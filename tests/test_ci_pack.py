@@ -14,6 +14,15 @@ from pathlib import Path
 import pytest
 
 from scripts.ci_scope_dependencies import suite_dependency_closure
+# Plain package import (not the importlib-from-path PACK below) so this test and
+# scripts/check_contract_delta.py's own import of the same names resolve to the
+# identical `scripts.run_ci_pack` module object — see
+# test_curated_exclusive_closure_findings_is_the_shared_implementation in
+# tests/test_contract_delta.py, which pins that identity.
+from scripts.run_ci_pack import (
+    curated_exclusive_closure_findings,
+    inferred_as_if_not_exclusive,
+)
 import yaml
 
 
@@ -1367,6 +1376,82 @@ def _never_execute(*args: object, **kwargs: object) -> int:
     raise AssertionError("execute_pack must not be reached on this path")
 
 
+DATA_HEALTH = ROOT / ".github" / "workflows" / "data-health.yml"
+
+
+def test_every_data_health_trigger_can_actually_mint_a_plan() -> None:
+    """The lane that took the data-gated jobs off the merge gate must be able to run.
+
+    ``data-health.yml`` fires on ``workflow_run`` (daily completed) and on a
+    13:30 UTC ``schedule`` backstop, and neither passes ``--role``/``--event``,
+    so both resolve to role ``main`` from the ambient ``GITHUB_EVENT_NAME``.
+    Until 2026-08-19 the supported set held only ``main/workflow_dispatch``, so
+    both raised ManifestError BEFORE any legacy job ran: run 32262001614
+    (schedule) died ``main/schedule is unsupported``, exit 2, in all six packs.
+    That is not a fail-closed that protects anything — it silently emptied the
+    only lane that grades the 74 ``gate: data`` jobs against a freshly written
+    data tree, which is the entire promise W2 made when it moved them off ci.yml.
+
+    This asserts the workflow's OWN trigger list, so adding a trigger there
+    without teaching the planner reds here instead of going quiet in production.
+    """
+    workflow = _yaml(DATA_HEALTH)
+    triggers = set((workflow.get("on") or workflow.get(True)).keys())
+    assert triggers, "data-health.yml must declare triggers"
+    for event in sorted(triggers):
+        assert ("main", event) in PACK.SUPPORTED_PLAN_ROLE_EVENTS, (
+            f"data-health.yml fires on {event!r} but the planner refuses "
+            f"main/{event}; that pack dies at exit 2 before a single job runs"
+        )
+
+
+def test_a_main_role_plan_from_a_data_health_trigger_carries_every_data_job(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Widening the transport must not have relaxed what ``main`` MEANS.
+
+    Both new events describe the shape ``main`` already required — a whole-tree
+    run at one checked-out SHA with no diff — so the plan they mint must be the
+    same full ``gate: data`` suite the manual dispatch minted, and it must carry
+    ``house-law-registry``: the guard whose input (the newest
+    ``data/symbol_directory`` snapshot) only ever moves on a nightly commit.
+    """
+    monkeypatch.setenv("GITHUB_SHA", "0" * 40)
+    monkeypatch.delenv("CI_SEMANTIC_ROLE", raising=False)
+    monkeypatch.delenv("CI_TESTED_TREE_SHA", raising=False)
+    monkeypatch.delenv("CI_SUBJECT_HEAD_SHA", raising=False)
+    monkeypatch.delenv("CI_BASE_SHA", raising=False)
+
+    plans = {}
+    for event in ("workflow_dispatch", "workflow_run", "schedule"):
+        monkeypatch.setenv("GITHUB_EVENT_NAME", event)
+        plan = PACK.plan_from_workflow(
+            MANIFEST, changed_from=None, scope_mode="active",
+            pack_count=6, gate="data",
+        )
+        assert plan.role == "main" and plan.event == event
+        assert plan.changed_from is None
+        plans[event] = {job for pack in plan.pack_jobs for job in pack}
+
+    assert "house-law-registry" in plans["schedule"]
+    assert plans["schedule"] == plans["workflow_dispatch"] == plans["workflow_run"]
+
+
+def test_the_supported_role_event_set_stays_closed() -> None:
+    """An unreasoned combination must still fail closed, both minting and consuming.
+
+    The widening above is two named transports for a role whose substance is
+    enforced elsewhere; it is not permission for any event to plan anything.
+    """
+    assert ("main", "push") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    assert ("pr_head", "schedule") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    assert ("pr_head", "workflow_dispatch") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    # One constant, both gates: the planner and the authoritative-plan reader
+    # cannot drift into disagreeing about what a legal plan is.
+    source = (ROOT / "scripts" / "run_ci_pack.py").read_text()
+    assert source.count("(role, event) not in SUPPORTED_PLAN_ROLE_EVENTS") == 2
+
+
 def test_plan_is_deterministic() -> None:
     first = _full_plan()
     second = _full_plan()
@@ -2165,11 +2250,20 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     # This job set was EXACTLY {"ci-pack"} until Wave B (2026-08-11) added the
     # planner and the aggregate. Pinned as a subset, not as equality: the
     # invariant this file defends is that CI does not fan back out (86 VMs, one
-    # per legacy suite), so a FOURTH job here is the regression — while the exact
-    # ci-plan/ci-gate shape belongs to tests/test_ci_plan_workflow.py, which owns
-    # it positively. Two suites asserting the same equality would only mean two
-    # places to edit, and the weaker one would win.
-    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "ci-gate"}
+    # per legacy suite), so a job-per-legacy-suite regression here is the thing
+    # this guards against — while the exact ci-plan/ci-gate shape belongs to
+    # tests/test_ci_plan_workflow.py, which owns it positively. Two suites
+    # asserting the same equality would only mean two places to edit, and the
+    # weaker one would win.
+    #
+    # `contract-delta` (2026-08-19) joined the allowed set deliberately: it is
+    # one small, purposeful, path-independent job — same shape as ci-plan/
+    # ci-pack/ci-gate, not a per-suite fan-out job — that re-derives two
+    # CI-contract finding classes ci-pack's own path scoping cannot reach (see
+    # scripts/check_contract_delta.py's module docstring). Adding it here is
+    # the same class of change as ci-plan/ci-gate joining originally; it does
+    # not reopen the 86-VM fan-out this test exists to prevent.
+    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "contract-delta", "ci-gate"}
     assert "ci-pack" in workflow["jobs"]
     pack = workflow["jobs"]["ci-pack"]
     # The pack COUNT tunes (2 -> 4 -> 12 as hosted capacity increased); the
@@ -2657,6 +2751,17 @@ def test_workspace_runtime_contracts_can_start_the_ci_that_validates_them() -> N
 # ---------------------------------------------------------------------------
 
 CURATED_EXCLUSIVE = {
+    # 2026-08-19 wave 5. #6027 moved #5984's three dossier suites into
+    # conviction-profile — the right call, because their #6023 home
+    # (unrun-publish-ops) is `gate: data`, which ci.yml never plans, so they
+    # were named by a run: step and still dark on every PR. But those suites
+    # import scripts/build_ticker_pages.py and check_stock_dossier_integrity.py,
+    # which rglob templates/ and site/, so the job inherited whole-tree
+    # fallback claims and newly matched templates/index.html — 128 > the 127
+    # ceiling below. Curated rather than paid for: its 59 concrete owned files
+    # plus the two templates build_ticker_pages loads by name. Probe returns
+    # to 127; weight and pack ceilings unmoved.
+    "conviction-profile",
     "unrun-government-revenue-grader",
     "biocatalyst-worker",
     "biocatalyst-serving",
@@ -2727,11 +2832,13 @@ CURATED_EXCLUSIVE = {
 
 
 def _inferred_as_if_not_exclusive() -> dict[str, PACK.LegacyJob]:
-    """What inference WOULD derive for the curated jobs, exclusivity aside."""
-    jobs = [PACK.replace(job, exclusive=False)
-            for job in PACK.load_legacy_jobs(MANIFEST)]
-    inferred, _ = PACK.infer_job_scopes(jobs)
-    return {job.job_id: job for job in inferred}
+    """What inference WOULD derive for the curated jobs, exclusivity aside.
+
+    Thin wrapper over the shared ``scripts.run_ci_pack.inferred_as_if_not_exclusive``
+    — kept so the other call sites below need no change; the computation itself now
+    lives in exactly one place (see the import block above).
+    """
+    return inferred_as_if_not_exclusive(MANIFEST)
 
 
 def test_the_curated_exclusive_set_is_actually_declared() -> None:
@@ -2748,17 +2855,14 @@ def test_curated_exclusive_scopes_cover_their_own_import_closure() -> None:
     when its own dependency changes, and reports green forever. The manifest's
     load-time coverage audit only reaches the paths a job's COMMANDS name; the
     transitive import closure is one layer deeper and is checked here.
+
+    The computation itself is ``scripts.run_ci_pack.curated_exclusive_closure_findings``
+    — the same function ``scripts/check_contract_delta.py`` calls for the head side
+    of its PR-vs-base delta, so this test and that gate can never quietly diverge on
+    what "covered" means.
     """
-    would_infer = _inferred_as_if_not_exclusive()
-    declared = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)
-                if job.exclusive}
-    misses: dict[str, list[str]] = {}
-    for job_id, job in sorted(declared.items()):
-        closure = [p for p in would_infer[job_id].paths if "*" not in p]
-        assert closure, f"{job_id} derives no closure — curation cannot be checked"
-        uncovered = [p for p in closure if not PACK._matches_any(job.paths, p)]
-        if uncovered:
-            misses[job_id] = uncovered[:8]
+    misses_full = curated_exclusive_closure_findings(MANIFEST)
+    misses = {job_id: list(paths[:8]) for job_id, paths in misses_full.items()}
     assert not misses, (
         "curated exclusive scope(s) no longer cover their own import closure:\n  "
         + "\n  ".join(f"{k}: {v}" for k, v in misses.items())

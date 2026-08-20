@@ -9,22 +9,23 @@
     "trade_authority": "none"
   },
   "cik_map_snapshot": "2026-08-18",
-  "code_version": "f77202fc135decd28ff44994a20ded261539252f",
+  "code_version": "a6fac4b16a5cd8d63c3ad269a16e87279da0e603",
   "coverage": {
-    "resolved": 703,
+    "resolved": 702,
     "total": 713,
-    "unresolved": 10,
+    "unresolved": 11,
     "unresolved_names": [
       "ANGPY",
+      "AVB",
       "B",
       "BLD",
       "CBOE",
       "EA",
+      "EQR",
       "GATO",
       "IMPUY",
       "MAG",
-      "RHHBY",
-      "VMRK"
+      "RHHBY"
     ]
   },
   "dataset_ids": [
@@ -33,7 +34,7 @@
     "reference.issuer_master",
     "reference.issuer_migrations"
   ],
-  "generated_at": "2026-08-19T10:55:43",
+  "generated_at": "2026-08-20T01:30:18",
   "identity_exceptions": [
     {
       "evidence": "SEC Barnes Group 2025-01-27 8-K/Form 25; Barrick Mining 2025-05-07 Form 6-K Exhibit 99.2; Gold.com 2025-11-12 AMRK->NYSE GOLD transfer announcement; config/theme_graph_identity_breaks.yml GOLD",
@@ -52,9 +53,9 @@
     "config.yml": "3c34cf00574ba9c316e4e767b59bed1e311b5d42e5bdded5aebaf8fb1840940c",
     "config/delisted_symbols.yml": "d5e656970865d77f6681afe281a86a7aa57098481e4e62a0b5b94e3a0d5cd894",
     "data/baskets/membership.json": "ee2695df99eef3f6092a8a3b605d79b7d73172b0b172a16949c14f04fd874aa6",
-    "data/breadth/constituents.parquet": "be304e529465ec96e141749ff9c882963fab5db3ba75e340d9f205e738943441",
+    "data/breadth/constituents.parquet": "f40d594d8115f9036c4d8a8ded8df81edbd2a40638d2240501ac1adca00b252c",
     "data/symbol_directory/cik_map": "1e47a7312c27fb70da6863eac31eb70b2fa35e605f1325f1bafc941340bca748",
-    "data/symbol_directory/snapshots": "f082a2bee3171061b1f61b4b38bba98a2bceccb0a49425a62def9dca9d1eb370",
+    "data/symbol_directory/snapshots": "1a96fd521d0954dfc9704d6556915e1493e3f9aa0d7e0e3b7c1da26b44e8e9f3",
     "lib/ticker_aliases.py": "e61756c5c1dda0b4f0a3fd06ce532e868adb91b9c38948b7e6cab00dd3893011"
   },
   "issuer": {
@@ -87,7 +88,7 @@
     ],
     "state_counts": {
       "DEFERRED_IDENTITY_EXCEPTION": 1,
-      "NO_ISSUER_EVIDENCE": 4,
+      "NO_ISSUER_EVIDENCE": 5,
       "RESOLVED": 699
     }
   },
@@ -118,18 +119,18 @@
   "row_counts": {
     "issuer_master": 701,
     "issuer_migrations": 3,
-    "security_master": 704,
-    "vendor_alias_rows_readable": 2821,
-    "vendor_aliases": 2821
+    "security_master": 705,
+    "vendor_alias_rows_readable": 2825,
+    "vendor_aliases": 2825
   },
   "seed_counts": {
     "delisted_keys": 2,
-    "directory_symbols": 13112,
+    "directory_symbols": 13161,
     "ticker_fixups": 2,
     "ticker_key_migrations": 1,
     "universe_keys": 711
   },
-  "symbol_directory_snapshot": "2026-08-10",
+  "symbol_directory_snapshot": "2026-08-20",
   "undated_renames": [
     {
       "evidence": "lib/ticker_aliases.py YAHOO_FETCH_ALIASES FI->FISV (vendor LAGS the rename); config.yml breadth.ticker_fixups FISV->FI; no in-repo date for the 2023 change",

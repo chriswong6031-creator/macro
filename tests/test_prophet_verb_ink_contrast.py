@@ -344,6 +344,100 @@ def test_zh_light_near_stays_softer_than_buy(theme_css, verbs, surfaces):
     )
 
 
+#: Minimum CIELAB separation between a stance token and the direction token it derives
+#: from. Measured in dE76 rather than raw RGB distance because RGB distance lies about
+#: greens: en/light sits 12.6 apart in summed channels and only 5.6 in dE, and it is dE
+#: that answers "can a reader tell these two apart".
+#:
+#: 3.0 is a REVERSION guard, not the design target — it sits above the ~2.3 just-
+#: noticeable threshold and well under every live margin. The four measured quadrants,
+#: raw token / text ink: en-light 30.5/5.6 · zh-light 35.1/23.3 · en-dark 10.1/10.1 ·
+#: zh-dark 12.5/12.5. All eight were 0.00 before C8-C.
+#:
+#: en/light's 5.6 is the thinnest and is INHERITED from the reference, not chosen here:
+#: light's --ink-mix-up is 62% and the reference's stance mix is 54%, two points on one
+#: axis, so the two inks are close by construction. It clears JND and the two never take
+#: the same form (Buy is a solid pill; the change is small text), but it is the quadrant
+#: to re-open first if the separation is ever judged too thin.
+_STANCE_DIRECTION_MIN_DE = 3.0
+
+
+def _resolve_ink(expr: str, env: dict):
+    """--ink-up and friends carry the mix PERCENTAGE in a var(); inline it first."""
+    for name in ("--ink-mix-up", "--ink-mix-down"):
+        expr = expr.replace(f"var({name})", env.get(name, "100%"))
+    return _resolve(expr, env)
+
+
+def _lab(c):
+    def lin(v):
+        v /= 255.0
+        return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
+
+    r, g, b = (lin(x) for x in c)
+    xyz = ((0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047,
+           (0.2126 * r + 0.7152 * g + 0.0722 * b),
+           (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883)
+    fx, fy, fz = (t ** (1 / 3) if t > 0.008856 else 7.787 * t + 16 / 116 for t in xyz)
+    return (116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz))
+
+
+def _delta_e(a, b) -> float:
+    return sum((x - y) ** 2 for x, y in zip(_lab(a), _lab(b))) ** 0.5
+
+
+@pytest.mark.parametrize("lang,theme", COMBOS, ids=[f"{l}-{t}" for l, t in COMBOS])
+def test_stance_is_never_the_direction_ink(theme_css, lang, theme):
+    """DA-002: a Buy call and a positive tape reading must not print the same colour.
+
+    ``--pv-buy`` used to BE ``--up``: byte-identical on every one of the four
+    theme x language quadrants (a literal on the two English planes, an explicit
+    ``var(--up)`` alias on the two Chinese ones). So one ink on one card meant two
+    different things — the stance we published and the direction the tape moved —
+    and no reader could tell which they were looking at. Cured by C8-C, the
+    Design-System PR chartered by the R4 composition verdict.
+
+    Both layers are checked because both were collided and they fail independently:
+    the raw token feeds fills, rings and glows, while ``--ink-pv-buy`` is what
+    actually prints as TEXT. The light plane is the one that catches a lazy fix —
+    at a 62%% mix ``--ink-pv-buy`` resolves byte-for-byte onto ``--ink-up``, because
+    light's ``--ink-mix-up`` is also 62%%, so a stance token can clear the raw
+    comparison and still land the chip and the change on one colour.
+    """
+    env = _env_for(theme_css, lang, theme)
+    for stance_name, direction_name in (("--pv-buy", "--up"), ("--ink-pv-buy", "--ink-up")):
+        stance = _resolve_ink(env[stance_name], env)
+        direction = _resolve_ink(env[direction_name], env)
+        gap = _delta_e(stance, direction)
+        assert gap >= _STANCE_DIRECTION_MIN_DE, (
+            f"{lang}/{theme}: {stance_name} sits dE {gap:.2f} from {direction_name} "
+            f"(floor {_STANCE_DIRECTION_MIN_DE}) — stance has collapsed back onto direction. "
+            f"They resolve to {'#%02x%02x%02x' % tuple(int(round(c)) for c in stance)} and "
+            f"{'#%02x%02x%02x' % tuple(int(round(c)) for c in direction)}. Stance must derive "
+            "FROM --up (so the zh flip stays structural) while staying visibly off it; see "
+            "the stance block in templates/theme.css."
+        )
+
+
+def test_stance_still_derives_from_direction(theme_css):
+    """The separation above must not be bought with a hand-picked hue.
+
+    A literal would satisfy the distance check and quietly break 红涨绿跌: the zh
+    blocks flip ``--up``/``--down`` and nothing else, so a stance token that does not
+    reference ``--up`` stops flipping with it. This pins the mechanism, not the value.
+    """
+    for theme in ("dark", "light"):
+        env = _env_for(theme_css, "en", theme)
+        assert "var(--up)" in env["--pv-buy"], (
+            f"{theme}: --pv-buy = {env['--pv-buy']!r} does not reference --up. "
+            "Deriving is what makes the Chinese direction flip structural."
+        )
+    zh, en = _env_for(theme_css, "zh", "dark"), _env_for(theme_css, "en", "dark")
+    assert _resolve(zh["--pv-buy"], zh) != _resolve(en["--pv-buy"], en), (
+        "zh --pv-buy resolves to the English value — the direction flip did not carry."
+    )
+
+
 def test_known_gap_entries_are_still_failing(theme_css, verbs, surfaces):
     """A carve-out that has been fixed must be deleted, not left to rot.
 

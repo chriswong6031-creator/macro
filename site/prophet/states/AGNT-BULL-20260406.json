@@ -11,21 +11,21 @@
   "human_state": "Invalidated",
   "components": {
     "validity": 0.0,
-    "progress": 0.0,
+    "progress": 24.3,
     "pace": 0.0,
-    "retention": 0.0,
-    "overlay": 61.0
+    "retention": 100.0,
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": -1.025,
-    "dist_to_t1_r": 1.5,
-    "dist_to_t2_r": 3.0,
+    "dist_to_stop_r": -0.62,
+    "dist_to_t1_r": 1.12,
+    "dist_to_t2_r": 2.62,
     "horizon_pct_used": 20.0,
-    "p1": -0.0165,
-    "p2": -0.0083,
+    "p1": 0.2534,
+    "p2": 0.1267,
     "p3": null,
-    "move_r": -0.025,
-    "mfe_r": 0.182,
+    "move_r": 0.38,
+    "mfe_r": 0.38,
     "mae_r": -0.025
   },
   "rr_ratio": null,
@@ -39,9 +39,9 @@
     "recommended_action": "display \u2014 narrate, not authoritative order",
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
-  "_mfe": 0.21999999999999975,
+  "_mfe": 0.4599997711181638,
   "_mae": -0.03000000000000025,
-  "_max_p1": 0.1212121212121211,
+  "_max_p1": 0.2534434000651041,
   "_first_trigger_ts": "2026-08-10",
   "_first_t1_ts": null,
   "_first_t2_ts": null,

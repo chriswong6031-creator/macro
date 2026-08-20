@@ -1,13 +1,13 @@
 {
   "schema": "agent_os_state.v1",
   "generator": "scripts/agentos.py status",
-  "generated_at": "2026-08-19T15:02:31Z",
+  "generated_at": "2026-08-20T01:05:36Z",
   "inputs": {
-    "workstreams": 28,
-    "decisions": 87,
-    "discoveries": 71,
-    "handoffs": 82,
-    "active_builds": "data/governance/active_builds.json@2026-08-19T15:02:31.031579+00:00",
+    "workstreams": 34,
+    "decisions": 121,
+    "discoveries": 95,
+    "handoffs": 99,
+    "active_builds": "data/governance/active_builds.json@2026-08-20T01:05:36.753157+00:00",
     "active_builds_age_hours": 0.0,
     "worktrees": 1,
     "uncommitted_worktrees": [],
@@ -34,7 +34,7 @@
       "next_action": "Sol adversarial review of the AD-1 implementation PR; on PASS, run the production-acceptance continuation (merge, nightly advance, served-page proof, acceptance record). AD-2 stays closed.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -144,7 +144,7 @@
       "next_action": "Phase 4 is eligible but not started. Commission it as a separate high-blast-radius, report-only hook wave; keep the readiness envelope graph-only and Mastermind's improvement agenda as the sole ranked queue.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -274,6 +274,12 @@
       "needs_ceo": null,
       "collisions": [
         {
+          "with": "BPC-JV-RECON",
+          "paths": [
+            "agentos/**"
+          ]
+        },
+        {
           "with": "GREY-DEER-RISK-INTELLIGENCE",
           "paths": [
             "agentos/**"
@@ -296,10 +302,10 @@
       "repos": [
         "macro"
       ],
-      "next_action": "Operator dispatches the six read-only Grok censuses (pack files GROK-A0/B0/D0/ E0/F0/G0) with the riders in PASS-0 §6; FABLE-A dispatches only after GROK-A0 returns, under the PASS-0 §7 conditions.",
+      "next_action": "Operator dispatches FABLE-A under the c0 §5 conditions (contract-first; store build gated on A0 §8 flip condition; FIF acceptance leg fixture-only until Sol rules). Census PRs #5955 (US G0) and #5943 (CN-G0) are ACCEPTED and armed to merge; #5953 carries a superseded rival G0 copy — disposition request posted, that lane responds. Next session adjudicates the FABLE-A K1 packet; K4-G is authored by operator/Sol carrying the seat packet §6 preconditions verbatim.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [
         "PROPHET-US-V4-RECOVERY",
         "PROPHET-CONDITIONAL-FUSION",
@@ -315,10 +321,10 @@
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 1,
+        "done": 3,
         "dropped": 0,
         "in_progress": 0,
-        "todo": 8
+        "todo": 7
       },
       "wave_detail": [
         {
@@ -333,13 +339,25 @@
         },
         {
           "id": "c0",
-          "title": "Wave-0 census adjudication (GROK A0/B0/D0/E0/F0/G0 returns; FABLE-A dispatch decision)",
-          "status": "todo",
+          "title": "Wave-0 census adjudication (GROK A0/B0/D0/E0/F0 returns; FABLE-A dispatch decision)",
+          "status": "done",
           "depends_on": [
             "p0"
           ],
           "deps_satisfied": true,
-          "next_action": "adjudicate the six census returns; confirm/deny FABLE-A dispatch conditions",
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "c0g",
+          "title": "G0 return adjudication (post-event reinterpretation census — outstanding at c0)",
+          "status": "done",
+          "depends_on": [
+            "c0"
+          ],
+          "deps_satisfied": true,
+          "next_action": null,
           "prs": [],
           "done_at": null
         },
@@ -350,7 +368,7 @@
           "depends_on": [
             "c0"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
           "prs": [],
           "done_at": null
@@ -437,6 +455,104 @@
       "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
     },
     {
+      "key": "BPC-JV-RECON",
+      "title": "BioPharmCatalyst JV snapshot reconstruction (independent primary sources)",
+      "status": "active",
+      "program": "biocatalyst",
+      "p0": null,
+      "p0_active": null,
+      "owner": "coo-fable",
+      "class": "research",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "After #5909 merges, return to Sol for commissioning of the first bounded SNAPSHOT-ONBOARD vertical. Do not begin it from this PR.",
+      "created": "2026-08-19",
+      "updated": "2026-08-19",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 1,
+        "dropped": 1,
+        "in_progress": 0,
+        "todo": 2
+      },
+      "wave_detail": [
+        {
+          "id": "RECON-0",
+          "title": "JV snapshot archaeology + source-system reconstruction freeze",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Architecture accepted; complete pending merge of PR",
+          "prs": [
+            5909
+          ],
+          "done_at": "2026-08-19T19:51:49Z"
+        },
+        {
+          "id": "SNAPSHOT-ONBOARD",
+          "title": "Licensed snapshot corpus onboarding",
+          "status": "todo",
+          "depends_on": [
+            "RECON-0"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Do not start from PR #5909. After #5909 merges, return to Sol for commissioning of the first bounded SNAPSHOT-ONBOARD vertical. When commissioned and W1–W4 bytes are in the implementation environment, census each workbook (SHA-256 → ordered sheet set → dimensions → content hashes → pair class ADDITIVE_SHEET_EXPORT_IDENTICAL_COMMON_CONTENT | COMMON_SHEET_CONTENT_CHANGED | DISTINCT_CAPTURE | UNRESOLVED). Do not invent predecessor SHA-256 from File Library metadata. Preserve unique predecessor rows if found.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "CONTINUOUS-RECON",
+          "title": "Continuous source reconstruction",
+          "status": "todo",
+          "depends_on": [
+            "RECON-0"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Do not start from PR",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "RECON-1",
+          "title": "Drugs@FDA hermetic matcher (recast — calibration component, not program-done)",
+          "status": "dropped",
+          "depends_on": [
+            "RECON-0"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Recast into CONTINUOUS-RECON. Do not start from this PR. CI ZIP replay is not production proof.",
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [
+        {
+          "number": 5909,
+          "state": "merged",
+          "wave": "RECON-0",
+          "merged_at": "2026-08-19T19:51:49Z"
+        }
+      ],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [
+        {
+          "with": "AGENT-OS",
+          "paths": [
+            "agentos/handoffs/BPC-JV-RECON-*",
+            "agentos/workstreams/WS-BPC-JV-RECON.md"
+          ]
+        }
+      ],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-BPC-JV-RECON.md"
+    },
+    {
       "key": "BREATHING-PLATFORM",
       "title": "Breathing Platform — live, continuously refreshed US signal platform",
       "status": "active",
@@ -452,7 +568,7 @@
       "next_action": "Land the revival wave (PR-A Massive close truth, PR-B launchd primary clock, PR-C liveness ruler), deploy the launchd agent on the Mac Studio, run replay acceptance, then hold for Monday's live session measurement.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -542,7 +658,7 @@
       "next_action": "Check whether R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID has an updated_at later than 2026-08-11T03:27:33Z; if so, dispatch attested-history-aapl-seed.yml from main, approve the protected environment, and independently admit the four downloaded artifacts with verify_fundamental_forensics_attested_history_seed_bundle.py.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "Operator must replace the protected attested-history-seed environment secret R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID with the Cloudflare R2 S3 Access Key ID for the separate Object Read & Write writer role; update its paired secret too if a new writer token is generated. The value must never enter chat or git.\n"
@@ -707,6 +823,398 @@
       "source": "agentos/workstreams/WS-CALCBENCH-FILING-FORENSICS-PARITY.md"
     },
     {
+      "key": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+      "title": "Capital Structure Intelligence V2 — issuer capital twin",
+      "status": "active",
+      "program": "capital-structure-intelligence",
+      "p0": null,
+      "p0_active": null,
+      "owner": "coo-fable",
+      "class": "research",
+      "blast_radius": "user_facing",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Sol review of W1A PR #6012; do not merge until accepted; do not start W2.",
+      "created": "2026-08-19",
+      "updated": "2026-08-19",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 2,
+        "dropped": 0,
+        "in_progress": 1,
+        "todo": 6
+      },
+      "wave_detail": [
+        {
+          "id": "W0",
+          "title": "Architecture freeze, estate audit, competitor/regulatory refresh",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Accepted by Sol/Chairman. W1 authorized.\n",
+          "prs": [
+            5901
+          ],
+          "done_at": null
+        },
+        {
+          "id": "W1",
+          "title": "Evidence identity + whole-generation append-only fence",
+          "status": "done",
+          "depends_on": [
+            "W0"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Merged as #5959 / b7004b132509. Identity defects remain; W1A is the corrective wave. Do not treat W1 as accepted until W1A lands.\n",
+          "prs": [
+            5959
+          ],
+          "done_at": "2026-08-19T15:10:27Z"
+        },
+        {
+          "id": "W1A",
+          "title": "Clock-independent event identity, no new legacy occurrence, bundle re-obs",
+          "status": "in_progress",
+          "depends_on": [
+            "W1"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Sol review of #6012. Do not merge until accepted. Do not start W2.\n",
+          "prs": [
+            6012
+          ],
+          "done_at": "2026-08-19T22:08:08Z"
+        },
+        {
+          "id": "W2",
+          "title": "LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health",
+          "status": "todo",
+          "depends_on": [
+            "W1A"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W3",
+          "title": "Capital Changes Desk and issuer Capital Twin UX on honest states",
+          "status": "todo",
+          "depends_on": [
+            "W1A"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W4",
+          "title": "Registration and remaining-capacity state machine (I.B.6, ATM, ELOC)",
+          "status": "todo",
+          "depends_on": [
+            "W1A"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W5",
+          "title": "Instrument overhang and disclosed toxic-term facts",
+          "status": "todo",
+          "depends_on": [
+            "W4"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W6",
+          "title": "Share basis, corporate actions, cash and funding need",
+          "status": "todo",
+          "depends_on": [
+            "W4"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W7",
+          "title": "Neural Web typed change events and Prophet shadow features",
+          "status": "todo",
+          "depends_on": [
+            "W4",
+            "W5",
+            "W6"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [
+        {
+          "number": 5901,
+          "state": "unknown",
+          "wave": "W0",
+          "merged_at": null
+        },
+        {
+          "number": 5959,
+          "state": "merged",
+          "wave": "W1",
+          "merged_at": "2026-08-19T15:10:27Z"
+        },
+        {
+          "number": 6012,
+          "state": "merged",
+          "wave": "W1A",
+          "merged_at": "2026-08-19T22:08:08Z"
+        }
+      ],
+      "claim": null,
+      "needs_ceo": {
+        "question": "Accept W1A (#6012) so post-W1 event-version identity is clock-independent, new child writes never mint legacy:{source_id}, and re-observation is a full-bundle decision? Hold W2 until that PR merges.",
+        "options": [
+          "Accept W1A; authorize Wave 2 only after merge and natural CS-path proof",
+          "Accept W1A with further named amendments",
+          "Reject; name which W1A ruling to reopen"
+        ],
+        "recommendation": "Accept W1A. Do not start Wave 2 in this PR. Do not rewrite historical event_ids or v1 manifests.",
+        "by_when": "2026-08-25",
+        "blocks_waves": 7
+      },
+      "collisions": [],
+      "warnings": [
+        "record_disagrees_with_execution: wave W1A is 'in_progress' but PR #6012 is merged"
+      ],
+      "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+    },
+    {
+      "key": "CHINA-ALPHA-INTELLIGENCE",
+      "title": "China Alpha Intelligence — corporate sensing + professional discovery program",
+      "status": "active",
+      "program": "china-system",
+      "p0": null,
+      "p0_active": null,
+      "owner": "fable",
+      "class": "build",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Gate: Sol's final freeze review of the revised #5953 head. After it clears: spawn PR-0B (builder) and RIGHTS-0 (researcher) in parallel from their commission files; PR-0D (builder) in parallel coordinated with WS:STOCK-IDENTITY; P1 spawns after the RIGHTS-0 verdict on the institutional visit source. Completion law on every build wave: merge = BUILT_NOT_PROVEN; a real production receipt (recorded here) = done. Later tracks (P3–P6, R3–R4, S-lobes, L3+) charter from the masterplan at their wave boundaries.",
+      "created": "2026-08-19",
+      "updated": "2026-08-19",
+      "stale_days": 1,
+      "depends_on": [
+        "ALPHA-INTELLIGENCE-INTEGRATION",
+        "EARNINGS-INTELLIGENCE-OS",
+        "STOCK-IDENTITY",
+        "GMI-THEME-GRAPH"
+      ],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 2,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 10
+      },
+      "wave_detail": [
+        {
+          "id": "g0",
+          "title": "G0 census slot — closed by the SEAT adjudication (canonical US G0 =",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [
+            5933,
+            5943,
+            5955
+          ],
+          "done_at": "2026-08-19T18:13:48Z"
+        },
+        {
+          "id": "pr0a",
+          "title": "PR-0A final research authority — masterplan rewrite, census adjudication, AgentOS (revised 2026-08-19 second pass per Sol freeze-review verdict; freeze effective at Sol's final review)",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [
+            5822,
+            5953
+          ],
+          "done_at": "2026-08-19T16:05:16Z"
+        },
+        {
+          "id": "pr0b",
+          "title": "PR-0B v4 telemetry preservation — persist full intel_interest anatomy prospectively (merge = BUILT_NOT_PROVEN; done only on real-nightly receipt)",
+          "status": "todo",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "after Sol's final freeze review, spawn builder with research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "rights0",
+          "title": "RIGHTS-0 source entitlement/rights audit (consumes CN-A",
+          "status": "todo",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "after Sol's final freeze review, spawn researcher with research/china_alpha_intelligence/commissions/RIGHTS-0_source_entitlement_audit.md",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "p1",
+          "title": "P1 Institutional Visit Tape + dossier (producer, PIT clock, provisional actor ontology, coverage-start semantics, failure isolation; NO score; merge = BUILT_NOT_PROVEN, done only on real asia-close receipt + production dossier desktop/mobile proof)",
+          "status": "todo",
+          "depends_on": [
+            "rights0"
+          ],
+          "deps_satisfied": false,
+          "next_action": "spawn builder with research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md after rights0 verdict on the visit source",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "pr0d",
+          "title": "PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; merge = BUILT_NOT_PROVEN)",
+          "status": "todo",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "after Sol's final freeze review, spawn builder with research/china_alpha_intelligence/commissions/PR-0D_china_identity_extension.md, coordinated with WS:STOCK-IDENTITY",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "l0",
+          "title": "L0 full-pool canonical outcomes (extract china_standout_track primitives for the candidate plane)",
+          "status": "todo",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "p1b",
+          "title": "P1B Institutional Discovery state + prospective outcome accrual (shadow research only)",
+          "status": "todo",
+          "depends_on": [
+            "p1",
+            "l0"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "p2",
+          "title": "P2 Analyst Research Effort state + dossier (shadow research)",
+          "status": "todo",
+          "depends_on": [
+            "rights0"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "r1",
+          "title": "R1 Announcement corpus + first event family (major contract/order or capacity milestone)",
+          "status": "todo",
+          "depends_on": [
+            "pr0d"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "r2",
+          "title": "R2 Government/SOE demand pilot — Grid/Power domain (frozen source input = CN-C",
+          "status": "todo",
+          "depends_on": [
+            "pr0d"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "l2",
+          "title": "L2 C1 equal-family shadow challenger (first vNext ranking challenger)",
+          "status": "todo",
+          "depends_on": [
+            "l0",
+            "p1b"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [
+        {
+          "number": 5933,
+          "state": "merged",
+          "wave": "g0",
+          "merged_at": "2026-08-19T16:05:24Z"
+        },
+        {
+          "number": 5943,
+          "state": "merged",
+          "wave": "g0",
+          "merged_at": "2026-08-19T18:08:49Z"
+        },
+        {
+          "number": 5955,
+          "state": "merged",
+          "wave": "g0",
+          "merged_at": "2026-08-19T18:13:48Z"
+        },
+        {
+          "number": 5822,
+          "state": "unknown",
+          "wave": "pr0a",
+          "merged_at": null
+        },
+        {
+          "number": 5953,
+          "state": "merged",
+          "wave": "pr0a",
+          "merged_at": "2026-08-19T16:05:16Z"
+        }
+      ],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+    },
+    {
       "key": "CI-MERGE-CONTROL-PLANE",
       "title": "CI + merge control-plane recovery (the 2026-08 traffic jam)",
       "status": "active",
@@ -719,14 +1227,14 @@
       "repos": [
         "macro"
       ],
-      "next_action": "W-GATE-SPLIT: PR 5969 merged; qledger clock heal PR 5972 merged (the nightly had committed a registrar-local write-once clock; now gitignored). Proof runs dispatched 11:01Z: main baseline 32245502253 on the code-only gate, and a hand-dispatched data-health.yml run 32245526648 to prove the issue plumbing. Then W3 to prove the issue plumbing, verify the first post-nightly firing, then W3 at >=72h - trailing-100 green rate above 90% via scripts/ci_gate_reliability_report.py plus two consecutive ordinary PRs merged with no main-red-repair. W-SEMANTIC-PROOF remains stopped; W-REWRITE remains separately commissioned.",
+      "next_action": "Verify contract-delta appears and behaves on the next few ordinary PRs (inherited-immune, catches introduced closure/unwired defects); confirm the armed backlog fully drains post-breaker-open (21 -> 17 within an hour of the 19:06Z green). Then W3 at >=72h from the W2 merge (~08-22): trailing-100 green rate above 90% via scripts/ci_gate_reliability_report.py plus two consecutive ordinary PRs merged with no main-red-repair. W-SEMANTIC-PROOF remains stopped; W-REWRITE remains separately commissioned.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
-        "awaiting_ci": 1,
+        "awaiting_ci": 2,
         "done": 1,
         "dropped": 0,
         "in_progress": 2,
@@ -772,6 +1280,16 @@
           "next_action": null,
           "prs": [],
           "done_at": null
+        },
+        {
+          "id": "W-CONTRACT-DELTA",
+          "title": "Differential pre-merge contract gate (post-merge jam class closed)",
+          "status": "awaiting_ci",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
         }
       ],
       "prs": [],
@@ -780,6 +1298,51 @@
       "collisions": [],
       "warnings": [],
       "source": "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md"
+    },
+    {
+      "key": "CN-COMMERCIAL-SUPPLY-DILIGENCE",
+      "title": "Commercial PRC supply-chain / alt-data diligence",
+      "status": "parked",
+      "program": "china-system",
+      "p0": null,
+      "p0_active": null,
+      "owner": "chairman",
+      "class": "research",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Do not purchase. Resume only if a named vendor returns a written grant covering API + persist + derived-feature + customer-facing derived display of disclosure (年报 top-5 / SDB-class) edges. Otherwise leave supply-chain on the public CNInfo floor and CN-B identity work.",
+      "created": "2026-08-19",
+      "updated": "2026-08-19",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 1,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 0
+      },
+      "wave_detail": [
+        {
+          "id": "W0",
+          "title": "GROK-CN-E commercial diligence (this packet)",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Land the research note, DEC, and DSC. Do not open a vendor conversation. Park the workstream until a written OEM grant exists.\n",
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-CN-COMMERCIAL-SUPPLY-DILIGENCE.md"
     },
     {
       "key": "CN-LIMIT-ALPHA",
@@ -794,18 +1357,18 @@
       "repos": [
         "macro"
       ],
-      "next_action": "P-B3 shipped on PR #5729: NULL=12, UNINFORMATIVE=8; P-D not opened. Parallel only: (1) P-B2-ACCRUAL live min(first_seen) after the first asia-close write; (2) P-C when its data gates open; (3) full-A exact-plane re-measurement. P-D stays last and currently has no P-B3 input. No production scoring change.",
+      "next_action": "R6-0 lands with this PR (records only). Then commission P0-ST, DEP-CAI, and DEP-EXACT as separate sessions per research/cn_limit/CN_LIMIT_R6_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md — P0-ST first (program P0). No CN-Limit runtime feature wave starts before its named dependency gates close; no live rank, score, gate, size, or public probability is authorized by any R6 record.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 6,
-        "dropped": 0,
+        "done": 7,
+        "dropped": 1,
         "in_progress": 0,
-        "todo": 3
+        "todo": 15
       },
       "wave_detail": [
         {
@@ -878,7 +1441,7 @@
             "P-A1"
           ],
           "deps_satisfied": true,
-          "next_action": "Accrual-gated by its own preregistration: >=120 distinct sessions AND >=2 own_market_regime segments per stream before any inference row (earliest ~2027-02 via v3). Partial peeks forbidden.",
+          "next_action": "Accrual-gated by its own preregistration: >=120 distinct sessions AND >=2 own_market_regime segments per stream before any inference row (earliest ~2027-02 via v3). Partial peeks forbidden. R6 note (2026-08-19): runs under the R6 freeze's authority precedence; a standout-panel research battery, never a substitute for the exact-plane R4 battery (wave M2-R4-BATTERY).",
           "prs": [],
           "done_at": null
         },
@@ -888,17 +1451,190 @@
           "status": "todo",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "Blocked on lawful data depth: minute-bar backfill + chips (cyq) accrual + the full-A TuShare spine authority decision. Charter only after its gates open.",
+          "next_action": "Reconciled under R6 (2026-08-19): intraday families (AUCTION_DEMAND_QUALITY, SEAL_CONTINUATION_STATE) live in the D-INTRADAY dormant branch of the R6 freeze §13.3 and unlock only on licensed auction/minute/order data plus a fresh P-C charter of its own era, behind DEP-EXACT. Seal anatomy never predicts the same first-board target (continuation/access only). Do not charter from this row alone.",
           "prs": [],
           "done_at": null
         },
         {
           "id": "P-D",
           "title": "Conjunction stacking + scorer preregistration",
-          "status": "todo",
+          "status": "dropped",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "Last, by design. Still todo — P-B3 did not open it. The frozen P-B3 construction produced no TIMING-stamped cells and no occupancy covariates (NULL=12, UNINFORMATIVE=8). A P-B3 NULL is not re-shopped into P-D. A later persistence-robust design would need a fresh prereg. Gauntlet at promotion; forward verification only via the exact-plane ledger chain.",
+          "next_action": "SUPERSEDED 2026-08-19 by the R6 measurement architecture: conjunction and stacking evaluation happens only inside M2-R4-BATTERY → I1C-G6 under the frozen R4 preregistration (DEC:CNLI-MEASUREMENT-BEFORE-ORDERING, DEC:CNLI-NO-OUTCOME-AUDITION). No separate P-D scorer prereg may be chartered. P-B3 gave it no input; R6 closes the row.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "R6-0",
+          "title": "Durable R6 final-freeze landing (records only)",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "SHIPPED with this record's PR: R6 canonical package landed byte-faithfully under research/cn_limit/ (architecture freeze, machine registry, Fable command packet, Grok bounded commissions, executive handoff index, artifact manifest — SHA-256s match the manifest); 13 DEC:CNLI-* rulings and 3 discoveries minted. Per the R6 proof matrix the required proof is merged-records discoverability on origin/main; no runtime diff shipped, no runtime proof claimed. R1-R5 source artifacts were not delivered as bytes to the landing session; they remain pinned by SHA-256 in the freeze Appendix C and the manifest.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "P0-ST",
+          "title": "2026 main-board risk-warning rule parity and replay (program P0)",
+          "status": "todo",
+          "depends_on": [
+            "R6-0"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Commission as its own session after R6-0 merges: effective-dated main-board risk-warning band ±5%→±10% from 2026-07-06 in config/cn_limit_rules.yml + engine/china_microstructure.py, with official-source effective-date receipt, boundary tests both venues, affected-row census, bounded replay, correction receipts, and a real asia-close proof (packet §P0-ST; DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06). Affected rows stay quarantined until then.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "DEP-CAI",
+          "title": "China Alpha Intelligence PR-0B telemetry + rights/identity closure",
+          "status": "todo",
+          "depends_on": [
+            "R6-0"
+          ],
+          "deps_satisfied": true,
+          "next_action": "State moved after the R6 packet was prepared: the architecture chain (#5953/#5933/#5943/#5955) all MERGED 2026-08-19 16:05-18:13Z, so the open-PR half is resolved. Remaining gate = execute PR-0B from research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md inside WS:CHINA-ALPHA-INTELLIGENCE and prove full intel_ anatomy on real asia-close candidate rows (DSC:CN-PR0B-NOT-LIVE-BLOCKS-CANDIDATE-PLANE). CN-Limit candidate-plane work stays blocked until PROVEN_LIVE, not merely merged.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "DEP-EXACT",
+          "title": "Exact-plane authorization, live canary, range campaign, completeness",
+          "status": "todo",
+          "depends_on": [
+            "R6-0"
+          ],
+          "deps_satisfied": true,
+          "next_action": "BLOCKED_RIGHTS_AND_AUTHORITY: close written authorization/trust-root governance, run licensed exact-schema canaries, promote the range campaign only through reviewed gates, produce the sanitized completeness manifest (packet §DEP-EXACT). No self-authored authorization; no gate constant edits; the fail-closed spine stays fail-closed until the operator-level authority decision recorded in this workstream's 08-13 state is taken.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "DEP-ID-ELIG",
+          "title": "Canonical China identity, PIT membership, eligibility overlay",
+          "status": "todo",
+          "depends_on": [
+            "DEP-EXACT",
+            "DEP-CAI"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Point-in-time eligible security-session population + time-valid sector/theme edges via Data OS/GMI/eligibility owners; no CN-Limit identity or membership plane; no ticker-only keys; no current-membership backfill (packet §DEP-ID-ELIG).",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "I1A-T1",
+          "title": "First candidate-anatomy vertical: CNLI.TRANS.DOWN_IMPACT_ASYMMETRY",
+          "status": "todo",
+          "depends_on": [
+            "P0-ST",
+            "DEP-CAI",
+            "DEP-ID-ELIG"
+          ],
+          "deps_satisfied": false,
+          "next_action": "One frozen deterministic feature projected prospectively onto canonical candidate rows + real audit consumer; no probability/rank/gate fields (packet §I1A-T1; freeze Appendix A contract).",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "I1A-T2",
+          "title": "Bad-day resilience vertical",
+          "status": "todo",
+          "depends_on": [
+            "I1A-T1"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "I1A-T3",
+          "title": "Constructive-volume asymmetry vertical",
+          "status": "todo",
+          "depends_on": [
+            "I1A-T1"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "I1A-T4",
+          "title": "Reclaim-and-hold quality vertical",
+          "status": "todo",
+          "depends_on": [
+            "I1A-T1"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "I1B-MEASURE",
+          "title": "Exact target + first immutable prediction/grade sidecar vertical",
+          "status": "todo",
+          "depends_on": [
+            "DEP-ID-ELIG",
+            "I1A-T1"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Referential sidecar china_prophet_rank.cn_limit_research.v1 with one real feature + R4 H10 exact target + access dispositions; never an empty generic foundation (packet §I1B-MEASURE).",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "M2-R4-BATTERY",
+          "title": "Frozen historical/rolling-origin R4 active-family battery",
+          "status": "todo",
+          "depends_on": [
+            "I1B-MEASURE",
+            "I1A-T2",
+            "I1A-T3",
+            "I1A-T4"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Freeze formulas/populations/baselines/controls/nulls/folds/metrics before opening exact outcomes; run once; advance/kill/accrue verdicts. A NULL or kill verdict is complete (packet §M2-R4-BATTERY).",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "I1C-G6",
+          "title": "Prospective G6 measurement shadow",
+          "status": "todo",
+          "depends_on": [
+            "M2-R4-BATTERY"
+          ],
+          "deps_satisfied": false,
+          "next_action": "One preregistered challenger accrued prospectively to the G6 floors (>=120 candidate sessions, >=2 regimes, >=60 exact first-board events, no retuning). Highest verdict = ELIGIBLE_FOR_SHADOW_IMPLEMENTATION_COMMISSION, which is not live authority.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "I2A-ORDER",
+          "title": "Fixed-candidate off-path ordering shadow",
+          "status": "todo",
+          "depends_on": [
+            "I1C-G6"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Coverage-atomic challenger order on frozen U3 with same-rule/same-cap shelf replay; production bytes must remain identical (DEC:CNLI-COVERAGE-ATOMIC-CHALLENGER, DEC:CNLI-ERA-IS-EFFECTIVE-AUTHORITY).",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "A5-DECISION",
+          "title": "Potential bounded live ordering decision (Sol/Chairman)",
+          "status": "todo",
+          "depends_on": [
+            "I2A-ORDER"
+          ],
+          "deps_satisfied": false,
+          "next_action": "NOT_AUTHORIZED. A decision record, not a build wave; R6 grants no A5 authority and no automatic promotion (DEC:CNLI-AUTHORITY-DOES-NOT-CASCADE).",
           "prs": [],
           "done_at": null
         }
@@ -909,6 +1645,65 @@
       "collisions": [],
       "warnings": [],
       "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+    },
+    {
+      "key": "CN-SOE-DEMAND",
+      "title": "China Government / SOE Demand source map (Grid/Power first)",
+      "status": "active",
+      "program": "china-system",
+      "p0": null,
+      "p0_active": null,
+      "owner": "grok-cn-c",
+      "class": "research",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Accept or reject the CSG-GD-货物-90d pilot in CN-C_GOV_SOE_DEMAND_SOURCE_MAP.md. If accepted, C1 is a display-tier adapter only.",
+      "created": "2026-08-19",
+      "updated": "2026-08-19",
+      "stale_days": 1,
+      "depends_on": [
+        "DEFENSE-PROCUREMENT-V3"
+      ],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 1,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 1
+      },
+      "wave_detail": [
+        {
+          "id": "C0",
+          "title": "First-party source map + bounded Grid/Power pilot recommendation",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Adjudicate CSG-GD-货物-90d. Do not start an ECP scraper. Do not ingest third-party bid aggregators.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "C1",
+          "title": "Display-tier CSG Guangdong goods adapter (receipts only)",
+          "status": "todo",
+          "depends_on": [
+            "C0"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Build only after C0 is accepted. Public HTML notices, CG… keys, typed INTENTION_NOT_PUBLIC / CONTRACT_NOT_PUBLIC. No login, no score.\n",
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-CN-SOE-DEMAND.md"
     },
     {
       "key": "COMMERCIAL-PATH-ALERTING",
@@ -926,7 +1721,7 @@
       "next_action": "Stay on PR #5734 (armed merge-on-green). After merge, confirm /etc/macro-sentinel.env has a human-watched channel if DELIVER was SKIP.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -982,7 +1777,7 @@
       "next_action": "Operator fills docs/RESTORE_RUNBOOK.md §Vendor backup/PITR and §Scratch-Supabase restore receipt by creating mmx-restore-scratch-YYYYMMDD and running `python -m scripts.backup_user_tables restore --backup-id <id> --dest-db-url \"$SCRATCH_DB_URL\" --i-am-restoring-into-scratch`.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "operator: confirm Supabase plan / PITR / vendor retention in the dashboard for fsldfzlxyavsuwqbceod",
@@ -1055,7 +1850,7 @@
       "next_action": "Sol D1 acceptance review. Do not start Atlas/D2. Do not merge #5424. Do not re-baseline.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1239,7 +2034,7 @@
       "next_action": "Implement E2-D only: render the live AAPL FY2026 Q3 event_workspace.v1 (generation f709a0a6ec514282d5769e7d, event_id evt_cik0000320193_2026q3_results) in the existing Macro dossier Company Intelligence glance with the same stance and event id as Terminal Brief. Do not reopen E2-T1. Do not re-read the v1 score overlay. Do not start E3+.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1349,7 +2144,7 @@
       "next_action": "Merge #5534, #5577 and the P0c-2 PR; then confirm the first nightly writes data/qledger/evidence_clock_start/<family>.json for stock_desk, thematic_desk and demand_chain, and record those three timestamps as the real evidence-clock start.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1434,7 +2229,7 @@
       "next_action": "W1 in flight: core + admin built on claude/eval-os-t4-output-health; adversarial review, Agent OS handoff, PR → merge → live verify.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [
         "EVAL-OS-T1-ENGINE-REGISTRY"
       ],
@@ -1481,7 +2276,7 @@
       "next_action": "W3 shipped. Next decision is the CEO's at the next checkpoint: T4 output-health, T12 Agent OS tier interface, or let prospective evidence accrue; T7/T8 stay calendar-bound. Standing residue: 2 deliberate output_class nulls (cortex — needs a CEO ruling on the two-species cell, and its attention grader coerces direction 0 to a long bet, repair before evaluating that half; options_structure — curate when the Package D producer ships), plus the desk hit-rate metric-binding warning (hit is a non-refutation endpoint, no-skill null far above 0.5 — T7 must bind dir_accuracy or placebo-netted rates).",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1558,7 +2353,7 @@
       "next_action": "FIF-1 is DONE and financial_intelligence_packet.v1 is FROZEN on main (PR #5889, f4183edade53603fad7a97f702eb4c6e5eabff5d). FIF-2 is UNLOCKED and NOT_STARTED. Do not reopen accepted packet semantics. Do not create FIF-1R4. A later session may start FIF-2 from the masterplan.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1765,7 +2560,7 @@
       "next_action": "Sol accepted MAX_UNIVERSE_ISSUERS=4000. Squash-merge",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "Live canonical parquet has 2837 issuers; merged MAX_UNIVERSE_ISSUERS=2500 fail-closed the first scheduled incremental (run 32097495749, universe_invalid). Repair raises the bind cap to 4000. Do not resume July recovery until that repair is on main."
@@ -1874,7 +2669,7 @@
       "next_action": "Wait for the 2026-08-15 scrape; then start the transmission layer.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1905,7 +2700,7 @@
           "prs": [
             5402
           ],
-          "done_at": "2026-08-12T23:34:44Z"
+          "done_at": null
         },
         {
           "id": "W3A",
@@ -1935,9 +2730,9 @@
       "prs": [
         {
           "number": 5402,
-          "state": "merged",
+          "state": "unknown",
           "wave": "R1",
-          "merged_at": "2026-08-12T23:34:44Z"
+          "merged_at": null
         },
         {
           "number": 5718,
@@ -1967,18 +2762,18 @@
         "terminal",
         "mastermind"
       ],
-      "next_action": "Merge #5961 (GD-1 artifacts + canonical-identity reconciliation); then run the GD-1B adversarial acceptance review (independent reviewer + Fable final, Sol on architecture implications); author the GD-2 build packet from the 2026-08-19 archaeology (settled-envelope seam, live seam, CN/HK ledger root cause) reconciled against the freeze.",
+      "next_action": "Execute the two Sol-commissioned build lanes as separate PRs (GD-2 settled envelope, GD-4A CN/HK ledger repair — packets under research/grey_deer/commissions/); relay the GD-1C research packet to the Grok operator; GD-3 waits for GD-2 production acceptance; GD-5A/B/C wait for GD-1C clearing the promotion gate.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
-        "awaiting_ci": 2,
-        "done": 1,
+        "awaiting_ci": 0,
+        "done": 3,
         "dropped": 0,
-        "in_progress": 0,
-        "todo": 16
+        "in_progress": 2,
+        "todo": 15
       },
       "wave_detail": [
         {
@@ -1996,7 +2791,7 @@
         {
           "id": "GD-1A",
           "title": "PIT prereg + source-clock census (Grok; hash-pinned before outcomes)",
-          "status": "awaiting_ci",
+          "status": "done",
           "depends_on": [],
           "deps_satisfied": true,
           "next_action": null,
@@ -2008,11 +2803,11 @@
         {
           "id": "GD-1B",
           "title": "Existing-organ replay + Prophet counterfactual (Grok)",
-          "status": "awaiting_ci",
+          "status": "done",
           "depends_on": [
             "GD-1A"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
           "prs": [
             5961
@@ -2020,9 +2815,21 @@
           "done_at": "2026-08-19T14:02:46Z"
         },
         {
+          "id": "GD-1C",
+          "title": "leadership_crack.v1 design-era reconstruction + GD-H1/GD-H2 interaction test (research-only prerequisite for GD-5)",
+          "status": "todo",
+          "depends_on": [
+            "GD-1B"
+          ],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
           "id": "GD-2",
           "title": "Settled Risk Envelope + three-answer Macro hero",
-          "status": "todo",
+          "status": "in_progress",
           "depends_on": [
             "GD-0A"
           ],
@@ -2046,7 +2853,7 @@
         {
           "id": "GD-4A",
           "title": "CN/HK forward-ledger liveness repair",
-          "status": "todo",
+          "status": "in_progress",
           "depends_on": [
             "GD-0A"
           ],
@@ -2084,7 +2891,7 @@
           "title": "Long-end duration shock expert (shadow)",
           "status": "todo",
           "depends_on": [
-            "GD-1B"
+            "GD-1C"
           ],
           "deps_satisfied": false,
           "next_action": null,
@@ -2096,7 +2903,7 @@
           "title": "Crowded-winner liquidation expert (shadow)",
           "status": "todo",
           "depends_on": [
-            "GD-1B"
+            "GD-1C"
           ],
           "deps_satisfied": false,
           "next_action": null,
@@ -2108,7 +2915,7 @@
           "title": "Repair/re-entry expert (shadow)",
           "status": "todo",
           "depends_on": [
-            "GD-1B"
+            "GD-1C"
           ],
           "deps_satisfied": false,
           "next_action": null,
@@ -2245,10 +3052,7 @@
           ]
         }
       ],
-      "warnings": [
-        "record_disagrees_with_execution: wave GD-1A is 'awaiting_ci' but PR #5961 is merged",
-        "record_disagrees_with_execution: wave GD-1B is 'awaiting_ci' but PR #5961 is merged"
-      ],
+      "warnings": [],
       "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
     },
     {
@@ -2265,18 +3069,18 @@
         "macro",
         "terminal"
       ],
-      "next_action": "#5845 MERGED 2026-08-18T12:40:51Z (squash 8552db805ea6) — Sol's post-merge acceptance of its bounded follow-up is the remaining W6 item; do not redesign the score, do not mark W6 done, do not start W7 or W9. W8 UI reference remains #5737. NEW: W4.1 live transport correction commissioned 2026-08-18 (Chairman Prophet Operator Lab program, V4-B5A) — see the W4.1 wave row for frozen scope/receipts; do not merge it against a knowingly red W4 baseline (#5897 open, test-only).",
+      "next_action": "#5845 MERGED 2026-08-18T12:40:51Z (squash 8552db805ea6) — Sol's post-merge acceptance of its bounded follow-up is the remaining W6 item; do not redesign the score, do not mark W6 done, do not start W7 or W9. W8 UI reference remains #5737. W4.1 live transport correction commissioned 2026-08-18 (Chairman Prophet Operator Lab program, V4-B5A) is build worker's PR #5929, OPEN and NOT YET MERGED as of this update — see the W4.1 wave row for scope/receipts; the commissioning session owns review and merge, not the build worker. #5897 (W4 test-baseline repair) MERGED 2026-08-19, so W4.1 rebased onto a green W4 baseline.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 7,
+        "done": 8,
         "dropped": 0,
         "in_progress": 1,
-        "todo": 4
+        "todo": 3
       },
       "wave_detail": [
         {
@@ -2351,15 +3155,18 @@
         {
           "id": "W4.1",
           "title": "PR-4.1 live transport correction (confirmed-lane pack field + W4→W5 spool envelope contract)",
-          "status": "todo",
+          "status": "done",
           "depends_on": [
             "W4",
             "W5"
           ],
           "deps_satisfied": true,
           "next_action": null,
-          "prs": [],
-          "done_at": null
+          "prs": [
+            5929,
+            5995
+          ],
+          "done_at": "2026-08-19T19:51:58Z"
         },
         {
           "id": "W5",
@@ -2475,6 +3282,18 @@
           "merged_at": "2026-08-16T03:13:45Z"
         },
         {
+          "number": 5929,
+          "state": "merged",
+          "wave": "W4.1",
+          "merged_at": "2026-08-19T17:27:25Z"
+        },
+        {
+          "number": 5995,
+          "state": "merged",
+          "wave": "W4.1",
+          "merged_at": "2026-08-19T19:51:58Z"
+        },
+        {
           "number": 5825,
           "state": "merged",
           "wave": "W5",
@@ -2526,7 +3345,7 @@
       "next_action": "Drive the benchmark gates green (W1).",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2593,7 +3412,7 @@
       "next_action": "Own the M0A PR through merge and production technicals verification, then stop. Do not repair context freshness, API restart, or mixed-root residue in M0A.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2650,7 +3469,7 @@
       "next_action": "Automatic W3 accrual on the natural us_prophet_ledgers lane. Do not start PR-3E. Do not start C2/C3/C4/C5 or Prophet V4. Do not read C1-vs-shadow outcomes. Durable paired-race N=2 unmatured (stamps 2026-08-17 and 2026-08-18); matured H=10 N=0. First lawful comparison remains PENDING until 20 matured H=10 sessions. Leave the frozen 2026-08-17 W3 parts byte-identical.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2801,10 +3620,10 @@
         "macro",
         "mastermind"
       ],
-      "next_action": "Merge the CA-TRUTH PR (canonical Canada board, branch claude/ca-truth-canonical-board) and verify the first owed TSX session's artifact/page/ledger parity receipt on the production reader.",
+      "next_action": "Verify the first owed TSX session's settlement receipt on the production reader (CA-TRUTH merged e495570eb5d8 and live; receipt spec in the ca-truth wave entry), then open LEDGER-ERA (era-clean scorecard fencing in engine/board_ledger.py). No HK/CA challenger work before LEDGER-ERA lands.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2821,9 +3640,11 @@
           "status": "in_progress",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": null,
-          "prs": [],
-          "done_at": null
+          "next_action": "Execute the first owed-TSX-session settlement receipt (packet §17) after the first nightly that renders Canada on or after merge e495570eb5d8: artifact carries board_definition=ca_prophet_branch_b_v1 + official_pick_authority=false, artifact/page ordered-cohort parity, CA ledger rows for that session stamped, legacy rows untouched. Then mark this wave done and open ledger-era.\n",
+          "prs": [
+            5926
+          ],
+          "done_at": "2026-08-19T16:04:48Z"
         },
         {
           "id": "ledger-era",
@@ -2935,11 +3756,20 @@
           "done_at": null
         }
       ],
-      "prs": [],
+      "prs": [
+        {
+          "number": 5926,
+          "state": "merged",
+          "wave": "ca-truth",
+          "merged_at": "2026-08-19T16:04:48Z"
+        }
+      ],
       "claim": null,
       "needs_ceo": null,
       "collisions": [],
-      "warnings": [],
+      "warnings": [
+        "record_disagrees_with_execution: wave ca-truth is 'in_progress' but PR #5926 is merged"
+      ],
       "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
     },
     {
@@ -2958,7 +3788,7 @@
       "next_action": "W3 (2026-08-17 outage hardening) is the live wave: land its PR, verify all five boards fresh, then fold the wedge/hostage classes into the W2 fire-drill list. W1 operator items stand: launchd installer; plus the new W3 operator asks on issue #5742 (cancel debris run 32077948964 post-recovery; census-lane cadence ruling; M1 host revival owns the collect_tail re-pin).",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -3039,7 +3869,7 @@
       "next_action": "Verify the 22:30Z bake (W1).",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -3124,7 +3954,7 @@
       "next_action": "V4-D1 complete. Route to Sol for three adjudications: (1) commission d2 with GMI per research/prophet_v4/V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md; (2) ratify the D3/W3B merge-order recommendation with GMI; (3) optionally commission the d5 contract-only lane in parallel (D1_D5_READINESS_RULING.md). Rights decisions routed in the census §7 await Chairman/Sol. A-lane unchanged: DO NOT SPAWN A1 — sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first. B5A LAB lane (Chairman 2026-08-18): day-1 wave COMPLETE 2026-08-19 — W4.1 #5929 + P-LAB-API #5928 built, twice-reviewed MERGE-SAFE, armed (merge gated on the house-law-registry VMRK self-heal at the next nightly snapshot); R5 RIG cycle verdict REVISE recorded on #5931 (armed); R5.1+R5.2 revision built on #5940 at frozen SHA f40ae70ac989 with its two-pass critic cycle + verdict OWED. Next session: execute agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-19-lab-day1.md §1 in order.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [
         "PROPHET-US-AVAILABILITY",
         "LIVE-ENTRY-RADAR",
@@ -3270,7 +4100,7 @@
         },
         {
           "id": "b5a",
-          "title": "V4-B5A — Prophet Operator Lab (LAB-0 recut of b5, Chairman commission 2026-08-18, wave-graph ruling 14, DEC:PROPHET-LAB-B5A-RECUT). Operator-only LIVE|LAB observational surface: read-only projection of canonical Radar output (six Lab boards) over the Prophet page + MP-1 shell migration. ZERO Prophet authority — read/filter/join/decorate only; no B3/B4 dependency. Contract: research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md. Child lanes: R-LAB-1 (= Radar W4.1, executes under WS:LIVE-ENTRY-RADAR), D-LAB-R5 (fresh independent RIG R5 — note R4 reference is committed but carries NO approval.yml; R4 was a closure pass, 10 blocking findings in research/reference_integrity/prophet-board-5514-r4/R4_CLOSURE_LEDGER.md), P-LAB-API, P-MP1-SHELL, P-LAB-UI. Shipping B5A completes NEITHER b5b NOR b6.",
+          "title": "V4-B5A — Prophet Operator Lab (LAB-0 recut of b5, Chairman commission 2026-08-18, wave-graph ruling 14, DEC:PROPHET-LAB-B5A-RECUT). Operator-only LIVE|LAB observational surface: read-only projection of canonical Radar output (six Lab boards) over the Prophet page + MP-1 shell migration. ZERO Prophet authority — read/filter/join/decorate only; no B3/B4 dependency. Contract: research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md. Child lanes: R-LAB-1 (= Radar W4.1, executes under WS:LIVE-ENTRY-RADAR), D-LAB-R5 (fresh independent RIG R5 — note R4 reference is committed but carries NO approval.yml; R4 was a closure pass, 10 blocking findings in research/reference_integrity/prophet-board-5514-r4/R4_CLOSURE_LEDGER.md), P-LAB-API, P-MP1-SHELL, P-LAB-UI. Shipping B5A completes NEITHER b5b NOR b6. DAY-2 STATE (2026-08-19): R-LAB-1 DONE (Radar W4.1 #5929 squash 9ef200f + commissioning-prep #5995 squash 85d651bc5bbb, live-verified via /api/health commit match; W4 arming stays an OPERATOR act per research/prophet_v4/P_LAB_COMMISSIONING_NOTES.md). P-LAB-API DONE (#5928 squash 4295c05; /api/prophet/lab/v1 live, 401 fail-closed). D-LAB-R5 DONE — R5.3 APPROVED: approval.yml minted at frozen dcbea7cd (research/reference_integrity/prophet-board-lab-r5-1/, two-pass independent dual-critic, author excluded). R4-composition C8 pass COMPLETE (#5990 squash 2313bdb, verdict REVISE + rulings b1/b8/n1); repairs C8-A/C8-B MERGED (#5998 squash fa9ceeb, 98/98 verify_r4); MP-1 Amendment 1 MERGED (#5994 squash a3c3b69); C8-C DS-PR #6011 in flight (independent review MERGE-SAFE, pre-merge repairs applied; commissioning session merges by hand — never armed). P-MP1-SHELL gated on: #6011 merged + G-D coverage re-measured at a post-#6006 nightly payload (08-19 library collapse was a #5980 partial build; heal #6006 squash 0de8b86 merged 2026-08-19T20:07:23Z; groundwork branch claude/p-mp1-shell at 3f43864e41ce, no PR). P-LAB-UI after the settled shell + API, per the day-2 directive §7.",
           "status": "in_progress",
           "depends_on": [
             "0a"
@@ -3570,7 +4400,7 @@
       "next_action": "Land the #5643 heal: W2 expert replay onto merged W1-A1, without duplicating B onto the program OHLCV plane or rewriting sealed GOLD. W3 still needs its own operator go — no auto-roll.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -3711,6 +4541,51 @@
       "source": "agentos/workstreams/WS-STOCK-IDENTITY.md"
     },
     {
+      "key": "TUSHARE-ENTITLEMENT",
+      "title": "Tushare P0 access vs commercial-rights census",
+      "status": "done",
+      "program": "china-system",
+      "p0": null,
+      "p0_active": null,
+      "owner": "chairman",
+      "class": "research",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Operator confirms the privilege page (redact token) against the 2026-08-09 SKU list, then asks Tushare in writing the five commercial questions in research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md §3.",
+      "created": "2026-08-19",
+      "updated": "2026-08-19",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 1,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 0
+      },
+      "wave_detail": [
+        {
+          "id": "GROK-CN-A",
+          "title": "Purchase/rights matrix from official docs + secret metadata",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-TUSHARE-ENTITLEMENT.md"
+    },
+    {
       "key": "WATCHLIST-PORTFOLIO-CEO",
       "title": "Watchlist + Portfolio CEO revamp",
       "status": "active",
@@ -3727,7 +4602,7 @@
       "next_action": "Obtain the persistence-model ruling, then start W1.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -3806,6 +4681,19 @@
     }
   ],
   "needs_ceo": [
+    {
+      "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+      "question": "Accept W1A (#6012) so post-W1 event-version identity is clock-independent, new child writes never mint legacy:{source_id}, and re-observation is a full-bundle decision? Hold W2 until that PR merges.",
+      "options": [
+        "Accept W1A; authorize Wave 2 only after merge and natural CS-path proof",
+        "Accept W1A with further named amendments",
+        "Reject; name which W1A ruling to reopen"
+      ],
+      "recommendation": "Accept W1A. Do not start Wave 2 in this PR. Do not rewrite historical event_ids or v1 manifests.",
+      "by_when": "2026-08-25",
+      "blocks_waves": 7,
+      "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+    },
     {
       "workstream": "WATCHLIST-PORTFOLIO-CEO",
       "question": "Portfolio and Watchlist persistence: one table or two?",
@@ -3983,9 +4871,9 @@
       {
         "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
         "wave": "c0",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#p0",
           "WS:DEFENSE-PROCUREMENT-V3",
@@ -3999,7 +4887,17 @@
           "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
-        "unmet_dependencies": [
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+      },
+      {
+        "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
+        "wave": "c0g",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#c0",
           "WS:DEFENSE-PROCUREMENT-V3",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -4011,6 +4909,7 @@
           "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
       },
       {
@@ -4018,7 +4917,7 @@
         "wave": "k1",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#c0, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#c0",
           "WS:DEFENSE-PROCUREMENT-V3",
@@ -4033,7 +4932,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:ALPHA-INTELLIGENCE-INTEGRATION#c0",
           "WS:DEFENSE-PROCUREMENT-V3",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -4275,6 +5173,62 @@
         "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
       },
       {
+        "workstream": "BPC-JV-RECON",
+        "wave": null,
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored workstream status is active.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BPC-JV-RECON.md"
+      },
+      {
+        "workstream": "BPC-JV-RECON",
+        "wave": "CONTINUOUS-RECON",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [
+          "WS:BPC-JV-RECON#RECON-0"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BPC-JV-RECON.md"
+      },
+      {
+        "workstream": "BPC-JV-RECON",
+        "wave": "RECON-0",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BPC-JV-RECON.md"
+      },
+      {
+        "workstream": "BPC-JV-RECON",
+        "wave": "RECON-1",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is dropped.",
+        "depends_on": [
+          "WS:BPC-JV-RECON#RECON-0"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BPC-JV-RECON.md"
+      },
+      {
+        "workstream": "BPC-JV-RECON",
+        "wave": "SNAPSHOT-ONBOARD",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [
+          "WS:BPC-JV-RECON#RECON-0"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BPC-JV-RECON.md"
+      },
+      {
         "workstream": "BREATHING-PLATFORM",
         "wave": null,
         "state": "in_progress",
@@ -4495,11 +5449,419 @@
         "source": "agentos/workstreams/WS-CALCBENCH-FILING-FORENSICS-PARITY.md"
       },
       {
+        "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "wave": null,
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored workstream status is active.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+      },
+      {
+        "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "wave": "W0",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+      },
+      {
+        "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "wave": "W1",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W0"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+      },
+      {
+        "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "wave": "W1A",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
+        "depends_on": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+      },
+      {
+        "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "wave": "W2",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A.",
+        "depends_on": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+        ],
+        "unmet_dependencies": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+        ],
+        "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+      },
+      {
+        "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "wave": "W3",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A.",
+        "depends_on": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+        ],
+        "unmet_dependencies": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+        ],
+        "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+      },
+      {
+        "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "wave": "W4",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A.",
+        "depends_on": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+        ],
+        "unmet_dependencies": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+        ],
+        "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+      },
+      {
+        "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "wave": "W5",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W4.",
+        "depends_on": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W4"
+        ],
+        "unmet_dependencies": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W4"
+        ],
+        "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+      },
+      {
+        "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "wave": "W6",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W4.",
+        "depends_on": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W4"
+        ],
+        "unmet_dependencies": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W4"
+        ],
+        "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+      },
+      {
+        "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "wave": "W7",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W4, WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W5, WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W6.",
+        "depends_on": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W4",
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W5",
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W6"
+        ],
+        "unmet_dependencies": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W4",
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W5",
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W6"
+        ],
+        "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": null,
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored workstream status is active.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "g0",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "l0",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "l2",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#l0, WS:CHINA-ALPHA-INTELLIGENCE#p1b, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#l0",
+          "WS:CHINA-ALPHA-INTELLIGENCE#p1b",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#l0",
+          "WS:CHINA-ALPHA-INTELLIGENCE#p1b",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "p1",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#rights0, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#rights0",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#rights0",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "p1b",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#l0, WS:CHINA-ALPHA-INTELLIGENCE#p1, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#l0",
+          "WS:CHINA-ALPHA-INTELLIGENCE#p1",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#l0",
+          "WS:CHINA-ALPHA-INTELLIGENCE#p1",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "p2",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#rights0, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#rights0",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#rights0",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "pr0a",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "pr0b",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "pr0d",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "r1",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#pr0d, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#pr0d",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#pr0d",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "r2",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#pr0d, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#pr0d",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:CHINA-ALPHA-INTELLIGENCE#pr0d",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "CHINA-ALPHA-INTELLIGENCE",
+        "wave": "rights0",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
+      },
+      {
         "workstream": "CI-MERGE-CONTROL-PLANE",
         "wave": null,
         "state": "in_progress",
         "reason_code": "status_in_progress",
         "reason": "Authored workstream status is active.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md"
+      },
+      {
+        "workstream": "CI-MERGE-CONTROL-PLANE",
+        "wave": "W-CONTRACT-DELTA",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is awaiting_ci.",
         "depends_on": [],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md"
@@ -4545,6 +5907,26 @@
         "source": "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md"
       },
       {
+        "workstream": "CN-COMMERCIAL-SUPPLY-DILIGENCE",
+        "wave": null,
+        "state": "blocked",
+        "reason_code": "workstream_blocked",
+        "reason": "Authored workstream status is parked.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CN-COMMERCIAL-SUPPLY-DILIGENCE.md"
+      },
+      {
+        "workstream": "CN-COMMERCIAL-SUPPLY-DILIGENCE",
+        "wave": "W0",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CN-COMMERCIAL-SUPPLY-DILIGENCE.md"
+      },
+      {
         "workstream": "CN-LIMIT-ALPHA",
         "wave": null,
         "state": "in_progress",
@@ -4552,6 +5934,184 @@
         "reason": "Authored workstream status is active.",
         "depends_on": [],
         "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "A5-DECISION",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#I2A-ORDER.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#I2A-ORDER"
+        ],
+        "unmet_dependencies": [
+          "WS:CN-LIMIT-ALPHA#I2A-ORDER"
+        ],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "DEP-CAI",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#R6-0"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "DEP-EXACT",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#R6-0"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "DEP-ID-ELIG",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#DEP-CAI, WS:CN-LIMIT-ALPHA#DEP-EXACT.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#DEP-CAI",
+          "WS:CN-LIMIT-ALPHA#DEP-EXACT"
+        ],
+        "unmet_dependencies": [
+          "WS:CN-LIMIT-ALPHA#DEP-CAI",
+          "WS:CN-LIMIT-ALPHA#DEP-EXACT"
+        ],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "I1A-T1",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#DEP-CAI, WS:CN-LIMIT-ALPHA#DEP-ID-ELIG, WS:CN-LIMIT-ALPHA#P0-ST.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#DEP-CAI",
+          "WS:CN-LIMIT-ALPHA#DEP-ID-ELIG",
+          "WS:CN-LIMIT-ALPHA#P0-ST"
+        ],
+        "unmet_dependencies": [
+          "WS:CN-LIMIT-ALPHA#DEP-CAI",
+          "WS:CN-LIMIT-ALPHA#DEP-ID-ELIG",
+          "WS:CN-LIMIT-ALPHA#P0-ST"
+        ],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "I1A-T2",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#I1A-T1.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#I1A-T1"
+        ],
+        "unmet_dependencies": [
+          "WS:CN-LIMIT-ALPHA#I1A-T1"
+        ],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "I1A-T3",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#I1A-T1.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#I1A-T1"
+        ],
+        "unmet_dependencies": [
+          "WS:CN-LIMIT-ALPHA#I1A-T1"
+        ],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "I1A-T4",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#I1A-T1.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#I1A-T1"
+        ],
+        "unmet_dependencies": [
+          "WS:CN-LIMIT-ALPHA#I1A-T1"
+        ],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "I1B-MEASURE",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#DEP-ID-ELIG, WS:CN-LIMIT-ALPHA#I1A-T1.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#DEP-ID-ELIG",
+          "WS:CN-LIMIT-ALPHA#I1A-T1"
+        ],
+        "unmet_dependencies": [
+          "WS:CN-LIMIT-ALPHA#DEP-ID-ELIG",
+          "WS:CN-LIMIT-ALPHA#I1A-T1"
+        ],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "I1C-G6",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#M2-R4-BATTERY.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#M2-R4-BATTERY"
+        ],
+        "unmet_dependencies": [
+          "WS:CN-LIMIT-ALPHA#M2-R4-BATTERY"
+        ],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "I2A-ORDER",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#I1C-G6.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#I1C-G6"
+        ],
+        "unmet_dependencies": [
+          "WS:CN-LIMIT-ALPHA#I1C-G6"
+        ],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "M2-R4-BATTERY",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#I1A-T2, WS:CN-LIMIT-ALPHA#I1A-T3, WS:CN-LIMIT-ALPHA#I1A-T4, WS:CN-LIMIT-ALPHA#I1B-MEASURE.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#I1A-T2",
+          "WS:CN-LIMIT-ALPHA#I1A-T3",
+          "WS:CN-LIMIT-ALPHA#I1A-T4",
+          "WS:CN-LIMIT-ALPHA#I1B-MEASURE"
+        ],
+        "unmet_dependencies": [
+          "WS:CN-LIMIT-ALPHA#I1A-T2",
+          "WS:CN-LIMIT-ALPHA#I1A-T3",
+          "WS:CN-LIMIT-ALPHA#I1A-T4",
+          "WS:CN-LIMIT-ALPHA#I1B-MEASURE"
+        ],
         "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
       },
       {
@@ -4631,9 +6191,31 @@
       {
         "workstream": "CN-LIMIT-ALPHA",
         "wave": "P-D",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is dropped.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "P0-ST",
         "state": "ready",
         "reason_code": "dependencies_satisfied",
         "reason": "All declared dependencies are done.",
+        "depends_on": [
+          "WS:CN-LIMIT-ALPHA#R6-0"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-LIMIT-ALPHA",
+        "wave": "R6-0",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
@@ -4647,6 +6229,47 @@
         "depends_on": [],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+      },
+      {
+        "workstream": "CN-SOE-DEMAND",
+        "wave": null,
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored workstream status is active.",
+        "depends_on": [
+          "WS:DEFENSE-PROCUREMENT-V3"
+        ],
+        "unmet_dependencies": [
+          "WS:DEFENSE-PROCUREMENT-V3"
+        ],
+        "source": "agentos/workstreams/WS-CN-SOE-DEMAND.md"
+      },
+      {
+        "workstream": "CN-SOE-DEMAND",
+        "wave": "C0",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:DEFENSE-PROCUREMENT-V3"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CN-SOE-DEMAND.md"
+      },
+      {
+        "workstream": "CN-SOE-DEMAND",
+        "wave": "C1",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:DEFENSE-PROCUREMENT-V3.",
+        "depends_on": [
+          "WS:CN-SOE-DEMAND#C0",
+          "WS:DEFENSE-PROCUREMENT-V3"
+        ],
+        "unmet_dependencies": [
+          "WS:DEFENSE-PROCUREMENT-V3"
+        ],
+        "source": "agentos/workstreams/WS-CN-SOE-DEMAND.md"
       },
       {
         "workstream": "COMMERCIAL-PATH-ALERTING",
@@ -5325,9 +6948,9 @@
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-1A",
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored wave status is awaiting_ci.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
@@ -5335,23 +6958,33 @@
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-1B",
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored wave status is awaiting_ci.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1A"
         ],
-        "unmet_dependencies": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1A"
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "GREY-DEER-RISK-INTELLIGENCE",
+        "wave": "GD-1C",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [
+          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B"
         ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
       },
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-2",
-        "state": "ready",
-        "reason_code": "dependencies_satisfied",
-        "reason": "All declared dependencies are done.",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-0A"
         ],
@@ -5375,9 +7008,9 @@
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-4A",
-        "state": "ready",
-        "reason_code": "dependencies_satisfied",
-        "reason": "All declared dependencies are done.",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-0A"
         ],
@@ -5413,12 +7046,12 @@
         "wave": "GD-5A",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B.",
+        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C.",
         "depends_on": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B"
+          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
         ],
         "unmet_dependencies": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B"
+          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
         ],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
       },
@@ -5427,12 +7060,12 @@
         "wave": "GD-5B",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B.",
+        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C.",
         "depends_on": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B"
+          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
         ],
         "unmet_dependencies": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B"
+          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
         ],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
       },
@@ -5441,12 +7074,12 @@
         "wave": "GD-5C",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B.",
+        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C.",
         "depends_on": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B"
+          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
         ],
         "unmet_dependencies": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B"
+          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
         ],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
       },
@@ -5608,9 +7241,9 @@
       {
         "workstream": "LIVE-ENTRY-RADAR",
         "wave": "W4.1",
-        "state": "ready",
-        "reason_code": "dependencies_satisfied",
-        "reason": "All declared dependencies are done.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:LIVE-ENTRY-RADAR#W4",
           "WS:LIVE-ENTRY-RADAR#W5"
@@ -7197,6 +8830,26 @@
         "source": "agentos/workstreams/WS-STOCK-IDENTITY.md"
       },
       {
+        "workstream": "TUSHARE-ENTITLEMENT",
+        "wave": null,
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored workstream status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-TUSHARE-ENTITLEMENT.md"
+      },
+      {
+        "workstream": "TUSHARE-ENTITLEMENT",
+        "wave": "GROK-CN-A",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-TUSHARE-ENTITLEMENT.md"
+      },
+      {
         "workstream": "WATCHLIST-PORTFOLIO-CEO",
         "wave": null,
         "state": "in_progress",
@@ -7243,6 +8896,7 @@
   },
   "warnings": [
     "WS:ADVANCED-DATA-OPTIONS — record_disagrees_with_execution: wave AD-1 is 'awaiting_ci' but PR #5872 is merged",
+    "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2 — record_disagrees_with_execution: wave W1A is 'in_progress' but PR #6012 is merged",
     "WS:COMMERCIAL-PATH-ALERTING — record_disagrees_with_execution: wave W1 is 'awaiting_ci' but PR #5734 is merged",
     "WS:CUSTOMER-DATA-BACKUP — record_disagrees_with_execution: wave W1 is 'awaiting_ci' but PR #5733 is merged",
     "WS:DEFENSE-PROCUREMENT-V3 — record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5836 is merged",
@@ -7251,16 +8905,12 @@
     "WS:DEFENSE-PROCUREMENT-V3 — record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5856 is merged",
     "WS:EVAL-OS-T1-ENGINE-REGISTRY — status is 'active' but every wave is done/dropped — roll the status forward",
     "WS:FUNDAMENTAL-FORENSICS — record_disagrees_with_execution: wave FF-1 is 'in_progress' but PR #5820 is merged",
-    "WS:GREY-DEER-RISK-INTELLIGENCE — record_disagrees_with_execution: wave GD-1A is 'awaiting_ci' but PR #5961 is merged",
-    "WS:GREY-DEER-RISK-INTELLIGENCE — record_disagrees_with_execution: wave GD-1B is 'awaiting_ci' but PR #5961 is merged",
     "WS:LIVE-ENTRY-RADAR — record_disagrees_with_execution: wave W6 is 'in_progress' but PR #5834 is merged",
     "WS:LIVE-ENTRY-RADAR — record_disagrees_with_execution: wave W6 is 'in_progress' but PR #5845 is merged",
+    "WS:PROPHET-HK-CA-REVAMP — record_disagrees_with_execution: wave ca-truth is 'in_progress' but PR #5926 is merged",
     "WS:STOCK-IDENTITY — record_disagrees_with_execution: wave W2 is 'in_progress' but PR #5643 is merged",
     "agentos/workstreams/WS-EVAL-OS-T1-ENGINE-REGISTRY.md: [active-but-complete] status is 'active' but every wave is done/dropped",
-    "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'engine/risk_envelope.py' does not exist in repo 'macro'",
-    "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'scripts/build_risk_envelope.py' does not exist in repo 'macro'",
     "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'scripts/build_live_risk_envelope.py' does not exist in repo 'macro'",
-    "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'site/riskdata/risk_envelope.json' does not exist in repo 'macro'",
     "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'site/live/risk_envelope.json' does not exist in repo 'macro'",
     "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'templates/risk_envelope/' does not exist in repo 'macro'",
     "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'tests/test_risk_envelope' does not exist in repo 'macro'",

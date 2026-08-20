@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-08-19",
+ "as_of": "2026-08-20",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -90,12 +90,12 @@
      "name": "Intuit Inc"
     },
     {
-     "ticker": "DDOG",
-     "name": "Datadog Inc"
-    },
-    {
      "ticker": "CDNS",
      "name": "Cadence Design Systems Inc"
+    },
+    {
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
     },
     {
      "ticker": "ADSK",
@@ -170,12 +170,12 @@
      "name": "ASML Holding NV"
     },
     {
-     "ticker": "LRCX",
-     "name": "Lam Research Corp"
-    },
-    {
      "ticker": "AMAT",
      "name": "Applied Materials Inc"
+    },
+    {
+     "ticker": "LRCX",
+     "name": "Lam Research Corp"
     },
     {
      "ticker": "KLAC",
@@ -200,12 +200,12 @@
      "name": "PDD Holdings Inc ADR"
     },
     {
-     "ticker": "DASH",
-     "name": "DoorDash Inc"
-    },
-    {
      "ticker": "MELI",
      "name": "MercadoLibre Inc"
+    },
+    {
+     "ticker": "DASH",
+     "name": "DoorDash Inc"
     }
    ]
   },
@@ -426,12 +426,12 @@
      "name": "ASML Holding NV"
     },
     {
-     "ticker": "LRCX",
-     "name": "Lam Research Corp"
-    },
-    {
      "ticker": "AMAT",
      "name": "Applied Materials Inc"
+    },
+    {
+     "ticker": "LRCX",
+     "name": "Lam Research Corp"
     },
     {
      "ticker": "KLAC",
@@ -532,12 +532,12 @@
      "name": "Intuit Inc"
     },
     {
-     "ticker": "DDOG",
-     "name": "Datadog Inc"
-    },
-    {
      "ticker": "CDNS",
      "name": "Cadence Design Systems Inc"
+    },
+    {
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
     },
     {
      "ticker": "ADSK",
@@ -630,12 +630,12 @@
      "name": "PDD Holdings Inc ADR"
     },
     {
-     "ticker": "DASH",
-     "name": "DoorDash Inc"
-    },
-    {
      "ticker": "MELI",
      "name": "MercadoLibre Inc"
+    },
+    {
+     "ticker": "DASH",
+     "name": "DoorDash Inc"
     },
     {
      "ticker": "TMUS",

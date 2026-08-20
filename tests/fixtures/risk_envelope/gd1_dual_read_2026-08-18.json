@@ -1,0 +1,43 @@
+{
+  "_fixture": "PERMANENT REGRESSION FIXTURE — GD-2 commission §0.4.",
+  "_why": "The accepted GD-1 dual-read of settled session 2026-08-18: the slow trend organ read RISK_ON 76 while the leadership cohort was BROKEN and the cross-asset radar was calm at 53.9. Any composer that averages these into a middle score, or that lets the calm radar cancel the broken cohort, destroys the exact transition this program exists to detect. This fixture is asserted verbatim and must never be regenerated from live data.",
+  "_source": "data/market_state/latest.json + data/leadership_crack/latest.json, settled session 2026-08-18",
+  "session": "2026-08-18",
+  "market_state": {
+    "schema": "market_state.v1",
+    "asof": "2026-08-18",
+    "verdict": "RISK_ON",
+    "score": 76,
+    "raw_score": 76,
+    "score_source": "blend",
+    "capped": false,
+    "label_en": "Risk-on",
+    "label_zh": "风险偏好",
+    "radar": {
+      "state": "calm",
+      "top_score": 53.9,
+      "label_en": "Trend extension watch",
+      "label_zh": "趋势延伸观察",
+      "is_warning": false,
+      "is_loud": false
+    },
+    "freshness": {
+      "data_asof": "2026-08-18",
+      "expected_asof": "2026-08-18",
+      "stale": false,
+      "any_input_stale": false,
+      "worst_input_age_days": 48
+    }
+  },
+  "leadership_crack": {
+    "schema": "leadership_crack.v1",
+    "asof": "2026-08-18",
+    "state": "BROKEN",
+    "cohort_role": "tracked_ai_hardware_damage_monitor",
+    "state_since": "2026-07-07",
+    "dislocation": true,
+    "n_fresh": 42,
+    "n_total": 42,
+    "high_window_sessions": 63
+  }
+}

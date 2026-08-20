@@ -6227,6 +6227,20 @@ def main() -> int:
     except Exception as _fse:  # noqa: BLE001 — additive display chip, never fatal
         log.warning("factor_season chip read failed: %s", _fse)
 
+    # Grey Deer GD-2: compose the settled Risk Envelope and hand it to the macro
+    # band. Built HERE (not read from disk) so the artifact and the page it renders
+    # always describe the same session — reading a stale committed copy is exactly
+    # the drift the per-source clocks exist to expose. The builder also writes both
+    # canonical copies (data/ + site/riskdata/) atomically. Additive display band:
+    # a failure leaves risk_envelope=None and the band renders nothing at all,
+    # which is the honest outcome — never a fabricated calm read.
+    _risk_envelope = None
+    try:
+        from scripts.build_risk_envelope import write as _write_risk_envelope
+        _risk_envelope = _write_risk_envelope() or None
+    except Exception as _ree:  # noqa: BLE001 — additive display band, never fatal
+        log.warning("risk_envelope compose/write skipped: %s", _ree)
+
     # MSX-2: pre-compute chart_liquidity_meta (needed by _msig_stances before vm assembles)
     _chart_liq_meta = _chart_liquidity_meta(f)
     _fx_context = _build_fx_context()
@@ -6234,6 +6248,7 @@ def main() -> int:
 
     vm = dict(
         latest=latest,
+        risk_envelope=_risk_envelope,
         mtf=mtf_data,
         macro_catalysts=macro_catalysts,
         event_strip=event_strip,

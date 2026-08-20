@@ -49,6 +49,8 @@ from engine.entry_radar import challengers as ch
 from engine.entry_radar import detectors as dt
 from engine.entry_radar import indicator_core as ic
 from engine.entry_radar import live_pack as lp
+from engine.entry_radar.contracts import AdmissionReason, ProbeRecord
+from engine.entry_radar.universe import ProbeSet
 
 ROOT = Path(__file__).resolve().parents[1]
 RADAR_DIR = ROOT / "engine" / "entry_radar"
@@ -832,6 +834,78 @@ def test_PACK8_a_bare_ticker_sequence_is_accepted_and_labelled():
     assert snapshot["source"] == "ticker_sequence"
     assert snapshot["tickers"] == ["AAA", "ZZZ"]
     assert snapshot["count"] == 2
+
+
+def _admission(layer: str, code: str) -> AdmissionReason:
+    return AdmissionReason(layer=layer, source_id="test.src",
+                           reason_code=code, reason_text=code)
+
+
+def _record(ticker: str, layers: tuple[str, ...],
+            codes: tuple[str, ...]) -> ProbeRecord:
+    return ProbeRecord(
+        ticker=ticker,
+        admission_layers=layers,
+        admission_reasons=tuple(_admission(layers[0], code) for code in codes),
+        eligibility="operating_equity",
+    )
+
+
+def _probe_set(*records: ProbeRecord) -> ProbeSet:
+    return ProbeSet(
+        records=records,
+        assembled_at=datetime(2026, 8, 18, tzinfo=timezone.utc),
+        market_session="2026-08-18",
+        budget={"state": "ok"},
+    )
+
+
+def test_PACK8_a_real_probe_set_snapshot_keeps_every_ticker():
+    """Production collapse: live ProbeSet.records → to_dict()['probes'], adapter read 'records'."""
+    probe_set = _probe_set(
+        _record("BBB", ("C", "D"), ("hot_tape.move", "index.sp500")),
+        _record("AAA", ("B",), ("index.sp500",)),
+    )
+    dumped = probe_set.to_dict()
+    snapshot = lp.probe_set_snapshot(probe_set)
+    serialized = lp.probe_set_snapshot(dumped)
+    assert dumped["probes"] and "records" not in dumped
+    assert snapshot["tickers"] == ["AAA", "BBB"]
+    assert snapshot["count"] == 2
+    assert snapshot["source"] == "probe_set"
+    assert snapshot["market_session"] == "2026-08-18"
+    assert snapshot["admission"]["layers"] == {"B": 1, "C": 1, "D": 1}
+    assert snapshot["admission"]["reason_codes"] == {"hot_tape.move": 1,
+                                                     "index.sp500": 2}
+    assert snapshot == serialized
+
+
+def test_PACK8_a_nonempty_probe_set_must_not_silently_collapse_to_zero_tickers():
+    assert lp.probe_set_snapshot(_probe_set())["tickers"] == []
+    blank = _probe_set(_record("", ("B",), ("index.sp500",)))
+    with pytest.raises(lp.LivePackError, match="collapsed"):
+        lp.probe_set_snapshot(blank)
+    with pytest.raises(lp.LivePackError, match="collapsed"):
+        lp.probe_set_snapshot({"probes": [{"ticker": "", "admission_layers": ["B"]}]})
+
+
+def test_PACK8_build_pack_requests_every_real_probe_set_ticker():
+    probe_set = _probe_set(
+        _record("WASH", ("B",), ("index.sp500",)),
+        _record("FLAT", ("C",), ("hot_tape.move",)),
+    )
+    requested: list[str] = []
+    frames = store()
+
+    def spy(ticker: str):
+        requested.append(ticker)
+        return frames.get(ticker)
+
+    lp.build_pack(
+        probe_set=probe_set, store_reader=spy, as_of=AS_OF,
+        built_at=datetime(2026, 8, 15, 2, 0, tzinfo=timezone.utc),
+    )
+    assert requested == ["FLAT", "WASH"]
 
 
 def test_PACK8_next_reference_session_is_calendar_not_arithmetic():

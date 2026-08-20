@@ -2081,6 +2081,9 @@
 <style id="macro-attio-type">
 {% include "_macro_attio_type.css.j2" %}
 </style>
+<style id="risk-envelope-band-css">
+{% include "_risk_envelope_band.css.j2" %}
+</style>
 {% endif %}
 </head>
 <body class="{{ 'page-stocks' if mode == 'stocks' else 'page-macro mx4-grid' }}">
@@ -8178,6 +8181,13 @@ html[data-theme="light"] :is(
   </script>
   {% endif %}
   </div>{# /#regime-radar panel #}
+
+  {# ── THREE SEPARATE READS — Grey Deer settled risk envelope (macro mode only).
+       Sits immediately under the regime hero: the hero answers "what regime am I
+       in", this band answers the different question "do the reads agree", which
+       the page previously buried in a prose aside. Renders nothing when the
+       artifact is absent. ── #}
+  {% if mode != 'stocks' %}{% include "_risk_envelope_band.html.j2" %}{% endif %}
 
   {# ── V2 ROW-LEDGER SECTIONS (macro mode only) ── #}
   {% if mode != 'stocks' %}

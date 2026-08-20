@@ -1134,6 +1134,32 @@ def test_vetoed_rows_name_the_refusal_and_the_marker_it_stands_on(prio_html):
         "the engine's raw reason string must stay off the glance tier")
 
 
+# ── THE FIVE GATES THE VETOED LANE'S CONFIRMATION ANCHOR OWNS (sparse policy R8) ──
+# These five read a MEASURED vetoed-lane move, and that move only exists when the
+# confirmation close can be derived.  `hk_board_rank.confirmation_move()` walks the
+# HK session grid through `signal_quality.confirmation_date(..., market="HK")`, which
+# anchors on `data/hk/_HSI.parquet` — a COMMITTED tree that a sparse session worktree
+# omits (R8: data/, site/, mockups/, verify_shots/ are 87 % of the checkout).
+#
+# The degradation is SILENT, which is the whole reason this needs a marker rather
+# than the conftest's traceback attribution.  `confirmation_move()` catches the
+# session-anchor FileNotFoundError on purpose — a missing reference is the disclosed-
+# null case it already documents, not a crash the nightly should take — so every
+# vetoed row comes back `pct_since: null`, no traceback ever names `data/`, and the
+# conftest sparse annotator has nothing to match on.  What a sparse tree sees instead
+# is five clean assertion failures that read exactly like template-vs-fixture drift:
+# "fixture has no measured moves", a missing `pbv-pop` block, and 9961.HK — which
+# earns its seat in the vetoed lane — vanishing from the witness count.
+#
+# Measured 2026-08-19 on origin/main bytes (f69f224c9723) in a sparse worktree:
+# 5 failed / 97 passed / 1 skipped.  `git sparse-checkout add data/hk` on the same
+# bytes, nothing else changed: 102 passed / 1 skipped.  No test flips the other way,
+# so the tree is the whole difference and these five are the whole blast radius.
+# CI is unaffected — `unrun-hk-board` runs on a full `actions/checkout@v4`.
+#
+# Marked, not deleted or loosened: in a full checkout (CI, the nightly host, any tree
+# that ran `worktree_sparse.py full`) all five still gate exactly as before.
+@pytest.mark.needs_full_checkout("data")
 def test_vetoed_move_is_signed_and_direction_coloured(prio_html):
     su = shapes_fixture()
     seg = _veto_block(prio_html)
@@ -1145,6 +1171,8 @@ def test_vetoed_move_is_signed_and_direction_coloured(prio_html):
         assert '<span class="%s">%+.1f%%</span>' % (cls, r["pct_since"]) in row
 
 
+# Sparse policy R8 — see the note above `test_vetoed_move_is_signed_and_direction_coloured`.
+@pytest.mark.needs_full_checkout("data")
 def test_vetoed_move_says_it_is_measured_from_the_confirmation_close(prio_html):
     """The figure must not silently answer "since the signal fired".
 
@@ -1166,6 +1194,8 @@ def test_vetoed_move_says_it_is_measured_from_the_confirmation_close(prio_html):
     assert "The signal fired on %s" % su["vetoed"][0]["signal_date"] in row
 
 
+# Sparse policy R8 — see the note above `test_vetoed_move_is_signed_and_direction_coloured`.
+@pytest.mark.needs_full_checkout("data")
 def test_vetoed_section_prints_the_population_behind_its_truncated_rows(prio_html):
     """Twelve rows ranked BY the move and cut at a cap are the winning tail of it.
 
@@ -1556,6 +1586,8 @@ def test_cohort_chip_tells_the_truth_about_where_it_counts(prio_html):
 # G1 — the seven witnesses are visible
 # --------------------------------------------------------------------------- #
 
+# Sparse policy R8 — see the note above `test_vetoed_move_is_signed_and_direction_coloured`.
+@pytest.mark.needs_full_checkout("data")
 def test_six_of_the_seven_witnesses_appear_on_the_production_board(prod_html):
     """G1 at the PAGE, measured on the board the nightly will ship.
 
@@ -1574,6 +1606,8 @@ def test_six_of_the_seven_witnesses_appear_on_the_production_board(prod_html):
     assert "9961.HK" in seen, "9961.HK earns its vetoed-lane seat under the era verdicts"
 
 
+# Sparse policy R8 — see the note above `test_vetoed_move_is_signed_and_direction_coloured`.
+@pytest.mark.needs_full_checkout("data")
 def test_at_least_five_witnesses_carry_a_stance_bearing_row(prio_html):
     """G1's fixture gate. A stance-bearing row is a staged card (its verb chip is
     the stance), a ran row (stance: the window has passed) or a leaders row

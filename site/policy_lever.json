@@ -1,21 +1,21 @@
 {
   "schema": "policy_lever.v1",
-  "as_of": "2026-08-18",
+  "as_of": "2026-08-19",
   "favored_complex": {
     "basket": [
       "SMH",
       "SOXX"
     ],
     "basket_incomplete": false,
-    "drawdown_pct": -16.85,
-    "drawdown_z": -2.45,
-    "as_of": "2026-08-18",
-    "note": "Semis complex (SMH/SOXX equal-weight) is -16.9% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
-    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-16.9%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
+    "drawdown_pct": -18.41,
+    "drawdown_z": -2.71,
+    "as_of": "2026-08-19",
+    "note": "Semis complex (SMH/SOXX equal-weight) is -18.4% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
+    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-18.4%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
   },
   "jawboning": {
     "n_7d": 11,
-    "n_30d": 36,
+    "n_30d": 33,
     "last_alert_ts": "2026-08-19T02:34:18+00:00",
     "last_alert_summary": "Trump suspends Canada tariffs 3 days \u2014 dairy, auto, alcohol relief rally likely",
     "last_alert_summary_zh": "\u7279\u6717\u666e\u6682\u505c\u5bf9\u52a0\u5173\u7a0e3\u5929\u2014\u2014\u4e73\u5236\u54c1\u3001\u6c7d\u8f66\u3001\u9152\u7c7b\u6216\u8fce\u5598\u606f\u53cd\u5f39"
@@ -31,13 +31,13 @@
       "name_zh": "\u4f0a\u6717/\u77f3\u6cb9",
       "asset": "CL=F",
       "arming": {
-        "stoch_k": 91.39,
-        "stoch_d": 81.9,
+        "stoch_k": 97.55,
+        "stoch_d": 89.42,
         "stoch_curl": false,
         "macd_curl": false,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.0992,
+        "flatness": 0.0796,
         "armed": false,
         "stoch_curl_recent": true,
         "stoch_traverse": true,

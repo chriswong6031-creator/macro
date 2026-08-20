@@ -73,14 +73,39 @@ waves:
       pre-PR review fixed 2 blockers + 4 majors in the lane (repo resolution,
       label ensure, needs-result-not-artifact-presence, literal concurrency
       group, nightly-conclusion gate, fail-closed lookup).
+  - id: W-CONTRACT-DELTA
+    title: Differential pre-merge contract gate (post-merge jam class closed)
+    status: awaiting_ci
+    note: >
+      2026-08-19 afternoon jam: merges 5872/5932 grew two curated-exclusive
+      import closures without widening paths; the closure contract test runs
+      only POST-merge (integration-baseline on main pushes; path-scoped PR
+      packs never reach it), so the culprits merged green, main went red
+      ~12:00Z, the breaker latched, and 21 armed PRs sat baseline-blocked
+      ~6h. Heal = PR 6002 (paths widened, merged 18:19Z as main-red-repair;
+      integration-baseline 32291151787 green 19:06Z; note the 6002 merge
+      push itself SCHEDULED NO integration-baseline run - silent-no-run
+      class - recovered via workflow_dispatch). Permanent = PR 6005 (merged
+      19:27Z on green main): always-on contract-delta job in ci.yml, PR
+      events only, feeding ci-gate needs; scripts/check_contract_delta.py
+      fails ONLY on findings the PR's tree introduces vs its base (closure
+      misses by (job,path); unwired suites by path) - inherited reds print
+      as notices, so a red main can never re-jam the fleet at PR level.
+      Finding computation is factored into run_ci_pack.py /
+      audit_unrun_tests.py and shared with the absolute tests (no drift
+      copy). Proven both directions pre-merge (0-introduced exit 0 against
+      the then-red main; simulated introduced defect exit 1 naming the fix).
+      Five suites remain unwired on main (analyzer_i18n_percentile,
+      check_stock_dossier_integrity, china_special_situations_truth_wave1,
+      dossier_identity_end_to_end, dossier_numeric_contract) - they red only
+      the data-gated workflow-yaml job (data-health lane); owners' follow-up,
+      deliberately not absorbed.
 next_action: >
-  W-GATE-SPLIT: PR 5969 merged; qledger clock heal PR 5972 merged (the
-  nightly had committed a registrar-local write-once clock; now
-  gitignored). Proof runs dispatched 11:01Z: main baseline 32245502253
-  on the code-only gate, and a hand-dispatched data-health.yml run
-  32245526648 to prove the issue plumbing. Then W3
-  to prove the issue plumbing, verify the first post-nightly firing, then W3
-  at >=72h - trailing-100 green rate above 90% via
+  Verify contract-delta appears and behaves on the next few ordinary PRs
+  (inherited-immune, catches introduced closure/unwired defects); confirm
+  the armed backlog fully drains post-breaker-open (21 -> 17 within an hour
+  of the 19:06Z green). Then W3 at >=72h from the W2 merge (~08-22):
+  trailing-100 green rate above 90% via
   scripts/ci_gate_reliability_report.py plus two consecutive ordinary PRs
   merged with no main-red-repair. W-SEMANTIC-PROOF remains stopped; W-REWRITE
   remains separately commissioned.

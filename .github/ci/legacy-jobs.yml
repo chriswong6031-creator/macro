@@ -999,6 +999,92 @@ jobs:
   conviction-profile:
     if: ${{ false }}
     gate: code
+    # CURATED SCOPE (2026-08-19, follow-up to #6027). `scope: exclusive` makes
+    # the paths below REPLACE inference instead of being unioned under it.
+    #
+    # #6027 moved #5984's three dossier suites into this job (correctly — the
+    # unrun-publish-ops home they had in #6023 is `gate: data`, which ci.yml
+    # never plans, so they were wired and still dark). But those suites import
+    # scripts/build_ticker_pages.py and scripts/check_stock_dossier_integrity.py,
+    # which rglob templates/ and site/, so the inferred FALLBACK tier grew
+    # whole-tree `templates/**`, `site/**`, `data/**`, `research/**`, `config/**`
+    # and `tools/**` claims. This job began selecting on files no suite in it
+    # reads: measured, it newly matched `templates/index.html` and pushed that
+    # probe to 128 against the 127 ceiling in
+    # tests/test_ci_pack.py::test_exclusive_curation_narrows_ordinary_code_prs.
+    # That is smear, and this file's own convention is to curate it away at the
+    # source rather than pay for it in the ceiling (same treatment as `inline-js`,
+    # `flow-surface`, `options-estate-guards`).
+    #
+    # Every path below is EARNED — the 59 concrete files inference already owned,
+    # plus the two templates build_ticker_pages.py loads by name
+    # (`ticker.html.j2`, which tests/test_dossier_identity_end_to_end.py renders
+    # directly, and `ticker_index.html.j2`). Nothing whole-tree survives, and
+    # scripts/check_ci_trigger_closure.py is the guard that every module these
+    # suites read can still start this job.
+    scope: exclusive
+    paths:
+      - "config/site_access.yml"
+      - "config/sparse_worktree.json"
+      - "engine/__init__.py"
+      - "engine/canon.py"
+      - "engine/conditions.py"
+      - "engine/cycles.py"
+      - "engine/i18n.py"
+      - "engine/indicators.py"
+      - "engine/indicators_m2.py"
+      - "engine/market_heatmap.py"
+      - "engine/marketing/__init__.py"
+      - "engine/marketing/accounts.py"
+      - "engine/marketing/authority.py"
+      - "engine/marketing/campaign_compiler.py"
+      - "engine/marketing/chart_render.py"
+      - "engine/marketing/charter.py"
+      - "engine/marketing/claims.py"
+      - "engine/marketing/cmo.py"
+      - "engine/marketing/departments.py"
+      - "engine/marketing/economics.py"
+      - "engine/marketing/events.py"
+      - "engine/marketing/ledgers.py"
+      - "engine/marketing/logo_cache.py"
+      - "engine/marketing/market_clock.py"
+      - "engine/marketing/movers_source.py"
+      - "engine/marketing/opportunity_bus.py"
+      - "engine/marketing/publication.py"
+      - "engine/marketing/share_cards.py"
+      - "engine/marketing/source_authority.py"
+      - "engine/marketing/state.py"
+      - "engine/session_anchor.py"
+      - "engine/sp500_heatmap.py"
+      - "engine/stock_dossier.py"
+      - "engine/stock_score.py"
+      - "engine/stock_view.py"
+      - "engine/stocks_hub.py"
+      - "engine/technicals.py"
+      - "engine/valuation.py"
+      - "engine/vol_forecast.py"
+      - "engine/vol_regime.py"
+      - "lib/__init__.py"
+      - "lib/config.py"
+      - "lib/numeric.py"
+      - "lib/nyse_calendar.py"
+      - "lib/pages.py"
+      - "lib/procutil.py"
+      - "lib/seo.py"
+      - "lib/store.py"
+      - "scripts/build_ticker_pages.py"
+      - "scripts/check_stock_dossier_integrity.py"
+      - "scripts/sparse_guard.py"
+      - "scripts/worktree_sparse.py"
+      - "templates/china.html.j2"
+      - "templates/ticker.html.j2"
+      - "templates/ticker_index.html.j2"
+      - "tests/test_analyzer_i18n_percentile.py"
+      - "tests/test_check_stock_dossier_integrity.py"
+      - "tests/test_dossier_identity_end_to_end.py"
+      - "tests/test_dossier_numeric_contract.py"
+      - "tests/test_stock_dossier.py"
+      - "tests/test_stock_score.py"
     # Wired 2026-08-02: neither suite was named by ANY run step, so #4297's caution
     # rewrite ran 4 stock_score pins red for a day with no CI signal, and the dossier's
     # prose-matched risk_veto died silently. test_stock_score pins the honesty
@@ -1012,9 +1098,68 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy markupsafe
+        # jinja2 + pyyaml added 2026-08-19 with the analyzer-i18n step below, and BOTH are
+        # needed at COLLECTION time, not merely at run time:
+        #   jinja2 — that suite renders the REAL china.html.j2 turnover row (macro + row
+        #     extracted from the shipped file, so it cannot silently drift from a hand-copied
+        #     duplicate) through a bare jinja2 Environment.
+        #   pyyaml — `from engine import cycles` pulls engine/technicals.py -> lib/config.py,
+        #     which does a module-scope `import yaml`. The two older suites in this job never
+        #     import engine.cycles, so this job's line had never needed it. Missing it is a
+        #     COLLECTION error (pytest exit 2), which fails the whole step rather than one
+        #     test — measured on this PR's first run (ci-pack-11, job 96210580631).
+        run: pip install pytest pandas numpy markupsafe jinja2 pyyaml
       - name: conviction profile honesty invariants + dossier reason codes
         run: python -m pytest tests/test_stock_score.py tests/test_stock_dossier.py -q
+      # P1 unrun backfill 2026-08-19: tests/test_analyzer_i18n_percentile.py (#5980) was named
+      # by no `run:` step in any workflow, so scripts/audit_unrun_tests.py reds the whole
+      # fleet's full-manifest runs on it. Same defect class as #5952 / #5985, discovered while
+      # landing the latter. THIS JOB OWNS THE SUBJECT: #5980's fix is the analyzer display-twin
+      # contract across engine/stock_score.py (the new bucket_display twin) and
+      # engine/stock_view.py (state_label_zh on BOTH timing paths, including the no-conviction
+      # fallback that would have kept the bug if only the main branch were fixed) — the two
+      # modules this job already exercises via test_stock_score/test_stock_dossier — plus
+      # engine/cycles.py's ladder_state() propagating STATE_DISPLAY's label_zh and
+      # engine/i18n.py's t_pctile() helper + the t() nesting guard. The defect it pins is
+      # invisible at runtime: `B(t.state_label, t.state_label)` renders perfectly in both
+      # languages, it just renders ENGLISH in Chinese mode, so nothing raises when it
+      # regresses. Appended LAST and as its OWN step (not folded into the step above) because
+      # a step is the masking unit — run_ci_pack.py returns on the first non-zero step — and
+      # the conviction/dossier honesty invariants are the older, higher-signal failure a
+      # reader should see first.
+      - name: analyzer display twins + china turnover percentile i18n (#5980)
+        run: python -m pytest tests/test_analyzer_i18n_percentile.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5952-class): #5984 — the
+      # "$nanM" dossier identity/truth fix — landed three suites named by ZERO
+      # run: steps, so they collected and never ran. Dark tests are worse than no
+      # tests, because they read as coverage.
+      #
+      # THIS JOB, not the ticker-page render lane in unrun-publish-ops that owns
+      # the same subject, for the reason that decides every one of these
+      # placements: unrun-publish-ops is `gate: data`, and ci.yml plans
+      # `--gate code` — measured on this PR's own run 32302003786, which put 121
+      # jobs in scope and never mentioned unrun-publish-ops once. Wiring a
+      # hermetic suite there satisfies audit_unrun_tests' letter (it asks only
+      # whether SOME run: step names the file) while leaving it dark on every PR,
+      # which is the darkness this backfill exists to end. conviction-profile is
+      # `gate: code` and already owns the dossier contract via test_stock_dossier.
+      #
+      # All three are hermetic — tmp_path fixtures, no data/ and no site/ read —
+      # and need nothing beyond this job's existing install line: 61 passed /
+      # 0 skipped in a clean venv holding exactly `pytest pandas numpy markupsafe
+      # jinja2 pyyaml`. test_dossier_numeric_contract pins lib.numeric.finite,
+      # the contract whose absence let a truthy float NaN render "$nanM" on 69 of
+      # 2066 published pages; test_check_stock_dossier_integrity pins the
+      # post-render estate guard that catches that leak; and
+      # test_dossier_identity_end_to_end drives the REAL context builder and the
+      # REAL template and asserts on the rendered HTML — the outcome a reader
+      # sees, which the unit suites only approach one mechanism at a time.
+      - name: dossier numeric contract, estate machine-sentinel guard, and identity end-to-end (#5984)
+        run: >
+          python -m pytest
+          tests/test_dossier_numeric_contract.py
+          tests/test_check_stock_dossier_integrity.py
+          tests/test_dossier_identity_end_to_end.py -q
 
   chronicle-suite:
     if: ${{ false }}
@@ -1332,6 +1477,16 @@ jobs:
       - "engine/government_revenue/**"
       - "engine/marketing/**"
       - "engine/metabolism/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/neuralweb/**"
       - "engine/press/**"
       - "engine/prophet_board_read.py"
@@ -1797,6 +1952,7 @@ jobs:
           tests/test_risk_radar_scorecard.py
           tests/test_vsb_radar_alert.py
           tests/test_risk_radar_intl_profiles.py
+          tests/test_gd4a_cnhk_ledger_repair.py
           tests/test_risk_radar_dlg_country_wiring.py
           tests/test_risk_radar_dlg_partial.py
           tests/test_risk_state_live_copy_sync.py
@@ -1811,9 +1967,6 @@ jobs:
           tests/test_prophet_governor.py
           tests/test_prophet_showcase.py
           tests/test_prophet_options_context.py
-          tests/test_prophet_lab.py
-          tests/test_prophet_lab_api.py
-          tests/test_prophet_lab_timeparse.py
           tests/test_pick_autopsy_selection.py
           tests/test_trade_memory.py
           tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
@@ -1922,6 +2075,61 @@ jobs:
       # (tests/test_statement_tape.py) is inside the sweep, one step above.
       - name: statement-tape schema guard (FL-E / FC-R9)
         run: python -m scripts.check_statement_tape
+
+  prophet-lab:
+    if: ${{ false }}
+    gate: code
+    # LAB-0 §6 commissioning-prep review B1 (2026-08-19, PR #5995): these four
+    # suites (test_prophet_lab.py/_api.py/_timeparse.py/_commissioning.py) were
+    # wired into engine-render-guards, which is `gate: data` — and ci.yml's
+    # merge-gate ONLY ever invokes `run_ci_pack.py --gate code` (gate:data jobs
+    # run exclusively on the nightly data-health.yml lane, post-merge). Every
+    # Lab suite, INCLUDING #5928's already-merged ones, has therefore NEVER
+    # actually run inside a PR's own merge gate. All four are hermetic
+    # tmp_path/fixture tests over engine/prophet_lab/** (a pure projection
+    # package — no data/ or site/ read, LAB-0 §1) plus the app/prophet_lab.py
+    # transport layer, the engine/entry_radar/spool.py R2-read seam it now
+    # imports, and the scripts/prophet_lab_baseline.py CLI: the verdict is a
+    # function of the PR's tree only, squarely `gate: code`'s own definition
+    # (see the GATE_VALUES docstring in scripts/run_ci_pack.py). Split into its
+    # own job rather than reclassifying engine-render-guards wholesale — that
+    # job also carries suites that DO read real rendered site/**/data/**
+    # output and are correctly gate:data; narrowing that job's own gate is a
+    # separate, larger cleanup outside this PR's scope.
+    paths:
+      - "app/prophet_lab.py"
+      - "engine/prophet_lab/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      - "scripts/prophet_lab_baseline.py"
+      - "tests/test_prophet_lab.py"
+      - "tests/test_prophet_lab_api.py"
+      - "tests/test_prophet_lab_timeparse.py"
+      - "tests/test_prophet_lab_commissioning.py"
+      - "tests/fixtures/prophet_lab/**"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        # fastapi + httpx: test_prophet_lab_api.py's FastAPI TestClient needs
+        # both (httpx importorskip'd). pandas: engine.prophet_board_read's
+        # enrichment path (boards.py's lazy import, LAB-0 §5's sanctioned
+        # reuse). boto3 is NOT needed: engine.entry_radar.spool imports it
+        # LAZILY inside `_r2_client()`, and every R2 path this suite exercises
+        # either deletes the R2 credential env vars or injects a fake client
+        # object directly — the real boto3 import is never reached.
+        run: pip install pytest pandas fastapi httpx pyyaml
+      - name: Prophet Operator Lab — projection, transport, timeparse, commissioning-prep
+        run: >
+          python -m pytest
+          tests/test_prophet_lab.py
+          tests/test_prophet_lab_api.py
+          tests/test_prophet_lab_timeparse.py
+          tests/test_prophet_lab_commissioning.py -q
 
   attested-history-guards:
     if: ${{ false }}
@@ -2556,7 +2764,7 @@ jobs:
       - name: factor boundary selftest (guard fires on planted violations)
         run: python3 scripts/check_factor_boundaries.py --selftest
       - name: synapse read-gate unit tests
-        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py tests/test_delivery_waterfall.py tests/test_pricing_power_monitor.py -q
+        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py tests/test_delivery_waterfall.py tests/test_pricing_power_monitor.py tests/test_risk_envelope.py -q
       - name: factor deescalation shadow + boundary guard tests
         run: python -m pytest tests/test_factor_deescalation_shadow.py -q
       - name: edgar 8-K item-code expansion unit tests (LHB-R7)
@@ -2783,6 +2991,7 @@ jobs:
       - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"
       - "scripts/build_output_health.py"
+      - "scripts/build_risk_envelope.py"
       - "scripts/build_rr_banner.py"
       - "scripts/build_site.py"
       - "scripts/build_sp500_heatmap.py"
@@ -3111,6 +3320,17 @@ jobs:
         run: python scripts/audit_unrun_tests.py
       - name: unrun-census discovery unit tests
         run: python -m pytest tests/test_audit_unrun_tests.py -q
+      # scripts/check_contract_delta.py (2026-08-19) is the differential PR-vs-base
+      # gate that re-derives the two finding classes above (curated-exclusive
+      # import-closure misses, unwired suites) UNCONDITIONALLY of ci-pack's path
+      # scoping — see its module docstring for the incident that motivated it
+      # (#5872/#5932 merged green because their packs never ran the two suites
+      # this job already runs above). Wired HERE, right after the audit_unrun_tests
+      # steps, for the same reason every other suite in this job is: it would
+      # otherwise be an unrun suite named by no run: step, caught by the
+      # audit_unrun_tests.py step right above it.
+      - name: differential contract-delta gate contract
+        run: python -m pytest tests/test_contract_delta.py -q
       # SKIP-ONLY suites: a test that skips in every job naming it executes
       # nowhere, so a job list and a green run both lie about it. This is what an
       # `importorskip` added to clear a red lane creates by construction — it
@@ -5923,6 +6143,7 @@ jobs:
       - "engine/regime_snap_veto.py"
       - "engine/regime_vector.py"
       - "engine/residual_alpha.py"
+      - "engine/risk_envelope.py"
       - "engine/risk_radar.py"
       - "engine/risk_radar_backtest.py"
       - "engine/risk_radar_intl.py"
@@ -6014,6 +6235,16 @@ jobs:
       - "engine/earnings_narrative/**"
       - "engine/fundamental_forensics/**"
       - "engine/government_revenue/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/marketing/**"
       - "engine/metabolism/**"
       - "engine/neuralweb/**"
@@ -6045,6 +6276,7 @@ jobs:
       - "scripts/build_market_heatmap.py"
       - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"
+      - "scripts/build_risk_envelope.py"
       - "scripts/build_rr_banner.py"
       - "scripts/build_site.py"
       - "scripts/build_sp500_heatmap.py"
@@ -6299,6 +6531,16 @@ jobs:
       - "engine/government_revenue/**"
       - "engine/marketing/**"
       - "engine/metabolism/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/neuralweb/**"
       - "engine/press/**"
       - "engine/prophet_board_read.py"
@@ -10298,6 +10540,37 @@ jobs:
         run: python -m pytest tests/test_okx_retail.py -q
       - name: CN risk-backdrop chip — renders, degrades, and stays out of macro mode
         run: python -m pytest tests/test_w5b_edge_chips.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5952-class): the China
+      # Special Situations desk's four truth contracts, shipped by #5975 and
+      # extended by #5996, were named by no run: step in any workflow. Engine and
+      # templates are FROZEN there — this suite only pins the already-shipped
+      # contract so a regression cannot return silently: goodwill units live in
+      # the field name and are never re-derived from magnitude (the defect printed
+      # '-51245300029.70%'), unlock n_large_30d/7d are counted over the full
+      # forward population BEFORE the _MAX_ROWS display slice (a display cap is
+      # not a statistic), inquiry reply state resolves per (issuer, named thread)
+      # and an unnamed thread is 'undetermined', and a stale-but-readable plane
+      # keeps its last reading on screen while dropping out of the hero's
+      # aggregate tallies and the "board is complete" copy.
+      #
+      # Lives HERE, not next to its sibling tests/test_china_special_situations_
+      # gate.py in tier-gate, for two independent reasons. (1) DEPENDENCIES: this
+      # suite writes its fixtures with DataFrame.to_parquet, and tier-gate's
+      # install line carries no pyarrow — the exact class of failure PR #5985 hit
+      # in CI (green locally, `ModuleNotFoundError` in the job, because the local
+      # environment happened to own a wheel the job's install line does not).
+      # Verified the other way here: a clean venv holding EXACTLY this job's
+      # install line (pytest pandas numpy pyarrow pyyaml jinja2 plotly requests
+      # beautifulsoup4 openpyxl scikit-learn) runs it 45 passed. (2) GATE: it is
+      # hermetic — every fixture is a tmp_path parquet behind a monkeypatched
+      # lib.config, and the render side loads templates/ only, no data/ and no
+      # site/ read — so it belongs on a `gate: code` job that the merge gate
+      # actually plans, not on tier-gate's `gate: data` lane. Ordered next to the
+      # other CN template-render contract above and ahead of the unrelated US
+      # board step, so a red here is not dark behind a failure it has nothing to
+      # do with.
+      - name: China Special Situations desk — goodwill units, unlock population, inquiry identity, stale-plane authority
+        run: python -m pytest tests/test_china_special_situations_truth_wave1.py -q
       - name: US board W9-A producer field + cohort math
         run: python -m pytest tests/test_w4_us_board.py -q
 
@@ -10734,6 +11007,16 @@ jobs:
       - "engine/government_revenue/**"
       - "engine/marketing/**"
       - "engine/metabolism/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/neuralweb/**"
       - "engine/press/**"
       - "engine/prophet_board_read.py"

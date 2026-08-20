@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-19T12:16:40.372719+00:00",
-  "as_of": "2026-08-19",
+  "generated_at": "2026-08-20T01:07:22.060582+00:00",
+  "as_of": "2026-08-20",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 419,
@@ -317,7 +317,7 @@
       "cond_hit_share": 0.909,
       "readiness_forecast": {
         "forecast": "date",
-        "forecast_date": "2026-08-19",
+        "forecast_date": "2026-08-20",
         "basis": "n_cond=17/30 needed; post-W-C cadence=19.606/day \u00d7 cond_hit_share=0.991 \u2192 1 days",
         "post_wc_fires": 647,
         "post_wc_span_days": 33
@@ -366,7 +366,7 @@
       "cond_hit_share": 0.9254,
       "readiness_forecast": {
         "forecast": "date",
-        "forecast_date": "2026-08-19",
+        "forecast_date": "2026-08-20",
         "basis": "n_cond=13/30 needed; post-W-C cadence=19.606/day \u00d7 cond_hit_share=0.986 \u2192 1 days",
         "post_wc_fires": 647,
         "post_wc_span_days": 33
@@ -392,7 +392,7 @@
       "cond_hit_share": 0.7762,
       "readiness_forecast": {
         "forecast": "date",
-        "forecast_date": "2026-08-20",
+        "forecast_date": "2026-08-21",
         "basis": "n_cond=0/30 needed; post-W-C cadence=19.606/day \u00d7 cond_hit_share=0.794 \u2192 2 days",
         "post_wc_fires": 647,
         "post_wc_span_days": 33
@@ -463,7 +463,7 @@
       "null_share": 1.0,
       "root_cause": "by-design opex_days<=5 gate \u2014 opt_pin_risk requires opex_days<=5 AND gamma='long' AND min_wall_dist<=2%. Gate only fires in the final week before monthly OPEX.",
       "pin_risk_gate_condition": "opex_days<=5 AND gamma_regime='long' AND min(|wall_dist_up_pct|, |wall_dist_down_pct|)<=2.0",
-      "current_opex_days": 2,
+      "current_opex_days": 1,
       "next_opex_date": "2026-08-21",
       "note": "pin_risk will be non-null only in the 5 trading days before each monthly OPEX. Current build date has opex_days>5 \u2014 no fires expected."
     },
@@ -491,39 +491,38 @@
         {
           "source": "options_entry/state.parquet",
           "latest_as_of": "2026-08-13",
-          "age_days_from_today": 6,
+          "age_days_from_today": 7,
           "status": "STALE"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-08-19 08:18 UTC",
-          "age_days_from_today": 0,
+          "latest_as_of": "2026-08-19 16:43 UTC",
+          "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
           "latest_as_of": "2026-08-07",
-          "age_days_from_today": 12,
+          "age_days_from_today": 13,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-19T12:16:40.116608+00:00",
+      "generated_at": "2026-08-20T01:07:22.000349+00:00",
       "ok": false,
       "fail_reasons": [
-        "CHAINS STALE: latest chain file is 2026-08-13 (3 NYSE session(s) behind last_session=2026-08-18); threshold=1 \u2014 OI snapshot may have been missed"
+        "CHAINS STALE: latest chain file is 2026-08-13 (4 NYSE session(s) behind last_session=2026-08-19); threshold=1 \u2014 OI snapshot may have been missed",
+        "CHAINS SESSION FAILED: session 2026-08-19 has a health-receipt attempt but NO chain parquet was ever written for it \u2014 the accrual captured nothing for the most recently attempted session (see data/polygon_gex_health/2026-08-19.json)"
       ],
-      "warnings": [
-        "OPTIONS FLOW CREDS ABSENT: MASSIVE_S3_ACCESS_KEY_ID / MASSIVE_S3_SECRET_ACCESS_KEY / MASSIVE_S3_ENDPOINT not set \u2014 build_options_flow will no-op silently (F1 from masterplan \u00a71)"
-      ]
+      "warnings": []
     }
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-19T12:16:40.372706+00:00",
-    "as_of": "2026-08-19",
+    "generated_at_utc": "2026-08-20T01:07:22.060575+00:00",
+    "as_of": "2026-08-20",
     "absent_stores": []
   }
 }

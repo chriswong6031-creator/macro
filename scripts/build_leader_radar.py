@@ -2061,18 +2061,34 @@ def _build_fire_history(
     # Load grades.jsonl via the ledger consumer (key: engine_id, ticker, fire_date, horizon)
     # grade_lookup: (engine_id, ticker, fire_date_iso) -> best 21d grade row
     #
-    # Resolved under the CALLER's data_root, not the ledger's module-level GRADES_PATH.
-    # `load_grades()` binds the ambient store, which made this function ignore its own
-    # data_root argument: the "grades absent" branch could never be reached while the
-    # real store held a matching row, so the branch was governed by whatever the nightly
-    # had most recently graded rather than by the caller. Production is unchanged —
-    # build() passes config.data_dir(), the same directory GRADES_PATH is derived from.
+    # data_root selects the store.  The ledger's module-level GRADES_PATH is a
+    # CWD-RELATIVE constant (engine/pick_lab/ledger.py: Path("data")/"pick_lab"), so a
+    # bare load_grades() would silently read the live repo store and ignore this
+    # function's own parameter.  That is not hypothetical: it made
+    # test_absent_grades_yields_accruing assert "absent" against the production ledger,
+    # so the branch it documents was never exercised, and the test flipped fleet-wide on
+    # 2026-08-18 the night the nightly graded the fire it hardcodes.
+    #
+    # `profile` is the ledger's documented additive redirection point (see its module
+    # docstring: "load_grades accept an optional 'profile' keyword ... the profile's path
+    # fields are used instead of the module-level constants"), so rebase the US profile's
+    # grade paths onto data_root.  Going through the ledger keeps this function's stated
+    # contract -- "consume, never re-implement" -- including keep-first dedup on GRADE_KEY.
+    # Only the two fields load_grades reads are rebased; the rest of US_PROFILE (calendar,
+    # benchmark, fill basis) is market semantics and must not move.
     grade_lookup: dict[tuple[str, str, str], dict] = {}
     try:
-        from engine.pick_lab.ledger import GRADE_KEY, keep_first, load_jsonl
-        grades = keep_first(
-            load_jsonl(Path(data_root) / "pick_lab" / "grades.jsonl"), GRADE_KEY
-        )
+        import dataclasses
+
+        from engine.pick_lab.ledger import load_grades
+        from engine.pick_lab.profile import US_PROFILE
+
+        _pick_lab = Path(data_root) / "pick_lab"
+        grades = load_grades(profile=dataclasses.replace(
+            US_PROFILE,
+            grades_path=_pick_lab / "grades.jsonl",
+            lh_grades_path=_pick_lab / "lh_grades.jsonl",
+        ))
         for gr in grades:
             eid = str(gr.get("engine_id", ""))
             if eid not in ("plab_leader_precipice", "plab_leader_onset"):
