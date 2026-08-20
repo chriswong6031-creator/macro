@@ -440,8 +440,13 @@ def _load_context() -> dict:
     """Regime + cross-asset + risk-appetite backdrop from regime/latest.json."""
     try:
         d = json.loads((config.data_dir() / "regime" / "latest.json").read_text())
-    except Exception:  # noqa: BLE001
-        return {}
+    except Exception as e:  # noqa: BLE001
+        # An unreadable backdrop is MISSING, not neutral.  cross_asset_tag() already
+        # declines to tag anything without a verdict, but the board must SAY the
+        # backdrop is missing instead of quietly presenting "no confirmation" as if
+        # the tape had been consulted and had nothing to add.
+        log.warning("triage: regime backdrop unavailable (%s)", e)
+        return {"_state": READ_UNAVAILABLE}
     ca = d.get("cross_asset") or {}
     cond = d.get("conditions") or {}
     ra = cond.get("recession") or {}
@@ -449,6 +454,7 @@ def _load_context() -> dict:
     dd = cond.get("drawdown_risk") or {}
     fc = cond.get("financial_conditions") or {}
     return {
+        "_state": READ_OK,
         "asof": d.get("date"),
         "regime": {
             "quad": d.get("quad"), "quad_name": d.get("quad_name"),
@@ -493,6 +499,51 @@ def _events(today: date, horizon_days: int = 14) -> dict:
     return {"items": items, "next": nxt}
 
 
+# ---------------------------------------------------------------------------
+# SOURCE READ HEALTH — a failed read is MISSING EVIDENCE, never zero alerts
+# ---------------------------------------------------------------------------
+# Every reader used to collapse three different worlds into the same ``[]``:
+#   * the feed read fine and genuinely has nothing to say;
+#   * the feed has never produced anything yet (no store on disk);
+#   * the reader CRASHED and we have no idea what it holds.
+# The board then computed its pressure gauge from whatever survived, so a bonds
+# outage and a quiet bonds tape were mathematically identical — and if the dead
+# feed had been carrying stress events, losing it LOWERED the score and produced a
+# more constructive headline.  An outage could make the product look safer.
+#
+# This is deterministic read metadata for THIS build.  It is not a health database,
+# not a producer SLA, and it says nothing about freshness: a transition-event store
+# legitimately has no events for weeks, and "latest event is old" is NOT a failure.
+READ_OK = "ok"                          # read succeeded, events in the window
+READ_OK_ZERO = "ok_zero_events"         # read succeeded, legitimately nothing to say
+READ_NO_COVERAGE = "no_coverage"        # no store yet — first run / this feed has no coverage
+READ_UNAVAILABLE = "unavailable"        # import/read/parse failed — we do NOT know what it holds
+
+# The families that can contribute act-tier weight or risk-off STRESS to the board
+# read.  These are the ONLY sources whose disappearance can LOWER the pressure score,
+# so these are the ones whose absence costs the board its whole-tape authority.
+# (macro/bonds/commodity own the stress clusters; vector carries its own inline tier
+# and can reach 'act' on the BTC risk regime.)
+_CONSEQUENTIAL_SOURCES = ("macro", "bonds", "commodity", "vector")
+
+
+def _read(source: str, state: str, events: list[dict], reason: str | None = None) -> dict:
+    """One reader's typed result.  ``reason`` is for OUR logs — never rendered."""
+    return {"source": source, "state": state, "events": events, "reason": reason}
+
+
+def _store_state(mod) -> tuple[str, str | None]:
+    """Distinguish 'this feed has no store yet' from 'the store is there and empty'.
+
+    Every jsonl alert engine exposes ``_path()``.  If we cannot resolve it we say so
+    rather than guessing — an unanswerable probe is not a clean bill of health.
+    """
+    try:
+        return (READ_OK_ZERO, None) if mod._path().exists() else (READ_NO_COVERAGE, None)
+    except Exception as e:  # noqa: BLE001
+        return READ_OK_ZERO, f"store path unresolved: {type(e).__name__}"
+
+
 def _window_date(clocks: dict, ev: dict) -> date | None:
     """The date the WINDOW filter scans on — a store-scan bound, not an event claim.
 
@@ -506,12 +557,12 @@ def _window_date(clocks: dict, ev: dict) -> date | None:
     return alert_time.parse_date(ev.get("ts") or clocks.get("recorded_at"))
 
 
-def _macro_raw(today: date, cutoff: date) -> list[dict]:
+def _macro_raw(today: date, cutoff: date) -> dict:
     """Recent macro alerts from the parquet log, normalised + enriched via alert_view."""
     out: list[dict] = []
     p = config.data_dir() / "alerts" / "alerts_log.parquet"
     if not p.exists():
-        return out
+        return _read("macro", READ_NO_COVERAGE, out)
     try:
         from engine.alerts import alert_href, alert_view
         mdf = pd.read_parquet(p)
@@ -540,19 +591,26 @@ def _macro_raw(today: date, cutoff: date) -> list[dict]:
             })
     except Exception as e:  # noqa: BLE001
         log.warning("triage: macro feed unavailable (%s)", e)
-    return out
+        # UNAVAILABLE, not empty: we do not know what this feed holds, and saying
+        # "zero macro alerts" would be a claim we cannot support.
+        return _read("macro", READ_UNAVAILABLE, [], f"{type(e).__name__}: {e}")
+    return _read("macro", READ_OK if out else READ_OK_ZERO, out)
 
 
 def _jsonl_raw(source: str, today: date, cutoff: date,
-               tier_map: dict) -> list[dict]:
+               tier_map: dict) -> dict:
     """Recent events from a jsonl alert engine, with a per-(source,type) tier.
 
     Time handling goes through ``engine.alert_time``: a session date stays a session date,
     an offset-aware instant KEEPS its offset (the old ``tz_localize(None)`` destroyed that
     provenance), and an event with no usable time is carried with its date disclosed as
     unknown rather than silently dated to the build.
+
+    Returns a TYPED read (see READ_*): a crash is ``unavailable`` — missing evidence — and
+    is never reported as "this feed had no alerts".
     """
     out: list[dict] = []
+    mod_obj = None
     try:
         mod = {
             "bonds": "bonds_alerts", "forex": "forex_alerts",
@@ -564,7 +622,7 @@ def _jsonl_raw(source: str, today: date, cutoff: date,
             "oracle": "oracle.alerts",
             "watchlist": "watchlist_alerts",
         }[source]
-        m = __import__("engine." + mod, fromlist=[mod])
+        m = mod_obj = __import__("engine." + mod, fromlist=[mod])
         for e in m.load_events():
             clocks = alert_time.normalize_event(e)
             wd = _window_date(clocks, e)
@@ -592,7 +650,15 @@ def _jsonl_raw(source: str, today: date, cutoff: date,
             })
     except Exception as ex:  # noqa: BLE001
         log.warning("triage: %s feed unavailable (%s)", source, ex)
-    return out
+        # UNAVAILABLE — not "zero alerts".  If this feed was carrying stress events,
+        # treating its silence as calm is how an outage makes the board look safer.
+        return _read(source, READ_UNAVAILABLE, [], f"{type(ex).__name__}: {ex}")
+    if out:
+        return _read(source, READ_OK, out)
+    # Zero events is a legitimate answer for a transition-event store — but only if the
+    # store is actually there.  No store yet is a different, disclosed thing.
+    state, reason = _store_state(mod_obj) if mod_obj is not None else (READ_OK_ZERO, None)
+    return _read(source, state, out, reason)
 
 
 # ---------------------------------------------------------------------------
@@ -699,11 +765,24 @@ def enum_zh(kind: str, value):
     return {"ca": _CA_ZH, "band": _BAND_ZH, "nfci": _NFCI_ZH, "quad": _QUAD_ZH}.get(kind, {}).get(value, value)
 
 
-# Persistence thresholds: a flag is "persisting" once it has re-fired at least
-# _PERSIST_MIN_FIRES times spanning at least _PERSIST_MIN_DAYS days.  These are the
-# same numbers used by the corroboration cap so the two reads never disagree.
-_PERSIST_MIN_FIRES = 3
-_PERSIST_MIN_DAYS = 3
+# RECURRENCE IS NOT PERSISTENCE (2026-08-20).
+#
+# An event log can prove how many times something fired, when it first fired, when it
+# last fired, and the elapsed span between those.  It CANNOT, by itself, prove the
+# condition was continuously active in between.  The old code computed
+# ``streak_days = (last - first).days``, called that a streak, and then called anything
+# with >=3 fires over >=3 days "persisting" — so Silver, which fired 3 times across 29
+# days, was presented as a 29-day persistent condition.  Three sparse pokes are not a
+# month-long state.
+#
+# So generic event history now earns only what it can prove — fire_count, first/last
+# event, span_days, and the word "re-fired" — and the lifecycle vocabulary for a generic
+# log is new / recurring / aging.  "persisting" (and its partner "fading") is reserved
+# for a source that explicitly establishes current-state continuity by setting
+# ``continuity_verified`` on the event.  No producer sets it today; the path exists so a
+# real continuity contract can claim the word later without re-litigating this.
+_RECUR_MIN_FIRES = 3
+_RECUR_MIN_DAYS = 3
 
 
 def _fire_board_date(e: dict) -> date | None:
@@ -727,53 +806,85 @@ def _fire_sort_key(e: dict) -> tuple:
     return (bd, inst.timestamp() if inst is not None else 0.0, str(e.get("ts") or ""))
 
 
-def _persistence(instances: list[dict]) -> dict:
-    """Aggregate same-key raw fires into persistence stats.  A re-fire pattern is
-    a FACT (not a forecast): the old keep-best dedup discarded it entirely.
+def _recurrence(instances: list[dict]) -> dict:
+    """Aggregate same-key raw fires into the facts an event log can actually prove.
 
-    Span is measured in BOARD days between the first and last fire."""
+    ``span_days`` is the elapsed board-day distance from the FIRST to the LAST fire.  It
+    is deliberately NOT called a streak: nothing here shows the condition held in
+    between.  ``continuity_verified`` is True only if a source explicitly says so.
+    """
     ordered = sorted(instances, key=_fire_sort_key)
     first, last = ordered[0], ordered[-1]
     fd, ld = _fire_board_date(first), _fire_board_date(last)
     span = int((ld - fd).days) if (fd is not None and ld is not None) else 0
     return {"fire_count": len(instances),
-            "first_ts": str(first.get("ts") or ""),
-            "last_ts": str(last.get("ts") or ""),
+            "first_event_at": str(first.get("ts") or ""),
+            "last_event_at": str(last.get("ts") or ""),
             "first_board_date": fd.isoformat() if fd else None,
             "last_board_date": ld.isoformat() if ld else None,
-            "streak_days": span}
+            "span_days": span,
+            "continuity_verified": any(bool(e.get("continuity_verified")) for e in instances)}
 
 
-def lifecycle_of(fire_count: int, streak_days: int, age_days: float | None) -> str:
-    """Descriptive lifecycle stage from the fire pattern (never a prediction):
-      persisting — re-fired repeatedly across days AND still firing now;
-      fading     — was persistent but has gone quiet (last fire aging out);
-      new        — first appeared in the last two days;
-      aging      — an older one-off still inside the window."""
-    persistent = fire_count >= _PERSIST_MIN_FIRES and streak_days >= _PERSIST_MIN_DAYS
+def lifecycle_of(fire_count: int, span_days: int, age_days: float | None,
+                 continuity_verified: bool = False) -> str:
+    """Descriptive lifecycle stage from the fire pattern (never a prediction).
+
+    From a generic event log we can only claim:
+      new       — it has fired ONCE, recently.  "New" is about when the thing FIRST
+                  appeared, not when it last did: a flag that also fired 29 days ago is
+                  not new, however fresh its latest firing is (measured 2026-08-20 — the
+                  old rule read `age_days <= 2` off the LATEST fire and labelled 2-fire
+                  29-day-old rotation rows "new" on the live board);
+      recurring — it has fired more than once ("re-fired 3× across 29d").  That is a
+                  count and an elapsed span, NOT a claim it held in between;
+      aging     — a single older fire still inside the window.
+
+    ``persisting`` / ``fading`` require ``continuity_verified`` — an explicit
+    current-state contract from the source.  A gap-filled transition log never earns it.
+
+    The count threshold for "re-fired" is the honest one — more than once.  The old 3
+    fires / 3 days bar was inherited from the severity corroborator, and that corroborator
+    is gone (see ``corroborated_severity``), so display no longer borrows its numbers.
+    """
     fresh = age_days is not None and age_days <= 2   # an unknown date is never "fresh"
-    if persistent:
+    repeated = fire_count > 1
+    if continuity_verified and fire_count >= _RECUR_MIN_FIRES and span_days >= _RECUR_MIN_DAYS:
         return "persisting" if fresh else "fading"
+    if repeated:
+        return "recurring"
     return "new" if fresh else "aging"
 
 
 def corroborated_severity(band: str, tier: str, ca_tag: str, validation: dict,
-                          fire_count: int, streak_days: int) -> tuple[str, str | None]:
+                          fire_count: int = 0, span_days: int = 0,
+                          continuity_verified: bool = False) -> tuple[str, str | None]:
     """DEMOTE-ONLY severity cap: the engine severity word is a PRIOR that an alert
     must corroborate to keep.  An isolated, unvalidated, one-off flag should not sit
-    at the same visual volume as a persisting, cross-asset-confirmed, or backtested
-    signal — so without ANY corroborator we step the band down one notch.
+    at the same visual volume as a cross-asset-confirmed or backtested signal — so
+    without ANY corroborator we step the band down one notch.
 
-    This extends the #42 doctrine (cap a measured-null emitter, never raise it) to
-    the whole board.  It NEVER raises a band, so it is Article-2 clean: no ranking
-    surface gains conviction it didn't earn.  Returns (band, reason|None)."""
+    RECURRENCE IS NOT CORROBORATION (2026-08-20).  This used to accept
+    ``fire_count >= 3 and streak_days >= 3`` as evidence, which meant three sparse
+    re-fires across a month could decline a demotion and hold a `major` band.  On a
+    watch-tier alert that is 22 + 18 + 20 = 60 instead of 22 + 6 + 20 = 48 — a real
+    ordering difference, and one that also clears the outbound push floor.  A gap-filled
+    transition log cannot show a condition held, so it corroborates nothing.  Only
+    SOURCE-VERIFIED continuity (``continuity_verified``) counts, and no producer sets
+    that today.  ``fire_count`` / ``span_days`` are still accepted so callers need not
+    change, and are still DISPLAYED — they are simply no longer authority.
+
+    Still demote-only, so it remains Article-2 clean: no surface gains conviction it did
+    not earn.  Returns (band, reason|None)."""
     if band == "minor":
         return band, None
     corroborated = (
         tier == "act"                                    # already true cross-asset weight
         or ca_tag == "confirm"                           # the tape agrees with it
         or validation.get("backtested") is True          # a measured edge backs the family
-        or (fire_count >= _PERSIST_MIN_FIRES and streak_days >= _PERSIST_MIN_DAYS)  # it persists
+        # source-verified continuity ONLY — never bare recurrence
+        or (continuity_verified and fire_count >= _RECUR_MIN_FIRES
+            and span_days >= _RECUR_MIN_DAYS)
     )
     if corroborated:
         return band, None
@@ -790,10 +901,63 @@ def _scrub(text: str) -> str:
     return text.replace("  ", " ").strip()
 
 
-def _board_read(kept: list[dict], ctx: dict) -> dict:
+def coverage_report(reads: list[dict], context_state: str) -> dict:
+    """What evidence this build could actually see.
+
+    ``complete`` — every consequential family read, and the cross-asset backdrop read.
+    ``partial``  — at least one consequential family (or the backdrop) is UNAVAILABLE, so
+                   the board keeps showing the alerts it has but forfeits whole-tape
+                   authority.  A feed with no store yet (``no_coverage``) is disclosed but
+                   does NOT degrade the board: never having produced anything is a known
+                   state, not a hole where evidence used to be.
+
+    Reasons stay internal.  A user is told WHICH evidence family is missing, never a
+    traceback.
+    """
+    sources = []
+    for r in reads:
+        meta = SOURCES.get(r["source"], {})
+        sources.append({
+            "source": r["source"],
+            "label": meta.get("label", r["source"]),
+            "label_zh": meta.get("label_zh", r["source"]),
+            "state": r["state"],
+            "events": len(r["events"]),
+            "consequential": r["source"] in _CONSEQUENTIAL_SOURCES,
+        })
+    unavailable = [s for s in sources if s["state"] == READ_UNAVAILABLE]
+    blocking = [s for s in unavailable if s["consequential"]]
+    backdrop_missing = context_state == READ_UNAVAILABLE
+    partial = bool(blocking) or backdrop_missing
+    return {
+        "state": "partial" if partial else "complete",
+        "sources": sources,
+        "unavailable": [s["label"] for s in unavailable],
+        "unavailable_zh": [s["label_zh"] for s in unavailable],
+        "blocking": [s["label"] for s in blocking],
+        "blocking_zh": [s["label_zh"] for s in blocking],
+        "no_coverage": [s["label"] for s in sources if s["state"] == READ_NO_COVERAGE],
+        "context_state": context_state,
+        "backdrop_missing": backdrop_missing,
+        "n_unavailable": len(unavailable),
+    }
+
+
+def _board_read(kept: list[dict], ctx: dict, coverage: dict | None = None) -> dict:
     """A one-line synthesis of what the whole board is saying — a DESCRIPTIVE read
     of the current alert mix plus the documented backdrop, explicitly NOT a forecast
-    and never a P(risk-off).  Transparent: the driver counts are shown."""
+    and never a P(risk-off).  Transparent: the driver counts are shown.
+
+    PARTIAL COVERAGE (2026-08-20).  The pressure score is computed from what survived
+    the read, so a dead feed used to be indistinguishable from a quiet one — and if the
+    dead feed held stress events, losing it LOWERED the score and produced a more
+    constructive headline.  An outage could make the product look safer.  So when a
+    consequential family or the cross-asset backdrop is unavailable we do not publish a
+    whole-tape verdict at all: stance becomes ``partial``, the score becomes None, and the
+    line says which evidence is missing.  We do NOT substitute a conservative fake score
+    either — unknown stays unknown.  The ranked feed below it is unaffected and still
+    usable; only the claim to read the WHOLE tape is withdrawn.
+    """
     stress = [a for a in kept if a.get("cluster") == "stress"]
     stress_confirm = sum(1 for a in stress if a.get("cross_asset_tag") == "confirm")
     act = [a for a in kept if a.get("tier") == "act"]
@@ -830,6 +994,31 @@ def _board_read(kept: list[dict], ctx: dict) -> dict:
     if rb.get("recession_band"):
         drivers.append(f"recession risk {rb['recession_band']}")
         drivers_zh.append(f"衰退风险 {_BAND_ZH.get(rb['recession_band'], rb['recession_band'])}")
+    cov = coverage or {"state": "complete"}
+    if cov.get("state") == "partial":
+        # WITHDRAW the whole-tape verdict. Not a downgrade of it, not a pessimistic
+        # substitute for it — there is no honest verdict to publish from a partial read.
+        missing = list(cov.get("blocking") or cov.get("unavailable") or [])
+        missing_zh = list(cov.get("blocking_zh") or cov.get("unavailable_zh") or [])
+        if cov.get("backdrop_missing"):
+            missing.append("cross-asset backdrop")
+            missing_zh.append("跨资产背景")
+        n = len(missing)
+        lead = (f"Partial tape read — {n} evidence "
+                f"{'family is' if n == 1 else 'families are'} unavailable "
+                f"({', '.join(missing)})")
+        lead_zh = f"盘面读数不完整 — {n} 类证据缺失（{'、'.join(missing_zh)}）"
+        tail = (" The alerts below are what we CAN see; this is not a complete read of "
+                "the tape, so no overall stance is shown.")
+        tail_zh = "以下警报仅为我们能够读到的部分；这不是对整体盘面的完整解读，因此不给出总体立场。"
+        seen = (" Of the evidence we do have: " + ", ".join(drivers) + "."
+                if drivers else "")
+        seen_zh = ("已读到的部分：" + "、".join(drivers_zh) + "。" if drivers_zh else "")
+        return {"stance": "partial", "stance_zh": "证据不完整", "score": None,
+                "coverage": "partial", "missing": missing, "missing_zh": missing_zh,
+                "subset_drivers": drivers,
+                "one_liner": lead + "." + seen + tail,
+                "one_liner_zh": lead_zh + "。" + seen_zh + tail_zh}
     lead = {"risk-off": "The tape is leaning risk-off",
             "mixed": "The tape is mixed",
             "constructive": "The tape is broadly constructive"}[stance]
@@ -839,6 +1028,7 @@ def _board_read(kept: list[dict], ctx: dict) -> dict:
     one = lead + (" — " + ", ".join(drivers) + "." if drivers else ".")
     one_zh = lead_zh + ("：" + "、".join(drivers_zh) + "。" if drivers_zh else "。")
     return {"stance": stance, "stance_zh": stance_zh, "score": score,
+            "coverage": "complete", "missing": [], "missing_zh": [],
             "drivers": drivers, "one_liner": one, "one_liner_zh": one_zh}
 
 
@@ -893,6 +1083,7 @@ def _storylines(kept: list[dict]) -> list[dict]:
             "order": meta["order"], "count": len(items),
             "act": sum(1 for x in items if x["tier"] == "act"),
             "critical": sum(1 for x in items if x["severity"] == "critical"),
+            "recurring": sum(1 for x in items if x.get("lifecycle") == "recurring"),
             "persisting": sum(1 for x in items if x.get("lifecycle") == "persisting"),
             "top_headline": top["headline"], "top_headline_zh": top.get("headline_zh") or top["headline"],
             "top_priority": top["priority"], "top_source": top["source"],
@@ -929,24 +1120,44 @@ def build_triage(days: int = 30, today: date | None = None,
     ctx = _load_context()
     ca_verdict = (ctx.get("cross_asset") or {}).get("verdict")
 
-    raw: list[dict] = []
-    raw += _macro_raw(today, cutoff)
-    raw += _jsonl_raw("bonds", today, cutoff, _BONDS_TIER)
-    raw += _jsonl_raw("forex", today, cutoff, _FOREX_TIER)
-    raw += _jsonl_raw("vector", today, cutoff, {})       # tier inline on events
-    raw += _jsonl_raw("commodity", today, cutoff, _COMMODITY_TIER)
-    raw += _jsonl_raw("themes", today, cutoff, _THEMES_TIER)
-    raw += _jsonl_raw("emergence", today, cutoff, _EMERGENCE_TIER)
-    raw += _jsonl_raw("altdata", today, cutoff, _ALTDATA_TIER)
-    raw += _jsonl_raw("demand", today, cutoff, _DEMAND_TIER)
-    raw += _jsonl_raw("rotation", today, cutoff, _ROTATION_TIER)
-    raw += _jsonl_raw("oracle", today, cutoff, _ORACLE_TIER)
-    raw += _jsonl_raw("watchlist", today, cutoff, _WATCHLIST_TIER)
+    # Every reader returns a TYPED result so a crashed feed is recorded as missing
+    # evidence rather than silently folded into "no alerts".  Each CALL is additionally
+    # wrapped: the readers guard their own internals, but this module's contract is that
+    # a bad feed degrades a section and never fails the build, so a reader that raises at
+    # the boundary must still land as `unavailable` rather than taking the page down.
+    def _safe(source: str, fn, *args) -> dict:
+        try:
+            return fn(*args)
+        except Exception as e:  # noqa: BLE001
+            log.warning("triage: %s reader raised at the boundary (%s)", source, e)
+            return _read(source, READ_UNAVAILABLE, [], f"{type(e).__name__}: {e}")
 
-    # ---- persistence-aware grouping (v2) -----------------------------------
+    reads: list[dict] = [
+        _safe("macro", _macro_raw, today, cutoff),
+        _safe("bonds", _jsonl_raw, "bonds", today, cutoff, _BONDS_TIER),
+        _safe("forex", _jsonl_raw, "forex", today, cutoff, _FOREX_TIER),
+        _safe("vector", _jsonl_raw, "vector", today, cutoff, {}),   # tier inline on events
+        _safe("commodity", _jsonl_raw, "commodity", today, cutoff, _COMMODITY_TIER),
+        _safe("themes", _jsonl_raw, "themes", today, cutoff, _THEMES_TIER),
+        _safe("emergence", _jsonl_raw, "emergence", today, cutoff, _EMERGENCE_TIER),
+        _safe("altdata", _jsonl_raw, "altdata", today, cutoff, _ALTDATA_TIER),
+        _safe("demand", _jsonl_raw, "demand", today, cutoff, _DEMAND_TIER),
+        _safe("rotation", _jsonl_raw, "rotation", today, cutoff, _ROTATION_TIER),
+        _safe("oracle", _jsonl_raw, "oracle", today, cutoff, _ORACLE_TIER),
+        _safe("watchlist", _jsonl_raw, "watchlist", today, cutoff, _WATCHLIST_TIER),
+    ]
+    coverage = coverage_report(reads, ctx.get("_state", READ_UNAVAILABLE))
+    if coverage["state"] == "partial":
+        log.warning("triage: PARTIAL coverage — unavailable: %s (backdrop_missing=%s)",
+                    coverage["blocking"] or coverage["unavailable"],
+                    coverage["backdrop_missing"])
+    raw: list[dict] = [e for r in reads for e in r["events"]]
+
+    # ---- recurrence-aware grouping (v2) ------------------------------------
     # Collapse re-fires of the same (source, type, asset) BEFORE enriching, but keep
     # the fire pattern instead of discarding it.  The representative is the newest
-    # fire (freshest headline + timestamp); its persistence stats summarise the rest.
+    # fire (freshest headline + timestamp); its recurrence stats summarise the rest.
+    # Those stats are DISPLAY facts, not authority: see corroborated_severity().
     # A row claiming a board day AFTER today is either a scheduled catalyst that leaked
     # into the fired-alert feed or a clock defect.  Either way it is not evidence that
     # something HAS happened, so it is quarantined out of the ranked board rather than
@@ -963,7 +1174,7 @@ def build_triage(days: int = 30, today: date | None = None,
 
     enriched: list[dict] = []
     for key, instances in groups.items():
-        pers = _persistence(instances)
+        rec = _recurrence(instances)
         rep = max(instances, key=_fire_sort_key)                    # newest fire
         tier = rep["tier"]
         band = severity_band(tier, rep["raw_sev"])
@@ -974,16 +1185,19 @@ def build_triage(days: int = 30, today: date | None = None,
         validation = _validation(rep["source"], rep["type"], rep.get("edge", ""),
                                  rep.get("edge_zh", ""), reg, rule_sc, rep.get("detail", ""))
         # v2: DEMOTE-ONLY corroboration cap — an isolated, unvalidated one-off can't
-        # sit at the same volume as a persisting / confirmed / backtested signal.
+        # sit at the same volume as a confirmed / backtested signal.  Bare recurrence is
+        # NOT a corroborator (2026-08-20): a transition log cannot show a state held.
         band, corr_reason = corroborated_severity(
-            band, tier, ca_tag, validation, pers["fire_count"], pers["streak_days"])
+            band, tier, ca_tag, validation, rec["fire_count"], rec["span_days"],
+            rec["continuity_verified"])
         # Age is in BOARD days off the representative (latest) fire.  None when that fire
         # has no usable event time — then no recency credit and no "today" wording.
-        rep_board = pers["last_board_date"]
+        rep_board = rec["last_board_date"]
         age = alert_time.age_days({"board_date": rep_board}, today)
         score, comp = priority(tier, band, age, ca_tag)
         act_en, act_zh = action_for(tier, band, ca_tag)
-        life = lifecycle_of(pers["fire_count"], pers["streak_days"], age)
+        life = lifecycle_of(rec["fire_count"], rec["span_days"], age,
+                            rec["continuity_verified"])
         smeta = SOURCES.get(rep["source"], {})
         # Stable content-hash ID: (source, type, asset, BOARD date).  Truncated to 12 hex
         # chars — collision-probability negligible for the ~60-alert board.  Keyed on the
@@ -1008,10 +1222,14 @@ def build_triage(days: int = 30, today: date | None = None,
             "action": act_en, "action_zh": act_zh,
             "cluster": cluster_of(rep["source"], rep["type"]),
             "lifecycle": life,
-            "fire_count": pers["fire_count"], "streak_days": pers["streak_days"],
-            "first_ts": pers["first_ts"], "last_ts": pers["last_ts"],
-            "first_board_date": pers["first_board_date"],
-            "last_board_date": pers["last_board_date"],
+            # RECURRENCE facts — what an event log can prove.  `span_days` is elapsed
+            # first-to-last distance, NOT a streak: nothing here shows the condition
+            # held in between, which is why the card says "re-fired N× across Md".
+            "fire_count": rec["fire_count"], "span_days": rec["span_days"],
+            "first_event_at": rec["first_event_at"], "last_event_at": rec["last_event_at"],
+            "first_board_date": rec["first_board_date"],
+            "last_board_date": rec["last_board_date"],
+            "continuity_verified": rec["continuity_verified"],
             "severity_capped": corr_reason,
             "source_label": smeta.get("label", rep["source"]),
             "source_label_zh": smeta.get("label_zh", rep["source"]),
@@ -1041,8 +1259,13 @@ def build_triage(days: int = 30, today: date | None = None,
         "major": sum(1 for a in kept if a["severity"] == "major"),
         "minor": sum(1 for a in kept if a["severity"] == "minor"),
         "actionable": sum(1 for a in kept if a["tier"] == "act"),
+        # `recurring` is what a generic event log can prove.  `persisting` is kept as a
+        # separate counter and only a source-verified continuity contract can fill it —
+        # today it is always 0, which is the honest number.
+        "recurring": sum(1 for a in kept if a["lifecycle"] == "recurring"),
         "persisting": sum(1 for a in kept if a["lifecycle"] == "persisting"),
         "new_today": sum(1 for a in kept if a["age_days"] == 0),
+        "date_unknown": sum(1 for a in kept if a["board_date"] is None),
         "by_source": {s: sum(1 for a in kept if a["source"] == s) for s in SOURCES},
         "by_cluster": {c: sum(1 for a in kept if a["cluster"] == c) for c in CLUSTER_META},
         "backtested": sum(1 for a in kept if a["validation"].get("backtested") is True),
@@ -1063,7 +1286,11 @@ def build_triage(days: int = 30, today: date | None = None,
         "risk_backdrop": ctx.get("risk_backdrop") or {},
         "events": _events(today),
         "summary": summary,
-        "board_read": _board_read(kept, ctx),
+        # What evidence this build could see.  `coverage.state == "partial"` means the
+        # board below is a partial read and the whole-tape verdict is withdrawn.
+        "coverage": coverage,
+        "coverage_state": coverage["state"],
+        "board_read": _board_read(kept, ctx, coverage),
         "volume": _volume_context(raw, today, days),
         "storylines": _storylines(kept),
         "alerts": kept,

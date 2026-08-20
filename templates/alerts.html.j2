@@ -67,6 +67,8 @@
   .stance { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .stance .word { font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1; }
   .stance.risk-off .word{ color:var(--ink-act, var(--act)); } .stance.mixed .word{ color:var(--ink-warn, var(--warn)); } .stance.constructive .word{ color:var(--ink-ok, var(--ok)); }
+  /* PARTIAL is deliberately not a risk colour — it is an absence of evidence, not a reading */
+  .stance.partial .word{ color:var(--muted); font-size:24px; }
   .stance .badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; border:1px solid currentColor; }
   .read-line { font-size:15px; line-height:1.5; margin-top:11px; max-width:62ch; }
   /* pressure gauge — the signature element: a risk-desk pressure read */
@@ -87,6 +89,14 @@
   .vol-pill { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; margin-top:10px;
               padding:4px 10px; border-radius:16px; border:1px solid var(--line); background:color-mix(in srgb,var(--panel) 60%,transparent); color:var(--muted); }
   .vol-pill b { color:var(--text); }
+  /* partial-coverage strip — states WHICH evidence family is missing, never a traceback */
+  .covbar { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-top:12px; font-size:12px;
+            padding:8px 11px; border-radius:10px; border:1px dashed color-mix(in srgb,var(--warn) 45%,var(--line));
+            background:color-mix(in srgb,var(--warn) 6%,transparent); }
+  .covpill { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+             color:var(--ink-warn, var(--warn)); border:1px solid currentColor; border-radius:14px; padding:2px 8px; }
+  .covsrc { font-size:11.5px; padding:2px 8px; border-radius:12px; border:1px solid var(--line);
+            background:color-mix(in srgb,var(--panel) 70%,transparent); }
 
   /* ── storyline strip ─────────────────────────────────────────────────── */
   .stories { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; }
@@ -171,6 +181,7 @@
   .sevpill { font-size:10.5px; font-weight:700; padding:1px 8px; border-radius:8px; border:1px solid; display:inline-flex; align-items:center; gap:5px; text-transform:capitalize; }
   .lifepill { font-size:10px; font-weight:700; padding:1px 8px; border-radius:8px; letter-spacing:.02em; }
   .life-new{ color:var(--ink-info, var(--info)); border:1px solid color-mix(in srgb,var(--info) 45%,var(--line)); }
+  .life-recurring{ color:var(--ink-info, var(--info)); border:1px solid color-mix(in srgb,var(--info) 45%,var(--line)); background:color-mix(in srgb,var(--info) 8%,transparent); }
   .life-persisting{ color:var(--ink-warn, var(--warn)); border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line)); background:color-mix(in srgb,var(--warn) 8%,transparent); }
   .life-fading{ color:var(--muted); border:1px dashed var(--line); }
   .ac .hl { font-size:15px; font-weight:600; margin:6px 0 2px; line-height:1.35; }
@@ -231,25 +242,41 @@
     <div>
       <div class="stance {{ stance }}">
         <span class="word">{{ t(
-          {'risk-off':'RISK-OFF','mixed':'MIXED','constructive':'CONSTRUCTIVE'}[stance],
-          {'risk-off':'偏防御','mixed':'喜忧参半','constructive':'偏进攻'}[stance]) }}</span>
-        <span class="badge {{ 'c-crit' if stance=='risk-off' else ('c-major' if stance=='mixed' else 'c-ok') }}">
-          {{ t('pressure','压力') }} <span class="mono">{{ br.score if br.score is not none else '—' }}</span>/100</span>
+          {'risk-off':'RISK-OFF','mixed':'MIXED','constructive':'CONSTRUCTIVE','partial':'PARTIAL READ'}[stance],
+          {'risk-off':'偏防御','mixed':'喜忧参半','constructive':'偏进攻','partial':'读数不完整'}[stance]) }}</span>
+        <span class="badge {{ 'c-crit' if stance=='risk-off' else ('c-major' if stance in ('mixed','partial') else 'c-ok') }}">
+          {{ t('pressure','压力') }} <span class="mono">{{ br.score if br.score is not none else '—' }}</span>/100{% if stance=='partial' %}{{ help(
+            'No pressure reading is shown because a consequential evidence family could not be read on this build. We will not compute a whole-tape score from a partial read — a missing risk feed must never be able to look like calm — and we will not substitute an invented cautious number either. Unknown stays unknown.',
+            '本次构建中有关键证据类别无法读取，因此不显示压力读数。我们不会用不完整的读数计算整体盘面分数 — 缺失的风险数据源绝不能看起来像市场平静 — 也不会用臆造的保守数字代替。未知即未知。') }}{% endif %}</span>
       </div>
       <p class="read-line">{{ t(br.one_liner or 'A quiet tape — no cross-asset alerts of note in the window.',
                                br.one_liner_zh or '盘面平静 — 窗口内无值得注意的跨资产警报。') }}
         {{ help('This is a DESCRIPTIVE read of what is firing right now plus the documented macro backdrop — not a forecast and not a probability the market falls. The pressure gauge is a transparent blend of how many act-tier and cross-asset-confirmed stress alerts are live; its parts are named in the sentence.',
                 '这是对当前触发情况与有据可查的宏观背景的描述性解读 — 并非预测，也不是市场下跌的概率。压力表是执行级与获跨资产佐证的压力类警报数量的透明混合；其构成已在句中列明。') }}</p>
+      {#- A partial read gets NO gauge. Drawing a needle from a subset of the evidence is
+          exactly how a missing risk feed comes to look like calm. -#}
+      {% if br.score is not none %}
       <div class="gauge">
-        <div class="gauge-track"><div class="gauge-mark" style="left:calc({{ br.score if br.score is not none else 0 }}% - 1px)"></div></div>
+        <div class="gauge-track"><div class="gauge-mark" style="left:calc({{ br.score }}% - 1px)"></div></div>
         <div class="gauge-scale"><span>{{ t('constructive','偏进攻') }}</span><span>{{ t('mixed','喜忧参半') }}</span><span>{{ t('risk-off','偏防御') }}</span></div>
       </div>
+      {% endif %}
+      {% if coverage and coverage.state == 'partial' %}
+      <div class="covbar">
+        <span class="covpill">{{ t('partial evidence','证据不完整') }}</span>
+        <span class="muted">{{ t('unavailable this build','本次构建无法读取') }}:</span>
+        {% for s in coverage.sources if s.state == 'unavailable' %}<span class="covsrc">{{ t(s.label, s.label_zh) }}</span>{% endfor %}
+        {% if coverage.backdrop_missing %}<span class="covsrc">{{ t('cross-asset backdrop','跨资产背景') }}</span>{% endif %}
+        {{ help('A source that failed to read is MISSING EVIDENCE, not zero alerts. The ranked list below is still real and still usable — it is simply not the whole tape, so the board declines to publish an overall stance or pressure score until every consequential family reads again.',
+                '读取失败的数据源意味着证据缺失，而非“没有警报”。下方的排序列表依然真实可用 — 只是它并非盘面的全部，因此在所有关键证据类别恢复读取之前，本看板不发布总体立场或压力分数。') }}
+      </div>
+      {% endif %}
     </div>
     <div>
       <div class="score">
         <div class="s act"><div class="n mono">{{ summary.actionable }}</div><div class="lab">{{ t('act now','立即行动') }}{{ help('Act-tier: a true cross-asset stress or regime call worth sizing around today.','执行级：值得今日据以调整仓位的真正跨资产压力或机制信号。') }}</div></div>
         <div class="s watch"><div class="n mono">{{ summary.major }}</div><div class="lab">{{ t('worth watching','值得关注') }}</div></div>
-        <div class="s"><div class="n mono">{{ summary.persisting }}</div><div class="lab">{{ t('persisting','持续中') }}{{ help('Flags that have re-fired across several days rather than a one-off — stickier, and easy to lose in a plain de-duplicated list.','已连续数日反复触发（而非一次性）的信号 — 黏性更强，在普通去重列表中容易被忽略。') }}</div></div>
+        <div class="s"><div class="n mono">{{ summary.recurring }}</div><div class="lab">{{ t('re-fired','重复触发') }}{{ help('Flags that have fired several times across a span of days rather than once. That is a fact about the LOG — it counts firings, it does not show the condition held continuously in between, so we call it re-fired, never persisting.','多次触发（而非一次性）的信号，其首末触发相隔数日。这是关于日志的事实 — 它统计触发次数，并不能证明该状态在此期间持续存在，因此我们称之为“重复触发”，而非“持续中”。') }}</div></div>
         <div class="s"><div class="n mono">{{ summary.total }}</div><div class="lab">{{ t('live alerts','活跃警报') }}</div></div>
       </div>
       {% if volume and volume.state %}
@@ -281,7 +308,7 @@
       <div class="st-tags">
         {% if s.act %}<span class="st-tag act">{{ icon('accel', 'fic') }} {{ s.act }} {{ t('act','执行') }}</span>{% endif %}
         {% if s.critical %}<span class="st-tag act">{{ s.critical }} {{ t('critical','关键') }}</span>{% endif %}
-        {% if s.persisting %}<span class="st-tag persist">↻ {{ s.persisting }} {{ t('persisting','持续') }}</span>{% endif %}
+        {% if s.recurring %}<span class="st-tag persist">↻ {{ s.recurring }} {{ t('re-fired','重复触发') }}</span>{% endif %}
         {% for tk in s.assets[:5] %}<span class="asset-chip">{{ tk }}</span>{% endfor %}
       </div>
     </button>
@@ -324,7 +351,7 @@
   <div class="row">
     <label class="fsearch">{{ icon('search', 'fic') }} <input type="text" id="q" autocomplete="off" placeholder="Filter by ticker, theme or keyword…" data-ph-zh="按代码、主题或关键词筛选…" aria-label="Filter alerts"></label>
     <button type="button" class="fbtn quick" data-quick="new" aria-pressed="false">{{ icon('spark', 'fic') }} {{ t('new today','今日新增') }}</button>
-    <button type="button" class="fbtn quick" data-quick="persisting" aria-pressed="false">{{ icon('swirl', 'fic') }} {{ t('persisting','持续中') }}</button>
+    <button type="button" class="fbtn quick" data-quick="recurring" aria-pressed="false">{{ icon('swirl', 'fic') }} {{ t('re-fired','重复触发') }}</button>
     <span class="showing"><span id="showN" class="mono">{{ summary.total }}</span> {{ t('of','/') }} <b class="mono">{{ summary.total }}</b> {{ t('shown','显示') }} · <button type="button" class="freset" id="reset">{{ t('reset','重置') }}</button></span>
   </div>
   <div class="row" role="group" aria-label="Priority filter">
@@ -364,8 +391,12 @@
       <div class="meta">
         <span class="src">{{ a.source_icon }} {{ t(a.source_label, a.source_label_zh) }}</span>
         <span class="sevpill bd-{{ sevcls }} c-{{ sevcls }}"><span class="dot bg-{{ sevcls }}"></span>{{ t(a.severity, {'critical':'关键','major':'重要','minor':'次要'}[a.severity]) }}</span>
+        {#- RECURRENCE, not persistence: the log proves how many times it fired and how far
+            apart, never that the condition held in between. "persisting" is reserved for a
+            source that verifies current-state continuity. -#}
         {% if a.lifecycle=='new' %}<span class="lifepill life-new">🆕 {{ t('new','新') }}</span>
-        {% elif a.lifecycle=='persisting' %}<span class="lifepill life-persisting">↻ {{ t('persisting','持续') }} {{ a.streak_days }}{{ t('d','天') }}</span>
+        {% elif a.lifecycle=='recurring' %}<span class="lifepill life-recurring">↻ {{ t('re-fired','重复触发') }} {{ a.fire_count }}× {{ t('across','历时') }} {{ a.span_days }}{{ t('d','天') }}</span>
+        {% elif a.lifecycle=='persisting' %}<span class="lifepill life-persisting">↻ {{ t('persisting','持续') }} {{ a.span_days }}{{ t('d','天') }}</span>
         {% elif a.lifecycle=='fading' %}<span class="lifepill life-fading">{{ t('fading','消退') }}</span>{% endif %}
         {#- The date is the EVENT's board day (America/New_York), never our build clock.
             An event whose time we cannot establish says so instead of borrowing today. -#}
@@ -375,7 +406,7 @@
         {% else %}
         <span class="mono muted">{{ t('date unknown','日期未知') }}{{ help('This alert reached us without a usable event time, so it earns no freshness credit and is never labelled today. We show it rather than invent a date for it.','该警报到达时没有可用的事件时间，因此不获得新鲜度加分，也绝不标注为“今天”。我们照实展示，而非为其编造日期。') }}</span>
         {% endif %}
-        {% if a.fire_count>1 %}<span class="muted">· {{ t('fired','触发') }} <b class="mono">{{ a.fire_count }}×</b>{% if a.streak_days>0 %} {{ t('over','历') }} {{ a.streak_days }}{{ t('d','天') }}{% endif %}</span>{% endif %}
+        {% if a.fire_count>1 %}<span class="muted">· {{ t('re-fired','重复触发') }} <b class="mono">{{ a.fire_count }}×</b>{% if a.span_days>0 %} {{ t('across','历时') }} {{ a.span_days }}{{ t('d','天') }}{{ help('Elapsed distance from the first firing to the latest one — NOT a streak. The log records ' ~ a.fire_count ~ ' firings spanning ' ~ a.span_days ~ ' days; it does not show the condition was continuously active between them.', '自首次触发到最近一次触发的间隔 — 并非连续天数。日志记录了 ' ~ a.fire_count ~ ' 次触发，跨度 ' ~ a.span_days ~ ' 天；但并不能证明该状态在此期间持续存在。') }}{% endif %}</span>{% endif %}
       </div>
       <div class="hl">{{ t(a.headline, a.headline_zh) }}</div>
       {% if a.detail %}<div class="dt">{{ t(a.detail[:200], a.detail_zh[:200]) }}</div>{% endif %}
@@ -435,9 +466,11 @@
       <dt>{{ t('Triage priority (0-100)','分诊优先级 (0-100)') }}</dt>
       <dd>{{ t('A transparent sum of four parts: conviction (act 40 / watch 22 / context 8), severity (critical 30 / major 18 / minor 6), recency (fresh 20 → old 2), and cross-asset agreement (+10 confirm, −6 diverge). It tells you what to LOOK at first. It is explicitly NOT a probability the call is correct.','四部分的透明加总：信念（执行40／观察22／背景8）、严重度（关键30／重要18／次要6）、新鲜度（新20→旧2）、跨资产一致性（佐证+10、背离−6）。它告诉你先看什么，明确不是判断正确的概率。') }}</dd>
       <dt>{{ t('Severity you can trust — corroboration, not volume','可信的严重度 — 靠佐证，而非音量') }}</dt>
-      <dd>{{ t("Each engine has its own 'high/medium' scale, so a single-name flag can read as loud as a credit blow-out. We re-tier every alert by its TRUE cross-asset importance, then cap it back down unless something corroborates it — a measured edge, agreement from the cross-asset tape, or genuine persistence (it kept firing for days). A severity band is only ever LOWERED, never inflated, so nothing shouts louder than it has earned.",'每个引擎有自己的“高／中”刻度，使单一个股信号看起来与信用崩溃一样响。我们按真正的跨资产重要性重新分级，再予以回调 — 除非有佐证：可测边际、跨资产盘面的一致性，或真实的持续性（连日反复触发）。严重度只会被下调，绝不虚高，因此没有信号会喊得超过它应得的音量。') }}</dd>
-      <dt>{{ t('Persistence is signal','持续性即信号') }}</dt>
-      <dd>{{ t("A flag that re-fires every day for a week is stickier than a one-off — a plain de-duplicated list throws that away. We keep the fire count and streak so a persisting alert earns its place, and show it on the card ('fired 9× over 22d').",'连续一周每天触发的信号比一次性的更具黏性 — 普通去重列表会将其丢弃。我们保留触发次数与连续天数，使持续型警报凭此立足，并在卡片上显示（“22天内触发9次”）。') }}</dd>
+      <dd>{{ t("Each engine has its own 'high/medium' scale, so a single-name flag can read as loud as a credit blow-out. We re-tier every alert by its TRUE cross-asset importance, then cap it back down unless something corroborates it — a measured edge, agreement from the cross-asset tape, or true act-tier weight. A severity band is only ever LOWERED, never inflated, so nothing shouts louder than it has earned.",'每个引擎有自己的“高／中”刻度，使单一个股信号看起来与信用崩溃一样响。我们按真正的跨资产重要性重新分级，再予以回调 — 除非有佐证：可测边际、跨资产盘面的一致性，或真正的执行级权重。严重度只会被下调，绝不虚高，因此没有信号会喊得超过它应得的音量。') }}</dd>
+      <dt>{{ t('Re-fired is a count, not a streak','“重复触发”是次数，不是连续天数') }}</dt>
+      <dd>{{ t("A flag that keeps coming back is worth seeing, so we keep the fire count and the span between the first and last firing instead of de-duplicating them away. But an event log can only prove WHEN something fired — never that the condition held continuously in between. Three firings scattered across 29 days are not a 29-day condition, so the card says 're-fired 3× across 29d' and the word 'persisting' is reserved for a source that actually verifies current-state continuity. Recurrence is also no longer allowed to corroborate a severity band: it is shown, it does not rank.",'反复出现的信号值得关注，因此我们保留触发次数以及首末触发之间的跨度，而非直接去重丢弃。但事件日志只能证明某事在何时触发 — 无法证明该状态在此期间持续存在。分散在 29 天里的三次触发并不构成一个持续 29 天的状态，因此卡片显示“重复触发 3 次，历时 29 天”，而“持续中”一词仅保留给真正验证了当前状态连续性的数据源。重复触发也不再被用作严重度的佐证：它只作展示，不参与排序权重。') }}</dd>
+      <dt>{{ t('Partial evidence is not a calm tape','证据不完整不等于盘面平静') }}</dt>
+      <dd>{{ t("Every source is read with an explicit outcome: it read fine, it read fine and had nothing to say, it has no store yet, or it could not be read at all. Those are not the same thing. If a consequential family — macro, bonds, commodity, the BTC risk regime — cannot be read, its alerts do not simply vanish into a quieter-looking board: the page says which evidence is missing and withholds the overall stance and the pressure score entirely. A missing risk feed must never be able to make the product look safer, and we do not substitute an invented cautious number either.",'每个数据源都带有明确的读取结果：读取正常、读取正常但无内容、尚无存储文件，或完全无法读取。这些并不等同。若关键证据类别 — 宏观、债券、大宗商品、比特币风险机制 — 无法读取，其警报不会悄然消失、使看板显得更平静：页面会指明缺失的证据类别，并完全不给出总体立场与压力分数。缺失的风险数据源绝不能让产品看起来更安全，我们也不会用臆造的保守数字来代替。') }}</dd>
       <dt>{{ t('Measured edge, or honest silence','可测边际，或坦诚沉默') }}</dt>
       <dd>{{ t("A hit-rate / IC / Deflated-Sharpe appears ONLY where the validation layer actually measured that signal family (the recession composite, the regime quad, the BTC risk regime, the commodity risk index). For condition-based alerts never backtested as timing signals, we say 'documented, not backtested' rather than invent a number.",'只有当验证层确实度量过该信号族（衰退综合、机制四象限、比特币风险机制、商品风险指数）时，才显示命中率／IC／去偏夏普。对于从未作为择时信号回测的条件型警报，我们标注“有据可查，但未回测”，而非编造数字。') }}</dd>
     </dl>
@@ -492,7 +525,7 @@
     if (sel.sev!=='all'){ if (sel.sev==='act'){ if(c.dataset.tier!=='act') return false; } else if (c.dataset.sev!==sel.sev) return false; }
     if (sel.cl!=='all' && c.dataset.cluster!==sel.cl) return false;
     if (sel.quick==='new' && c.dataset.age!=='0') return false;
-    if (sel.quick==='persisting' && c.dataset.life!=='persisting') return false;
+    if (sel.quick==='recurring' && c.dataset.life!=='recurring') return false;
     if (sel.q){ if ((c.dataset.q||'').indexOf(sel.q)===-1) return false; }
     return true;
   }

@@ -194,21 +194,30 @@ def test_exp_overrode_button_exists():
 
 def test_build_triage_has_alert_id():
     """build_triage returns alerts that each carry a non-empty alert_id field."""
+    from engine import alert_triage as at
     from engine.alert_triage import build_triage
     # Patch all raw feed loaders to return a single synthetic alert so the test
-    # doesn't depend on any data files.
+    # doesn't depend on any data files.  Readers return a TYPED read since 2026-08-20
+    # (source / state / events): a crashed feed must be recorded as missing evidence
+    # rather than as "zero alerts", so `[]` alone is no longer a valid reader result.
     synthetic = [{
         "source": "macro", "type": "ebp_widening", "asset": "macro",
         "ts": "2026-07-06T00:00:00", "date_only": True,
+        "event_date": "2026-07-06", "board_date": "2026-07-06",
+        "event_ts": None, "source_asof": None, "recorded_at": None,
+        "date_precision": "date",
         "raw_sev": "high", "tier": "act",
         "headline": "Test alert", "headline_zh": "Test alert",
         "detail": "", "detail_zh": "",
         "anchor": "", "edge": "", "edge_zh": "",
     }]
     with (
-        unittest.mock.patch("engine.alert_triage._macro_raw", return_value=synthetic),
-        unittest.mock.patch("engine.alert_triage._jsonl_raw", return_value=[]),
-        unittest.mock.patch("engine.alert_triage._load_context", return_value={}),
+        unittest.mock.patch("engine.alert_triage._macro_raw",
+                            return_value=at._read("macro", at.READ_OK, synthetic)),
+        unittest.mock.patch("engine.alert_triage._jsonl_raw",
+                            side_effect=lambda source, *a, **k: at._read(source, at.READ_OK_ZERO, [])),
+        unittest.mock.patch("engine.alert_triage._load_context",
+                            return_value={"_state": at.READ_OK}),
         unittest.mock.patch("engine.alert_triage._events", return_value={"items": [], "next": None}),
         unittest.mock.patch("engine.alert_triage._registry_index", return_value={}),
         unittest.mock.patch("engine.alert_triage._rule_scorecard", return_value={}),
