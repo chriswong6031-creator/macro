@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T05:21:11.448099+00:00",
-  "count": 1455,
+  "generated_at": "2026-08-20T06:24:34.309642+00:00",
+  "count": 1458,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -300,6 +300,66 @@
       "tickers": [],
       "top_pick": false,
       "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wsa9qjhlngy-c5cfd6",
+      "title": "UBS Equity Preference List European Financials 2026 08 19",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:09Z",
+      "summary_points": [
+        "**European Banks Valuation & Yield**: Trading at 11x 2027 earnings with 5% dividend yield, supported by resilient loan demand, stable rates, and solid profitability; valuations not expensive vs.",
+        "broader market.",
+        "**Extreme Concentration Risk**: 88% portfolio in European banks (ex-S&L), with Santander (12.0% weight) as largest holding; 36% UK bank exposure (GBP volatility) and 46% EU exposure (EUR volatility) amplify FX risk.",
+        "**Banking Catalysts & Execution**: ABN Amro targeting 12% ROE by 2028 via cost optimization (cost-income <55%); Santander integration (Webster/TSB) driving growth toward 2028 ROE target (>20%).",
+        "**Insurance Sector Headwinds**: P&C earnings momentum fading due to pricing deceleration and margin normalization; life insurance improving but sector upside constrained by limited earnings surprises and competitive pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mbejgl8u2ar-611f7c",
+      "title": "Bond markets",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:08Z",
+      "summary_points": [
+        "**Credit Outlook Revisions**: UBS upgrades Entegris, McKesson, Occidental, Sandoz to *Improving*; downgrades Telstra, UK Power Networks to *Deteriorating*; removes Tesco from Core list amid 2026 earnings season impacts.",
+        "**Senior vs Subordinated Bond Dynamics**: Senior bonds yield 4.8–6.0% (e.g., Toyota 4.8% YTM, A1/A+), subordinated bonds yield 6.5–7.1% (e.g., Allianz 6.5% YTW, A3/A), reflecting elevated risk/reward with regulatory risk (Solv 2 T2) in subordinated segments.",
+        "**Regulatory Yield Pressure**: Solvency II (Solv 2 RT1/T2) and Basel III (Basel 3 T2) impacts drive yield spreads on subordinated bonds (e.g., EDP EUR 4.475 2034, YTW 4.5%), increasing credit risk exposure.",
+        "**CHF vs GBP Performance Divergence**: CHF bonds (0.7–1.3% YTM) outperform GBP (4.6–6.5% YTM) due to stronger credit ratings (A1/A+), green bonds (Toyota, Holcim), and sustainability tailwinds.",
+        "**Key Issuer Fundamentals**: Entegris (AI-driven revenue +11.5% y/y, net leverage 3.4x), Occidental (oil price +23.7% y/y, net debt down 53% to $9.6bn) and Sandoz (biosimilars 33% revenue, EBITDA +15%) show improving credit profiles."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 50,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-syl1nppxa3l-f8dba3",
+      "title": "Natural gas",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:08Z",
+      "summary_points": [
+        "**Inventory Glut & Price Pressure**: US natural gas inventories rising faster than seasonal norms, with Dec 2026/Mar 2027/Jun 2027 price forecasts revised down by $0.20/mmbtu due to supply outpacing demand, reducing near-term trading opportunities.",
+        "**Pipeline Capacity Catalyst**: New Texas/Louisiana/Oklahoma pipelines poised to boost supply capacity if prices rise, creating a structural long-term supply growth lever independent of current LNG export weakness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
