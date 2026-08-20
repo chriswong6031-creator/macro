@@ -791,10 +791,10 @@
     "superseded": "SATS",
     "current": "ECHO",
     "superseded_rows": 128,
-    "current_rows": 128,
+    "current_rows": 129,
     "shared_keys": 128,
     "superseded_only_keys": 0,
-    "current_only_keys": 0,
+    "current_only_keys": 1,
     "span": [
      "2008-11-25",
      "2026-04-23"
@@ -806,7 +806,7 @@
   "ticker_key_migrations": {
    "SATS": "ECHO"
   },
-  "ledger_rows": 59012
+  "ledger_rows": 59025
  },
  "grace_days": 30,
  "stale_calendar_days": 7,
