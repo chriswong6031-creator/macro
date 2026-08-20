@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T09:22:38.166707+00:00",
-  "count": 1467,
+  "generated_at": "2026-08-20T10:18:37.829770+00:00",
+  "count": 1470,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -82,6 +82,48 @@
   ],
   "items": [
     {
+      "id": "marketdesk-czcxavxorjj-280125",
+      "title": "JPM Daily Credit Strategy",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T10:08:51Z",
+      "summary_points": [
+        "**Earnings Growth Fundamentals**: 86% S&P 500 coverage shows sector acceleration (Energy 147%, Communications 117%, Discretionary 92%, Tech 70%), with debt-weighted earnings growth >20% across all cohorts; intermediate debt buckets ($20-50bn, $10-15bn) accelerating to 33% and 37%.",
+        "**Credit Spread Divergence**: Strong earnings issuers (2Q >40%) trade at tighter spreads (e.g., Caterpillar 51bp vs Comcast 134bp), signaling credit quality differentiation; weak growth issuers face widening spreads reflecting deterioration risks.",
+        "**High-Grade Liquidity Risk**: HG net dealer inventories negative (-$5,296m), dealer net positions down $2.5bn to $2.4bn, coupled with $106mn HY ETF outflows, indicating acute liquidity pressure and price discovery risks.",
+        "**HG Flow Dynamics**: $1.256bn high-grade ETF inflows (9% below 5d avg) amid dealer selling; 10s30s curve flattened to 17.7bp (42% of 6m range), signaling sector-specific technical shifts.",
+        "**HG Spread Widening**: HG bonds trading 38bp wider to CDS on average (widest since May 2026), with JULI spread at 96bp (2bp WoW), reflecting deteriorating credit conditions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-g0ncidbqzfc-373ae2",
+      "title": "JPM SK hynix W40trn buyback",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T08:50:09Z",
+      "summary_points": [
+        "**Buyback Acceleration & Policy Shift**: SK Hynix announced W40T buyback (3.7% market cap) and raised shareholder return ceiling to >50% FCF, accelerating from Sept to Aug 19, signaling proactive capital return strategy.",
+        "**Valuation Anchor**: Current 6.4x P/E (trailing 12M) and 3.8x P/E (H126 annualized) align with buyback benchmark, supporting further capital returns.",
+        "**Upcoming Catalysts**: 3Q26 earnings call (Oct-end), HBM contract price update (Sep-end), and US subsidiary listing (next month) to drive near-term momentum.",
+        "**Institutional Conviction**: J.P.",
+        "Morgan’s Asia Pacific coverage shows 83% buy rating for SK Hynix, reflecting strong sector confidence amid semiconductor sector dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-nhrzqncmoud-09e48a",
       "title": "GS Basics Gross Concerns. Operation Buyback. Token Cost Collapse",
       "institution": "S&T",
@@ -116,6 +158,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-n0crabcksmn-f7e3dd",
+      "title": "JPM International Market Intelligence | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T08:38:03Z",
+      "summary_points": [
+        "**Treasury Buybacks & Policy Intent**: Deliberate long-end Treasury buybacks counter rising yields (Operation Twist-like), with JPM noting policy through-line in actions (EURJPY intervention, guidance tweaks).",
+        "**US Debt & Term Premium**: US gross debt crosses $40T; buybacks temporary (no fiscal drivers), debasement trades (Gold/Miners) and higher term premium expected long-term.",
+        "**Iran Geopolitics**: \"Status quo\" with military realities, declining oil inventories, China adding reserves, US economic pressure; crack spreads critical (not Brent).",
+        "**CTA Positioning Extremes**: Equities show severe net short (S&P 500 87%, Euro Stoxx 50 93%), fixed income concentrated net long (Italian 10y 10%, Australian 3y 30%), heightening equity risk.",
+        "**LLM Expenditure Index Decline**: LLM Token Expenditure Index drops sharply from ~2000 (May '26) to ~1000 (Aug '26), signaling cost pressure/reduced demand in AI infrastructure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
