@@ -98,7 +98,7 @@ capture the `0 / N` header and the header-only table.
 **Overview.** Two independent stale mechanisms, of different character:
 1. **Absolute-clock guard** — `_dtpState()` (`templates/sector_central.html.j2:1780-1815`):
    `var builtMs=Date.parse(pulse.as_of_utc||''); var stale=isFinite(builtMs)&&(Date.now()-builtMs)>12*3600e3;`
-   (`:1794-1795`). This compares **now** against the payload's own absolute UTC timestamp —
+   (`:1799-1800`). This compares **now** against the payload's own absolute UTC timestamp —
    the correct shape per the house law (build-time deltas can't see a dead writer; this reads
    `Date.now()` fresh on every client render), so a genuinely dead nightly writer whose file
    simply never updates IS caught, unlike a baked `lag_min`/`source_age_min` field would be.
@@ -364,7 +364,7 @@ control. **Fixture recipe:** for each capped surface, three row-count variants: 
 
 ## Fail-open guards found
 
-- `templates/sector_central.html.j2:1794-1795`: `var stale=isFinite(builtMs)&&(Date.now()-builtMs)>12*3600e3;`
+- `templates/sector_central.html.j2:1799-1800`: `var stale=isFinite(builtMs)&&(Date.now()-builtMs)>12*3600e3;`
   — `isFinite(NaN)` is `false`, so a malformed/absent `pulse.as_of_utc` makes `stale` evaluate
   `false` (not stale) rather than flagging the input as bad. This is the mission-named
   NaN-comparison trap, confirmed present. It differs from the canonical trap shape (`if (age >

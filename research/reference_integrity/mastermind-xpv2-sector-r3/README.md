@@ -9,12 +9,20 @@ commissioning-session review.
 ## Why this pack exists
 
 Four critics BLOCKED the R2 Sector Central mockup for inventing and mixing
-authority and for losing capabilities present in production. This pack makes
-it impossible for the R3 designer to guess what any number, action, row,
-route, clock, access behavior, or failure state means: every claim in it
-cites production code (`file:line`) or a committed payload, never inference,
-and every gap the archaeology found is carried forward as a GAP rather than
-filled by guessing.
+authority and for losing capabilities present in production. This pack exists
+to close that gap: every claim in it is bound either to a `file:line` in
+production code (the routing constants, the gate config, the wording
+strings) or to the frozen fixture (`fixture/`, so R3's evidence is
+reproducible instead of racing the nightly), and every gap the archaeology
+found is carried forward as a GAP rather than filled by guessing. It does
+not claim to have eliminated every possible way an R3 designer could
+misread a number or an authority label — it claims to have made the correct
+reading citable and testable. The `file:line` citations were sampled by an
+adversarial review after the first pass and three were found off by a small
+margin (a docstring/blank-line offset, not a wrong claim) — see git history
+for the corrections; treat any citation as "verify against the code before
+trusting it exactly," the same discipline the archaeology itself used
+against the R2 review bundle.
 
 ## Inputs (read-only — do not edit)
 

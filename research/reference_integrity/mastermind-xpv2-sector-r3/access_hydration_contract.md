@@ -16,9 +16,15 @@ sector_central_gate:
 read by `scripts/build_sector_central.py::_gate_cfg()` (defaults to
 `{"gated": False, "preview_rows": 3}` only on a missing/malformed block —
 current production state is **gated, preview=3**). Live freeze-time split at
-capture (2026-08-20): `preview=3, locked=29, total=44` — counts computed off
-the FULL board regardless of gate state (see Deliverable 2's Overview rows
-for the count mechanism).
+capture (2026-08-20): `preview=3, locked=29, total=44` — this panel object is
+computed off the full board, not the preview slice; with `gated:false` (or
+nothing withheld) `split_actnow` returns no count object at all
+(`scripts/build_sector_central.py:106-107,124-125`) — an ungated or
+nothing-withheld page ships byte-identical to the pre-gate one, not a panel
+with zeroed-out counts. (This is distinct from the lane HEADER counts —
+`.acth-count` — which really are computed off the full `action_board` list
+unconditionally regardless of gate state; see Deliverable 2's Overview rows
+for that separate mechanism.)
 
 **Every other view's payload is ungated**: Explore (`basketdata/baskets.json`,
 `basketdata/narrative_emergence.json`, `oracledata/tm_manifest.json` +

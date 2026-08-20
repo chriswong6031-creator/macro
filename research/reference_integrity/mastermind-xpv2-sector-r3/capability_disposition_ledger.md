@@ -22,7 +22,7 @@ into the note column verbatim — it is not resolved by inference here.
 
 | # | Capability | Disposition | Dossier cite | Note |
 |---|---|---|---|---|
-| 1 | Six action-lane keys (`buy_now,buy_soon,on_the_run,take_profits,hold,avoid`) folding into five rendered columns (hold+avoid share "Stand aside") | RETAIN | lane A §1, A1 | Fixture-pinned: `scripts/build_sector_central.py:67-73 _ACTNOW_LANES` |
+| 1 | Six action-lane keys (`buy_now,buy_soon,on_the_run,take_profits,hold,avoid`) folding into five rendered columns (hold+avoid share "Stand aside") | RETAIN | lane A §1, A1 | Fixture-pinned: `scripts/build_sector_central.py:67-74 _ACTNOW_LANES` |
 | 2 | Exact EN/ZH lane labels + subcopy (Buy now / Almost ready / In favour — don't chase / Take profits / Stand aside) | RETAIN | lane A §2-3 | Byte-verified against R2 critic's own DAC-006 quotes |
 | 3 | Lane header counts computed off the FULL board, never gated ("counts are free, names are paid") | RETAIN | lane A §4 | |
 | 4 | Row merge order: theme (basket) rows lead, sector rows follow, within each lane | RETAIN | lane A §5 | Build-time, server-side; not client-resortable |

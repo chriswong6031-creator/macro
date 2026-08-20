@@ -1,5 +1,5 @@
 {
-  "_note": "SHA-256 receipts for the XPV2-SC-R3A fixture set. Each entry pairs the production source path (site/<...>) with the frozen fixture copy (fixture/<...>). Both hashes MUST match each other and MUST match recomputation at test time (ADJUDICATIONS.md SS A10) -- a mismatch means either the fixture was hand-edited (forbidden) or the copy step failed.",
+  "_note": "SHA-256 receipts for the XPV2-SC-R3A fixture set. Each entry carries ONE sha256, computed once at capture from the fixture/<...> file; the entry also names the production source path (site/<...>) it was copied from, since the copy was verified byte-identical to that source AT CAPTURE TIME (a single hash covers both by construction, not two separate hashes). Recomputation at test time (ADJUDICATIONS.md SS A10) MUST match this stored hash -- a mismatch means the fixture file was altered after capture. The 'correction/UNREPRESENTED.md' entry is the one exception: it is an authored doc, not a copy of any site/ artifact, so its 'source' is null.",
   "captured_commit": "4c55fe433490adfd75fd901ef25f5793db2202db",
   "captured_date": "2026-08-20",
   "entries": [
@@ -121,7 +121,15 @@
       "fixture": "fixture/oracledata/tm_manifest.json",
       "sha256": "580c277ff00d365650ce7ebbc56a680c5c51589f98c117bf4b1f2898f84fe319",
       "size_bytes": 60357
+    },
+    {
+      "path": "correction/UNREPRESENTED.md",
+      "source": null,
+      "fixture": "fixture/correction/UNREPRESENTED.md",
+      "sha256": "04d9017c830fc3301819e67d03b63153e10c93141d9b64183f602041dbe0de72",
+      "size_bytes": 2135,
+      "note": "authored doc, not a copy of a site/ artifact -- records the State-8 BLOCKED_DATA finding (ADJUDICATIONS.md SS A6) so the fixture set is complete"
     }
   ],
-  "total_fixture_bytes": 4333745
+  "total_fixture_bytes": 4335880
 }

@@ -1,15 +1,20 @@
 # XPV2-SC-R3A fixture — PROVENANCE
 
-Deliverable 3 provenance record. Every file under `fixture/` is a byte-for-byte
-copy of a production artifact under `site/` at the capture commit below — no
-recompute, no reordering, no reformatting. SHA-256 receipts for both the
-source (`site/…`) and the fixture (`fixture/…`) copy of every file are in
-`fixture/receipts.json`; the two hashes are identical for every entry
-(verified at capture time and re-verified in `tests/test_xpv2_sector_r3_fixture.py`).
+Deliverable 3 provenance record. Every producer-derived file under `fixture/`
+is a byte-for-byte copy of a production artifact under `site/` at the
+capture commit below — no recompute, no reordering, no reformatting.
+`fixture/receipts.json` carries ONE SHA-256 per entry, computed from the
+`fixture/…` file; the copy was verified byte-identical to its `site/…`
+source at capture time, so that single hash covers both by construction —
+there are not two separate hashes to compare. Recomputation at test time
+(`tests/test_xpv2_sector_r3_fixture.py`) must match the stored hash. One
+entry, `correction/UNREPRESENTED.md`, is an authored doc rather than a
+`site/` copy (see §"What is NOT in this fixture set" below) — its receipt
+still carries a hash, just no `site/` source.
 
 - **Capture commit**: `4c55fe433490adfd75fd901ef25f5793db2202db` (`git rev-parse HEAD`, this worktree, at capture time)
 - **Capture date**: 2026-08-20
-- **Total fixture size**: 4,333,745 bytes (≈4.13 MiB) — well under the 50MB size guard; no truncation was needed.
+- **Total fixture size**: 4,335,880 bytes (≈4.13 MiB) — well under the 50MB size guard; no truncation was needed. (17 producer-copied JSON artifacts + 1 authored correction doc.)
 
 ## Source → fixture → producer map
 
@@ -21,8 +26,9 @@ source (`site/…`) and the fixture (`fixture/…`) copy of every file are in
 | `basketdata/baskets.json` | `site/basketdata/baskets.json` | `scripts/build_baskets.py` | writes `theme_intel.{themes,act_now,market_concentration}` (`:413`) | lane C §4, lane D §2 |
 | `basketdata/narrative_emergence.json` | `site/basketdata/narrative_emergence.json` | `scripts/build_baskets.py` pipeline | `engine/narrative_emergence.py::compute_emergence()` | lane D §5 |
 | `marketdata/subsector_confluence.json` | `site/marketdata/subsector_confluence.json` | `scripts/build_subsector_confluence.py::main()` | `engine/subsector_confluence.py::compute_subsector_confluence()` (`:364`) | lane E §1, row 1 |
-| `marketdata/subsector_confluence_nasdaq.json` | `site/marketdata/subsector_confluence_nasdaq.json` | `scripts/build_subsector_confluence.py::main_index("nasdaq")` (`:353`) | `engine/subsector_confluence.py::compute_nasdaq_confluence()` → `_compute_index_desk("nasdaq","QQQ",…)` (`:618,590`) | lane E §1, row 1 |
+| `marketdata/subsector_confluence_nasdaq.json` | `site/marketdata/subsector_confluence_nasdaq.json` | `scripts/build_subsector_confluence.py::main_index("nasdaq")` (`:377`) | `engine/subsector_confluence.py::compute_nasdaq_confluence()` → `_compute_index_desk("nasdaq","QQQ",…)` (`:618,590`) | lane E §1, row 1 |
 | `marketdata/subsector_confluence_russell.json` | `site/marketdata/subsector_confluence_russell.json` | `scripts/build_subsector_confluence.py::main_index("russell")` | `engine/subsector_confluence.py::compute_russell_confluence()` (`:623`) | lane E §1, row 1 |
+| `correction/UNREPRESENTED.md` | *(none — authored doc, not a `site/` copy)* | n/a | n/a — records that correction/revision has NO production representation on either surface (State 8) | lane F §State 8, ADJUDICATIONS.md §A6 |
 | `marketdata/basket_confluence.json` | `site/marketdata/basket_confluence.json` | `scripts/build_subsector_confluence.py::main()` | `engine/subsector_confluence.py::compute_basket_confluence()` (`:428`), over `data/baskets/membership.json` | lane E §1, row 1 |
 | `marketdata/rotation_events.json` | `site/marketdata/rotation_events.json` | `scripts/build_rotation_events.py` (`:130,173`) | `engine.rotation_events` | lane C §2 row 2, §4 |
 | `marketdata/sector_fragmentation.json` | `site/marketdata/sector_fragmentation.json` | `scripts/build_rotation_events.py` (`:130,173`) | `engine.sector_fragmentation` | lane C §2 row 2, §4 |
