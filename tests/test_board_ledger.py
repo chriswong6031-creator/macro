@@ -907,7 +907,13 @@ class TestUSRegimeStamps:
             sc = bl.scorecard("HK")
 
         assert "n_unstamped" in sc, "scorecard() must return n_unstamped key"
-        assert "n_unstamped=" in sc.get("note", ""), "scorecard() note must include n_unstamped"
+        # MINOR-3 (review, 2026-08-20): the note token is regime_unstamped= — the KEY
+        # n_unstamped stays put (consumed interface), but the note text was relabelled
+        # so it cannot misread as a board_definition-unstamped count next to
+        # board_definition=/metrics_scope= on the same line (see grade()'s comment at
+        # the n_unstamped computation site).
+        assert "regime_unstamped=" in sc.get("note", ""), (
+            "scorecard() note must include regime_unstamped")
 
 
 # ---------------------------------------------------------------------------
@@ -1437,18 +1443,52 @@ class TestLedgerEraSelectionMetrics:
         """MUTATION KILLS (b) 'restamp legacy rows' and (c) 'drop legacy rows':
         the raw parquet must still hold every row, legacy rows must still read
         board_definition-null (never restamped to the current era), and the
-        legacy pool must surface, in full, under historical_context."""
+        legacy pool must surface, in full, under historical_context.
+
+        MAJOR-2 (review, 2026-08-20): also pins the raw-parquet count fix. One
+        extra legacy row is a name with NO live close at all (delisted) — grade()
+        drops it entirely (board_ledger.py's `close is None: continue`), so it
+        never reaches any by_horizon list. A legacy_rows/unstamped_rows count
+        built off the GRADED frame undercounts by exactly this row (reviewer
+        measured a 1-row undercount with this exact scenario); a count built off
+        the raw STORED parquet does not.
+        """
         legacy_dates, cur_dates = 8, bl.MIN_IC_DATES
         n_names, leg_tickers, cur_tickers = self._ca_ledger(
             tmp_path, monkeypatch, legacy_dates=legacy_dates, cur_dates=cur_dates)
+
+        # One more legacy-era row for a name that will never have a live close —
+        # a delisted name grade() cannot price and therefore cannot count.
+        bl.append_board(
+            [{"ticker": "DELISTED.TO", "group": "entry_open", "edge_z": 1.0,
+              "close_asof": 100.0}],
+            "CA", asof=str(pd.bdate_range(start="2026-05-01", periods=1)[0].date()))
+
+        def fake_close_with_delisting(m, t, ca_cache=None):
+            if t == "DELISTED.TO":
+                return None
+            if t.startswith("LEG"):
+                return _make_close("2026-05-01", 140, step=5.0)
+            return _make_close("2026-05-01", 140, val=500.0, step=-1.0)
+
+        monkeypatch.setattr(bl, "_name_close", fake_close_with_delisting)
+
         sc = bl.scorecard("CA")
 
         hc = sc["historical_context"]
-        assert hc["legacy_rows"] == legacy_dates * n_names
+        expected_legacy_rows = legacy_dates * n_names + 1   # + the delisted row
+        assert hc["legacy_rows"] == expected_legacy_rows, (
+            "MAJOR-2: the delisted legacy row must still be counted — it is a raw "
+            "ledger row, even though grade() could never price it")
         assert hc["definitions"] == [], "this ledger's legacy pool was never stamped"
-        assert hc["unstamped_rows"] == legacy_dates * n_names
+        assert hc["unstamped_rows"] == expected_legacy_rows
         assert hc["note"] == "historical context only; not current-model track record"
+        assert hc["survivorship"] == sc["survivorship"], (
+            "historical_context must mirror the top-level survivorship caveat")
         h21_hist = hc["by_horizon"]["21d"]
+        # by_horizon stays GRADED (delisted name has no price to grade), so its n
+        # is the graded-only count — the divergence from hc['legacy_rows'] above
+        # (which DOES include the delisted row) is the honest, expected shape.
         assert h21_hist["n"] == legacy_dates * n_names
         assert h21_hist["hit_rate_21d"] == 1.0, (
             "the legacy (LEG-ticker, rising) pool must still read as fully positive")
@@ -1456,7 +1496,7 @@ class TestLedgerEraSelectionMetrics:
 
         # (b)+(c): the STORED ledger is untouched — nothing restamped, nothing dropped.
         raw = pd.read_parquet(tmp_path / "ca_board.parquet")
-        assert len(raw) == (legacy_dates + cur_dates) * n_names, (
+        assert len(raw) == (legacy_dates + cur_dates) * n_names + 1, (
             "MUTATION KILL (c): no row may be dropped from the stored ledger")
         leg_rows = raw[raw["ticker"].isin(leg_tickers)]
         assert len(leg_rows) == legacy_dates * n_names
@@ -1464,6 +1504,7 @@ class TestLedgerEraSelectionMetrics:
             "MUTATION KILL (b): legacy rows must NOT be restamped to the current definition")
         cur_rows = raw[raw["ticker"].isin(cur_tickers)]
         assert (cur_rows["board_definition"] == "ca_prophet_branch_b_v1").all()
+        assert raw.loc[raw["ticker"] == "DELISTED.TO", "board_definition"].isna().all()
 
     def test_hk_existing_definition_behavior_does_not_regress(self, tmp_path, monkeypatch):
         """An HK-style ledger (legacy + stamped v1 era, plus one suspended v1-era

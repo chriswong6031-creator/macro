@@ -968,6 +968,12 @@ def grade(market: str) -> dict:
 
     # Count residual unstamped rows (rows where US vector had no coverage)
     # A row is "still unstamped" if us_rate_pressure is still null after backfill
+    # NAMING NOTE (LEDGER-ERA, 2026-08-20): this counts REGIME-stamp coverage
+    # (the us_* context columns), NOT board_definition coverage — an entirely
+    # different "unstamped".  scorecard() prints this value under the note token
+    # regime_unstamped= (not n_unstamped=, which would misread as the definition
+    # fence next to board_definition=/metrics_scope= on the same line); the KEY
+    # here and on the returned dict stays n_unstamped, a consumed interface.
     n_unstamped = int(df["us_rate_pressure"].isna().sum()) if "us_rate_pressure" in df.columns else 0
 
     # Write back with all updates — lane-gated like append_board (PR-R10): grade()
@@ -1037,6 +1043,45 @@ def _selection_metrics(frame: pd.DataFrame, horizon: int) -> dict:
     }
 
 
+def _raw_legacy_counts(m: str, current_definition: str) -> dict | None:
+    """Ledger-level legacy-pool counts, read straight from the RAW ledger parquet —
+    never from grade()'s matured-row set (LEDGER-ERA MAJOR-2, 2026-08-20 review).
+
+    grade() silently drops two classes of row before they ever reach by_horizon:
+    a name with no live close at all (delisted — board_ledger.py's ``close is None
+    or close.empty: continue``) and a call whose next-bar fill has not yet occurred
+    (``fill_iloc is None: continue``).  historical_context's legacy_rows/
+    unstamped_rows claim to describe the LEDGER, so counting them off the graded
+    subset silently undercounts by exactly the delisted/unfilled names — measured
+    as a 1-row undercount with a single delisted legacy name in review.  This reads
+    the STORED parquet directly (read-only, no grade() call, no write) so the count
+    is exact regardless of what could be priced.
+
+    Returns None (never raises) on any read failure so the caller can degrade to
+    its own graded-frame estimate rather than lose the field or crash the render.
+    """
+    try:
+        p = _store_path(m)
+        if not p.exists():
+            return None
+        df = pd.read_parquet(p)
+    except Exception:  # noqa: BLE001 — read-only probe; a failure must degrade, not raise
+        return None
+    if df.empty:
+        return {"legacy_rows": 0, "definitions": [], "unstamped_rows": 0}
+    if "board_definition" in df.columns:
+        defs = df["board_definition"].map(_definition_or_none)
+    else:
+        defs = pd.Series([None] * len(df), dtype=object)
+    legacy_mask = defs != current_definition
+    legacy_defs = defs[legacy_mask]
+    return {
+        "legacy_rows": int(legacy_mask.sum()),
+        "definitions": sorted(legacy_defs.dropna().unique().tolist()),
+        "unstamped_rows": int(legacy_defs.isna().sum()),
+    }
+
+
 def scorecard(market: str) -> dict:
     """Per-group hit-rate + Spearman rank-IC of board_pos vs forward excess at each
     horizon. Returns an 'accruing' status dict until the min-IC-dates gate is met.
@@ -1088,10 +1133,18 @@ def scorecard(market: str) -> dict:
                                'current_definition' AND at least one ledger row
                                does not carry the current definition:
                                {legacy_rows, definitions, unstamped_rows, note,
-                               by_horizon: {h: {n, n_buy, hit_rate_21d (21d
-                               only), by_group}}} computed over the legacy pool
-                               with the SAME rules as the scoped metrics
-        note               — human-readable status summary
+                               survivorship, by_horizon: {h: {n, n_buy,
+                               hit_rate_21d (21d only), by_group}}}.
+                               legacy_rows/definitions/unstamped_rows are read
+                               from the RAW ledger parquet (not grade()'s
+                               matured-row set, which drops delisted/unfilled
+                               rows — MAJOR-2 review fix, 2026-08-20); the
+                               by_horizon block is still graded and follows the
+                               SAME rules as the scoped metrics.
+        note               — human-readable status summary (n_unstamped prints
+                               under the token regime_unstamped= — MINOR-3
+                               review fix, 2026-08-20 — see grade()'s comment at
+                               the n_unstamped computation site)
     """
     m = market.upper()
     g = grade(m)
@@ -1103,14 +1156,19 @@ def scorecard(market: str) -> dict:
                 "first_read_est": _est_first_read()}
 
     definition = g.get("board_definition")
+    # Legacy-pool COUNTS (legacy_rows/definitions/unstamped_rows) come from the RAW
+    # parquet, not from grade()'s matured-row set — see _raw_legacy_counts docstring
+    # (MAJOR-2 review fix, 2026-08-20).  Read once, before the horizon loop: it is a
+    # ledger-level fact, not a per-horizon one.
+    _raw_legacy = _raw_legacy_counts(m, definition) if definition is not None else None
     by_h: dict = {}
-    # Legacy-pool facts (LEDGER-ERA, 2026-08-20): 'legacy_rows'/'definitions'/
-    # 'unstamped_rows' are ledger-level, not horizon-level — every matured call is
-    # appended to ALL FOUR horizon lists in grade() with identical board_definition/
-    # suspended metadata (only fwd_ret/excess_ret differ by maturity), so these
-    # counts are invariant across horizons.  Capture once, from the first horizon
-    # with rows, instead of recomputing (and risking drift) every iteration.
-    legacy_top: dict | None = None
+    # Fallback legacy-pool facts (used only if the raw-parquet read above failed):
+    # 'legacy_rows'/'definitions'/'unstamped_rows' derived from grade()'s graded rows
+    # instead — every matured call is appended to ALL FOUR horizon lists in grade()
+    # with identical board_definition/suspended metadata (only fwd_ret/excess_ret
+    # differ by maturity), so these counts are invariant across horizons; capture
+    # once, from the first horizon with legacy rows, instead of recomputing.
+    _gf_legacy_top: dict | None = None
     historical_by_h: dict = {}
     for h in _HORIZONS_D:
         key = f"{h}d"
@@ -1131,8 +1189,8 @@ def scorecard(market: str) -> dict:
             ic_frame = gf
             legacy_frame = gf.iloc[0:0]
 
-        if legacy_top is None and definition is not None and not legacy_frame.empty:
-            legacy_top = {
+        if _gf_legacy_top is None and definition is not None and not legacy_frame.empty:
+            _gf_legacy_top = {
                 "legacy_rows": int(len(legacy_frame)),
                 "definitions": sorted(
                     legacy_frame["board_definition"].dropna().unique().tolist()
@@ -1182,8 +1240,13 @@ def scorecard(market: str) -> dict:
             "by_group": scoped["by_group"],
         }
 
-        if definition is not None:
+        # NIT (review, 2026-08-20): only spend the computation when the legacy pool
+        # for THIS horizon is actually non-empty — an empty frame returns the same
+        # zero-value shape _selection_metrics always would, so skip the call.
+        if definition is not None and not legacy_frame.empty:
             historical_by_h[key] = _selection_metrics(legacy_frame, h)
+        elif definition is not None:
+            historical_by_h[key] = {"n": 0, "n_buy": 0, "hit_rate_21d": None, "by_group": {}}
 
     # overall gate: scored only when 21d horizon meets MIN_IC_DATES
     gate_met = by_h.get("21d", {}).get("n_ic_dates", 0) >= MIN_IC_DATES
@@ -1195,7 +1258,11 @@ def scorecard(market: str) -> dict:
         f"n_calls={g['n_calls']}",
         f"n_graded={g['n_graded']}",
         f"n_suspended={g['n_suspended']}",
-        f"n_unstamped={n_unstamped}",
+        # token relabelled regime_unstamped= (MINOR-3, review 2026-08-20): n_unstamped
+        # counts null REGIME stamps (see grade()'s computation-site comment), and the
+        # old token read as a definition-unstamped count sitting beside
+        # board_definition=/metrics_scope= on the same line.  KEY stays n_unstamped.
+        f"regime_unstamped={n_unstamped}",
         f"21d_ic_dates={by_h.get('21d', {}).get('n_ic_dates', 0)}/{MIN_IC_DATES}",
     ]
     if definition:
@@ -1219,11 +1286,17 @@ def scorecard(market: str) -> dict:
         "note": "; ".join(note_parts),
     }
     # historical_context: only when scoped AND at least one row falls outside the
-    # current era (legacy_top is None otherwise) — see docstring / FROZEN SPEC.
-    if legacy_top is not None:
+    # current era — see docstring / FROZEN SPEC.  Prefer the raw-parquet counts
+    # (MAJOR-2); degrade to the graded-frame estimate only if that read failed.
+    legacy_top = _raw_legacy if _raw_legacy is not None else _gf_legacy_top
+    if legacy_top is not None and legacy_top["legacy_rows"] > 0:
         out["historical_context"] = {
             **legacy_top,
             "note": "historical context only; not current-model track record",
+            # Mirrors the top-level `survivorship` value: a reader inside
+            # historical_context sees the same caveat inline (MAJOR-2 review,
+            # 2026-08-20) rather than needing to cross-reference the outer dict.
+            "survivorship": g.get("survivorship"),
             "by_horizon": historical_by_h,
         }
     return out
