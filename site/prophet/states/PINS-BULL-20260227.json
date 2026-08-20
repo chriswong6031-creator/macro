@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PINS-BULL-20260227",
-  "asof": "2026-08-19",
+  "asof": "2026-08-20",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
   "management_confidence": 57.7,
@@ -12,7 +12,7 @@
   "components": {
     "validity": 85.3,
     "progress": 0.0,
-    "pace": 16.2,
+    "pace": 12.8,
     "retention": 50.0,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.889,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 46.7,
+    "horizon_pct_used": 48.9,
     "p1": -0.0738,
     "p2": -0.0369,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 21,
-  "tau": 0.4667
+  "days_elapsed": 22,
+  "tau": 0.4889
 }

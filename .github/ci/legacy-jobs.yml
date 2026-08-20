@@ -1259,6 +1259,24 @@ jobs:
         run: pip install pytest pyyaml jinja2 fastapi httpx requests numpy pandas
       - name: tier-preview split contract (no paid row in the free shell)
         run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py tests/test_us_board_gate.py -q
+      # The split's OTHER half: how the page puts the two sides back together.
+      # test_us_board_gate above proves the shell withholds the paid rows; this
+      # proves hydration re-joins them into ONE board — a stage headed on both
+      # sides of the wall must not draw its heading twice, and a withheld group
+      # must land at its own rank rather than after every shell group (the
+      # reported "LIVE NOW twice, over different names", #6040).
+      #
+      # HERE and not with the board-UI suites in `unrun-picks-boards`: that job
+      # is `scope: exclusive`, so a suite reaching scripts.build_site would drag
+      # build_site's whole engine import closure into its declared paths (114
+      # uncovered, measured 2026-08-20). This suite is jinja2-only by design and
+      # sits with the tier-gate family whose helpers it imports. It needs NO new
+      # package on the install line above — pytest + jinja2, both already there —
+      # and node for tests/us_board_hydrate_harness.js, which runs the SHIPPED
+      # merge against a stub DOM and is preinstalled on ubuntu-latest (the node
+      # tests skip cleanly if it ever is not).
+      - name: tier-preview hydration merges the two halves into one board
+        run: python -m pytest tests/test_us_board_hydration_merge.py -q
       # The SAME Act-Now board, on its second host. test_us_board_gate above pins
       # the us_stocks split; this pins sector_central.html, which rendered the
       # identical include ungated (45 `.actitem` rows, anonymous, 2026-08-17)
@@ -2013,6 +2031,8 @@ jobs:
           tests/test_fundamental_forensics_attested_history_reader.py
           tests/test_sec_document_spine.py
           tests/test_fundamental_forensics_filing_package.py
+          tests/test_fundamental_forensics_financial_query_service.py
+          tests/test_fundamental_forensics_financial_query_api.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
           tests/test_fundamental_forensics_broad_sec.py
@@ -8385,6 +8405,11 @@ jobs:
         run: python -m pytest tests/test_government_revenue_shadow_context.py tests/test_government_revenue_prophet_annotation.py -q
       - name: workspace / dossier / briefcase UI contracts
         run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
+      # D3 temporal contract: typed rail states (producer) + the Change Tape
+      # clock/diff/successor renders (node harness, same runner requirement as
+      # the UI suite above, whose _run_runtime it imports).
+      - name: D3 temporal contract — typed rails, clock block, hostile families T1-T8
+        run: python -m pytest tests/test_government_revenue_temporal_contract.py -q
       # D2 Identity Atlas: projector + graph-delta pins + the node-harness test
       # that renders the shipped dossier JS factory against the COMMITTED
       # identity-atlas artifact (needs node, present on these runners for the
@@ -9637,6 +9662,10 @@ jobs:
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
+      # P0-ST band-repair receipt: referenced from engine/china_microstructure.py's
+      # MAIN_ST_BAND_WIDE_DATE provenance comment, so the closure scanner reaches it
+      # (contract-delta 2026-08-20; widening is always the safe direction).
+      - "research/cn_limit/P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.md"
       - "research/prophet_fusion/PR1B_BASELINE_RACE.md"
       - "research/prophet_fusion/PR2_C2_REDUNDANCY.md"
       - "research/prophet_fusion/families.yml"

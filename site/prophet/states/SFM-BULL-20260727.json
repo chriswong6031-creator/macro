@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "SFM-BULL-20260727",
-  "asof": "2026-08-19",
+  "asof": "2026-08-20",
   "phase": "at_t1",
   "detection_phase": "at_t1",
-  "management_confidence": 62.6,
-  "raw_confidence": 62.7,
-  "delta_vs_base": 2.6,
+  "management_confidence": 62.4,
+  "raw_confidence": 62.2,
+  "delta_vs_base": 2.4,
   "recommended_action": "hold",
   "human_state": "T1 Hit \u2014 Holding",
   "components": {
     "validity": 100.0,
     "progress": 60.0,
-    "pace": 67.5,
+    "pace": 64.6,
     "retention": 27.0,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.871,
     "dist_to_t1_r": 0.629,
     "dist_to_t2_r": 2.129,
-    "horizon_pct_used": 51.1,
+    "horizon_pct_used": 53.3,
     "p1": 0.5807,
     "p2": 0.2904,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Phase: between_t1_t2 \u2192 at_t1",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-08",
   "_first_t1_ts": "2026-08-08",
   "_first_t2_ts": "2026-08-08",
-  "days_elapsed": 23,
-  "tau": 0.5111
+  "days_elapsed": 24,
+  "tau": 0.5333
 }

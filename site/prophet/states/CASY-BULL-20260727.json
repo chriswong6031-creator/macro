@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "CASY-BULL-20260727",
-  "asof": "2026-08-19",
+  "asof": "2026-08-20",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
   "management_confidence": 56.4,
@@ -12,7 +12,7 @@
   "components": {
     "validity": 80.2,
     "progress": 0.0,
-    "pace": 24.9,
+    "pace": 20.3,
     "retention": 50.0,
     "overlay": 55.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.85,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 42.2,
+    "horizon_pct_used": 44.4,
     "p1": -0.1003,
     "p2": -0.0502,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 19,
-  "tau": 0.4222
+  "days_elapsed": 20,
+  "tau": 0.4444
 }

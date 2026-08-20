@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "STEP-BULL-20260707",
-  "asof": "2026-08-19",
+  "asof": "2026-08-20",
   "phase": "at_t1",
   "detection_phase": "at_t1",
-  "management_confidence": 68.6,
-  "raw_confidence": 72.3,
-  "delta_vs_base": 8.6,
+  "management_confidence": 70.2,
+  "raw_confidence": 72.1,
+  "delta_vs_base": 10.2,
   "recommended_action": "hold",
   "human_state": "T1 Hit \u2014 Holding",
   "components": {
     "validity": 100.0,
     "progress": 61.2,
-    "pace": 62.8,
+    "pace": 61.8,
     "retention": 75.6,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 2.274,
     "dist_to_t1_r": 0.226,
     "dist_to_t2_r": 1.726,
-    "horizon_pct_used": 77.8,
+    "horizon_pct_used": 80.0,
     "p1": 0.8494,
     "p2": 0.4247,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-15",
   "_first_t1_ts": "2026-08-13",
   "_first_t2_ts": null,
-  "days_elapsed": 35,
-  "tau": 0.7778
+  "days_elapsed": 36,
+  "tau": 0.8
 }

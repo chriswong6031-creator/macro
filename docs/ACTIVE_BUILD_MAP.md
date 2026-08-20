@@ -2,33 +2,40 @@
 
 # Active Build Map
 
-Generated: 2026-08-20T01:05:36.753157+00:00  |  Open PRs: 8  |  Merged (window): 500  |  base: `34b50b9508cde80a98aee4392965d18cb7664526`
+Generated: 2026-08-20T05:30:56.871125+00:00  |  Open PRs: 9  |  Merged (window): 500  |  base: `5761b9791e23d8ef6e5ee6cc3807089061c31fcd`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
+| #6041 | fix(stocks): a subsidiary, brand or product line is not the issuer | `claude/dossier-subsidiary-entity-guard` | 2026-08-20 | ⚠ CONFLICTING |
+| #6040 | prophet board: live change on the gated cards, and one "Live now" heading | `claude/prophet-board-live-change-and-duplicate-heading` | 2026-08-20 | — |
+| #6038 | research(gd1c): reconstruct leadership crack design era | `claude/gd1c-design-era-20260819` | 2026-08-20 | DRAFT |
+| #6037 | fix(grey-deer): GD-2R1 — semantic-correctness repair of the settled envelope | `claude/gd2r1-semantic-repair` | 2026-08-20 | ⚠ CONFLICTING |
+| #6036 | docs(alpha-intel): FABLE-00 close-out — canonical K4-G precondition sources; next action = Sol dispatch FABLE-A | `claude/alpha-intel-c0g-handoff-close` | 2026-08-20 | ⚠ CONFLICTING |
 | #6021 | E2-D: Canonical Macro dossier glance from event_workspace.v1 [HOLD] | `claude/earnings-e2-d` | 2026-08-19 | DRAFT / ⚠ protected:1 |
-| #6018 | agentos(options): live entitlement still blocked; reconcile AD-1 merged state | `claude/ad-options-source-restore` | 2026-08-20 | — |
-| #6008 | agentos(govrev): unissued candidates self-retire — B2 and B3 both refused on evidence | `claude/govrev-reviewed-non-issuance` | 2026-08-20 | — |
-| #5983 | feat(fif): FIF-2A authenticated canonical financial query bridge — HELD FOR SOL REVIEW | `claude/fif-2a-query-bridge` | 2026-08-19 | — |
 | #5898 | FF-1P2R: current-quarter EDGAR index discovery (do not merge; recovery fail-closed) | `claude/ff-1p2-bulk-census` | 2026-08-19 | ⚠ protected:2 |
 | #5821 | docs(bci): freeze federated Biopharma Cycle Intelligence OS architecture | `sol/biopharma-cycle-intelligence-architecture-20260816` | 2026-08-17 | DRAFT |
 | #5737 | radar(w8): Live Entry Radar reference UX + RIG (Prophet sister language) | `cursor/entry-radar-w8-rig-9f9d` | 2026-08-19 | ⚠ CONFLICTING |
-| #5424 | data(govrev): publish reviewed defense20-v1 recipient graph — BWXT + refreshed exact edges | `claude/govrev-defense20-bwxt-graph` | 2026-08-14 | DRAFT / ⚠ CONFLICTING |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
 
 ## File Collisions
 
-| PR A | PR B | Shared files | Files |
-|------|------|-------------|-------|
-| #5983 | #5898 | 1 | `.github/ci/legacy-jobs.yml` |
+_No file collisions detected among open PRs._
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #6039 | docs(perf): continuation handoff through PR 3, and scout PR 4 | 2026-08-20 |
+| #6035 | docs(china-alpha): post-merge authority reconciliation — hold-merge incident DSC, final merged-object pins, AgentOS reality repair | 2026-08-20 |
+| #6034 | docs(agentos): rescue six orphaned WS:AGENT-OS executive records | 2026-08-20 |
+| #6033 | perf(edge): give every content-hashed public asset the immutable year it already earned | 2026-08-20 |
+| #6032 | records(grey-deer): Sol post-merge review — GD-2R1 commission, Gate 8 hold, GD-1C relay | 2026-08-20 |
+| #6031 | docs(agentos): D2P production close — DEFENSE-PROCUREMENT-V3 lifecycle seal | 2026-08-20 |
+| #6030 | fix(check_stock_dossier_integrity): heal three permanent-red guard defects | 2026-08-20 |
+| #6029 | fix(hk-board): the 18 "deterministic main reds" are a sparse-checkout artifact — mark them | 2026-08-20 |
 | #6028 | fix(ci): curate conviction-profile's scope — #6027 gave it whole-tree fallback smear | 2026-08-20 |
 | #6027 | fix(ci): move #5984's dossier suites to a gate:code job — gate:data never runs on a PR | 2026-08-19 |
 | #6026 | feat(grey-deer): GD-2 settled risk envelope + three-answer Macro hero | 2026-08-19 |
@@ -38,6 +45,7 @@ Generated: 2026-08-20T01:05:36.753157+00:00  |  Open PRs: 8  |  Merged (window):
 | #6022 | fix(grey-deer): GD-4A — arm CN/HK forward-ledger advancement per-step in the Asia-close lane | 2026-08-19 |
 | #6020 | ci: overlap contract-delta's head/base censuses, raise timeout margin | 2026-08-19 |
 | #6019 | records(grey-deer): Sol GD-1 acceptance — GD-1 closed, GD-1C prerequisite, GD-2/GD-4A commissioned | 2026-08-19 |
+| #6018 | agentos(options): live entitlement still blocked; reconcile AD-1 merged state | 2026-08-20 |
 | #6017 | ci: let data-health's workflow_run and schedule triggers actually plan | 2026-08-20 |
 | #6014 | fix(intraday-flow): survive first render when live quotes are still empty | 2026-08-19 |
 | #6013 | agentos: jam-recovery handoff + W-CONTRACT-DELTA wave (WS:CI-MERGE-CONTROL-PLANE) | 2026-08-19 |
@@ -45,6 +53,7 @@ Generated: 2026-08-20T01:05:36.753157+00:00  |  Open PRs: 8  |  Merged (window):
 | #6011 | design-system(C8-C): .mx ladder/mark primitives, --pv-buy retune off --up, touch-floor raises, specimen annotation | 2026-08-19 |
 | #6010 | ship-loop: retire semantic units main is not eligible to clear | 2026-08-19 |
 | #6009 | cn-limit R6-0: records-only landing of the Sol final architecture freeze | 2026-08-19 |
+| #6008 | agentos(govrev): unissued candidates self-retire — B2 and B3 both refused on evidence | 2026-08-20 |
 | #6007 | docs(cn-limit): G0 dependency census vs missing R6 freeze | 2026-08-19 |
 | #6006 | fix(i18n,render): stop re-wrapping vix_monitor's bilingual twins — unblock the estate-wide render lane | 2026-08-19 |
 | #6005 | ci: add differential contract-delta gate (PR-vs-base, never absolute) | 2026-08-19 |
@@ -69,6 +78,7 @@ Generated: 2026-08-20T01:05:36.753157+00:00  |  Open PRs: 8  |  Merged (window):
 | #5986 | fix(research_vault): publication integrity — the vault cannot report a success it did not achieve | 2026-08-19 |
 | #5985 | ci: wire three unrun suites (chat_launcher_stub, collectors_na_sentinel, template_site_sync_tokens) | 2026-08-19 |
 | #5984 | fix(stocks): stop the dossier estate publishing the wrong company | 2026-08-19 |
+| #5983 | feat(fif): FIF-2A authenticated canonical financial query bridge — Sol PASS | 2026-08-20 |
 | #5982 | docs(perf): continuation handoff for the 7-PR site performance remediation | 2026-08-19 |
 | #5981 | fix(ipo,quant-lab): stop raw NaN/inf sentinels from reaching site/ipo.html and site/quant_lab.html | 2026-08-19 |
 | #5980 | fix(analyzer,china): real display twins + percentile nesting fix | 2026-08-19 |
@@ -518,17 +528,6 @@ Generated: 2026-08-20T01:05:36.753157+00:00  |  Open PRs: 8  |  Merged (window):
 | #5472 | agent-os: architecture + Phase 0 knowledge plane | 2026-08-13 |
 | #5471 | eval-os: intelligence evaluation architecture + metric-validity gate | 2026-08-12 |
 | #5470 | docs(watchlist-portfolio): W1-cycle program build log | 2026-08-12 |
-| #5467 | feat(etfs): Fund Flows upgrade — decomposition engine, 105-fund universe, weighting lens, ledger, UI refresh | 2026-08-13 |
-| #5464 | docs(mockups): W2 mockup gate — Portfolio Intelligence workspace | 2026-08-13 |
-| #5463 | fix(watchlist): cure the anonymous watchlist.html husk — promote the funnel shell, keep the graded plane walled | 2026-08-12 |
-| #5462 | feat(options): add unarmed selector capture attestation | 2026-08-12 |
-| #5461 | feat(watchstore): W1a registered multi-list store seam | 2026-08-12 |
-| #5460 | W0-A: institutionalize delivery-plane truth census | 2026-08-12 |
-| #5459 | Design System Wave 0: master product design system, migration factory, specimen + dense-dashboard reference | 2026-08-12 |
-| #5458 | Polish light-mode odometer needles | 2026-08-12 |
-| #5457 | docs(watchlist-portfolio): W0 commissioning packet — CEO revamp census + plan | 2026-08-12 |
-| #5456 | ci: stop merge sweeper refresh starvation | 2026-08-12 |
-| #5455 | fix: gate market score overrides on validated risk | 2026-08-12 |
 
 ---
 

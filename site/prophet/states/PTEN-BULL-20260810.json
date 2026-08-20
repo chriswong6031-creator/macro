@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PTEN-BULL-20260810",
-  "asof": "2026-08-19",
+  "asof": "2026-08-20",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 72.0,
-  "raw_confidence": 71.4,
-  "delta_vs_base": 12.0,
+  "management_confidence": 71.7,
+  "raw_confidence": 71.3,
+  "delta_vs_base": 11.7,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
     "progress": 25.1,
-    "pace": 100.0,
+    "pace": 99.3,
     "retention": 50.0,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.398,
     "dist_to_t1_r": 1.102,
     "dist_to_t2_r": 2.602,
-    "horizon_pct_used": 20.0,
+    "horizon_pct_used": 22.2,
     "p1": 0.2652,
     "p2": 0.1326,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 9,
-  "tau": 0.2
+  "days_elapsed": 10,
+  "tau": 0.2222
 }

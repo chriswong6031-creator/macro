@@ -43,12 +43,20 @@ SCHEMA = ROOT / "contracts" / "theme_graph" / "cn_limit_rules.v1.schema.json"
 ENGINE_BOARD = {"sse_main": "main", "szse_main": "main",
                 "star": "star", "chinext": "chinext", "bse": "bse"}
 
-#: The engine applies ST narrowing only from its own ST_STORE_COVERAGE_DATE — that is a
-#: DATA-COVERAGE gate (when the ST membership store begins), not a rule date. Probing ST
-#: parity before it would compare the registry's rule against the engine's declared
-#: blindness, which proves nothing about either.
-from engine.china_microstructure import ST_STORE_COVERAGE_DATE  # noqa: E402
-
+#: NOTE (P0-ST amendment): this suite used to skip every ST probe dated before the
+#: engine's ST_STORE_COVERAGE_DATE, reasoning that "the engine applies ST narrowing only
+#: from its own coverage date, so an earlier probe compares the registry's rule against
+#: the engine's declared blindness". That reasoning is a DETECTION-level concern —
+#: `_detect_limit_events` gates `is_st` to `ST_STORE_COVERAGE_DATE` because it derives
+#: `is_st` from a current-only membership snapshot it cannot trust for earlier dates.
+#: This suite instead calls `limit_width_for_date` DIRECTLY with an explicit
+#: `is_st=(status == "st")` — it is never blind pre-coverage, because the caller is
+#: telling it the ST status rather than asking the engine to infer one. The skip was
+#: therefore over-broad: once the historical 5% ST row gained a `valid_to` (P0-ST closed
+#: it at 2026-07-05), every one of its probe dates fell before the coverage floor and the
+#: skip silently zeroed out parity coverage for that entire closed interval. Removed;
+#: all probes (including the closed 5% era) now run and pass.
+#:
 #: An open-ended interval needs a right edge to probe. Fixed constant, deliberately not
 #: `today`: a wall-clock probe date makes the suite's coverage drift every night.
 OPEN_INTERVAL_PROBE = dt.date(2026, 8, 1)
@@ -177,8 +185,6 @@ def _parity_cases() -> list[tuple[str, str, str, float]]:
             continue
         for row in rows:
             for probe in _probe_dates(row):
-                if status == "st" and probe < ST_STORE_COVERAGE_DATE.date():
-                    continue
                 cases.append((board, status, probe.isoformat(), row["limit_up"]))
     return cases
 

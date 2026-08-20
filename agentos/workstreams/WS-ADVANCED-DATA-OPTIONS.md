@@ -15,13 +15,16 @@ blast_radius: reversible
 ambiguity: scoped
 blocked_by:
   - >
-    Massive/Polygon option-chain snapshot entitlement is absent on the linked key.
-    Live 8-probe 2026-08-19T19:59:29Z: GET /v3/snapshot/options/{AAPL,SPY} returns
-    HTTP 403 NOT_AUTHORIZED on BOTH api.polygon.io and api.massive.com, while AAPL
-    stock snapshot and news return 200 on the same key. No repo change can restore
-    this. AD-1 stays BUILT_NOT_PROVEN / SOURCE_BLOCKED until the owner restores a
-    rights-safe Options Snapshot + daily OI + Greeks/IV entitlement and two
-    consecutive healthy scheduled captures exist.
+    Massive/Polygon option-chain snapshot entitlement is still absent on the linked
+    key after a claimed restoration. Post-entitlement commissioning census
+    2026-08-20T05:23:23Z: GET /v3/snapshot/options/{AAPL,SPY} returns HTTP 403
+    NOT_AUTHORIZED on BOTH api.polygon.io and api.massive.com, while AAPL stock
+    snapshot and news return 200 on the same key (MASSIVE_API_KEY). Production
+    adapter PolygonOptions.snapshot() on the mixed probe set
+    [SPY, QQQ, IWM, AG, CDE] returned 5/5 auth_or_entitlement_failure, 0 rows,
+    no production write. The 2026-08-19 scheduled capture wrote a FAILED health
+    receipt (coverage_pct=0.0, aborted_early). No repo change can restore this.
+    AD-1 stays BUILT_NOT_PROVEN / SOURCE_BLOCKED.
 needs_ceo:
   question: >
     Restore a rights-safe Massive Options Snapshot entitlement (daily OI + Greeks/IV)
@@ -63,8 +66,11 @@ waves:
     depends_on: [AD-1]
     next_action: >
       Merged (d5ebb5d9b3db8c12deed7c267676cb38b6b348dc, 2026-08-19T16:04:26Z).
-      First post-merge scheduled capture has not yet written data/polygon_gex_health/.
-      Do not hand-write a receipt. Let the normal scheduled owner produce S then D.
+      First post-merge scheduled capture DID run: data/polygon_gex_health/2026-08-19.json
+      session 2026-08-19 capture_instant 2026-08-20T01:00:18Z health=failed
+      coverage_pct=0.0 aborted_early 5/5 auth_or_entitlement_failure. That is not
+      capture S. Do not hand-write a receipt. Do not --force. After a live 200
+      entitlement, the next lawful scheduled run may replace this failed vintage.
   - id: AD-2
     title: Evidence Receipts, Nulls, Lifecycle, Corrections
     status: todo
@@ -114,8 +120,13 @@ do_not_redo:
     Do not resurrect darkpool direction labels (v2 null walk-forward + DNR:PSS-AF1) or the
     DOI/skew-decel families (killed).
   - >-
-    Do not restart Polygon-vs-Massive domain-migration diagnosis. Re-proved 2026-08-19T19:59:29Z:
-    both domains 403 on option chains and 200 on stock/news with the same linked key.
+    Do not restart Polygon-vs-Massive domain-migration diagnosis. Re-proved
+    2026-08-19T19:59:29Z and again 2026-08-20T05:23:23Z: both domains 403 on option
+    chains and 200 on stock/news with the same linked key.
+  - >-
+    Do not treat an operator/CEO "entitlement restored" claim as live evidence.
+    Re-run the bounded 8-probe plus a no-write adapter snapshot this session.
+    2026-08-20 commissioning did that and still got 403.
   - >-
     Do not sweep 375 underlyings while the chain endpoint is 403. AD-1C0 short-circuits
     after a mixed-class auth probe.
@@ -148,21 +159,25 @@ Production commissioning is SOURCE-BLOCKED. `site/options_intel_brief.json` is
 still `board_state=STALE_SOURCE`, `as_of_session=2026-08-12`,
 `oi_counted_date=2026-08-13`, empty opportunity/watch/event boards. The chain
 store newest vintage is `data/polygon_gex/chains/2026-08-13.parquet`. Sessions
-2026-08-14/17/18 are absent and must not be filled by hand. No
-`data/polygon_gex_health/` receipt exists yet — #5974 merged after the last
-`polygon_gex_accrual` `run_status.json` write (`checked_at` 2026-08-19T04:42:05Z,
-`status=empty`).
+2026-08-14/17/18 are absent and must not be filled by hand.
 
-Live entitlement census 2026-08-19T19:59:29Z on main
-`418c583754a6` (worktree fast-forwarded from the session-start SHA
-`7b436da928a7cccc504d78bb0e04ed427c71ed7b`; probe itself ran at
-`164d7ea41f6e7a2262ac3151b5cb276b1c39871b`) re-proved CASE B:
-option-chain snapshot 403 NOT_AUTHORIZED on both vendor domains; stock snapshot
-and news 200. Local key source name `MASSIVE_API_KEY`. GitHub Actions has
-`POLYGON_API_KEY` (secret metadata `updated_at` 2026-08-08T08:10:36Z); no
-`MASSIVE_API_KEY` Actions secret. The 2026-08-08 capability manifest recorded
-`options_chain_snapshot` HTTP 200 entitled with Greeks/IV/OI under
-`POLYGON_API_KEY`.
+AD-1C0 health machinery has now observed a scheduled run:
+`data/polygon_gex_health/2026-08-19.json` (`health=failed`, `coverage_pct=0.0`,
+`aborted_early`, 5/5 `auth_or_entitlement_failure` at
+`capture_instant` 2026-08-20T01:00:18Z). `run_status.json`
+`sources.polygon_gex_accrual` matches (`status=empty`, `health=failed`,
+`checked_at` 2026-08-20T01:02:45Z). That failed vintage is not capture S.
+
+Post-entitlement commissioning census 2026-08-20T05:23:23Z on
+`origin/main` `e186f9f45c1bf0f55e774d836c7ee5df2fecccc7` re-proved CASE B
+after a claimed restoration: option-chain snapshot 403 NOT_AUTHORIZED on both
+vendor domains; stock snapshot and news 200. Production adapter dry-run on
+[SPY, QQQ, IWM, AG, CDE] also 5/5 `auth_or_entitlement_failure`, 0 rows, no
+write. Local key source name `MASSIVE_API_KEY` (POLYGON_API_KEY absent from
+local env). GitHub Actions has `POLYGON_API_KEY` (secret metadata still
+`updated_at` 2026-08-08T08:10:36Z); no `MASSIVE_API_KEY` Actions secret. The
+2026-08-08 capability manifest recorded `options_chain_snapshot` HTTP 200
+entitled with Greeks/IV/OI under `POLYGON_API_KEY`.
 
 ThetaData remains a source-redundancy *candidate* only (`collectors/thetadata.py`,
 theta-ops lane, not on the AD-1 path).

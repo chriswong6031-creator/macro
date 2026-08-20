@@ -47,6 +47,7 @@ def _run_runtime(
     ticker_routes: list[str] | None = None,
     location_search: str = "",
     lang: str = "en",
+    budget_module_status: str | None = None,
 ) -> dict:
     """Run the page's real IIFE against a deliberately tiny browser DOM stub."""
     page_runtime = _page_runtime_js()
@@ -65,6 +66,7 @@ def _run_runtime(
         var TICKER_ROUTES = %(ticker_routes)s;
         var LOCATION_SEARCH = %(location_search)s;
         var LANG = %(lang)s;
+        var BUDGET_MODULE_STATUS = %(budget_module_status)s;
         var fetchCalls = 0;
         function makeElement(){
           var listeners = {};
@@ -101,6 +103,13 @@ def _run_runtime(
         if(CANDIDATE_ROWS!==null)window.createGovernmentRevenueCandidateRadar=function(api){return {
           load:function(){api.onRows(CANDIDATE_ROWS,{status:CANDIDATE_STATUS,total:CANDIDATE_ROWS.length,mapping_backlog_total:CANDIDATE_BACKLOG,mapping_backlog_tickers:CANDIDATE_BACKLOG_TICKERS,mapping_backlog_states:CANDIDATE_BACKLOG_STATES,freshness:{exact_candidate_availability:EXACT_CANDIDATE_AVAILABILITY}});return Promise.resolve(CANDIDATE_ROWS)},
           refresh:function(){return this.load()}, render:function(){}, invalidate:function(){}, state:function(){return 'ok'}, crosschecks:function(){return ''}
+        }};
+        // D3: optional REAL-module fake -- settles budgetUI.load() with the
+        // given HTTP-receipt status and ZERO rows, pinning the law that the
+        // module's own verdict is authoritative over the read-model fallback.
+        if(BUDGET_MODULE_STATUS!==null)window.createGovernmentRevenueBudget=function(api){return {
+          load:function(){api.onRows([],{status:BUDGET_MODULE_STATUS});return Promise.resolve([])},
+          refresh:function(){return[]}, render:function(){}, invalidate:function(){}, state:function(){return BUDGET_MODULE_STATUS}
         }};
         var fetch = function(){fetchCalls += 1; return Promise.resolve({ok:FETCH_STATUS >= 200 && FETCH_STATUS < 300,status:FETCH_STATUS,json:function(){return Promise.resolve(FULL_WORKSPACE)}})};
         function CustomEvent(name, init){this.type=name;this.detail=init&&init.detail}
@@ -156,6 +165,7 @@ def _run_runtime(
         "ticker_routes": json.dumps(ticker_routes) if ticker_routes is not None else "null",
         "location_search": json.dumps(location_search),
         "lang": json.dumps(lang),
+        "budget_module_status": json.dumps(budget_module_status) if budget_module_status is not None else "null",
         "page_runtime": page_runtime,
     }
     path = tmp_path / "government_revenue_runtime.js"

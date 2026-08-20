@@ -95,12 +95,9 @@ body.page-macro .gde-row {
   column-gap: var(--sp-6); row-gap: 2px; align-items: start;
 }
 body.page-macro .gde-reads.is-split .gde-read { border-left-color: var(--gde-c, var(--line)); }
-/* capital posture with zero policies has no meaning for hue to carry — achromatic
-   by construction, and quiet on purpose: nothing is being restricted. The word
-   still needs contrast, but the rail must stay the quietest of the three or an
-   empty policy set reads as loud as a broken cohort (visible in light mode). */
-body.page-macro .gde-read--quiet { --gde-c: var(--ink-2); }
-body.page-macro .gde-reads.is-split .gde-read--quiet { border-left-color: var(--hair-strong); }
+/* (GD-2R1: the former .gde-read--quiet posture row is gone from the spine entirely —
+   see .gde-policy below. A railed posture row implied it was a party to the
+   agreement the rail encodes, which it is not.) */
 
 body.page-macro .gde-q {
   grid-area: q; font-size: var(--fs-label); font-weight: 600;
@@ -202,18 +199,42 @@ body.page-macro .gde-receipt {
   font-size: var(--fs-micro); color: var(--ink-3); line-height: 1.6; word-break: break-word;
 }
 
-/* ── footer: one stance, one sentence (doctrine Law 1 + Law 4) ──────────────── */
+/* ── capital policy — ORTHOGONAL to the spine (GD-2R1 §0.5) ─────────────────
+   No rail: the rail IS the agreement encoding, and a posture built from zero
+   policies is not a party to that agreement. An inset strip rather than a railed
+   row, so the difference is structural and needs no caption to be understood.   */
+body.page-macro .gde-policy {
+  display: grid;
+  grid-template-columns: minmax(0, 232px) minmax(0, 1fr) max-content;
+  grid-template-areas: "lbl note count" "state note count";
+  column-gap: var(--sp-6); row-gap: 2px; align-items: center;
+  margin: var(--sp-5) 0 0; padding: var(--sp-3) var(--sp-4);
+  background: var(--tile); border: var(--rule) solid var(--hair);
+  border-radius: var(--r-md);
+}
+body.page-macro .gde-policy-lbl {
+  grid-area: lbl; font-size: var(--fs-label); font-weight: 600;
+  letter-spacing: var(--trk); text-transform: uppercase; color: var(--ink-3);
+}
+html[data-lang="zh"] body.page-macro .gde-policy-lbl { letter-spacing: 0; text-transform: none; }
+/* achromatic by construction — zero policies means no reserved meaning for hue */
+body.page-macro .gde-policy-state {
+  grid-area: state; font-size: var(--fs-md); font-weight: 700; color: var(--ink-2);
+}
+body.page-macro .gde-policy-note {
+  grid-area: note; font-size: var(--fs-sm); color: var(--ink-3); max-width: 58ch;
+}
+body.page-macro .gde-policy-count {
+  grid-area: count; justify-self: start; font-size: var(--fs-micro); color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* ── footer: one descriptive sentence. No stance chip: while zero policies exist
+   this band reports and never instructs (GD-2R1 §0.4).                          */
 body.page-macro .gde-foot {
   display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4);
-  margin: var(--sp-5) 0 0; padding-top: var(--sp-3);
+  margin: var(--sp-4) 0 0; padding-top: var(--sp-3);
   border-top: var(--rule) solid var(--hair);
-}
-body.page-macro .gde-stance {
-  display: inline-flex; align-items: center; font-weight: 700; font-size: var(--fs-sm);
-  padding: 4px 11px; border-radius: 999px;
-  border: var(--rule) solid color-mix(in srgb, var(--gde-c, var(--ink-2)) 34%, transparent);
-  background: color-mix(in srgb, var(--gde-c, var(--ink-2)) 12%, var(--panel));
-  color: var(--gde-c, var(--ink-2)); white-space: nowrap;
 }
 body.page-macro .gde-note { font-size: var(--fs-sm); color: var(--ink-3); }
 
@@ -234,6 +255,10 @@ body.page-macro :where(.gde-quote, .gde-disc > summary):focus-visible {
       "clock  clause";
   }
   body.page-macro .gde-clock { justify-self: start; align-self: start; margin-top: 3px; }
+  body.page-macro .gde-policy {
+    grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+    grid-template-areas: "lbl note" "state note" "count note";
+  }
 }
 /* ≤720w (tablet portrait → phone): one column, deliberate stack. Reading order is
    question → answer → why → when, which is the order the row is meant to be read
@@ -253,4 +278,10 @@ body.page-macro :where(.gde-quote, .gde-disc > summary):focus-visible {
   body.page-macro .gde-lead { font-size: var(--fs-body); margin-bottom: var(--sp-4); }
   body.page-macro .gde-head { flex-wrap: wrap; }
   body.page-macro .gde-disc-body { padding: var(--sp-3); }
+  body.page-macro .gde-policy {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "lbl" "state" "note" "count";
+    row-gap: 4px; padding: var(--sp-3);
+  }
+  body.page-macro .gde-policy-note { max-width: none; }
 }
