@@ -25,7 +25,7 @@ def test_same_repo_fence_checkout_is_bounded_sparse_and_blob_filtered() -> None:
     options = checkout["with"]
 
     assert options["filter"] == "blob:none"
-    assert options["fetch-depth"] == 2
+    assert options["fetch-depth"] == 256
     assert options["sparse-checkout-cone-mode"] is False
 
     sparse = {line.strip() for line in str(options["sparse-checkout"]).splitlines() if line.strip()}
@@ -53,25 +53,19 @@ def test_same_repo_fence_checkout_is_bounded_sparse_and_blob_filtered() -> None:
     assert "/data/" not in sparse
 
 
-def test_self_mod_live_check_fetches_only_exact_pr_ancestry_and_fails_closed() -> None:
+def test_self_mod_live_check_uses_exact_synthetic_parents_and_fails_closed() -> None:
     job = _document()["jobs"]["fence-pack"]
     live = _named_step(job, "self-mod-fence live check (loop PR + immutable → BLOCKED)")
     command = live["run"]
-    env = live["env"]
 
-    assert env["PR_BASE_SHA"] == "${{ github.event.pull_request.base.sha }}"
-    assert env["PR_HEAD_SHA"] == "${{ github.event.pull_request.head.sha }}"
-    assert env["PR_NUMBER"] == "${{ github.event.pull_request.number }}"
-    assert env["PR_BASE_REF"] == "${{ github.base_ref }}"
-
-    assert "--unshallow" in command
-    assert "refs/heads/$PR_BASE_REF" in command
-    assert "refs/pull/$PR_NUMBER/head" in command
-    assert 'MERGE_BASE=$(git merge-base "$PR_BASE_SHA" "$PR_HEAD_SHA")' in command
-    assert 'git log --format="%B" "$MERGE_BASE..$PR_HEAD_SHA"' in command
-    assert 'git diff --name-only "$MERGE_BASE" "$PR_HEAD_SHA"' in command
-    assert "could not establish exact PR ancestry" in command
-    assert "git fetch origin ${{ github.base_ref" not in command
+    assert 'git rev-list --parents -n 1 "$GITHUB_SHA"' in command
+    assert "expected one synthetic merge with exactly two parents" in command
+    assert 'MERGE_BASE=$(git merge-base "$TESTED_BASE_SHA" "$SUBJECT_HEAD_SHA")' in command
+    assert 'git log --format="%B" "$MERGE_BASE..$SUBJECT_HEAD_SHA"' in command
+    assert 'git diff --name-only "$MERGE_BASE" "$SUBJECT_HEAD_SHA"' in command
+    assert "could not establish exact PR ancestry inside the bounded checkout" in command
+    assert "git fetch " not in command
+    assert "origin/${{ github.base_ref" not in command
 
 
 def test_self_mod_fence_suite_pins_checkout_contract() -> None:
