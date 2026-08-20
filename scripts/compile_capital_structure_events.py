@@ -45,6 +45,7 @@ from engine.capital_structure.source_ledger_io import (
 )  # noqa: E402
 from engine.capital_structure.source_identity import (
     evidence_id_from_manifest,
+    refine_evidence_ids_for_semantic_compare,
     source_ledger_prefix_hash,
     validate_manifest_ledger,
 )  # noqa: E402
@@ -814,6 +815,38 @@ def _project_evidence_ids_into_event(
     return projected
 
 
+def _event_for_semantic_compare(
+    event: Mapping[str, Any],
+    manifest_records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Project and refine evidence_ids so identity migration is not a correction.
+
+    Historical v1 children project ``legacy:{source_id}``. A later coordinate-bound
+    row for the same accession+source_id+bytes is the same evidence occurrence.
+    Comparison uses the coordinate id when it exists. Historical rows are not
+    rewritten.
+    """
+    projected = _project_evidence_ids_into_event(event, manifest_records)
+    source = projected.get("source")
+    if not isinstance(source, dict):
+        return projected
+    eids = source.get("evidence_ids")
+    if not isinstance(eids, list) or not eids:
+        return projected
+    accession = str(
+        (projected.get("filing") or {}).get("accession")
+        or source.get("accession")
+        or source.get("source_id")
+        or ""
+    )
+    source["evidence_ids"] = refine_evidence_ids_for_semantic_compare(
+        [str(eid) for eid in eids],
+        accession=accession,
+        records=manifest_records,
+    )
+    return projected
+
+
 def _latest_events_by_logical_key(
     events: Sequence[Mapping[str, Any]],
 ) -> dict[tuple[str, str], Mapping[str, Any]]:
@@ -1016,10 +1049,15 @@ def compile_manifest_records(
                 # W1: project evidence_ids into historical prior so that the
                 # first W1 compile does not generate a spurious correction for
                 # every accession whose economic content is unchanged.
-                prior_for_compare = _project_evidence_ids_into_event(
+                prior_for_compare = _event_for_semantic_compare(
                     prior, manifest_records
                 )
-                if _semantic_event_body(candidate) == _semantic_event_body(prior_for_compare):
+                candidate_for_compare = _event_for_semantic_compare(
+                    candidate, manifest_records
+                )
+                if _semantic_event_body(candidate_for_compare) == _semantic_event_body(
+                    prior_for_compare
+                ):
                     continue
             if prior is not None:
                 produced = pd.Timestamp(now)

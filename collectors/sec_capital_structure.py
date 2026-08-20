@@ -37,9 +37,6 @@ from engine.capital_structure.source_identity import (
     classify_bundle_against_published,
     document_inner_spans,
     evidence_id_for,
-    evidence_id_from_manifest,
-    interpretation_fingerprint,
-    latest_published_for_evidence,
     manifest_id_for,
     merge_manifest_ledgers,
     published_first_known_at,
@@ -1847,24 +1844,12 @@ class SecCapitalStructureAdapter(Adapter):
                 _validate_source_manifest(complete_manifest)
                 attempt_observed_eids.append(complete_manifest["evidence_id"])
 
-                # Bundle-level re-observation: never shortcut on the complete
-                # row alone. Parent pointer for children is the already-published
-                # complete manifest when that occurrence+interpretation is
-                # unchanged, otherwise the candidate complete just built.
-                complete_prior = latest_published_for_evidence(
-                    evidence_id_from_manifest(complete_manifest),
-                    combined_published,
-                )
-                complete_unchanged = (
-                    complete_prior is not None
-                    and interpretation_fingerprint(complete_manifest)
-                    == interpretation_fingerprint(complete_prior)
-                )
-                parent_id = (
-                    str(complete_prior["manifest_id"])
-                    if complete_unchanged
-                    else complete_manifest["manifest_id"]
-                )
+                # Closed-bundle law: every child in a newly persisted bundle
+                # points at this run's candidate complete-submission manifest,
+                # including when the complete occurrence+interpretation is
+                # unchanged. A revision remints the whole accession-wide
+                # version; re-observation persists nothing.
+                parent_id = complete_manifest["manifest_id"]
                 child_manifests: list[dict] = []
                 for role, document, filename, inspection, doc_receipt in stored_children:
                     doc_source_id = f"{accession}:{document.sequence or 'unknown'}:{filename}"
@@ -1925,9 +1910,10 @@ class SecCapitalStructureAdapter(Adapter):
                     continue
                 # All selected evidence must verify before any manifest for the
                 # filing is committed. A partially stored bundle stays retryable.
-                # Unchanged members are not rewritten; only new or
-                # interpretation-revised rows append.
-                new_manifests.extend(decision["append"])
+                # Revision persistence is bundle-atomic: the entire candidate
+                # bundle at this accession-wide version, never changed members
+                # alone.
+                new_manifests.extend(decision["persist"])
                 retained_available_at = _iso(self._now_fn())
                 if (
                     complete_inspection.parser_eligibility == "eligible"

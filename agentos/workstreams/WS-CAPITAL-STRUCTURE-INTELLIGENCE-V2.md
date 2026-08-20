@@ -37,6 +37,7 @@ owns_paths:
 decisions:
   - DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES
   - DEC:CS-V2-FIRST-KNOWN-AT-IS-CANONICAL-RETENTION-CLOCK
+  - DEC:CS-V2-CLOSED-BUNDLE-ATOMIC-PERSISTENCE
   - DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE
   - DEC:CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG
   - DEC:CS-V2-SIX-QUESTION-ONTOLOGY
@@ -59,9 +60,10 @@ do_not_redo:
   - "Mint legacy:{source_id} as a new child occurrence key"
   - "Hash source.manifest_ids or PIT clocks into post-W1 event identity"
   - "Shortcut re-observation on the complete row alone"
+  - "Persist only the changed members of an N+1 closed bundle"
 landmines:
   - "manifest_id_for hashes retrieval clocks (DSC:CS-MANIFEST-ID-HASHES-RETRIEVAL-CLOCKS)"
-  - "CS job push uses -X theirs with no append-only fence (daily.yml:1332); collect fence cannot see CS because collect unstages data/capital_structure"
+  - "Partial N+1 persist drops unchanged children from _current_manifest_bundle"
   - "Subset-hashing v2 manifest_id fights validate_manifest_ledger one-id-one-body"
   - "Concurrent daily.yml collect is still possible; CS must be idempotent"
   - "Projection freshness is compiler age, not information horizon"
@@ -73,19 +75,20 @@ artifacts:
   - research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md
 needs_ceo:
   question: >
-    Accept W1A (#6012) so post-W1 event-version identity is clock-independent,
-    new child writes never mint legacy:{source_id}, and re-observation is a
-    full-bundle decision? Hold W2 until that PR merges.
+    Accept W1B so revision persistence is accession-wide closed-bundle
+    atomic, after W1A identity (#6012) is already merged? Hold W2 until
+    W1B merges and the first natural collector → Capital Structure chain
+    containing W1B is production-proven.
   options:
-    - Accept W1A; authorize Wave 2 only after merge and natural CS-path proof
-    - Accept W1A with further named amendments
-    - Reject; name which W1A ruling to reopen
+    - Accept W1B; authorize Wave 2 only after merge and natural CS-path proof
+    - Accept W1B with further named amendments
+    - Reject; name which closed-bundle ruling to reopen
   recommendation: >
-    Accept W1A. Do not start Wave 2 in this PR. Do not rewrite historical
-    event_ids or v1 manifests.
+    Accept W1B. Do not start Wave 2 in this PR. Do not rewrite historical
+    event_ids or v1 manifests. Do not dispatch a second daily run.
   by_when: 2026-08-25
 next_action: >
-  Sol review of W1A PR #6012; do not merge until accepted; do not start W2.
+  Sol review of W1B; do not merge until accepted; do not start W2.
 waves:
   - id: W0
     title: Architecture freeze, estate audit, competitor/regulatory refresh
@@ -99,28 +102,35 @@ waves:
     depends_on: [W0]
     pr: 5959
     next_action: >
-      Merged as #5959 / b7004b132509. Identity defects remain; W1A is the
-      corrective wave. Do not treat W1 as accepted until W1A lands.
+      Merged as #5959 / b7004b132509. Identity defects closed by W1A.
   - id: W1A
     title: Clock-independent event identity, no new legacy occurrence, bundle re-obs
-    status: in_progress
+    status: done
     depends_on: [W1]
-    branch: claude/cs-v2-w1a-identity-correction
     pr: 6012
     next_action: >
-      Sol review of #6012. Do not merge until accepted. Do not start W2.
+      Merged as #6012. Identity accepted; W1B closes closed-bundle persist.
+  - id: W1B
+    title: Accession-wide closed-bundle atomic persistence
+    status: in_progress
+    depends_on: [W1A]
+    branch: claude/cs-v2-w1b-closed-bundle
+    next_action: >
+      Sol review of the W1B PR. Do not merge until accepted. Do not start W2.
   - id: W2
     title: LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health
     status: todo
-    depends_on: [W1A]
+    depends_on: [W1B]
+    next_action: >
+      Start only after W1B merge and the first natural post-W1B CS chain is proven.
   - id: W3
     title: Capital Changes Desk and issuer Capital Twin UX on honest states
     status: todo
-    depends_on: [W1A]
+    depends_on: [W1B]
   - id: W4
     title: Registration and remaining-capacity state machine (I.B.6, ATM, ELOC)
     status: todo
-    depends_on: [W1A]
+    depends_on: [W1B]
   - id: W5
     title: Instrument overhang and disclosed toxic-term facts
     status: todo

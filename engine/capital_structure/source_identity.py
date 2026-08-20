@@ -453,13 +453,16 @@ def classify_bundle_against_published(
     """Adjudicate a retained filing bundle against the published ledger.
 
     ``re_observed`` only when every candidate occurrence+bytes is already
-    known and every relevant interpretation is unchanged. A newly selected,
-    newly resolvable, or interpretation-revised child is a bundle revision
-    — never a complete-row shortcut.
+    known and every relevant interpretation is unchanged — persist nothing.
+    A newly selected, newly resolvable, or interpretation-revised member is
+    a bundle revision: durable persistence is the entire candidate bundle at
+    the newly allocated accession-wide version, not the changed members alone.
+    ``changed`` is diagnostic; ``persist`` (and ``append``, an alias) is the
+    durable set.
     """
     if not candidates:
         raise EvidenceIdentityError("bundle classification requires candidates")
-    append: list[Mapping[str, Any]] = []
+    changed: list[Mapping[str, Any]] = []
     unchanged: list[Mapping[str, Any]] = []
     for candidate in candidates:
         eid = evidence_id_from_manifest(candidate)
@@ -471,9 +474,78 @@ def classify_bundle_against_published(
         ):
             unchanged.append(candidate)
         else:
-            append.append(candidate)
-    status = "re_observed" if not append and unchanged else "revision"
-    return {"status": status, "append": append, "unchanged": unchanged}
+            changed.append(candidate)
+    status = "re_observed" if not changed and unchanged else "revision"
+    persist: list[Mapping[str, Any]] = (
+        [] if status == "re_observed" else list(candidates)
+    )
+    return {
+        "status": status,
+        "changed": changed,
+        "unchanged": unchanged,
+        "persist": persist,
+        "append": persist,
+    }
+
+
+def refine_evidence_ids_for_semantic_compare(
+    evidence_ids: Sequence[str],
+    *,
+    accession: str,
+    records: Sequence[Mapping[str, Any]],
+) -> list[str]:
+    """Replace historical ``legacy:{source_id}`` ids with later coordinate ids.
+
+    Comparison-only identity refinement for the same accession + ``source_id``
+    + retained bytes. Does not rewrite historical rows. A later coordinate-bound
+    child for those same bytes is not new economic evidence.
+    """
+    if not evidence_ids:
+        return []
+    coord_by_key: dict[tuple[str, str, str], str] = {}
+    legacy_eid_to_coord: dict[str, str] = {}
+    target = str(accession or "")
+    for record in records:
+        filing = record.get("filing") or {}
+        document = record.get("document") or {}
+        row_accession = str(filing.get("accession") or "")
+        if target and row_accession != target:
+            continue
+        source_id = str(record.get("source_id") or "")
+        digest = str(document.get("content_sha256") or "").lower()
+        if not source_id or not digest:
+            continue
+        try:
+            occurrence = evidence_occurrence_from_manifest(record)
+            eid = evidence_id_from_manifest(record)
+        except (EvidenceIdentityError, ManifestIdentityError, TypeError, ValueError):
+            continue
+        key = (row_accession, source_id, digest)
+        if isinstance(occurrence, str) and occurrence.startswith("legacy:"):
+            if key in coord_by_key:
+                legacy_eid_to_coord[eid] = coord_by_key[key]
+            continue
+        coord_by_key[key] = eid
+    if coord_by_key:
+        for record in records:
+            filing = record.get("filing") or {}
+            document = record.get("document") or {}
+            row_accession = str(filing.get("accession") or "")
+            if target and row_accession != target:
+                continue
+            source_id = str(record.get("source_id") or "")
+            digest = str(document.get("content_sha256") or "").lower()
+            key = (row_accession, source_id, digest)
+            if key not in coord_by_key:
+                continue
+            try:
+                occurrence = evidence_occurrence_from_manifest(record)
+                eid = evidence_id_from_manifest(record)
+            except (EvidenceIdentityError, ManifestIdentityError, TypeError, ValueError):
+                continue
+            if isinstance(occurrence, str) and occurrence.startswith("legacy:"):
+                legacy_eid_to_coord[eid] = coord_by_key[key]
+    return sorted({legacy_eid_to_coord.get(str(eid), str(eid)) for eid in evidence_ids})
 
 
 def published_first_known_at(
