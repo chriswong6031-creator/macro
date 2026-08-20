@@ -163,7 +163,10 @@ def test_card_macro_adds_only_a_reserved_empty_slot():
     assert '<span class="pv-live" hidden></span>' in CARD
     # ordered after the nightly ⚡ chip and before the ⚠N popover — compared inside the
     # MARKUP macro, since every class name also appears earlier in pv_css().
-    body = CARD[CARD.index("{% macro pv_card(cx) %}"):]
+    # Anchor is "{% macro pv_card(" (not the full historical signature) so this slice
+    # survives an additive parameter change (P-MP1-SHELL §8a added `allow_no_read`) —
+    # the test only needs "from the macro definition onward", never the exact params.
+    body = CARD[CARD.index("{% macro pv_card("):]
     assert body.index('class="pv-trg') < body.index('<span class="pv-live" hidden></span>') \
         < body.index('class="pv-cau-btn"')
 

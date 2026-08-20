@@ -30,6 +30,16 @@ from collectors.sponsors import flows_table  # noqa: E402
 from engine.i18n import prettify as _prettify, t as T  # noqa: E402
 from engine.inputs import build_features  # noqa: E402
 from engine.market_gamma import view as market_gamma_view  # noqa: E402 — SHARED deriver: FE banner + contract (engine/run.py) call the SAME function so they can't drift
+# P-MP1-SHELL §8a (MP-1-prophet-board.md, b1 ruling): the SAME Q7 bucket table
+# engine/us_board_rank.py already ships for the entry/actionability axis — imported
+# read-only (engine/* stays out of this packet's scope; we consume, never patch the
+# exporter) so the stance projection below can never drift into a second mapping.
+from engine.us_board_rank import (  # noqa: E402
+    _BLOCKED_STATUSES as _US_BLOCKED_STATUSES,
+    _LIVE_STATUSES as _US_LIVE_STATUSES,
+    _RAN_STATUSES as _US_RAN_STATUSES,
+    _SETTING_UP_STATUSES as _US_SETTING_UP_STATUSES,
+)
 from lib import config, site_assets, store  # noqa: E402
 from lib.chat_allowance import chat_allowance_view_model  # noqa: E402
 from lib.pages import write_page  # noqa: E402
@@ -4871,6 +4881,69 @@ def _us_board_group_items(rows: list[dict], sg_any: bool, stage_counts: dict) ->
             if r.get("lane") and r.get("lane") not in _US_LANE_KEYS:
                 items.append(r)
     return items
+
+
+# ── PROPHET BOARD STANCE PROJECTION (P-MP1-SHELL §8a, MP-1-prophet-board.md) ──────
+# b1 ruling (verdict.yml rulings.b1_actionability_axis, routed to Sol for veto,
+# effective unless countermanded): display-tier stance sources `entry_status` when
+# present on a plan row, else `board_read.fields.status` (ticker-scoped, the SAME
+# twelve/fifteen-value vocabulary, the SAME us_stock_library producer the board
+# already partitions), projected through the SAME Q7 bucket table
+# engine/us_board_rank.py ships (_LIVE_/_SETTING_UP_/_RAN_/_BLOCKED_STATUSES) —
+# never a second mapping (DESIGN_NOTES.md Q7, R4.2, table verified against the
+# imported constants below). "No read yet" (BLOCKED_DATA, Q7b) renders only when
+# BOTH sources are absent for a row — neither source absent alone is sufficient.
+# DNR:KILL-PROPHET-POP-MERGE confronted: this changes no population, no blend, no
+# rank, no gate — only the display verb's source field, inside the same library
+# the board already consumes.
+_US_STANCE_VERB_BY_STATUS: dict[str, str] = {}
+for _s in _US_BLOCKED_STATUSES:
+    _US_STANCE_VERB_BY_STATUS[_s] = "avoid"
+for _s in _US_RAN_STATUSES:
+    _US_STANCE_VERB_BY_STATUS[_s] = "hold"
+for _s in _US_SETTING_UP_STATUSES:
+    _US_STANCE_VERB_BY_STATUS[_s] = "wait"
+# _LIVE_STATUSES splits at the verb layer (Q7 table): buy_now/partial -> Buy,
+# buy_soon -> Near. Asserted against the imported set so a future engine-side
+# addition to _LIVE_STATUSES fails loudly here instead of silently defaulting.
+assert _US_LIVE_STATUSES == frozenset({"buy_now", "partial", "buy_soon"}), (
+    "engine.us_board_rank._LIVE_STATUSES changed shape — the Q7 Buy/Near split "
+    "below (DESIGN_NOTES.md Q7) needs a matching update, not a silent default."
+)
+_US_STANCE_VERB_BY_STATUS["buy_now"] = "buy"
+_US_STANCE_VERB_BY_STATUS["partial"] = "buy"
+_US_STANCE_VERB_BY_STATUS["buy_soon"] = "near"
+# wait_pullback / later / await carry an _ENTRY_VALUE but sit in no engine bucket
+# (DESIGN_NOTES.md Q7); stage_for() routes wait_pullback to setting_up, so all
+# three join Wait here rather than falling through to an undocumented default.
+for _s in ("wait_pullback", "later", "await"):
+    _US_STANCE_VERB_BY_STATUS.setdefault(_s, "wait")
+
+
+def us_stance_projection(entry_status: "str | None", board_read: "dict | None") -> dict:
+    """b1 ruling projection for one plan row.
+
+    Returns ``{"verb": <one of buy/near/wait/hold/avoid, or None>,
+    "stance_basis": "entry_status" | "board_read" | "no_read"}``.
+
+    `verb` is None only when `stance_basis == "no_read"` — the caller renders
+    the disclosed no-read state (Q7b), never a guessed "wait". An unrecognized
+    but truthy status value fails soft to "wait" (matching the pre-existing
+    `_us_board_cards.html.j2` legacy verb fallback for an unbucketed but
+    present status), never raises and never silently drops the row.
+    """
+    if entry_status:
+        return {"verb": _US_STANCE_VERB_BY_STATUS.get(entry_status, "wait"),
+                "stance_basis": "entry_status"}
+    br_status = None
+    if board_read:
+        status_field = (board_read.get("fields") or {}).get("status") or {}
+        if status_field.get("state") == "available":
+            br_status = status_field.get("value")
+    if br_status:
+        return {"verb": _US_STANCE_VERB_BY_STATUS.get(br_status, "wait"),
+                "stance_basis": "board_read"}
+    return {"verb": None, "stance_basis": "no_read"}
 
 
 def _split_us_board(us_standouts: "dict | None", preview_rows: int, *, gated: bool = True):
