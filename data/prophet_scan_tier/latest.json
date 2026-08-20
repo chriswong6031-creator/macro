@@ -11,23 +11,23 @@
   "min_mdv20_usd": 5000000.0,
   "mdv_window": 20,
   "min_history_bars": 159,
-  "store_n": 20833,
+  "store_n": 20834,
   "kept_n": 2843,
-  "excluded_n": 17990,
+  "excluded_n": 17991,
   "excluded_by_reason": {
    "below_liquidity_floor": 3873,
    "below_price_floor": 939,
-   "not_trading": 11971,
+   "not_trading": 11972,
    "thin_history": 1207
   },
   "price_through": "2026-08-17",
   "curated_n": 3147,
-  "curated_overlap_n": 1746,
-  "scan_n": 1097,
+  "curated_overlap_n": 1745,
+  "scan_n": 1098,
   "store_manifest": {
-   "n_tickers": 21340,
-   "latest_date": "2026-08-17",
-   "updated_at": "2026-08-19T03:44:22.018007+00:00"
+   "n_tickers": 21352,
+   "latest_date": "2026-08-18",
+   "updated_at": "2026-08-20T00:19:42.432391+00:00"
   }
  },
  "bases": {
@@ -35,11 +35,11 @@
   "universe": "engine.us_scan_universe.resolve over data/massive_stock_day, minus the curated universe (the two tiers are disjoint by construction)."
  },
  "summary": {
-  "store_n": 20833,
+  "store_n": 20834,
   "floored_n": 2843,
-  "curated_overlap_n": 1746,
-  "scan_n": 1097,
-  "panel_n": 1097,
+  "curated_overlap_n": 1745,
+  "scan_n": 1098,
+  "panel_n": 1098,
   "runners_n": 150,
   "runners_eligible_today_n": 16,
   "runners_never_eligible_n": 22,
@@ -55,12 +55,12 @@
   }
  },
  "excluder_hist": {
-  "not_topped_veto(stoch_ob)": 38,
+  "not_topped_veto(stoch_ob)": 39,
   "not_topped_veto(stoch_ob+stoch_bear)": 32,
   "not_topped_veto(macd_bear)": 25,
   "not_topped_veto(stoch_bear+macd_bear)": 18,
   "ELIGIBLE": 16,
-  "not_topped_veto(stoch_bear)": 15,
+  "not_topped_veto(stoch_bear)": 14,
   "freshness_expired": 6
  },
  "excluder_family_hist": {
@@ -897,6 +897,37 @@
     "stoch_bear"
    ],
    "excluder": "not_topped_veto(stoch_bear)",
+   "excluder_family": "not_topped_veto"
+  },
+  {
+   "ticker": "ISSC",
+   "r63_pct": 52.3,
+   "sector": "?",
+   "off_index": true,
+   "coverage_reason": "not_in_curated_universe",
+   "eligible_today": false,
+   "tier_today": NaN,
+   "days_eligible": 6,
+   "first_eligible": "2026-06-30",
+   "fwd_ret_from_first_pct": 37.67,
+   "tiers_seen": [
+    "T1"
+   ],
+   "stoch_ob": true,
+   "stoch_bear": false,
+   "macd_bear": false,
+   "rsi_block": true,
+   "k3": 87.1,
+   "d3": 82.0,
+   "rsi3d": 65.1,
+   "t1_ticks": 11,
+   "t2_ticks": 25,
+   "t2raw_ticks": 25,
+   "recent3": true,
+   "veto_legs": [
+    "stoch_ob"
+   ],
+   "excluder": "not_topped_veto(stoch_ob)",
    "excluder_family": "not_topped_veto"
   },
   {
@@ -4673,37 +4704,6 @@
     "stoch_bear"
    ],
    "excluder": "not_topped_veto(stoch_ob+stoch_bear)",
-   "excluder_family": "not_topped_veto"
-  },
-  {
-   "ticker": "BSAC",
-   "r63_pct": 14.5,
-   "sector": "?",
-   "off_index": true,
-   "coverage_reason": "not_in_curated_universe",
-   "eligible_today": false,
-   "tier_today": NaN,
-   "days_eligible": 6,
-   "first_eligible": "2026-06-16",
-   "fwd_ret_from_first_pct": 3.41,
-   "tiers_seen": [
-    "T1"
-   ],
-   "stoch_ob": false,
-   "stoch_bear": true,
-   "macd_bear": false,
-   "rsi_block": false,
-   "k3": 66.6,
-   "d3": 79.6,
-   "rsi3d": 56.3,
-   "t1_ticks": 15,
-   "t2_ticks": 23,
-   "t2raw_ticks": 23,
-   "recent3": true,
-   "veto_legs": [
-    "stoch_bear"
-   ],
-   "excluder": "not_topped_veto(stoch_bear)",
    "excluder_family": "not_topped_veto"
   }
  ],

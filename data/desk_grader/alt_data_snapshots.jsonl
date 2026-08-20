@@ -2322,3 +2322,13 @@
 {"date":"2026-08-19","ticker":"SPGI","departed":true,"left_desk":"2026-08-19","last_rank":null,"last_score":22}
 {"date":"2026-08-19","ticker":"T","departed":true,"left_desk":"2026-08-19","last_rank":24,"last_score":34}
 {"date":"2026-08-19","ticker":"CRM","rank":30,"score":30,"lean":1,"broken":false}
+{"date":"2026-08-19","ticker":"LTH","rank":23,"score":31,"lean":1,"broken":false}
+{"date":"2026-08-19","ticker":"RHHBY","rank":26,"score":31,"lean":1,"broken":false}
+{"date":"2026-08-19","ticker":"NVS","rank":30,"score":30,"lean":1,"broken":false}
+{"date":"2026-08-19","ticker":"DDOG","rank":null,"score":21,"lean":1,"broken":true}
+{"date":"2026-08-19","ticker":"STLD","rank":null,"score":20,"lean":1,"broken":true}
+{"date":"2026-08-19","ticker":"ESAB","rank":null,"score":19,"lean":1,"broken":true}
+{"date":"2026-08-19","ticker":"LHX","rank":null,"score":19,"lean":1,"broken":true}
+{"date":"2026-08-19","ticker":"AVGO","rank":null,"score":16,"lean":1,"broken":true}
+{"date":"2026-08-19","ticker":"T","rank":7,"score":54,"lean":1,"broken":false}
+{"date":"2026-08-19","ticker":"GOOGL","rank":8,"score":49,"lean":1,"broken":false}

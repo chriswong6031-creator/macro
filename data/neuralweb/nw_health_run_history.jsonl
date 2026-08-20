@@ -31,3 +31,4 @@
 {"run_date": "2026-08-18", "degraded": true, "produced_at": "2026-08-18T11:45:20.875341+00:00", "reasons_count": 8}
 {"run_date": "2026-08-19", "degraded": true, "produced_at": "2026-08-19T08:40:43.776498+00:00", "reasons_count": 3}
 {"run_date": "2026-08-19", "degraded": true, "produced_at": "2026-08-19T17:04:31.006195+00:00", "reasons_count": 3}
+{"run_date": "2026-08-20", "degraded": true, "produced_at": "2026-08-20T05:08:26.918672+00:00", "reasons_count": 3}

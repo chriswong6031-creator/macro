@@ -9,6 +9,7 @@ load-bearing fail-safe (offline = a valid, empty snapshot).
 """
 from __future__ import annotations
 
+import json
 import pathlib
 import re
 
@@ -435,6 +436,156 @@ def test_visible_nb_chg_board_pages_are_covered_or_explicitly_exempt():
         f"DISPLAY_BOARD_PAGES (if the pill should go live) or to "
         f"DISPLAY_BOARD_EXEMPT_PAGES with a written reason (if it genuinely "
         f"should not)"
+    )
+
+
+# ── The GATED half of a board (2026-08-20) ───────────────────────────────────
+# Reported live: most US Prophet cards showed a price beside a dead "—" percent.
+# Root cause: the scrape stopped at `site/<page>.html`, but a tier-gated board
+# server-renders only `preview_rows` cards there and writes the withheld
+# remainder — same partial, same visible `.nb-chg` pill — into
+# `site/premiumdata/<page>.json`, which the page splices into the SAME grid
+# post-auth. Measured in production 2026-08-20: us_stocks.html carried 3 board
+# symbols (all covered, all moving) while premiumdata/us_stocks.json carried 60
+# more, 0 of which were in /live/quotes.json's 146.
+#
+# Note what the invariant above could NOT see: a gated page's VISIBLE pills are
+# genuinely covered, so the page passes while 60 dead pills sit in the JSON
+# beside it. That blind spot is the point of the payload invariant below.
+
+def _payload_syms(blob: str) -> set:
+    return {s.strip().upper() for s in blq._DATA_SYM_RE.findall(blob)
+            if blq._SYMBOL_RE.match(s.strip().upper())}
+
+
+def test_a_gated_boards_withheld_cards_reach_the_display_universe(tmp_path):
+    """THE BUG. A board page whose shell holds 1 card and whose tier payload
+    holds 3 must contribute all four — the wall decides who may READ a name, not
+    which names the quote producer fetches."""
+    (tmp_path / "us_stocks.html").write_text(
+        '<span class="nb-chg" data-sym="BIIB">—</span>'
+    )
+    (tmp_path / "premiumdata").mkdir()
+    (tmp_path / "premiumdata" / "us_stocks.json").write_text(json.dumps({
+        "schema": "tier_payload.v1", "page": "us_stocks", "gated": True,
+        "cards_html": '<span class="nb-chg" data-sym="HWM">—</span>'
+                      '<span class="nb-chg" data-sym="GNW">—</span>',
+        "actnow_html": '<span class="nb-chg" data-sym="SPOT">—</span>',
+        # rows[] carries tickers too but no markup — the pills are what matter,
+        # and scraping data-sym (not "any ticker-shaped string") is what keeps
+        # this leg the same contract the page half has always had.
+        "rows": [{"ticker": "NEVERMIND"}],
+    }))
+    board = blq.board_display_symbols(tmp_path)
+    assert board == ["BIIB", "GNW", "HWM", "SPOT"], board
+    assert "NEVERMIND" not in board
+    assert set(board) <= set(blq.display_universe(tmp_path))
+
+
+def test_payload_markup_is_json_escaped_so_a_raw_text_scrape_would_miss_it(tmp_path):
+    """Why payload_html() parses JSON instead of regexing the raw bytes: inside
+    the file the markup reads `data-sym=\\"HWM\\"`, which _DATA_SYM_RE cannot
+    match — and a scrape that silently finds nothing is indistinguishable from a
+    board that renders nothing."""
+    p = tmp_path / "us_stocks.json"
+    p.write_text(json.dumps({"cards_html": '<span class="nb-chg" data-sym="HWM">—</span>'}))
+    assert 'data-sym=\\"HWM\\"' in p.read_text()
+    assert not _payload_syms(p.read_text()), "raw-text scrape must be the broken path"
+    assert _payload_syms(blq.payload_html(p)) == {"HWM"}
+
+
+def test_a_symbol_on_both_sides_of_the_wall_costs_one_slot(tmp_path):
+    (tmp_path / "us_stocks.html").write_text(
+        '<span class="nb-chg" data-sym="BIIB">—</span>'
+    )
+    (tmp_path / "premiumdata").mkdir()
+    (tmp_path / "premiumdata" / "us_stocks.json").write_text(json.dumps({
+        "cards_html": '<span class="nb-chg" data-sym="BIIB">—</span>'
+    }))
+    assert blq.board_display_symbols(tmp_path).count("BIIB") == 1
+
+
+def test_the_payload_leg_keeps_the_charset_gate(tmp_path):
+    """A junk data-sym behind the wall must be rejected exactly as one on the
+    page is — the payload is not a trusted shortcut into a feed request."""
+    (tmp_path / "us_stocks.html").write_text('<span data-sym="BIIB"></span>')
+    (tmp_path / "premiumdata").mkdir()
+    (tmp_path / "premiumdata" / "us_stocks.json").write_text(json.dumps({
+        "cards_html": '<span data-sym="HWM"></span><span data-sym="bad sym!"></span>'
+                      "<span data-sym=\"'+sym+'\"></span>",
+    }))
+    board = blq.board_display_symbols(tmp_path)
+    assert "HWM" in board
+    assert not any("+" in s or "'" in s or " " in s for s in board)
+
+
+@pytest.mark.parametrize("body", ["not json at all", "[1, 2, 3]", '"a string"', ""])
+def test_an_unusable_payload_degrades_to_the_shell_and_never_raises(tmp_path, body):
+    """This feeds the once-a-minute snapshot lane. A corrupt payload must cost
+    the withheld cards their live percentage — the pre-fix behaviour — not cost
+    every macro tile its feed."""
+    (tmp_path / "us_stocks.html").write_text('<span data-sym="BIIB"></span>')
+    (tmp_path / "premiumdata").mkdir()
+    (tmp_path / "premiumdata" / "us_stocks.json").write_text(body)
+    assert blq.board_display_symbols(tmp_path) == ["BIIB"]
+
+
+def test_an_ungated_board_with_no_payload_is_unchanged(tmp_path):
+    """Most board pages ship no payload at all; that is the normal case, not a
+    fault, and must stay silent."""
+    (tmp_path / "canada_stocks.html").write_text('<span data-sym="RY.TO"></span>')
+    assert blq.board_display_symbols(tmp_path) == ["RY.TO"]
+
+
+def test_tier_payload_pills_are_covered_by_the_producer():
+    """THE INVARIANT the page-only scan could not express: for every shipped
+    tier payload that carries a visible `.nb-chg` + data-sym, those symbols must
+    actually land in the fetched board leg. This is what makes a future gated
+    board fail CI instead of shipping 60 dead pills to the paying tier.
+    Skips cleanly when site/ is not checked out (sparse worktree)."""
+    site_dir = blq._ROOT / "site"
+    payload_dir = site_dir / blq.DISPLAY_BOARD_PAYLOAD_DIR
+    if not payload_dir.is_dir():
+        pytest.skip("site/ not checked out (sparse worktree) — nothing to scan")
+
+    board = set(blq.board_display_symbols(site_dir))
+    uncovered = {}
+    for path in sorted(payload_dir.glob("*.json")):
+        blob = blq.payload_html(path)
+        if 'class="nb-chg' not in blob:
+            continue
+        syms = _payload_syms(blob)
+        missing = syms - board
+        if missing:
+            uncovered[path.name] = sorted(missing)[:8]
+
+    assert not uncovered, (
+        f"tier payload(s) render a visible .nb-chg pill for symbols the producer "
+        f"never fetches: {uncovered} — every one of those cards shows a live "
+        f"price beside a dead '—'. The owning page must be in "
+        f"DISPLAY_BOARD_PAGES (its payload is scraped with it), and the board "
+        f"leg must not be truncating at DISPLAY_BOARD_CAP "
+        f"({blq.DISPLAY_BOARD_CAP})"
+    )
+
+
+def test_the_board_leg_has_headroom_over_the_cap():
+    """`out[:cap]` truncates ALPHABETICALLY, which on the page reads as exactly
+    the dead-pill bug — silently, on whichever names sort last. Fail while there
+    is still room to think, not on the night the board grows."""
+    site_dir = blq._ROOT / "site"
+    if not site_dir.is_dir():
+        pytest.skip("site/ not checked out (sparse worktree) — nothing to scan")
+    n = len(blq.board_display_symbols(site_dir))
+    assert n < blq.DISPLAY_BOARD_CAP, (
+        f"board leg is AT the cap ({n}/{blq.DISPLAY_BOARD_CAP}) — names are "
+        f"already being dropped"
+    )
+    assert n <= blq.DISPLAY_BOARD_CAP * 0.85, (
+        f"board leg {n} is within 15% of DISPLAY_BOARD_CAP "
+        f"({blq.DISPLAY_BOARD_CAP}); the US board is re-picked nightly, so raise "
+        f"the cap with a fresh size/latency measurement before a heavy board "
+        f"night truncates it"
     )
 
 

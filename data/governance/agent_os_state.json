@@ -1,13 +1,13 @@
 {
   "schema": "agent_os_state.v1",
   "generator": "scripts/agentos.py status",
-  "generated_at": "2026-08-20T01:05:36Z",
+  "generated_at": "2026-08-20T05:30:57Z",
   "inputs": {
     "workstreams": 34,
-    "decisions": 121,
-    "discoveries": 95,
-    "handoffs": 99,
-    "active_builds": "data/governance/active_builds.json@2026-08-20T01:05:36.753157+00:00",
+    "decisions": 124,
+    "discoveries": 97,
+    "handoffs": 105,
+    "active_builds": "data/governance/active_builds.json@2026-08-20T05:30:56.871125+00:00",
     "active_builds_age_hours": 0.0,
     "worktrees": 1,
     "uncommitted_worktrees": [],
@@ -21,7 +21,7 @@
     {
       "key": "ADVANCED-DATA-OPTIONS",
       "title": "Advanced Data — Options EOD + Off-Exchange Intelligence OS",
-      "status": "awaiting_review",
+      "status": "blocked",
       "program": "options-intelligence",
       "p0": null,
       "p0_active": null,
@@ -31,18 +31,20 @@
       "repos": [
         "macro"
       ],
-      "next_action": "Sol adversarial review of the AD-1 implementation PR; on PASS, run the production-acceptance continuation (merge, nightly advance, served-page proof, acceptance record). AD-2 stays closed.",
+      "next_action": "Owner restores/rebinds Massive Options Snapshot + daily OI + Greeks/IV on the linked key under a business/enterprise license. Then the normal scheduled nightly must produce two consecutive healthy captures (S then D, coverage_pct >= 0.90, no --force). Only then run AD-1 production acceptance. AD-2 stays closed.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
       "stale_days": 1,
       "depends_on": [],
-      "blocked_by": [],
+      "blocked_by": [
+        "Massive/Polygon option-chain snapshot entitlement is absent on the linked key. Live 8-probe 2026-08-19T19:59:29Z: GET /v3/snapshot/options/{AAPL,SPY} returns HTTP 403 NOT_AUTHORIZED on BOTH api.polygon.io and api.massive.com, while AAPL stock snapshot and news return 200 on the same key. No repo change can restore this. AD-1 stays BUILT_NOT_PROVEN / SOURCE_BLOCKED until the owner restores a rights-safe Options Snapshot + daily OI + Greeks/IV entitlement and two consecutive healthy scheduled captures exist.\n"
+      ],
       "waves": {
-        "awaiting_ci": 1,
-        "done": 2,
+        "awaiting_ci": 0,
+        "done": 4,
         "dropped": 0,
         "in_progress": 0,
-        "todo": 0
+        "todo": 1
       },
       "wave_detail": [
         {
@@ -76,16 +78,42 @@
         {
           "id": "AD-1",
           "title": "Daily EOD Options Intelligence Brief (runtime implementation)",
-          "status": "awaiting_ci",
+          "status": "done",
           "depends_on": [
             "AD-1P0"
           ],
           "deps_satisfied": true,
-          "next_action": "Sol adversarial review of the implementation PR (session did NOT merge it, per the AD-1 runtime handoff PR policy); on PASS run the production-acceptance continuation.",
+          "next_action": "Runtime MERGED (661ad5d291aa687bbb0c7a33e5b573c60a2b148f, 2026-08-19T13:25:26Z). Production commissioning remains SOURCE-BLOCKED / BUILT_NOT_PROVEN until entitlement restoration plus two consecutive healthy scheduled captures (S then D, coverage_pct >= 0.90), then Sol production-acceptance review.\n",
           "prs": [
             5872
           ],
           "done_at": "2026-08-19T13:25:26Z"
+        },
+        {
+          "id": "AD-1C0",
+          "title": "Source-failure durability (auth census, health receipt, first-writer quality)",
+          "status": "done",
+          "depends_on": [
+            "AD-1"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Merged (d5ebb5d9b3db8c12deed7c267676cb38b6b348dc, 2026-08-19T16:04:26Z). First post-merge scheduled capture has not yet written data/polygon_gex_health/. Do not hand-write a receipt. Let the normal scheduled owner produce S then D.\n",
+          "prs": [
+            5974
+          ],
+          "done_at": "2026-08-19T16:04:26Z"
+        },
+        {
+          "id": "AD-2",
+          "title": "Evidence Receipts, Nulls, Lifecycle, Corrections",
+          "status": "todo",
+          "depends_on": [
+            "AD-1"
+          ],
+          "deps_satisfied": true,
+          "next_action": "CLOSED until AD-1 production acceptance. Do not start.",
+          "prs": [],
+          "done_at": null
         }
       ],
       "prs": [
@@ -118,14 +146,28 @@
           "state": "merged",
           "wave": "AD-1",
           "merged_at": "2026-08-19T13:25:26Z"
+        },
+        {
+          "number": 5974,
+          "state": "merged",
+          "wave": "AD-1C0",
+          "merged_at": "2026-08-19T16:04:26Z"
         }
       ],
       "claim": null,
-      "needs_ceo": null,
+      "needs_ceo": {
+        "question": "Restore a rights-safe Massive Options Snapshot entitlement (daily OI + Greeks/IV) on the linked production key, and confirm a BUSINESS/ENTERPRISE license or written commercial grant covering Mastermind before AD-1 production commissioning?",
+        "options": [
+          "Restore Options Snapshot on the existing linked key under a business/enterprise grant, then wait for two scheduled healthy captures",
+          "Replace the linked key with an already-entitled business-licensed key, then wait for two scheduled healthy captures",
+          "Hold AD-1 dark and separately commission a Massive↔ThetaData parallel-source adjudication (not a silent swap)"
+        ],
+        "recommendation": "Restore/rebind Options Snapshot on the existing account/key under a business license. Do not attach a personal-use plan. Do not silently route AD-1 to ThetaData. Do not ask a coding agent to \"fix Polygon options.\"",
+        "by_when": "2026-08-21",
+        "blocks_waves": 1
+      },
       "collisions": [],
-      "warnings": [
-        "record_disagrees_with_execution: wave AD-1 is 'awaiting_ci' but PR #5872 is merged"
-      ],
+      "warnings": [],
       "source": "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md"
     },
     {
@@ -302,7 +344,7 @@
       "repos": [
         "macro"
       ],
-      "next_action": "Operator dispatches FABLE-A under the c0 §5 conditions (contract-first; store build gated on A0 §8 flip condition; FIF acceptance leg fixture-only until Sol rules). Census PRs #5955 (US G0) and #5943 (CN-G0) are ACCEPTED and armed to merge; #5953 carries a superseded rival G0 copy — disposition request posted, that lane responds. Next session adjudicates the FABLE-A K1 packet; K4-G is authored by operator/Sol carrying the seat packet §6 preconditions verbatim.",
+      "next_action": "Operator dispatches FABLE-A under the c0 §5 conditions (contract-first; store build gated on A0 §8 flip condition; FIF acceptance leg fixture-only until Sol rules). Post-merge state 2026-08-19: #5955 (US G0), #5943 (CN-G0), #5933 (this seat's c0/c0g packet) and #5953 (China masterplan, rival G0 copy withdrawn pre-merge) are ALL MERGED — c0/c0g are supplied by main; final merged-object pins live in the seat packet §7. Next session adjudicates the FABLE-A K1 packet; K4-G is authored by operator/Sol carrying the seat packet §6 preconditions verbatim.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
       "stale_days": 1,
@@ -1015,7 +1057,7 @@
       "repos": [
         "macro"
       ],
-      "next_action": "Gate: Sol's final freeze review of the revised #5953 head. After it clears: spawn PR-0B (builder) and RIGHTS-0 (researcher) in parallel from their commission files; PR-0D (builder) in parallel coordinated with WS:STOCK-IDENTITY; P1 spawns after the RIGHTS-0 verdict on the institutional visit source. Completion law on every build wave: merge = BUILT_NOT_PROVEN; a real production receipt (recorded here) = done. Later tracks (P3–P6, R3–R4, S-lobes, L3+) charter from the masterplan at their wave boundaries.",
+      "next_action": "Gate: Sol's POST-MERGE final freeze acceptance of the canonical main tree (all ten program/authority PRs merged 2026-08-19; receipts in the reconciliation PR and CHINA-ALPHA-INTELLIGENCE-2026-08-19 handoff). Until that acceptance the freeze is NOT effective and nothing spawns. After it: amend the DEC/this record to mark the freeze effective, then spawn PR-0B (builder) and RIGHTS-0 (researcher) in parallel from their commission files; PR-0D (builder) in parallel coordinated with WS:STOCK-IDENTITY; P1 spawns after the RIGHTS-0 verdict on the institutional visit source. Completion law on every build wave: merge = BUILT_NOT_PROVEN; a real production receipt (recorded here) = done. Later tracks (P3–P6, R3–R4, S-lobes, L3+) charter from the masterplan at their wave boundaries.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
       "stale_days": 1,
@@ -1050,7 +1092,7 @@
         },
         {
           "id": "pr0a",
-          "title": "PR-0A final research authority — masterplan rewrite, census adjudication, AgentOS (revised 2026-08-19 second pass per Sol freeze-review verdict; freeze effective at Sol's final review)",
+          "title": "PR-0A final research authority — masterplan rewrite, census adjudication, AgentOS (revised 2026-08-19 second pass per Sol verdict; MERGED PREMATURELY 16:05Z under a recorded CEO hold — DSC:CHINA-ALPHA-HOLD-MERGE-INCIDENT; content = the revised artifact exactly; freeze NOT effective until Sol's post-merge final freeze acceptance)",
           "status": "done",
           "depends_on": [],
           "deps_satisfied": true,
@@ -1847,7 +1889,7 @@
         "terminal",
         "mastermind"
       ],
-      "next_action": "Sol D1 acceptance review. Do not start Atlas/D2. Do not merge #5424. Do not re-baseline.",
+      "next_action": "Sol D3 authorization review. D0R/D1/D1.1/D2 are done and accepted; the D2 operational closure chain is #5932 + #5997 + #6004 + #6008, production-proven 2026-08-20. Do not merge #5424 (superseded by defense21-v1). Do not re-baseline. Publisher-vintage alarm is a reliability follow-up, not a D3 prerequisite.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
       "stale_days": 1,
@@ -1855,9 +1897,9 @@
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 3,
+        "done": 4,
         "dropped": 0,
-        "in_progress": 1,
+        "in_progress": 0,
         "todo": 3
       },
       "wave_detail": [
@@ -1877,12 +1919,12 @@
         {
           "id": "D1",
           "title": "Production truth and signed-in product rescue",
-          "status": "in_progress",
+          "status": "done",
           "depends_on": [
             "D0R"
           ],
           "deps_satisfied": true,
-          "next_action": "Sol D1 acceptance review. Desk rescue, stale-base fence, FATAL=1 candidate proof, and PIT-safe agency labels are on main and served. Do not start D2. Do not merge #5424. Do not re-baseline. Do not treat Radar 48 as new alpha.\n",
+          "next_action": "Done — Sol accepted D1 (D2 was authorized and executed on top of it). Radar 48 remains coverage truth, never new alpha.\n",
           "prs": [
             5836,
             5885,
@@ -1898,8 +1940,8 @@
           "depends_on": [
             "D1"
           ],
-          "deps_satisfied": false,
-          "next_action": "D1.1F live-proven on #5856. P00032 renders Department of Defense / Defense Information Systems Agency from receipt-backed PIT evidence. Do not start D2. Do not merge #5424.\n",
+          "deps_satisfied": true,
+          "next_action": "Done/accepted. D1.1F live-proven on #5856. P00032 renders Department of Defense / Defense Information Systems Agency from receipt-backed PIT evidence.\n",
           "prs": [
             5856
           ],
@@ -1913,11 +1955,14 @@
             "D1.1"
           ],
           "deps_satisfied": true,
-          "next_action": "D2 shipped defense21-v1 (digest 93171ba0e6f7…) + the Identity Atlas artifact/product on #5932 with two-round opus adversarial review. Five BWXT chains reviewed; MMACD85DT5D5 / PM7HBL2KDX46 / URJ3CAC3MSH8 refused (see DEC:D2-BWXT-EXACT-ADMISSION-GE-STAYS-UNRESOLVED); GE and SPR stay not_asserted by design. Remaining mapping_needed pilots: GE. Return to Sol before D3. Do not merge #5424 (superseded for BWXT; close-or-recut is a Sol call). Graph republish law: DSC:GRAPH-REPUBLISH-RETIMES-EVERY-CANDIDATE-CLOCK.\n",
+          "next_action": "Done — accepted after the D2P production close (2026-08-20 entitled- journey proof; see agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-20-d2p-production-close.md). The operational closure chain is FOUR PRs, not #5932 alone: #5932 (defense21-v1 graph, digest 93171ba0e6f7…, + Identity Atlas artifact/product, two-round opus adversarial review), #5997 (republish-proof heal: distinct-id census + ledger-issuance-frontier discriminator), #6004 (candidate-accounting closure: B2 non-issuance manifest refused on evidence; vintage-bound excuse self-retired), #6008 (unissued candidates self-retire via nightly; B2 manifest unloadable). Five BWXT chains reviewed; MMACD85DT5D5 / PM7HBL2KDX46 / URJ3CAC3MSH8 refused (see DEC:D2-BWXT-EXACT-ADMISSION-GE-STAYS-UNRESOLVED); GE and SPR stay not_asserted by design. Remaining mapping_needed pilots: GE. #5424 is superseded by defense21-v1 — do not merge, revive, or recut. Graph republish law: DSC:GRAPH-REPUBLISH-RETIMES-EVERY-CANDIDATE-CLOCK. Reliability follow-up (NOT a D3 prerequisite): the publisher-vintage lag has no alarm — nothing notices a publisher that stops firing (DSC:GOVREV-PUBLISHER-VINTAGE-LAG-IS-THE-ONLY-TRACE).\n",
           "prs": [
-            5932
+            5932,
+            5997,
+            6004,
+            6008
           ],
-          "done_at": "2026-08-19T13:26:47Z"
+          "done_at": "2026-08-20T01:48:58Z"
         },
         {
           "id": "D3",
@@ -1927,7 +1972,7 @@
             "D2"
           ],
           "deps_satisfied": true,
-          "next_action": null,
+          "next_action": "Unauthorized. Awaiting Sol D3 authorization review.\n",
           "prs": [],
           "done_at": null
         },
@@ -2004,17 +2049,30 @@
           "state": "merged",
           "wave": "D2",
           "merged_at": "2026-08-19T13:26:47Z"
+        },
+        {
+          "number": 5997,
+          "state": "merged",
+          "wave": "D2",
+          "merged_at": "2026-08-19T16:18:05Z"
+        },
+        {
+          "number": 6004,
+          "state": "merged",
+          "wave": "D2",
+          "merged_at": "2026-08-19T18:00:07Z"
+        },
+        {
+          "number": 6008,
+          "state": "merged",
+          "wave": "D2",
+          "merged_at": "2026-08-20T01:48:58Z"
         }
       ],
       "claim": null,
       "needs_ceo": null,
       "collisions": [],
-      "warnings": [
-        "record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5836 is merged",
-        "record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5885 is merged",
-        "record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5882 is merged",
-        "record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5856 is merged"
-      ],
+      "warnings": [],
       "source": "agentos/workstreams/WS-DEFENSE-PROCUREMENT-V3.md"
     },
     {
@@ -2350,7 +2408,7 @@
         "macro",
         "terminal"
       ],
-      "next_action": "FIF-1 is DONE and financial_intelligence_packet.v1 is FROZEN on main (PR #5889, f4183edade53603fad7a97f702eb4c6e5eabff5d). FIF-2 is UNLOCKED and NOT_STARTED. Do not reopen accepted packet semantics. Do not create FIF-1R4. A later session may start FIF-2 from the masterplan.",
+      "next_action": "FIF-1 is DONE / FROZEN. FIF-2A is ACCEPTED / FIXTURE_PROVEN / ON_MAIN (PR #5983). FIF-2 remains IN_PROGRESS. FIF-2B is UNLOCKED / NOT_STARTED. Do not reopen A–D. Do not claim production issuer query coverage.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
       "stale_days": 1,
@@ -2360,8 +2418,8 @@
         "awaiting_ci": 0,
         "done": 2,
         "dropped": 0,
-        "in_progress": 0,
-        "todo": 10
+        "in_progress": 1,
+        "todo": 9
       },
       "wave_detail": [
         {
@@ -2391,14 +2449,16 @@
         {
           "id": "FIF-2",
           "title": "Read-only financial query API",
-          "status": "todo",
+          "status": "in_progress",
           "depends_on": [
             "FIF-1"
           ],
           "deps_satisfied": true,
-          "next_action": "UNLOCKED / NOT_STARTED. Do not start in the FIF-1 landing session.",
-          "prs": [],
-          "done_at": null
+          "next_action": "FIF-2A ACCEPTED / FIXTURE_PROVEN / ON_MAIN via PR #5983. FIF-2B is UNLOCKED / NOT_STARTED. Production issuer coverage is FIF-3; default provider remains unavailable/503.\n",
+          "prs": [
+            5983
+          ],
+          "done_at": "2026-08-20T05:28:35Z"
         },
         {
           "id": "FIF-3",
@@ -2518,6 +2578,12 @@
           "state": "merged",
           "wave": "FIF-1",
           "merged_at": "2026-08-19T09:50:19Z"
+        },
+        {
+          "number": 5983,
+          "state": "merged",
+          "wave": "FIF-2",
+          "merged_at": "2026-08-20T05:28:35Z"
         }
       ],
       "claim": null,
@@ -2527,21 +2593,27 @@
           "with": "CALCBENCH-FILING-FORENSICS-PARITY",
           "paths": [
             "engine/fundamental_forensics/financial_intelligence_packet.py",
+            "engine/fundamental_forensics/query_service.py",
             "engine/fundamental_forensics/synthetic_filing_package.py",
             "tests/test_fundamental_forensics_financial_intelligence_packet.py",
             "tests/test_fundamental_forensics_financial_intelligence_packet_r2.py",
-            "tests/test_fundamental_forensics_financial_intelligence_packet_r3.py"
+            "tests/test_fundamental_forensics_financial_intelligence_packet_r3.py",
+            "tests/test_fundamental_forensics_financial_query_api.py",
+            "tests/test_fundamental_forensics_financial_query_service.py"
           ]
         },
         {
           "with": "FUNDAMENTAL-FORENSICS",
           "paths": [
             "engine/fundamental_forensics/financial_intelligence_packet.py",
+            "engine/fundamental_forensics/query_service.py",
             "engine/fundamental_forensics/synthetic_filing_package.py"
           ]
         }
       ],
-      "warnings": [],
+      "warnings": [
+        "record_disagrees_with_execution: wave FIF-2 is 'in_progress' but PR #5983 is merged"
+      ],
       "source": "agentos/workstreams/WS-FINANCIAL-INTELLIGENCE-FABRIC.md"
     },
     {
@@ -2762,7 +2834,7 @@
         "terminal",
         "mastermind"
       ],
-      "next_action": "Execute the two Sol-commissioned build lanes as separate PRs (GD-2 settled envelope, GD-4A CN/HK ledger repair — packets under research/grey_deer/commissions/); relay the GD-1C research packet to the Grok operator; GD-3 waits for GD-2 production acceptance; GD-5A/B/C wait for GD-1C clearing the promotion gate.",
+      "next_action": "Merge GD-2R1 (semantic-correctness repair, commissioned); then run Gate 8 on the repaired production render; verify GD-4A's Asia-close row proof; Grok executes GD-1C. GD-3 starts only after Gate 8 passes; GD-5A/B/C wait for GD-1C clearing the promotion gate.",
       "created": "2026-08-19",
       "updated": "2026-08-19",
       "stale_days": 1,
@@ -2772,8 +2844,8 @@
         "awaiting_ci": 0,
         "done": 3,
         "dropped": 0,
-        "in_progress": 2,
-        "todo": 15
+        "in_progress": 4,
+        "todo": 14
       },
       "wave_detail": [
         {
@@ -2817,7 +2889,7 @@
         {
           "id": "GD-1C",
           "title": "leadership_crack.v1 design-era reconstruction + GD-H1/GD-H2 interaction test (research-only prerequisite for GD-5)",
-          "status": "todo",
+          "status": "in_progress",
           "depends_on": [
             "GD-1B"
           ],
@@ -2834,6 +2906,20 @@
             "GD-0A"
           ],
           "deps_satisfied": true,
+          "next_action": null,
+          "prs": [
+            6026
+          ],
+          "done_at": "2026-08-19T23:15:52Z"
+        },
+        {
+          "id": "GD-2R1",
+          "title": "Semantic-correctness repair of the settled envelope (pre-acceptance)",
+          "status": "in_progress",
+          "depends_on": [
+            "GD-2"
+          ],
+          "deps_satisfied": false,
           "next_action": null,
           "prs": [],
           "done_at": null
@@ -2859,8 +2945,10 @@
           ],
           "deps_satisfied": true,
           "next_action": null,
-          "prs": [],
-          "done_at": null
+          "prs": [
+            6022
+          ],
+          "done_at": "2026-08-19T21:00:03Z"
         },
         {
           "id": "GD-4B",
@@ -3040,6 +3128,18 @@
           "state": "merged",
           "wave": "GD-1B",
           "merged_at": "2026-08-19T14:02:46Z"
+        },
+        {
+          "number": 6026,
+          "state": "merged",
+          "wave": "GD-2",
+          "merged_at": "2026-08-19T23:15:52Z"
+        },
+        {
+          "number": 6022,
+          "state": "merged",
+          "wave": "GD-4A",
+          "merged_at": "2026-08-19T21:00:03Z"
         }
       ],
       "claim": null,
@@ -3052,7 +3152,10 @@
           ]
         }
       ],
-      "warnings": [],
+      "warnings": [
+        "record_disagrees_with_execution: wave GD-2 is 'in_progress' but PR #6026 is merged",
+        "record_disagrees_with_execution: wave GD-4A is 'in_progress' but PR #6022 is merged"
+      ],
       "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
     },
     {
@@ -4623,7 +4726,7 @@
           "prs": [
             5457
           ],
-          "done_at": "2026-08-12T15:10:34Z"
+          "done_at": null
         },
         {
           "id": "P0-HUSK",
@@ -4635,7 +4738,7 @@
           "prs": [
             5463
           ],
-          "done_at": "2026-08-12T15:54:05Z"
+          "done_at": null
         },
         {
           "id": "W1",
@@ -4653,15 +4756,15 @@
       "prs": [
         {
           "number": 5457,
-          "state": "merged",
+          "state": "unknown",
           "wave": "W0",
-          "merged_at": "2026-08-12T15:10:34Z"
+          "merged_at": null
         },
         {
           "number": 5463,
-          "state": "merged",
+          "state": "unknown",
           "wave": "P0-HUSK",
-          "merged_at": "2026-08-12T15:54:05Z"
+          "merged_at": null
         }
       ],
       "claim": null,
@@ -4681,6 +4784,19 @@
     }
   ],
   "needs_ceo": [
+    {
+      "workstream": "ADVANCED-DATA-OPTIONS",
+      "question": "Restore a rights-safe Massive Options Snapshot entitlement (daily OI + Greeks/IV) on the linked production key, and confirm a BUSINESS/ENTERPRISE license or written commercial grant covering Mastermind before AD-1 production commissioning?",
+      "options": [
+        "Restore Options Snapshot on the existing linked key under a business/enterprise grant, then wait for two scheduled healthy captures",
+        "Replace the linked key with an already-entitled business-licensed key, then wait for two scheduled healthy captures",
+        "Hold AD-1 dark and separately commission a Massive↔ThetaData parallel-source adjudication (not a silent swap)"
+      ],
+      "recommendation": "Restore/rebind Options Snapshot on the existing account/key under a business license. Do not attach a personal-use plan. Do not silently route AD-1 to ThetaData. Do not ask a coding agent to \"fix Polygon options.\"",
+      "by_when": "2026-08-21",
+      "blocks_waves": 1,
+      "source": "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md"
+    },
     {
       "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
       "question": "Accept W1A (#6012) so post-W1 event-version identity is clock-independent, new child writes never mint legacy:{source_id}, and re-observation is a full-bundle decision? Hold W2 until that PR merges.",
@@ -4713,9 +4829,9 @@
       {
         "workstream": "ADVANCED-DATA-OPTIONS",
         "wave": null,
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored workstream status is awaiting_review.",
+        "state": "blocked",
+        "reason_code": "workstream_blocked",
+        "reason": "Authored workstream status is blocked.",
         "depends_on": [],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md"
@@ -4733,11 +4849,23 @@
       {
         "workstream": "ADVANCED-DATA-OPTIONS",
         "wave": "AD-1",
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored wave status is awaiting_ci.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:ADVANCED-DATA-OPTIONS#AD-1P0"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md"
+      },
+      {
+        "workstream": "ADVANCED-DATA-OPTIONS",
+        "wave": "AD-1C0",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:ADVANCED-DATA-OPTIONS#AD-1"
         ],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md"
@@ -4750,6 +4878,18 @@
         "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:ADVANCED-DATA-OPTIONS#AD-0"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md"
+      },
+      {
+        "workstream": "ADVANCED-DATA-OPTIONS",
+        "wave": "AD-2",
+        "state": "blocked",
+        "reason_code": "workstream_blocked",
+        "reason": "Parent workstream status is blocked.",
+        "depends_on": [
+          "WS:ADVANCED-DATA-OPTIONS#AD-1"
         ],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md"
@@ -6348,9 +6488,9 @@
       {
         "workstream": "DEFENSE-PROCUREMENT-V3",
         "wave": "D1",
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored wave status is in_progress.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:DEFENSE-PROCUREMENT-V3#D0R"
         ],
@@ -6688,9 +6828,9 @@
       {
         "workstream": "FINANCIAL-INTELLIGENCE-FABRIC",
         "wave": "FIF-2",
-        "state": "ready",
-        "reason_code": "dependencies_satisfied",
-        "reason": "All declared dependencies are done.",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
         "depends_on": [
           "WS:FINANCIAL-INTELLIGENCE-FABRIC#FIF-1"
         ],
@@ -6970,9 +7110,9 @@
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-1C",
-        "state": "ready",
-        "reason_code": "dependencies_satisfied",
-        "reason": "All declared dependencies are done.",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B"
         ],
@@ -6989,6 +7129,20 @@
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-0A"
         ],
         "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "GREY-DEER-RISK-INTELLIGENCE",
+        "wave": "GD-2R1",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
+        "depends_on": [
+          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-2"
+        ],
+        "unmet_dependencies": [
+          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-2"
+        ],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
       },
       {
@@ -8895,16 +9049,14 @@
     "degraded": []
   },
   "warnings": [
-    "WS:ADVANCED-DATA-OPTIONS — record_disagrees_with_execution: wave AD-1 is 'awaiting_ci' but PR #5872 is merged",
     "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2 — record_disagrees_with_execution: wave W1A is 'in_progress' but PR #6012 is merged",
     "WS:COMMERCIAL-PATH-ALERTING — record_disagrees_with_execution: wave W1 is 'awaiting_ci' but PR #5734 is merged",
     "WS:CUSTOMER-DATA-BACKUP — record_disagrees_with_execution: wave W1 is 'awaiting_ci' but PR #5733 is merged",
-    "WS:DEFENSE-PROCUREMENT-V3 — record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5836 is merged",
-    "WS:DEFENSE-PROCUREMENT-V3 — record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5885 is merged",
-    "WS:DEFENSE-PROCUREMENT-V3 — record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5882 is merged",
-    "WS:DEFENSE-PROCUREMENT-V3 — record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5856 is merged",
     "WS:EVAL-OS-T1-ENGINE-REGISTRY — status is 'active' but every wave is done/dropped — roll the status forward",
+    "WS:FINANCIAL-INTELLIGENCE-FABRIC — record_disagrees_with_execution: wave FIF-2 is 'in_progress' but PR #5983 is merged",
     "WS:FUNDAMENTAL-FORENSICS — record_disagrees_with_execution: wave FF-1 is 'in_progress' but PR #5820 is merged",
+    "WS:GREY-DEER-RISK-INTELLIGENCE — record_disagrees_with_execution: wave GD-2 is 'in_progress' but PR #6026 is merged",
+    "WS:GREY-DEER-RISK-INTELLIGENCE — record_disagrees_with_execution: wave GD-4A is 'in_progress' but PR #6022 is merged",
     "WS:LIVE-ENTRY-RADAR — record_disagrees_with_execution: wave W6 is 'in_progress' but PR #5834 is merged",
     "WS:LIVE-ENTRY-RADAR — record_disagrees_with_execution: wave W6 is 'in_progress' but PR #5845 is merged",
     "WS:PROPHET-HK-CA-REVAMP — record_disagrees_with_execution: wave ca-truth is 'in_progress' but PR #5926 is merged",

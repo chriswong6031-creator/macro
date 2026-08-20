@@ -132,11 +132,13 @@ def _leadership_crack_read(doc: Mapping[str, Any] | None, session: str | None) -
     state = doc.get("state")
     stale = bool(session) and bool(as_of) and as_of != session
     stage = _LEADERSHIP_STAGE.get(str(state).upper()) if state else None
-    # A BROKEN cohort that is also dislocated is damage that has already spread beyond
-    # the cohort's own members — a present-tense TRANSMITTING observation, still
-    # descriptive (it reports what the tape did, not what it will do).
-    if stage == "FRAGILE" and str(state).upper() == "BROKEN" and doc.get("dislocation"):
-        stage = "TRANSMITTING"
+    # GD-2R1 (Sol post-merge review): `dislocation` does NOT promote to TRANSMITTING.
+    # Dislocation is precisely "the cohort is damaged while the INDEX still holds" —
+    # evidence that damage has NOT spread. Reading it as transmission inverted the
+    # signal's own meaning. It stays a FRAGILE observation and the flag itself is
+    # carried in `detail` for the evidence drawer. This organ measures one cohort, so
+    # it is not competent to assert transmission at all: the default FRAGILE ceiling
+    # on SourceRead is what enforces that, whatever a future mapping claims.
     return SourceRead(
         source_id=_LEADERSHIP_SOURCE,
         role="hazard_evidence",

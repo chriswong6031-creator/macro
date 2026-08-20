@@ -8,7 +8,7 @@
     "model": null,
     "probabilities": false
   },
-  "asof": "2026-08-19",
+  "asof": "2026-08-20",
   "null_state": true,
   "null_reason": "panel: no readable tickers in the store",
   "states": {
@@ -18,13 +18,13 @@
     "breaking": []
   },
   "_vintage": {
-    "generated_utc": "2026-08-19T15:46:34Z",
+    "generated_utc": "2026-08-20T03:42:47Z",
     "source": "scripts/build_top_maturation.py",
     "store_vintage": {
       "store": "massive_stock_day",
-      "n_tickers": 21340,
-      "latest_date": "2026-08-17",
-      "updated_at": "2026-08-19T03:44:22.018007+00:00"
+      "n_tickers": 21352,
+      "latest_date": "2026-08-18",
+      "updated_at": "2026-08-20T00:19:42.432391+00:00"
     }
   }
 }

@@ -1,6 +1,8 @@
 {
-  "_fixture": "PERMANENT REGRESSION FIXTURE — GD-2 commission §0.4.",
+  "_fixture": "PERMANENT REGRESSION FIXTURE — GD-2 commission §0.4, expectations revised by GD-2R1 §0.6.",
   "_why": "The accepted GD-1 dual-read of settled session 2026-08-18: the slow trend organ read RISK_ON 76 while the leadership cohort was BROKEN and the cross-asset radar was calm at 53.9. Any composer that averages these into a middle score, or that lets the calm radar cancel the broken cohort, destroys the exact transition this program exists to detect. This fixture is asserted verbatim and must never be regenerated from live data.",
+  "_expected": "RISK_ON 76 carried verbatim + leadership BROKEN -> hazard_stage FRAGILE (never TRANSMITTING: dislocation is cohort damage while the index holds, which is evidence damage has NOT spread), coherence CONTRADICTORY scoped to the market reads only, hazard_summary.stage_since null (V0 has no episode lifecycle; the 2026-07-07 onset stays attributed to the source in provenance detail), every authority boolean false.",
+  "_raw_sources_are_frozen": "GD-2R1 changed only what the fixture is expected to COMPOSE TO. Every source value below is byte-identical to the GD-2 original.",
   "_source": "data/market_state/latest.json + data/leadership_crack/latest.json, settled session 2026-08-18",
   "session": "2026-08-18",
   "market_state": {

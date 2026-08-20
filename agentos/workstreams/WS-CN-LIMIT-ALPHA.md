@@ -106,17 +106,24 @@ waves:
       Appendix C and the manifest.
   - id: P0-ST
     title: 2026 main-board risk-warning rule parity and replay (program P0)
-    status: todo
+    status: in_progress
     depends_on: [R6-0]
     next_action: >-
-      Commission as its own session after R6-0 merges: effective-dated
-      main-board risk-warning band ±5%→±10% from 2026-07-06 in
-      config/cn_limit_rules.yml + engine/china_microstructure.py, with
-      official-source effective-date receipt, boundary tests both venues,
-      affected-row census, bounded replay, correction receipts, and a real
-      asia-close proof (packet §P0-ST;
-      DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06). Affected rows stay
-      quarantined until then.
+      BUILT_NOT_PROVEN (merge pending → asia-close production proof pending).
+      Era-dated main-board risk-warning band ±5%→±10% effective 2026-07-06
+      landed in config/cn_limit_rules.yml + engine/china_microstructure.py
+      (MAIN_ST_BAND_WIDE_DATE) with official-source receipts (SSE
+      c_20260424_10816474; SZSE 深证上〔2026〕551号 arts. 3.3.13/10.9),
+      boundary tests for both venues, and a bounded owner-native replay:
+      census found 0 stale limit_width==5.0 rows and exactly one affected
+      main-board name (600079.SS); both replay arms (current era-dated law vs.
+      the superseded always-5% law) produced identical empty event sets over
+      its 33 scored sessions since 2026-07-06 (max move 3.08%, never near
+      either band) — zero store corrections required. Receipts:
+      research/cn_limit/P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.{md,json},
+      research/cn_limit/p0_st_band_replay.py. Resolves
+      DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06 pending merge + a real
+      asia-close live proof.
   - id: DEP-CAI
     title: China Alpha Intelligence PR-0B telemetry + rights/identity closure
     status: todo
@@ -232,13 +239,23 @@ landmines:
     (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT). P-B3's corroborative null
     is a duration/prevalence-preserving within-split spell permutation.
   - >-
-    Main-board risk-warning event labels from 2026-07-06 onward are rule-stale
-    and QUARANTINED until P0-ST closes: the repo still applies ±5% where the
-    official 2026 rules require ±10%
-    (DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06). Note
-    engine/china_microstructure.py's ST_STORE_COVERAGE_DATE is coincidentally
-    also 2026-07-06 — that constant is store coverage, not the missing rule-era
-    switch.
+    QUARANTINE LIFTED at merge (PR #6047, P0-ST wave): the main-board
+    risk-warning band repair (era-dated ±5%→±10% effective 2026-07-06;
+    MAIN_ST_BAND_WIDE_DATE in engine/china_microstructure.py) plus the matching
+    config/cn_limit_rules.yml interval split landed there. The census in that
+    PR's replay (research/cn_limit/P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.md)
+    confirmed ZERO persisted rows at limit_width==5.0 in
+    data/china_microstructure/limit_events.parquet even under the pre-fix code
+    — the sole affected main-board ST name (600079.SS) never actually printed
+    a post-07-06 event at either width — so there were no pre-fix rule-stale
+    era labels to quarantine in the first place; this constraint recorded a
+    risk that the census then measured as not materialized
+    (DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06, now resolved — see that
+    record for the repaired claim). Final closure still waits on a real
+    asia-close production proof (packet §P0-ST). Note
+    engine/china_microstructure.py's ST_STORE_COVERAGE_DATE remains
+    coincidentally also 2026-07-06 — that constant is store coverage, not the
+    rule-era switch (which is the separate MAIN_ST_BAND_WIDE_DATE constant).
   - >-
     The R6 packet statuses (DORMANT_*/BLOCKED_*) are encoded here as todo +
     gates in next_action because the wave schema has no blocked status. The

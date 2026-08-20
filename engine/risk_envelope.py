@@ -59,6 +59,42 @@ over an ordinal, never a mean.  Two sources at FRAGILE do not make BREAKDOWN, an
 calm source does not pull a BREAKDOWN source down to FRAGILE.  `coherence` records the
 disagreement explicitly instead of dissolving it.
 
+STAGE COMPETENCE — the GD-2R1 mapping tightening (Sol post-merge review 2026-08-19)
+------------------------------------------------------------------------------------
+A source may only assert stages it is actually competent to OBSERVE.  Competence is
+declared per source (`SourceRead.stage_ceiling`) and enforced here; it is never inferred
+from a score.  The ceiling defaults to `FRAGILE`, so a source must be deliberately
+promoted before it can claim more — the same direction of travel as the descriptive-only
+birth authority.
+
+The rule this exists to enforce: **cohort damage is not transmission.**  Leadership
+Crack reporting `BROKEN` with `dislocation` means a tracked cohort is damaged *while the
+index still holds*.  That is a FRAGILE observation.  Claiming `TRANSMITTING` from it
+asserts something nobody measured — that the damage is currently moving through the
+market — and a lead claim of that kind needs an INDEPENDENT settled transmission source
+confirming it.  **V0 maps no such source, so TRANSMITTING and BREAKDOWN are unreachable
+in V0 by construction**, not by the accident of no source happening to claim them.  A
+claim above a source's ceiling is admitted at the ceiling and the source is named in
+`hazard_summary.capped_sources`, so the demotion is never silent.
+
+This tightens semantics WITHIN `mastermind.risk_envelope/v1` — no schema version bump.
+Consumers that treated the stage as descriptive are unaffected; the only change is that
+a stage the composer was never entitled to assert can no longer appear.
+
+THE LIFECYCLE CLOCK IS NOT THE SOURCE'S ONSET CLOCK
+----------------------------------------------------
+`hazard_summary.stage_since` is the Grey Deer *episode* clock: when THIS envelope first
+observed this stage.  Establishing it requires an episode lifecycle — a durable record of
+first-observed transitions — and V0 has none (the Risk Envelope owns no forward ledger,
+freeze §4).  So in V0 `stage_since` is **always null**.
+
+It must not be back-filled from a source's own retrospective onset.  Leadership Crack's
+`state_since` is a statement about the cohort's history, re-derived nightly; reusing it
+would silently claim the envelope has been watching this hazard since a date it did not
+exist.  The source onset is preserved where it belongs — `provenance.sources[].detail` —
+so a surface that wants to say "this source has read that way since <date>" still can,
+attributed to the source.
+
 EXCLUSIONS
 ----------
 `engine/risk_state.py` is frozen legacy.  Its fused score must never enter this
@@ -159,9 +195,16 @@ class SourceRead:
     stale     : the source's own staleness verdict, when it publishes one.
     present   : False when the artifact was missing entirely.
     required  : True when the stage is not lawfully knowable without this source.
-    hazard_stage : this source's descriptive V0 stage contribution, or None.
+    hazard_stage : this source's descriptive V0 stage CLAIM, or None.  A claim above
+                this source's `stage_ceiling` is admitted at the ceiling.
+    stage_ceiling : the highest stage this source is competent to OBSERVE.  Defaults to
+                FRAGILE: asserting that damage is transmitting or that a market has
+                broken down is a claim about spread, and a source earns the right to
+                make it by measuring spread, not by having a large number.  Raising a
+                ceiling is a promotion decision, never an implementation detail.
     detail    : extra source-native fields carried for the evidence drawer.  Never
-                read as arithmetic.
+                read as arithmetic.  Holds the source's own retrospective onset
+                (`state_since`), which is NOT the envelope's lifecycle clock.
     """
 
     source_id: str
@@ -173,6 +216,7 @@ class SourceRead:
     present: bool = True
     required: bool = False
     hazard_stage: str | None = None
+    stage_ceiling: str = "FRAGILE"
     label_en: str | None = None
     label_zh: str | None = None
     detail: Mapping[str, Any] = field(default_factory=dict)
@@ -181,6 +225,30 @@ class SourceRead:
         if self.role not in ROLES:
             raise EnvelopeContractError(f"unknown source role {self.role!r}; expected one of {ROLES}")
         assert_v0_stage(self.hazard_stage)
+        if self.stage_ceiling not in STAGE_VOCABULARY:
+            raise EnvelopeContractError(
+                f"stage_ceiling {self.stage_ceiling!r} is not a V0 stage; "
+                f"lawful values are {STAGE_VOCABULARY}"
+            )
+
+    @property
+    def admitted_stage(self) -> str | None:
+        """The claim, capped at what this source is competent to observe.
+
+        Cohort damage is not transmission: a source that measures one cohort cannot
+        establish that damage is moving through the market, however bad that cohort's
+        reading is.  Capping here — rather than trusting each adapter to be careful —
+        is what makes the limit a property of the contract instead of a convention.
+        """
+        if self.hazard_stage is None:
+            return None
+        if _STAGE_RANK[self.hazard_stage] > _STAGE_RANK[self.stage_ceiling]:
+            return self.stage_ceiling
+        return self.hazard_stage
+
+    @property
+    def stage_was_capped(self) -> bool:
+        return self.hazard_stage is not None and self.admitted_stage != self.hazard_stage
 
     @property
     def usable(self) -> bool:
@@ -277,57 +345,82 @@ def _hazard_summary(sources: Sequence[SourceRead]) -> dict[str, Any]:
 
     Rules, in order:
       1. A required hazard source that is missing or stale  → stage null (not knowable).
-      2. No usable hazard source at all                     → stage null.
-      3. Otherwise the stage is the MAX severity any single usable source justifies.
-         A calm source never reduces a damaged source's reading; two FRAGILE sources
-         never compound to TRANSMITTING.
-      4. NONE is emitted only under rule 3 with fresh required coverage — i.e. it is a
+      2. A required hazard source that is FRESH but whose state this build cannot MAP
+         → stage null.  A state we do not understand is not a state we may ignore: if
+         a required organ starts publishing a vocabulary we have no mapping for, the
+         honest answer is "we cannot read this today", not "an optional source says
+         calm, so NONE".  Without this rule an unmapped required source is silently
+         dropped and a calm optional source decides the answer alone.
+      3. No usable hazard source at all                     → stage null.
+      4. Otherwise the stage is the MAX severity any single usable source is COMPETENT
+         to justify (`SourceRead.admitted_stage`).  A calm source never reduces a
+         damaged source's reading; two FRAGILE sources never compound to TRANSMITTING;
+         and a source claiming beyond its ceiling is admitted at the ceiling.
+      5. NONE is emitted only under rule 4 with fresh required coverage — i.e. it is a
          positive "we looked and found nothing", never a fallback.
+
+    `stage_since` is null in every branch: it is the envelope's own episode clock, and
+    V0 has no episode lifecycle to date a first-observed transition from.  A source's
+    retrospective onset stays in `provenance.sources[].detail`, attributed to it.
     """
     hazard = [s for s in _sorted(sources) if s.role == ROLE_HAZARD]
     required_unusable = [s for s in hazard if s.required and not s.usable]
-    usable = [s for s in hazard if s.usable and s.hazard_stage is not None]
+    required_unmapped = [s for s in hazard
+                         if s.required and s.usable and s.hazard_stage is None]
+    usable = [s for s in hazard if s.usable and s.admitted_stage is not None]
+    capped = [s.source_id for s in usable if s.stage_was_capped]
+
+    # V0 owns no forward ledger (freeze §4), so there are no episodes and no lawful
+    # first-observed transition instant. Every branch below shares these.
+    _episode_fields = {
+        "primary_episode_id": None,
+        "active_episode_count": 0,
+        "stage_since": None,
+        "stage_since_basis": "no_episode_lifecycle_in_v0",
+        "display_only": True,
+    }
 
     if required_unusable:
         return {
             "stage": None,
             "stage_reason": "required_coverage_unavailable",
             "unreadable_sources": [s.source_id for s in required_unusable],
+            "unmapped_required_sources": [s.source_id for s in required_unmapped],
             "contributing_sources": [s.source_id for s in usable],
-            "primary_episode_id": None,
-            "active_episode_count": 0,
-            "stage_since": None,
-            "display_only": True,
+            "capped_sources": capped,
+            **_episode_fields,
+        }
+    if required_unmapped:
+        return {
+            "stage": None,
+            "stage_reason": "required_source_state_unmapped",
+            "unreadable_sources": [s.source_id for s in hazard if not s.usable],
+            "unmapped_required_sources": [s.source_id for s in required_unmapped],
+            "contributing_sources": [s.source_id for s in usable],
+            "capped_sources": capped,
+            **_episode_fields,
         }
     if not usable:
         return {
             "stage": None,
             "stage_reason": "no_usable_hazard_evidence",
             "unreadable_sources": [s.source_id for s in hazard if not s.usable],
+            "unmapped_required_sources": [],
             "contributing_sources": [],
-            "primary_episode_id": None,
-            "active_episode_count": 0,
-            "stage_since": None,
-            "display_only": True,
+            "capped_sources": [],
+            **_episode_fields,
         }
 
-    lead = max(usable, key=lambda s: (_STAGE_RANK[s.hazard_stage or "NONE"], s.source_id))
-    stage = assert_v0_stage(lead.hazard_stage)
-    # stage_since comes from the leading source's own clock when it publishes one —
-    # the composer never invents a transition timestamp.
-    stage_since = None
-    if stage != "NONE":
-        stage_since = lead.detail.get("state_since") or lead.as_of
+    lead = max(usable, key=lambda s: (_STAGE_RANK[s.admitted_stage or "NONE"], s.source_id))
+    stage = assert_v0_stage(lead.admitted_stage)
     return {
         "stage": stage,
         "stage_reason": "observed_settled_evidence",
         "unreadable_sources": [s.source_id for s in hazard if not s.usable],
+        "unmapped_required_sources": [],
         "contributing_sources": [s.source_id for s in usable],
-        # V0 mints no episodes: the Risk Envelope owns no forward ledger (freeze §4).
-        "primary_episode_id": None,
-        "active_episode_count": 0,
-        "stage_since": stage_since,
-        "display_only": True,
+        "capped_sources": capped,
+        **_episode_fields,
     }
 
 
@@ -347,7 +440,7 @@ def _contradictions(
 
     if measured.get("verdict") == "RISK_ON" and stage in ("FRAGILE", "TRANSMITTING", "BREAKDOWN"):
         for s in hazard:
-            if (s.hazard_stage or "NONE") != "NONE":
+            if (s.admitted_stage or "NONE") != "NONE":
                 out.append({
                     "kind": "trend_vs_hazard",
                     "left": measured.get("source_artifact"),
@@ -356,8 +449,8 @@ def _contradictions(
                     "right_state": s.state,
                 })
 
-    damaged = [s for s in hazard if (s.hazard_stage or "NONE") != "NONE"]
-    calm = [s for s in hazard if (s.hazard_stage or "NONE") == "NONE"]
+    damaged = [s for s in hazard if (s.admitted_stage or "NONE") != "NONE"]
+    calm = [s for s in hazard if (s.admitted_stage or "NONE") == "NONE"]
     for d in damaged:
         for c in calm:
             out.append({
@@ -376,12 +469,19 @@ def _coherence(
     hazard: Mapping[str, Any],
     data_state: str,
 ) -> dict[str, Any]:
-    """Do the answers agree?  A structural verdict — NOT a severity and NOT a score.
+    """Do the MARKET READS agree?  A structural verdict — NOT a severity, NOT a score.
 
-    CONTRADICTORY  the answers point opposite ways (trend intact, mechanism broken).
+    SCOPE (GD-2R1, Sol ruling): coherence compares the measured trend against the hazard
+    evidence, and nothing else.  **Capital policy is orthogonal and never participates.**
+    A posture derived from zero policies cannot agree or disagree with a market reading —
+    it is a different kind of statement, and letting it join the comparison would imply
+    the product is weighing "what we're allowed to do" against "what the market is
+    doing".  `scope` is emitted so a surface cannot quietly widen this.
+
+    CONTRADICTORY  the reads point opposite ways (trend intact, mechanism damaged).
     MIXED          we cannot claim alignment: the stage is unreadable, coverage is
                    degraded, or hazard organs disagree with each other only.
-    ALIGNED        every usable answer points the same way.
+    ALIGNED        every usable market read points the same way.
 
     coherence carries no hue of its own on the surface: under the reserved-hue law
     (MASTER_PRODUCT_DESIGN_SYSTEM_V1 §1) hue means direction, health, wayfinding,
@@ -402,6 +502,10 @@ def _coherence(
 
     return {
         "state": state,
+        # named, not implied: this verdict covers the market reads only
+        "scope": "market_reads",
+        "compares": ["measured_state", "hazard_evidence"],
+        "excludes": ["policy_summary"],
         "contradictions": contradictions,
         "contradiction_count": len(contradictions),
         "display_only": True,
@@ -457,7 +561,12 @@ def _provenance(sources: Sequence[SourceRead]) -> dict[str, Any]:
                 "as_of": s.as_of,
                 "coverage": s.coverage_state(),
                 "required": s.required,
-                "hazard_stage": s.hazard_stage,
+                # the stage that actually counted (claim capped at competence), the
+                # ceiling that capped it, and the raw claim when the two differ — so a
+                # demotion is auditable rather than invisible
+                "hazard_stage": s.admitted_stage,
+                "stage_ceiling": s.stage_ceiling,
+                "hazard_stage_claimed": s.hazard_stage if s.stage_was_capped else None,
                 "label_en": s.label_en,
                 "label_zh": s.label_zh,
                 "detail": dict(sorted(s.detail.items())),
