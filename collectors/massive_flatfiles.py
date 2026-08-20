@@ -1,18 +1,22 @@
 """collectors/massive_flatfiles.py — massive.com S3 flat-file reader: the OPTIONS-FLOW data foundation.
 
 massive.com (a Polygon.io-compatible vendor) exposes daily OPRA flat files on an
-S3-compatible store (files.massive.com, bucket 'flatfiles'). Our account is ENTITLED to
-download the AGGREGATE products (verified by probe 2026-06-21):
+S3-compatible store (files.massive.com, bucket 'flatfiles'). The configured account
+historically downloaded the AGGREGATE products (verified by probe 2026-06-21):
 
   • us_options_opra/minute_aggs_v1/  — per-contract per-MINUTE OHLCV + volume + txns (~18 MB/day)
   • us_options_opra/day_aggs_v1/     — per-contract DAILY OHLCV + volume + txns (~3 MB/day)
   • us_stocks_sip/day_aggs_v1/       — stock daily bars (for option/stock volume ratios)
 
-…over a ROLLING RECENT WINDOW (~2025→present). It is NOT entitled to the per-trade tape
-(trades_v1) or the NBBO quotes (quotes_v1) — both return 403 via flat-file AND REST. So the
-flow engine signs volume with a MINUTE TICK-RULE (the option's own minute-close tick),
-which is the honest fallback when the trade-level tape and NBBO are unavailable; true
-quote-rule signing is an optional Databento calibration (collectors/databento_tbbo.py).
+…over a ROLLING RECENT WINDOW (~2025→present). Entitlement is runtime state, not a
+permanent property of this module: DSC:MASSIVE-OPTIONS-FLATFILE-ENTITLEMENT-REGRESSION
+records the 2026-08-20 production-key regression where listings remain visible but
+Options aggregate reads return 403. The account is not entitled to the per-trade tape
+(trades_v1) or the NBBO quotes (quotes_v1) — both return 403 via flat-file AND REST. So
+the flow engine signs volume with a MINUTE TICK-RULE (the option's own minute-close
+tick), which is the honest fallback when the trade-level tape and NBBO are unavailable;
+true quote-rule signing is an optional Databento calibration
+(collectors/databento_tbbo.py).
 
 This reader downloads one day's gzip, filters to the requested underlyings, parses the OCC
 option symbol, and caches the filtered frame to data/massive_flat/ so re-runs never
