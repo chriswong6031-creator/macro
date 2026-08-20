@@ -71,6 +71,23 @@ waves:
       coverage_pct=0.0 aborted_early 5/5 auth_or_entitlement_failure. That is not
       capture S. Do not hand-write a receipt. Do not --force. After a live 200
       entitlement, the next lawful scheduled run may replace this failed vintage.
+  - id: AD-1C0.1
+    title: Source-clock integrity + security closure + production commissioning
+    status: building
+    depends_on: [AD-1C0]
+    next_action: >
+      Sol handoff 2026-08-20, three jobs. (A) Source-clock adjudication: census
+      measures the nightly accrual's real execution window (a normal collect crosses
+      midnight ET while the resolved session stays the prior NYSE session, so the
+      same-ET-day partial-replacement rule may refuse lawful repairs); Fable rules
+      Option A (earlier close-proximate capture point) vs Option B (bounded lawful
+      capture lease); any timing PR is held UNMERGED for Sol, no merge-on-green.
+      (B) Credential/vendor closure is OPERATOR-EXTERNAL: revoke/rotate the exposed
+      key, delete run 32077948964 logs, register the replacement as a real Actions
+      secret, restore the option-chain entitlement (probe 2026-08-20T08:09Z: chain
+      still 403, logs still served, no POLYGON/MASSIVE key in Actions secrets).
+      (C) Production commissioning BLOCKED_EXTERNAL until (B) closes; then two
+      consecutive healthy scheduled captures (S, D) and AD-1 end-to-end acceptance.
   - id: AD-2
     title: Evidence Receipts, Nulls, Lifecycle, Corrections
     status: todo

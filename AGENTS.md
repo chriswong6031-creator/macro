@@ -432,6 +432,14 @@ surviving PR proof run is the merge's evidence — watch it to conclusion. `--ad
 remains only for the spurious Workers X, docs-only pull requests that trigger no
 pack checks, and genuine wedges — never to outrun CI.
 
+**A RECORDED HOLD IS A MERGE BARRIER (Sol 2026-08-19, #5974/#5953).** A hold stated in a
+PR's body or comments (HOLD-FOR-SOL / "do not merge") binds EVERY merge path — the sweeper,
+blanket-arming sessions, and manual merges alike — regardless of label state. Enforce it as
+state (no arming label, `autoMergeRequest` null, DRAFT, hold comment naming authority +
+release condition), and never arm a PR you did not open without grepping its
+title+body+comments for a hold. Conditional merge authority granted for one PR NEVER
+transfers to any other PR (`DEC:SOL-HOLD-IS-A-MERGE-BARRIER`).
+
 **DISARMING IS NEVER SILENT (PR #5291, 2026-08-11).** The sweeper never removes
 `merge-on-green`; `scripts/merge_on_green.py` has no code path that does. Every
 removal is a session's deliberate act, so treat it as one: taking a pull request
