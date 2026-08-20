@@ -1,0 +1,117 @@
+name: EXK Turn 4 canonical replay
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/exk_turn4_replay.py"
+      - "research/exk_dislocation/**"
+      - ".github/workflows/exk-turn4-replay.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout canonical PR tape
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install replay dependencies
+        run: python -m pip install --disable-pip-version-check numpy pandas pyarrow
+
+      - name: Compile and self-test
+        run: |
+          python -m py_compile scripts/exk_turn4_replay.py
+          python scripts/exk_turn4_replay.py --selftest
+
+      - name: Verify canonical input presence
+        run: |
+          set -euo pipefail
+          test -f data/yahoo/EXK.parquet
+          test -f data/yahoo/SIL.parquet
+          if test -f data/yahoo/SLV.parquet; then
+            echo "SLV_STATE=MEASURED"
+          else
+            echo "SLV_STATE=UNAVAILABLE"
+          fi
+          sha256sum data/yahoo/EXK.parquet data/yahoo/SIL.parquet
+
+      - name: Run frozen replay twice
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python scripts/exk_turn4_replay.py \
+            --root . \
+            --events research/exk_dislocation/EXK_TURN4_EVENTS_MIN.json \
+            --out artifacts/replay1.json \
+            --max-wait 60
+          python scripts/exk_turn4_replay.py \
+            --root . \
+            --events research/exk_dislocation/EXK_TURN4_EVENTS_MIN.json \
+            --out artifacts/replay2.json \
+            --max-wait 60
+          cmp artifacts/replay1.json artifacts/replay2.json
+          sha256sum artifacts/replay1.json artifacts/replay2.json | tee artifacts/replay_sha256.txt
+
+      - name: Build compact adjudication summary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          p=json.loads(Path('artifacts/replay1.json').read_text())
+          event_ids={
+              'february':'EXK-2026-02-27-TERRONERA-SECURITY-RECAP',
+              'august':'EXK-2026-08-16-TERRONERA-BLOCKADE',
+              'trunnion':'EXK-2024-08-12-TRUNNION',
+              'guanacevi_2023':'EXK-2023-10-11-GUANACEVI-SEQUENCING',
+          }
+          selected={}
+          for label,event_id in event_ids.items():
+              selected[label]=[
+                  r for r in p['rows']
+                  if r.get('event_id')==event_id and r.get('arm') in ('H0','H1','H2','H3','H4','H1B','H4B')
+              ]
+          summary={
+              'schema':'mastermind.exk_turn4_adjudication_summary.v1',
+              'coverage':p['coverage'],
+              'inputs':p['inputs'],
+              'summary':p['summary'],
+              'selected_events':selected,
+              'refusals':[r for r in p['rows'] if r.get('status') in ('REFUSED','NO_ENTRY')],
+          }
+          Path('artifacts/summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True))
+          print('=== COVERAGE ===')
+          print(json.dumps(p['coverage'],sort_keys=True))
+          print('=== INPUTS ===')
+          print(json.dumps(p['inputs'],sort_keys=True))
+          print('=== ARM SUMMARY ===')
+          print(json.dumps(p['summary']['by_arm'],sort_keys=True))
+          print('=== SELECTED EVENTS ===')
+          print(json.dumps(selected,sort_keys=True))
+          print('=== REFUSAL COUNTS ===')
+          counts={}
+          for r in summary['refusals']:
+              key=r.get('refusal','unknown')
+              counts[key]=counts.get(key,0)+1
+          print(json.dumps(counts,sort_keys=True))
+          PY
+
+      - name: Upload replay receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: exk-turn4-canonical-replay
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 7
