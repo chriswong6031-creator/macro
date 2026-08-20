@@ -9656,6 +9656,10 @@ jobs:
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
+      # P0-ST band-repair receipt: referenced from engine/china_microstructure.py's
+      # MAIN_ST_BAND_WIDE_DATE provenance comment, so the closure scanner reaches it
+      # (contract-delta 2026-08-20; widening is always the safe direction).
+      - "research/cn_limit/P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.md"
       - "research/prophet_fusion/PR1B_BASELINE_RACE.md"
       - "research/prophet_fusion/PR2_C2_REDUNDANCY.md"
       - "research/prophet_fusion/families.yml"
