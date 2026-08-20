@@ -7878,8 +7878,10 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest fastapi httpx pyyaml requests
+      - name: node must be on PATH — dossier JS contract skips without it (vacuous green)
+        run: node --version
       - name: collect beacon throttle + growth-event registry + tape per-IP cap + generic billing/auth errors
-        run: python -m pytest tests/test_collect_throttle.py tests/test_growth_events_registry.py tests/test_tape_relay.py tests/test_billing_subscribe.py tests/test_company_intelligence_api.py -q
+        run: python -m pytest tests/test_collect_throttle.py tests/test_growth_events_registry.py tests/test_tape_relay.py tests/test_billing_subscribe.py tests/test_company_intelligence_api.py tests/test_company_intelligence_dossier_js.py -q
 
   free-content-estate:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free

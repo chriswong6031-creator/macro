@@ -9,17 +9,19 @@ Prophet.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 import re
 import tempfile
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Sequence, Union
 
 from .contracts import (
     ContractError,
     canonical_json_bytes,
     iso_timestamp,
+    safe_ticker,
 )
 from .documents import (
     TypedAbsence,
@@ -332,6 +334,27 @@ def _strip_private(workspace: Mapping[str, Any]) -> dict[str, Any]:
     return {key: workspace[key] for key in WORKSPACE_KEYS}
 
 
+def _register_alias(alias_map: dict[str, str], alias: object, event_id: str) -> None:
+    """Bind one alias to a canonical event before marker promotion.
+
+    Same alias → same event is idempotent. Same alias → a different canonical
+    event raises ``WorkspaceError`` so dictionary assignment cannot silently
+    overwrite ownership.
+    """
+    key = str(alias or "").strip()
+    if not key:
+        return
+    existing = alias_map.get(key)
+    if existing is None:
+        alias_map[key] = event_id
+        return
+    if existing != event_id:
+        raise WorkspaceError(
+            f"alias {key!r} is already owned by {existing}; "
+            f"cannot reassign to {event_id}"
+        )
+
+
 def _generation_identity(
     workspaces: Mapping[str, Mapping[str, Any]],
     generated_at: str,
@@ -378,19 +401,20 @@ def write_workspace_generation(
         row["generated_at"] = str(generated)
         validate_event_workspace(row)
         stamped[event_id] = row
-        alias_map[event_id] = event_id
+        _register_alias(alias_map, event_id, event_id)
         for alias in row.get("aliases") or []:
-            alias_map[str(alias)] = event_id
+            _register_alias(alias_map, alias, event_id)
         private = workspaces[event_id]
         extra = private.get("_aliases") if isinstance(private, Mapping) else None
         if isinstance(extra, Mapping):
-            for group in (
+            _register_alias(alias_map, extra.get("canonical_event_id"), event_id)
+            for family in (
                 extra.get("company_intelligence_ids") or [],
                 extra.get("earnings_narrative_keys") or [],
                 extra.get("public_slugs") or [],
             ):
-                for alias in group:
-                    alias_map[str(alias)] = event_id
+                for alias in family:
+                    _register_alias(alias_map, alias, event_id)
 
     nest = Path(out_dir) / NEST
     generation_dir = nest / "generations" / generation_id
@@ -442,6 +466,103 @@ def resolve_workspace_event_id(event_id: object, aliases: Mapping[str, str]) -> 
     if _EVENT_ID_RE.fullmatch(text):
         return text
     raise WorkspaceError(f"unresolved event id: {text}")
+
+
+@dataclass(frozen=True)
+class SelectedEvent:
+    """Result of ``select_current_event_from_aliases``.
+
+    ``alias`` is the T/YYYYQn key that matched (e.g. ``"AAPL/2026Q3"``).
+    """
+
+    event_id: str
+    ticker: str
+    year: int
+    quarter: int
+    alias: str
+
+
+def select_current_event_from_aliases(
+    ticker: str,
+    aliases: Union[Mapping[str, str], Sequence[tuple[str, str]]],
+) -> SelectedEvent:
+    """Select the most-recent T/YYYYQn event for *ticker* from *aliases*.
+
+    *aliases* is the ``aliases`` dict from an ``event_workspace_manifest.v1``
+    (a ``Mapping[str, str]``), or a sequence of ``(alias, canonical)`` pairs
+    so tests can inject duplicate keys that a plain dict cannot represent.
+
+    Rules
+    -----
+    * Only aliases whose key matches ``^TICKER/YYYYQn$`` (after
+      ``safe_ticker``) are admitted.
+    * At most one distinct canonical ``event_id`` is permitted per fiscal
+      period (year, quarter).  If a period maps to two or more distinct ids,
+      the call fails closed with a ``WorkspaceError`` whose message contains
+      ``"ambiguous"``.
+    * When no admitted alias exists the error message contains
+      ``"does not cover"``.
+    * The admitted alias with the greatest ``(year, quarter)`` is returned.
+    """
+    try:
+        normalized = safe_ticker(ticker)
+    except ContractError as exc:
+        raise WorkspaceError(str(exc)) from exc
+
+    # Build per-ticker pattern: ^AAPL/(\d{4})Q([1-4])$ for ticker AAPL.
+    pattern = re.compile(r"^" + re.escape(normalized) + r"/(\d{4})Q([1-4])$")
+
+    # Normalize to a sequence of pairs so duplicate keys are visible.
+    if isinstance(aliases, Mapping):
+        pairs: list[tuple[str, str]] = list(aliases.items())
+    else:
+        pairs = [(str(a), str(c)) for a, c in aliases]
+
+    # period → set of distinct canonical event_ids admitted under that period.
+    period_ids: dict[tuple[int, int], set[str]] = {}
+    # period → the first matching alias key (for the return value).
+    period_alias: dict[tuple[int, int], str] = {}
+
+    for alias_key, canonical in pairs:
+        m = pattern.fullmatch(str(alias_key))
+        if m is None:
+            continue
+        canonical_str = str(canonical)
+        if not _EVENT_ID_RE.fullmatch(canonical_str):
+            continue
+        year = int(m.group(1))
+        quarter = int(m.group(2))
+        period = (year, quarter)
+        if period not in period_ids:
+            period_ids[period] = set()
+            period_alias[period] = alias_key
+        period_ids[period].add(canonical_str)
+
+    if not period_ids:
+        raise WorkspaceError(
+            f"Event workspace does not cover {normalized}"
+        )
+
+    # Fail closed on any fiscal period with >1 distinct canonical owner.
+    for (year, quarter), ids in period_ids.items():
+        if len(ids) > 1:
+            raise WorkspaceError(
+                f"{normalized}/{year}Q{quarter} is ambiguous: "
+                f"{len(ids)} distinct canonical ids"
+            )
+
+    best_period = max(period_ids)
+    best_year, best_quarter = best_period
+    best_event_id = next(iter(period_ids[best_period]))
+    best_alias = period_alias[best_period]
+
+    return SelectedEvent(
+        event_id=best_event_id,
+        ticker=normalized,
+        year=best_year,
+        quarter=best_quarter,
+        alias=best_alias,
+    )
 
 
 def index_from_workspace(payload: Mapping[str, Any]) -> EventAliasIndex:
