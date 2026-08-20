@@ -1,10 +1,10 @@
 {
   "artifact_hashes": {
-    "event_edges": "8a86eeea739eb8145fee71082fcb81587b80c212f72412dbe8f2acbdf5322e0f",
-    "event_versions": "6fca28d4db064a6f9a14a43bec8dfa857b994afb83807e3760987d6852d7dd84",
-    "review_queue": "c3d973a1921e9a2d1486603a9fcd8403095abc469d036c6abbfd6ff6e0959e84"
+    "event_edges": "687d0d8bfdafcca0a778d1d96d1d5777438f9939f40ef967f2550068ac1b98f0",
+    "event_versions": "e581a349079757b9d08097375483a47d9c291b1d65c6c82514592b542f246e1b",
+    "review_queue": "912eff10f7e1ea6e33789564a347d44443036245b067ec6c90451017406449b5"
   },
-  "as_of": "2026-08-19T05:20:35.337035+00:00",
+  "as_of": "2026-08-20T00:31:42.565430+00:00",
   "authority": {
     "entry_authority": false,
     "is_context_only": true,
@@ -18,7 +18,7 @@
     "compile_failures": 0,
     "event_edges": 1,
     "event_versions": 800,
-    "new_event_versions": 200,
+    "new_event_versions": 0,
     "review_queue": 556,
     "source_manifests": 2592
   },
@@ -124,7 +124,7 @@
       "PRE 14C"
     ]
   },
-  "generation_id": "generation:cs:0a7bc05fc903ca2ead7e7107",
+  "generation_id": "generation:cs:11fc9ce057bc83975a660087",
   "known_exclusions": [
     "424B2",
     "424B6",
