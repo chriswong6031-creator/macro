@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T06:24:34.309642+00:00",
-  "count": 1458,
+  "generated_at": "2026-08-20T07:31:35.679057+00:00",
+  "count": 1462,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1471,6 +1471,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-mlgerisdq7d-b9df78",
+      "title": "Emerging market bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:32:15Z",
+      "summary_points": [
+        "**Saudi Aramco Resilience**: 1H26 net income up 33% (SAR 241.6bn) despite 12% production drop; net debt SAR 119.7bn (leverage 0.1x), dividends SAR 164.2bn; geopolitical headwinds partially offset by local supply chain.",
+        "**PIF Strategic Pivot**: Shift from growth to value focus (Vision 2030 2026-30); AUM SAR 3,405bn (USD 908bn) by 2025; revenue up 9% y/y (SAR 450bn) driven by telecom/banking/mining, but faces asset concentration and dividend dependency risks.",
+        "**Geopolitical Credit Threats**: Strait of Hormuz disruptions, Middle East conflict (energy infrastructure damage), and Red Sea trade risks directly threaten credit outlooks; require monitoring for SABIC, Dar Al Arkan, and PIF.",
+        "**Credit Framework Essentials**: Default probability thresholds (<2% for \"Very low\" risk), issuer outlooks (Improving/Stable/Deteriorating), and rating scales (BBB- as lowest investment grade) are critical for portfolio risk assessment.",
+        "**Sell Threshold Definition**: Bonds deemed \"Sell\" when adverse outcome risk exceeds valuation (e.g., negative yield to maturity or imminent call below market price), guiding portfolio exit decisions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-scile3ernj8-ef72c1",
       "title": "Daily US",
       "institution": "UBS",
@@ -1484,6 +1505,68 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-w5brzmvv4l6-bcab86",
+      "title": "UBS Equity Preference List UK 2026 08 18",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:32:12Z",
+      "summary_points": [
+        "**UK Earnings Catalyst**: Oil price surge lifted earnings growth expectation to 11% (from 5%), with 10% growth projected into 2027, driven by supportive global policies and reasonable valuations (12.3x forward P/E vs 1990 median 12.8x).",
+        "**Portfolio Concentration Risk**: 14 UK-listed stocks weighted at 6.3% each, exposing portfolio to UK-specific geopolitical risks (Brexit, fiscal policy), GBP volatility, and minimal international diversification.",
+        "**3i Group Valuation & Risk**: Trading below book value with demographic tailwinds in discounted retail (Action), but key risks include overexposure to Action, branch expansion disruptions, and macroeconomic volatility.",
+        "**BAE Systems Defense Catalyst**: NATO’s 3.5% core defense spending target (2025) and geopolitical tensions (Saudi/US clients) drive growth, though program delays risk near-term volatility.",
+        "**China Regulatory & Patent Risks**: 13% revenue exposure to China slowdown (NMPA shifts), US Part D redesign impact on oncology drugs (Tagrisso, Calquence), and patent expirations (Lynparza, Farxiga) threaten growth momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xxvrp5od1dz-f25693",
+      "title": "UBS Equity Preference List European Energy 2026 08 18",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:32:10Z",
+      "summary_points": [
+        "**BP's Strategic Pivot & Debt Advantage**: Reversed 2020 energy transition focus to prioritize oil/gas, debt reduction, and operational efficiency; Oman positioning outside Strait of Hormuz enhances strategic value; debt reduction vs peers boosts relative valuation.",
+        "**Vår Energi's Acquisition-Driven Dividend**: BlueNord/DUC acquisition enables 10% dividend yield with 9% dilution; Norway's stable regulatory framework supports low-risk profile; 10% production growth target.",
+        "**Sector Allocation Strategy**: 14.3% uniform weighting across 6 European energy stocks (oil majors, drilling services); reflects deliberate sector concentration in high-conviction names (BP, TotalEnergies, Vår Energi).",
+        "**Trading Restrictions Risk**: UBS highlights potential regulatory/liquidity risks for EU/UK energy equities, signaling heightened vulnerability to market access constraints.",
+        "**Refining Margin Catalyst**: Repsol benefits from refining capacity constraints (Strait of Hormuz closure) and minimal Middle East exposure, amplifying margin upside from competitor interruptions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u7hfsjok863-0123b9",
+      "title": "Gold",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:32:08Z",
+      "summary_points": [
+        "**Price Forecast Upside**: End-2027 gold price raised to $5,400/oz (vs.",
+        "$5,200/oz June 2027) driven by disinflation, less restrictive Fed policy, dollar weakening, and sustained demand from central banks (PBoC +20 tons July) and ETF inflows (China/Europe).",
+        "**Key Demand Drivers**: Central bank net purchases (PBoC) and ETF inflows (China/Europe) underpin near-term demand, with pullbacks to $4,000/oz viewed as strategic entry points amid structural support.",
+        "**Critical Risk Factors**: Fed rate hikes risk lifting real yields and strengthening USD, potentially testing $3,850/oz; elevated option volatility (>20%) favors volatility-selling strategies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
