@@ -1,0 +1,131 @@
+{#- ── P-MP1-SHELL central act — Setups CARDS, sourced from the PLAN BOOK ─────────
+   MP-1-prophet-board.md §6 row 1: "this re-sourcing IS the migration's structural
+   act." One `.pvcard` per plan row (`site/prophet/index.json.plans`), keyed by
+   plan `id`, never re-sorted here (the array arrives priority-ordered — the
+   producer's own `plans_sort_key` — §8 "rank via the PUBLISHED plans_sort_key,
+   never a second ordering").
+
+   ONE source for both the free shell and the paid payload, same convention as
+   _us_board_cards.html.j2: the shell {% include %}s this file with-context at
+   the .nbgrid loop's location (dashboard.html.j2); scripts/build_site.py
+   ._write_us_payload renders it directly for the LOCKED remainder shipped in
+   site/premiumdata/us_stocks.json (§8b).
+
+   Params:
+     items        — plan rows (already sliced to the tier's preview or the
+                    locked remainder — this partial carries no tier logic).
+     cand_map     — ticker -> us_standouts.buy row, the SAME candidate join
+                    tools/gen_fixture.py uses for the reference (name, sector,
+                    price, spark, lane, featured, new, caution fields). Absent
+                    for ~75% of plan rows (gen_fixture.py's own measured
+                    coverage) — every join below is fail-soft.
+     trg_map      — ticker -> top_setups row, for the fresh-trigger ⚡ chip
+                    (same producer _us_board_cards.html.j2 already reads).
+     episode_map  — plan id -> {ep, eps, newer}, scripts/build_site.py
+                    ._us_prophet_episode_map() (computed over the FULL,
+                    unsliced book so episode numbers never depend on tier).
+-#}
+{% import "_prophet_card.html.j2" as pv %}
+{%- set _LIFE_LABEL_EN = {'watch':'Watch','ready':'Ready','entered':'Entered','delivering':'Delivering','overtime':'Overtime','invalidated':'Invalidated','resolved':'Resolved'} -%}
+{%- set _LIFE_LABEL_ZH = {'watch':'观察','ready':'就绪','entered':'入场','delivering':'达标','overtime':'超时','invalidated':'失效','resolved':'已结'} -%}
+{% for p in items %}
+{%- set cand = cand_map.get(p.asset) -%}
+{%- set _life = p.get('lifecycle_state') -%}
+{%- set _stance = us_stance_projection(p.get('entry_status'), p.get('board_read')) -%}
+{%- set _verb = _stance.verb -%}
+{%- set _basis = _stance.stance_basis -%}
+{# ── caution ledger — SAME real candidate fields _us_board_cards.html.j2 reads
+   (dashboard.html.j2's shipped rows), ported verbatim; None when no candidate
+   join exists for this plan (the majority of rows — gen_fixture.py's own
+   measured ~25% join coverage). #}
+{%- set _fl = namespace(rows=[]) -%}
+{%- if cand -%}
+  {%- set _bl = cand.get('blowoff') or {} -%}
+  {%- if _bl.get('burst_mover') or cand.get('alpha_entry') == 'extended' -%}
+    {%- set _fl.rows = _fl.rows + [("Already moving. Don't chase above the buy zone.", '已在异动。不要在买区上方追高。')] -%}
+  {%- endif -%}
+  {%- if cand.get('ext_z') is not none and cand.ext_z > 2.0 -%}
+    {%- set _fl.rows = _fl.rows + [('Stretched unusually far above its trend line, so chasing is risky.', '远高于趋势线，追高风险较大。')] -%}
+  {%- endif -%}
+  {%- if cand.get('antichase_shadow_blocked') -%}
+    {%- set _fl.rows = _fl.rows + [('Parabolic tail. Treat any entry here as a chase.', '处于抛物线尾部。此处入场应视同追高。')] -%}
+  {%- endif -%}
+  {%- set _es = cand.get('earnings_soon') or {} -%}
+  {%- if _es.get('reports_within_7') and _es.get('days_to_report') is not none and _es.days_to_report >= 0 -%}
+    {%- set _fl.rows = _fl.rows + [(('Earnings in ' ~ (_es.days_to_report|int) ~ 'd — a result can override the setup.'), ('距财报 ' ~ (_es.days_to_report|int) ~ ' 天 — 业绩可能盖过形态。'))] -%}
+  {%- endif -%}
+  {%- if _es.get('in_blackout') -%}
+    {%- set _fl.rows = _fl.rows + [('Inside the earnings blackout window.', '处于财报静默期内。')] -%}
+  {%- endif -%}
+{%- endif -%}
+{# ── the .pv-mark lane chip — lane in {bottoming, continuation} ONLY (§5 vocabulary
+   resolution, §12 acceptance item 5); every other value (ran/watch/None from the
+   candidate join, or no join at all) renders no chip. #}
+{%- set _lane = (cand.get('lane') if cand else none) -%}
+{%- set _lane_mark = none -%}
+{%- if _lane == 'bottoming' -%}
+  {%- set _lane_mark = {'en':'Bottoming','zh':'筑底','tip_en':'The setup is turning up off a base.','tip_zh':'形态正自底部转强。'} -%}
+{%- elif _lane == 'continuation' -%}
+  {%- set _lane_mark = {'en':'Continuation','zh':'延续','tip_en':'An existing uptrend resuming.','tip_zh':'原有上升趋势重新启动。'} -%}
+{%- endif -%}
+{# ── zone: geography (entry_zone) vs actionability (the projected verb) —
+   ported from tools/gen_fixture.py::zone_kind, the shipped split
+   (dashboard.html.j2's own "Zone GEOGRAPHY vs ACTIONABILITY" comment). #}
+{%- set _ez = p.get('entry_zone') -%}
+{%- set _has_zone = _ez and _ez.get('high') is not none -%}
+{%- if _has_zone -%}
+  {%- set _zk = 'readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted') -%}
+{%- else -%}
+  {%- set _zk = 'confirm' if _verb in ('wait','near') else 'none' -%}
+{%- endif -%}
+{# ── trigger ⚡ chip — same producer join _us_board_cards.html.j2 uses #}
+{%- set _tsr = trg_map.get(p.asset) -%}
+{%- set _tsg = (_tsr.get('signal') or {}) if _tsr else {} -%}
+{%- set _trg_kind = ('imminent' if _tsg.get('tier_cascade') == 'T3' else 'fired') if _tsr else none -%}
+{%- set _trg_prov = (_trg_kind == 'imminent' and _tsg.get('provisional')) -%}
+{# ── episode chip (§10) — id-keyed, computed over the full book #}
+{%- set _epi = episode_map.get(p.id) -%}
+{%- set _mk = namespace(rows=[]) -%}
+{%- if cand and cand.get('featured') -%}{%- set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选'}] -%}{%- endif -%}
+{%- if cand and cand.get('new') -%}{%- set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新'}] -%}{%- endif -%}
+{%- if _epi -%}{%- set _dopen = p.get('entry_date') or p.get('recorded_at') -%}
+  {%- set _mk.rows = _mk.rows + [{'k':'lane','en':('Episode ' ~ _epi.ep ~ ' of ' ~ _epi.eps ~ (' · ' ~ _dopen if _dopen else '')),
+                                   'zh':('第 ' ~ _epi.ep ~ ' 轮（共 ' ~ _epi.eps ~ ' 轮）' ~ ('· ' ~ _dopen if _dopen else ''))}] -%}
+{%- endif -%}
+{{ pv.pv_card({
+  'href': 'stock.html#' ~ p.asset, 'tk': p.asset, 'mkt': 'us', 'id': p.id,
+  'name': (cand.get('name') if cand else none), 'sec': (cand.get('sector') if cand else none),
+  'sec_zh': tr(cand.get('sector')) if cand else none,
+  'price_txt': (('$' ~ ('%.2f'|format(cand.price))) if (cand and cand.get('price') is not none) else none),
+  'show_change': true,
+  'verb': _verb, 'stance_basis': _basis,
+  'stance_tip_en': ('Stance source: entry signal (fresh read)' if _basis == 'entry_status'
+                     else ('Stance source: last recorded board read' if _basis == 'board_read'
+                     else 'Prophet has no entry read here — the stance is unavailable, not a verdict.')),
+  'stance_tip_zh': ('依据来源：入场信号（最新判读）' if _basis == 'entry_status'
+                     else ('依据来源：上次记录的看板读数' if _basis == 'board_read'
+                     else '此计划暂无入场判读 — 表示暂缺，并非判断结果。')),
+  'edge': (('%.0f'|format(p._priority_score)) if p.get('_priority_score') is not none else none),
+  'edge_label_en': 'Priority', 'edge_label_zh': '优先级',
+  'edge_tip_en': 'Priority (0–100) ranks how ready this setup is today. Higher combines a fresher signal, a better entry and stronger stock quality. It is not a win probability.',
+  'edge_tip_zh': '优先级（0–100）表示这个形态今天有多接近可操作。数值越高，通常意味着信号更新、入场更好、个股质量更强。它不是胜率。',
+  'spark': (cand.get('spark_svg') if cand else none),
+  'zone_kind': _zk,
+  'zone_lo': (('$' ~ ('%.2f'|format(_ez.low))) if (_has_zone and _ez.get('low') is not none) else none),
+  'zone_hi': (('$' ~ ('%.2f'|format(_ez.high))) if _has_zone else none),
+  'date': p.get('plan_asof') or p.get('recorded_at'),
+  'flags': _fl.rows, 'featured': (cand.get('featured') if cand else false),
+  'life': _life,
+  'lifecycle': {'state': _life, 'label_en': _LIFE_LABEL_EN.get(_life, _life), 'label_zh': _LIFE_LABEL_ZH.get(_life, _life),
+                'newer': (_epi.newer if _epi else none)},
+  'lane_mark': _lane_mark,
+  'marks': _mk.rows,
+  'trigger': ({'kind': _trg_kind,
+               'tip_en': ('Fresh entry trigger — it fired in the last few days.' if _trg_kind == 'fired'
+                          else ('Entry trigger is close — it should fire within the next day or two.'
+                                ~ (' Provisional: projected off an incomplete bar — about 1 in 10 of these vanish when the bar completes.' if _trg_prov else ''))),
+               'tip_zh': ('新的入场触发 — 最近几天刚刚触发。' if _trg_kind == 'fired'
+                          else ('入场触发快到了 — 预计一两天内触发。'
+                                ~ ('（暂定：基于未完成的K线推算 — 约十分之一会在K线完成后消失。）' if _trg_prov else '')))} if _trg_kind else none)
+}) }}
+{% endfor %}

@@ -4986,6 +4986,103 @@ def _split_us_board(us_standouts: "dict | None", preview_rows: int, *, gated: bo
     return shell_su, gate, locked
 
 
+# ── PROPHET BOARD LIFECYCLE GRID tier gate (P-MP1-SHELL central act, §8b) ─────────
+# _split_us_board above splits the CANDIDATE screener array (us_standouts.buy);
+# this is the SAME re-plumb, never a re-draw (Amendment 2 §8b ruling), applied to
+# the PLAN BOOK array the migrated Setups grid now renders from
+# (site/prophet/index.json.plans, loaded fail-soft into vm["us_prophet_book"]).
+# Split points and preview-row COUNT are identical to the candidate board's own
+# gate config (_us_board_gate_cfg) — the observable boundary (anon 1 / Free 3 /
+# paid full, by the SAME client-side tier_preview.js treatment) is unchanged in
+# effect; only which array gets sliced moves.
+def _split_us_prophet_board(book: "dict | None", preview_rows: int, *, gated: bool = True):
+    """Tier-preview split for the US Prophet lifecycle grid (plan book).
+
+    Returns (shell_book, life_gate, locked_plans):
+      shell_book  — a SHALLOW COPY of `book` with `plans` sliced to the first
+                    `preview_rows` entries (published sort order preserved,
+                    never re-sorted here). NEVER the original object — the
+                    caller's `vm["us_prophet_book"]` is not mutated.
+      life_gate   — {tier, payload, preview, locked, total} when gated and
+                    there is a board to split, else None. Deliberately carries
+                    NO lifecycle counts of its own: the ladder always quotes
+                    `book['lifecycle_counts']` / `lifecycle_live_total`
+                    / `lifecycle_grand_total` off the FULL (unsliced) book —
+                    those are published totals, free at every tier
+                    (docs/TIER_PREVIEW_PATTERN.md: "state and totals are free,
+                    names are paid") — so gating never touches them.
+      locked_plans — the withheld remainder of `plans`.
+    """
+    if not gated or not book or not book.get("plans"):
+        return book, None, []
+    full_plans = book["plans"]
+    preview_n = max(0, preview_rows)
+    preview = full_plans[:preview_n]
+    locked = full_plans[preview_n:]
+    if not locked:
+        # Board smaller than the preview cap — ship it whole (same as ungated).
+        return book, None, []
+    shell_book = dict(book)
+    shell_book["plans"] = preview
+    life_gate = {
+        "tier": "essential",  # config/site_access.yml premium.default_tier
+        "payload": US_PAYLOAD_URL,
+        "preview": len(preview),
+        "locked": len(locked),
+        "total": len(full_plans),
+    }
+    return shell_book, life_gate, locked
+
+
+def _us_prophet_episode_map(plans: "list[dict]") -> dict:
+    """Per-plan {id: {'ep', 'eps', 'newer'}} for the multi-episode chip (MP-1
+    §10 "Episode chip"), computed over the FULL (unsliced) plan book so a
+    ticker's episode numbers are the same whether a given row falls in the free
+    preview or behind the wall. Mirrors mockups/refs/institutionalize/
+    us_stocks/tools/gen_fixture.py's episode/newer-link derivation exactly (the
+    mockup's own real-payload projection), never re-invented here.
+
+    `newer` is the id of the newest OPEN row on a ticker with >1 plan, attached
+    only to a CLOSED row of that ticker (P-B2 — the affordance points forward
+    from a resolved episode to the live one, never sideways or backward).
+    """
+    by_ticker: dict = {}
+    for r in plans:
+        by_ticker.setdefault(r.get("asset"), []).append(r)
+
+    def _opened(r: dict) -> str:
+        return r.get("entry_date") or r.get("recorded_at") or r.get("signal_date") or ""
+
+    episode_of: dict = {}
+    multi = set()
+    for tk, rows in by_ticker.items():
+        if len(rows) < 2:
+            continue
+        multi.add(tk)
+        for i, r in enumerate(sorted(rows, key=lambda x: (_opened(x), x.get("id") or "")), start=1):
+            episode_of[r.get("id")] = i
+
+    newest_open: dict = {}
+    for tk in multi:
+        opens = [r for r in by_ticker[tk] if r.get("closed") is not True]
+        if opens:
+            newest_open[tk] = max(opens, key=lambda x: (_opened(x), x.get("id") or "")).get("id")
+
+    out: dict = {}
+    for r in plans:
+        pid = r.get("id")
+        tk = r.get("asset")
+        if tk not in multi:
+            continue
+        out[pid] = {
+            "ep": episode_of.get(pid),
+            "eps": len(by_ticker[tk]),
+            "newer": (newest_open.get(tk)
+                      if (r.get("closed") is True and newest_open.get(tk) != pid) else None),
+        }
+    return out
+
+
 def _us_board_row_flat(n: dict) -> dict:
     """Same flat key schema #us-stocktable-data emits (dashboard.html.j2:
     15797-15823, including the lane->stage mapping dict), so a payload row
@@ -5017,7 +5114,12 @@ def _write_us_payload(env: Environment, site: Path, gate: "dict | None", *,
                        locked_rows: list[dict], us_standouts: "dict | None",
                        top_setups: "dict | None", built: str,
                        pgate: "dict | None" = None,
-                       panel_blocks: "dict | None" = None) -> None:
+                       panel_blocks: "dict | None" = None,
+                       life_gate: "dict | None" = None,
+                       locked_plans: "list[dict] | None" = None,
+                       cand_map: "dict | None" = None,
+                       trg_map: "dict | None" = None,
+                       episode_map: "dict | None" = None) -> None:
     """Render the paid remainder of the US Prophet board into
     site/premiumdata/us_stocks.json.
 
@@ -5026,8 +5128,15 @@ def _write_us_payload(env: Environment, site: Path, gate: "dict | None", *,
     full board at a path the page has stopped asking for.
 
     `cards_html` is rendered from the SAME partial the shell includes
-    (_us_board_cards.html.j2), so the hydrated page and the server-rendered one
-    cannot drift apart.
+    (_us_board_cards.html.j2) for the LEGACY candidate-board locked remainder
+    (kept, unused by the current hydrate() JS, for payload-shape stability).
+
+    `plan_cards_html` (P-MP1-SHELL §8b) is the CENTRAL ACT's own locked
+    remainder — rendered from the SAME partial the shell includes
+    (_us_prophet_plan_cards.html.j2) for `locked_plans` (the plan-book rows
+    past `life_gate['preview']`), so the migrated grid's hydrated cards can
+    never drift from its server-rendered ones. Independent switch from `gate`
+    (§8b: "a re-plumb, never a re-draw" — same mechanism, different array).
     """
     path = site / US_PAYLOAD_DIR / US_PAYLOAD_NAME
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -5088,9 +5197,27 @@ def _write_us_payload(env: Environment, site: Path, gate: "dict | None", *,
                              if k in ("setups", "leaders", "ran", "actnow", "tape",
                                       "plv_names")}
         payload.update(panel_blocks)
+    # P-MP1-SHELL §8b — the Setups grid's OWN locked remainder, independent of
+    # `gate`/`cards_html` above. Always present in the payload shape (empty
+    # string / life_gate:None when the plan board is whole), same "written on
+    # every build" law as the rest of this function.
+    locked_plans = locked_plans or []
+    if life_gate and locked_plans:
+        try:
+            plan_cards_html = env.get_template("_us_prophet_plan_cards.html.j2").render(
+                items=locked_plans, cand_map=(cand_map or {}), trg_map=(trg_map or {}),
+                episode_map=(episode_map or {}))
+        except Exception as e:  # noqa: BLE001 — payload must still write with an
+            # honest empty card block rather than aborting the whole build.
+            log.error("us_stocks: locked plan-card render failed (%s)", e)
+            plan_cards_html = ""
+    else:
+        plan_cards_html = ""
+    payload["life_gate"] = life_gate
+    payload["plan_cards_html"] = plan_cards_html
     path.write_text(json.dumps(payload), encoding="utf-8")
-    log.info("us_stocks: premium payload %s (%d locked board rows, %d locked panels)",
-              US_PAYLOAD_URL, len(locked_rows),
+    log.info("us_stocks: premium payload %s (%d locked board rows, %d locked plans, %d locked panels)",
+              US_PAYLOAD_URL, len(locked_rows), len(locked_plans),
               len(payload.get("panels") or {}))
 
 
@@ -5338,6 +5465,12 @@ def main() -> int:
     from lib.seo import SITE_BASE as _SITE_BASE
     env.globals.update(td=i18n.td, tr=i18n.tr, t_pctile=i18n.t_pctile, zip=zip,
                        SITE_BASE=_SITE_BASE)  # bilingual helpers for templates
+    # P-MP1-SHELL central act: expose the b1-ruling stance projection to the
+    # template so the Setups card grid (re-sourced to the plan book, below) can
+    # call it per row — the SAME function scripts/build_site.py already ships
+    # and tests (tests/test_p_mp1_shell_stance_projection.py), never a second
+    # template-side mapping (MP-1 §8a: "never a second mapping").
+    env.globals["us_stance_projection"] = us_stance_projection
     confirming, contradicting = component_chips(latest)
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
@@ -6638,6 +6771,14 @@ def main() -> int:
     _us_gate_cfg = _us_board_gate_cfg()
     _us_shell_su, _us_gate, _us_locked = _split_us_board(
         vm.get("us_standouts"), _us_gate_cfg["preview_rows"], gated=_us_gate_cfg["gated"])
+    # P-MP1-SHELL central act, §8b: the SAME re-plumb as the candidate split
+    # above, applied to the plan book the migrated Setups grid renders from.
+    # Ladder counts are NEVER affected by this split (life_gate carries no
+    # count fields — see _split_us_prophet_board docstring); only which CARD
+    # ROWS render past the preview slice moves.
+    _us_life_shell, _us_life_gate, _us_life_locked = _split_us_prophet_board(
+        vm.get("us_prophet_book"), _us_gate_cfg["preview_rows"], gated=_us_gate_cfg["gated"])
+    _us_life_episodes = _us_prophet_episode_map((vm.get("us_prophet_book") or {}).get("plans") or [])
     # The four panels ADJACENT to the board (fresh triggers, market leaders,
     # recently fired, act-now, theme tape) are fed by different artifacts, so the
     # board's split never reached them — they ride the same payload as extra
@@ -6648,11 +6789,19 @@ def main() -> int:
                        us_standouts=vm.get("us_standouts"),
                        top_setups=vm.get("top_setups"), built=generated,
                        pgate=_us_pgate,
-                       panel_blocks=_render_us_panel_payload(env, _us_pgate, _us_plocked, vm))
+                       panel_blocks=_render_us_panel_payload(env, _us_pgate, _us_plocked, vm),
+                       life_gate=_us_life_gate, locked_plans=_us_life_locked,
+                       cand_map={r.get("ticker"): r for r in ((vm.get("us_standouts") or {}).get("buy") or [])
+                                 if r.get("ticker")},
+                       trg_map={r.get("ticker"): r for r in ((vm.get("top_setups") or {}).get("buy") or [])
+                                if r.get("ticker")},
+                       episode_map=_us_life_episodes)
     out_st = site / "us_stocks.html"
     write_page(out_st, env.get_template("dashboard.html.j2").render(
         **{**vm, **_us_pov, "us_standouts": _us_shell_su,
-           "gate": _us_gate, "pgate": _us_pgate}, mode="stocks"))
+           "gate": _us_gate, "pgate": _us_pgate,
+           "us_prophet_book": _us_life_shell, "life_gate": _us_life_gate,
+           "us_prophet_episodes": _us_life_episodes}, mode="stocks"))
     _tmark("dashboard_vm+render")
     log.info("wrote %s (%.0f KB)", out_st, out_st.stat().st_size / 1024)
 
@@ -7053,6 +7202,15 @@ def main() -> int:
                 # silently reopen the leak on every one-build-lag refresh.
                 _us_shell_su2, _us_gate2, _us_locked2 = _split_us_board(
                     vm.get("us_standouts"), _us_gate_cfg["preview_rows"], gated=_us_gate_cfg["gated"])
+                # The plan book is not touched by this one-build-lag re-render
+                # (only us_standouts/top_setups/theme_tape are refreshed above),
+                # so re-splitting it here is idempotent — done anyway so this
+                # render call is self-contained rather than reaching back into
+                # the first pass's locals.
+                _us_life_shell2, _us_life_gate2, _us_life_locked2 = _split_us_prophet_board(
+                    vm.get("us_prophet_book"), _us_gate_cfg["preview_rows"], gated=_us_gate_cfg["gated"])
+                _us_life_episodes2 = _us_prophet_episode_map(
+                    (vm.get("us_prophet_book") or {}).get("plans") or [])
                 # Same for the adjacent panels: this pass replaced us_standouts,
                 # top_setups and theme_tape above, so re-split from THIS generation
                 # or the re-render bakes their full row sets back into the shell.
@@ -7063,12 +7221,20 @@ def main() -> int:
                                    top_setups=vm.get("top_setups"), built=generated,
                                    pgate=_us_pgate2,
                                    panel_blocks=_render_us_panel_payload(
-                                       env, _us_pgate2, _us_plocked2, vm))
+                                       env, _us_pgate2, _us_plocked2, vm),
+                                   life_gate=_us_life_gate2, locked_plans=_us_life_locked2,
+                                   cand_map={r.get("ticker"): r for r in ((vm.get("us_standouts") or {}).get("buy") or [])
+                                             if r.get("ticker")},
+                                   trg_map={r.get("ticker"): r for r in ((vm.get("top_setups") or {}).get("buy") or [])
+                                            if r.get("ticker")},
+                                   episode_map=_us_life_episodes2)
                 _dash = env.get_template("dashboard.html.j2")
                 write_page(site / "macro.html", _dash.render(**vm, mode="macro"))
                 write_page(site / "us_stocks.html", _dash.render(
                     **{**vm, **_us_pov2, "us_standouts": _us_shell_su2,
-                       "gate": _us_gate2, "pgate": _us_pgate2}, mode="stocks"))
+                       "gate": _us_gate2, "pgate": _us_pgate2,
+                       "us_prophet_book": _us_life_shell2, "life_gate": _us_life_gate2,
+                       "us_prophet_episodes": _us_life_episodes2}, mode="stocks"))
                 log.info(
                     "one-build-lag fix: re-rendered macro/us_stocks from fresh board "
                     "(as_of %s -> %s, delayed %s -> %s)",
