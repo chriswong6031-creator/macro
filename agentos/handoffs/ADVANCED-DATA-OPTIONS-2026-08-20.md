@@ -2,7 +2,7 @@
 workstream: "WS:ADVANCED-DATA-OPTIONS"
 session: claude/ad1c01-capture-lease
 model: fable
-ended_because: blocked_external
+ended_because: blocked
 mission: >
   Sol AD-1C0.1 handoff: (A) source-clock adjudication + conditional timing PR held
   for Sol; (B) credential/vendor incident closure (operator-external, recorded);
