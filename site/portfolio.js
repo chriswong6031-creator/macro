@@ -64,7 +64,19 @@
       notInLibrary: "This name isn't in tonight's library — value shown at cost.",
       dossier: 'Full dossier →',
       terminal: 'Chart in Terminal →',
-      lblStage: 'Stage'
+      lblStage: 'Stage',
+      // A1A frozen copy (research/market_os/…A1A_COMMISSIONING…md §13c) — verbatim
+      degradedBanner: 'Cloud portfolio unavailable — showing your last saved positions (read-only).',
+      errorBanner: "Cloud portfolio unavailable. We can't show your positions right now.",
+      equalAssumed: 'Equal weights assumed — no position sizes entered.',
+      mixedAbstain: 'Weights not shown — mix of sized and unsized positions.',
+      mixedBasisAbstain: 'Weights not shown — mix of live-priced and at-cost positions.',
+      unresolvedBasisAbstain: 'Weights not shown — a position has no resolvable price.',
+      singlePositionBook: 'One position in this book — a relationship read needs at least two.',
+      costWeighted: 'Weighted by entry cost — live prices are not available for these positions.',
+      onePosSay: 'This book is one position',
+      onePosBecause: 'There is nothing to compare it against yet. Add a second position and this reads what your book really is.',
+      emptyBookSay: 'Add a second position and this reads what your book really is.'
     },
     zh: {
       emptyHeading: '暂无开仓持仓。',
@@ -105,7 +117,18 @@
          so it is retired here. The live version of the ruling, now that the lane is
          labelled 入场拉伸 and the row 偏离度, lives beside each of them in
          `watchlist_risk.js`. */
-      lblStage: '阶段'
+      lblStage: '阶段',
+      degradedBanner: '云端持仓暂不可用 —— 显示你最后一次保存的持仓（只读）。',
+      errorBanner: '云端持仓暂不可用。目前无法显示你的持仓。',
+      equalAssumed: '按等权重计算 —— 未输入仓位大小。',
+      mixedAbstain: '未显示权重 —— 部分持仓有仓位大小，部分没有。',
+      mixedBasisAbstain: '未显示权重 —— 部分按现价，部分按成本价。',
+      unresolvedBasisAbstain: '未显示权重 —— 有一笔持仓没有可用价格。',
+      singlePositionBook: '这本账簿只有一笔持仓——关系读数需要至少两笔。',
+      costWeighted: '按成本价加权 —— 这些持仓暂无实时价格。',
+      onePosSay: '这本账簿只有一笔持仓',
+      onePosBecause: '目前还没有可比较的对象。再添加一笔持仓，这里就会读出你的账簿到底是什么。',
+      emptyBookSay: '再添加一笔持仓，这里就会读出你的账簿到底是什么。'
     }
   };
   function L(k) { return (T[lang()] || T.en)[k]; }
@@ -129,7 +152,8 @@
   function group(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
 
   // ---- state ---------------------------------------------------------------
-  var rows = null;          // portfolio rows; null until first load
+  var rows = null;          // portfolio rows; null until first load OR genuinely unknown
+                             // (A1A: a cloud read error with no last-good — never [])
   var editingId = null;
   var priceCache = {};      // ticker -> {price, asof} | null (uncovered)
   var jsonCache = {};       // ticker -> full per-ticker JSON | null
@@ -140,6 +164,12 @@
   var ctxTried = false;
   var prevFocusEl = null;
   var openDrawers = {};     // row id -> true (survives re-render)
+  // A1A: {authority, state, last_good_at, warning} from watchstore.js's read seam —
+  // 'ready' | 'degraded' (last-good, read-only) | 'error' (unknown, nothing to show)
+  var readState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
+
+  // ---- portfolio_state.js seam ----------------------------------------------
+  function PS() { return window.PS || null; }
 
   // ---- market/book seam ----------------------------------------------------
   function MB() { return window.MB || null; }
@@ -159,7 +189,9 @@
   function showError() {
     hideEl('pf_desk'); hideEl('pf_empty'); hideEl('pf_add'); hideEl('pf_closed');
     var errDiv = el('pf_err_inline');
-    if (errDiv) { errDiv.textContent = L('unavailable'); errDiv.style.display = 'block'; }
+    // A1A frozen copy (§13c): a cloud read error with no last-good rows — never a
+    // silent zero, never the local book substituted in.
+    if (errDiv) { errDiv.textContent = L('errorBanner'); errDiv.style.display = 'block'; }
   }
 
   // ---- index ---------------------------------------------------------------
@@ -222,13 +254,40 @@
   // statistic downstream (betas, ENB, correlations, MCTR). A3 law 3.
   function pushFxWeights() {
     if (!window.FX || !window.FX.setAutoWeights) return;
+    var modeled = openRows().filter(function (r) { return r.ticker && isModeled(r.ticker); });
     var w = {};
-    openRows().forEach(function (r) {
-      var t = r.ticker;
-      if (!t || !isModeled(t)) return;          // <- the guard
-      var sh = num(r.shares), px = priceOf(t);
-      if (sh != null && sh > 0 && px != null && px > 0) w[t] = sh * px;
-    });
+    /* A1A weighting law (§12): "for an all-unsized modeled book the page applies
+       FX.setAutoWeights({SYM:1,...})" — an unsized modeled book used to push an EMPTY
+       weight map (every row skipped by the shares>0 guard below), so the factor read
+       never activated for it at all. computeWeighting's `all_unsized_equal` state is
+       what names that case; everything else keeps the original real-value math. */
+    var ps = PS();
+    var wgt = ps ? ps.computeWeighting(modeled, priceOf) : null;
+    if (wgt && wgt.state === 'all_unsized_equal') {
+      modeled.forEach(function (r) { w[r.ticker] = 1; });
+    } else if (wgt && wgt.complete !== true) {
+      /* S3 (review): an ABSTAINING book (mixed sizing, mixed price basis, unresolved
+         basis) must reach the factor engine with NO weights at all — the page's own
+         Book Read says "weights not shown"; it must not also be true that FX is
+         silently computing betas/ENB/MCTR from a distribution the user was told does
+         not exist. `w` stays `{}` and is pushed via the dedicated call below rather
+         than through the `keys.length>=2 ? w : null` ternary, because `null` here
+         would fall FX back to its manual/equal-weight path over `LAST` (whatever
+         watchlist.js most recently fed `FX.update` — a DIFFERENT leak: the book's
+         factor read would silently become a Watchlist-derived one). Verified against
+         factor_exposure.js: `setAutoWeights({})` sets `AUTO_W={}` (an object, so
+         `autoMode` stays true — `null` is the only value that flips it off), giving
+         `render()` an empty `universe`; `aggregate([]...)` returns `{ok:false}` on
+         `held.length < 2`, so the panel hides — an honest absence, not garbage. */
+      window.FX.setAutoWeights({});
+      return;
+    } else {
+      modeled.forEach(function (r) {
+        var t = r.ticker;
+        var sh = num(r.shares), px = priceOf(t);
+        if (sh != null && sh > 0 && px != null && px > 0) w[t] = sh * px;
+      });
+    }
     var keys = Object.keys(w);
     /* W2 seeded `FX.update(keys)` here before announcing, because `FX.setAutoWeights`
        bailed on an empty `LAST` — so a full book with an EMPTY watchlist never reached
@@ -684,11 +743,24 @@
         cov = el('ws_book_coverage'), sub = el('ws_book_sub');
     if (!say) return;
 
-    if (open.length < 2) {
+    /* A1A (§13, defect "zero/one collapse"): 0 and 1 open positions used to share ONE
+       message ("Add a SECOND position…", which presupposes a first). They are now two
+       distinct states. Neither shows a relationship/cluster read — there is nothing to
+       relate a single position to. */
+    if (open.length === 0) {
       if (meta) meta.innerHTML = '';
-      say.innerHTML = te('Add a second position and this reads what your book really is.',
-                         '再添加一笔持仓，这里就会读出你的账簿到底是什么。');
+      say.innerHTML = te(T.en.emptyBookSay, T.zh.emptyBookSay);
       if (because) because.innerHTML = '';
+      if (stance) stance.innerHTML = '';
+      if (cov) cov.innerHTML = '';
+      if (WS().seam) WS().seam(el('ws_seam'), null);
+      return;
+    }
+    if (open.length === 1) {
+      var only = open[0];
+      if (meta) meta.innerHTML = '<span>' + te('1 position', '1 只持仓') + '</span>';
+      say.innerHTML = te(T.en.onePosSay, T.zh.onePosSay) + ' — <b>' + esc(only.ticker) + '</b>.';
+      if (because) because.innerHTML = te(T.en.onePosBecause, T.zh.onePosBecause);
       if (stance) stance.innerHTML = '';
       if (cov) cov.innerHTML = '';
       if (WS().seam) WS().seam(el('ws_seam'), null);
@@ -700,25 +772,94 @@
     open.forEach(function (r) { byBook[marketOf(r.ticker)] = (byBook[marketOf(r.ticker)] || 0) + 1; });
     var lead = Object.keys(byBook).sort(function (a, b) { return byBook[b] - byBook[a]; })[0] || 'us';
     var leadTot = totals[lead] ? totals[lead].value : 0;
+    var leadRows = open.filter(function (r) { return marketOf(r.ticker) === lead; });
 
-    var items = open.filter(function (r) { return marketOf(r.ticker) === lead; })
-      .map(function (r) {
-        var v = rowValue(r).value;
-        return {
-          sym: r.ticker,
-          money: (leadTot > 0 && v != null) ? v / leadTot * 100 : 100 / byBook[lead],
-          risk: RISK_COVERED[r.ticker] && isNum(RISK_SHARES[r.ticker])
-                  ? Math.abs(RISK_SHARES[r.ticker]) * 100 : null,
-          role: ''
-        };
-      }).sort(function (a, b) { return b.money - a.money; });
+    /* A1A weighting law (§12): the distribution below must come from ONE basis — never
+       an actual proportional value blended with an equal-split fallback for the rows
+       that had none (defect "hidden weighting completion"). A book too thin to have
+       exactly one basis (mixed sized/unsized, or mixed live/cost pricing) ABSTAINS —
+       it shows no money bars rather than a fabricated one. */
+    var ps = PS();
+    var W;
+    if (ps) {
+      W = ps.computeWeighting(leadRows, priceOf);
+    } else {
+      /* B2 (review — split-deploy falsehood): portfolio_state.js is a NEW paired
+         script; the .j2 markup that references it goes live within minutes, but
+         `site/watchlist.html` itself re-bakes far slower (measured "over an hour" —
+         see watchlist.js's own LEGACY RENDER PATH comment). In that window `ps` is
+         null on every page — not just a mixed book. The old shape here (`!W ||
+         W.complete !== true`) printed the ABSTAIN copy for every book whenever PS was
+         merely absent, including a fully sized, fully live-priced one — a false
+         "weights not shown" over a book that had a perfectly good answer. PS's
+         ABSENCE must never make a weighting-law claim: only the one case computable
+         without it (every row sized AND live-priced) gets real numbers, with no
+         basis label; anything else is a silent minimal state — no abstain copy, no
+         equal-assumption label, no claim this module is not ready to make. */
+      var allCurrent = leadRows.length > 0 && leadRows.every(function (r) {
+        var sh = num(r.shares), px = priceOf(r.ticker);
+        return sh != null && sh > 0 && px != null && px > 0;
+      });
+      if (!allCurrent) {
+        if (meta) meta.innerHTML = '<span>' + te(open.length + (open.length === 1 ? ' position' : ' positions'),
+                                                   open.length + ' 只持仓') + '</span>';
+        say.innerHTML = te('This book holds ' + open.length + (open.length === 1 ? ' position.' : ' positions.'),
+                            '这本账簿共有 ' + open.length + ' 笔持仓。');
+        if (because) because.innerHTML = '';
+        if (stance) stance.innerHTML = '';
+        if (cov) cov.innerHTML = '';
+        if (WS().seam) WS().seam(el('ws_seam'), null);
+        return;
+      }
+      var psSum = 0, psVal = {};
+      leadRows.forEach(function (r) { var v = num(r.shares) * priceOf(r.ticker); psVal[r.ticker] = v; psSum += v; });
+      var psWeights = {};
+      leadRows.forEach(function (r) {
+        psWeights[r.ticker] = psSum > 0 ? (psVal[r.ticker] / psSum * 100) : (100 / leadRows.length);
+      });
+      W = { state: 'all_sized_current', weights: psWeights, basis: 'current_value',
+            complete: true, reason: null };
+    }
+    if (!W || W.complete !== true) {
+      if (meta) meta.innerHTML = '<span>' + te(open.length + ' positions', open.length + ' 只持仓') + '</span>';
+      /* M-a (review): `unresolved_basis` (a SIZED row with neither a live price nor
+         an entry price) is not "mixed sized/unsized" — every row in that book DID
+         carry a size. Routing it through the mixed-sizing copy said something false.
+         It gets its own sentence naming the real reason: no resolvable price. */
+      var abstainMsg = T.en.mixedAbstain, abstainMsgZh = T.zh.mixedAbstain;
+      if (W && W.reason === 'mixed_price_basis') { abstainMsg = T.en.mixedBasisAbstain; abstainMsgZh = T.zh.mixedBasisAbstain; }
+      else if (W && W.reason === 'unresolved_basis') { abstainMsg = T.en.unresolvedBasisAbstain; abstainMsgZh = T.zh.unresolvedBasisAbstain; }
+      /* A 1-US + 1-HK all-sized book (core audience) reaches this block via the
+         lead-book restriction: leadRows.length===1 → 'insufficient'/'single_position'.
+         The generic mixed-sizing sentence is FALSE for it — every position carries a
+         size. Name the real reason instead ('no_positions' defensively: same copy). */
+      else if (W && (W.reason === 'single_position' || W.reason === 'no_positions')) { abstainMsg = T.en.singlePositionBook; abstainMsgZh = T.zh.singlePositionBook; }
+      say.innerHTML = te(abstainMsg, abstainMsgZh);
+      if (because) because.innerHTML = '';
+      if (stance) stance.innerHTML = '';
+      if (cov) cov.innerHTML = '';
+      if (WS().seam) WS().seam(el('ws_seam'), null);
+      return;
+    }
 
-    // the cluster is whatever the risk publisher named; absent one, the top half by money
+    var items = leadRows.map(function (r) {
+      return {
+        sym: r.ticker,
+        money: (W.weights[r.ticker] != null) ? W.weights[r.ticker] : 0,
+        risk: RISK_COVERED[r.ticker] && isNum(RISK_SHARES[r.ticker])
+                ? Math.abs(RISK_SHARES[r.ticker]) * 100 : null,
+        role: ''
+      };
+    }).sort(function (a, b) { return b.money - a.money; });
+
+    // A1A (defect "fabricated cluster"): no source cluster means no cluster role,
+    // bracket, coloring or explanatory caption — never a top-half-by-money invention.
     var clusterSet = (BOOK && BOOK.cluster) || null;
-    items.forEach(function (x, i) {
-      x.role = clusterSet ? (clusterSet[x.sym] ? 'cluster' : (BOOK.ballast && BOOK.ballast[x.sym] ? 'ballast' : ''))
-                          : (i < Math.ceil(items.length / 2) ? 'cluster' : '');
-    });
+    if (clusterSet) {
+      items.forEach(function (x) {
+        x.role = clusterSet[x.sym] ? 'cluster' : (BOOK.ballast && BOOK.ballast[x.sym] ? 'ballast' : '');
+      });
+    }
 
     var nUncovered = items.filter(function (x) { return x.risk == null; }).length;
 
@@ -728,6 +869,13 @@
       if (leadTot > 0) {
         parts.push('<span class="sep">·</span><span class="fig">' + esc(fmtMoney(leadTot, lead)) + '</span>' +
           '<span>' + te('tracked', '在管') + '</span>');
+      }
+      // the weighting basis is disclosed whenever it is not the unlabeled default
+      // (real current-value weights need no caveat; an assumption always does)
+      if (W.state === 'all_unsized_equal') {
+        parts.push('<span class="sep">·</span><span>' + te(T.en.equalAssumed, T.zh.equalAssumed) + '</span>');
+      } else if (W.state === 'all_sized_cost') {
+        parts.push('<span class="sep">·</span><span>' + te(T.en.costWeighted, T.zh.costWeighted) + '</span>');
       }
       meta.innerHTML = parts.join('');
     }
@@ -964,19 +1112,47 @@
   function wsState() {
     return document.documentElement.getAttribute('data-ws-state') || 'signed';
   }
+  function renderReadBanner() {
+    var host = el('pf_readbanner'); if (!host) return;
+    /* A1A (§10, defect "authenticated cloud-to-local fork"): a degraded cloud read
+       shows the LAST-GOOD rows read-only, disclosed here — never silently, never as an
+       unqualified "Saved" table. An error with no last-good never reaches this line
+       (render() returns before it — showError() handles that case instead).
+       M-c (review): a LATER read that fails while `rows` still holds an EARLIER
+       successful read's content also lands here with `state === 'error'` (reload()'s
+       `.catch()` sets 'error' but deliberately never touches `rows`) — that used to
+       render the stale table with no disclosure at all. It reads exactly like
+       'degraded' to the visitor (last-good rows, read-only) and gets the same banner. */
+    if (readState.state === 'degraded' || (readState.state === 'error' && rows && rows.length)) {
+      host.textContent = L('degradedBanner');
+      host.className = 'pf-readbanner is-degraded';
+      host.style.display = 'block';
+    } else {
+      host.style.display = 'none';
+      host.textContent = '';
+    }
+  }
   function render() {
     if (!section()) return;
-    if (rows === null) return;   // not loaded yet: leave the static shell alone
+    if (rows === null) {
+      /* A1A: `rows === null` now means one of two honest things — not loaded yet
+         (readState still its default 'ready'), or a cloud read that genuinely failed
+         with no last-good rows to fall back to (readState.state === 'error'). The
+         second case gets the explicit unavailable message; NEVER a silent zero and
+         NEVER the anonymous local book substituted in. */
+      if (readState.state === 'error' && wsState().indexOf('anon') !== 0) showError();
+      return;
+    }
     if (wsState().indexOf('anon') === 0) return;
 
+    renderReadBanner();
     renderTable();
     renderBookRead();
     renderAttention();
 
-    // books strip + factor weights
-    var wl = (window.WL && window.WL.getBlob) ? window.WL.getBlob() : null;
-    var watchSyms = wl && wl.items ? wl.items.map(function (it) { return it.t; }) : [];
-    if (MB()) MB().refresh(watchSyms, rows, priceOf);
+    // books strip + factor weights — Portfolio rows ONLY (A1A §11: no Watchlist name
+    // may enter the Portfolio's own book model; watchlist.js no longer feeds this call).
+    if (MB()) MB().refresh(rows, priceOf);
     pushFxWeights();
     publishEarningsFact();
 
@@ -1201,13 +1377,55 @@
   }
 
   // ---- save / remove -------------------------------------------------------
-  function reload() {
+  /* A1A (§13, defect "Save-state crossover"): the header save chip used to be driven
+     ONLY by Watchlist synchronization (watchstore.js's `ws-save`), so it was never a
+     reliable answer for "did my POSITION save?" — a Portfolio write could fail while
+     the chip still said "Saved" (that was true of the Watchlist, not the Portfolio).
+     `pf-save` is a parallel event carrying Portfolio write/read authority specifically;
+     watchlist.js's chip picks whichever event matches the active mode (portfolio.js
+     never touches the chip's DOM directly — same seam discipline as the Watchlist). */
+  function dispatchPfSave(state) {
+    try { document.dispatchEvent(new CustomEvent('pf-save', { detail: { state: state } })); }
+    catch (e) { /* no CustomEvent (very old browser / test shell) */ }
+  }
+  /* M-d (review): a plain READ that succeeds is not a WRITE claim — 'Saved' means
+     "the write you just made landed," and a first load / background re-read never
+     made one. `afterWrite` is true ONLY when this settles a doSave()/doRemove() call;
+     everything else (onAuth's first load, the visibilitychange refetch, 'pf-folded')
+     settles to the neutral 'clean' state instead. */
+  function pfChipStateFor(rs, afterWrite) {
+    if (!rs || rs.authority === 'local') return 'local';
+    // S6's brief cloud-loading window ('user' set, the shared Supabase client not yet
+    // resolved) is NOT offline — 'saving' is the closest honest existing word for "a
+    // read is in flight," and it self-corrects within the tick the re-fired 'wl-auth'
+    // lands (watchstore.js dispatches it the instant `sb` resolves).
+    if (rs.state === 'loading') return 'saving';
+    if (rs.state !== 'ready') return 'offline';
+    return afterWrite ? 'saved' : 'clean';
+  }
+
+  function reload(afterWrite) {
     if (!window.WatchStore || !window.WatchStore.portfolio) return;
     hydrated = false;
     window.WatchStore.portfolio.list().then(function (newRows) {
-      rows = newRows || [];
+      var rs = window.WatchStore.portfolio.readState ? window.WatchStore.portfolio.readState() : null;
+      readState = rs || { authority: 'local', state: 'ready', last_good_at: null, warning: null };
+      dispatchPfSave(pfChipStateFor(readState, afterWrite));
+      /* A1A: `newRows === null` is the explicit "genuinely unknown" answer (§10) —
+         keep whatever `rows` already held (last-good was already folded into
+         readState.state === 'degraded' by watchstore.js; a bare `null` here only
+         happens with NO last-good, i.e. readState.state === 'error') and let render()
+         decide what to show. NEVER coerce it to []  — that is the "never assert zero"
+         law, and `rows || []` was exactly that coercion. */
+      if (newRows === null) { render(); return; }
+      rows = newRows;
       ensureIndex().then(render);
-    }).catch(function () { rows = rows || []; render(); });
+    }).catch(function () {
+      readState = { authority: readState.authority, state: 'error',
+                    last_good_at: readState.last_good_at, warning: 'read-failed' };
+      dispatchPfSave('offline');
+      render();
+    });
   }
 
   function doSave() {
@@ -1233,14 +1451,21 @@
       if (errEl) errEl.textContent = L('saveError');
       saveBtn.disabled = false; return;
     }
+    dispatchPfSave('saving');
     window.WatchStore.portfolio.upsert(pos).then(function (result) {
       saveBtn.disabled = false;
-      if (!result) { if (errEl) errEl.textContent = L('saveError'); return; }
+      if (!result) {
+        if (errEl) errEl.textContent = L('saveError');
+        // never claim Saved on a write that did not happen
+        dispatchPfSave('offline');
+        return;
+      }
       pfCloseDlg();
-      reload();
+      reload(true);   // afterWrite: reload() dispatches 'saved', not 'clean' (M-d)
     }).catch(function () {
       saveBtn.disabled = false;
       if (errEl) errEl.textContent = L('saveError');
+      dispatchPfSave('offline');
     });
   }
 
@@ -1248,7 +1473,11 @@
     if (!window.WatchStore || !window.WatchStore.portfolio ||
         !window.WatchStore.portfolio.remove) return;
     delete openDrawers[id];
-    window.WatchStore.portfolio.remove(id).then(reload).catch(function () {});
+    dispatchPfSave('saving');
+    window.WatchStore.portfolio.remove(id).then(function (result) {
+      if (!result) { dispatchPfSave('offline'); return; }
+      reload(true);   // afterWrite (M-d)
+    }).catch(function () { dispatchPfSave('offline'); });
   }
 
   // ---- drawer toggle -------------------------------------------------------
@@ -1274,17 +1503,31 @@
   });
 
   // ---- auth event ----------------------------------------------------------
+  /* A1A: the FIRST load (init -> onAuth, and every 'wl-auth' transition) used to run
+     its own copy of the pre-A1A bug — `rows = newRows || []` coerced a genuinely
+     unknown cloud read into a false zero, and never touched `readState` at all, so
+     the very first paint of a degraded/errored authenticated session could never show
+     the banner reload() now shows. Both paths share the same corrected logic. */
   function onAuth() {
     if (!section()) return;
     if (!window.WatchStore || !window.WatchStore.portfolio) { showError(); return; }
     lastListAt = Date.now();
     hydrated = false;
     window.WatchStore.portfolio.list().then(function (newRows) {
-      rows = newRows || [];
+      var rs = window.WatchStore.portfolio.readState ? window.WatchStore.portfolio.readState() : null;
+      readState = rs || { authority: 'local', state: 'ready', last_good_at: null, warning: null };
+      dispatchPfSave(pfChipStateFor(readState));
       hideEl('pf_err_inline');
       showEl('pf_add');
+      if (newRows === null) { render(); return; }   // genuinely unknown — never []
+      rows = newRows;
       ensureIndex().then(render);
-    }).catch(function () { showError(); });
+    }).catch(function () {
+      readState = { authority: readState.authority, state: 'error',
+                    last_good_at: readState.last_good_at, warning: 'read-failed' };
+      dispatchPfSave('offline');
+      showError();
+    });
   }
 
   // ---- event wiring --------------------------------------------------------
@@ -1350,14 +1593,10 @@
     document.addEventListener('wl-auth', function () { onAuth(); });
     document.addEventListener('pf-folded', function () { reload(); });
     document.addEventListener('bk-change', function () { if (section() && rows) render(); });
-    // the watchlist changed -> book membership may have changed
-    document.addEventListener('wl-changed', function () {
-      if (section() && rows) {
-        var wl = (window.WL && window.WL.getBlob) ? window.WL.getBlob() : null;
-        var syms = wl && wl.items ? wl.items.map(function (it) { return it.t; }) : [];
-        if (MB()) MB().refresh(syms, rows, priceOf);
-      }
-    });
+    /* A1A (§11): the Portfolio's own book model is built from Portfolio rows ONLY —
+       a Watchlist change can no longer move it, so there is nothing for a `wl-changed`
+       listener to do here any more (it used to re-run the union-based MB().refresh).
+       Removed rather than left as a silent no-op wire. */
     wireTickerSuggest();
   }
 
@@ -1375,9 +1614,13 @@
      setBookRisk. Nothing outside this file touches `rows`. */
   window.PF = {
     render: render,
-    count: function () { return openRows().length; },
+    // A1A: never a Watchlist-derived number and never a false zero — `null` when the
+    // canonical count is genuinely unknown (readState.state === 'error'). Callers
+    // (watchlist.js's pfCount) must treat `null` as "show unavailable", not as 0.
+    count: function () { return (rows === null && readState.state === 'error') ? null : openRows().length; },
     repaintRow: repaintRow,
-    setBookRisk: setBookRisk
+    setBookRisk: setBookRisk,
+    readState: function () { return readState; }
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

@@ -230,15 +230,21 @@ def test_aggregate_ignores_rows_without_shares():
 
 
 # ---------------------------------------------------------------------------
-# buildModel — when the strip appears at all
+# buildPortfolioModel / buildWatchlistModel — when the strip appears at all
+#
+# A1A (research/market_os/…A1A_COMMISSIONING…md §11) retired the old union
+# `buildModel(watchSyms, rows, priceOf)` — a Watchlist name could paint the Portfolio's
+# own market strip (`#bk_strip` lives in the Portfolio holdings toolbar). The two
+# constructors below are now separate and PORTFOLIO ONLY drives the strip.
 # ---------------------------------------------------------------------------
 @needs_node
 def test_strip_hidden_for_a_single_market_book():
     """Zero regression for single-market users: a US-only book must not grow a strip."""
     out = _run(
-        "var m = MB.buildModel(['AAPL','NVDA'], ROWS, function(){ return 100; }); "
+        "var m = MB.buildPortfolioModel(ROWS, function(){ return 100; }); "
         "OUT({show:m.show, present:m.present, nAll:m.nAll});",
-        {"ROWS": [{"ticker": "AAPL", "shares": 1, "entry_price": 1, "status": "open"}]},
+        {"ROWS": [{"ticker": "AAPL", "shares": 1, "entry_price": 1, "status": "open"},
+                  {"ticker": "NVDA", "shares": 1, "entry_price": 1, "status": "open"}]},
     )
     assert out["show"] is False
     assert out["present"] == ["us"]
@@ -248,11 +254,13 @@ def test_strip_hidden_for_a_single_market_book():
 @needs_node
 def test_strip_appears_and_orders_books_canonically():
     out = _run(
-        "var m = MB.buildModel(WATCH, ROWS, function(){ return 100; }); "
+        "var m = MB.buildPortfolioModel(ROWS, function(){ return 100; }); "
         "OUT({show:m.show, present:m.present, nAll:m.nAll});",
         {
-            "WATCH": ["AAPL", "0700.HK", "^GSPC"],
             "ROWS": [
+                {"ticker": "AAPL", "shares": 1, "entry_price": 1, "status": "open"},
+                {"ticker": "0700.HK", "shares": 1, "entry_price": 1, "status": "open"},
+                {"ticker": "^GSPC", "shares": 1, "entry_price": 1, "status": "open"},
                 {"ticker": "SHOP.TO", "shares": 1, "entry_price": 1, "status": "open"},
                 {"ticker": "BTC-USD", "shares": 1, "entry_price": 1, "status": "open"},
             ],
@@ -267,11 +275,42 @@ def test_strip_appears_and_orders_books_canonically():
 @needs_node
 def test_closed_positions_do_not_create_a_book():
     out = _run(
-        "var m = MB.buildModel([], ROWS, function(){ return 100; }); OUT({present:m.present});",
+        "var m = MB.buildPortfolioModel(ROWS, function(){ return 100; }); OUT({present:m.present});",
         {"ROWS": [{"ticker": "0700.HK", "shares": 1, "entry_price": 1, "status": "closed"},
                   {"ticker": "AAPL", "shares": 1, "entry_price": 1, "status": "open"}]},
     )
     assert out["present"] == ["us"]
+
+
+@needs_node
+def test_buildPortfolioModel_never_admits_a_watchlist_only_name():
+    """A1A defect 'population union': a Watchlist name in a market the Portfolio does
+    not hold must NEVER appear in the Portfolio's own book model. This is the mutation
+    pin for 'restore population union' — reintroducing the old `(watchSyms||[]).forEach
+    (addName)` union line in buildPortfolioModel turns this red."""
+    out = _run(
+        "var m = MB.buildPortfolioModel(ROWS, function(){ return 100; }); "
+        "OUT({present:m.present, nAll:m.nAll, hasHK:'0700.HK' in (m.members.hk||{})});",
+        {"ROWS": [{"ticker": "AAPL", "shares": 1, "entry_price": 1, "status": "open"}]},
+    )
+    # only the US book exists — a watched HK name (never passed to this constructor at
+    # all) cannot leak in because the constructor accepts no watchlist argument
+    assert out["present"] == ["us"]
+    assert out["nAll"] == 1
+    assert out["hasHK"] is False
+
+
+@needs_node
+def test_buildWatchlistModel_is_watchlist_only_and_ignores_portfolio_shape():
+    out = _run(
+        "var m = MB.buildWatchlistModel(WATCH); "
+        "OUT({present:m.present, nAll:m.nAll, agg:m.agg});",
+        {"WATCH": ["AAPL", "0700.HK", "^GSPC"]},
+    )
+    assert out["present"] == ["us", "hk", "macro"]
+    assert out["nAll"] == 3
+    # the watchlist constructor never aggregates money — it has no portfolio rows
+    assert out["agg"] == {}
 
 
 # ---------------------------------------------------------------------------
