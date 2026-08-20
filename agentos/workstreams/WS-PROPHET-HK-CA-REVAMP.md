@@ -60,19 +60,48 @@ do_not_redo:
 waves:
   - id: ca-truth
     title: Canada canonical board truth
-    status: in_progress
+    status: done
     pr: 5926
-    next_action: >
-      Execute the first owed-TSX-session settlement receipt (packet §17) after
-      the first nightly that renders Canada on or after merge e495570eb5d8:
-      artifact carries board_definition=ca_prophet_branch_b_v1 +
-      official_pick_authority=false, artifact/page ordered-cohort parity,
-      CA ledger rows for that session stamped, legacy rows untouched. Then mark
-      this wave done and open ledger-era.
+    settlement_receipt: >
+      PASSED 2026-08-20 (first owed TSX session 2026-08-19; verifier = Fable
+      session fable-handoff-hk-canada-prophet-c7c63d). Nightly commit
+      fae690766555 (engine regime update 2026-08-20) built on merged code
+      (contains e495570eb5d8); VPS checkout 5d58699cf8b contains it (api/health
+      + merge-base --is-ancestor). Artifact origin/main
+      site/factordata/canada_standouts.json — as_of=2026-08-19,
+      board_definition=ca_prophet_branch_b_v1, authority=screen,
+      official_pick_authority=false, selection_status=accruing, buy board_pos
+      1..10 contiguous, top-level rank_basis=momentum_screen_accruing. Page
+      parity — served https://mastermind-x.com/canada_stocks.html
+      stocktable-data block byte-equal to git and row order == artifact buy
+      order exactly (10/10). Ledger data/board_ledger/ca_board.parquet — 18
+      rows for 2026-08-19 all stamped ca_prophet_branch_b_v1, board_pos 1..18
+      (buy 1-10 in artifact order + watch 11-18); the 382 legacy rows (21
+      dates 2026-06-30..08-17) preserved with null definition; PLUS 18
+      legacy-by-timing rows for session 2026-08-18 (nightly ran ~02-08Z
+      08-19, before the 16:04Z merge) — also null-definition, correct, total
+      legacy pool now 400; zero duplicate (date,ticker) keys (keep-FIRST
+      intact). Era fence — scorecard('CA') on the production parquet returns
+      status=accruing under board_definition=ca_prophet_branch_b_v1 with
+      21d_ic_dates=0/5 (legacy fenced out of rank statistics), as declared.
+      NOTE the factordata HTTP endpoint is tier-locked
+      (authentication_required); served-byte proof therefore rides the VPS
+      checkout ancestry (the check_nightly_liveness.py pattern — repo paths
+      ARE the served files) plus the public canada_stocks.html direct fetch.
   - id: ledger-era
     title: Era-clean HK/CA scorecard semantics
-    status: todo
+    status: in_progress
     depends_on: [ca-truth]
+    next_action: >
+      Definition-scope the scorecard group metrics (n/n_buy/hit_rate_21d/
+      by_group currently pooled all-era in engine/board_ledger.scorecard —
+      only rank_ic is fenced); add an explicit historical_context block
+      keeping the legacy pool queryable as labeled context; legacy-only
+      ledgers (definition None) keep pooled behavior unchanged. Packet §7
+      required tests + mutation kills. Consumers censused 2026-08-20:
+      build_hk.py horizons table (scored-only), build_canada.py board_track +
+      track_ledger.from_board_ledger_grade, prophet_governor status fields,
+      build_hk_library status only.
   - id: shadow-contract
     title: Rank/discovery shadow substrate
     status: todo
@@ -106,10 +135,10 @@ waves:
     status: todo
     depends_on: [hk-race, ca-race]
 next_action: >
-  Verify the first owed TSX session's settlement receipt on the production
-  reader (CA-TRUTH merged e495570eb5d8 and live; receipt spec in the ca-truth
-  wave entry), then open LEDGER-ERA (era-clean scorecard fencing in
-  engine/board_ledger.py). No HK/CA challenger work before LEDGER-ERA lands.
+  Land LEDGER-ERA (era-clean scorecard fencing in engine/board_ledger.py;
+  spec in the ledger-era wave entry + packet §7). CA-TRUTH settlement receipt
+  PASSED 2026-08-20 — receipt recorded in the ca-truth wave entry. No HK/CA
+  challenger work before LEDGER-ERA lands.
 ---
 
 # HK + Canada Prophet revamp
