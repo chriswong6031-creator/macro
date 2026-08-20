@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T13:37:54.751810+00:00",
-  "count": 1479,
+  "generated_at": "2026-08-20T15:23:17.333065+00:00",
+  "count": 1484,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -82,6 +82,45 @@
   ],
   "items": [
     {
+      "id": "marketdesk-uq917jnpkeb-f0b524",
+      "title": "LONG EM CARRY",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-20T13:53:18Z",
+      "summary_points": [
+        "**Fed Hawkishness Easing**: Weaker US labor data (3.2% avg hourly earnings) and retail sales decline reduce Fed hiking urgency, intensifying dollar weakness; structural dollar bear case persists due to US allies' alienation and diversification trends.",
+        "**EM FX Basket Trade**: Added long positions in IDR, ZAR, HUF, BRL, MXN, COP, CLP vs USD, supported by resilient EM carry regime, improved EM FX carry indicator (z-score 0.6), and manageable oil surge risk.",
+        "**China Oil Import Structural Shift**: Crude oil imports fell to 35.7 million tons (2026), signaling structural energy strategy change with implications for global oil demand, supply chains, and energy transition investments."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gwr43wkxqmy-f774a2",
+      "title": "GS Meschoulam Operation Twist 4.0 Path vs Destination 20 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T12:45:48Z",
+      "summary_points": [
+        "**Triple Threat Macro**: Simultaneous growth weakness, elevated inflation above pre-pandemic norms, and historically large fiscal deficits strain term premia—unlike historical patterns where bond markets forgave one issue, all three now converge structurally.",
+        "**Structural Capital Scarcity**: AI-driven capital demand and permanently scarcer capital (vs.",
+        "post-GFC era) dominate term premia, reducing sensitivity to policy tools like Treasury buybacks; fiscal deficits and inflation uncertainty are primary drivers.",
+        "**Duration Risk Acceleration**: 0.15% 3-month increase in 28-year USD swap rate signals heightened demand for long-duration fixed income, directly impacting portfolio duration risk and signaling persistent long-end rate pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-axptu59jdvw-087e67",
       "title": "GS Johnstone TMT Spec Sales 20 Aug 2026",
       "institution": "S&T",
@@ -101,6 +140,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-dpbgm2ozthk-941c3a",
+      "title": "GS Crook GS Morning 20 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T12:35:31Z",
+      "summary_points": [
+        "**UST Buyback Scale & Impact**: Treasury to increase long-end buybacks by $2bn+ per operation ($72bn/year), reducing 20y/30y supply by 16% (vs.",
+        "$111bn/quarter issuance), anchoring long-end volatility but deficits/AI supply capping rally depth.",
+        "**Duration Management Signal**: Treasury actively stabilizes long end via buybacks/issuance, signaling duration management across funding program; dollar/gold bullish as supply/demand balance remains marginal, with market reaction to tightening likely shifting Treasury's approach.",
+        "**EURUSD Technical Breakout & Positioning**: EURUSD spot (1.1693) breaks above 200d MVA (1.163), supported by low volatility and implied vol breakouts; 1m ATM EUR call shows 60bps terminal break even, indicating sustained breakout momentum.",
+        "**Treasury's Backend Calming Signals USD Weakness**: Treasury's backend yield curve calming triggers broad USD sell-off (signal vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uthhel2agpd-d38089",
+      "title": "GS Blekos Marketcolour 20 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T12:35:29Z",
+      "summary_points": [
+        "**Mutual Fund Flows & AI Sector Bifurcation**: 74% growth funds outperforming YTD, GS Broad AI basket (GSTMTAIP) and SPXXAI Index show record-low correlation (1/3rd same direction vs 2/3rd historical avg), signaling AI vs non-AI trade divergence.",
+        "**Treasury Liquidity Policy & Yield Curve**: US Treasury expanding liquidity support ($4bn per op) for longer-dated securities; yield curve flattened (2s30s -9 bps), addressing short-term yield concerns but not fundamental issues.",
+        "**GS AI Basket vs SPXXAI Correlation**: Strong negative correlation (-0.5711) indicates significant diversification potential, critical for hedging strategies during market volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ggyy54c8vcz-9dfd54",
       "title": "GS Privorotsky Gross Concerns, Operation Buyback 20 Aug 2026",
       "institution": "S&T",
@@ -110,6 +189,25 @@
       "summary_points": [
         "**Token Cost Collapse Risk**: AI adoption bullish but token/model access faces de-rating due to intensified competition (Qwen3.8, memory inflation), eroding moats and creating valuation uncertainty through 2027/28.",
         "**Treasury Buyback Policy Shift**: Doubled long-end liquidity buybacks to $4bn (10-20yr/20-30yr), signaling active stabilization via buybacks/issuance—not QE—with duration flexibility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3gdjdu9fiut-2de1e0",
+      "title": "GS Wijaya Energy Preview Recent Conversations 19 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T12:35:26Z",
+      "summary_points": [
+        "**Valuation Disconnect**: TRGP +60% YTD vs Brent +50%, underperforming peers despite tied to Majors with no slowdown and real exit growth to 2027.",
+        "**TTF Crowding Risk**: TTF +10% last month vs peers, trade crowded (8/10), driven by US gas inbounds (EXE, EQT, RRC, AR) and Permian pipeline developments.",
+        "**US Gas Catalyst**: Henry Hub prices at $2.88/$3.30 supporting positive sentiment for US gas producers amid pipeline infrastructure growth."
       ],
       "tags": [],
       "tickers": [],

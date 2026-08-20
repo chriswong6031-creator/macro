@@ -714,3 +714,38 @@ def test_the_committed_bake_is_reproducible_from_the_committed_inputs(nodes):
             (nid, bv, fv) for nid, bv, fv in
             zip(baked_sorted["node_id"].astype(str), b_col, f_col) if bv != fv]
         assert not mismatches, (col, mismatches[:5])
+
+
+# ---------------------------------------------------------------------------
+# V4-D2B1-R1 AMENDMENT §1 ruling 8 (m1/m2) — §6.1's four sidecar assertions,
+# pinned against the COMMITTED sidecar (the current, latest-generation view every
+# real consumer reads — see engine/theme_graph/store.read_identity_resolution).
+# ---------------------------------------------------------------------------
+
+def test_r1_section_6_1_the_four_sidecar_assertions_against_the_committed_parquet() -> None:
+    current_view = store.read_identity_resolution(latest=True)
+    assert not current_view.empty
+    by_node = {
+        str(row["node_id"]): row
+        for row in current_view.to_dict("records")
+    }
+
+    # 1. co:us:EQR still resolves RESOLVED -> SEC:US-XNYS-EQR / ISS:US-XNYS-EQR.
+    eqr = by_node.get("co:us:EQR")
+    assert eqr is not None, "co:us:EQR must have a sidecar row"
+    assert eqr["resolution_state"] == "RESOLVED"
+    assert eqr["security_id"] == "SEC:US-XNYS-EQR"
+    assert eqr["issuer_id"] == "ISS:US-XNYS-EQR"
+
+    # 2. co:us:AVB still resolves RESOLVED -> SEC:US-XNYS-AVB.
+    avb = by_node.get("co:us:AVB")
+    assert avb is not None, "co:us:AVB must have a sidecar row"
+    assert avb["resolution_state"] == "RESOLVED"
+    assert avb["security_id"] == "SEC:US-XNYS-AVB"
+
+    # 3. NO co:us:VMRK node is created — graph node minting is the theme graph's
+    #    own lane, forbidden to this bridge.
+    assert "co:us:VMRK" not in by_node
+
+    # 4. Zero sidecar cells reference the superseded SEC:US-XNYS-VMRK id at all.
+    assert not (current_view["security_id"] == "SEC:US-XNYS-VMRK").any()

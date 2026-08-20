@@ -341,3 +341,15 @@ NOT_IN_MASTER queue stays open).
    mint-once states. (b) m4 — the daily.yml step no longer carries `if: always()`, so
    it does not run after a failed collect; `continue-on-error` + the `::warning`
    fallback remain the non-fatality mechanism.
+
+### AMENDMENT §6 (2026-08-20) — R1 child contract
+
+The predicted transition race fired on the first natural nightly: the 2026-08-20
+refresh minted duplicate `SEC:US-XNYS-VMRK` for the EQR→VMRK NYSE rename (SEC 8-K
+accession 0001140361-26-033377; ticker effective 2026-08-18) while `SEC:US-XNYS-EQR`
+stayed RESOLVED. The repair — dated RenameEvent, security-axis supersession
+(`security_state`/`superseded_by` + `security_migrations.parquet`), AVB typed exit,
+and the general pending-transition fence — is governed by the child contract
+`research/prophet_v4/d2/D2B1_R1_FROZEN_CONTRACT_2026-08-20.md` (including its own
+post-review AMENDMENT §1). This contract's laws remain binding except where that
+child contract explicitly amends them for the security axis.

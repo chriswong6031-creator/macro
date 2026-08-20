@@ -740,28 +740,56 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
             if master_path.exists() and {"resolution_state", "security_id", "node_id"} \
                     <= set(latest_idr.columns):
                 try:
+                    master_ids_frame = pd.read_parquet(master_path)
                     known_security_ids: set[str] | None = set(
-                        pd.read_parquet(master_path, columns=["security_id"])
-                          ["security_id"].astype(str))
+                        master_ids_frame["security_id"].astype(str))
+                    # V4-D2B1-R1 §6.2 — a security-axis-superseded row (a tombstone)
+                    # is a distinct violation class from "absent entirely": the id
+                    # EXISTS in the master, but is no longer a lawful join target for
+                    # any consumer, so a sidecar row pointing at it is caught here,
+                    # not folded into the plain-orphan check above. Missing column
+                    # (pre-D2B1-R1 master) = empty set, never a breach.
+                    superseded_security_ids: set[str] = (
+                        set(
+                            master_ids_frame.loc[
+                                master_ids_frame["security_state"].apply(
+                                    lambda v: not _is_null(v)),
+                                "security_id",
+                            ].astype(str)
+                        )
+                        if "security_state" in master_ids_frame.columns
+                        else set()
+                    )
                 except Exception as exc:  # noqa: BLE001 — unreadable master is a breach
                     breaches.append(
                         "security_master.parquet unreadable for the identity_resolution "
                         f"master-membership check: {exc}")
                     known_security_ids = None
+                    superseded_security_ids = set()
                 if known_security_ids is not None:
                     orphan_security: list[str] = []
+                    superseded_referenced: list[str] = []
                     for nid, st, sec in zip(latest_idr["node_id"],
                                             latest_idr["resolution_state"],
                                             latest_idr["security_id"]):
-                        if str(st) == "RESOLVED" and not _is_null(sec) \
-                                and str(sec) not in known_security_ids:
-                            orphan_security.append(str(nid))
+                        if str(st) == "RESOLVED" and not _is_null(sec):
+                            if str(sec) not in known_security_ids:
+                                orphan_security.append(str(nid))
+                            elif str(sec) in superseded_security_ids:
+                                superseded_referenced.append(str(nid))
                     if orphan_security:
                         breaches.append(
                             f"{len(orphan_security)} RESOLVED identity_resolution row(s) "
                             "reference a security_id absent from the committed security "
                             f"master (first: {orphan_security[0]!r}) — artifact corruption "
                             "(F3a, master-membership guard)")
+                    if superseded_referenced:
+                        breaches.append(
+                            f"{len(superseded_referenced)} identity_resolution row(s) "
+                            "reference a security_id whose committed master row is "
+                            f"security-axis-superseded (first: {superseded_referenced[0]!r}) "
+                            "— every join index must exclude a superseded master row "
+                            "(V4-D2B1-R1 §6.2)")
 
             # (e) census — printed every run, never a breach. Node-sets resolving to the
             # same security_id are the machine-visible duplicates the bridge exists to
@@ -1111,6 +1139,42 @@ def selftest(tmp_root: Path | None = None) -> int:
     checks.append((any("absent from the committed security master" in x for x in b),
                    f"a RESOLVED security_id absent from the committed security master "
                    f"must breach (F3a, master-membership): {b}"))
+
+    # V4-D2B1-R1 §6.2 — a resolution row whose security_id points at a
+    # security-axis-superseded master row (a tombstone): a DISTINCT violation class
+    # from "absent entirely" above — the id EXISTS in the master, but every consumer
+    # join index must exclude it.
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "idres_superseded", nodes=nodes, edges=edges, evidence=ev)
+    corrupt = _clean_idres_row(state="RESOLVED")
+    corrupt.update({
+        "issuer_id": None, "security_id": "SEC:US-XNYS-DUP",
+        "listing_key": "US-XNYS-DUP", "join_method": "master_inception_exact",
+        "refusal_reason": None,
+        "source_receipts": '{"security_id":"SEC:US-XNYS-DUP"}',
+    })
+    _write_idres(d, [corrupt])
+    ref2 = tmp_root / "reference"
+    ref2.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        {
+            "security_id": "SEC:US-XNYS-REAL", "issuer_id": "ISS:US-XNYS-REAL",
+            "issuer_state": "RESOLVED",
+            "listing_key": "US-XNYS-REAL", "country": "US", "mic": "XNYS",
+            "inception_code": "REAL", "security_state": None, "superseded_by": None,
+        },
+        {
+            "security_id": "SEC:US-XNYS-DUP", "issuer_id": None,
+            "issuer_state": "NO_ISSUER_EVIDENCE",
+            "listing_key": "US-XNYS-DUP", "country": "US", "mic": "XNYS",
+            "inception_code": "DUP", "security_state": "SUPERSEDED_DUPLICATE_MINT",
+            "superseded_by": "SEC:US-XNYS-REAL",
+        },
+    ]).to_parquet(ref2 / "security_master.parquet", index=False)
+    b, n = audit(d, empty_breaks)
+    checks.append((any("security-axis-superseded" in x for x in b),
+                   f"a resolution row referencing a superseded master row must breach "
+                   f"(V4-D2B1-R1 §6.2): {b}"))
 
     bad = [m for ok, m in checks if not ok]
     for m in bad:

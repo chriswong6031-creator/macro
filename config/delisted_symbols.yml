@@ -45,6 +45,34 @@
 version: 1
 
 symbols:
+  AVB:
+    company: AvalonBay Communities, Inc.
+    company_zh: AvalonBay Communities
+    exchange: NYSE
+    cik: '0000915912'
+    # Store tip 2026-08-18 is a 0-volume repeat of the 08-14 close (same flat-forward
+    # tell as CTRA/TPH) — the true last session is the Friday before the Monday
+    # merger close (data/stocks/AVB.parquet, data/baskets/ohlcv/AVB.parquet).
+    last_session: '2026-08-14'
+    delisted_on: '2026-08-17'
+    reason: acquisition
+    acquirer: Vivmark Residential (formerly Equity Residential)
+    acquirer_zh: Vivmark Residential
+    consideration: null
+    successor_ticker: null
+    receipts:
+      - 8-K 2026-08-17 (Vivmark Residential, CIK 0000906107) — reports the closing of
+        its acquisition of AvalonBay Communities via merger into Canopy Merger Sub
+        LLC, a subsidiary, followed by a subsequent merger into ERP Operating Limited
+        Partnership, under an Agreement and Plan of Merger dated 2026-05-20; closed
+        2026-08-17. No per-share price/premium/advisor terms disclosed. Accession
+        0001193125-26-354068
+      - SEC EDGAR CIK 0000906107 8-K filed 2026-08-17, Item 5.03 — the same
+        registrant's corporate name/ticker change EQR->VMRK, corroborating the
+        acquirer's continuing identity. Accession 0001140361-26-033377
+      - data/special_situations/classify_cache/0001193125-26-354068.json — in-repo
+        classifier receipt (category Acquisitions, role acquirer, confidence high)
+
   CTRA:
     company: Coterra Energy Inc.
     company_zh: Coterra Energy

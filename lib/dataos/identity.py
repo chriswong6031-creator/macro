@@ -762,12 +762,21 @@ class SecurityIssuerRow:
 
     Carries only the columns the issuer reader needs — not a copy of the whole master
     row shape, so a future master column never forces a change here.
+
+    ``security_state``/``superseded_by`` (V4-D2B1-R1 §3.6) are the SECURITY axis —
+    orthogonal to ``issuer_state`` above, which is the ISSUER axis.  ``security_state``
+    is ``None`` for an active row and the closed enum's one value this era
+    (``SUPERSEDED_DUPLICATE_MINT``) for a row this builder corrected onto
+    ``superseded_by``; a consumer that needs "is this security still active" reads
+    this field, never ``issuer_state``.
     """
 
     security_id: str
     issuer_id: str | None
     issuer_state: str
     listing_key: str
+    security_state: str | None = None
+    superseded_by: str | None = None
 
 
 class IssuerMaster:
@@ -800,7 +809,12 @@ class IssuerMaster:
         by_issuer: dict[str, list[str]] = {}
         for row in rows:
             by_security[row.security_id] = row
-            if row.issuer_id is not None:
+            # V4-D2B1-R1 §3.6: a security-axis-superseded row (a tombstone) is
+            # excluded from issuer aggregation by default — it is still readable via
+            # `_by_security` (so a caller CAN look it up and see its security_state),
+            # but `securities_of_issuer` must never hand back a corrected duplicate as
+            # if it were a live member of the issuer's roster.
+            if row.issuer_id is not None and not row.security_state:
                 by_issuer.setdefault(row.issuer_id, []).append(row.security_id)
         self._by_security = by_security
         self._by_issuer: dict[str, tuple[str, ...]] = {
@@ -834,12 +848,19 @@ class IssuerMaster:
             issuer = _null_to_none(rec.get("issuer_id"))
             state = _null_to_none(rec.get("issuer_state"))
             listing_key = _null_to_none(rec.get("listing_key"))
+            # V4-D2B1-R1 §3.6: absent on a pre-repair master (era-seam, same NaN trap
+            # as the fields above) — `.get(...)` + `_null_to_none` handles both the
+            # missing-key and the NaN-cell shapes uniformly.
+            security_state = _null_to_none(rec.get("security_state"))
+            superseded_by = _null_to_none(rec.get("superseded_by"))
             rows.append(
                 SecurityIssuerRow(
                     security_id=sec,
                     issuer_id=None if issuer is None else str(issuer),
                     issuer_state=str(state) if state is not None else "",
                     listing_key=str(listing_key) if listing_key is not None else "",
+                    security_state=None if security_state is None else str(security_state),
+                    superseded_by=None if superseded_by is None else str(superseded_by),
                 )
             )
         return cls(rows)
@@ -857,5 +878,23 @@ class IssuerMaster:
 
     def securities_of_issuer(self, issuer_id_: str) -> tuple[str, ...]:
         """Every ``security_id`` CURRENTLY carrying this ``issuer_id`` — the §9.7
-        canonical query.  Sorted; empty tuple if the issuer id is unknown or unused."""
+        canonical query.  Sorted; empty tuple if the issuer id is unknown or unused.
+
+        EXCLUDES a security-axis-superseded row (V4-D2B1-R1 §3.6) by construction —
+        see :meth:`__init__`.
+        """
         return self._by_issuer.get(issuer_id_, ())
+
+    def security_state_of(self, security_id: str) -> str | None:
+        """This security's ``security_state`` (V4-D2B1-R1 §3.6) — ``None`` for an
+        active row, ``"SUPERSEDED_DUPLICATE_MINT"`` for a corrected duplicate, or
+        ``None`` for an unknown ``security_id`` (indistinguishable from active; check
+        membership via :attr:`rows` / ``by_security`` lookups first if that matters)."""
+        row = self._by_security.get(security_id)
+        return row.security_state if row is not None else None
+
+    def superseded_by_of(self, security_id: str) -> str | None:
+        """The ``security_id`` this row was corrected onto, or ``None`` when it is
+        active (or unknown) — V4-D2B1-R1 §3.6."""
+        row = self._by_security.get(security_id)
+        return row.superseded_by if row is not None else None

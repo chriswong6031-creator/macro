@@ -196,6 +196,17 @@ def load_master_inputs(data_dir: Path | None = None) -> MasterInputs | None:
     master_by_code: dict[str, dict] = {}
     master_by_security: dict[str, dict] = {}
     for r in master.to_dict("records"):
+        # V4-D2B1-R1 §6.1: a security-axis-superseded row (a tombstone —
+        # security_state non-null, e.g. SUPERSEDED_DUPLICATE_MINT) is excluded from
+        # BOTH join indices entirely — every join index excludes superseded master
+        # rows. It never becomes rule 5's inception-code hit and never becomes rule
+        # 6's vendor-alias resolution target (the alias table itself never emits a
+        # row pointing at a superseded id post-repair, but this is belt-and-suspenders
+        # against any committed row this builder has not yet re-derived). `pd.isna`
+        # catches both the missing-column (pre-repair master) and the NaN-cell shapes.
+        security_state = r.get("security_state")
+        if not pd.isna(security_state) and str(security_state).strip():
+            continue
         # V4-D2B1 FIX 8 (m3): issuer_id is copied into the sidecar ONLY when the
         # master row's OWN issuer_state is RESOLVED — CIK evidence actually backs the
         # link. Any other state (NO_ISSUER_EVIDENCE, AMBIGUOUS, EVIDENCE_CONFLICT,
