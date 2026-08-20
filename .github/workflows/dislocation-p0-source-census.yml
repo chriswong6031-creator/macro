@@ -1,0 +1,103 @@
+name: Dislocation P0 price-blind source census
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/research/dislocation_p0_source_census.py"
+      - ".github/workflows/dislocation-p0-source-census.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  census:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source-only research workspace
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            scripts/research/dislocation_p0_source_census.py
+            data/edgar/material_8k_events.parquet
+            data/edgar/material_8k_velocity.parquet
+            data/edgar/earnings_8k_dates.parquet
+            data/edgar/earnings_8k_dates_coverage.json
+            data/edgar/earnings_8k_dates_manifest.json
+            data/edgar/guidance_hits.parquet
+            data/edgar/bottleneck_hits.parquet
+            data/edgar/emergence_hits.parquet
+            data/edgar/dilution_events.parquet
+            data/edgar/ticker_cik_ledger.json
+            data/edgar/cik_sic.json
+
+      - name: Assert the price firewall before dependencies
+        run: |
+          set -euo pipefail
+          forbidden=(
+            data/yahoo data/stocks data/ohlc data/stockdata data/intraday
+            data/chinaohlc data/hkohlc data/canadaohlc data/intlohlc
+            data/price_pressure data/washout_turn
+          )
+          for p in "${forbidden[@]}"; do
+            test ! -e "$p" || { echo "FORBIDDEN_PATH_PRESENT=$p"; exit 1; }
+          done
+          echo "PRICE_FIREWALL=PASS"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install source-census dependencies
+        run: python -m pip install --disable-pip-version-check pandas pyarrow
+
+      - name: Compile and execute twice
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/research/dislocation_p0_source_census.py
+          mkdir -p artifacts
+          python scripts/research/dislocation_p0_source_census.py --root . --out artifacts/census1.json
+          python scripts/research/dislocation_p0_source_census.py --root . --out artifacts/census2.json
+          cmp artifacts/census1.json artifacts/census2.json
+          sha256sum artifacts/census1.json artifacts/census2.json | tee artifacts/census_sha256.txt
+
+      - name: Print compact feasibility receipt
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/census1.json').read_text())
+          print('=== BLIND BOUNDARY ===')
+          print(json.dumps(p['blind_boundary'],sort_keys=True))
+          print('=== FEASIBILITY ===')
+          print(json.dumps(p['feasibility'],sort_keys=True))
+          print('=== DATASETS ===')
+          for path,d in p['datasets'].items():
+              print(json.dumps({
+                  'path':path,
+                  'kind':d.get('kind'),
+                  'rows':d.get('rows'),
+                  'columns':d.get('columns'),
+                  'dates':d.get('dates'),
+                  'identity_cardinality':d.get('identity_cardinality'),
+                  'year_counts':d.get('year_counts'),
+                  'shape':d.get('shape'),
+                  'nested_rows':d.get('nested_rows'),
+                  'nested_filings':d.get('nested_filings'),
+              },sort_keys=True))
+          print('=== MISSING ===')
+          print(json.dumps(p['missing'],sort_keys=True))
+          PY
+
+      - name: Upload source-only census receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: dislocation-p0-source-census
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 7
