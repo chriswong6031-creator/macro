@@ -1,31 +1,12 @@
 {
-  "ts": "2026-08-19T22:57:27+00:00",
-  "main_sha": "9fecb8976089ddef8069e21b4072582cba64c788",
-  "red_required": [
-    {
-      "name": "dag-conformance",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32290019199/job/96188411875"
-    },
-    {
-      "name": "free-content-estate",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32290019199/job/96188411740"
-    },
-    {
-      "name": "tier-gate",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32290019199/job/96188411688"
-    }
-  ],
-  "green": false,
-  "consecutive_failures": 13,
+  "ts": "2026-08-20T02:08:57+00:00",
+  "main_sha": "16852ad3a809b415a7cfda4d0ff7264442bf7442",
+  "red_required": [],
+  "green": true,
+  "consecutive_failures": 0,
   "sensed_shas": [
-    "9fecb8976089ddef8069e21b4072582cba64c788",
-    "4b133e18871816909ecd4380d08eecfa439f81e1"
+    "16852ad3a809b415a7cfda4d0ff7264442bf7442",
+    "97144ce33b5bdf718f1a0dd71290e3f5cfd2b60d"
   ],
   "heartbeat_degraded": false
 }
