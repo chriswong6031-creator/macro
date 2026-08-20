@@ -130,14 +130,15 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  Operator dispatches FABLE-A under the c0 §5 conditions (contract-first; store
-  build gated on A0 §8 flip condition; FIF acceptance leg fixture-only until Sol
-  rules). Post-merge state 2026-08-19: #5955 (US G0), #5943 (CN-G0), #5933
-  (this seat's c0/c0g packet) and #5953 (China masterplan, rival G0 copy
-  withdrawn pre-merge) are ALL MERGED — c0/c0g are supplied by main; final
-  merged-object pins live in the seat packet §7. Next session adjudicates the
-  FABLE-A K1 packet; K4-G is authored by operator/Sol carrying the seat
-  packet §6 preconditions verbatim.
+  Sol dispatch FABLE-A (with the c0 §5.1 rider appended verbatim; contract-first;
+  store build gated on A0 §8 flip condition; FIF acceptance leg fixture-only
+  until Sol rules). FABLE-00 waves p0/c0/c0g are CLOSED and proven on origin/main
+  (operator acceptance 2026-08-19); #5955/#5943/#5933/#5953 ALL MERGED
+  (#5953 rival G0 copy withdrawn pre-merge). A FRESH session adjudicates the
+  K1 packet; Sol authors K4-G carrying the seat packet §6 preconditions
+  unchanged (canonical sources per item: handoff
+  ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19 §"K4-G preconditions — canonical
+  sources"). This seat begins neither.
 ---
 
 # Alpha Intelligence Expansion — integration workstream
