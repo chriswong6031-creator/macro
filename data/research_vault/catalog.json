@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T10:18:37.829770+00:00",
-  "count": 1470,
+  "generated_at": "2026-08-20T11:17:44.134791+00:00",
+  "count": 1472,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -94,6 +94,46 @@
         "**High-Grade Liquidity Risk**: HG net dealer inventories negative (-$5,296m), dealer net positions down $2.5bn to $2.4bn, coupled with $106mn HY ETF outflows, indicating acute liquidity pressure and price discovery risks.",
         "**HG Flow Dynamics**: $1.256bn high-grade ETF inflows (9% below 5d avg) amid dealer selling; 10s30s curve flattened to 17.7bp (42% of 6m range), signaling sector-specific technical shifts.",
         "**HG Spread Widening**: HG bonds trading 38bp wider to CDS on average (widest since May 2026), with JULI spread at 96bp (2bp WoW), reflecting deteriorating credit conditions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-efouqssiuzs-73b8dc",
+      "title": "GS MORNING: 1 UST Buybacks, 2 USD Update, 3 FX Trader Call Takeaways and 4 FOMC Minutes Recap",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T10:01:56Z",
+      "summary_points": [
+        "**UST Buyback Scale**: Treasury to increase long-end buybacks by $2bn/operation (9 ops → $18bn/quarter, $72bn/year), totaling $144bn/year, reducing 20y/30y supply by ~16% and altering curve steepening dynamics.",
+        "**EURUSD Technical Breakout**: EURUSD breaks 200d MA (1.1693 vs 1.163) with low volatility, 60bps breakeven on EUR call, and EUR-funded EM carry supporting sustained upside.",
+        "**BRL Election Volatility Risk**: Tight Lula lead (narrow margin) drives defensive positioning and rising \"election premium,\" with fiscal \"more of the same\" view impacting BRL depreciation and carry trade dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cdgpeqspvdl-4aa558",
+      "title": "JPM US Treasury Market Daily",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T08:50:18Z",
+      "summary_points": [
+        "**Treasury Buyback Policy Shift**: Treasury increased long-dated nominal buybacks to $4bn (from $2bn), conflicting with Secretary’s stated goals and risking reduced auction sizes despite temporary impact.",
+        "**US Budget Deficit Root Cause**: 6% budget deficit in near-full employment economy drives long-end yield rises, amplified by record end-user demand for long-dated Treasuries creating supply-demand imbalance.",
+        "**Active Core Bond Fund Flow Risk**: 1y z-score of -0.62 indicates significant net short positioning by active core bond fund managers, a critical flow factor for potential yield reversals.",
+        "**30-Year Breakevens Valuation Risk**: 30-year breakevens no longer screen cheap to fair value (Figure 8), increasing vulnerability of long-end inflation curve and requiring concessions in upcoming auction.",
+        "**2s/10s Curve Technicals**: Curve flattened sharply (51.3-55.74bp resistance) with repeated June-August whipsaws reducing conviction despite medium-term steepening bias."
       ],
       "tags": [],
       "tickers": [],
