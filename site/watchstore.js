@@ -1023,9 +1023,22 @@
   }
   // signed-out only. A degraded authenticated session is NOT local mode — see the law
   // above; it is 'cloud' authority in a 'degraded' or 'error' read_state instead.
-  function _isLocalMode() { return !user || !sb; }
+  function _isLocalMode() { return !user; }
+  /* A1A (review finding S6): `user` is set the instant onAuthUser sees a session, but
+     the shared Supabase client resolves ASYNCHRONOUSLY afterward (`getClient().then
+     (c => sb = c)`) — and portfolio.js's `onAuth()` runs off the FIRST 'wl-auth',
+     dispatched BEFORE that resolves. In that window `user` is truthy and `sb` is not:
+     `!user||!sb` used to read as "local mode" and a signed-in load briefly rendered
+     the anonymous LOCAL book under a 'local' authority/chip. This is neither anonymous
+     (there IS a user) nor ready cloud (no client yet) — a THIRD transitional state. */
+  function _isCloudLoading() { return !!user && !sb; }
 
   function portfolioList() {
+    if (_isCloudLoading()) {
+      // never local rows, never an error banner for plain loading
+      pfReadState = { authority: 'cloud', state: 'loading', last_good_at: null, warning: null };
+      return Promise.resolve(null);
+    }
     if (_isLocalMode()) {
       pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
       return pfLocalList();
@@ -1064,6 +1077,9 @@
   function portfolioUpsert(pos) {
     // pos: { ticker, shares, entry_price, entry_date, notes, status }
     // status must be 'open' or 'closed'
+    // A1A (S6): a signed-in write during the cloud-loading window must never land in
+    // the anonymous local book — reject cleanly; the caller must not claim Saved.
+    if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalUpsert(pos);
     return _portfolioGuard().then(function () {
       function toNumOrNull(v) {
@@ -1109,6 +1125,7 @@
   }
 
   function portfolioClose(id) {
+    if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalClose(id);
     return _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
@@ -1129,6 +1146,7 @@
   }
 
   function portfolioRemove(id) {
+    if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalRemove(id);
     return _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
@@ -1196,6 +1214,15 @@
     if (uid === lastAuthUid) return;
     lastAuthUid = uid;
 
+    /* A1A (review finding B1 — cross-user private-holdings leak): the cached
+       last-good cloud rows and read-state are PER-USER private data. Reset them on
+       EVERY uid transition, sign-in and sign-out alike, before anything else below
+       runs — otherwise a second user signing in on the same page session, whose own
+       first cloud read then fails, would be served the FIRST user's cached
+       "last-good" rows as their own degraded state. */
+    pfLastGoodCloud = null;
+    pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
+
     user = u || null;
     if (!user) {
       sb = null;
@@ -1242,6 +1269,13 @@
     getClient().then(function (c) {
       sb = c;
       pull();
+      /* A1A (review finding S6): the FIRST 'wl-auth' above fired before `sb`
+         resolved, so portfolio.js's onAuth() ran during the cloud-loading window
+         (`user` set, `sb` not yet) and could read nothing but the loading
+         placeholder (see portfolioList's `_isCloudLoading()` branch). Re-fire now
+         that `sb` is ready so the Portfolio re-reads the real cloud rows without
+         any user interaction. */
+      document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
     }).catch(function (err) {
       setPill('offline');
       warnOnce('client', 'getSupabaseClient failed: ' + (err && err.message || err));
@@ -1344,6 +1378,10 @@
       cacheKey: cacheKey, cacheRead: cacheRead, cacheWrite: cacheWrite,
       tickersOf: _tickersOf,
       _setTestSession: function (u, client) { user = u; sb = client; },
+      // A1A test seam (review B1): the real auth-transition reset logic, so the
+      // cross-user last-good-cloud leak can be pinned against the actual function
+      // rather than reconstructed by hand in a test.
+      onAuthUser: onAuthUser,
       // W2: the read-side guard that keeps a focus refetch from reverting an edit
       // that is still only local (see tests/test_watchlist_workspace_js.py)
       _testHooks: {

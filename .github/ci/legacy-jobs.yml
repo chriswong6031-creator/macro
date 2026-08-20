@@ -4199,6 +4199,10 @@ jobs:
       # empty), and the anonymous lock shell.
       - name: watchlist drawer — honest absence, glance vocabulary, canonical routes (W4)
         run: python -m pytest tests/test_watchlist_drawer_js.py -q
+      - name: portfolio_state.js — snapshot authority + weighting law (A1A)
+        run: python -m pytest tests/test_portfolio_state_js.py -q
+      - name: portfolio truth — A1A mutation battery + page wiring (A1A)
+        run: python -m pytest tests/test_portfolio_truth_a1a_js.py -q
       # Repo hygiene, wired here because this wave introduced the class it closes: a crop
       # harness borrows site/stockdata/ from the main checkout for the duration of a
       # shoot, and an aborted run once left the symlink behind long enough for a broad

@@ -71,6 +71,7 @@
       equalAssumed: 'Equal weights assumed — no position sizes entered.',
       mixedAbstain: 'Weights not shown — mix of sized and unsized positions.',
       mixedBasisAbstain: 'Weights not shown — mix of live-priced and at-cost positions.',
+      unresolvedBasisAbstain: 'Weights not shown — a position has no resolvable price.',
       costWeighted: 'Weighted by entry cost — live prices are not available for these positions.',
       onePosSay: 'This book is one position',
       onePosBecause: 'There is nothing to compare it against yet. Add a second position and this reads what your book really is.',
@@ -121,6 +122,7 @@
       equalAssumed: '按等权重计算 —— 未输入仓位大小。',
       mixedAbstain: '未显示权重 —— 部分持仓有仓位大小，部分没有。',
       mixedBasisAbstain: '未显示权重 —— 部分按现价，部分按成本价。',
+      unresolvedBasisAbstain: '未显示权重 —— 有一笔持仓没有可用价格。',
       costWeighted: '按成本价加权 —— 这些持仓暂无实时价格。',
       onePosSay: '这本账簿只有一笔持仓',
       onePosBecause: '目前还没有可比较的对象。再添加一笔持仓，这里就会读出你的账簿到底是什么。',
@@ -261,6 +263,22 @@
     var wgt = ps ? ps.computeWeighting(modeled, priceOf) : null;
     if (wgt && wgt.state === 'all_unsized_equal') {
       modeled.forEach(function (r) { w[r.ticker] = 1; });
+    } else if (wgt && wgt.complete !== true) {
+      /* S3 (review): an ABSTAINING book (mixed sizing, mixed price basis, unresolved
+         basis) must reach the factor engine with NO weights at all — the page's own
+         Book Read says "weights not shown"; it must not also be true that FX is
+         silently computing betas/ENB/MCTR from a distribution the user was told does
+         not exist. `w` stays `{}` and is pushed via the dedicated call below rather
+         than through the `keys.length>=2 ? w : null` ternary, because `null` here
+         would fall FX back to its manual/equal-weight path over `LAST` (whatever
+         watchlist.js most recently fed `FX.update` — a DIFFERENT leak: the book's
+         factor read would silently become a Watchlist-derived one). Verified against
+         factor_exposure.js: `setAutoWeights({})` sets `AUTO_W={}` (an object, so
+         `autoMode` stays true — `null` is the only value that flips it off), giving
+         `render()` an empty `universe`; `aggregate([]...)` returns `{ok:false}` on
+         `held.length < 2`, so the panel hides — an honest absence, not garbage. */
+      window.FX.setAutoWeights({});
+      return;
     } else {
       modeled.forEach(function (r) {
         var t = r.ticker;
@@ -760,11 +778,55 @@
        exactly one basis (mixed sized/unsized, or mixed live/cost pricing) ABSTAINS —
        it shows no money bars rather than a fabricated one. */
     var ps = PS();
-    var W = ps ? ps.computeWeighting(leadRows, priceOf) : null;
+    var W;
+    if (ps) {
+      W = ps.computeWeighting(leadRows, priceOf);
+    } else {
+      /* B2 (review — split-deploy falsehood): portfolio_state.js is a NEW paired
+         script; the .j2 markup that references it goes live within minutes, but
+         `site/watchlist.html` itself re-bakes far slower (measured "over an hour" —
+         see watchlist.js's own LEGACY RENDER PATH comment). In that window `ps` is
+         null on every page — not just a mixed book. The old shape here (`!W ||
+         W.complete !== true`) printed the ABSTAIN copy for every book whenever PS was
+         merely absent, including a fully sized, fully live-priced one — a false
+         "weights not shown" over a book that had a perfectly good answer. PS's
+         ABSENCE must never make a weighting-law claim: only the one case computable
+         without it (every row sized AND live-priced) gets real numbers, with no
+         basis label; anything else is a silent minimal state — no abstain copy, no
+         equal-assumption label, no claim this module is not ready to make. */
+      var allCurrent = leadRows.length > 0 && leadRows.every(function (r) {
+        var sh = num(r.shares), px = priceOf(r.ticker);
+        return sh != null && sh > 0 && px != null && px > 0;
+      });
+      if (!allCurrent) {
+        if (meta) meta.innerHTML = '<span>' + te(open.length + (open.length === 1 ? ' position' : ' positions'),
+                                                   open.length + ' 只持仓') + '</span>';
+        say.innerHTML = te('This book holds ' + open.length + (open.length === 1 ? ' position.' : ' positions.'),
+                            '这本账簿共有 ' + open.length + ' 笔持仓。');
+        if (because) because.innerHTML = '';
+        if (stance) stance.innerHTML = '';
+        if (cov) cov.innerHTML = '';
+        if (WS().seam) WS().seam(el('ws_seam'), null);
+        return;
+      }
+      var psSum = 0, psVal = {};
+      leadRows.forEach(function (r) { var v = num(r.shares) * priceOf(r.ticker); psVal[r.ticker] = v; psSum += v; });
+      var psWeights = {};
+      leadRows.forEach(function (r) {
+        psWeights[r.ticker] = psSum > 0 ? (psVal[r.ticker] / psSum * 100) : (100 / leadRows.length);
+      });
+      W = { state: 'all_sized_current', weights: psWeights, basis: 'current_value',
+            complete: true, reason: null };
+    }
     if (!W || W.complete !== true) {
       if (meta) meta.innerHTML = '<span>' + te(open.length + ' positions', open.length + ' 只持仓') + '</span>';
-      var abstainMsg = (W && W.reason === 'mixed_price_basis') ? T.en.mixedBasisAbstain : T.en.mixedAbstain;
-      var abstainMsgZh = (W && W.reason === 'mixed_price_basis') ? T.zh.mixedBasisAbstain : T.zh.mixedAbstain;
+      /* M-a (review): `unresolved_basis` (a SIZED row with neither a live price nor
+         an entry price) is not "mixed sized/unsized" — every row in that book DID
+         carry a size. Routing it through the mixed-sizing copy said something false.
+         It gets its own sentence naming the real reason: no resolvable price. */
+      var abstainMsg = T.en.mixedAbstain, abstainMsgZh = T.zh.mixedAbstain;
+      if (W && W.reason === 'mixed_price_basis') { abstainMsg = T.en.mixedBasisAbstain; abstainMsgZh = T.zh.mixedBasisAbstain; }
+      else if (W && W.reason === 'unresolved_basis') { abstainMsg = T.en.unresolvedBasisAbstain; abstainMsgZh = T.zh.unresolvedBasisAbstain; }
       say.innerHTML = te(abstainMsg, abstainMsgZh);
       if (because) because.innerHTML = '';
       if (stance) stance.innerHTML = '';
@@ -1048,8 +1110,13 @@
     /* A1A (§10, defect "authenticated cloud-to-local fork"): a degraded cloud read
        shows the LAST-GOOD rows read-only, disclosed here — never silently, never as an
        unqualified "Saved" table. An error with no last-good never reaches this line
-       (render() returns before it, see below), so this branch only ever means degraded. */
-    if (readState.state === 'degraded') {
+       (render() returns before it — showError() handles that case instead).
+       M-c (review): a LATER read that fails while `rows` still holds an EARLIER
+       successful read's content also lands here with `state === 'error'` (reload()'s
+       `.catch()` sets 'error' but deliberately never touches `rows`) — that used to
+       render the stale table with no disclosure at all. It reads exactly like
+       'degraded' to the visitor (last-good rows, read-only) and gets the same banner. */
+    if (readState.state === 'degraded' || (readState.state === 'error' && rows && rows.length)) {
       host.textContent = L('degradedBanner');
       host.className = 'pf-readbanner is-degraded';
       host.style.display = 'block';
@@ -1314,21 +1381,29 @@
     try { document.dispatchEvent(new CustomEvent('pf-save', { detail: { state: state } })); }
     catch (e) { /* no CustomEvent (very old browser / test shell) */ }
   }
-  // maps a read/write outcome onto the chip's existing 4-word vocabulary — no new
-  // chip copy is authorized by the frozen spec, so 'saved'/'local'/'saving'/'offline'
-  // is the full range; 'offline' also covers a write failure and a degraded/error read.
-  function pfChipStateFor(rs) {
+  /* M-d (review): a plain READ that succeeds is not a WRITE claim — 'Saved' means
+     "the write you just made landed," and a first load / background re-read never
+     made one. `afterWrite` is true ONLY when this settles a doSave()/doRemove() call;
+     everything else (onAuth's first load, the visibilitychange refetch, 'pf-folded')
+     settles to the neutral 'clean' state instead. */
+  function pfChipStateFor(rs, afterWrite) {
     if (!rs || rs.authority === 'local') return 'local';
-    return (rs.state === 'ready') ? 'saved' : 'offline';
+    // S6's brief cloud-loading window ('user' set, the shared Supabase client not yet
+    // resolved) is NOT offline — 'saving' is the closest honest existing word for "a
+    // read is in flight," and it self-corrects within the tick the re-fired 'wl-auth'
+    // lands (watchstore.js dispatches it the instant `sb` resolves).
+    if (rs.state === 'loading') return 'saving';
+    if (rs.state !== 'ready') return 'offline';
+    return afterWrite ? 'saved' : 'clean';
   }
 
-  function reload() {
+  function reload(afterWrite) {
     if (!window.WatchStore || !window.WatchStore.portfolio) return;
     hydrated = false;
     window.WatchStore.portfolio.list().then(function (newRows) {
       var rs = window.WatchStore.portfolio.readState ? window.WatchStore.portfolio.readState() : null;
       readState = rs || { authority: 'local', state: 'ready', last_good_at: null, warning: null };
-      dispatchPfSave(pfChipStateFor(readState));
+      dispatchPfSave(pfChipStateFor(readState, afterWrite));
       /* A1A: `newRows === null` is the explicit "genuinely unknown" answer (§10) —
          keep whatever `rows` already held (last-good was already folded into
          readState.state === 'degraded' by watchstore.js; a bare `null` here only
@@ -1379,7 +1454,7 @@
         return;
       }
       pfCloseDlg();
-      reload();   // reload() dispatches the settled pf-save state once it resolves
+      reload(true);   // afterWrite: reload() dispatches 'saved', not 'clean' (M-d)
     }).catch(function () {
       saveBtn.disabled = false;
       if (errEl) errEl.textContent = L('saveError');
@@ -1394,7 +1469,7 @@
     dispatchPfSave('saving');
     window.WatchStore.portfolio.remove(id).then(function (result) {
       if (!result) { dispatchPfSave('offline'); return; }
-      reload();
+      reload(true);   // afterWrite (M-d)
     }).catch(function () { dispatchPfSave('offline'); });
   }
 

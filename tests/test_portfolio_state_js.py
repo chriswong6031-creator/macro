@@ -6,9 +6,11 @@ Pure, DOM-free, node-exported behind a `typeof module` guard (the risk_core.js /
 market_books.js idiom) — node-shelled with NO stubs at all beyond `require()` itself.
 
 Covers the weighting law (§12) and the population/authority shape of the private
-`portfolio_snapshot.v1` object (§9-10). This is a NEW suite — new test files are
-force-wired by scripts/audit_unrun_tests.py's gate, unlike the grandfathered-dark
-tests/test_market_books_js.py and tests/test_portfolio.py.
+`portfolio_snapshot.v1` object (§9-10). This is a NEW suite, wired via an explicit
+step in the `wri-risk-core` job of `.github/ci/legacy-jobs.yml` (review finding B3) —
+`scripts/audit_unrun_tests.py`'s gate only reports/reds an unwired suite, it does not
+itself add any `run:` step. Unlike the grandfathered-dark tests/test_market_books_js.py
+and tests/test_portfolio.py, this suite actually executes in CI.
 """
 from __future__ import annotations
 

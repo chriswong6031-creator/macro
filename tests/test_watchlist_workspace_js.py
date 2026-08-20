@@ -695,7 +695,12 @@ def test_portfolio_no_longer_carries_the_retired_fx_seeding_workaround():
     import re
 
     src = PORTFOLIO.read_text()
-    body = src[src.index("function pushFxWeights"):src.index("function pushFxWeights") + 1800]
+    start = src.index("function pushFxWeights")
+    # bounded by the NEXT top-level function declaration rather than a fixed-width
+    # window — A1A's S3 abstain-branch fix (review 2026-08-20) grew this function well
+    # past the old 1800-char slice, which silently truncated before reaching the very
+    # call this test exists to find.
+    body = src[start:src.index("\n  function ", start + 10)]
     # the comment that RECORDS the retirement names the retired call; a scan that cannot
     # tell code from prose would fail on its own documentation
     code = re.sub(r"/\*.*?\*/", "", body, flags=re.S)

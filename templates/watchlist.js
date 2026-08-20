@@ -735,8 +735,10 @@
   }
 
   /* The save-state chip is the ONLY disclosure of sync state on this page — the
-     Account Sync panel is deleted. Four states, each literally true:
-       saved   — written through to the account
+     Account Sync panel is deleted. Five states, each literally true:
+       saved   — a WRITE just landed in the account
+       clean   — a READ succeeded from the account; nothing has been written this
+                 session, so nothing is claimed to have been "saved" (M-d review)
        saving  — a write is in flight
        local   — anonymous; the list lives in this browser and nowhere else
        offline — the network is unreachable and changes are being kept locally */
@@ -744,6 +746,9 @@
     saved:   ['is-saved',   'Saved', '已保存',
               'Saved to your Mastermind account. Your list and positions follow you to the Terminal.',
               '已保存到你的 Mastermind 账户。名单和持仓会同步到终端。'],
+    clean:   ['is-saved',   'Up to date', '已是最新',
+              'Loaded from your Mastermind account. Nothing has changed since.',
+              '已从你的 Mastermind 账户加载。此后没有发生变化。'],
     saving:  ['is-saving',  'Saving…', '保存中…',
               'Writing your change through now. Nothing is blocked while it finishes.',
               '正在写入你的更改。写入期间页面照常可用。'],
@@ -1439,7 +1444,13 @@
 
   function renderAnonTable(items, unit) {
     var host = el('tbl_pf'); if (!host) return;
-    var filtered = items.filter(function (x) { return inBook(x.sym); });
+    /* S2 (review): this table renders the TEMPORARY BASKET, not the Portfolio — the
+       Portfolio's active-book filter must not touch it (§11, and this is a second
+       reason on top of that law: `items[].money` is computed over the FULL parsed
+       set, so silently dropping a row here made the visible weights stop summing to
+       100 — a .HK name pasted under a US-only active book used to just vanish while
+       its share of the money stayed baked into everyone else's percentage). */
+    var filtered = items;
     var q = (el('pf_q') && el('pf_q').value || '').trim().toLowerCase();
     if (q) filtered = filtered.filter(function (x) { return x.sym.toLowerCase().indexOf(q) >= 0; });
     var head = (unit === 'shares')
@@ -1622,8 +1633,21 @@
   // ===========================================================================
   function wsState() {
     if (window.MDXAuth && window.MDXAuth.user && window.MDXAuth.user()) return 'signed';
-    if (chipState.watchlists === 'saved' || chipState.watchlists === 'saving' ||
-        chipState.portfolio === 'saved' || chipState.portfolio === 'saving') return 'signed';
+    if (chipState.watchlists === 'saved' || chipState.watchlists === 'saving') return 'signed';
+    /* S4 (review): `doSave()`/`doRemove()` dispatch 'pf-save':'saving' UNCONDITIONALLY
+       at the start of every write — including an ANONYMOUS local one, before the write
+       even knows its own authority. Reading `chipState.portfolio === 'saving'` alone
+       therefore briefly un-gated the signed-in shell for an anonymous visitor who
+       clicked Save. A Portfolio chip state counts toward 'signed' ONLY when the
+       Portfolio's own read authority is genuinely 'cloud' — never on the chip word
+       alone (the anonymous local store shares the exact same chip vocabulary). */
+    var pf = (window.WatchStore && window.WatchStore.portfolio) || null;
+    var pfAuth = (pf && pf.readState) ? pf.readState().authority : null;
+    if (pfAuth === 'cloud' &&
+        (chipState.portfolio === 'saved' || chipState.portfolio === 'saving' ||
+         chipState.portfolio === 'clean')) {
+      return 'signed';
+    }
     if (window.SD) return 'signed';               // the gated shell only boots for a session
     return ENTERED ? 'anon-analyzed' : 'anon-empty';
   }
@@ -2109,9 +2133,10 @@
       var an = e.target.closest('#wl_analyze');
       if (an) {
         // a watchlist has no position sizes, so analyzing it is an EQUAL-WEIGHTED
-        // structure read — never a portfolio
-        var syms = blob.items.filter(function (it) { return inBook(it.t); })
-                             .map(function (it) { return it.t; });
+        // structure read — never a portfolio. S2 (review): the Portfolio's active-
+        // book filter must not silently drop Watchlist names from the analysis —
+        // "analyze this watchlist" means the WHOLE watchlist, every time.
+        var syms = blob.items.map(function (it) { return it.t; });
         if (syms.length >= 2) {
           wmode = 'equal';
           ENTERED = { mode: 'equal', parsed: { rows: syms.map(function (s) { return { t: s, size: null }; }), bad: [] } };
@@ -2281,7 +2306,12 @@
       viewItems: viewItems,
       renderWatchlist: renderWatchlist,
       // A1A test seam (§11): drives the temporary-basket path without a real click.
-      runEntry: runEntry
+      runEntry: runEntry,
+      // A1A test seam (S2/S5, review): the LEGACY card-grid view, so its book-filter
+      // removal is pinned behaviorally too, not just in the W2 table renderer.
+      lgViewItems: lgViewItems,
+      // A1A test seam (S4, review): the anonymous-save-never-signs-in-the-shell law.
+      wsState: wsState
     };
   }
 })();
