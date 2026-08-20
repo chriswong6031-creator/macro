@@ -75,6 +75,26 @@
 .pvcard{position:relative;display:flex;flex-direction:column;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);min-width:0;transition:transform .12s,box-shadow .12s,border-color .12s}
 .pvcard:hover{transform:translateY(-2px);box-shadow:0 5px 18px rgba(0,0,0,.22);border-color:color-mix(in srgb,var(--pvh) 55%,var(--line))}
 .pv-buy{--pvh:var(--pv-buy);--pvh-ink:var(--ink-pv-buy,var(--pvh))}.pv-near{--pvh:var(--pv-near);--pvh-ink:var(--ink-pv-near,var(--pvh))}.pv-wait{--pvh:var(--pv-wait);--pvh-ink:var(--ink-pv-wait,var(--pvh))}.pv-hold{--pvh:var(--pv-hold);--pvh-ink:var(--pv-hold)}.pv-avoid{--pvh:var(--pv-avoid);--pvh-ink:var(--ink-pv-avoid,var(--pvh))}
+{# P-MP1-SHELL §8a / Q7b — the "no read yet" (BLOCKED_DATA) card carries NO stance
+   hue (DESIGN_NOTES.md: "an unavailable read is not a cautious read"). --pvh/--pvh-ink
+   both resolve to --muted so every hue-driven element on the card (chart, chip, edge
+   number, zone label, stage dots) renders in the same neutral ink the layout already
+   uses for "nothing to report", rather than inventing a sixth hue. The verb chip's
+   dashed border is the additional, load-bearing "this is absence, not a verdict" cue. #}
+.pv-noread{--pvh:var(--muted);--pvh-ink:var(--muted)}
+{# Selected via an ATTRIBUTE selector on the chip span's own `data-noread` marker
+   (see the macro below), not a class or a plain descendant selector: two existing
+   raw-source guards constrain the form here — tests/test_prophet_card_shared.py's
+   verb-chip guard requires the chip's `class` attribute to stay literally exactly
+   `class="pv-chip"` in the unrendered template source (so it can assert no
+   `data-tip` attribute sits beside it), and
+   tests/test_prophet_verb_ink_contrast.py's _rule() helper regex-matches the FIRST
+   occurrence of the base chip selector text immediately followed by optional
+   whitespace and an opening brace, anywhere in the raw file. An attribute selector
+   satisfies both: `class="pv-chip"` in the macro markup never changes, and the
+   selector text below never has "pv-chip" immediately followed by only
+   whitespace-then-brace (the "[" breaks that match). #}
+.pv-chip[data-noread]{border-style:dashed;background:transparent}
 .pvcard::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;z-index:3;pointer-events:none;border-radius:12px 12px 0 0;background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 12%,transparent) 90%);box-shadow:0 1px 8px color-mix(in srgb,var(--pvh) 45%,transparent)}
 .pvcard.pv-triage::before{box-shadow:0 1px 12px color-mix(in srgb,var(--pvh) 70%,transparent)}
 {# ── FEATURED GLOW (prophet board priority engine, G0.2 — 2026-08-02) ──────────
@@ -367,13 +387,24 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
 </style>
 {% endmacro %}
 
-{% macro pv_card(cx) %}
+{% macro pv_card(cx, allow_no_read=false) %}
 {%- set _VEN = {'buy':'Buy','near':'Near','wait':'Wait','hold':'Hold','avoid':'Avoid'} -%}
 {%- set _VZH = {'buy':'买入','near':'临近','wait':'等待','hold':'持有','avoid':'回避'} -%}
 {%- set _MN = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} -%}
-{%- set _verb = cx.verb if cx.verb in _VEN else 'wait' -%}
+{#- P-MP1-SHELL §8a (b1 ruling, macro wait-default parameterization requirement):
+    the ORIGINAL fallback below silently rendered "wait" for any unrecognized/absent
+    verb — exactly the default DESIGN_NOTES.md Q7b forbids for an unobtainable
+    stance (BLOCKED_DATA must render as a disclosed no-read chip, never a guessed
+    Wait). `allow_no_read` is additive and OFF by default: every existing caller
+    (hk/china/canada/intl, and every current US call site) passes no such flag and
+    keeps this exact byte-for-byte fallback-to-wait behavior. Only a caller that
+    explicitly opts in AND passes a verb that fails the `_VEN` membership test
+    (i.e. `cx.verb` is None/absent — the no_read basis from us_stance_projection())
+    takes the new branch. -#}
+{%- set _no_read = allow_no_read and (cx.verb not in _VEN) -%}
+{%- set _verb = 'wait' if _no_read else (cx.verb if cx.verb in _VEN else 'wait') -%}
 {%- set _stage = cx.get('stage') or 0 -%}
-<a class="pvcard pv-{{ _verb }}{% if cx.get('featured') %} pv-featured{% elif cx.get('triage') %} pv-triage{% endif %}" href="{{ cx.href|e }}" data-ticker="{{ cx.tk|e }}"{% if cx.get('stage_key') %} data-stage="{{ cx.stage_key|e }}"{% endif %}>
+<a class="pvcard{% if _no_read %} pv-noread{% else %} pv-{{ _verb }}{% endif %}{% if cx.get('featured') %} pv-featured{% elif cx.get('triage') %} pv-triage{% endif %}" href="{{ cx.href|e }}" data-ticker="{{ cx.tk|e }}"{% if cx.get('stage_key') %} data-stage="{{ cx.stage_key|e }}"{% endif %}{% if cx.get('stance_basis') %} data-tip-en="{{ cx.get('stance_tip_en') or ('Stance source: ' ~ cx.stance_basis) }}" data-tip-zh="{{ cx.get('stance_tip_zh') or ('依据来源：' ~ cx.stance_basis) }}"{% endif %}>
   <div class="pv-chart">
     {% if cx.get('spark') %}{{ cx.spark|safe }}{% else %}<div class="pv-nochart"></div>{% endif %}
     <span class="pv-ov pv-ovl">
@@ -385,7 +416,7 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
           still accepted by callers; they are simply not rendered. Same call for .pv-edge
           and the feat/new marks below. The ⚡ trigger tip and the ⚠N popover STAY: those
           carry facts that appear nowhere else on the card. -#}
-      <span class="pv-chip">{{ t(_VEN[_verb], _VZH[_verb]) }}</span>
+      <span class="pv-chip"{% if _no_read %} data-noread="1"{% endif %}>{% if _no_read %}{{ t('No read yet', '暂无读数') }}{% else %}{{ t(_VEN[_verb], _VZH[_verb]) }}{% endif %}</span>
       {%- if cx.get('trigger') %}{% set _tg = cx.trigger %}
       <span class="pv-trg{% if _tg.kind == 'imminent' %} pv-trg-soon{% endif %}"{% if _tg.get('tip_en') %} data-tip-en="{{ _tg.tip_en|e }}" data-tip-zh="{{ (_tg.get('tip_zh') or _tg.tip_en)|e }}"{% endif %}>⚡ {% if _tg.kind == 'imminent' %}{{ t('Imminent','即将触发') }}{% else %}{{ t('Triggered','已触发') }}{% endif %}</span>
       {%- endif %}
