@@ -73,7 +73,7 @@ waves:
       entitlement, the next lawful scheduled run may replace this failed vintage.
   - id: AD-1C0.1
     title: Source-clock integrity + security closure + production commissioning
-    status: building
+    status: in_progress
     depends_on: [AD-1C0]
     next_action: >
       Sol handoff 2026-08-20, three jobs. (A) Source-clock adjudication: census
