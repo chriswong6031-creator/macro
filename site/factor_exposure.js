@@ -262,14 +262,38 @@
     catch (e) { /* older browsers: watchlist_risk.js falls back to polling on render */ }
   }
 
+  /* Which book is on screen owns the universe this panel publishes.
+
+     BOTH publishers stay live in BOTH modes: watchlist.js calls `FX.update(watchlist
+     names)` in Watchlists mode, and portfolio.js calls `setAutoWeights()` off its own
+     data / language / book-chip events whatever the mode is. So neither "who spoke last"
+     nor `LAST` can settle the question — only the workspace's own statement of which book
+     the reader is looking at, html[data-ws-mode] (watchlist.js `setMode`).
+
+     Any other host — the legacy watchlist page, stock.html — carries no attribute, reads
+     '' and keeps the `LAST` fallback. The gate only ever narrows the workspace. */
+  function pfMode() {
+    var de = document.documentElement;
+    return !!(de && de.getAttribute && de.getAttribute('data-ws-mode') === 'portfolio');
+  }
+
   function render(panel, tickers, data) {
     if (!data || !data.factors) { panel.style.display = 'none'; return; }
     // AUTO_W (from portfolio.js dollar values) takes precedence over manual editor weights.
     // When AUTO_W is active, use its keys as the universe (not the watchlist tickers arg)
     // so off-watchlist holdings contribute their real weight and no eqPct fallback applies.
     var autoMode = AUTO_W !== null;
-    var universe = autoMode ? Object.keys(AUTO_W) : tickers;
-    var wmap = autoMode ? AUTO_W : loadW();
+    /* Portfolio mode with no auto book is an EMPTY book — never the watchlist. `LAST`
+       still holds the names from the last Watchlists-mode render, so falling back to it
+       published the WATCHLIST as "this book" the instant portfolio.js reported an empty
+       book (`setAutoWeights(null)`, fewer than two modeled open rows). Holdings read
+       "No positions yet" while the Risk Center's Concentration tab read "One name,
+       ETH-USD, carries 40% of this book's risk" off names the reader does not own — and
+       it only appeared after visiting Watchlists mode first, so a fresh load in Portfolio
+       mode looked correct. Market OS freeze §13: no Watchlist name in Portfolio risk. */
+    var pfEmpty = !autoMode && pfMode();
+    var universe = autoMode ? Object.keys(AUTO_W) : (pfEmpty ? [] : tickers);
+    var wmap = autoMode ? AUTO_W : (pfEmpty ? {} : loadW());
     // publish the resolved weighting for the WRI layer (before the ok/thin gate so
     // it also learns about a thin/empty book and can collapse its hero in step).
     CUR = { universe: universe.slice(), wmap: wmap, mode: autoMode ? 'auto' : 'manual' };
@@ -301,24 +325,31 @@
     refresh: function () { window.FX.update(LAST); },
     // the resolved weighting the WRI book-structure layer (watchlist_risk.js) reuses
     currentWeights: currentWeights,
-    // Called by portfolio.js after every render.
-    // w = {ticker: dollarValue} for open holdings with shares + price; null resets to equal-weight.
-    /* The bail condition is "there is nothing to read", and in the AUTO path that is NOT
-       `LAST` — `render()` derives the auto universe from `Object.keys(AUTO_W)` and never
-       looks at `LAST` at all. Guarding on `LAST.length` therefore returned early for the
-       exact user this page exists for: a signed-in account with a full portfolio and an
-       EMPTY watchlist. `render()` never ran, so `CUR` was never resolved and
-       `announceWeights()` never fired — watchlist_risk.js received no weights, RiskCore
-       was never called, every position read "Not covered" and the Book Seam's risk rail
-       went dark. Nothing was broken downstream; the weights simply never left this file.
-       W2 worked around it from portfolio.js (seeding the universe via FX.update) because
-       this file was outside its scope; the seam is fixed here now and that workaround is
-       retired, so this guard is the one thing carrying the case in production. */
+    /* Called by portfolio.js after every render.
+       w = {ticker: dollarValue} for open holdings with shares + price; null = this book
+       has fewer than two modeled positions, i.e. there is no auto book to weight.
+
+       No early return. The bail condition reads as "there is nothing to publish", and
+       twice that was itself the defect:
+
+       • `if (!LAST.length) return;` — `LAST` is the WATCHLIST, and `render()` derives the
+         auto universe from `Object.keys(AUTO_W)`, never from `LAST`. So the exact user
+         this page exists for — a signed-in account with a full portfolio and an EMPTY
+         watchlist — never resolved `CUR` and never announced: watchlist_risk.js received
+         no weights, RiskCore was never called, every position read "Not covered" and the
+         Book Seam's risk rail went dark. W2 worked around it from portfolio.js (seeding
+         the universe via FX.update); the seam was fixed here and that workaround retired.
+
+       • `if (!LAST.length && !autoNames) return;` — "nothing anywhere" is precisely when a
+         book already on screen must be RETRACTED. With an empty watchlist, deleting down
+         to one position announced nothing at all, so the Risk Center went on describing
+         the book the reader had just dismantled.
+
+       Publishing an empty book is a real publication: `render()` resolves `CUR` and
+       announces BEFORE the thin gate, so the WRI layer collapses in step. */
     setAutoWeights: function (w) {
       AUTO_W = w || null;
       var p = panelEl(); if (!p) return;
-      var autoNames = AUTO_W ? Object.keys(AUTO_W).length : 0;
-      if (!LAST.length && !autoNames) return;
       load().then(function (data) { render(p, LAST, data); });
     }
   };
