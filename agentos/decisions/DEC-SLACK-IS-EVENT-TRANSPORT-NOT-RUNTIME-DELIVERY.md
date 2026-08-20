@@ -2,62 +2,93 @@
 key: SLACK-IS-EVENT-TRANSPORT-NOT-RUNTIME-DELIVERY
 question: >
   Can Slack messages themselves serve as agent dispatch/runtime delivery for Sol,
-  Fable and worker sessions, or must Mastermind distinguish transport from actual
-  runtime delivery and acknowledgement?
+  Fable and worker sessions, and should the Slack integration create its own durable
+  lifecycle/seat-inbox state?
 answer: >
-  Slack is a human-visible event transport, not runtime delivery and not canonical
-  state. A Mastermind dispatcher must durably ingest/validate/route the event, and
-  the target runtime must produce an explicit delivery receipt and ACK before the
-  system may say the agent received or accepted the mission.
+  Slack is a human-visible transport and acknowledgement surface, not canonical state,
+  not runtime delivery, and not a reason to create another lifecycle store. Reuse the
+  canonical state of the system receiving the command. For the first CEO-intent vertical,
+  Slack feeds the existing Mastermind Executive OS CEO-intent admission and sole
+  Job/JOB_CREATED lifecycle; bounded Slack transport provenance and a thread ACK prove
+  the round trip. Generic agent dispatch remains a later program and must be re-designed
+  against the then-current Executive OS and Wake authority rather than pre-authorizing a
+  new Slack queue, mutable dispatch store, or durable seat-inbox database.
 rationale: >
-  Browser-hosted ChatGPT/Claude/Fable sessions do not inherently listen to an employee
-  Slack inbox while running or stopped. Treating a posted message as delivered-to-model
-  creates the worst possible false-green: the sender believes work was dispatched while
-  no runtime ever saw it. Agent OS invariant I1 already places execution/dispatch authority
-  outside the knowledge plane, and DEC:AGENTOS-NO-TASK-STORE places future autonomous job
-  assignment in the Executive OS dispatcher. The bridge therefore needs its own durable
-  transport lifecycle (received, queued, runtime-visible, ACKed, result) while Agent OS
-  remains the canonical work/decision/handoff source it consumes.
+  Browser-hosted ChatGPT/Claude/Fable sessions do not inherently listen to a Slack inbox,
+  so a Slack post cannot prove runtime visibility or acknowledgement. More importantly,
+  current Executive OS archaeology shows the durable Job/Attempt/Worker/Event plane,
+  command-id idempotency, CEO-intent admission, and recomputed Executive Inbox already
+  exist. A separate Slack event lifecycle database or mutable seat inbox would duplicate
+  canonical state and violate Mastermind's one-system law. The correct first vertical is
+  narrower: Personal-Pro Sol writes a bounded high-level request to #ceo-control-room;
+  a least-privilege Slack transport validates transport facts and submits through the
+  existing Executive control service; existing Executive SQLite records one canonical
+  Job/JOB_CREATED; Slack returns an acknowledgement; read-only MCP proves the same state.
 alternatives:
-  - option: Use direct Slack DMs between employee accounts as the agent inbox
+  - option: Persist every Slack dispatch in a new Slack lifecycle database and seat inbox
     why_not: >
-      A Slack user notification proves only that Slack accepted a message. It does not prove a
-      ChatGPT/Claude/Fable session was active, read the message, received current Agent OS context,
-      or accepted the authority boundary.
-  - option: Make Slack threads the canonical handoff/workstream state
+      Rebuilds lifecycle, dedupe and pending-work state already owned by Executive OS.
+      It also turns transport implementation convenience into a second control plane.
+  - option: Treat direct Slack DMs or channel posts as agent runtime delivery
     why_not: >
-      Chat transcripts are mutable/noisy transport, lack Agent OS schema/provenance gates, and
-      recreate the cross-account state-loss problem the file-backed handoff protocol solved.
-  - option: Do not use Slack in the agent architecture
+      A Slack notification proves only transport receipt. It does not prove a browser
+      ChatGPT/Claude/Fable runtime was active, read current Agent OS context, or accepted
+      the authority boundary.
+  - option: Make Slack threads canonical handoff/workstream state
     why_not: >
-      Loses a useful shared human-visible coordination/event surface across durable employee seats
-      and makes dispatch/escalation harder to observe while the runtime control plane is completed.
+      Slack is noisy transport and lacks Agent OS's durable work-identity, decision,
+      discovery, handoff and proof contracts.
+  - option: Exclude Slack from the architecture entirely
+    why_not: >
+      Loses a useful approved write transport and shared human-visible acknowledgement
+      surface, including the immediate Pro-Sol CEO-intent writeback path.
 evidence:
-  - "agentos/workstreams/WS-AGENT-OS.md landmine — anything that gates or dispatches belongs in Mastermind control_plane/ or the Macro hook layer"
-  - "agentos/decisions/DEC-AGENTOS-NO-TASK-STORE.md — future task/job store belongs in the Executive OS dispatcher"
-  - "research/MASTERMIND_AGENT_HANDOFF_PROTOCOL.md — durable state is a cold-stranger artifact, not chat history"
-  - "research/MASTERMIND_SLACK_AGENT_EVENT_BRIDGE_CONTRACT_2026-08-20.md — immutable event/lifecycle/runtime-delivery contract"
+  - "agentos/workstreams/WS-AGENT-OS.md — anything that gates or dispatches belongs in Mastermind control_plane/ or existing execution hooks"
+  - "agentos/decisions/DEC-AGENTOS-NO-TASK-STORE.md — autonomous job/task authority belongs in Executive OS, not Agent OS"
+  - "Mastermind PR #91 / MAS-48 — current Executive OS archaeology: Executive SQLite is sole Job/Attempt/Worker/Event authority; no Slack queue or durable seat-inbox DB"
+  - "research/MASTERMIND_SLACK_AGENT_EVENT_BRIDGE_CONTRACT_2026-08-20.md — transport sequence and no-duplicate-state contract"
 affects:
   - WS:AGENT-OS
   - project-active-build-control
   - research/MASTERMIND_SLACK_AGENT_EVENT_BRIDGE_CONTRACT_2026-08-20.md
+  - MAS-9
+  - MAS-48
 confidence: high
 reversibility: easy
 decided_by: ceo-sol
 decided_at: 2026-08-20
 ---
 
-## Required transport distinction
+## Required truth distinction
 
-The bridge state machine is separate from the workstream state machine:
+These facts must never be collapsed:
 
-`RECEIVED → VALIDATED → ROUTED → QUEUED → RUNTIME_VISIBLE → ACKED → RUNNING → RESULT`.
+`SLACK_POSTED -> TRANSPORT_ACCEPTED -> CANONICAL_SYSTEM_ACCEPTED -> RUNTIME_VISIBLE -> AGENT_ACKED -> RUNNING -> RESULT`
 
-A Slack post may establish `RECEIVED`; it can never establish `RUNTIME_VISIBLE` or `ACKED`
-without a runtime/bootstrap adapter receipt.
+Not every integration needs to persist each label as its own state machine. The canonical
+receiving system is authoritative. In the CEO-intent V1, Executive OS Job/Event state plus
+bounded Slack transport provenance and the Slack ACK are sufficient; `dispatched=false`
+remains explicit.
 
-## Current runtime law
+## First vertical: CEO intent
 
-For a runtime with no approved launch/resume adapter, the dispatch remains in a durable seat
-inbox and is surfaced by the next eligible session bootstrap before unrelated new work. That
-is honest delayed delivery, not fake asynchronous autonomy.
+`MAS-48` is the first implementation proof:
+
+`Pro Sol -> #ceo-control-room -> least-privilege Slack transport -> ExecutiveControlService -> existing ceo_intent.submit_intent -> one Job/JOB_CREATED -> Slack ACK -> MCP readback`.
+
+No generic #agent-dispatch bus, Wake dependency, new SQLite table/database, mutable Slack
+dispatch store, or durable seat-inbox store is authorized by this decision.
+
+## Generic agent dispatch remains later
+
+`MAS-29/30/31` must consume MAS-48 production proof and the then-current Wake ruling before
+implementation. Prefer projections over new mutable state. If a future generic dispatch fact
+cannot be represented by existing Executive Job/Event authority, a separate architecture
+ruling must prove why before any new persistence is introduced.
+
+## Browser-runtime law
+
+A browser-hosted AI session is never claimed as awakened or runtime-visible because Slack
+received a message. Pending-work presentation at session bootstrap must be derived from an
+accepted canonical representation; this decision does not pre-authorize a new durable seat
+inbox to solve that problem.
