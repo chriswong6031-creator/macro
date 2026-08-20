@@ -1,11 +1,13 @@
 """Static serving-boundary drift and client-artifact leak tripwires."""
 from __future__ import annotations
 
+import hashlib
 import re
 import shlex
 import subprocess
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -510,3 +512,106 @@ def test_fail_closed_and_browser_hardening_are_present():
     assert "Content-Security-Policy \"base-uri 'self'; object-src 'none'; frame-ancestors 'none'\"" in CADDY
     assert 'X-Frame-Options "DENY"' in CADDY
     assert 'Permissions-Policy "camera=(), microphone=(), geolocation=(), usb=()"' in CADDY
+
+
+# --- cache-policy drift (PR 3 of the 2026-08-20 performance remediation) ------
+# scripts/optimize_assets.py stamps ?v=<sha256[:8]> on EVERY local .js/.css ref
+# it finds in site/**/*.html — not a curated list. The Caddyfile splits cache
+# policy on that stamp: @public_static carries `not query v=*`, so a stamped
+# request only reaches @public_versioned. An asset reviewed public but missing
+# from @public_versioned therefore matches NOTHING and is served with NO
+# Cache-Control, which hands EdgeOne its long default TTL — the 2026-07-03
+# white-page incident class. That silent hole is what these three tests close.
+
+def _caddy_path_list(matcher: str) -> list[str]:
+    m = re.search(r"@%s \{\s*\n\s*path ([^\n]+)\n" % re.escape(matcher), CADDY)
+    assert m, f"@{matcher} matcher not found in the Caddyfile"
+    return m.group(1).split()
+
+
+def _matches(path: str, patterns: list[str]) -> bool:
+    return any(
+        path.startswith(p[:-1]) if p.endswith("*") else path == p for p in patterns
+    )
+
+
+def _served_stamps() -> dict[str, str]:
+    """Root-relative asset path -> the ?v= stamp site/ actually serves for it."""
+    ref = re.compile(r'(?:src|href)="([^"]+\.(?:js|css))\?v=([0-9a-zA-Z]+)"')
+    out: dict[str, str] = {}
+    for page in SITE.rglob("*.html"):
+        parent = page.parent
+        for url, stamp in ref.findall(page.read_text(encoding="utf-8", errors="replace")):
+            if url.startswith(("http://", "https://", "//")):
+                continue
+            try:
+                out["/" + str((parent / url).resolve().relative_to(SITE.resolve()))] = stamp
+            except ValueError:
+                continue
+    return out
+
+
+def test_immutable_cache_list_never_widens_the_access_boundary():
+    """@public_versioned is a CACHE decision and must never be an access one.
+
+    Every entry has to already be reviewed public — listed in @public_static or
+    carried in the policy's `public.exact`. Without this, adding a member-only
+    asset here would cache a gated body at the edge under a public key.
+    """
+    static = _caddy_path_list("public_static")
+    exact = set(POLICY["public"]["exact"])
+    unreviewed = [
+        p for p in _caddy_path_list("public_versioned")
+        if not _matches(p, static) and p not in exact
+    ]
+    assert not unreviewed, (
+        "@public_versioned grants a cached-forever public response to paths with "
+        f"no public review: {unreviewed}. Add them to config/site_access.yml "
+        "`public.exact` deliberately, or drop them here."
+    )
+
+
+def test_every_stamped_public_asset_is_on_the_immutable_matcher():
+    """The drift guard: a reviewed-public asset that is served ?v=-stamped must
+    be on @public_versioned, or it falls through every matcher and ships with no
+    Cache-Control at all."""
+    if not SITE.is_dir():
+        pytest.skip("site/ not checked out")
+    static = _caddy_path_list("public_static")
+    versioned = _caddy_path_list("public_versioned")
+    handstamped = _caddy_path_list("watchlist_shell_versioned")
+    missing = sorted(
+        path for path in _served_stamps()
+        if _matches(path, static)
+        and not _matches(path, versioned)
+        and not _matches(path, handstamped)
+    )
+    assert not missing, (
+        f"{len(missing)} reviewed-public asset(s) are served ?v=-stamped but are "
+        f"absent from @public_versioned, so they get NO Cache-Control: {missing}"
+    )
+
+
+def test_hand_stamp_carve_out_holds_only_hand_stamped_paths():
+    """@watchlist_shell_versioned exists ONLY for hand-authored ?v=N integers,
+    which must not be cached for a year. A path whose served stamp equals its own
+    sha256[:8] is content-addressed and belongs on the immutable matcher instead
+    — that is exactly how mtf.js and mm_brain.js sat at 300s after they became
+    content-hashed, paying a revalidation on every navigation."""
+    if not SITE.is_dir():
+        pytest.skip("site/ not checked out")
+    stamps = _served_stamps()
+    wrong = []
+    for path in _caddy_path_list("watchlist_shell_versioned"):
+        served = stamps.get(path)
+        if served is None:
+            continue
+        body = SITE / path.lstrip("/")
+        if not body.is_file():
+            continue
+        if served == hashlib.sha256(body.read_bytes()).hexdigest()[:8]:
+            wrong.append(f"{path}?v={served}")
+    assert not wrong, (
+        "these are content-hash stamped, so the 300s carve-out is wrong for them "
+        f"— move them to @public_versioned: {wrong}"
+    )
