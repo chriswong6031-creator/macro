@@ -68,7 +68,13 @@
           <span class="sh-s"><span class="l-en">{{ _stage_sub_en[_sk] }}</span><span class="l-zh">{{ _stage_sub_zh[_sk] }}</span></span>
         </div>
         {% elif n.get('_heading') %}
-        <div class="nb-lane-hd">
+        {# `data-lane` is the legacy path's join key, mirroring `data-stage` above:
+           on a gated board the shell and the tier payload each render their own
+           heading for a group that spans both sides of the wall, and the page's
+           hydrate() merges them by this attribute (dashboard.html.j2). Without it
+           the lane path can only fall back to appending, which is what drew the
+           heading twice. Display is unchanged — the CSS keys on the class. #}
+        <div class="nb-lane-hd" data-lane="{{ n.lane }}">
           <span class="l-en">{{ _lane_labels_en.get(n.lane, n.lane) }} · {{ n.count }}</span>
           <span class="l-zh">{{ _lane_labels_zh.get(n.lane, n.lane) }} · {{ n.count }}</span>
         </div>
