@@ -36,6 +36,16 @@ Additionally found **during** the fix, not in the original brief:
   See `DSC:LIVE-BREADTH-VPS-LANE-MUST-NOT-GIT-PUBLISH`.
 - **Wiring only into `live-setup.sh` is a silent production no-op (fixed).**
   See `DSC:LIVE-BREADTH-NEW-LANE-INSTALLS-VIA-UPDATE-SH-ABSENT-FILE-CLAUSE`.
+- **A dead producer read as healthy (fixed).** `source_age_min` is frozen at
+  BUILD time, so a lane that stopped writing three hours ago keeps serving an
+  artifact that still says `source_age_min: 4.0` and `usable: true` — grading
+  that field would have declared a stopped producer healthy forever, which is
+  precisely the blindness a dead-man exists to prevent. `check_vps_live_health.py`
+  now derives source age from the **absolute** `source_asof` against *now*
+  (`_source_age_min()`), so the value keeps ageing after the writer dies and one
+  check answers both "is the source stale?" and "did the producer run?" without
+  touching mtime. Mutation-tested: grading the frozen field reddens
+  `test_breadth_health_catches_a_producer_that_stopped_writing`.
 
 ## 2. Actual production breadth ownership (as observed 2026-08-20 ~10:56Z)
 

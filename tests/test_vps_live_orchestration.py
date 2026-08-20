@@ -1489,11 +1489,50 @@ def test_breadth_health_fails_when_unusable_during_the_live_window():
 def test_breadth_health_fails_on_stale_source_clock():
     payload = _healthy_vps_status()
     payload["checks"]["breadth"] = _healthy_breadth_check()
+    # Source snapshot 40 min before `now` — the ABSOLUTE stamp is what is graded.
+    payload["checks"]["breadth"]["source_asof"] = "2026-07-20T14:20:00Z"
     payload["checks"]["breadth"]["source_age_min"] = 40.0
     failures = evaluate_live_health(
         payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
     )
     assert any("breadth: source stale" in f for f in failures)
+
+
+def test_breadth_health_catches_a_producer_that_stopped_writing():
+    """A dead producer must red the dead-man, not read healthy.
+
+    `source_age_min` is frozen at BUILD time. A lane that died three hours ago
+    keeps serving an artifact that still says `source_age_min: 4.0` and
+    `usable: true` forever, so grading that field would declare a stopped
+    producer perfectly healthy — the exact blindness a dead-man exists to
+    prevent. Only the absolute `source_asof` keeps ageing after the writer
+    stops, so it is what gets graded.
+    """
+    payload = _healthy_vps_status()
+    breadth = _healthy_breadth_check()
+    # Everything the payload says about itself still looks fresh...
+    assert breadth["source_age_min"] == 4.0 and breadth["usable"] is True
+    # ...but nothing has been written for three hours.
+    breadth["source_asof"] = "2026-07-20T11:44:00Z"
+    breadth["age_min"] = 180.0
+    payload["checks"]["breadth"] = breadth
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: source stale" in f for f in failures), failures
+    assert any("producer that stopped writing" in f for f in failures), failures
+
+
+def test_breadth_health_fails_closed_without_an_absolute_source_stamp():
+    payload = _healthy_vps_status()
+    breadth = _healthy_breadth_check()
+    breadth.pop("source_asof")
+    breadth.pop("source_age_min")
+    payload["checks"]["breadth"] = breadth
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: missing or invalid source_asof" in f for f in failures)
 
 
 def test_breadth_health_fails_on_low_coverage():

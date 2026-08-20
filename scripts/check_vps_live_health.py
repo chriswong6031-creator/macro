@@ -37,6 +37,32 @@ def _require_age(
         failures.append(f"{key}: stale at {age:.1f}m (limit {maximum:.1f}m)")
 
 
+def _source_age_min(breadth: dict[str, Any], now: datetime) -> float | None:
+    """Minutes between the live-breadth SOURCE snapshot and `now`.
+
+    Derived from the absolute ``source_asof`` stamp, NOT from the payload's own
+    ``source_age_min`` (which is frozen at build time and therefore stops ageing
+    the moment the producer dies). Falls back to ``source_age_min`` plus the
+    artifact's own ``age_min`` when the absolute stamp is unparseable, which is
+    the same quantity computed the long way round. Returns None when neither
+    path yields a number — the caller fails closed on that.
+    """
+    raw = breadth.get("source_asof")
+    if isinstance(raw, str) and raw.strip():
+        try:
+            stamp = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError:
+            stamp = None
+        if stamp is not None:
+            if stamp.tzinfo is None:
+                stamp = stamp.replace(tzinfo=timezone.utc)
+            return (now - stamp.astimezone(timezone.utc)).total_seconds() / 60.0
+    try:
+        return float(breadth["source_age_min"]) + float(breadth.get("age_min") or 0.0)
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[str]:
     """Return human-readable health failures; an empty list is healthy."""
     current = now or datetime.now(timezone.utc)
@@ -175,15 +201,22 @@ def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[st
                     "breadth: not usable during the live window"
                     + (f" ({reason})" if reason else "")
                 )
-            try:
-                source_age = float(breadth["source_age_min"])
-            except (KeyError, TypeError, ValueError):
-                failures.append("breadth: missing or invalid source_age_min")
-            else:
-                if source_age > 25:
-                    failures.append(
-                        f"breadth: source stale at {source_age:.1f}m (limit 25.0m)"
-                    )
+            # Source age is measured against NOW from the ABSOLUTE source_asof,
+            # never from the payload's own source_age_min. That field is frozen at
+            # BUILD time, so a producer that died three hours ago keeps serving an
+            # artifact reading `source_age_min: 16` forever — a dead lane would
+            # look perfectly healthy and the dead-man would never fire. The
+            # absolute stamp is the only value that keeps ageing after the writer
+            # stops, so it answers both "is the source stale?" and "did the
+            # producer actually run?" with one check and no reliance on mtime.
+            source_age = _source_age_min(breadth, current)
+            if source_age is None:
+                failures.append("breadth: missing or invalid source_asof")
+            elif source_age > 25:
+                failures.append(
+                    f"breadth: source stale at {source_age:.1f}m (limit 25.0m) — "
+                    "stale feed or a producer that stopped writing"
+                )
             try:
                 coverage_pct = float(breadth["coverage_pct"])
             except (KeyError, TypeError, ValueError):
