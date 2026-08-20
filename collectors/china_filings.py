@@ -147,6 +147,14 @@ CATEGORY_PRIORITY: list[tuple[str, list[str]]] = [
     ("pledge",              ["质押"]),
     ("holder_change_down",  ["减持"]),
     ("holder_change_up",    ["增持"]),
+    # institutional-visit / IR-activity family (P1, China Alpha Intelligence
+    # RIGHTS-0 §1: rights-clear metadata plane, extraction was the gap).
+    # Lowest priority among the named categories (only "other" ranks below
+    # it) — 调研 is a broad word and this ordering guarantees the addition
+    # never reclassifies any filing that already matched a higher-priority
+    # category above (investigation/inquiry_letter/... unchanged).
+    ("institutional_visit", ["投资者关系活动记录表", "特定对象调研",
+                             "分析师会议", "业绩说明会", "调研"]),
 ]
 _OTHER = "other"
 
@@ -213,7 +221,7 @@ def categorize(title: str) -> str:
 
     Priority order: investigation > inquiry_letter > delisting_risk >
     earnings_preann > restructuring > major_contract > buyback > pledge >
-    holder_change_down > holder_change_up > other.
+    holder_change_down > holder_change_up > institutional_visit > other.
 
     Pure function; unit-testable without any I/O.
     """

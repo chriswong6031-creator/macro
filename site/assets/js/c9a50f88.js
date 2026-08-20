@@ -105,6 +105,9 @@ function getJSON(url){
    .catch(→ null), and an honest labelled absence on every failure path.
    ══════════════════════════════════════════════════════════════════════════ */
 var flDesk = null, flTide = null;
+/* Generated from the canonical NYSE calendar at bake time.  It is null on a
+   weekend/holiday, so the literal Today panel cannot invent a session. */
+var LIVE_SESSION_DATE = "2026-08-20";
 
 function r2Url(path){
   var base = String((window && window.DATA_BASE) || '').replace(/\/+$/, '');
@@ -435,6 +438,17 @@ function flApplyTide(tide){
   }
   flDrawUnfold();
 }
+
+function flTideValidity(tide){
+  if(!tide || tide.schema !== 'live_flow.tide/v1') return 'schema';
+  if(!LIVE_SESSION_DATE || tide.session_date !== LIVE_SESSION_DATE) return 'session';
+  if(typeof tide.asof !== 'string' || !tide.asof || isNaN(Date.parse(tide.asof))) return 'asof';
+  if(!Array.isArray(tide.minutes) || tide.minutes.length < 2) return 'minutes';
+  var valid = tide.minutes.every(function(m){
+    return m && typeof m.t === 'string' && num(m.ncp) !== null && num(m.npp) !== null;
+  });
+  return valid ? null : 'minutes';
+}
 function renderFlow(host, desk, cohorts){
   if(!desk || !desk.sector_heatmap){
     host.innerHTML = emptyPanel('The flow desk did not report for this close. It returns with the next options tape.',
@@ -455,7 +469,9 @@ function renderFlow(host, desk, cohorts){
   fetch(url, { cache:'no-cache' })
     .then(function(r){ return r.ok ? r.json() : null; })
     .catch(function(){ return null; })
-    .then(function(t){ if(t){ try{ flApplyTide(t); }catch(e){} } });
+    .then(function(t){
+      if(t && !flTideValidity(t)){ try{ flApplyTide(t); }catch(e){} }
+    });
 }
 
 /* ══════════ SCANNER ══════════ */

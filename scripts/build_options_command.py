@@ -26,8 +26,9 @@ CONTRACT — read before changing anything here
    Runs AFTER build_flow_desk / build_options_screener / build_flow_leaders /
    build_market_structure so it never renders a generation-stale page.
 5. FAIL-SOFT, NEVER FAKE.  A missing store degrades exactly one section to its
-   honest empty state and is named in the session-stamp quality receipt.  The
-   builder always exits 0 — it can never break the nightly deploy.
+   honest empty state and is named in the session-stamp quality receipt.  A
+   render/write failure preserves the previous page and returns non-zero so the
+   closing-bell lane records that this session did not publish.
 
 Payload law (spec §6): the Brief and the whole persistent chrome are baked
 inline; Scanner / Ticker / Leaders payloads are lazy-fetched by the page on mode
@@ -45,6 +46,7 @@ import logging
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -692,7 +694,8 @@ def _source_asof(payload) -> str | None:
     """A store's own session stamp, whatever it calls it.  None when unreadable."""
     if not isinstance(payload, dict):
         return None
-    for key in ("asof", "as_of", "session", "date", "built"):
+    # Prefer an explicit source-session field over build/publish timestamps.
+    for key in ("session_date", "session", "asof", "as_of", "date", "built"):
         v = payload.get(key)
         if isinstance(v, str) and v[:4].isdigit():
             return v[:10]
@@ -718,7 +721,8 @@ def _source_n(payload, key: str) -> int | None:
     return int(v)
 
 
-def build_session(stores: dict, missing: list[str], intel_brief: dict | None = None) -> dict:
+def build_session(stores: dict, missing: list[str], intel_brief: dict | None = None,
+                  *, target_session=None) -> dict:
     """The session stamp: date, OI vintage, coverage share, quality word.
 
     `intel_brief` is OPTIONAL and additive — the AD-1 board (built separately,
@@ -728,13 +732,9 @@ def build_session(stores: dict, missing: list[str], intel_brief: dict | None = N
     a caller that never passes it (every pre-existing call site) sees no
     behaviour change at all.
 
-    ONE SESSION DATE, CROSS-CHECKED (#F2-03/#F2-04).  The page date is the flow
-    desk's own `asof` — the settled close the Brief is written against.  The
-    screener export and the index-levels manifest each carry their OWN stamp,
-    and those CAN drift apart (a rebuilt levels board, a scanner export from a
-    later run).  When either disagrees with the page date, the mismatch is
-    NAMED in the receipt and the quality word degrades to Partial — three
-    vintages must never be presented silently as one settled close.
+    ONE TARGET SESSION, CROSS-CHECKED (#F2-03/#F2-04).  The page date comes from
+    the canonical NYSE completion clock, never from whichever source happened
+    to publish last.  Every source retains its own stamp in ``sources``.
 
     Coverage numerator/denominator both come from ONE payload (the screener
     export) so the fraction is internally consistent: how many of the names we
@@ -746,7 +746,8 @@ def build_session(stores: dict, missing: list[str], intel_brief: dict | None = N
     sc = stores.get("screener") or {}
     gex_index = stores.get("gex_index")
 
-    session_date = _day(fd.get("asof")) if isinstance(fd, dict) else None
+    target = target_session or nyse_calendar.expected_last_session()
+    session_date = str(target)[:10]
     weekday_en = weekday_zh = ""
     if session_date:
         try:
@@ -776,48 +777,89 @@ def build_session(stores: dict, missing: list[str], intel_brief: dict | None = N
     if covered is not None and universe:
         coverage_pct = round(covered / universe * 100, 1)
 
-    # Quality word — a PRESENCE census over the stores PLUS a VINTAGE-AGREEMENT
-    # census, never a threshold on a value.  The receipt names exactly what is
-    # absent, stale, or dated to a different close than the page's own
-    # (#vacuous-green: emit the census, never a bare count).
+    # Per-source receipts.  A stale value may remain visible as prior-session
+    # context, but its own date remains attached and it cannot earn Complete.
+    source_specs = [
+        ("flow_desk", "Options tape", "期权成交", _source_asof(fd)),
+        ("screener", "Scanner rows", "筛选表标的", coverage_asof),
+        ("gex", "Dealer positioning", "做市商持仓", oi_vintage),
+        ("leaders", "Flow leaders", "资金领跑", _source_asof(stores.get("leaders"))),
+        ("market_structure", "Index structure", "指数结构",
+         _source_asof(stores.get("market_structure"))),
+        ("vol", "Volatility regime", "波动状态", _source_asof(stores.get("vol"))),
+    ]
+    if isinstance(intel_brief, dict):
+        source_specs.append(("intel_brief", "Options intelligence", "期权情报",
+                             _day(intel_brief.get("as_of_session"))))
+
+    source_receipts = []
+    for key, name_en, name_zh, asof in source_specs:
+        behind = None
+        status = "unavailable"
+        if asof:
+            try:
+                actual = datetime.strptime(asof, "%Y-%m-%d").date()
+                expected = datetime.strptime(session_date, "%Y-%m-%d").date()
+                if actual < expected:
+                    behind = len(nyse_calendar.sessions_between(actual + timedelta(days=1), expected))
+                    status = "stale"
+                elif actual > expected:
+                    behind = 0
+                    status = "conflict"
+                else:
+                    behind = 0
+                    status = "current"
+            except ValueError:
+                status = "unavailable"
+        source_receipts.append({
+            "key": key, "name_en": name_en, "name_zh": name_zh,
+            "source_session": asof, "target_session": session_date,
+            "sessions_behind": behind, "status": status,
+        })
+
     stale_notes_en: list[str] = []
     stale_notes_zh: list[str] = []
-    leaders = stores.get("leaders")
-    if isinstance(leaders, dict) and leaders.get("stale"):
-        stale_notes_en.append("the leader boards are from an earlier session")
-        stale_notes_zh.append("领头股榜单来自更早的场次")
-
-    if session_date:
-        if coverage_asof and coverage_asof != session_date:
+    for receipt in source_receipts:
+        if receipt["status"] == "stale":
             stale_notes_en.append(
-                f"the options scanner's freshest chain is dated {coverage_asof}, not {session_date}")
-            stale_notes_zh.append(f"期权筛选表的最新期权链日期为 {coverage_asof}，而非 {session_date}")
-        if oi_vintage and oi_vintage != session_date:
+                f"{receipt['name_en']} is {receipt['source_session']} "
+                f"({receipt['sessions_behind']} sessions behind)")
+            stale_notes_zh.append(
+                f"{receipt['name_zh']}为 {receipt['source_session']}"
+                f"（落后 {receipt['sessions_behind']} 个交易日）")
+        elif receipt["status"] == "conflict":
             stale_notes_en.append(
-                f"the index levels were last measured {oi_vintage}, not {session_date}")
-            stale_notes_zh.append(f"指数水位的最近测算日期为 {oi_vintage}，而非 {session_date}")
-        if isinstance(intel_brief, dict):
-            ib_asof = _day(intel_brief.get("as_of_session"))
-            if ib_asof and ib_asof != session_date:
-                stale_notes_en.append(
-                    f"the options intelligence brief is dated {ib_asof}, not {session_date}")
-                stale_notes_zh.append(f"期权情报简报日期为 {ib_asof}，而非 {session_date}")
+                f"{receipt['name_en']} is dated {receipt['source_session']}, after the target")
+            stale_notes_zh.append(f"{receipt['name_zh']}日期为 {receipt['source_session']}，晚于目标场次")
 
-    if missing:
-        stale_notes_en.append("some sections could not be built for this close")
-        stale_notes_zh.append("部分板块本次收盘无法生成")
-
-    if stale_notes_en:
+    statuses = {r["status"] for r in source_receipts}
+    core_keys = {"flow_desk", "screener", "gex", "market_structure", "vol"}
+    has_current_core = any(
+        r["key"] in core_keys and r["status"] == "current" for r in source_receipts)
+    if "stale" in statuses:
+        quality_en, quality_zh = "Stale", "过期"
+        tip_en = (f"Latest completed session: {session_date}. Prior-session inputs remain visible "
+                  "with their real dates: " + "; ".join(stale_notes_en) + ".")
+        tip_zh = (f"最近完成场次：{session_date}。较早场次的输入仍按真实日期展示："
+                  + "；".join(stale_notes_zh) + "。")
+    elif not has_current_core:
+        quality_en, quality_zh = "Unavailable", "不可用"
+        tip_en = (f"Latest completed session: {session_date}. No core source can defensibly "
+                  "describe this close.")
+        tip_zh = f"最近完成场次：{session_date}。没有核心数据源可审慎描述本次收盘。"
+    elif missing or "unavailable" in statuses or "conflict" in statuses:
         quality_en, quality_zh = "Partial", "部分"
-        tip_en = ("Not everything reported for this close: "
-                  + "; ".join(stale_notes_en)
-                  + ". Every affected section says so where it sits.")
-        tip_zh = "本次收盘并非所有数据都已送达：" + "；".join(stale_notes_zh) + "。受影响的板块会在原处说明。"
+        absent = ", ".join(missing) if missing else "a source vintage conflict"
+        tip_en = (f"Latest completed session: {session_date}. A defensible target-session view exists, "
+                  f"but coverage is incomplete ({absent})."
+                  + ((" " + "; ".join(stale_notes_en) + ".") if stale_notes_en else ""))
+        tip_zh = (f"最近完成场次：{session_date}。目标场次仍可审慎阅读，但覆盖不完整（{absent}）。"
+                  + ((" " + "；".join(stale_notes_zh) + "。") if stale_notes_zh else ""))
     else:
         quality_en, quality_zh = "Complete", "完整"
-        tip_en = ("Every source reported on time, for the same close, and inside its normal "
-                  "range. Nothing was estimated or carried over from an older session.")
-        tip_zh = "所有数据源均按时送达、对应同一次收盘且处于正常范围。没有任何数值是估算或沿用旧场次的。"
+        tip_en = (f"Latest completed session: {session_date}. Every required source reported "
+                  "for that close; nothing was carried over.")
+        tip_zh = f"最近完成场次：{session_date}。所有必要数据源均对应本次收盘；没有沿用旧场次数据。"
 
     if covered is not None and universe:
         cov_tip_en = (f"{covered} of the {universe} names we track reported a complete options "
@@ -847,6 +889,8 @@ def build_session(stores: dict, missing: list[str], intel_brief: dict | None = N
         "quality_zh": quality_zh,
         "quality_tip_en": tip_en,
         "quality_tip_zh": tip_zh,
+        "target_session": session_date,
+        "sources": source_receipts,
         "cov_tip_en": cov_tip_en,
         "cov_tip_zh": cov_tip_zh,
         # OIP R8 — the shared options coverage object, ADDITIVE. Every key above is
@@ -860,6 +904,7 @@ def build_session(stores: dict, missing: list[str], intel_brief: dict | None = N
             universe_n=universe,
             covered_n=covered,
             asof=coverage_asof or session_date,
+            expected_session=session_date,
             sources=[
                 options_coverage.source(
                     "flow_desk", "Options tape", "期权成交",
@@ -869,10 +914,11 @@ def build_session(stores: dict, missing: list[str], intel_brief: dict | None = N
                     n=_source_n((stores.get("flow_desk") or {}).get("read")
                                 if isinstance(stores.get("flow_desk"), dict) else None,
                                 "n_names"),
+                    expected_session=session_date,
                 ),
                 options_coverage.source(
                     "screener", "Scanner rows", "筛选表标的",
-                    asof=coverage_asof, n=universe,
+                    asof=coverage_asof, n=universe, expected_session=session_date,
                 ),
                 options_coverage.source(
                     "leaders", "Flow leaders", "资金领跑",
@@ -881,14 +927,15 @@ def build_session(stores: dict, missing: list[str], intel_brief: dict | None = N
                     n=_source_n((stores.get("leaders") or {}).get("coverage")
                                 if isinstance(stores.get("leaders"), dict) else None,
                                 "n_universe"),
+                    expected_session=session_date,
                 ),
                 options_coverage.source(
                     "market_structure", "Index structure", "指数结构",
-                    asof=_source_asof(stores.get("market_structure")),
+                    asof=_source_asof(stores.get("market_structure")), expected_session=session_date,
                 ),
                 options_coverage.source(
                     "vol", "Volatility regime", "波动状态",
-                    asof=_source_asof(stores.get("vol")),
+                    asof=_source_asof(stores.get("vol")), expected_session=session_date,
                 ),
                 options_coverage.source(
                     "gex", "Dealer positioning", "做市商持仓",
@@ -900,6 +947,7 @@ def build_session(stores: dict, missing: list[str], intel_brief: dict | None = N
                     n=(len(stores.get("gex_index"))
                        if isinstance(stores.get("gex_index"), list)
                        else None),
+                    expected_session=session_date,
                 ),
             ],
         ),
@@ -1247,7 +1295,10 @@ def build_rail(stores: dict) -> dict:
 
     return {
         "a": a, "b": b, "c": c,
-        "asof": leaders.get("as_of", "")[:10] if isinstance(leaders.get("as_of"), str) else None,
+        # ``as_of`` is the build timestamp; ``session_date`` is the source
+        # session these rows actually describe.  Never label prior-session
+        # leaders with the day the JSON happened to be serialized.
+        "asof": (_day(leaders.get("session_date")) or _day(leaders.get("as_of"))),
     }
 
 
@@ -1288,7 +1339,8 @@ def _missing_stores(stores: dict) -> list[str]:
     return missing
 
 
-def build_context(root: Path, stores: dict | None = None, intel_brief: dict | None = None) -> dict:
+def build_context(root: Path, stores: dict | None = None, intel_brief: dict | None = None,
+                  *, now: datetime | None = None) -> dict:
     """Assemble the whole workspace context from the committed stores.
 
     `intel_brief` is the AD-1 board's OWN artifact (site/options_intel_brief.json),
@@ -1300,7 +1352,13 @@ def build_context(root: Path, stores: dict | None = None, intel_brief: dict | No
 
     missing = _missing_stores(stores)
 
-    session = build_session(stores, missing, intel_brief)
+    clock = now or datetime.now(timezone.utc)
+    if clock.tzinfo is None:
+        clock = clock.replace(tzinfo=timezone.utc)
+    target = nyse_calendar.expected_last_session(clock)
+    session = build_session(stores, missing, intel_brief, target_session=target)
+    today_et = clock.astimezone(ZoneInfo("America/New_York")).date()
+    live_session_date = str(today_et) if nyse_calendar.is_session(today_et) else None
     changed = build_changed(stores)
     indexes = build_indexes(stores)
     sectors = build_sectors(stores)
@@ -1313,6 +1371,9 @@ def build_context(root: Path, stores: dict | None = None, intel_brief: dict | No
     return {
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "session": session,
+        # The literal Today panel may accept an overlay only for this ET market
+        # session.  Weekend/holiday builds deliberately publish null.
+        "live_session_date": live_session_date,
         "posture": build_posture(stores),
         "changed": changed,
         "indexes": indexes,
@@ -1390,9 +1451,10 @@ def _sector_zh_json(stores: dict) -> str:
     return json.dumps({n: tr(n) for n in sorted(names)}, ensure_ascii=False)
 
 
-def render(root: Path, stores: dict | None = None, intel_brief: dict | None = None) -> str:
+def render(root: Path, stores: dict | None = None, intel_brief: dict | None = None,
+           *, now: datetime | None = None) -> str:
     """Render options.html.j2 and return the HTML string."""
-    ctx = build_context(root, stores, intel_brief)
+    ctx = build_context(root, stores, intel_brief, now=now)
     env = Environment(
         loader=FileSystemLoader(str(root / "templates")),
         autoescape=True,
@@ -1418,11 +1480,8 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.root).resolve()
     out_path = Path(args.out) if args.out else (root / "site" / "options.html")
 
-    # CONTRACT (docstring §5): the builder always exits 0.  write_page and the
-    # logging pass used to sit OUTSIDE this fence — along with a second, fully
-    # redundant re-read of every store purely to log a line — so an exception
-    # in either one propagated out of main() despite the contract's promise
-    # (#F2-08).  One store load, one context build, one fence.
+    # One store load, one render, one write fence.  A failure preserves the
+    # previous page but returns non-zero so closing-bell records degradation.
     try:
         stores = load_stores(root)
         intel_brief = load_intel_brief(root)
@@ -1449,11 +1508,11 @@ def main(argv: list[str] | None = None) -> int:
             print("::warning title=build_options_command::degraded sections — missing stores: "
                   + ", ".join(ctx["missing"]))
     except Exception as exc:  # noqa: BLE001
-        # Display-tier surface: never break the nightly deploy.  The last
-        # committed options.html stands.
+        # Display-tier surface: retain the last committed options.html, but do
+        # not call that retention a successful publication.
         log.error("render failed — keeping the previous page: %s", exc, exc_info=True)
-        print(f"::warning title=build_options_command::render failed ({exc}); previous page kept")
-        return 0
+        print(f"::error title=build_options_command::render failed ({exc}); previous page kept")
+        return 1
 
     return 0
 

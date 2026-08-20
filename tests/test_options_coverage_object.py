@@ -64,8 +64,16 @@ def test_coverage_pct_is_computed():
 def test_source_row_shape():
     s = options_coverage.source("options_flow", "Options tape", "期权成交",
                                 asof="2026-07-28", n=353)
-    assert set(s) == {"key", "name_en", "name_zh", "asof", "n", "sessions_behind"}
+    assert set(s) == {"key", "name_en", "name_zh", "asof", "n", "expected_session",
+                      "sessions_behind", "status"}
     assert s["n"] == 353
+
+
+def test_future_source_is_conflict_not_current():
+    s = options_coverage.source("options_flow", "Options tape", "期权成交",
+                                asof="2026-07-29", expected_session="2026-07-28")
+    assert s["sessions_behind"] == 0
+    assert s["status"] == "conflict"
 
 
 # ─────────────────────────────────────────────────────────── honesty invariants

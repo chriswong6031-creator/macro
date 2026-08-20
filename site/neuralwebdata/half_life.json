@@ -67,9 +67,9 @@
       "ci_low": null,
       "ci_high": null,
       "ci_basis": null,
-      "n_eff": 92,
+      "n_eff": 100,
       "n_horizons": 0,
-      "reason_null": "unmeasured (family n_eff=92 < floor=200)",
+      "reason_null": "unmeasured (family n_eff=100 < floor=200)",
       "fit_rho": null,
       "trend": null,
       "ic_ratio_long_short": null,
@@ -177,7 +177,7 @@
       "reason_null": "edge_non_decaying",
       "fit_rho": 1.0,
       "trend": "non_decaying",
-      "ic_ratio_long_short": 2.5756,
+      "ic_ratio_long_short": 3.0825,
       "fit_direction": "rising"
     },
     "whitehouse": {
@@ -242,7 +242,7 @@
   "notes": "W2 re-scoped to holding-horizon decay (B1: no age-at-fire column in spine). Staleness half-life: measured when replay_delay.parquet is present (nwqs-d); unmeasured on CI runners (Mac-local artifact, EI R9). Conservative defaults: family_floor=200, curve_floor=3, cell_floor=12, bootstrap=90pct event-block 200 resamples. Expected outcome: horizon families mostly null (track_record IC rises; radar/us_board < 3 horizons). family_half_life naming recommendation: the 'half_life' column is a family-level constant broadcast to rows; future consumers should not read it as a per-signal value.",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/half_life.py",
-  "produced_at": "2026-08-20T04:45:32Z",
-  "inputs_hash": "sha256:1d2e7a4dfa099471d15bc4fbf0eed65c6c885379edfb48ef0f53d483279e4f5d",
+  "produced_at": "2026-08-20T09:12:01Z",
+  "inputs_hash": "sha256:0a2d71c1c66f748349af6f619b7f853df08f6181d11e0fd1d9cb47617c8d73b7",
   "tier": "infrastructure"
 }
