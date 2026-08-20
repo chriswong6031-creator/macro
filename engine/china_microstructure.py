@@ -11,8 +11,10 @@ Board-aware limit widths (CN-SYS-R12)
   STAR (688/689.SS): ±20% from listing
   ChiNext (300/301.SZ): ±10% BEFORE 2020-08-24; ±20% on/after 2020-08-24
   BSE (8x/4x): ±30% (2021-11-15→) — not present in raw store as of 2026-07-08, handled
-  ST/*ST: ±5% on the main board, and on launch-era ChiNext (< 2020-08-24, when ChiNext
-    traded main-board widths); ST names on STAR and on wide-era ChiNext keep 20%
+  ST/*ST: ±5% on the main board **before 2026-07-06; ±10% from 2026-07-06 (2026 rules
+    revision)** — see MAIN_ST_BAND_WIDE_DATE — and on launch-era ChiNext (< 2020-08-24,
+    when ChiNext traded main-board widths); ST names on STAR and on wide-era ChiNext
+    keep 20%
 
 IPO exclusion windows (CN-SYS-R12)
 ------------------------------------
@@ -35,14 +37,20 @@ ST flags
 ---------
 data/china_st/ carries st_snapshot.parquet (current flags) and st_history.parquet (recent dates,
 currently only 2026-07-06 row — effectively current-only). Historical ST membership is NOT
-available for dates before the store coverage. We apply ST width (5%) only for dates where
-the store covers the flag. A 'st_flags_current_only' caveat is stamped in tape metadata and
-this docstring.
+available for dates before the store coverage. We apply the ST-specific width only for dates
+where the store covers the flag. A 'st_flags_current_only' caveat is stamped in tape metadata
+and this docstring.
 
 CAVEAT: st_flags_current_only — ST/\\*ST membership history in data/china_st is limited to
 the store's coverage window (effectively 2026-07-06 forward as of the W1 backfill). For earlier
-dates we apply the 20%/10% board widths, not the 5% ST width. This means historical sealed_down
-counts on known ST names may be understated before the store coverage date.
+dates we apply the 20%/10% board widths, not the ST-specific width. This means historical
+sealed_down counts on known ST names may be understated before the store coverage date.
+By coincidence the store-coverage floor (2026-07-06) lands exactly on
+MAIN_ST_BAND_WIDE_DATE — the day the 2026 rules revision widened the main-board ST band from
+5% to 10% — so this detection-level blindness never actually applies a 5% width today: dates
+before 2026-07-06 are undetected (non-ST width applied), and dates on/after 2026-07-06 that
+ARE detected as ST already sit in the 10% era. See MAIN_ST_BAND_WIDE_DATE for the boundary
+semantics; do not conflate the two dates (R6 trap).
 
 Schema contracts (§5, frozen)
 ------------------------------
@@ -108,6 +116,15 @@ LIMIT_TAPE_START_DATE = pd.Timestamp("2011-01-01")
 
 ST_STORE_COVERAGE_DATE = pd.Timestamp("2026-07-06")  # first date st_history covers
 
+# 2026 trading-rules revision (both venues): the main-board risk-warning (ST/*ST) band
+# widened from ±5% to ±10% effective 2026-07-06 (SSE c_20260424_10816474; SZSE
+# 深证上〔2026〕551号, arts. 3.3.13/10.9).  Receipt with quotes + hashes:
+# research/cn_limit/P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.md
+# NOTE: numerically equal to ST_STORE_COVERAGE_DATE below BY COINCIDENCE — that one is
+# the date our ST membership store happens to begin (a data-coverage gate), this one is
+# the exchanges' rule effective date. Do not merge or confuse them (R6 trap).
+MAIN_ST_BAND_WIDE_DATE = pd.Timestamp("2026-07-06")
+
 
 # ── board classification ───────────────────────────────────────────────────────
 
@@ -139,9 +156,10 @@ def limit_width_for_date(board: str, trade_date: pd.Timestamp,
                           is_st: bool = False) -> float:
     """Return the limit-up/down width as a decimal fraction for a given board+date.
 
-    ST narrows to 5% on the main board (CN-SYS-R12) and on launch-era ChiNext
-    (< CHINEXT_WIDE_DATE, when ChiNext traded main-board widths); STAR and wide-era
-    ChiNext ST names keep 20%.
+    ST narrows to 5% on the main board **before 2026-07-06; ±10% from 2026-07-06
+    (2026 rules revision)** (CN-SYS-R12; MAIN_ST_BAND_WIDE_DATE) and on launch-era
+    ChiNext (< CHINEXT_WIDE_DATE, when ChiNext traded main-board widths); STAR and
+    wide-era ChiNext ST names keep 20%.
     BSE: 30% from 2021-11-15; before that date, BSE did not exist — treated as 30% for
     any bar in the raw store that starts after BSE_LAUNCH_DATE.
     """
@@ -161,7 +179,9 @@ def limit_width_for_date(board: str, trade_date: pd.Timestamp,
         return 0.30
     # main board
     if is_st:
-        return 0.05
+        # ±5% risk-warning band until the 2026 trading-rules revision widened the
+        # main-board risk-warning band to ±10% effective 2026-07-06.
+        return 0.05 if trade_date < MAIN_ST_BAND_WIDE_DATE else 0.10
     return 0.10
 
 
@@ -240,7 +260,8 @@ def _detect_limit_events(
     if df.empty:
         return [], 0, 0
 
-    # ST membership: apply 5% width only for dates >= ST_STORE_COVERAGE_DATE on main boards
+    # ST membership: apply the ST-specific width (era-dated by limit_width_for_date) only
+    # for dates >= ST_STORE_COVERAGE_DATE on main boards
     is_st_current = (ticker in st_set)
 
     # Build prev_close shifted series

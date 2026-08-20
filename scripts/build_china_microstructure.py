@@ -288,8 +288,16 @@ def build_increment(target_date: Optional[str] = None) -> dict:
             "st_flags_current_only": True,
             "st_flags_note": (
                 "ST/\\*ST membership history in data/china_st covers 2026-07-06 forward only. "
-                "Historical sealed_down counts on ST names may be understated before this date."
+                "Historical sealed_down counts on ST names may be understated before this date. "
+                "From 2026-07-06 the main-board risk-warning band is ±10% (2026 trading-rules "
+                "revision), identical to ordinary main-board names."
             ),
+            "st_band_regime": {
+                "main_st_width_pct": 10.0,
+                "effective_from": "2026-07-06",
+                "prior_width_pct": 5.0,
+                "receipt": "research/cn_limit/P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.md",
+            },
             "backfill_version": "W1-2026-07-08",
         },
     }

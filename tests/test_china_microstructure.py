@@ -28,6 +28,7 @@ from engine.china_microstructure import (
     LIMIT_TAPE_START_DATE,
     MAIN_REG_IPO_DATE,
     MAIN_REG_IPO_WINDOW,
+    MAIN_ST_BAND_WIDE_DATE,
     ST_STORE_COVERAGE_DATE,
     _board_from_ticker,
     _detect_limit_events,
@@ -106,6 +107,25 @@ class TestLimitWidthForDate:
 
     def test_main_st(self):
         assert limit_width_for_date("main", pd.Timestamp("2020-01-01"), is_st=True) == 0.05
+
+    def test_main_st_pre_era_2026_07_03(self):
+        # Pre-era: 2026-07-06 rules revision has not taken effect yet.
+        assert limit_width_for_date("main", pd.Timestamp("2026-07-03"), is_st=True) == 0.05
+
+    def test_main_st_day_before_cutoff(self):
+        # Boundary: 2026-07-05 is the last day of the old ±5% band.
+        d = MAIN_ST_BAND_WIDE_DATE - pd.Timedelta(days=1)
+        assert d == pd.Timestamp("2026-07-05")
+        assert limit_width_for_date("main", d, is_st=True) == 0.05
+
+    def test_main_st_on_cutoff(self):
+        # Boundary: the reform date itself is already the wide (±10%) era — SSE
+        # c_20260424_10816474 / SZSE 深证上〔2026〕551号 art. 10.9 both take effect
+        # 2026-07-06.
+        assert limit_width_for_date("main", MAIN_ST_BAND_WIDE_DATE, is_st=True) == 0.10
+
+    def test_main_st_after_cutoff_2026_08_03(self):
+        assert limit_width_for_date("main", pd.Timestamp("2026-08-03"), is_st=True) == 0.10
 
     def test_star_always_20(self):
         assert limit_width_for_date("star", pd.Timestamp("2019-08-01")) == 0.20
@@ -283,22 +303,47 @@ class TestChiNextWidthEra:
 # ── ST flag ───────────────────────────────────────────────────────────────────
 
 class TestSTFlag:
-    def test_st_main_gets_5pct(self):
-        # ST on main board, post-coverage date: 5% limit
-        # prev close = 10.0 → lim_up = round(10*1.05, 2) = 10.50
-        # 5 leading sessions pad the registration-era IPO window: a main-board frame whose
-        # first store bar is on/after MAIN_REG_IPO_DATE is a fresh listing, and its first 5
-        # sessions are no-limit bars.  The scored bars still start at ST_STORE_COVERAGE_DATE.
+    # ST_STORE_COVERAGE_DATE (our ST membership store's coverage floor) numerically
+    # coincides with MAIN_ST_BAND_WIDE_DATE (the 2026 rules revision's effective date) —
+    # by coincidence, not by construction; see the R6 trap comment on
+    # MAIN_ST_BAND_WIDE_DATE in engine/china_microstructure.py. Detection-level ST
+    # bars are therefore ONLY ever produced on/after 2026-07-06 (the store-coverage
+    # blindness caveat for earlier dates is unchanged by this wave — those bars take
+    # the ordinary non-ST width instead), which means the ±5% era can never be
+    # observed through _detect_limit_events any more: the width-function boundary
+    # tests above (TestLimitWidthForDate) are where the 5% era is asserted.
+    @pytest.mark.parametrize("ticker", ["600079.SS", "000001.SZ"])
+    def test_st_main_10pct_on_or_after_cutoff(self, ticker):
+        # ST on main board, at/after the 2026-07-06 band-widening: a +10% close now
+        # seals at limit_width 10.0 (not 5.0). 5 leading sessions pad the
+        # registration-era IPO window: a main-board frame whose first store bar is
+        # on/after MAIN_REG_IPO_DATE is a fresh listing, and its first 5 sessions are
+        # no-limit bars. The scored bars still start at ST_STORE_COVERAGE_DATE.
         start = _bdays_before(ST_STORE_COVERAGE_DATE, 5)
-        closes = [10.0] * 5 + [10.0, 10.0, 10.5]
-        highs  = [10.0] * 5 + [10.0, 10.0, 10.6]
+        closes = [10.0] * 5 + [10.0, 10.0, 11.0]   # +10% on the last bar
+        highs  = [10.0] * 5 + [10.0, 10.0, 11.0]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
         events, _, _ = _detect_limit_events(
-            "000001.SZ", df, "main", frozenset(["000001.SZ"])
+            ticker, df, "main", frozenset([ticker])
         )
         su = [e for e in events if e["event"] == "sealed_up"]
         assert len(su) == 1
-        assert su[0]["limit_width"] == 5.0
+        assert su[0]["limit_width"] == 10.0
+
+    @pytest.mark.parametrize("ticker", ["600079.SS", "000001.SZ"])
+    def test_st_main_6pct_does_not_seal_after_cutoff(self, ticker):
+        # A +6% close would have SEALED under the old ±5% band (pc*1.05 = 10.50 <
+        # 10.60) but must NOT seal — and must not even touch — under the new ±10%
+        # band (pc*1.10 = 11.00 > 10.60) that applies on/after 2026-07-06.
+        start = _bdays_before(ST_STORE_COVERAGE_DATE, 5)
+        closes = [10.0] * 5 + [10.0, 10.0, 10.6]   # +6% on the last bar
+        highs  = [10.0] * 5 + [10.0, 10.0, 10.6]
+        df     = _ohlcv(closes=closes, highs=highs, start=start)
+        events, _, _ = _detect_limit_events(
+            ticker, df, "main", frozenset([ticker])
+        )
+        assert [e for e in events if e["event"] == "sealed_up"] == []
+        assert [e for e in events if e["event"] == "failed_up_seal"] == []
 
     def test_non_st_ticker_not_in_set(self):
         # Not in ST set → 10% limit.  5 leading sessions pad the registration-era IPO

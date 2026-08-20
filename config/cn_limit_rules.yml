@@ -25,7 +25,7 @@
 
 schema: theme_graph.cn_limit_rules.v1
 version: 1
-updated: "2026-08-11"
+updated: "2026-08-19"
 note: >
   Decimal fractions throughout (0.10 = ±10%). Dates are the first/last calendar date the
   regime applied. valid_to null = still in force. Board ids are this repo's board
@@ -101,7 +101,7 @@ rules:
   - board: sse_main
     security_status: st
     valid_from: "1998-04-28"
-    valid_to: null
+    valid_to: "2026-07-05"
     limit_up: 0.05
     limit_down: 0.05
     source: "https://english.sse.com.cn/start/trading/mechanism/"
@@ -109,16 +109,45 @@ rules:
       Risk-warning (ST/*ST) names trade in a ±5% band. The interval starts at the first
       ST designations, not at the board's own limits_from — before that the status did
       not exist, which is why the ST series is declared with its own st_from rather than
-      being back-filled to 1996.
+      being back-filled to 1996. Closed 2026-07-05: superseded by the 2026 trading-rules
+      revision (see the sse_main/st row starting 2026-07-06 below).
 
   - board: szse_main
     security_status: st
     valid_from: "1998-04-28"
-    valid_to: null
+    valid_to: "2026-07-05"
     limit_up: 0.05
     limit_down: 0.05
     source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
-    note: "±5% for risk-warning names, same as the SSE main board."
+    note: >
+      ±5% for risk-warning names, same as the SSE main board. Closed 2026-07-05:
+      superseded by the 2026 trading-rules revision (see the szse_main/st row starting
+      2026-07-06 below).
+
+  - board: sse_main
+    security_status: st
+    valid_from: "2026-07-06"
+    valid_to: null
+    limit_up: 0.10
+    limit_down: 0.10
+    source: "https://www.sse.com.cn/aboutus/mediacenter/hotandd/c/c_20260424_10816474.shtml"
+    note: >
+      2026 trading-rules revision (announced 2026-04-24, effective 2026-07-06):
+      "将主板风险警示股票价格涨跌幅限制比例由5%调整为10%". The width now equals the
+      ordinary main-board band; the series stays separate because the risk-warning
+      status and its other trading-mechanism constraints still exist.
+
+  - board: szse_main
+    security_status: st
+    valid_from: "2026-07-06"
+    valid_to: null
+    limit_up: 0.10
+    limit_down: 0.10
+    source: "https://docs.static.szse.cn/www/lawrules/rule/trade/current/W020260424690713155663.pdf"
+    note: >
+      SZSE Trading Rules (2026 revision, 深证上〔2026〕551号) art. 3.3.13 sets the
+      main-board band uniformly at 10% with no risk-warning carve-out; art. 10.9 makes
+      the rules effective 2026-07-06, superseding the 2023-02-17 edition.
 
   - board: star
     security_status: ordinary

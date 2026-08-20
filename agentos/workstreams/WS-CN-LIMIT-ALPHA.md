@@ -106,17 +106,24 @@ waves:
       Appendix C and the manifest.
   - id: P0-ST
     title: 2026 main-board risk-warning rule parity and replay (program P0)
-    status: todo
+    status: in_progress
     depends_on: [R6-0]
     next_action: >-
-      Commission as its own session after R6-0 merges: effective-dated
-      main-board risk-warning band ±5%→±10% from 2026-07-06 in
-      config/cn_limit_rules.yml + engine/china_microstructure.py, with
-      official-source effective-date receipt, boundary tests both venues,
-      affected-row census, bounded replay, correction receipts, and a real
-      asia-close proof (packet §P0-ST;
-      DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06). Affected rows stay
-      quarantined until then.
+      BUILT_NOT_PROVEN (merge pending → asia-close production proof pending).
+      Era-dated main-board risk-warning band ±5%→±10% effective 2026-07-06
+      landed in config/cn_limit_rules.yml + engine/china_microstructure.py
+      (MAIN_ST_BAND_WIDE_DATE) with official-source receipts (SSE
+      c_20260424_10816474; SZSE 深证上〔2026〕551号 arts. 3.3.13/10.9),
+      boundary tests for both venues, and a bounded owner-native replay:
+      census found 0 stale limit_width==5.0 rows and exactly one affected
+      main-board name (600079.SS); both replay arms (current era-dated law vs.
+      the superseded always-5% law) produced identical empty event sets over
+      its 33 scored sessions since 2026-07-06 (max move 3.08%, never near
+      either band) — zero store corrections required. Receipts:
+      research/cn_limit/P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.{md,json},
+      research/cn_limit/p0_st_band_replay.py. Resolves
+      DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06 pending merge + a real
+      asia-close live proof.
   - id: DEP-CAI
     title: China Alpha Intelligence PR-0B telemetry + rights/identity closure
     status: todo
