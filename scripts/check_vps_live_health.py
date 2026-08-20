@@ -156,6 +156,48 @@ def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[st
     if weekday and 14 <= hour <= 22:
         require_lane("bars", 90)
         _require_age(failures, checks, "flow_pulse", 90)
+    # Live-breadth truth boundary (FROZEN CONTRACT §6). ABSENT-OK — same
+    # precedent as cn_prophet_live above: a box that has not deployed the
+    # `macro-live-breadth` lane yet must not red the whole dead-man.
+    breadth = checks.get("breadth")
+    if isinstance(breadth, dict):
+        if breadth.get("session") == "closed" or not weekday:
+            # Stale last-session data outside a session is legitimate evidence
+            # of nothing being wrong — never a fault (explicit spec requirement).
+            pass
+        elif 14 <= hour <= 20:
+            # Expected live window: ~10:00-16:00 ET, safely inside RTH for both
+            # DST offsets. `usable` is the semantic truth — never inferred from
+            # artifact age alone (a fresh deploy can copy OLD content).
+            if breadth.get("usable") is not True:
+                reason = breadth.get("unusable_reason")
+                failures.append(
+                    "breadth: not usable during the live window"
+                    + (f" ({reason})" if reason else "")
+                )
+            try:
+                source_age = float(breadth["source_age_min"])
+            except (KeyError, TypeError, ValueError):
+                failures.append("breadth: missing or invalid source_age_min")
+            else:
+                if source_age > 25:
+                    failures.append(
+                        f"breadth: source stale at {source_age:.1f}m (limit 25.0m)"
+                    )
+            try:
+                coverage_pct = float(breadth["coverage_pct"])
+            except (KeyError, TypeError, ValueError):
+                failures.append("breadth: missing or invalid coverage_pct")
+            else:
+                if coverage_pct < 90:
+                    failures.append(
+                        f"breadth: coverage low at {coverage_pct:.1f}% (minimum 90.0%)"
+                    )
+            producer = breadth.get("producer")
+            if not isinstance(producer, str) or not producer.strip():
+                failures.append("breadth: missing producer (unowned)")
+        # else: weekday, session open, but outside the expected live window —
+        # require only that the key parses (already true); report nothing.
     return failures
 
 

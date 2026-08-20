@@ -1436,6 +1436,191 @@ def test_vps_health_contract_does_not_require_equity_lanes_on_weekend():
     ) == []
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Live-breadth truth boundary — /api/status semantic health (FROZEN CONTRACT §6)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _healthy_breadth_check() -> dict:
+    return {
+        "usable": True,
+        "unusable_reason": None,
+        "feed_status": "ok",
+        "session": "rth",
+        "source_asof": "2026-07-20T14:44:00Z",
+        "source_age_min": 4.0,
+        "delay_min": 19,
+        "producer": "vps:macro-live-breadth",
+        "coverage_n": 1503,
+        "coverage_pct": 100.2,
+        "adv": 900,
+        "dec": 580,
+    }
+
+
+def test_breadth_health_is_absent_ok():
+    """A box that has not deployed the macro-live-breadth lane yet must not red
+    the whole dead-man — same ABSENT-OK precedent as cn_prophet_live."""
+    payload = _healthy_vps_status()
+    assert "breadth" not in payload["checks"]
+    assert evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    ) == []
+
+
+def test_breadth_health_passes_during_the_live_window_when_healthy():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    assert evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)  # weekday, in window
+    ) == []
+
+
+def test_breadth_health_fails_when_unusable_during_the_live_window():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["usable"] = False
+    payload["checks"]["breadth"]["unusable_reason"] = "source_stale"
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: not usable" in f and "source_stale" in f for f in failures)
+
+
+def test_breadth_health_fails_on_stale_source_clock():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["source_age_min"] = 40.0
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: source stale" in f for f in failures)
+
+
+def test_breadth_health_fails_on_low_coverage():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["coverage_pct"] = 40.0
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: coverage low" in f for f in failures)
+
+
+def test_breadth_health_fails_on_missing_producer():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["producer"] = ""
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: missing producer" in f for f in failures)
+
+
+def test_breadth_health_requires_nothing_when_session_closed():
+    """Stale last-session data outside a session is legitimate evidence of
+    nothing being wrong — never a fault, even inside what would otherwise be
+    the live window's hour (explicit spec requirement)."""
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["session"] = "closed"
+    payload["checks"]["breadth"]["usable"] = False
+    payload["checks"]["breadth"]["source_age_min"] = 999.0
+    assert evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    ) == []
+
+
+def test_breadth_health_requires_nothing_on_the_weekend():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["usable"] = False
+    payload["checks"]["breadth"]["source_age_min"] = 999.0
+    assert evaluate_live_health(
+        payload, now=datetime(2026, 7, 19, 15, 0, tzinfo=timezone.utc)  # Sunday
+    ) == []
+
+
+def test_breadth_health_requires_only_parsing_outside_the_live_window():
+    """Weekday, session open, but outside UTC hour 14..20 — require only that
+    the key parses; report nothing about freshness/coverage/usable."""
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["usable"] = False
+    payload["checks"]["breadth"]["source_age_min"] = 999.0
+    assert evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 10, 0, tzinfo=timezone.utc)  # weekday, before window
+    ) == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Live-breadth canonical production ownership (FROZEN CONTRACT §7)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_live_setup_installs_and_arms_the_breadth_lane():
+    root = Path(__file__).resolve().parents[1]
+    live_setup = (root / "app" / "deploy" / "live-setup.sh").read_text()
+    assert "macro-live-breadth.service macro-live-breadth.timer" in live_setup
+    enable_block = live_setup.split("systemctl enable --now")[1].split("\n\n")[0]
+    assert "macro-live-breadth.timer" in enable_block
+
+
+def test_breadth_unit_pair_exists_and_uses_the_shared_env_file():
+    root = Path(__file__).resolve().parents[1]
+    service = (root / "app" / "deploy" / "macro-live-breadth.service").read_text()
+    timer = (root / "app" / "deploy" / "macro-live-breadth.timer").read_text()
+    assert "EnvironmentFile=-/etc/macro-live.env" in service
+    assert "ExecStart=/opt/macro/.venv/bin/python -m scripts.live_breadth_poller --once" in service
+    assert "Environment=MACRO_LIVE_PRODUCER=vps:macro-live-breadth" in service
+    assert "Unit=macro-live-breadth.service" in timer
+
+
+def test_breadth_vps_lane_never_publishes_via_git():
+    """The VPS lane publishes by atomic rename into $MACRO_LIVE_DIR — the path
+    Caddy serves first, no-store — so it must NOT carry --publish.
+
+    Two independent reasons, both load-bearing:
+
+    1. Ownership. --publish is the GitHub BACKSTOP's mechanism (it commits
+       site/live/breadth.json to main so the STATIC fallback advances). If the
+       VPS lane also published, two writers would claim primary ownership of the
+       same artifact, which is exactly the state this wave exists to end.
+    2. It would hard-fail every two minutes. With MACRO_LIVE_DIR set, the output
+       path is OUTSIDE the git work tree, so `git add -f` returns "is outside
+       repository", publish() returns False, and --once --publish now (correctly)
+       exits non-zero. Verified by direct run against a temp MACRO_LIVE_DIR.
+    """
+    root = Path(__file__).resolve().parents[1]
+    service = (root / "app" / "deploy" / "macro-live-breadth.service").read_text()
+    exec_line = next(
+        line for line in service.splitlines() if line.startswith("ExecStart=")
+    )
+    assert "--publish" not in exec_line, (
+        "the VPS breadth lane must not git-publish: it would contend with the GH "
+        "backstop for primary ownership AND fail on every tick, because "
+        "$MACRO_LIVE_DIR is outside the git work tree"
+    )
+
+    # The backstop is the one that DOES publish — the other half of the split.
+    workflow = (root / ".github" / "workflows" / "live-breadth.yml").read_text()
+    assert "--once --publish" in workflow
+
+
+def test_update_sh_self_arms_the_breadth_lane_on_a_running_box():
+    """live-setup.sh alone is not ownership: it is a manual operator act, and the
+    unit did not exist when it last ran on the box. update.sh is what actually
+    installs a NEW live lane on an already-provisioned VPS, via the same
+    absent-file self-arming clause macro-live-prophet uses.
+    """
+    root = Path(__file__).resolve().parents[1]
+    update = (root / "app" / "deploy" / "update.sh").read_text()
+    assert "app/deploy/macro-live-breadth" in update
+    assert "[ ! -f /etc/systemd/system/macro-live-breadth.timer ]" in update
+    assert "systemctl enable --now macro-live-breadth.timer" in update
+    # A oneshot must never be restarted out of band — that would burn a Polygon
+    # snapshot off-schedule. Only the timer is re-armed.
+    assert "systemctl restart macro-live-breadth.service" not in update
+
+
 def test_caddy_serves_live_store_without_cache():
     root = Path(__file__).resolve().parents[1]
     text = (root / "app" / "deploy" / "Caddyfile").read_text()
