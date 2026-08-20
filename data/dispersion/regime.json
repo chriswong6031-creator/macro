@@ -1,8 +1,8 @@
 {
   "as_of": "2026-08-19",
   "state": "lean_in",
-  "dispersion_pctile": 0.96,
-  "avg_corr": 0.07,
+  "dispersion_pctile": 1.0,
+  "avg_corr": 0.06,
   "shadow_gross_mult": 1.2,
   "gross_mult_live": 1.0,
   "passport": {
@@ -223,8 +223,8 @@
     {
       "as_of": "2026-08-19",
       "state": "lean_in",
-      "dispersion_pctile": 0.96,
-      "avg_corr": 0.07
+      "dispersion_pctile": 1.0,
+      "avg_corr": 0.06
     }
   ],
   "label": "Selection pays \u2014 high dispersion",
@@ -233,9 +233,9 @@
     "basis": "trailing_252d_fixed",
     "n_names_used": 1500,
     "n_days_used": 252,
-    "dominant_equity_pc_share": 0.1789,
-    "effective_universe_bets_pr": 22.41,
-    "idio_dispersion_share": 0.6833,
+    "dominant_equity_pc_share": 0.1779,
+    "effective_universe_bets_pr": 22.53,
+    "idio_dispersion_share": 0.7217,
     "sector_pc_loadings": null,
     "note": "sector map not wired (deferred); display-only \u2014 DISP-EIGEN-1 registered, activation DEFERRED pending DISP-GATE-1 non-stationarity resolution",
     "display_only": true

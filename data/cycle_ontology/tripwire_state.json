@@ -33,10 +33,10 @@
   },
   "oil.regime_shift.v1": {
     "version": 1,
-    "state": "DATA_MISSING",
+    "state": "ARMED",
     "fired_on": null,
     "latched": false,
-    "current_leg": null,
+    "current_leg": false,
     "as_of": "2026-08-19"
   },
   "copper.trough_in.v1": {
@@ -137,10 +137,10 @@
   },
   "natural-gas.summer_squeeze.v1": {
     "version": 1,
-    "state": "DATA_MISSING",
+    "state": "ARMED",
     "fired_on": null,
     "latched": false,
-    "current_leg": null,
+    "current_leg": false,
     "as_of": "2026-08-19"
   },
   "iron-ore.china_demand.v1": {

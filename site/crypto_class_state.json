@@ -2,12 +2,12 @@
   "schema": "crypto.class_state/v1",
   "tier": "display",
   "display_only": true,
-  "as_of": "2026-08-19",
+  "as_of": "2026-08-20",
   "market": {
     "stance": "Range-bound, waiting for participation",
     "total_state": "Steady",
     "dominance_state": "Steady",
-    "fear_state": "Neutral",
+    "fear_state": "Greedy",
     "breadth_state": "Building history"
   },
   "flows": {
@@ -17,22 +17,22 @@
   },
   "heat": {
     "funding": "Balanced",
-    "open_interest": "Leverage elevated",
+    "open_interest": "Leverage normal",
     "volatility": "Volatility compressed",
-    "altseason": "Mixed participation"
+    "altseason": "Alt participation broad"
   },
   "assets": {
     "ETH": {
-      "trend": "Range",
+      "trend": "Advancing",
       "risk": "Stressed",
       "relative": "Leading Bitcoin",
-      "coverage": "3,732 daily observations from Coinbase daily OHLCV."
+      "coverage": "3,733 daily observations from Coinbase daily OHLCV."
     },
     "SOL": {
-      "trend": "Fading",
+      "trend": "Advancing",
       "risk": "Stressed",
       "relative": "Leading Bitcoin",
-      "coverage": "1,890 daily observations from Coinbase daily OHLCV."
+      "coverage": "1,891 daily observations from Coinbase daily OHLCV."
     }
   }
 }

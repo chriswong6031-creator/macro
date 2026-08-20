@@ -202,3 +202,4 @@
 {"session": "2026-08-17", "symbol": "WFC", "state": "NONE", "prior_state": "WASHOUT_TURN", "since": null, "depth_pctile": null, "line": null, "hist": null, "data_through": "2026-08-17", "reason": "graduated"}
 {"session": "2026-08-17", "symbol": "WULF", "state": "TURN_WATCH", "prior_state": "NONE", "since": null, "depth_pctile": 14.9, "line": -5.036, "hist": -2.425, "data_through": "2026-08-17", "reason": null}
 {"session": "2026-08-17", "symbol": "ZS", "state": "NONE", "prior_state": "WASHOUT_TURN", "since": null, "depth_pctile": null, "line": null, "hist": null, "data_through": "2026-08-17", "reason": "graduated"}
+{"session": "2026-08-19", "symbol": "L", "state": "NONE", "prior_state": "WASHOUT_TURN", "since": null, "depth_pctile": null, "line": null, "hist": null, "data_through": "2026-08-19", "reason": "graduated"}

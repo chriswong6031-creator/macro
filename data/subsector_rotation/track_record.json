@@ -1,29 +1,29 @@
 {
   "schema": "subsector_rotation.track_record.v1",
   "as_of": "2026-08-19",
-  "generated_at": "2026-08-19T06:17:16.264014+00:00",
+  "generated_at": "2026-08-20T02:49:04.214785+00:00",
   "is_context_only": true,
   "n_snapshots": 6716,
   "n_days": 25,
   "horizons": {
     "5": {
-      "n_matured": 6083,
-      "score_ic": 0.0139,
+      "n_matured": 6107,
+      "score_ic": 0.014,
       "score_ic_t_hac": 0.155,
       "score_ic_t_gate": 0.155,
-      "score_ic_t_iid": 0.174,
+      "score_ic_t_iid": 0.176,
       "hac_anticonservative": false,
       "ic_span_days": 48,
       "indep_windows": 6.86,
       "indep_windows_required": 6.0,
       "score_ic_detail": {
-        "mean_ic": 0.0139,
-        "ic_vol": 0.3824,
-        "ic_ir": 0.036,
-        "ic_ir_ann": 0.115,
+        "mean_ic": 0.014,
+        "ic_vol": 0.3817,
+        "ic_ir": 0.037,
+        "ic_ir_ann": 0.116,
         "t_hac": 0.155,
-        "p_hac": 0.8767,
-        "hit": 0.478,
+        "p_hac": 0.8765,
+        "hit": 0.435,
         "n": 23,
         "hac_lags": 5,
         "hac_lags_requested": 5,
@@ -34,61 +34,61 @@
       },
       "by_stage": {
         "emerging": {
-          "n": 268,
-          "mean_fwd_rel": -0.0019,
-          "hit_rate": 0.493
+          "n": 272,
+          "mean_fwd_rel": -0.0025,
+          "hit_rate": 0.496
         },
         "neutral": {
-          "n": 5539,
+          "n": 5559,
           "mean_fwd_rel": 0.0015,
           "hit_rate": null
         },
         "fading": {
           "n": 276,
           "mean_fwd_rel": -0.0005,
-          "hit_rate": 0.514
+          "hit_rate": 0.507
         }
       },
       "v2": {
-        "n_matured": 792,
+        "n_matured": 796,
         "score_ic": null,
         "score_ic_t_hac": null,
         "by_stage": {
           "emerging": {
             "n": 69,
-            "mean_fwd_rel": 0.004,
+            "mean_fwd_rel": 0.0029,
             "hit_rate": 0.551
           },
           "neutral": {
-            "n": 627,
-            "mean_fwd_rel": 0.0015,
+            "n": 631,
+            "mean_fwd_rel": 0.0013,
             "hit_rate": null
           },
           "fading": {
             "n": 96,
-            "mean_fwd_rel": 0.0062,
+            "mean_fwd_rel": 0.006,
             "hit_rate": 0.427
           }
         }
       }
     },
     "10": {
-      "n_matured": 5819,
-      "score_ic": 0.0545,
-      "score_ic_t_hac": 0.527,
-      "score_ic_t_gate": 0.527,
-      "score_ic_t_iid": 0.784,
+      "n_matured": 5842,
+      "score_ic": 0.0552,
+      "score_ic_t_hac": 0.548,
+      "score_ic_t_gate": 0.548,
+      "score_ic_t_iid": 0.803,
       "hac_anticonservative": false,
       "ic_span_days": 42,
       "indep_windows": 3.0,
       "indep_windows_required": 6.0,
       "score_ic_detail": {
-        "mean_ic": 0.0545,
-        "ic_vol": 0.3259,
-        "ic_ir": 0.167,
-        "ic_ir_ann": 0.747,
-        "t_hac": 0.527,
-        "p_hac": 0.5981,
+        "mean_ic": 0.0552,
+        "ic_vol": 0.3226,
+        "ic_ir": 0.171,
+        "ic_ir_ann": 0.766,
+        "t_hac": 0.548,
+        "p_hac": 0.5839,
         "hit": 0.545,
         "n": 22,
         "hac_lags": 10,
@@ -100,85 +100,85 @@
       },
       "by_stage": {
         "emerging": {
-          "n": 257,
-          "mean_fwd_rel": 0.0031,
-          "hit_rate": 0.514
+          "n": 261,
+          "mean_fwd_rel": 0.0026,
+          "hit_rate": 0.521
         },
         "neutral": {
-          "n": 5298,
-          "mean_fwd_rel": 0.0041,
+          "n": 5317,
+          "mean_fwd_rel": 0.0039,
           "hit_rate": null
         },
         "fading": {
           "n": 264,
-          "mean_fwd_rel": -0.0067,
+          "mean_fwd_rel": -0.0065,
           "hit_rate": 0.515
         }
       },
       "v2": {
-        "n_matured": 528,
+        "n_matured": 531,
         "score_ic": null,
         "score_ic_t_hac": null,
         "by_stage": {
           "emerging": {
             "n": 48,
-            "mean_fwd_rel": 0.0232,
-            "hit_rate": 0.729
+            "mean_fwd_rel": 0.0238,
+            "hit_rate": 0.708
           },
           "neutral": {
-            "n": 402,
-            "mean_fwd_rel": 0.0117,
+            "n": 405,
+            "mean_fwd_rel": 0.0111,
             "hit_rate": null
           },
           "fading": {
             "n": 78,
-            "mean_fwd_rel": 0.0117,
+            "mean_fwd_rel": 0.0115,
             "hit_rate": 0.372
           }
         }
       }
     },
     "21": {
-      "n_matured": 4756,
-      "score_ic": 0.0987,
-      "score_ic_t_hac": 0.833,
-      "score_ic_t_gate": 0.833,
-      "score_ic_t_iid": 1.129,
+      "n_matured": 5040,
+      "score_ic": 0.0765,
+      "score_ic_t_hac": 0.63,
+      "score_ic_t_gate": 0.63,
+      "score_ic_t_iid": 0.899,
       "hac_anticonservative": false,
-      "ic_span_days": 32,
-      "indep_windows": 1.09,
+      "ic_span_days": 33,
+      "indep_windows": 1.12,
       "indep_windows_required": 6.0,
       "score_ic_detail": {
-        "mean_ic": 0.0987,
-        "ic_vol": 0.3708,
-        "ic_ir": 0.266,
-        "ic_ir_ann": 1.725,
-        "t_hac": 0.833,
-        "p_hac": 0.4049,
-        "hit": 0.5,
-        "n": 18,
-        "hac_lags": 17,
+        "mean_ic": 0.0765,
+        "ic_vol": 0.371,
+        "ic_ir": 0.206,
+        "ic_ir_ann": 1.336,
+        "t_hac": 0.63,
+        "p_hac": 0.529,
+        "hit": 0.474,
+        "n": 19,
+        "hac_lags": 18,
         "hac_lags_requested": 21,
         "ic_first_date": "2026-06-26",
-        "ic_last_date": "2026-07-28",
-        "ic_span_days": 32,
-        "indep_windows": 1.09
+        "ic_last_date": "2026-07-29",
+        "ic_span_days": 33,
+        "indep_windows": 1.12
       },
       "by_stage": {
         "emerging": {
-          "n": 210,
-          "mean_fwd_rel": 0.0067,
-          "hit_rate": 0.529
+          "n": 226,
+          "mean_fwd_rel": 0.0055,
+          "hit_rate": 0.509
         },
         "neutral": {
-          "n": 4330,
-          "mean_fwd_rel": 0.0106,
+          "n": 4586,
+          "mean_fwd_rel": 0.0109,
           "hit_rate": null
         },
         "fading": {
-          "n": 216,
-          "mean_fwd_rel": -0.0259,
-          "hit_rate": 0.616
+          "n": 228,
+          "mean_fwd_rel": -0.0206,
+          "hit_rate": 0.583
         }
       },
       "v2": {
@@ -228,105 +228,105 @@
   "note_zh": "\u6b63\u5728\u7d2f\u79ef\u524d\u77bb\u89c2\u6d4b\uff1b\u5c1a\u65e0\u5468\u671f\u901a\u8fc7 Newey-West \u663e\u8457\u6027\u68c0\u9a8c\u3002\u65e9\u671f\u6570\u636e\u4e3a\u6682\u5b9a\uff0c\u4ec5\u4f9b\u53c2\u8003\u3002",
   "recent_misses": [
     {
-      "date": "2026-07-28",
-      "key": "hardwarestorage",
-      "name": "Storage",
-      "theme": "Hardware",
-      "stage": "fading",
-      "fwd_rel": 0.1615,
+      "date": "2026-07-29",
+      "key": "educationplatforms",
+      "name": "Platforms",
+      "theme": "Education Technology",
+      "stage": "emerging",
+      "fwd_rel": -0.1604,
       "horizon_d": 21
     },
     {
-      "date": "2026-07-28",
-      "key": "cybersecuritythreatops",
-      "name": "ThreatOps",
-      "theme": "Cybersecurity",
-      "stage": "fading",
-      "fwd_rel": 0.1489,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-28",
-      "key": "cybersecurityappsecurity",
-      "name": "App Security",
-      "theme": "Cybersecurity",
-      "stage": "fading",
-      "fwd_rel": 0.128,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-28",
-      "key": "cloudsecurity",
-      "name": "Security",
-      "theme": "Cloud Computing",
-      "stage": "fading",
-      "fwd_rel": 0.1067,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-28",
-      "key": "cybersecurityzerotrust",
-      "name": "ZeroTrust",
-      "theme": "Cybersecurity",
-      "stage": "fading",
-      "fwd_rel": 0.1036,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-28",
+      "date": "2026-07-29",
       "key": "cloudhardware",
       "name": "Hardware",
       "theme": "Cloud Computing",
       "stage": "fading",
-      "fwd_rel": 0.0995,
+      "fwd_rel": 0.132,
       "horizon_d": 21
     },
     {
-      "date": "2026-07-28",
-      "key": "cybersecurityendpoint",
-      "name": "Endpoint",
+      "date": "2026-07-29",
+      "key": "hardwareservers",
+      "name": "Servers",
+      "theme": "Hardware",
+      "stage": "fading",
+      "fwd_rel": 0.126,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-29",
+      "key": "hardwarestorage",
+      "name": "Storage",
+      "theme": "Hardware",
+      "stage": "fading",
+      "fwd_rel": 0.1148,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-29",
+      "key": "agriculturealtprotein",
+      "name": "Alt Protein",
+      "theme": "Agriculture & FoodTech",
+      "stage": "emerging",
+      "fwd_rel": -0.1049,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-29",
+      "key": "cybersecurityappsecurity",
+      "name": "App Security",
       "theme": "Cybersecurity",
       "stage": "fading",
-      "fwd_rel": 0.0966,
+      "fwd_rel": 0.0843,
       "horizon_d": 21
     },
     {
-      "date": "2026-07-28",
-      "key": "iotsecurity",
-      "name": "Security",
-      "theme": "Internet of Things",
+      "date": "2026-07-29",
+      "key": "cybersecuritythreatops",
+      "name": "ThreatOps",
+      "theme": "Cybersecurity",
       "stage": "fading",
-      "fwd_rel": 0.0954,
+      "fwd_rel": 0.082,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-29",
+      "key": "hardwarenetworking",
+      "name": "Networking",
+      "theme": "Hardware",
+      "stage": "fading",
+      "fwd_rel": 0.0683,
       "horizon_d": 21
     }
   ],
   "head_to_head": {
     "by_horizon": {
       "5": {
-        "n": 6083,
-        "n_v2": 792,
-        "ic": 0.0139,
+        "n": 6107,
+        "n_v2": 796,
+        "ic": 0.014,
         "ic_v2": null,
         "gap": null,
         "t_hac": 0.155,
         "t_hac_v2": null
       },
       "10": {
-        "n": 5819,
-        "n_v2": 528,
-        "ic": 0.0545,
+        "n": 5842,
+        "n_v2": 531,
+        "ic": 0.0552,
         "ic_v2": null,
         "gap": null,
-        "t_hac": 0.527,
+        "t_hac": 0.548,
         "t_hac_v2": null
       },
       "21": {
-        "n": 4756,
+        "n": 5040,
         "n_v2": 0,
-        "ic": 0.0987,
+        "ic": 0.0765,
         "ic_v2": null,
         "gap": null,
-        "t_hac": 0.833,
+        "t_hac": 0.63,
         "t_hac_v2": null
       },
       "63": {
