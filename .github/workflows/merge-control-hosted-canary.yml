@@ -1,0 +1,249 @@
+name: merge-control-hosted-canary
+
+# W1-A of WS:RUNNER-FLEET-RESILIENCE.
+#
+# This is an ENVIRONMENT canary, not a second merge controller. The production
+# merge semantics remain solely in scripts/merge_on_green.py and the real
+# merge-on-green.yml. This workflow has read-only repository permission, never
+# receives ADMIN_GH_TOKEN/MERGE_TOKEN, and never executes the sweeper entrypoint.
+#
+# Why it exists: merge-on-green was moved to a dedicated M2 listener in the old
+# 180/180 hosted-runner saturation regime. The 2026-08-20 runner-starvation
+# incident proved that logical label isolation is not physical isolation: the
+# merge arbiter still shares CPU/SSD/filesystem/Git I/O with the M2 nightly and
+# render estate. Before routing the real arbiter back to Enterprise hosted, this
+# canary proves the exact production sparse checkout + system-Python/PyYAML
+# environment, then runs the existing merge-control test set on a deliberately
+# HEAVIER hosted checkout. Three post-merge dispatches, including one during the
+# congested nightly/render window, are required by the architecture freeze.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merge-control-hosted-canary
+  cancel-in-progress: false
+
+jobs:
+  trust-gate:
+    name: trust-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: canary implementation must come from main
+        env:
+          TRUSTED_REF: ${{ github.ref }}
+        run: |
+          if [ "$TRUSTED_REF" != "refs/heads/main" ]; then
+            echo "::error title=merge-control hosted canary trust gate::dispatch --ref main; candidate refs are not accepted environment proof"
+            exit 1
+          fi
+
+  hosted-environment:
+    name: hosted-environment
+    needs: trust-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Create negative evidence before touching Git. A checkout/bootstrap failure is
+      # exactly the condition this canary must make observable, so the receipt must
+      # already exist before PHASE 1 can fail. Later steps only advance this record.
+      # `run_attempt` makes a rerun a distinct receipt instead of silently colliding
+      # with the first attempt's artifact identity. The observed timestamp is captured
+      # at the first hosted-environment step; pickup is adjudicated later from GitHub's
+      # run/job created_at+started_at metadata together with this receipt, never from
+      # `accepted:true` alone.
+      - name: initialize negative canary receipt
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, platform, sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          receipt = {
+              "schema": "merge_control.hosted_environment_canary.v1",
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job_started_at_observed": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+              "sha": os.environ["GITHUB_SHA"],
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "runner_os": os.environ.get("RUNNER_OS"),
+              "runner_arch": os.environ.get("RUNNER_ARCH"),
+              "python": sys.version.split()[0],
+              "platform": platform.platform(),
+              "phase1": "pending",
+              "phase2": "pending",
+              "production_contract_parity": False,
+              "accepted": False,
+          }
+          path = Path(os.environ["RUNNER_TEMP"]) / "merge-control-hosted-canary.json"
+          path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+
+      # PHASE 1 materializes exactly the production sweeper's tracked surface.
+      # `persist-credentials:false` is the one deliberate tightening: this canary is
+      # read-only and must not retain a credential it can never lawfully use.
+      - name: exact production sparse checkout
+        uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            scripts/merge_on_green.py
+            scripts/ci_semantic_proof.py
+            scripts/ci_authority_paths.py
+            scripts/gh_path_filter.py
+            scripts/run_ci_pack.py
+            .github/workflows
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      # Byte-for-byte copy of merge-on-green.yml's production dependency bootstrap.
+      # Keep this as its own step so the parity assertion below can fail if production
+      # changes independently of the canary.
+      - name: exact production PyYAML bootstrap
+        run: |
+          if python3 -c "import yaml" 2>/dev/null; then
+            echo "pyyaml already importable on ${RUNNER_NAME:-this runner}"
+            exit 0
+          fi
+          python3 -m pip install --quiet --disable-pip-version-check pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check --user pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check \
+                 --break-system-packages pyyaml
+          python3 -c "import yaml"
+
+      # The canary must not become a stale imitation of production. Compare the live
+      # main-tree workflow contracts before claiming any environment proof. Credential
+      # persistence is intentionally excluded because the canary is stricter/read-only.
+      - name: assert canary tracks the production environment contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          root = Path.cwd()
+          prod = yaml.safe_load((root / ".github/workflows/merge-on-green.yml").read_text(encoding="utf-8"))
+          canary = yaml.safe_load((root / ".github/workflows/merge-control-hosted-canary.yml").read_text(encoding="utf-8"))
+
+          def named(steps, name):
+              matches = [step for step in steps if step.get("name") == name]
+              assert len(matches) == 1, (name, len(matches))
+              return matches[0]
+
+          prod_steps = prod["jobs"]["sweep"]["steps"]
+          canary_steps = canary["jobs"]["hosted-environment"]["steps"]
+          prod_checkout = next(step for step in prod_steps if str(step.get("uses", "")).startswith("actions/checkout@"))
+          canary_checkout = named(canary_steps, "exact production sparse checkout")
+
+          assert canary_checkout["uses"] == prod_checkout["uses"]
+          for key in ("filter", "sparse-checkout", "sparse-checkout-cone-mode"):
+              assert canary_checkout["with"][key] == prod_checkout["with"][key], key
+          assert canary_checkout["with"]["persist-credentials"] is False
+
+          prod_bootstrap = named(prod_steps, "install the yaml parser")
+          canary_bootstrap = named(canary_steps, "exact production PyYAML bootstrap")
+          assert canary_bootstrap["run"] == prod_bootstrap["run"]
+          print("merge-control production/canary environment contract parity: OK")
+          PY
+
+      # Probe the imported runtime after the byte-identical production bootstrap.
+      # This is intentionally stronger than production but carries no alternate setup.
+      - name: prove the production system-Python dependency contract
+        run: |
+          if python3 -c "import yaml" 2>/dev/null; then
+            echo "pyyaml already importable on ${RUNNER_NAME:-this runner}"
+          else
+            python3 -m pip install --quiet --disable-pip-version-check pyyaml \
+              || python3 -m pip install --quiet --disable-pip-version-check --user pyyaml \
+              || python3 -m pip install --quiet --disable-pip-version-check \
+                   --break-system-packages pyyaml
+          fi
+          python3 -c "import yaml"
+          python3 -m py_compile \
+            scripts/merge_on_green.py \
+            scripts/ci_semantic_proof.py \
+            scripts/ci_authority_paths.py \
+            scripts/gh_path_filter.py \
+            scripts/run_ci_pack.py
+          python3 - <<'PY'
+          import scripts.merge_on_green as mog
+          assert callable(mog.main)
+          print("merge-control production import closure: OK")
+          PY
+
+      - name: record successful phase-1 environment receipt
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          path = Path(os.environ["RUNNER_TEMP"]) / "merge-control-hosted-canary.json"
+          receipt = json.loads(path.read_text(encoding="utf-8"))
+          receipt["phase1"] = "production_sparse_import_ok"
+          receipt["production_contract_parity"] = True
+          path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+
+      # PHASE 2 is intentionally HEAVIER than the production sweeper. It matches
+      # the already-hosted integration-baseline tree shape and runs the same
+      # control-plane suites. Passing here is a conservative environment proof;
+      # the real sweeper will materialize far fewer paths.
+      - name: expand to the hosted control test surface
+        uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          fetch-depth: 1
+          sparse-checkout: |
+            /*
+            !/site/
+            !/data/
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: install hosted control-test dependencies
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check pytest pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check --user pytest pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check \
+                 --break-system-packages pytest pyyaml
+
+      - name: run existing merge-control and runner-boundary suites
+        run: >-
+          python3 -m pytest -q
+          tests/test_ci_pack.py
+          tests/test_merge_on_green.py
+          tests/test_runner_policy.py
+          tests/test_ci_canary_tools.py
+          tests/test_ci_canary_workflows.py
+
+      # This step is reached only when every preceding phase-2 step succeeded. A red
+      # run uploads the already-created negative receipt; only this step can accept it.
+      - name: finalize successful canary receipt
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          path = Path(os.environ["RUNNER_TEMP"]) / "merge-control-hosted-canary.json"
+          receipt = json.loads(path.read_text(encoding="utf-8"))
+          receipt["phase2"] = "control_tests_ok"
+          receipt["accepted"] = True
+          path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+
+      - name: publish canary receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: merge-control-hosted-canary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/merge-control-hosted-canary.json
+          if-no-files-found: error
+          retention-days: 14
