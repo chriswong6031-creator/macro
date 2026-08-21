@@ -814,7 +814,7 @@ def test_r1_section_6_1_the_four_sidecar_assertions_against_the_committed_parque
 #: reads us NOT_IN_MASTER for the ~508 codes this wave admitted — this is the
 #: before/after boundary the acceptance criterion's delta is drawn across, the
 #: same pattern D2B2_FIRST_COMPUTED_AT already establishes for CN/HK above.
-D2B2_US_FIRST_COMPUTED_AT = "2026-08-21T10:20:12Z"
+D2B2_US_FIRST_COMPUTED_AT = "2026-08-21T11:20:44Z"
 
 
 class TestD2B2US:

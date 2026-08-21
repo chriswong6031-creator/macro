@@ -268,7 +268,7 @@
     "target_population_source": "data/theme_graph/nodes.parquet (kind=company, market_scope in cn/hk)"
   },
   "cik_map_snapshot": "2026-08-18",
-  "code_version": "d5bd5bfb0295392949d89be22caa73b20af98ecc",
+  "code_version": "c74e39d64ddfe7a27cf2e37778a2cd38aa762594",
   "coverage": {
     "resolved": 702,
     "total": 712,
@@ -293,7 +293,7 @@
     "reference.issuer_migrations",
     "reference.security_migrations"
   ],
-  "generated_at": "2026-08-21T10:17:27",
+  "generated_at": "2026-08-21T11:20:25",
   "identity_exceptions": [
     {
       "evidence": "SEC Barnes Group 2025-01-27 8-K/Form 25; Barrick Mining 2025-05-07 Form 6-K Exhibit 99.2; Gold.com 2025-11-12 AMRK->NYSE GOLD transfer announcement; config/theme_graph_identity_breaks.yml GOLD",
@@ -418,9 +418,10 @@
   "seed_counts": {
     "delisted_keys": 3,
     "directory_symbols": 13168,
+    "gmi_seed_keys": 1238,
     "ticker_fixups": 3,
     "ticker_key_migrations": 1,
-    "universe_keys": 1238
+    "universe_keys": 710
   },
   "symbol_directory_snapshot": "2026-08-21",
   "undated_renames": [
@@ -433,6 +434,16 @@
   "unregistered_rename_duplicates": [],
   "us_gmi_admission": {
     "contract": "research/prophet_v4/d2/D2B2_US_FROZEN_CONTRACT_2026-08-21.md",
+    "disclosed_exclusions": [
+      {
+        "code": "duplicate_claim_collapsed",
+        "listing_key": "US-XNAS-FISV",
+        "reason": "'FISV' renders the same listing key 'US-XNAS-FISV' as 'FI' \u2014 a duplicate graph-topology reference to one security, collapsed to the winning claimant; never a second mint or a second alias-row set (D2B2-US \u00a72, AMENDMENT R3)",
+        "symbol": "FISV",
+        "winning_security_id": "SEC:US-XNAS-FISV",
+        "winning_symbol": "FI"
+      }
+    ],
     "identity_exception_excluded": [
       {
         "code": "B",
@@ -550,6 +561,11 @@
         "symbol": "RHHBY"
       },
       {
+        "code": "not_listed_cik_present",
+        "reason": "absent from the newest symbol-directory snapshot under 'SATS' or 'SATS' (and from the exit ledger) \u2014 venue unknown",
+        "symbol": "SATS"
+      },
+      {
         "code": "not_listed_no_cik",
         "reason": "absent from the newest symbol-directory snapshot under 'SEE' or 'SEE' (and from the exit ledger) \u2014 venue unknown",
         "symbol": "SEE"
@@ -568,12 +584,18 @@
         "code": "not_listed_no_cik",
         "reason": "absent from the newest symbol-directory snapshot under 'UGRO' or 'UGRO' (and from the exit ledger) \u2014 venue unknown",
         "symbol": "UGRO"
+      },
+      {
+        "code": "not_listed_cik_present",
+        "reason": "absent from the newest symbol-directory snapshot under 'WBS' or 'WBS' (and from the exit ledger) \u2014 venue unknown",
+        "symbol": "WBS"
       }
     ],
-    "refused_this_run": 25,
-    "resolved_this_run": 508,
-    "resolved_total": 508,
-    "target_n": 533,
+    "refused_this_run": 27,
+    "resolved_this_run": 0,
+    "resolved_total": 1208,
+    "structural_check_exempt_exit_ledger": [],
+    "target_n": 1236,
     "target_population_source": "data/theme_graph/nodes.parquet (kind=company, market_scope=us)"
   },
   "vendor_alias_prunes": []
