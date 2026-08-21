@@ -27,11 +27,23 @@ from pathlib import Path
 import pytest
 
 THEME_JS = Path(__file__).resolve().parent.parent / "templates" / "theme.js"
+#: The DEPLOYED artifact. `site/theme.js` is a committed build product — lib/site_assets.py
+#: `copy_asset` bakes the Supabase config and the Terminal overlay into it at copy time — and it
+#: is what mastermind-x.com actually serves. It is committed ALONGSIDE the template in every
+#: commit that touches templates/theme.js (verified: the five commits before #6170 all did).
+#: PR #6170 shipped the template alone, so the fix merged and changed nothing live. That is the
+#: gap `test_the_deployed_artifact_is_not_stale` exists to close.
+SITE_THEME_JS = Path(__file__).resolve().parent.parent / "site" / "theme.js"
 
 
 @pytest.fixture(scope="module")
 def src() -> str:
     return THEME_JS.read_text(encoding="utf-8")
+
+
+@pytest.fixture(scope="module")
+def deployed() -> str:
+    return SITE_THEME_JS.read_text(encoding="utf-8")
 
 
 def _save_pref_fn(src: str) -> str:
@@ -109,3 +121,32 @@ def test_theme_auto_is_browser_only_and_stays_out_of_the_route_vocabulary(src: s
 
     assert "theme_auto" in src
     assert "theme_auto" not in user_prefs.PREF_VALUES
+
+
+def test_the_deployed_artifact_is_not_stale(deployed: str) -> None:
+    """site/theme.js is what the live site serves. A template-only change is invisible.
+
+    This is not a hypothetical: PR #6170 edited templates/theme.js and NOT site/theme.js, so the
+    lost-update fix merged to main while mastermind-x.com kept serving the whole-blob writer. The
+    template is the source of truth, but the artifact is the thing that runs.
+    """
+    body = _save_pref_fn(deployed)
+    assert "patch.theme =" in body
+    assert "patch.theme_auto =" in body
+    assert "patch.lang =" in body
+    assert "data: { prefs" not in body
+    assert "prefs: prefs" not in body
+
+
+def test_the_deployed_artifact_reads_per_field_too(deployed: str) -> None:
+    apply_fn = deployed[deployed.index("function _applyServerPrefs("):deployed.index("/* Save ONLY the atomics")]
+    assert "_sharedPref(meta, 'theme', 'theme', _isTheme)" in apply_fn
+    assert "_sharedPref(meta, 'theme_auto', 'themeAuto', _isFlag)" in apply_fn
+    assert "_sharedPref(meta, 'lang', 'lang', _isLang)" in apply_fn
+
+
+def test_the_deployed_artifact_matches_the_template_for_this_block(src: str, deployed: str) -> None:
+    """copy_asset() bakes config into site/theme.js, so the files are not byte-identical — but the
+    preference-sync block is copied verbatim, and any drift between them means one of the two was
+    hand-edited instead of regenerated."""
+    assert _save_pref_fn(src) == _save_pref_fn(deployed)
