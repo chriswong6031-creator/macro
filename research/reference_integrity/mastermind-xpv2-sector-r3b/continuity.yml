@@ -47,21 +47,42 @@ predecessors:
       - id: PRC-001
         predecessor_ref: PRC-001
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: blocker; source: reviews/product_regression.yml] Operational rows use dead
-          href targets and a LENS link to a nonexistent method anchor, while production preserves
-          real row, trace, group, stock, and method destinations. Pending orchestrator
-          adjudication against the frozen R3 candidate.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: blocker; source: reviews/product_regression.yml] The Sector Central portion
+          of this finding (dead href="#" placeholders on operational rows -- selected-action
+          "View all", Early turns, Map, Moving, Crosscurrents, Explore history tools, Confluence
+          focus/queue/late rows, generated state/Explore rows) is resolved: the R3B candidate
+          renders zero href="#" and zero empty hrefs in any of the six views
+          (QA_ATTACK_REPORT.md SS7 "dead destination: 0/0/0/0/0/0"; capability_crosscheck.md row
+          86 "ZERO href=\"#\" and zero empty hrefs anywhere -- commission S19 satisfied"), and
+          real row/trace/group/stock destinations are preserved and click-verified (crosscheck
+          rows 9, 10, 72, 74, 76, 82-84). The LENS "Open methodology" href="#method" sub-claim
+          (LENS...html:269) is out of R3B's own route (intelligence_hub.html is a different
+          surface from sector_central.html) and is NOT addressed by this change -- carried
+          forward under the same reasoning as PRC-008/VTC-009/VTC-010/DAC-008
+          (ORCHESTRATOR_ADJUDICATIONS.md S9).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/map.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/moving.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/explore.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/confluence.html
       - id: PRC-002
         predecessor_ref: PRC-002
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: blocker; source: reviews/product_regression.yml] The candidate has no exact
-          preview/full-count disclosure, premium hydration, or access-failure contract and
-          therefore does not preserve the current tier gate. Pending orchestrator adjudication
-          against the frozen R3 candidate.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: blocker; source: reviews/product_regression.yml] The candidate discloses an
+          exact preview=3/locked=29/total=44 count sourced live from the embedded
+          premiumdata/sector_central.json payload (capability_crosscheck.md rows 14, 16), and
+          premium hydration now genuinely inserts the fetched rows (routed through
+          REF.fetchJSON), live re-verified at 4/5/5/3/27 with `.pg-more` dropping 5 to 0
+          (FIX_VERIFICATION.md QA2-07+F-3 row). A 401/403/schema-mismatch access failure
+          collapses safely to the baked gated shell -- "nothing to undo" -- confirmed by
+          `REF.log` after a simulated fetch failure (access_evidence.md "fetch-fail + hydrated").
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
       - id: PRC-003
         predecessor_ref: PRC-003
         kind: blocker
@@ -82,42 +103,72 @@ predecessors:
       - id: PRC-004
         predecessor_ref: PRC-004
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: blocker; source: reviews/product_regression.yml] Snapshot clocks, counts,
-          rows, and universes are hardcoded without a carried producer/correction contract, so
-          dynamic product preservation is unproven. Pending orchestrator adjudication against the
-          frozen R3 candidate -- the R3B candidate must bind these fields to the fixture, not
-          hardcode them, per COMMISSION.md S0/S19.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: blocker; source: reviews/product_regression.yml] Every clock, count, row
+          and universe in the candidate is demonstrated dynamically bound to its embedded
+          producer fixture rather than hardcoded: forcing score=0/null on fixture rows changes
+          the render (capability_crosscheck.md row 28), deleting `action_board.buy_now` renders
+          the genuine empty-lane copy (row 29), deleting `si_handoff.json` triggers the
+          documented fallback (row 25), and the stale-clock guard is computed live from `as_of`
+          against wall-clock time (row 27). No literal replaces a producer read; the R3B build
+          rule is "bind to the fixture, not hardcode" (COMMISSION.md S0/S19).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/confluence.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/map.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/moving.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/money.html
       - id: PRC-005
         predecessor_ref: PRC-005
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: blocker; source: reviews/product_regression.yml] Explore, performance, Time
-          Machine, narratives, and track record collapse to a seven-row sample and dead links
-          rather than reachable current capabilities. Pending orchestrator adjudication against
-          the frozen R3 candidate -- binds SC-054/055/057/058/059/060/061.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: blocker; source: reviews/product_regression.yml] Explore/Performance/Time
+          Machine/Narratives are full, producer-bound capabilities, not a seven-row sample: the
+          comparison table defaults to top-8/bottom-8 with a "Show all (49)" reveal verified to
+          expand to 49 rows (capability_crosscheck.md row 56), Time Machine's deferred-fetch
+          contract is demonstrated live (row 58), Forming Narratives renders the full 5-leg
+          breakdown per cluster (row 59), and What's Moving's track-record accessible equivalent
+          (`drawTrackRecord`) was restored by fix F-5 (FIX_VERIFICATION.md F-5 row). Zero dead
+          links across all six views (QA_ATTACK_REPORT.md SS7, `a[href="#"]` 0/0/0/0/0/0).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/explore.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/moving.html
       - id: PRC-006
         predecessor_ref: PRC-006
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: blocker; source: reviews/product_regression.yml] Confluence tabs only toggle
-          visual state; they do not switch producer universes, recompute coverage/distribution,
-          or preserve group/member detail behavior. Pending orchestrator adjudication against the
-          frozen R3 candidate -- binds SC-063/070/074.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: blocker; source: reviews/product_regression.yml] Confluence's four universe
+          tabs each rebind to a genuinely distinct embedded producer array (65/12/93/49 rows
+          respectively) and recompute their own coverage disclosure per universe ("65 of 113..."
+          / "12 of 12" / "93 of 93" / absent for Baskets -- capability_crosscheck.md rows
+          63-67), and group/member detail destinations resolve into per-universe directories
+          (`subsector/`, `subsector_nasdaq/`, `subsector_russell/` -- row 74). This is a genuine
+          universe recompute, not a visual-only toggle.
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/confluence.html
       - id: PRC-007
         predecessor_ref: PRC-007
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: blocker; source: reviews/product_regression.yml] Loading, stale, partial,
-          unavailable, access-error, independent-clock, and honest empty states are specified in
-          prose but absent from the candidate surface. CONFIRMED as an accurate critique per
-          ADJUDICATIONS.md (not among the refuted items). Pending orchestrator adjudication
-          against the frozen R3 candidate -- binds COMMISSION.md S16 "Render only states backed
-          by current contracts" and every SC-02x/03x state-matrix row.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: blocker; source: reviews/product_regression.yml; CONFIRMED as accurate per
+          ADJUDICATIONS.md] state_matrix.md demonstrates 8 of the 10 commissioned states live and
+          screenshotted: zero/empty (`confluence-empty-lane.png`, `confluence-search-zero.png`),
+          stale (`#ov-asof.r3-stale` + staleline text), error
+          (`overview-access-fetchfail.png`, production-shaped fetch-fail strings per
+          QA_ATTACK_REPORT.md SS6), access-shell gated/hydrated
+          (`overview-access-gated.png`/`overview-access-hydrated.png`), long-names and
+          cardinality-extreme. The two remaining states ("loading", null-guarded "partial") are
+          honestly documented as not captured on this fixture/architecture, not silently absent
+          (state_matrix.md's own "why not captured" sections) -- materially different from r2's
+          "specified in prose but absent from the surface."
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/state_matrix.md
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/confluence.html
       - id: PRC-008
         predecessor_ref: PRC-008
         kind: blocker
@@ -128,135 +179,205 @@ predecessors:
           methodology link has no target (second pass: "the packet provides the lawful
           hide-or-implement remedy"). Out of R3B's own scope (LENS/intelligence_hub.html is a
           separate surface from sector_central.html) but still an unresolved r2 item under this
-          predecessor's combined artifact set -- carried forward rather than silently dropped.
-          Pending orchestrator adjudication (ownership: a future LENS/intelligence_hub RIG cycle,
-          not R3B).
+          predecessor's combined artifact set -- carried forward rather than silently dropped,
+          per ORCHESTRATOR_ADJUDICATIONS.md S9 ("Four predecessor findings targeting
+          intelligence_hub.html/LENS ... are out of this cycle's route; carried as CARRIED_BLOCK
+          with ownership deferred to a future LENS RIG cycle -- not silently dropped"). Pending
+          orchestrator adjudication (ownership: a future LENS/intelligence_hub RIG cycle, not
+          R3B).
       - id: PRC-009
         predecessor_ref: PRC-009
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: major; source: reviews/product_regression.yml] Leadership handoff and What
-          changed are not proven payload-resident. Pending orchestrator adjudication against the
-          frozen R3 candidate -- binds SC-024.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: major; source: reviews/product_regression.yml] `capability_crosscheck.md`
+          rows 20 and 24 show `#si-read-overview` (leadership handoff) and `#ov-ctx-body` (What
+          changed context) are demonstrably payload-resident, not hardcoded prose -- both carry
+          `data-from`/`data-to` attributes composed from `si_handoff.json`'s
+          `theme_context`/`factor_season` fields, and row 25's probe (deleting `si_handoff.json`)
+          triggers the documented verbatim fallback copy rather than a frozen string.
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
       - id: PRC-010
         predecessor_ref: PRC-010
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: major; source: reviews/product_regression.yml] Early-turn compression loses
-          current receipts and destinations (second pass: "the ledger says improve, not
-          sample-only"). Pending orchestrator adjudication against the frozen R3 candidate --
-          binds SC-021/022/023.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: major; source: reviews/product_regression.yml] The Bottoming Watch
+          ("early-turn") strip renders full per-row receipts (position-in-cycle chip,
+          gate-conflict chip, dual-read chip, null disclosure -- capability_crosscheck.md row
+          22), and fix F-2 restored the rows' real `basket/*.html` destinations as clickable
+          `<a data-ref-nav>` elements per `_us_bottoming_watch.html.j2:95`, live re-verified: "3
+          anchors with real basket/*.html hrefs; click records exact route"
+          (FIX_VERIFICATION.md F-2 row).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
       - id: PRC-011
         predecessor_ref: PRC-011
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: major; source: reviews/product_regression.yml] Map, Moving, and Money/
-          Breadth are visually present but capability completeness is unproven. Pending
-          orchestrator adjudication against the frozen R3 candidate -- binds all Map/Moving/Money
-          capability rows (SC-036..053).
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: major; source: reviews/product_regression.yml] `capability_crosscheck.md`
+          rows 36-53 (18 rows covering Map/Moving/Money) each carry an explicit VERIFIED or
+          VERIFIED-AS-ADJUDICATED verdict with live probe/grep evidence; of the 92 total ledger
+          rows only 7 findings were open at cross-check time (F-1..F-6, one row shared), and
+          FIX_VERIFICATION.md records live re-probe confirmation for all of them, including F-4
+          (map ZH leaks: 57/57 + 57/57 leaves carrying CJK) and F-5 (moving `drawTrackRecord`
+          ported with real horizon numbers).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/map.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/moving.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/money.html
       - id: PRC-012
         predecessor_ref: PRC-012
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: major; source: reviews/product_regression.yml] The candidate changes the
-          current ZH Stand aside label from 观望 to 暂时回避. Pending orchestrator adjudication
-          against the frozen R3 candidate -- binds SC-002 exact-label-parity, and is the same
-          defect class DAC-006 raises independently below.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: major; source: reviews/product_regression.yml] The candidate's live
+          Stand-aside ledge label reads "Stand aside/观望" -- the canonical ZH string, not the
+          drifted "暂时回避" (`capability_crosscheck.md` row 2: "Live ledge text: ... Stand
+          aside观望").
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
       - id: PRC-013
         predecessor_ref: PRC-013
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: major; source: reviews/product_regression.yml] Copying the standalone shell
-          literally would create a duplicate local component system. Pending orchestrator
-          adjudication against the frozen R3 candidate -- binds COMMISSION.md S6 "Do not redesign
-          global Mastermind navigation here" / "Do not reproduce R2's hand-built topbar as design
-          law".
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: major; source: reviews/product_regression.yml] No production file was
+          modified by this cycle (ORCHESTRATOR_ADJUDICATIONS.md S10); the two chrome divergences
+          from production (label rail behavior, mobile tab layout) are explicitly recorded as
+          approved-but-non-binding with the instruction "R3C must adjudicate both for production"
+          (S3), and `R3C_HANDOFF_DRAFT.md` exists specifically to route that decision through an
+          explicit future adjudication rather than letting a literal shell copy silently become
+          de facto design law / a duplicate local component system.
+        changed_files:
+          - research/reference_integrity/mastermind-xpv2-sector-r3b/ORCHESTRATOR_ADJUDICATIONS.md
+          - research/reference_integrity/mastermind-xpv2-sector-r3b/R3C_HANDOFF_DRAFT.md
 
       # ================= VTC-001..010 (source: reviews/visual_taste.yml) =================
       - id: VTC-001
         predecessor_ref: VTC-001
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: blocker; source: reviews/visual_taste.yml] Sticky chrome and automatic hash
-          scrolling visibly occlude the page answer at desktop and mobile widths (second pass:
-          "shareable hashes and immediate answers do not authorize occlusion"). Pending
-          orchestrator adjudication against the frozen R3 candidate -- COMMISSION.md S14 makes
-          the correct scroll-offset behavior a REQUIRED reference behavior this wave, so this
-          item should be directly closeable at candidate freeze rather than merely carried.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: blocker; source: reviews/visual_taste.yml] `QA_ATTACK_REPORT.md` Gate 6
+          (SS1.6) PASSES across 32 measured hash landings: every resolved legacy-anchor target
+          lands clear of the combined 148.8px sticky-chrome bottom (17 anchors at
+          159.5-160.4px, plus 289/671.7px for two others), none sit under sticky chrome, and fix
+          F-6 further reconciled the measured `--ref-sticky-offset` with the value the
+          scroll-margin rules actually consume (FIX_VERIFICATION.md F-6 row;
+          `evidence/hash_evidence.md`).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/runtime_shim.js
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/shell.html
       - id: VTC-002
         predecessor_ref: VTC-002
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
           [severity: blocker, downgraded to major in second pass; source:
-          reviews/visual_taste.yml] The 660px five-lane strip clips labels and hides two action
-          states without a visible continuation affordance (second pass: "local scroll is
-          allowed, but clipping and invisible continuation remain unacceptable"). Pending
-          orchestrator adjudication against the frozen R3 candidate -- COMMISSION.md S8 Sol
-          amendment directly targets this: all five mobile action states must be discoverable
-          without hidden offscreen states.
+          reviews/visual_taste.yml] `QA_ATTACK_REPORT.md` Gate 1 (SS1.1) PASSES: all five
+          action-state labels and counts (including the two states r2 found hidden) are
+          simultaneously visible, stacked full-bleed with zero document overflow at 320px, and
+          `design_notes.md` S4 records the shell's <=767px change explicitly as "repairing the
+          VTC-002 hidden-offscreen defect class" (production's six-tab horizontal scroller
+          replaced with a 3x2 grid, adjudications S3(b)); the visible-control count is a
+          constant 12/12 across every swept width (SS2).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/shell.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
       - id: VTC-003
         predecessor_ref: VTC-003
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: blocker; source: reviews/visual_taste.yml] Proportional columns clip
-          Buy-ready and hide later Confluence states in the default viewport. Pending
-          orchestrator adjudication against the frozen R3 candidate -- COMMISSION.md S13 Sol
-          amendment directly targets this: fixed readable state/count cells, never
-          population-scaled labels.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: blocker; source: reviews/visual_taste.yml] `QA_ATTACK_REPORT.md` Gate 3
+          (SS1.3) PASSES: all five Confluence state names and counts are simultaneously legible
+          at every width 320-1440, and the `.r3-state` label boxes measure by string length
+          only -- byte-identical widths across all four widths regardless of the underlying
+          population (1/16/21/18/9) -- confirming the fixed `repeat(5,minmax(0,1fr))` grid
+          `design_notes.md` S3 describes, never a proportional/population-scaled cell.
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/confluence.html
       - id: VTC-004
         predecessor_ref: VTC-004
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: major; source: reviews/visual_taste.yml] The mobile Map is a shrunken dense
-          desktop SVG in a tall frame rather than a readable mobile instrument. Pending
-          orchestrator adjudication against the frozen R3 candidate -- binds COMMISSION.md S9
-          "Mobile -- required redesign".
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: major; source: reviews/visual_taste.yml] `QA_ATTACK_REPORT.md` Gate 2
+          (SS1.2) PASSES: the phone Map composition is a genuine re-order (answer -> quadrant
+          summary -> selected object -> accessible table -> full plot behind an explicit
+          disclosure at document top 2054px), materially different from the desktop paint order
+          (SVG at top 322, above the quadrants at 871) -- "not a CSS shrink of the desktop
+          stack" in the report's own words, and `responsive_contract.md`'s Map section documents
+          the `grid-template-areas` reorder and the disclosure mechanism driving it.
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/map.html
       - id: VTC-005
         predecessor_ref: VTC-005
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: major; source: reviews/visual_taste.yml] Dynamic Sector rows and supporting
-          LENS labels remain English in ZH mode. Pending orchestrator adjudication against the
-          frozen R3 candidate -- same defect class as MAC-002 below.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: major; source: reviews/visual_taste.yml] The Sector Central portion of this
+          finding (Overview/Explore rows English-only in ZH) is resolved:
+          `QA_ATTACK_REPORT.md` SS3 confirms zero leaked visible `.l-en` strings in generated
+          rows, buttons, or state vocabulary in any of the six views, and fix F-4 replaced the
+          Map reasoning-chain's untranslated layer/tier labels with `LAYER_ZH`/`TIER_ZH` bound
+          from production's own China-sibling twin map, live re-verified at 57/57 + 57/57 leaves
+          carrying CJK with zero leaks (FIX_VERIFICATION.md F-4 row; `copy_ledger.md` SS2). The
+          LENS "Entry T2" untranslated sub-claim (`MASTERMIND_LENS...html:214`) is out of R3B's
+          own route and is NOT addressed by this change -- carried forward under the same
+          reasoning as PRC-008/VTC-009/VTC-010/DAC-008 (ORCHESTRATOR_ADJUDICATIONS.md S9).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/map.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/money.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/confluence.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/moving.html
       - id: VTC-006
         predecessor_ref: VTC-006
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: major; source: reviews/visual_taste.yml] Multiple similarly weighted modules
-          make the mobile Overview read as a compressed dashboard stack (second pass: "module
-          order is accepted; rendered weighting and mobile composition are not"). Pending
-          orchestrator adjudication against the frozen R3 candidate -- binds the Overview
-          "Quiet Conviction" north star, COMMISSION.md S5/S8.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: major; source: reviews/visual_taste.yml] `design_notes.md` S3 documents the
+          Overview mobile composition as an explicit reorder (answer -> board -> leadership
+          context -> Bottoming Watch -> grader, `order:1..5` at `overview.html:204-220`) rather
+          than a shrink, with the inline law "Nothing is removed, and the ledge itself never
+          moves off the top of the object"; `QA_ATTACK_REPORT.md` Gate 1 confirms the five
+          action-lane targets render at a distinct, readable 294x56px each at 320px, not a
+          squeezed dashboard stack.
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
       - id: VTC-007
         predecessor_ref: VTC-007
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: major; source: reviews/visual_taste.yml] The reference hand-builds a third
-          topbar idiom and omits real product affordances (second pass condition: "production
-          must treat the mock topbar as non-binding and keep canonical chrome"). Pending
-          orchestrator adjudication against the frozen R3 candidate -- COMMISSION.md S6 directly
-          forbids reproducing R2's hand-built topbar as design law.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: major; source: reviews/visual_taste.yml] `ORCHESTRATOR_ADJUDICATIONS.md` S3
+          explicitly ratifies the reference's chrome divergences as approved-and-recorded (never
+          silent) and states verbatim "R3C must adjudicate both for production" -- i.e.
+          production must treat this mock topbar as non-binding, exactly the second-pass
+          condition r2's own critic proposed. S10 confirms no production file was modified and no
+          approval.yml was self-issued.
+        changed_files:
+          - research/reference_integrity/mastermind-xpv2-sector-r3b/ORCHESTRATOR_ADJUDICATIONS.md
+          - research/reference_integrity/mastermind-xpv2-sector-r3b/design_notes.md
       - id: VTC-008
         predecessor_ref: VTC-008
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: major; source: reviews/visual_taste.yml] Unicode and emoji-like glyphs read
-          as mockup shorthand rather than restrained instrumentation. Pending orchestrator
-          adjudication against the frozen R3 candidate -- COMMISSION.md S18 directly forbids
-          decorative Unicode stars/emoji/glyphs/lightning badges.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: major; source: reviews/visual_taste.yml] `ORCHESTRATOR_ADJUDICATIONS.md` S4
+          and S5 record CSS-drawn marks replacing production's Unicode glyphs (arrow/triangle
+          marks) on Overview/Confluence and the Map/Moving source-destination connector, and
+          `accessible_alternative_contract.md` SS3.3 confirms the connector is now
+          `aria-hidden` with no decorative role/label at all -- commission S18's ban on
+          decorative Unicode/emoji/lightning badges is honored throughout.
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/map.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/moving.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/shell.html
       - id: VTC-009
         predecessor_ref: VTC-009
         kind: minor
@@ -267,8 +388,10 @@ predecessors:
           an interaction/component specimen (second pass condition: "lawful only when explicitly
           scoped as a component specimen"). Out of R3B's own scope (LENS/intelligence_hub.html is
           a separate surface) but carried forward rather than silently dropped, same reasoning as
-          PRC-008. Pending orchestrator adjudication (ownership: a future LENS/intelligence_hub
-          RIG cycle, not R3B).
+          PRC-008, per ORCHESTRATOR_ADJUDICATIONS.md S9 ("carried as CARRIED_BLOCK with
+          ownership deferred to a future LENS RIG cycle -- not silently dropped"). Pending
+          orchestrator adjudication (ownership: a future LENS/intelligence_hub RIG cycle, not
+          R3B).
       - id: VTC-010
         predecessor_ref: VTC-010
         kind: minor
@@ -277,149 +400,218 @@ predecessors:
           [severity: minor, downgraded further in second pass; source: reviews/visual_taste.yml]
           Mobile sheet title focus is accessible but visually browser-default and unpolished
           (second pass: "the focus destination is correct; only its visual treatment needs
-          repair"). Out of R3B's own scope (LENS is a separate surface) but carried forward.
-          Pending orchestrator adjudication (ownership: a future LENS/intelligence_hub RIG
-          cycle, not R3B).
+          repair"). Out of R3B's own scope (LENS is a separate surface) but carried forward, per
+          ORCHESTRATOR_ADJUDICATIONS.md S9 ("carried as CARRIED_BLOCK with ownership deferred to
+          a future LENS RIG cycle -- not silently dropped"). Pending orchestrator adjudication
+          (ownership: a future LENS/intelligence_hub RIG cycle, not R3B).
 
       # ================= MAC-001..008 (source: reviews/mobile_accessibility.md) =================
       - id: MAC-001
         predecessor_ref: MAC-001
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: BLOCK; source: reviews/mobile_accessibility.md] 200% text zoom breaks core
-          layouts: document-level horizontal overflow and clipped primary names/state labels
-          measured across LENS and every Sector Central view at 320-820px (e.g. Sector Overview
-          320px overflow 87px with all five action labels clipped; Sector Explore 768px overflow
-          401px). Pending orchestrator adjudication against the frozen R3 candidate --
-          COMMISSION.md S17 "200% text zoom -- strengthened requirement" directly targets this.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: BLOCK; source: reviews/mobile_accessibility.md] `FIX_VERIFICATION.md`
+          records live re-probe of every 200%-zoom finding QA2-01 through QA2-05: css320/390/820
+          all measure 0px document overflow post-fix (was +4, +60, +36, +32, +26, +1px plus one
+          clipped primary name), and the post-fix regression sweep states "200%-zoom cells that
+          previously failed: 7/7 now 0px."
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/money.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/explore.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
       - id: MAC-002
         predecessor_ref: MAC-002
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
           [severity: BLOCK for Sector, major for LENS; source: reviews/mobile_accessibility.md]
-          Sector Central ZH is not a bilingual accessible page: #search keeps its English
-          placeholder/aria-label, the Explore empty state stays English, generated product rows
-          and controls leak English text and accessible labels in ZH mode. Pending orchestrator
-          adjudication against the frozen R3 candidate -- COMMISSION.md S17 "Language" ZH-parity
-          requirement, same defect class as VTC-005.
+          The Sector Central portion is resolved: `QA_ATTACK_REPORT.md` SS3 measures zero
+          leaked visible `.l-en` strings across generated rows, buttons, and empty/error states
+          in all six views, and fix QA2-10 made the four reference-authored `aria-label` pairs
+          language-aware, live re-verified to carry CJK under `data-lang=zh`
+          (FIX_VERIFICATION.md QA2-10 row); the Confluence `#cf-q` search placeholder is
+          independently confirmed translated (SS11.4 QA2-10 counter-measurement). The "LENS also
+          leaks English accessibility strings" sub-claim (`#help` aria-label) targets
+          `intelligence_hub.html` and is out of R3B's own route -- not addressed by this change,
+          carried forward under the same reasoning as PRC-008/VTC-009/VTC-010/DAC-008
+          (ORCHESTRATOR_ADJUDICATIONS.md S9).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/confluence.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/explore.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/map.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/moving.html
       - id: MAC-003
         predecessor_ref: MAC-003
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: BLOCK; source: reviews/mobile_accessibility.md] Focusable links include
-          broken or placeholder destinations: LENS #method has no target element; Sector Overview
-          (7), Map (1), Moving (3), Explore (3), and Confluence (10) all carry visible/focusable
-          href="#" placeholder links. Pending orchestrator adjudication against the frozen R3
-          candidate -- COMMISSION.md S19 "Never use href=\"#\"" directly targets this; binds
-          SC-086.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: BLOCK; source: reviews/mobile_accessibility.md] The Sector Central portion
+          (the 24 `href="#"` placeholder links across Overview 7 / Map 1 / Moving 3 / Explore 3
+          / Confluence 10) is resolved: `QA_ATTACK_REPORT.md` SS7 measures zero `a[href="#"]` in
+          all six views (0/0/0/0/0/0), and the per-view destination inventory
+          (`capability_crosscheck.md` row 86) confirms real recorded routes for every anchor. The
+          LENS `.method-link href="#method"` dead destination targets `intelligence_hub.html`
+          and is out of R3B's own route -- not addressed by this change, carried forward under
+          the same reasoning as PRC-008/VTC-009/VTC-010/DAC-008
+          (ORCHESTRATOR_ADJUDICATIONS.md S9).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/map.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/moving.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/explore.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/confluence.html
       - id: MAC-004
         predecessor_ref: MAC-004
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: BLOCK; source: reviews/mobile_accessibility.md] Charts and dense data views
-          lack accessible equivalents: the Map SVG has zero title/desc/focusable points and no
-          data table/list; the Moving cross-table has no caption/aria-label; the Confluence
-          sparkline has an aria-label but no role/title/desc/textual summary. Pending
-          orchestrator adjudication against the frozen R3 candidate -- COMMISSION.md S17 "Chart
-          accessibility" and the Map/Money "Accessible equivalent -- mandatory" clauses directly
-          target this; binds SC-037/039/045/052.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: BLOCK; source: reviews/mobile_accessibility.md] `accessible_alternative_
+          contract.md` SS1/SS2 documents all three mandatory chart equivalents implemented: the
+          Map rotation-map svg gets a `role=img` + `aria-labelledby` name/desc pair plus
+          `table#rvx-board` (with a `<caption>`, same-source fields, no recomputation); the Map
+          sector-cycle-clock svg gets the equivalent treatment plus `table.r3-cyc-tbl`; the Money
+          heatmap gets a `role=img` treemap plus a same-source `<details>` table
+          (`hm-alt-tbl`). Moving's cross-table equivalent (`drawTrackRecord`) was restored by fix
+          F-5 with a live-verified horizons table and verdict ladder (FIX_VERIFICATION.md F-5
+          row). Confluence's population-scaled spread bar (the sparkline-class control) is now
+          cleanly `aria-hidden="true"` (`confluence.html:335`) rather than carrying a misleading
+          label with no data, with the underlying values available as real text in the same row.
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/map.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/moving.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/money.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/confluence.html
       - id: MAC-005
         predecessor_ref: MAC-005
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: MAJOR; source: reviews/mobile_accessibility.md] Invalid ARIA patterns on
-          secondary controls: .panel.distribution and .universe-tabs declare role="tablist" over
-          plain buttons with no role="tab"/aria-selected/aria-pressed; #theme and #lang are
-          stateful controls lacking aria-pressed. Pending orchestrator adjudication against the
-          frozen R3 candidate -- COMMISSION.md S17 "ARIA" ("proper tab semantics for tabs,
-          group/toolbar/pressed semantics for filters/segments") directly targets this.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: MAJOR; source: reviews/mobile_accessibility.md] The candidate's tablists
+          are not faked: Overview's five-lane ledge (formerly `.panel.distribution`) and
+          Confluence's universe tabs (formerly `.universe-tabs`) both declare real
+          `role=tab`/`role=tabpanel`/`aria-selected` children with roving tabindex, live
+          re-verified by fixes QA2-08/QA2-09/QA2-12 (FIX_VERIFICATION.md: "controls resolve to
+          tabpanel; ArrowRight moves focus+selection", "focus stays inside the widget", "0/-1
+          swap verified; Home/End land first/last"). The r2 candidate's stateful `#theme`/`#lang`
+          toggle buttons (the ones lacking `aria-pressed`) do not exist in this reference at all
+          -- the specimen self-bootstrap chrome was dropped rather than carried
+          (ORCHESTRATOR_ADJUDICATIONS.md S3 "Shell integration drops").
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/confluence.html
       - id: MAC-006
         predecessor_ref: MAC-006
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
           [severity: MAJOR, rising to BLOCK if required mobile/tablet journeys; source:
-          reviews/mobile_accessibility.md] Normal-size responsive states still clip/overflow
-          important Sector content without text zoom, e.g. the "IN FAVOUR -- DON'T CHASE" state
-          name clips at 320-430px, Sector Overview 768px overflows 33px, Sector Money overflows
-          138px/68px at 320/390px. Pending orchestrator adjudication against the frozen R3
-          candidate -- COMMISSION.md S17 automated width sweep requirement targets this directly.
+          reviews/mobile_accessibility.md] Every example r2 cited is directly re-swept clean:
+          Gate 1 (`QA_ATTACK_REPORT.md` SS1.1) shows "IN FAVOUR -- DON'T CHASE / 5" fully
+          rendered unclipped at 320px (294x56px, doc overflow 0), and the width-sweep matrix
+          (SS2, 216/216 clean at 100% zoom across 320-1440 x both langs x both themes x all six
+          views, including 768/820) plus `FIX_VERIFICATION.md`'s post-fix sweep ("54/54 cells, 0
+          document overflow") together cover the exact Overview-768, Moving-768, Money-320/390
+          and Explore-768/820 cells r2 measured overflowing.
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/moving.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/money.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/explore.html
       - id: MAC-007
         predecessor_ref: MAC-007
         kind: major
         disposition: CARRIED_BLOCK
         note: >
           [severity: MAJOR / production-proof required; source: reviews/mobile_accessibility.md]
-          Actual touch path and focus trap are not production-proven: CDP touch dispatch was
-          unsupported in the review harness and Tab traversal/focus-trap cycling was unreliable
-          and marked NOT_EVALUABLE, though the LENS mobile sheet showed several correct modal
-          signs. Pending orchestrator adjudication against the frozen R3 candidate --
-          COMMISSION.md S17 requires real keyboard semantics; this item needs real-browser proof
-          the R3B evidence lane must supply, not merely a repeat of the same NOT_EVALUABLE state.
+          The R3B evidence lane repairs the adjacent keyboard-focus defects this finding's own
+          harness flagged as related (QA2-08/QA2-09/QA2-12, live re-verified in
+          FIX_VERIFICATION.md), but the specific evaluability gap MAC-007 names -- CDP
+          `Input.dispatchTouchEvent` unsupported, so real touch-path dispatch is NOT_EVALUABLE --
+          is not overcome by anything in this cycle's evidence pack (`QA_ATTACK_REPORT.md` SS5
+          covers keyboard only, not touch dispatch). Genuinely unresolved, not stretched. Pending
+          orchestrator adjudication against the frozen R3 candidate -- a future evidence lane
+          needs a harness with real touch-event support.
       - id: MAC-008
         predecessor_ref: MAC-008
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: MAJOR; source: reviews/mobile_accessibility.md] Touch targets are below 44px
-          on repeated primary controls: LENS #themeBtn/#langBtn/#help and 9-10 undersized Sector
-          controls at small widths, including the Confluence "Open group ->" link at 40px high
-          under 200% zoom. Pending orchestrator adjudication against the frozen R3 candidate --
-          COMMISSION.md S17 "Touch targets" (>=44 CSS px) directly targets this.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: MAJOR; source: reviews/mobile_accessibility.md] The Sector Central portion
+          is resolved: `QA_ATTACK_REPORT.md` Gate 5 (SS1.5) is a comprehensive 72-cell sweep (6
+          widths x 2 langs x 6 views, every focusable control enumerated) that found only 4
+          failing cells -- the Map universe segmented control at 768/820px -- fixed by QA2-06,
+          live re-verified at 44.0px (FIX_VERIFICATION.md QA2-06 row). The "main tab buttons at
+          40px" claim does not reproduce (Overview's five action-lane targets measure 294x56px,
+          Gate 1); "Open group ->" is not among Gate 5's failing cells. The r2 candidate's
+          `#theme`/`#lang` controls this finding also names do not exist in this reference (see
+          MAC-005 evidence). The LENS `#themeBtn`/`#langBtn`/`#help` sub-claim targets
+          `intelligence_hub.html` and is out of R3B's own route -- not addressed, carried forward
+          under the same reasoning as PRC-008/VTC-009/VTC-010/DAC-008
+          (ORCHESTRATOR_ADJUDICATIONS.md S9).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/shell.html
 
       # ================= DAC-001..008 (source: reviews/data_authority.md) =================
       - id: DAC-001
         predecessor_ref: DAC-001
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: BLOCK; source: reviews/data_authority.md] Sector Central Explore assigns
-          wrong action states, scores, and performance for Memory/HBM/Storage, Health Care,
-          Semicap Equipment, and Data-Center Power & Cooling versus the current
-          action_board.json/sector_central.json producers. CONFIRMED as an accurate critique per
-          ADJUDICATIONS.md (row 7 of capability_disposition_ledger.md independently confirms
-          sector rows must carry the real qualitative stat chip, never an invented blended
-          score). Pending orchestrator adjudication against the frozen R3 candidate -- binds
-          SC-006/007/008.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: BLOCK; source: reviews/data_authority.md] The Explore action-state
+          assignments read directly and exclusively from the embedded producer fixture with zero
+          client-side recomputation -- `capability_crosscheck.md` row 56 confirms "the table
+          reads basketdata/baskets.json from the client fetch only; window.SECTOR_CENTRAL is not
+          consulted", and row 78 confirms zero foreign/mixed rows across the confluence-adjacent
+          surfaces. `capability_disposition_ledger.md` row 7 independently establishes sector
+          rows must carry the real qualitative stat chip, never an invented blended score -- the
+          same fixture-verbatim binding this cycle preserves throughout (adjudications S0:
+          "Fixture stands; no refresh").
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/explore.html
       - id: DAC-002
         predecessor_ref: DAC-002
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: BLOCK; source: reviews/data_authority.md] Health Care context leadership is
-          converted into action authority ("Buy now") when the current XLV payload is conviction
-          23/Reduce/down and the action-board row is on_the_run, not Buy now. CONFIRMED as an
-          accurate critique per ADJUDICATIONS.md (the structural-separation invariant this
-          violates is exactly capability_disposition_ledger.md row 26 / SC-026). Pending
-          orchestrator adjudication against the frozen R3 candidate -- binds SC-024/026.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: BLOCK; source: reviews/data_authority.md] `capability_crosscheck.md` rows
+          24 and 26 structurally prove leadership-context data cannot promote into action
+          authority: "`HND` is never referenced by `laneRows()`, `laneCount()`, `fillLane()` or
+          `REF.renderActNow()`", probed by deleting `si_handoff.json` entirely -- the five action
+          lanes render unchanged (counts 4/5/5/3/27 intact). The Health Care leadership hero and
+          the action board are drawn as structurally independent systems with no shared hue or
+          causal prose (`design_notes.md` S3, commission S7.3).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
       - id: DAC-003
         predecessor_ref: DAC-003
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: BLOCK; source: reviews/data_authority.md] Display-only Bottoming Watch is
-          retitled "Early turns" with "Watch until the entry state upgrades" copy, while
-          baskets.json marks it tier: display / may_rank/gate/size/escalate: false and the action
-          board simultaneously places the same three names on the avoid side. CONFIRMED as an
-          accurate critique per ADJUDICATIONS.md. Pending orchestrator adjudication against the
-          frozen R3 candidate -- binds SC-021/022/023 and COMMISSION.md S8 "Bottoming Watch" naming
-          prohibition (must not become Early Entry / Early Turn Pipeline / Upgrade Watch).
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: BLOCK; source: reviews/data_authority.md] `capability_crosscheck.md` row 22
+          shows current Bottoming Watch copy: title "Bottoming watch/筑底观察", subcopy "cycle
+          lows forming -- watch, don't chase", with an explicit non-predictive null disclosure.
+          `QA_ATTACK_REPORT.md` SS7 (authority masquerade) scanned for the forbidden renames
+          DAC-003 warns against and found zero matches: "exactly 5 lanes... zero forbidden
+          renames; Bottoming Watch renders as 'All 3 rows: cycle turn signal -- watch only -
+          may be bottoming' -- watch-only, nonpredictive, not a sixth lane."
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
       - id: DAC-004
         predecessor_ref: DAC-004
         kind: blocker
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: BLOCK; source: reviews/data_authority.md] Confluence mixes theme rows
-          (Medical Devices, Big Pharma, Gold Miners, Non-AI Software) into the selected S&P 500
-          subsector universe tab, against subsector_confluence.json's actual S&P
-          tailwind/late-headwind rows. Pending orchestrator adjudication against the frozen R3
-          candidate -- COMMISSION.md S13 "Active-universe law -- Never mix rows from another
-          universe" directly targets this; binds SC-063/070.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: BLOCK; source: reviews/data_authority.md] `capability_crosscheck.md` rows
+          63 and 78 confirm zero cross-universe row mixing: the S&P 500 payload is 100%
+          `kind="subsector"` with `anyBasketId=0`, and the Baskets payload is 100%
+          `kind="basket"` -- the "five-part detector's attack surface" the R3A test suite
+          asserts on is preserved intact. `QA_ATTACK_REPORT.md` SS7's foreign-universe probe
+          sums each universe's five state counts against its own total and finds them exact in
+          all four (no leakage, no client re-rank).
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/confluence.html
       - id: DAC-005
         predecessor_ref: DAC-005
         kind: major
@@ -445,24 +637,31 @@ predecessors:
       - id: DAC-006
         predecessor_ref: DAC-006
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: MAJOR; source: reviews/data_authority.md] Action-board counts and lane order
-          are correct (4/5/5/3/27) but exact subcopy is abbreviated and the ZH Stand aside label
-          reads 暂时回避 instead of canonical 观望. CONFIRMED as an accurate critique per
-          ADJUDICATIONS.md. Pending orchestrator adjudication against the frozen R3 candidate --
-          binds SC-002; same defect class as PRC-012 above.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: MAJOR; source: reviews/data_authority.md] Same fix as PRC-012: the
+          candidate's live Stand-aside ledge label reads "Stand aside/观望" -- the canonical ZH
+          string (`capability_crosscheck.md` row 2), replacing the drifted "暂时回避" this
+          finding and PRC-012 both name.
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/overview.html
       - id: DAC-007
         predecessor_ref: DAC-007
         kind: major
-        disposition: CARRIED_BLOCK
-        note: >
-          [severity: MAJOR; source: reviews/data_authority.md] Moving/handoff copy contradicts
-          the current si_handoff.json producer payload (candidate says money moves from Semicap
-          Equipment into Memory/Non-AI hardware; canonical migration is Software/Materials-
-          Mining/Consumer-Defensive absorbing from Semiconductors/Energy, with Memory/HBM/Storage
-          itself the broken trailing leader, not a destination). Pending orchestrator
-          adjudication against the frozen R3 candidate -- binds SC-047.
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          [severity: MAJOR; source: reviews/data_authority.md] `build/DESIGN_SYSTEM_SPEC.md`
+          explicitly forbids "sourcing Moving from anything other than its five artifacts
+          (rotation_events, sector_fragmentation, subsector_rotation, oracle_turn_desk,
+          oracle_tape_onset) -- si_handoff.json is not a Moving source", and
+          `capability_crosscheck.md` row 47 confirms live that `basketdata/si_handoff.json` does
+          NOT appear in the Moving fetch set at all. The Moving handoff/transition copy is
+          rendered exclusively from `marketdata/rotation_events.json`'s own verbatim producer
+          prose (row 44), eliminating the si_handoff-derived leadership-narrative contamination
+          path DAC-007 critiqued.
+        changed_files:
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/views/moving.html
+          - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/DESIGN_SYSTEM_SPEC.md
       - id: DAC-008
         predecessor_ref: DAC-008
         kind: condition
@@ -474,16 +673,30 @@ predecessors:
           candidate's wording correctly fixes. Out of R3B's own scope entirely --
           intelligence_hub.html is a different route/surface from sector_central.html, and this
           item was only carried in r2's artifact set because r2 combined both surfaces under one
-          reference_id. Carried forward rather than silently dropped, per RIG S13.1; ownership
-          for closing this item rests with a future intelligence_hub RIG cycle, not R3B. Pending
-          orchestrator adjudication (scope reassignment, not a candidate fix).
+          reference_id. Carried forward rather than silently dropped, per RIG S13.1 and
+          ORCHESTRATOR_ADJUDICATIONS.md S9 ("carried as CARRIED_BLOCK with ownership deferred to
+          a future LENS RIG cycle -- not silently dropped"); ownership for closing this item
+          rests with a future intelligence_hub RIG cycle, not R3B. Pending orchestrator
+          adjudication (scope reassignment, not a candidate fix).
 
 # -- What this file demonstrates ------------------------------------------------------------
-# 37 of 39 predecessor findings are CARRIED_BLOCK (2 of those, PRC-008 and VTC-009/VTC-010 --
-# three ids across two entries -- and DAC-008, are out of R3B's own route scope and are flagged
-# for future-cycle ownership rather than silently dropped). 2 of 39 (PRC-003 fully, DAC-005's
-# tab-order sub-claim only) are OVERRIDDEN on R3A archaeology evidence that already exists on
-# main. Every id closure obligation is satisfied by an explicit row -- none evaporate between
-# cycles. A CARRIED_BLOCK is not a failure of this artifact; it is the honest state, legally
-# recorded, and it correctly blocks approval (rule_l10: continuity-carried-block-approved) until
-# the R3B candidate and its fresh post-freeze critic wave (COMMISSION.md S27) resolve each one.
+# CONTINUATION PASS RESULT (orchestrator-adjudicated, this revision): of the 39 predecessor
+# findings, 32 are RESOLVED_BY_CHANGE against the frozen R3B candidate, each with concrete
+# evidence citations (QA_ATTACK_REPORT.md gate verdicts, FIX_VERIFICATION.md live re-probes,
+# capability_crosscheck.md rows, copy_ledger.md/responsive_contract.md/accessible_alternative_
+# contract.md, or a specific candidate feature). 2 of 39 (PRC-003 fully, DAC-005's tab-order
+# sub-claim only) remain OVERRIDDEN on the R3A archaeology evidence recorded before this pass
+# and are UNCHANGED by it. 5 of 39 remain CARRIED_BLOCK, honestly: four (PRC-008, VTC-009,
+# VTC-010, DAC-008) target intelligence_hub.html/LENS, a route this cycle never touches
+# (ORCHESTRATOR_ADJUDICATIONS.md S9 names ownership as a future LENS RIG cycle), and one
+# (MAC-007) names a specific evaluability gap -- no real touch-dispatch harness -- that this
+# cycle's evidence pack does not overcome even though it repairs the adjacent keyboard-focus
+# defects the same review flagged. Several RESOLVED_BY_CHANGE rows above are themselves compound
+# (PRC-001, MAC-002, MAC-003, VTC-005, MAC-008): where the original r2 finding named both a
+# Sector Central defect and a LENS/intelligence_hub defect in one id, this pass resolves the
+# Sector Central half with concrete evidence and says so explicitly, while disclosing the LENS
+# half is untouched and out of route -- the same compound-finding honesty the DAC-005 OVERRIDDEN
+# row above established as house practice, applied here to RESOLVED_BY_CHANGE rather than
+# OVERRIDDEN. No id evaporates between cycles; every one of the 39 rows carries an explicit,
+# evidenced disposition (rule_l10: continuity-carried-block-approved no longer applies to the 32
+# resolved rows, and remains correctly enforced against the 5 still-CARRIED_BLOCK rows above).
