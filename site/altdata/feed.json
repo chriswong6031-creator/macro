@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-21T04:24:29.479855+00:00",
+  "generated_utc": "2026-08-21T03:49:09.835073+00:00",
   "as_of": "2026-08-21",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -26895,14 +26895,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "MSFT",
-        "mentions": 25,
-        "sentiment": 0.015
-      },
-      {
         "ticker": "QQQ",
         "mentions": 25,
         "sentiment": 0.074
+      },
+      {
+        "ticker": "MSFT",
+        "mentions": 25,
+        "sentiment": 0.015
       },
       {
         "ticker": "OKLO",
@@ -28641,11 +28641,25 @@
         "last_surprise_pct": 19.5
       },
       {
+        "ticker": "DELL",
+        "next_date": "2026-09-01",
+        "days_to": 11,
+        "eps_forecast": 4.63,
+        "last_surprise_pct": 66.0
+      },
+      {
         "ticker": "MDB",
         "next_date": "2026-09-01",
         "days_to": 11,
         "eps_forecast": 0.08,
         "last_surprise_pct": -50.0
+      },
+      {
+        "ticker": "GTLB",
+        "next_date": "2026-09-01",
+        "days_to": 11,
+        "eps_forecast": null,
+        "last_surprise_pct": 66.7
       },
       {
         "ticker": "AVGO",
@@ -28669,25 +28683,11 @@
         "last_surprise_pct": 2.7
       },
       {
-        "ticker": "GTLB",
-        "next_date": "2026-09-02",
-        "days_to": 12,
-        "eps_forecast": null,
-        "last_surprise_pct": 66.7
-      },
-      {
         "ticker": "SNOW",
         "next_date": "2026-09-02",
         "days_to": 12,
         "eps_forecast": null,
         "last_surprise_pct": -18.6
-      },
-      {
-        "ticker": "DELL",
-        "next_date": "2026-09-03",
-        "days_to": 13,
-        "eps_forecast": 4.63,
-        "last_surprise_pct": 66.0
       },
       {
         "ticker": "DOCU",
@@ -29077,16 +29077,6 @@
         "why": "congress_buy: 2 member(s) net +7 \u00b7 material_8k: 7 material 8-Ks (items 1.01, 2.03, 5.02, 7.01, 8.01)"
       },
       {
-        "ticker": "RTX",
-        "score": 2,
-        "weighted_score": 1.0,
-        "channel_list": [
-          "analyst_upgrade_cluster",
-          "unusual_options"
-        ],
-        "why": "analyst_upgrade_cluster: net upgrades +22 revision delta \u00b7 unusual_options: 4.28\u00d7 vol/OI, call-skew"
-      },
-      {
         "ticker": "WMT",
         "score": 3,
         "weighted_score": 0.95,
@@ -29096,6 +29086,17 @@
           "lobbying"
         ],
         "why": "app_demand: 4.82\u2605 \u00d7 19,003,221 reviews \u00b7 cnbc_pick: Guy Adami \u00b7 lobbying: $2,749,000 lobbied"
+      },
+      {
+        "ticker": "UNP",
+        "score": 3,
+        "weighted_score": 0.95,
+        "channel_list": [
+          "13f_add",
+          "analyst_upgrade_cluster",
+          "special_situation"
+        ],
+        "why": "13f_add: Curated Wealth Partners LLC +$2,030,517,264 \u00b7 analyst_upgrade_cluster: net upgrades +21 revision delta \u00b7 special_situation: Acquisitions"
       }
     ]
   }
