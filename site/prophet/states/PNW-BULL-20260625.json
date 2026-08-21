@@ -10,23 +10,23 @@
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 76.9,
+    "validity": 76.0,
     "progress": 0.0,
     "pace": 90.0,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 64.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.823,
+    "dist_to_stop_r": 0.816,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
     "horizon_pct_used": 15.6,
-    "p1": -0.1179,
-    "p2": -0.059,
+    "p1": -0.1226,
+    "p2": -0.0613,
     "p3": null,
-    "move_r": -0.177,
+    "move_r": -0.184,
     "mfe_r": 0.003,
-    "mae_r": -0.177
+    "mae_r": -0.184
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,7 +40,7 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.020001220703122158,
-  "_mae": -1.2699996948242216,
+  "_mae": -1.320002746582034,
   "_max_p1": 0.0018571235564644535,
   "_first_trigger_ts": "2026-08-13",
   "_first_t1_ts": null,

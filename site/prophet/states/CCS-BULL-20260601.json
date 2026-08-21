@@ -10,21 +10,21 @@
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 97.9,
+    "validity": 90.3,
     "progress": 0.0,
     "pace": 10.1,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.984,
+    "dist_to_stop_r": 0.927,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
     "horizon_pct_used": 51.1,
-    "p1": -0.0106,
-    "p2": -0.0053,
+    "p1": -0.0485,
+    "p2": -0.0243,
     "p3": null,
-    "move_r": -0.016,
+    "move_r": -0.073,
     "mfe_r": 0.021,
     "mae_r": -0.166
   },
