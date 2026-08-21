@@ -34,6 +34,14 @@
 {% set counts = (sga.counts) if (sga is defined and sga is not none and sga.counts is defined and sga.counts is not none) else none %}
 {% set market = (sga.market) if (sga is defined and sga is not none and sga.market is defined and sga.market is not none) else none %}
 {% set asof   = (sga.asof)   if (sga is defined and sga is not none and sga.asof   is defined and sga.asof   is not none) else none %}
+{# Wave 8 observation-truth clock (§1/§2.5) — additive alongside `asof`, which
+   keeps its legacy build-date meaning unchanged. `target_stage_week` is the
+   completed Stage week the whole cross-section is anchored to;
+   `data_session` is the daily source tape behind the CURRENT population;
+   `population` is the current/stale/unknown receipt. #}
+{% set target_stage_week = (sga.target_stage_week) if (sga is defined and sga is not none and sga.target_stage_week is defined and sga.target_stage_week is not none) else none %}
+{% set data_session = (sga.data_session) if (sga is defined and sga is not none and sga.data_session is defined and sga.data_session is not none) else none %}
+{% set population = (sga.population) if (sga is defined and sga is not none and sga.population is defined and sga.population is not none) else none %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -651,8 +659,22 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
       <p class="sub">{{ t('Every stock sorted into one of four seasons — building a base, advancing, topping, or declining. Trend quality, earnings tone, and where the money is rotating, in plain words.', '把每只股票归入四个阶段之一 —— 筑底、上升、见顶、下行。趋势质量、财报语气、资金轮动去向，全用大白话说清。') }}</p>
     </div>
     <div class="asof">
-      {% if asof %}<span class="l-en">Priced <b>{{ asof }}</b></span><span class="l-zh">数据截至 <b>{{ asof }}</b></span>{% endif %}
+      {# Wave 8 §2.5 — the real Stage-week and source-tape clocks replace the
+         retired "Priced <asof>" label. `asof` (build date) may still appear
+         as technical provenance elsewhere, but never labelled "Priced". #}
+      {% if target_stage_week %}
+        <span class="l-en">Stage week ended <b>{{ target_stage_week }}</b>{% if data_session %} · source tape through <b>{{ data_session }}</b>{% endif %}</span>
+        <span class="l-zh">阶段周截至 <b>{{ target_stage_week }}</b>{% if data_session %} · 数据行情至 <b>{{ data_session }}</b>{% endif %}</span>
+      {% elif asof %}
+        <span class="l-en">Build <b>{{ asof }}</b></span><span class="l-zh">构建于 <b>{{ asof }}</b></span>
+      {% endif %}
       <div style="margin-top:3px">{{ t('Weekly stage read', '周线阶段判定') }}</div>
+      {% if population and population.current is not none %}
+        <div class="popreceipt" style="margin-top:3px">
+          <span class="l-en">{{ '{:,}'.format(population.current) }} current · {{ '{:,}'.format(population.stale) }} stale · {{ '{:,}'.format(population.unknown) }} unknown</span>
+          <span class="l-zh">{{ '{:,}'.format(population.current) }} 当前 · {{ '{:,}'.format(population.stale) }} 过时 · {{ '{:,}'.format(population.unknown) }} 未知</span>
+        </div>
+      {% endif %}
     </div>
   </div>
 
@@ -682,6 +704,11 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
           <h2 class="arc-state"><span class="l-en">The market is <span class="accent s3">mixed</span></span><span class="l-zh">市场<span class="accent s3">分化</span></span></h2>
           <p class="arc-stance"><span class="l-en">No clear season — advances and declines roughly balance. <span class="em">Let the strongest names lead; don't force it.</span></span><span class="l-zh">没有明确的季节 —— 上升与下行大致均衡。<span class="em">让最强的股票领路，别硬做。</span></span></p>
           <span class="stancepill watch"><span class="dot"></span>{{ t('Watch — don''t chase', '观察 —— 别追') }}</span>
+        {% elif population and (population.status == 'no_target_week' or population.status == 'unavailable') %}
+          {# Wave 8 §2.4 — a mature-lane failure (SPY unresolved, no current
+             cross-sectional authority) is never described as a first run. #}
+          <h2 class="arc-state mut">{{ t('Stage read unavailable', '阶段判定暂不可用') }}</h2>
+          <p class="arc-stance">{{ t('We could not establish tonight\'s completed stage week, so the market read is withheld rather than shown stale.', '今晚无法确定已完成的阶段周，因此暂不显示市场判读，而不是给出过时数据。') }}</p>
         {% else %}
           <h2 class="arc-state mut">{{ t('Warming up', '正在预热') }}</h2>
           <p class="arc-stance">{{ t('The first stage read runs tonight. The arc fills in once the weekly classification lands.', '首次阶段判定今晚运行。周线分类完成后，曲线即会填充。') }}</p>
@@ -1367,12 +1394,19 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
   }
   function renderBoardProv(){
     var p=qs('#board-prov');if(!p)return;
-    var d=BOARD[boardCadence];var asof=d&&d.asof?d.asof:'';
+    var d=BOARD[boardCadence];
     /* honesty: daily currently mirrors the weekly stage read. */
     var honesty=boardCadence==='daily'
       ? TT('Daily view: the stage read is still the weekly classification — a daily-specific read lands once intraday history is wired.','日线视图：阶段判定目前仍沿用周线分类 —— 待接入日内历史后才有专属的日线判定。')
       : TT('Weekly stage read — the primary Weinstein classification.','周线阶段判定 —— 主要的温斯坦分类。');
-    p.innerHTML=honesty+(asof?' '+TT('Priced '+asof+'.','数据截至 '+asof+'。'):'')+' '+TT('Context only — a stage classification, never a buy signal.','仅供参考 —— 这是阶段分类，绝非买入信号。');
+    /* Wave 8 observation-truth clock (replaces the retired build-date-only
+       label): the completed Stage week the board is anchored to, plus the
+       daily source tape behind it — never the build date alone. */
+    var stageWeek=d&&d.target_stage_week?d.target_stage_week:'';
+    var srcSession=d&&d.population&&d.population.data_session?d.population.data_session:'';
+    var clockEn=stageWeek?('Stage week ended '+stageWeek+(srcSession?' · source tape through '+srcSession:'')+'.'):'';
+    var clockZh=stageWeek?('阶段周截至 '+stageWeek+(srcSession?' · 数据行情至 '+srcSession:'')+'。'):'';
+    p.innerHTML=honesty+(clockEn?' '+TT(clockEn,clockZh):'')+' '+TT('Context only — a stage classification, never a buy signal.','仅供参考 —— 这是阶段分类，绝非买入信号。');
   }
   function selectCadence(c){
     if(c!=='daily')c='weekly';boardCadence=c;
