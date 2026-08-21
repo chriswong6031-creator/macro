@@ -501,3 +501,41 @@ def test_corrupt_or_empty_stagedata_is_not_published(tmp_path):
     assert not (site_dir / "stagedata" / "industry_ranks.json").exists()
     assert (site_dir / "stagedata" / "stage_board_daily.json").exists()
     assert copied == 1
+
+
+# ---------------------------------------------------------------------------
+# Wave 8 §3 — stale-row treatment + the mobile clock overflow fix
+# ---------------------------------------------------------------------------
+def test_stale_rows_get_a_visible_stale_chip_in_the_client():
+    """A stale row must SAY it is stale, not merely lack a rank.
+
+    Browser-verified: SILA renders `stale 2026-06-26` with a rank of `—`. The
+    fields shipped in screener.json from day one, but nothing rendered them —
+    this pins the client wiring so the provenance cannot go dark again.
+    """
+    html = _render_with_fixture()
+    assert "staleChip" in html, "the stale-chip renderer is missing"
+    assert ".staletag{" in html, "the stale-chip style is missing"
+    # Gated on observation currentness, NOT on `source` — those are different
+    # facts and conflating them is the defect this wave exists to fix.
+    assert "row.stage_current!==false" in html
+    assert "Last Stage read" in html
+    assert "最近阶段判定" in html
+    # It must be wired into BOTH row renderers (screener table + stage board).
+    assert html.count("staleChip(r)") >= 2, (
+        "staleChip must be wired into the screener AND the board renderer")
+
+
+def test_hero_clock_can_wrap_on_narrow_viewports():
+    """The Wave 8 clock is far longer than the retired "Priced <date>" label.
+
+    Measured at 375px before the fix: `.asof` scrollWidth 374px inside a 347px
+    `.pghead`, clipping the second date, "Weekly stage read" and "unknown". The
+    nowrap must be lifted on narrow viewports while each clause stays intact.
+    """
+    html = _render_with_fixture()
+    assert "@media (max-width:760px)" in html
+    assert ".pghead .asof{white-space:normal" in html
+    assert ".asof .clk{display:inline-block}" in html
+    # Dates themselves must never break mid-token.
+    assert ".asof b{" in html and "white-space:nowrap}" in html
