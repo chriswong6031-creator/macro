@@ -15,12 +15,7 @@
       "lag_days": 1,
       "state": "fresh"
     },
-    "BIDU": {
-      "asof": "2026-08-20",
-      "lag_days": 1,
-      "state": "fresh"
-    },
-    "KWEB": {
+    "BABA": {
       "asof": "2026-08-20",
       "lag_days": 1,
       "state": "fresh"
@@ -31,6 +26,11 @@
       "state": "fresh"
     },
     "TCOM": {
+      "asof": "2026-08-20",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "KWEB": {
       "asof": "2026-08-20",
       "lag_days": 1,
       "state": "fresh"
