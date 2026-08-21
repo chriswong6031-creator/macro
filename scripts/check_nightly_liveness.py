@@ -377,6 +377,45 @@ MARKET_BOARDS: tuple[dict, ...] = (
         "max_sessions_behind": 3,   # 1 + the +2 weekday-approximation tolerance
         "min_calendar_days": None,
     },
+    # ── GD-4A.1 ledger-freshness entries ────────────────────────────────────────────
+    # A SEPARATE risk plane from the five boards above: the CN/HK risk-radar forward
+    # ledgers (data/risk_radar_intl/{cn,hk}_forward_log.jsonl) that the settled
+    # asia-close lane advances once per session, independent of daily.yml (which does
+    # not bake asia-close at all — see the MARKET_BOARDS module comment on checks A/B).
+    # A run concluding SUCCESS every night proved nothing about these ledgers: a
+    # gate-classifier bug held both stalled for hours on 2026-08-20 with every asia-close
+    # run still green, and the July-August outage ran a MONTH with no independent
+    # instrument watching either file. ``kind: "ledger"`` routes these through
+    # ``_ledger_expected_session`` / ``sessions_between`` instead of the board path's
+    # ``expected_last_session`` / ``sessions_behind`` — the exchange's own settle time
+    # (09:00Z cn / ~09:30Z hk) is HOURS before the asia-close lane's own ~15:17-15:20Z
+    # write, so grading a ledger on the exchange's settle time would call a healthy,
+    # still-in-progress afternoon "behind". ``max_sessions_behind: 0`` is intentional and
+    # correct ONLY paired with the write-window floor: the floor already absorbs the one
+    # legitimate lag (today's row not landed yet, pre-floor), so a ledger reporting ANY
+    # positive lag past the floor is a proven stall, not routine drift.
+    {
+        "market": "cn_ledger",
+        "label": "CN Risk Ledger",
+        "path": "data/risk_radar_intl/cn_forward_log.jsonl",
+        "stamp_known_absent": False,
+        "field": "asof",
+        "calendar": "cn",
+        "max_sessions_behind": 0,
+        "min_calendar_days": 11,   # lib.cn_calendar.MAX_LEGIT_CLOSURE_DAYS — mirrors "cn"
+        "kind": "ledger",
+    },
+    {
+        "market": "hk_ledger",
+        "label": "HK Risk Ledger",
+        "path": "data/risk_radar_intl/hk_forward_log.jsonl",
+        "stamp_known_absent": False,
+        "field": "asof",
+        "calendar": "hk",
+        "max_sessions_behind": 0,
+        "min_calendar_days": None,   # mirrors "hk" — HKEX's table is not deliberately minimal
+        "kind": "ledger",
+    },
 )
 
 
@@ -473,9 +512,9 @@ def _market_calendar(name: str):
     return __import__(module, fromlist=["sessions_behind"])
 
 
-def _holiday_in_gap(cal, stamp: date, now: datetime) -> bool:
+def _holiday_in_gap(cal, stamp: date, end: date) -> bool:
     """Does the market's calendar place a scheduled weekday closure between ``stamp`` and
-    the session we expect?
+    ``end`` (the session we expect)?
 
     This is what narrows the mainland's calendar-day floor from "always on" to "only
     inside a closure window".  The floor exists to absorb PHANTOM sessions — weekdays
@@ -484,14 +523,77 @@ def _holiday_in_gap(cal, stamp: date, now: datetime) -> bool:
     exchange is shut.  Outside a holiday window there is nothing for the floor to excuse,
     so the mainland pages at the same 2 sessions as everyone else instead of waiting 12
     calendar days.  Measured against the 2026-08-14 freeze shape: 2026-08-26 -> 2026-08-19.
+
+    ``end`` is caller-supplied rather than derived from ``now`` here so the SAME probe
+    serves both grading rules this module has: a JSON board's ``end`` is the market's own
+    ``expected_last_session(now)``; a ledger's ``end`` is the write-window-floor session
+    from ``_ledger_expected_session`` (see the ``kind: "ledger"`` MARKET_BOARDS entries)
+    — the two are deliberately different instants and neither belongs inside this probe.
     """
-    end = cal.expected_last_session(now)
     day = stamp
     while day < end:
         day += timedelta(days=1)
         if day.weekday() < 5 and day in cal.holidays(day.year):
             return True
     return False
+
+
+#: How late an asia-close ledger write may legitimately still be pending before the
+#: guard requires it.  The lane's advance commit lands ~15:17-15:20Z on a settled
+#: session day (GD-4A receipt: commit baf4cf7c9291 at 15:17:04Z, run window
+#: 13:29->15:20Z); 17:00Z leaves ~1h40m of margin.  Deliberately NOT the market's own
+#: settle time (lib/cn_calendar and lib/hk_calendar flip to "today" at their own close
+#: plus a settle buffer — 09:00Z / ~09:30Z) — that would call a healthy, still-
+#: in-progress afternoon "behind" hours before the asia-close lane even runs.
+_LEDGER_WRITE_WINDOW_FLOOR_UTC = time(17, 0)
+
+
+def _ledger_expected_session(cal, now: datetime) -> date:
+    """The session a risk-forward ledger's newest row should carry, per the write-window
+    floor above.
+
+    Consequences this function exists to guarantee (pinned by
+    tests/test_nightly_liveness.py):
+      * Before the floor (the 08:00Z and 14:00Z liveness looks) the expectation is always
+        the PREVIOUS completed session — a healthy day's write for TODAY may simply not
+        have landed yet, and that must never alarm.
+      * From the floor onward (the 20:00Z look), on a session day the expectation becomes
+        the CURRENT session — a write still missing this late is a stall, not a long bake.
+      * A non-session ``today`` (weekend or a scheduled market holiday) resolves to the
+        prior session regardless of the clock, so it can never manufacture a breach.
+    """
+    now_utc = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    now_utc = now_utc.astimezone(timezone.utc)
+    today = now_utc.date()
+    if cal.is_session(today) and now_utc.time() >= _LEDGER_WRITE_WINDOW_FLOOR_UTC:
+        return today
+    return cal.last_session_on_or_before(today - timedelta(days=1))
+
+
+def _load_ledger_tail(path: Path) -> "dict | None":
+    """Newest row of a risk-forward-ledger JSONL file: the last non-blank line, parsed.
+
+    Robust to a trailing newline and to blank lines a writer left at the end of the
+    file.  Missing file, empty file, and an unparsable or non-dict tail row all resolve
+    to None — the SAME blindness contract ``load_index`` uses for the JSON boards:
+    reported as a named ``::warning`` (INDETERMINATE), never a silent green and never a
+    page on data this guard could not actually read (VERDICT DISCIPLINE, module
+    docstring).
+    """
+    try:
+        text = path.read_text()
+    except OSError:
+        return None
+    for line in reversed(text.splitlines()):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:
+            return None
+        return row if isinstance(row, dict) else None
+    return None
 
 
 def evaluate_market_boards(
@@ -520,19 +622,25 @@ def evaluate_market_boards(
     facts["boards"] = states
     for spec in MARKET_BOARDS:
         market, label, path = spec["market"], spec["label"], spec["path"]
+        # "board" (a rendered site/factordata/*.json index) or "ledger" (a raw
+        # data/risk_radar_intl/*.jsonl forward log, GD-4A.1). Only the grading rule and
+        # the message wording differ; the blindness/warn/fail plumbing is shared.
+        kind = spec.get("kind", "board")
+        noun = "ledger" if kind == "ledger" else "board"
         state: dict[str, Any] = {"as_of": None, "behind": None}
         states[market] = state
 
         payload = boards.get(market)
-        # isinstance, not `is None`: load_index already maps a non-dict artifact to None,
-        # but this is a PURE function and its blindness contract must hold for every
-        # caller. A board that becomes a JSON array would otherwise raise here — and a
-        # traceback out of a dead-man switch is a page about the wrong thing.
+        # isinstance, not `is None`: load_index/_load_ledger_tail already map an
+        # unreadable artifact to None, but this is a PURE function and its blindness
+        # contract must hold for every caller. A board that becomes a JSON array would
+        # otherwise raise here — and a traceback out of a dead-man switch is a page
+        # about the wrong thing.
         if not isinstance(payload, dict):
             warn.append(
-                f"INDETERMINATE [{label}]: {path} is absent or unreadable — this market "
-                "is UNGRADED, not green. If the path is right, check the lane's "
-                "sparse-checkout list."
+                f"INDETERMINATE [{label}]: {path} is absent or unreadable — this "
+                f"{noun} is UNGRADED, not green. If the path is right, check the "
+                "lane's sparse-checkout list."
             )
             continue
 
@@ -543,9 +651,9 @@ def evaluate_market_boards(
             if spec["stamp_known_absent"]:
                 warn.append(
                     f"INDETERMINATE [{label}]: {path} carries no usable "
-                    f"{spec['field']} ({raw!r}). This board has NEVER carried one — see "
-                    "MARKET_BOARDS — so it is a standing, named blind spot rather than "
-                    "a new fault. It is not graded and must not be read as healthy."
+                    f"{spec['field']} ({raw!r}). This {noun} has NEVER carried one — "
+                    "see MARKET_BOARDS — so it is a standing, named blind spot rather "
+                    "than a new fault. It is not graded and must not be read as healthy."
                 )
             else:
                 # NOT blindness, and this distinction is the whole point. Blindness is
@@ -558,22 +666,33 @@ def evaluate_market_boards(
                 # publishes a null stamp: without this branch, check D would go quiet on
                 # the exact market it was written for and read green forever.
                 fail.append(
-                    f"BOARD PUBLISHED WITHOUT A STAMP [{label}]: {path} is readable but "
-                    f"carries no usable {spec['field']} ({raw!r}). Its producer stopped "
-                    "stating which session the board is for, which silences every "
-                    "freshness instrument for this market — a regression, not blindness."
+                    f"{noun.upper()} PUBLISHED WITHOUT A STAMP [{label}]: {path} is "
+                    f"readable but carries no usable {spec['field']} ({raw!r}). Its "
+                    f"producer stopped stating which session the {noun} is for, which "
+                    "silences every freshness instrument for this market — a "
+                    "regression, not blindness."
                 )
             continue
 
         try:
-            behind = _market_calendar(spec["calendar"]).sessions_behind(stamp, now)
+            cal = _market_calendar(spec["calendar"])
+            if kind == "ledger":
+                # Custom write-window boundary, NOT the market's own settle time — see
+                # _ledger_expected_session for why the two must not be conflated.
+                expected = _ledger_expected_session(cal, now)
+                behind = cal.sessions_between(stamp, expected)
+            else:
+                expected = cal.expected_last_session(now)
+                behind = cal.sessions_behind(stamp, now)
         except Exception as exc:  # noqa: BLE001 — a broken calendar blinds ONE market
             warn.append(
                 f"INDETERMINATE [{label}]: {spec['calendar']} calendar unusable "
-                f"({exc!r}); this market is ungraded"
+                f"({exc!r}); this {noun} is ungraded"
             )
             continue
         state["behind"] = behind
+        if kind == "ledger":
+            state["expected_session"] = expected.isoformat()
 
         budget = spec["max_sessions_behind"]
         if behind <= budget:
@@ -586,13 +705,12 @@ def evaluate_market_boards(
             # closure window: a broken holiday probe falls back to applying it, because
             # blindness must never manufacture a page.
             try:
-                in_closure = _holiday_in_gap(
-                    _market_calendar(spec["calendar"]), stamp, now)
+                in_closure = _holiday_in_gap(cal, stamp, expected)
             except Exception:  # noqa: BLE001 — a broken probe suppresses, never pages
                 in_closure = True
             if in_closure:
                 warn.append(
-                    f"INDETERMINATE [{label}]: board is {behind} sessions behind "
+                    f"INDETERMINATE [{label}]: {noun} is {behind} sessions behind "
                     f"({stamp.isoformat()}), only {(now.date() - stamp).days} calendar "
                     f"days old, and a scheduled exchange closure falls in that gap — "
                     f"inside the {floor}-day longest-legitimate-closure floor, so this "
@@ -600,12 +718,22 @@ def evaluate_market_boards(
                 )
                 continue
 
-        fail.append(
-            f"STALE BOARD [{label}]: {path} still reads {spec['field']}="
-            f"{stamp.isoformat()}, {behind} completed {spec['calendar'].upper()} "
-            f"sessions behind (limit {budget}). The board was re-rendered but did not "
-            "advance — a green lane and a fresh git mtime both look exactly like this."
-        )
+        if kind == "ledger":
+            fail.append(
+                f"LEDGER STALLED [{label}]: {path} newest row asof={stamp.isoformat()}, "
+                f"{behind} completed {spec['calendar'].upper()} session(s) behind the "
+                f"expected session {expected.isoformat()} (write-window floor "
+                "17:00Z). The asia-close lane did not advance this ledger for its "
+                "owed session."
+            )
+        else:
+            fail.append(
+                f"STALE BOARD [{label}]: {path} still reads {spec['field']}="
+                f"{stamp.isoformat()}, {behind} completed {spec['calendar'].upper()} "
+                f"sessions behind (limit {budget}). The board was re-rendered but did "
+                "not advance — a green lane and a fresh git mtime both look exactly "
+                "like this."
+            )
 
     return fail, warn, facts
 
@@ -856,8 +984,17 @@ def load_index(path: Path) -> "dict | None":
 def load_market_boards(root: Path) -> "dict[str, dict | None]":
     """Every MARKET_BOARDS artifact, parsed.  Unreadable -> None (that market goes
     INDETERMINATE); the key is ALWAYS present so a market can never be silently dropped
-    from the registry by a read failure."""
-    return {spec["market"]: load_index(root / spec["path"]) for spec in MARKET_BOARDS}
+    from the registry by a read failure.  ``kind: "ledger"`` entries read the newest row
+    of a JSONL forward log (``_load_ledger_tail``); every other entry reads a whole-file
+    JSON board index (``load_index``), unchanged from before GD-4A.1."""
+    out: "dict[str, dict | None]" = {}
+    for spec in MARKET_BOARDS:
+        path = root / spec["path"]
+        if spec.get("kind") == "ledger":
+            out[spec["market"]] = _load_ledger_tail(path)
+        else:
+            out[spec["market"]] = load_index(path)
+    return out
 
 
 def _notify(report: dict) -> None:
@@ -1097,7 +1234,9 @@ def _selftest() -> int:
                  boards={"us": None, "cn": None, "hk": None,
                          "ca": {"as_of": "2026-08-17"}, "intl": {"as_of": None}})
     _check("D/blind-markets-never-breach", r["ok"], True)
-    assert len([w for w in r["warnings"] if "INDETERMINATE [" in w]) == 4, r
+    # 4 board-level blind markets (us, cn, hk, intl) + 2 ledger entries absent from this
+    # fixture's ``boards`` dict entirely (cn_ledger, hk_ledger) = 6.
+    assert len([w for w in r["warnings"] if "INDETERMINATE [" in w]) == 6, r
     assert r["facts"]["boards"]["ca"]["behind"] == 0, r
 
     # ...but an artifact we CAN read that publishes no stamp is a producer regression,
@@ -1120,6 +1259,72 @@ def _selftest() -> int:
     r = evaluate(healthy_runs, d_index, d_now)
     _check("D/not-requested-is-silent", r["ok"], True)
     assert "boards" not in r["facts"], r
+
+    # ── GD-4A.1: CN/HK risk-forward-ledger freshness ────────────────────────
+    # 2026-08-20 (Thu) and 2026-08-19 (Wed) are both ordinary CN/HK trading days —
+    # no weekend, no calendar holiday in between. Session D = 08-20, session D-1 = 08-19.
+    # The daily.yml (US/NYSE) backdrop is held constant and healthy across all three
+    # liveness looks on 08-20 (checks A/B/C are not this section's subject) —
+    # expected_fire_after resolves to NYSE session 08-19 at 08:00Z/14:00Z/20:00Z alike,
+    # since NYSE's own settle boundary has not yet passed at any of those UTC hours.
+    led_healthy_runs = [{"created_at": "2026-08-19T22:30:00Z", "status": "completed",
+                          "conclusion": "success"}]
+    led_index = {"source_asof": "2026-08-19"}
+
+    # Healthy day, no alarm at ANY of the three liveness looks. Before the 17:00Z
+    # write-window floor the ledger legitimately still carries D-1's row; at/after
+    # the floor it carries D's.
+    for hour, asof in ((8, "2026-08-19"), (14, "2026-08-19"), (20, "2026-08-20")):
+        now_h = datetime(2026, 8, 20, hour, 0, tzinfo=timezone.utc)
+        r = evaluate(led_healthy_runs, led_index, now_h,
+                     boards={"cn_ledger": {"asof": asof}, "hk_ledger": {"asof": asof}})
+        _check(f"ledger/healthy-{hour:02d}Z-no-alarm", r["ok"], True)
+        assert r["facts"]["boards"]["cn_ledger"]["behind"] == 0, r
+
+    # Pre-floor hours (08:00Z, 14:00Z) always expect the PREVIOUS session; 20:00Z (past
+    # the floor) expects the CURRENT one. Pin the expected_session fact directly so this
+    # law is provable independent of whether the write happened.
+    for hour, expected in ((8, "2026-08-19"), (14, "2026-08-19"), (20, "2026-08-20")):
+        now_h = datetime(2026, 8, 20, hour, 0, tzinfo=timezone.utc)
+        r = evaluate(led_healthy_runs, led_index, now_h,
+                     boards={"cn_ledger": {"asof": "2026-08-19"},
+                             "hk_ledger": {"asof": "2026-08-19"}})
+        assert r["facts"]["boards"]["cn_ledger"]["expected_session"] == expected, (
+            hour, r["facts"]["boards"]["cn_ledger"])
+
+    # A silent stall — D's row never lands — must alarm no later than the SAME
+    # session's 20:00Z check. 08:00Z/14:00Z stay quiet (the write is not owed yet).
+    stall_boards = {"cn_ledger": {"asof": "2026-08-19"}, "hk_ledger": {"asof": "2026-08-19"}}
+    for hour in (8, 14):
+        now_h = datetime(2026, 8, 20, hour, 0, tzinfo=timezone.utc)
+        r = evaluate(led_healthy_runs, led_index, now_h, boards=stall_boards)
+        _check(f"ledger/stall-quiet-before-{hour:02d}Z", r["ok"], True)
+    now_20 = datetime(2026, 8, 20, 20, 0, tzinfo=timezone.utc)
+    r = evaluate(led_healthy_runs, led_index, now_20, boards=stall_boards)
+    _check("ledger/stall-alarms-at-20Z", r["ok"], False)
+    stalled = [f for f in r["fail_reasons"] if "LEDGER STALLED" in f]
+    assert len(stalled) == 2, r["fail_reasons"]
+    assert any("[CN Risk Ledger]" in f for f in stalled), stalled
+    assert any("[HK Risk Ledger]" in f for f in stalled), stalled
+
+    # Weekend quiet: Saturday resolves to Friday's session at every hour, so a ledger
+    # holding Friday's row never alarms over the weekend.
+    sat = datetime(2026, 8, 22, 20, 0, tzinfo=timezone.utc)
+    r = evaluate([{"created_at": "2026-08-21T22:30:00Z", "status": "completed",
+                   "conclusion": "success"}], {"source_asof": "2026-08-21"}, sat,
+                 boards={"cn_ledger": {"asof": "2026-08-21"},
+                         "hk_ledger": {"asof": "2026-08-21"}})
+    _check("ledger/weekend-quiet", r["ok"], True)
+
+    # Mainland long-closure floor: same Golden Week shape as the board check above, now
+    # applied to the ledger. cn_ledger carries the min_calendar_days=11 floor; hk_ledger
+    # (min_calendar_days=None) has no such floor and would page on the same input.
+    gw_stall = {"cn_ledger": {"asof": "2026-09-28"}, "hk_ledger": {"asof": "2026-09-28"}}
+    r = evaluate(gw_runs, {"source_asof": "2026-10-08"}, gw_now, boards=gw_stall)
+    _check("ledger/mainland-holiday-floor-suppresses-cn-only", r["ok"], False)
+    assert any("longest-legitimate-closure floor" in w and "[CN Risk Ledger]" in w
+               for w in r["warnings"]), r["warnings"]
+    assert any("LEDGER STALLED [HK Risk Ledger]" in f for f in r["fail_reasons"]), r
 
     print("nightly-liveness selftest: " + ("PASS" if ok else "FAIL"), flush=True)
     return 0 if ok else 1
