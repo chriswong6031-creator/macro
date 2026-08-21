@@ -43,7 +43,11 @@ Stores (parquet via pandas, keep-first dedupe on the declared key):
 - Lane A (same-population rank pairs):  `data/prophet_shadow/{hk,ca}_rank_pairs.parquet`
   key: (date, ticker, challenger_definition), keep-first.
 - Lane B (discovery observations):      `data/prophet_shadow/{hk,ca}_discovery.parquet`
-  key: (session_date, security_ref, challenger_definition), keep-first.
+  key: (session_date, security_ref, security_ref_raw, challenger_definition),
+  keep-first. (security_ref_raw was added to the key by post-build review
+  finding M4 — without it, the next session's keep-first merge silently
+  destroyed one of two collision rows the collision counter had just sworn to
+  preserve; see the clarifications block below.)
 
 Single accreting file per market/lane (volume ≤ ~20 rows/session/challenger; the
 US monthly-partition rationale — 3-14 GB/yr — does not apply at this volume).
@@ -357,6 +361,12 @@ CLARIFICATIONS of the frozen text above, not design changes — nothing here
 alters what §§1-6 require; each note either resolves an ambiguity the build
 exposed or documents a deliberate, reviewed departure from the literal text.
 
+- **M4 (design amendment, reviewed)** — `_LANE_B_KEY` includes
+  `security_ref_raw` (the §1 key line above now reflects this). The narrower
+  key could not represent two raw refs canonicalizing to one security_ref:
+  keep-first on the next session's merge silently dropped the second
+  collision row after ref_collision_n had counted it. K9's kill now asserts
+  both collision rows survive a later-session merge.
 - **n1** — "`_SCHEMA_B`" in §1/§3 is realized in code as `schema_b()`, a
   function of `FAMILY_REGISTRY` (fixed columns + registered families),
   because the schema is only fully known once families are registered. There
