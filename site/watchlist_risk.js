@@ -2409,7 +2409,20 @@
     loadChains().then(function () { scheduleDecorate(); });
     // 1) recompute the book whenever the FX layer republishes weights
     document.addEventListener('fx-weights', function (e) { recomputeBook(e.detail); });
-    // 2) first read: pull current weights if the FX panel already resolved them
+    // 2) first read: pull current weights if the FX panel already resolved them.
+    // F3 (adversarial review, MINOR — documenting a pre-existing accident): this
+    // branch is DEAD on a typical page load. `window.FX` (factor_exposure.js)
+    // exists as a MODULE the instant it is required, but its `CUR.prov` stays
+    // `null` (F3's own fix, factor_exposure.js's initial CUR literal) until the
+    // FIRST real CUR assignment — a render() triggered by some consumer's
+    // FX.update()/setAutoWeights() call, which has not necessarily happened yet
+    // when THIS init() runs. `currentWeights()` therefore hands back `prov: null`
+    // here more often than not, and recomputeBook()'s own self-check (below)
+    // aborts on a null prov exactly like it aborts on any other unstampable
+    // read — this bootstrap call was already effectively a no-op before LAW 3,
+    // this only makes the no-op fail-closed and load-bearing instead of dead by
+    // accident. The REAL first read arrives via the `fx-weights` listener above
+    // once a producer actually mints one.
     if (window.FX && window.FX.currentWeights) recomputeBook(window.FX.currentWeights());
     // LAW 3: no window.FX at all — there is no real producer to mint provenance, so
     // this synthetic bootstrap weights object carries the same fail-closed gen:-1

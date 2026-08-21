@@ -2332,6 +2332,19 @@
         // user's first read must never inherit the previous identity's risk
         // payload (foreign-keyed or not) via this file's mode render.
         if (window.PF && window.PF.resetBookRisk) window.PF.resetBookRisk();
+        // F2 (adversarial review, MAJOR): LAW 3's mint reads window.WS.prov() LIVE
+        // at factor_exposure.js's render() time, and render() reads AUTO_W LIVE too
+        // — so a POST-boundary re-derivation (FX.refresh(), reachable via the
+        // lang-btn click listener at factor_exposure.js:~410, or any other event
+        // that re-renders the FX panel without a fresh push) re-mints the
+        // PRE-boundary universe under the CURRENT (post-boundary) gen and is
+        // ACCEPTED — provenance binds the MOMENT of derivation, not the DATA.
+        // AUTO_W (portfolio.js's dollar-weighted push) is a RETAINED LATCH the
+        // boundary above never invalidates on its own (DSC:MARKET-OS-FX-UNIVERSE-
+        // IS-AN-UNOWNED-LATCH); clear it the same honest-empty way every other
+        // boundary in this codebase already does, BEFORE render() below can pick
+        // up a re-render request that would otherwise re-mint the retained book.
+        if (window.FX && window.FX.setAutoWeights) window.FX.setAutoWeights({});
         render();
       }
       lastAuthIdentity = uid;

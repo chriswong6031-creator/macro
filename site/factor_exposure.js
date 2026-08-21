@@ -243,6 +243,7 @@
         var res = document.getElementById('fx_results');
         if (a.ok && res) res.innerHTML = resultsInner(a, DATA);  // editor untouched → focus kept
         // manual weight edit only fires in non-auto mode; keep the WRI layer in sync
+        // manual weight edit only fires in non-auto mode; keep the WRI layer in sync
         CUR = { universe: LAST.slice(), wmap: w, mode: 'manual', prov: curProv(pfMode() ? 'portfolio' : 'watchlist') };
         announceWeights();
       });
@@ -255,7 +256,11 @@
   // of truth watchlist_risk.js (the WRI book-structure layer) reuses so the two
   // never fork. { universe, wmap, mode }; mode 'auto' = portfolio dollar values,
   // 'manual' = the local weight editor / equal-weight fallback.
-  var CUR = { universe: [], wmap: {}, mode: 'manual' };
+  // F3 (adversarial review, MINOR): the initial literal is never a real
+  // derivation — no CUR assignment has run yet — so it carries no provenance
+  // (`prov: null`), matching curProv()'s own fail-closed contract rather than
+  // leaving the field silently `undefined` until the first real mint.
+  var CUR = { universe: [], wmap: {}, mode: 'manual', prov: null };
   /* LAW 3 (A1A round-3, Sol P0 — risk provenance): stamp EVERY CUR assignment with
      the scope+generation active at the exact moment the universe is resolved —
      never re-derived later. `pfMode()` is already this file's own answer to "which
