@@ -3,6 +3,27 @@ key: MARKET-OS-FX-UNIVERSE-IS-AN-UNOWNED-LATCH
 workstream: "WS:MARKET-OS"
 date: 2026-08-21
 session: market-os-macro-merge-1bc993
+claim: >
+  The watchlist page's risk chain holds derived state in module-level latches
+  with no single owner (factor_exposure LAST/AUTO_W, watchlist_risk LAST_READ,
+  watchlist RISK, portfolio BOOK/RISK_SHARES); nothing invalidated them at the
+  mode or auth-identity boundary, and setAutoWeights(null) means "revert to the
+  last-fed universe" — so a zero-position Portfolio rendered the Watchlist's
+  concentration read, and user A's book could repaint under user B after a
+  same-page sign-in. Any surface added to this chain must push honest-empty {}
+  (never null), invalidate retained payloads at every mode/identity boundary,
+  and validate cross-module payloads against its own universe before repainting.
+kind: constraint
+verified_at: 2026-08-20
+verified_by: >
+  Executed browser reproductions and node proofs during the A1A closure:
+  scratchpad dbg harness repro2/repro3 (stale Concentration tab: 6 watchlist
+  names at 21%/20%/18% in a zero-position Portfolio), reviewer proofA/proofB2
+  (RISK latch across sign-out/sign-in), proofF/proofF2 (foreign payload
+  repainting 11 Portfolio surfaces with a false coverage sentence), proofE/proofH
+  (layers individually load-bearing). Fixed by #6102 + #6136 (2633380f800a).
+scope: repo:macro templates/{factor_exposure,watchlist_risk,watchlist,portfolio}.js
+confidence: verified
 falsifier: >
   Show a code path on current main where, with the mode gates and boundary
   resets removed, a surface can NOT end up rendering another surface's (or

@@ -22,7 +22,7 @@ waves:
     next_action: Merge the records PR; do not start runtime work from the records branch.
   - id: A1A
     title: Portfolio Population Truth + State Authority
-    status: in_review
+    status: in_progress
     depends_on: [M0]
     next_action: >
       Engineering closed and live 2026-08-21: #6098 (initial wave), #6109 (serving
