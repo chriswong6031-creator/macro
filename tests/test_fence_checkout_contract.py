@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 import yaml
@@ -7,6 +8,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "fences.yml"
+CANARY_CONTRACT_PATH = ROOT / "tests" / "test_ci_canary_workflows.py"
 
 
 def _document() -> dict:
@@ -17,6 +19,16 @@ def _named_step(job: dict, name: str) -> dict:
     matches = [step for step in job["steps"] if step.get("name") == name]
     assert len(matches) == 1, (name, [step.get("name") for step in job["steps"]])
     return matches[0]
+
+
+def _load_canary_contract_module():
+    spec = importlib.util.spec_from_file_location(
+        "fence_owned_ci_canary_contract", CANARY_CONTRACT_PATH
+    )
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_same_repo_fence_checkout_is_bounded_sparse_and_blob_filtered() -> None:
@@ -73,3 +85,18 @@ def test_self_mod_fence_suite_pins_checkout_contract() -> None:
     suite = _named_step(job, "self-mod-fence test suite")["run"]
     assert "tests/test_self_mod_fence.py" in suite
     assert "tests/test_fence_checkout_contract.py" in suite
+
+
+def test_hosted_merge_control_canary_contract_executes_in_fast_fence() -> None:
+    """Reuse the canonical W1-A assertions inside the always-on PR fence.
+
+    ``workflow-yaml`` also names ``test_ci_canary_workflows.py``, but that logical
+    job is ``gate: data`` and therefore is not a PR merge precondition. Loading the
+    canonical module here makes the hosted-canary safety contract execute in the
+    already-required ``fence-pack`` without copying the assertions or adding a
+    parallel CI workflow.
+    """
+
+    contract = _load_canary_contract_module()
+    contract.test_canaries_are_dispatch_only_and_not_merge_authority()
+    contract.test_merge_control_hosted_canary_is_read_only_main_pinned_and_non_acting()
