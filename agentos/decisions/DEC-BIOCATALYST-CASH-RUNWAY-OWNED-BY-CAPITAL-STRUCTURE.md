@@ -19,10 +19,11 @@ rationale: >
   financing survival). A BioCatalyst-local computation would duplicate both —
   a second accounting-facts reader and a second projection engine — and would
   drift from the canonical one the first time either plane's methodology
-  moved. The P1-0 capability ledger recorded exactly this gap (row 12,
-  NOT_BUILT — blocked on plane-authority ruling): the blocked state was
-  correct, and the unblock is this ownership assignment, not a local
-  workaround. The dossier and radar surfaces get runway context the same way
+  moved. The P1-0 capability ledger recorded exactly this gap (row 15,
+  SPEC_ONLY — runway a named non-capability of capital_structure; the §4
+  Burn/Runway job's missing edge was an owner-plane decision): the blocked
+  state was correct, and the unblock is this ownership assignment, not a
+  local workaround. The dossier and radar surfaces get runway context the same way
   they get identity: consumed with provenance from the owning plane.
 alternatives:
   - option: BioCatalyst computes runway locally from raw observations
@@ -44,7 +45,7 @@ alternatives:
       shortcut under delivery pressure.
 evidence:
   - "Sol P1-0R authority-closure directive, 2026-08-20 §4"
-  - "research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md §3 row 12 (NOT_BUILT — blocked on plane-authority ruling), §11.4 (question as returned to Sol)"
+  - "research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md §3 row 15 (SPEC_ONLY, runway a named non-capability of capital_structure) and §4 Burn/Runway job, §11.4 (question as returned to Sol; both now carry the ownership-resolved wording post-P1-0R)"
   - "cash_runway named non-capability of capital_structure; BC-C2 adapter refuses it (P1-0 census, architecture doc §4 Burn/Runway row)"
 affects:
   - "biocatalyst"

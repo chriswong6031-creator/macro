@@ -16,14 +16,19 @@ class: build
 blast_radius: user_facing
 ambiguity: specified
 owns_paths:
-  - engine/biocatalyst/**
   - app/biocatalyst.py
   - templates/biocatalyst.html.j2
   - templates/biocatalyst.js
   - templates/biocatalyst.css
   - site/biocatalyst.js
   - site/biocatalyst.css
-  - tests/test_biocatalyst_*
+  - tests/test_biocatalyst_api.py
+  - tests/test_biocatalyst_page.py
+  - tests/test_biocatalyst_d0a_design_contract.py
+  - tests/test_biocatalyst_d0b_ui.py
+  - tests/test_biocatalyst_hydration.py
+  - tests/biocatalyst_hydration_harness.js
+  - tests/test_biocatalyst_peer_api_contract.py
   - research/BIOCATALYST_P1_*
   - agentos/workstreams/WS-BIOCATALYST-CORE-PRODUCT.md
   - agentos/handoffs/BIOCATALYST-CORE-PRODUCT-*
@@ -48,6 +53,15 @@ decisions:
   - "DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE"
   - "DEC:BIOCATALYST-RECOVERY-V2-CORE-NOT-JV-OR-BCI"
 landmines:
+  - >-
+    Ownership is narrow by Sol order (P1-0R review): this workstream does NOT
+    own engine/biocatalyst/** or a blanket tests/test_biocatalyst_* claim —
+    those globs include source/publication/history/storage/regulatory and
+    source-soak surfaces owned elsewhere. Owned tests are the product-facing
+    files enumerated in owns_paths only. The P1-1 implementation PR adds the
+    exact new engine/biocatalyst/catalyst_events.py and its exact new test
+    path to owns_paths when those files actually exist. Reading another
+    plane/module never requires owning it.
   - >-
     Explicitly OUT of this workstream (Sol P1-0R charter): P0 recovery
     (WS:BIOCATALYST-RECOVERY-V2 is closed); BPC JV snapshot
