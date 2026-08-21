@@ -390,10 +390,24 @@ MARKET_BOARDS: tuple[dict, ...] = (
     # ``expected_last_session`` / ``sessions_behind`` — the exchange's own settle time
     # (09:00Z cn / ~09:30Z hk) is HOURS before the asia-close lane's own ~15:17-15:20Z
     # write, so grading a ledger on the exchange's settle time would call a healthy,
-    # still-in-progress afternoon "behind". ``max_sessions_behind: 0`` is intentional and
-    # correct ONLY paired with the write-window floor: the floor already absorbs the one
-    # legitimate lag (today's row not landed yet, pre-floor), so a ledger reporting ANY
-    # positive lag past the floor is a proven stall, not routine drift.
+    # still-in-progress afternoon "behind".
+    #
+    # DETECTION CONTRACT (Sol adjudication, 2026-08-20 review of PR #6140): "detect a
+    # silent ledger stall within the NEXT expected market session" — NOT the same
+    # session's own 20:00Z look. ``max_sessions_behind: 1`` is what encodes that: a
+    # SUSTAINED stall (session D's row never lands, AND D+1's does not either) first
+    # exceeds budget at D+1's 20:00Z check (behind=2), which is still "within the next
+    # expected session" of the miss. A single-session hiccup that self-heals — D's write
+    # fails once but D+1's lands normally — never exceeds budget 1 at any look and stays
+    # quiet BY DESIGN, mirroring the boards' own phantom-session budgets. Budget 0 was
+    # rejected: it deterministically false-pages on any weekend-anchored State-Council
+    # closure lib/cn_calendar does not encode (the table is deliberately minimal — see
+    # its module docstring; the review traced five dated false pages through 2029,
+    # e.g. Qingming Mon 2026-04-06), on the asia-close lane's own measured late-fire tail
+    # (runs concluding as late as ~19:11Z, cutting into the 20:00Z floor's margin), and on
+    # the ledger's own measured healthy-era misses (advanced only 9 of 12 CN sessions
+    # 2026-06-26→07-16 even while the lane ran green). Budget 1 absorbs all three classes
+    # while still catching a genuine sustained stall within one extra session.
     {
         "market": "cn_ledger",
         "label": "CN Risk Ledger",
@@ -401,7 +415,7 @@ MARKET_BOARDS: tuple[dict, ...] = (
         "stamp_known_absent": False,
         "field": "asof",
         "calendar": "cn",
-        "max_sessions_behind": 0,
+        "max_sessions_behind": 1,
         "min_calendar_days": 11,   # lib.cn_calendar.MAX_LEGIT_CLOSURE_DAYS — mirrors "cn"
         "kind": "ledger",
     },
@@ -412,7 +426,7 @@ MARKET_BOARDS: tuple[dict, ...] = (
         "stamp_known_absent": False,
         "field": "asof",
         "calendar": "hk",
-        "max_sessions_behind": 0,
+        "max_sessions_behind": 1,
         "min_calendar_days": None,   # mirrors "hk" — HKEX's table is not deliberately minimal
         "kind": "ledger",
     },
@@ -570,30 +584,57 @@ def _ledger_expected_session(cal, now: datetime) -> date:
     return cal.last_session_on_or_before(today - timedelta(days=1))
 
 
-def _load_ledger_tail(path: Path) -> "dict | None":
-    """Newest row of a risk-forward-ledger JSONL file: the last non-blank line, parsed.
+#: How many trailing lines of a risk-forward-ledger JSONL file to scan for the newest
+#: row. Real ledgers run ~10-25 lines total (measured 2026-08-20), so 50 comfortably
+#: covers the whole file today with headroom for years of growth; a bound still exists
+#: so this stays cheap even if a ledger someday grows very large.
+_LEDGER_TAIL_SCAN_LINES = 50
 
-    Robust to a trailing newline and to blank lines a writer left at the end of the
-    file.  Missing file, empty file, and an unparsable or non-dict tail row all resolve
-    to None — the SAME blindness contract ``load_index`` uses for the JSON boards:
-    reported as a named ``::warning`` (INDETERMINATE), never a silent green and never a
-    page on data this guard could not actually read (VERDICT DISCIPLINE, module
-    docstring).
+
+def _load_ledger_tail(path: Path) -> "dict | None":
+    """The FRESHEST row near the end of a risk-forward-ledger JSONL file — NOT simply
+    the last line.
+
+    The writer (engine/risk_radar_intl_audit.log_snapshot) appends any row whose asof
+    was previously absent to the END of the file, and a truncated or regressed bench
+    series can append an OLDER asof after a newer one — so "last line" is not reliably
+    "newest row". This scans the trailing ``_LEDGER_TAIL_SCAN_LINES`` lines, parses
+    every one that is a dict carrying a parseable ``asof``, and returns the row with
+    the MAX asof among them (ties keep the later line in file order).
+
+    Missing file, empty file, unreadable bytes (``Path.read_text()`` raises
+    ``UnicodeDecodeError`` — a ``ValueError`` subclass, NOT an ``OSError`` — on a
+    stray non-UTF-8 byte; letting that escape here previously killed the ENTIRE
+    watchdog silently, since it propagates uncaught through ``load_market_boards`` into
+    ``main()`` before checks A/B/C or any board ever run), and a tail with no
+    parseable-``asof`` row at all all resolve to None — the SAME blindness contract
+    ``load_index`` uses for the JSON boards: reported as a named ``::warning``
+    (INDETERMINATE), never a silent green and never a page on data this guard could
+    not actually read (VERDICT DISCIPLINE, module docstring).
     """
     try:
         text = path.read_text()
-    except OSError:
+    except (OSError, ValueError):
         return None
-    for line in reversed(text.splitlines()):
-        line = line.strip()
-        if not line:
-            continue
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if not lines:
+        return None
+
+    best_row: "dict | None" = None
+    best_asof: "date | None" = None
+    for line in lines[-_LEDGER_TAIL_SCAN_LINES:]:
         try:
             row = json.loads(line)
         except ValueError:
-            return None
-        return row if isinstance(row, dict) else None
-    return None
+            continue
+        if not isinstance(row, dict):
+            continue
+        asof = _parse_date(row.get("asof"))
+        if asof is None:
+            continue
+        if best_asof is None or asof >= best_asof:
+            best_row, best_asof = row, asof
+    return best_row
 
 
 def evaluate_market_boards(
@@ -674,6 +715,20 @@ def evaluate_market_boards(
                 )
             continue
 
+        # ``expected`` (the session _holiday_in_gap's floor check needs) is handled
+        # DIFFERENTLY by kind, on purpose. Ledger kind needs it up front — its own
+        # ``behind`` computation IS sessions_between(stamp, expected) — so it is
+        # unavoidably eager there. The board path historically computed it LAZILY, only
+        # inside the floor branch below (which only ever runs for "cn", the sole board
+        # with a floor): ``cal.sessions_behind(stamp, now)`` already calls
+        # ``expected_last_session(now)`` internally for its own purposes, so adding a
+        # SECOND, eager top-level call here would not change what a genuinely broken
+        # calendar does (still caught, same except clause) — but it silently doubles
+        # the surface this try covers for every board, not just the one with a floor.
+        # Restored to the original structure (a real regression risk PR #6140's review
+        # flagged, even though its 35-fixture differential found no live difference
+        # today): a calendar exception must not turn a HEALTHY board INDETERMINATE
+        # through a code path the board never used to exercise.
         try:
             cal = _market_calendar(spec["calendar"])
             if kind == "ledger":
@@ -682,7 +737,7 @@ def evaluate_market_boards(
                 expected = _ledger_expected_session(cal, now)
                 behind = cal.sessions_between(stamp, expected)
             else:
-                expected = cal.expected_last_session(now)
+                expected = None  # computed lazily below, only if the floor needs it
                 behind = cal.sessions_behind(stamp, now)
         except Exception as exc:  # noqa: BLE001 — a broken calendar blinds ONE market
             warn.append(
@@ -703,9 +758,12 @@ def evaluate_market_boards(
             # The table-independent holiday floor. See MARKET_BOARDS for why the
             # mainland alone carries one and what it costs. It applies only INSIDE a
             # closure window: a broken holiday probe falls back to applying it, because
-            # blindness must never manufacture a page.
+            # blindness must never manufacture a page. Board kind derives its ``end``
+            # HERE, lazily (matching the pre-GD-4A.1 structure) rather than reusing a
+            # top-level ``expected`` — see the comment above the outer try.
             try:
-                in_closure = _holiday_in_gap(cal, stamp, expected)
+                gap_end = expected if expected is not None else cal.expected_last_session(now)
+                in_closure = _holiday_in_gap(cal, stamp, gap_end)
             except Exception:  # noqa: BLE001 — a broken probe suppresses, never pages
                 in_closure = True
             if in_closure:
@@ -1292,20 +1350,46 @@ def _selftest() -> int:
         assert r["facts"]["boards"]["cn_ledger"]["expected_session"] == expected, (
             hour, r["facts"]["boards"]["cn_ledger"])
 
-    # A silent stall — D's row never lands — must alarm no later than the SAME
-    # session's 20:00Z check. 08:00Z/14:00Z stay quiet (the write is not owed yet).
+    # Detection contract (Sol adjudication on PR #6140's review): "detect a silent
+    # ledger stall within the NEXT expected market session" — budget 1, not 0. A
+    # SUSTAINED stall (D's row never lands AND D+1's does not either) must alarm no
+    # later than D+1's 20:00Z check (behind=2); every look before that stays quiet
+    # (behind<=1), including D's OWN 20:00Z — a single missed session is, by itself,
+    # indistinguishable from the lane's measured late-fire tail and must not page.
     stall_boards = {"cn_ledger": {"asof": "2026-08-19"}, "hk_ledger": {"asof": "2026-08-19"}}
-    for hour in (8, 14):
+    d1_runs = [{"created_at": "2026-08-20T22:30:00Z", "status": "completed",
+                "conclusion": "success"}]
+    d1_index = {"source_asof": "2026-08-20"}
+    for hour in (8, 14, 20):  # all of D quiet — one miss is within budget
         now_h = datetime(2026, 8, 20, hour, 0, tzinfo=timezone.utc)
         r = evaluate(led_healthy_runs, led_index, now_h, boards=stall_boards)
-        _check(f"ledger/stall-quiet-before-{hour:02d}Z", r["ok"], True)
-    now_20 = datetime(2026, 8, 20, 20, 0, tzinfo=timezone.utc)
-    r = evaluate(led_healthy_runs, led_index, now_20, boards=stall_boards)
-    _check("ledger/stall-alarms-at-20Z", r["ok"], False)
+        _check(f"ledger/sustained-stall-quiet-D-{hour:02d}Z", r["ok"], True)
+    for hour in (8, 14):     # D+1 pre-floor: still only 1 behind, quiet
+        now_h = datetime(2026, 8, 21, hour, 0, tzinfo=timezone.utc)
+        r = evaluate(d1_runs, d1_index, now_h, boards=stall_boards)
+        _check(f"ledger/sustained-stall-quiet-D1-{hour:02d}Z", r["ok"], True)
+    now_d1_20 = datetime(2026, 8, 21, 20, 0, tzinfo=timezone.utc)
+    r = evaluate(d1_runs, d1_index, now_d1_20, boards=stall_boards)
+    _check("ledger/sustained-stall-alarms-at-D1-20Z", r["ok"], False)
     stalled = [f for f in r["fail_reasons"] if "LEDGER STALLED" in f]
     assert len(stalled) == 2, r["fail_reasons"]
     assert any("[CN Risk Ledger]" in f for f in stalled), stalled
     assert any("[HK Risk Ledger]" in f for f in stalled), stalled
+
+    # A single-session hiccup that self-heals must NEVER alarm, at any look: D's write
+    # fails once, but D+1's lands normally (stamp advances straight to D+1, per the
+    # "no backfill audit" law — this check only ever grades the newest row).
+    now_d_20 = datetime(2026, 8, 20, 20, 0, tzinfo=timezone.utc)
+    r = evaluate(led_healthy_runs, led_index, now_d_20, boards=stall_boards)
+    _check("ledger/self-heal-quiet-at-D-20Z", r["ok"], True)
+    for hour in (8, 14):
+        now_h = datetime(2026, 8, 21, hour, 0, tzinfo=timezone.utc)
+        r = evaluate(d1_runs, d1_index, now_h, boards=stall_boards)
+        _check(f"ledger/self-heal-quiet-D1-{hour:02d}Z", r["ok"], True)
+    healed_boards = {"cn_ledger": {"asof": "2026-08-21"}, "hk_ledger": {"asof": "2026-08-21"}}
+    r = evaluate(d1_runs, d1_index, now_d1_20, boards=healed_boards)
+    _check("ledger/self-heal-quiet-at-D1-20Z", r["ok"], True)
+    assert r["facts"]["boards"]["cn_ledger"]["behind"] == 0, r
 
     # Weekend quiet: Saturday resolves to Friday's session at every hour, so a ledger
     # holding Friday's row never alarms over the weekend.

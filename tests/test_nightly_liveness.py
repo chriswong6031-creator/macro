@@ -671,11 +671,12 @@ def test_registry_covers_the_five_markets_and_two_ledgers():
     for spec in MARKET_BOARDS:
         assert spec["label"] and spec["field"], spec
         if spec.get("kind") == "ledger":
-            # Ledgers are raw data/ JSONL logs, not rendered site/ board indexes, and
-            # budget 0 is intentional — see the MARKET_BOARDS comment block: the
-            # write-window floor already absorbs the one legitimate lag.
+            # Ledgers are raw data/ JSONL logs, not rendered site/ board indexes.
+            # Budget 1 is the Sol-adjudicated detection contract ("within the next
+            # expected market session") — see the MARKET_BOARDS comment block for the
+            # false-page classes budget 0 would have produced.
             assert spec["path"].startswith("data/"), spec
-            assert spec["max_sessions_behind"] == 0, spec
+            assert spec["max_sessions_behind"] == 1, spec
         else:
             assert spec["path"].startswith("site/"), spec
             assert spec["max_sessions_behind"] >= 1, spec
@@ -798,27 +799,69 @@ def test_ledger_healthy_day_no_alarm_at_any_liveness_look(hour, asof):
     assert report["facts"]["boards"]["hk_ledger"]["behind"] == 0, report
 
 
-def test_ledger_stalled_session_alarms_at_2000z():
-    """The signature this check exists to catch: D's row never lands. 08:00Z/14:00Z
-    must stay quiet (the write is not owed yet); 20:00Z — past the write-window floor,
-    on a session day — must page, and name both ledgers plus their newest asof."""
+# Backdrop for D+1 = 2026-08-21 (Fri): expected_fire_after resolves to NYSE session
+# 08-20 at every one of 08:00Z/14:00Z/20:00Z on 08-21, exactly as _LED_RUNS/_LED_INDEX
+# does for D's own hours. Two separate healthy backdrops, one per calendar day, keep
+# every fixture's ``created_at`` safely in the PAST relative to the "now" it is
+# evaluated against.
+_LED_D1_RUNS = [_run(created_at="2026-08-20T22:30:00Z")]
+_LED_D1_INDEX = {"source_asof": "2026-08-20"}
+
+
+def test_ledger_sustained_stall_alarms_at_next_session_2000z():
+    """Detection contract (Sol adjudication on PR #6140's review): 'detect a silent
+    ledger stall within the NEXT expected market session' — not the SAME session's own
+    20:00Z look. D's row never lands, and neither does D+1's: every look through D stays
+    quiet (behind<=1, a single miss is within budget), and D+1's pre-floor looks stay
+    quiet too — only D+1's 20:00Z check (behind=2, past budget 1) pages, naming both
+    ledgers plus their newest asof and the expected session."""
     stalled_boards = {"cn_ledger": {"asof": "2026-08-19"},
                        "hk_ledger": {"asof": "2026-08-19"}}
-    for hour in (8, 14):
+    for hour in (8, 14, 20):
         now = datetime(2026, 8, 20, hour, 0, tzinfo=timezone.utc)
         report = evaluate(_LED_RUNS, _LED_INDEX, now, boards=stalled_boards)
         assert report["ok"] is True, (hour, report)
+    for hour in (8, 14):
+        now = datetime(2026, 8, 21, hour, 0, tzinfo=timezone.utc)
+        report = evaluate(_LED_D1_RUNS, _LED_D1_INDEX, now, boards=stalled_boards)
+        assert report["ok"] is True, (hour, report)
 
-    now = datetime(2026, 8, 20, 20, 0, tzinfo=timezone.utc)
-    report = evaluate(_LED_RUNS, _LED_INDEX, now, boards=stalled_boards)
+    now = datetime(2026, 8, 21, 20, 0, tzinfo=timezone.utc)
+    report = evaluate(_LED_D1_RUNS, _LED_D1_INDEX, now, boards=stalled_boards)
     assert report["ok"] is False, report
+    assert report["facts"]["boards"]["cn_ledger"]["behind"] == 2, report
     stalled = [f for f in report["fail_reasons"] if "LEDGER STALLED" in f]
     assert len(stalled) == 2, report["fail_reasons"]
     cn_line = next(f for f in stalled if "[CN Risk Ledger]" in f)
     assert "cn_forward_log.jsonl" in cn_line, cn_line
     assert "asof=2026-08-19" in cn_line, cn_line
-    assert "2026-08-20" in cn_line, cn_line  # names the expected session too
+    assert "2026-08-21" in cn_line, cn_line  # names the expected session too
     assert any("[HK Risk Ledger]" in f for f in stalled), stalled
+
+
+def test_ledger_single_session_hiccup_that_self_heals_never_alarms():
+    """A one-session miss that self-heals must never alarm, at ANY look — this is the
+    false-page class budget 1 exists to absorb (weekend-anchored State-Council closures
+    lib/cn_calendar does not encode, the lane's own late-fire tail, and the ledger's
+    measured healthy-era misses). D's write fails once; D+1's lands normally, so the
+    newest row jumps straight from D-1 to D+1 (no backfill — this check only ever grades
+    the newest row, never a gap in history)."""
+    stalled_boards = {"cn_ledger": {"asof": "2026-08-19"},
+                       "hk_ledger": {"asof": "2026-08-19"}}
+    now = datetime(2026, 8, 20, 20, 0, tzinfo=timezone.utc)
+    report = evaluate(_LED_RUNS, _LED_INDEX, now, boards=stalled_boards)
+    assert report["ok"] is True, report
+
+    for hour in (8, 14):
+        now = datetime(2026, 8, 21, hour, 0, tzinfo=timezone.utc)
+        report = evaluate(_LED_D1_RUNS, _LED_D1_INDEX, now, boards=stalled_boards)
+        assert report["ok"] is True, (hour, report)
+
+    healed_boards = {"cn_ledger": {"asof": "2026-08-21"}, "hk_ledger": {"asof": "2026-08-21"}}
+    now = datetime(2026, 8, 21, 20, 0, tzinfo=timezone.utc)
+    report = evaluate(_LED_D1_RUNS, _LED_D1_INDEX, now, boards=healed_boards)
+    assert report["ok"] is True, report
+    assert report["facts"]["boards"]["cn_ledger"]["behind"] == 0, report
 
 
 def test_ledger_pre_floor_hours_expect_the_previous_session():
@@ -865,7 +908,7 @@ def test_ledger_mainland_long_closure_is_quiet_under_the_floor():
 
 def test_ledger_tail_reader_is_robust_to_trailing_newline_and_blank_lines(tmp_path):
     """The asia-close lane's own writer may or may not leave a trailing newline, and some
-    JSONL writers append blank lines. The reader must find the LAST real row regardless."""
+    JSONL writers append blank lines. The reader must find the newest real row regardless."""
     path = tmp_path / "cn_forward_log.jsonl"
     row1 = json.dumps({"asof": "2026-08-18", "market": "cn"})
     row2 = json.dumps({"asof": "2026-08-19", "market": "cn"})
@@ -885,10 +928,56 @@ def test_ledger_tail_reader_is_robust_to_trailing_newline_and_blank_lines(tmp_pa
     path.write_text("\n\n\n")                        # only blank lines
     assert _load_ledger_tail(path) is None
 
-    path.write_text(f"{row1}\nnot json at all\n")   # unparsable tail row
+    # An unparsable/garbage LAST line no longer blinds the whole read — it is simply
+    # skipped, and the reader falls back to the newest row it CAN parse in the scanned
+    # tail (the max-asof scan this same amendment introduces for GD-4A.1's newest-row
+    # fix; see test_ledger_tail_reader_grades_on_max_asof_not_last_line below).
+    path.write_text(f"{row1}\nnot json at all\n")
+    assert _load_ledger_tail(path) == {"asof": "2026-08-18", "market": "cn"}
+
+    # ...but a tail with NO parseable row at all is genuine blindness.
+    path.write_text("not json at all\nneither is this\n")
     assert _load_ledger_tail(path) is None
 
     assert _load_ledger_tail(tmp_path / "does_not_exist.jsonl") is None  # missing file
+
+
+def test_ledger_tail_reader_survives_a_non_utf8_byte(tmp_path):
+    """Path.read_text() raises UnicodeDecodeError (a ValueError, NOT an OSError) on a
+    stray non-UTF-8 byte. Before this fix that escaped _load_ledger_tail uncaught,
+    propagated through load_market_boards into main(), and killed the ENTIRE watchdog
+    silently — checks A/B/C and every other board would have produced nothing. It must
+    instead degrade to the same blindness contract as a missing file: None here, and a
+    named INDETERMINATE warning (never a crash, never a silent exit) from evaluate()."""
+    path = tmp_path / "cn_forward_log.jsonl"
+    path.write_bytes(b'{"asof": "2026-08-19"}\n\xff\xfe garbage bytes\n')
+    assert _load_ledger_tail(path) is None
+
+    now = datetime(2026, 8, 20, 20, 0, tzinfo=timezone.utc)
+    report = evaluate(_LED_RUNS, _LED_INDEX, now,
+                      boards={"cn_ledger": _load_ledger_tail(path),
+                              "hk_ledger": {"asof": "2026-08-20"}})
+    assert report["ok"] is True, report
+    assert any("INDETERMINATE [CN Risk Ledger]" in w for w in report["warnings"]), report
+    assert report["facts"]["boards"]["hk_ledger"]["behind"] == 0, report  # unaffected
+
+
+def test_ledger_tail_reader_grades_on_max_asof_not_last_line(tmp_path):
+    """The writer (engine/risk_radar_intl_audit.log_snapshot) appends any row whose asof
+    was previously absent to the END of the file, so a truncated or regressed bench
+    series can append an OLDER asof after a newer one. 'Last line' is therefore not
+    reliably 'newest row' — the reader must scan the tail and take the row with the
+    MAX asof, wherever it sits."""
+    path = tmp_path / "cn_forward_log.jsonl"
+    newer = json.dumps({"asof": "2026-08-20", "market": "cn", "note": "newer, earlier line"})
+    older = json.dumps({"asof": "2026-08-18", "market": "cn", "note": "older, LAST line"})
+    path.write_text(f"{newer}\n{older}\n")
+    assert _load_ledger_tail(path) == json.loads(newer)
+
+    # And the ordinary case — newest genuinely last — still resolves correctly, so the
+    # max-scan is not merely tolerant of disorder, it agrees with simple order too.
+    path.write_text(f"{older}\n{newer}\n")
+    assert _load_ledger_tail(path) == json.loads(newer)
 
 
 def test_ledger_missing_file_is_loud_not_green():
