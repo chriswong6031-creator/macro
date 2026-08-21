@@ -1089,6 +1089,86 @@ def test_universe_union_and_fallback(env):
 
 
 # ---------------------------------------------------------------------------
+# 14b. Retirement — build_universe globs the stores, so it NEVER FORGETS a
+# ticker. That is right for a name an index merely dropped (the collector's
+# --store leg keeps its tape moving) and wrong for a security that STOPPED
+# EXISTING: no future fetch can advance its last bar. The exit ledger is the
+# authority. Disclosure, not deletion — the row stays browseable, it just holds
+# no current authority (CSP-R1 forbids fail-dark; the ledger's own contract is
+# that a delisting is disclosed rather than disappeared).
+# ---------------------------------------------------------------------------
+@pytest.fixture
+def exit_ledger(tmp_path, monkeypatch):
+    """Repoint the REPO-ABSOLUTE, lru_cached exit ledger at a fixture and make sure the
+    cache cannot leak the fake into any later test in the process."""
+    from lib import delisted_symbols
+
+    def _install(rows: dict[str, dict]) -> None:
+        p = tmp_path / "delisted_symbols.yml"
+        body = ["symbols:"]
+        for t, r in rows.items():
+            body.append(f"  {t}:")
+            for k, v in r.items():
+                body.append(f"    {k}: {v!r}")
+        p.write_text("\n".join(body) + "\n")
+        monkeypatch.setattr(delisted_symbols, "LEDGER_PATH", p)
+        delisted_symbols.ledger.cache_clear()
+
+    delisted_symbols.ledger.cache_clear()
+    yield _install
+    delisted_symbols.ledger.cache_clear()
+
+
+_EXIT = {"company": "Broadcom", "last_session": "2026-07-14",
+         "delisted_on": "2026-07-15", "reason": "acquisition"}
+
+
+def test_build_universe_stamps_a_resolved_exit(env, exit_ledger):
+    dr, _ = env
+    exit_ledger({"AVGO": _EXIT})
+    uni = sa.build_universe(root=dr)
+    # disclosure, NOT deletion — the name is still there, and still browseable
+    assert "AVGO" in uni
+    assert uni["AVGO"]["retired"] is True
+    assert uni["AVGO"]["retired_on"] == "2026-07-15"
+    assert uni["AVGO"]["retired_last_session"] == "2026-07-14"
+    assert uni["AVGO"]["retired_reason"] == "acquisition"
+    assert not uni["NVDA"].get("retired")
+
+
+def test_a_retired_name_is_never_observation_current(env, exit_ledger):
+    """The week test ALONE is not enough. Every name in this fixture completed the SAME
+    Stage week, so AVGO's week matches the target exactly — the shape a mid-week delisting
+    produces, and the shape a vendor that flat-forwards a dead symbol produces (AVB's tape
+    carried 0-volume repeats four sessions past its real close). On the week comparison
+    alone both read as current, which would let a company that no longer exists rank beside
+    live names."""
+    dr, _ = env
+    base = sa.build_context_feed(root=dr, asof="2026-07-17")
+    # baseline: nothing retired, the whole population is observation-current
+    assert base["population"]["stale"] == 0
+    assert "AVGO" in {r["ticker"] for r in base["top_stage2"]}
+
+    exit_ledger({"AVGO": _EXIT})
+    contract = sa.build_context_feed(root=dr, asof="2026-07-17")
+
+    # the retired name is partitioned OUT of the current cross-section...
+    assert contract["population"]["stale"] == 1
+    assert contract["population"]["current"] == base["population"]["current"] - 1
+    # ...so it cannot rank beside live names on the current board
+    assert "AVGO" not in {r["ticker"] for r in contract["top_stage2"]}
+    # ...while the identical sibling (same stage, same completed week) is untouched,
+    # so the ledger is doing the work and the week test is not broken for everyone
+    assert "NVDA" in {r["ticker"] for r in contract["top_stage2"]}
+    # ...and the name is DISCLOSED, not deleted: it is still classified and still counted
+    # in the population total, it has simply moved from the current bucket to the stale one
+    # (Wave 8's existing partition then keeps it browseable in the screener with visible
+    # provenance and no current rank number). Losing the row entirely would be fail-dark.
+    assert contract["population"]["total"] == base["population"]["total"]
+    assert "AVGO" in sa.build_universe(root=dr)
+
+
+# ---------------------------------------------------------------------------
 # 15. Fresh-first board ordering + blackout stance surface.
 # ---------------------------------------------------------------------------
 def test_board_fresh_first_ordering(env):
