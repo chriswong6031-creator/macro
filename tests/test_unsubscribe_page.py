@@ -736,6 +736,36 @@ PUBLIC_EXACT = frozenset({
     "/adtest.js",
     "/nav_market.js", "/supabase.js", "/data_base.js", "/live.js", "/live_config.js",
     "/live/quotes.json", "/live/breadth.json",
+    # The two Intraday Flow board inputs (#6105, 2026-08-20). Public BY DECISION
+    # — ratified here on this set's own standard, not synced in because
+    # site_access.yml already said so.
+    #
+    # The membership question is the one that matters, because it is the exact
+    # objection the /live/prophet_live.json paragraph in site_access.yml raises
+    # against that file: intraday_quotes.json is keyed by the board's leader
+    # symbols, so its KEY SET is board membership. Checked rather than assumed:
+    # templates/intraday_flow.html.j2 inlines the whole base object
+    # (`var BASE_DATA = {{ intraday_flow | tojson }}`) into the page shell, and
+    # *.html is anonymous-public since 2026-08-04 — so every leader ticker AND
+    # its plain-word call already ship to signed-out visitors in the HTML. These
+    # two files disclose no membership the shell has not already disclosed,
+    # which is what separates them from prophet_live.json, whose board is NOT
+    # published anywhere.
+    #
+    # Payloads, field by field: intraday_quotes.json is a price map over those
+    # already-named symbols plus coverage meta — display-tier market context,
+    # the same class as /live/quotes.json above. flow_pulse.json carries
+    # deterministic per-ticker intraday statistics (vwap, cum_vol, rvol_tod,
+    # session high/low, bars_above_vwap, volume durability, higher-lows) over
+    # today's bars. Note what that is and is not: those are rule INPUTS, and
+    # they are strictly less disclosing than the rule's OUTPUT, which the shell
+    # already prints. The calibrated thresholds that turn them into a call stay
+    # in engine/intraday_flow.py and are not published — the watchlist_risk.js /
+    # risk_core.js refusal recorded below is about publishing the RULE, and this
+    # is measured data, so that refusal is not in tension with this entry. No
+    # score, no rank, no cross-symbol ordering, no customer data.
+    "/live/intraday_quotes.json",
+    "/live/flow_pulse.json",
     # Official agency event lifecycle/facts; no signal, portfolio or user data.
     "/live/release_publications.json",
     # Freshness-sentinel staleness state (masterplan W1 dead-man switch) — public
@@ -844,6 +874,25 @@ PUBLIC_EXACT = frozenset({
     "/portfolio.js",
     "/mtf.js",
     "/mm_brain.js",
+    # The seventh funnel-shell script, promoted deliberately (#6141, 2026-08-20)
+    # and qualifying on the same standard as the six above: portfolio_state.js is
+    # the DOM-free pure computation of the canonical Portfolio read. It makes no
+    # network call of its own, and the portfolio_snapshot.v1 object it derives
+    # stays in the client and never leaves it — the visitor's own book, exactly
+    # like the localStorage store the other funnel scripts read.
+    #
+    # Worth recording HOW it arrived, because this set exists to catch that
+    # shape: #6109 (A1A) added it to the Caddyfile's public matchers and to
+    # @watchlist_shell_versioned but to no policy file, so for a day the edge
+    # served it anonymously while app/paywall.py still classified it `premium` —
+    # the two enforcement halves disagreed, and the cross-check that exists to
+    # catch precisely that went red and merged anyway because its only CI home
+    # was a `gate: data` job. #6141 reconciled the policy to what the edge was
+    # already doing and put that guard on the merge gate. This frozen set is the
+    # third place the promotion had to be argued, and it is argued here on the
+    # merits above, not merely reconciled: a widening is not ratified by having
+    # already happened.
+    "/portfolio_state.js",
     "/factordata/tech_lab.json",
 })
 
