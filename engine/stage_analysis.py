@@ -194,6 +194,31 @@ def build_universe(root: Path | None = None) -> dict[str, dict]:
         except Exception as e:  # noqa: BLE001
             log.warning("stage_analysis: stocks glob failed (%s)", e)
 
+    # --- the retirement half of the store contract (2026-08-20) ---
+    # This function globs the stores, so it NEVER FORGETS A TICKER: a parquet written once
+    # keeps being classified for as long as the file exists. That is correct for a name that
+    # merely fell out of an index (scripts/fetch_basket_ohlcv --store keeps its tape moving),
+    # and wrong for a security that STOPPED EXISTING — its last bar is a fact, not an
+    # observation of a live company, and no future fetch can ever advance it.
+    #
+    # DISCLOSURE, NOT DELETION. The ticker stays in the universe on purpose: the exit ledger's
+    # own contract is that a delisting is disclosed rather than disappeared (the store keeps
+    # its history, the page keeps its deep links, CSP-R1 forbids fail-dark), and dropping the
+    # key here would blank a browseable name instead of labelling it. Consumers read `retired`
+    # to strip CURRENT authority while leaving the row readable.
+    try:
+        from lib import delisted_symbols  # noqa: PLC0415 — lib/, no engine import cycle
+        for tk, row in delisted_symbols.ledger().items():
+            d = meta.get(tk)
+            if d is None:
+                continue
+            d["retired"] = True
+            d["retired_on"] = str(row.get("delisted_on") or "") or None
+            d["retired_last_session"] = str(row.get("last_session") or "") or None
+            d["retired_reason"] = str(row.get("reason") or "") or None
+    except Exception as e:  # noqa: BLE001 — fail-open: an unreadable ledger must not
+        log.warning("stage_analysis: delisted ledger unreadable (%s)", e)
+
     # Attach company/sector (fallback ticker / 'Unknown').
     for tk, d in meta.items():
         d["company"] = name_by.get(tk) or tk
@@ -2030,6 +2055,18 @@ def build_context_feed(root: Path | None = None,
         else:
             stage_current = None
 
+        # A RETIRED name can never be observation-current, whatever its week says. The
+        # week comparison alone is not enough: a security that delists mid-week still has a
+        # completed prior week, and a vendor that flat-forwards a dead symbol (AVB's tape
+        # carried 0-volume repeats four sessions past its real 2026-08-14 close) can even
+        # push that week up to the target. Both shapes read as `stage_current=True` on the
+        # week test alone, which would let a company that no longer exists rank beside live
+        # names. The exit ledger is the authority; this only feeds it into the boundary
+        # Wave 8 already built, rather than adding a second one.
+        retired = bool(meta.get("retired"))
+        if retired:
+            stage_current = False
+
         gate_tier = gate_tiers.get(tk)
 
         rec = {
@@ -2044,6 +2081,12 @@ def build_context_feed(root: Path | None = None,
             "sub_industry_id": None,
             "sub_industry": None,
             "stage_source_asof": res.get("stage_source_asof"),
+            # The security stopped existing (config/delisted_symbols.yml). Carried so the
+            # row can SAY so — a retired name stays browseable with its history intact
+            # (disclosure, not deletion), it just holds no current authority.
+            "retired": retired,
+            "retired_on": meta.get("retired_on"),
+            "retired_reason": meta.get("retired_reason"),
             # Wave 8 §1/§2 clock fields — the completed week THIS row's stage
             # was actually read from, and whether that equals the resolved
             # target week. Never derived from `source == "live"` (§3).

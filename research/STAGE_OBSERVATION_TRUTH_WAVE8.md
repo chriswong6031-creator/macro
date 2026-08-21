@@ -637,6 +637,44 @@ those frozen names from carrying current authority. Repairing the collector
 universe (and the census's blind spot) is a separate wave — out of scope here,
 flagged in the continuation report.
 
+### §9.1 THE CURE SHIPPED (2026-08-20) — and three §9 claims did not survive re-checking
+
+The upstream repair is `DEC:BASKET-OHLCV-STORE-SELF-MAINTAINS`: the deep store now
+self-maintains (`fetch_basket_ohlcv --store`, wired into the nightly), so leaving an
+index can no longer freeze a file, and the only lawful exit is a resolved row in
+`config/delisted_symbols.yml`. The census was widened to judge the whole store under
+three dispositions (`stale` / `unsponsored` / `retired`). Wave 8's containment is
+UNCHANGED and still load-bearing.
+
+Every §9 measurement above reproduced exactly on 2026-08-20 (2,782 files, 183 stale,
+179 orphans, the 110-file 2026-07-10 cluster, 2,599/2,599 and 179/183 separation) —
+plus two that §9 did not state: **zero** orphans are fresh, and **zero** fetch-universe
+names lack a file. A live vendor probe then settled the reconstitution hypothesis:
+10 of 10 sampled names from the 07-10 cluster (ARWR/AXSM/BBIO/BE/AAOI/ALDX/BARK/BOOM/
+ACNT/AHR) returned a current tape while frozen 29 sessions back, and a real fetch
+advanced ARWR/AXSM/BBIO to 2026-08-20.
+
+Three claims in the bullets above are **wrong** and are corrected here rather than
+edited away, because each one would mislead the next reader in the same direction —
+toward believing an orphan is dead when it is merely unrequested:
+
+1. **TMHC does not carry `Delistings` "completed"** — the string `TMHC` does not appear
+   anywhere in `data/special_situations/context/latest.json`. (Its tape *is* genuinely
+   over: the vendor returns nothing. The conclusion was right, the cited receipt is not.)
+2. **SILA has no "high-confidence" classification** — the key `SILA|Going-Private`
+   exists with `stage: ""`. An empty stage is not a confidence level.
+3. **AVB is not "one session behind, ordinary jitter"** (stated in the handoff's
+   four-name breakdown). AVB was acquired 2026-08-17 and already had a *well-formed exit
+   row in the ledger*. Its 1-session lag is the vendor flat-forwarding a dead symbol as
+   0-volume repeats past its real 2026-08-14 close. Nothing read that ledger, so AVB was
+   days from becoming BLD's permanent unexplained red line a second time.
+
+The generalisable lesson from (1) and (2): `data/special_situations/context/latest.json`
+is `is_context_only: true` and carries the disclaimer "never a signal" — it is a HINT
+source, and only ~13 of the 179 orphans have even a hint of an exit. From (3): freshness
+alone cannot classify a name, in either direction. Both are why the shipped census
+surfaces a triage QUEUE and never infers a retirement.
+
 ---
 
 ## §10 REQUIRED TESTS
