@@ -444,8 +444,19 @@ def _load_industry_pctile(dr: Path) -> dict[str, float]:
 
 
 def _build_live_industry_surfaces(recs: list[dict], root: Path | None,
-                                  asof: str) -> tuple[dict[str, float], dict[str, dict]]:
+                                  asof: str, current_tickers: set[str] | None = None,
+                                  target_stage_week: str | None = None,
+                                  ) -> tuple[dict[str, float], dict[str, dict]]:
     """Build ranks + flows from the exact live classifier records in this run.
+
+    Wave 8 §6.2 — `prepare_live_frame` runs on ALL records (including stale
+    ones) so every row still gets its reference-taxonomy identity for the
+    screener's industry column; but only a frame filtered to `current_tickers`
+    is passed into `stage_industry.build()`, `stage_flows.build()`, and
+    `name_industry_percentiles()`. A stale row therefore contributes no rank
+    authority and its `industry_percentile` comes back null (correct — it has
+    no current rank).  `current_tickers=None` means "no partition available"
+    (§2.4, no target week) and ranks/flows build from an empty frame.
 
     Returns ``(per_name_percentiles, taxonomy_by_ticker)`` for immediate use by
     the screener.  Both side engines receive the same prepared DataFrame and
@@ -490,13 +501,22 @@ def _build_live_industry_surfaces(recs: list[dict], root: Path | None,
                 "sub_industry": _clean(row.get("sub_industry_name")),
             }
 
+    # §6.2 — mixed vintages excluded BEFORE aggregation: only current tickers'
+    # rows feed ranks/flows/percentiles. `current_tickers is None` (no target
+    # week resolved, §2.4) filters to an empty frame — no current authority.
+    current_frame = live_frame
+    if live_frame is not None and not live_frame.empty:
+        wanted = current_tickers or set()
+        current_frame = live_frame[live_frame["ticker"].isin(wanted)]
+
     name_pct: dict[str, float] = {}
     try:
         industry_contract = stage_industry.build(
-            stage_frame=live_frame, root=root, asof=asof,
+            stage_frame=current_frame, root=root, asof=asof,
+            target_stage_week=target_stage_week,
         )
         name_pct = stage_industry.name_industry_percentiles(
-            stage_frame=live_frame, root=root,
+            stage_frame=current_frame, root=root,
         )
         if (industry_contract.get("coverage") or {}).get("non_vacuous") is not True:
             issues = (industry_contract.get("coverage") or {}).get("issues") or []
@@ -508,7 +528,8 @@ def _build_live_industry_surfaces(recs: list[dict], root: Path | None,
 
     try:
         flows_contract = stage_flows.build(
-            stage_frame=live_frame, root=root, asof=asof,
+            stage_frame=current_frame, root=root, asof=asof,
+            target_stage_week=target_stage_week,
         )
         if (flows_contract.get("coverage") or {}).get("non_vacuous") is not True:
             issues = (flows_contract.get("coverage") or {}).get("issues") or []
@@ -2105,11 +2126,31 @@ def build_context_feed(root: Path | None = None,
 
         recs.append(rec)
 
-    # Build the side surfaces only after the live fan-out exists. Previously
-    # the CLI ran these first against a missing stage_daily.parquet seed, which
-    # silently emitted zero-industry artifacts. The returned taxonomy and
-    # percentiles are applied to the same records before any UI projection.
-    industry_pctile, taxonomy = _build_live_industry_surfaces(recs, root, asof)
+    # --- Wave 8 §2.1 partition: current / stale / unknown, by completed-week
+    # equality against the resolved target Stage week. Everything below this
+    # point that claims current authority (counts, slope_pop, sga_score,
+    # top_stage2, warnings_stage3, sectors, roster, data_session, the change
+    # feed, the machine snapshot, and — per §6.2 — the industry rank/flow
+    # frame) is computed from `current_recs` ONLY (§2.2). `recs` (all three
+    # buckets) still feeds the screener and both stage boards below, so stale
+    # names stay browseable.
+    current_recs = [r for r in recs if r.get("stage_current") is True]
+    stale_recs = [r for r in recs if r.get("stage_current") is False]
+    unknown_recs = [r for r in recs if r.get("stage_current") is None]
+    current_tickers = {r["ticker"] for r in current_recs}
+
+    # Build the side surfaces only after the live fan-out AND the current/
+    # stale partition above exist. §6.2 moved this call from before the
+    # partition to after it: `prepare_live_frame` still runs on ALL records
+    # inside the helper (every row, including stale ones, keeps its
+    # reference-taxonomy identity for the screener's industry column), but
+    # the frame handed to `stage_industry.build()` / `stage_flows.build()` /
+    # `name_industry_percentiles()` is filtered to `current_tickers` only —
+    # a stale row must not contaminate the current industry cross-section.
+    industry_pctile, taxonomy = _build_live_industry_surfaces(
+        recs, root, asof, current_tickers=current_tickers,
+        target_stage_week=target_stage_week,
+    )
     for rec in recs:
         tk = rec["ticker"]
         ref = taxonomy.get(tk) or {}
@@ -2118,17 +2159,6 @@ def build_context_feed(root: Path | None = None,
             if ref.get(key) is not None:
                 rec[key] = ref[key]
         rec["industry_percentile"] = industry_pctile.get(tk)
-
-    # --- Wave 8 §2.1 partition: current / stale / unknown, by completed-week
-    # equality against the resolved target Stage week. Everything below this
-    # point that claims current authority (counts, slope_pop, sga_score,
-    # top_stage2, warnings_stage3, sectors, roster, data_session, the change
-    # feed, the machine snapshot) is computed from `current_recs` ONLY (§2.2).
-    # `recs` (all three buckets) still feeds the screener and both stage
-    # boards below, so stale names stay browseable.
-    current_recs = [r for r in recs if r.get("stage_current") is True]
-    stale_recs = [r for r in recs if r.get("stage_current") is False]
-    unknown_recs = [r for r in recs if r.get("stage_current") is None]
 
     # --- underlying session: the newest bar any CURRENT leg actually read ---
     # Forward-ledger calendar-asof audit 2026-08-05 (#4568 pattern). `asof`

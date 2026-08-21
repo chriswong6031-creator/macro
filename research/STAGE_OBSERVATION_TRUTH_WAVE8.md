@@ -573,8 +573,19 @@ Required behavior:
   or `stage_current is false`, or `population.status == "no_target_week"`) → copy
   it, and let the client render it as stale. Valid last-known data may be retained
   **only** when the artifact itself discloses that it is stale.
-- Validation stays narrow and per-artifact: the file parses as JSON and carries a
-  `schema` key. **Do not invent a global health database.**
+- Validation stays narrow and per-artifact: the file **parses as JSON into a
+  non-empty object**. **Do not invent a global health database.**
+
+  **Corrected 2026-08-20 — do NOT require a `schema` key.** This section first
+  said "parses as JSON and carries a `schema` key". Implemented literally, that
+  silently stopped publishing FIVE live surfaces — `ec_industry.json`,
+  `ec_industry_heatmap.json`, `earnings_table.json`, `earnings_season.json`,
+  `earnings_compare.json` — because their producer `engine/earnings_qual.py`
+  stamps `"surface"`, not `"schema"`. A publication guard that quietly freezes
+  healthy surfaces is precisely the failure mode this section exists to prevent.
+  The check must test only what it is for: that the bytes are a usable JSON
+  object rather than a truncated or corrupt file. A test must pin that every
+  artifact in `_STAGEDATA_FILES` which exists on disk actually publishes.
 
 Return a small report `(copied, revoked, stale)` and log it.
 

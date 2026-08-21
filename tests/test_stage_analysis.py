@@ -357,6 +357,11 @@ def test_live_frame_populates_industry_ranks_flows_and_screener(env):
         "expected_asof": "2026-07-17",
         "source_asof": "2026-07-17",
         "status": "current",
+        # Wave 8 §6.1 — freshness is judged on the completed-Stage-week plane;
+        # the daily values above stay for audit but no longer decide the verdict.
+        "plane": "stage_week",
+        "expected_stage_week": "2026-07-17",
+        "source_stage_week": "2026-07-17",
     }
     assert ranks["coverage"]["input_rows"] == contract["counts"]["total"]
     assert set(industry_by_ticker) <= set(pct["percentiles"])
@@ -369,21 +374,50 @@ def test_live_frame_populates_industry_ranks_flows_and_screener(env):
 
 
 def test_live_industry_freshness_uses_ohlcv_source_not_requested_asof(env):
-    """A later build label cannot launder a stale classifier snapshot."""
+    """A build label can neither launder NOR falsely condemn a classifier snapshot.
+
+    Original intent (unchanged): the freshness verdict must come from what the
+    classifier actually read, never from the date a caller asked the builder to
+    label. Wave 8 §6.1 changed the PLANE that verdict is computed on, so the old
+    assertion here — that a one-day daily lag makes the ranks `warn`/`stale` —
+    now pins the very defect this wave fixes: the classifier is weekly-native,
+    Aug-19 tape and an Aug-20 build BOTH describe the completed week ending
+    Aug-14, and downgrading that is the false-stale bug from the mission.
+
+    So the intent is tested more strongly than before: build the SAME data under
+    two different `asof` labels and assert the freshness verdict is byte-identical.
+    A verdict that moved with the label would be reading the clock.
+    """
     dr, _ = env
     _write_overview_seed(dr, [
         _ov_row(tk, "USA", 75, gics_industry="Software")
         for tk in ("NVDA", "AVGO", "INTC")
     ])
+
     sa.build_context_feed(root=dr, asof="2026-07-18")
-    ranks = json.loads((dr / "stage_analysis" / "industry_ranks.json").read_text())
-    assert ranks["status"] == "warn"
-    assert ranks["coverage"]["freshness"] == {
-        "expected_asof": "2026-07-18",
-        "source_asof": "2026-07-17",
-        "status": "stale",
-    }
-    assert "source_asof_stale" in ranks["coverage"]["issues"]
+    ranks_later = json.loads((dr / "stage_analysis" / "industry_ranks.json").read_text())
+    fresh_later = ranks_later["coverage"]["freshness"]
+
+    # The data plane is unchanged, so the verdict must be CURRENT, not stale:
+    # both dates fall inside the same completed Stage week.
+    assert fresh_later["plane"] == "stage_week"
+    assert fresh_later["status"] == "current"
+    assert fresh_later["source_stage_week"] == fresh_later["expected_stage_week"]
+    assert "source_asof_stale" not in ranks_later["coverage"]["issues"], (
+        "a one-day daily lag inside one completed Stage week is not staleness")
+    # The daily plane is still disclosed for audit, and still reports the real
+    # gap between the requested label and the tape.
+    assert fresh_later["expected_asof"] == "2026-07-18"
+    assert fresh_later["source_asof"] == "2026-07-17"
+
+    # THE INTENT: re-label the same data and the verdict must not move.
+    sa.build_context_feed(root=dr, asof="2026-07-24")
+    fresh_relabelled = json.loads(
+        (dr / "stage_analysis" / "industry_ranks.json").read_text()
+    )["coverage"]["freshness"]
+    assert fresh_relabelled["status"] == fresh_later["status"]
+    assert fresh_relabelled["source_stage_week"] == fresh_later["source_stage_week"]
+    assert fresh_relabelled["source_asof"] == fresh_later["source_asof"] == "2026-07-17"
 
 
 def test_seed_region_cap_disclosed(env):

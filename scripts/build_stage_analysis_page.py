@@ -27,7 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import shutil
+import os
 import sys
 from pathlib import Path
 
@@ -92,24 +92,96 @@ def _load_context(data_dir: Path, fixture: Path | None = None) -> dict | None:
         return None
 
 
-def _copy_stagedata(data_dir: Path, site_dir: Path) -> int:
-    """Copy the per-surface JSON artifacts into site/stagedata/. Returns the count
-    copied. Missing files are skipped (fail-open)."""
+def _is_stale_artifact(payload: dict) -> bool:
+    """Wave 8 §8 — an artifact discloses its own staleness via any of these.
+
+    Valid last-known data may be RETAINED only when the artifact itself
+    discloses that it is stale; this is what makes the retention honest
+    rather than a silent "still current" default.
+    """
+    if not isinstance(payload, dict):
+        return False
+    if payload.get("status") == "stale":
+        return True
+    if payload.get("stage_current") is False:
+        return True
+    population = payload.get("population")
+    if isinstance(population, dict) and population.get("status") == "no_target_week":
+        return True
+    return False
+
+
+def _copy_stagedata(data_dir: Path, site_dir: Path) -> tuple[int, int, int]:
+    """Copy the per-surface JSON artifacts into site/stagedata/.
+
+    Wave 8 §8 publication integrity — required behavior per artifact:
+      - source present and valid (parses as JSON into a NON-EMPTY object) ->
+        copy it atomically (temp + os.replace).
+      - source ABSENT -> remove the public destination (if any) and disclose
+        the revocation via `::warning title=stagedata-revoked::`. A missing
+        current source must never preserve yesterday's destination as though
+        it were current.
+      - source present but carrying explicit stale provenance (`status` of
+        "stale", `stage_current is false`, or
+        `population.status == "no_target_week"`) -> copy it anyway and let
+        the client render it as stale. Valid last-known data is retained
+        ONLY when the artifact itself discloses that it is stale.
+
+    Returns (copied, revoked, stale) — the counts of each outcome.
+
+    Validation stays narrow and per-artifact — parses as JSON into a non-empty
+    object — and is deliberately NOT a `schema`-key check. An earlier draft
+    required `"schema" in payload`, which silently stopped publishing FIVE live
+    surfaces (`ec_industry`, `ec_industry_heatmap`, `earnings_table`,
+    `earnings_season`, `earnings_compare`): their producer `engine/earnings_qual.py`
+    stamps `"surface"`, not `"schema"`. A publication guard that quietly freezes
+    healthy surfaces is the very failure mode §8 exists to prevent, so the check
+    tests only what it is actually for — that the bytes are a usable JSON object
+    rather than a truncated or corrupt file. This is not a global data-health
+    database.
+    """
     src_dir = data_dir / "stage_analysis"
     out_dir = site_dir / "stagedata"
     out_dir.mkdir(parents=True, exist_ok=True)
     copied = 0
+    revoked = 0
+    stale = 0
     for name in _STAGEDATA_FILES:
         src = src_dir / name
+        dest = out_dir / name
         if not src.exists():
-            log.info("stagedata: %s absent — surface shows warm-up state", name)
+            if dest.exists():
+                try:
+                    dest.unlink()
+                    revoked += 1
+                    print(f"::warning title=stagedata-revoked::{name} source "
+                          "absent — public copy revoked", flush=True)
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("stagedata: failed to revoke %s: %s", name, exc)
+            else:
+                log.info("stagedata: %s absent — surface shows unavailable state", name)
             continue
         try:
-            shutil.copyfile(src, out_dir / name)
+            raw = src.read_text(encoding="utf-8")
+            payload = json.loads(raw)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("stagedata: %s unreadable/invalid JSON, skipping copy: %s",
+                        name, exc)
+            continue
+        if not isinstance(payload, dict) or not payload:
+            log.warning("stagedata: %s is not a non-empty JSON object, skipping copy",
+                        name)
+            continue
+        try:
+            tmp = dest.with_suffix(dest.suffix + ".tmp")
+            tmp.write_text(raw, encoding="utf-8")
+            os.replace(tmp, dest)
             copied += 1
+            if _is_stale_artifact(payload):
+                stale += 1
         except Exception as exc:  # noqa: BLE001
             log.warning("stagedata: failed to copy %s: %s", name, exc)
-    return copied
+    return copied, revoked, stale
 
 
 def render(root: Path, fixture: Path | None = None) -> str:
@@ -147,8 +219,9 @@ def build(root: Path, fixture: Path | None = None) -> Path:
     data_dir = _data_dir(root)
     site_dir = root / "site"
 
-    n = _copy_stagedata(data_dir, site_dir)
-    log.info("copied %d stagedata artifact(s) to %s", n, site_dir / "stagedata")
+    copied, revoked, stale = _copy_stagedata(data_dir, site_dir)
+    log.info("stagedata: copied=%d revoked=%d stale=%d -> %s",
+             copied, revoked, stale, site_dir / "stagedata")
 
     html = render(root, fixture=fixture)
 

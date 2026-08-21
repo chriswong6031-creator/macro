@@ -1512,7 +1512,26 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
     return {head:head,body:body,legend:legend};
   }
 
+  function indHeatHistoryNote(){
+    /* Wave 8 §7.4 — the heatmap now accrues from house-native weekly history
+       (industry_rank_history.jsonl) rather than the absent EquityDesk seed.
+       Render the accrual/unavailable state honestly: never a blank panel
+       that reads as healthy, and never a fabricated 26 weeks. */
+    var h=IND.heat&&IND.heat.history;
+    if(!h)return null;
+    if(h.status==='unavailable'){
+      return '<div class="empty soon"><div class="ico">📈</div><h3>'+TT('Rank history unavailable','排名历史暂不可用')+'</h3><p>'+TT('No house-native weekly rank history has accrued yet. Check back after the next completed Stage week.','尚未累积任何自建的每周排名历史。请在下一个已完成的阶段周后再来查看。')+'</p></div>';
+    }
+    if(h.status==='accruing'){
+      var n=h.weeks_available||0,tgt=h.weeks_target||26,fw=esc(h.first_week||'—');
+      return '<p class="subcap accruing-note">'+TT('Rank history accruing from '+fw+' — '+n+' of '+tgt+' weeks','排名历史自'+fw+'起累积 —— '+tgt+'周中的第'+n+'周')+'</p>';
+    }
+    return null;
+  }
   function indHeatmap(){
+    var hstatus=indHeatHistoryNote();
+    var h=IND.heat&&IND.heat.history;
+    if(h&&h.status==='unavailable')return hstatus;
     var map=IND.heat&&IND.heat.regions;if(!map)return indEmpty();
     var g=heatGrid(map,function(row){
       return (row.ranks||[]).map(function(rk){
@@ -1522,7 +1541,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
       }).join('');
     },false,74);
     if(g.head===undefined)return indEmpty();
-    return '<p class="subcap"><b>'+LT('Where each industry ranked, week by week.','每个行业逐周的排名。')+'</b> '+LT('Each cell is that industry’s rank that Friday (1 = strongest). Most-recent week on the left.','每格是该行业当周五的排名（1＝最强）。最新一周在左。')+'</p>'+
+    return (hstatus||'')+'<p class="subcap"><b>'+LT('Where each industry ranked, week by week.','每个行业逐周的排名。')+'</b> '+LT('Each cell is that industry’s rank that Friday (1 = strongest). Most-recent week on the left.','每格是该行业当周五的排名（1＝最强）。最新一周在左。')+'</p>'+
       '<div class="heatscroll"><table class="heat"><thead>'+g.head+'</thead><tbody>'+g.body+'</tbody></table></div>'+
       '<div class="heatlegend"><span>'+LT('rank 1 (best)','排名1（最佳）')+'</span><span class="grad"></span><span>'+LT('rank 74 (worst)','排名74（最差）')+'</span></div>';
   }
