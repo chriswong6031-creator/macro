@@ -56,7 +56,7 @@ here. They are documented in `design_notes.md` §4 (§7 ruling) instead.
 | validated | 已验证 | Map, `#board` reasoning-chain tier label (`TIER_ZH`, `map.html:457`) | bound-from-production (verbatim) | Inline comment: "validated from `templates/sector_central.html.j2:3463`, the same 'Validated' the Money view's own tag already renders (QA2-13)." |
 | confirmer | 确认项 | Map, `#board` reasoning-chain tier label (`TIER_ZH`, `map.html:457`) | bound-from-production (verbatim) | Inline comment: "Tier words come from the producer's own established twins... confirmer/display from `templates/signal_lab.html.j2:548`'s `tier_labels`." |
 | display | 仅展示 | Map, `#board` reasoning-chain tier label (`TIER_ZH`, `map.html:457`) | bound-from-production (verbatim) | Same citation as `confirmer` above. |
-| breadth thrust | 广度推进 | Money, `#scc-leadership` rising-star driver leg (`LEG_ZH`, `money.html:912`) | bound-from-production, **EN half only** — ZH twin's provenance is ambiguous, see note | Inline comment (`money.html:904-911`): "'breadth thrust' reuses production's own established phrase (`templates/_risk_radar_card.html.j2:205`); the china sibling template... carries no twin for any of these three legs, so the other two are authored here." The comment confirms the **EN** phrase has a production precedent but does not state whether 广度推进 itself has one — **verify at freeze**: open `_risk_radar_card.html.j2` and its ZH twin (if any) before treating this ZH string as bound rather than authored. |
+| breadth thrust | 广度推进 | Money, `#scc-leadership` rising-star driver leg (`LEG_ZH`, `money.html:912`) | bound-from-production (EN and ZH both) | RESOLVED at freeze (orchestrator, 2026-08-21): `templates/_risk_radar_card.html.j2:205` carries the ZH pair itself — 广度推进 appears verbatim in its help() ZH string, so BOTH halves are bound-from-production. The other two legs (参与广泛 / 回报加速) remain authored, as the inline comment states. |
 | broad participation | 参与广泛 | Money, `#scc-leadership` rising-star driver leg (`LEG_ZH`, `money.html:912-913`) | authored-new | Same inline comment: explicitly named as one of "the other two [that] are authored here." |
 | return acceleration | 回报加速 | Money, `#scc-leadership` rising-star driver leg (`LEG_ZH`, `money.html:913`) | authored-new | Same inline comment: the second of "the other two [that] are authored here." |
 
@@ -125,9 +125,9 @@ no EN/ZH pair to ledger for this surface anymore.
 - **Authored-new inside a mostly-bound set, §2:** 3 rows (`Trend gate` inside
   `LAYER_ZH`; `broad participation` and `return acceleration` inside
   `LEG_ZH`).
-- **Ambiguous provenance flagged for freeze, §2:** 1 row (`breadth thrust`
-  ZH twin `广度推进` — EN confirmed bound, ZH twin's origin not confirmed by
-  the available inline comment).
+- **Ambiguous provenance: 0 rows** — the one freeze-flagged row (`breadth
+  thrust` / 广度推进) was resolved at freeze: both halves bound verbatim from
+  `templates/_risk_radar_card.html.j2:205`.
 - **Authored-new (ARIA-only), §3:** 4 `aria-label` pairs.
 - **Total EN/ZH pairs ledgered:** 24 (9 + 14 + 4, less double-counting none
   — §1 and §2 and §3 are disjoint surfaces).
