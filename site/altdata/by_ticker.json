@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-21",
-  "generated_utc": "2026-08-21T07:24:56.944248+00:00",
-  "n_tickers": 2590,
+  "generated_utc": "2026-08-21T09:13:20.136250+00:00",
+  "n_tickers": 2589,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
@@ -3744,12 +3744,10 @@
     },
     "ICE": {
       "ticker": "ICE",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
+      "channels": [],
+      "weighted_score": 0,
       "congress_position_usd": 2385675000.0,
-      "convergence_score": 1,
+      "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
     },
@@ -11158,16 +11156,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "LPSN": {
-      "ticker": "LPSN",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "LLM": {
       "ticker": "LLM",
       "channels": [
@@ -12870,16 +12858,6 @@
     },
     "QNCX": {
       "ticker": "QNCX",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "ROOT": {
-      "ticker": "ROOT",
       "channels": [
         "special_situation"
       ],
@@ -18079,6 +18057,16 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "OPTT": {
+      "ticker": "OPTT",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "CTHH": {
       "ticker": "CTHH",
       "channels": [
@@ -18589,6 +18577,16 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "WBS-PG": {
+      "ticker": "WBS-PG",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "TOON": {
       "ticker": "TOON",
       "channels": [
@@ -18941,16 +18939,6 @@
     },
     "IOBTQ": {
       "ticker": "IOBTQ",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "AIIR": {
-      "ticker": "AIIR",
       "channels": [
         "special_situation"
       ],
@@ -19631,6 +19619,16 @@
     },
     "BRAG": {
       "ticker": "BRAG",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "TECH": {
+      "ticker": "TECH",
       "channels": [
         "special_situation"
       ],
@@ -21541,6 +21539,16 @@
     },
     "PLUR": {
       "ticker": "PLUR",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "RDACU": {
+      "ticker": "RDACU",
       "channels": [
         "special_situation"
       ],
@@ -26119,16 +26127,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "ORBS": {
-      "ticker": "ORBS",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "NEON": {
       "ticker": "NEON",
       "channels": [
@@ -26393,16 +26391,6 @@
       "ticker": "WYFI",
       "channels": [
         "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "BETRW": {
-      "ticker": "BETRW",
-      "channels": [
-        "activist_13d"
       ],
       "weighted_score": 0.2,
       "convergence_score": 1,
