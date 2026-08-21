@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T08:25:18.967764+00:00",
-  "count": 1534,
+  "generated_at": "2026-08-21T09:24:47.083874+00:00",
+  "count": 1537,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -730,6 +730,68 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iuzpdbsyyrm-a968e8",
+      "title": "Walmart Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:43Z",
+      "summary_points": [
+        "**2Q26 Earnings Beat & Guidance**: Adj.",
+        "EPS $0.81 beat consensus; FY26 net sales growth guidance raised to +4.0-5.0% (from +3.5-4.5%) driven by tariff refunds and customer experience investments, despite underlying comp softness from health/wellness decline (-LSD) and tariff impacts.",
+        "**Gross Margin Expansion**: Gross margin at 25.4% (+91 bps y/y), above consensus, with tariff refunds offsetting price investments; SG&A expense ratio up 7.9% y/y due to higher self-insured claims and healthcare costs.",
+        "**Actuals vs.",
+        "Estimates & Key Risks**: Total Revenue $177.4bn vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ifm0v6xsszj-5fa005",
+      "title": "Kodiak Gas Services Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:41Z",
+      "summary_points": [
+        "**<u>EBITDA Guidance & Growth Acceleration</u>**: Raised 2025–30 EBITDA CAGR to 16% (from 15%) with 2026 guidance $830–860m; power segment driven by 1.5 GW capacity target by 2030 and LNT project catalyst.",
+        "**<u>Compression Pricing Power & Supply Tightness</u>**: 180+ week lead times for 3600 engines enable long-term contracts (2027–2029) and pricing upside; KGS captures pricing on 50% of 2027 uncontracted capacity.",
+        "**<u>Power Segment Deployment & Margin Expansion</u>**: +400 MW/year power deployment (75% gas turbines/Baker Hughes), 100MW hyperscaler data center deals (15% return, 5-yr payback), and legacy portfolio repricing driving margin trajectory.",
+        "**<u>Valuation Upside & Growth Visibility</u>**: $90 PT (49.9% upside from $60) based on 12.5x 2027 EBITDA ($980M), with revenue growing from $1.3B (2025) to $2.0B (2028) and EPS rising to $3.52.",
+        "**<u>Capital Allocation Shift to Power Growth</u>**: Prioritizing power footprint expansion (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-33yj6x3qt5m-21d56f",
+      "title": "CVC Capital Partners (CVC.AS) Strategic partnership with Standard Life to launch PRT platform",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:37Z",
+      "summary_points": [
+        "**Capital Structure & AUM Targets**: £2bn CVC-Standard Life partnership (CVC: £400m, SL: £500m) targets £25-35bn AUM in 5 years with 5.5%-8% capital strain due to monoline structure, leveraging CVC’s private market access and SL’s regulatory infrastructure.",
+        "**Strategic Positioning**: Directly supports CVC’s insurance franchise growth (post-AIG/Marathon acquisitions), enabling capture of UK pension opportunities and enhancing credit origination amid high-capital-strain environment.",
+        "**Valuation Gap & Downgrade**: Goldman Sachs reduced target price from €24.20 (Feb 2025) to €20.90 (Jul 2026), with \"B\" rating; target exceeds closing price (€14.51), signaling overvaluation or analyst skepticism.",
+        "**Key Risk Factors**: Fundraising deterioration, investor allocation shifts to alternatives, fee margin compression, and performance/track record issues threaten capital deployment and profitability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
