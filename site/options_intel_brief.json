@@ -2,7 +2,7 @@
   "as_of_session": "2026-08-12",
   "board_reason": null,
   "board_state": "STALE_SOURCE",
-  "built_at_utc": "2026-08-20T08:43:11.462082+00:00",
+  "built_at_utc": "2026-08-21T03:59:34.180183+00:00",
   "config_hash": "975ea7db731fc5dcd04f2e63cd29dcff973931a17a4d768c9232fa4aa66123ac",
   "contract_identity_exclusions": 0,
   "directional_qualified_count": 0,
@@ -60,7 +60,7 @@
       "asof": "2026-08-20",
       "logical_source": "prophet_index",
       "path": "site/prophet/index.json",
-      "sha256": "93d2f65e6cdf24d2169e51b3737cdb540b2fdb24efbe45f97a7dc5ea620b5380",
+      "sha256": "42ba062baa3734c977e1767f40c2eda7965795350efbd565ed108381880b3ca8",
       "state": "ok"
     },
     {
@@ -94,7 +94,7 @@
   "opportunities_overflow": 0,
   "pending_reason": "OI_NOT_YET_SETTLED",
   "pending_session": "2026-08-13",
-  "receipt_id": "442f3344c38b427edf8e2ad4351357938b90bbd00871b9a5e14bf2268afde124",
+  "receipt_id": "8b1c7b5f0319804d59e2eb7b41a26d0d1c891e308020d8336a5a3065c8af4cdb",
   "risk_board_overflow": 0,
   "risk_warnings": [],
   "schema": "options.intel_brief/v1",

@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-08-21T01:18:36.406634+00:00",
+  "generated_utc": "2026-08-21T04:24:54.278064+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -1125,10 +1125,11 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 0.8,
+      "alt_score": 4,
+      "alt_weighted": 1.15,
       "alt_channels": [
         "affiliation",
+        "analyst_upgrade_cluster",
         "retail_buzz",
         "stocktwits_bull"
       ],
@@ -1467,6 +1468,27 @@
       }
     },
     {
+      "ticker": "DHR",
+      "actors": [
+        {
+          "actor": "Jim Cramer",
+          "kind": "influencer",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 1.0,
+      "alt_channels": [
+        "affiliation",
+        "trump"
+      ],
+      "top_holder": null
+    },
+    {
       "ticker": "ABTC",
       "actors": [
         {
@@ -1647,31 +1669,19 @@
         "affiliation"
       ],
       "top_holder": null
-    },
-    {
-      "ticker": "DHR",
-      "actors": [
-        {
-          "actor": "Jim Cramer",
-          "kind": "influencer",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
     }
   ],
   "recent": [],
   "n_candidates": 0,
   "filings": [
+    {
+      "date": "2026-08-20",
+      "form": "8-K",
+      "company": "AMAZE HOLDINGS, INC.",
+      "ticker": "AMZE",
+      "items": "1.01,7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1880343/000149315226039376/ex99-1.htm"
+    },
     {
       "date": "2026-08-14",
       "form": "6-K",
@@ -1759,14 +1769,6 @@
       "ticker": null,
       "items": "",
       "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026838/djt20260810j_425.htm"
-    },
-    {
-      "date": "2026-08-10",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026809/djt20260810h_425.htm"
     }
   ]
 }

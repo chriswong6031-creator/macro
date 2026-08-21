@@ -1,31 +1,31 @@
 {
   "schema": "bottom_sensors_geometry_audit.v1",
-  "n_booked": 52831,
+  "n_booked": 55766,
   "booked_dates": [
     "2026-07-06",
-    "2026-08-19"
+    "2026-08-20"
   ],
-  "asof": "2026-08-19",
-  "n_matured": 5438,
+  "asof": "2026-08-20",
+  "n_matured": 5440,
   "by_horizon": {
     "h21": {
-      "n_obs": 5438,
+      "n_obs": 5440,
       "decline_geometry": {
         "buckets": {
           "flush": {
-            "mean_fwd_ret": 0.012674638608580086,
-            "n": 810
+            "mean_fwd_ret": 0.012532653060065091,
+            "n": 811
           },
           "grind": {
-            "mean_fwd_ret": 0.02855921971986329,
+            "mean_fwd_ret": 0.028386566481836132,
             "n": 829
           },
           "mixed": {
-            "mean_fwd_ret": 0.0247469135850724,
-            "n": 825
+            "mean_fwd_ret": 0.024481972188072236,
+            "n": 826
           }
         },
-        "flush_minus_grind": -0.015884581111283207
+        "flush_minus_grind": -0.01585391342177104
       },
       "underwater_state": {
         "buckets": {
@@ -34,20 +34,20 @@
             "n": 812
           },
           "mid": {
-            "mean_fwd_ret": 0.024211456367370623,
+            "mean_fwd_ret": 0.023942396937446927,
             "n": 804
           },
           "short": {
-            "mean_fwd_ret": 0.0006272900930569188,
-            "n": 848
+            "mean_fwd_ret": 0.0003630187349085454,
+            "n": 850
           }
         },
-        "long_minus_short": 0.041688351791331034
+        "long_minus_short": 0.04195262314947941
       }
     }
   },
   "interpretation": "Realized forward-return gaps of the FROZEN structural descriptors per horizon: decline_geometry flush\u2212grind (family E, DISPLAY-CANDIDATE) and underwater_state long\u2212short (family F, ADVERSE-CONTEXT). Descriptive only; empty/thin until horizons elapse.",
   "authority": "DISPLAY-ONLY \u2014 no ranking/gating/allocation surface is touched; a positive gap does NOT promote either descriptor. CHIP promotion is blocked until the true eq_band cache lands (RUL-28).",
   "survivorship": "OPTIMISTIC bound \u2014 free prices serve currently-listed names only.",
-  "generated_utc": "2026-08-20T09:27:40+00:00"
+  "generated_utc": "2026-08-21T04:46:02+00:00"
 }

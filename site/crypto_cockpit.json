@@ -2,18 +2,18 @@
   "schema": "crypto.cockpit/v1",
   "contract_phase": "w0",
   "display_only": true,
-  "as_of": "2026-08-20",
-  "generated_at": "2026-08-21T02:11:18+00:00",
+  "as_of": "2026-08-21",
+  "generated_at": "2026-08-21T04:05:54+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 69670.34,
-    "change_24h_pct": 0.53,
-    "stance_en": "RISK-ON",
-    "stance_zh": "偏多",
-    "summary_en": "The big picture reads risk-on. Support comes from the trend and momentum; the drag comes from futures positioning and stablecoin flows. Day-to-day direction is a coin flip — watch the dip-risk read below.",
-    "summary_zh": "大方向偏多。支撑来自趋势与动量；拖累来自期货持仓与稳定币资金。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
-    "master_score": 31,
-    "exposure_pct": 44,
+    "price": 73407.13,
+    "change_24h_pct": 0.54,
+    "stance_en": "STRONG RISK-ON",
+    "stance_zh": "强烈偏多",
+    "summary_en": "The big picture reads strongly risk-on. Support comes from the pace of the move and momentum; the drag comes from futures positioning and stablecoin flows. Day-to-day direction is a coin flip — watch the dip-risk read below.",
+    "summary_zh": "大方向明显偏多。支撑来自涨跌节奏与动量；拖累来自期货持仓与稳定币资金。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
+    "master_score": 41,
+    "exposure_pct": 50,
     "gate_active": false
   },
   "axes": [
@@ -153,7 +153,7 @@
         "state_en": "Low",
         "state_zh": "低",
         "tone": "bull",
-        "as_of": "2026-08-20"
+        "as_of": "2026-08-21"
       },
       "spark_source": "signals.oi_mcap_ratio",
       "receipt_members": [

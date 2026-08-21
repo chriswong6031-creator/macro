@@ -7,16 +7,21 @@
   "ac8b8579a423": {
     "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Communication Services",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Communication Services",
-    "score": 61.1
+    "score": 63.7
+  },
+  "b1d5c09e6b31": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Information Technology",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Information Technology",
+    "score": 57.9
   },
   "c57ebeee3468": {
     "name_en": "Cross-sector cluster \u00b7 Communication Services + Consumer Discretionary",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication Services + Consumer Discretionary",
-    "score": 64.1
+    "score": 64.0
   },
   "d2a4afb86e07": {
     "name_en": "Emerging Consumer Staples cluster",
     "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 42.7
+    "score": 40.9
   }
 }
