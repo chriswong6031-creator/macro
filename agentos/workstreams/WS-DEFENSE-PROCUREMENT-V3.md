@@ -100,43 +100,44 @@ waves:
   - id: D4
     title: Company financial truth bridge
     status: done
-    pr: [6123, 6173]
+    pr: [6123, 6173, 6192]
     depends_on: [D3]
     next_action: >
-      Done — shipped and live 2026-08-20 (merge b5548ece927d) under Sol's
-      IRDM-only charter. Owner preflight: case A on the v1 context plane
-      (GET /api/company-intelligence/IRDM serves company_intelligence_
-      context.v1 live; event_workspace.v1 stays AAPL-only; DEC:D4-COMPANY-
-      RAIL-CONSUMES-CI-V1-CONTEXT). Bridge renders GOVERNMENT FACT (P00032,
-      transaction receipt by content_sha256) / COMPANY TRUTH
-      (earnings_history-lineage fields only, fail-closed typed unavailable)
-      / COMPARISON fixed not_comparable with no ratio node / RESEARCH
-      QUESTION. 27-test hostile suite on a committed P00032 fixture in the
-      MERGE-BINDING gate:code job govrev-company-bridge. Opus review found
-      the suite would have shipped dark (gate:data holding pen) and a
-      wrong-receipt link — repaired pre-merge, probes pinned as tests.
-      Page fence unchanged (baked 296,693 <= 303,104). Sol re-review
-      2026-08-21: implementation substantially passes, FINAL ACCEPTANCE
-      WITHHELD on two gates. Gate 1 (D4.1 provenance hardening) CLOSED
-      2026-08-21: receiptUrl() fail-open `|| rows[0]` fallback removed —
-      exact content_sha256 match or NO source link (PR #6173, merge
-      8f10699e118b, live in prod checkout 6590e678c60, fail-closed bytes
-      verified at the serving checkout); pinned by hostile tests R14a-R14d
-      in the merge-binding gate:code suite plus a captured red/green
-      mutation run; bake 296,729 <= 303,104, fence NOT ratcheted. Gate 2
-      (D4P entitled happy-path production proof) BLOCKED: no entitled
-      browser mechanism was available (Chrome extension: zero connected
-      instances, checked repeatedly 2026-08-21; credential entry is
-      prohibited to agents; government-revenue-data/workspace.json is
-      auth-locked so there is no anonymous receipt-sha shortcut). Honest
-      state per Sol's own protocol: D4.1 merged; D4 = BUILT_NOT_PROVEN;
-      BLOCKED_ON_ENTITLED_PRODUCTION_PROOF. No fixture substitute was
-      performed. Live owner packet at block time: schema
-      company_intelligence_context.v1, available true, generated_at
-      2026-08-21T06:53:16Z, latest_event cie_77ff210df9c064c3b2fe4aa1,
-      FY2026 Q1 / call 2026-04-23, claim_citations_pending true. Anonymous
-      negative controls re-proven post-D4.1 (module 401, workspace locked,
-      page 200, bridge host hidden markup only). D5 unauthorized.
+      Done / SOL ACCEPTANCE PENDING — shipped under Sol's IRDM-only charter
+      in #6123 and provenance-hardened in #6173. D4P entitled production
+      proof CLOSED 2026-08-21 on the real signed-in route
+      government_revenue.html?mode=companies&item=company:IRDM. Production
+      rendered GOVERNMENT FACT P00032 for exactly $18,416,666.66, effective
+      2026-05-12, first known 2026-08-12, late discovery. The rendered
+      official-receipt target was selected by exact
+      content_sha256=2a07ba19681a3c9d07f69b3316850b4646db48a8075d2ea8375755e112d02bab,
+      byte-equal to award_change.source_identity.content_sha256; the decoy
+      award receipt carried a different sha. One actual authenticated GET
+      /api/company-intelligence/IRDM completed 200 (no D4 fetch storm and no
+      D4 console/request error), and COMPANY TRUTH rendered the successful
+      packet state, never Company packet unavailable. Live owner packet:
+      company_intelligence_context.v1, generated_at
+      2026-08-21T06:53:16Z, latest_event
+      cie_77ff210df9c064c3b2fe4aa1, FY2026 Q1 / call 2026-04-23. Live
+      procurement workspace: government_procurement_workspace.v2,
+      generated_at 2026-08-21T06:52:47.804099+00:00; P00032 event
+      govws-a6c70850a9cbdce9fa3e7f3b. The first production pass exposed one
+      real D4 defect: the rendered source-status line leaked metadata-only
+      score_overlay lineage. #6192 removed that forbidden lineage at the
+      rendering boundary, pinned it with a captured failing regression, and
+      merged concluded-green as 7b6e5d126e7a; public-render run 32482669089
+      completed green and production /api/health reported checkout
+      7b6e5d126e7. Post-deploy proof has zero rendered score_overlay lineage;
+      COMPARISON remains not_comparable, with zero denominator-value nodes
+      and zero ratio nodes. Responsive proof: 1280x900 EN desktop inspector
+      in-bounds with no horizontal overflow; 768x1024 EN mobile sheet
+      in-bounds with no horizontal overflow; 375x812 ZH mobile sheet
+      localized (政府事实 / 公司披露 / 不可比) and in-bounds with no horizontal
+      overflow. LMT negative: no D4 bridge host and zero
+      /api/company-intelligence/LMT fetches. Anonymous negative: D4 module
+      and workspace JSON each 401 authentication_required/locked; page 200
+      exposes one hidden empty bridge host only. Return to Sol for final D4
+      acceptance. D5 remains unauthorized and unstarted.
   - id: D5
     title: Program, mission, capability, and product graph
     status: todo
@@ -182,20 +183,13 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  D4P entitled production proof, then Sol final D4 acceptance. D4.1
-  provenance hardening is CLOSED (#6173, merge 8f10699e118b, live);
-  D4 = BUILT_NOT_PROVEN / BLOCKED_ON_ENTITLED_PRODUCTION_PROOF — the
-  remaining gate is a real entitled site_full browser session rendering
-  government_revenue.html?mode=companies&item=company:IRDM with the
-  SUCCESS company-packet state beside P00032 (receipt sha equivalence,
-  1280/768/375, LMT negative, anon control) per Sol's 2026-08-21 D4
-  closeout directive. Unblocks when an authorized entitled browser
-  mechanism exists (e.g. operator connects the Claude Chrome extension in
-  a signed-in Chrome); never via agent credential entry, never via a
-  fixture substitute. D5 is unauthorized. #5424 is closed/superseded by
-  defense21-v1. Publisher-vintage alarm and fixture-freezing the D2/D3
-  law suites out of the unrun-government-revenue holding pen remain
-  separate follow-ups — do not fold them into the D4 closeout.
+  Sol final D4 acceptance. D4P entitled production proof is CLOSED on the
+  real signed-in IRDM route after #6192 removed the live-discovered
+  score_overlay rendering defect; D4 is done / SOL ACCEPTANCE PENDING.
+  D5 is unauthorized and unstarted. #5424 is closed/superseded by
+  defense21-v1. Publisher-vintage alarm and fixture-freezing the D2/D3 law
+  suites out of the unrun-government-revenue holding pen remain separate
+  follow-ups — do not fold them into the D4 closeout.
 ---
 
 ## Context
