@@ -1,16 +1,16 @@
 {
-  "date": "2026-08-20",
+  "date": "2026-08-21",
   "present": true,
   "variant": "balanced",
   "label_en": "Balanced",
   "label_zh": "\u5747\u8861",
   "growth_w": 35,
   "defensive_w": 65,
-  "sharpe": 0.96,
+  "sharpe": 0.97,
   "maxdd": -17.2,
-  "cagr": 7.97,
+  "cagr": 8.01,
   "band": "elevated",
   "years": 13.1,
-  "bench_csi_sharpe": 0.44,
+  "bench_csi_sharpe": 0.45,
   "bench_csi_maxdd": -45.5
 }
