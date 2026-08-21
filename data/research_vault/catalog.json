@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T17:18:38.076566+00:00",
-  "count": 1560,
+  "generated_at": "2026-08-21T18:20:10.126839+00:00",
+  "count": 1563,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -84,6 +84,27 @@
   ],
   "items": [
     {
+      "id": "marketdesk-4zfjlbotwm9-7d6e11",
+      "title": "MS AI Sovereignty Policy, Market, and Economic Implications",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T17:08:30Z",
+      "summary_points": [
+        "**US AI Sovereignty Policy & Market Impact**: $860B US federal AI infrastructure build-out (data centers, semiconductors) via de-risking policies creates market bifurcation; US model providers gain share if Chinese models restricted, non-China robotics OEMs face higher inference costs.",
+        "**AI Sovereignty Thematic Growth**: Sovereign AI infrastructure spending drives fastest-growing thematic cohort (3,800 coverage names) with premium valuations, favoring infrastructure providers (NVDA, AVGO), cloud (MSFT), and colocation DCs (EQIX).",
+        "**Geopolitical Fragmentation**: US/China prioritizing domestic AI capabilities (data centers, semiconductors) over global markets fragments tech landscapes; governments enforce tighter controls on tech flows (chips, cloud, models), expanding TAM for sovereign-focused infrastructure.",
+        "**Policy-Driven Tech Controls**: Governments prioritize national security over economic efficiency → increased demand for domestic infrastructure; key beneficiaries: data centers, cloud, semiconductors, telecom (e.g., US restrictions target advanced chips/cloud access, China enforces localization via cybersecurity/data controls).",
+        "**US-China Policy Divergence**: US restricts advanced chips/cloud access (Entity List, ICTS Rule), China mandates local model integration (regulatory approval, domestic data storage); creates bifurcation risk with critical impact on AI model/applications deployment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 73,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-tahiacdewgo-97a5ef",
       "title": "GS Gold Macro buying w a physical kicker",
       "institution": "S&T",
@@ -95,6 +116,27 @@
         "**Geopolitical Flow Divergence**: UK-China trade (37 MT Q2 vs 15 MT 2025), Turkey buying back, and Russia liquidating highlight geopolitical drivers reshaping gold flows, creating asymmetric demand/supply dynamics.",
         "**EFP Speculative Signals**: Rolling 2nd Matched EFP spikes correlate with tariff events, indicating elevated speculative activity and potential short-term volatility in gold pricing.",
         "**CTA Momentum Buildup**: CTAs increasing long positions with positive momentum indicators confirm sustained bullish sentiment, reinforcing technical support for gold's upward trajectory."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fc7qkuodrv1-120918",
+      "title": "Bear Traps Chat Recap Overnight 21 Aug 2026",
+      "institution": "Bear Traps",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T16:16:02Z",
+      "summary_points": [
+        "**US Treasury Yield Curve Steepening**: 5-30yr yields rising signals shifting economic expectations and Fed tightening concerns, critical for duration positioning and policy anticipation.",
+        "**NVIDIA-China Geopolitical Dispute**: Conflicting reports on U.S.-compliant chip shipments raise export control risks and market access volatility, directly impacting AI sector flows.",
+        "**Walmart Sales Drop & NDX Impact**: WMT’s 8% intraday decline (slowest sales growth in years) drives 0.20% NDX drop, highlighting consumer staples' index exposure and demand weakness.",
+        "**Gold 200-Day Resistance Break**: Spot XAU breaking downtrend and PM consensus identifying 200-day MA as critical resistance signals tactical entry (\"GIFTS\") amid safe-haven dynamics.",
+        "**AVGO AI Debt Financing**: Broadcom negotiating >$60B debt package for AI infrastructure (incl."
       ],
       "tags": [],
       "tickers": [],
@@ -120,6 +162,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 36,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gtez1k14ayi-80c7aa",
+      "title": "THE POPULIST HYDRA",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-21T15:18:47Z",
+      "summary_points": [
+        "**German Populist Surge**: AFD leads Saxony-Anhalt and Mecklenburg-West Pomerania elections; Merz’s 13% approval (new low) signals institutional fragility and rising populist influence in Germany.",
+        "**US Midterms & Trump 2.0**: November midterms face radicalized populist dynamics; Trump’s -20pp net approval fuels protest votes toward socialist left, escalating policy instability.",
+        "**AI Infrastructure Backlash**: Bipartisan opposition to data centers (Maine veto, NY moratorium, 75%+ public opposition) threatens trillion-dollar AI buildout, risking project delays and sector volatility.",
+        "**EU Populist Pivot on Ukraine**: European populists (e.g., Meloni) may reduce Ukraine aid and align with Russia in second terms, leveraging fiscal constraints for \"peace dividend\" amid domestic political capital.",
+        "**Policy Risk Drivers**: Radical policies (immigration clampdowns, punitive wealth taxes) and widening wage/asset gaps fuel populist movements, destabilizing business confidence and generating immediate market uncertainty."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
