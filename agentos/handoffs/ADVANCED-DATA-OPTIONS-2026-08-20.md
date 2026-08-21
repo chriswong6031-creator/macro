@@ -29,7 +29,7 @@ verified:
     result: every clock attack held; F1 major + 5 minors repaired; each flip fails a named test; pytest tests/test_polygon_gex.py -q = 123 passed
   - claim: Sol review 4989933857's four amendments are load-bearing (first-write lease, pre-fetch refusal, real overlap floor, receipt provenance)
     command: "python3 -m pytest tests/test_polygon_gex.py -q (142 passed) + per-amendment flip-verification (each amendment reverted alone fails 1-16 named tests, e.g. TestAD1C01FirstWriteLease, TestAD1C01NoFetchOutsideLease, TestAD1C01OverlapFloorIsAMinimum, TestAD1C01ReceiptAudit)"
-    result: all four amendments implemented at commit 662342a0ece6; reverting any one fails named tests; suite green
+    result: all four amendments implemented at commit b4c71b100d9c (post-rebase sha); the ordered single adversarial round then found F1 (BLOCKER two-clock lease gate refusing the documented accrue(<instant>) convention — 5 untouched sibling tests red), F2 (MAJOR all-None refusal census blinding the N2 shrink tripwire), F3 (forced overwrite receipted as first_write), F4 (vintage_proof counts non-reproducible vs the floor) — all repaired at 11d3ae1b2235, each flip-verified; combined suites 196 passed / 10 skipped
   - claim: Job B external closure is NOT done (recorded, not litigated)
     command: "secret-safe probe 2026-08-20T08:09Z + gh api runs/32077948964/logs -i + actions/secrets listing"
     result: option chain 403 NOT_AUTHORIZED (stock 200, same key); exposed run logs still HTTP 200; no POLYGON_API_KEY/MASSIVE_API_KEY in Actions secrets

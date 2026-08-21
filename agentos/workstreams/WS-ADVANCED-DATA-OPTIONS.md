@@ -94,7 +94,15 @@ waves:
       next day + OI same-book proof); PR #6080 open as a HELD DRAFT for Sol
       (no arming, per DEC:SOL-HOLD-IS-A-MERGE-BARRIER). Jobs B/C remain
       BLOCKED_EXTERNAL (probe 08:09Z: chain 403; logs undeleted; no Actions
-      secret registered).
+      secret registered). Sol review 4989933857 (2026-08-21) = AMEND-THEN-PASS:
+      four amendments implemented (lease gates every non-forced write incl.
+      first writes; refusal pre-fetch with zero vendor calls; overlap floor
+      min(stored, max(20, ceil(0.25*stored))); receipts carry lease +
+      vintage_proof audit dicts) and one boundary-focused adversarial round
+      found F1 two-clock blocker / F2 shrink-tripwire blinding / F3 forced
+      write_kind mislabel / F4 non-reproducible floor — all repaired and
+      flip-verified (196 passed combined). Revised head returned to Sol;
+      PR stays a HELD DRAFT.
   - id: AD-2
     title: Evidence Receipts, Nulls, Lifecycle, Corrections
     status: todo
