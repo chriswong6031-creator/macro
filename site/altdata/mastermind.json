@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-08-21",
-  "generated_utc": "2026-08-21T05:39:22.543867+00:00",
+  "generated_utc": "2026-08-21T06:45:35.117548+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": "Convergence is broad but uneven: the cleanest measured alignments are in AI/cloud demand, memory, telecom contracting, and an airline activist setup, while several other clusters lean heavily on sentiment or affiliation. With no scored outcomes in the desk track record, conviction remains deliberately low despite multiple five-channel signals [track_record].",
   "brain_present": true,
@@ -20,7 +20,7 @@
     "open": 15,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 88,
+  "n_signals": 89,
   "n_broken": 26,
   "signals": [
     {
@@ -82,8 +82,8 @@
     },
     {
       "ticker": "MU",
-      "signal_score": 80,
-      "conviction": "medium",
+      "signal_score": 64,
+      "conviction": "low",
       "action": "ACCUMULATE",
       "direction": "long",
       "source": "brain",
@@ -96,7 +96,7 @@
         "stocktwits_bull"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 21.4,
+      "rs_vs_spy_60d": 6.9,
       "no_price_data": false,
       "extended": false,
       "rolling_over": false,
@@ -112,14 +112,14 @@
         }
       ],
       "n_affiliated_actors": 1,
-      "thesis": "MU combines insider-purchase intensity with patent activity, accelerating government-grant data, and uniformly bullish analyst and social indicators [insider_mspr] [patent_cluster] [gov_grant_accel] [analyst_upgrade_cluster] [stocktwits_bull]. Insider behavior and grant acceleration are the differentiated components; analyst and retail optimism are supporting rather than decisive evidence. The name is not flagged extended.",
+      "thesis": "The memory-cycle read has four-way support from insider purchasing intensity, a sizable patent cluster, unanimous measured Stocktwits bullishness and a disclosed Ro Khanna affiliation [insider_mspr] [patent_cluster] [stocktwits_bull] [actor:Ro Khanna]. Government-grant acceleration is also present in the metrics, but it is not one of the scored convergence channels and is therefore only supplementary. At +6.9 percentage points versus SPY, MU is not extended.",
       "second_order": [
-        "AMAT \u2014 memory-capacity expansion would support wafer-fabrication equipment demand",
-        "LRCX \u2014 higher memory investment would benefit deposition and etch intensity",
-        "AI-server memory supply chain \u2014 stronger high-bandwidth-memory demand can lift adjacent packaging and substrate activity"
+        "Memory-equipment suppliers \u2014 stronger memory investment would support fabrication-tool demand",
+        "AI accelerators \u2014 rising high-bandwidth-memory demand is tied to accelerator deployments",
+        "Data-center hardware \u2014 memory-content growth benefits AI server supply chains"
       ],
       "falsifier": {
-        "text": "Insider buying stops and memory investment or demand weakens despite the patent and grant signals.",
+        "text": "Insider buying ceases and memory demand weakens before patent activity converts into commercial products.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MU",
@@ -127,6 +127,49 @@
           "op": "<",
           "threshold": -0.05,
           "horizon_d": 60
+        }
+      },
+      "clamped": null
+    },
+    {
+      "ticker": "T",
+      "signal_score": 62,
+      "conviction": "low",
+      "action": "ACCUMULATE",
+      "direction": "long",
+      "source": "brain",
+      "weighted_score": 1.7,
+      "convergence_score": 2,
+      "channels": [
+        "congress_cluster",
+        "gov_contract_accel"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 0.0,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -11.5,
+      "ret_20d": 9.5,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": "Only two channels align, but both are transaction-oriented: a four-member congressional buying cluster and sharply accelerating federal-contract activity [congress_cluster] [gov_contract_accel]. The flat 60-day relative return means the entry is not extended, but the narrow channel count limits conviction.",
+      "second_order": [
+        "Telecom network equipment \u2014 sustained federal communications awards can pull through equipment demand",
+        "Cybersecurity services \u2014 government telecom deployments typically require security layers",
+        "Fiber construction contractors \u2014 network expansion can increase installation and maintenance work"
+      ],
+      "falsifier": {
+        "text": "Federal contract awards normalize without follow-through and the congressional buying cluster dissipates.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "T",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 45
         }
       },
       "clamped": null
@@ -258,38 +301,9 @@
       "clamped": null
     },
     {
-      "ticker": "T",
-      "signal_score": 54,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.7,
-      "convergence_score": 2,
-      "channels": [
-        "congress_cluster",
-        "gov_contract_accel"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 0.0,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -11.5,
-      "ret_20d": 9.5,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "MRK",
       "signal_score": 53,
-      "conviction": "high",
+      "conviction": "low",
       "action": "WATCH",
       "direction": "long",
       "source": "brain",
@@ -427,6 +441,48 @@
           "actor": "Paul Pelosi",
           "rel": "AFFILIATES_WITH",
           "kind": "influencer"
+        }
+      ],
+      "n_affiliated_actors": 2,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "PLTR",
+      "signal_score": 49,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.15,
+      "convergence_score": 4,
+      "channels": [
+        "affiliation",
+        "analyst_upgrade_cluster",
+        "retail_buzz",
+        "stocktwits_bull"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 25.5,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -16.0,
+      "ret_20d": 41.0,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Marjorie Taylor Greene",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Cathie Wood",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
         }
       ],
       "n_affiliated_actors": 2,
@@ -802,35 +858,23 @@
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 0.8,
-      "convergence_score": 3,
+      "weighted_score": 1.0,
+      "convergence_score": 2,
       "channels": [
-        "affiliation",
-        "retail_buzz",
-        "stocktwits_bull"
+        "analyst_upgrade_cluster",
+        "unusual_options"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 25.5,
+      "rs_vs_spy_60d": 17.1,
       "no_price_data": false,
       "extended": false,
       "rolling_over": false,
-      "off_high_252": -16.0,
-      "ret_20d": 41.0,
+      "off_high_252": -5.9,
+      "ret_20d": 1.8,
       "above_50dma": true,
       "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Marjorie Taylor Greene",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Cathie Wood",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 2,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -886,35 +930,6 @@
       "rolling_over": false,
       "off_high_252": -1.1,
       "ret_20d": -0.1,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "CNC",
-      "signal_score": 33,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.9,
-      "convergence_score": 2,
-      "channels": [
-        "analyst_upgrade_cluster",
-        "material_8k"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 13.2,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -2.4,
-      "ret_20d": 0.7,
       "above_50dma": true,
       "entry_tier": null,
       "affiliations": [],
@@ -1130,35 +1145,6 @@
       "rolling_over": false,
       "off_high_252": -3.2,
       "ret_20d": 6.4,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "PFE",
-      "signal_score": 31,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.9,
-      "convergence_score": 2,
-      "channels": [
-        "clinical_phase3_start",
-        "fda_label_expansion"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 7.5,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -1.6,
-      "ret_20d": 13.1,
       "above_50dma": true,
       "entry_tier": null,
       "affiliations": [],
@@ -1484,35 +1470,6 @@
       "no_price_data": false,
       "extended": false,
       "rolling_over": true,
-      "off_high_252": -26.6,
-      "ret_20d": -10.8,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "DDOG",
-      "signal_score": 22,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.65,
-      "convergence_score": 2,
-      "channels": [
-        "analyst_upgrade_cluster",
-        "github_momentum"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 2.1,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
       "off_high_252": -19.3,
       "ret_20d": -4.8,
       "above_50dma": false,
@@ -1558,6 +1515,57 @@
       "second_order": [],
       "falsifier": null,
       "clamped": null
+    },
+    {
+      "ticker": "LUV",
+      "signal_score": 21,
+      "conviction": "low",
+      "action": "AVOID",
+      "direction": "short",
+      "source": "brain",
+      "weighted_score": 1.6,
+      "convergence_score": 4,
+      "channels": [
+        "activist_13d",
+        "affiliation",
+        "app_demand",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": -7.1,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -26.6,
+      "ret_20d": -10.8,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Paul Singer",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": "The airline setup combines an activist 13D, strong app demand, a disclosed Paul Singer affiliation and a favorable Trump-linked signal [activist_13d] [app_demand] [actor:Paul Singer] [trump]. The -7.1 percentage-point relative return versus SPY leaves room for operational or governance catalysts to be recognized, but the signal depends heavily on activist execution.",
+      "second_order": [
+        "Aircraft maintenance providers \u2014 improved fleet utilization can raise maintenance demand",
+        "Airport service vendors \u2014 stronger passenger throughput supports ground and terminal services",
+        "Domestic travel platforms \u2014 healthier airline demand can increase booking volumes"
+      ],
+      "falsifier": {
+        "text": "The activist campaign produces no measurable governance or operating change and app demand fails to translate into improved traffic.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "LUV",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 90
+        }
+      },
+      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'ACCUMULATE' \u2192 'AVOID' (deterministic ceiling)"
     },
     {
       "ticker": "HIMS",

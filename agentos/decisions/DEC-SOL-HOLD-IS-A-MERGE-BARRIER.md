@@ -14,9 +14,14 @@ answer: >
   the authority and the release condition (ratifying the
   DSC:CHINA-ALPHA-HOLD-MERGE-INCIDENT protocol into the decision plane). A session
   arming any PR it did not open must first grep its title+body+comments for hold
-  language. Conditional merge authority granted for one PR (e.g. Sol's #5872
-  finalization conditions) NEVER transfers to a sibling or successor PR — each PR's
-  merge authority is granted individually or not at all.
+  language. Once that protocol is complete, the exact head is pushed and clean, and
+  all binding checks on that head have concluded green, the delivery state is
+  **PARKED / HOLD-FOR-SOL**: it is terminal for the current session, not SHIPPED and
+  not a retryable `SHIP LOOP BLOCKED` state. Report the evidence once and stop; do
+  not poll, re-arm, mark ready, merge, or re-enter the ship loop until the named
+  holding authority changes or releases the hold. Conditional merge authority granted
+  for one PR (e.g. Sol's #5872 finalization conditions) NEVER transfers to a sibling
+  or successor PR — each PR's merge authority is granted individually or not at all.
 rationale: >
   Label-based holds do not bind the merge path: the sweeper selects candidates by
   label only, blanket-arming sessions have twice overridden deliberate review freezes
@@ -25,7 +30,10 @@ rationale: >
   merge paths actually consult (label absence, draft status, auto-merge state) AND be
   a named prohibition on the actors that bypass them. The non-transfer clause exists
   because #5974's merge followed immediately after #5872's authorized merge — adjacent
-  authority is exactly the momentum a barrier must stop.
+  authority is exactly the momentum a barrier must stop. The PARKED terminal state
+  closes the opposite failure mode: after the barrier is correctly installed, an
+  agent must not spend repeated turns waiting for a merge that the same decision
+  forbids it to perform.
 alternatives:
   - option: Keep the DSC protocol as a standing mitigation without a decision record
     why_not: the DSC self-flags as provisional ("until a stronger control ships"); Sol ordered the rule made durable in the decision plane after the second incident
@@ -36,21 +44,25 @@ alternatives:
 affects:
   - "WS:ADVANCED-DATA-OPTIONS"
   - .github/workflows/merge-on-green.yml (behavioral contract, not edited here)
-  - CLAUDE.md / AGENTS.md merge-discipline sections (one-line durable amendment in the same PR)
+  - scripts/ship_loop_hold_wrapper.py
+  - .cursor/rules/ship-loop-terminal-states.mdc
+  - CLAUDE.md / AGENTS.md merge-discipline sections (AGENTS.md already cites this decision)
 evidence:
   - "PR #5974: body 'Held for Sol adversarial review — do NOT merge' vs merged 2026-08-19T16:04:26Z (d5ebb5d9b3db) by shared automation identity"
   - "DSC:CHINA-ALPHA-HOLD-MERGE-INCIDENT (PR #5953, same day) — the 4-step hold protocol ratified here"
   - "memory blanket-arming-merges-prs-held-for-review (08-19): 4 of 6 blanket-armed PRs carried explicit holds"
   - "Sol handoff AD-1C0.1 §1 (2026-08-19/20): 'A Sol STOP / HOLD-FOR-SOL on a specific PR is a merge barrier. Conditional merge authority granted for one PR does not transfer to a subsequent PR.'"
+  - "PR #6138: lawful HOLD-FOR-SOL completed the delivery chain through green exact-head checks but repeated SHIP LOOP BLOCKED because the session completion state had no terminal held classification"
 confidence: high
 reversibility: easy
 decided_by: ceo-sol
 decided_at: 2026-08-20
 ---
 
-Scope note: this record governs merge AUTHORITY. It does not change when a merge is
-technically clean (DEC:MERGE-ON-CONCLUDED-CHECKS-ONLY) or the sweeper's normal
-handoff contract (DEC:DEFAULT-FINISH-HANDS-WAIT-TO-SWEEPER) — a held PR is simply
-outside both until the holding authority releases it. A future hook-enforced hold
-label supersedes the procedural protocol here when it ships through its own reviewed
-wave.
+Scope note: this record governs merge AUTHORITY and the terminal session classification
+created by that authority. It does not change when an ordinary merge is technically
+clean (DEC:MERGE-ON-CONCLUDED-CHECKS-ONLY) or the sweeper's normal handoff contract
+(DEC:DEFAULT-FINISH-HANDS-WAIT-TO-SWEEPER). A held PR is outside both until the holding
+authority releases it. PARKED is not evidence of deployment or live verification and
+must never be reported as SHIPPED. A future hook-enforced hold label supersedes the
+procedural protocol here when it ships through its own reviewed wave.

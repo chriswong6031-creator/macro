@@ -90,9 +90,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ship_loop_guard.py\"",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/ship_loop_hold_wrapper.py\" \"$CLAUDE_PROJECT_DIR/.claude/hooks/ship_loop_guard.py\"",
             "timeout": 540,
-            "statusMessage": "Verifying commit, PR, merge, deploy, and live state"
+            "statusMessage": "Verifying ship state, including lawful external holds"
           }
         ]
       }
