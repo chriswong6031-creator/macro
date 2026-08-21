@@ -539,7 +539,10 @@ var STANCE_META = {
 };
 
 // ── URL helpers ────────────────────────────────────────────────────────────
-function snapUrl() { return window.LIVE_SNAPSHOT_URL || 'live/intraday_quotes.json'; }
+function snapUrl() {
+  var url = window.LIVE_SNAPSHOT_URL || 'live/intraday_quotes.json';
+  return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'ift=' + Date.now();
+}
 function pulseUrl() { return 'live/flow_pulse.json'; }
 function r2Url(path) {
   var base = (window.DATA_BASE || '').replace(/\/+$/, '');

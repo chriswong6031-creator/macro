@@ -68,6 +68,7 @@
       // A1A frozen copy (research/market_os/…A1A_COMMISSIONING…md §13c) — verbatim
       degradedBanner: 'Cloud portfolio unavailable — showing your last saved positions (read-only).',
       errorBanner: "Cloud portfolio unavailable. We can't show your positions right now.",
+      loadingMsg: 'Loading your positions…',
       equalAssumed: 'Equal weights assumed — no position sizes entered.',
       mixedAbstain: 'Weights not shown — mix of sized and unsized positions.',
       mixedBasisAbstain: 'Weights not shown — mix of live-priced and at-cost positions.',
@@ -120,6 +121,7 @@
       lblStage: '阶段',
       degradedBanner: '云端持仓暂不可用 —— 显示你最后一次保存的持仓（只读）。',
       errorBanner: '云端持仓暂不可用。目前无法显示你的持仓。',
+      loadingMsg: '正在加载持仓…',
       equalAssumed: '按等权重计算 —— 未输入仓位大小。',
       mixedAbstain: '未显示权重 —— 部分持仓有仓位大小，部分没有。',
       mixedBasisAbstain: '未显示权重 —— 部分按现价，部分按成本价。',
@@ -167,9 +169,58 @@
   // A1A: {authority, state, last_good_at, warning} from watchstore.js's read seam —
   // 'ready' | 'degraded' (last-good, read-only) | 'error' (unknown, nothing to show)
   var readState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
+  // A1A blocker 3 (write-failure honesty): 'clean' | 'saving' | 'saved' | 'failed'.
+  // Never stores 'offline_readonly' directly — that word is DERIVED (see
+  // refreshSnapshot below) whenever the read authority itself is degraded/error and
+  // no write is in flight; there is no authenticated outbox to call anything "clean".
+  var writeState = 'clean';
+  // N2 (Sol post-review, MAJOR, re-opens F3 — proofG d2/d3): `writeState` used to
+  // survive an auth identity change untouched — a signed-in user's write FAILURE
+  // (the account-scoped 'failed' word) leaked onto the NEXT identity's very first
+  // read: an anonymous visitor who never wrote anything saw "Change not saved" the
+  // instant they signed out, and a SECOND user's first healthy read painted the
+  // same false disclosure for a write they never made. Tracked the same way
+  // watchlist.js tracks its own auth boundary (undefined = never seen a wl-auth
+  // yet, so no reset needed — writeState is already 'clean' at that point).
+  var lastAuthIdentity;
+  // A1A blocker 2 decision (Sol): the ONE portfolio_snapshot.v1 this file consumes —
+  // never a second, independently-derived mirror of the same population/read/write
+  // facts. Refreshed by refreshSnapshot(); null whenever window.PS has not deployed
+  // yet (B2 split-deploy window) or rows is genuinely unknown.
+  var snapshot = null;
 
   // ---- portfolio_state.js seam ----------------------------------------------
   function PS() { return window.PS || null; }
+
+  /* Assembles the canonical `portfolio_snapshot.v1` (research/market_os/…A1A…§9-12)
+     from the CURRENT rows/readState/writeState and holds it in `snapshot`. Every
+     population, read-state and write-state question this file answers reads THIS
+     object — openRows()/closedRows() (population + the table's row set),
+     renderReadBanner() (the read story) and the write-honesty dispatch all route
+     through it, rather than re-deriving the same fact a second, independent way.
+     PS-absent (split-deploy window, B2): `snapshot` stays null and every consumer
+     below falls back to its own pre-PS literal check on rows/readState — legacy-
+     quiet, no weighting-law claim, the existing B2 fallback untouched. */
+  function refreshSnapshot() {
+    var ps = PS();
+    if (!ps) { snapshot = null; return null; }
+    var effWrite = writeState;
+    if (effWrite === 'clean' && readState.authority === 'cloud' &&
+        (readState.state === 'degraded' || readState.state === 'error')) {
+      effWrite = 'offline_readonly';
+    }
+    snapshot = ps.computeSnapshot({
+      rows: rows,
+      authority: readState.authority,
+      readState: readState.state,
+      writeState: effWrite,
+      priceOf: priceOf,
+      bookOf: marketOf,
+      lastGoodAt: readState.last_good_at,
+      warning: readState.warning
+    });
+    return snapshot;
+  }
 
   // ---- market/book seam ----------------------------------------------------
   function MB() { return window.MB || null; }
@@ -192,6 +243,24 @@
     // A1A frozen copy (§13c): a cloud read error with no last-good rows — never a
     // silent zero, never the local book substituted in.
     if (errDiv) { errDiv.textContent = L('errorBanner'); errDiv.style.display = 'block'; }
+  }
+  /* A1A blocker 2 (Sol, consumer-level auth-transition fix): the delayed-cloud window
+     (onAuth()'s synchronous rows=null + 'loading' clear, below) must paint HONESTLY
+     too — never silently leave a PRIOR authority's table (the anonymous local rows,
+     or a previous signed-in user's cloud rows, B1) standing on screen while THIS
+     authority's real read is still unknown. Table content is cleared, not merely
+     hidden — a hidden-but-present stale row is still a leak the moment anything
+     un-hides it. Never an error tone: this is expected, resolving traffic. */
+  function showLoading() {
+    hideEl('pf_desk'); hideEl('pf_empty'); hideEl('pf_add'); hideEl('pf_closed');
+    var host = el('tbl_pf');
+    if (host) host.innerHTML = '';
+    var errDiv = el('pf_err_inline');
+    if (errDiv) {
+      errDiv.textContent = L('loadingMsg');
+      errDiv.className = 'pf-err-inline is-loading';
+      errDiv.style.display = 'block';
+    }
   }
 
   // ---- index ---------------------------------------------------------------
@@ -216,16 +285,27 @@
   function tickerName(t) { var r = idxRec(t); return r ? (r.n || '') : ''; }
   function tickerSt(t) { var r = idxRec(t); return r ? (r.st || null) : null; }
 
-  // ---- open/closed split ---------------------------------------------------
+  // ---- open/closed split -----------------------------------------------------
+  // A1A blocker 2: sourced from the ONE portfolio_snapshot.v1 (refreshSnapshot()) —
+  // never a second independent filter of `rows`. PS-absent falls back to the exact
+  // pre-PS literal filter (B2: legacy-quiet, never a divergent answer).
   function openRows() {
     if (!rows) return [];
-    return rows.filter(function (r) { return r.status !== 'closed'; })
-      .sort(function (a, b) { return (a.ticker || '').localeCompare(b.ticker || ''); });
+    var snap = refreshSnapshot();
+    // F5 (Sol post-review): the PS-absent fallback must filter IDENTICALLY to
+    // portfolio_state.js's own openRowsOf() (a truthy `r.ticker` required, not
+    // just `r`) — a divergent fallback filter is exactly the kind of second,
+    // independent population answer this file is meant to have retired.
+    var list = snap ? snap.open_rows
+      : rows.filter(function (r) { return r && r.ticker && r.status !== 'closed'; });
+    return list.slice().sort(function (a, b) { return (a.ticker || '').localeCompare(b.ticker || ''); });
   }
   function closedRows() {
     if (!rows) return [];
-    return rows.filter(function (r) { return r.status === 'closed'; })
-      .sort(function (a, b) { return (a.ticker || '').localeCompare(b.ticker || ''); });
+    var snap = refreshSnapshot();
+    var list = snap ? snap.closed_rows
+      : rows.filter(function (r) { return r && r.ticker && r.status === 'closed'; });
+    return list.slice().sort(function (a, b) { return (a.ticker || '').localeCompare(b.ticker || ''); });
   }
 
   // ---- value math (per row; never crosses a currency) ----------------------
@@ -254,6 +334,23 @@
   // statistic downstream (betas, ENB, correlations, MCTR). A3 law 3.
   function pushFxWeights() {
     if (!window.FX || !window.FX.setAutoWeights) return;
+    /* Harness non-vacuity finding (Sol post-review, F2 follow-on): this function
+       runs on every one of THIS file's own render passes, regardless of which
+       workspace tab is active — a hydration wave, ensureIndex(), or a background
+       reload() can all trigger it while the reader is sitting on the Watchlists
+       tab. AUTO_W is a non-null value the instant this pushes ANYTHING (even the
+       honest-empty {} F2 requires), and factor_exposure.js's `autoMode = AUTO_W
+       !== null` check does not know or care which tab is active — so a push here
+       permanently overrides the Watchlists tab's OWN FX.update() reset (browser
+       after-proof: the watchlist-mode fx-weights trace went empty/auto even
+       though the reader was looking straight at the Watchlists panel). "Watchlist
+       names feed FX ONLY in [watchlists] mode" (watchlist.js's own render()) has
+       the same law in reverse here: Portfolio dollar values feed FX ONLY while
+       the Portfolio tab is the active mode. `window.WS.mode` absent (an isolated
+       test harness, or watchlist.js not on the page) defaults to allowing the
+       push — unchanged from every existing behavior that never depended on mode. */
+    var activeMode = (window.WS && window.WS.mode) ? window.WS.mode() : 'portfolio';
+    if (activeMode !== 'portfolio') return;
     var modeled = openRows().filter(function (r) { return r.ticker && isModeled(r.ticker); });
     var w = {};
     /* A1A weighting law (§12): "for an all-unsized modeled book the page applies
@@ -281,12 +378,32 @@
          `held.length < 2`, so the panel hides — an honest absence, not garbage. */
       window.FX.setAutoWeights({});
       return;
-    } else {
+    } else if (wgt && wgt.complete === true) {
       modeled.forEach(function (r) {
         var t = r.ticker;
         var sh = num(r.shares), px = priceOf(t);
         if (sh != null && sh > 0 && px != null && px > 0) w[t] = sh * px;
       });
+    } else {
+      /* F5 (Sol post-review, MAJOR): PS-absent (`wgt === null`, split-deploy
+         window) used to silently DROP any row that was not both sized and live-
+         priced from `w` — the weights that DID make it in still summed to 100%
+         of THEMSELVES, presented as if they were the whole book: a fabricated
+         distribution, the same class of defect §12/S3 exist to forbid. Mirrors
+         renderBookRead's own B2 `allCurrent` condition: real per-row weights are
+         pushed ONLY when EVERY open modeled row is sized AND live-priced;
+         anything else pushes the honest-empty `{}` (no claim) rather than a
+         partial view of who is actually weighted. */
+      var allCurrent = modeled.length > 0 && modeled.every(function (r) {
+        var sh = num(r.shares), px = priceOf(r.ticker);
+        return sh != null && sh > 0 && px != null && px > 0;
+      });
+      if (allCurrent) {
+        modeled.forEach(function (r) { w[r.ticker] = num(r.shares) * priceOf(r.ticker); });
+      } else {
+        window.FX.setAutoWeights({});
+        return;
+      }
     }
     var keys = Object.keys(w);
     /* W2 seeded `FX.update(keys)` here before announcing, because `FX.setAutoWeights`
@@ -294,8 +411,17 @@
        RiskCore. W3 fixed that at the mechanism (factor_exposure.js: the auto path's
        universe is the weight map, never `LAST`), so the seeding call is retired rather
        than left as a second, silent guarantee of the same property. One owner for the
-       auto path means the regression test pins the path production actually takes. */
-    window.FX.setAutoWeights(keys.length >= 2 ? w : null);
+       auto path means the regression test pins the path production actually takes.
+       Sol blocker 1 (Risk Center residue, producer (c), PS-absent): `null` here means
+       "fall back to manual mode over LAST" in factor_exposure.js — LAST is whatever
+       watchlist.js most recently fed FX.update(), i.e. the WATCHLIST universe. A
+       resolved-but-thin Portfolio book (keys.length < 2) used to push exactly that
+       null, actively re-rendering a Watchlist-derived read into the Concentration tab
+       while Portfolio mode shows 0/1 positions. The honest-empty `{}` (the same
+       signal the S3 abstain branch above already uses) keeps `autoMode` true and the
+       universe empty — an honest absence, never a fallback to someone else's data.
+       `null` must stay unreachable from a resolved portfolio state. */
+    window.FX.setAutoWeights(keys.length >= 2 ? w : {});
   }
 
   // =========================================================================
@@ -782,7 +908,21 @@
     var ps = PS();
     var W;
     if (ps) {
-      W = ps.computeWeighting(leadRows, priceOf);
+      /* F5 (Sol post-review, MAJOR — real snapshot consumption): a single-currency
+         book (the common case, `byBook` has exactly one key) reads the ONE
+         snapshot's own `weighting` field directly — computeSnapshot() computes it
+         over the exact same `open` rows this function already partitions into
+         `leadRows` whenever there is only one book, so the two calls would be
+         identical; re-deriving a second time is exactly the "3-field pass-through"
+         the review named. A MULTI-currency book keeps the DIRECT per-book call
+         (§12 currency-partition law, carve-out) — the snapshot's own weighting is
+         `cross_currency_partitioned` (a stub, `complete:false`) precisely because
+         it spans books, and blending across currencies is the one thing §12
+         forbids; only a call scoped to `leadRows` alone answers honestly there. */
+      var singleBookSnap = Object.keys(byBook).length === 1 ? refreshSnapshot() : null;
+      W = (singleBookSnap && singleBookSnap.weighting)
+        ? singleBookSnap.weighting
+        : ps.computeWeighting(leadRows, priceOf);
     } else {
       /* B2 (review — split-deploy falsehood): portfolio_state.js is a NEW paired
          script; the .j2 markup that references it goes live within minutes, but
@@ -1122,25 +1262,65 @@
        successful read's content also lands here with `state === 'error'` (reload()'s
        `.catch()` sets 'error' but deliberately never touches `rows`) — that used to
        render the stale table with no disclosure at all. It reads exactly like
-       'degraded' to the visitor (last-good rows, read-only) and gets the same banner. */
-    if (readState.state === 'degraded' || (readState.state === 'error' && rows && rows.length)) {
+       'degraded' to the visitor (last-good rows, read-only) and gets the same banner.
+       A1A blocker 2: read through the ONE snapshot (refreshSnapshot()), never a
+       second literal mirror of `readState.state` — PS-absent falls back to the exact
+       same reads on `readState` directly (B2: legacy-quiet). */
+    var snap = refreshSnapshot();
+    var rs = snap ? snap.read_state : readState.state;
+    if (rs === 'degraded' || (rs === 'error' && rows && rows.length)) {
       host.textContent = L('degradedBanner');
       host.className = 'pf-readbanner is-degraded';
       host.style.display = 'block';
+      /* F5 (Sol post-review): the banner's frozen copy (§13c) is verbatim
+         regardless of WHY the read degraded — but the reason (cloud-unavailable,
+         F6's client-timeout/read-timeout, …) is still real information, exposed
+         as a machine-readable attribute rather than silently discarded. Read
+         through the ONE snapshot's own `warning` field, PS-present. */
+      var warn = snap ? snap.warning : readState.warning;
+      host.setAttribute('data-warning', warn || '');
     } else {
       host.style.display = 'none';
       host.textContent = '';
+      host.setAttribute('data-warning', '');
     }
   }
   function render() {
     if (!section()) return;
+    // A1A blocker 2: assemble the ONE portfolio_snapshot.v1 for this render pass.
+    // openRows()/closedRows()/renderReadBanner() below all read it (or refresh their
+    // own equivalent copy of the same inputs, PS-present) rather than re-deriving
+    // population/read-state a second, independent way.
+    refreshSnapshot();
     if (rows === null) {
-      /* A1A: `rows === null` now means one of two honest things — not loaded yet
-         (readState still its default 'ready'), or a cloud read that genuinely failed
-         with no last-good rows to fall back to (readState.state === 'error'). The
-         second case gets the explicit unavailable message; NEVER a silent zero and
-         NEVER the anonymous local book substituted in. */
-      if (readState.state === 'error' && wsState().indexOf('anon') !== 0) showError();
+      /* A1A: `rows === null` now means one of three honest things — not loaded yet
+         (readState still its default 'ready'), a cloud read that genuinely failed
+         with no last-good rows to fall back to (readState.state === 'error'), or the
+         delayed-cloud window on an auth flip (readState.state === 'loading', onAuth()
+         below) — the previous authority's rows were cleared and the real read has not
+         settled yet. Each gets its own explicit, honest paint; NEVER a silent zero
+         and NEVER a PRIOR authority's rows (anonymous local, or a previous user's
+         cloud book, B1) left standing or substituted in.
+         Sol blocker 1 (Risk Center residue, root-caused by parallel debugger, producer
+         (d)): this branch used to return without ever calling pushFxWeights() below —
+         FX was told NOTHING, so watchlist.js's mode render simply repainted whatever
+         RISK payload it last retained (a Watchlist-derived read, or a stale prior
+         Portfolio one) under "positions unknown". Clearing FX's own weights here,
+         honest-empty and before ANY return in this block, closes that gap at its
+         source — "unknown" can never render as someone else's risk.
+         Harness non-vacuity finding (F2 follow-on): same mode-gate as
+         pushFxWeights() — this file's `rows` can turn null (a background read
+         failing) while the reader is on the WATCHLISTS tab; pushing here
+         unconditionally would re-lock AUTO_W into empty-auto mode and silently
+         blank the Watchlists tab's own FX panel the reader is looking at.
+         Portfolio dollar values (honest-empty or real) feed FX ONLY while the
+         Portfolio tab is the active mode — switching INTO it re-runs this exact
+         render() pass (window.PF.render() from watchlist.js's own dispatcher) and
+         pushes the correct honest-empty state at that point instead. */
+      var pushMode = (window.WS && window.WS.mode) ? window.WS.mode() : 'portfolio';
+      if (pushMode === 'portfolio' && window.FX && window.FX.setAutoWeights) window.FX.setAutoWeights({});
+      if (readState.state === 'error' && wsState().indexOf('anon') !== 0) { showError(); return; }
+      if (readState.state === 'loading' && wsState().indexOf('anon') !== 0) { showLoading(); return; }
       return;
     }
     if (wsState().indexOf('anon') === 0) return;
@@ -1251,10 +1431,43 @@
     MB().setFact('earn', n);
   }
 
+  /* N1 (Sol post-review, MAJOR, freeze §5 — inverse of blocker 1, proofF/proofF2):
+     watchlist_risk.js's publish() forwards EVERY payload it computes to this seam
+     with no mode/universe guard. F2's own fix made FX correctly announce the
+     WATCHLIST universe while the reader is on the Watchlists tab — which means
+     watchlist_risk.js can now genuinely compute a payload keyed to WATCHLIST
+     names and hand it here. Consumer-side validation: the payload's per-name maps
+     (shares/covered/cluster/ballast) must name ONLY tickers that are actually in
+     THIS book's own open rows. An empty payload (no per-name keys at all) is
+     always accepted as a clear — that is the honest S3/F2 "nothing to weight"
+     signal. A payload naming even ONE foreign ticker is rejected WHOLESALE —
+     never partially accepted, never repainted from. */
+  function payloadIsConsistentWithBook(payload) {
+    if (!payload) return true;
+    var maps = [payload.shares, payload.covered, payload.cluster, payload.ballast];
+    var seen = {}, any = false;
+    maps.forEach(function (m) {
+      if (!m) return;
+      for (var k in m) {
+        if (!Object.prototype.hasOwnProperty.call(m, k)) continue;
+        any = true;
+        seen[k] = true;
+      }
+    });
+    if (!any) return true;
+    var openTickers = {};
+    openRows().forEach(function (r) { if (r.ticker) openTickers[r.ticker] = true; });
+    for (var t in seen) {
+      if (Object.prototype.hasOwnProperty.call(seen, t) && !openTickers[t]) return false;
+    }
+    return true;
+  }
+
   /* The risk publisher's landing pad (watchlist_risk.js computes, this file composes).
      Everything here is DISPLAY of a number the model produced — nothing is derived,
      re-scaled or re-ranked on the way in. */
   function setBookRisk(payload) {
+    if (!payloadIsConsistentWithBook(payload)) return;
     BOOK = payload || null;
     RISK_SHARES = (payload && payload.shares) || {};
     RISK_COVERED = (payload && payload.covered) || {};
@@ -1385,22 +1598,96 @@
      watchlist.js's chip picks whichever event matches the active mode (portfolio.js
      never touches the chip's DOM directly — same seam discipline as the Watchlist). */
   function dispatchPfSave(state) {
+    /* A1A blocker 2/3: keep the tracked write_state (feeds refreshSnapshot()) in
+       lockstep with whatever word this dispatch just told the chip — so the ONE
+       snapshot this file assembles always answers "what did we just say happened"
+       consistently, rather than a second silent mirror of the same fact that could
+       drift from it. Every other chip word ('local', 'clean', 'unavailable', a plain
+       read's 'saving' during the S6 loading window) means "nothing is currently
+       in-flight or just landed" -> 'clean' (refreshSnapshot derives 'offline_readonly'
+       from readState when that is also honest). */
+    writeState = (state === 'saving' || state === 'saved' || state === 'failed' ||
+                  state === 'failed_local') ? state : 'clean';
     try { document.dispatchEvent(new CustomEvent('pf-save', { detail: { state: state } })); }
     catch (e) { /* no CustomEvent (very old browser / test shell) */ }
+  }
+  /* F3 (Sol post-review, MAJOR — proofC_anon_write_failure.py): 'failed' and
+     'unavailable' are ACCOUNT-scoped copy ("The write to your account failed…",
+     "We cannot reach your cloud portfolio…") — both false for an anonymous
+     visitor, who has no account and no cloud portfolio to fail against. A local
+     write failure (Safari private mode, storage quota) used to dispatch the same
+     account-scoped 'failed' word regardless of authority. Authority-aware: under
+     LOCAL authority a write failure is 'failed_local' (device-storage copy);
+     'failed'/'unavailable' become unreachable under local authority — the guard
+     is on the CURRENT `readState.authority`, the same field every other A1A
+     authority check in this file already reads. */
+  function dispatchWriteFailure() {
+    // F5: reads authority via the ONE snapshot (PS-present); PS-absent falls back
+    // to the raw readState field directly.
+    var snap = refreshSnapshot();
+    var authority = snap ? snap.authority : readState.authority;
+    dispatchPfSave(authority === 'local' ? 'failed_local' : 'failed');
+  }
+  function dispatchReadUnavailable() {
+    // 'unavailable' names an unreachable CLOUD read; under local authority there is
+    // no cloud account to be unavailable — nothing is actually wrong.
+    var snap = refreshSnapshot();
+    var authority = snap ? snap.authority : readState.authority;
+    dispatchPfSave(authority === 'local' ? 'local' : 'unavailable');
   }
   /* M-d (review): a plain READ that succeeds is not a WRITE claim — 'Saved' means
      "the write you just made landed," and a first load / background re-read never
      made one. `afterWrite` is true ONLY when this settles a doSave()/doRemove() call;
      everything else (onAuth's first load, the visibilitychange refetch, 'pf-folded')
-     settles to the neutral 'clean' state instead. */
+     settles to the neutral 'clean' state instead.
+     A1A blocker 3 (Sol, verbatim: "A1A has no authenticated Portfolio outbox, so
+     failed Portfolio writes must never claim they are locally retained or will sync
+     later"): a non-ready read state used to map to 'offline' unconditionally — the
+     WATCHLIST word that claims local retention and push-through sync, both false for
+     the authenticated Portfolio. A confirmed write (afterWrite) still reports 'saved'
+     even when the FOLLOW-UP read comes back non-ready — the write itself already
+     landed (doSave/doRemove only call reload(true) after a truthy result); the read
+     story is the read banner's job, not the chip's. A plain (non-afterWrite) non-ready
+     read reports the honest 'unavailable', never 'offline'. */
   function pfChipStateFor(rs, afterWrite) {
-    if (!rs || rs.authority === 'local') return 'local';
+    /* F4 (Sol post-review, MAJOR — sticky failure disclosure): a FAILED write's
+       chip word must not be silently downgraded to clean/saved/local by the NEXT
+       unrelated background read (visibilitychange's 60s refetch) — only a
+       subsequent CONFIRMED write (afterWrite, settling to 'saved' below) may
+       clear it. Consulted via the tracked `writeState` — the same field
+       refreshSnapshot() feeds into the snapshot's write_state, so this reads the
+       ONE tracked fact rather than a second independent notion of "did the last
+       write fail".
+       N2 (Sol post-review, MAJOR, proofG d2/d3): the sticky check used to run
+       BEFORE the authority guard — a STALE account-scoped 'failed' surviving an
+       identity change (onAuth() now resets writeState on identity change, but
+       this is the belt-and-suspenders half) leaked into the very NEXT identity's
+       first read: an anonymous sign-out, or user B's first healthy read, both
+       painted "Change not saved" for a write that was never theirs. The
+       authority guard now runs FIRST — a local-authority view can only ever see
+       ITS OWN `failed_local` (still honest: this device's own write really did
+       fail), never the account-scoped `failed` a prior CLOUD identity left
+       behind. */
+    // F5 (Sol post-review, MAJOR — real snapshot consumption): the write_state and
+    // authority checks below read the ONE snapshot (PS-present), never the raw
+    // `writeState`/`rs.authority` fields a second, independently-derived way.
+    // PS-absent falls back to the raw fields directly (B2: legacy-quiet).
+    var chipSnap = refreshSnapshot();
+    var chipWriteState = chipSnap ? chipSnap.write_state : writeState;
+    var chipAuthority = chipSnap ? chipSnap.authority : (rs && rs.authority);
+    if (!rs || chipAuthority === 'local') {
+      if (!afterWrite && chipWriteState === 'failed_local') return 'failed_local';
+      return 'local';
+    }
+    if (!afterWrite && (chipWriteState === 'failed' || chipWriteState === 'failed_local')) {
+      return chipWriteState;
+    }
     // S6's brief cloud-loading window ('user' set, the shared Supabase client not yet
     // resolved) is NOT offline — 'saving' is the closest honest existing word for "a
     // read is in flight," and it self-corrects within the tick the re-fired 'wl-auth'
     // lands (watchstore.js dispatches it the instant `sb` resolves).
     if (rs.state === 'loading') return 'saving';
-    if (rs.state !== 'ready') return 'offline';
+    if (rs.state !== 'ready') return afterWrite ? 'saved' : 'unavailable';
     return afterWrite ? 'saved' : 'clean';
   }
 
@@ -1423,7 +1710,16 @@
     }).catch(function () {
       readState = { authority: readState.authority, state: 'error',
                     last_good_at: readState.last_good_at, warning: 'read-failed' };
-      dispatchPfSave('offline');
+      /* A1A blocker 3: this catch fires for a READ failure. When it follows a
+         CONFIRMED write (afterWrite — doSave()/doRemove() only call reload(true)
+         after upsert/remove already returned a truthy result), the write itself
+         landed; only the follow-up read failed. 'saved' stays honest; the read
+         banner (renderReadBanner, driven by the same readState) carries the read
+         story. Otherwise this is a plain read failure with no write involved:
+         'unavailable' (or, under local authority, F3's 'local' — see
+         dispatchReadUnavailable()), never 'offline' (this file has no local
+         retention to claim for the cloud case). */
+      if (afterWrite) { dispatchPfSave('saved'); } else { dispatchReadUnavailable(); }
       render();
     });
   }
@@ -1456,8 +1752,11 @@
       saveBtn.disabled = false;
       if (!result) {
         if (errEl) errEl.textContent = L('saveError');
-        // never claim Saved on a write that did not happen
-        dispatchPfSave('offline');
+        // A1A blocker 3: never claim Saved OR account-side retention on a write
+        // that did not happen. F3: authority-aware — 'failed' (account copy) is
+        // false for an anonymous visitor; dispatchWriteFailure() picks the right
+        // word.
+        dispatchWriteFailure();
         return;
       }
       pfCloseDlg();
@@ -1465,7 +1764,7 @@
     }).catch(function () {
       saveBtn.disabled = false;
       if (errEl) errEl.textContent = L('saveError');
-      dispatchPfSave('offline');
+      dispatchWriteFailure();
     });
   }
 
@@ -1475,9 +1774,10 @@
     delete openDrawers[id];
     dispatchPfSave('saving');
     window.WatchStore.portfolio.remove(id).then(function (result) {
-      if (!result) { dispatchPfSave('offline'); return; }
+      // A1A blocker 3/F3: a failed remove is authority-aware too — see doSave().
+      if (!result) { dispatchWriteFailure(); return; }
       reload(true);   // afterWrite (M-d)
-    }).catch(function () { dispatchPfSave('offline'); });
+    }).catch(function () { dispatchWriteFailure(); });
   }
 
   // ---- drawer toggle -------------------------------------------------------
@@ -1513,6 +1813,39 @@
     if (!window.WatchStore || !window.WatchStore.portfolio) { showError(); return; }
     lastListAt = Date.now();
     hydrated = false;
+    /* A1A blocker 2 (Sol, verbatim): "prove anonymous rows never render under
+       authenticated authority ... loading always resolves to ready/degraded/error".
+       Authority is flipping (either direction) the instant this fires —
+       `window.WatchStore.portfolio.list()` below is ASYNC (the S6 cloud-loading
+       race, a client-init failure, OR just the local store's own promise
+       microtask), so whatever `rows` currently holds (a PRIOR user's cloud book, or
+       the anonymous local book) must never be left standing for an interim
+       render() — a price tick, a language toggle, an fx event — to paint while the
+       real read for THIS authority is still in flight. Clear SYNCHRONOUSLY and
+       render the loading state before the list() call below settles anything; the
+       unknown-rows branch of render() then paints loading (and, per F2(ii), pushes
+       window.FX's honest-empty clear) rather than repainting the OTHER authority's
+       book or risk. F2 (Sol post-review): this used to be gated on `user()` being
+       truthy (sign-IN only) — a sign-OUT left A's rows/readState/FX weights
+       standing through the exact same async gap, just on the local-list side. */
+    var authedNow = !!(window.WatchStore.user && window.WatchStore.user());
+    /* N2 (Sol post-review, MAJOR): reset the write-failure disclosure on every
+       genuine identity change (sign-in, sign-out, or a DIFFERENT uid replacing
+       the previous one) — never on the S6 double-fire of the SAME identity,
+       which must not clear a write that is still legitimately in flight for
+       THIS session. `lastAuthIdentity === undefined` is the one-time "never
+       seen a wl-auth yet" state and needs no reset (writeState is already
+       'clean' at page load). */
+    var uidNow = authedNow ? window.WatchStore.user().id : null;
+    if (lastAuthIdentity !== undefined && uidNow !== lastAuthIdentity) {
+      writeState = 'clean';
+    }
+    lastAuthIdentity = uidNow;
+    rows = null;
+    readState = authedNow
+      ? { authority: 'cloud', state: 'loading', last_good_at: null, warning: null }
+      : { authority: 'local', state: 'loading', last_good_at: null, warning: null };
+    render();
     window.WatchStore.portfolio.list().then(function (newRows) {
       var rs = window.WatchStore.portfolio.readState ? window.WatchStore.portfolio.readState() : null;
       readState = rs || { authority: 'local', state: 'ready', last_good_at: null, warning: null };
@@ -1525,7 +1858,9 @@
     }).catch(function () {
       readState = { authority: readState.authority, state: 'error',
                     last_good_at: readState.last_good_at, warning: 'read-failed' };
-      dispatchPfSave('offline');
+      // A1A blocker 3/F3: no write is ever involved in onAuth()'s plain read —
+      // always the honest, authority-aware word, never 'offline'.
+      dispatchReadUnavailable();
       showError();
     });
   }
@@ -1615,11 +1950,31 @@
   window.PF = {
     render: render,
     // A1A: never a Watchlist-derived number and never a false zero — `null` when the
-    // canonical count is genuinely unknown (readState.state === 'error'). Callers
-    // (watchlist.js's pfCount) must treat `null` as "show unavailable", not as 0.
-    count: function () { return (rows === null && readState.state === 'error') ? null : openRows().length; },
+    // canonical count is genuinely unknown. Callers (watchlist.js's pfCount) must
+    // treat `null` as "show unavailable", not as 0.
+    // F1 (Sol post-review, blocker): population is assertable ONLY when the read
+    // genuinely resolved — 'ready', or 'degraded' with last-good rows (which always
+    // arrives WITH non-null rows, never null). `rows === null` is the ONE honest
+    // signal covering BOTH the terminal 'error' window AND the 'loading' delayed-
+    // cloud window (onAuth's synchronous clear, A1A blocker 2) — the old
+    // `readState.state === 'error'`-only check let 'loading' fall through to
+    // `openRows().length`, which is 0 whenever rows is null (openRows()'s own early
+    // return) — a false zero rendered on a signed-in visitor's Portfolio tab mid-read.
+    count: function () { return rows === null ? null : openRows().length; },
     repaintRow: repaintRow,
     setBookRisk: setBookRisk,
+    // N1 (Sol post-review, MAJOR): explicit reset seam for the mode/auth boundary
+    // — mirrors watchlist.js's own RISK reset (setMode()'s enteringPortfolio
+    // branch and the wl-auth identity-change listener) so a stale (possibly
+    // foreign-keyed) BOOK/RISK_SHARES/RISK_COVERED payload is cleared BEFORE the
+    // Portfolio's own publisher round-trip has a chance to replace it — never
+    // left painting until that async trip lands.
+    resetBookRisk: function () {
+      BOOK = null; RISK_SHARES = {}; RISK_COVERED = {};
+      if (section() && rows && wsState().indexOf('anon') !== 0) {
+        renderTable(); renderBookRead(); renderAttention();
+      }
+    },
     readState: function () { return readState; }
   };
 

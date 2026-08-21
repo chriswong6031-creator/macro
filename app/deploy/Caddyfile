@@ -555,8 +555,9 @@
 	# content hashes — so they can take neither @public_static above (its
 	# `not query v=*` skips them) nor @public_versioned's immutable year (a body
 	# edit without a stamp bump would pin the stale body at the edge forever).
-	# Verified 2026-08-20 (post-A1A #6098): watchlist.js?v=10, watchstore.js?v=7,
-	# market_books.js?v=3, portfolio.js?v=7, portfolio_state.js?v=1 — integers,
+	# Verified 2026-08-20 (post-A1A commissioning fix wave, Sol post-review F8):
+	# watchlist.js?v=11, watchstore.js?v=8, market_books.js?v=3, portfolio.js?v=8,
+	# portfolio_state.js?v=1 — integers,
 	# and none equals its own sha256[:8]. mtf.js and mm_brain.js LEFT this list the same day: both are
 	# served content-hash-stamped (b62aea2f / f74045d8, each matching its file
 	# body), so the immutable year is correct for them and the 300s here was

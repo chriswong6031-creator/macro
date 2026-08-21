@@ -215,7 +215,8 @@ def accrue(as_of=None, *, lookback_days: int | None = None, full: bool = False,
 
     ``lookback_days`` overrides the cold-start window (when no prior file exists); on an
     incremental run the window is computed from the last stored bar. ``full`` ignores
-    existing files (clean re-fetch). ``only``/``limit`` restrict the universe (debug)."""
+    existing files (clean re-fetch). When supplied, ``only`` is the explicit requested
+    universe rather than an intersection with the chart-oriented default universe."""
     client = PolygonOptions()   # reuses the entitled stocks REST client (auth + http_get)
     if not client.enabled():
         log.warning("polygon intraday: no API key (POLYGON_API_KEY/MASSIVE_API_KEY) — skipped")
@@ -237,8 +238,11 @@ def accrue(as_of=None, *, lookback_days: int | None = None, full: bool = False,
 
     universe = _universe()
     if only:
-        keep = {s.upper() for s in only}
-        universe = [t for t in universe if t.upper() in keep]
+        universe = sorted({
+            str(symbol).strip().upper()
+            for symbol in only
+            if str(symbol).strip()
+        })
     if limit:
         universe = universe[:limit]
 
