@@ -34,7 +34,7 @@ so_what: >
 kind: landmine
 verified_at: 2026-08-21
 verified_by: >
-  PR #6175. Symptom receipt: run 32461103221 attempt 1, job ci-pack-9 -> legacy job
+  PR #6181. Symptom receipt: run 32461103221 attempt 1, job ci-pack-9 -> legacy job
   `options-nbbo-cohort`, `tests/test_options_nbbo_cohort.py:1853`; attempt 2 (a plain rerun,
   no code change) passed, which is what identifies it as a race rather than a break.
   Mechanism receipt: 671/6s `nlink == 0` sightings from the writer/observer harness above.
