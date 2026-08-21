@@ -860,6 +860,15 @@ class Resolution:
     venue_source: str | None
     effective_at: date | None
     reason: str | None = None
+    #: AMENDMENT R15 — True iff a venue MIC was found and successfully mapped
+    #: (``mic is not None`` at the point this Resolution was built in
+    #: :func:`resolve_universe`), regardless of whether the candidate ultimately
+    #: resolved.  Set explicitly at every construction site so downstream typed-
+    #: refusal classification (:func:`_gmi_us_unresolved_refusal`) discriminates
+    #: `unsupported_venue` (mic never mapped) from `unrenderable_code` (mic
+    #: mapped, but ``ListingKey`` construction itself failed) STRUCTURALLY —
+    #: never by substring-matching the human-readable ``reason`` text.
+    venue_mapped: bool = False
 
 
 def _inception_code(key: str, directory_symbol: str | None) -> str:
@@ -1060,19 +1069,30 @@ def resolve_universe(
                 )
 
         if mic is None:
-            out.append(Resolution(key, None, None, None, venue_source, effective, reason))
+            # AMENDMENT R15 — venue_mapped=False: the mic itself was never found or
+            # never mapped, structurally the `unsupported_venue` class.
+            out.append(
+                Resolution(key, None, None, None, venue_source, effective, reason,
+                          venue_mapped=False)
+            )
             continue
 
         code = _inception_code(key, directory_symbol)
         try:
             listing_key = ListingKey(DEFAULT_COUNTRY, mic, code)
         except IdentityError as exc:
+            # AMENDMENT R15 — venue_mapped=True: the mic WAS found and mapped; only
+            # the CODE failed to render into the closed listing-key grammar —
+            # structurally the `unrenderable_code` class, never conflated with an
+            # unmapped venue.
             out.append(
-                Resolution(key, None, None, directory_symbol, venue_source, effective, str(exc))
+                Resolution(key, None, None, directory_symbol, venue_source, effective, str(exc),
+                          venue_mapped=True)
             )
             continue
         out.append(
-            Resolution(key, listing_key, code, directory_symbol, venue_source, effective, None)
+            Resolution(key, listing_key, code, directory_symbol, venue_source, effective, None,
+                      venue_mapped=True)
         )
     return out
 
@@ -1612,19 +1632,27 @@ def _gmi_us_unresolved_refusal(
         # set whenever either matched; ``exchange_symbol`` is NOT a reliable signal
         # here, because ``resolve_universe``'s own unresolved-Resolution construction
         # hardcodes it None on the unmapped-MIC path — verified against the real
-        # committed CBOE/Z case).  Two DISTINCT venue-shaped refusals share this
-        # branch, split by reason text (AMENDMENT R12): an unmapped MIC (the closed
-        # EXCHANGE_MIC list stays closed, §4) is `unsupported_venue`; anything else
-        # here is a mic FOUND+MAPPED candidate whose ``ListingKey`` construction
-        # itself failed (a malformed inception code) — the venue WAS supported, the
-        # CODE could not be rendered into the closed listing-key grammar, so it is
-        # typed `unrenderable_code`, never conflated with the venue class.
-        reason_text = res.reason or ""
-        if "has no MIC in" in reason_text:
-            return {"code": "unsupported_venue", "reason": reason_text}
+        # committed CBOE/Z case).  AMENDMENT R15 — the two DISTINCT venue-shaped
+        # refusals sharing this branch are discriminated STRUCTURALLY via
+        # ``res.venue_mapped`` (set explicitly at every construction site in
+        # :func:`resolve_universe`), never by substring-matching the human-readable
+        # ``reason`` text: ``venue_mapped=False`` means the mic itself was never
+        # found/mapped (the closed EXCHANGE_MIC list stays closed, §4) —
+        # `unsupported_venue`; ``venue_mapped=True`` means the mic WAS found+mapped
+        # and only the CODE failed ``ListingKey`` construction (a malformed
+        # inception code) — the venue WAS supported, the CODE could not be
+        # rendered into the closed listing-key grammar, typed `unrenderable_code`.
+        if not res.venue_mapped:
+            return {
+                "code": "unsupported_venue",
+                "reason": res.reason or (
+                    f"venue found ({res.venue_source}) but has no MIC in the "
+                    "closed EXCHANGE_MIC list (D2B2-US §4)"
+                ),
+            }
         return {
             "code": "unrenderable_code",
-            "reason": reason_text or (
+            "reason": res.reason or (
                 f"ListingKey construction failed for {res.key!r} (D2B2-US §4/R12)"
             ),
         }
@@ -1745,20 +1773,32 @@ def _collapse_duplicate_claims(
     (AMENDMENT ruling 6, D2B1-R1) — this function makes that state structurally
     unreachable rather than catching it after the fact.
 
-    Winner selection, in priority order:
-      1. a LEGACY-universe claimant ALWAYS wins over a GMI-only one — R1's
-         "legacy mint law is untouched, regardless of master state" is an
-         absolute law this NEW mechanism must not itself violate by silently
-         dropping a legacy resolution; among >1 legacy claimants (should never
-         occur in curated data) fall through to rule 2.
-      2. the claimant whose OWN key equals the resolved row's CURRENT symbol
+    AMENDMENT R14 (fix pass 2, finding 13) — this mechanism must NEVER drop a
+    LEGACY resolution: when >=2 LEGACY-universe claimants render one key (the
+    D2B1-R1 dated-alias EQR/VMRK shape is exactly this — BOTH the pre-rename and
+    post-rename symbol stay live universe keys ON PURPOSE), this function does
+    NOT collapse them at all — every claimant flows through unchanged, exactly
+    as it did pre-D2B2-US, and ``mint_master_rows``'s OWN existing collision
+    handling (the ``minted_by``/``prior`` current-symbol-agreement check, H2)
+    is what dedups them.  Collapsing here would itself become the "silently
+    dropping a legacy resolution" violation R1's absolute law forbids.
+
+    Collapse applies ONLY when at least one claimant is GMI-only.  Winner
+    selection, in priority order:
+      1. a LEGACY-universe claimant ALWAYS wins over a GMI-only one when
+         exactly one legacy claimant is present — R1's "legacy mint law is
+         untouched, regardless of master state" is an absolute law this NEW
+         mechanism must not itself violate by dropping the legacy claimant.
+      2. among GMI-only claimants only (no legacy claimant present), the one
+         whose OWN key equals the resolved row's CURRENT symbol
          (:func:`_current_symbol` of the shared inception code) — "what do we
          call this today" is the natural winner.
-      3. otherwise the lexicographically smallest key, deterministic.
+      3. otherwise the lexicographically smallest GMI-only key, deterministic.
 
     Returns ``(kept_resolutions, disclosures)``.  Every disclosure names the
     dropped symbol, its rendered listing key, and the winning symbol — never a
-    silent drop.
+    silent drop.  A dropped claimant is ALWAYS GMI-only; a legacy claimant is
+    never named in ``disclosures``.
     """
     by_rendered: dict[str, list[Resolution]] = {}
     for res in resolutions:
@@ -1775,17 +1815,25 @@ def _collapse_duplicate_claims(
         legacy_claimants = sorted(
             (c for c in claimants if c.key in legacy_keys), key=lambda c: c.key
         )
+        gmi_only_claimants = sorted(
+            (c for c in claimants if c.key not in legacy_keys), key=lambda c: c.key
+        )
+        if len(legacy_claimants) >= 2:
+            # R14 — >=2 legacy claimants: NOT this mechanism's problem. Leave
+            # every claimant untouched (mint_master_rows' own existing
+            # collision handling owns this shape, exactly as pre-D2B2-US).
+            continue
+        if not gmi_only_claimants:
+            continue  # a single legacy claimant alone — nothing to collapse
         if legacy_claimants:
             winner = legacy_claimants[0]
+            losers = gmi_only_claimants
         else:
             current_symbol = _current_symbol(claimants[0].inception_code)
-            matching = sorted(
-                (c for c in claimants if c.key == current_symbol), key=lambda c: c.key
-            )
-            winner = matching[0] if matching else sorted(claimants, key=lambda c: c.key)[0]
-        for c in sorted(claimants, key=lambda c: c.key):
-            if c.key == winner.key:
-                continue
+            matching = [c for c in gmi_only_claimants if c.key == current_symbol]
+            winner = matching[0] if matching else gmi_only_claimants[0]
+            losers = [c for c in gmi_only_claimants if c.key != winner.key]
+        for c in losers:
             dropped.add(c.key)
             disclosures.append({
                 "symbol": c.key,
@@ -1795,7 +1843,7 @@ def _collapse_duplicate_claims(
                     f"{c.key!r} renders the same listing key {rendered!r} as "
                     f"{winner.key!r} — a duplicate graph-topology reference to one "
                     "security, collapsed to the winning claimant; never a second "
-                    "mint or a second alias-row set (D2B2-US §2, AMENDMENT R3)"
+                    "mint or a second alias-row set (D2B2-US §2, AMENDMENT R3/R14)"
                 ),
             })
     kept = [r for r in resolutions if r.key not in dropped]
@@ -2832,18 +2880,43 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
         ambiguous_tickers=ambiguous_tickers,
     )
 
-    # ── V4-D2B2-US — complete per-target accounting (R2) ───────────────────────────
+    # ── V4-D2B2-US — complete per-target accounting (R2, corrected R13) ────────────
     # Every one of the `target_n` GMI targets lands in EXACTLY ONE of three
-    # buckets: resolved (`ids` carries its key), a disclosed duplicate-claim
-    # exclusion (R3, computed above), or a single named typed refusal — never
-    # two, never zero.  `resolved_total + refused_this_run +
-    # len(disclosed_exclusions) == target_n` is enforced fail-closed, in-build,
-    # below — the STANDING invariant R2 requires (a future lost US row re-enters
-    # as a refusal and the invariant still holds).
+    # buckets: resolved (`ids` carries its key OR an ACTIVE master row already
+    # covers its identity, R13), a disclosed duplicate-claim exclusion (R3,
+    # computed above), or a single named typed refusal — never two, never zero.
+    # `resolved_total + refused_this_run + len(disclosed_exclusions) ==
+    # target_n` is enforced fail-closed, in-build, below.
     resolutions_by_key = {r.key: r for r in resolutions}
+    _master_rows_by_security_for_gmi = {r["security_id"]: r for r in master_rows}
+    # AMENDMENT R13 — a target is RESOLVED when an ACTIVE master row covers its
+    # identity post-run (the sidecar's own rule-5 answer: does this code's OWN
+    # pure rename-chain root, :func:`_inception_code` with no directory context,
+    # match an active row's inception_code?) — NOT only when THIS run's rail
+    # join re-derived it via `ids`.  A rail that cannot currently re-derive an
+    # EXISTING row (WBS: a pre-existing, unrelated symbol-directory staleness
+    # gap; SATS: the old pre-rename ticker, no longer listed under that name —
+    # both already disclosed via `listing_continuity`) is a STALENESS fact,
+    # never a refusal: the identity is not missing, only this run's evidence
+    # for THIS SPELLING is quiet.  Named in `resolved_not_rederivable` so a
+    # receipt reader can see exactly which admissions relied on this path.
+    _active_us_security_by_root: dict[str, str] = {
+        str(r.get("inception_code") or "").strip().upper(): r["security_id"]
+        for r in master_rows
+        if r.get("country") == "US" and not r.get("security_state")
+    }
+    us_gmi_resolved_not_rederivable: list[dict] = []
+    _resolved_not_rederivable_codes: set[str] = set()
     us_gmi_refusals_by_code: dict[str, dict] = {}
     for _code in gmi_us_all_targets:
         if _code in disclosed_exclusion_keys or _code in ids:
+            continue
+        _covering_sec = _active_us_security_by_root.get(_inception_code(_code, None))
+        if _covering_sec is not None:
+            us_gmi_resolved_not_rederivable.append(
+                {"code": _code, "security_id": _covering_sec}
+            )
+            _resolved_not_rederivable_codes.add(_code)
             continue
         _res = resolutions_by_key.get(_code)
         if _res is not None and _res.listing_key is None:
@@ -2863,11 +2936,24 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
         us_gmi_refusals_by_code[_er["symbol"]] = {
             "code": _er["code"], "reason": _er["reason"],
         }
+    # A code resolved via the fence/eligibility/resurrection loops above is, by
+    # construction, never ALSO a resolved_not_rederivable code (those loops only
+    # ever fire for a resolution whose OWN listing_key resolved, which — had its
+    # root matched an active row — would already be `ids`-resolved via the
+    # ordinary `stored is not None` join, never reaching a fence/eligibility
+    # decision at all). Defensive: never let a later refusal overwrite an
+    # earlier resolved_not_rederivable classification.
+    for _dup in list(us_gmi_refusals_by_code):
+        if _dup in _resolved_not_rederivable_codes:
+            del us_gmi_refusals_by_code[_dup]
 
-    us_gmi_resolved_codes = sorted(c for c in gmi_us_all_targets if c in ids)
+    us_gmi_resolved_codes = sorted(
+        (c for c in gmi_us_all_targets if c in ids or c in _resolved_not_rederivable_codes)
+    )
     us_gmi_missing = sorted(
         c for c in gmi_us_all_targets
         if c not in ids and c not in disclosed_exclusion_keys
+        and c not in _resolved_not_rederivable_codes
         and c not in us_gmi_refusals_by_code
     )
     if us_gmi_missing:
@@ -2885,10 +2971,10 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
             f"({len(disclosed_exclusion_keys)}) != target_n "
             f"({len(gmi_us_all_targets)})"
         )
-    _master_rows_by_security_for_gmi = {r["security_id"]: r for r in master_rows}
     us_gmi_resolved_this_run = sum(
         1 for c in us_gmi_resolved_codes
-        if not _master_rows_by_security_for_gmi.get(ids[c], {}).get("_existed_before")
+        if c in ids
+        and not _master_rows_by_security_for_gmi.get(ids[c], {}).get("_existed_before")
     )
     # R5 disclosure — a GMI-only target minted THIS run via the exit-ledger path
     # (`exchange_symbol` is None on its resolution) never went through the
@@ -2912,6 +2998,9 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
         }
         for d in sorted(duplicate_claim_disclosures, key=lambda d: d["symbol"])
     ]
+    us_gmi_resolved_not_rederivable = sorted(
+        us_gmi_resolved_not_rederivable, key=lambda d: d["code"]
+    )
 
     # V4-D2B2-CN-HK — a SEPARATE, additive admission stage (see the module block
     # above :func:`mint_cn_hk_rows`), folded into ``master_rows`` BEFORE the security-
@@ -3220,6 +3309,11 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
                 for code in sorted(us_gmi_refusals_by_code)
             ],
             "disclosed_exclusions": us_gmi_disclosed_exclusions,
+            # AMENDMENT R13 — resolved targets whose IDENTITY is covered by an
+            # ACTIVE master row post-run but whose OWN rail join could not
+            # re-derive it THIS run (a staleness fact, already disclosed via
+            # `listing_continuity` — never a refusal).
+            "resolved_not_rederivable": us_gmi_resolved_not_rederivable,
             # AMENDMENT R5 — GMI-only targets minted this run via the exit-ledger
             # path, exempt BY LAW from the directory structural-flag check.
             "structural_check_exempt_exit_ledger": us_gmi_exit_ledger_exempt,
