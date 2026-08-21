@@ -724,7 +724,7 @@ def attested_history_private_not_found(
 
 
 # ---------------------------------------------------------------------------
-# FIF-2A: financial query endpoint
+# FIF-2A / FIF-2B shared JSON admission
 # ---------------------------------------------------------------------------
 
 
@@ -735,6 +735,15 @@ def _financial_query_provider():
     )
 
     return UnavailableFinancialQueryProvider()
+
+
+def _financial_revision_provider():
+    """Test seam: monkeypatch this to inject a packet fixture provider in tests."""
+    from engine.fundamental_forensics.revision_service import (  # noqa: PLC0415
+        UnavailableFinancialPacketProvider,
+    )
+
+    return UnavailableFinancialPacketProvider()
 
 
 def _financial_query_max_request_bytes() -> int:
@@ -766,6 +775,29 @@ async def _read_bounded_request_body(request: Request, max_bytes: int) -> bytes:
     return bytes(buf)
 
 
+async def _admit_json_post_body(request: Request) -> bytes:
+    """Auth already ran. Bound Content-Type, Content-Length, and streamed body."""
+    max_request_bytes = _financial_query_max_request_bytes()
+
+    cl_header = request.headers.get("content-length")
+    if cl_header is not None:
+        try:
+            cl_int = int(cl_header)
+        except (ValueError, TypeError):
+            raise _private_error(400, "malformed request")
+        if cl_int < 0:
+            raise _private_error(400, "malformed request")
+        if cl_int > max_request_bytes:
+            raise _private_error(413, "request body exceeds bound")
+
+    content_type = request.headers.get("content-type", "")
+    media_type = content_type.split(";")[0].strip().casefold()
+    if media_type != "application/json":
+        raise _private_error(400, "malformed request")
+
+    return await _read_bounded_request_body(request, max_request_bytes)
+
+
 @router.api_route(
     "/api/forensics/v1/financial/query",
     methods=["GET", "PUT", "PATCH", "DELETE", "HEAD"],
@@ -791,26 +823,7 @@ async def financial_query(
         execute_financial_query,
     )
 
-    max_request_bytes = _financial_query_max_request_bytes()
-
-    cl_header = request.headers.get("content-length")
-    if cl_header is not None:
-        try:
-            cl_int = int(cl_header)
-        except (ValueError, TypeError):
-            raise _private_error(400, "malformed request")
-        if cl_int < 0:
-            raise _private_error(400, "malformed request")
-        if cl_int > max_request_bytes:
-            raise _private_error(413, "request body exceeds bound")
-
-    content_type = request.headers.get("content-type", "")
-    media_type = content_type.split(";")[0].strip().casefold()
-    if media_type != "application/json":
-        raise _private_error(400, "malformed request")
-
-    body = await _read_bounded_request_body(request, max_request_bytes)
-
+    body = await _admit_json_post_body(request)
     provider = _financial_query_provider()
 
     try:
@@ -821,6 +834,55 @@ async def financial_query(
         raise _private_error(503, "financial query temporarily unavailable") from None
     except Exception:  # noqa: BLE001
         raise _private_error(503, "financial query temporarily unavailable") from None
+
+    return Response(
+        content=result.body,
+        media_type="application/json",
+        headers={
+            **_PRIVATE_HEADERS,
+            "X-FIF-Response-SHA256": result.sha256,
+        },
+    )
+
+
+@router.api_route(
+    "/api/forensics/v1/financial/revisions",
+    methods=["GET", "PUT", "PATCH", "DELETE", "HEAD"],
+)
+def financial_revisions_method_not_allowed(
+    response: Response,
+    _user: dict = Depends(require_site_full_user),
+) -> None:
+    """Auth first, then a private 405. Starlette's default 405 has no no-store policy."""
+    del response
+    raise _private_error(405, "method not allowed")
+
+
+@router.post("/api/forensics/v1/financial/revisions")
+async def financial_revisions(
+    request: Request,
+    _user: dict = Depends(require_site_full_user),
+) -> Response:
+    """Project cutoff-safe FIP revision records from the frozen packet assembler."""
+    from engine.fundamental_forensics.query_service import (  # noqa: PLC0415
+        FinancialQueryAdmissionError,
+        FinancialQueryUnavailableError,
+    )
+    from engine.fundamental_forensics.revision_service import (  # noqa: PLC0415
+        execute_financial_revisions,
+    )
+
+    body = await _admit_json_post_body(request)
+    provider = _financial_revision_provider()
+
+    try:
+        result = execute_financial_revisions(body=body, provider=provider)
+    except FinancialQueryAdmissionError as exc:
+        raise _private_error(exc.status_code, exc.detail) from None
+    except FinancialQueryUnavailableError:
+        raise _private_error(503, "financial revisions temporarily unavailable") from None
+    except Exception:  # noqa: BLE001
+        raise _private_error(503, "financial revisions temporarily unavailable") from None
 
     return Response(
         content=result.body,
