@@ -794,6 +794,8 @@ def _fake_api(
     main_ref_sha=None,
     pull_read_sequence=None,
     annotations=None,
+    hold_comments=None,
+    hold_comments_status=200,
 ):
     """Route every `_request` call by method+URL and record what was sent.
 
@@ -818,6 +820,12 @@ def _fake_api(
     clobbered/empty head is staged with `compare_files=()`. The invariant judges
     the compare ALONE (the files view recomputes against a clobbered head, so a
     live-vs-view disagreement never occurs in practice — measured 2026-08-09).
+
+    `hold_comments` seeds the GET `/issues/{n}/comments` page-1 response the
+    recorded-hold guard reads immediately before the merge call; the default
+    `None` answers an empty list (no hold) so every test that is not about the
+    hold guard keeps its old outcome. `hold_comments_status` >= 400 simulates a
+    comments-read failure (the guard's fail-closed path).
     """
     calls: list[tuple[str, str, dict | None]] = []
     parsed_commits = [_commit_parts(entry) for entry in main_commits]
@@ -948,6 +956,13 @@ def _fake_api(
             if page > 1:
                 return 200, []
             return 200, [{"filename": name} for name in pr_files]
+        if method == "GET" and "/issues/" in url and "/comments?" in url:
+            if hold_comments_status >= 400:
+                return hold_comments_status, {"message": "Server Error"}
+            page = int(url.rsplit("page=", 1)[1].split("&")[0])
+            if page > 1:
+                return 200, []
+            return 200, list(hold_comments or [])
         if method == "GET" and "/pulls/" in url:
             pull_reads += 1
             if pull_read_sequence:
@@ -1280,6 +1295,235 @@ def test_standing_holds_are_never_squash_merged(monkeypatch):
     assert not [call for call in calls if call[1].endswith("/merge")]
 
 
+# --- recorded-hold guard (2026-08-20, PR #6109) ----------------------------------
+#
+# #6109 carried an explicit HOLD-FOR-SOL comment from its author and was squash-
+# merged anyway by the shared account, with no release comment. Fleet law already
+# says a recorded hold binds every merge path (`DEC:SOL-HOLD-IS-A-MERGE-BARRIER`);
+# these tests pin the automation that now enforces it.
+
+
+def test_recorded_hold_pure_function_matches_and_releases():
+    """`MOG.recorded_hold` in isolation: no network, every marker/timestamp case."""
+    # A body-carried hold, several marker spellings.
+    assert MOG.recorded_hold("HOLD-FOR-SOL: pending review", []) == "HOLD-FOR-SOL"
+    assert MOG.recorded_hold("hold-for-ops until Monday", []) == "hold-for-ops"
+    assert MOG.recorded_hold("please do NOT   merge  this", []) == "do NOT   merge"
+    assert MOG.recorded_hold("nothing to see here", []) is None
+
+    # A comment-carried hold, no release.
+    assert (
+        MOG.recorded_hold(
+            "no hold in the body",
+            [{"body": "HOLD-FOR-SOL", "created_at": "2026-08-20T10:00:00Z"}],
+        )
+        == "HOLD-FOR-SOL"
+    )
+
+    # A release strictly after the hold clears it.
+    assert (
+        MOG.recorded_hold(
+            "no hold in the body",
+            [
+                {"body": "HOLD-FOR-SOL", "created_at": "2026-08-20T10:00:00Z"},
+                {"body": "hold-released, thanks", "created_at": "2026-08-20T11:00:00Z"},
+            ],
+        )
+        is None
+    )
+
+    # A release that PREDATES the hold does not clear it.
+    assert (
+        MOG.recorded_hold(
+            "no hold in the body",
+            [
+                {"body": "HOLD-RELEASED", "created_at": "2026-08-20T09:00:00Z"},
+                {"body": "HOLD-FOR-SOL", "created_at": "2026-08-20T10:00:00Z"},
+            ],
+        )
+        == "HOLD-FOR-SOL"
+    )
+
+    # A body-only hold is released by ANY release comment — there is no comment
+    # timestamp on the body side to out-race.
+    assert (
+        MOG.recorded_hold(
+            "HOLD-FOR-SOL in the body only",
+            [{"body": "unrelated chatter", "created_at": "2026-08-19T00:00:00Z"}],
+        )
+        == "HOLD-FOR-SOL"
+    )
+    assert (
+        MOG.recorded_hold(
+            "HOLD-FOR-SOL in the body only",
+            [{"body": "HOLD-RELEASED", "created_at": "2026-08-19T00:00:00Z"}],
+        )
+        is None
+    )
+
+    # The guard's own comment (quoting the marker back at the reader) must never
+    # register as a fresh hold — without this exclusion the block could never clear.
+    assert (
+        MOG.recorded_hold(
+            "no hold in the body",
+            [
+                {
+                    "body": f"{MOG.HOLD_GUARD_SENTINEL} matched marker: `HOLD-FOR-SOL`",
+                    "created_at": "2026-08-20T10:00:00Z",
+                }
+            ],
+        )
+        is None
+    )
+
+
+def test_a_hold_in_the_body_blocks_the_merge_and_comments_exactly_once(
+    monkeypatch, capsys
+):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        pull_payload={"body": "Context.\n\nHOLD-FOR-SOL until the review lands."},
+    )
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "recorded-hold"
+    assert not [call for call in calls if call[1].endswith("/merge")], (
+        "a recorded hold must never reach the merge call"
+    )
+    comments = [
+        call for call in calls if call[0] == "POST" and call[1].endswith("/comments")
+    ]
+    assert len(comments) == 1
+    assert comments[0][2]["body"].startswith(MOG.HOLD_GUARD_SENTINEL)
+    assert "HOLD-FOR-SOL" in comments[0][2]["body"]
+    assert "DEC:SOL-HOLD-IS-A-MERGE-BARRIER" in comments[0][2]["body"]
+    labels = [call for call in calls if call[0] == "POST" and call[1].endswith("/labels")]
+    assert len(labels) == 1
+    out = capsys.readouterr().out
+    assert "recorded hold" in out
+
+
+def test_a_hold_in_a_comment_blocks_the_merge(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        hold_comments=[
+            {"body": "LGTM from my read.", "created_at": "2026-08-20T21:00:00Z"},
+            {"body": "HOLD-FOR-SOL — pending an audit.", "created_at": "2026-08-20T22:03:00Z"},
+        ],
+    )
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "recorded-hold"
+    assert not [call for call in calls if call[1].endswith("/merge")]
+
+
+def test_a_release_newer_than_the_hold_unblocks_the_merge(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        hold_comments=[
+            {"body": "HOLD-FOR-SOL — pending an audit.", "created_at": "2026-08-20T22:03:00Z"},
+            {"body": "HOLD-RELEASED — audit complete.", "created_at": "2026-08-20T23:00:00Z"},
+        ],
+    )
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "merged"
+    assert len([call for call in calls if call[1].endswith("/merge")]) == 1
+
+
+def test_a_release_older_than_a_later_hold_does_not_unblock(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        hold_comments=[
+            {"body": "HOLD-FOR-SOL — first concern.", "created_at": "2026-08-20T20:00:00Z"},
+            {"body": "HOLD-RELEASED — resolved.", "created_at": "2026-08-20T21:00:00Z"},
+            {"body": "HOLD-FOR-SOL — new concern raised.", "created_at": "2026-08-20T22:00:00Z"},
+        ],
+    )
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "recorded-hold"
+    assert not [call for call in calls if call[1].endswith("/merge")]
+
+
+def test_a_prior_hold_guard_comment_is_not_duplicated(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        pull_payload={"body": "HOLD-FOR-SOL until reviewed."},
+        hold_comments=[
+            {
+                "body": f"{MOG.HOLD_GUARD_SENTINEL} **not merging.** matched marker: "
+                "`HOLD-FOR-SOL`",
+                "created_at": "2026-08-20T22:05:00Z",
+            }
+        ],
+    )
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "recorded-hold"
+    comments = [
+        call for call in calls if call[0] == "POST" and call[1].endswith("/comments")
+    ]
+    assert not comments, "a prior hold-guard comment must suppress a duplicate"
+
+
+def test_no_recorded_hold_leaves_the_merge_path_unchanged(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        pull_payload={"body": "Nothing to hold here."},
+        hold_comments=[{"body": "Ship it.", "created_at": "2026-08-20T10:00:00Z"}],
+    )
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "merged"
+    assert len([call for call in calls if call[1].endswith("/merge")]) == 1
+
+
+def test_a_red_check_never_spends_the_hold_guards_comments_read(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="failure")]}
+        },
+    )
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "blocked"
+    comment_fetches = [
+        call for call in calls if call[0] == "GET" and "/comments" in call[1]
+    ]
+    assert not comment_fetches, (
+        "the hold guard is spent ONLY on the about-to-merge path, after every "
+        "other gate concluded clean — a red check must never reach it"
+    )
+
+
+def test_a_comments_fetch_failure_defers_without_merging(monkeypatch, capsys):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        hold_comments_status=502,
+    )
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "error"
+    assert not [call for call in calls if call[1].endswith("/merge")]
+    out = capsys.readouterr().out
+    assert "unreadable hold state is not permission to merge" in out
+
+
 def test_scoped_unscheduled_packs_are_not_incomplete_on_the_merge_path(
     monkeypatch,
 ):
@@ -1367,6 +1611,8 @@ def test_an_ambiguous_merge_response_rereads_the_pr_and_consumes_the_snapshot(
             }
         if method == "GET" and "/git/ref/heads/main" in url:
             return 200, {"object": {"sha": DEFAULT_MAIN_SHA}}
+        if method == "GET" and "/issues/" in url and "/comments?" in url:
+            return 200, []
         if method == "PUT" and url.endswith("/merge"):
             raise ConnectionError("response body truncated after write")
         if method == "GET" and url.endswith("/pulls/4242"):

@@ -456,6 +456,12 @@ COMMIT_FILES_TRUNCATED_AT = 300
 # we cannot fully see, and an UNDER-read footprint under-detects, so it is re-proven.
 PR_FILE_PAGE_CAP = 3
 OPEN_PULL_PAGE_CAP = 10
+# `/issues/{n}/comments` pages, 100 each, for the recorded-hold guard below. A pull
+# request carrying more than this many comments is not fully readable, and an
+# under-read comment inventory could hide either a HOLD or its HOLD-RELEASED — so
+# `fetch_issue_comments` fails closed (returns None) past this cap, exactly like
+# `_semantic_pull_paths` does for an oversized files inventory.
+HOLD_COMMENT_PAGE_CAP = 5
 
 
 def _annotate(level: str, title: str, message: str) -> None:
@@ -5082,6 +5088,193 @@ def failing_check_names(runs: list[dict[str, Any]]) -> set[str]:
     }
 
 
+# --- recorded-hold guard --------------------------------------------------------
+#
+# WHY (2026-08-20, PR #6109). A HOLD-FOR-SOL comment was posted on #6109 by its
+# author, and the shared account squash-merged it anyway a short while later with
+# no release comment. Fleet law already says a recorded hold binds every merge
+# path (`DEC:SOL-HOLD-IS-A-MERGE-BARRIER`), but the automation had no way to SEE a
+# recorded hold — its only hold mechanism was the hardcoded `NEVER_AUTO_MERGE_PULLS`
+# frozenset above, which nobody had (or reasonably could have) added #6109 to. A
+# re-armed `merge-on-green` label — any session can add labels — silently overrode
+# an authority hold that lived only in prose. This guard closes that gap: it reads
+# the pull request's own body and comments for a hold marker immediately before the
+# irreversible merge call, so the label can never again be the last word.
+HOLD_GUARD_SENTINEL = "[merge-on-green hold-guard]"
+# Case-insensitive on purpose: a hold posted as `hold-for-sol` or `Hold-For-Sol`
+# binds exactly as hard as `HOLD-FOR-SOL` — the marker is a convention, not a
+# cryptographic token, and treating case as significant would let a typo silently
+# defeat the barrier.
+HOLD_MARKER_RE = re.compile(r"\bHOLD-FOR-[A-Z0-9_-]+|\bDO\s+NOT\s+MERGE\b", re.IGNORECASE)
+HOLD_RELEASE_RE = re.compile(r"\bHOLD-RELEASED\b", re.IGNORECASE)
+
+
+def recorded_hold(body: str, comments: list[dict[str, Any]]) -> str | None:
+    """Is this pull request currently under a recorded hold? Pure, no network.
+
+    A HOLD marker is `HOLD-FOR-<...>` or `DO NOT MERGE`, matched case-insensitively
+    in the pull request BODY or in any issue COMMENT. A RELEASE is a comment
+    matching `HOLD-RELEASED`.
+
+    The comparison is timestamp-based: a release only counts if it is STRICTLY
+    LATER than the newest hold-carrying COMMENT. A hold that lives only in the body
+    has no comment timestamp to out-race, so the parenthetical in the frozen spec
+    applies literally — ANY release comment clears a body-only hold (and so does
+    editing the marker out of the body; this function always reads the CURRENT
+    body/comments text, never a cached copy). A hold reasserted by a later comment
+    (after an earlier release) re-blocks, because the "newest hold-carrying
+    comment" used for the comparison moves forward with it.
+
+    Comments whose body starts with `HOLD_GUARD_SENTINEL` are the guard's OWN
+    output and are excluded from every match here — both hold and release scanning
+    — because without that exclusion the guard's own explanatory comment (which
+    necessarily quotes the matched hold text) would itself register as a fresh
+    hold and the block could never clear.
+
+    Returns the matched marker text (for the explanation), or None when the pull
+    request is not currently held.
+    """
+    newest_hold_at: dt.datetime | None = None
+    newest_hold_text: str | None = None
+    release_ats: list[dt.datetime] = []
+
+    for comment in comments or ():
+        text = str((comment or {}).get("body") or "")
+        if text.startswith(HOLD_GUARD_SENTINEL):
+            continue
+        hold_match = HOLD_MARKER_RE.search(text)
+        if hold_match:
+            # An unparsable/missing timestamp on a genuine hold comment must not
+            # make it easy to out-race — treat it as maximally recent so only an
+            # unambiguously-dated release can clear it.
+            created_at = _parse_dt(comment.get("created_at")) or dt.datetime.max.replace(
+                tzinfo=dt.timezone.utc
+            )
+            if newest_hold_at is None or created_at > newest_hold_at:
+                newest_hold_at = created_at
+                newest_hold_text = hold_match.group(0)
+        if HOLD_RELEASE_RE.search(text):
+            # The reverse bias for a release: an undated release must not be able
+            # to clear a dated hold, so an unparsable timestamp sorts minimally.
+            release_ats.append(
+                _parse_dt(comment.get("created_at"))
+                or dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+            )
+
+    if newest_hold_text is not None:
+        released = any(at > newest_hold_at for at in release_ats)
+        return None if released else newest_hold_text
+
+    body_match = HOLD_MARKER_RE.search(body or "")
+    if body_match is None:
+        return None
+    # Body-only hold: no comment timestamp to compare against, so ANY release
+    # comment clears it (see docstring).
+    return None if release_ats else body_match.group(0)
+
+
+def fetch_issue_comments(
+    repo: str, number: Any, token: str
+) -> list[dict[str, Any]] | None:
+    """Every issue comment on a pull request, or None on any read failure.
+
+    Paginated like `_semantic_pull_paths`: fails closed (returns None) on an
+    erroring page, a non-list body, or exceeding `HOLD_COMMENT_PAGE_CAP` — an
+    under-read comment inventory could hide either a HOLD or its HOLD-RELEASED,
+    and either miss is unsafe in the direction this guard exists to prevent.
+
+    Called from exactly one place: `sweep_pull`'s about-to-merge path, immediately
+    before the merge call and after every other gate (checks, freshness, the
+    clobbered-head invariant) has already concluded clean — this module's API
+    budget doctrine spends a call here only on a pull request that has earned it.
+    """
+    if number is None:
+        return None
+    comments: list[dict[str, Any]] = []
+    for page in range(1, HOLD_COMMENT_PAGE_CAP + 1):
+        query = urllib.parse.urlencode({"per_page": "100", "page": str(page)})
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/issues/{number}/comments?{query}",
+            token,
+        )
+        if status >= 400 or not isinstance(payload, list):
+            return None
+        comments.extend(item for item in payload if isinstance(item, dict))
+        if len(payload) < 100:
+            return comments
+    return None
+
+
+def hold_guard_comment(marker: str) -> str:
+    """The one-shot explanation posted when a recorded hold blocks the merge."""
+    return (
+        f"{HOLD_GUARD_SENTINEL} **not merging.** This pull request carries a "
+        f"recorded hold — matched marker: `{marker}` — in its body or comments.\n\n"
+        "A recorded hold binds every merge path — this sweeper, a re-armed "
+        "`merge-on-green` label, and a manual merge alike — regardless of label "
+        "state, per `DEC:SOL-HOLD-IS-A-MERGE-BARRIER`. The `merge-on-green` label "
+        "stays armed so the next sweep merges automatically once the hold clears; "
+        "nothing here needs to be re-armed by hand.\n\n"
+        "To release: the hold's named authority posts a comment containing "
+        "`HOLD-RELEASED` (dated after the hold above), or edits the hold marker "
+        "out of the pull request body."
+    )
+
+
+def apply_recorded_hold_block(
+    repo: str,
+    pull: dict[str, Any],
+    marker: str,
+    comments: list[dict[str, Any]],
+    token: str,
+) -> None:
+    """Label + one-shot comment for a recorded-hold refusal.
+
+    Deduplicates on the presence of a prior `HOLD_GUARD_SENTINEL` comment in the
+    ALREADY-FETCHED `comments` list, not on the `merge-blocked` label transition
+    `mark_blocked` uses for red checks: the label can already be armed for an
+    unrelated red-check reason (or a stale one `sweep_pull` has not yet cleared),
+    and keying dedup off the label would silently swallow the hold explanation on
+    a pull request that happens to already be labeled for something else.
+    """
+    number = pull.get("number")
+    if MERGE_BLOCKED_LABEL not in label_names(pull):
+        status, _ = _request(
+            "POST",
+            f"{GITHUB_API}/repos/{repo}/issues/{number}/labels",
+            token,
+            {"labels": [MERGE_BLOCKED_LABEL]},
+        )
+        if status >= 400:
+            _annotate(
+                "error",
+                "merge-on-green hold-guard",
+                f"PR #{number}: could not add `{MERGE_BLOCKED_LABEL}` for the "
+                f"recorded hold (HTTP {status}); posting the explanation anyway "
+                "so the refusal stays visible.",
+            )
+    already_commented = any(
+        str((comment or {}).get("body") or "").startswith(HOLD_GUARD_SENTINEL)
+        for comment in comments
+    )
+    if already_commented:
+        return
+    comment_status, _ = _request(
+        "POST",
+        f"{GITHUB_API}/repos/{repo}/issues/{number}/comments",
+        token,
+        {"body": hold_guard_comment(marker)},
+    )
+    if comment_status >= 400:
+        _annotate(
+            "error",
+            "merge-on-green hold-guard",
+            f"PR #{number}: could not post the recorded-hold explanation "
+            f"(HTTP {comment_status}).",
+        )
+
+
 def red_check_comment(names: list[str]) -> str:
     """The refusal a red head gets, worded ONCE for both callers.
 
@@ -6254,6 +6447,36 @@ def sweep_pull(
             "the merge call.",
         )
         return "main-moved"
+
+    # RECORDED-HOLD GUARD (2026-08-20, PR #6109 — see the module comment above
+    # `recorded_hold`). Every other gate has now concluded clean, so this is the
+    # single point immediately before the irreversible merge call. Fetched here and
+    # only here: a comments read is spent solely on a pull request that has already
+    # earned it, matching this module's API-budget doctrine for the merge step.
+    hold_comments = fetch_issue_comments(repo, number, read_token)
+    if hold_comments is None:
+        _annotate(
+            "warning",
+            "merge-on-green hold-guard",
+            f"PR #{number}: could not read issue comments to check for a recorded "
+            "hold; an unreadable hold state is not permission to merge. Left "
+            "armed for the next sweep.",
+        )
+        return "error"
+    hold_marker = recorded_hold(str(pull.get("body") or ""), hold_comments)
+    if hold_marker is not None:
+        apply_recorded_hold_block(repo, pull, hold_marker, hold_comments, merge_token)
+        if blocked_names is not None:
+            blocked_names.add(f"recorded-hold:{hold_marker}")
+        _annotate(
+            "warning",
+            "merge-on-green hold-guard",
+            f"PR #{number}: recorded hold ({hold_marker!r}) blocks every merge "
+            "path per DEC:SOL-HOLD-IS-A-MERGE-BARRIER; not merging. The "
+            "merge-on-green label stays armed for the next sweep once the hold "
+            "clears.",
+        )
+        return "recorded-hold"
 
     def finish_ambiguous_merge(cause: str) -> str:
         """Consume this snapshot after a merge whose outcome is not definitive."""
