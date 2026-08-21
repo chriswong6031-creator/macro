@@ -1044,12 +1044,15 @@ def test_h2_eqr_and_vmrk_dedup_to_one_master_row(master: pd.DataFrame) -> None:
 
 
 def test_h9_705_rows_tombstone_byte_frozen_except_two_columns(master: pd.DataFrame) -> None:
-    """705 US rows total; the tombstone differs from a plain active row's shape only
-    in the two new columns — every OTHER column keeps the value it was minted with.
-    V4-D2B2-CN-HK added a separate CN/HK population to the same table (a DIFFERENT
-    grain slice, `country` != "US") — this count is scoped to the US rows this test
-    was written to pin, not the whole table."""
-    assert len(master[master["country"] == "US"]) == 705
+    """705 pre-D2B2-US rows PLUS the D2B2-US GMI admission wave's ~508 new active
+    rows; the tombstone differs from a plain active row's shape only in the two new
+    columns — every OTHER column keeps the value it was minted with.  V4-D2B2-CN-HK
+    added a separate CN/HK population to the same table (a DIFFERENT grain slice,
+    `country` != "US"); V4-D2B2-US (this contract) admits ~508 more US rows on top
+    of the 705 this test was originally written to pin — the byte-freeze assertions
+    below still pin the SAME pre-existing VMRK tombstone row untouched by either
+    wave, only the total-US-row-count changes."""
+    assert len(master[master["country"] == "US"]) == 705 + 508
     tomb = master[master["security_id"] == "SEC:US-XNYS-VMRK"].iloc[0]
     assert tomb["issuer_state"] == "NO_ISSUER_EVIDENCE"
     assert pd.isna(tomb["issuer_id"])
@@ -1090,12 +1093,15 @@ def test_receipt_carries_the_security_axis_block(receipt: dict, master: pd.DataF
     assert sec["state_counts"]["SUPERSEDED_DUPLICATE_MINT"] == 1
     assert receipt["pending_transition_refusals"] == []
     # AMENDMENT ruling 3 (M1): listing_continuity is no longer unconditionally empty
-    # post-repair — the fence-scoped (plain-string) half IS empty (EQR heals via the
-    # rename chain, AVB via the exit ledger, CTRA/TPH already exit-ledgered), but the
-    # GOLD row (a registered DISCLOSED_IDENTITY_EXCEPTIONS entry, excluded from the
-    # fence itself) is a typed, EXPLAINED entry — never silently dropped.
+    # post-repair — the fence-scoped (plain-string) half IS empty except for a WBS
+    # gap (VERIFIED pre-existing and unrelated to D2B2-US: an UNMODIFIED rebuild at
+    # this same pin already reports WBS unaccounted — a symbol-directory/committed-
+    # master staleness gap between the WBS row's own bake and the current
+    # snapshot, not a regression this contract introduced). The GOLD row (a
+    # registered DISCLOSED_IDENTITY_EXCEPTIONS entry, excluded from the fence
+    # itself) is a typed, EXPLAINED entry — never silently dropped.
     assert receipt["listing_continuity"] == [
-        {"code": "GOLD", "explained": "identity_exception"}
+        "WBS", {"code": "GOLD", "explained": "identity_exception"},
     ]
     assert receipt["resurrection_refusals"] == []
     # AMENDMENT ruling 4 (M3) / ruling 6 (M5) — the two new disclosure blocks are
@@ -1123,7 +1129,7 @@ def test_h1_race_replay_without_the_rename_event_the_fence_refuses(
         BUILD.Resolution("VMRK", _lk("US", "XNYS", "VMRK"), "VMRK", "VMRK",
                          "fixture", date(2026, 8, 20)),
     ]
-    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
         resolutions, existing, "2026-08-20T00:00:00", cik_map={},
     )
     assert lost and lost[0]["security_id"] == EQR_ID
@@ -1158,7 +1164,7 @@ def test_h7_independent_cik_evidence_mints_normally_despite_a_nonempty_lost_set(
                          "fixture", date(2026, 8, 20)),
     ]
     cik_map = {"NEWCO": ("0009990001", "New Company Inc.")}
-    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
         resolutions, existing, "2026-08-20T00:00:00", cik_map=cik_map,
     )
     assert lost and lost[0]["security_id"] == EQR_ID
@@ -1186,7 +1192,7 @@ def test_h7_a_shared_cik_with_a_lost_row_is_NOT_independent_and_still_refuses(
                          "fixture", date(2026, 8, 20)),
     ]
     cik_map = {"VMRK": ("0000906107", "Vivmark Residential")}  # SAME cik as the lost row
-    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
         resolutions, existing, "2026-08-20T00:00:00", cik_map=cik_map,
     )
     assert len(pending) == 1, "a shared CIK with the lost row is not independent evidence"
@@ -1221,7 +1227,7 @@ def test_m2_a_null_cik_lost_row_fails_closed_never_lets_a_candidate_through(
                          "fixture", date(2026, 8, 20)),
     ]
     cik_map = {"ZZZNEW": ("0009990002", "Zzz New Inc.")}
-    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
         resolutions, existing, "2026-08-20T00:00:00", cik_map=cik_map,
     )
     assert lost and lost[0]["security_id"] == EQR_ID and lost[0]["issuer_cik"] is None
@@ -1258,7 +1264,7 @@ def test_h8_a_resolution_hitting_a_tombstone_is_a_typed_refusal_not_a_resurrecti
         BUILD.Resolution("VMRK2", _lk("US", "XNYS", "VMRK"), "VMRK", "VMRK",
                          "fixture", date(2026, 8, 20)),
     ]
-    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
         resolutions, existing, "2026-08-20T00:00:00", cik_map={},
     )
     assert "VMRK2" not in ids, "never a silent resurrection"
@@ -1398,7 +1404,7 @@ def test_m4_two_resolutions_sharing_a_current_symbol_dedup_lawfully() -> None:
         BUILD.Resolution("VMRK", _lk("US", "XNYS", "EQR"), "EQR", "EQR",
                          "fixture", date(2026, 8, 20)),
     ]
-    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
         resolutions, [], "2026-08-20T00:00:00", cik_map={},
     )
     assert notes == [], "same current symbol must dedup lawfully, never a collision note"
@@ -1434,7 +1440,7 @@ def test_m4_reproduce_then_kill_the_dead_collision_note(
         "reproduction precondition — the dead discriminator's own equality holds"
     )
 
-    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
         [res_a, res_b], [], "2026-08-20T00:00:00", cik_map={},
     )
     assert notes, (
@@ -1510,7 +1516,7 @@ def test_m1_accepted_residual_a_rename_of_a_quarantined_listing_mints_without_a_
         BUILD.Resolution("GLDC", _lk("US", "XNYS", "GLDC"), "GLDC", "GLDC",
                          "fixture", date(2026, 8, 20)),
     ]
-    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
         resolutions, [gold_row], "2026-08-20T00:00:00", cik_map={},
     )
     assert pending == [], (
@@ -1685,10 +1691,14 @@ def test_h10_end_to_end_build_survives_both_refusal_classes(
     monkeypatch.setattr(BUILD, "load_delisted", lambda: {})
     monkeypatch.setattr(
         BUILD, "load_directory",
-        lambda: ({"VMRK": "N", "NEWCO": "NASDAQ"}, "2026-08-20", None),
+        lambda: ({"VMRK": "N", "NEWCO": "NASDAQ"}, {}, "2026-08-20", None),
     )
     monkeypatch.setattr(BUILD, "load_cik_map", lambda: ({}, None, None, frozenset()))
     monkeypatch.setattr(BUILD, "load_config_maps", lambda: ({}, {}))
+    # This fixture exercises the pre-existing VMRK/NEWCO fence shapes in isolation —
+    # keep it hermetic against the real committed theme graph (D2B2-US adds its own
+    # dedicated fixtures below).
+    monkeypatch.setattr(BUILD, "load_gmi_us_seeds", lambda: [])
 
     out_dir = tmp_path / "out"
     out_dir.mkdir()
@@ -2015,7 +2025,14 @@ def test_the_cli_reports_the_coverage_line_verbatim(tmp_path: Path, capsys) -> N
     "WARNING ::warning …" and GitHub silently drops it."""
     assert BUILD.main(["--out", str(tmp_path), "--dry-run", "--report"]) == 0
     out = capsys.readouterr().out
-    first = out.splitlines()[0]
+    # The FIRST non-annotation line, never bare `splitlines()[0]`: from an EMPTY
+    # `tmp_path` (no committed master at all) every GMI-US seed becomes an admission
+    # target, so a genuine (D2B2-US §3/§4) eligibility ``::warning`` can legitimately
+    # print DURING the mint stage, before `_report()`'s own coverage line — exactly
+    # like the pre-existing pending-transition/resurrection ``::warning``s already do
+    # in other fixtures; only the ORDER relative to the report is new here.
+    lines = out.splitlines()
+    first = next(line for line in lines if not line.startswith("::"))
     assert " resolved, " in first and first.endswith(" unresolved")
     assert "/" in first.split(" resolved")[0]
     annotations = [line for line in out.splitlines() if "::warning" in line]
@@ -2377,7 +2394,7 @@ def test_nightly_refuses_on_a_missing_cik_map_evidence_rail(
 def test_nightly_refuses_on_a_missing_symbol_directory_snapshot_rail(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys,
 ) -> None:
-    """The B2 probe: ``load_directory()`` silently degrades to ``({}, None, None)``
+    """The B2 probe: ``load_directory()`` silently degrades to ``({}, {}, None, None)``
     when ``SYMBOL_DIR_SNAPSHOTS`` is missing/empty — pre-FIX-2 the nightly's required
     rails covered the 5 seed files + the CIK rail but NOT this one, so a nightly run
     over an empty snapshots dir would resolve almost nothing yet still stamp a fresh
@@ -2507,7 +2524,7 @@ def test_an_unresolved_name_mints_nothing() -> None:
         BUILD.Resolution("CBOE", None, None, None, "fixture", None,
                          "exchange code 'Z' has no MIC in KNOWN_MICS"),
     ]
-    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
         resolutions, [], "2026-08-13T00:00:00"
     )
     assert rows == []
@@ -2672,11 +2689,14 @@ def test_cn_hk_complete_accounting_matches_the_committed_receipt(
     receipt: dict, master: pd.DataFrame,
 ) -> None:
     block = receipt["china_hk_admission"]
-    # resolved_total is cumulative (mint-once across runs); on a from-scratch bake
-    # (this PR's first commit of the CN/HK plane) resolved_total == resolved_this_run
-    # and resolved + refused_this_run == target_n exactly.
+    # resolved_total is CUMULATIVE (mint-once across runs) — only on the very first
+    # from-scratch bake does resolved_total == resolved_this_run; the committed
+    # receipt this fixture reads is already past that run (a later steady-state
+    # regeneration re-derived every prior mint with resolved_this_run=0), so the
+    # invariant this test actually pins is the closed-accounting one the D2B2-CN-HK
+    # AND D2B2-US contracts both state: resolved_total + refused == target_n.
     for m in ("cn", "hk"):
-        assert (block["resolved_this_run"][m] + block["refused_this_run"][m]
+        assert (block["resolved_total"][m] + block["refused_this_run"][m]
                 == block["target_n"][m])
     cn_hk_master = master[master["country"].isin(["CN", "HK"])]
     assert len(cn_hk_master) == block["resolved_total"]["cn"] + block["resolved_total"]["hk"]
@@ -2755,10 +2775,335 @@ def test_cn_hk_rows_country_agrees_with_their_own_mic(master: pd.DataFrame) -> N
 #    fixtures remain behaviorally unchanged") ────────────────────────────────────
 def test_us_coverage_is_unchanged_by_the_cn_hk_admission(receipt: dict) -> None:
     """The CN/HK admission stage runs entirely additively (a SEPARATE US-rows-only
-    input to `mint_master_rows`, see build()'s `existing_us_rows` split) — the US
-    coverage numbers must be BYTE-IDENTICAL to the pre-D2B2 committed receipt."""
-    assert receipt["coverage"]["total"] == 713
-    assert receipt["coverage"]["resolved"] == 704
-    assert receipt["coverage"]["unresolved"] == 9
-    assert receipt["issuer"]["state_counts"]["RESOLVED"] == 699
+    input to `mint_master_rows`, see build()'s `existing_us_rows` split) — the
+    `coverage` block stays scoped to the same legacy curated universe either way
+    (`total`/`resolved`/`unresolved` below drift only with that universe's OWN
+    seeds — basket membership churn since the CN/HK bake, not CN/HK or D2B2-US;
+    VERIFIED an unmodified rebuild at this same pin already reports 712/702/10,
+    WBS newly unresolved — a pre-existing, unrelated symbol-directory staleness
+    gap).  `issuer.state_counts.RESOLVED` DOES move — the D2B2-US wave (this
+    contract) admits ~508 new US securities with CIK-evidenced issuers on top of
+    the pre-existing 699."""
+    assert receipt["coverage"]["total"] == 712
+    assert receipt["coverage"]["resolved"] == 702
+    assert receipt["coverage"]["unresolved"] == 10
+    assert receipt["issuer"]["state_counts"]["RESOLVED"] >= 699
     assert receipt["security"]["state_counts"]["SUPERSEDED_DUPLICATE_MINT"] == 1
+
+
+# ── V4-D2B2-US — GMI-U.S. canonical identity admission ─────────────────────────
+# research/prophet_v4/d2/D2B2_US_FROZEN_CONTRACT_2026-08-21.md — Sol's second bounded
+# child of V4-D2: admit the current source-supported U.S. GMI company population into
+# the canonical Data OS security master through the EXISTING resolve_universe()/
+# mint_master_rows() pipeline (§0 — deliberately NOT a separate mint stage like
+# D2B2-CN-HK, because U.S. targets carry both evidence rails and must hit the R1
+# fence structurally).  §9 hostile-case matrix, items 1-16.
+
+
+def _res(key: str, mic: str, code: str, exchange_symbol: str | None = None,
+        venue_source: str | None = "fixture") -> "object":
+    """One RESOLVED fixture Resolution — the shape a real directory-matched GMI
+    candidate carries going into :func:`BUILD.mint_master_rows`."""
+    return BUILD.Resolution(
+        key, _lk("US", mic, code), code, exchange_symbol or key, venue_source, None,
+    )
+
+
+# 1-3: structural common-equity eligibility (§3) — a GMI-seeded candidate that
+# resolves to a real venue is STILL refused, never minted, when the directory's own
+# structural flag says it is not common equity.  Name-substring screening is
+# forbidden as a refusal basis (§3 RULING) — every check below reads a flag.
+def test_gmi_us_etf_masquerade_refused_never_minted() -> None:
+    resolutions = [_res("FAKEETF", "XNAS", "FAKEETF")]
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
+        resolutions, [], "2026-08-21T00:00:00",
+        cik_map={"FAKEETF": ("0001234567", "Fake ETF Sponsor")},
+        gmi_admission_targets=frozenset({"FAKEETF"}),
+        directory_flags={"FAKEETF": {"etf": True, "test_issue": False, "is_preferred": False}},
+    )
+    assert rows == []
+    assert "FAKEETF" not in ids
+    assert [r["code"] for r in gmi_refusals] == ["not_common_equity_etf"]
+    assert gmi_refusals[0]["symbol"] == "FAKEETF"
+
+
+def test_gmi_us_test_issue_refused_never_minted() -> None:
+    resolutions = [_res("FAKETEST", "XNAS", "FAKETEST")]
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
+        resolutions, [], "2026-08-21T00:00:00",
+        cik_map={"FAKETEST": ("0001234568", "Fake Test Issuer")},
+        gmi_admission_targets=frozenset({"FAKETEST"}),
+        directory_flags={"FAKETEST": {"etf": False, "test_issue": True, "is_preferred": False}},
+    )
+    assert rows == []
+    assert "FAKETEST" not in ids
+    assert [r["code"] for r in gmi_refusals] == ["not_common_equity_test_issue"]
+
+
+def test_gmi_us_preferred_refused_never_minted() -> None:
+    resolutions = [_res("FAKEPFD", "XNAS", "FAKEPFD")]
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
+        resolutions, [], "2026-08-21T00:00:00",
+        cik_map={"FAKEPFD": ("0001234569", "Fake Preferred Issuer")},
+        gmi_admission_targets=frozenset({"FAKEPFD"}),
+        directory_flags={"FAKEPFD": {"etf": False, "test_issue": False, "is_preferred": True}},
+    )
+    assert rows == []
+    assert "FAKEPFD" not in ids
+    assert [r["code"] for r in gmi_refusals] == ["not_common_equity_preferred"]
+
+
+# 4: unsupported venue — real committed data, single expected instance (CBOE/Z), and
+# the closed MIC list is asserted unchanged (widening it is out of scope, §4/§13).
+def test_gmi_us_unsupported_venue_real_data_cboe(receipt: dict) -> None:
+    assert BUILD.EXCHANGE_MIC == {"NASDAQ": "XNAS", "N": "XNYS", "A": "XASE"}
+    block = receipt["us_gmi_admission"]
+    cboe = [r for r in block["refusals_this_run"] if r["symbol"] == "CBOE"]
+    assert len(cboe) == 1
+    assert cboe[0]["code"] == "unsupported_venue"
+
+
+# 5: listing present, CIK absent -> no_registrant_cik (fixture — empirically zero
+# among today's 533 targets, but the law still ships, §4).
+def test_gmi_us_no_registrant_cik_fixture() -> None:
+    resolutions = [_res("FAKENOCIK", "XNAS", "FAKENOCIK")]
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
+        resolutions, [], "2026-08-21T00:00:00",
+        cik_map={},  # FAKENOCIK deliberately absent
+        gmi_admission_targets=frozenset({"FAKENOCIK"}),
+        directory_flags={"FAKENOCIK": {"etf": False, "test_issue": False, "is_preferred": False}},
+    )
+    assert rows == []
+    assert "FAKENOCIK" not in ids
+    assert [r["code"] for r in gmi_refusals] == ["no_registrant_cik"]
+
+
+# 6: CIK present, listing absent -> not_listed_cik_present (real-data EA).
+def test_gmi_us_not_listed_cik_present_real_data_ea(receipt: dict) -> None:
+    block = receipt["us_gmi_admission"]
+    ea = [r for r in block["refusals_this_run"] if r["symbol"] == "EA"]
+    assert len(ea) == 1
+    assert ea[0]["code"] == "not_listed_cik_present"
+
+
+# 7: neither rail -> not_listed_no_cik (real-data exemplar from the 21).
+def test_gmi_us_not_listed_no_cik_real_data_exemplar(receipt: dict) -> None:
+    block = receipt["us_gmi_admission"]
+    no_cik = [r for r in block["refusals_this_run"] if r["code"] == "not_listed_no_cik"]
+    assert len(no_cik) >= 1
+    assert "STKL" in {r["symbol"] for r in no_cik}
+
+
+# 8: ambiguous ticker -> CIK -> ambiguous_registrant (fixture forcing the
+# ambiguous_tickers path — load_cik_map() itself removes an ambiguous ticker from
+# the mapping, so a candidate hitting it is typed even though `cik_map` is blind).
+def test_gmi_us_ambiguous_registrant_fixture() -> None:
+    resolutions = [_res("FAKEAMBIG", "XNAS", "FAKEAMBIG")]
+    rows, ids, notes, refusals, pending, lost, exc_lost, gmi_refusals = BUILD.mint_master_rows(
+        resolutions, [], "2026-08-21T00:00:00",
+        cik_map={},  # load_cik_map() already popped an ambiguous ticker out of here
+        gmi_admission_targets=frozenset({"FAKEAMBIG"}),
+        directory_flags={"FAKEAMBIG": {"etf": False, "test_issue": False, "is_preferred": False}},
+        ambiguous_tickers=frozenset({"FAKEAMBIG"}),
+    )
+    assert rows == []
+    assert "FAKEAMBIG" not in ids
+    assert [r["code"] for r in gmi_refusals] == ["ambiguous_registrant"]
+
+
+# 9: reused ticker / pending-transition via the GMI seed path — NO new law (§4): the
+# candidate hits the unchanged R1 fence and the refusal surfaces in the GMI
+# accounting under its EXISTING typed reason, never a silent mint or drop.
+def test_gmi_us_pending_transition_fence_surfaces_in_gmi_accounting() -> None:
+    existing = [{
+        "security_id": "SEC:US-XNYS-OLDCO", "issuer_id": None,
+        "issuer_state": "RESOLVED", "issuer_cik": "0009000001",
+        "issuer_evidence_snapshot": "2026-08-18", "listing_key": "US-XNYS-OLDCO",
+        "country": "US", "mic": "XNYS", "inception_code": "OLDCO",
+        "effective_at": "2020-01-01T00:00:00", "ingested_at": "2020-01-01T00:00:00",
+        "security_state": None, "superseded_by": None,
+    }]
+    # OLDCO is not re-derived this run (unaccounted -> `lost_rows`), and NEWGMI is a
+    # GMI-seeded listing-key MISS with no independent CIK evidence -> the fence
+    # refuses it (§5.2), exactly like a legacy candidate would.
+    resolutions = [_res("NEWGMI", "XNAS", "NEWGMI")]
+    (rows, ids, notes, resurrection, pending, lost, exc_lost,
+     gmi_refusals) = BUILD.mint_master_rows(
+        resolutions, existing, "2026-08-21T00:00:00",
+        cik_map={}, gmi_admission_targets=frozenset({"NEWGMI"}),
+        directory_flags={"NEWGMI": {"etf": False, "test_issue": False, "is_preferred": False}},
+    )
+    # OLDCO carried forward unchanged (only the `_existed_before` in-memory marker is
+    # new — never a declared column, never written to parquet), NEWGMI never minted.
+    assert len(rows) == 1
+    assert {k: v for k, v in rows[0].items() if k != "_existed_before"} == existing[0]
+    assert "NEWGMI" not in ids
+    assert len(pending) == 1 and pending[0]["symbol"] == "NEWGMI"
+    assert gmi_refusals == []  # the fence refused it BEFORE the GMI eligibility gate
+    # build()'s own accounting loop classifies a pending_transition_refusals hit
+    # under its EXISTING typed reason string — never a silent drop.
+    refused_by_code = {}
+    for r in resolutions:
+        if r.listing_key is not None or r.key not in {"NEWGMI"}:
+            continue
+        refused_by_code[r.key] = BUILD._gmi_us_unresolved_refusal(r, {})
+    for p in pending:
+        refused_by_code[p["symbol"]] = {
+            "code": "pending_transition_fence", "reason": p["reason"],
+        }
+    assert refused_by_code["NEWGMI"]["code"] == "pending_transition_fence"
+
+
+# 10: new clean IPO fixture -> mints once; a second run re-derives, never re-mints.
+def test_gmi_us_new_clean_ipo_mints_once() -> None:
+    resolutions = [_res("FAKEIPO", "XNAS", "FAKEIPO")]
+    cik_map = {"FAKEIPO": ("0001234570", "Fake IPO Co")}
+    flags = {"FAKEIPO": {"etf": False, "test_issue": False, "is_preferred": False}}
+    targets = frozenset({"FAKEIPO"})
+
+    rows1, ids1, *_r1, gmi1 = BUILD.mint_master_rows(
+        resolutions, [], "2026-08-21T00:00:00", cik_map=cik_map,
+        gmi_admission_targets=targets, directory_flags=flags,
+    )
+    assert gmi1 == []
+    assert len(rows1) == 1 and rows1[0]["security_id"] == "SEC:US-XNAS-FAKEIPO"
+    minted_id = ids1["FAKEIPO"]
+
+    rows2, ids2, *_r2, gmi2 = BUILD.mint_master_rows(
+        resolutions, rows1, "2026-08-22T00:00:00", cik_map=cik_map,
+        gmi_admission_targets=targets, directory_flags=flags,
+    )
+    assert gmi2 == []
+    assert ids2["FAKEIPO"] == minted_id, "a second run re-minted an already-minted row"
+    # Byte-stable modulo the `_existed_before` in-memory marker (row1's mint carries
+    # none; row2's re-derivation of that same row carries it — never a declared
+    # column, never written to parquet, see mint_master_rows' own docstring).
+    strip = lambda rows: [{k: v for k, v in r.items() if k != "_existed_before"} for r in rows]
+    assert strip(rows2) == strip(rows1), "re-derivation must be byte-stable, never a re-mint"
+
+
+# 11: class shares — two GMI codes share ONE CIK and both list -> TWO securities
+# (never collapsed to one), and issuer grouping happens ONLY where the EXISTING
+# allowlist-gated law already allows it (§5: "no allowlist additions this wave") — a
+# brand-new multi-member group on an un-allowlisted CIK is EVIDENCE_CONFLICT, not a
+# fabricated group.
+def test_gmi_us_class_shares_two_securities_issuer_grouping_per_existing_law() -> None:
+    resolutions = [
+        _res("FAKECLA", "XNAS", "FAKECLA"),
+        _res("FAKECLB", "XNAS", "FAKECLB"),
+    ]
+    cik_map = {"FAKECLA": ("0001234571", "Fake Class Co"),
+               "FAKECLB": ("0001234571", "Fake Class Co")}
+    flags = {"FAKECLA": {"etf": False, "test_issue": False, "is_preferred": False},
+             "FAKECLB": {"etf": False, "test_issue": False, "is_preferred": False}}
+    targets = frozenset({"FAKECLA", "FAKECLB"})
+    rows, ids, *_r, gmi_refusals = BUILD.mint_master_rows(
+        resolutions, [], "2026-08-21T00:00:00", cik_map=cik_map,
+        gmi_admission_targets=targets, directory_flags=flags,
+    )
+    assert gmi_refusals == []
+    assert {r["security_id"] for r in rows} == {"SEC:US-XNAS-FAKECLA", "SEC:US-XNAS-FAKECLB"}
+
+    out_rows, migrations = BUILD.apply_issuer_correction(
+        rows, cik_map, "2026-08-21", "2026-08-21T00:00:00",
+        allowlist=frozenset(),  # no allowlist additions this wave — a REAL empty gate
+    )
+    by_id = {r["security_id"]: r for r in out_rows}
+    assert by_id["SEC:US-XNAS-FAKECLA"]["issuer_state"] == "EVIDENCE_CONFLICT"
+    assert by_id["SEC:US-XNAS-FAKECLB"]["issuer_state"] == "EVIDENCE_CONFLICT"
+    assert migrations == []
+
+
+# 12: same-CIK sponsor/trust pair (common + ETF) — the ETF is refused at the MINT
+# decision (never becomes a row), so the common security settles as a lone,
+# UNGATED single-member group — no issuer is ever fabricated for the refused ETF,
+# because there is no row to fabricate one onto.
+def test_gmi_us_same_cik_sponsor_trust_pair_common_mints_etf_refused() -> None:
+    resolutions = [
+        _res("FAKECOM", "XNAS", "FAKECOM"),
+        _res("FAKEETFPAIR", "XNAS", "FAKEETFPAIR"),
+    ]
+    cik_map = {"FAKECOM": ("0001234572", "Fake Sponsor Trust"),
+               "FAKEETFPAIR": ("0001234572", "Fake Sponsor Trust")}
+    flags = {"FAKECOM": {"etf": False, "test_issue": False, "is_preferred": False},
+             "FAKEETFPAIR": {"etf": True, "test_issue": False, "is_preferred": False}}
+    targets = frozenset({"FAKECOM", "FAKEETFPAIR"})
+    rows, ids, *_r, gmi_refusals = BUILD.mint_master_rows(
+        resolutions, [], "2026-08-21T00:00:00", cik_map=cik_map,
+        gmi_admission_targets=targets, directory_flags=flags,
+    )
+    assert [r["symbol"] for r in gmi_refusals] == ["FAKEETFPAIR"]
+    assert {r["security_id"] for r in rows} == {"SEC:US-XNAS-FAKECOM"}
+
+    out_rows, migrations = BUILD.apply_issuer_correction(
+        rows, cik_map, "2026-08-21", "2026-08-21T00:00:00", allowlist=frozenset(),
+    )
+    assert out_rows[0]["issuer_state"] == "RESOLVED", (
+        "a single-member group is ungated — no fabricated relationship to the "
+        "refused ETF is possible, because it was never minted"
+    )
+    assert out_rows[0]["issuer_id"] == "ISS:US-XNAS-FAKECOM"
+
+
+# 13: LP common unit (real-data) — pins the §3 RULING: the six LP common-unit
+# issuers are admissible through the SAME structural gates as every other candidate
+# (all-false flags, registrant CIK present), never refused by name.
+def test_gmi_us_lp_common_unit_mints_real_data(master: pd.DataFrame) -> None:
+    for lp in ("ARLP", "BEP", "CQP", "ET", "UAN", "XIFR"):
+        rows = master[(master["inception_code"] == lp) & (master["country"] == "US")]
+        assert len(rows) == 1, f"{lp} must mint exactly one active US security"
+        assert not rows.iloc[0]["security_state"] or pd.isna(rows.iloc[0]["security_state"])
+
+
+# 14: accounting completeness — the invariant, identity-exception disclosure, and
+# zero unaccounted targets, against the COMMITTED receipt (real data).
+def test_gmi_us_accounting_completeness_real_data(receipt: dict) -> None:
+    block = receipt["us_gmi_admission"]
+    assert block["resolved_total"] + block["refused_this_run"] == block["target_n"]
+    assert len(block["refusals_this_run"]) == block["refused_this_run"]
+    excluded_codes = {e["code"] for e in block["identity_exception_excluded"]}
+    assert "B" in excluded_codes
+    # Every named refusal carries a non-empty typed code and reason (no silent drop).
+    for r in block["refusals_this_run"]:
+        assert r["symbol"] and r["code"] and r["reason"]
+
+
+# 15: regression pins — CN 984 + HK 147 + the pre-existing 705 US rows byte-identical
+# after the expansion run; legacy `coverage` block semantics unchanged (712-scope).
+def test_gmi_us_regression_pins_cn_hk_and_legacy_us_unchanged(
+    master: pd.DataFrame, receipt: dict,
+) -> None:
+    assert len(master[master["country"] == "CN"]) == 984
+    assert len(master[master["country"] == "HK"]) == 147
+    assert receipt["coverage"]["total"] == 712
+    assert receipt["coverage"]["resolved"] == 702
+    assert receipt["coverage"]["unresolved"] == 10
+
+
+# 16: idempotency + run-2 stability (§8) — run 2 with the widened seed set must
+# re-derive EVERY pre-existing and newly-minted active US row (the fence never
+# flags any of them lost) and report resolved_this_run=0 with stable refusals.
+def test_gmi_us_idempotent_run_2_stability_real_data(tmp_path: Path) -> None:
+    shutil.copy(MASTER_PATH, tmp_path / BUILD.MASTER_NAME)
+    shutil.copy(ALIASES_PATH, tmp_path / BUILD.ALIASES_NAME)
+    issuer_master = ROOT / "data" / "reference" / BUILD.ISSUER_MASTER_NAME
+    issuer_migrations = ROOT / "data" / "reference" / BUILD.ISSUER_MIGRATIONS_NAME
+    security_migrations = ROOT / "data" / "reference" / BUILD.SECURITY_MIGRATIONS_NAME
+    for src in (issuer_master, issuer_migrations, security_migrations):
+        if src.exists():
+            shutil.copy(src, tmp_path / src.name)
+
+    run1 = BUILD.build(tmp_path)
+    before_master = (tmp_path / BUILD.MASTER_NAME).read_bytes()
+    before_aliases = (tmp_path / BUILD.ALIASES_NAME).read_bytes()
+
+    run2 = BUILD.build(tmp_path)
+    after_master = (tmp_path / BUILD.MASTER_NAME).read_bytes()
+    after_aliases = (tmp_path / BUILD.ALIASES_NAME).read_bytes()
+
+    assert after_master == before_master
+    assert after_aliases == before_aliases
+    gmi2 = run2["us_gmi_admission"]
+    assert gmi2["resolved_this_run"] == 0
+    assert gmi2["refusals_this_run"] == run1["us_gmi_admission"]["refusals_this_run"]
+    assert gmi2["resolved_total"] == run1["us_gmi_admission"]["resolved_total"]
