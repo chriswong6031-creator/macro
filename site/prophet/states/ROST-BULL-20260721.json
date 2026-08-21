@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ROST-BULL-20260721",
-  "asof": "2026-08-19",
+  "asof": "2026-08-20",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 43.3,
-  "raw_confidence": 42.3,
-  "delta_vs_base": -16.7,
+  "management_confidence": 38.3,
+  "raw_confidence": 35.1,
+  "delta_vs_base": -21.7,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 100.0,
-    "progress": 2.3,
-    "pace": 5.3,
+    "validity": 75.4,
+    "progress": 0.0,
+    "pace": 3.7,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.016,
-    "dist_to_t1_r": 1.484,
-    "dist_to_t2_r": 2.984,
-    "horizon_pct_used": 64.4,
-    "p1": 0.0107,
-    "p2": 0.0054,
+    "dist_to_stop_r": 0.811,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 66.7,
+    "p1": -0.1258,
+    "p2": -0.0629,
     "p3": null,
-    "move_r": 0.016,
+    "move_r": -0.189,
     "mfe_r": 0.538,
-    "mae_r": -0.014
+    "mae_r": -0.189
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Moving Away from Stop",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 19.42999572753905,
-  "_mae": -0.5200012207031364,
+  "_mae": -6.809994506835949,
   "_max_p1": 0.3588180189757906,
   "_first_trigger_ts": "2026-07-25",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 29,
-  "tau": 0.6444
+  "days_elapsed": 30,
+  "tau": 0.6667
 }

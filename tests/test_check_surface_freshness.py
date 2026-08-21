@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -28,7 +29,7 @@ def tmp_root(tmp_path):
     for spec in _ARTIFACTS:
         p = tmp_path / spec.path
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps({"as_of": EXPECTED}))
+        p.write_text(json.dumps({spec.as_of_key: EXPECTED}))
     return tmp_path
 
 
@@ -83,6 +84,64 @@ def test_oracle_state_asof_fallback(tmp_root):
     assert rc == 0
 
 
+def test_options_flow_manifest_uses_its_asof_clock(tmp_root, capsys):
+    spec = next(s for s in _ARTIFACTS if s.path == "site/flow/index.json")
+    assert spec.as_of_key == "asof"
+    (tmp_root / spec.path).write_text(json.dumps({"asof": "2026-07-07", "rows": []}))
+    assert sentinel.run(now=REF_NOW, root=tmp_root) == 0
+    out = capsys.readouterr().out
+    assert "site/flow/index.json" in out and "2026-07-07" in out
+
+
+def test_darkpool_uses_finra_clock_before_and_after_1830(tmp_root, capsys):
+    spec = next(s for s in _ARTIFACTS if s.path == "site/darkpool_eod.json")
+    assert spec.clock == "finra"
+    et = ZoneInfo("America/New_York")
+
+    # At 18:29 ET ordinary NYSE surfaces expect Aug 19, but FINRA still lawfully
+    # expects Aug 18.  Give every other artifact its own current clock.
+    before = datetime(2026, 8, 19, 18, 29, tzinfo=et)
+    for other in _ARTIFACTS:
+        expected = str(sentinel._expected_for_spec(other, before))
+        (tmp_root / other.path).write_text(json.dumps({other.as_of_key: expected}))
+    assert sentinel.run(now=before, root=tmp_root) == 0
+    assert "site/darkpool_eod.json" not in capsys.readouterr().out
+
+    # One minute later the same Aug 18 artifact is stale against FINRA's source
+    # availability clock even though its top-level date still parses cleanly.
+    after = datetime(2026, 8, 19, 18, 30, tzinfo=et)
+    assert sentinel.run(now=after, root=tmp_root) == 0
+    out = capsys.readouterr().out
+    assert "site/darkpool_eod.json" in out
+    assert "expected=2026-08-19" in out
+
+
+def test_darkpool_mixed_population_warns_even_when_top_level_is_fresh(tmp_root, capsys):
+    spec = next(s for s in _ARTIFACTS if s.path == "site/darkpool_eod.json")
+    (tmp_root / spec.path).write_text(json.dumps({
+        "asof": EXPECTED,
+        "universe": [
+            {"ticker": "AAPL", "asof": EXPECTED},
+            {"ticker": "QQQ", "asof": "2026-07-01"},
+        ],
+    }))
+    assert sentinel.run(now=REF_NOW, root=tmp_root) == 0
+    out = capsys.readouterr().out
+    assert "SURFACE MIXED" in out
+    assert "universe_rows_off_clock=1" in out
+
+
+def test_darkpool_current_universe_and_explicit_history_pass_population_census(tmp_root, capsys):
+    spec = next(s for s in _ARTIFACTS if s.path == "site/darkpool_eod.json")
+    (tmp_root / spec.path).write_text(json.dumps({
+        "asof": EXPECTED,
+        "universe": [{"ticker": "AAPL", "asof": EXPECTED}],
+        "historical_rows": [{"ticker": "QQQ", "asof": "2026-07-01", "session_status": "stale"}],
+    }))
+    assert sentinel.run(now=REF_NOW, root=tmp_root) == 0
+    assert "SURFACE MIXED" not in capsys.readouterr().out
+
+
 def test_selftest_passes():
     assert sentinel.selftest() == 0
 
@@ -126,7 +185,7 @@ def test_two_sessions_behind_escalates_once_not_per_surface(tmp_root, _captured_
     Six pushes is how an operator learns to mute the channel.
     """
     for spec in _ARTIFACTS:
-        (tmp_root / spec.path).write_text(json.dumps({"as_of": "2026-07-02"}))
+        (tmp_root / spec.path).write_text(json.dumps({spec.as_of_key: "2026-07-02"}))
     assert sentinel.run(now=REF_NOW, root=tmp_root) == 0
     assert len(_captured_push) == 1, "one digest, never one alert per surface"
     kw = _captured_push[0]
@@ -162,7 +221,7 @@ def test_a_broken_alert_channel_never_breaks_the_render(tmp_root, monkeypatch, c
 
     monkeypatch.setattr(at, "push_ops_alert", boom)
     for spec in _ARTIFACTS:
-        (tmp_root / spec.path).write_text(json.dumps({"as_of": "2026-07-02"}))
+        (tmp_root / spec.path).write_text(json.dumps({spec.as_of_key: "2026-07-02"}))
     assert sentinel.run(now=REF_NOW, root=tmp_root) == 0, "a dead channel must not fail the sentinel"
     assert "SURFACE STALE" in capsys.readouterr().out, "and the annotations must survive it"
 

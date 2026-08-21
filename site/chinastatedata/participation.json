@@ -1,36 +1,42 @@
 {
-  "date": "2026-08-17",
+  "date": "2026-08-19",
   "authority": {
     "tier": "context_only"
   },
-  "turnover_z20": 0.1054410126466651,
-  "turnover_z60": -0.9362327872215056,
-  "margin_balance": 26924.7360301,
-  "margin_chg_5d": 1.1388242170117246,
-  "margin_to_mcap": 2.60349,
-  "southbound_net": 3076.98,
-  "southbound_z": 0.2157517854556914,
-  "etf_share_chg": 0.0,
+  "turnover_z20": 0.8429518710284244,
+  "turnover_z60": -0.6100044949129332,
+  "margin_balance": 26676.04577747,
+  "margin_chg_5d": -0.20830187783331677,
+  "margin_to_mcap": 2.668862,
+  "southbound_net": -10620.78,
+  "southbound_z": -1.6742202635636956,
+  "etf_share_chg": 0.7071067811865475,
   "zt_breadth": null,
   "failed_seal_ratio": null,
-  "qvix": 17.92,
-  "qvix_z": -1.7998404825994452,
-  "broker_rs": -0.02917257183628099,
+  "qvix": 20.35,
+  "qvix_z": -0.3648700981332773,
+  "broker_rs": 0.04405717744679545,
   "regime": "unclear",
   "who_controls": "mixed",
   "risk": "normal",
   "evidence": [
-    "turnover_z20=0.11",
-    "margin_chg_5d=1.14% (rising)",
-    "fin_pct_float=2.60%",
-    "qvix_z=-1.80 (inverted-semantics: high=stress)"
+    "turnover_z20=0.84",
+    "fin_pct_float=2.67%",
+    "broker_rs=0.0441 (positive, sector leading)",
+    "qvix_z=-0.36 (inverted-semantics: high=stress)"
   ],
-  "contradictions": [],
+  "contradictions": [
+    {
+      "a": "southbound_z=-1.67 (outflow)",
+      "b": "turnover_z20=0.84 (hot)",
+      "detail": "offshore selling into retail-driven volume — potential distribution"
+    }
+  ],
   "data_gaps": [
-    "zt_breadth:null on 2026-08-17",
+    "zt_breadth:null on 2026-08-19",
     "northbound:DEAD post-2024-08-16 SLF-050",
-    "snapshot_staleness:published row 2026-08-17 is 1d behind tape tail 2026-08-18; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
+    "snapshot_staleness:published row 2026-08-19 is 2d behind tape tail 2026-08-21; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
   ],
   "backfill": false,
-  "snapshot_note": "core legs null on 2026-08-18; publishing last fully-populated row (2026-08-17)"
+  "snapshot_note": "core legs null on 2026-08-21; publishing last fully-populated row (2026-08-19)"
 }

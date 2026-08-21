@@ -213,16 +213,22 @@ itself a linked worktree of the occupied primary — a SessionStart hook keyed
 only on `git-dir != common-dir` would sparsify that 3.8 GiB tree on every
 Cursor chat.
 
-**Cursor CLI + Grok mechanism (shipped 2026-08-15).** Cursor CLI / Agents
-Window runs `.cursor/worktrees.json` `setup-worktree-unix` after it creates
-the worktree. Grok Build runs `.grok/hooks/sparse-worktree.json` on
-`SessionStart` (unknown Claude events such as `WorktreeCreate` are skipped).
-Both call `python3 scripts/worktree_sparse.py auto`, so they share the
-post-checkout thinning, session-root refusal, and "do not re-apply over an
-existing sparse selection" rule. Grok project hooks need one-time
-`/hooks-trust`. `--worktree` / `-w` still bases on current HEAD unless the
-session passes `--ref origin/main` (Grok) or `--worktree-base origin/main`
-(Cursor).
+**Cursor CLI + Grok mechanism (shipped 2026-08-15; AionUi mint 2026-08-18).**
+Cursor CLI / Agents Window runs `.cursor/worktrees.json` `setup-worktree-unix`
+after it creates the worktree. Grok Build runs
+`.grok/hooks/session_start_sparse.py` on `SessionStart` (unknown Claude events
+such as `WorktreeCreate` are skipped). When the session already sits in a
+linked session worktree the hook calls `python3 scripts/worktree_sparse.py
+auto`, sharing the post-checkout thinning, session-root refusal, and "do not
+re-apply over an existing sparse selection" rule. AionUi launches Grok in an
+empty `~/.aionui/conversations/.../grok-temp-*` directory that is not a git
+worktree, so the project hook never loads; the always-trusted
+`~/.grok/hooks/` copy of the same script mints a sparse tree under
+`.grok/worktrees/<name>/` with `git worktree add --no-checkout` (Claude's
+pre-checkout shape) and writes `.session-worktree` in the temp dir. Grok
+project hooks still need one-time `/hooks-trust`. `--worktree` / `-w` still
+bases on current HEAD unless the session passes `--ref origin/main` (Grok) or
+`--worktree-base origin/main` (Cursor).
 
 **Host migration (one operator step, AFTER this merges).** The Studio's legacy wiring
 was deliberately left alone by the shipping session: repointing it before the merge
@@ -279,6 +285,30 @@ must never make a guard or test pass for the wrong reason:
   per-test reporting. `tests/test_ship_loop_guard.py::test_the_pair_list_is_the_ci_gate_s_own_enumeration`
   is the one test marked here: it asserts its pair list is non-empty and builds it by
   walking `site/`, so unmarked it fails with a bare `assert set()`.
+- **THE ANNOTATOR CANNOT SEE A *SWALLOWED* FileNotFoundError (found 2026-08-19).**
+  The bullet above promises a wrong answer "stays red, it just stops being a
+  mystery" — but attribution is by name match against the omitted trees in the
+  TRACEBACK, so it only fires when the error propagates. Production code that
+  catches the missing-reference error ON PURPOSE defeats it completely.
+  `hk_board_rank.confirmation_move()` is the worked example: it derives the HK
+  vetoed/ran lanes' confirmation close through
+  `signal_quality.confirmation_date(..., market="HK")`, which anchors on the
+  committed `data/hk/_HSI.parquet`, and it narrowly catches that FileNotFoundError
+  because a missing reference is its documented **disclosed-null** case, not a crash
+  the nightly should take. That contract is correct and unchanged. Its side effect in
+  a sparse tree is that every vetoed row comes back `pct_since: null`, no traceback
+  ever names `data/`, no NOTE is attributed — and the HK board pair prints
+  **18 clean assertion failures that read exactly like engine-vs-fixture drift**
+  (`tests/test_hk_board_ui.py` 5, `tests/test_hk_board_rank.py` 13). Measured on
+  origin/main f69f224c9723: 18 failed sparse; `git sparse-checkout add data/hk` on
+  the same bytes and nothing else, 0 failed. A session was commissioned to heal them
+  as deterministic main reds while main's own ci.yml ran green — the cost this
+  records. All eighteen now carry `needs_full_checkout("data")`: this is the
+  surgical use the paragraph above reserves, not a retreat from it, and the
+  distinguishing test is whether the annotator CAN fire. Where a traceback names the
+  omitted tree, leave it red and opt into a full checkout; where production swallows
+  the error, the failure is unattributable and marking is the only honest signal.
+
 - Detection reads git's sparse state, never `Path.is_dir()`: `data/` survives
   `git reset --hard` as a **0-byte husk**, so presence checks report it materialised
   while it holds none of its 2.3 GiB. `scripts/worktree_sparse.missing_dirs()` is the

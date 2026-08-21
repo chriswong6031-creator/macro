@@ -109,19 +109,90 @@ class TestCategorize:
         # buyback outranks holder_change_down per brief priority order
         assert cf.categorize("回购减持公告") == "buyback"
 
+    # ----------------------------------------------------------------- #
+    # institutional_visit (P1, RIGHTS-0 §1) — added alongside china_visits.py
+    # ----------------------------------------------------------------- #
+
+    def test_institutional_visit_activity_record(self):
+        assert cf.categorize("顺网科技：投资者关系活动记录表") == "institutional_visit"
+
+    def test_institutional_visit_specific_object_survey(self):
+        assert cf.categorize("关于接待特定对象调研的公告") == "institutional_visit"
+
+    def test_institutional_visit_analyst_meeting(self):
+        assert cf.categorize("2026年度分析师会议纪要") == "institutional_visit"
+
+    def test_institutional_visit_results_briefing(self):
+        assert cf.categorize("2026年半年度业绩说明会公告") == "institutional_visit"
+
+    def test_institutional_visit_generic_survey_keyword(self):
+        assert cf.categorize("机构调研情况登记表") == "institutional_visit"
+
+    def test_institutional_visit_is_lowest_priority_named_category(self):
+        # investigation still wins over a title that also mentions 调研
+        assert cf.categorize("立案调查暨调研接待公告") == "investigation"
+        # inquiry_letter still wins
+        assert cf.categorize("问询函回复：调研接待安排说明") == "inquiry_letter"
+        # buyback still wins
+        assert cf.categorize("回购股份实施结果暨调研接待公告") == "buyback"
+
+    def test_existing_categories_unchanged_by_the_new_bucket(self):
+        # Full existing-category regression, single assertion per family —
+        # the new institutional_visit entry must not shift any of these.
+        assert cf.categorize("公司收到证监会立案告知书") == "investigation"
+        assert cf.categorize("关于问询函的回复公告") == "inquiry_letter"
+        assert cf.categorize("关于可能退市风险的提示公告") == "delisting_risk"
+        assert cf.categorize("2023年年度业绩预告") == "earnings_preann"
+        assert cf.categorize("关于重大资产重组进展的公告") == "restructuring"
+        assert cf.categorize("公司中标政府采购合同公告") == "major_contract"
+        assert cf.categorize("关于回购公司股份的公告") == "buyback"
+        assert cf.categorize("股东股权质押公告") == "pledge"
+        assert cf.categorize("持股5%以上股东减持股份计划公告") == "holder_change_down"
+        assert cf.categorize("董事增持公司股份结果公告") == "holder_change_up"
+        assert cf.categorize("关于召开2024年度股东大会的通知") == "other"
+
 
 # --------------------------------------------------------------------------- #
 # classify_kind — inquiry-letter sub-kind
 # --------------------------------------------------------------------------- #
 
 class TestClassifyKind:
-    def test_letter_is_default(self):
-        # Plain inquiry letter title → 'letter'
-        assert cf.classify_kind("关于问询函的相关说明") == "letter"
+    def test_exchange_issued_inquiry_is_a_letter(self):
+        # A genuine exchange-issued inquiry, or the company's receipt of one.
+        assert cf.classify_kind("关于收到上海证券交易所问询函的公告") == "letter"
+        assert cf.classify_kind("关于对某公司有关股价波动事项的问询函") == "letter"
 
     def test_empty_title_is_letter(self):
         # Empty title falls back to 'letter' (inquiry family default)
         assert cf.classify_kind("") == "letter"
+
+    def test_reply_side_explanations_are_not_letters(self):
+        """A 说明/意见 filed in ANSWER to an inquiry is not an inquiry.
+
+        Regression this catches: `letter` used to be the fall-through for the
+        whole family, so 100 of 140 stored "letters" were reply-side filings and
+        the desk published them as unanswered regulatory questions (PR #5975).
+        """
+        for title in (
+            "关于问询函的相关说明",
+            "天健会计师事务所关于某公司审核问询函中有关财务事项的说明",
+            "某公司独立董事关于年度报告信息披露监管问询函所涉事项的独立董事意见",
+            "北京市某律师事务所关于《问询函》相关问题的专项法律意见",
+            "董事会审计委员会关于公司问询函所涉问题的相关意见",
+        ):
+            assert cf.classify_kind(title) == "reply_side", title
+
+    def test_deferral_notice_is_not_a_reply(self):
+        """延期回复 announces the reply is POSTPONED — the inverse of a reply.
+
+        Regression this catches: it contains 回复, and all 41 such notices in the
+        store were classified `reply`, so the filing saying no reply had been made
+        would mark the inquiry answered.
+        """
+        for verb in ("延期", "延长", "推迟", "顺延"):
+            assert cf.classify_kind(f"关于{verb}回复《关于某公司重组的问询函》的公告") == "deferral", verb
+        # A genuine inquiry whose SUBJECT concerns a postponement stays a letter.
+        assert cf.classify_kind("关于收到上海证券交易所《关于某公司延期复牌事项的问询函》的公告") == "letter"
 
     def test_reply_huihan(self):
         assert cf.classify_kind("关于收到上交所问询函的回函公告") == "reply"
@@ -232,10 +303,19 @@ class TestParseAnnouncement:
 
     def test_inquiry_letter_has_kind_letter(self):
         ann = dict(_SAMPLE_ANN)
-        ann["announcementTitle"] = "收到上交所关注函的说明"
+        # A receipt announcement — not a 说明, which is reply-side (see
+        # TestClassifyKind.test_reply_side_explanations_are_not_letters).
+        ann["announcementTitle"] = "收到上交所关注函的公告"
         row = cf._parse_announcement(ann, "sse", "2024-01-15T09:00:00+00:00")
         assert row["category"] == "inquiry_letter"
         assert row["kind"] == "letter"
+
+    def test_inquiry_reply_side_has_kind_reply_side(self):
+        ann = dict(_SAMPLE_ANN)
+        ann["announcementTitle"] = "收到上交所关注函的说明"
+        row = cf._parse_announcement(ann, "sse", "2024-01-15T09:00:00+00:00")
+        assert row["category"] == "inquiry_letter"
+        assert row["kind"] == "reply_side"
 
     def test_inquiry_letter_has_kind_reply(self):
         ann = dict(_SAMPLE_ANN)

@@ -51,10 +51,12 @@ import logging
 import os
 import random
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
 import time
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -63,6 +65,7 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
+from lib import nyse_calendar  # noqa: E402
 
 log = logging.getLogger("live_breadth_poller")
 
@@ -133,18 +136,36 @@ def _cadence(cfg: dict) -> int:
     return max(CADENCE_MIN, min(CADENCE_MAX, c))
 
 
+def _producer_id() -> str:
+    """Stable owner id stamped into every payload (FROZEN CONTRACT §0/§2b) — lets
+    `/api/status` and the dead-man tell an unowned box (no producer) from one
+    running the canonical `macro-live-breadth` systemd lane vs a GH-cron backstop
+    vs a bare local dev run. Never raises."""
+    try:
+        override = os.environ.get("MACRO_LIVE_PRODUCER")
+        if override:
+            return override
+        return "host:" + socket.gethostname()
+    except Exception:  # noqa: BLE001
+        return "host:unknown"
+
+
 # ── session window ─────────────────────────────────────────────────────────────
 
 def session_tag(now: datetime | None = None) -> str:
     """US-equity session label for `now` (America/New_York): one of
-    "pre" | "rth" | "post" | "closed". Weekends + outside 04:00-20:00 ET = closed.
+    "pre" | "rth" | "post" | "closed". Weekends, holidays (full-day NYSE
+    closures — Good Friday, Thanksgiving, observed fixed-date closures, via
+    `lib.nyse_calendar.is_session`, checked BEFORE any time-of-day logic), and
+    outside 04:00-20:00 ET = closed. Early closes are NOT modeled (out of scope
+    — `lib.nyse_calendar` doesn't model them either).
 
     Pure over an injected `now` (tests pass fixed DST-boundary datetimes — no
     wall-clock-dependent assertions). Never raises.
     """
     try:
         et = (now or datetime.now(timezone.utc)).astimezone(ET)
-        if et.weekday() >= 5:                       # Sat / Sun
+        if not nyse_calendar.is_session(et.date()):  # weekend or full-day holiday
             return "closed"
         mins = et.hour * 60 + et.minute
         pre_start = PRE_START_H * 60
@@ -164,11 +185,12 @@ def session_tag(now: datetime | None = None) -> str:
 
 def within_rth(now: datetime | None = None) -> bool:
     """True iff `now` (ET) is within the poller's continuous window
-    (09:25-16:05 on a weekday). Mirrors live_flow_poller._within_rth. Never
-    raises — returns False on any error."""
+    (09:25-16:05 on a weekday, and not a full-day NYSE holiday — checked via
+    `lib.nyse_calendar.is_session` before any time-of-day logic). Mirrors
+    live_flow_poller._within_rth. Never raises — returns False on any error."""
     try:
         et = (now or datetime.now(timezone.utc)).astimezone(ET)
-        if et.weekday() >= 5:
+        if not nyse_calendar.is_session(et.date()):
             return False
         t = et.hour * 60 + et.minute
         start = RTH_START_H * 60 + RTH_START_M       # 565
@@ -419,15 +441,28 @@ def build_breadth(
     now = now or datetime.now(timezone.utc)
     session = session_tag(now)
     delay = _delay_floor()
-    # Honest staleness: vendor floor + how stale the snapshot itself is.
+    # Honest staleness on TWO clocks (FROZEN CONTRACT §0): `delay_min` stays the
+    # existing descriptive vendor-floor-plus-staleness number; `source_asof` /
+    # `source_age_min` are the SOURCE clock, first-class, computed from the
+    # snapshot's own timestamp — NEVER from filesystem mtime.
+    source_asof: str | None = None
+    source_age_min: float | None = None
     if snapshot_ts is not None:
-        extra = max(0.0, (now - snapshot_ts).total_seconds() / 60.0)
+        ts = snapshot_ts if snapshot_ts.tzinfo is not None else snapshot_ts.replace(tzinfo=timezone.utc)
+        ts = ts.astimezone(timezone.utc)
+        extra = max(0.0, (now - ts).total_seconds() / 60.0)
         delay = int(round(delay + extra))
+        source_asof = ts.strftime("%Y-%m-%dT%H:%M:%SZ")
+        source_age_min = round((now - ts).total_seconds() / 60.0, 1)
     asof = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    producer = _producer_id()
 
     if offline or not last_by_symbol:
         note = "offline" if offline else feed_status
-        return lb.empty_payload(asof=asof, delay_min=delay, session=session, note=note)
+        payload_feed_status = "offline" if offline else feed_status
+        return lb.empty_payload(asof=asof, delay_min=delay, session=session, note=note,
+                                feed_status=payload_feed_status, source_asof=source_asof,
+                                source_age_min=source_age_min, producer=producer)
 
     tiers: list[dict] = []
     missing: dict[str, int] = {}
@@ -443,16 +478,29 @@ def build_breadth(
                                      th, present))
     if not tiers:
         return lb.empty_payload(asof=asof, delay_min=delay, session=session,
-                                note="no thresholds")
+                                note="no thresholds", feed_status="no_thresholds",
+                                source_asof=source_asof, source_age_min=source_age_min,
+                                producer=producer)
     return lb.build_payload(tiers, asof=asof, delay_min=delay, session=session,
-                            missing=missing, n_snapshot=len(last_by_symbol))
+                            missing=missing, n_snapshot=len(last_by_symbol),
+                            source_asof=source_asof, source_age_min=source_age_min,
+                            feed_status=feed_status, producer=producer)
 
 
 # ── output + publish ───────────────────────────────────────────────────────────
 
 def _out_path(site_dir: Path | None = None) -> Path:
-    site = Path(site_dir) if site_dir is not None else config.site_dir()
-    out_dir = site / "live"
+    """Resolve the output path. Precedence (FROZEN CONTRACT §2c): an explicit
+    `site_dir=` argument wins; else the `MACRO_LIVE_DIR` env var (already
+    exported by /etc/macro-live.env on the VPS live plane) when set and
+    non-empty — that value IS the live dir Caddy serves, so it is used AS-IS,
+    never with another `live` segment appended; else the repo-relative
+    `config.site_dir()/live` default (dev / GH-cron backstop)."""
+    if site_dir is not None:
+        out_dir = Path(site_dir) / "live"
+    else:
+        env_dir = os.environ.get("MACRO_LIVE_DIR")
+        out_dir = Path(env_dir) if env_dir else config.site_dir() / "live"
     out_dir.mkdir(parents=True, exist_ok=True)
     return out_dir / "breadth.json"
 
@@ -511,10 +559,20 @@ def _state_path() -> Path:
 
 # ── one full cycle (I/O) ───────────────────────────────────────────────────────
 
+@dataclass
+class CycleResult:
+    """`run_cycle`'s return (FROZEN CONTRACT §2d) — the emitted payload PLUS the
+    honest publication outcome, so a caller can no longer discard it the way
+    `run_cycle(...)` (bare) used to. `published` is `None` when publication was
+    not requested (`do_publish=False`), never conflated with a failed publish."""
+    payload: dict
+    published: bool | None
+
+
 def run_cycle(store: ThresholdStore, *, offline: bool = False,
-             do_publish: bool = False, site_dir: Path | None = None) -> dict:
+             do_publish: bool = False, site_dir: Path | None = None) -> CycleResult:
     """Load-refresh thresholds, fetch one snapshot, join, write (+publish).
-    Returns the emitted payload."""
+    Returns a `CycleResult` (payload + the real publish outcome)."""
     store.refresh()
     last_by_symbol, status, snap_ts = fetch_full_market(offline=offline)
     payload = build_breadth(store, last_by_symbol, snapshot_ts=snap_ts,
@@ -523,15 +581,14 @@ def run_cycle(store: ThresholdStore, *, offline: bool = False,
     n_tiers = len(payload.get("tiers", []))
     comp = payload.get("comp", {})
     log.info("poller: cycle session=%s status=%s tiers=%d adv=%s dec=%s "
-             "pa50=%.1f snapshot_names=%s delay=%dm -> %s",
+             "pa50=%.1f snapshot_names=%s delay=%dm usable=%s -> %s",
              payload.get("session"), status, n_tiers,
              comp.get("adv"), comp.get("dec"),
              comp.get("pa50") if comp.get("pa50") is not None else float("nan"),
              payload.get("meta", {}).get("snapshot_names"),
-             payload.get("delay_min"), out)
-    if do_publish:
-        publish(out)
-    return payload
+             payload.get("delay_min"), payload.get("usable"), out)
+    published = publish(out) if do_publish else None
+    return CycleResult(payload=payload, published=published)
 
 
 # ── main loop ──────────────────────────────────────────────────────────────────
@@ -574,15 +631,40 @@ def main(argv: list[str] | None = None) -> int:
                     "emit empty payloads until data/<ns>/_closes_cache.parquet exist")
 
     cycle_n = 0
+    publish_degraded = False
     while True:
         loop_t0 = time.perf_counter()
         cycle_n += 1
+        result: CycleResult | None = None
         try:
-            run_cycle(store, offline=args.offline, do_publish=args.publish)
+            result = run_cycle(store, offline=args.offline, do_publish=args.publish)
         except Exception as e:  # noqa: BLE001 — a cycle error never kills the loop
             log.error("poller: cycle #%d error: %s", cycle_n, e, exc_info=True)
             if args.once:
                 return 1
+
+        # Publication truth (FROZEN CONTRACT §2d): a requested `--publish` that
+        # failed used to be silently swallowed (run_cycle's boolean discarded,
+        # main() always returned 0). Honor it now instead of lying green.
+        if result is not None and args.publish and result.published is False:
+            if args.once:
+                # Line-start GitHub annotation via a BARE print — never through the
+                # logger (house law: a level prefix pushes the "::error" token off
+                # column 0 and GitHub drops it silently; tests/test_gh_annotation_line_start.py).
+                print("::error title=live-breadth-publish::live-breadth poll succeeded but "
+                      "git add/commit/push of breadth.json failed — see poller logs", flush=True)
+                return 1
+            # Long-running loop: a transient git error must never kill the daemon —
+            # log it and continue, but track the degraded state (surfaced via logs;
+            # semantic health lives in check_vps_live_health.py's `usable` read).
+            if not publish_degraded:
+                log.warning("poller: cycle #%d publish failed — continuing in degraded "
+                            "publish state (loop mode)", cycle_n)
+            publish_degraded = True
+        elif result is not None and args.publish and result.published is True:
+            if publish_degraded:
+                log.info("poller: cycle #%d publish recovered", cycle_n)
+            publish_degraded = False
 
         if args.once:
             return 0

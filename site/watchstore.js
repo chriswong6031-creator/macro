@@ -36,8 +36,45 @@
 
   // ---- state -----------------------------------------------------------------
   var sb = null;           // shared Supabase client, set on auth
+  var sbInitFailed = false; // A1A blocker 2: true once getClient() has REJECTED (or, F6,
+                             // TIMED OUT) for the current session — `sb` will never
+                             // resolve on time; see _isClientUnavailable() below.
+  // F6 (Sol post-review, MAJOR): which of the two ways sbInitFailed became true —
+  // read by portfolioList()'s _isClientUnavailable() branch so the warning names the
+  // real cause instead of a generic word for both.
+  var sbInitFailureReason = 'client-unavailable';
+  // F6: "loading always resolves" was false — getClient()'s promise (theme.js's SDK
+  // load) and the PostgREST read itself had no deadline; a stalled connection left
+  // _isCloudLoading() (or a bare in-flight read) true for the rest of the session.
+  // Bounds BOTH async gates. Test seam: _setCloudDeadlineMs() shortens it so a test
+  // does not need to wait 12 real seconds.
+  var PF_CLOUD_DEADLINE_MS = 12000;
+  /* Returns {promise, cancel} rather than a bare promise: an uncancelled timer
+     keeps holding the event loop open for the full `ms` even after the OTHER side
+     of the race has already settled — invisible in the browser (nothing waits on
+     process exit) but a real cost in every node-shelled test that exercises a
+     cloud call, each now silently paying up to PF_CLOUD_DEADLINE_MS of dead time
+     per call otherwise. Callers MUST call `cancel()` once the real promise they
+     raced this against settles, win or lose. */
+  function _deadline(ms, tag) {
+    var timer;
+    var promise = new Promise(function (_resolve, reject) {
+      timer = setTimeout(function () { reject(new Error(tag)); }, ms);
+    });
+    return { promise: promise, cancel: function () { clearTimeout(timer); } };
+  }
   var user = null;         // current auth user
   var lastAuthUid = undefined;  // dedup guard: undefined = never seen; null = signed-out
+  // N3 (Sol post-review, MINOR — proofI C2): incremented on EVERY accepted uid
+  // transition (onAuthUser's dedup check passing), including a sign-out then a
+  // SAME uid signing back in. `clientFailed`'s late-settle guard was uid-only
+  // (`uidAtCall`), which correctly refused a DIFFERENT uid's stale timer but let
+  // session 1's client-gate deadline fire straight into session 2 when the uid
+  // repeats (~30% early terminal state + a spurious offline pill). Every deadline
+  // timer captures its epoch at creation and no-ops if the epoch has since moved
+  // — a strict superset of the uid check (a uid change is always an epoch change,
+  // but a same-uid cycle is an epoch change the uid check alone cannot see).
+  var authEpoch = 0;
   var listsCache = [];     // [{id,name,position}] — last server read of the user's lists
   var wlId = null;         // ACTIVE (bound) list id — see resolveBoundList()
   var foldTargetId = null; // id of the list NAMED 'Watchlist' — resolved ON DEMAND by the fold
@@ -1000,38 +1037,135 @@
 
   // ---- portfolio CRUD --------------------------------------------------------
   // Targets portfolio_positions when signed in; the localStorage book when signed out.
-  // All cloud queries filter by user_id = session user. If RLS is not yet applied,
-  // errors are caught and logged; status() reports 'local' so callers degrade.
+  // All cloud queries filter by user_id = session user.
+  //
+  // A1A authority law (research/market_os/…A1A_COMMISSIONING…md §10):
+  //   anonymous     -> the local Portfolio is canonical
+  //   authenticated -> the cloud Portfolio is canonical
+  // A signed-in session is NEVER "local mode", even when the cloud read/write most
+  // recently failed — `portfolioOk` is a diagnostic used for last-good bookkeeping and
+  // the read-state banner, never a router to the anonymous local book. The old shape
+  // (`_isLocalMode` including `!portfolioOk`) is exactly Turn 6's defect "authenticated
+  // cloud-to-local fork": one failed read silently and PERMANENTLY rerouted every later
+  // read AND write to the anonymous local book for the rest of the session — never
+  // resolved, never disclosed, and never the visitor's own local data to begin with.
+
+  var pfLastGoodCloud = null;   // {rows, at} — the last rows a CLOUD read actually returned
+  // the current read-state answer, refreshed on every portfolioList() call
+  var pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
 
   function _portfolioGuard() {
     if (!user || !sb) return Promise.reject(new Error('no-session'));
-    if (!portfolioOk) return Promise.reject(new Error('portfolio-unavailable'));
     return Promise.resolve();
   }
-  // signed-out (or a portfolio backend that has gone unavailable) -> the local book
-  function _isLocalMode() { return !user || !sb || !portfolioOk; }
+  // signed-out only. A degraded authenticated session is NOT local mode — see the law
+  // above; it is 'cloud' authority in a 'degraded' or 'error' read_state instead.
+  function _isLocalMode() { return !user; }
+  /* A1A (review finding S6): `user` is set the instant onAuthUser sees a session, but
+     the shared Supabase client resolves ASYNCHRONOUSLY afterward (`getClient().then
+     (c => sb = c)`) — and portfolio.js's `onAuth()` runs off the FIRST 'wl-auth',
+     dispatched BEFORE that resolves. In that window `user` is truthy and `sb` is not:
+     `!user||!sb` used to read as "local mode" and a signed-in load briefly rendered
+     the anonymous LOCAL book under a 'local' authority/chip. This is neither anonymous
+     (there IS a user) nor ready cloud (no client yet) — a THIRD transitional state. */
+  function _isCloudLoading() { return !!user && !sb && !sbInitFailed; }
+  /* A1A blocker 2 (Sol, 2026-08-20): `getClient()` can also REJECT — the SDK blocked
+     (GFW), a config error, a throw inside the client factory — and when it does, `sb`
+     stays null FOREVER for this session; nothing was ever going to make it resolve.
+     Before this branch existed, that case was indistinguishable from `_isCloudLoading`
+     (both are `user` truthy, `sb` null), so `portfolioList()` answered 'loading' and
+     never anything else — an authenticated visitor behind a broken client was stuck on
+     a loading placeholder for the rest of the session, in violation of "loading always
+     resolves to ready/degraded/error". `sbInitFailed` is the ONLY thing that
+     distinguishes "still resolving" from "will never resolve" — set once, by the
+     `getClient().catch()` below, and reset on every uid transition. */
+  function _isClientUnavailable() { return !!user && !sb && sbInitFailed; }
 
   function portfolioList() {
-    if (_isLocalMode()) return pfLocalList();
-    return _portfolioGuard().then(function () {
+    if (_isClientUnavailable()) {
+      // Terminal cloud-unreachable, not a router to the anonymous local book (A1A
+      // authority law, §10) — the same last-good/none split an ordinary cloud read
+      // failure uses, so this reads exactly like any other degraded/error cloud state.
+      pfReadState = {
+        authority: 'cloud',
+        state: pfLastGoodCloud ? 'degraded' : 'error',
+        last_good_at: pfLastGoodCloud ? pfLastGoodCloud.at : null,
+        warning: sbInitFailureReason
+      };
+      return Promise.resolve(pfLastGoodCloud ? pfLastGoodCloud.rows.slice() : null);
+    }
+    if (_isCloudLoading()) {
+      // never local rows, never an error banner for plain loading
+      pfReadState = { authority: 'cloud', state: 'loading', last_good_at: null, warning: null };
+      return Promise.resolve(null);
+    }
+    if (_isLocalMode()) {
+      pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
+      return pfLocalList();
+    }
+    // F6 (Sol post-review, MAJOR): the PostgREST read itself had no deadline — a
+    // stalled connection left a `portfolioList()` call pending forever. `readPromise`
+    // is the REAL query; it keeps running (and keeps its OWN .then()/.catch() below,
+    // which is the single place pfLastGoodCloud/pfReadState get written for this
+    // read) independently of the race — so a genuinely slow read still reconciles
+    // pfReadState to 'ready' (or the ordinary degraded/error shape) via the exact
+    // same code path an on-time read uses, whenever it finally settles, late or not.
+    var readPromise = _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at');
     }).then(function (res) {
       if (res.error) throw res.error;
-      return res.data || [];
+      var rows = res.data || [];
+      portfolioOk = true;
+      pfLastGoodCloud = { rows: rows.slice(), at: nowISO() };
+      pfReadState = { authority: 'cloud', state: 'ready', last_good_at: pfLastGoodCloud.at, warning: null };
+      return rows;
     }).catch(function (err) {
       portfolioOk = false;
       warnOnce('portfolio-list', 'portfolio list failed: ' + (err && err.message || err));
-      // backend unavailable -> fall back to the local book rather than showing nothing
-      return pfLocalList();
+      /* NEVER substitute the anonymous local Portfolio for a signed-in session's cloud
+         read, and NEVER assert zero. Preserve last-good cloud rows (degraded, read-only)
+         when we have them; otherwise resolve `null` — an explicit "we do not know",
+         never an empty array standing in for a true zero. A durable authenticated
+         offline outbox is a separate, later capability (A1A does not build one). */
+      if (pfLastGoodCloud) {
+        pfReadState = { authority: 'cloud', state: 'degraded',
+                         last_good_at: pfLastGoodCloud.at, warning: 'cloud-unavailable' };
+        return pfLastGoodCloud.rows.slice();
+      }
+      pfReadState = { authority: 'cloud', state: 'error', last_good_at: null, warning: 'cloud-unavailable' };
+      return null;
     });
+    // THIS call's own answer is bounded — readPromise never rejects (its own catch
+    // above always resolves), so the race is really "whichever settles first": the
+    // read, or the deadline. A timed-out call answers degraded (last-good)/error
+    // with warning:'read-timeout' RIGHT NOW; readPromise's own handlers above still
+    // run later and correct pfReadState/pfLastGoodCloud for whoever reads them next.
+    var readDeadline = _deadline(PF_CLOUD_DEADLINE_MS, 'read-timeout');
+    readPromise.then(readDeadline.cancel, readDeadline.cancel);
+    return Promise.race([readPromise, readDeadline.promise])
+      .catch(function (err) {
+        if (!(err && err.message === 'read-timeout')) throw err; // defensive: readPromise never rejects
+        pfReadState = {
+          authority: 'cloud',
+          state: pfLastGoodCloud ? 'degraded' : 'error',
+          last_good_at: pfLastGoodCloud ? pfLastGoodCloud.at : null,
+          warning: 'read-timeout'
+        };
+        return pfLastGoodCloud ? pfLastGoodCloud.rows.slice() : null;
+      });
   }
+  function portfolioReadState() { return pfReadState; }
 
   function portfolioUpsert(pos) {
     // pos: { ticker, shares, entry_price, entry_date, notes, status }
     // status must be 'open' or 'closed'
+    // A1A (S6): a signed-in write during the cloud-loading window must never land in
+    // the anonymous local book — reject cleanly; the caller must not claim Saved.
+    if (_isClientUnavailable()) return Promise.resolve(null);
+    if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalUpsert(pos);
     return _portfolioGuard().then(function () {
       function toNumOrNull(v) {
@@ -1077,6 +1211,8 @@
   }
 
   function portfolioClose(id) {
+    if (_isClientUnavailable()) return Promise.resolve(null);
+    if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalClose(id);
     return _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
@@ -1097,6 +1233,8 @@
   }
 
   function portfolioRemove(id) {
+    if (_isClientUnavailable()) return Promise.resolve(null);
+    if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalRemove(id);
     return _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
@@ -1146,8 +1284,13 @@
       upsert: portfolioUpsert,
       close: portfolioClose,
       remove: portfolioRemove,
-      // 'local' = the localStorage book (signed out, or backend unavailable)
-      isLocal: _isLocalMode
+      // 'local' = the localStorage book — signed OUT only (A1A authority law, §10).
+      isLocal: _isLocalMode,
+      // {authority, state, last_good_at, warning} — refreshed by every list() call.
+      // 'local' authority is always 'ready'; 'cloud' authority may be 'ready',
+      // 'degraded' (last-good rows, read-only) or 'error' (no last-good; list()
+      // resolved null). Private — never logged, published, or sent to analytics.
+      readState: portfolioReadState
     }
   };
 
@@ -1158,6 +1301,20 @@
     var uid = (u && u.id) ? u.id : null;
     if (uid === lastAuthUid) return;
     lastAuthUid = uid;
+    authEpoch++;
+
+    /* A1A (review finding B1 — cross-user private-holdings leak): the cached
+       last-good cloud rows and read-state are PER-USER private data. Reset them on
+       EVERY uid transition, sign-in and sign-out alike, before anything else below
+       runs — otherwise a second user signing in on the same page session, whose own
+       first cloud read then fails, would be served the FIRST user's cached
+       "last-good" rows as their own degraded state. */
+    pfLastGoodCloud = null;
+    pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
+    // A1A blocker 2: a fresh uid transition gets a fresh chance to resolve the client —
+    // yesterday's permanent failure must never carry over onto today's sign-in.
+    sbInitFailed = false;
+    sbInitFailureReason = 'client-unavailable';
 
     user = u || null;
     if (!user) {
@@ -1202,13 +1359,74 @@
     // Resolve the shared Supabase client then kick off the initial pull
     var getClient = window.getSupabaseClient;
     if (!getClient) { setPill('offline'); warnOnce('no-client', 'getSupabaseClient not found'); return; }
-    getClient().then(function (c) {
+    var uidAtCall = user && user.id;
+    var epochAtCall = authEpoch;
+    function clientReady(c) {
+      // N3: a late resolution after ANY auth transition since this call started
+      // — a different uid, OR the SAME uid signing out and back in — must not
+      // resurrect (or misattribute) a PRIOR session's client into the CURRENT
+      // one. The epoch check subsumes the old uid-only check.
+      if (authEpoch !== epochAtCall || (user && user.id) !== uidAtCall) return;
+      // Idempotency: `clientPromise` is listened to TWICE (the race below, and the
+      // late-settle reconciliation further down) — on the normal fast path both
+      // resolve to the SAME client, and this guard is what stops the second one
+      // from re-running sb=c/pull()/re-dispatch a wasteful, duplicate second time.
+      if (sb === c) return;
       sb = c;
+      sbInitFailed = false;
       pull();
-    }).catch(function (err) {
+      /* A1A (review finding S6): the FIRST 'wl-auth' above fired before `sb`
+         resolved, so portfolio.js's onAuth() ran during the cloud-loading window
+         (`user` set, `sb` not yet) and could read nothing but the loading
+         placeholder (see portfolioList's `_isCloudLoading()` branch). Re-fire now
+         that `sb` is ready so the Portfolio re-reads the real cloud rows without
+         any user interaction. F6: this ALSO covers the late-settle case — a
+         client that finally resolves after this file's own timeout already
+         declared it unavailable corrects the state the same way an on-time
+         success would have. */
+      document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
+    }
+    function clientFailed(err, reason) {
+      // N3 (proofI C2): the stale-timer guard — see clientReady()'s comment.
+      if (authEpoch !== epochAtCall || (user && user.id) !== uidAtCall) return;
       setPill('offline');
-      warnOnce('client', 'getSupabaseClient failed: ' + (err && err.message || err));
-    });
+      warnOnce('client', 'getSupabaseClient ' + (reason === 'client-timeout' ? 'timed out' : 'failed') +
+        ': ' + (err && err.message || err));
+      /* A1A blocker 2 / F6 (Sol post-review, MAJOR — "loading always resolves" was
+         false): `sb` will never resolve ON TIME now — mark it terminal and re-fire
+         'wl-auth' exactly like the success path does above. Without the re-fire,
+         every listener that read the FIRST 'wl-auth' (dispatched before this
+         promise settled) is left holding the transient 'loading' answer forever.
+         `reason` distinguishes a genuine REJECT (theme.js's SDK failed to load —
+         GFW, config error) from a TIMEOUT (the promise never settles at all — a
+         stalled connection, neither onload nor onerror) — both are terminal for
+         THIS call, but the reason is real information the warning field carries
+         rather than collapsing to one generic word. */
+      sbInitFailed = true;
+      sbInitFailureReason = reason;
+      document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
+    }
+    var clientPromise = getClient();
+    // F6: bound the client gate with a deadline — `clientPromise` itself may never
+    // settle (a stalled connection fires neither onload nor onerror), which used to
+    // leave `_isCloudLoading()` true for the rest of the session. Race it against a
+    // timer for THIS call's terminal answer; the timer is cancelled once
+    // `clientPromise` itself settles (win or lose the race) so a fast/normal
+    // resolution never leaves a dangling 12s timer alive behind it.
+    var clientDeadline = _deadline(PF_CLOUD_DEADLINE_MS, 'client-timeout');
+    clientPromise.then(clientDeadline.cancel, clientDeadline.cancel);
+    Promise.race([clientPromise, clientDeadline.promise])
+      .then(clientReady)
+      .catch(function (err) {
+        clientFailed(err, (err && err.message === 'client-timeout') ? 'client-timeout' : 'client-unavailable');
+      });
+    /* F6 late-settle reconciliation: `clientPromise` is tracked independently of the
+       race above, so a genuinely slow (but eventually successful) client init still
+       corrects the state once it finally resolves — `clientReady`'s own idempotency
+       (re-running sb=c/pull()/re-dispatch) is harmless if the race ALSO already
+       succeeded on time; a late rejection after the race already timed out is a
+       no-op (the terminal state is already correctly recorded). */
+    clientPromise.then(clientReady, function () { /* already handled by the race's catch */ });
   }
 
   // ---- init ------------------------------------------------------------------
@@ -1306,7 +1524,18 @@
       resolveFoldTarget: resolveFoldTarget,
       cacheKey: cacheKey, cacheRead: cacheRead, cacheWrite: cacheWrite,
       tickersOf: _tickersOf,
-      _setTestSession: function (u, client) { user = u; sb = client; },
+      _setTestSession: function (u, client, initFailed) {
+        user = u; sb = client; sbInitFailed = !!initFailed;
+      },
+      // F6 test seam: shortens the client/read deadline so a test does not have to
+      // wait the real 12s default. Returns the previous value.
+      _setCloudDeadlineMs: function (ms) {
+        var prev = PF_CLOUD_DEADLINE_MS; PF_CLOUD_DEADLINE_MS = ms; return prev;
+      },
+      // A1A test seam (review B1): the real auth-transition reset logic, so the
+      // cross-user last-good-cloud leak can be pinned against the actual function
+      // rather than reconstructed by hand in a test.
+      onAuthUser: onAuthUser,
       // W2: the read-side guard that keeps a focus refetch from reverting an edit
       // that is still only local (see tests/test_watchlist_workspace_js.py)
       _testHooks: {

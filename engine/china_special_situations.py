@@ -1064,16 +1064,29 @@ def _block_trade_block() -> dict | None:
                 "last_date":      str(r.get("last_date") or ""),
             }
 
+        # Population counts BEFORE truncation. `_n_anom` used to be
+        # len(top_premium) + len(top_discount) — both display slices of a frame
+        # sorted by the very property being counted — so it saturated at
+        # 2 * _MAX_ROWS and published "16 block-trade price gaps" against a true
+        # population of 220. Same defect as the unlock plane (#5975); this one
+        # survived that sweep because the cap is applied to two frames rather
+        # than one, so the saturated total did not look like _MAX_ROWS.
+        n_premium = int(len(df_prem))
+        n_discount = int(len(df_disc))
+        _n_anom = n_premium + n_discount
+
         top_premium  = [_row(r) for _, r in df_prem.head(_MAX_ROWS).iterrows()]
         top_discount = [_row(r) for _, r in df_disc.head(_MAX_ROWS).iterrows()]
 
-        _n_anom = len(top_premium) + len(top_discount)
         glance = ({"level": "active",
                    "en": f"{_n_anom} block-trade price gap{'s' if _n_anom > 1 else ''}.",
                    "zh": f"{_n_anom}笔大宗交易价差异常。"} if _n_anom else
                   {"level": "quiet", "en": "No block-trade anomalies.", "zh": "无大宗交易异常。"})
         return {"asof": asof, "status": status,
                 "top_premium": top_premium, "top_discount": top_discount,
+                "n_premium": n_premium, "n_discount": n_discount,
+                "n_anomalies": _n_anom,
+                "n_shown": len(top_premium) + len(top_discount),
                 "n_names": len(df), "glance": glance}
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: block trade block failed (%s)", e)

@@ -1,55 +1,55 @@
 {
   "schema": "index_leadership.track_record.v1",
-  "as_of": "2026-08-17",
-  "generated_at": "2026-08-19T06:48:38.920032+00:00",
+  "as_of": "2026-08-19",
+  "generated_at": "2026-08-20T07:42:09.442850+00:00",
   "is_context_only": true,
-  "n_snapshots": 291,
-  "n_days": 9,
+  "n_snapshots": 345,
+  "n_days": 11,
   "horizons": {
     "5": {
-      "n_matured": 222,
+      "n_matured": 253,
       "by_stage": {
         "running": {
-          "n": 203,
-          "mean_fwd_rel": 0.0021,
-          "hit_rate": 0.517
+          "n": 226,
+          "mean_fwd_rel": 0.0007,
+          "hit_rate": 0.5
         },
         "coiling": {
-          "n": 10,
-          "mean_fwd_rel": 0.0004,
-          "hit_rate": 0.6
+          "n": 13,
+          "mean_fwd_rel": 0.005,
+          "hit_rate": 0.692
         },
         "coiling_primed": {
-          "n": 9,
-          "mean_fwd_rel": 0.0174,
-          "hit_rate": 0.778
+          "n": 14,
+          "mean_fwd_rel": 0.0207,
+          "hit_rate": 0.857
         }
       },
-      "running_ic": 0.1658,
-      "running_ic_t_hac": null,
+      "running_ic": 0.1953,
+      "running_ic_t_hac": 4.141,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 200,
+      "n_matured": 209,
       "by_stage": {
         "running": {
-          "n": 183,
-          "mean_fwd_rel": 0.0034,
-          "hit_rate": 0.546
+          "n": 191,
+          "mean_fwd_rel": 0.0009,
+          "hit_rate": 0.534
         },
         "coiling": {
           "n": 10,
-          "mean_fwd_rel": -0.0151,
+          "mean_fwd_rel": -0.0139,
           "hit_rate": 0.4
         },
         "coiling_primed": {
-          "n": 7,
-          "mean_fwd_rel": 0.0237,
-          "hit_rate": 0.714
+          "n": 8,
+          "mean_fwd_rel": 0.0258,
+          "hit_rate": 0.75
         }
       },
-      "running_ic": 0.1922,
+      "running_ic": 0.1398,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
@@ -59,12 +59,12 @@
       "by_stage": {
         "running": {
           "n": 24,
-          "mean_fwd_rel": -0.0199,
-          "hit_rate": 0.5
+          "mean_fwd_rel": -0.023,
+          "hit_rate": 0.458
         },
         "coiling": {
           "n": 7,
-          "mean_fwd_rel": -0.0178,
+          "mean_fwd_rel": -0.0154,
           "hit_rate": 0.571
         }
       },
@@ -82,17 +82,17 @@
       "coiling_ic_t_hac": null
     }
   },
-  "lead_time_d": null,
-  "peak_ic": null,
+  "lead_time_d": 5,
+  "peak_ic": 0.1953,
   "proven": {
-    "5": false,
+    "5": true,
     "10": false,
     "21": false,
     "63": false
   },
   "any_matured": true,
-  "verdict": "measuring",
-  "note": "Accruing forward observations; no horizon clears the Newey-West significance bar yet. Early numbers are provisional, context-only.",
+  "verdict": "validated",
+  "note": "Call-score IC is significant at the 5d horizon (measured). Context-only \u2014 informs the read, never sizes.",
   "recent_misses": [
     {
       "date": "2026-06-30",
@@ -115,15 +115,7 @@
       "id": "russell:building-products-equipment",
       "name": "Building Products & Equipment",
       "stage": "running",
-      "fwd_rel": -0.0987,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-06-30",
-      "id": "russell:specialty-industrial-machinery",
-      "name": "Specialty Industrial Machinery",
-      "stage": "coiling",
-      "fwd_rel": -0.097,
+      "fwd_rel": -0.1207,
       "horizon_d": 21
     },
     {
@@ -139,7 +131,7 @@
       "id": "baskets:housing",
       "name": "Housing Chain",
       "stage": "running",
-      "fwd_rel": -0.0922,
+      "fwd_rel": -0.0947,
       "horizon_d": 21
     },
     {
@@ -152,10 +144,18 @@
     },
     {
       "date": "2026-06-30",
+      "id": "russell:specialty-industrial-machinery",
+      "name": "Specialty Industrial Machinery",
+      "stage": "coiling",
+      "fwd_rel": -0.0834,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-06-30",
       "id": "russell:credit-services",
       "name": "Credit Services",
       "stage": "running",
-      "fwd_rel": -0.074,
+      "fwd_rel": -0.0706,
       "horizon_d": 21
     }
   ],

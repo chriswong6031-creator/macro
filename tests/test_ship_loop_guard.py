@@ -193,6 +193,114 @@ def test_a_new_file_written_by_the_session_still_blocks(tmp_path):
     ]
 
 
+def _dirty_after_shipped_exclusion(repo: Path, baseline: dict) -> list[str]:
+    """The Stop gate's dirty verdict, including the shipped-identical filter."""
+    now = GUARD._fingerprint(repo)
+    dirty = GUARD._changed_since_baseline(baseline, now)
+    shipped = GUARD._shipped_identical_untracked(repo, now, dirty)
+    return [entry for entry in dirty if entry not in shipped]
+
+
+def _repo_with_stale_head(tmp_path: Path) -> Path:
+    """A checkout detached on a HEAD that predates origin/main's hook file.
+
+    Models the 2026-08-20 primary-checkout state: origin/main tracks
+    `.claude/hooks/hook.py`, the working tree sits on an older commit that
+    does not, so a byte-restore of the shipped file shows up as `??`.
+    """
+    repo = _repo(tmp_path)
+    old_head = _git(repo, "rev-parse", "HEAD")
+    hooks = repo / ".claude" / "hooks"
+    hooks.mkdir(parents=True)
+    (hooks / "hook.py").write_text("shipped bytes\n", encoding="utf-8")
+    _git(repo, "add", ".claude/hooks/hook.py")
+    _git(repo, "commit", "-m", "ship hook")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    _git(repo, "checkout", "--detach", old_head)
+    return repo
+
+
+def test_untracked_bytes_identical_to_origin_main_do_not_block(tmp_path):
+    """The documented `git show origin/main:<p> > <p>` repair is not dirt.
+
+    2026-08-20: three hook files byte-restored into the stale primary checkout
+    blocked every session evaluating that tree, though a commit would have
+    added nothing main did not already have.
+    """
+    repo = _repo_with_stale_head(tmp_path)
+    baseline = GUARD._fingerprint(repo)
+
+    hook = repo / ".claude" / "hooks" / "hook.py"
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text("shipped bytes\n", encoding="utf-8")
+
+    assert GUARD._fingerprint(repo)[".claude/hooks/hook.py"].startswith("??:")
+    assert _dirty_after_shipped_exclusion(repo, baseline) == []
+
+
+def test_untracked_bytes_that_differ_from_origin_main_still_block(tmp_path):
+    """One changed byte is real unshipped work, not a restore."""
+    repo = _repo_with_stale_head(tmp_path)
+    baseline = GUARD._fingerprint(repo)
+
+    hook = repo / ".claude" / "hooks" / "hook.py"
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text("shipped bytes plus an edit\n", encoding="utf-8")
+
+    assert _dirty_after_shipped_exclusion(repo, baseline) == [".claude/hooks/hook.py"]
+
+
+def test_the_shipped_exclusion_fails_closed_without_an_origin_main_ref(tmp_path):
+    """No origin/main to compare against -> nothing is excused."""
+    repo = _repo_with_stale_head(tmp_path)
+    _git(repo, "update-ref", "-d", "refs/remotes/origin/main")
+    baseline = GUARD._fingerprint(repo)
+
+    hook = repo / ".claude" / "hooks" / "hook.py"
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text("shipped bytes\n", encoding="utf-8")
+
+    assert _dirty_after_shipped_exclusion(repo, baseline) == [".claude/hooks/hook.py"]
+
+
+def test_a_tracked_file_rewritten_to_match_origin_main_still_blocks(tmp_path):
+    """The exclusion is for `??` entries only.
+
+    A tracked file whose working bytes match origin/main is still a diff
+    against HEAD — excusing it would also excuse an un-pulled revert riding
+    in the working tree.
+    """
+    repo = _repo(tmp_path)
+    old_head = _git(repo, "rev-parse", "HEAD")
+    (repo / "kept.txt").write_text("v2 shipped\n", encoding="utf-8")
+    _git(repo, "add", "kept.txt")
+    _git(repo, "commit", "-m", "v2")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    _git(repo, "checkout", "--detach", old_head)
+    baseline = GUARD._fingerprint(repo)
+
+    (repo / "kept.txt").write_text("v2 shipped\n", encoding="utf-8")
+
+    current = GUARD._fingerprint(repo)
+    assert current["kept.txt"].startswith(" M:")
+    assert _dirty_after_shipped_exclusion(repo, baseline) == ["kept.txt"]
+
+
+def test_an_untracked_symlink_is_never_excused_as_shipped(tmp_path):
+    """A symlink's blob is its target string; the followed file must not count."""
+    repo = _repo_with_stale_head(tmp_path)
+    baseline = GUARD._fingerprint(repo)
+
+    target = repo / "target.txt"
+    target.write_text("shipped bytes\n", encoding="utf-8")
+    hook = repo / ".claude" / "hooks" / "hook.py"
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    os.symlink(target, hook)
+
+    dirty = _dirty_after_shipped_exclusion(repo, baseline)
+    assert ".claude/hooks/hook.py" in dirty
+
+
 def test_a_tracked_file_deleted_by_the_session_still_blocks(tmp_path):
     """The inverse case: leaving the working tree is not leaving the status.
 
@@ -3014,6 +3122,72 @@ def _drive_block(path: Path, capsys, code: str, payload: dict) -> bool:
     state = GUARD._load(path)
     GUARD._block(path, state, payload, code, f"reason for {code}")
     return capsys.readouterr().out.strip() == ""
+
+
+def _drive_block_keyed(path: Path, capsys, code: str, payload: dict, exit_key: str) -> bool:
+    """`_drive_block` with an exit key; return True if the Stop was allowed."""
+    state = GUARD._load(path)
+    GUARD._block(path, state, payload, code, f"reason for {code}", exit_key=exit_key)
+    return capsys.readouterr().out.strip() == ""
+
+
+def test_a_ratified_ladder_exit_is_remembered_for_the_exact_frozen_state(tmp_path, capsys):
+    """One evidence report per frozen merged head, not one per Stop.
+
+    A `ci_failed` block on a merged head argues about evidence frozen at merge,
+    so once the full ladder ratified an exit (report + external arms) the same
+    state must pass every later Stop without demanding an identical re-report —
+    the 2026-08-19 authority-frozen session filed the same `SHIP LOOP BLOCKED:`
+    report dozens of times."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    key = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is True
+    assert GUARD._load(path)["ladder_exits"] == [key]
+    # A later NATURAL stop — no report, no stop_hook_active — passes through
+    # silently and bumps no counter.
+    natural = {"stop_hook_active": False, "last_assistant_message": "done."}
+    before = GUARD._load(path)["total_blocks"]
+    assert _drive_block_keyed(path, capsys, "ci_failed", natural, key) is True
+    assert GUARD._load(path)["total_blocks"] == before
+
+
+def test_a_remembered_exit_never_covers_a_different_frozen_state(tmp_path, capsys):
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    first = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, first) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, first) is True
+    # A new merge mints a new key; without a fresh report it must still block.
+    second = f"ci_failed:{'e' * 40}:{'f' * 40}"
+    natural = {"stop_hook_active": False, "last_assistant_message": "done."}
+    assert _drive_block_keyed(path, capsys, "ci_failed", natural, second) is False
+    assert GUARD._load(path)["ladder_exits"] == [first]
+
+
+def test_an_unratified_block_records_no_ladder_exit(tmp_path, capsys):
+    """Only the moment an escape actually fires may write the memory — a block
+    that was refused (no report yet) must leave nothing behind."""
+    path = _block_state(tmp_path)
+    unreported = {"stop_hook_active": True, "last_assistant_message": "still working"}
+    key = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", unreported, key) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", unreported, key) is False
+    assert "ladder_exits" not in GUARD._load(path)
+
+
+def test_a_keyless_block_never_reads_or_writes_the_exit_memory(tmp_path, capsys):
+    """Internal codes and evolving states carry no key; the ladder is unchanged
+    for them even when a remembered exit exists for another state."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    key = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is True
+    natural = {"stop_hook_active": False, "last_assistant_message": "done."}
+    assert _drive_block(path, capsys, "render_pending", natural) is False
+    assert GUARD._load(path)["ladder_exits"] == [key]
 
 
 def test_external_ping_pong_escapes_on_the_third_cumulative_external_block(tmp_path, capsys):

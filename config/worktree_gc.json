@@ -1,5 +1,5 @@
 {
-  "_comment": "Fleet session-worktree GC (scripts/worktree_gc.py). armed:false = report-only; deletion refuses. Flipping armed to true is the operator's ratification act — see research/WORKTREE_GC_POLICY.md before arming. JSON (not yml) so the tool runs on a bare system python3 under launchd with no pyyaml. The in-repo `.codex/worktrees` and the home-dir `~/.codex/worktrees` are DIFFERENT roots, not a duplicate — the in-repo one (55 checkouts) was missing until 2026-08-11. Registered worktrees are CLASSIFIED from `git worktree list` regardless of this list, so the miss was invisible in the report; what a missing root actually breaks is deletion (the final belt refuses any target `outside configured roots`, so a SAFE verdict there can never be acted on) and `scan_orphans`, which only walks configured in-repo roots. The four in-repo roots must stay in step with `.gitignore` and `ship_loop_guard.AGENT_WORKTREE_ROOTS`; `tests/test_agent_worktree_roots.py` pins them.",
+  "_comment": "Fleet session-worktree GC (scripts/worktree_gc.py). armed:false = report-only; deletion refuses. Flipping armed to true is the operator's ratification act — see research/WORKTREE_GC_POLICY.md before arming. JSON (not yml) so the tool runs on a bare system python3 under launchd with no pyyaml. The in-repo `.codex/worktrees` and the home-dir `~/.codex/worktrees` are DIFFERENT roots, not a duplicate — the in-repo one (55 checkouts) was missing until 2026-08-11. Registered worktrees are CLASSIFIED from `git worktree list` regardless of this list, so the miss was invisible in the report; what a missing root actually breaks is deletion (the final belt refuses any target `outside configured roots`, so a SAFE verdict there can never be acted on) and `scan_orphans`, which only walks configured in-repo roots. The in-repo roots must stay in step with `.gitignore` and `ship_loop_guard.AGENT_WORKTREE_ROOTS`; `tests/test_agent_worktree_roots.py` pins them.",
   "_armed_ratification": "OPERATOR RATIFIED 2026-08-13 (~02:45Z chat order: 'ok yes' to 'Arm the worktree GC — flip armed:true, optionally min_age_days 7->3'), during the disk-pressure incident: 1.7Ti/1.8Ti used, ~100GB free, two receipted runner ENOSPC crashes (2026-07-26, 2026-08-09), 168 session trees holding 386GB. min_age dropped 7->3 in the same act — at 7d the fleet's churn meant the gate never opened (150/168 trees read <7d on strong signals; 19 trees / 66GB age past 3d). Disarming again is likewise an operator act.",
   "armed": true,
   "min_age_days": 3,
@@ -13,6 +13,8 @@
     ".claire/worktrees",
     ".codex/worktrees",
     ".codex-worktrees",
+    ".cursor/worktrees",
+    ".grok/worktrees",
     "~/.codex/worktrees"
   ]
 }

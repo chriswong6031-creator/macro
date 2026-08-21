@@ -31,6 +31,13 @@ NODES_PATH = ROOT / "data" / "theme_graph" / "nodes.parquet"
 MASTER_PATH = ROOT / "data" / "reference" / "security_master.parquet"
 BAKED_IDRES_PATH = ROOT / "data" / "theme_graph" / "identity_resolution.parquet"
 
+#: V4-D2B2-CN-HK — the ``computed_at`` stamp of the FIRST generation baked after the
+#: China/HK admission (`research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md`).
+#: Every OLDER generation legitimately still reads cn/hk NOT_IN_MASTER (the master
+#: really was 100% US when those generations were computed); this is the before/after
+#: boundary the acceptance criterion's "measured separately" delta is drawn across.
+D2B2_FIRST_COMPUTED_AT = "2026-08-20T18:50:58Z"
+
 pytestmark = pytest.mark.skipif(
     not (NODES_PATH.exists() and MASTER_PATH.exists()),
     reason="sparse checkout — data/theme_graph and data/reference are not materialized",
@@ -238,16 +245,57 @@ class TestSection6HostileCases:
         assert row["security_id"] is None
         assert row["refusal_reason"]
 
-    def test_every_cn_hk_ca_node_is_not_in_master(self, baked_idres):
-        """F4: FULL-POPULATION over the BAKED parquet, not a 25-per-market sample — the
-        master is 100% US today, so every cn/hk/ca row must be NOT_IN_MASTER, with no
-        sampled subset left unchecked."""
-        for market in ("cn", "hk", "ca"):
+    def test_every_ca_node_is_not_in_master(self, baked_idres):
+        """F4: FULL-POPULATION over the BAKED parquet, not a 25-per-market sample.
+        V4-D2B2-CN-HK (`research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md`)
+        admitted a China/HK population into the master — Canada expansion remains
+        UNAUTHORIZED (boundary 2), so `ca` alone must still be 100% NOT_IN_MASTER
+        across every generation this parquet carries, historical and current."""
+        rows = baked_idres[baked_idres["market_scope"] == "ca"]
+        assert not rows.empty, "no ca company rows in the baked sidecar — fixture stale"
+        bad = rows[rows["resolution_state"] != "NOT_IN_MASTER"]
+        assert bad.empty, bad[["node_id", "resolution_state"]].to_dict("records")
+
+    def test_every_cn_hk_node_was_not_in_master_before_d2b2(self, baked_idres):
+        """Every generation OLDER than the D2B2 admission must still read
+        NOT_IN_MASTER for cn/hk (append-only history is never rewritten) — this pins
+        the PRE-D2B2 half of the required before/after delta."""
+        for market in ("cn", "hk"):
             rows = baked_idres[baked_idres["market_scope"] == market]
-            assert not rows.empty, (
-                f"no {market} company rows in the baked sidecar — fixture stale")
-            bad = rows[rows["resolution_state"] != "NOT_IN_MASTER"]
+            pre = rows[rows["computed_at"] < D2B2_FIRST_COMPUTED_AT]
+            assert not pre.empty, (
+                f"no pre-D2B2 {market} generation in the baked sidecar — fixture stale")
+            bad = pre[pre["resolution_state"] != "NOT_IN_MASTER"]
             assert bad.empty, (market, bad[["node_id", "resolution_state"]].to_dict("records"))
+
+    def test_cn_hk_resolution_rate_after_d2b2_matches_the_receipt(self, baked_idres):
+        """V4-D2B2-CN-HK acceptance: before/after China and HK GMI resolution rates,
+        measured SEPARATELY, over the CURRENT view (max computed_at per node) —
+        cross-checked against `data/reference/_receipt.json`'s own accounting so the
+        two artifacts (master receipt, sidecar) can never silently disagree."""
+        current = baked_idres.loc[
+            baked_idres.groupby("node_id")["computed_at"].idxmax()
+        ]
+        receipt = json.loads((ROOT / "data" / "reference" / "_receipt.json").read_text())
+        block = receipt["china_hk_admission"]
+        for market in ("cn", "hk"):
+            rows = current[current["market_scope"] == market]
+            assert not rows.empty, f"no {market} rows in the current sidecar view"
+            resolved = rows[rows["resolution_state"] == "RESOLVED"]
+            not_in_master = rows[rows["resolution_state"] == "NOT_IN_MASTER"]
+            assert len(resolved) + len(not_in_master) == len(rows)
+            assert len(resolved) == block["resolved_total"][market]
+            before_rate = 0.0
+            after_rate = len(resolved) / len(rows)
+            assert before_rate == 0.0  # every market/hk node started NOT_IN_MASTER
+            if market == "hk":
+                assert after_rate == 1.0  # 147/147, VERIFIED at the D2B2 pin
+            else:
+                assert after_rate > 0.9  # 984/1021, VERIFIED at the D2B2 pin
+            # RESOLVED rows all reach D2A rule 6 (vendor_alias) — see the hostile
+            # fixture 5 in tests/test_dataos_security_master.py for why rule 5 (exact
+            # inception-code match) structurally cannot fire for CN/HK.
+            assert set(resolved["join_method"]) <= {"vendor_alias"}
 
     def test_every_intl_node_is_unsupported_market(self, baked_idres):
         """F4: full population, not a sample."""
@@ -714,3 +762,38 @@ def test_the_committed_bake_is_reproducible_from_the_committed_inputs(nodes):
             (nid, bv, fv) for nid, bv, fv in
             zip(baked_sorted["node_id"].astype(str), b_col, f_col) if bv != fv]
         assert not mismatches, (col, mismatches[:5])
+
+
+# ---------------------------------------------------------------------------
+# V4-D2B1-R1 AMENDMENT §1 ruling 8 (m1/m2) — §6.1's four sidecar assertions,
+# pinned against the COMMITTED sidecar (the current, latest-generation view every
+# real consumer reads — see engine/theme_graph/store.read_identity_resolution).
+# ---------------------------------------------------------------------------
+
+def test_r1_section_6_1_the_four_sidecar_assertions_against_the_committed_parquet() -> None:
+    current_view = store.read_identity_resolution(latest=True)
+    assert not current_view.empty
+    by_node = {
+        str(row["node_id"]): row
+        for row in current_view.to_dict("records")
+    }
+
+    # 1. co:us:EQR still resolves RESOLVED -> SEC:US-XNYS-EQR / ISS:US-XNYS-EQR.
+    eqr = by_node.get("co:us:EQR")
+    assert eqr is not None, "co:us:EQR must have a sidecar row"
+    assert eqr["resolution_state"] == "RESOLVED"
+    assert eqr["security_id"] == "SEC:US-XNYS-EQR"
+    assert eqr["issuer_id"] == "ISS:US-XNYS-EQR"
+
+    # 2. co:us:AVB still resolves RESOLVED -> SEC:US-XNYS-AVB.
+    avb = by_node.get("co:us:AVB")
+    assert avb is not None, "co:us:AVB must have a sidecar row"
+    assert avb["resolution_state"] == "RESOLVED"
+    assert avb["security_id"] == "SEC:US-XNYS-AVB"
+
+    # 3. NO co:us:VMRK node is created — graph node minting is the theme graph's
+    #    own lane, forbidden to this bridge.
+    assert "co:us:VMRK" not in by_node
+
+    # 4. Zero sidecar cells reference the superseded SEC:US-XNYS-VMRK id at all.
+    assert not (current_view["security_id"] == "SEC:US-XNYS-VMRK").any()

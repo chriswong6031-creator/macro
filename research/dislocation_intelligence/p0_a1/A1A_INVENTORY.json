@@ -1,0 +1,28 @@
+{
+  "a1_declared_ledger_sha256": "04d502e398a0f2ae65df7b2f9d5156305094f7b10ca104da08792d7219c1f83c",
+  "a1_declared_ledger_status": "UNVERIFIED_ABSENT_SOURCE_FILE",
+  "access_log_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "allowed_hosts": [
+    "data.sec.gov",
+    "efts.sec.gov",
+    "www.sec.gov"
+  ],
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "blocked_families": {
+    "MACRO_OR_INDUSTRY_WIDE": "SOURCE_CAPACITY_SHORTFALL"
+  },
+  "generated_at": "2026-08-20T12:35:19Z",
+  "lexicon_sha256": "c164b5b3d0cfa8365a685e88662b00d8ad338957886fd51771286bf3c137cb58",
+  "present_forbidden_paths": [],
+  "price_firewall": "PASS",
+  "query_cells": 146,
+  "query_ledger_sha256": "496537f5d3822c160c93afb3cbccf55f6334028e20094979e1de797e6aab3b36",
+  "schema": "mastermind.dislocation_p0.a1a_inventory.v1",
+  "workspace_root": "."
+}

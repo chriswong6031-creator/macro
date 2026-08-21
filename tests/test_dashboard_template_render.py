@@ -41,7 +41,62 @@ def _env() -> jinja2.Environment:
     env.filters["min"] = lambda seq: min(seq)
     from engine import i18n  # noqa: PLC0415 — same import site as build_site.py
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
+    # P-MP1-SHELL: scripts/build_site.py registers this global for the migrated
+    # Setups grid (templates/_us_prophet_plan_cards.html.j2) — mirrored here so
+    # a render exercising us_prophet_book.plans does not crash on an undefined
+    # global the real build always provides.
+    from scripts.build_site import us_stance_projection  # noqa: PLC0415
+    env.globals["us_stance_projection"] = us_stance_projection
     return env
+
+
+def _prophet_plan(**overrides) -> dict:
+    """One plan row (site/prophet/index.json.plans shape) — the minimal fields
+    templates/_us_prophet_plan_cards.html.j2 reads. Ticker defaults to ACME so
+    it lines up with _board_row()'s default candidate join."""
+    row = {
+        "id": "ACME-BULL-20260701",
+        "asset": "ACME",
+        "lifecycle_state": "entered",
+        "entry_status": "buy_now",
+        "board_read": None,
+        "_priority_score": 72.0,
+        "entry_zone": None,
+        "entry_zone_state": None,
+        "closed": False,
+        "plan_asof": "2026-07-04",
+        "recorded_at": "2026-07-04",
+        "entry_date": "2026-07-01",
+        "signal_date": "2026-07-01",
+    }
+    row.update(overrides)
+    return row
+
+
+def _prophet_book(plans: "list | None" = None, **overrides) -> dict:
+    # Two rows by default (not one): several suites assert "every board card"
+    # properties (>= 2 occurrences) against the default fixture, matching the
+    # pre-existing two-row (ACME + ZEUS) us_standouts.buy default this grid's
+    # population moved off of.
+    plans = plans if plans is not None else [
+        _prophet_plan(),
+        _prophet_plan(id="ZEUS-BULL-20260701", asset="ZEUS", lifecycle_state="ready",
+                       entry_status="bounce_wait", _priority_score=48.0),
+    ]
+    from collections import Counter
+    counts = Counter(p.get("lifecycle_state") for p in plans)
+    book = {
+        "asof": "2026-07-04",
+        "intake": {"early_turn_watch": []},
+        "lifecycle_counts": {k: counts.get(k, 0) for k in
+                              ("watch", "ready", "entered", "delivering", "overtime",
+                               "invalidated", "resolved")},
+        "lifecycle_live_total": sum(v for k, v in counts.items() if k != "resolved"),
+        "lifecycle_grand_total": sum(counts.values()),
+        "plans": plans,
+    }
+    book.update(overrides)
+    return book
 
 
 # --------------------------------------------------------------------------- #
@@ -180,6 +235,12 @@ def _base_vm() -> dict:
             ],
             "eligible": 2,
         },
+        # P-MP1-SHELL central act: the migrated Setups grid's population
+        # (defined below _base_vm — forward ref resolved by call, not import
+        # time, since _prophet_book is a plain function).
+        us_prophet_book=_prophet_book(),
+        life_gate=None,
+        us_prophet_episodes={},
         us_board_outcomes=None,
         market_gamma=None,
         components_confirming=[],
@@ -345,26 +406,35 @@ def test_both_modes_render_with_no_standouts():
 
 
 # --------------------------------------------------------------------------- #
-# us_prophet_v1 priority board — both artifact shapes through THIS harness
+# P-MP1-SHELL RETIREMENT PROOF — the candidate stage/lane rail is GONE from the
+# Setups grid (MP-1-prophet-board.md §6 row 4, §12 acceptance item 4). Prior to
+# this packet, `us_standouts.buy` drove the Setups card grid directly and these
+# three cases proved BOTH its artifact shapes (legacy `lane` vs priority
+# `stage`) rendered correctly there. The grid's population moved to the plan
+# book (site/prophet/index.json.plans, vm["us_prophet_book"]) — `us_standouts`
+# is untouched data (still read by the Recently-fired/footnote sections below
+# the grid) but no longer drives ANY card, heading, or filter bar on this page.
+# The full candidate-board-schema rendered-HTML contract that used to live here
+# now lives ONLY in tests/test_us_board_priority_ui.py, updated in the same PR
+# to assert the same retirement.
 # --------------------------------------------------------------------------- #
-# The full rendered-HTML contract lives in tests/test_us_board_priority_ui.py.
-# These three cases keep the pair visible from the harness that mirrors build_site:
-# the default fixture (old schema) must take the legacy path, the overlaid fixture
-# must take the priority path, and the degraded lane=None row must survive both.
-# The overlay is imported INSIDE the functions — the priority module imports
-# _base_vm/_env/_board_row from here, so a module-level import would be circular.
 
-def test_old_schema_rows_take_the_legacy_lane_partition():
-    html = _render("stocks")
-    assert '<div class="nb-lane-hd">' in html
-    assert '<div class="nb-stage-hd sg-' not in html
-    assert '<div class="pbf-bar" id="us-stage-filter"' not in html
-    assert '<span class="l-en">Edge</span><span class="l-zh">优势</span>' in html
-
-
-def test_new_schema_rows_take_the_priority_path():
+def test_candidate_stage_rail_absent_from_setups_grid():
+    """rail-absence proof (MP-1 §12 item 4): neither artifact shape — legacy
+    `lane` (the default fixture) nor priority `stage` (the overlay) — puts a
+    stage/lane heading or filter bar on the page anymore, however the
+    candidate board is shaped. `us_standouts` data is still read elsewhere
+    (data-ticker sanity below), just never rendered as cards."""
     from tests.test_us_board_priority_ui import priority_overlay, ran_overlay  # noqa: PLC0415
 
+    # legacy-lane shape (the default _base_vm fixture)
+    html_legacy = _render("stocks")
+    assert '<div class="nb-lane-hd"' not in html_legacy
+    assert '<div class="nb-stage-hd sg-' not in html_legacy
+    assert '<div class="pbf-bar" id="us-stage-filter"' not in html_legacy
+    assert 'id="us-stage-filter"' not in html_legacy
+
+    # priority-stage shape (the overlaid fixture)
     vm = _base_vm()
     rows = [
         _board_row(ticker="ACME", entry_signal={"status": "buy_now"}, signal={"asof": "2026-07-04"}),
@@ -375,33 +445,28 @@ def test_new_schema_rows_take_the_priority_path():
     ]
     board = priority_overlay(rows)
     vm["us_standouts"] = {"buy": board, "ran": ran_overlay(board[-1:]), "eligible": 3}
-    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
-    assert '<div class="nb-stage-hd sg-live"' in html
-    assert '<div class="nb-stage-hd sg-blocked"' in html
-    assert '<div class="pbf-bar" id="us-stage-filter"' in html
-    assert '<div class="pbr" data-stage="ran">' in html
-    assert '<div class="pbt">' not in html                   # no duplicate theme strip
-    assert '<a class="pvcard pv-buy pv-featured"' in html     # the glow cohort
-    assert '<div class="nb-lane-hd">' not in html             # legacy headings stood down
-    assert html.find('data-ticker="ACME"') < html.find('data-ticker="NXE"')
+    html_priority = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert '<div class="nb-lane-hd"' not in html_priority
+    assert '<div class="nb-stage-hd sg-' not in html_priority
+    assert '<div class="pbf-bar" id="us-stage-filter"' not in html_priority
+    # the "Recently fired" ran-lane display (unaffected by the grid re-source —
+    # it reads us_standouts.ran independently) still renders off this same data.
+    assert '<div class="pbr" data-stage="ran">' in html_priority
+    # candidate rows are simply not cards on this page anymore: no data-ticker
+    # for a name that exists ONLY in us_standouts.buy, not in us_prophet_book.
+    assert 'data-ticker="NXE"' not in html_priority
 
 
-def test_priority_path_survives_a_lane_none_row():
-    """The dev-VM degradation case, on the NEW path: lane=None costs the card its
-    demoted lane chip and nothing else."""
-    from tests.test_us_board_priority_ui import priority_overlay  # noqa: PLC0415
-
-    vm = _base_vm()
-    board = priority_overlay([
-        _board_row(ticker="ACME", lane=None, entry_signal={"status": "buy_now"}),
-        _board_row(ticker="ZEUS", lane=None, entry_signal={"status": "bounce_wait"}),
-    ])
-    vm["us_standouts"] = {"buy": board, "eligible": 2}
-    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
-    assert len(html) > 50_000
-    assert '<div class="nb-stage-hd sg-live"' in html
-    assert '<span class="pv-mk-i pv-mk-lane"' not in html
-    assert 'data-ticker="ACME"' in html and 'data-ticker="ZEUS"' in html
+def test_lifecycle_ladder_present_with_data_life_grid_marker():
+    """The 7-cell lifecycle ladder (MP-1 §4b) + the migrated grid's W-L1
+    neutralization marker (id="us-life-grid" data-mp1-grid="1") are what
+    replaced the rail — both present on the default fixture, which carries
+    one ACME plan (see _prophet_book())."""
+    html = _render("stocks")
+    assert 'class="mx-ladder mx-ladder--board"' in html
+    assert 'id="us-life-grid"' in html and 'data-mp1-grid="1"' in html
+    assert 'data-ticker="ACME"' in html
+    assert 'data-life="entered"' in html
 
 
 # --------------------------------------------------------------------------- #

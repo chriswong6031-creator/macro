@@ -1,5 +1,5 @@
 {
- "as_of": "2026-08-18",
+ "as_of": "2026-08-19",
  "rows": [
   {
    "ticker": "CRSR",
@@ -158,19 +158,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "REZI",
-   "sector": "Industrials",
-   "first_surfaced": "2026-07-01",
-   "surfaced_price": 21.34,
-   "last_price": 23.62,
-   "pct_since": 10.7,
-   "days_on_board": 4,
-   "exit_date": "2026-07-10",
-   "mark_date": "2026-07-10",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
    "ticker": "ORA",
    "sector": "Utilities",
    "first_surfaced": "2026-07-31",
@@ -310,6 +297,19 @@
    "days_on_board": 3,
    "exit_date": "2026-08-18",
    "mark_date": "2026-08-18",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "PL",
+   "sector": "Industrials",
+   "first_surfaced": "2026-08-13",
+   "surfaced_price": 24.69,
+   "last_price": 22.62,
+   "pct_since": -8.4,
+   "days_on_board": 3,
+   "exit_date": "2026-08-19",
+   "mark_date": "2026-08-19",
    "status": "stopped",
    "lane": "buy"
   },
@@ -470,19 +470,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "MRNA",
-   "sector": "Health Care",
-   "first_surfaced": "2026-08-07",
-   "surfaced_price": 59.81,
-   "last_price": 63.67,
-   "pct_since": 6.5,
-   "days_on_board": 1,
-   "exit_date": "2026-08-12",
-   "mark_date": "2026-08-12",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
    "ticker": "BA",
    "sector": "Industrials",
    "first_surfaced": "2026-07-06",
@@ -557,6 +544,19 @@
    "days_on_board": 1,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "REZI",
+   "sector": "Industrials",
+   "first_surfaced": "2026-07-02",
+   "surfaced_price": 22.33,
+   "last_price": 23.62,
+   "pct_since": 5.8,
+   "days_on_board": 3,
+   "exit_date": "2026-07-10",
+   "mark_date": "2026-07-10",
    "status": "running",
    "lane": "buy"
   },
@@ -783,24 +783,24 @@
   }
  ],
  "summary": {
-  "n_running": 76,
-  "n_stopped": 90,
-  "n_flat": 320,
-  "n_total": 486,
+  "n_running": 79,
+  "n_stopped": 88,
+  "n_flat": 309,
+  "n_total": 476,
   "n_shown": 60,
   "median_pct": 0.0,
   "n_skipped_no_price": 8,
   "skipped_no_price": [
    "ARWR",
+   "BRX",
    "CAR",
    "CE",
-   "DIOD",
+   "DAR",
    "FN",
-   "HAL",
    "SITM",
    "U"
   ],
-  "win_rate": 0.156,
+  "win_rate": 0.166,
   "avg_pct": -0.0,
   "conventions": {
    "entry": "next session's close after first_surfaced (the surfaced bar is the bar the board is computed from \u2014 unbuyable)",

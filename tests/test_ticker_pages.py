@@ -1483,6 +1483,7 @@ class TestTemplateRender:
         assert 'id="ci-history" hidden' in html
         assert 'id="ci-empty"' in html and 'id="ci-empty" hidden' not in html
         assert 'id="ci-loading" aria-hidden="true" hidden' in html
+        assert 'id="ci-v2-host"' in html
         assert html.index('id="company-update"') < html.index('id="chart"')
 
     def test_ticker_company_intelligence_has_terminal_and_public_record_handoffs(self):
@@ -1490,6 +1491,7 @@ class TestTemplateRender:
         html = env.get_template("ticker.html.j2").render(**_rich_ctx())
 
         assert "pane=transcripts" in html
+        assert 'id="ci-v2-host"' in html
         assert 'id="ci-earnings-record" href="earnings/"' in html
         assert "Browse earnings records" in html
         assert "earnings/?ticker=AAPL" not in html
@@ -1502,7 +1504,8 @@ class TestTemplateRender:
         assert "utm_campaign=company_intelligence_upgrade" in html
 
     def test_company_intelligence_script_uses_event_exact_wire_routes_and_public_teaser(self):
-        """The client must keep article navigation exact even when only one public event is exposed."""
+        """The client fetches /api/event-workspace/ as the current-event authority (v2)
+        and only mentions /api/company-intelligence/ as the genuine 404 fallback."""
         js = (_REPO / "site" / "assets" / "js" / "company-intelligence-dossier.js").read_text(encoding="utf-8")
 
         assert "earnings.public_wire_routes/v1" in js
@@ -1511,7 +1514,14 @@ class TestTemplateRender:
         assert "history.hidden = events.length <= 1" in js
         assert "new URLSearchParams(window.location.search).get('tx')" in js
         assert "?from=company-intelligence&tx=" in js
+        # v2 event-workspace is now the current-event authority (primary fetch)
+        assert "fetch('/api/event-workspace/' + encodeURIComponent(ticker)," in js
+        # v1 company-intelligence is retained only as the genuine 404 fallback
         assert "fetch('/api/company-intelligence/' + encodeURIComponent(ticker)," in js
+        # v2 fetch must appear before v1 fetch in the source (structural ordering)
+        assert js.index("fetch('/api/event-workspace/'") < js.index("fetch('/api/company-intelligence/'"), (
+            "v1 fetch appears before v2 fetch in source — execution order inverted"
+        )
         assert "?limit=8" not in js
         assert "source.kind === 'transcript' && source.status === 'present'" in js
         assert "typeof source.url" not in js

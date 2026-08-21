@@ -28,6 +28,7 @@ import json
 import shutil
 import subprocess
 import textwrap
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -42,6 +43,15 @@ CN_JS = [ROOT / "templates" / "china_risk_state_live.js",
          ROOT / "site" / "china_risk_state_live.js"]
 US_PAGES = pytest.mark.parametrize("js", US_JS, ids=["template", "site"])
 CN_PAGES = pytest.mark.parametrize("js", CN_JS, ids=["template", "site"])
+
+# GD-3 (adjudication #10): the Risk Envelope live overlay is a SECOND US-macro-page
+# consumer of the same feed-behind-the-render floor law, but its DOM shape (the
+# #risk-envelope-band chip/pending/receipt hooks) is unrelated to the
+# ms-word/ms-score headline patcher's, so it gets its own JS list + harness rather
+# than being appended into US_JS/US_PAGES (which would silently break every
+# existing test there — `entry = "patchMacro"` does not exist in this module).
+RE_JS = [ROOT / "templates" / "risk_envelope_live.js", ROOT / "site" / "risk_envelope_live.js"]
+RE_PAGES = pytest.mark.parametrize("js", RE_JS, ids=["template", "site"])
 
 BAKED_SESSION = "2026-07-31"
 BAKED_SCORE = 66          # the chart endpoint AND the gauge, post-reconciliation
@@ -169,6 +179,256 @@ def _harness(js_src: str, feed: dict, page: str) -> dict:
     res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=60)
     assert res.returncode == 0, f"node failed: {res.stderr[-2000:]}"
     return json.loads(res.stdout.strip().splitlines()[-1])
+
+
+# ── GD-3: the Risk Envelope overlay's own DOM stub + harness (adjudication #10) ──
+# risk_envelope_live.js exposes `applyFeed(d)` (extracted from tick()'s fetch chain
+# specifically so it is drivable this way, same idiom as patchMacro/patchChina
+# above) — reads the band's data-bundle-id/data-settled-session, and paints/hides
+# the #gde-live-chip / #gde-pending-chip / #gde-live-receipt hooks.
+
+RE_BAKED_BUNDLE = "fd9ccdbe47f7f008"
+RE_BAKED_SESSION = "2026-08-19"
+
+
+def _re_harness(js_src: str, feed: dict | None) -> dict:
+    """Run risk_envelope_live.js's `applyFeed` against one feed and report what
+    the DOM ended up holding. `feed=None` simulates a fetch that resolved falsy
+    (network error / non-OK response already reduced to null upstream of
+    applyFeed in the real fetch chain)."""
+    setup = f"""
+    var band = reg("#risk-envelope-band", new El("risk-envelope-band"));
+    band.setAttribute("data-bundle-id", {RE_BAKED_BUNDLE!r});
+    band.setAttribute("data-settled-session", {RE_BAKED_SESSION!r});
+
+    var chip = reg("#gde-live-chip", new El("gde-live-chip"));
+    chip.hidden = true;
+    var chipEn = new El("", "l-en", "");
+    var chipZh = new El("", "l-zh", "");
+    var chipTime = new El("", "gde-live-time", "");
+    chip.querySelector = function (sel) {{
+      if (sel === ".l-en") return chipEn;
+      if (sel === ".l-zh") return chipZh;
+      if (sel === ".gde-live-time") return chipTime;
+      return null;
+    }};
+
+    var pending = reg("#gde-pending-chip", new El("gde-pending-chip"));
+    pending.hidden = true;
+    var pendingEn = new El("", "l-en", "");
+    var pendingZh = new El("", "l-zh", "");
+    pending.querySelector = function (sel) {{
+      if (sel === ".l-en") return pendingEn;
+      if (sel === ".l-zh") return pendingZh;
+      return null;
+    }};
+
+    var receipt = reg("#gde-live-receipt", new El("gde-live-receipt"));
+    receipt.hidden = true;
+    """
+    readback = """
+    out.chip_hidden = !!chip.hidden;
+    out.chip_en = chipEn.textContent;
+    out.chip_zh = chipZh.textContent;
+    out.chip_time = chipTime.textContent;
+    out.pending_hidden = !!pending.hidden;
+    out.pending_en = pendingEn.textContent;
+    out.receipt_hidden = !!receipt.hidden;
+    out.receipt_text = receipt.textContent;
+    """
+    script = "\n".join([
+        DOM_STUB,
+        setup,
+        "var out = {};",
+        f"var FEED = {json.dumps(feed)};",
+        "(function(){",
+        js_src.replace(
+            "})();",
+            "try { applyFeed(FEED); } catch (e) { out.error = String(e); }\n})();",
+        ),
+        "})();",
+        readback,
+        "console.log(JSON.stringify(out));",
+    ])
+    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=60)
+    assert res.returncode == 0, f"node failed: {res.stderr[-2000:]}"
+    return json.loads(res.stdout.strip().splitlines()[-1])
+
+
+def _re_feed(*, source_session="2026-08-20", bundle_id=RE_BAKED_BUNDLE, precedence="live",
+             live_active=True, built=None, stale_after_min=5,
+             stage="FRAGILE", stable_stage="FRAGILE", pending=None, data_state="FRESH") -> dict:
+    # `active()`'s freshness gate compares against REAL wall-clock Date.now() (it
+    # must, in production), so a fixture built from a fixed historical string would
+    # go stale the moment real time moves past it. Default to "90s ago" computed at
+    # call time instead, well inside the 5min horizon regardless of when the suite
+    # actually runs.
+    if built is None:
+        built = (datetime.now(timezone.utc) - timedelta(seconds=90)).strftime("%Y-%m-%d %H:%M:%S UTC")
+    return {
+        "schema": "mastermind.risk_envelope/v1",
+        "revision": "live_provisional",
+        "precedence": precedence,
+        "source_session": source_session,
+        "bundle_id": "9c4a7e21ab30f581",
+        "built": built,
+        "live_active": live_active,
+        "stale_after_min": stale_after_min,
+        "data_state": data_state,
+        "hazard_summary": {"stage": stage},
+        "overlays": {"settled_bundle_id": bundle_id, "settled_source_session": RE_BAKED_SESSION},
+        "live_transition": {"candidate_stage": stage, "stable_stage": stable_stage, "pending": pending},
+    }
+
+
+@needs_node
+@RE_PAGES
+def test_re_feed_a_session_behind_the_render_never_paints(js):
+    """The SAME feed-behind-the-render floor law as risk_state_live.js, applied to
+    the Risk Envelope overlay: a live read whose own source_session is OLDER than
+    the page's baked settled session (data-settled-session) must never paint."""
+    feed = _re_feed(source_session="2026-08-18")   # older than RE_BAKED_SESSION
+    out = _re_harness(js.read_text(encoding="utf-8"), feed)
+    assert not out.get("error"), out.get("error")
+    assert out["chip_hidden"] is True
+    assert out["pending_hidden"] is True
+    assert out["receipt_hidden"] is True
+
+
+@needs_node
+@RE_PAGES
+def test_re_feed_on_or_ahead_of_the_render_still_paints(js):
+    """Sanity control for the floor test above: a live session AHEAD of the baked
+    settled session (the normal case) must still paint."""
+    feed = _re_feed(source_session="2026-08-20")   # ahead of RE_BAKED_SESSION
+    out = _re_harness(js.read_text(encoding="utf-8"), feed)
+    assert not out.get("error"), out.get("error")
+    assert out["chip_hidden"] is False
+    assert out["chip_en"] == "Live · provisional"
+
+
+@needs_node
+@RE_PAGES
+def test_re_unpaint_hides_all_three_hooks_completely(js):
+    """A feed that fails `active()` (mismatched settled_bundle_id here) must hide
+    ALL three hooks — chip, pending, and receipt — never leave one painted while
+    the others clear."""
+    feed = _re_feed()
+    feed["overlays"]["settled_bundle_id"] = "SOME-OTHER-BUNDLE"
+    out = _re_harness(js.read_text(encoding="utf-8"), feed)
+    assert not out.get("error"), out.get("error")
+    assert out["chip_hidden"] is True
+    assert out["pending_hidden"] is True
+    assert out["receipt_hidden"] is True
+    assert out["receipt_text"] == ""
+
+
+@needs_node
+@RE_PAGES
+def test_re_stage_null_routes_to_degraded_even_when_data_state_is_fresh(js):
+    """Adjudication #8 regression: route on hazard_summary.stage alone. A feed
+    with a null stage but data_state FRESH (the exact shape a laundered empty
+    live block used to produce) must still paint the DEGRADED copy, never the
+    healthy "Live · provisional" chip."""
+    feed = _re_feed(stage=None, stable_stage="FRAGILE", data_state="FRESH")
+    out = _re_harness(js.read_text(encoding="utf-8"), feed)
+    assert not out.get("error"), out.get("error")
+    assert out["chip_hidden"] is False
+    assert out["chip_en"] == "Live · not enough to say"
+    assert out["chip_zh"] == "实时 · 暂无法判断"
+    assert out["pending_hidden"] is True
+
+
+@needs_node
+@RE_PAGES
+def test_re_paint_degraded_paint_restores_chip_copy_and_receipt(js):
+    """Adjudication #4 regression: paint() must NOT assume the DOM still holds its
+    baked "Live · provisional" copy — a prior paintDegraded() call must not leave
+    the chip stuck on degraded text, or the receipt stuck on a stale HEALTHY line,
+    once a subsequent feed is healthy again. Runs three feeds through the SAME
+    long-lived DOM stub in one node process, exactly like a real poll sequence."""
+    healthy = _re_feed(stage="TRANSMITTING",
+                       pending={"stage": "TRANSMITTING", "ticks": 2, "needs": 3})
+    degraded = _re_feed(stage=None, data_state="DEGRADED")
+    healthy_again = _re_feed(stage="FRAGILE", pending=None)
+
+    setup = f"""
+    var band = reg("#risk-envelope-band", new El("risk-envelope-band"));
+    band.setAttribute("data-bundle-id", {RE_BAKED_BUNDLE!r});
+    band.setAttribute("data-settled-session", {RE_BAKED_SESSION!r});
+
+    var chip = reg("#gde-live-chip", new El("gde-live-chip"));
+    chip.hidden = true;
+    var chipEn = new El("", "l-en", "");
+    var chipZh = new El("", "l-zh", "");
+    var chipTime = new El("", "gde-live-time", "");
+    chip.querySelector = function (sel) {{
+      if (sel === ".l-en") return chipEn;
+      if (sel === ".l-zh") return chipZh;
+      if (sel === ".gde-live-time") return chipTime;
+      return null;
+    }};
+
+    var pending = reg("#gde-pending-chip", new El("gde-pending-chip"));
+    pending.hidden = true;
+    var pendingEn = new El("", "l-en", "");
+    var pendingZh = new El("", "l-zh", "");
+    pending.querySelector = function (sel) {{
+      if (sel === ".l-en") return pendingEn;
+      if (sel === ".l-zh") return pendingZh;
+      return null;
+    }};
+
+    var receipt = reg("#gde-live-receipt", new El("gde-live-receipt"));
+    receipt.hidden = true;
+    """
+    readback = """
+    out.chip_en = chipEn.textContent;
+    out.receipt_text = receipt.textContent;
+    """
+    script = "\n".join([
+        DOM_STUB,
+        setup,
+        "var out1 = {}, out2 = {}, out3 = {};",
+        f"var FEED1 = {json.dumps(healthy)};",
+        f"var FEED2 = {json.dumps(degraded)};",
+        f"var FEED3 = {json.dumps(healthy_again)};",
+        "(function(){",
+        js.read_text(encoding="utf-8").replace(
+            "})();",
+            "try {\n"
+            "  applyFeed(FEED1);\n"
+            "  out1.chip_en = chipEn.textContent; out1.receipt_text = receipt.textContent;\n"
+            "  applyFeed(FEED2);\n"
+            "  out2.chip_en = chipEn.textContent; out2.receipt_text = receipt.textContent;\n"
+            "  applyFeed(FEED3);\n"
+            "  out3.chip_en = chipEn.textContent; out3.receipt_text = receipt.textContent;\n"
+            "} catch (e) { out1.error = String(e); }\n"
+            "})();",
+        ),
+        "})();",
+        "console.log(JSON.stringify({one: out1, two: out2, three: out3}));",
+    ])
+    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=60)
+    assert res.returncode == 0, f"node failed: {res.stderr[-2000:]}"
+    out = json.loads(res.stdout.strip().splitlines()[-1])
+    assert not out["one"].get("error"), out["one"].get("error")
+
+    assert out["one"]["chip_en"] == "Live · provisional"
+    assert "TRANSMITTING" in out["one"]["receipt_text"]
+
+    assert out["two"]["chip_en"] == "Live · not enough to say", (
+        "paintDegraded must overwrite the chip copy"
+    )
+    assert "TRANSMITTING" not in out["two"]["receipt_text"], (
+        "the degraded receipt must not keep showing the last HEALTHY pending line"
+    )
+
+    assert out["three"]["chip_en"] == "Live · provisional", (
+        "a healthy feed after a degraded one must restore the chip's normal copy, "
+        "not leave it stuck on 'not enough to say'"
+    )
+    assert "TRANSMITTING" not in out["three"]["receipt_text"]
 
 
 # display labels exactly as engine/market_state.py _LABEL emits them

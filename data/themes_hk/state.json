@@ -5,11 +5,18 @@
       "displayed": "hk_conglo",
       "pending": {
         "bucket": "2026-08-19",
-        "count": 1,
+        "count": 3,
         "tid": "hk_dividend"
       }
     },
-    "reco": {}
+    "reco": {
+      "hk_conglo": {
+        "bucket": "2026-08-19",
+        "count": 1,
+        "from": "hold",
+        "to": "accumulate"
+      }
+    }
   },
   "hk_banks": {
     "label": "dominant",

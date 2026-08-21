@@ -24,10 +24,12 @@ owns_paths:
 depends_on:
   - WS:ALPHA-INTELLIGENCE-INTEGRATION
   - WS:EARNINGS-INTELLIGENCE-OS
+  - WS:PROPHET-US-V4-RECOVERY
   - WS:STOCK-IDENTITY
   - WS:GMI-THEME-GRAPH
 decisions:
   - DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE
+  - DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK
 landmines:
   - "Serving firewall: Intelligence serving inputs never contain Prophet
     score/rank/lane/board membership/entry state/signal tier. Those are
@@ -53,8 +55,18 @@ landmines:
     china_corporate_event.v1 on any path."
   - "Completion law: merge = BUILT_NOT_PROVEN on every build wave; done only
     after a real production run traverses the real path and the receipt (run
-    id + evidence) is recorded here. asia-close proves collectors; the real
-    nightly plane write proves telemetry."
+    id + evidence) is recorded here. Lane correction 2026-08-20: ALL China
+    data planes — collectors AND candidate-plane telemetry — are written by
+    asia-close.yml; daily.yml resets data/china* in its collect step and can
+    never prove a China wave, so every earlier 'real nightly plane write'
+    phrase resolves to the real asia-close production run."
+  - "HOLD LAW (DSC:CHINA-ALPHA-HOLD-MERGE-INCIDENT): #5953 merged 2026-08-19
+    16:05Z under a recorded CEO hold via a direct account merge — label
+    removal does not bind humans. Any future held PR in this program must be
+    label-disarmed AND auto-merge-disabled AND converted to DRAFT AND
+    hold-commented. The freeze is NOT effective at merge; it becomes
+    effective only at Sol's post-merge final freeze acceptance, recorded
+    here and in the DEC when given."
 do_not_redo:
   - "Do not re-run the PRC entity-resolver bake-off — CN-B #5947 returned
     NO-BUY (all five vendors; overseas/IP + cross-border-storage
@@ -89,26 +101,63 @@ waves:
     status: done
     pr: [5933, 5943, 5955]
   - id: pr0a
-    title: PR-0A final research authority — masterplan rewrite, census adjudication, AgentOS (revised 2026-08-19 second pass per Sol freeze-review verdict; freeze effective at Sol's final review)
+    title: PR-0A final research authority — masterplan rewrite, census adjudication, AgentOS (revised 2026-08-19 second pass per Sol verdict; MERGED PREMATURELY 16:05Z under a recorded CEO hold — DSC:CHINA-ALPHA-HOLD-MERGE-INCIDENT; content = the revised artifact exactly; freeze NOT effective until Sol's post-merge final freeze acceptance)
     status: done
     pr: [5822, 5953]
   - id: pr0b
-    title: PR-0B v4 telemetry preservation — persist full intel_interest anatomy prospectively (merge = BUILT_NOT_PROVEN; done only on real-nightly receipt)
-    status: todo
-    next_action: after Sol's final freeze review, spawn builder with research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md
+    title: PR-0B v4 telemetry preservation — persist full intel_interest anatomy prospectively (RECEIPT ACCRUED 2026-08-20)
+    status: done
+    pr: [6045]
+    next_action: >
+      DONE — merged as PR #6045 (squash fdbf543b2333ec6077988ffd571966f180008cc5) and
+      PROVEN by the first qualifying natural post-merge production run: asia-close.yml
+      run 32348780228 (the operator-dispatched real production execution of 2026-08-20;
+      asia job 13:29-15:20Z success; merge is an ancestor of its checkout). Plane write
+      = commit baf4cf7c9291 data/china_prophet_rank/candidates.parquet (24,070 rows):
+      all intel_* columns present, 1,636-1,640 non-null across covered-name fields, 4
+      rows with intel_unavailable_reason set (typed refusals) — exactly the receipt
+      standard. LANE CORRECTION recorded with the receipt: the China candidate/telemetry
+      plane is written by asia-close.yml, NOT daily.yml — daily.yml resets data/china*
+      in its collect step and can never prove a China wave; every "real nightly" phrase
+      in earlier PR-0B prose means the real asia-close production run. Proof-only
+      inspection 2026-08-20; no run was manufactured for this receipt.
   - id: rights0
     title: RIGHTS-0 source entitlement/rights audit (consumes CN-A #5945 matrix + CN-B #5947 resolver findings + CN-E #5951 license findings; residual only)
-    status: todo
-    next_action: after Sol's final freeze review, spawn researcher with research/china_alpha_intelligence/commissions/RIGHTS-0_source_entitlement_audit.md
+    status: done
+    next_action: "P1 verdict (research/china_alpha_intelligence/RIGHTS_REGISTRY.md section 10): do NOT build on Tushare stk_surv (UNKNOWN_RIGHTS, no collector, tier UNKNOWN(operator)); P1 builds on the CNInfo primary-source route instead (rights-clear metadata plane, china_filings.py) -- blocker is the missing 投资者关系活动记录表/调研 category bucket in CATEGORY_PRIORITY (collectors/china_filings.py:139-150), not rights. Family-2 (fund_portfolio) and Family-6 named-actor plane remain GAP with no rights-clear native alternative; spawn builder with research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md next."
   - id: p1
     title: P1 Institutional Visit Tape + dossier (producer, PIT clock, provisional actor ontology, coverage-start semantics, failure isolation; NO score; merge = BUILT_NOT_PROVEN, done only on real asia-close receipt + production dossier desktop/mobile proof)
-    status: todo
+    status: in_progress
     depends_on: [rights0]
-    next_action: spawn builder with research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md after rights0 verdict on the visit source
+    next_action: "BUILT_NOT_PROVEN -- merged as PR #6050 (squash c54d1b55f673cb383c00889e8f4ab809614666ba; immutable merge SHA is the canonical proof pointer per Sol 2026-08-20); done only on the real asia-close receipt + production dossier desktop/mobile proof (collectors/china_visits.py derives the visit tape from china_filings' new institutional_visit category bucket; owner-native store data/china_visits/; dossier block in engine/china_intel_hub.py's _dossier(); fixture-driven receipts in the PR body). Follow-up verification session: (1) confirm a real asia-close.yml run has collected real visit rows end-to-end (record the run id), (2) capture desktop+mobile crops of the PRODUCTION dossier showing the visit block for a real company with honest failure states, then flip p1 to done. PARTIAL RECEIPT (proof-only inspection 2026-08-20): page half PROVEN — https://www.mastermind-x.com/china_intel.html serves the K2c visits block with honest not-yet-covered states (render commit baf4cf7c9291; the later render-public 8e73239563ef only re-stamped assets). Data half NOT accrued: asia-close run 32372312243 (first checkout containing the merge; still in progress at inspection) wrote data/china_visits/ via commit a14ac56627c9 with n_candidates=0 ('0 candidate row(s) this run', health ok) — the collector ran end-to-end without error but zero real visit rows exist yet. P1-ZERO-ROW-ATTRIBUTION (Sol-authorized proof-only task, adjudicated 2026-08-20): NOT a quiet day — commit a14ac56627c9 itself carries 73 raw-keyword-matching filings (68 业绩说明会 dated 2026-08-20, 5 投资者关系活动记录表 dated 2026-08-19) and ALL 73 are stored category=institutional_visit, a 100% classifier hit rate. The zero is deterministically attributed to the documented one-cycle serial-loop latency (scripts/collect.py:248): china_visits ran at 16:37Z against the checkout-era store (666ff40c, zero institutional_visit rows — the category was born in this very merge) while china_filings fetched at 16:44Z. One-time bootstrap artifact; nothing lost (rows persist correctly categorized; the candidate filter is not date-gated). NO REPAIR AUTHORIZED — the latency is a design property documented at merge, not a defect; whether the standing 1-cycle delay is acceptable product semantics is a Sol product ruling (DSC:CHINA-VISITS-FIRST-CYCLE-ZERO-IS-BOOTSTRAP-NOT-QUIET). FALSIFIER: the next natural asia-close run must report n_candidates >= 68 and persist the first real rows — a second zero is genuine P1_BROKEN with no bootstrap excuse (bounded repair then: run china_visits after china_filings). Remaining proof unchanged: the first asia-close run persisting >=1 real institutional_visit row, plus the crops. Sol post-activation adjudication 2026-08-20 REJECTED the standing one-cycle latency as permanent semantics and authorized exactly one bounded repair, P1-R1 same-cycle derivation -- BUILT in PR #6142 (cninfo host-group ordering + process-local china_filings.LAST_RUN_OUTCOME flag + upstream_degraded health state; --only china_visits still derives over the committed store; no second ingester, CNInfo concurrency intact). P1 remains BUILT_NOT_PROVEN; it flips done ONLY on the first natural post-merge Asia production run's receipt: filing/visit execution order, upstream health, candidate/new-row accounting, confirmation that every newly fetched eligible institutional_visit row appeared in the visit plane in that same run, plus production desktop+mobile dossier crops. The DSC falsifier (n_candidates >= 68) stays armed, now evaluated under same-cycle order."
   - id: pr0d
-    title: PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; merge = BUILT_NOT_PROVEN)
-    status: todo
-    next_action: after Sol's final freeze review, spawn builder with research/china_alpha_intelligence/commissions/PR-0D_china_identity_extension.md, coordinated with WS:STOCK-IDENTITY
+    title: PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; OWNER-ROUTED to D2B2-CN-HK per DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK)
+    status: in_progress
+    next_action: >
+      BUILT_NOT_PROVEN 2026-08-20 (adopted by reference from the owner child):
+      D2B2-CN-HK (WS:PROPHET-US-V4-RECOVERY, frozen contract
+      research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md) admitted
+      984/1021 (96.4%) cn and 147/147 (100%) hk company nodes into the
+      canonical Data OS master via CNInfo + SFC/HKEX committed primary-source
+      evidence, then re-derived the GMI identity_resolution/v1 sidecar — real
+      China/HK company nodes now resolve through canonical Mastermind ids
+      (co:cn:601398.SS -> SEC:CN-XSHG-601398, co:hk:1398.HK ->
+      SEC:HK-XHKG-01398, etc). PR #6116, squash-merged as
+      ed28d0d992a144aec5f0ef2616024e3e32d83b1a (immutable merge SHA) — see
+      the owner WS's D2B2 handoff for full receipts. Status wording: BUILT_NOT_PROVEN
+      by adoption (Sol 2026-08-20): #6116 squash ed28d0d992a144aec5f0ef2616024e3e32d83b1a
+      accepted, proof pending on the first natural nightly containing it (run
+      32426513915 was in progress 2026-08-20T23:37Z); proof = CN/HK master
+      survives the canonical build_security_master.py --nightly refresh and
+      the resulting GMI current view still resolves CN/HK at the measured
+      rates (CN 96.4%, HK 100%) with US byte-identical, recording run ID,
+      source/master generation receipts, CN/HK resolution counts/rates, and
+      the immutable resulting commit; then pr0d AND owner D2B2 flip done; on
+      a topology/persistence failure stop and return the exact failure,
+      never hand-rebake. Also note: later-wave gate closed — no R1/R2 until
+      pr0d=done; no P1B until P1 and L0 satisfy dependencies; L0 has NO
+      bounded builder commission in research/china_alpha_intelligence/commissions/
+      — return to Sol for that commission rather than improvising.
   - id: l0
     title: L0 full-pool canonical outcomes (extract china_standout_track primitives for the candidate plane)
     status: todo
@@ -133,14 +182,25 @@ waves:
     status: todo
     depends_on: [l0, p1b]
 next_action: >
-  Gate: Sol's final freeze review of the revised #5953 head. After it clears:
-  spawn PR-0B (builder) and RIGHTS-0 (researcher) in parallel from their
-  commission files; PR-0D (builder) in parallel coordinated with
-  WS:STOCK-IDENTITY; P1 spawns after the RIGHTS-0 verdict on the
-  institutional visit source. Completion law on every build wave: merge =
-  BUILT_NOT_PROVEN; a real production receipt (recorded here) = done. Later
-  tracks (P3–P6, R3–R4, S-lobes, L3+) charter from the masterplan at their
-  wave boundaries.
+  ACTIVATION CLOSED 2026-08-20 (Sol PR-0D authority adjudication received;
+  freeze effective since Sol post-merge acceptance GO, receipt = main
+  49533d59b16076630ccd7d8bf48307f658db61da). State: pr0b DONE (#6045 squash
+  fdbf543b2333; receipt = asia-close run 32348780228 -> commit baf4cf7c9291,
+  intel_* columns live), rights0 done, p1 BUILT_NOT_PROVEN (#6050 squash
+  c54d1b55f673; page half proven live, zero real visit rows yet), pr0d
+  BUILT_NOT_PROVEN, adopted by reference from D2B2-CN-HK under
+  WS:PROPHET-US-V4-RECOVERY (PR #6116 squash ed28d0d992a1; CN 0->96.4%
+  / HK 0->100% GMI resolution). Next in this WS: (1) P1 data-half proof — the
+  first asia-close run persisting >=1 real institutional_visit row +
+  production dossier desktop/mobile crops (never manufacture a run;
+  RECEIPT_NOT_YET_ACCRUED leaves the wave BUILT_NOT_PROVEN); (2) record the
+  D2B2-CN-HK immutable merge SHA + the first natural nightly's proof (run id
+  + resolution delta) once observed, flipping pr0d to done. Completion
+  law on every build wave: merge = BUILT_NOT_PROVEN; a real production
+  receipt (recorded here, immutable merge SHAs) = done. Do NOT start P1B,
+  L0, R1, R2, or later verticals without a new Sol directive. Later tracks
+  (P3–P6, R3–R4, S-lobes, L3+) charter from the masterplan at their wave
+  boundaries.
 artifacts:
   - research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md
   - research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md

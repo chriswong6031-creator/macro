@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import sys
 import datetime
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -441,6 +442,102 @@ def test_staleness_no_crash_when_store_empty(capsys):
         mock_store.last_date.return_value = None
 
         bof._check_staleness()   # must not raise
+
+
+# ── 4b. Target-session publication contract ─────────────────────────────────
+
+def test_massive_probe_distinguishes_missing_configuration(monkeypatch):
+    from collectors import massive_flatfiles as mf
+    for key in ("MASSIVE_S3_ENDPOINT", "MASSIVE_S3_ACCESS_KEY_ID",
+                "MASSIVE_S3_SECRET_ACCESS_KEY"):
+        monkeypatch.delenv(key, raising=False)
+    probe = mf.probe_available("minute", end_date=datetime.date(2026, 8, 19))
+    assert probe.available_date is None
+    assert probe.reason == "configuration_missing"
+
+
+def test_massive_probe_distinguishes_entitlement_from_absence(monkeypatch):
+    from collectors import massive_flatfiles as mf
+    for key in ("MASSIVE_S3_ENDPOINT", "MASSIVE_S3_ACCESS_KEY_ID",
+                "MASSIVE_S3_SECRET_ACCESS_KEY"):
+        monkeypatch.setenv(key, "configured")
+
+    class Denied(Exception):
+        response = {"Error": {"Code": "Forbidden"},
+                    "ResponseMetadata": {"HTTPStatusCode": 403}}
+
+    class Fake:
+        def get_object(self, **_kwargs):
+            raise Denied("forbidden")
+
+    monkeypatch.setattr(mf, "client", lambda: Fake())
+    probe = mf.probe_available("minute", end_date=datetime.date(2026, 8, 19))
+    assert probe.reason == "authorization_or_entitlement_failure"
+    assert "403" in probe.detail
+
+
+def test_options_flow_target_absence_returns_degraded_without_writing(monkeypatch, tmp_path):
+    import scripts.build_options_flow as bof
+    probe = bof.mf.AvailabilityProbe(None, "upstream_file_absent", "8 objects not published")
+    monkeypatch.setattr(bof.mf, "probe_available", lambda *_a, **_k: probe)
+    monkeypatch.setattr(bof.config, "ROOT", tmp_path)
+    outcome = bof.build(target_session=datetime.date(2026, 8, 19))
+    assert not outcome.ok and outcome.reason == "upstream_file_absent"
+    assert not (tmp_path / "site" / "flow" / "index.json").exists()
+
+
+def test_options_flow_empty_or_malformed_target_is_failure(monkeypatch):
+    import engine.options_universe as universe
+    import scripts.build_options_flow as bof
+    target = datetime.date(2026, 8, 19)
+    monkeypatch.setattr(bof.mf, "probe_available",
+                        lambda *_a, **_k: bof.mf.AvailabilityProbe(target, "available"))
+    monkeypatch.setattr(bof.mf, "fetch_aggs", lambda *_a, **_k: pd.DataFrame())
+    monkeypatch.setattr(universe, "gex_symbols", lambda *_a, **_k: ["SPY"])
+    monkeypatch.setattr(bof.config, "load", lambda: {"polygon": {"gex": {}},
+                                                     "storage": {"site_dir": "site"}})
+    outcome = bof.build(target_session=target)
+    assert not outcome.ok and outcome.reason == "minute_input_empty_or_malformed"
+
+
+def test_options_flow_nonempty_target_publication_is_success(monkeypatch, tmp_path):
+    import engine.options_universe as universe
+    import scripts.build_options_flow as bof
+    target = datetime.date(2026, 8, 19)
+    minute = pd.DataFrame({"underlying": ["SPY"]})
+    greeks = pd.DataFrame({
+        "underlying": ["SPY"], "ticker": ["O:SPY260821C00600000"],
+        "gamma": [0.1], "delta": [0.5], "oi": [100], "spot": [600.0],
+        "is_call": [True], "K": [600.0], "expiry": [pd.Timestamp("2026-08-21")],
+    })
+    payload = {
+        "available": True, "asof": str(target), "spot": 600.0,
+        "net_premium_mn": 1.0, "signed_pc": 0.8, "zerodte_share": 0.2,
+        "dealer": {"gamma_flow_bn": 0.1, "delta_flow_mn": 2.0},
+        "positioning": {"available": False}, "new_positions": {"fresh_contracts": 1},
+        "verdict": {"tone": "pos~", "en": "Call-leaning"},
+    }
+    monkeypatch.setattr(bof.mf, "probe_available",
+                        lambda *_a, **_k: bof.mf.AvailabilityProbe(target, "available"))
+    monkeypatch.setattr(bof.mf, "fetch_aggs", lambda *_a, **_k: minute)
+    monkeypatch.setattr(universe, "gex_symbols", lambda *_a, **_k: ["SPY"])
+    monkeypatch.setattr(bof, "_chain_pair", lambda _d: (greeks, target, None, None))
+    monkeypatch.setattr(bof.of, "build_flow", lambda *_a, **_k: payload)
+    monkeypatch.setattr(bof.store, "upsert", lambda *_a, **_k: None)
+    monkeypatch.setattr(bof.config, "ROOT", tmp_path)
+    monkeypatch.setattr(bof.config, "load", lambda: {"polygon": {"gex": {}},
+                                                     "storage": {"site_dir": "site"}})
+    outcome = bof.build(target_session=target)
+    assert outcome.ok and len(outcome.rows) == 1
+    manifest = json.loads((tmp_path / "site" / "flow" / "index.json").read_text())
+    assert manifest["asof"] == str(target) and len(manifest["rows"]) == 1
+
+
+def test_options_flow_main_annotates_unexpected_producer_exception(monkeypatch, capsys):
+    import scripts.build_options_flow as bof
+    monkeypatch.setattr(bof, "build", lambda: (_ for _ in ()).throw(RuntimeError("disk failed")))
+    assert bof.main() != 0
+    assert "producer_exception" in capsys.readouterr().err
 
 
 # ── 5. _discover_dates: file-selection priority ───────────────────────────────

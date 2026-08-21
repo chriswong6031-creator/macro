@@ -333,13 +333,21 @@ def test_folded_pack_commands_fold_to_one_line_and_carry_no_comment_marker() -> 
 def test_ci_gate_exists_needs_both_jobs_and_always_runs() -> None:
     """`ci-gate` is the only check name that concludes on every non-closed event.
 
-    It must depend on BOTH jobs (a `needs` on `ci-plan` alone would let it conclude
-    green while packs were still running) and it must be `always()`, because the
-    situation it exists for — a skipped or failed `ci-pack` — is precisely the one
-    where a default-conditioned job would not run at all and publish nothing.
+    It must depend on ci-plan and ci-pack (a `needs` on `ci-plan` alone would let
+    it conclude green while packs were still running) and it must be `always()`,
+    because the situation it exists for — a skipped or failed `ci-pack` — is
+    precisely the one where a default-conditioned job would not run at all and
+    publish nothing.
+
+    `contract-delta` (2026-08-19) joined the `needs` list for the same reason:
+    its own verdict must be able to fail ci-gate, which GitHub Actions requires
+    a `needs` edge for. It does not change the reasoning above — it is fenced to
+    `pull_request` events on its own `if:` and reads `skipped` as OK (see
+    scripts/check_contract_delta.py and the "enforce contract-delta verdict"
+    step below), so it never turns a proven-no-work or non-PR run red.
     """
     job = _job("ci-gate")
-    assert sorted(job["needs"]) == ["ci-pack", "ci-plan"]
+    assert sorted(job["needs"]) == ["ci-pack", "ci-plan", "contract-delta"]
     assert job["if"].startswith("always()")
 
 

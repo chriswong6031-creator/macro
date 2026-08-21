@@ -438,15 +438,12 @@ SESSION_WORKTREE_MARKERS: tuple[tuple[str, ...], ...] = (
 )
 
 
-def is_session_worktree(root: Path = ROOT) -> bool:
-    """True when ``root`` is a linked worktree sitting under a session root.
+def path_under_session_root(root: Path) -> bool:
+    """True when ``root`` sits under a session worktree folder.
 
-    Linked-worktree is necessary but not sufficient. ``auto`` must refuse the
-    operator's designated local project root even though that folder is a
-    linked worktree of the occupied primary.
+    Used by ``is_session_worktree`` and by ``mint_session_worktree`` before the
+    destination exists (so there is not yet a linked checkout to inspect).
     """
-    if not is_linked_worktree(root):
-        return False
     try:
         parts = Path(root).resolve().parts
     except OSError:
@@ -457,6 +454,16 @@ def is_session_worktree(root: Path = ROOT) -> bool:
             if parts[index:index + length] == marker:
                 return True
     return False
+
+
+def is_session_worktree(root: Path = ROOT) -> bool:
+    """True when ``root`` is a linked worktree sitting under a session root.
+
+    Linked-worktree is necessary but not sufficient. ``auto`` must refuse the
+    operator's designated local project root even though that folder is a
+    linked worktree of the occupied primary.
+    """
+    return is_linked_worktree(root) and path_under_session_root(root)
 
 
 def _cone_included(root: Path) -> list[str]:
@@ -589,6 +596,93 @@ def auto_profile(root: Path = ROOT, config_path: Path | None = None) -> int:
         return 0
 
     return apply_profile(root, exclude_dirs=list(profile["exclude_dirs"]))
+
+
+def is_aionui_temp(path: Path) -> bool:
+    """True for an AionUi ``grok-temp-*`` conversation workspace.
+
+    AionUi launches ``grok agent stdio`` in an empty directory under
+    ``~/.aionui/conversations/.../grok-temp-<id>``. That folder is not a git
+    worktree, so the project-local SessionStart hook never loads and ``auto``
+    has nothing to convert. The Grok SessionStart hook uses this predicate to
+    mint a sparse linked worktree instead.
+    """
+    try:
+        parts = Path(path).resolve().parts
+    except OSError:
+        parts = Path(path).parts
+    if ".aionui" not in parts or "conversations" not in parts:
+        return False
+    return any(part.startswith("grok-temp-") for part in parts)
+
+
+def mint_session_worktree(
+    donor: Path,
+    dest: Path,
+    *,
+    branch: str,
+    base: str = "refs/remotes/origin/main",
+    fetch: bool = True,
+    config_path: Path | None = None,
+) -> int:
+    """Mint a sparse linked worktree the way Claude's WorktreeCreate hook does.
+
+    ``donor`` is any checkout of this repository (the operator local root is
+    the usual one). ``dest`` must sit under a session worktree root. Uses
+    ``git worktree add --no-checkout`` so the heavy generated trees are never
+    materialized, then applies the configured sparse profile and populates
+    only the included paths.
+    """
+    dest = Path(dest)
+    donor = Path(donor)
+    if not path_under_session_root(dest):
+        print("worktree-sparse: mint refused — destination is not under a "
+              "session worktree root", file=sys.stderr)
+        return 1
+
+    profile = load_profile(config_path or donor / "config" / "sparse_worktree.json")
+    if not profile["enabled"]:
+        print("worktree-sparse: mint disabled by config/sparse_worktree.json")
+        return 0
+
+    if dest.exists():
+        if is_linked_worktree(dest):
+            print(f"worktree-sparse: reusing existing worktree {dest}")
+            return auto_profile(dest, config_path or dest / "config" / "sparse_worktree.json")
+        print(f"worktree-sparse: mint refused — {dest} exists and is not a worktree",
+              file=sys.stderr)
+        return 1
+
+    if fetch:
+        if _git(donor, "fetch", "--prune", "origin", "main") is None:
+            print("worktree-sparse: warning — fetch origin main failed; "
+                  "minting from the donor's current refs", file=sys.stderr)
+    if _git(donor, "rev-parse", "--verify", base) is None:
+        print(f"worktree-sparse: {base} missing; minting from HEAD")
+        base = "HEAD"
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    created = _git(
+        donor, "worktree", "add", "--no-checkout", "-b", branch, str(dest), base,
+    )
+    if created is None:
+        print(f"worktree-sparse: `git worktree add` failed for {dest}", file=sys.stderr)
+        return 1
+    if apply_profile(dest, exclude_dirs=list(profile["exclude_dirs"])) != 0:
+        subprocess.run(
+            ("git", "-C", str(donor), "worktree", "remove", "--force", "--", str(dest)),
+            capture_output=True, check=False,
+        )
+        return 1
+    if _git(dest, "read-tree", "-mu", "HEAD") is None:
+        print("worktree-sparse: `git read-tree -mu HEAD` failed", file=sys.stderr)
+        subprocess.run(
+            ("git", "-C", str(donor), "worktree", "remove", "--force", "--", str(dest)),
+            capture_output=True, check=False,
+        )
+        return 1
+    print(f"worktree-sparse: minted sparse worktree at {dest}")
+    return 0
 
 
 def disable_profile(root: Path = ROOT, timeout: float = ADD_TIMEOUT_S) -> int:

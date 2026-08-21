@@ -86,6 +86,12 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     # them here takes ~14-19 min off the asia shard's serial phase (china_filings alone
     # is ~6.5 min healthy / ~5 min burning CNInfo 504s).
     "china_filings": "cninfo",             # www.cninfo.com.cn hisAnnouncement pagination
+    # P1-R1: zero-network DERIVED plane (reads china_filings' parquet only); cninfo
+    # membership is an ORDERING boundary, not a host user — it runs serially inside the
+    # cninfo group immediately AFTER china_filings' same-run refresh (registry order
+    # china_filings → china_visits → china_irm), which keeps the CNInfo concurrent
+    # optimization intact and adds nothing to the serial C0 lane.
+    "china_visits": "cninfo",
     # W1 CNH interaction/sell-side planes — pure requests + bs4, verified no akshare.
     # Each carries its own ≥1 rps pacing and a ~100s wall-clock guard.
     "china_irm": "cninfo",                 # irm.cninfo.com.cn — org-polite: serializes behind china_filings' www.cninfo.com.cn pagination
@@ -245,6 +251,7 @@ def all_adapters() -> dict:
         ("china_news_wire", "collectors.china_news_wire", "ChinaNewsWireAdapter"),  # multi-source flash-wire daily tone -> media-sentiment index (engine/china_news_intel.py)
         ("china_official_corpora", "collectors.china_official_corpora", "ChinaOfficialCorporaAdapter"),  # official policy corpora (State Council/PBOC/NDRC/CSRC/People's Daily) -> date-keyed parquet + qbus; feeds the Communiqué Diff (engine/communique_diff.py, W4 B1)
         ("china_filings", "collectors.china_filings", "ChinaFilingsAdapter"),  # CNInfo A-share filing metadata (SSE+SZSE): investigation/inquiry/earnings/restructuring events → data/china_filings/filings.parquet (W3.2)
+        ("china_visits", "collectors.china_visits", "ChinaVisitsAdapter"),    # P1 institutional-visit tape, DERIVED from china_filings (category=='institutional_visit', RIGHTS-0 §1/§10) — no second CNInfo ingester; same-run derivation (P1-R1) — runs in the cninfo host group immediately after china_filings, consuming the store that refresh just wrote; `--only china_visits` still derives over the committed store → data/china_visits/visits.parquet. Registry order china_filings → china_visits → china_irm is LOAD-BEARING (pinned by tests/test_china_visits_collector.py::test_registry_order_and_concurrent_membership) — do not reorder these three specs.
         ("china_irm", "collectors.china_irm", "ChinaIrmAdapter"),              # 互动易 investor Q&A drip (W1 CNH; SZ-half of the board universe, ≤40 names/night cursor) + market-wide Q&A velocity
         ("china_einteraction", "collectors.china_einteraction", "ChinaEInteractionAdapter"),  # 上证e互动 investor Q&A drip (W1 CNH; SS-half, uid map cached/resumable)
         ("china_reports", "collectors.china_reports", "ChinaReportsAdapter"),  # sell-side rating/TP/EPS revision stream + daily aggregates (W1 CNH; per-report EVENT tape, distinct from china_analyst's consensus snapshot)

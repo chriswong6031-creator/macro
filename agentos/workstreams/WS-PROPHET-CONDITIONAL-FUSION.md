@@ -40,6 +40,7 @@ decisions:
   - DEC:US-SHADOW-ACCRUES-UNDER-ITS-OWN-COLUMN-FAMILY
   - DEC:W3-PROSPECTIVE-SAMPLE-IGNORES-GENERIC-BACKFILL
   - DEC:W3-FIRST-DURABLE-COMPLETE-OBSERVATION-WINS
+  - DEC:FUSION-C2-TEST-ERA-IS-REGISTERED-VINTAGE
 discoveries:
   - DSC:CHAMPION-BASELINE-COLUMNS-CARRY-THE-CHALLENGER
   - DSC:PROPHET-BOARD-ASOF-IS-ECONOMIC-SESSION-ID
@@ -72,6 +73,9 @@ landmines:
     survivorship-clean panel later reversed — never cite it as a live GO."
   - "The two 'memories of the board' disagree: candidates store vs snapshots.jsonl buy
     lanes differ by 5 names on 2026-08-07 — arena joins key on the snapshot."
+  - "C2 vintage-bound tests rebuild from the REGISTERED era pin (date, ticker, horizon),
+    never from the grown live ledger and never via an as-of cutoff.
+    DEC:FUSION-C2-TEST-ERA-IS-REGISTERED-VINTAGE. Do not re-stamp report.json to go green."
 do_not_redo:
   - "Do not re-litigate C1's adoption against the w7 gate — DEC:PROPHET-FUSION-IS-THE-
     CANONICAL-US-RANKER settled it on 2026-08-15. The gate still governs C2-C5."

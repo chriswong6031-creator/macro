@@ -35,45 +35,89 @@ waves:
       Historical corpus remains mandatory before any alpha promotion.
   - id: D1
     title: Production truth and signed-in product rescue
-    status: in_progress
+    status: done
     pr: [5836, 5885, 5882, 5856]
     depends_on: [D0R]
     next_action: >
-      Sol D1 acceptance review. Desk rescue, stale-base fence, FATAL=1
-      candidate proof, and PIT-safe agency labels are on main and served.
-      Do not start D2. Do not merge #5424. Do not re-baseline.
-      Do not treat Radar 48 as new alpha.
+      Done — Sol accepted D1 (D2 was authorized and executed on top of it).
+      Radar 48 remains coverage truth, never new alpha.
   - id: D1.1
     title: Agency semantic recovery
     status: done
     pr: [5856]
     depends_on: [D1]
     next_action: >
-      D1.1F live-proven on #5856. P00032 renders Department of Defense /
-      Defense Information Systems Agency from receipt-backed PIT evidence.
-      Do not start D2. Do not merge #5424.
+      Done/accepted. D1.1F live-proven on #5856. P00032 renders Department of
+      Defense / Defense Information Systems Agency from receipt-backed PIT
+      evidence.
   - id: D2
     title: Defense Identity Atlas vertical slice
     status: done
-    pr: [5932]
+    pr: [5932, 5997, 6004, 6008]
     depends_on: [D1.1]
     next_action: >
-      D2 shipped defense21-v1 (digest 93171ba0e6f7…) + the Identity Atlas
-      artifact/product on #5932 with two-round opus adversarial review.
+      Done — accepted after the D2P production close (2026-08-20 entitled-
+      journey proof; see
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-20-d2p-production-close.md).
+      The operational closure chain is FOUR PRs, not #5932 alone: #5932
+      (defense21-v1 graph, digest 93171ba0e6f7…, + Identity Atlas
+      artifact/product, two-round opus adversarial review), #5997
+      (republish-proof heal: distinct-id census + ledger-issuance-frontier
+      discriminator), #6004 (candidate-accounting closure: B2 non-issuance
+      manifest refused on evidence; vintage-bound excuse self-retired), #6008
+      (unissued candidates self-retire via nightly; B2 manifest unloadable).
       Five BWXT chains reviewed; MMACD85DT5D5 / PM7HBL2KDX46 / URJ3CAC3MSH8
       refused (see DEC:D2-BWXT-EXACT-ADMISSION-GE-STAYS-UNRESOLVED); GE and
       SPR stay not_asserted by design. Remaining mapping_needed pilots: GE.
-      Return to Sol before D3. Do not merge #5424 (superseded for BWXT;
-      close-or-recut is a Sol call). Graph republish law:
-      DSC:GRAPH-REPUBLISH-RETIMES-EVERY-CANDIDATE-CLOCK.
+      #5424 is superseded by defense21-v1 — do not merge, revive, or recut.
+      Graph republish law: DSC:GRAPH-REPUBLISH-RETIMES-EVERY-CANDIDATE-CLOCK.
+      Reliability follow-up (NOT a D3 prerequisite): the publisher-vintage
+      lag has no alarm — nothing notices a publisher that stops firing
+      (DSC:GOVREV-PUBLISHER-VINTAGE-LAG-IS-THE-ONLY-TRACE).
   - id: D3
     title: Temporal event v3 and Change Tape
-    status: todo
+    status: done
+    pr: [6048, 6059]
     depends_on: [D2]
+    next_action: >
+      Done — Sol authorized 2026-08-20 and the bounded charter shipped the
+      same day: typed rail failure_state (source_unavailable /
+      projection_missing) emitted by the workspace read-model, dual-clock
+      tape rows + Late-discovery chip, inspector Clocks block with the
+      NAMED-NULL source-publication row, receipt-bound before/after +
+      successor line from prior_source_identity, budget mode's eternal
+      "loading" retired. Additive only — event contract stays v2
+      (DEC:D3-TEMPORAL-V3-IS-ADDITIVE); frozen spec
+      research/defense_intelligence/DEFENSE_D3_TEMPORAL_CONTRACT_AND_CHANGE_TAPE_SPEC.md.
+      Opus adversarial review found a real blocker (the first cut destroyed
+      the already-working module PROJECTION_MISSING verdict) — repaired same
+      PR chain: the real module's HTTP-receipt status is authoritative, the
+      typed fallback applies only when no module exists. #6059 fitted the
+      page under a ratcheted 296 KiB raw-byte budget after the D3 markup
+      left 65 bytes of headroom. All four D3 families production-proven
+      (browser proof 2026-08-20). ACCEPTED by Sol 2026-08-20 (D4 authorized
+      on the D3 close).
   - id: D4
     title: Company financial truth bridge
-    status: todo
+    status: done
+    pr: [6123]
     depends_on: [D3]
+    next_action: >
+      Done — shipped and live 2026-08-20 (merge b5548ece927d) under Sol's
+      IRDM-only charter. Owner preflight: case A on the v1 context plane
+      (GET /api/company-intelligence/IRDM serves company_intelligence_
+      context.v1 live; event_workspace.v1 stays AAPL-only; DEC:D4-COMPANY-
+      RAIL-CONSUMES-CI-V1-CONTEXT). Bridge renders GOVERNMENT FACT (P00032,
+      transaction receipt by content_sha256) / COMPANY TRUTH
+      (earnings_history-lineage fields only, fail-closed typed unavailable)
+      / COMPARISON fixed not_comparable with no ratio node / RESEARCH
+      QUESTION. 27-test hostile suite on a committed P00032 fixture in the
+      MERGE-BINDING gate:code job govrev-company-bridge. Opus review found
+      the suite would have shipped dark (gate:data holding pen) and a
+      wrong-receipt link — repaired pre-merge, probes pinned as tests.
+      Page fence unchanged (baked 296,693 <= 303,104). Awaiting Sol
+      acceptance; D5 unauthorized. Residual: one entitled production
+      eyeball (operator-side; all inputs individually live-proven).
   - id: D5
     title: Program, mission, capability, and product graph
     status: todo
@@ -81,12 +125,14 @@ waves:
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
-  - "Reviewed recipient graph on HEAD is defense21-v1 as of #5932 (defense19 rows byte-preserved). #5424 defense20-v1 is still open, superseded for BWXT evidence, and must not be treated as live or merged wholesale."
+  - "Reviewed recipient graph on HEAD is defense21-v1 as of #5932 (defense19 rows byte-preserved). #5424 defense20-v1 is CLOSED/superseded by defense21-v1 — do not merge, revive, or recut it (Sol, D4 charter 2026-08-20)."
   - "government-revenue-live can build-and-prove a projection and still fail to publish; prior live projection stays authoritative until commit complete evidence projection lands (run 32112383533 did not publish; run 32177051815 did)."
   - "Radar 48 is the coherent published queue, not 26 new awards. Ledger line_count is append-only audit and is not required to equal Radar."
   - "Session worktrees are sparse by default. Never write into omitted data/ — that truncates the committed artifact."
   - "DNR:LAW-REVIEWED-MANIFEST-CENSUS — a reviewed recipient graph cannot re-time itself."
   - "SPR is not a live issuer (Boeing close 2025-12-08; absent from Stock Identity universe)."
+  - "government_revenue.html has a ratcheted RAW_HTML_BUDGET_BYTES fence (296 KiB since #6059). Template growth ships INLINE in the page — bake locally (scripts/build_government_revenue._write_site_projection) before merging template edits, or the shared render lane fails at the govrev step. D3's first cut left 65 bytes of headroom."
+  - "The real createGovernmentRevenueBudget module EXISTS in government-revenue-dossiers.js (BSD grep hides it — use grep -a). Its HTTP-receipt status is authoritative; the typed freshness.budget fallback applies only when no module loaded."
 do_not_redo:
   - "Do not start original D0. V2/D0 remain historical records only."
   - "Do not implement collectors, schemas, UI, Neural Web, or Prophet members in D0R."
@@ -95,7 +141,7 @@ do_not_redo:
   - "Do not grant rank, gate, size, entry, or execution authority."
   - "Do not treat SPR as a live golden ticker."
   - "Do not invent 60 VERIFIED_CASE primaries."
-  - "Do not fold #5424 into D1 or D1.1. Do not start D2 until Sol accepts D1."
+  - "Do not merge, revive, or recut #5424 — superseded by defense21-v1 (#5932). Do not start D3 until Sol authorizes it."
   - "Do not rewrite collector awarding_agency hashes to flatten nested USAspending objects."
   - "Do not assert Candidate Radar must equal historical 22. Prove cookie = bearer = UI for the live content_id."
   - "Do not hand-advance the candidate ledger. Do not change recipient mappings to make counts nicer."
@@ -117,8 +163,14 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  Sol D1 acceptance review. Do not start Atlas/D2. Do not merge #5424.
-  Do not re-baseline.
+  Sol D4 acceptance review. D0R/D1/D1.1/D2/D3 done and accepted; D4 shipped
+  and live 2026-08-20 (#6123, merge b5548ece927d) — GovRev P00032 beside
+  the canonical owner's live IRDM context packet, comparison closed
+  (not_comparable, null ratio) with no lawful denominator asserted. D5 is
+  unauthorized. #5424 is closed/superseded by defense21-v1. Do not
+  re-baseline. Publisher-vintage alarm remains a reliability follow-up;
+  new candidate follow-up: fixture-freeze the D2/D3 law suites out of the
+  unrun-government-revenue holding pen (advisory-only today).
 ---
 
 ## Context
@@ -130,11 +182,19 @@ D1 entitled-desk rescue merged as #5836. D1 closure on main: #5885 append-only
 stale-base fence (`694c081975bf`), #5882 `GOVREV_CANDIDATE_PROOF_FATAL=1`
 (`120f77a7e8e4`), #5856 PIT-safe receipt-strict agency (`19b009fceca6`).
 Live run 32177051815 on `19b009fceca6` built, proved, and published.
-Production checkout `f3a62c71833` serves bundle `grw2-825a2706c83452624a62f682`,
-candidate `grcq1-3d14df91367241b9392818ca`, Radar/cookie/bearer 48, mapping
-backlog 21, graph `defense19-v1`. P00032 is DoD / DISA, obligation
-18416666.66, effective 2026-05-12, known_at 2026-08-12, late discovery, IRDM.
 Canonical D1 contract:
 `research/defense_intelligence/DEFENSE_D1_PRODUCTION_TRUTH_AND_PRODUCT_RESCUE_HANDOFF.md`.
-Latest proof: `agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-18-d1-closure.md`.
-D1 is not accepted until Sol's review. D2 stays unauthorized.
+
+D2 closed operationally on #5932 + #5997 + #6004 + #6008 and was
+production-proven 2026-08-20 (D2P): production checkout `f69f224c972` serves
+graph `recipient-graph:reviewed:2026-08-19:defense21-v1` (digest
+`93171ba0e6f7286de02e0918ef85be7db80df3f6b7fd8eb3d47e7e8e4adfa843`), atlas
+`gria1-4eeaa88c8cbabfaa800fc67d` (graph_status ready), bundle
+`grw2-a0f56dbca09da2a4d0363ca1`, candidate queue
+`grcq1-3ff9ecc9633f3d667840f43f` (62), mapping backlog 21; candidate
+accounting 124 emitted lines / 70 distinct ids / 8 quarantined (2026-08-10
+manifest) / 62 queued / 0 unaccounted. P00032 stays DoD / DISA, obligation
+18416666.66, effective 2026-05-12, known_at 2026-08-12, late discovery, IRDM.
+Proof record:
+`agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-20-d2p-production-close.md`.
+D3 stays unauthorized pending Sol review.

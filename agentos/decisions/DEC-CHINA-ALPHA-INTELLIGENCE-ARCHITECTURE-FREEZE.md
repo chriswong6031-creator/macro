@@ -26,8 +26,18 @@ answer: >
   ¥0 outlay; CSG/EIA source maps #5944/#5946; twelve-family priors #5949],
   completion law hardened [merge = BUILT_NOT_PROVEN; a real production
   receipt = done], a dated capability ledger added at §1.10, and the PR-0D
-  commission authored with an identity-only boundary. The freeze becomes
-  effective at Sol's final review of the revised head.) Frozen boundaries: four-model
+  commission authored with an identity-only boundary. FREEZE EFFECTIVE
+  2026-08-20: Sol issued post-merge final freeze acceptance — GO — against
+  the accepted architecture-reconciliation receipt, main commit
+  49533d59b16076630ccd7d8bf48307f658db61da (the #6035 post-merge authority
+  reconciliation squash). The #5953 premature merge remains a process
+  incident, never the authorization event; the
+  DSC:CHINA-ALPHA-HOLD-MERGE-INCIDENT hold protocol [label-disarm +
+  auto-merge-disable + DRAFT conversion + hold comment] remains binding for
+  every future held PR. Execution starts from current origin/main — main
+  having advanced past the receipt through unrelated activity does not
+  reopen the freeze. Reopening any frozen boundary requires a future
+  falsifier or a superseding DEC.) Frozen boundaries: four-model
   architecture (Reality / Professional Belief / Market Recognition /
   Prophet-Path — never collapsed into one score); cn_prophet_v4 remains live
   champion with the new China rank arena shadow-only (C1–C5 challenger ladder);
@@ -83,6 +93,7 @@ evidence:
   - "Census returns: A0 #5912, B0 #5911, D0 #5913, E0 #5914, F0 #5915"
   - "GROK-CN wave verdicts adopted as freeze inputs: CN-A #5945 (Tushare rights matrix, DSC:TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT), CN-B #5947 (resolver NO-BUY, DSC:PRC-REGISTRY-VENDORS-BLOCK-OVERSEAS), CN-C #5944 (CSG pilot spec, DSC:CN-CSG-HTML-VS-SGCC-ECP-SPA), CN-D #5946 (EIA project-code join, DSC:CN-PROJECT-CODE-LIVES-ON-LOCAL-EIA), CN-E #5951 (no seat purchase, DEC:CN-NO-SUPPLY-CHAIN-SEAT-PURCHASE), CN-F #5950 (Bio+EV clocks only, DSC:CN-F-ONLY-BIO-AND-EV-PIN-UNIQUE-CLOCKS), CN-G #5949 (twelve-family prior table)"
   - "Sol freeze-review verdict 2026-08-19: architecture thesis APPROVED; #5953 freeze artifact REVISE — six blockers, all resolved in the §0-ter revision pass"
+  - "Sol post-merge final freeze acceptance 2026-08-20: GO — accepted reconciliation receipt = main 49533d59b16076630ccd7d8bf48307f658db61da (#6035); activation = PR-0B + RIGHTS-0 + PR-0D dispatched in parallel; P1 strictly behind the RIGHTS-0 visit-source verdict"
   - "GMI→Data OS identity bridge merged: #5894; PIT replay harness merged: #5902"
   - "cn_prophet_v4 live champion since 2026-08-15; canonical plane engine/china_prophet_shadow.py → data/china_prophet_rank/candidates.parquet; ruler engine/china_standout_track.py; board authority engine/china_board_rank.py"
   - "Standing kills honored: DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT, DNR:KILL-CN-SUPPLY-ABSORPTION, DNR:KILL-ASHARE-SUBSECTOR-GATE, DNR:KILL-OWNERSHIP-BREAKAWAY, DNR:KILL-SPONSORSHIP-SCORE, DNR:KILL-POSITIONING-FUSION, DNR:KILL-FUSED-COMPOSITE, DNR:KILL-LLM-ORIGINATION, DNR:KILL-PROPHET-POP-MERGE"

@@ -1,48 +1,33 @@
 {
-  "appended": 2,
-  "asof": "2026-08-18",
+  "appended": 0,
+  "asof": "2026-08-19",
   "candidates": {
-    "R": 0,
-    "T": 4,
+    "R": 1,
+    "T": 8,
     "W": 46
   },
   "deduped": {
-    "R": 0,
-    "T": 2,
+    "R": 1,
+    "T": 8,
     "W": 46
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "asof": "2026-08-19",
-      "consulted": true,
-      "n_keys": 27,
-      "n_themes": 18,
-      "ok": true,
-      "reason": null,
-      "source": "site/basketdata/foresight_cascade.json"
+      "consulted": false
     },
     "ignition": {
       "coil_min_sessions": 293,
-      "consulted": true,
-      "null_reasons": {
-        "no_bar_on_flag_date": 11,
-        "ohlcv_absent": 9
-      },
+      "consulted": false,
+      "null_reasons": {},
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {
-        "Energy Traditional": {
-          "theme_thrust_frac": 0.3103,
-          "theme_thrust_reason": null,
-          "theme_thrust_state": "quiet"
-        }
-      },
+      "themes_read": {},
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 29,
-      "tickers_read": 49
+      "tickers_ok": 0,
+      "tickers_read": 0
     },
     "keys": [
       "relay_count_3d",
@@ -60,21 +45,10 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": true,
-      "high_lookback": 63,
-      "members_indexed": 157,
-      "n_covered": 108,
-      "reason": null,
-      "window_sessions": 21
+      "consulted": false
     },
     "turnover": {
-      "consulted": true,
-      "last_session": "2026-08-18",
-      "n_tickers": 1543,
-      "ok": true,
-      "reason": null,
-      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
-      "window_max": 60
+      "consulted": false
     }
   },
   "feature_source_w": {
@@ -103,10 +77,7 @@
   },
   "flag_tickers": {
     "R": [],
-    "T": [
-      "WMB",
-      "XEL"
-    ],
+    "T": [],
     "W": []
   },
   "n_universe": 1495,
@@ -115,41 +86,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-19 10:34:24",
-  "runtime_s": 108.2,
+  "run_utc": "2026-08-20 13:24:23",
+  "runtime_s": 150.8,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": -1,
+    "age_days": 0,
     "asof": "2026-08-19",
-    "n_members": 157,
+    "n_members": 192,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 2.655,
+        "emerging_score": 2.441,
         "rank": 1,
-        "theme": "Energy Traditional"
-      },
-      {
-        "emerging_score": 2.603,
-        "rank": 2,
         "theme": "Commodities Agriculture"
       },
       {
-        "emerging_score": 2.057,
+        "emerging_score": 2.279,
+        "rank": 2,
+        "theme": "Commodities Metals"
+      },
+      {
+        "emerging_score": 1.903,
         "rank": 3,
-        "theme": "Commodities Energy"
+        "theme": "Healthcare & Biotech"
       },
       {
-        "emerging_score": 1.474,
+        "emerging_score": 1.771,
         "rank": 4,
-        "theme": "Real Estate & REITs"
+        "theme": "Energy Traditional"
       },
       {
-        "emerging_score": 1.39,
+        "emerging_score": 1.503,
         "rank": 5,
-        "theme": "Space Tech"
+        "theme": "Healthy Food & Nutrition"
       }
     ]
   },
@@ -159,18 +130,18 @@
       "3B"
     ],
     "aligned": 46,
-    "asof_max": "2026-08-18",
-    "asof_mismatch": 9,
-    "asof_run": "2026-08-18",
+    "asof_max": "2026-08-19",
+    "asof_mismatch": 0,
+    "asof_run": "2026-08-19",
     "evaluated": 712,
     "fresh": 46,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 19.0,
+    "runtime_s": 31.3,
     "skipped": 5,
     "source": "baskets/membership.json",
-    "state_turn": 104,
+    "state_turn": 103,
     "universe_n": 717
   }
 }

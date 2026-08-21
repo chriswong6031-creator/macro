@@ -14,6 +14,15 @@ from pathlib import Path
 import pytest
 
 from scripts.ci_scope_dependencies import suite_dependency_closure
+# Plain package import (not the importlib-from-path PACK below) so this test and
+# scripts/check_contract_delta.py's own import of the same names resolve to the
+# identical `scripts.run_ci_pack` module object — see
+# test_curated_exclusive_closure_findings_is_the_shared_implementation in
+# tests/test_contract_delta.py, which pins that identity.
+from scripts.run_ci_pack import (
+    curated_exclusive_closure_findings,
+    inferred_as_if_not_exclusive,
+)
 import yaml
 
 
@@ -1367,6 +1376,82 @@ def _never_execute(*args: object, **kwargs: object) -> int:
     raise AssertionError("execute_pack must not be reached on this path")
 
 
+DATA_HEALTH = ROOT / ".github" / "workflows" / "data-health.yml"
+
+
+def test_every_data_health_trigger_can_actually_mint_a_plan() -> None:
+    """The lane that took the data-gated jobs off the merge gate must be able to run.
+
+    ``data-health.yml`` fires on ``workflow_run`` (daily completed) and on a
+    13:30 UTC ``schedule`` backstop, and neither passes ``--role``/``--event``,
+    so both resolve to role ``main`` from the ambient ``GITHUB_EVENT_NAME``.
+    Until 2026-08-19 the supported set held only ``main/workflow_dispatch``, so
+    both raised ManifestError BEFORE any legacy job ran: run 32262001614
+    (schedule) died ``main/schedule is unsupported``, exit 2, in all six packs.
+    That is not a fail-closed that protects anything — it silently emptied the
+    only lane that grades the 74 ``gate: data`` jobs against a freshly written
+    data tree, which is the entire promise W2 made when it moved them off ci.yml.
+
+    This asserts the workflow's OWN trigger list, so adding a trigger there
+    without teaching the planner reds here instead of going quiet in production.
+    """
+    workflow = _yaml(DATA_HEALTH)
+    triggers = set((workflow.get("on") or workflow.get(True)).keys())
+    assert triggers, "data-health.yml must declare triggers"
+    for event in sorted(triggers):
+        assert ("main", event) in PACK.SUPPORTED_PLAN_ROLE_EVENTS, (
+            f"data-health.yml fires on {event!r} but the planner refuses "
+            f"main/{event}; that pack dies at exit 2 before a single job runs"
+        )
+
+
+def test_a_main_role_plan_from_a_data_health_trigger_carries_every_data_job(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Widening the transport must not have relaxed what ``main`` MEANS.
+
+    Both new events describe the shape ``main`` already required — a whole-tree
+    run at one checked-out SHA with no diff — so the plan they mint must be the
+    same full ``gate: data`` suite the manual dispatch minted, and it must carry
+    ``house-law-registry``: the guard whose input (the newest
+    ``data/symbol_directory`` snapshot) only ever moves on a nightly commit.
+    """
+    monkeypatch.setenv("GITHUB_SHA", "0" * 40)
+    monkeypatch.delenv("CI_SEMANTIC_ROLE", raising=False)
+    monkeypatch.delenv("CI_TESTED_TREE_SHA", raising=False)
+    monkeypatch.delenv("CI_SUBJECT_HEAD_SHA", raising=False)
+    monkeypatch.delenv("CI_BASE_SHA", raising=False)
+
+    plans = {}
+    for event in ("workflow_dispatch", "workflow_run", "schedule"):
+        monkeypatch.setenv("GITHUB_EVENT_NAME", event)
+        plan = PACK.plan_from_workflow(
+            MANIFEST, changed_from=None, scope_mode="active",
+            pack_count=6, gate="data",
+        )
+        assert plan.role == "main" and plan.event == event
+        assert plan.changed_from is None
+        plans[event] = {job for pack in plan.pack_jobs for job in pack}
+
+    assert "house-law-registry" in plans["schedule"]
+    assert plans["schedule"] == plans["workflow_dispatch"] == plans["workflow_run"]
+
+
+def test_the_supported_role_event_set_stays_closed() -> None:
+    """An unreasoned combination must still fail closed, both minting and consuming.
+
+    The widening above is two named transports for a role whose substance is
+    enforced elsewhere; it is not permission for any event to plan anything.
+    """
+    assert ("main", "push") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    assert ("pr_head", "schedule") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    assert ("pr_head", "workflow_dispatch") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    # One constant, both gates: the planner and the authoritative-plan reader
+    # cannot drift into disagreeing about what a legal plan is.
+    source = (ROOT / "scripts" / "run_ci_pack.py").read_text()
+    assert source.count("(role, event) not in SUPPORTED_PLAN_ROLE_EVENTS") == 2
+
+
 def test_plan_is_deterministic() -> None:
     first = _full_plan()
     second = _full_plan()
@@ -2165,11 +2250,20 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     # This job set was EXACTLY {"ci-pack"} until Wave B (2026-08-11) added the
     # planner and the aggregate. Pinned as a subset, not as equality: the
     # invariant this file defends is that CI does not fan back out (86 VMs, one
-    # per legacy suite), so a FOURTH job here is the regression — while the exact
-    # ci-plan/ci-gate shape belongs to tests/test_ci_plan_workflow.py, which owns
-    # it positively. Two suites asserting the same equality would only mean two
-    # places to edit, and the weaker one would win.
-    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "ci-gate"}
+    # per legacy suite), so a job-per-legacy-suite regression here is the thing
+    # this guards against — while the exact ci-plan/ci-gate shape belongs to
+    # tests/test_ci_plan_workflow.py, which owns it positively. Two suites
+    # asserting the same equality would only mean two places to edit, and the
+    # weaker one would win.
+    #
+    # `contract-delta` (2026-08-19) joined the allowed set deliberately: it is
+    # one small, purposeful, path-independent job — same shape as ci-plan/
+    # ci-pack/ci-gate, not a per-suite fan-out job — that re-derives two
+    # CI-contract finding classes ci-pack's own path scoping cannot reach (see
+    # scripts/check_contract_delta.py's module docstring). Adding it here is
+    # the same class of change as ci-plan/ci-gate joining originally; it does
+    # not reopen the 86-VM fan-out this test exists to prevent.
+    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "contract-delta", "ci-gate"}
     assert "ci-pack" in workflow["jobs"]
     pack = workflow["jobs"]["ci-pack"]
     # The pack COUNT tunes (2 -> 4 -> 12 as hosted capacity increased); the
@@ -2348,7 +2442,12 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
         if str(step.get("uses", "")).startswith("actions/checkout@")
     )
     assert checkout["with"]["filter"] == "blob:none"
-    assert checkout["with"]["fetch-depth"] == 0
+    # Commit 09abde056620 "fix(ci): contain fence checkout to proof surface"
+    # bounded fence-pack's checkout to fetch-depth 256 + sparse-checkout
+    # (~74.7k -> 4,994 files, production-proven). The exact shape (paths,
+    # cone-mode) is canonically owned by test_fence_checkout_contract.py;
+    # this assertion only keeps this file from drifting back to the old pin.
+    assert checkout["with"]["fetch-depth"] == 256
 
     publish = next(step for step in pack["steps"] if step.get("id") == "publish")
     assert publish["if"] == "always()"
@@ -2657,6 +2756,29 @@ def test_workspace_runtime_contracts_can_start_the_ci_that_validates_them() -> N
 # ---------------------------------------------------------------------------
 
 CURATED_EXCLUSIVE = {
+    # 2026-08-20. `regwall-boundary` carries tests/test_regwall_json_gate.py out
+    # of `tier-gate` (`gate: data`, never packed by ci.yml) and onto the merge
+    # gate. It is curated for COVERAGE, not to narrow: the suite names its two
+    # subjects — app/deploy/Caddyfile and config/site_access.yml — as segment
+    # literals (REPO_ROOT / "app" / "deploy" / "Caddyfile"), and no segment
+    # holds a `/`, so inference cannot see them and the job would not re-run on
+    # the Caddyfile edit that is the whole regression class. Exclusive is what
+    # makes the declared paths replace inference instead of riding a whole-tree
+    # fallback tier. Sole probe delta: templates/index.html +1, from the five
+    # public documents test_public_pages_fetch_nothing_under_paid_prefixes
+    # actually reads; the other two probes are unmoved.
+    "regwall-boundary",
+    # 2026-08-19 wave 5. #6027 moved #5984's three dossier suites into
+    # conviction-profile — the right call, because their #6023 home
+    # (unrun-publish-ops) is `gate: data`, which ci.yml never plans, so they
+    # were named by a run: step and still dark on every PR. But those suites
+    # import scripts/build_ticker_pages.py and check_stock_dossier_integrity.py,
+    # which rglob templates/ and site/, so the job inherited whole-tree
+    # fallback claims and newly matched templates/index.html — 128 > the 127
+    # ceiling below. Curated rather than paid for: its 59 concrete owned files
+    # plus the two templates build_ticker_pages loads by name. Probe returns
+    # to 127; weight and pack ceilings unmoved.
+    "conviction-profile",
     "unrun-government-revenue-grader",
     "biocatalyst-worker",
     "biocatalyst-serving",
@@ -2723,15 +2845,39 @@ CURATED_EXCLUSIVE = {
     # test and enumeration would drop them silently.
     "cn-standout-audit",
     "coiled-mtf-anchor-era",
+    # 2026-08-20 main-red-repair. serving-observability (#6115, Sentry arm for
+    # the macro-api serving tier) shipped with no scope at all. Its own subject
+    # (_release()'s `subprocess.run(["git", ...])` for the deployed SHA) is an
+    # opaque subprocess call scope inference cannot see through, so it fell back
+    # to SUBPROCESS_ROOTS — including site/** and templates/** — and matched
+    # every ordinary templates/index.html PR (128 > the 127 ceiling below).
+    # Curated at the source: its true subject is exactly app/observability.py
+    # and tests/test_observability_sentry.py, both declared and covered.
+    "serving-observability",
+    # 2026-08-20 main-red-repair (same wave). govrev-company-bridge (D4
+    # Company Financial Truth Bridge) also shipped with no scope. Its suite's
+    # own `node` subprocess call (tests/test_government_revenue_company_bridge.py:197)
+    # resolves to `subprocess roots=templates,tests`, widening to templates/**
+    # and matching every ordinary templates/index.html PR. Curated at the
+    # source: its true subject is the frozen fixture plus the two template
+    # files its own header comment already documents as the only reads.
+    "govrev-company-bridge",
+    # #6117 (records(dislocation): P0-A1 price-blind candidate harvest) shipped
+    # its own `scope: exclusive` declaration pre-curated — registered here so
+    # this file's pin does not drift from the manifest (no fix required, the
+    # job's own paths: already cover its full closure).
+    "dislocation-p0-a1-blind-harvest",
 }
 
 
 def _inferred_as_if_not_exclusive() -> dict[str, PACK.LegacyJob]:
-    """What inference WOULD derive for the curated jobs, exclusivity aside."""
-    jobs = [PACK.replace(job, exclusive=False)
-            for job in PACK.load_legacy_jobs(MANIFEST)]
-    inferred, _ = PACK.infer_job_scopes(jobs)
-    return {job.job_id: job for job in inferred}
+    """What inference WOULD derive for the curated jobs, exclusivity aside.
+
+    Thin wrapper over the shared ``scripts.run_ci_pack.inferred_as_if_not_exclusive``
+    — kept so the other call sites below need no change; the computation itself now
+    lives in exactly one place (see the import block above).
+    """
+    return inferred_as_if_not_exclusive(MANIFEST)
 
 
 def test_the_curated_exclusive_set_is_actually_declared() -> None:
@@ -2748,17 +2894,14 @@ def test_curated_exclusive_scopes_cover_their_own_import_closure() -> None:
     when its own dependency changes, and reports green forever. The manifest's
     load-time coverage audit only reaches the paths a job's COMMANDS name; the
     transitive import closure is one layer deeper and is checked here.
+
+    The computation itself is ``scripts.run_ci_pack.curated_exclusive_closure_findings``
+    — the same function ``scripts/check_contract_delta.py`` calls for the head side
+    of its PR-vs-base delta, so this test and that gate can never quietly diverge on
+    what "covered" means.
     """
-    would_infer = _inferred_as_if_not_exclusive()
-    declared = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)
-                if job.exclusive}
-    misses: dict[str, list[str]] = {}
-    for job_id, job in sorted(declared.items()):
-        closure = [p for p in would_infer[job_id].paths if "*" not in p]
-        assert closure, f"{job_id} derives no closure — curation cannot be checked"
-        uncovered = [p for p in closure if not PACK._matches_any(job.paths, p)]
-        if uncovered:
-            misses[job_id] = uncovered[:8]
+    misses_full = curated_exclusive_closure_findings(MANIFEST)
+    misses = {job_id: list(paths[:8]) for job_id, paths in misses_full.items()}
     assert not misses, (
         "curated exclusive scope(s) no longer cover their own import closure:\n  "
         + "\n  ".join(f"{k}: {v}" for k, v in misses.items())
@@ -2910,12 +3053,46 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     ceilings are again NOT moved: the 18 weight-seconds removed here are two
     orders of magnitude below the ~1,550 a fallback-tier regression costs,
     and packs were 9 on every probe before and after.
+
+    JOB COUNT RE-BASED +1 on engine/prophet/plan_book.py only (120, wave 6,
+    2026-08-20 main-red-repair). Measured against the last lane-green main
+    commit (d972484c6474): baseline selects 119/195 jobs for this probe;
+    the current manifest selects 120/196, and diffing the two selected-job
+    NAME sets (not just counts) isolates the entire delta to one job,
+    ``reference-integrity`` — present in both manifests, but newly matching
+    this probe. #6122 (XPV2-SC-R3A, commit f4305a4485f6) added a third step
+    to that already-existing job (`tests/test_xpv2_sector_r3_fixture.py`,
+    over the frozen Sector Central fixture), and that suite's import closure
+    carries several ``dynamic import`` / ``subprocess invocation``
+    ambiguities several hops deep (engine/alert_triage.py,
+    engine/codex_lane/runner.py) that resolve to CODE_SCAN_ROOTS/
+    SUBPROCESS_ROOTS, which include ``engine/**`` — hence the new match on
+    engine/prophet/plan_book.py specifically, not anything Sector Central or
+    Prophet actually share.
+
+    This is NOT curated away like serving-observability's smear (2026-08-20
+    main-red-repair, same wave) or curated like dataos-identity-seams was
+    REJECTED (wave 2 note above): reference-integrity's own header comment
+    documents it as deliberately unscoped — "Unscoped on purpose: L7/L8/L9
+    are namespace and coupling closures over mockups/design_system,
+    research/migration_packets and the page registry, so a diff that adds a
+    file anywhere in those roots must re-run this" — a whole-tree RIG V1
+    reference-integrity gate that already existed pre-#6122 and is meant to
+    fire broadly. Declaring `scope: exclusive` on a job whose real purpose is
+    "catch reference laundering anywhere in these wide namespaces" would
+    either lie about coverage or degenerate straight back to the fallback
+    breadth it already carries — the identical failure mode
+    dataos-identity-seams was rejected for. One extra match on an
+    already-broad, already-reviewed, always-on gate costs nothing over the
+    ~1,550 weight-seconds/3-pack fallback-regression bound this file guards;
+    ratcheting the ceiling is the correct-risk response, not curation.
+    WEIGHT and PACK ceilings stay unmoved (5,600 / 9 packs, unchanged).
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
         ("templates/index.html", 127, 5_800),
         ("scripts/build_free_content.py", 124, 5_600),
-        ("engine/prophet/plan_book.py", 119, 5_600),
+        ("engine/prophet/plan_book.py", 120, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)

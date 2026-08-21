@@ -25,8 +25,10 @@ What is actually being pinned, and why each one has bitten:
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 import subprocess
+import sys
 import tomllib
 from pathlib import Path
 
@@ -43,10 +45,19 @@ CODEX_HOOKS_PATH = ROOT / ".codex" / "hooks.json"
 CURSOR_HOOKS_PATH = ROOT / ".cursor" / "hooks.json"
 CURSOR_WORKTREES_PATH = ROOT / ".cursor" / "worktrees.json"
 GROK_HOOKS_PATH = ROOT / ".grok" / "hooks" / "sparse-worktree.json"
+GROK_SESSION_START_PATH = ROOT / ".grok" / "hooks" / "session_start_sparse.py"
 
 
 def _load_hook():
     spec = importlib.util.spec_from_file_location("worktree_create_sparse", HOOK_PATH)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_grok_hook():
+    spec = importlib.util.spec_from_file_location(
+        "session_start_sparse", GROK_SESSION_START_PATH)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -418,8 +429,78 @@ def test_grok_session_start_applies_the_same_sparse_profile():
     settings = json.loads(GROK_HOOKS_PATH.read_text(encoding="utf-8"))
     entries = settings["hooks"]["SessionStart"]
     commands = [hook["command"] for entry in entries for hook in entry["hooks"]]
-    assert any("scripts/worktree_sparse.py" in command and command.endswith(" auto")
+    assert any(".grok/hooks/session_start_sparse.py" in command
                for command in commands), commands
+
+
+def test_aionui_temp_predicate_matches_only_grok_temp_workspaces(tmp_path: Path):
+    aion = tmp_path / ".aionui" / "conversations" / "users" / "u1" / "2026" / "08" / "18" / "grok-temp-abcd1234"
+    aion.mkdir(parents=True)
+    assert WS.is_aionui_temp(aion) is True
+    other = tmp_path / ".aionui" / "conversations" / "users" / "u1" / "notes"
+    other.mkdir(parents=True)
+    assert WS.is_aionui_temp(other) is False
+    assert WS.is_aionui_temp(tmp_path / "macro-main") is False
+
+
+def test_mint_session_worktree_is_sparse_and_skips_heavy_trees(
+        synthetic_repo: Path, tmp_path: Path):
+    dest = tmp_path / ".grok" / "worktrees" / "grok-temp-test"
+    assert WS.mint_session_worktree(
+        synthetic_repo, dest, branch="grok/grok-temp-test",
+        base="HEAD", fetch=False,
+    ) == 0
+    assert WS.is_session_worktree(dest) is True
+    assert WS.missing_dirs(dest) == ["data", "mockups", "site"]
+    assert (dest / "engine" / "keep.txt").is_file()
+    assert not (dest / "data").exists()
+    assert _git(dest, "status", "--porcelain") == ""
+
+
+def test_mint_session_worktree_refuses_a_path_outside_session_roots(
+        synthetic_repo: Path, tmp_path: Path):
+    dest = tmp_path / "not-a-session-root" / "tree"
+    assert WS.mint_session_worktree(
+        synthetic_repo, dest, branch="grok/outside",
+        base="HEAD", fetch=False,
+    ) == 1
+    assert not dest.exists()
+
+
+def test_mint_session_worktree_reuses_an_existing_sparse_tree(
+        synthetic_repo: Path, tmp_path: Path):
+    dest = tmp_path / ".grok" / "worktrees" / "grok-temp-reuse"
+    assert WS.mint_session_worktree(
+        synthetic_repo, dest, branch="grok/grok-temp-reuse",
+        base="HEAD", fetch=False,
+    ) == 0
+    _git(dest, "sparse-checkout", "add", "--", "site")
+    assert (dest / "site" / "asset.js").is_file()
+    assert WS.mint_session_worktree(
+        synthetic_repo, dest, branch="grok/grok-temp-reuse",
+        base="HEAD", fetch=False,
+    ) == 0
+    assert (dest / "site" / "asset.js").is_file(), (
+        "a second SessionStart must not undo an explicit add site"
+    )
+
+
+def test_grok_session_start_hook_mints_from_an_aionui_temp(
+        synthetic_repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    hook = _load_grok_hook()
+    temp = (
+        tmp_path / ".aionui" / "conversations" / "users" / "u"
+        / "2026" / "08" / "18" / "grok-temp-hooktest"
+    )
+    temp.mkdir(parents=True)
+    monkeypatch.setattr(hook, "discover_donor", lambda cwd: synthetic_repo)
+    monkeypatch.setattr(hook, "_load_ws", lambda donor: WS)
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps({"cwd": str(temp)})))
+    assert hook.main() == 0
+    dest = synthetic_repo / ".grok" / "worktrees" / "grok-temp-hooktest"
+    assert dest.is_dir()
+    assert (temp / ".session-worktree").read_text(encoding="utf-8").strip() == str(dest)
+    assert WS.missing_dirs(dest) == ["data", "mockups", "site"]
 
 
 def test_hook_name_validation_rejects_path_traversal():

@@ -1473,6 +1473,118 @@ def find_descendant_pass_witness(
     return None
 
 
+# How many ancestry-valid main artifacts must be readable before their job
+# inventory is allowed to answer "no main run will ever emit this job".
+# One artifact is a sample, not an inventory: a single truncated or partially
+# uploaded main artifact would otherwise declare every job unclearable at once.
+MIN_INVENTORY_ARTIFACTS = 2
+
+
+@dataclass(frozen=True)
+class MainRoleInventory:
+    """What the main role actually plans, read off main's own artifacts.
+
+    ``job_ids`` is the union of ``logical_job_id`` across the readable
+    main-role artifacts, i.e. the jobs main is ELIGIBLE to report on.  It is
+    deliberately a union rather than an intersection: a job main ran even once
+    in the window can produce a descendant PASS later, so it is clearable.
+    """
+
+    job_ids: frozenset[str]
+    artifacts: int
+    descendant_artifacts: int
+
+
+def main_role_job_inventory(
+    old_merge_sha: str,
+    candidates: Iterable[Mapping[str, Any] | LoadedSemanticEvidence],
+    is_ancestor: Callable[[str, str], bool],
+    *,
+    max_candidates: int = 12,
+) -> MainRoleInventory:
+    """The job set main can report on, from the same bounded artifact window.
+
+    Semantic ELIGIBILITY is role-dependent, and that is the asymmetry this
+    exists to expose.  ``ci.yml`` plans the merge gate with ``--gate code`` and
+    ``data-health.yml`` runs the ``gate: data`` jobs on its own lane, which
+    emits no main-role semantic evidence at all.  A pull-request head planned
+    before that split (2026-08-19, W2) therefore froze blocking units for
+    ``gate: data`` jobs — measured on PR #5936's head run 32223270543,
+    ``house-law-registry`` and ``signal-contract`` — that
+    ``find_descendant_pass_witness`` can never match, because no main artifact
+    will ever carry those ``logical_job_id``s again.  Waiting for one is not
+    slow; it is impossible.
+
+    The ancestry rule is the witness search's own rule, so "eligible" here
+    means eligible on the exact main history that could have healed this merge,
+    never on some unrelated older lane.
+    """
+    job_ids: set[str] = set()
+    artifacts = 0
+    descendant_artifacts = 0
+    for index, item in enumerate(candidates):
+        if index >= max_candidates:
+            break
+        evidence = item.evidence if isinstance(item, LoadedSemanticEvidence) else item
+        if not isinstance(evidence, Mapping):
+            continue
+        try:
+            validated = _validate_evidence(evidence)
+        except SemanticProofError:
+            continue
+        if validated["role"] != "main":
+            continue
+        artifacts += 1
+        if not is_ancestor(old_merge_sha, validated["tested_tree_sha"]):
+            continue
+        descendant_artifacts += 1
+        for job in validated["jobs"]:
+            job_ids.add(job["logical_job_id"])
+    return MainRoleInventory(
+        frozenset(job_ids), artifacts, descendant_artifacts
+    )
+
+
+def unclearable_units(
+    units: Iterable[SemanticUnit],
+    inventory: MainRoleInventory,
+    *,
+    min_descendant_artifacts: int = MIN_INVENTORY_ARTIFACTS,
+) -> tuple[SemanticUnit, ...]:
+    """Units no future main run can ever clear, or nothing at all.
+
+    Fail-closed by construction: with too few readable descendant artifacts, or
+    with an empty inventory, the answer is "unknown", which is spelled as the
+    empty tuple — the unit stays blocking exactly as it did before this
+    function existed.  Only a job main demonstrably plans WITHOUT this job in
+    it can retire a blocking unit.
+    """
+    if inventory.descendant_artifacts < min_descendant_artifacts:
+        return ()
+    if not inventory.job_ids:
+        return ()
+    return tuple(
+        unit for unit in units if unit.logical_job_id not in inventory.job_ids
+    )
+
+
+def format_main_eligibility(
+    unit: SemanticUnit, inventory: MainRoleInventory
+) -> str:
+    """One clause telling a session whether waiting on this unit can help."""
+    if inventory.descendant_artifacts < MIN_INVENTORY_ARTIFACTS:
+        state = "unknown"
+    elif unit.logical_job_id in inventory.job_ids:
+        state = "yes"
+    else:
+        state = "no"
+    return (
+        f"main-eligible={state} "
+        f"({inventory.descendant_artifacts} ancestry-valid main artifact(s) of "
+        f"{inventory.artifacts} read, {len(inventory.job_ids)} job(s) in main's "
+        "eligible inventory)"
+    )
+
 def _write_json(path: Path, value: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")

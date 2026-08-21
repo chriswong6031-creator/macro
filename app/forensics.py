@@ -723,4 +723,113 @@ def attested_history_private_not_found(
     raise _private_error(404, "attested history route not found")
 
 
+# ---------------------------------------------------------------------------
+# FIF-2A: financial query endpoint
+# ---------------------------------------------------------------------------
+
+
+def _financial_query_provider():
+    """Test seam: monkeypatch this to inject a fixture provider in tests."""
+    from engine.fundamental_forensics.query_service import (  # noqa: PLC0415
+        UnavailableFinancialQueryProvider,
+    )
+
+    return UnavailableFinancialQueryProvider()
+
+
+def _financial_query_max_request_bytes() -> int:
+    from engine.fundamental_forensics.query_service import MAX_REQUEST_BYTES  # noqa: PLC0415
+
+    return MAX_REQUEST_BYTES
+
+
+async def _read_bounded_request_body(request: Request, max_bytes: int) -> bytes:
+    """Read at most ``max_bytes + 1`` from the ASGI stream, then 413.
+
+    Content-Length is an early cheap rejection only.  A missing or lying
+    Content-Length cannot force a full-body buffer.
+    """
+    buf = bytearray()
+    limit = max_bytes + 1
+    async for chunk in request.stream():
+        if not chunk:
+            continue
+        remaining = limit - len(buf)
+        if remaining <= 0:
+            raise _private_error(413, "request body exceeds bound")
+        if len(chunk) > remaining:
+            buf.extend(chunk[:remaining])
+            raise _private_error(413, "request body exceeds bound")
+        buf.extend(chunk)
+        if len(buf) > max_bytes:
+            raise _private_error(413, "request body exceeds bound")
+    return bytes(buf)
+
+
+@router.api_route(
+    "/api/forensics/v1/financial/query",
+    methods=["GET", "PUT", "PATCH", "DELETE", "HEAD"],
+)
+def financial_query_method_not_allowed(
+    response: Response,
+    _user: dict = Depends(require_site_full_user),
+) -> None:
+    """Auth first, then a private 405. Starlette's default 405 has no no-store policy."""
+    del response
+    raise _private_error(405, "method not allowed")
+
+
+@router.post("/api/forensics/v1/financial/query")
+async def financial_query(
+    request: Request,
+    _user: dict = Depends(require_site_full_user),
+) -> Response:
+    """Execute a bounded bitemporal metric query and return the governed MetricMatrix receipt."""
+    from engine.fundamental_forensics.query_service import (  # noqa: PLC0415
+        FinancialQueryAdmissionError,
+        FinancialQueryUnavailableError,
+        execute_financial_query,
+    )
+
+    max_request_bytes = _financial_query_max_request_bytes()
+
+    cl_header = request.headers.get("content-length")
+    if cl_header is not None:
+        try:
+            cl_int = int(cl_header)
+        except (ValueError, TypeError):
+            raise _private_error(400, "malformed request")
+        if cl_int < 0:
+            raise _private_error(400, "malformed request")
+        if cl_int > max_request_bytes:
+            raise _private_error(413, "request body exceeds bound")
+
+    content_type = request.headers.get("content-type", "")
+    media_type = content_type.split(";")[0].strip().casefold()
+    if media_type != "application/json":
+        raise _private_error(400, "malformed request")
+
+    body = await _read_bounded_request_body(request, max_request_bytes)
+
+    provider = _financial_query_provider()
+
+    try:
+        result = execute_financial_query(body=body, provider=provider)
+    except FinancialQueryAdmissionError as exc:
+        raise _private_error(exc.status_code, exc.detail) from None
+    except FinancialQueryUnavailableError:
+        raise _private_error(503, "financial query temporarily unavailable") from None
+    except Exception:  # noqa: BLE001
+        raise _private_error(503, "financial query temporarily unavailable") from None
+
+    return Response(
+        content=result.body,
+        media_type="application/json",
+        headers={
+            **_PRIVATE_HEADERS,
+            "X-FIF-Response-SHA256": result.sha256,
+        },
+    )
+
+
 __all__ = ["router", "require_site_full_user"]

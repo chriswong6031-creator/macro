@@ -288,6 +288,50 @@ PIP_INSTALL_RE = re.compile(
 # express carries an explicit allowance above its 112s share. These are
 # estimates from a measured shape, not a second hosted run — replace them from
 # a green post-split run's step timings when one exists.
+# Which (role, event) pairs may mint or consume a semantic plan.
+#
+# ``role`` carries the SUBSTANCE and is enforced separately below: ``pr_head``
+# requires an exact changed-file inventory and ``changed_from == base_sha``;
+# ``main`` requires one identical tree/head/base SHA and no ``changed_from``.
+# The event is the TRANSPORT, and it is allowlisted rather than ignored so a
+# combination nobody has reasoned about fails closed instead of silently
+# planning something unintended.
+#
+# The two ``main`` triggers below the dispatch were added 2026-08-19 because
+# leaving them out did not fail closed in the useful sense — it left the lane
+# that runs every ``gate: data`` job unable to run ANY of them. ``data-health.yml``
+# (W2 of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md) took the
+# 74 data-gated jobs off the merge gate on the promise that this lane would still
+# grade them AFTER the nightly writes the tree they assert against. It fires on
+# ``workflow_run`` (daily completed) and on a 13:30 UTC ``schedule`` backstop,
+# and both resolve role ``main`` — so both raised ManifestError before a single
+# legacy job ran. Measured: run 32262001614 (schedule, 2026-08-19T14:06Z) died
+# with ``main/schedule is unsupported``, exit 2, in all SIX packs; the
+# ``workflow_run`` run 32246816331 only escaped the same fate because its packs
+# were skipped by the daily-success condition. The single execution that lane
+# achieved all day came from a manual ``workflow_dispatch``, and it graded the
+# universe against ``data/symbol_directory/snapshots/2026-08-10.parquet`` — nine
+# days stale, because the 2026-08-19 snapshot (6f3fd8b3ea1f) was not committed
+# until 12:16Z, after it. The schedule that exists to catch exactly that ordering
+# is the one that could not start.
+#
+# Both events describe the same shape ``main`` already means: a whole-tree run at
+# one checked-out SHA with no diff. Nothing about the substance is relaxed here —
+# the ``role == "main"`` invariants still reject a plan that is not that shape.
+# The set stays CLOSED; ``push`` is deliberately absent (no gating workflow uses
+# it, and ci.yml has no push trigger).
+#
+# ``ci_semantic_proof._identity`` keeps its OWN, narrower pair set on purpose —
+# do not "unify" it with this one. That gate also asserts ``workflow == "ci"``:
+# it judges merge-gate proofs, and a data-health plan is not one. Widening it
+# would let a non-gating lane's plan pose as authority for a merge.
+SUPPORTED_PLAN_ROLE_EVENTS = frozenset({
+    ("pr_head", "pull_request"),
+    ("main", "workflow_dispatch"),
+    ("main", "workflow_run"),
+    ("main", "schedule"),
+})
+
 PACK_TARGET_SECONDS = 600
 OBSERVED_COMMAND_SECONDS = {
     "engine-render-guards": 860,
@@ -1372,6 +1416,48 @@ def load_legacy_jobs(path: Path, *, gate: str | None = None) -> list[LegacyJob]:
     return legacy
 
 
+def inferred_as_if_not_exclusive(manifest_path: Path) -> dict[str, LegacyJob]:
+    """What inference WOULD derive for every job, exclusivity aside.
+
+    Canonical home for a computation that used to live only as a local helper in
+    ``tests/test_ci_pack.py``. Two callers now share this single copy: that test
+    (``test_curated_exclusive_scopes_cover_their_own_import_closure`` and its
+    siblings) and ``scripts/check_contract_delta.py``'s PR-vs-base contract-delta
+    gate. Neither may keep a private re-derivation — see
+    ``curated_exclusive_closure_findings`` below for why that matters.
+    """
+    jobs = [replace(job, exclusive=False) for job in load_legacy_jobs(manifest_path)]
+    inferred, _note = infer_job_scopes(jobs)
+    return {job.job_id: job for job in inferred}
+
+
+def curated_exclusive_closure_findings(manifest_path: Path) -> dict[str, tuple[str, ...]]:
+    """``{job_id: uncovered closure paths}`` for every ``scope: exclusive`` job.
+
+    This IS ``tests/test_ci_pack.py::
+    test_curated_exclusive_scopes_cover_their_own_import_closure``'s check, factored
+    out so that test and ``scripts/check_contract_delta.py`` import one copy instead
+    of drifting apart. ``scope: exclusive`` REPLACES inference, so the declared
+    ``paths:`` are the whole scope; a closure file matched by no declared pattern is
+    a job that silently stops running when its own dependency changes.
+
+    Raises ``ValueError`` if a curated job derives no closure at all (curation
+    cannot be checked) — the same hard-fail posture the test's own ``assert``
+    took before this factoring, preserved so behavior does not change.
+    """
+    would_infer = inferred_as_if_not_exclusive(manifest_path)
+    declared = {job.job_id: job for job in load_legacy_jobs(manifest_path) if job.exclusive}
+    misses: dict[str, tuple[str, ...]] = {}
+    for job_id, job in sorted(declared.items()):
+        closure = [p for p in would_infer[job_id].paths if "*" not in p]
+        if not closure:
+            raise ValueError(f"{job_id} derives no closure — curation cannot be checked")
+        uncovered = tuple(p for p in closure if not _matches_any(job.paths, p))
+        if uncovered:
+            misses[job_id] = uncovered
+    return misses
+
+
 def partition_jobs(jobs: Iterable[LegacyJob], pack_count: int) -> list[list[LegacyJob]]:
     """Greedily balance stable jobs across ``pack_count`` packs."""
     if pack_count < 1:
@@ -1710,10 +1796,7 @@ def build_plan(
     role = role or os.environ.get("CI_SEMANTIC_ROLE") or (
         "pr_head" if event == "pull_request" else "main"
     )
-    if (role, event) not in {
-        ("pr_head", "pull_request"),
-        ("main", "workflow_dispatch"),
-    }:
+    if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS:
         raise ManifestError(
             f"semantic plan role/event combination {role}/{event} is unsupported"
         )
@@ -2017,10 +2100,7 @@ def load_authoritative_plan(
     if role not in {"pr_head", "main"}:
         raise ManifestError("authoritative plan role must be pr_head or main")
     event = required_text("event")
-    if (role, event) not in {
-        ("pr_head", "pull_request"),
-        ("main", "workflow_dispatch"),
-    }:
+    if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS:
         raise ManifestError(
             f"authoritative plan role/event combination {role}/{event} is unsupported"
         )

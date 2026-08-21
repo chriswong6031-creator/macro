@@ -1005,7 +1005,7 @@ fi
 API_RESTART_CONFIRMED=0
 API_RESTART_NEEDED=0
 # BEGIN MACRO_API_RESTART_TRIGGER
-if [ "$API_UNIT_UPDATED" -eq 1 ] || ! mm_api_fence_marker_ready || grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_playback|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|portfolio_changes|portfolio_vocab|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/prophet_lab/.*\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|commercial_path|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' <<<"$CHANGED" || \
+if [ "$API_UNIT_UPDATED" -eq 1 ] || ! mm_api_fence_marker_ready || grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_playback|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|portfolio_changes|portfolio_vocab|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/prophet_lab/.*\.py|engine/entry_radar/(__init__|contracts|spool)\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|commercial_path|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' <<<"$CHANGED" || \
    [ "$API_DEPS_UPDATED" -eq 1 ]; then
 	API_RESTART_NEEDED=1
 
@@ -1507,6 +1507,51 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 			echo "macro-update: macro-live-prophet.timer could not be enabled" >&2
 	else
 		echo "macro-update: refusing macro-live-prophet unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
+# LIVE BREADTH lane (docs/live_breadth_runbook.md). Own block, same narrow
+# allow-list and self-arming contract as the prophet block above: go-live is a
+# REPO COMMIT, and the unit did not exist when live-setup.sh was last run on the
+# box, so a CHANGED-only trigger would install a timer nobody ever enables and
+# the producer would stay dark exactly as it was before this lane existed.
+#
+# This block is what makes live breadth OWNED. Before it, live-setup.sh armed
+# five lanes and none of them was breadth, while VPS_LIVE_PRIMARY=true disabled
+# the GitHub backstop — so the only repo-managed producer was switched off and
+# its replacement was never installed. An operator re-running live-setup.sh by
+# hand is not ownership; this is.
+#
+# The .service is NEVER restarted: it is a oneshot (`--once --publish`), so a
+# restart would burn a Polygon snapshot out of band, off the windowed schedule
+# and outside the one-snapshot-per-cycle entitlement the lane is built around.
+# Only the timer is (re)armed.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-live-breadth\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-live-breadth.timer ]; }; then
+	BREADTH_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-live-breadth.service"
+		"$APP_DIR/app/deploy/macro-live-breadth.timer"
+	)
+	if systemd-analyze verify "${BREADTH_UNIT_SOURCES[@]}"; then
+		BREADTH_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${BREADTH_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				BREADTH_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$BREADTH_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-live-breadth.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-live-breadth units updated"
+		fi
+		systemctl enable --now macro-live-breadth.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-live-breadth.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-live-breadth unit update — systemd-analyze verify failed" >&2
 	fi
 fi
 

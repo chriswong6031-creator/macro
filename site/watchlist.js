@@ -286,8 +286,11 @@
       return { t: it.t, added: it.added, rec: rec,
                st: rec ? rec.st : null, n: rec ? rec.n : it.t, s: rec ? rec.s : '' };
     });
-    // the active book is a VIEW over the same list — never a different list
-    rows = rows.filter(function (r) { return inBook(r.t); });
+    /* A1A (§11, defect "global hidden filter"): the Portfolio's active-book state used
+       to filter this list too, even though the Watchlist surface shows no book-filter
+       control of its own — a selection made in the Portfolio toolbar silently shortened
+       a DIFFERENT list. Every Watchlist row stays visible regardless of the active book;
+       A1A adds no new Watchlist filter to replace it. */
     if (only) rows = rows.filter(function (r) { return r.st && BUYSOON[r.st]; });
     var ord = blob.order;
     rows.sort(function (a, b) {
@@ -304,11 +307,11 @@
     return rows;
   }
 
-  // counts the FILTERED set — the pill must agree with the cards on screen
+  // counts the FILTERED set — the pill must agree with the cards on screen. A1A: no
+  // book filter applies to the Watchlist (see lgViewItems), so this is every item.
   function lgBuysoonCount() {
     var n = 0;
     blob.items.forEach(function (it) {
-      if (!inBook(it.t)) return;
       var rec = idxBy[it.t]; if (rec && BUYSOON[rec.st]) n++;
     });
     return n;
@@ -368,8 +371,10 @@
       var syms = blob.items.map(function (it) { return it.t; });
       window.FX.update(window.MB ? window.MB.modeledOnly(syms) : syms);
     }
-    // the books strip reads the full list (membership is never filtered by the view)
-    if (window.MB) window.MB.refresh(blob.items.map(function (it) { return it.t; }), null, null);
+    /* A1A (§11): `#bk_strip` is the Portfolio holdings toolbar's books strip and is
+       repainted from Portfolio rows only (portfolio.js calls MB.refresh) — this legacy
+       card renderer has no Portfolio section on its page at all, so it must not touch
+       the strip. Retired the union call (Turn 6 defect "population union"). */
     var rows = lgViewItems();
     // header counter
     var n = lgBuysoonCount();
@@ -714,6 +719,7 @@
   };
 
   function setMode(next, remember) {
+    var enteringPortfolio = (next !== 'watchlists') && mode !== 'portfolio';
     mode = (next === 'watchlists') ? 'watchlists' : 'portfolio';
     document.documentElement.setAttribute('data-ws-mode', mode);
     var modes = el('ws_modes');
@@ -725,19 +731,76 @@
     var p = el('ws_purpose');
     if (p) p.innerHTML = te(PURPOSE[mode][0], PURPOSE[mode][1]);
     if (remember !== false) { try { localStorage.setItem(MODE_KEY, mode); } catch (e) {} }
+    /* A1A Sol blocker 1 (Risk Center residue, root-caused by parallel debugger): a RISK
+       payload derived from window.FX's WATCHLIST universe is retained across a mode
+       switch — nothing invalidates it at the boundary. Two confirmed producer paths
+       (executed browser proofs): PS-absent pushFxWeights() pushing null for a
+       resolved-but-thin Portfolio book falls FX back to manual mode over the retained
+       Watchlist universe; and portfolio.js's rows===null early return never calling
+       pushFxWeights at all, so the LAST-published (Watchlists-mode) RISK payload is
+       simply never invalidated. Both are fixed at their own source (portfolio.js), but
+       the fix here closes the mechanism itself: reset RISK to the same empty default
+       literal setRisk() uses BEFORE render(), so a payload derived in Watchlists mode
+       can never be repainted by renderRiskCenter() once the reader has switched into
+       Portfolio. Asymmetric on purpose — switching BACK into watchlists re-announces
+       via the watchlist render itself, which has its own live publisher. */
+    if (enteringPortfolio) {
+      RISK = { shares: null, concHTML: '', rcTabs: null, labHTML: '',
+               seamItems: null, coverage: null, headline: null };
+      /* N1 (Sol post-review, MAJOR, freeze §5): portfolio.js's OWN
+         BOOK/RISK_SHARES/RISK_COVERED are a SEPARATE latch from this file's RISK
+         — watchlist_risk.js's publish() can hand portfolio.js a WATCHLIST-keyed
+         payload while the reader is on the Watchlists tab (F2's own fix made that
+         payload real rather than the old vacuous no-op). Reset it the same way,
+         at the same boundary, so a stale foreign payload cannot keep painting
+         the Portfolio's own surfaces until the Portfolio's own publisher
+         round-trip lands. */
+      if (window.PF && window.PF.resetBookRisk) window.PF.resetBookRisk();
+    }
+    paintChip();   // the chip shows THIS mode's save state (A1A §13)
     render();
   }
 
   /* The save-state chip is the ONLY disclosure of sync state on this page — the
-     Account Sync panel is deleted. Four states, each literally true:
-       saved   — written through to the account
+     Account Sync panel is deleted. Eight states, each literally true:
+       saved   — a WRITE just landed in the account
+       clean   — a READ succeeded from the account; nothing has been written this
+                 session, so nothing is claimed to have been "saved" (M-d review)
        saving  — a write is in flight
        local   — anonymous; the list lives in this browser and nowhere else
-       offline — the network is unreachable and changes are being kept locally */
+       offline — WATCHLIST ONLY (see scope law below): the network is unreachable
+                 and changes are being kept locally
+       failed       — a Portfolio WRITE was attempted under CLOUD authority and did
+                      not land anywhere (account-scoped copy)
+       failed_local — a Portfolio WRITE was attempted under LOCAL (anonymous)
+                      authority and did not land anywhere (device-storage copy —
+                      F3, Sol post-review: 'failed's account copy is false for a
+                      visitor with no account)
+       unavailable  — the cloud Portfolio cannot be read right now; editing is paused
+
+     A1A (Sol blocker 3, verbatim): "A1A has no authenticated Portfolio outbox, so
+     failed Portfolio writes must never claim they are locally retained or will sync
+     later." `offline`'s copy ("changes kept locally… written through when it comes
+     back") is TRUE for the Watchlist (a real local store with push-through sync) and
+     FALSE for the authenticated Portfolio (no local mirror, no outbox — a failed
+     cloud write is simply lost). SCOPE LAW: `offline` remains a WATCHLIST-only chip
+     word; portfolio.js's write/read authority dispatches `failed`/`failed_local` or
+     `unavailable` for the Portfolio scope, NEVER `offline`.
+     F3 (Sol post-review, MAJOR — proofC_anon_write_failure.py): `failed` and
+     `unavailable` are themselves ACCOUNT-scoped claims ("your account", "your cloud
+     portfolio") — both false for an ANONYMOUS visitor, whose local write failure
+     (Safari private mode, storage quota) is a device problem, not an account one.
+     portfolio.js's dispatch is authority-aware: under local authority, a write
+     failure dispatches `failed_local`, and `unavailable` becomes unreachable
+     (the honest `local` word is dispatched instead — nothing is actually wrong
+     with a cloud account that does not exist for this visitor). */
   var CHIP = {
     saved:   ['is-saved',   'Saved', '已保存',
               'Saved to your Mastermind account. Your list and positions follow you to the Terminal.',
               '已保存到你的 Mastermind 账户。名单和持仓会同步到终端。'],
+    clean:   ['is-saved',   'Up to date', '已是最新',
+              'Loaded from your Mastermind account. Nothing has changed since.',
+              '已从你的 Mastermind 账户加载。此后没有发生变化。'],
     saving:  ['is-saving',  'Saving…', '保存中…',
               'Writing your change through now. Nothing is blocked while it finishes.',
               '正在写入你的更改。写入期间页面照常可用。'],
@@ -746,17 +809,33 @@
               '这份名单只存在这个浏览器里。保存到免费账户后，任何设备都能看到。'],
     offline: ['is-offline', 'Offline — changes kept locally', '离线 · 更改已存在本地',
               'We cannot reach the network right now. Your changes are kept on this device and written through when it comes back.',
-              '当前无法连接网络。更改会先保存在本机，恢复后自动写入。']
+              '当前无法连接网络。更改会先保存在本机，恢复后自动写入。'],
+    failed: ['is-failed', 'Change not saved', '更改未保存',
+             'The write to your account failed — this change was not stored and will not sync on its own. Please retry.',
+             '写入你的账户失败——这笔更改没有被保存，也不会自动同步。请重试。'],
+    failed_local: ['is-failed', 'Change not saved', '更改未保存',
+                   'Saving on this device failed — storage may be full or blocked. The change was not stored.',
+                   '本机保存失败——存储可能已满或被禁用。这笔更改没有被保存。'],
+    unavailable: ['is-unavailable', 'Portfolio unavailable — read-only', '云端持仓暂不可用 · 只读',
+                  'We cannot reach your cloud portfolio right now. Editing is paused so nothing can be silently lost.',
+                  '当前无法连接云端持仓。已暂停编辑，以免更改被悄悄丢失。']
   };
-  var chipState = 'local';
-  function setChip(state) {
+  /* A1A (§13, defect "Save-state crossover"): this ONE chip used to be driven
+     exclusively by Watchlist synchronization (`ws-save`, dispatched by watchstore.js's
+     pushList/pull) — so it could say "Saved" while a Portfolio WRITE had just failed,
+     because nothing about a Portfolio write ever touched it. It now tracks the two
+     collections' states SEPARATELY and paints whichever one the active mode is
+     actually looking at — Portfolio save state comes ONLY from Portfolio write
+     authority (`pf-save`, dispatched by portfolio.js), never from Watchlist sync. */
+  var chipState = { watchlists: 'local', portfolio: 'local' };
+  function setChip(state, scope) {
     if (!CHIP[state]) return;
-    chipState = state;
+    chipState[(scope === 'portfolio') ? 'portfolio' : 'watchlists'] = state;
     paintChip();
   }
   function paintChip() {
     var host = el('ws_savechip'); if (!host) return;
-    var c = CHIP[chipState];
+    var c = CHIP[chipState[mode] || 'local'];
     host.className = 'ws-chip ' + c[0];
     host.setAttribute('data-tip-en', c[3]);
     host.setAttribute('data-tip-zh', c[4]);
@@ -812,7 +891,7 @@
                s: tickerSector(it.t), st: tickerSt(it.t),
                pos: (pos[it.t] == null ? blob.order.length + i : pos[it.t]) };
     });
-    rows = rows.filter(function (r) { return inBook(r.t); });
+    // A1A (§11): no book filter applies to the Watchlist table — see lgViewItems.
     if (wlFilter) {
       var v = wlFilter.toLowerCase();
       rows = rows.filter(function (r) {
@@ -986,7 +1065,7 @@
   function renderWatchlist() {
     var host = el('tbl_wl'); if (!host) return;
     var rows = viewItems();
-    var total = blob.items.filter(function (it) { return inBook(it.t); }).length;
+    var total = blob.items.length;   // A1A: no book filter applies to the Watchlist
 
     if (!blob.items.length) {
       host.innerHTML = '<tbody><tr><td><div class="tbl-empty">' + te(
@@ -1169,26 +1248,38 @@
   function weightsOf(parsed, m) {
     var rows = parsed.rows;
     var anySize = rows.some(function (r) { return r.size != null && r.size > 0; });
+    var allSize = rows.every(function (r) { return r.size != null && r.size > 0; });
     // a price plane only exists for a signed-in session (stockdata.js); anonymously
     // Shares can never become money, so the unit follows the mode, not the wish
     var unit = (m === 'shares' && !window.SD) ? 'shares' : 'money';
     if (m === 'equal' || !anySize) {
       var w = 100 / rows.length;
       return { items: rows.map(function (r) { return { sym: r.t, money: w }; }),
-               assumed: true, unit: 'money' };   // an equal split IS an equal split of money
+               assumed: true, abstain: false, unit: 'money' };   // an equal split IS an equal split of money
     }
-    var tot = 0;
-    rows.forEach(function (r) { tot += (r.size != null && r.size > 0) ? r.size : 0; });
-    var avg = tot / rows.filter(function (r) { return r.size != null && r.size > 0; }).length;
-    var filled = rows.map(function (r) {
-      return { sym: r.t, money: (r.size != null && r.size > 0) ? r.size : avg };
-    });
-    var sum = 0; filled.forEach(function (x) { sum += x.money; });
-    filled.forEach(function (x) { x.money = sum > 0 ? x.money / sum * 100 : 0; });
-    return { items: filled, unit: unit,
-             assumed: !rows.every(function (r) { return r.size != null && r.size > 0; }) };
+    /* A1A (§12, defect "hidden weighting completion"): a row with no size typed used to
+       be filled with the AVERAGE of the sized rows and blended into the SAME
+       distribution as the real ones — exactly the "mix actual values with equal
+       fallback rows" the weighting law forbids. Some sized / some unsized now abstains
+       instead; renderAnonBook shows the mixed-sizing message rather than a fabricated
+       percentage. */
+    if (!allSize) {
+      return { items: rows.map(function (r) { return { sym: r.t, money: null }; }),
+               assumed: true, abstain: true, unit: unit };
+    }
+    var sum = 0;
+    rows.forEach(function (r) { sum += r.size; });
+    var filled = rows.map(function (r) { return { sym: r.t, money: sum > 0 ? r.size / sum * 100 : 0 }; });
+    return { items: filled, unit: unit, assumed: false, abstain: false };
   }
 
+  /* A1A (§11, defect "temporary paste is a Watchlist mutation"): this used to call
+     add(r.t) for every parsed row + pushCloud() — a paste silently mutated the
+     Watchlist and synced that mutation to the account. It is now a labeled temporary
+     hypothetical basket ONLY: no Watchlist add, no pushCloud, no Portfolio write. It
+     cannot alter Portfolio count, market views, risk, or save state (pfCount() reads
+     window.PF, never ENTERED; the save chip is driven by pf-save/ws-save, never by
+     ENTERED either). */
   function runEntry() {
     var box = el('ws_entry_in'); if (!box) return;
     var err = el('ws_entry_err');
@@ -1196,13 +1287,9 @@
     if (err) err.textContent = '';
     if (!parsed.rows.length) { if (err) err.textContent = L('entryNone'); return; }
     if (parsed.rows.length < 2) { if (err) err.textContent = L('entryOne'); return; }
-    var n = 0;
-    parsed.rows.forEach(function (r) { if (add(r.t)) n++; });
     ENTERED = { mode: wmode, parsed: parsed };
     try { localStorage.setItem('mdash.ws.entry.v1', JSON.stringify({ mode: wmode, text: box.value })); } catch (e) {}
-    pushCloud();
     render();
-    if (n) toast(L('added')(n));
   }
   function restoreEntry() {
     // the analysis survives a refresh: the names are in the store already, and the
@@ -1236,10 +1323,48 @@
      facts (packet amendment A9). Everything factor-model-derived — effective bets,
      risk shares, stage reads — is a LOCK SHELL, never a number we do not have.
      "moves like about K bets" is reserved to the signed-in read: it is factor output. */
+  // A1A frozen copy (§11): the temporary basket is labeled everywhere it renders, and
+  // the label is the ONLY thing this function ever writes into `ws_book_eyebrow` for a
+  // pasted/analyzed basket — the canonical signed-in Book Read (portfolio.js) never
+  // calls this, so the two can never collide on the same host.
+  var BASKET_LABEL_EN = 'Temporary basket — not saved to your Portfolio.';
+  var BASKET_LABEL_ZH = '临时组合 —— 未保存到你的持仓。';
+
   function renderAnonBook() {
     var w = weightsOf(ENTERED.parsed, ENTERED.mode);
+    var n = w.items.length;
+
+    var eyebrowEl = el('ws_book_eyebrow');
+    if (eyebrowEl) eyebrowEl.innerHTML = te('This book', '这本账簿') +
+      ' <span class="basket-badge">' + te(BASKET_LABEL_EN, BASKET_LABEL_ZH) + '</span>';
+
+    if (w.abstain) {
+      // A1A (§12): some sized / some unsized -> abstain. No fabricated percentage.
+      var meta0 = el('ws_book_meta');
+      if (meta0) meta0.innerHTML = '<span>' + te(n + ' names', n + ' 只') + '</span>';
+      var sub0 = el('ws_book_sub');
+      if (sub0) sub0.innerHTML = '';
+      var say0 = el('ws_book_say');
+      if (say0) say0.innerHTML = te('Weights not shown — mix of sized and unsized positions.',
+                                     '未显示权重 —— 部分持仓有仓位大小，部分没有。');
+      var because0 = el('ws_book_because');
+      if (because0) because0.innerHTML = '';
+      var stance0 = el('ws_book_stance');
+      if (stance0) stance0.innerHTML = '';
+      if (WS().seam) WS().seam(el('ws_seam'), null);
+      var cov0 = el('ws_book_coverage');
+      if (cov0) cov0.innerHTML = '';
+      renderAnonTable(w.items, w.unit);
+      var head0 = el('ws_gate_head');
+      if (head0) head0.innerHTML = te('The stage read for each of these ' + n + ' names',
+                                       '这 ' + n + ' 只票各自的阶段判断');
+      var att0 = el('ws_sec_att');
+      if (att0) att0.style.display = 'none';
+      renderRiskCenter();
+      return;
+    }
+
     var items = w.items.slice().sort(function (a, b) { return b.money - a.money; });
-    var n = items.length;
 
     // market split — MB.marketOf is a pure suffix derivation and needs no account
     var byMkt = {}, mkts = [];
@@ -1265,8 +1390,7 @@
         te('No sizes given', '未提供仓位金额') + '</span>');
       meta.innerHTML = parts.join('');
     }
-    var eyebrow = el('ws_book_eyebrow');
-    if (eyebrow) eyebrow.innerHTML = te('This book', '这本账簿');
+    // (eyebrow — including the basket badge — was already set once, above)
     var sub = el('ws_book_sub');
     if (sub) sub.innerHTML = w.assumed
       ? te('Equal weighted — you did not give sizes', '等权重 —— 你没有输入仓位大小')
@@ -1381,7 +1505,13 @@
 
   function renderAnonTable(items, unit) {
     var host = el('tbl_pf'); if (!host) return;
-    var filtered = items.filter(function (x) { return inBook(x.sym); });
+    /* S2 (review): this table renders the TEMPORARY BASKET, not the Portfolio — the
+       Portfolio's active-book filter must not touch it (§11, and this is a second
+       reason on top of that law: `items[].money` is computed over the FULL parsed
+       set, so silently dropping a row here made the visible weights stop summing to
+       100 — a .HK name pasted under a US-only active book used to just vanish while
+       its share of the money stayed baked into everyone else's percentage). */
+    var filtered = items;
     var q = (el('pf_q') && el('pf_q').value || '').trim().toLowerCase();
     if (q) filtered = filtered.filter(function (x) { return x.sym.toLowerCase().indexOf(q) >= 0; });
     var head = (unit === 'shares')
@@ -1391,7 +1521,10 @@
       var open = !!openRows[x.sym];
       return '<tr data-t="' + esc(x.sym) + '" aria-expanded="' + (open ? 'true' : 'false') + '">' +
         '<td class="c-sym"><b>' + esc(x.sym) + '</b><span class="co"></span></td>' +
-        '<td class="c-val num"><span class="fig">' + x.money.toFixed(1) + '%</span></td>' +
+        '<td class="c-val num">' + (x.money == null ? dash(
+          'Weights not shown — mix of sized and unsized positions.',
+          '未显示权重 —— 部分持仓有仓位大小，部分没有。'
+        ) : '<span class="fig">' + x.money.toFixed(1) + '%</span>') + '</td>' +
         '<td class="c-day num">' + dayCell() + '</td>' +
         // a pasted list has no cost basis, so this is "—" with a cue, never a
         // fabricated 0.0%
@@ -1561,7 +1694,21 @@
   // ===========================================================================
   function wsState() {
     if (window.MDXAuth && window.MDXAuth.user && window.MDXAuth.user()) return 'signed';
-    if (chipState === 'saved' || chipState === 'saving') return 'signed';
+    if (chipState.watchlists === 'saved' || chipState.watchlists === 'saving') return 'signed';
+    /* S4 (review): `doSave()`/`doRemove()` dispatch 'pf-save':'saving' UNCONDITIONALLY
+       at the start of every write — including an ANONYMOUS local one, before the write
+       even knows its own authority. Reading `chipState.portfolio === 'saving'` alone
+       therefore briefly un-gated the signed-in shell for an anonymous visitor who
+       clicked Save. A Portfolio chip state counts toward 'signed' ONLY when the
+       Portfolio's own read authority is genuinely 'cloud' — never on the chip word
+       alone (the anonymous local store shares the exact same chip vocabulary). */
+    var pf = (window.WatchStore && window.WatchStore.portfolio) || null;
+    var pfAuth = (pf && pf.readState) ? pf.readState().authority : null;
+    if (pfAuth === 'cloud' &&
+        (chipState.portfolio === 'saved' || chipState.portfolio === 'saving' ||
+         chipState.portfolio === 'clean')) {
+      return 'signed';
+    }
     if (window.SD) return 'signed';               // the gated shell only boots for a session
     return ENTERED ? 'anon-analyzed' : 'anon-empty';
   }
@@ -1599,29 +1746,66 @@
     // saved lists, so the count is ABSENT rather than borrowed
     var pfN = el('ws_modes') && el('ws_modes').querySelector('[data-count="pf"]');
     var wlN = el('ws_modes') && el('ws_modes').querySelector('[data-count="wl"]');
-    if (pfN) pfN.textContent = (state === 'anon-empty') ? '' : String(pfCount());
+    if (pfN) {
+      var pfC = pfCount();
+      // `null` = genuinely unknown (A1A §10) — an em dash, never a borrowed/fake number
+      pfN.textContent = (pfC == null) ? '—' : String(pfC);
+    }
     if (wlN) wlN.textContent = (state.indexOf('anon') === 0) ? '' : String(listsCount());
 
     if (mode === 'watchlists') {
-      // Watchlist names feed FX / the books strip ONLY in this mode. Doing it on
-      // every render — including the Portfolio click — is the W4 2026-08-15 chip
-      // drop: FX paints the watchlist as "this book's risk" while holdings is 0
-      // rows, and MB.refresh(watchlist, null) collapses a multi-market strip.
+      // Watchlist names feed FX ONLY in this mode. Doing it on every render —
+      // including the Portfolio click — is the W4 2026-08-15 chip drop: FX paints the
+      // watchlist as "this book's risk" while holdings is 0 rows.
       if (window.FX) {
+        /* Harness non-vacuity finding (Sol post-review, F2 follow-on): portfolio.js
+           calls pushFxWeights() on its OWN render pass regardless of which tab is
+           active, and F2's fix made an empty/thin Portfolio push the honest-empty
+           `{}` instead of `null` — but `{}` is still a NON-null AUTO_W, so
+           factor_exposure.js's `autoMode = AUTO_W !== null` stayed permanently
+           locked into 'auto' (portfolio) mode with nothing in it, silently
+           overriding FX.update() below and leaving the Watchlists tab's OWN panel
+           dark even while the reader is looking straight at it (caught by the
+           browser after-proof's watchlist-mode trace check going empty). Auto
+           mode is a PORTFOLIO-tab concept; entering Watchlists mode explicitly
+           releases it back to null so the watchlist's own universe governs here —
+           portfolio.js re-asserts its own AUTO_W the moment the reader switches
+           back (render() -> pushFxWeights() on every Portfolio-mode render). */
+        window.FX.setAutoWeights(null);
         var syms = blob.items.map(function (it) { return it.t; });
         window.FX.update(window.MB ? window.MB.modeledOnly(syms) : syms);
       }
-      /* The books model is built from watchlist names UNION open positions.
-         portfolio.js refreshes it with BOTH. This file only has the watchlist
-         half — calling refresh here while PF exists rebuilds the model with
-         `rows = null` and clears the strip. Anonymous / no-PF still owns this. */
-      if (window.MB && window.MB.refresh && !window.PF) {
-        window.MB.refresh(blob.items.map(function (it) { return it.t; }), null, null);
-      }
+      /* A1A (§11): `#bk_strip` is the Portfolio holdings toolbar's books strip and is
+         built from Portfolio rows ONLY (portfolio.js calls MB.refresh on its own render
+         pass) — this file no longer touches it. The old union call is exactly Turn 6's
+         "population union" defect: a Watchlist name painted the Portfolio's own market
+         strip, and worse, painting it here while no Portfolio was loaded overwrote a
+         real Portfolio strip with a watchlist-only one. */
       renderWatchlist();
       return;
     }
 
+    /* Both branches below return WITHOUT calling renderRiskCenter(), and both are
+       correct — but only because the PAGE hides the panel in exactly those states,
+       which is a fact living in templates/watchlist.html.j2, not here. Read this file
+       alone and it looks like the anonymous funnel gets an empty Risk Center; that
+       reading was filed as a defect on 2026-08-20 off a console check of
+       `#rc_body.innerHTML`, which returns '' here and says nothing about whether the
+       panel is on screen. It is not:
+
+         anon-empty  -> `html[data-ws-state="anon-empty"] #ws_sec_rc { display:none }`
+         watchlists  -> #ws_sec_rc lives inside the `data-ws-mode="portfolio"`
+                        container, and `main.ws > [data-ws-mode]` is display:none
+                        unless it is the active mode
+
+       The lock shell IS reached for the audience it was written for: `anon-analyzed`
+       is the one anonymous state that SHOWS the panel, and renderAnonBook() calls
+       renderRiskCenter() on both of its exits (verified live, signed out, 2026-08-20).
+       Do not "fix" this by painting a lock shell into a hidden panel — that same
+       anon-empty rule hides three sibling sections too, so papering over one of the
+       four in JS would be arbitrary AND would mask the rule's deletion. The pairing is
+       pinned from both sides in tests/test_watchlist_workspace_js.py §12; if you move
+       either half, that suite tells you which one you broke. */
     if (state === 'anon-analyzed' && ENTERED) { renderAnonBook(); return; }
     if (state === 'anon-empty') { renderStarters(); return; }
     // signed in: portfolio.js owns the holdings table + the book read; it repaints
@@ -1629,12 +1813,16 @@
     if (window.PF && window.PF.render) window.PF.render();
     renderRiskCenter();
   }
+  /* A1A (§10, §13): the Portfolio tab count is the canonical Portfolio's own count and
+     nothing else — never the temporary pasted/analyzed basket's size (defect "cannot
+     alter Portfolio count": ENTERED used to stand in for it here) and never a
+     Watchlist-derived fallback (defect "count fallback": `blob.items.length` — this
+     file's OWN Watchlist blob — used to be the answer whenever window.PF was
+     unavailable). Returns `null`, never a borrowed or fabricated number, when the
+     canonical count is genuinely unknown; the caller shows that as unavailable. */
   function pfCount() {
-    // an anonymous visitor has no saved positions, so the count is what they pasted;
-    // signed in it is the book itself. Never a number borrowed from the other state.
-    if (ENTERED && wsState() === 'anon-analyzed') return ENTERED.parsed.rows.length;
     if (window.PF && window.PF.count) return window.PF.count();
-    return blob.items.length;
+    return null;
   }
   function listsCount() {
     if (window.WatchStore && window.WatchStore.lists && window.WatchStore.lists.all) {
@@ -1915,6 +2103,9 @@
     setRisk: setRisk,
     setChip: setChip,
     mode: function () { return mode; },
+    // A1A test seam (§10, §13): the canonical Portfolio count — never Watchlist-
+    // derived, never the temporary basket. tests/test_portfolio_truth_a1a_js.py pins it.
+    pfCount: pfCount,
     toast: toast,
     render: render,
     hydrate: hydrate,
@@ -2038,9 +2229,10 @@
       var an = e.target.closest('#wl_analyze');
       if (an) {
         // a watchlist has no position sizes, so analyzing it is an EQUAL-WEIGHTED
-        // structure read — never a portfolio
-        var syms = blob.items.filter(function (it) { return inBook(it.t); })
-                             .map(function (it) { return it.t; });
+        // structure read — never a portfolio. S2 (review): the Portfolio's active-
+        // book filter must not silently drop Watchlist names from the analysis —
+        // "analyze this watchlist" means the WHOLE watchlist, every time.
+        var syms = blob.items.map(function (it) { return it.t; });
         if (syms.length >= 2) {
           wmode = 'equal';
           ENTERED = { mode: 'equal', parsed: { rows: syms.map(function (s) { return { t: s, size: null }; }), bad: [] } };
@@ -2073,9 +2265,46 @@
       if (dlg && dlg.classList.contains('open')) return;
       if (closeOpenDrawers()) e.preventDefault();
     });
-    // the store is the authority on the save state; the chip only paints it
+    // the store is the authority on the save state; the chip only paints it. Two
+    // parallel events, two scopes — A1A §13, "Save-state crossover".
     document.addEventListener('ws-save', function (e) {
-      if (e && e.detail && e.detail.state) setChip(e.detail.state);
+      if (e && e.detail && e.detail.state) setChip(e.detail.state, 'watchlists');
+    });
+    document.addEventListener('pf-save', function (e) {
+      if (e && e.detail && e.detail.state) setChip(e.detail.state, 'portfolio');
+    });
+    /* F2 (Sol post-review, MAJOR, part iii — the "belt" at the auth boundary,
+       proofB_risk_latch_auth.js): the RISK payload was invalidated ONLY at the
+       Watchlists->Portfolio MODE boundary (setMode()) — nothing invalidated it at
+       an AUTH boundary. A signed-in user A's Risk Center read (RISK.rcTabs, keyed
+       to A's own book) survived A's sign-out and a second user B signing in on the
+       same page session while the reader stayed in Portfolio mode: any ordinary
+       repaint B's session triggers (a price tick, hydration, a langchange) simply
+       re-painted A's stale read. Reset RISK the same way setMode()'s mode-boundary
+       fix does, whenever the wl-auth IDENTITY actually changes (sign-in, sign-out,
+       or a different uid replacing the previous one) — never on the S6 double-fire
+       of the SAME identity (user set, then the shared Supabase client resolving),
+       which must not cost an extra reset+render. `lastAuthIdentity === undefined`
+       is the one-time "never seen a wl-auth yet" state at page load and is
+       deliberately treated as a change too (belt-and-suspenders: RISK is normally
+       already the empty default at that point, so the reset is a harmless no-op
+       value-wise, but staying fail-safe here — rather than special-casing "first
+       fire, skip" — means the belt still closes the gap even if some future path
+       ever populates RISK before the page's own first wl-auth). */
+    var lastAuthIdentity;
+    document.addEventListener('wl-auth', function (e) {
+      var uid = (e && e.detail && e.detail.user && e.detail.user.id) || null;
+      if (uid !== lastAuthIdentity) {
+        RISK = { shares: null, concHTML: '', rcTabs: null, labHTML: '',
+                 seamItems: null, coverage: null, headline: null };
+        // N1 (Sol post-review, MAJOR): the SAME reset, on the SAME boundary, for
+        // portfolio.js's separate BOOK/RISK_SHARES/RISK_COVERED latch — a second
+        // user's first read must never inherit the previous identity's risk
+        // payload (foreign-keyed or not) via this file's mode render.
+        if (window.PF && window.PF.resetBookRisk) window.PF.resetBookRisk();
+        render();
+      }
+      lastAuthIdentity = uid;
     });
 
     /* Resolve the live universe across every market the saved list actually touches.
@@ -2200,7 +2429,18 @@
       toggleExp: toggleExp,
       closeOpenDrawers: closeOpenDrawers,
       drawerOpen: function (t) { return !!openRows[t]; },
-      __setDetail: function (t, d) { DETAIL[t] = d; }
+      __setDetail: function (t, d) { DETAIL[t] = d; },
+      // A1A test seam (§11): the workspace table view + renderer, so a book-filter
+      // regression can be pinned behaviorally instead of by source inspection.
+      viewItems: viewItems,
+      renderWatchlist: renderWatchlist,
+      // A1A test seam (§11): drives the temporary-basket path without a real click.
+      runEntry: runEntry,
+      // A1A test seam (S2/S5, review): the LEGACY card-grid view, so its book-filter
+      // removal is pinned behaviorally too, not just in the W2 table renderer.
+      lgViewItems: lgViewItems,
+      // A1A test seam (S4, review): the anonymous-save-never-signs-in-the-shell law.
+      wsState: wsState
     };
   }
 })();

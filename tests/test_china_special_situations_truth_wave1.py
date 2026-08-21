@@ -698,6 +698,40 @@ def test_unlock_glance_does_not_claim_none_large_when_float_share_unknown(tmp_pa
     assert "float share not reported" in g["en"]
 
 
+def test_block_trade_count_is_population_not_two_display_slices(tmp_path, monkeypatch):
+    """Block-trade anomalies are counted over the population, not two capped lists.
+
+    Regression this catches: `_n_anom = len(top_premium) + len(top_discount)`,
+    where both are `head(_MAX_ROWS)` of frames sorted by the counted property.
+    It saturated at 2 * _MAX_ROWS, publishing "16 block-trade price gaps" against
+    a real population of 220. It survived the first sweep precisely because the
+    saturated total (16) did not look like the cap (8).
+    """
+    data_dir = _wire(tmp_path, monkeypatch)
+    rows = []
+    # 3 premium (under the cap) and 20 discount (over it).
+    for i in range(3):
+        rows.append({"ticker": f"60{i:04d}.SS", "name": f"P{i}",
+                     "avg_premium_pct": 5.0 + i, "total_value_yi": 1.0,
+                     "date": "2026-08-19"})
+    for i in range(20):
+        rows.append({"ticker": f"00{i:04d}.SZ", "name": f"D{i}",
+                     "avg_premium_pct": -(5.0 + i), "total_value_yi": 1.0,
+                     "date": "2026-08-19"})
+    _make_parquet(data_dir / "china_block_trades" / "detail.parquet", rows)
+
+    from engine import china_special_situations as css
+    snap = css.scan()
+    bt = snap["block_trades"]
+
+    assert len(bt["top_discount"]) == css._MAX_ROWS      # display stays capped
+    assert bt["n_premium"] == 3 and bt["n_discount"] == 20
+    # THE regression-catching assertion: the published number is the population.
+    assert bt["n_anomalies"] == 23
+    assert bt["n_anomalies"] != bt["n_shown"]
+    assert "23 block-trade price gaps" in bt["glance"]["en"], bt["glance"]
+
+
 def test_inquiry_thread_keys_extracted_from_book_quoted_title():
     """Pure-function sanity: a 《》-quoted inquiry name produces a non-empty,
     normalised key.

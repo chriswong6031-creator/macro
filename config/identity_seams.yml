@@ -41,6 +41,7 @@ master:
     - data/reference/vendor_aliases.parquet
     - data/reference/issuer_master.parquet       # V4-D2B1, 2026-08-19 — issuer rollup
     - data/reference/issuer_migrations.parquet   # V4-D2B1 — append-only issuer_id migration receipt
+    - data/reference/security_migrations.parquet # V4-D2B1-R1, 2026-08-20 — append-only security_state correction receipt
   id_conventions:
     issuer: "ISS:<CC>-<MIC>-<CODE>[.N]"
     security: "SEC:<CC>-<MIC>-<CODE>[.N]"
@@ -50,6 +51,20 @@ master:
   # ingested_at.  There is NO lifecycle column.  The master therefore answers
   # "which security is this" but NOT "does it still exist".  Two feeders below are scoped
   # against that gap rather than against an existing column.
+  #
+  # SECURITY AXIS (V4-D2B1-R1, 2026-08-20): the master gained security_state /
+  # superseded_by (both nullable, era-seamed like the issuer axis below) — a
+  # CORRECTION-only closed enum (null = active | SUPERSEDED_DUPLICATE_MINT), never a
+  # general existence/lifecycle column (`models_lifecycle` above stays false: a
+  # delisting is still NOT modelled here, only a duplicate-mint correction is).  A
+  # security minted as an independent row for a rename's NEW symbol before this
+  # builder modelled the rename is tombstoned in place — never deleted (705 rows in,
+  # 705 out) — and every consumer join index (this master's own readers,
+  # lib.dataos.identity.IssuerMaster, engine/theme_graph/identity_resolution.py's
+  # sidecar) must exclude a superseded row.  data/reference/security_migrations.parquet
+  # is the durable receipt, one row per correction.  The general pending-transition
+  # fence that prevents a RECURRENCE of this class lives in _receipt.json's
+  # `pending_transition_refusals`/`listing_continuity` blocks.
   #
   # ISSUER AXIS (V4-D2B1, 2026-08-19): the master gained issuer_state / issuer_cik /
   # issuer_evidence_snapshot, and issuer_id became NULLABLE. The one authorized

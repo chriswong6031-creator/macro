@@ -292,7 +292,7 @@
         ✓ and ★ are text glyphs, not emoji; they stay as characters. -#}
     {%- set _legend_en %}Every sector and theme is grouped by where it sits in the cycle. The lane name tells you what to do; open a row for detail. Symbols: {{ icon('sector') }} sector fund · {{ icon('diamond') }} theme · ✓ risk check passed · ★ in the model portfolio.{% endset -%}
     {%- set _legend_zh %}所有板块与主题都按当前周期位置分组。分组名称就是操作建议；打开任意一行可查看详情。图例：{{ icon('sector') }} 板块基金 · {{ icon('diamond') }} 主题 · ✓ 风险检查通过 · ★ 模型组合内。{% endset -%}
-    <h2>{{ t('What to act on now', '当前可操作') }}
+    <h2>{{ t('What to act on now', '当前可操作') }}{% if action_board.get('total') is number %} <span class="muted" style="font-size:11.5px;font-weight:400">{{ action_board.total }} {{ t('grouped', '个已分组') }}</span>{% endif %}
       {{ help(_legend_en, _legend_zh) }}
       <a href="sector_central.html#actnow-section" style="font-size:11px;color:var(--muted);font-weight:400;text-decoration:none;margin-left:8px"><span class="l-en">Theme reasons → Sector Intelligence</span><span class="l-zh">主题详情 → 行业情报页</span></a>
     </h2>

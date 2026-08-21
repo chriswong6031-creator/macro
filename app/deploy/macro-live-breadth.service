@@ -1,0 +1,53 @@
+# Live breadth truth-boundary producer — the CANONICAL owner of
+# site/live/breadth.json (FROZEN CONTRACT §7). Before this unit, no VPS-side
+# install ran scripts/live_breadth_poller.py at all: the GH-cron backstop
+# (.github/workflows/live-breadth.yml) was the only producer, and it cannot
+# hold a 1-2 min cadence. This lane is modelled BYTE-FOR-BYTE on the sibling
+# macro-live-prophet.service structure (same [Unit]/[Service]/[Install] layout,
+# same hardening directives, same EnvironmentFile, same WorkingDirectory).
+#
+# `--once` — the timer supplies the cadence; a long-running daemon is NOT
+# wanted here because the timer model is what every other lane on this box
+# uses. One `--once` run is exactly one Polygon full-market snapshot (D6) —
+# never a fan-out.
+#
+# A breadth fault can never take the served site down: the pass reads the
+# box's own nightly-baked close caches off disk and writes only its own
+# artifact (breadth.json under $MACRO_LIVE_DIR, already exported by
+# live-setup.sh step [2/6]) by atomic rename. It writes no other data/ path.
+#
+# NO `--publish`, deliberately. Publication for THIS lane is the atomic rename
+# into $MACRO_LIVE_DIR = /var/lib/macro-live/public/live, which is the path
+# Caddy serves first (no-store) — the artifact is live the instant it lands, and
+# no git is involved. `--publish` is the GitHub backstop's mechanism: it commits
+# site/live/breadth.json to main so the STATIC fallback copy advances on a box
+# where this lane is down.
+#
+# Passing --publish here would also hard-fail the unit every two minutes: with
+# MACRO_LIVE_DIR set, the output path is OUTSIDE this git work tree, so
+# `git add -f` returns "is outside repository", publish() returns False, and
+# `--once --publish` (correctly) exits non-zero. Verified by direct run.
+# That split is what keeps exactly ONE writer claiming primary ownership.
+[Unit]
+Description=Mastermind live intraday breadth poller (truth-boundary producer)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-live.env
+Environment=MACRO_LIVE_PRODUCER=vps:macro-live-breadth
+ExecStart=/opt/macro/.venv/bin/python -m scripts.live_breadth_poller --once
+TimeoutStartSec=120
+Nice=10
+CPUWeight=20
+CPUQuota=60%
+MemoryHigh=256M
+MemoryMax=512M
+IOWeight=20
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -32,8 +32,8 @@
   "capture_undefined_pct": null,
   "n_logged": 23,
   "n_locked_excluded": 0,
-  "n_skipped_awaiting_t1": 14,
-  "n_skipped_total": 14,
+  "n_skipped_awaiting_t1": 27,
+  "n_skipped_total": 27,
   "board_definition": "cn_prophet_v4"
  },
  "rows": [
@@ -56,8 +56,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 20.2,
+   "erw": "re-derivation on today's bars gives 20.2000 (t1_open) against the published entry 20.0800 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "002240.SZ",
@@ -78,8 +78,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_hl2",
-   "er": null,
-   "erw": null
+   "er": 32.4,
+   "erw": "re-derivation on today's bars gives 32.4000 (t1_open) against the published entry 32.4150 (t1_hl2); the published entry is point-in-time and is not restated"
   },
   {
    "t": "002338.SZ",
@@ -100,8 +100,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 46.0,
+   "erw": "re-derivation on today's bars gives 46.0000 (t1_open) against the published entry 44.6000 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "002812.SZ",
@@ -122,8 +122,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 56.93,
+   "erw": "re-derivation on today's bars gives 56.9300 (t1_open) against the published entry 56.5500 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "002929.SZ",
@@ -144,8 +144,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 56.0,
+   "erw": "re-derivation on today's bars gives 56.0000 (t1_open) against the published entry 55.3500 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "300065.SZ",
@@ -166,8 +166,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 17.48,
+   "erw": "re-derivation on today's bars gives 17.4800 (t1_open) against the published entry 16.5800 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "300322.SZ",
@@ -188,8 +188,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 18.5,
+   "erw": "re-derivation on today's bars gives 18.5000 (t1_open) against the published entry 18.4100 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "300432.SZ",
@@ -210,8 +210,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 16.69,
+   "erw": "re-derivation on today's bars gives 16.6900 (t1_open) against the published entry 16.1100 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "301000.SZ",
@@ -232,8 +232,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_hl2",
-   "er": null,
-   "erw": null
+   "er": 25.61,
+   "erw": "re-derivation on today's bars gives 25.6100 (t1_open) against the published entry 24.5050 (t1_hl2); the published entry is point-in-time and is not restated"
   },
   {
    "t": "301216.SZ",
@@ -254,8 +254,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 17.09,
+   "erw": "re-derivation on today's bars gives 17.0900 (t1_open) against the published entry 16.6800 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "301363.SZ",
@@ -276,8 +276,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 18.0,
+   "erw": "re-derivation on today's bars gives 18.0000 (t1_open) against the published entry 17.4400 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "301371.SZ",
@@ -298,8 +298,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_hl2",
-   "er": null,
-   "erw": null
+   "er": 26.68,
+   "erw": "re-derivation on today's bars gives 26.6800 (t1_open) against the published entry 26.4500 (t1_hl2); the published entry is point-in-time and is not restated"
   },
   {
    "t": "301662.SZ",
@@ -320,8 +320,8 @@
    "xr": null,
    "ed": "2026-08-19",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 70.54,
+   "erw": "re-derivation on today's bars gives 70.5400 (t1_open) against the published entry 70.0100 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "600777.SS",
@@ -551,8 +551,8 @@
   "survivorship": {
    "n_locked_excluded": 0,
    "n_skipped_no_price": 0,
-   "n_skipped_awaiting_t1": 14,
-   "n_skipped_total": 14,
+   "n_skipped_awaiting_t1": 27,
+   "n_skipped_total": 27,
    "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
   },
   "board_definition": "cn_prophet_v4",
@@ -572,23 +572,23 @@
    "n_inflight": 1,
    "n_skipped_no_price": 0,
    "n_board_days": 18,
-   "win_pct": 70.5,
-   "expectancy_pct": 3.23,
+   "win_pct": 70.3,
+   "expectancy_pct": 3.21,
    "median_pct": 4.35,
-   "avg_win_pct": 8.15,
-   "avg_loss_pct": -8.54,
-   "profit_factor": 2.28,
-   "ci_lo_pct": 63.2,
-   "ci_hi_pct": 78.4,
-   "exp_lo_pct": 1.86,
-   "exp_hi_pct": 4.7,
+   "avg_win_pct": 8.16,
+   "avg_loss_pct": -8.52,
+   "profit_factor": 2.27,
+   "ci_lo_pct": 63.0,
+   "ci_hi_pct": 78.3,
+   "exp_lo_pct": 1.85,
+   "exp_hi_pct": 4.69,
    "median_hold": 10,
-   "capture": 0.65,
-   "n_capture": 510,
-   "n_capture_undefined": 73,
-   "capture_undefined_pct": 12.5,
+   "capture": 0.64,
+   "n_capture": 509,
+   "n_capture_undefined": 74,
+   "capture_undefined_pct": 12.7,
    "mfe_median_pct": 5.91,
-   "mae_median_pct": -2.29,
+   "mae_median_pct": -2.31,
    "mae_p10_pct": -14.77,
    "n_logged": 584,
    "n_locked_excluded": 1,
@@ -885,14 +885,14 @@
    },
    {
     "t": "600956.SS",
-    "nm": "China Suntien Green Energy Corporation Limited / 新天绿能",
+    "nm": "China Suntien Green Energy Corporation Limited / XD新天绿",
     "sec": "Utilities",
     "grp": null,
     "d": "2026-07-29",
     "e": 7.37,
-    "l": 7.25,
-    "p": -1.6,
-    "x": -4.73,
+    "l": 7.05,
+    "p": -4.4,
+    "x": -7.49,
     "dy": 10,
     "st": "lag",
     "m": true,
@@ -902,8 +902,8 @@
     "xr": "horizon",
     "ed": "2026-07-30",
     "eb": "t1_open",
-    "er": null,
-    "erw": null
+    "er": 7.16,
+    "erw": "re-derivation on today's bars gives 7.1633 (t1_open) against the published entry 7.3700 (t1_open); the published entry is point-in-time and is not restated"
    },
    {
     "t": "600958.SS",
@@ -2953,8 +2953,8 @@
    },
    {
     "t": "000034.SZ",
-    "nm": "Digital China Group Co., Ltd. / 神州数码",
-    "sec": "Technology",
+    "nm": null,
+    "sec": null,
     "grp": null,
     "d": "2026-07-23",
     "e": 27.25,
@@ -3134,11 +3134,11 @@
     "grp": null,
     "d": "2026-07-23",
     "e": 8.94,
-    "l": 9.01,
-    "p": 0.8,
-    "x": 0.61,
+    "l": 8.86,
+    "p": -0.9,
+    "x": -1.03,
     "dy": 10,
-    "st": "beat",
+    "st": "lag",
     "m": true,
     "rk": 45,
     "tr": "T2",
@@ -3146,8 +3146,8 @@
     "xr": "horizon",
     "ed": "2026-07-24",
     "eb": "t1_open",
-    "er": null,
-    "erw": null
+    "er": 8.79,
+    "erw": "re-derivation on today's bars gives 8.7946 (t1_open) against the published entry 8.9400 (t1_open); the published entry is point-in-time and is not restated"
    },
    {
     "t": "002595.SZ",
@@ -5395,8 +5395,8 @@
    },
    {
     "t": "600595.SS",
-    "nm": "Henan Zhongfu Industrial Co.,Ltd / 中孚实业",
-    "sec": "Basic Materials",
+    "nm": null,
+    "sec": null,
     "grp": null,
     "d": "2026-07-16",
     "e": 6.16,
@@ -8959,14 +8959,14 @@
    },
    {
     "t": "600956.SS",
-    "nm": "China Suntien Green Energy Corporation Limited / 新天绿能",
+    "nm": "China Suntien Green Energy Corporation Limited / XD新天绿",
     "sec": "Utilities",
     "grp": null,
     "d": "2026-07-08",
     "e": 6.85,
-    "l": 7.28,
-    "p": 6.3,
-    "x": 9.35,
+    "l": 7.08,
+    "p": 3.3,
+    "x": 6.37,
     "dy": 10,
     "st": "beat",
     "m": true,
@@ -8976,8 +8976,8 @@
     "xr": "horizon",
     "ed": "2026-07-09",
     "eb": "t1_open",
-    "er": null,
-    "erw": null
+    "er": 6.66,
+    "erw": "re-derivation on today's bars gives 6.6579 (t1_open) against the published entry 6.8500 (t1_open); the published entry is point-in-time and is not restated"
    },
    {
     "t": "601038.SS",
@@ -10149,8 +10149,8 @@
    },
    {
     "t": "000034.SZ",
-    "nm": "Digital China Group Co., Ltd. / 神州数码",
-    "sec": "Technology",
+    "nm": null,
+    "sec": null,
     "grp": null,
     "d": "2026-07-03",
     "e": 27.85,
@@ -12129,8 +12129,8 @@
    },
    {
     "t": "000034.SZ",
-    "nm": "Digital China Group Co., Ltd. / 神州数码",
-    "sec": "Technology",
+    "nm": null,
+    "sec": null,
     "grp": null,
     "d": "2026-06-30",
     "e": 27.69,
@@ -13481,14 +13481,14 @@
     "n_skipped_no_price": 0,
     "n_board_days": 5,
     "win_pct": 28.3,
-    "expectancy_pct": -1.94,
+    "expectancy_pct": -1.99,
     "median_pct": -4.48,
     "avg_win_pct": 7.18,
-    "avg_loss_pct": -5.55,
-    "profit_factor": 0.51,
+    "avg_loss_pct": -5.62,
+    "profit_factor": 0.5,
     "ci_lo_pct": 19.3,
     "ci_hi_pct": 38.8,
-    "exp_lo_pct": -4.53,
+    "exp_lo_pct": -4.62,
     "exp_hi_pct": 1.58,
     "median_hold": 10,
     "capture": 0.17,
@@ -13497,7 +13497,7 @@
     "capture_undefined_pct": 32.1,
     "mfe_median_pct": 2.05,
     "mae_median_pct": -3.15,
-    "mae_p10_pct": -6.5,
+    "mae_p10_pct": -6.58,
     "n_logged": 53,
     "n_locked_excluded": 0,
     "n_skipped_awaiting_t1": 0,
@@ -14167,8 +14167,8 @@
     },
     {
      "t": "600862.SS",
-     "nm": "Avic Aviation High-Technology Co., Ltd. / 中航高科",
-     "sec": "Industrials",
+     "nm": null,
+     "sec": null,
      "grp": null,
      "d": "2026-08-03",
      "e": 18.87,
@@ -14189,14 +14189,14 @@
     },
     {
      "t": "600956.SS",
-     "nm": "China Suntien Green Energy Corporation Limited / 新天绿能",
+     "nm": "China Suntien Green Energy Corporation Limited / XD新天绿",
      "sec": "Utilities",
      "grp": null,
      "d": "2026-08-03",
      "e": 7.63,
-     "l": 7.25,
-     "p": -5.0,
-     "x": -8.21,
+     "l": 7.05,
+     "p": -7.6,
+     "x": -10.87,
      "dy": 10,
      "st": "lag",
      "m": true,
@@ -14206,8 +14206,8 @@
      "xr": "horizon",
      "ed": "2026-08-04",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 7.42,
+     "erw": "re-derivation on today's bars gives 7.4160 (t1_open) against the published entry 7.6300 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "600958.SS",
@@ -14255,7 +14255,7 @@
     },
     {
      "t": "601696.SS",
-     "nm": "BOC International (China) Co., Ltd. / XD中银证",
+     "nm": "BOC International (China) Co., Ltd. / 中银证券",
      "sec": "Financial Services",
      "grp": null,
      "d": "2026-08-03",
@@ -14720,8 +14720,8 @@
     "capture_undefined_pct": null,
     "n_logged": 81,
     "n_locked_excluded": 0,
-    "n_skipped_awaiting_t1": 9,
-    "n_skipped_total": 9,
+    "n_skipped_awaiting_t1": 18,
+    "n_skipped_total": 18,
     "board_definition": "cn_prophet_v2_shadow"
    },
    "rows": [
@@ -14744,8 +14744,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 197.0,
+     "erw": "re-derivation on today's bars gives 197.0000 (t1_open) against the published entry 190.1300 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300024.SZ",
@@ -14766,8 +14766,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 16.2,
+     "erw": "re-derivation on today's bars gives 16.2000 (t1_open) against the published entry 15.4500 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300316.SZ",
@@ -14788,8 +14788,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 45.67,
+     "erw": "re-derivation on today's bars gives 45.6700 (t1_open) against the published entry 44.7500 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300593.SZ",
@@ -14810,8 +14810,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 30.7,
+     "erw": "re-derivation on today's bars gives 30.7000 (t1_open) against the published entry 29.7600 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "600141.SS",
@@ -16360,8 +16360,8 @@
      "grp": null,
      "d": "2026-08-06",
      "e": 8.98,
-     "l": 9.22,
-     "p": 2.7,
+     "l": 9.07,
+     "p": 1.0,
      "x": null,
      "dy": 9,
      "st": "early",
@@ -16372,8 +16372,8 @@
      "xr": null,
      "ed": "2026-08-07",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 8.83,
+     "erw": "re-derivation on today's bars gives 8.8339 (t1_open) against the published entry 8.9800 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300702.SZ",
@@ -16516,8 +16516,8 @@
     "survivorship": {
      "n_locked_excluded": 0,
      "n_skipped_no_price": 0,
-     "n_skipped_awaiting_t1": 9,
-     "n_skipped_total": 9,
+     "n_skipped_awaiting_t1": 18,
+     "n_skipped_total": 18,
      "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
     },
     "exit_rule": "10-session forced verdict · T+1 open fill · no oscillator target (3D thresholds not yet refit for A-shares)",
@@ -18722,8 +18722,8 @@
     "capture_undefined_pct": null,
     "n_logged": 23,
     "n_locked_excluded": 0,
-    "n_skipped_awaiting_t1": 14,
-    "n_skipped_total": 14,
+    "n_skipped_awaiting_t1": 27,
+    "n_skipped_total": 27,
     "board_definition": "cn_prophet_v3_shadow"
    },
    "rows": [
@@ -18746,8 +18746,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 20.2,
+     "erw": "re-derivation on today's bars gives 20.2000 (t1_open) against the published entry 20.0800 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "002240.SZ",
@@ -18768,8 +18768,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 32.4,
+     "erw": "re-derivation on today's bars gives 32.4000 (t1_open) against the published entry 32.4150 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "002338.SZ",
@@ -18790,8 +18790,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 46.0,
+     "erw": "re-derivation on today's bars gives 46.0000 (t1_open) against the published entry 44.6000 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "002812.SZ",
@@ -18812,8 +18812,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 56.93,
+     "erw": "re-derivation on today's bars gives 56.9300 (t1_open) against the published entry 56.5500 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "002929.SZ",
@@ -18834,8 +18834,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 56.0,
+     "erw": "re-derivation on today's bars gives 56.0000 (t1_open) against the published entry 55.3500 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300065.SZ",
@@ -18856,8 +18856,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 17.48,
+     "erw": "re-derivation on today's bars gives 17.4800 (t1_open) against the published entry 16.5800 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300322.SZ",
@@ -18878,8 +18878,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 18.5,
+     "erw": "re-derivation on today's bars gives 18.5000 (t1_open) against the published entry 18.4100 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300432.SZ",
@@ -18900,8 +18900,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 16.69,
+     "erw": "re-derivation on today's bars gives 16.6900 (t1_open) against the published entry 16.1100 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "301000.SZ",
@@ -18922,8 +18922,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 25.61,
+     "erw": "re-derivation on today's bars gives 25.6100 (t1_open) against the published entry 24.5050 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "301216.SZ",
@@ -18944,8 +18944,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 17.09,
+     "erw": "re-derivation on today's bars gives 17.0900 (t1_open) against the published entry 16.6800 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "301363.SZ",
@@ -18966,8 +18966,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 18.0,
+     "erw": "re-derivation on today's bars gives 18.0000 (t1_open) against the published entry 17.4400 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "301371.SZ",
@@ -18988,8 +18988,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 26.68,
+     "erw": "re-derivation on today's bars gives 26.6800 (t1_open) against the published entry 26.4500 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "301662.SZ",
@@ -19010,8 +19010,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 70.54,
+     "erw": "re-derivation on today's bars gives 70.5400 (t1_open) against the published entry 70.0100 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "600777.SS",
@@ -19242,8 +19242,8 @@
     "survivorship": {
      "n_locked_excluded": 0,
      "n_skipped_no_price": 0,
-     "n_skipped_awaiting_t1": 14,
-     "n_skipped_total": 14,
+     "n_skipped_awaiting_t1": 27,
+     "n_skipped_total": 27,
      "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
     },
     "exit_rule": "10-session forced verdict · T+1 open fill · no oscillator target (3D thresholds not yet refit for A-shares)",
@@ -19285,8 +19285,8 @@
     "mae_p10_pct": -8.27,
     "n_logged": 142,
     "n_locked_excluded": 1,
-    "n_skipped_awaiting_t1": 13,
-    "n_skipped_total": 13,
+    "n_skipped_awaiting_t1": 16,
+    "n_skipped_total": 16,
     "board_definition": "cn_reversal_watch_v1"
    },
    "rows": [
@@ -19309,8 +19309,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 28.91,
+     "erw": "re-derivation on today's bars gives 28.9100 (t1_open) against the published entry 27.2500 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300455.SZ",
@@ -19331,8 +19331,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 19.88,
+     "erw": "re-derivation on today's bars gives 19.8800 (t1_open) against the published entry 19.1400 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300855.SZ",
@@ -19353,8 +19353,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 34.32,
+     "erw": "re-derivation on today's bars gives 34.3200 (t1_open) against the published entry 33.9100 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "301622.SZ",
@@ -19375,8 +19375,8 @@
      "xr": null,
      "ed": "2026-08-19",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 42.41,
+     "erw": "re-derivation on today's bars gives 42.4100 (t1_open) against the published entry 41.3800 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "600208.SS",
@@ -22425,8 +22425,8 @@
     "survivorship": {
      "n_locked_excluded": 1,
      "n_skipped_no_price": 0,
-     "n_skipped_awaiting_t1": 13,
-     "n_skipped_total": 13,
+     "n_skipped_awaiting_t1": 16,
+     "n_skipped_total": 16,
      "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
     },
     "exit_rule": "10-session forced verdict · T+1 open fill · no oscillator target (3D thresholds not yet refit for A-shares)",

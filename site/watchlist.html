@@ -50,7 +50,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=54439ad9">
+<link rel="stylesheet" href="theme.css?v=f41f9a21">
 <link rel="stylesheet" href="tier_preview.css?v=d390f599">
 <script>
   // engine + page config injected at build time (the workspace is pure client
@@ -60,7 +60,7 @@
   window.WL_STARTERS   = ["SPY", "QQQ", "BTC-USD", "GC=F"];
   // L3 regime input (baked risk_radar state + dominant label + vol regime).
   // null/absent => the book-read subline stays book-only. Book-derived text is client-side.
-  window.WRI_REGIME    = {"state": "calm", "dominant_label_en": "Trend extension watch", "dominant_label_zh": "\u8d8b\u52bf\u5ef6\u4f38\u89c2\u5bdf", "vol_regime": "normalizing", "asof": "2026-08-18"};
+  window.WRI_REGIME    = {"state": "watch", "dominant_label_en": "Trend extension watch", "dominant_label_zh": "\u8d8b\u52bf\u5ef6\u4f38\u89c2\u5bdf", "vol_regime": "normalizing", "asof": "2026-08-19"};
   // Sector / theme names arrive as raw English on each index record, so the rows
   // this page paints client-side have no td() to reach. This is the glossary's
   // answer for the finite vocabulary (engine.i18n.sector_lexicon); a name it does
@@ -72,7 +72,7 @@
   // this block down with one SyntaxError.
   window.WL_SECTOR_ZH  = {"Energy": "能源", "Materials": "原材料", "Industrials": "工业", "Consumer Discretionary": "可选消费", "Consumer Staples": "必需消费", "Health Care": "医疗保健", "Financials": "金融", "Information Technology": "信息技术", "Communication Services": "通信服务", "Utilities": "公用事业", "Real Estate": "房地产", "Basic Materials": "原材料", "Financial Services": "金融", "Consumer Cyclical": "可选消费", "Consumer Defensive": "必需消费", "Technology": "科技", "Healthcare": "医疗", "Nuclear & SMR Power": "核电与小型模块化反应堆", "Rare Earth & Critical Minerals": "稀土与关键矿产", "Data Center Power & Cooling": "数据中心供电与散热", "Memory, HBM & Storage": "存储、HBM 与存储设备", "AI Semiconductors": "AI 半导体", "Semiconductor Equipment (WFE)": "半导体设备（WFE）", "Cybersecurity": "网络安全", "GLP-1 / Obesity": "GLP-1／减肥药", "Defense & Aerospace": "国防与航空航天", "Copper, Steel & Electrification": "铜、钢与电气化", "Solar": "光伏", "Robotics & Automation": "机器人与自动化", "Fintech & Payments": "金融科技与支付", "Medical Devices": "医疗器械", "Diagnostics & Life-Science Tools": "诊断与生命科学工具", "Agriculture & Fertilizer": "农业与化肥", "Space & Satellites": "航天与卫星", "Grid & Electrification": "电网与电气化"};
 </script>
-<link rel="stylesheet" href="assets/css/b005f737.css?v=b005f737">
+<link rel="stylesheet" href="assets/css/29cecf26.css?v=29cecf26">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 </head>
@@ -298,7 +298,7 @@
   <script src="logo_config.js?v=b37d33d3" defer></script>
   <script src="stock-logos.js?v=cc29be53" defer></script>
   <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=b245e3c3" defer></script>
+  <script src="live.js?v=cfb8c072" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -423,6 +423,9 @@
         <span class="sec-eyebrow"><span class="l-en">Holdings</span><span class="l-zh">持仓明细</span></span>
         <span class="sec-sub" id="ws_hold_sub"><span class="l-en">Your work surface — every position, no cap</span><span class="l-zh">主操作区 —— 全部持仓，不设上限</span></span>
       </div>
+      <!-- A1A: an authenticated cloud read that degraded to last-good rows is disclosed
+           here, read-only — never a silent zero, never the anonymous local book. -->
+      <div class="pf-readbanner" id="pf_readbanner" style="display:none"></div>
       <div class="panel" style="overflow:hidden">
         <!-- ONE toolbar, two lines: controls above, the book filter below. The chips
              filter THIS TABLE only; the scope line beside them names the active book,
@@ -583,21 +586,25 @@
 <div id="wl_toast" class="wl-toast"></div>
 
 <!-- market_books.js owns marketOf()/storeOf() and MUST load before stockdata.js:
-     SD routes each per-ticker fetch to its market's store through window.MB. -->
-<script src="market_books.js?v=2"></script>
+     SD routes each per-ticker fetch to its market's store through window.MB.
+     portfolio_state.js is the A1A private state authority (window.PS) — DOM-free, pure,
+     depends on nothing else here, and must load before watchlist.js/portfolio.js, both
+     of which read it. -->
+<script src="market_books.js?v=3"></script>
+<script src="portfolio_state.js?v=1"></script>
 <script src="stockdata.js?v=3"></script>
-<script src="watchlist.js?v=9"></script>
-<script src="factor_exposure.js?v=3"></script>
+<script src="watchlist.js?v=11"></script>
+<script src="factor_exposure.js?v=5"></script>
 <!-- pure book-structure math + the risk publisher. risk_core.js must precede
      watchlist_risk.js; both need SD + FX. Signed-in only — the anonymous shell
      boots without them and the Risk rails render as lock shells (packet A9). -->
 <script src="risk_core.js?v=2"></script>
 <script src="watchlist_risk.js?v=6"></script>
-<script src="watchstore.js?v=6"></script>
-<script src="portfolio.js?v=6"></script>
+<script src="watchstore.js?v=8"></script>
+<script src="portfolio.js?v=8"></script>
 <script src="mtf.js?v=b62aea2f" defer></script>
 <script src="theme.js?v=b1128870" defer></script>
-<p class="muted" style="font-size:12px; text-align:center"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-19 12:04 UTC</p>
+<p class="muted" style="font-size:12px; text-align:center"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-21 01:21 UTC</p>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>

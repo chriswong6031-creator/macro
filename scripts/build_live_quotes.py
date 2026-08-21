@@ -187,7 +187,68 @@ DISPLAY_BOARD_EXEMPT_PAGES = {
         "basket_member_symbols()"
     ),
 }
-DISPLAY_BOARD_CAP = 240
+
+# THE GATED HALF OF A BOARD PAGE (2026-08-20). Scraping `site/<page>.html` finds
+# only the cards the SHELL ships. Every tier-gated board (docs/TIER_PREVIEW_PATTERN.md)
+# server-renders just `preview_rows` cards into the HTML and writes the withheld
+# remainder to `site/premiumdata/<page>.json` as pre-rendered `*_html` blocks, which
+# the page fetches post-auth and splices into the very same `.nbgrid`
+# (dashboard.html.j2 `hydrate()`). Those cards are rendered from the SAME partial
+# with the SAME `.nb-chg` pill — they are not a different, lesser surface — so a
+# scrape that stops at the .html covers the preview and abandons the rest.
+#
+# MEASURED IN PRODUCTION 2026-08-20 (www.mastermind-x.com): us_stocks.html emitted
+# 3 board data-sym values (BIIB/JNJ/TRGP, all covered and all moving) while
+# premiumdata/us_stocks.json carried 60 more (HWM/GNW/SWX/KMI/UGI/SPOT/CELH/NU/…),
+# none of which reached /live/quotes.json's 146 symbols. Every one of those 60 cards
+# showed a live price beside a dead "—" percentage, all night, every night — the
+# exact defect DISPLAY_BOARD_PAGES was added to fix, reintroduced for the paying
+# tier only, because the gate moved the cards but nothing moved the scrape.
+#
+# This is also why the invariant test could not see it: a gated page's VISIBLE pills
+# really are covered, so the page passes while the payload beside it is dead.
+# tests/test_build_live_quotes.py scans the payloads too for that reason.
+DISPLAY_BOARD_PAYLOAD_DIR = "premiumdata"
+
+# Cap raised 240 -> 320 with the payload leg (2026-08-20). Measured on this
+# checkout's built site: board leg 130 -> 190, display universe 146 -> 206. The
+# headroom is the point — the US board is re-picked nightly and its 63 names are
+# now ALL in the leg instead of 3, so a heavier board night that used to cost 1
+# slot can cost 60. At 240 that leaves ~50 slots of swing before `out[:cap]`
+# starts eating late-alphabet names ALPHABETICALLY (a truncation that reads, on
+# the page, as exactly the dead-pill bug this leg exists to fix); 320 restores the
+# ~2x margin the 240 cap had over its own 128. Cost at the new ceiling: ~59KB
+# serialized (~183B/symbol median, vs the 500KB browser-fetch budget), <=16
+# keyless-Yahoo batch requests (20/batch) plus <=4 Polygon chunks (100/chunk),
+# ~9s at the measured ~37 symbols/s — still cheap for both producers (the hourly
+# 24/7 btc-live Action and the 30-min intraday fastpath). The
+# vps_live_orchestrator quality gate (min_resolved=50, min_coverage=0.10) is
+# unaffected: more requested symbols only raises the resolved count.
+DISPLAY_BOARD_CAP = 320
+
+
+def payload_html(path: Path) -> str:
+    """The concatenated pre-rendered card HTML inside one tier payload, or ``""``.
+
+    Every block the page splices into the DOM is a top-level string value whose
+    key ends in ``_html`` (`cards_html`, `actnow_html`, `leaders_html`,
+    `ran_html`, `tape_html` — scripts/build_site.py::_write_us_payload). Parsed as
+    JSON rather than regex-scraped off the raw bytes because the payload stores
+    the markup JSON-escaped (`data-sym=\\"HWM\\"`), which `_DATA_SYM_RE` would
+    silently never match — a scrape that finds nothing looks exactly like a page
+    that renders nothing.
+
+    Unreadable, non-JSON or unexpectedly-shaped payloads return "" (never raise):
+    this feeds the once-a-minute snapshot lane, where a hard failure costs every
+    tile its feed to save a few board pills."""
+    try:
+        data = json.loads(path.read_text(errors="ignore"))
+    except (OSError, ValueError):
+        return ""
+    if not isinstance(data, dict):
+        return ""
+    return "".join(v for k, v in data.items()
+                   if isinstance(k, str) and k.endswith("_html") and isinstance(v, str))
 
 
 def scrape_site_symbols(site_dir: Path) -> list[str]:
@@ -215,6 +276,13 @@ def board_display_symbols(site_dir: Path,
     """Every distinct ``data-sym`` the named BOARD pages emit — the single-name
     cards whose price/percentage pills live.js patches from this snapshot.
 
+    Each page's TIER PAYLOAD is scraped with it (see DISPLAY_BOARD_PAYLOAD_DIR):
+    on a gated board the .html holds only the preview cards and the withheld
+    remainder — same partial, same visible `.nb-chg` pill — lives in
+    `premiumdata/<page>.json`. An absent payload is the normal ungated case and
+    is silent; a payload that IS there and carries cards is counted into the same
+    de-duped set, so a symbol on both sides costs one slot, not two.
+
     A missing page is logged and skipped, never fatal: the snapshot then simply
     carries the macro tiles it always did and the board keeps its baked numbers
     (the pre-2026-08-13 behaviour), rather than the whole once-a-minute lane
@@ -236,7 +304,21 @@ def board_display_symbols(site_dir: Path,
                 page_syms.add(s)
         if not page_syms:
             log.warning("live display board page emits no data-sym: %s", path)
-        found |= page_syms
+        # The gated remainder of the SAME grid — cards the shell withheld, not a
+        # separate surface. Counted per page so the log line below can name which
+        # board's paid half is (or is not) reaching the feed.
+        payload = (Path(site_dir) / DISPLAY_BOARD_PAYLOAD_DIR
+                   / (Path(name).stem + ".json"))
+        locked_syms: set[str] = set()
+        if payload.exists():
+            for raw in _DATA_SYM_RE.findall(payload_html(payload)):
+                s = raw.strip().upper()
+                if _SYMBOL_RE.match(s):
+                    locked_syms.add(s)
+            if locked_syms:
+                log.info("live display board %s: %d shell + %d tier-gated symbol(s)",
+                         name, len(page_syms), len(locked_syms - page_syms))
+        found |= page_syms | locked_syms
     out = sorted(found)
     if len(out) > cap:
         log.warning("live display board universe %d exceeds cap %d — truncating "

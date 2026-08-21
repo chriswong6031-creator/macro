@@ -866,7 +866,13 @@
         return dd;
       }
 
-      if (stageOpts.length > 0) { var ddStage = _makeDD('stage', stageOpts); if (ddStage) bar.appendChild(ddStage); }
+      /* P-MP1-SHELL §6/§9 (banned vocab: no "stage/阶段" user-facing) — the US
+         market opts out of this ONE dropdown via `cfg.stageFilter === false`.
+         Every other caller (hk/china/canada/intl) passes no such key, so
+         `cfg.stageFilter !== false` stays true and this dropdown renders
+         exactly as it always has — the header docstring documented this
+         config key since v3 but nothing ever read it until now. */
+      if (cfg.stageFilter !== false && stageOpts.length > 0) { var ddStage = _makeDD('stage', stageOpts); if (ddStage) bar.appendChild(ddStage); }
       if (zoneOpts.length > 0)  { var ddZone  = _makeDD('zone', zoneOpts);   if (ddZone)  bar.appendChild(ddZone); }
       if (tierList.length > 0)  { var ddTier  = _makeDD('tier', tierList);   if (ddTier)  bar.appendChild(ddTier); }
       { var ddSect = _makeDD('sector', sectors); if (ddSect) bar.appendChild(ddSect); }
@@ -1142,6 +1148,17 @@
     });
 
     function _updateCountChips(allR, filteredR) {
+      /* Same opt-out as the stage dropdown above — the reference this label
+         reads from ('ENTRY'/'RAN / LATE'/'RIPENING'/'KNIFE') is the retired
+         stage/阶段 taxonomy, MP-1 §6: "and its count chips — RETIRED. No
+         replacement column." Clearing the mount point (rather than leaving
+         its last-rendered content) matches every other cfg.stageFilter===false
+         no-op below: nothing this feature ever wrote survives being turned off. */
+      if (cfg.stageFilter === false) {
+        var offEl = document.getElementById('st-count-chips');
+        if (offEl) offEl.innerHTML = '';
+        return;
+      }
       var counts = { ENTRY:0, RAN_LATE:0, RIPENING:0, KNIFE:0 };
       filteredR.forEach(function(r){
         var s = r.stage || r._stage || '';

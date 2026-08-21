@@ -1,18 +1,22 @@
 """collectors/massive_flatfiles.py — massive.com S3 flat-file reader: the OPTIONS-FLOW data foundation.
 
 massive.com (a Polygon.io-compatible vendor) exposes daily OPRA flat files on an
-S3-compatible store (files.massive.com, bucket 'flatfiles'). Our account is ENTITLED to
-download the AGGREGATE products (verified by probe 2026-06-21):
+S3-compatible store (files.massive.com, bucket 'flatfiles'). The configured account
+historically downloaded the AGGREGATE products (verified by probe 2026-06-21):
 
   • us_options_opra/minute_aggs_v1/  — per-contract per-MINUTE OHLCV + volume + txns (~18 MB/day)
   • us_options_opra/day_aggs_v1/     — per-contract DAILY OHLCV + volume + txns (~3 MB/day)
   • us_stocks_sip/day_aggs_v1/       — stock daily bars (for option/stock volume ratios)
 
-…over a ROLLING RECENT WINDOW (~2025→present). It is NOT entitled to the per-trade tape
-(trades_v1) or the NBBO quotes (quotes_v1) — both return 403 via flat-file AND REST. So the
-flow engine signs volume with a MINUTE TICK-RULE (the option's own minute-close tick),
-which is the honest fallback when the trade-level tape and NBBO are unavailable; true
-quote-rule signing is an optional Databento calibration (collectors/databento_tbbo.py).
+…over a ROLLING RECENT WINDOW (~2025→present). Entitlement is runtime state, not a
+permanent property of this module: DSC:MASSIVE-OPTIONS-FLATFILE-ENTITLEMENT-REGRESSION
+records the 2026-08-20 production-key regression where listings remain visible but
+Options aggregate reads return 403. The account is not entitled to the per-trade tape
+(trades_v1) or the NBBO quotes (quotes_v1) — both return 403 via flat-file AND REST. So
+the flow engine signs volume with a MINUTE TICK-RULE (the option's own minute-close
+tick), which is the honest fallback when the trade-level tape and NBBO are unavailable;
+true quote-rule signing is an optional Databento calibration
+(collectors/databento_tbbo.py).
 
 This reader downloads one day's gzip, filters to the requested underlyings, parses the OCC
 option symbol, and caches the filtered frame to data/massive_flat/ so re-runs never
@@ -29,6 +33,7 @@ import io
 import logging
 import os
 import re
+from dataclasses import dataclass
 from datetime import date, datetime
 
 import pandas as pd
@@ -44,6 +49,20 @@ PRODUCTS = {
     "day": "us_options_opra/day_aggs_v1",
     "stock_day": "us_stocks_sip/day_aggs_v1",
 }
+
+
+@dataclass(frozen=True)
+class AvailabilityProbe:
+    """Result of probing a bounded flat-file window without downloading a file.
+
+    ``reason`` is deliberately operational, not provider-specific prose.  It lets
+    callers distinguish configuration, authorization, upstream publication and
+    transport failures without ever logging credentials or request signatures.
+    """
+
+    available_date: date | None
+    reason: str
+    detail: str = ""
 
 
 # --------------------------------------------------------------------------- #
@@ -180,18 +199,62 @@ def fetch_aggs(d: date, product: str = "minute", underlyings: list[str] | None =
     return df
 
 
-def latest_available(product: str = "minute", lookback: int = 6) -> date | None:
-    """Most recent date (<= today) whose flat file we can actually GET, scanning back
-    `lookback` days. Used by the build to pick the freshest entitled day (T+1 cadence)."""
+def _error_code(exc: Exception) -> tuple[str, int | None]:
+    """Return the provider error code and HTTP status without importing botocore."""
+    response = getattr(exc, "response", None)
+    if not isinstance(response, dict):
+        return type(exc).__name__, None
+    error = response.get("Error") if isinstance(response.get("Error"), dict) else {}
+    meta = response.get("ResponseMetadata") if isinstance(response.get("ResponseMetadata"), dict) else {}
+    code = str(error.get("Code") or type(exc).__name__)
+    try:
+        status = int(meta.get("HTTPStatusCode"))
+    except (TypeError, ValueError):
+        status = None
+    return code, status
+
+
+def probe_available(product: str = "minute", lookback: int = 6, *,
+                    end_date: date | None = None) -> AvailabilityProbe:
+    """Probe the newest readable object in a bounded window and preserve why none is.
+
+    A 403 is not the same thing as an unpublished 404, and neither is the same as
+    missing configuration.  The former implementation collapsed all three into
+    ``None``; the options-flow producer therefore reported success while frozen.
+    """
+    if product not in PRODUCTS:
+        raise ValueError(f"unknown product {product!r}")
+    if not all(os.environ.get(k) for k in (
+            "MASSIVE_S3_ENDPOINT", "MASSIVE_S3_ACCESS_KEY_ID", "MASSIVE_S3_SECRET_ACCESS_KEY")):
+        return AvailabilityProbe(None, "configuration_missing")
     cl = client()
     if cl is None:
-        return None
-    today = pd.Timestamp(datetime.utcnow().date())
+        return AvailabilityProbe(None, "client_initialization_failed")
+    end = end_date or datetime.utcnow().date()
+    missing = 0
     for i in range(lookback + 1):
-        d = (today - pd.Timedelta(days=i)).date()
+        d = (pd.Timestamp(end) - pd.Timedelta(days=i)).date()
         try:
             cl.get_object(Bucket=_bucket(), Key=_key(product, d), Range="bytes=0-10")
-            return d
-        except Exception:  # noqa: BLE001
-            continue
-    return None
+            return AvailabilityProbe(d, "available")
+        except Exception as exc:  # noqa: BLE001 — classification is the contract
+            code, status = _error_code(exc)
+            if status == 403 or code in {"403", "AccessDenied", "Forbidden"}:
+                return AvailabilityProbe(None, "authorization_or_entitlement_failure",
+                                         f"HTTP {status or 403} {code}")
+            if status == 404 or code in {"404", "NoSuchKey", "NotFound"}:
+                missing += 1
+                continue
+            if status is not None and status >= 500:
+                return AvailabilityProbe(None, "provider_service_failure",
+                                         f"HTTP {status} {code}")
+            return AvailabilityProbe(None, "transport_or_request_failure", code)
+    return AvailabilityProbe(None, "upstream_file_absent",
+                             f"{missing or lookback + 1} object(s) not published")
+
+
+def latest_available(product: str = "minute", lookback: int = 6, *,
+                     end_date: date | None = None) -> date | None:
+    """Most recent date (<= today) whose flat file we can actually GET, scanning back
+    `lookback` days. Used by the build to pick the freshest entitled day (T+1 cadence)."""
+    return probe_available(product, lookback, end_date=end_date).available_date

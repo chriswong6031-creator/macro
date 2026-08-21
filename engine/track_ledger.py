@@ -190,6 +190,116 @@ def build_shell(
     return pyify(doc)
 
 
+def _board_ledger_row(gr: dict, name_lookup: dict) -> tuple[dict, bool, bool, bool]:
+    """Build ONE JSON-ready ledger row from a board_ledger.grade() by_horizon entry.
+
+    Shared by from_board_ledger_grade's current-era and legacy-era partitions
+    (LEDGER-ERA track_ledger fence, 2026-08-20 review) so the two can never
+    diverge in row SHAPE — only in which grade() rows feed each one. Returns
+    (row_dict, suspended, matured, beat) — the three booleans let the caller
+    tally its own era-scoped summary counters without re-deriving them.
+    """
+    tk = gr.get("ticker")
+    d = gr.get("date")
+    suspended = bool(gr.get("suspended"))
+    excess = gr.get("excess_ret")
+    matured = (excess is not None) and not suspended
+    beat = bool(matured and excess > 0)
+
+    fl: list[str] = []
+    if suspended:
+        fl.append("susp")
+
+    if suspended or not matured:
+        st = "early"  # suspended names have no grade; shown as early w/ susp flag
+    else:
+        st = "beat" if beat else "lag"
+
+    disp = name_lookup.get(str(tk), {})
+    fwd = gr.get("fwd_ret")
+    row = {
+        "t": tk,
+        "nm": disp.get("nm"),
+        "sec": disp.get("sec"),
+        "grp": gr.get("group"),
+        "d": d,
+        "e": None,   # board_ledger grade carries no raw entry/latest price
+        "l": None,
+        "p": round(fwd * 100.0, 1) if (fwd is not None and not suspended) else None,
+        "x": round(excess * 100.0, 2) if (excess is not None and not suspended) else None,
+        "dy": 21 if matured else None,
+        "st": st,
+        "m": bool(matured),
+        "rk": gr.get("board_pos") or None,
+        "tr": None,
+        "fl": fl,
+        # Board-ledger rows already carry their selection-era stamp.  The popup
+        # never needed it, but cross-product receipt consumers do: a legacy HK
+        # call must not be relabelled as tonight's board.
+        "bd": gr.get("board_definition"),
+        "ed": gr.get("entry_date"),
+    }
+    return row, suspended, matured, beat
+
+
+def _board_ledger_era_summary(state: str, rows: list[dict], n_susp: int,
+                               n_matured: int, n_beat: int, n_lag: int,
+                               first_read_est: str | None = None,
+                               n_calls_override: int | None = None) -> dict:
+    """The summary shape shared by from_board_ledger_grade's CURRENT-era summary
+    and its prior_record's own summary (LEDGER-ERA track_ledger fence, 2026-08-20
+    review). Carries this module's existing hit_matured/wilson_* vocabulary AND
+    win_pct (0-100 scale) — the field _track_record_dlg.html.j2's prior-era
+    ribbon actually reads (templates/_track_record_dlg.html.j2:1052-1064),
+    mirroring engine.track_scoring.summarize's vocabulary (the CN producer;
+    see scripts/build_china_library._cn_era_block).
+
+    n_calls/n_logged (MINOR-2, review 2026-08-20): `n_logged` is always
+    `len(rows)` — the ROW count of the era this summary describes. `n_calls`
+    is ALSO `len(rows)` by default (era-logged GRADED rows; a delisted name
+    grade() could never price is not counted here — the raw-ledger truth,
+    including delisted names, lives in board_ledger.scorecard()'s
+    historical_context, not in this per-era summary), UNLESS the caller passes
+    `n_calls_override` — used ONLY on the unscoped (no board_definition) path,
+    to restore byte-identical behavior with the pre-LEDGER-ERA-track_ledger-
+    fence artifact: n_calls used to read grade()'s whole-ledger raw parquet
+    count (which can exceed len(rows) when a name was never fillable/graded).
+    """
+    hit = round(n_beat / n_matured, 3) if n_matured else None
+    wl, wh = wilson_ci(n_beat, n_matured)
+    win_pct = round(hit * 100.0, 1) if hit is not None else None
+    out = {
+        "state": state,
+        "n_calls": n_calls_override if n_calls_override is not None else len(rows),
+        "n_logged": len(rows),
+        "n_matured": n_matured,
+        "n_beat": n_beat,
+        "n_lag": n_lag,
+        "n_suspended": n_susp,
+        "hit_matured": hit,
+        "wilson_lo_pct": round(wl * 100.0, 1) if wl is not None else None,
+        "wilson_hi_pct": round(wh * 100.0, 1) if wh is not None else None,
+        "win_pct": win_pct,
+    }
+    if first_read_est is not None:
+        out["first_read_est"] = first_read_est
+    return out
+
+
+def _board_ledger_prior_label(rows: list[dict]) -> tuple[str, str]:
+    """Bilingual label for a board_ledger prior_record block, derived from the
+    era's own date span (never hard-coded — see
+    scripts/build_china_library._cn_era_label, the CN sibling this mirrors
+    locally rather than importing, per packet §7.3's "implement locally").
+    """
+    dates = sorted(r["d"] for r in rows if r.get("d"))
+    if not dates:
+        return ("previous board definition", "上一版选股口径")
+    d_from, d_to = dates[0], dates[-1]
+    return (f"previous board definition · {d_from} – {d_to}",
+            f"上一版选股口径 · {d_from} – {d_to}")
+
+
 def from_board_ledger_grade(
     market: str,
     grade: dict | None,
@@ -205,14 +315,37 @@ def from_board_ledger_grade(
 
     grade() shape: {available, n_calls, n_graded, n_suspended,
                     by_horizon: {"21d": [{date,ticker,board_pos,group,edge_z,fwd_ret,
-                                          bench_ret,excess_ret,suspended}, ...], ...}}
+                                          bench_ret,excess_ret,suspended,
+                                          board_definition}, ...], ...}}
     One ledger row per unique (date, ticker) — keyed off the 21d horizon list (the
     grading basis). Matured rows (excess_ret non-null): st='beat'/'lag' by sign,
     m=true, x=excess_ret*100. Suspended rows: fl=['susp'], excluded from summary.
     Unmatured, non-suspended: st='early', m=false, x=null (grade() carries no raw
     price to mark unrealized cheaply — honest null rather than a fabricated mark).
 
-    scorecard() supplies the panel state ('accruing' | 'scored') and first_read_est.
+    scorecard() supplies the panel state ('accruing' | 'scored'), first_read_est,
+    AND (as of LEDGER-ERA, 2026-08-20 review) the ERA FENCE: when
+    scorecard['board_definition'] is not None, ONLY rows carrying that definition
+    enter `rows`/`summary` — the same current-era scoping board_ledger.scorecard()
+    itself already applies to n/n_buy/hit_rate_21d/by_group. Before this fix,
+    from_board_ledger_grade re-pooled every era back together with no filter at
+    all, publishing a competing, uncorrected win rate right beside the correctly
+    scoped one in board_ledger.scorecard(). Rows outside the current era are
+    NEVER dropped: they surface, in full, under the returned doc's top-level
+    `prior_record` key — same block shape scripts/build_china_library._cn_era_block
+    produces for CN (label_en/label_zh, board_definition, date_from/date_to,
+    state, summary, rows, meta), so _track_record_dlg.html.j2's existing
+    hasLegacy()/era-chip/prior-ribbon JS (already shipped for CN) lights up for
+    HK/CA with zero template changes. When scorecard carries no definition (a
+    ledger that never stamps, e.g. every legacy HK row, or any market pre-stamp)
+    every row goes to `rows` and no `prior_record` key is added — TRUE
+    byte-identity with the pre-fix artifact modulo the one additive key
+    `summary.win_pct` (MINOR-2, review 2026-08-20: n_calls on this unscoped
+    path is restored to grade()'s whole-ledger raw parquet count, the same
+    source it always read; only the SCOPED path's summary.n_calls counts
+    era-logged graded rows instead — see _board_ledger_era_summary's
+    docstring).
+
     name_lookup: {ticker: {"nm": .., "sec": .., "grp": ..}} display map (optional).
     """
     name_lookup = name_lookup or {}
@@ -220,18 +353,20 @@ def from_board_ledger_grade(
 
     status = "accruing"
     first_read_est = None
+    current_definition = None
     if isinstance(scorecard, dict):
         status = scorecard.get("status") or "accruing"
         first_read_est = scorecard.get("first_read_est")
+        current_definition = scorecard.get("board_definition")
     # board_ledger uses 'accruing'/'scored'; the track_ledger `state` vocabulary is the
     # same 'accruing'/'scored'/'interim' set, so pass it through.
     state = status if status in ("accruing", "scored", "interim") else "accruing"
 
-    rows_out: list[dict] = []
-    n_susp = 0
-    n_beat = 0
-    n_lag = 0
-    n_matured = 0
+    cur_rows: list[dict] = []
+    cur_n_susp = cur_n_beat = cur_n_lag = cur_n_matured = 0
+    legacy_rows: list[dict] = []
+    legacy_n_susp = legacy_n_beat = legacy_n_lag = legacy_n_matured = 0
+
     if isinstance(grade, dict) and grade.get("available"):
         h21 = (grade.get("by_horizon") or {}).get("21d") or []
         for gr in h21:
@@ -239,77 +374,119 @@ def from_board_ledger_grade(
             d = gr.get("date")
             if not tk or not d:
                 continue
-            suspended = bool(gr.get("suspended"))
-            excess = gr.get("excess_ret")
-            matured = (excess is not None) and not suspended
 
-            fl: list[str] = []
-            if suspended:
-                fl.append("susp")
-                n_susp += 1
+            row, suspended, matured, beat = _board_ledger_row(gr, name_lookup)
 
-            if suspended:
-                st = "early"  # suspended names have no grade; shown as early w/ susp flag
-            elif matured:
-                st = "beat" if excess > 0 else "lag"
-                n_matured += 1
-                if excess > 0:
-                    n_beat += 1
-                else:
-                    n_lag += 1
+            # ERA FENCE: only partition when the scorecard actually names a current
+            # definition. When it does not (current_definition is None), EVERY row
+            # goes to the current bucket unconditionally — never compare a row's
+            # board_definition to None, which would misclassify an orphaned old
+            # stamp as "legacy" on a ledger board_ledger.py itself still pools
+            # (byte-identical requirement, packet §7.3).
+            is_current = current_definition is None or row["bd"] == current_definition
+
+            if is_current:
+                cur_rows.append(row)
+                if suspended:
+                    cur_n_susp += 1
+                elif matured:
+                    cur_n_matured += 1
+                    if beat:
+                        cur_n_beat += 1
+                    else:
+                        cur_n_lag += 1
             else:
-                st = "early"
+                legacy_rows.append(row)
+                if suspended:
+                    legacy_n_susp += 1
+                elif matured:
+                    legacy_n_matured += 1
+                    if beat:
+                        legacy_n_beat += 1
+                    else:
+                        legacy_n_lag += 1
 
-            disp = name_lookup.get(str(tk), {})
-            fwd = gr.get("fwd_ret")
-            rows_out.append({
-                "t": tk,
-                "nm": disp.get("nm"),
-                "sec": disp.get("sec"),
-                "grp": gr.get("group"),
-                "d": d,
-                "e": None,   # board_ledger grade carries no raw entry/latest price
-                "l": None,
-                "p": round(fwd * 100.0, 1) if (fwd is not None and not suspended) else None,
-                "x": round(excess * 100.0, 2) if (excess is not None and not suspended) else None,
-                "dy": 21 if matured else None,
-                "st": st,
-                "m": bool(matured),
-                "rk": gr.get("board_pos") or None,
-                "tr": None,
-                "fl": fl,
-                # Board-ledger rows already carry their selection-era stamp.  The
-                # popup never needed it, but cross-product receipt consumers do:
-                # a legacy HK call must not be relabelled as tonight's board.
-                "bd": gr.get("board_definition"),
-                "ed": gr.get("entry_date"),
-            })
-
-    hit = round(n_beat / n_matured, 3) if n_matured else None
-    wl, wh = wilson_ci(n_beat, n_matured)
-    summary = {
-        "state": state,
-        "n_calls": (grade or {}).get("n_calls") if isinstance(grade, dict) else len(rows_out),
-        "n_logged": len(rows_out),
-        "n_matured": n_matured,
-        "n_beat": n_beat,
-        "n_lag": n_lag,
-        "n_suspended": n_susp,
-        "hit_matured": hit,
-        "wilson_lo_pct": round(wl * 100.0, 1) if wl is not None else None,
-        "wilson_hi_pct": round(wh * 100.0, 1) if wh is not None else None,
-        "first_read_est": first_read_est,
-    }
+    # MINOR-2 (review, 2026-08-20): on the UNSCOPED path (no board_definition —
+    # every row is "current"), restore the pre-fix n_calls source
+    # (grade()'s whole-ledger raw parquet count) for TRUE byte-identity —
+    # it can exceed len(cur_rows) when a name was never fillable/graded.
+    _unscoped_n_calls = (
+        grade.get("n_calls") if current_definition is None and isinstance(grade, dict)
+        else None
+    )
+    summary = _board_ledger_era_summary(
+        state, cur_rows, cur_n_susp, cur_n_matured, cur_n_beat, cur_n_lag,
+        first_read_est=first_read_est, n_calls_override=_unscoped_n_calls,
+    )
 
     doc_as_of = as_of
-    if doc_as_of is None and rows_out:
-        doc_as_of = max((r["d"] for r in rows_out if r["d"]), default=None)
+    if doc_as_of is None and cur_rows:
+        doc_as_of = max((r["d"] for r in cur_rows if r["d"]), default=None)
 
-    return build_shell(
-        m, doc_as_of, state, bench, summary, rows_out, grain="board_day",
-        survivorship={"n_suspended": n_susp,
+    doc = build_shell(
+        m, doc_as_of, state, bench, summary, cur_rows, grain="board_day",
+        survivorship={"n_suspended": cur_n_susp,
                       "note": "no delisting archive — vanished names leave the sample"},
     )
+
+    # ── the prior-definition record, alongside and NEVER pooled ────────────────
+    # Only when the scorecard names a current era AND at least one row fell
+    # outside it — mirrors board_ledger.scorecard()'s own historical_context
+    # gate exactly, and matches build_china_library's `if prior and
+    # prior["rows"]:` gate for CN's prior_record.
+    if current_definition is not None and legacy_rows:
+        label_en, label_zh = _board_ledger_prior_label(legacy_rows)
+        legacy_summary = _board_ledger_era_summary(
+            state, legacy_rows, legacy_n_susp, legacy_n_matured,
+            legacy_n_beat, legacy_n_lag,
+        )
+        dates = sorted(r["d"] for r in legacy_rows if r.get("d"))
+        # MINOR-3 (review, 2026-08-20): sort newest-first before capping — grade()
+        # emits rows in date-ASCENDING order, so an uncapped slice kept the
+        # OLDEST legacy rows.  _cn_era_block sorts newest-first before its own
+        # cap, and build_shell's own docstring says the cap "keeps the most
+        # recent episodes" — match that comparator here too.
+        legacy_rows_newest_first = sorted(
+            legacy_rows, key=lambda r: (r.get("d") or ""), reverse=True)
+        doc["prior_record"] = pyify({
+            "label_en": label_en,
+            "label_zh": label_zh,
+            "board_definition": None,  # legacy pool may span several/no stamps
+            "date_from": dates[0] if dates else None,
+            "date_to": dates[-1] if dates else None,
+            # NIT-4 (review, 2026-08-20): this inherits the CURRENT era's `state`,
+            # unlike CN's _cn_era_block, which passes the PRIOR era's own
+            # independently-graded state. CN can do that cheaply because
+            # _cn_grade_era() already re-runs its whole grading+publish_state
+            # pipeline per era. board_ledger.scorecard()'s status gate
+            # (n_ic_dates >= MIN_IC_DATES per date, per horizon) is computed
+            # inline inside scorecard() over ONE frame, not exposed as a
+            # function this module could re-run cheaply over legacy_rows alone
+            # — doing so correctly would mean duplicating that gate's grouping
+            # logic here. Left inherited rather than silently wrong.
+            "state": state,
+            "summary": legacy_summary,
+            "rows": legacy_rows_newest_first[:MAX_ROWS],
+            "meta": {
+                "n_total": len(legacy_rows),
+                "truncated": max(0, len(legacy_rows) - MAX_ROWS),
+                "grain": "board_day",
+                "closed": False,  # HK/CA legacy pools may still receive backfill
+                "survivorship": {"n_suspended": legacy_n_susp,
+                                 "note": "no delisting archive — vanished names "
+                                         "leave the sample"},
+                "pooling_note_en": ("Graded with the same scorer and horizon as "
+                                    "the current record, and reported "
+                                    "separately. This era selected its board by "
+                                    "a different rule, so the two must never be "
+                                    "added together."),
+                "pooling_note_zh": ("与当前记录采用相同的评分方法与持有期，但单独"
+                                    "统计。该时期的选股口径不同，因此绝不可与上方"
+                                    "记录合并计算。"),
+            },
+        })
+
+    return doc
 
 
 def _read_existing(path: Path) -> dict | None:

@@ -113,6 +113,14 @@ def roots(tmp_path: Path) -> LabRoots:
     _write_ledger(state_dir)
     return LabRoots(
         radar_spool_dir=FIXTURES / "radar_spool",
+        # Review S3: resolve_radar_spool now scopes the local read to
+        # radar_spool_dir/radar_spool_prefix (production correctness fix —
+        # the real local root also holds Radar's nomination spool at a
+        # sibling prefix). This fixture tree's own subdirectory is
+        # deliberately NOT the real prefix (ci-pack-9 census-guard dodge,
+        # see the module docstring above), so every test reading through
+        # this fixture must say so explicitly here, once.
+        radar_spool_prefix="live_flow/lab_events",
         radar_state_dir=state_dir,
         prophet_index_path=FIXTURES / "prophet_index" / "index.json",
         enrichment_library_root=FIXTURES / "stockdata",
@@ -748,7 +756,10 @@ def test_health_block_surfaces_skipped_envelopes_not_just_a_zero(
         '{"schema": "entry_radar.events/v2", "pass_ts": "2026-08-19T09:00:00Z"}',
         encoding="utf-8",
     )
-    drifted_roots = replace(roots, radar_spool_dir=drifted_spool)
+    drifted_roots = replace(
+        roots, radar_spool_dir=drifted_spool,
+        radar_spool_prefix="live_flow/entry_radar_events",  # this fixture uses the real prefix
+    )
     payload = build_lab_response(drifted_roots)
     health = payload["health"]
     assert health["radar_spool_readable"] is True
@@ -756,11 +767,24 @@ def test_health_block_surfaces_skipped_envelopes_not_just_a_zero(
     assert health["radar_envelopes_skipped"] == 1
 
 
-def test_health_block_names_the_spool_source(roots: LabRoots) -> None:
+def test_health_block_names_the_spool_source(roots: LabRoots, monkeypatch) -> None:
+    # Day-2 commissioning-prep amendment (LAB-0 §6): `radar_spool_source` now
+    # names the actual BACKEND that served the read, not which local-dir env
+    # var would apply. No R2 credentials are set in this process, so the
+    # `roots` fixture's configured local `radar_spool_dir` resolves via the
+    # local backend.
+    for name in ("R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"):
+        monkeypatch.delenv(name, raising=False)
     payload = build_lab_response(roots)
-    # The `roots` fixture supplies radar_spool_dir directly (not via an env
-    # ladder), so LabRoots' own default label is what surfaces here; the
-    # env-ladder labelling itself is covered at the app.prophet_lab layer.
+    assert payload["health"]["radar_spool_source"] == "local"
+    # The old env-var-label meaning survives as a separate diagnostic field.
+    assert payload["health"]["radar_spool_local_dir_env"] == "unconfigured"
+
+
+def test_health_block_names_unconfigured_when_no_backend_resolves(monkeypatch) -> None:
+    for name in ("R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"):
+        monkeypatch.delenv(name, raising=False)
+    payload = build_lab_response(LabRoots())
     assert payload["health"]["radar_spool_source"] == "unconfigured"
 
 
@@ -1120,18 +1144,26 @@ def test_read_live_episodes_skips_malformed_rows(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # review ci-pack-10 — the Lab must never import the Radar detector stack
 # ---------------------------------------------------------------------------
-def test_sources_module_never_imports_the_radar_detector_stack() -> None:
-    """AST-level pin: no ``import``/``from`` in sources.py names entry_radar.
+def test_sources_module_imports_only_the_radar_spool_read_seam() -> None:
+    """AST-level pin, NARROWED for LAB-0 §6 commissioning prep (day-2,
+    2026-08-19): sources.py may import exactly ONE thing from
+    ``engine.entry_radar`` — the ``spool`` submodule, the R2-first read seam
+    that piece explicitly commissions (``resolve_radar_spool`` mirrors the
+    Radar spool WRITER's own R2-first-else-local ladder) — and never the
+    detector/scoring stack (``live_ledger``, ``challengers``, ``detectors``,
+    and everything they transitively pull in).
 
-    Measured 2026-08-19: a single (even lazy, function-level) import of
+    Originally a blanket "no entry_radar import at all" pin (measured
+    2026-08-19: a single, even lazy, function-level import of
     ``engine.entry_radar.live_ledger`` pulled ~150 unrelated engine/*.py
     files into the transitive closure of every CI job that reaches
-    ``engine.prophet_lab`` (Radar's own challengers/detectors fan-out into
-    the US board/stock-scoring engine subsystem) -- a real, measured cost
-    that has nothing to do with what this package actually needs (three
-    plain fields off an episode record). This test is an AST walk, not a
-    runtime import, so it catches the edge whether it is module-level or
-    buried inside a function.
+    ``engine.prophet_lab``, Radar's own challengers/detectors fan-out into
+    the US board/stock-scoring engine subsystem). ``engine.entry_radar.spool``
+    is NOT that stack — it imports only ``engine.entry_radar.contracts``
+    (stdlib-only) — so this narrowing keeps the original guarantee (the
+    heavy stack never reaches this package) while allowing the one import
+    LAB-0 §6 requires. This test is an AST walk, not a runtime import, so it
+    catches the edge whether it is module-level or buried inside a function.
     """
     import ast
 
@@ -1140,9 +1172,18 @@ def test_sources_module_never_imports_the_radar_detector_stack() -> None:
     offenders: list[str] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.module and "entry_radar" in node.module:
-            offenders.append(node.module)
+            if node.module == "engine.entry_radar":
+                offenders.extend(
+                    f"{node.module}.{alias.name}"
+                    for alias in node.names if alias.name != "spool"
+                )
+            else:
+                offenders.append(node.module)
         elif isinstance(node, ast.Import):
-            offenders.extend(a.name for a in node.names if "entry_radar" in a.name)
+            offenders.extend(
+                a.name for a in node.names
+                if "entry_radar" in a.name and a.name != "engine.entry_radar.spool"
+            )
     assert not offenders, offenders
 
 
@@ -1423,6 +1464,7 @@ def test_full_width_entry_event_round_trips_through_the_reader(
     full_width_roots = replace(
         roots,
         radar_spool_dir=tmp_path / "full_width_spool",
+        radar_spool_prefix="live_flow/entry_radar_events",  # this fixture uses the real prefix
         radar_state_dir=tmp_path / "full_width_state",
     )
     payload = build_lab_response(full_width_roots)

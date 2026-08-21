@@ -179,7 +179,100 @@ waves:
       independent RIG R5 — note R4 reference is committed but carries NO approval.yml;
       R4 was a closure pass, 10 blocking findings in
       research/reference_integrity/prophet-board-5514-r4/R4_CLOSURE_LEDGER.md),
-      P-LAB-API, P-MP1-SHELL, P-LAB-UI. Shipping B5A completes NEITHER b5b NOR b6."
+      P-LAB-API, P-MP1-SHELL, P-LAB-UI. Shipping B5A completes NEITHER b5b NOR b6.
+      DAY-2 STATE (2026-08-19): R-LAB-1 DONE (Radar W4.1 #5929 squash 9ef200f +
+      commissioning-prep #5995 squash 85d651bc5bbb, live-verified via /api/health
+      commit match; W4 arming stays an OPERATOR act per
+      research/prophet_v4/P_LAB_COMMISSIONING_NOTES.md). P-LAB-API DONE (#5928
+      squash 4295c05; /api/prophet/lab/v1 live, 401 fail-closed). D-LAB-R5 DONE —
+      R5.3 APPROVED: approval.yml minted at frozen dcbea7cd
+      (research/reference_integrity/prophet-board-lab-r5-1/, two-pass independent
+      dual-critic, author excluded). R4-composition C8 pass COMPLETE (#5990 squash
+      2313bdb, verdict REVISE + rulings b1/b8/n1); repairs C8-A/C8-B MERGED
+      (#5998 squash fa9ceeb, 98/98 verify_r4); MP-1 Amendment 1 MERGED (#5994
+      squash a3c3b69); C8-C DS-PR #6011 in flight (independent review MERGE-SAFE,
+      pre-merge repairs applied; commissioning session merges by hand — never
+      armed). P-MP1-SHELL gated on: #6011 merged + G-D coverage re-measured at a
+      post-#6006 nightly payload (08-19 library collapse was a #5980 partial
+      build; heal #6006 squash 0de8b86 merged 2026-08-19T20:07:23Z; groundwork
+      branch claude/p-mp1-shell at 3f43864e41ce, no PR). P-LAB-UI after the
+      settled shell + API, per the day-2 directive §7.
+      DAY-3 STATE (2026-08-20, Sol Day-3 directive): SEQUENCE CORRECTED — the
+      frozen LAB-0 §6 order is P-LAB-API -> R-LAB-1 -> Radar live commissioning
+      -> P-MP1-SHELL -> P-LAB-UI; the day-2 handoff's shell->UI->commissioning
+      ordering is SUPERSEDED. Gate A (G-D) PASS: measured at blob 251b9351 (the
+      post-#6006 publication 0b0c296f, byte-identical at tip) — frozen Reading A
+      (available/(available+blocked_data), not_applicable:plan_closed excluded
+      per producer law) = 237/237 = 100.0000%, blocked_data 0; gross-row Reading
+      B = 237/262 = 90.46%; ALL plausible readings clear >=90%. BINDING READING
+      ADJUDICATED = Reading A (uniquely reproduces MP-1's literal 225/225).
+      Do NOT wait for another nightly to re-measure — measure the CURRENT
+      artifact (the day-2 'tonight's nightly' wait is CLOSED). Gate B (Radar
+      commissioning) BLOCKED-ON-OPERATOR: W4 was already armed 08-18 by a prior
+      operator; 215 armed passes ALL refused (160 in-window 'no_pack') — the
+      08-19 pack builder store-gate red self-resolved, but four config blockers
+      remain: B2 writer has NO spool destination (live env lacks R2 creds AND
+      spool dir), B3 same-host split-brain (API env reads R2
+      mastermindx/live_flow/entry_radar_events; writer resolves to nothing),
+      B4 PROPHET_LAB_OBSERVATION_BASELINE_PATH absent from the API env, B5
+      ENTRY_RADAR_SLICE_DIR unset (path /opt/terminal/terminal/public/data now
+      VERIFIED live: 5.7G, 44,436 entries). Repairs are STAGED (systemd drop-in
+      referencing the API env file — no credential values handled — + two path
+      appends); the harness permission boundary denies remote production config
+      mutation from any lane, so applying them is an OPERATOR act; receipts:
+      /var/lib/macro-live/state/prophet_lab/commissioning_receipt_2026-08-20.json.
+      Baseline NOT minted (CLI correctly refused: zero spooled passes — never
+      self-baseline). P-MP1-SHELL: bounded prep MERGED #6049 (1ccf7fe8bdba —
+      §8a stance projection plumbing unwired, pv_card parameter byte-parity
+      proven, count plumbing, suites wired into engine-render-guards); CENTRAL
+      ACT OWED on a Sol referral — MP-1 is silent on the W-L1 collision (the
+      pinned provisional-board surface repaints the same #us-standouts .nbgrid
+      the packet re-sources; research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md).
+      DS-PR #6055 MERGED (d78121d6459c: .skel + .mx-error ported from the
+      specimen, additive-only, drift-guarded) discharging the V-B4 primitive
+      gap. Heal #6053 MERGED (zh-rebind test re-pinned to the C8-C structural
+      flip — the test-pinned-retired-literal trap, third instance). The five
+      test_hk_board_ui reds were NOT fixture drift — #6029 proved a sparse-CI
+      checkout artifact (day-2 diagnosis STRUCK, chip dismissed). P-LAB-UI NOT
+      started (directive §9).
+      DAY-4 STATE (2026-08-20, Sol Day-4 directive — CLOSURE): W-L1 RULED by Sol
+      (option b, MP-1 §13 row CLOSED, records #6064). GATE B COMMISSIONED under
+      the Chairman's explicit admin grant: env repairs applied (drop-in
+      EnvironmentFile + slice dir + baseline path + macro-api restart), a NEW
+      code blocker isolated and healed same-day (#6095: live_eval._quote_ts
+      only read 'ts' while the loader normalizes to 'ts_ms' — a healthy
+      2,089-symbol snapshot darked the whole probe set 0/2979), two bounded
+      resource rulings on the evaluator unit (MemoryHigh 768M/Max 1G;
+      TimeoutStartSec 570 — first full pass is cold-I/O ~10min), first genuine
+      in-window envelope 115834-entry_radar_live.json (240 usable quotes, 54
+      transitions, 27 events, 237 basis audits 0 mismatch), baseline minted
+      LAWFULLY 16:10:41Z (dry-run first, backend r2, after real passes),
+      post-mint service cycles self-sustaining (~5min cadence) with
+      observation_class live_forward=49 / retrospective_seed=150, pools
+      separate, coverage_verified true. Receipt (verdict COMMISSIONED):
+      /var/lib/macro-live/state/prophet_lab/commissioning_receipt_2026-08-20.json.
+      P-MP1-SHELL CENTRAL ACT MERGED #6076 (squash 31ca4971ba4a) after THREE
+      build rounds + THREE independent adversarial review rounds (final
+      certification MERGE-SAFE; §8b three-part record: mechanism PASS /
+      boundary WITHHELD pending the B1 escalation / candidate split
+      conformant): plan-book grid re-source in published plans_sort_key order,
+      §4b ladder verbatim, ?life= URL law, W-L1 neutralization per ruling (b)
+      (data-mp1-grid marker + :not() choke point; poller+stamp byte-identical),
+      §8a stance wiring, §10 states (dense clause DEFERRED — no plan-book
+      table view exists yet), Candidates shelf gated at the standing 1/3/full
+      idiom, fail-closed gate config, non-US byte parity proven at merge-base.
+      CRITICAL ESCALATION B1 (routed to Sol + operator,
+      DSC:PROPHET-INDEX-PUBLIC-R2-TWIN): the FULL plan book is anonymously
+      world-readable at the public R2 dev URL (200/2.16MB/262 plans with
+      entries/zones/targets/invalidations/theses) while the origin 401s the
+      same path — a LIVE pre-existing leak that the shell's paid boundary now
+      sits on top of. Remedy sketch in the DSC (redacted public stub for the
+      rescue watchdog + credentialed server-side reads for the Terminal's
+      /api/flow route + delete the public object; all consumers are
+      server-side). Post-merge render pending at the merge SHA; browser matrix
+      + live verification follow the bake. Follow-ups owed: cadence finding
+      for the Radar owner (cold-start pass exceeds the 5-min tick), N1 dead-JS
+      heal, N2 macro.html dead CSS, remote-route proof (site-full token)."
     status: in_progress
   - id: b5b
     depends_on: [b3, b4]
@@ -238,10 +331,50 @@ waves:
       receipt authority decomposition; nightly refresh seam in daily.yml collect;
       frozen contract research/prophet_v4/d2/D2B1_FROZEN_CONTRACT_2026-08-19.md)
       shipped as #5965 — live-refresh production proof gated on the first
-      post-#5936 listing snapshot (>2026-08-10). D2B2 (broad expansion: 1,868
-      NOT_IN_MASTER queue), D2B3 (GMI GOLD/B + IBIT corrections), D2C
-      (PIT vintages), D2D (ontology/probation), D2E (rights/acceptance) NOT
-      authorized yet — Sol reviews after each child returns."
+      post-#5936 listing snapshot (>2026-08-10). Child D2B1-R1 (Sol amendment
+      2026-08-20: the transition race fired on the first natural nightly —
+      duplicate SEC:US-XNYS-VMRK minted for the EQR→VMRK rename; PROVEN, then
+      repaired: dated RenameEvent from SEC 8-K 0001140361-26-033377, supersession
+      onto the continuing EQR identity via new security_state/superseded_by axis +
+      security_migrations receipts + authored SECURITY_SUPERSESSIONS registry,
+      AVB typed exit, general pending-transition fence with typed refusals;
+      contract research/prophet_v4/d2/D2B1_R1_FROZEN_CONTRACT_2026-08-20.md +
+      AMENDMENTS §1-§3) shipped as #6082 — Sol's D2B2 gate = the next natural
+      refresh proving one canonical identity survives (see the R1 handoff for
+      the expected first-night provenance churn). D2B2-CN-HK AUTHORIZED
+      2026-08-20 (Sol adjudication DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK,
+      resolving the China Alpha pr0d owner collision): exactly one bounded
+      child admitting the source-supported China/HK listing population into
+      the canonical master (or typed refusals for every target) and
+      re-deriving the GMI identity projection — frozen contract
+      research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md; start
+      pin re-censuses NOT_IN_MASTER by market (the 1,868 figure is
+      observation, not contract); China wave pr0d is consumer-verifier and
+      adopts the child's result by reference. The full D2B2 US/Canada
+      backlog, D2B3 (GMI GOLD/B + IBIT corrections), D2C (PIT vintages), D2D
+      (ontology/probation), D2E (rights/acceptance) remain NOT authorized —
+      Sol reviews after each child returns. D2B2-CN-HK BUILT_NOT_PROVEN
+      2026-08-20: start-pin census 1,021 cn + 147 hk (target N 1,168);
+      admitted via the EXISTING canonical builder (no lib/dataos edits, no
+      new evidence class, no CN/HK issuer grouping) using committed
+      primary-source evidence (CN: CNInfo data/china_filings/filings.parquet,
+      984/1021 = 96.4%; HK: SFC+HKEX data/hk_shorts/{positions,turnover}.parquet,
+      147/147 = 100%; 37 CN refused, named in the receipt, no silent drop);
+      GMI sidecar re-derived with zero code changes to
+      engine/theme_graph/identity_resolution.py (already market-agnostic);
+      US coverage byte-identical (702/533/2/1 unchanged); 5 hostile fixtures
+      on real committed data (A/H ICBC, renamed 300223, SOE-naming-collision
+      601988/601601, unresolved issuer, alias-only vendor id — CN/HK never
+      resolves via rule 5, only rule 6); PR #6116, squash-merged as
+      ed28d0d992a144aec5f0ef2616024e3e32d83b1a (immutable merge SHA). China
+      pr0d wave adopts this result by
+      reference (WS-CHINA-ALPHA-INTELLIGENCE.md). Done requires a natural
+      production nightly proving source -> master -> GMI projection with a
+      recorded run id and the measured CN/HK resolution delta, per Sol's
+      completion law — not yet observed. Sol accepted the D2B2-CN-HK
+      implementation 2026-08-20 (BUILT_NOT_PROVEN); proof rides the first
+      natural nightly containing ed28d0d992a1 per the China WS pr0d entry;
+      no dispatched proof runs."
     status: in_progress
   - id: d3
     depends_on: [d2]

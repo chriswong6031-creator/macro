@@ -46,6 +46,13 @@ pyarrow>=16
 # stamp must never block a paid download).
 pypdf>=4.0
 reportlab>=4.0
+# Error/trace reporting (app/observability.py). SOFT dep by construction: the
+# init helper catches ImportError and no-ops, so a fresh box whose pip step has
+# not landed yet still serves /api. Pinned >=2.35 because `enable_logs` only
+# graduated to a top-level init kwarg there (the helper degrades to the
+# portable option set if an older wheel is what actually gets installed).
+# Auto-instruments FastAPI/Starlette/logging — no per-route code.
+sentry-sdk>=2.35,<3
 # Billing spine (MNZ W2): app/billing.py — Stripe Checkout + webhook + portal +
 # reconciler. Needs the Entitlements API (GA), so pin >=11. Imported lazily inside
 # app/billing.py so the API process still starts if the dep is briefly absent.

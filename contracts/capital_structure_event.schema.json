@@ -131,7 +131,12 @@
       "properties": {
         "immutable_record": {"const": true},
         "correction_version": {"type": "integer", "minimum": 1},
-        "correction_of": {"type": ["string", "null"]}
+        "correction_of": {"type": ["string", "null"]},
+        "identity_format": {
+          "type": "integer",
+          "const": 2,
+          "description": "Post-W1 event-version identity. Format 2 hashes semantic state + evidence_ids + the correction chain, excluding source.manifest_ids, evidence[].manifest_id, and point_in_time clocks. Omitted on historical format-1 rows, which hash the full body minus event_id."
+        }
       }
     },
     "point_in_time": {

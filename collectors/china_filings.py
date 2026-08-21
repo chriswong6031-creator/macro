@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import logging
 import random
+import re
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -30,6 +31,21 @@ from collectors.base import Adapter
 from lib import config
 
 log = logging.getLogger(__name__)
+
+# P1-R1 same-cycle derivation contract: process-local outcome of the MOST RECENT
+# fetch() call in THIS process. Read by collectors/china_visits.py when both run in
+# one collect invocation (same cninfo host-group thread, china_filings then
+# china_visits — see scripts/collect.py _CONCURRENT_HOSTS). None means china_filings
+# has not run in this process (e.g. `--only china_visits`) and the derived plane
+# then reads the committed store — the legitimate proof/debug path. Set FAIL-CLOSED
+# at fetch() entry so an escape (an exception that somehow skips every later
+# assignment) reads as a failed refresh, never as "not run". Process-local by
+# design, never persisted to disk — a sidecar file would make a later
+# `--only china_visits` run inherit a stale verdict from a prior process. Exchange
+# budget truncation (_EXCHANGE_BUDGET_S) is deliberately NOT a degradation signal
+# here: it is self-healing by design (keep-FIRST dedup + the 3-day re-pull), so a
+# truncated-but-successful exchange still counts as ok.
+LAST_RUN_OUTCOME: dict | None = None
 
 # ------------------------------------------------------------------ constants --
 
@@ -146,6 +162,14 @@ CATEGORY_PRIORITY: list[tuple[str, list[str]]] = [
     ("pledge",              ["质押"]),
     ("holder_change_down",  ["减持"]),
     ("holder_change_up",    ["增持"]),
+    # institutional-visit / IR-activity family (P1, China Alpha Intelligence
+    # RIGHTS-0 §1: rights-clear metadata plane, extraction was the gap).
+    # Lowest priority among the named categories (only "other" ranks below
+    # it) — 调研 is a broad word and this ordering guarantees the addition
+    # never reclassifies any filing that already matched a higher-priority
+    # category above (investigation/inquiry_letter/... unchanged).
+    ("institutional_visit", ["投资者关系活动记录表", "特定对象调研",
+                             "分析师会议", "业绩说明会", "调研"]),
 ]
 _OTHER = "other"
 
@@ -157,24 +181,53 @@ _KIND_ATTACHMENT_KW = ("专项说明", "核查意见", "专项核查意见")
 # 复函 (formal reply letter) added: confirmed in 4 live inquiry.parquet rows
 # e.g. "股票交易异常波动问询函的复函-郁敏珺". 答复 kept (deliberate superset ruling).
 _KIND_REPLY_KW = ("回函", "回复", "答复", "复函")
+# Reply-side forms that the two lists above miss. `letter` used to be the
+# fall-through for the whole family, so ANY reply-side document whose title did
+# not happen to contain one of the words above was stored as an exchange-issued
+# inquiry. Measured 2026-08-19 on data/china_filings/filings.parquet: 100 of the
+# 140 rows stored kind="letter" were 会计师事务所…说明, 独立董事…意见,
+# 律师…法律意见书 or 评估机构…发表意见 — reply-side filings published as
+# unanswered regulatory questions (PR #5975).
+#
+# 意见 is matched broadly rather than enumerated: the reply side keeps inventing
+# organ and adviser forms (独立董事意见, 董事会审计委员会…相关意见, 专项法律意见,
+# 评估机构…发表意见), and an enumeration silently re-admits each new one.
+_KIND_REPLY_SIDE_KW = ("意见", "说明")
+# 延期回复 says the reply is POSTPONED. It contains 回复 and every one of the 41
+# such notices in the store was classified `reply`, which is the inverse of the
+# truth: the filing announcing that no reply has been made would mark the inquiry
+# answered. It is reply-SIDE (not an exchange letter) but it is not a reply.
+_KIND_DEFERRAL_RE = re.compile(r"(?:延期|延长|推迟|顺延)回复")
 
 
 def classify_kind(title: str) -> str | None:
     """Return the inquiry-letter sub-kind for a title, or None if not applicable.
 
     Only called when the enclosing category is 'inquiry_letter'. Within that
-    family precedence is: attachment > reply > letter (default).
+    family precedence is:
+      deferral > attachment > reply > reply_side > letter
 
-      'letter'     — exchange-issued inquiry (问询函/监管函/关注函), the default
-      'reply'      — company reply (回函/回复/答复)
-      'attachment' — third-party verification / specialist note (专项说明/核查意见)
+      'letter'     — an exchange-issued inquiry, or the company's receipt of one
+      'reply'      — the company's reply (回函/回复/答复/复函)
+      'attachment' — third-party verification note (专项说明/核查意见)
+      'reply_side' — any other filing made in ANSWER to an inquiry: an adviser's
+                     说明, an organ's 意见, a 法律意见书. Not an inquiry, and not
+                     itself the reply.
+      'deferral'   — a notice that the reply is postponed; answers nothing.
+
+    `letter` is deliberately no longer the catch-all: a title that names none of
+    these forms is an inquiry, and everything else must say what it is.
 
     Pure function; unit-testable without any I/O.
     """
+    if _KIND_DEFERRAL_RE.search(title):
+        return "deferral"
     if any(kw in title for kw in _KIND_ATTACHMENT_KW):
         return "attachment"
     if any(kw in title for kw in _KIND_REPLY_KW):
         return "reply"
+    if any(kw in title for kw in _KIND_REPLY_SIDE_KW):
+        return "reply_side"
     return "letter"
 
 
@@ -183,7 +236,7 @@ def categorize(title: str) -> str:
 
     Priority order: investigation > inquiry_letter > delisting_risk >
     earnings_preann > restructuring > major_contract > buyback > pledge >
-    holder_change_down > holder_change_up > other.
+    holder_change_down > holder_change_up > institutional_visit > other.
 
     Pure function; unit-testable without any I/O.
     """
@@ -366,6 +419,14 @@ class ChinaFilingsAdapter(Adapter):
         date_range = self._date_range(full_history)
         collected_at = datetime.now(timezone.utc).isoformat()
 
+        global LAST_RUN_OUTCOME
+        LAST_RUN_OUTCOME = {
+            "ok": False,
+            "errors": ["refresh started but did not complete"],
+            "per_exchange": {},
+            "at": collected_at,
+        }
+
         session = requests.Session()
         all_rows: list[dict] = []
         per_exchange: dict[str, int] = {}
@@ -387,6 +448,12 @@ class ChinaFilingsAdapter(Adapter):
                 )
 
         if not all_rows and errors:
+            LAST_RUN_OUTCOME = {
+                "ok": False,
+                "errors": errors,
+                "per_exchange": per_exchange,
+                "at": collected_at,
+            }
             raise RuntimeError(
                 "china_filings: all exchanges failed — " + " | ".join(errors)
             )
@@ -396,6 +463,12 @@ class ChinaFilingsAdapter(Adapter):
             "china_filings: %d raw rows collected, %d net-new stored (%s)",
             len(all_rows), net_new, per_exchange,
         )
+        LAST_RUN_OUTCOME = {
+            "ok": not errors,
+            "errors": errors,
+            "per_exchange": per_exchange,
+            "at": collected_at,
+        }
 
         # Summary frame — DatetimeIndex is required by base.validate() /
         # store.upsert(). Follow china_official_corpora precedent (line 468):

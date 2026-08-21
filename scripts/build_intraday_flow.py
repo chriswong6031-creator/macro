@@ -335,9 +335,15 @@ def _load_intraday_bars(ticker: str, data_root: Path) -> pd.DataFrame | None:
         df = pd.read_parquet(p)
         # Ensure a date column for session grouping.
         if "date" not in df.columns and isinstance(df.index, pd.DatetimeIndex):
+            index_name = df.index.name or "index"
             df = df.reset_index()
-            if "index" in df.columns:
-                df = df.rename(columns={"index": "timestamp"})
+            # Polygon's current writer names the DatetimeIndex ``ts``.  Normalize
+            # any datetime-index label instead of requiring each reader to know
+            # every producer spelling.
+            if index_name in df.columns and index_name not in {
+                "timestamp", "t", "datetime", "time"
+            }:
+                df = df.rename(columns={index_name: "timestamp"})
         return df
     except Exception as e:  # noqa: BLE001
         log.debug("build_intraday_flow: intraday/%s unreadable: %s", ticker, e)

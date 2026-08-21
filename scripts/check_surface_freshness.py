@@ -27,7 +27,7 @@ import argparse
 import json
 import logging
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import NamedTuple
 
@@ -42,6 +42,7 @@ log = logging.getLogger("check_surface_freshness")
 class ArtifactSpec(NamedTuple):
     path: str            # relative to config.ROOT
     as_of_key: str = "as_of"   # JSON key holding the session date string
+    clock: str = "nyse"         # ``nyse`` or a source-owned availability clock
 
 
 # Authoritative list of first-class surface artifacts (FT-R8).
@@ -54,7 +55,54 @@ _ARTIFACTS: list[ArtifactSpec] = [
     ArtifactSpec("site/basketdata/sector_pulse.json"),
     ArtifactSpec("site/basketdata/turn_watch.json"),  # FTR W4 basket turn-watch organ
     ArtifactSpec("site/factordata/us_standouts.json"),  # CSP-W5 FT-R8 registration
+    # Options Flow publishes ``asof`` (no underscore).  Registering the actual
+    # reader-facing manifest closes the gap where its producer could no-op for
+    # several sessions while this shared sentinel remained green.
+    ArtifactSpec("site/flow/index.json", "asof"),
+    # FINRA daily files have a later, source-owned 18:30 ET availability clock.
+    ArtifactSpec("site/darkpool_eod.json", "asof", "finra"),
 ]
+
+
+def _expected_for_spec(spec: ArtifactSpec, now: datetime | None) -> date:
+    if spec.clock == "finra":
+        from collectors.finra_short_volume import expected_available_session
+
+        return expected_available_session(now)
+    return nyse_calendar.expected_last_session(now)
+
+
+def check_darkpool_population(root: Path) -> int | None:
+    """Warn when a nominally fresh Dark Pool universe mixes observation dates.
+
+    The current machine-facing ``universe`` must be a comparable cross-section:
+    every member's ``asof`` equals the artifact's top-level session.  Explicit
+    older rows may live under ``historical_rows`` and are not counted as mixed.
+    """
+    path = root / "site" / "darkpool_eod.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        asof = str(payload.get("asof") or "")
+        rows = payload.get("universe") or []
+        mixed = sum(
+            1 for row in rows
+            if isinstance(row, dict) and str(row.get("asof") or "") != asof
+        )
+    except FileNotFoundError:
+        return None
+    except Exception as e:  # noqa: BLE001 — sentinel remains warn-only
+        log.debug("darkpool population census unreadable (%s)", e)
+        return None
+    if mixed:
+        print(
+            "::warning::SURFACE MIXED: site/darkpool_eod.json "
+            f"universe_rows_off_clock={mixed} top_level_asof={asof}",
+            flush=True,
+        )
+        log.warning("Dark Pool mixed population: %d universe rows differ from %s", mixed, asof)
+    else:
+        log.info("Dark Pool population coherent: %d current rows at %s", len(rows), asof)
+    return mixed
 
 
 def _read_as_of(root: Path, spec: ArtifactSpec) -> str | None:
@@ -248,10 +296,12 @@ def run(now: datetime | None = None, root: Path | None = None) -> int:
         check_candidates_freshness(root, now)
     except Exception as e:  # noqa: BLE001 — the sentinel never breaks the render
         log.warning("candidates freshness check failed (%s)", e)
-    expected_date = nyse_calendar.expected_last_session(now)
-    expected = str(expected_date)
     stale: list[tuple[str, str]] = []
+    expected_by_path: dict[str, date] = {}
     for spec in _ARTIFACTS:
+        expected_date = _expected_for_spec(spec, now)
+        expected = str(expected_date)
+        expected_by_path[spec.path] = expected_date
         as_of = _read_as_of(root, spec)
         actual = as_of or "MISSING"
         if not as_of or as_of < expected:
@@ -260,26 +310,39 @@ def run(now: datetime | None = None, root: Path | None = None) -> int:
             log.warning("SURFACE STALE: %s as_of=%s expected=%s", spec.path, actual, expected)
         else:
             log.info("fresh: %s as_of=%s", spec.path, as_of)
+    mixed_darkpool = check_darkpool_population(root)
     stale_count = len(stale)
     if stale_count == 0:
-        log.info("all %d surface artifacts are fresh for session %s", len(_ARTIFACTS), expected)
+        log.info(
+            "all %d surface artifacts are clock-current%s",
+            len(_ARTIFACTS),
+            "; Dark Pool population mixed" if mixed_darkpool else "",
+        )
         return 0
-    log.warning("%d/%d surface artifacts are stale (expected session %s)",
-                stale_count, len(_ARTIFACTS), expected)
+    log.warning("%d/%d surface artifacts are stale against their source clocks",
+                stale_count, len(_ARTIFACTS))
 
     # How far behind is the WORST one? A MISSING artifact has no date to measure, so it
     # counts as maximally behind — an artifact that is not there published nothing.
     worst = 0
-    for _path, actual in stale:
+    for path, actual in stale:
         if actual == "MISSING":
             worst = max(worst, ESCALATE_SESSIONS_BEHIND)
             continue
         try:
-            worst = max(worst, nyse_calendar.sessions_behind(date.fromisoformat(actual), now))
+            actual_date = date.fromisoformat(actual)
+            target = expected_by_path[path]
+            gap = len(nyse_calendar.sessions_between(
+                actual_date + timedelta(days=1), target
+            ))
+            worst = max(worst, gap)
         except Exception:  # noqa: BLE001 — an unparseable as_of is not this sentinel's subject
             continue
     if worst >= ESCALATE_SESSIONS_BEHIND:
-        _escalate(stale, worst, expected)
+        expected_summary = ", ".join(
+            sorted({str(expected_by_path[path]) for path, _actual in stale})
+        )
+        _escalate(stale, worst, expected_summary)
     else:
         log.info("worst surface is %d session(s) behind (< %d) — annotation only, no page",
                  worst, ESCALATE_SESSIONS_BEHIND)
@@ -302,7 +365,7 @@ def selftest() -> int:
         for spec in _ARTIFACTS:
             p = tmp / spec.path
             p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(json.dumps({"as_of": expected}))
+            p.write_text(json.dumps({spec.as_of_key: expected}))
 
         rc = run(now=datetime(2026, 7, 9, 3, 0, tzinfo=timezone.utc), root=tmp)
         assert rc == 0, f"fresh scenario returned {rc}"

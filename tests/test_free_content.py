@@ -1263,13 +1263,19 @@ class TestRenderedOutput:
             pytest.skip("No rendered free-estate HTML files found in site/")
 
         # Two legitimate script tails, ONE resolution rule.
-        # Generator-rendered estate pages carry the estate tail.
-        _ESTATE_TAIL = ("supabase.js", "account.js", "mm_brain.js", "theme.js")
+        # Generator-rendered estate pages carry the estate tail. mm_brain.js left
+        # this tail in #5983: theme.js mounts its own launcher stub and requests
+        # the 227 KB bundle on first activation, so an eager tag here is pure
+        # first-load cost. It is still in _LANDING_TAIL below — see there.
+        _ESTATE_TAIL = ("supabase.js", "account.js", "theme.js")
         # The hand-authored flagships (bfc.HAND_AUTHORED) ship the LANDING tail
         # instead — masterplan §1, chrome-verified in-browser: onboard.js owns
         # the gear/auth chrome on landing-family pages, so supabase.js,
         # account.js and theme.js are deliberately absent there. They are not
-        # missing; they are not that page's contract.
+        # missing; they are not that page's contract. That absent theme.js is
+        # also why these three KEEP their eager mm_brain.js tag: with no theme.js
+        # there is no launcher stub and no on-demand loader, so the tag is the
+        # only assistant they have.
         # These pages are re-checked against their own tail rather than skipped.
         # The depth-resolution assertion below is what this test exists for — a
         # nested page linking "mm_brain.js" without the "../" 404s — and that
@@ -1308,6 +1314,62 @@ class TestRenderedOutput:
                         f"{page.relative_to(_REPO)}: {asset} resolves to {target}"
                     )
         assert not errors, "Broken nested runtime assets:\n" + "\n".join(errors)
+
+    def test_no_page_eagerly_loads_the_assistant_bundle_beside_theme_js(self):
+        """mm_brain.js is 227 KB — the largest script in the estate. A page that
+        already loads theme.js gets its launcher from theme.js's stub and fetches
+        the bundle on first activation (#5976), so an eager tag beside theme.js
+        buys nothing and costs every visitor the full download, parse, and mount.
+
+        The three hand-authored flagships are the deliberate exception and are
+        asserted POSITIVELY: they carry no theme.js, so their own tag is the only
+        loader they have, and silently losing it would take the assistant off
+        those pages entirely.
+        """
+        import scripts.build_free_content as bfc
+
+        if not _SITE_DIR.is_dir():
+            pytest.skip("site/ not rendered")
+
+        eager = re.compile(r'<script[^>]+src=["\'][^"\']*mm_brain\.js')
+        theme = re.compile(r'<script[^>]+src=["\'][^"\']*theme\.js')
+
+        offenders, exempt_seen = [], set()
+        for page in _SITE_DIR.rglob("*.html"):
+            html = page.read_text(encoding="utf-8", errors="replace")
+            if not eager.search(html):
+                continue
+            rel = page.relative_to(_SITE_DIR)
+            if bfc._is_hand_authored(rel):
+                exempt_seen.add(str(rel).replace("\\", "/"))
+                # The exemption is earned by NOT having theme.js. If one of these
+                # ever gains the shared chrome, it must drop the eager tag too.
+                if theme.search(html):
+                    offenders.append(
+                        f"{rel}: hand-authored page now loads theme.js — the "
+                        "eager mm_brain.js tag is no longer earned"
+                    )
+                continue
+            offenders.append(f"{rel}: eager mm_brain.js tag beside theme.js")
+
+        assert not offenders, (
+            f"{len(offenders)} page(s) still pay the eager assistant cost:\n"
+            + "\n".join(offenders[:20])
+        )
+        assert exempt_seen == set(bfc.HAND_AUTHORED), (
+            "the hand-authored exemption drifted — expected "
+            f"{sorted(bfc.HAND_AUTHORED)}, found {sorted(exempt_seen)}"
+        )
+
+    def test_seo_base_template_does_not_emit_the_assistant_bundle(self):
+        """The source-side twin of the check above, so the fix cannot be undone at
+        the template and only caught after a full estate re-render."""
+        tpl = (_REPO / "templates" / "seo_base.html.j2").read_text(encoding="utf-8")
+        emitted = re.findall(r'<script[^>]+src=["\'][^"\']*mm_brain\.js[^>]*>', tpl)
+        assert not emitted, (
+            "templates/seo_base.html.j2 emits an eager mm_brain.js tag again: "
+            f"{emitted} — theme.js already loads it on first activation (#5976)"
+        )
 
     def test_calculator_pages_have_related_rail(self):
         """F2: Calculator pages must contain the related rail markup (.est-related)."""

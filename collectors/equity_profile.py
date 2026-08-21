@@ -59,7 +59,13 @@ REFRESH_DAYS = 120
 #       "redwood", which the restaurant page carries.
 #   v2: graded resolution strength + first-party (SEC SIC) industry corroboration;
 #       a single-distinctive-token match must now be corroborated to be published.
-RESOLVER_VERSION = 2
+#   v3: child-entity rejection. v2 still published a page whose title appends a
+#       word the issuer's name lacks AND which declares itself a subsidiary, brand
+#       or product line of a DIFFERENT company: PSMT carried "PriceSmart Foods" (a
+#       BC supermarket chain owned by the Jim Pattison Group), LNC "Lincoln
+#       Financial Media" (a defunct broadcaster), DMC "Del Monte Foods" (a
+#       NutriAsia subsidiary), TXN "Texas Instruments Power" (a transistor series).
+RESOLVER_VERSION = 3
 # A row whose SEC identity resolved but whose Wikipedia description came back empty
 # was usually a TRANSIENT miss (Wikipedia throttled/down for that one fetch), not a
 # name Wikipedia genuinely lacks — the matcher resolves the vast majority on a retry.
@@ -703,6 +709,87 @@ def _resolution_strength(title: str, *names: str) -> str:
     return STRENGTH_TOKENS if distinct >= 2 else STRENGTH_WEAK
 
 
+# A page that declares itself a subsidiary, division, brand or product line is
+# describing something NARROWER than the listed issuer. Paired with a title that
+# adds a word the issuer's own name does not carry, that is the signature of the
+# wrong entity — measured on the live cache, it is what PSMT ("PriceSmart Foods",
+# a BC supermarket chain owned by the Jim Pattison Group), LNC ("Lincoln Financial
+# Media", a defunct broadcaster), DMC ("Del Monte Foods", a NutriAsia subsidiary)
+# and TXN ("Texas Instruments Power", a transistor series) all have in common.
+# Each signal alone is too blunt: plenty of correct pages mention a subsidiary, and
+# a fused title ("Eagle Bancorp" -> "EagleBank") adds a token without adding a WORD.
+_CHILD_ENTITY_RE = re.compile(
+    r"\b(?:wholly[- ]owned\s+)?"
+    r"(?:subsidiary|division|unit|marque|trade\s+name|product\s+line|brand)\s+of\b"
+    r"|\b(?:is|was)\s+(?:a|an|the)\s+series\s+of\b"
+    r"|\bowned\s+by\b|\bmanufactured\s+by\b|\boperated\s+by\b",
+    re.IGNORECASE)
+
+
+# A product line is never a company, so there is no parent to compare — reject.
+_PRODUCT_RE = re.compile(
+    r"\b(?:is|was)\s+(?:a|an|the)\s+(?:series|line|range|family|model)\s+of\b",
+    re.IGNORECASE)
+# "... subsidiary of X", "... owned by X" — X is the declared parent.
+_PARENT_RE = re.compile(
+    r"\b(?:(?:wholly[- ]owned\s+)?"
+    r"(?:subsidiary|division|unit|marque|trade\s+name|product\s+line|brand)\s+of"
+    r"|owned\s+by|manufactured\s+by|operated\s+by)\s+"
+    r"(?:the\s+)?([A-Z][\w&.'-]*(?:\s+(?:and\s+)?[A-Z][\w&.'-]*){0,4})",
+    re.IGNORECASE)
+
+
+def _declares_foreign_parent(page_desc: str | None, page_extract: str | None,
+                             *names: str) -> bool:
+    """Does the page declare itself a child of something that is NOT this issuer?
+
+    A page saying "X is a subsidiary of Y" is about X, not Y — so if Y is not the
+    issuer we are resolving, the blurb belongs to a different company. But if Y IS
+    the issuer, the page is the issuer's own operating bank or property and the
+    blurb is legitimate: measured on the live cache, comparing the declared parent
+    is what separates "Old National Bank, operated by Old National Bancorp" (ONB,
+    correct) from "PriceSmart Foods, a subsidiary of the Overwaitea Food Group"
+    (PSMT, a different company entirely)."""
+    lead = f"{page_desc or ''} {str(page_extract or '')[:400]}"
+    if _PRODUCT_RE.search(lead):
+        return True                      # a product line has no parent to match
+    m = _PARENT_RE.search(lead)
+    if not m:
+        return False
+    parent = _norm(_core_name(m.group(1)))
+    if not parent:
+        return False
+    for nm in names:
+        core = _norm(_core_name(nm or ""))
+        if core and (core in parent or parent in core):
+            return False                 # the declared parent IS this issuer
+    return True
+
+
+def _title_adds_a_word(title: str, *names: str) -> bool:
+    """Does the candidate title carry a WORD the issuer's own name does not?
+
+    Word-level on purpose. A fused rendering ("Eagle Bancorp" titled "EagleBank")
+    adds no word — its single token simply spells the issuer differently — while
+    "PriceSmart" -> "PriceSmart Foods" genuinely appends one."""
+    t_words = set(_toks(_title_core(title)))
+    if not t_words:
+        return False
+    for nm in names:
+        if not nm:
+            continue
+        n_words = set(_toks(_core_name(nm))) | set(_toks(nm))
+        extra = {w for w in (t_words - n_words)
+                 if w not in _NAME_STOP and len(w) >= 3}
+        # a fused spelling is not an addition: the whole issuer core sits inside it
+        fused = _norm(_core_name(nm))
+        if extra and fused and any(fused in _norm(w) or _norm(w) in fused for w in extra):
+            continue
+        if not extra:
+            return False
+    return True
+
+
 def _accept_page(s: dict, sic_description: str | None, *names: str,
                  hq: str | None = None) -> tuple[bool, str]:
     """The publication decision for one candidate page: (accepted, strength).
@@ -745,6 +832,14 @@ def _accept_page(s: dict, sic_description: str | None, *names: str,
     # Wikipedia offers under that name) and on none of those three.
     if (_foreign_parenthetical(title, *names)
             and _location_contradicts(hq, desc, extract)):
+        return False, strength
+    # A title that appends a word the issuer's own name lacks, on a page that
+    # declares itself a child of some OTHER company, is describing a subsidiary,
+    # brand or product line — not the listed issuer. Both halves are required:
+    # correct pages mention subsidiaries all the time, and a fused spelling adds a
+    # token without adding a word.
+    if (_title_adds_a_word(title, *names)
+            and _declares_foreign_parent(desc, extract, *names)):
         return False, strength
     if strength == STRENGTH_TOKENS:
         return agrees is not False, strength       # only a CONTRADICTION blocks
@@ -822,6 +917,11 @@ def adjudicate_cached_row(name: str | None, wiki_title: str | None,
         return False, "exact-name-match"
     if _industry_agrees(sic_description, None, text) is False:
         return True, "industry-contradiction"
+    # decidable offline from the stored extract alone: the page says it belongs to
+    # a different company, and its title carries a word this issuer's name does not
+    if (_title_adds_a_word(title, str(nm) if nm else "")
+            and _declares_foreign_parent(None, text, str(nm) if nm else "")):
+        return True, "declares-a-different-parent"
     return False, "retained-pending-refetch"
 
 

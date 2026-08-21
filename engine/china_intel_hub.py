@@ -251,6 +251,168 @@ def _load_special_by_ticker() -> dict:
     return {}
 
 
+# ── Institutional-visit tape (P1, China Alpha Intelligence) ────────────────── #
+# DESCRIPTIVE ONLY — no score, no rank input (masterplan §11.4 serial firewall).
+# Source: data/china_visits/visits.parquet (collectors/china_visits.py), a
+# store DERIVED from china_filings' own CNInfo stream — see RIGHTS_REGISTRY.md
+# §1/§10 for the rights basis and collectors/china_visits.py for the PIT/
+# coverage-start/health contract this block reads.
+
+_VISIT_SUFFIX_TO_EXCHANGE = {"SZ": "szse", "SS": "sse"}
+_VISIT_STALE_AFTER_DAYS = 4   # mirrors ChinaVisitsAdapter.stale_after_days
+
+
+def _ticker_to_sec_code(ticker: str) -> tuple[str, str] | None:
+    """('000001', 'szse') from '000001.SZ'; None for a non-A-share ticker
+    (e.g. an HK 4/5-digit code) — those are NOT_APPLICABLE to this CNInfo
+    plane, never a false 'no event'. Pure."""
+    if not ticker or "." not in ticker:
+        return None
+    code, _, suf = ticker.upper().rpartition(".")
+    exch = _VISIT_SUFFIX_TO_EXCHANGE.get(suf)
+    if not exch or not code:
+        return None
+    return code, exch
+
+
+def _load_visits_context() -> dict:
+    """One-time load of the whole china_visits plane for this build: rows
+    grouped by sec_code, plus the plane's coverage_start and health record.
+    Degrade-safe — an absent/corrupt store (or the module itself missing)
+    reads as 'no_coverage', never a crash and never a false 'measured_no_event'.
+    """
+    try:
+        from collectors import china_visits as cv
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_hub: collectors.china_visits import failed (%s)", e)
+        return {"by_code": {}, "coverage_start": None,
+                "health": {"status": "no_coverage", "detail": str(e)}}
+    try:
+        df = cv.load_visits()
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_hub: china_visits.load_visits() failed (%s)", e)
+        df = None
+    by_code: dict = {}
+    if df is not None and not df.empty:
+        for row in df.to_dict("records"):
+            code = str(row.get("sec_code") or "").strip()
+            if not code:
+                continue
+            # Plain-word filing-type label, computed ONCE per plane load (not
+            # per-dossier-call) — descriptive only, never routes/scores.
+            try:
+                kind_en, kind_zh = cv.visit_kind_label(row.get("title") or "")
+            except Exception:  # noqa: BLE001
+                kind_en, kind_zh = "investor visit", "机构调研"
+            row = {**row, "kind_en": kind_en, "kind_zh": kind_zh}
+            by_code.setdefault(code, []).append(row)
+    try:
+        coverage_start = cv.read_coverage_start()
+    except Exception:  # noqa: BLE001
+        coverage_start = None
+    try:
+        health = cv.read_health()
+    except Exception:  # noqa: BLE001
+        health = {"status": "no_coverage", "detail": "health read failed"}
+    return {"by_code": by_code, "coverage_start": coverage_start, "health": health}
+
+
+def _visit_block(ticker: str, visit_ctx: dict) -> dict:
+    """Descriptive visit-tape block for one ticker — recent filings, visitor
+    identity (typed, never guessed), and a first-seen-since-coverage-start
+    flag. Always names its state from the house ten-state taxonomy
+    (masterplan §9.3); NEVER presents a source failure as a quiet tape.
+
+    health.status == "upstream_degraded" (P1-R1: the same-run china_filings
+    refresh this collection's china_visits derivation consumed was itself
+    degraded) never routes into the source_failure branch — the visit tape
+    history is still readable and stays visible. With no rows for this name
+    it reads like a stale refusal instead of a clean "measured_no_event": a
+    degraded upstream proves no absence. Rows present render normally either
+    way — positive evidence from a degraded run is real evidence.
+    """
+    try:
+        parsed = _ticker_to_sec_code(ticker)
+        if parsed is None:
+            return {"state": "not_applicable",
+                    "detail": "not a CNInfo A-share (SSE/SZSE) ticker", "recent": []}
+        code, _exch = parsed
+        coverage_start = visit_ctx.get("coverage_start")
+        health = visit_ctx.get("health") or {}
+        status = health.get("status")
+
+        if status == "source_failure":
+            return {"state": "source_failure",
+                    "detail": health.get("detail") or "visit-tape source unreadable "
+                              "on the last collection run", "recent": []}
+        if not coverage_start:
+            return {"state": "no_coverage",
+                    "detail": "visit-tape plane has not completed its first "
+                              "collection run yet", "recent": []}
+
+        stale = False
+        stale_days = None
+        last_success = health.get("last_success_utc")
+        if last_success:
+            try:
+                stale_days = (datetime.now(timezone.utc)
+                              - datetime.fromisoformat(last_success)).days
+                stale = stale_days > _VISIT_STALE_AFTER_DAYS
+            except Exception:  # noqa: BLE001
+                stale = False
+                stale_days = None
+
+        rows = (visit_ctx.get("by_code") or {}).get(code) or []
+        if not rows:
+            if stale:
+                return {"state": "stale", "stale_days": stale_days,
+                        "detail": "visit-tape source has not refreshed recently — "
+                                  "absence of visits cannot be confirmed right now",
+                        "recent": [], "coverage_start": coverage_start}
+            if status == "upstream_degraded":
+                return {"state": "stale", "stale_days": stale_days,
+                        "detail": "visit-tape upstream was degraded on the last "
+                                  "collection run — absence of visits cannot be "
+                                  "confirmed right now",
+                        "recent": [], "coverage_start": coverage_start}
+            return {"state": "measured_no_event",
+                    "detail": "no institutional-visit filing observed for this name "
+                              "since coverage start", "recent": [],
+                    "coverage_start": coverage_start}
+
+        rows_sorted = sorted(rows, key=lambda r: r.get("source_published_at") or "",
+                              reverse=True)
+        earliest_ts = min((r.get("source_published_at") or "" for r in rows), default="")
+        recent = []
+        for r in rows_sorted[:5]:
+            recent.append({
+                "title": r.get("title"),
+                "kind_en": r.get("kind_en") or "investor visit",
+                "kind_zh": r.get("kind_zh") or "机构调研",
+                "source_published_at": r.get("source_published_at"),
+                "visitor_raw": r.get("visitor_raw"),
+                "visitor_class": r.get("visitor_class"),
+                "ontology_version": r.get("ontology_version"),
+                "adjunct_url": r.get("adjunct_url"),
+                # Never "first ever" — we did not observe this company before
+                # coverage_start, so the strongest honest claim is "since".
+                "first_seen_since_coverage_start":
+                    bool(r.get("source_published_at") == earliest_ts and earliest_ts),
+            })
+        return {
+            "state": "stale" if stale else "ok",
+            "stale_days": stale_days if stale else None,
+            "detail": ("visit-tape source has not refreshed recently" if stale else None),
+            "recent": recent,
+            "n_total": len(rows),
+            "coverage_start": coverage_start,
+        }
+    except Exception as e:  # noqa: BLE001 — a visit-block failure must never sink a dossier
+        log.debug("china_intel_hub: visit block failed for %s (%s)", ticker, e)
+        return {"state": "source_failure", "detail": f"visit block error: {e}",
+                "recent": []}
+
+
 # ── Price trajectories ────────────────────────────────────────────────────── #
 
 def _load_closes_and_benchmark() -> tuple:
@@ -610,7 +772,8 @@ def _read_for(stage: str, lean: int, dirs: dict, edge_score: int, gap: int,
 def _dossier(ticker: str, altdata_row: dict | None, radar_row: dict | None,
              news_items: list | None, board_row: dict | None,
              special_flags: dict | None, traj: dict | None,
-             board_member: bool, gov: dict | None = None) -> dict:
+             board_member: bool, gov: dict | None = None,
+             visit_ctx: dict | None = None) -> dict:
     """Build the per-ticker command dossier."""
     dirs = _dirs(altdata_row, radar_row, news_items, board_row)
     gap_rec = _leading_gap(dirs)
@@ -707,6 +870,11 @@ def _dossier(ticker: str, altdata_row: dict | None, radar_row: dict | None,
         "directions": dirs,
         "desk_matrix": desk_matrix,
         "off_desk": not board_member,
+        # Descriptive only — NEVER a desk, NEVER a score/rank input (masterplan
+        # §11.4 serial firewall). visit_ctx absent (e.g. a test that does not
+        # pass it) degrades to the plane's honest no_coverage state.
+        "visits": _visit_block(ticker, visit_ctx or {"by_code": {}, "coverage_start": None,
+                                                       "health": {"status": "no_coverage"}}),
         "traj": {
             "ret_20d": traj.get("ret_20d"),
             "rs_20d": traj.get("rs_20d"),
@@ -1232,6 +1400,7 @@ def _empty(today: date) -> dict:
         "as_of": today.isoformat(),
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "command": [], "discovery": [], "n_universe": 0,
+        "visits_coverage_start": None,
         "desks": {}, "counts": {}, "disclaimer": DISCLAIMER,
     }
 
@@ -1262,6 +1431,7 @@ def _build_inner(today: date, top: int) -> dict:
 
     # ── 3. Load price data once ─────────────────────────────────────────── #
     closes, bench = _load_closes_and_benchmark()
+    visit_ctx = _load_visits_context()
 
     # ── 4. Per-ticker dossiers ──────────────────────────────────────────── #
     # SIGNAL GOVERNOR (CN) — per-feeder trust map (de-escalation only). Absent/corrupt ⇒ {}
@@ -1281,7 +1451,7 @@ def _build_inner(today: date, top: int) -> dict:
         special_flags = special_bt.get(ticker)
         traj = _price_trajectory(ticker, closes, bench)
         d = _dossier(ticker, altdata_row, radar_row, news_items, board_row,
-                     special_flags, traj, board_member, gov=gov)
+                     special_flags, traj, board_member, gov=gov, visit_ctx=visit_ctx)
 
         # ── BLOCKER 3b: price-plane missing → veto_blind, honest opportunity ── #
         veto_blind = traj is None  # No price data from either source
@@ -1370,6 +1540,10 @@ def _build_inner(today: date, top: int) -> dict:
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "n_universe": len(all_dossiers),
         "command": command,
+        # Plane-level fact (P1, China Alpha Intelligence) — the visit tape's own
+        # coverage_start, exposed ONCE here rather than re-derived per row by a
+        # template scanning every dossier's nested visits.coverage_start.
+        "visits_coverage_start": visit_ctx.get("coverage_start"),
         "discovery": discovery_queue,
         "analogs": analogs,
         "desks": _desks_summary(command),

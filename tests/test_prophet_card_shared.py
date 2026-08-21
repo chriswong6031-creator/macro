@@ -140,19 +140,28 @@ def _all_rule_bodies(selector: str) -> str:
 
 
 def test_chinese_mode_rebinds_prophet_bullish_red_and_bearish_green():
+    # C8-C (#6011) made the zh direction flip STRUCTURAL: the zh block flips
+    # --up/--down themselves, and Buy/Near derive from --up via the base
+    # color-mix, so a zh Buy chip is red BY CONSTRUCTION. A zh restatement of
+    # --pv-buy/--pv-near would re-create the desync DA-002 cured (a future
+    # --up edit silently leaving zh on a stale hand-tuned red). The semantic
+    # properties (AA on every consumer, dE floors, Near lighter than Buy)
+    # live in tests/test_prophet_verb_ink_contrast.py — change either file
+    # only alongside the other.
     zh = _all_rule_bodies('html[data-lang="zh"]')
-    assert "--pv-buy: var(--up)" in zh
-    assert "--pv-near: color-mix(in srgb, var(--up) 82%, #fff)" in zh
+    assert "--up: #e06464" in zh and "--down: #45b873" in zh
+    assert "--pv-buy:" not in zh, "zh must not restate --pv-buy (flip is structural)"
+    assert "--pv-near:" not in zh, "zh must not restate --pv-near (flip is structural)"
+    # --pv-avoid is a :root literal, so zh still needs its one explicit rebind:
     assert "--pv-avoid: var(--down)" in zh
 
     light_zh = _all_rule_bodies('html[data-theme="light"][data-lang="zh"]')
-    assert "--ink-pv-buy:" in light_zh and "var(--pv-buy)   84%" in light_zh
-    # near is 70%, NOT buy's 84%: --pv-near is the red already pushed 82% toward
-    # white, so the plain-red rung left it at 3.90:1 — under AA — until 2026-08-10.
-    # This line only pins the literal; the property that actually matters (>=4.5:1
-    # on all four ink consumers, and Near staying lighter than Buy) is measured in
-    # tests/test_prophet_verb_ink_contrast.py. Change this number only alongside that.
-    assert "--ink-pv-near:" in light_zh and "var(--pv-near)  70%" in light_zh
+    assert "--up: #cf4040" in light_zh and "--down: #1f9a55" in light_zh
+    # The light+zh --ink-pv-buy/--ink-pv-near deepening rungs were RETIRED by
+    # C8-C (the deepening moved into the token itself); re-adding one would
+    # double-mix. --ink-pv-avoid keeps its quadrant rung.
+    assert "--ink-pv-buy:" not in light_zh, "retired rung must stay retired (C8-C)"
+    assert "--ink-pv-near:" not in light_zh, "retired rung must stay retired (C8-C)"
     assert "--ink-pv-avoid:" in light_zh and "var(--pv-avoid) 62%" in light_zh
 
 

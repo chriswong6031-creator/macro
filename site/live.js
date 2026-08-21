@@ -66,6 +66,15 @@
   function chgNodes() { return [].slice.call(document.querySelectorAll(".nb-chg[data-sym]")); }
   function symNodes() { return [].slice.call(document.querySelectorAll(".nb-px[data-sym],.nb-chg[data-sym]")); }
   function rawSym(el) { return (el.getAttribute("data-sym") || "").trim().toUpperCase(); }
+  // Markets whose BOARD BAKES a "$" on the nightly price, so a live patch must put
+  // it back or the number visibly loses its currency glyph mid-session. Measured on
+  // the served pages 2026-08-19: us_stocks.html data-mkt="us" bakes "$212.55" and
+  // canada_stocks.html data-mkt="ca" bakes "$15.20", while hk_stocks.html ("hk",
+  // HKD) bakes "6.22" and china_stocks.html ("cn", CNY) bakes "37.70" bare. `ca` was
+  // missing here, so every .TO card dropped its "$" the moment live.js patched it —
+  // invisible until the Canada board joined the live universe and started patching
+  // at all. Do NOT add "hk"/"cn": those are HKD/CNY and a "$" would be plain wrong.
+  var DOLLAR_MKT = { us: 1, ca: 1 };
   function fmtPrice(price, mkt) {
     if (mkt === "crypto") {                       // "$" + thousands, no decimals (matches the baked BTC header)
       try { return "$" + Number(price).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
@@ -75,7 +84,7 @@
     var s;
     try { s = Number(price).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
     catch (e) { s = Number(price).toFixed(dec); }
-    return (mkt === "us" ? "$" : "") + s;
+    return (DOLLAR_MKT[mkt] ? "$" : "") + s;
   }
   // Crypto trades 24/7 and is refreshed on its own hourly cadence, so it goes stale
   // only when a scheduled refresh is actually MISSED (~65 min), not at the 20-min
@@ -362,6 +371,14 @@
   // ── Live breadth patch (sbx scoreboard, us_stocks) ─────────────────────────
   // Stance bands MIRROR scripts/build_site.py::_breadth_read exactly — if those
   // thresholds or words change, change these with them (render test pins baked).
+  //
+  // The fail-CLOSED eligibility gate + stamp below (FROZEN CONTRACT §3/§9) is
+  // lifted verbatim by tests/test_live_breadth_js_contract.py and executed
+  // under node against a DOM stub — do not rename these markers, and keep them
+  // as SELF-CONTAINED block comments (not nested in a `//` line) so the sliced
+  // text is still valid, parseable JS.
+  /* SBX-BREADTH-CONTRACT-BEGIN */
+  var SBX_MAX_SOURCE_AGE_MIN = 25;   // SLA on the SOURCE clock (mirrors the engine default)
   var SBX_STANCE = {
     broad: { l: ["broad", "广泛"], v: ["The advance is well-supported across the full 1,500", "上涨在整个 1500 只股票中获得良好支撑"], tone: "pos" },
     thin:  { l: ["thin", "稀薄"], v: ["Few names hold their trend — rallies here are fragile", "守住趋势的个股很少 — 此时的反弹较脆弱"], tone: "neg" },
@@ -377,12 +394,28 @@
   }
   function sbxSet(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
   function applyBreadth(b) {
+    // Fail-CLOSED eligibility gate (FROZEN CONTRACT §3): every check returns
+    // EARLY with ZERO DOM writes. `usable !== true` is the load-bearing first
+    // line — an explicit server-side opt-in, so a legacy v1 payload carrying no
+    // `usable` key (or a degraded/offline/no_key fail-soft payload, which is
+    // ALWAYS `usable: false`) is rejected outright and the baked nightly board
+    // (848 adv / 651 dec class of numbers) is left completely untouched.
+    if (!b || b.usable !== true) return;
     var c = b && b.comp;
     if (!c || typeof c.adv !== "number" || typeof c.dec !== "number") return;
-    // freshness + session honesty: patch only a payload from an open/near session,
-    // stamped within the last 25 min — otherwise the baked close numbers stand.
-    var age = b.asof ? (Date.now() - new Date(b.asof).getTime()) / 60000 : 1e9;
-    if (age > 25 || b.session === "closed") return;
+    if (b.session === "closed") return;
+    // Both clocks are checked with isFinite, NOT a bare `> SLA`: an unparseable
+    // stamp yields NaN, and EVERY NaN comparison is false, so `NaN > SLA` would
+    // sail through the gate and hand a malformed payload live authority over the
+    // baked board — a fail-OPEN hole in a gate whose whole job is to fail closed.
+    var srcAge = (typeof b.source_age_min === "number" && isFinite(b.source_age_min))
+      ? b.source_age_min : null;
+    if (srcAge === null) return;                          // missing/NaN source clock -> fail closed
+    if (srcAge > SBX_MAX_SOURCE_AGE_MIN) return;          // stale SOURCE, however fresh the build
+    var buildStamp = b.built_at || b.asof;
+    var buildAge = buildStamp
+      ? (Date.now() - new Date(buildStamp).getTime()) / 60000 : NaN;
+    if (!isFinite(buildAge) || buildAge > SBX_MAX_SOURCE_AGE_MIN) return;  // missing/unparseable/stale artifact
     var n = c.n || (c.adv + c.dec + (c.unch || 0)) || 1;
     var unch = (typeof c.unch === "number") ? c.unch : Math.max(0, n - c.adv - c.dec);
     var den = (c.adv + c.dec + unch) || 1;
@@ -421,12 +454,28 @@
     var stamp = document.getElementById("sbx-stamp");
     if (stamp) {
       stamp.classList.add("live");
-      var et = new Date(b.asof).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
-      var dm = (typeof b.delay_min === "number") ? b.delay_min : 15;
+      // The ET time comes from source_asof (the snapshot we actually read), never
+      // the build clock.
+      //
+      // The DELAY NUMBER is delay_min, not source_age_min, and the difference is
+      // user-facing honesty rather than pedantry. source_age_min measures how
+      // stale OUR snapshot is; on the Polygon STANDARD plan the vendor stamps a
+      // current quote_ts on data whose PRICES are 15 minutes behind, so
+      // source_age_min is ~0 while the tape the reader is looking at is a
+      // quarter-hour old. Stamping "≈0-min delayed" over 15-minute-delayed prices
+      // claims real-time data we do not have. delay_min is the producer's honest
+      // total (vendor floor + snapshot staleness), so it is what the reader sees.
+      // Measured on production 2026-08-20: source_age_min 0.0, delay_min 15.
+      // max() keeps it monotone if a future feed ever reports staleness the
+      // producer's floor does not already cover.
+      var et = new Date(b.source_asof).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+      var dm = (typeof b.delay_min === "number" && isFinite(b.delay_min))
+        ? Math.max(b.delay_min, Math.round(srcAge)) : Math.round(srcAge);
       stamp.innerHTML = '<span class="sbx-dot"></span>' +
         sbxBi(["≈" + dm + "-min delayed · " + et + " ET", "约" + dm + "分钟延迟 · 美东 " + et]);
     }
   }
+  /* SBX-BREADTH-CONTRACT-END */
 
   // Stamp an honest feed caption into any [data-live-label] element the build placed
   // (e.g. "≈15-min delayed (Polygon Standard / Yahoo)"). No-op if none / no label.

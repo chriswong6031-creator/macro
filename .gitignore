@@ -690,8 +690,9 @@ data/institutional_13f/*
 # wall so an old local render can never be swept into the public Git history.
 /site/premiumdata/earnings/
 
-# Agent worktree roots. Parallel Claude/Codex sessions create linked git worktrees
-# under these paths; they are checkouts, never content, and must never be committed.
+# Agent worktree roots. Parallel Claude/Codex/Cursor/Grok sessions create linked
+# git worktrees under these paths; they are checkouts, never content, and must
+# never be committed.
 # `.claude/worktrees/` has historically been excluded per-clone via .git/info/exclude,
 # which every fresh clone and every new session has to rediscover — and the codex root
 # had no rule at all, so it surfaced as an untracked directory in every session's
@@ -699,13 +700,17 @@ data/institutional_13f/*
 # 2026-08-11: the rule above shipped covering only two of the four roots, so
 # `.claire/worktrees/` (3 checkouts) and `.codex/worktrees/` (55) still surfaced as
 # untracked directories in every session's `git status` — the exact symptom the note
-# above says it was fixing. The same set is duplicated in `config/worktree_gc.json`
-# and `ship_loop_guard.AGENT_WORKTREE_ROOTS`; `tests/test_agent_worktree_roots.py`
-# pins all three in step, so extend them together.
+# above says it was fixing. 2026-08-18: `.cursor/worktrees/` and `.grok/worktrees/`
+# were already session-root markers in scripts/worktree_sparse.py but missing from
+# this triad, the same silent-miss class. The same set is duplicated in
+# `config/worktree_gc.json` and `ship_loop_guard.AGENT_WORKTREE_ROOTS`;
+# `tests/test_agent_worktree_roots.py` pins all three in step, so extend them together.
 .claude/worktrees/
 .claire/worktrees/
 .codex/worktrees/
 .codex-worktrees/
+.cursor/worktrees/
+.grok/worktrees/
 
 # Private paid-vendor A-share spine. The collector defaults outside the repo;
 # this containment wall prevents an explicitly configured legacy store from

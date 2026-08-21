@@ -28,6 +28,25 @@ def test_universe_is_curated_us_set():
     assert all(not t.startswith("^") for t in u)     # no index symbols
 
 
+def test_explicit_symbols_are_not_intersected_with_chart_universe(monkeypatch, tmp_path):
+    """The live board can request leaders absent from the curated chart universe."""
+    monkeypatch.setattr(bpi.PolygonOptions, "enabled", lambda self: True)
+    monkeypatch.setattr(bpi, "_universe", lambda: ["AAPL"])
+    requested = []
+
+    def get(self, path, params=None):
+        requested.append(path)
+        return _bars((1_000, 10.0))
+
+    monkeypatch.setattr(bpi.PolygonOptions, "_get", get)
+    out = bpi.accrue(only=["snow", "AAPL"], out_dir=tmp_path)
+
+    assert out["rows"] == 2
+    assert any("/AAPL/" in path for path in requested)
+    assert any("/SNOW/" in path for path in requested)
+    assert (tmp_path / "SNOW.parquet").exists()
+
+
 def test_accrue_without_key_is_a_clean_noop(monkeypatch):
     # force the client to look key-less regardless of the local environment
     monkeypatch.setattr(bpi.PolygonOptions, "enabled", lambda self: False)

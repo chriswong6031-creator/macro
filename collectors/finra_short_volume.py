@@ -23,18 +23,38 @@ Keyless — degrades to 'failed' only if FINRA's CDN is unreachable.
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 import pandas as pd
 
 from collectors.base import Adapter, is_connection_error
-from lib import config
+from lib import config, nyse_calendar
 
 log = logging.getLogger(__name__)
 
 BASE = "https://cdn.finra.org/equity/regsho/daily"
 LOOKBACK_DAYS = 30          # calendar days backfilled per run (dedup-merged)
 GROUP = "finra_short_volume"
+FINRA_AVAILABLE_ET = time(18, 30)
+
+
+def expected_available_session(now: datetime | None = None) -> date:
+    """Return the newest FINRA daily file the desk may require at ``now``.
+
+    FINRA owns a later release clock than ordinary settled-price surfaces.  On
+    an NYSE session day the current file becomes due at 18:30 ET; before then,
+    and on weekends/holidays, the prior session remains the honest expectation.
+    Naive datetimes follow the repository convention and are interpreted as UTC.
+    """
+    if now is None:
+        now = datetime.now(timezone.utc)
+    elif now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    now_et = now.astimezone(nyse_calendar.ET)
+    today = now_et.date()
+    if nyse_calendar.is_session(today) and now_et.time() >= FINRA_AVAILABLE_ET:
+        return today
+    return nyse_calendar.last_session_on_or_before(today - timedelta(days=1))
 
 
 def _panel_path():

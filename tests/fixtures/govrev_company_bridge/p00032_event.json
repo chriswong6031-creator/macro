@@ -1,0 +1,271 @@
+{
+  "agency": {
+    "department_id": "097",
+    "department_name": "Department of Defense",
+    "name": "Department of Defense",
+    "office_id": null,
+    "office_name": "TELECOMMUNICATIONS DIVISION- HC1013",
+    "subagency": "Defense Information Systems Agency",
+    "subagency_id": "97AK",
+    "subagency_name": "Defense Information Systems Agency"
+  },
+  "amounts": [
+    {
+      "as_of": "2026-05-12T00:00:00+00:00",
+      "currency": "USD",
+      "id": "federal_action_obligation",
+      "is_lower_bound": false,
+      "label_code": "federal_action_obligation",
+      "semantic": "official",
+      "source_ref": "https://api.usaspending.gov/api/v2/transactions/",
+      "value": 18416666.66
+    }
+  ],
+  "authority": {
+    "can_add_candidates": false,
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false,
+    "context_only": true,
+    "tier": "display"
+  },
+  "award_change": {
+    "action_id": "CONT_TX_9700_-NONE-_HC101319C0006_P00032_-NONE-_0",
+    "award_key": "generated:CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-",
+    "coverage_scope": "USAspending award/action observations supplied to this projector; not a complete federal procurement corpus or an investment recommendation.",
+    "event_type": "obligation",
+    "generated_award_id": "CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-",
+    "is_late_discovery": true,
+    "observation_kind": "action",
+    "piid": "HC101319C0006",
+    "prior_source_identity": null,
+    "recipient_name": null,
+    "secondary_types": [],
+    "source_identity": {
+      "content_sha256": "2a07ba19681a3c9d07f69b3316850b4646db48a8075d2ea8375755e112d02bab",
+      "id": "action:CONT_TX_9700_-NONE-_HC101319C0006_P00032_-NONE-_0",
+      "version": "997bc21615ab6b9418cd107a587340a5bb3ca67862a4fc4df8430854f0df92ac"
+    },
+    "source_rail": "usaspending_award_action",
+    "text_annotations": []
+  },
+  "change": {
+    "changed_fields": [
+      {
+        "after": 18416666.66,
+        "after_receipt_ref": "usaspending:usaspending-3be22546a4a9a6b9a46a7469:actions:1d52f66cfa31a196:2a07ba19681a3c9d",
+        "after_source_ref": "https://api.usaspending.gov/api/v2/transactions/",
+        "before": null,
+        "before_receipt_ref": null,
+        "before_source_ref": null,
+        "field": "federal_action_obligation",
+        "semantic": "official",
+        "source_ref": "https://api.usaspending.gov/api/v2/transactions/"
+      },
+      {
+        "after": "2026-05-12",
+        "after_receipt_ref": "usaspending:usaspending-3be22546a4a9a6b9a46a7469:actions:1d52f66cfa31a196:2a07ba19681a3c9d",
+        "after_source_ref": "https://api.usaspending.gov/api/v2/transactions/",
+        "before": null,
+        "before_receipt_ref": null,
+        "before_source_ref": null,
+        "field": "action_date",
+        "semantic": "official",
+        "source_ref": "https://api.usaspending.gov/api/v2/transactions/"
+      },
+      {
+        "after": "C",
+        "after_receipt_ref": "usaspending:usaspending-3be22546a4a9a6b9a46a7469:actions:1d52f66cfa31a196:2a07ba19681a3c9d",
+        "after_source_ref": "https://api.usaspending.gov/api/v2/transactions/",
+        "before": null,
+        "before_receipt_ref": null,
+        "before_source_ref": null,
+        "field": "action_type",
+        "semantic": "official",
+        "source_ref": "https://api.usaspending.gov/api/v2/transactions/"
+      },
+      {
+        "after": "YEAR 7 INCREMENTAL FUNDING",
+        "after_receipt_ref": "usaspending:usaspending-3be22546a4a9a6b9a46a7469:actions:1d52f66cfa31a196:2a07ba19681a3c9d",
+        "after_source_ref": "https://api.usaspending.gov/api/v2/transactions/",
+        "before": null,
+        "before_receipt_ref": null,
+        "before_source_ref": null,
+        "field": "description",
+        "semantic": "official",
+        "source_ref": "https://api.usaspending.gov/api/v2/transactions/"
+      }
+    ],
+    "effective_at": "2026-05-12T00:00:00+00:00",
+    "first_seen_at": "2026-08-12T23:50:04.442107+00:00",
+    "is_correction": false,
+    "known_at": "2026-08-12T23:50:04.442107+00:00",
+    "last_seen_at": "2026-08-12T23:50:04.442107+00:00",
+    "summary_origin": "deterministic_template",
+    "type": "obligation",
+    "what_changed_en": "New obligation observed — HC101319C0006",
+    "what_changed_zh": ""
+  },
+  "contract": "government_procurement_event.v2",
+  "dates": [
+    {
+      "id": "effective_at",
+      "known_at": "2026-08-12T23:50:04.442107+00:00",
+      "label_code": "effective_at",
+      "semantic": "official",
+      "source_ref": "https://api.usaspending.gov/api/v2/transactions/",
+      "value": "2026-05-12T00:00:00+00:00"
+    },
+    {
+      "id": "known_at",
+      "known_at": "2026-08-12T23:50:04.442107+00:00",
+      "label_code": "known_at",
+      "semantic": "official",
+      "source_ref": "https://api.usaspending.gov/api/v2/transactions/",
+      "value": "2026-08-12T23:50:04.442107+00:00"
+    }
+  ],
+  "display_priority": {
+    "company_materiality": 1.0,
+    "evidence_quality": 0.95,
+    "formula_version": "govrev_display_priority.v1",
+    "is_investment_rank": false,
+    "new_information": 1.0,
+    "score": 98.75,
+    "tie_breakers": [
+      "effective_at_desc",
+      "known_at_desc",
+      "event_id_asc"
+    ]
+  },
+  "event_id": "govws-a6c70850a9cbdce9fa3e7f3b",
+  "evidence": {
+    "conflicts": [],
+    "derivations": [
+      {
+        "detail": "Event emitted only from explicitly eligible, receipt-bound observations visible under both clocks.",
+        "method": "strict_dual_clock_before_after.v1"
+      },
+      {
+        "basis_refs": [
+          "snapshot:generated:CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-:86b9bde58b63d712d0f6651109119d0e13812085e5a0148b11416d75f2ab4a4c",
+          "receipt:usaspending:usaspending-3be22546a4a9a6b9a46a7469:award_detail:f7cb11995cfb1e18:39ddb128a49985cf",
+          "source_known_at:2026-08-12T23:50:04.442107+00:00",
+          "target_action_known_at:2026-08-12T23:50:04.442107+00:00",
+          "temporal_rule:source_known_at<=action_known_at"
+        ],
+        "classification": "pit_qualified_award_snapshot",
+        "detail": "Awarding agency inherited from a same-award snapshot observed at or before this action's known_at. The snapshot is not this action's receipt.",
+        "formula_version": "award_snapshot_agency_fallback.v1",
+        "known_at": "2026-08-12T23:50:04.442107+00:00",
+        "method": "award_snapshot_agency_fallback.v1",
+        "ref_id": "usaspending:usaspending-3be22546a4a9a6b9a46a7469:award_detail:f7cb11995cfb1e18:39ddb128a49985cf"
+      }
+    ],
+    "limitations": [
+      "Display-only context; cannot rank, size, gate, originate, or escalate a signal.",
+      "USAspending award/action observations supplied to this projector; not a complete federal procurement corpus or an investment recommendation."
+    ],
+    "mapping_class": "reviewed",
+    "receipts": [
+      {
+        "content_sha256": "2a07ba19681a3c9d07f69b3316850b4646db48a8075d2ea8375755e112d02bab",
+        "effective_at": "2026-05-12T00:00:00+00:00",
+        "known_at": "2026-08-12T23:50:04.442107+00:00",
+        "publisher": "USAspending.gov",
+        "record_id": "CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-",
+        "ref_id": "usaspending:usaspending-3be22546a4a9a6b9a46a7469:actions:1d52f66cfa31a196:2a07ba19681a3c9d",
+        "retrieved_at": "2026-08-12T23:50:04.442107+00:00",
+        "url": "https://api.usaspending.gov/api/v2/transactions/"
+      },
+      {
+        "content_sha256": "39ddb128a49985cf051e59376d288f8b2cc4322feb57f8396efdf50a215ae339",
+        "effective_at": "2026-05-12T00:00:00+00:00",
+        "known_at": "2026-08-12T23:50:04.442107+00:00",
+        "publisher": "USAspending.gov",
+        "record_id": "CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-",
+        "ref_id": "usaspending:usaspending-3be22546a4a9a6b9a46a7469:award_detail:f7cb11995cfb1e18:39ddb128a49985cf",
+        "retrieved_at": "2026-08-12T23:50:04.442107+00:00",
+        "url": "https://api.usaspending.gov/api/v2/awards/CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-/"
+      }
+    ],
+    "source_class": "official_fact"
+  },
+  "kind": "award_change",
+  "listed_company_impacts": [
+    {
+      "company_name": "Iridium Communications",
+      "confidence": "medium",
+      "cross_desk_links": [],
+      "evidence_refs": [
+        "evidence:irdm-sec-10k",
+        "evidence:irdm-sec-ex21",
+        "evidence:irdm-usaspending-s77sw52lcr57",
+        "https://api.usaspending.gov/api/v2/transactions/"
+      ],
+      "identity_basis": "award_level_recipient_at_collection",
+      "issuer_company_id": "central:IRDM",
+      "materiality": {
+        "band": "high",
+        "basis": "absolute event amount x reviewed economic share / resolved issuer TTM government obligations",
+        "basis_code": "reviewed_attributable_absolute_event_amount_over_issuer_ttm_government_obligations",
+        "coverage_note": "Issuer-impact numerator applies reviewed economic share 1; it is not revenue, backlog, margin, or investment authority.",
+        "denominator_value": 132124706.82,
+        "event_amount_usd": 18416666.66,
+        "government_obligations_ttm_usd": 132124706.82,
+        "numerator_value": 18416666.66,
+        "ratio": 0.13938851486035791,
+        "score": 1.0
+      },
+      "ownership_path": [
+        {
+          "child_entity_id": "legal:irdm:iridium-government-services-llc",
+          "economic_share": 1.0,
+          "edge_id": "ownership:irdm:iridium-government-services-llc",
+          "evidence_refs": [
+            "evidence:irdm-sec-ex21",
+            "evidence:irdm-usaspending-s77sw52lcr57"
+          ],
+          "known_at": "2026-08-07T12:00:00+00:00",
+          "parent_company_id": null,
+          "parent_entity_id": "legal:irdm:iridium-communications-inc",
+          "relationship": "wholly_owned",
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null
+        },
+        {
+          "child_entity_id": "legal:irdm:iridium-communications-inc",
+          "economic_share": 1.0,
+          "edge_id": "issuer-identity:irdm:iridium-communications-inc",
+          "evidence_refs": [
+            "evidence:irdm-sec-10k"
+          ],
+          "known_at": "2026-08-07T12:00:00+00:00",
+          "parent_company_id": "central:IRDM",
+          "parent_entity_id": null,
+          "relationship": "issuer_legal_entity",
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null
+        }
+      ],
+      "relation_semantic": "reviewed",
+      "resolution_state": "reviewed",
+      "stance": "watch_dont_chase",
+      "stance_scope": "research",
+      "ticker": "IRDM"
+    }
+  ],
+  "opportunity": null,
+  "primary_amount_id": "federal_action_obligation",
+  "primary_date_id": "effective_at",
+  "primary_ticker": "IRDM",
+  "recompete": null,
+  "record_id": "award:generated:CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-",
+  "state": "updated",
+  "title_original": "New obligation observed — HC101319C0006",
+  "title_zh": null,
+  "translation_status": "original",
+  "version": 1
+}
