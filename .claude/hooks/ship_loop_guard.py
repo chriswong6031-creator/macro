@@ -199,16 +199,28 @@ GIT_TERM_GRACE_SECONDS = 10
 # index and page cache were warm. One budget cannot express that — it would have
 # to be the cold number, and the cold number does not fit the wall below.
 #
-# The wall is `.claude/settings.json`, where Stop gives this hook 180s
+# The wall is `.claude/settings.json`, where Stop gives this hook 540s
 # (SessionStart, 30s), and the HARNESS enforces it. Budgets larger than that wall
 # can never conclude: the hook is cancelled mid-flight and the Stop evaluation
 # silently does not happen at all, which is a fail-OPEN — strictly worse than the
 # block it was trying to file. So the numbers below are chosen so that the WHOLE
-# pathological path fits, sweeps and grace periods included, not just the two
-# status attempts: 100 + 10 grace, + a first sweep (5 + 10 grace to resolve the
-# gitdir, 5 for lsof), + 150 + 10 grace, + a second sweep (5 for lsof; the gitdir
-# is cached by then) = 295 of 300. That path ends in a raise and a `guard_error`
-# emit, so 5s is all it needs after it.
+# pathological path fits, sweeps, the untracked-cache heal, and grace periods
+# included, not just the two status attempts: 100 + 10 grace, + a first sweep
+# (5 + 10 grace to resolve the gitdir, 5 for lsof), + 260 + 10 grace, + a second
+# sweep (5 for lsof; the gitdir is cached by then), + the heal (5 + 10 to read the
+# config, 20 + 10 to test the filesystem, 5 + 10 to write it) = 465. That path ends
+# in a raise and a `guard_error` emit, which is all it needs after.
+#
+# 465 is NOT the whole story and the residual is deliberate, not slack. The costlier
+# shape is the one that SUCCEEDS: a retry that answers just under its budget reaches
+# ~449s (110 + 20 + 259 + the 60s heal) and then still owes the entire rest of
+# `_stop` — the PR lookup, CI attribution (up to ~16 REST calls when there is a red
+# to attribute), render coverage, live verification. Those are what the remaining
+# ~90s is for. Sizing the wall to 465 would leave that path ~15s and cancel the hook
+# mid-evaluation on exactly the trees this change is meant to serve. The same
+# reasoning covers the bounded probes in `main()` ahead of `_fingerprint`
+# (`_repo_root`'s `rev-parse` at the default 45s leash, run twice on the delegating
+# path): sub-second in health, and not silently assumed to be free.
 #
 # The 2026-08-21 rebalance (60/70 of a 180s wall -> 100/150 of a 300s wall) fixed a
 # tree the old split could not answer at all. The retry's whole premise is that the
@@ -225,10 +237,40 @@ GIT_TERM_GRACE_SECONDS = 10
 # exactly as designed. Raising the wall is the cost of covering both shapes; a Stop
 # that takes 5 minutes on the pathological path still beats one that is killed
 # mid-evaluation, because a killed Stop hook fails OPEN.
-# `tests/test_ship_loop_guard.py` pins that arithmetic against the settings file
-# so the two cannot drift apart unnoticed.
+#
+# The SECOND rebalance (150 -> 260, 2026-08-21) is the same arithmetic failing at a
+# larger scale, and it is why `_enable_untracked_cache` exists. Worktree
+# `celh-cycle-autopsy-c5adcc` of the 250-worktree `Macro Dashboard` clone measured a
+# **333s** cold `status` (75,427 index entries, `core.untrackedCache` unset) against
+# a 1s warm one — the incident hit the then-current 60s first budget, which bought
+# ~18% of that walk before the SIGKILL, so the retry started essentially cold too
+# and blew its own — `guard_error` on a tree that was clean, committed and pushed.
+# A retry only 50% longer than the first attempt cannot absorb a cold walk several
+# times either budget: the retry has to clear what the warm-up pass did NOT reach.
+# 260 is sized on the assumption that warming is roughly linear in elapsed time —
+# 100s of a 333s walk leaves ~233s, so 260 carries ~11% margin. That model is an
+# ESTIMATE, not a measurement, and it is exactly why the heal below matters more
+# than this number: if the walk is worse than linear the retry still dies, and a
+# budget alone would leave the tree in the same loop it is in today.
+#
+# The budget is the fallback; the heal is the fix. `_enable_untracked_cache` turns
+# that walk into a sub-second one — measured on the same clone with it enabled:
+# 75,551 index entries, `UNTR` present in the index, `status` in 0.63s. Scope,
+# stated precisely because the loose version of this claim is wrong: the CONFIG is
+# clone-shared, so every worktree becomes ELIGIBLE at once, but the cache itself is
+# an index extension and each worktree has its OWN index — so each still pays a
+# single cold walk that must COMPLETE before it is cheap. This heals the clone; it
+# does not retroactively heal 250 checkouts.
+# `tests/test_ship_loop_guard.py` pins that arithmetic against the settings file so
+# the two cannot drift apart unnoticed.
 STATUS_TIMEOUT_SECONDS = 100
-STATUS_RETRY_TIMEOUT_SECONDS = 150
+STATUS_RETRY_TIMEOUT_SECONDS = 260
+# `git update-index --test-untracked-cache` measured 6.04/6.06/6.09s on the affected
+# volume — it is dominated by deliberate sleeps that probe mtime granularity, not by
+# repository size, so this is a ~3x leash on a near-constant cost rather than a
+# target. It is bounded at all because an unresponsive filesystem must not be able to
+# spend the retry's budget on a heal that is only ever an optimisation.
+UNTRACKED_CACHE_TEST_TIMEOUT_SECONDS = 20
 # Metadata-only probes (`rev-parse`, `lsof`) that must never become the reason
 # the wall above is missed. Both are sub-second in health; this is the leash for
 # the pathological case, not a target.
@@ -239,6 +281,9 @@ SWEEP_PROBE_TIMEOUT_SECONDS = 5
 # fingerprint can orphan a lock just as a Stop one can.
 _GUARD_STARTED_AT = time.time()
 _INDEX_LOCK_CACHE: dict[str, Path | None] = {}
+# Whether `_enable_untracked_cache` has already run in this process. Its answer
+# cannot change mid-invocation, and its filesystem test costs ~6s to re-learn.
+_UNTRACKED_CACHE_HEAL_TRIED = False
 
 
 def _emit(value: dict[str, Any]) -> None:
@@ -489,6 +534,159 @@ def _is_agent_worktree_path(path: str, status: str) -> bool:
     return any(path.startswith(root) for root in AGENT_WORKTREE_ROOTS)
 
 
+# Exactly what `git update-index --test-untracked-cache` builds inside its scratch
+# directory, measured across kill timings t=1..5s on git 2.46.1: a 6-character
+# mkdtemp suffix, and a subset of these three entries and nothing else. Pinned as
+# data because `_remove_mtime_test_scratch` refuses anything that does not match —
+# a future git that writes something else must be left alone, not guessed at.
+_MTIME_TEST_GLOB = "mtime-test-??????"
+_MTIME_TEST_ENTRIES = frozenset({"newfile", "new-dir", "new-dir/new"})
+
+
+def _mtime_test_scratches(root: Path) -> set[Path]:
+    """Scratch directories matching git's mtime-test glob, at the worktree root."""
+    try:
+        return set(root.glob(_MTIME_TEST_GLOB))
+    except OSError:
+        return set()
+
+
+def _remove_mtime_test_scratch(root: Path, preexisting: set[Path]) -> None:
+    """Delete the scratch directory a KILLED `--test-untracked-cache` leaves behind.
+
+    Measured on git 2.46.1: the mtime test builds `mtime-test-XXXXXX/` in the
+    process CWD — the worktree ROOT — and cleans it up itself on a normal exit, but
+    a SIGTERMed or SIGKILLed git leaves it there. Left alone that directory turns
+    the very next `status --untracked-files=all` into `?? mtime-test-XXXXXX/newfile`
+    on a tree that is otherwise clean, so the guard would file a false `uncommitted`
+    block naming a file THE GUARD ITSELF created — and `uncommitted` is an internal
+    code, escapable only at 10 consecutive blocks. Worse, the obvious way out of
+    that block is `git add -A && git commit`, which commits the guard's scratch.
+    Trading `guard_error` on a clean tree for a false `uncommitted` on a clean tree
+    is not a fix, so the heal cleans up after itself on every path.
+
+    Deliberately narrow, because this deletes inside somebody's worktree. Only a
+    directory that matches git's exact glob AT THE ROOT, is not a symlink, APPEARED
+    during the call being cleaned up, and whose entire contents are a subset of the
+    three entries git writes, is removed — and only ever with `unlink`/`rmdir`,
+    never a recursive delete. Anything else, including any OSError along the way, is
+    left exactly where it is: an unexpected `mtime-test-*` is far better reported as
+    dirt than deleted on a guess.
+
+    Provenance is a set difference against the directories that existed before the
+    call, NOT a birthtime comparison. A timestamp test has to assume the filesystem's
+    creation clock and `time.time()` agree closely enough to order two events
+    milliseconds apart; the set difference just asks whether the directory is new,
+    which is the actual question and cannot be lost to clock granularity or skew.
+    A sibling session's concurrent mtime test is therefore also safe: its scratch
+    either predates our snapshot (excluded) or, if it appears alongside ours, is
+    removed only once git has left it in the exact inert shape below.
+    """
+    for scratch in sorted(_mtime_test_scratches(root) - preexisting):
+        try:
+            if scratch.is_symlink() or not scratch.is_dir():
+                continue
+            found = [p for p in scratch.rglob("*")]
+            names = {p.relative_to(scratch).as_posix() for p in found}
+            if not names <= _MTIME_TEST_ENTRIES:
+                continue
+            if any(p.is_symlink() for p in found):
+                continue
+            for path in sorted(found, key=lambda p: len(p.parts), reverse=True):
+                path.rmdir() if path.is_dir() else path.unlink()
+            scratch.rmdir()
+        except OSError:
+            continue
+
+
+def _enable_untracked_cache(root: Path) -> bool:
+    """Turn on git's untracked cache after a status timeout, so the NEXT one is cheap.
+
+    This is the actual repair for the 2026-08-21 incident; the retry budget is only
+    the fallback that lets THIS invocation still answer. A `status
+    --untracked-files=all` on a cold cache re-walks every directory in the worktree,
+    which on the affected clone cost 333s; the untracked cache makes git reuse the
+    previous walk per directory, keyed on the directory's mtime, and the same clone
+    then answered in 0.63s. Enabling it converts a tree that cannot be read into one
+    that is read for free, permanently and for every worktree of the clone — a
+    linked worktree's unscoped `git config` write lands in the clone's SHARED
+    config, which is the right scope precisely because the next session gets a
+    healed tree without ever paying this path. That holds even though this clone
+    runs `extensions.worktreeConfig=true`: only an explicit `--worktree` writes the
+    per-worktree file, while `--get` still reads it, so a worktree-scoped value
+    would be seen and respected by the refusal below rather than silently reset.
+
+    The cache itself lives in each worktree's own index (the `UNTR` extension) and
+    is written by the first walk that COMPLETES there, so the config write is the
+    durable half and each worktree populates its own on first success.
+
+    Racing sessions are safe: `git config` takes `config.lock` and the losers exit
+    non-zero with `could not lock config file` (measured, 20 concurrent writers —
+    one winner, valid config, no duplicate keys), which this reads as "not ours to
+    claim" and drops. `--test-untracked-cache` never touches the index (measured:
+    identical index hash across it), so it cannot collide with a sibling's git.
+
+    Three refusals, all fail-SAFE, because a wrong "yes" here is the only way this
+    function could weaken the gate:
+
+    * An already-configured value is never overwritten, in either direction. An
+      operator (or a previous heal) who set `false` decided that deliberately, and
+      an unreadable/odd exit status is not evidence of anything — only a clean rc 1,
+      git's specific "this key is unset", is taken as permission to write.
+    * `--test-untracked-cache` must pass FIRST. The cache trusts directory mtimes,
+      so on a filesystem that does not update them reliably git would report a
+      directory as unchanged and MISS untracked files in it. That is a fail-OPEN in
+      the dirty check this whole hook exists to make — a session's new files would
+      simply not appear. Skipping the test to save its ~6s would trade a slow honest
+      answer for a fast dishonest one, so it is never skipped.
+    * Any exception at all leaves the cache alone. The heal is an optimisation on
+      the way to a retry that has its own budget; it must never become the reason
+      the retry does not happen.
+
+    Attempted at most once per process: a filesystem that fails the test would
+    otherwise re-pay those ~6s on every call, and the result cannot change mid-run.
+    """
+    global _UNTRACKED_CACHE_HEAL_TRIED
+    if _UNTRACKED_CACHE_HEAL_TRIED:
+        return False
+    _UNTRACKED_CACHE_HEAL_TRIED = True
+    try:
+        configured = _capture(
+            root,
+            ("git", "config", "--get", "core.untrackedCache"),
+            SWEEP_PROBE_TIMEOUT_SECONDS,
+        )
+        # rc 0 -> already set (leave it); rc 1 -> unset (ours to set); anything
+        # else is an error we decline to interpret.
+        if configured.returncode != 1:
+            return False
+        # The mtime test holds `index.lock` for its whole ~6s run and writes a
+        # scratch directory into the worktree root, so a killed one leaves BOTH
+        # behind. Clean up after it on every path — success, non-zero, or timeout.
+        preexisting = _mtime_test_scratches(root)
+        try:
+            tested = _capture(
+                root,
+                ("git", "update-index", "--test-untracked-cache"),
+                UNTRACKED_CACHE_TEST_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            _sweep_stale_index_lock(root)
+            raise
+        finally:
+            _remove_mtime_test_scratch(root, preexisting)
+        if tested.returncode != 0:
+            return False
+        written = _capture(
+            root,
+            ("git", "config", "core.untrackedCache", "true"),
+            SWEEP_PROBE_TIMEOUT_SECONDS,
+        )
+        return written.returncode == 0
+    except Exception:  # noqa: BLE001 — a failed optimisation must never block the retry
+        return False
+
+
 def _status_output(root: Path) -> str:
     """`git status --porcelain`, retried ONCE because the first run warms the index.
 
@@ -503,9 +701,28 @@ def _status_output(root: Path) -> str:
     our own wreckage, and once more before giving up, so the NEXT invocation
     starts from a tree this one did not wedge.
 
+    A first attempt that timed out also triggers `_enable_untracked_cache`, which
+    is the difference between a tree that keeps timing out and one that stops: a
+    blown first budget is the only evidence this hook ever gets that a checkout is
+    too slow to read, and it is a good one — a healthy tree never reaches that
+    line, and so never pays the heal's ~6s filesystem test.
+
+    The heal runs AFTER the status has been read, never between the two attempts,
+    and that ordering is load-bearing rather than cosmetic. Its `--test-untracked-
+    cache` writes a scratch directory into the worktree root; a killed one leaves it
+    there (measured), and a `status` run afterwards would report it as untracked —
+    letting the guard file a false `uncommitted` block naming a file the guard
+    itself created. `_remove_mtime_test_scratch` is the direct repair for that, and
+    reading status first means even a cleanup that fails cannot contaminate THIS
+    invocation's answer. Nothing is lost by waiting: the cache is populated by the
+    first walk that COMPLETES, so it could never have rescued a retry that follows a
+    killed attempt anyway — the retry's own budget has to be able to finish the walk
+    alone, and the heal is for every invocation after this one.
+
     Fail-closed is unchanged. A status that times out twice re-raises, `main`
     files `guard_error`, and Stop blocks — the retry buys a second chance to
-    ANSWER, never permission to skip the question.
+    ANSWER, never permission to skip the question, and the heal changes only how
+    long the answer takes, never whether one is required.
     """
     args = ("git", "status", "--porcelain=v1", "--untracked-files=all")
     try:
@@ -513,10 +730,13 @@ def _status_output(root: Path) -> str:
     except subprocess.TimeoutExpired:
         _sweep_stale_index_lock(root)
     try:
-        return _run_raw(root, *args, timeout=STATUS_RETRY_TIMEOUT_SECONDS)
+        output = _run_raw(root, *args, timeout=STATUS_RETRY_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
         _sweep_stale_index_lock(root)
+        _enable_untracked_cache(root)
         raise
+    _enable_untracked_cache(root)
+    return output
 
 
 def _fingerprint(root: Path) -> dict[str, str]:
