@@ -139,7 +139,11 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - name: install test deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
+        # plotly/pillow/requests: the K1 legs import the REAL production
+        # builders (scripts.build_canada / scripts.build_hk_library), whose
+        # import closure needs the render deps — without them both K1 tests
+        # die on ModuleNotFoundError before asserting anything.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests
       - name: HK+CA Prophet shadow substrate — K1-K14 + standing clauses
         run: python -m pytest tests/test_board_shadow.py -q
 

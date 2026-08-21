@@ -736,7 +736,13 @@ def test_k6_prophet_shadow_literal_is_confined_to_its_own_module_and_tests():
         if not root.is_dir():
             continue
         for path in root.rglob("*"):
-            if not path.is_file() or "__pycache__" in path.parts:
+            if not path.is_file():
+                continue
+            # prune on the path RELATIVE to the scan root, never the absolute
+            # path — an absolute-part prune also matches anything ABOVE the
+            # root and silently skips every file in a .claude/worktrees/<name>/
+            # checkout (#3802; pinned by test_no_absolute_path_part_prunes).
+            if "__pycache__" in path.relative_to(root).parts:
                 continue
             rel = path.relative_to(ROOT).as_posix()
             if rel in _K6_ALLOWED_FILES:
