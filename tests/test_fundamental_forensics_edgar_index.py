@@ -591,6 +591,14 @@ def test_quarter_rollover_does_not_treat_prior_quarter_rows_as_mass_corrections(
     assert fake.index_fetches[-1] == (2026, 4)
     # SPEC item 1: index_latest_key is never written (no second mutable pointer).
     assert store.get_bytes_strict(f"{PREFIX}/indexes/quarters/2026-Q4/latest.json") is None
+    # Quarter rollover must not reset the SEC source clock.
+    assert q4.receipt["latest_relevant_sec_accepted_at"] == ACCEPT_NEW
+    fake.submissions_fetches.clear()
+    fake.facts_fetches.clear()
+    q4_quiet = _poll(store, universe, fake, _clocks("2026-10-02T04:15:00Z"), repo_root=repo)
+    assert q4_quiet.exit_code == 0
+    assert fake.submissions_fetches == []
+    assert q4_quiet.receipt["latest_relevant_sec_accepted_at"] == ACCEPT_NEW
 
 
 def test_partial_timed_out_issuer_state_is_not_purged_by_index_baseline(tmp_path: Path) -> None:

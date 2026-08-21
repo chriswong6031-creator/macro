@@ -22,10 +22,10 @@ config/site_access.yml	24	#   * every other data path not named under `public` b
 config/site_access.yml	297	# THIS LIST IS THE EXCEPTION, NOT THE PREFIX. Everything else under /live/
 config/site_access.yml	299	# /live/prophet_live.json (Prophet Live provisional states, masterplan §4.4a)
 config/site_access.yml	303	# (The armed trigger LEVELS are not in it; they stay in the R2 pack.) It is
-config/site_access.yml	346	# client-side arithmetic only — every heavy per-symbol panel is fetched from R2
-config/synapse.yml	5917	gamma_flow, 0DTE pct) is reliable. Accrual store: data/options_flow/summary_<SYM>.parquet
-config/synapse.yml	6114	path: data/options_entry/state.parquet
-config/synapse.yml	11551	# --- prophet-ledger: Prophet forward outcome ledger ---
+config/site_access.yml	348	# client-side arithmetic only — every heavy per-symbol panel is fetched from R2
+config/synapse.yml	5940	gamma_flow, 0DTE pct) is reliable. Accrual store: data/options_flow/summary_<SYM>.parquet
+config/synapse.yml	6137	path: data/options_entry/state.parquet
+config/synapse.yml	11574	# --- prophet-ledger: Prophet forward outcome ledger ---
 engine/biocatalyst/activation.py	577	"contract_id": "biocatalyst_retention_preflight.v1",
 engine/biocatalyst/prospective.py	509	def build_public_model(
 engine/biocatalyst/publication.py	1185	def build_private_mirror_manifest(
@@ -36,7 +36,7 @@ engine/capital_structure/source_store.py	24	SEC_OBJECT_PREFIX = "capital_structu
 engine/capital_structure/source_store.py	187	or isinstance(max_byte_length, bool)
 engine/earnings_narrative/private_publication.py	33	PRIVATE_PREFIX = "earnings_wire_private/v1"
 engine/fundamental_forensics/attested_history_store.py	1	"""Read-only store for the DEDICATED attested-history bucket.
-engine/fundamental_forensics/broad_sec_store.py	55	PREFIX = "fundamental_forensics/broad-sec/v1"
+engine/fundamental_forensics/broad_sec_store.py	56	PREFIX = "fundamental_forensics/broad-sec/v1"
 engine/fundamental_forensics/disclosure_bundle.py	56	DISCLOSURE_BUNDLE_PREFIX = "fundamental_forensics/disclosures/v1"
 engine/fundamental_forensics/private_state.py	25	STATE_KEY = "fundamental_forensics/state.json.gz"
 engine/fundamental_forensics/query_snapshots.py	57	QUERY_SNAPSHOT_PREFIX = "fundamental_forensics/query-snapshots/v1"
@@ -54,13 +54,13 @@ engine/options_focused_quote.py	34	W0A_INDEX_KEY = "options_structure/msc_intrad
 engine/options_focused_quote.py	760	prefix = f"private/options_focused_quote/v1/attempts/{digest}"
 engine/prophet_live/r2io.py	32	PACK_KEY = "live_flow/prophet_live_armed.json"
 engine/prophet_live/r2io.py	33	LIVE_KEY = "live_flow/prophet_live.json"
-engine/research_vault/catalog.py	29	CATALOG_KEY = "research_vault/catalog.json"
+engine/research_vault/catalog.py	30	CATALOG_KEY = "research_vault/catalog.json"
 engine/research_vault/corpus.py	447	CORPUS_KEY = "research_vault/corpus.sqlite"   # mirrors ingest CORPUS_KEY
-engine/research_vault/ingest.py	52	INBOX_PREFIX = "research_inbox/"
-engine/research_vault/ingest.py	54	PROCESSED_PREFIX = "research_inbox/_processed/"
-engine/research_vault/ingest.py	55	VAULT_PREFIX = "research_vault/"
-engine/research_vault/ingest.py	56	CORPUS_KEY = "research_vault/corpus.sqlite"
-engine/research_vault/ingest.py	142	def _receipt_key(item_id: str) -> str:
+engine/research_vault/ingest.py	59	INBOX_PREFIX = "research_inbox/"
+engine/research_vault/ingest.py	61	PROCESSED_PREFIX = "research_inbox/_processed/"
+engine/research_vault/ingest.py	62	VAULT_PREFIX = "research_vault/"
+engine/research_vault/ingest.py	63	CORPUS_KEY = "research_vault/corpus.sqlite"
+engine/research_vault/ingest.py	149	def _receipt_key(item_id: str) -> str:
 engine/research_vault/r2_store.py	1	"""research_vault.r2_store — object store for the PRIVATE research bucket.
 lib/commercial_path.py	75	return Path(os.environ.get("MACRO_API_STATE_DIR", "/var/lib/macro-api")) / "commercial_path"
 lib/commercial_path.py	79	return state_dir(root) / "events" / f"{_utc(day).strftime('%Y-%m-%d')}.jsonl"

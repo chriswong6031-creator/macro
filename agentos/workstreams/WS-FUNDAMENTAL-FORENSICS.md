@@ -15,7 +15,7 @@ blast_radius: user_facing
 ambiguity: specified
 blocked_by:
   - "Production incremental 32116597760 cancelled at the 90-minute job budget on the 2837-issuer per-issuer census. FF-1 is not PROVEN_LIVE. Do not start FF-2."
-  - "FF-1P2R current-quarter index discovery on PR #5898 is BUILT_NOT_PROVEN, awaiting Sol review / production commissioning. #5898 does not perform production recovery."
+  - "FF-1P2R current-quarter index discovery on PR #5898 is BUILT_NOT_PROVEN, awaiting Sol review / production commissioning. #5898 does not perform production recovery. Accession-prefix==subject-CIK (Sol ruling 7 literal) is recorded as a Fable deviation: DEC:FF-1-ACCESSION-PREFIX-IS-TRANSMITTER."
   - "FF-1R July recovery engine is NOT_BUILT. Live Q3 index candidates are 2560 rows / 2541 unique CIKs. Do not start FF-1R from this PR."
 discoveries:
   - DSC:FF-1-LIVE-UNIVERSE-EXCEEDS-2500
@@ -26,6 +26,8 @@ decisions:
   - DEC:FF-1-UNIVERSE-BIND-CAP-4000
   - DEC:FF-1-BROAD-DISCOVERY-USES-EDGAR-INDEXES
   - DEC:FF-1-RECOVERY-NOT-COMMISSIONED
+  - DEC:FF-1-ACCESSION-PREFIX-IS-TRANSMITTER
+  - DEC:FF-1-PRIOR-COMPLETE-FAILS-CLOSED
 owns_paths:
   - engine/fundamental_forensics/
   - app/forensics.py
@@ -52,7 +54,7 @@ waves:
     status: in_progress
     depends_on: [FF-0]
     pr: [5820, 5864, 5898]
-    next_action: FF-1P2R is BUILT_NOT_PROVEN on PR #5898; current-quarter discovery only; awaiting Sol review / production commissioning.
+    next_action: FF-1P2R is BUILT_NOT_PROVEN on PR #5898; current-quarter discovery only; Fable implemented Sol kernel minus the unimplementable accession[:10]==subject-CIK bind; awaiting Sol review / production commissioning.
   - id: FF-1R
     title: July recovery engine
     status: todo
@@ -78,7 +80,9 @@ landmines:
   - "A cancelled 90-minute run may have admitted valid immutable objects with no latest-complete. Index baseline may become canonical while those objects remain. Reconcile issuer latest pointers only when an issuer is affected; do not infer emptiness from list_prefix."
   - "Index HTTP Last-Modified, archive_retrieved_at, and index_latest_filed_on are never sec_accepted_at. Acceptance comes only from per-issuer Submissions."
   - "Index state is quarter-scoped. Do not treat Q3 rows missing from a Q4 baseline as mass corrections."
-  - "index_latest is the latest fully processed discovery snapshot, not the latest archive downloaded. Unresolved PIT/unevaluable NEW index events must not advance it."
+  - "latest-complete.json is the sole processed authority. Do not ship indexes/quarters/<q>/latest.json as a second mutable pointer. Unresolved PIT/unevaluable NEW index events must not advance latest-complete."
+  - "Accession[:10] is the transmitting filer/agent CIK, not the subject issuer. Bind row CIK to path CIK; require accession shape only. Live canary: MSFT 0000789019 / 0001193125-26-323660 (DEC:FF-1-ACCESSION-PREFIX-IS-TRANSMITTER)."
+  - "A sha-verified latest-complete missing index-discovery state is corrupt prior, not bootstrap (DEC:FF-1-PRIOR-COMPLETE-FAILS-CLOSED)."
   - "Previous-quarter weekly reconciliation is SPEC_ONLY / NOT_BUILT. Current-quarter rebuilt-index corrections are implemented; FF-1 is not globally correction-safe yet."
 do_not_redo:
   - "Do not modify FF-0 (app/forensics.py, engine/fundamental_forensics/health.py, templates/fundamental_forensics*, site/fundamental_forensics*, scripts/build_fundamental_forensics.py)."
@@ -97,8 +101,20 @@ do_not_redo:
   - "Do not purge fundamental_forensics/broad-sec/v1/ after a cancelled run."
   - "Do not ingest companyfacts.zip. Do not change Wave-2."
   - "Do not authorize or freeze a submissions.zip compressed maximum. Live Content-Length was 1558585919. Sol rejected a 2 GiB bound."
+  - "Do not require accession[:10] == subject CIK. That rejects agent-filed rows and fails the live master index."
+  - "Do not bootstrap from a sha-verified latest-complete that lacks a well-formed index block."
   - "Do not move the 03:15 UTC schedule merely because submissions.zip rebuilds around 03:00 ET. Q3 master.zip Last-Modified was 02:02 UTC."
-next_action: Return PR #5898 to Sol unmerged. FF-1P2R is BUILT_NOT_PROVEN (current-quarter discovery). FF-1R is NOT_BUILT. Prior-quarter weekly reconciliation is NOT_BUILT. Do not merge, do not dispatch incremental or recovery, do not start FF-2.
+next_action: Return PR #5898 to Sol unmerged. FF-1P2R is BUILT_NOT_PROVEN (current-quarter discovery). Recorded deviation DEC:FF-1-ACCESSION-PREFIX-IS-TRANSMITTER. FF-1R is NOT_BUILT. Prior-quarter weekly reconciliation is NOT_BUILT. Do not merge, do not dispatch incremental or recovery, do not start FF-2.
+needs_ceo:
+  question: >
+    Ruling 7 required accession[:10] == subject CIK. Live EDGAR accessions are
+    prefixed with the transmitting agent. May #5898 ship with row==path bind
+    plus accession shape only?
+  options:
+    - Keep Fable's production-safe remainder (recommended).
+    - Restore the three-identity equality and accept that production polls fail on agent-filed 10-Ks.
+  recommendation: Keep row==path plus accession shape; do not require accession prefix == subject CIK.
+  by_when: 2026-08-22
 ---
 
 ## Context

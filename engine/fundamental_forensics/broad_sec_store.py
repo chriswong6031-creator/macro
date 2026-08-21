@@ -25,8 +25,9 @@ poll clock.  Callers inject every clock; this kernel does not sample wall time.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from hashlib import sha256
+from zoneinfo import ZoneInfo
 import gzip
 import io
 import json
@@ -275,7 +276,6 @@ def index_latest_key(quarter_id: str) -> str:
 
 def calendar_quarter(iso_z: str) -> tuple[int, int]:
     """Route iso_z to (year, quarter) in America/New_York time, per SPEC item 4."""
-    from zoneinfo import ZoneInfo
     stamp = _require_iso_z(iso_z, field="quarter_clock")
     parsed = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
     eastern = parsed.astimezone(ZoneInfo("America/New_York"))
@@ -822,11 +822,14 @@ def parse_master_index_archive(
                 "edgar_index_cik_mismatch",
                 f"path CIK {path_cik} does not match row CIK {cik}",
             )
-        # SPEC item 7: accession[:10] (10-digit prefix) must equal canonical row CIK.
-        if accession[:10] != cik:
+        # Accession numbers are prefixed with the transmitting filer/agent CIK,
+        # not the subject issuer. Live Q3 canary: MSFT (0000789019) 10-K
+        # 0001193125-26-323660. Bind row CIK to path CIK; require accession
+        # *shape* only. Do not require accession[:10] == row CIK.
+        if _ACCESSION_RE.fullmatch(accession) is None:
             raise BroadSecError(
-                "edgar_index_cik_mismatch",
-                f"accession prefix {accession[:10]!r} does not match row CIK {cik!r}",
+                "edgar_index_invalid",
+                f"malformed accession {accession!r}",
             )
         row = {
             "cik": cik,
@@ -961,8 +964,15 @@ def _load_prior_context(
     for field in ("run_id", "run_key", "run_receipt_sha256", "status"):
         if not isinstance(head.get(field), str):
             raise BroadSecError("issuer_manifest_invalid", f"latest-complete head missing field: {field}")
+    if head.get("schema") != HEAD_SCHEMA:
+        raise BroadSecError("issuer_manifest_invalid", "latest-complete head has unexpected schema")
+    if head.get("status") != "complete":
+        raise BroadSecError("issuer_manifest_invalid", "latest-complete head has non-complete status")
+    expected_run_key = run_key(head["run_id"])
+    if head["run_key"] != expected_run_key:
+        raise BroadSecError("issuer_manifest_invalid", "latest-complete head run_key does not match run_id")
 
-    receipt_bytes = store.get_bytes_strict(head["run_key"])
+    receipt_bytes = store.get_bytes_strict(expected_run_key)
     if receipt_bytes is None:
         raise BroadSecError("store_readback_failure", "prior complete run receipt missing")
     if sha256(receipt_bytes).hexdigest() != head["run_receipt_sha256"]:
@@ -986,14 +996,20 @@ def _load_prior_context(
 
     index_info = receipt.get("index")
     if not isinstance(index_info, dict):
-        return PriorContext(clock=prior_clock, rows=[], is_bootstrap=True)
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "prior complete receipt is missing index discovery state",
+        )
 
     snap_sha = index_info.get("snapshot_sha256")
     prior_year = index_info.get("year")
     prior_q = index_info.get("quarter")
 
     if not isinstance(snap_sha, str) or not isinstance(prior_year, int) or not isinstance(prior_q, int):
-        return PriorContext(clock=prior_clock, rows=[], is_bootstrap=True)
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "prior complete receipt index identity is incomplete",
+        )
 
     snap_key = index_snapshot_key(quarter_id(prior_year, prior_q), snap_sha)
     snap_raw = store.get_bytes_strict(snap_key)
@@ -1852,6 +1868,19 @@ def run_broad_sec_poll(
             coverage["failed_issuers"] += 1
             item["failed"] = True
 
+    still_open = [
+        item
+        for item in facts_candidates
+        if item["needs_facts"]
+        and not item["observation"].get("companyfacts_fetched")
+        and not item.get("failed")
+    ]
+    deferred = still_open
+    coverage["companyfacts_deferred"] = len(deferred)
+    coverage["recovery_backlog"] = len(deferred)
+    if still_open:
+        overflow = True
+
     clocks.recorded_at = clocks.recorded_at or now()
     _progress(on_progress, "publish", prepared=len(prepared), observed=coverage["observed_issuers"])
     # SPEC item 8: durably admit index object + snapshot; if that fails, census_complete=False.
@@ -2092,20 +2121,9 @@ def run_broad_sec_poll(
                 receipt_sha256=receipt_sha256,
             ))
     except BroadSecError as exc:
-        # SPEC item 10: do not mutate stored receipt dict after run_key is written.
-        # Build failed head from precomputed sha so run_receipt_sha256 stays correct.
-        try:
-            failed_head = _compact_head(
-                receipt,
-                observation_key=observation_key,
-                observation_sha256=observation_sha,
-                receipt_sha256=receipt_sha256,
-            )
-            failed_head["status"] = "failed"
-            _put_pointer(store, latest_observation_key(), failed_head)
-        except BroadSecError:
-            pass
-        # Return a non-mutated receipt view; stored bytes at run_key are unchanged.
+        # Do not mutate stored receipt bytes. Do not rewrite latest-observation
+        # to a failed head (that would clobber a successful observation pointer
+        # after a later latest-complete CAS miss, or name a receipt never stored).
         failed_receipt = dict(receipt)
         failed_receipt["status"] = "failed"
         failed_receipt["reason_code"] = exc.reason_code

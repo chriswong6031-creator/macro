@@ -1447,29 +1447,68 @@ def test_malformed_cik_rejects_in_parse_master_index_archive() -> None:
             parse_master_index_archive(_zip_with_cik(bad), canonical_ciks=canonical)
 
 
-def test_accession_cik_prefix_mismatch_is_rejected() -> None:
-    """Accession prefix (first 10 chars) must match the canonical row CIK."""
+def test_agent_filed_accession_is_admitted_when_row_matches_path() -> None:
+    """Accession prefix is the transmitting filer, not the subject issuer.
+
+    Live Q3 canary: MSFT CIK 0000789019, 10-K 0001193125-26-323660.
+    Row CIK must still match path CIK; accession shape must be valid.
+    """
     from engine.fundamental_forensics.broad_sec_store import parse_master_index_archive
 
-    canonical = {"0000320193"}
-    # Row CIK = 0000320193 but accession starts with 0000789019 (MSFT's CIK).
+    canonical = {"0000789019"}
     header = (
         "CIK|Company Name|Form Type|Date Filed|Filename\n"
         "--------------------------------------------------------------------------------\n"
     )
-    acc = "0000789019-26-000123"
-    filename = f"edgar/data/320193/{acc}.txt"
-    body = f"320193|AAPL|10-Q|2026-06-15|{filename}\n"
+    acc = "0001193125-26-323660"
+    filename = "edgar/data/789019/0001193125-26-323660.txt"
+    body = f"789019|MICROSOFT CORP|10-K|2026-07-29|{filename}\n"
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as h:
         h.writestr("master.idx", header + body)
-    raw = buf.getvalue()
-    with pytest.raises(BroadSecError) as exc_info:
-        parse_master_index_archive(raw, canonical_ciks=canonical)
-    assert exc_info.value.reason_code == "edgar_index_cik_mismatch"
+    parsed = parse_master_index_archive(buf.getvalue(), canonical_ciks=canonical)
+    assert parsed["relevant_rows"][0]["cik"] == "0000789019"
+    assert parsed["relevant_rows"][0]["accession"] == acc
 
 
-# ── SPEC item 8: index write/readback failure ─────────────────────────────────
+def test_prior_complete_without_index_state_fails_closed(tmp_path: Path) -> None:
+    """A sha-verified complete head missing index discovery state must not re-bootstrap."""
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    fake.set_index([])
+    run_id = "run_corruptprior0001"
+    receipt = {
+        "schema": "fundamental_forensics.broad_sec.run.v1",
+        "status": "complete",
+        "run_id": run_id,
+        "latest_relevant_sec_accepted_at": ACCEPT_Q,
+    }
+    raw = json.dumps(receipt).encode("utf-8")
+    key = run_key(run_id)
+    assert store.put_bytes_strict_conditional(key, raw, expected_version=None)
+    head = {
+        "schema": "fundamental_forensics.broad_sec.head.v1",
+        "run_id": run_id,
+        "run_key": key,
+        "run_receipt_sha256": sha256(raw).hexdigest(),
+        "status": "complete",
+        "poll_completed_at": POLL_1,
+        "universe_sha256": "ab" * 32,
+        "observation_key": "x",
+        "observation_sha256": "cd" * 32,
+    }
+    assert store.put_bytes_strict_conditional(
+        latest_complete_key(),
+        json.dumps(head).encode("utf-8"),
+        expected_version=None,
+    )
+    result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "issuer_manifest_invalid"
+    assert result.receipt.get("index") in (None, {}) or result.receipt["index"].get("baseline") is not True
+    assert fake.submissions_fetches == []
+    assert store.get_bytes_strict(latest_complete_key()) == json.dumps(head).encode("utf-8")
+
 
 def test_index_snapshot_write_failure_cannot_complete_or_publish_latest_complete(
     tmp_path: Path,
@@ -1554,7 +1593,7 @@ def test_latest_complete_cas_failure_leaves_prior_complete_valid(tmp_path: Path)
         def put_bytes_strict_conditional(self, key, data, *, expected_version, content_type="application/octet-stream"):
             from engine.fundamental_forensics.broad_sec_store import latest_complete_key as lck
             if key == lck():
-                raise BroadSecError("store_write_failure", "simulated complete CAS failure")
+                return False
             return self.wrapped.put_bytes_strict_conditional(key, data, expected_version=expected_version, content_type=content_type)
 
         def __getattr__(self, name):
