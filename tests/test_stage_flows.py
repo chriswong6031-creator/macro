@@ -192,6 +192,22 @@ def test_build_writes_artifact_display_tier(tmp_path: Path):
     assert written["n_industry"] == 1
 
 
+# ---------------------------------------------------------------------------
+# Wave 8 §6.1 — `target_stage_week` threaded through to
+# `stage_industry.coverage_snapshot`, judging freshness on the Stage-week
+# plane instead of downgrading merely because the wall clock advanced.
+# ---------------------------------------------------------------------------
+def test_build_threads_target_stage_week_into_coverage(tmp_path: Path):
+    frame = _frame().assign(stage_source_asof="2026-08-19",
+                            stage_week_end="2026-08-14")
+    contract = sf.build(stage_frame=frame, root=tmp_path, asof="2026-08-20",
+                        target_stage_week="2026-08-14")
+    assert contract["coverage"]["freshness"]["plane"] == "stage_week"
+    assert contract["coverage"]["freshness"]["status"] == "current"
+    assert contract["status"] == "ready"
+    assert "source_asof_stale" not in contract["coverage"]["issues"]
+
+
 def test_build_turn_flag_from_prior_artifact(tmp_path: Path):
     # First build (strong LEADING-ish) then a weakened frame -> roll flag.
     strong = _frame().copy()
