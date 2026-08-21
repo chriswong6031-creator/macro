@@ -281,3 +281,46 @@ field changes meaning.
 Fix-pass order: code (R1, R2, R3, R5, R6, R11, R12) → tests (R4, R8, R9, R10) → regeneration + rebake LAST (R7)
 → full §11 gates re-run. The reviewer re-verifies findings 1-12 individually (CONFIRMED/NOT-CONFIRMED per
 finding) before the ship loop starts.
+
+---
+
+## AMENDMENT §2 — second-round rulings (Fable, 2026-08-21; binding on fix pass 2)
+
+Re-verification: findings 1, 3-12 CONFIRMED-FIXED; finding 2 residual is the sole blocker; new findings 13-15.
+
+**R13 (blocker residual — fix).** `resolved_total` semantics: a target code is RESOLVED when an ACTIVE master row
+covers its identity post-run (the sidecar's own rule-5/rule-6 answer) — NOT only when this run's rail join
+re-derived it. A rail that cannot currently re-derive an EXISTING row is a staleness fact, not a refusal; it is
+already disclosed via `listing_continuity`. Therefore: `resolved_total` = 1,210 (702 pre + 508 new, incl. WBS and
+SATS); `refused_this_run` = 25 (the true not-admitted set); new small disclosure list `resolved_not_rederivable`
+naming `{code, security_id}` for resolved targets whose current rail join fails (expected: WBS, SATS). Partition
+unchanged and fail-closed: `resolved_total + refused + disclosed_exclusions == target_n` (1,210 + 25 + 1 = 1,236).
+The §9 sidecar clause returns to STRICT equality: sidecar us `NOT_IN_MASTER` symbol set == receipt refused set
+(both 25) — the containment weakening at tests/test_theme_graph_identity_resolution.py:847 is reverted.
+The RESOLVED-side reconciliation (sidecar us RESOLVED 1,210 vs block fields) has exactly two structural
+divergence classes — disclosed duplicate-claim exclusions that the sidecar resolves as nodes (FISV), and
+ENTITY_TYPE_CONFLICT nodes whose master row exists but which the sidecar types separately — and the test asserts
+that reconciliation BY NAME (closed set; a new divergence class must fail the test).
+
+**R14 (new finding 13 — fix).** `_collapse_duplicate_claims` must NEVER drop a legacy resolution (R1 law).
+When two or more LEGACY claimants render one key, do NOT collapse — all flow exactly as pre-diff (the D2B1-R1
+dated-alias EQR/VMRK shape is legal). Collapse applies only when at least one claimant is GMI-only; if a legacy
+claimant exists it always wins; among GMI-only claimants the existing deterministic rules stand. Docstring and
+code must agree. Synthetic legacy-pair test asserting zero drop required.
+
+**R15 (new finding 14 — fix).** `unrenderable_code` vs `unsupported_venue` is discriminated STRUCTURALLY at the
+construction site (mic-is-None vs ListingKey construction raise), never by substring-matching a human-readable
+message.
+
+**R16 (new finding 15 — fix).** R4(b)'s batch isolation must not depend on `ingested_at` mode: derive the strip
+set deterministically (e.g. the receipt's own admitted-symbol set for this wave, or max-batch-timestamp ∩
+GMI-only symbols). The test must survive a later, larger admission wave.
+
+**Note (no repair):** the sidecar now carries TWO new generations (pre-amendment and amendment bakes). This is
+indistinguishable from an ordinary double nightly bake, has no state consequence (master byte-unchanged between
+them), and the append-only law forbids rewriting history — §7's "ONE new generation" reads as "per bake", not
+"per wave". No action.
+
+Fix-pass-2 order: code (R13, R14, R15) → tests (R13 strict equality + closed-set reconciliation, R14 pair test,
+R16) → regeneration + rebake LAST (R7 discipline: code_version must name a commit whose tree produces the bytes)
+→ §11 gates re-run. Reviewer re-verifies R13-R16 and closes finding 2.
