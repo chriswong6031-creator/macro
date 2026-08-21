@@ -22,7 +22,21 @@ var REF = window.REF = window.REF || {};
 REF.registry = {};      // production-relative path -> raw embedded text (JSON or JS)
 REF.fragments = {};     // production-relative path -> raw embedded HTML fragment text
 REF.log = [];           // [{seq, type:'fetch'|'nav'|'boot', path, result}]
-REF.simulateFetchFail = false;
+/* QA3-08: simulate-fetch-fail used to be arm-able only from the drawer's
+   toggle button, which mounts on DOMContentLoaded — by then every BOOT-phase
+   fetch (the embedded-registry hits every view partial issues from its own
+   DOMContentLoaded handler, several of which run inline ahead of the
+   drawer's own listener) has already resolved. `?reffail=1` (or `#reffail=1`,
+   since a hash-anchored boot URL like `?reffail=1#overview` is common) is
+   read synchronously here, at parse time, before ANY fetch — boot-resolved
+   or not — can occur, so a boot URL can fail-test every payload, not only
+   the two (Moving, Explore) whose organs happen to fetch after the drawer
+   exists. README_BUILD.md documents the param. */
+function _bootFailArmed(){
+  var probe = (location.search || '') + '&' + (location.hash || '').replace(/^#/, '');
+  return /(?:^|[?&])reffail=1(?:&|$)/.test(probe);
+}
+REF.simulateFetchFail = _bootFailArmed();
 REF.accessState = 'gated';  // 'gated' | 'hydrated' | 'ungated'
 var _seq = 0;
 
@@ -183,6 +197,23 @@ function wireStickyOffset(){
   document.documentElement.style.setProperty('--ref-sticky-offset', h + 'px');
 }
 
+/* QA2-10 completion: the workspace nav's own accessible name lives in
+   shell.html (`<nav class="si-side" aria-label="Sector Intelligence
+   views">`), which — unlike every view partial — has no per-view JS of its
+   own to make it language-aware. The other four ARIA-label fixes (Overview
+   Action lanes, Map's rotation-scope group, Confluence's two tablists) each
+   set their attribute from their own view's isZh()/langchange listener
+   (overview.html:528-531, confluence.html:809/1034-1035, map.html:875-876);
+   the nav rail belongs to none of them, so this shim — the one script that
+   already owns global boot + langchange plumbing — paints it instead. */
+function paintNavLabel(){
+  var nav = document.querySelector('nav.si-side');
+  if(!nav) return;
+  var isZh = document.documentElement.getAttribute('data-lang') === 'zh';
+  nav.setAttribute('aria-label', isZh ? '板块情报视图' : 'Sector Intelligence views');
+}
+document.addEventListener('langchange', paintNavLabel);
+
 /* F-6: a hash landing can overshoot when its target sits below content that
    mounts lazily (a view's own organs load async, per-view, well after
    activate()'s own scrollIntoView already ran) — measured pre-fix: #tm-mount
@@ -301,6 +332,7 @@ var HTML = '' +
 document.addEventListener('DOMContentLoaded', function(){
   document.body.insertAdjacentHTML('beforeend', HTML);
   wireStickyOffset();
+  paintNavLabel();
 
   var root = document.getElementById('ref-harness');
   document.getElementById('ref-harness-head').addEventListener('click', function(){
@@ -317,7 +349,17 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('ref-access').addEventListener('change', function(e){
     REF.setAccessState(e.target.value);
   });
-  document.getElementById('ref-failfetch').addEventListener('click', function(e){
+  /* QA3-08: the drawer mounts AFTER _bootFailArmed() already decided
+     REF.simulateFetchFail at parse time — reflect that armed state in the
+     toggle's UI the moment it exists, so `?reffail=1` shows "on" rather than
+     a stale "off" the reader would have to click through (and un-arm). */
+  var failBtn = document.getElementById('ref-failfetch');
+  if(REF.simulateFetchFail){
+    failBtn.textContent = 'on';
+    failBtn.setAttribute('aria-pressed', 'true');
+    failBtn.classList.add('on');
+  }
+  failBtn.addEventListener('click', function(e){
     REF.simulateFetchFail = !REF.simulateFetchFail;
     e.target.textContent = REF.simulateFetchFail ? 'on' : 'off';
     e.target.setAttribute('aria-pressed', String(REF.simulateFetchFail));

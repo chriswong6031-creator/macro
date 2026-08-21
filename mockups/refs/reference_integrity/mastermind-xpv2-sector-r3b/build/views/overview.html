@@ -108,12 +108,12 @@ html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text
 [data-view="overview"] .actbody.is-collapsed > a:nth-child(n+4),
 [data-view="overview"] .actbody.is-collapsed > div[data-theme-id]:nth-child(n+4){ display:none; }
 [data-view="overview"] .actbody > div[data-theme-id] > a{ border-bottom:1px solid var(--line); }
-[data-view="overview"] .pg-more{ margin:0; padding:12px 16px; border-top:1px solid var(--line);
+[data-view="overview"] .pg-more, [data-view="overview"] .pg-plus{ margin:0; padding:12px 16px; border-top:1px solid var(--line);
   font-size:var(--fs-sm); color:var(--muted); }
 /* the sign-in disclosure IS the access-locked UI, so its link is a primary
    target and has to clear 44px. It stays inside its sentence: the box grows by
    padding and gives the space back with an equal negative margin. */
-[data-view="overview"] .pg-more a{ display:inline-block; padding:14px 0; margin:-14px 0;
+[data-view="overview"] .pg-more a, [data-view="overview"] .pg-plus a{ display:inline-block; padding:14px 0; margin:-14px 0;
   color:var(--ink-link); font-weight:700; }
 [data-view="overview"] .r3-lane-empty{ margin:0; padding:var(--sp-6) var(--sp-4);
   font-size:var(--fs-md); font-weight:700; text-align:center; }
@@ -645,9 +645,15 @@ function abMore(n){
 }
 /* the "+N more" basket-items line, verbatim from :565 / :646. Its production href
    is `sector_central.html#actnow-section`; this page IS sector_central, so the
-   same destination is written as the in-page hash it resolves to. */
+   same destination is written as the in-page hash it resolves to. Class is
+   `pg-plus`, NOT `pg-more` — in production this line is `<p class="muted sm">`
+   (_us_act_now_board.html.j2:565), a different class from ab_more()'s
+   `pg-more` sign-in disclosure (:31). hydrate()'s `.pg-more` sweep
+   (sector_central.html.j2:3618) therefore never removes this line in
+   production; giving it a distinct class here preserves that same survival
+   through hydrate (QA3-01). */
 function abPlus(n){
-  return '<p class="pg-more"><a href="#actnow-section">'
+  return '<p class="pg-plus"><a href="#actnow-section">'
     + '<span class="l-en">+' + n + ' more — full list on Sector Intelligence</span>'
     + '<span class="l-zh">还有 ' + n + ' 个 — 完整列表见行业情报页</span></a></p>';
 }

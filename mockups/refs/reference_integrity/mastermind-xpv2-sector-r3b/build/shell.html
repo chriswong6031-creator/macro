@@ -260,7 +260,13 @@ html[data-theme="light"] .si-side{ background:color-mix(in srgb, var(--panel2) 6
 /* §14 scroll-offset law: every hash landing target clears the sticky chrome, so a
    legacy anchor NEVER buries the view answer.  scrollIntoView({block:'start'})
    honours scroll-margin-top, which is why this one property is the whole repair. */
-.si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--ref-sticky-offset) + var(--r3-mnav-h) + 16px); }
+/* QA3-04: fallback embedded directly in the var() call (not just via the
+   :root default two rules up) — the one surviving copy of this rule (the
+   duplicates in money.html/explore.html's standalone-preview @layer are now
+   stripped at assembly time, build_reference.py's strip_layer_block()) is
+   never dependent on a separate --ref-sticky-offset default declaration to
+   degrade safely. */
+.si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--ref-sticky-offset, var(--r3-chrome-h,40px)) + var(--r3-mnav-h,0px) + 16px); }
 
 /* the composed read line — router writes .si-vr-g / .si-vr-t / .si-vr-q into it */
 .si-view-read{ display:flex; align-items:flex-start; gap:9px; margin:0 0 var(--sp-5);

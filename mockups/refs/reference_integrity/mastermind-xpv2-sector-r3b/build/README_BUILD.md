@@ -167,7 +167,18 @@ commission's OUT-OF-SCOPE line forbids repairing it without a new ruling.
   'ungated'`, wired to the drawer's selector. Calls
   `window.REF.renderActNow(state)` if a view has registered one (currently
   `build/views/overview.html`, which owns the `#actnow` board DOM).
-- `REF.simulateFetchFail` — boolean, wired to the drawer's toggle.
+- `REF.simulateFetchFail` — boolean, wired to the drawer's toggle. **Boot-time
+  arming (QA3-08):** the drawer's toggle only exists after `DOMContentLoaded`,
+  which is too late to fail-test a payload a view fetches from its own
+  earlier `DOMContentLoaded` handler — those payloads have already resolved
+  by the time a reader could click the button. Load the page with
+  `?reffail=1` (a hash form also works, e.g. `?reffail=1#overview`) to arm
+  `REF.simulateFetchFail = true` synchronously at parse time, before the
+  first `REF.fetchJSON`/`fetch` call of any kind runs, so every boot-resolved
+  payload across all six views is genuinely fail-tested, not only the ones a
+  view happens to fetch lazily after the drawer mounts. The toggle button
+  reflects the armed state the moment it mounts (already "on", not a stale
+  "off" a reader would have to click through and accidentally un-arm).
 - `REF.log` / `REF.recordFetch(path, result)` / `REF.recordNav(path, result)`
   / `REF.renderLog()` — the recorder. Every log entry is `{seq, type, path,
   result}` — deliberately no wall-clock timestamp (determinism note in the

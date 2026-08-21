@@ -525,6 +525,27 @@ html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(
           <table class="r3-tbl" id="hm-alt-tbl"></table>
         </div>
       </details>
+
+      <!-- QA3-05 / routing_contract.md §7: Money's own runtime-destination row
+           records "per-stock stock.html#<TICKER> pattern (hm-mrow rows)" —
+           heatmap.js's mobile list mode (layoutList(), heatmap.js:1320-1374),
+           which the treemap+sector-table above have no equivalent of (that
+           table is a SECTOR roll-up; this is the per-NAME list production
+           renders in place of the map at <=560px). Reusing the .r3-disc/
+           .r3-tbl idiom already gated by every width/target-size/a11y probe
+           on this view, rather than a new hm-mrow-shaped component, keeps
+           this addition inside the verified surface instead of opening a new
+           one. -->
+      <details class="r3-disc mny-alt" id="hm-names">
+        <summary>
+          <span class="dash-icon dash-icon-table" aria-hidden="true"></span>
+          <span class="l-en">Browse the names</span><span class="l-zh">浏览个股</span>
+          <small id="hm-names-count"></small>
+        </summary>
+        <div class="r3-tblbox mny-alt-body">
+          <table class="r3-tbl" id="hm-names-tbl"></table>
+        </div>
+      </details>
     </div>
   </section>
 
@@ -876,6 +897,43 @@ function renderHeatText(){
   $('hm-alt-tbl').innerHTML=head+'<tbody>'+body+'</tbody>';
   $('hm-alt-count').innerHTML=L(esc(rows.length)+' sectors · '+HM.n_tiles+' names',
                                 esc(rows.length)+' 个板块 · '+HM.n_tiles+' 只');
+  paintNameList();
+}
+
+/* QA3-05 — the per-NAME list, verbatim mechanics from heatmap.js's mobile list
+   mode (layoutList(), heatmap.js:1320-1374): every tile, one row each, sorted
+   by market value (the same default SORT='cap' order layoutList() opens
+   with — no alternate rank). STOCK_URL mirrors heatmap.js:826 EXACTLY
+   (`var STOCK_URL = data.stock_url || 'stock.html#';`): the fixture's own
+   `stock_url` field wins over the generic fallback when present. This
+   capture's `marketdata/sp500_heatmap.json` DOES carry one (an external
+   Mastermind terminal URL, not `stock.html#`) — routing_contract.md §7's
+   "stock.html#<TICKER>" description is the FALLBACK shape of the mechanism,
+   not a hardcoded literal, and this reference must not hardcode a literal
+   the payload itself overrides. Every row is `data-ref-nav` regardless of
+   whether STOCK_URL resolves in-page or external — both are genuine
+   navigate-away destinations the quarantine must intercept, matching every
+   other `data-ref-nav` anchor in this artifact. */
+function paintNameList(){
+  var box=$('hm-names-tbl'); if(!box||!HM) return;
+  var STOCK_URL = HM.stock_url || 'stock.html#';
+  var rows=(HM.tiles||[]).slice().sort(function(a,b){ return (b.size||0)-(a.size||0); });
+  var head='<caption class="r3-vh"><span class="l-en">Every name in the map, individually — ticker, name, sector, one-day move, and its destination.</span><span class="l-zh">图中每一只个股 — 代码、名称、板块、当日涨跌及跳转目的地。</span></caption>'
+    +'<thead><tr>'
+    +'<th>'+L('Ticker','代码')+'</th>'
+    +'<th>'+L('Name','名称')+'</th>'
+    +'<th>'+L('Sector','板块')+'</th>'
+    +'<th class="num">'+L('Move today','当日涨跌')+'</th></tr></thead>';
+  var body=rows.map(function(t){
+    var pc=t.perf?t.perf[HM_TF]:null;
+    var href=STOCK_URL+encodeURIComponent(t.t);
+    return '<tr><td><a data-ref-nav href="'+esc(href)+'">'+esc(dispT(t.t))+'</a></td>'
+      +'<td>'+esc(t.name||'')+'</td>'
+      +'<td>'+esc(t.sector||'')+'</td>'
+      +'<td class="num '+cls(pc)+'">'+fmtPc(pc)+'</td></tr>';
+  }).join('');
+  box.innerHTML=head+'<tbody>'+body+'</tbody>';
+  $('hm-names-count').innerHTML=L(esc(rows.length)+' names',esc(rows.length)+' 只');
 }
 
 /* ───────────────────────────────────────────────────────────────────────────────
@@ -1067,6 +1125,11 @@ document.addEventListener('DOMContentLoaded', function(){
       +'<span>'+L('The market-heat artifact did not arrive. Every other reading on this view is unaffected.',
                   '市场热度数据未送达。本视图其他读数不受影响。')+'</span>'; }
     var alt=$('hm-alt'); if(alt) alt.remove();
+    /* QA3-05: the per-name list is exactly as fetch-dependent as the sector
+       table above it (both are gated on the same HM) — it has to vanish on
+       the same branch, or an empty, unpopulated "Browse the names" toggle is
+       left behind next to the sibling that correctly disappeared. */
+    var names=$('hm-names'); if(names) names.remove();
     var tk=$('hm-takeaway'); if(tk) tk.innerHTML='';
     var sc=$('hm-scale'); if(sc) sc.innerHTML='';
     var mt=$('hm-meta'); if(mt) mt.innerHTML='';

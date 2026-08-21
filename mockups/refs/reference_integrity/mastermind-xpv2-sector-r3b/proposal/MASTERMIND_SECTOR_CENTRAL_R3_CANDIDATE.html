@@ -260,7 +260,13 @@ html[data-theme="light"] .si-side{ background:color-mix(in srgb, var(--panel2) 6
 /* §14 scroll-offset law: every hash landing target clears the sticky chrome, so a
    legacy anchor NEVER buries the view answer.  scrollIntoView({block:'start'})
    honours scroll-margin-top, which is why this one property is the whole repair. */
-.si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--ref-sticky-offset) + var(--r3-mnav-h) + 16px); }
+/* QA3-04: fallback embedded directly in the var() call (not just via the
+   :root default two rules up) — the one surviving copy of this rule (the
+   duplicates in money.html/explore.html's standalone-preview @layer are now
+   stripped at assembly time, build_reference.py's strip_layer_block()) is
+   never dependent on a separate --ref-sticky-offset default declaration to
+   degrade safely. */
+.si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--ref-sticky-offset, var(--r3-chrome-h,40px)) + var(--r3-mnav-h,0px) + 16px); }
 
 /* the composed read line — router writes .si-vr-g / .si-vr-t / .si-vr-q into it */
 .si-view-read{ display:flex; align-items:flex-start; gap:9px; margin:0 0 var(--sp-5);
@@ -766,12 +772,12 @@ html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text
 [data-view="overview"] .actbody.is-collapsed > a:nth-child(n+4),
 [data-view="overview"] .actbody.is-collapsed > div[data-theme-id]:nth-child(n+4){ display:none; }
 [data-view="overview"] .actbody > div[data-theme-id] > a{ border-bottom:1px solid var(--line); }
-[data-view="overview"] .pg-more{ margin:0; padding:12px 16px; border-top:1px solid var(--line);
+[data-view="overview"] .pg-more, [data-view="overview"] .pg-plus{ margin:0; padding:12px 16px; border-top:1px solid var(--line);
   font-size:var(--fs-sm); color:var(--muted); }
 /* the sign-in disclosure IS the access-locked UI, so its link is a primary
    target and has to clear 44px. It stays inside its sentence: the box grows by
    padding and gives the space back with an equal negative margin. */
-[data-view="overview"] .pg-more a{ display:inline-block; padding:14px 0; margin:-14px 0;
+[data-view="overview"] .pg-more a, [data-view="overview"] .pg-plus a{ display:inline-block; padding:14px 0; margin:-14px 0;
   color:var(--ink-link); font-weight:700; }
 [data-view="overview"] .r3-lane-empty{ margin:0; padding:var(--sp-6) var(--sp-4);
   font-size:var(--fs-md); font-weight:700; text-align:center; }
@@ -1303,9 +1309,15 @@ function abMore(n){
 }
 /* the "+N more" basket-items line, verbatim from :565 / :646. Its production href
    is `sector_central.html#actnow-section`; this page IS sector_central, so the
-   same destination is written as the in-page hash it resolves to. */
+   same destination is written as the in-page hash it resolves to. Class is
+   `pg-plus`, NOT `pg-more` — in production this line is `<p class="muted sm">`
+   (_us_act_now_board.html.j2:565), a different class from ab_more()'s
+   `pg-more` sign-in disclosure (:31). hydrate()'s `.pg-more` sweep
+   (sector_central.html.j2:3618) therefore never removes this line in
+   production; giving it a distinct class here preserves that same survival
+   through hydrate (QA3-01). */
 function abPlus(n){
-  return '<p class="pg-more"><a href="#actnow-section">'
+  return '<p class="pg-plus"><a href="#actnow-section">'
     + '<span class="l-en">+' + n + ' more — full list on Sector Intelligence</span>'
     + '<span class="l-zh">还有 ' + n + ' 个 — 完整列表见行业情报页</span></a></p>';
 }
@@ -3508,133 +3520,7 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
    placeholder shell, and goes inert the moment the real shell is in the document.
    Values are COPIED from build/shell_specimen.html §1 (itself a verbatim mirror of
    templates/theme.css) — nothing is retuned and no new token name is minted. */
-@layer r3fb {
-  :root{
-    --font-ui:-apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, "Helvetica Neue",
-      "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC", sans-serif;
-    --font-mono:ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
-    --fs-num-lg:22px; --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-sm:12.5px;
-    --fs-label:11px; --fs-micro:10px;
-    --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3; --muted:#8b93a1; --line:#3a4150;
-    --warn:#e0a030; --up:#45b873; --down:#e06464; --info:#5b9bf0; --link:#7aa7e0;
-    --card-shadow:0 1px 0 rgba(255,255,255,.02);
-    --gbtn-bg:color-mix(in srgb, var(--panel2) 52%, transparent);
-    --gbtn-brd:color-mix(in srgb, var(--text) 12%, transparent);
-    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-7:32px; --sp-8:44px;
-    --gap-grid:18px;
-    --r-ctl:8px; --r-btn:10px; --r-card:12px; --r-panel:14px; --r-pill:999px;
-    --t-fast:.16s; --t-med:.2s; --ease-std:ease; --ease-lift:cubic-bezier(.2,.7,.3,1);
-    --ink-mix-up:100%; --ink-mix-down:100%; --ink-mix-warn:100%; --ink-mix-link:100%; --ink-mix-info:100%;
-    --r3-thread:var(--link);
-  }
-  html[data-theme="light"]{
-    --bg:#f7f8fa; --panel:#ffffff; --panel2:#eef1f6; --text:#1c2430; --muted:#5d6b7e;
-    --line:color-mix(in srgb, #1c2430 16%, #eaecf0);
-    --warn:#b9791a; --up:#1f9a55; --down:#cf4040; --info:#285fff; --link:#285fff;
-    --card-shadow:0 1px 3px rgba(20,30,50,.07);
-    --gbtn-bg:color-mix(in srgb, var(--panel2) 78%, var(--panel));
-    --gbtn-brd:color-mix(in srgb, #1c2430 50%, transparent);
-    --ink-mix-up:62%; --ink-mix-down:84%; --ink-mix-warn:62%; --ink-mix-link:88%; --ink-mix-info:88%;
-    --r3-thread:color-mix(in srgb, var(--link) 74%, var(--line));
-  }
-  html[data-lang="zh"]{ --up:#e06464; --down:#45b873; }
-  html[data-theme="light"][data-lang="zh"]{ --up:#cf4040; --down:#1f9a55; --ink-mix-up:84%; --ink-mix-down:62%; }
-  :root{
-    --ink-up:color-mix(in srgb, var(--up) var(--ink-mix-up), var(--text));
-    --ink-down:color-mix(in srgb, var(--down) var(--ink-mix-down), var(--text));
-    --ink-warn:color-mix(in srgb, var(--warn) var(--ink-mix-warn), var(--text));
-    --ink-link:color-mix(in srgb, var(--link) var(--ink-mix-link), var(--text));
-    --ink-info:color-mix(in srgb, var(--info) var(--ink-mix-info), var(--text));
-  }
-  html[data-lang] .l-zh{ display:none; }
-  html[data-lang="zh"] .l-en{ display:none; }
-  html[data-lang="zh"] .l-zh{ display:inline; }
-  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-ui);
-    font-size:var(--fs-body); line-height:1.55; -webkit-font-smoothing:antialiased; }
-  a{ color:inherit; text-decoration:none; } h1,h2,h3{ margin:0; } p{ margin:0; }
-  .tnum{ font-variant-numeric:tabular-nums; }
-  .si-view{ display:none; } .si-view.on{ display:block; }
-  /* F-6: see explore.html's identical fix — this local reset shadowed
-     shell.html's --ref-sticky-offset-based rule with a static fallback. */
-  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--ref-sticky-offset, var(--r3-chrome-h,40px)) + var(--r3-mnav-h,0px) + 16px); }
-  :where(a,button,summary,select,[tabindex]):focus-visible{
-    outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; border-radius:var(--r-ctl); }
-  /* .r3-* primitives, copied verbatim from build/shell_specimen.html §7/§9/§10 */
-  .r3-eyebrow{ display:block; font-size:var(--fs-label); font-weight:600; letter-spacing:.08em;
-    text-transform:uppercase; color:var(--muted); }
-  .r3-answer{ border-left:3px solid var(--r3-thread); padding:2px 0 2px var(--sp-4); margin:0 0 var(--sp-6); }
-  .r3-answer-view{ font-size:var(--fs-label); font-weight:700; letter-spacing:.09em;
-    text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
-  .r3-answer-line, .r3-answer .si-view-read{ font-size:var(--fs-num-lg); font-weight:500;
-    line-height:1.36; letter-spacing:-.01em; color:var(--text); max-width:62ch; }
-  html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){ letter-spacing:0; line-height:1.55; max-width:34em; }
-  .r3-answer .si-view-read{ display:flex; align-items:flex-start; gap:11px; margin:0; padding:0;
-    background:none; border:0; border-radius:0; }
-  .si-view-read[hidden]{ display:none; }
-  .r3-answer .si-vr-g{ width:20px; height:20px; flex:none; margin-top:5px; color:var(--ink-link,var(--link)); }
-  .r3-answer .si-vr-t{ flex:0 1 auto; min-width:0; }
-  .r3-answer .si-vr-q{ flex:none; margin-top:7px; display:inline-flex; align-items:center;
-    justify-content:center; width:16px; height:16px; border:1px solid var(--line); border-radius:50%;
-    font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
-  .r3-answer .si-view-read:not([hidden]) ~ .r3-answer-line{ display:none; }
-  .r3-answer-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
-    margin-top:12px; font-size:var(--fs-sm); color:var(--muted); }
-  .r3-q{ display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
-    border:1px solid var(--line); border-radius:50%; font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
-  .r3-asof{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.05em;
-    color:var(--muted); font-variant-numeric:tabular-nums; }
-  .r3-sec{ display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3); margin:0 0 var(--sp-3); }
-  .r3-sec h2{ font-size:var(--fs-h2); font-weight:700; letter-spacing:-.01em; }
-  .r3-sec .r3-sec-sub{ font-size:var(--fs-sm); color:var(--muted); }
-  .r3-sec .r3-asof{ margin-left:auto; }
-  .r3-band{ margin-top:var(--sp-7); }
-  .r3-panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel);
-    box-shadow:var(--card-shadow); }
-  html[data-theme="light"] .r3-panel{ border-color:color-mix(in srgb, var(--text) 9%, var(--line)); }
-  .r3-more{ display:inline-flex; align-items:center; gap:7px; min-height:44px; font-size:var(--fs-sm);
-    font-weight:700; color:var(--ink-link,var(--link)); }
-  .r3-more::after{ content:""; width:6px; height:6px; flex:none; border-right:1.6px solid currentColor;
-    border-top:1.6px solid currentColor; transform:rotate(45deg); transition:transform var(--t-fast) var(--ease-std); }
-  .r3-more:hover::after{ transform:translateX(2px) rotate(45deg); }
-  .r3-vh{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
-    clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
-  .r3-tblbox{ overflow-x:auto; }
-  .r3-tbl{ width:100%; min-width:420px; border-collapse:collapse; font-size:var(--fs-sm); }
-  .r3-tbl th{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-    color:var(--muted); text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); }
-  .r3-tbl td{ padding:9px 12px; border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent);
-    font-variant-numeric:tabular-nums; }
-  .r3-tbl td:first-child{ font-weight:700; font-size:var(--fs-body); }
-  .r3-tbl tr:last-child td{ border-bottom:0; }
-  .r3-tbl .num{ text-align:right; }
-  .r3-chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 9px; border-radius:var(--r-pill);
-    border:1px solid color-mix(in srgb, var(--c,var(--muted)) 34%, transparent);
-    background:color-mix(in srgb, var(--c,var(--muted)) 11%, var(--panel)); color:var(--c,var(--muted));
-    font-size:var(--fs-label); font-weight:700; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; }
-  .r3-tag{ display:inline-flex; align-items:center; padding:1px 7px; border-radius:var(--r-ctl);
-    border:1px solid var(--line); color:var(--muted); font-size:var(--fs-micro); font-weight:600;
-    letter-spacing:.05em; white-space:nowrap; }
-  .r3-disc{ border:1px solid var(--line); border-radius:var(--r-card); background:var(--panel); }
-  .r3-disc summary{ cursor:pointer; padding:12px 15px; font-size:var(--fs-sm); font-weight:700;
-    min-height:44px; display:flex; align-items:center; gap:9px; }
-  .r3-disc summary small{ color:var(--muted); font-weight:400; }
-  .r3-mount{ display:grid; place-items:center; gap:6px; min-height:var(--h,300px);
-    border:1px dashed color-mix(in srgb, var(--muted) 40%, transparent); border-radius:var(--r-panel);
-    background:color-mix(in srgb, var(--panel) 70%, transparent); color:var(--muted);
-    font-size:var(--fs-sm); text-align:center; padding:var(--sp-4); }
-  .r3-mount b{ color:var(--text); font-weight:700; font-size:var(--fs-body); }
-  /* sanctioned monoline icon base + the one mask this view uses (dashboard-icons.css verbatim) */
-  .dash-icon{ position:relative; display:inline-grid; place-items:center; width:1.08em; height:1.08em;
-    margin:0 .14em; color:var(--dash-icon-color,currentColor); vertical-align:-.16em; flex:none; opacity:.88; }
-  .dash-icon::before{ content:""; width:100%; height:100%; background:currentColor;
-    -webkit-mask:var(--dash-icon-mask,var(--submenu-icon-mask)) center / contain no-repeat;
-    mask:var(--dash-icon-mask,var(--submenu-icon-mask)) center / contain no-repeat; }
-  .dash-icon-table{ --dash-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='4' width='17' height='16' rx='2'/%3E%3Cpath d='M3.5 9.3h17M3.5 14.7h17M9 4v16'/%3E%3C/g%3E%3C/svg%3E"); }
-  @media (prefers-reduced-motion:reduce){
-    *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important;
-      transition-duration:.001ms !important; scroll-behavior:auto !important; }
-  }
-}
+
 
 /* ══ VIEW-SCOPED LAW (unlayered; wins over the shell by specificity, never by accident) ══
    Every selector below is anchored on .si-view[data-view="money"] so this partial can
@@ -3998,6 +3884,27 @@ html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(
           <table class="r3-tbl" id="hm-alt-tbl"></table>
         </div>
       </details>
+
+      <!-- QA3-05 / routing_contract.md §7: Money's own runtime-destination row
+           records "per-stock stock.html#<TICKER> pattern (hm-mrow rows)" —
+           heatmap.js's mobile list mode (layoutList(), heatmap.js:1320-1374),
+           which the treemap+sector-table above have no equivalent of (that
+           table is a SECTOR roll-up; this is the per-NAME list production
+           renders in place of the map at <=560px). Reusing the .r3-disc/
+           .r3-tbl idiom already gated by every width/target-size/a11y probe
+           on this view, rather than a new hm-mrow-shaped component, keeps
+           this addition inside the verified surface instead of opening a new
+           one. -->
+      <details class="r3-disc mny-alt" id="hm-names">
+        <summary>
+          <span class="dash-icon dash-icon-table" aria-hidden="true"></span>
+          <span class="l-en">Browse the names</span><span class="l-zh">浏览个股</span>
+          <small id="hm-names-count"></small>
+        </summary>
+        <div class="r3-tblbox mny-alt-body">
+          <table class="r3-tbl" id="hm-names-tbl"></table>
+        </div>
+      </details>
     </div>
   </section>
 
@@ -4349,6 +4256,43 @@ function renderHeatText(){
   $('hm-alt-tbl').innerHTML=head+'<tbody>'+body+'</tbody>';
   $('hm-alt-count').innerHTML=L(esc(rows.length)+' sectors · '+HM.n_tiles+' names',
                                 esc(rows.length)+' 个板块 · '+HM.n_tiles+' 只');
+  paintNameList();
+}
+
+/* QA3-05 — the per-NAME list, verbatim mechanics from heatmap.js's mobile list
+   mode (layoutList(), heatmap.js:1320-1374): every tile, one row each, sorted
+   by market value (the same default SORT='cap' order layoutList() opens
+   with — no alternate rank). STOCK_URL mirrors heatmap.js:826 EXACTLY
+   (`var STOCK_URL = data.stock_url || 'stock.html#';`): the fixture's own
+   `stock_url` field wins over the generic fallback when present. This
+   capture's `marketdata/sp500_heatmap.json` DOES carry one (an external
+   Mastermind terminal URL, not `stock.html#`) — routing_contract.md §7's
+   "stock.html#<TICKER>" description is the FALLBACK shape of the mechanism,
+   not a hardcoded literal, and this reference must not hardcode a literal
+   the payload itself overrides. Every row is `data-ref-nav` regardless of
+   whether STOCK_URL resolves in-page or external — both are genuine
+   navigate-away destinations the quarantine must intercept, matching every
+   other `data-ref-nav` anchor in this artifact. */
+function paintNameList(){
+  var box=$('hm-names-tbl'); if(!box||!HM) return;
+  var STOCK_URL = HM.stock_url || 'stock.html#';
+  var rows=(HM.tiles||[]).slice().sort(function(a,b){ return (b.size||0)-(a.size||0); });
+  var head='<caption class="r3-vh"><span class="l-en">Every name in the map, individually — ticker, name, sector, one-day move, and its destination.</span><span class="l-zh">图中每一只个股 — 代码、名称、板块、当日涨跌及跳转目的地。</span></caption>'
+    +'<thead><tr>'
+    +'<th>'+L('Ticker','代码')+'</th>'
+    +'<th>'+L('Name','名称')+'</th>'
+    +'<th>'+L('Sector','板块')+'</th>'
+    +'<th class="num">'+L('Move today','当日涨跌')+'</th></tr></thead>';
+  var body=rows.map(function(t){
+    var pc=t.perf?t.perf[HM_TF]:null;
+    var href=STOCK_URL+encodeURIComponent(t.t);
+    return '<tr><td><a data-ref-nav href="'+esc(href)+'">'+esc(dispT(t.t))+'</a></td>'
+      +'<td>'+esc(t.name||'')+'</td>'
+      +'<td>'+esc(t.sector||'')+'</td>'
+      +'<td class="num '+cls(pc)+'">'+fmtPc(pc)+'</td></tr>';
+  }).join('');
+  box.innerHTML=head+'<tbody>'+body+'</tbody>';
+  $('hm-names-count').innerHTML=L(esc(rows.length)+' names',esc(rows.length)+' 只');
 }
 
 /* ───────────────────────────────────────────────────────────────────────────────
@@ -4540,6 +4484,11 @@ document.addEventListener('DOMContentLoaded', function(){
       +'<span>'+L('The market-heat artifact did not arrive. Every other reading on this view is unaffected.',
                   '市场热度数据未送达。本视图其他读数不受影响。')+'</span>'; }
     var alt=$('hm-alt'); if(alt) alt.remove();
+    /* QA3-05: the per-name list is exactly as fetch-dependent as the sector
+       table above it (both are gated on the same HM) — it has to vanish on
+       the same branch, or an empty, unpopulated "Browse the names" toggle is
+       left behind next to the sibling that correctly disappeared. */
+    var names=$('hm-names'); if(names) names.remove();
     var tk=$('hm-takeaway'); if(tk) tk.innerHTML='';
     var sc=$('hm-scale'); if(sc) sc.innerHTML='';
     var mt=$('hm-meta'); if(mt) mt.innerHTML='';
@@ -4611,139 +4560,7 @@ document.addEventListener('langchange', function(){
    everything in here, whatever its specificity. Present only so this partial renders
    truthfully against the harness's placeholder shell. Values copied from
    build/shell_specimen.html §1 (a verbatim theme.css mirror). No token is retuned. */
-@layer r3fb {
-  :root{
-    --font-ui:-apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, "Helvetica Neue",
-      "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC", sans-serif;
-    --font-mono:ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
-    --fs-num-lg:22px; --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-sm:12.5px;
-    --fs-label:11px; --fs-micro:10px;
-    --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3; --muted:#8b93a1; --line:#3a4150;
-    --warn:#e0a030; --up:#45b873; --down:#e06464; --info:#5b9bf0; --link:#7aa7e0;
-    --ser-1:#5b9bf0; --ser-2:#d4a017; --ser-3:#0ea5e9; --ser-4:#e08b45;
-    --card-shadow:0 1px 0 rgba(255,255,255,.02);
-    --popover-shadow:0 6px 18px rgba(0,0,0,.5);
-    --gbtn-bg:color-mix(in srgb, var(--panel2) 52%, transparent);
-    --gbtn-brd:color-mix(in srgb, var(--text) 12%, transparent);
-    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-7:32px; --sp-8:44px;
-    --gap-grid:18px;
-    --r-ctl:8px; --r-btn:10px; --r-card:12px; --r-panel:14px; --r-pill:999px;
-    --t-fast:.16s; --t-med:.2s; --ease-std:ease; --ease-lift:cubic-bezier(.2,.7,.3,1);
-    --ink-mix-up:100%; --ink-mix-down:100%; --ink-mix-warn:100%; --ink-mix-link:100%; --ink-mix-info:100%;
-    --r3-thread:var(--link);
-  }
-  html[data-theme="light"]{
-    --bg:#f7f8fa; --panel:#ffffff; --panel2:#eef1f6; --text:#1c2430; --muted:#5d6b7e;
-    --line:color-mix(in srgb, #1c2430 16%, #eaecf0);
-    --warn:#b9791a; --up:#1f9a55; --down:#cf4040; --info:#285fff; --link:#285fff;
-    --ser-1:#2f63c4; --ser-2:#8f6a04; --ser-3:#0284c7; --ser-4:#b06a25;
-    --card-shadow:0 1px 3px rgba(20,30,50,.07);
-    --popover-shadow:0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
-    --gbtn-bg:color-mix(in srgb, var(--panel2) 78%, var(--panel));
-    --gbtn-brd:color-mix(in srgb, #1c2430 50%, transparent);
-    --ink-mix-up:62%; --ink-mix-down:84%; --ink-mix-warn:62%; --ink-mix-link:88%; --ink-mix-info:88%;
-    --r3-thread:color-mix(in srgb, var(--link) 74%, var(--line));
-  }
-  html[data-lang="zh"]{ --up:#e06464; --down:#45b873; }
-  html[data-theme="light"][data-lang="zh"]{ --up:#cf4040; --down:#1f9a55; --ink-mix-up:84%; --ink-mix-down:62%; }
-  :root{
-    --ink-up:color-mix(in srgb, var(--up) var(--ink-mix-up), var(--text));
-    --ink-down:color-mix(in srgb, var(--down) var(--ink-mix-down), var(--text));
-    --ink-warn:color-mix(in srgb, var(--warn) var(--ink-mix-warn), var(--text));
-    --ink-link:color-mix(in srgb, var(--link) var(--ink-mix-link), var(--text));
-    --ink-info:color-mix(in srgb, var(--info) var(--ink-mix-info), var(--text));
-  }
-  html[data-lang] .l-zh{ display:none; }
-  html[data-lang="zh"] .l-en{ display:none; }
-  html[data-lang="zh"] .l-zh{ display:inline; }
-  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-ui);
-    font-size:var(--fs-body); line-height:1.55; -webkit-font-smoothing:antialiased; }
-  a{ color:inherit; text-decoration:none; } button{ font:inherit; color:inherit; }
-  h1,h2,h3{ margin:0; } p{ margin:0; }
-  .tnum{ font-variant-numeric:tabular-nums; }
-  .si-view{ display:none; } .si-view.on{ display:block; }
-  /* F-6: this standalone-preview reset used a STATIC fallback
-     (--r3-chrome-h) instead of the shim-measured --ref-sticky-offset shell.html's
-     own rule consumes — since this partial's <style> loads AFTER shell.html's in
-     the assembled candidate, equal specificity meant this rule WON and silently
-     ignored wireStickyOffset()'s real measurement for every id on this view.
-     --ref-sticky-offset first (falls back to the static token only when standalone,
-     i.e. outside the full assembly) makes it one consumed value again. */
-  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--ref-sticky-offset, var(--r3-chrome-h,40px)) + var(--r3-mnav-h,0px) + 16px); }
-  :where(a,button,summary,select,[tabindex]):focus-visible{
-    outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; border-radius:var(--r-ctl); }
-  .r3-eyebrow{ display:block; font-size:var(--fs-label); font-weight:600; letter-spacing:.08em;
-    text-transform:uppercase; color:var(--muted); }
-  .r3-answer{ border-left:3px solid var(--r3-thread); padding:2px 0 2px var(--sp-4); margin:0 0 var(--sp-6); }
-  .r3-answer-view{ font-size:var(--fs-label); font-weight:700; letter-spacing:.09em;
-    text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
-  .r3-answer-line, .r3-answer .si-view-read{ font-size:var(--fs-num-lg); font-weight:500;
-    line-height:1.36; letter-spacing:-.01em; color:var(--text); max-width:62ch; }
-  html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){ letter-spacing:0; line-height:1.55; max-width:34em; }
-  .r3-answer .si-view-read{ display:flex; align-items:flex-start; gap:11px; margin:0; padding:0;
-    background:none; border:0; border-radius:0; }
-  .si-view-read[hidden]{ display:none; }
-  .r3-answer .si-vr-g{ width:20px; height:20px; flex:none; margin-top:5px; color:var(--ink-link,var(--link)); }
-  .r3-answer .si-vr-t{ flex:0 1 auto; min-width:0; }
-  .r3-answer .si-vr-q{ flex:none; margin-top:7px; display:inline-flex; align-items:center;
-    justify-content:center; width:16px; height:16px; border:1px solid var(--line); border-radius:50%;
-    font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
-  .r3-answer .si-view-read:not([hidden]) ~ .r3-answer-line{ display:none; }
-  .r3-answer-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
-    margin-top:12px; font-size:var(--fs-sm); color:var(--muted); }
-  .r3-q{ display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
-    border:1px solid var(--line); border-radius:50%; font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
-  .r3-asof{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.05em;
-    color:var(--muted); font-variant-numeric:tabular-nums; }
-  .r3-sec{ display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3); margin:0 0 var(--sp-3); }
-  .r3-sec h2{ font-size:var(--fs-h2); font-weight:700; letter-spacing:-.01em; }
-  .r3-sec .r3-sec-sub{ font-size:var(--fs-sm); color:var(--muted); }
-  .r3-sec .r3-asof{ margin-left:auto; }
-  .r3-band{ margin-top:var(--sp-7); }
-  .r3-panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel);
-    box-shadow:var(--card-shadow); }
-  html[data-theme="light"] .r3-panel{ border-color:color-mix(in srgb, var(--text) 9%, var(--line)); }
-  .r3-more{ display:inline-flex; align-items:center; gap:7px; min-height:44px; font-size:var(--fs-sm);
-    font-weight:700; color:var(--ink-link,var(--link)); }
-  .r3-more::after{ content:""; width:6px; height:6px; flex:none; border-right:1.6px solid currentColor;
-    border-top:1.6px solid currentColor; transform:rotate(45deg); transition:transform var(--t-fast) var(--ease-std); }
-  .r3-more:hover::after{ transform:translateX(2px) rotate(45deg); }
-  .r3-vh{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
-    clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
-  .r3-tblbox{ overflow-x:auto; }
-  .r3-tbl{ width:100%; min-width:420px; border-collapse:collapse; font-size:var(--fs-sm); }
-  .r3-tbl th{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-    color:var(--muted); text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); }
-  .r3-tbl td{ padding:9px 12px; border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent);
-    font-variant-numeric:tabular-nums; }
-  .r3-tbl tr:last-child td{ border-bottom:0; }
-  .r3-tbl .num{ text-align:right; }
-  .r3-tag{ display:inline-flex; align-items:center; padding:1px 7px; border-radius:var(--r-ctl);
-    border:1px solid var(--line); color:var(--muted); font-size:var(--fs-micro); font-weight:600;
-    letter-spacing:.05em; white-space:nowrap; }
-  .r3-seg{ display:inline-flex; flex-wrap:wrap; gap:6px; }
-  .r3-seg button{ min-height:40px; padding:0 14px; border-radius:var(--r-ctl);
-    border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
-    font-size:var(--fs-sm); font-weight:600; cursor:pointer; }
-  .r3-seg button[aria-pressed="true"]{ color:var(--text); background:var(--panel2);
-    border-color:color-mix(in srgb, var(--link) 45%, var(--line)); }
-  .r3-disc{ border:1px solid var(--line); border-radius:var(--r-card); background:var(--panel); }
-  .r3-disc summary{ cursor:pointer; padding:12px 15px; font-size:var(--fs-sm); font-weight:700;
-    min-height:44px; display:flex; align-items:center; gap:9px; }
-  .r3-disc summary small{ color:var(--muted); font-weight:400; }
-  .r3-empty{ padding:var(--sp-7) var(--sp-4); text-align:center; }
-  .r3-empty-line{ font-size:var(--fs-md); font-weight:700; }
-  .r3-empty-why{ color:var(--muted); font-size:var(--fs-sm); margin-top:5px; }
-  .r3-mount{ display:grid; place-items:center; gap:6px; min-height:var(--h,300px);
-    border:1px dashed color-mix(in srgb, var(--muted) 40%, transparent); border-radius:var(--r-panel);
-    background:color-mix(in srgb, var(--panel) 70%, transparent); color:var(--muted);
-    font-size:var(--fs-sm); text-align:center; padding:var(--sp-4); }
-  .r3-mount b{ color:var(--text); font-weight:700; font-size:var(--fs-body); }
-  @media (prefers-reduced-motion:reduce){
-    *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important;
-      transition-duration:.001ms !important; scroll-behavior:auto !important; }
-  }
-}
+
 
 /* ══ VIEW-SCOPED LAW (unlayered) — every selector anchored on this view ══ */
 .si-view[data-view="explore"]{ --exp-pad:14px 16px; }
@@ -7207,7 +7024,21 @@ var REF = window.REF = window.REF || {};
 REF.registry = {};      // production-relative path -> raw embedded text (JSON or JS)
 REF.fragments = {};     // production-relative path -> raw embedded HTML fragment text
 REF.log = [];           // [{seq, type:'fetch'|'nav'|'boot', path, result}]
-REF.simulateFetchFail = false;
+/* QA3-08: simulate-fetch-fail used to be arm-able only from the drawer's
+   toggle button, which mounts on DOMContentLoaded — by then every BOOT-phase
+   fetch (the embedded-registry hits every view partial issues from its own
+   DOMContentLoaded handler, several of which run inline ahead of the
+   drawer's own listener) has already resolved. `?reffail=1` (or `#reffail=1`,
+   since a hash-anchored boot URL like `?reffail=1#overview` is common) is
+   read synchronously here, at parse time, before ANY fetch — boot-resolved
+   or not — can occur, so a boot URL can fail-test every payload, not only
+   the two (Moving, Explore) whose organs happen to fetch after the drawer
+   exists. README_BUILD.md documents the param. */
+function _bootFailArmed(){
+  var probe = (location.search || '') + '&' + (location.hash || '').replace(/^#/, '');
+  return /(?:^|[?&])reffail=1(?:&|$)/.test(probe);
+}
+REF.simulateFetchFail = _bootFailArmed();
 REF.accessState = 'gated';  // 'gated' | 'hydrated' | 'ungated'
 var _seq = 0;
 
@@ -7368,6 +7199,23 @@ function wireStickyOffset(){
   document.documentElement.style.setProperty('--ref-sticky-offset', h + 'px');
 }
 
+/* QA2-10 completion: the workspace nav's own accessible name lives in
+   shell.html (`<nav class="si-side" aria-label="Sector Intelligence
+   views">`), which — unlike every view partial — has no per-view JS of its
+   own to make it language-aware. The other four ARIA-label fixes (Overview
+   Action lanes, Map's rotation-scope group, Confluence's two tablists) each
+   set their attribute from their own view's isZh()/langchange listener
+   (overview.html:528-531, confluence.html:809/1034-1035, map.html:875-876);
+   the nav rail belongs to none of them, so this shim — the one script that
+   already owns global boot + langchange plumbing — paints it instead. */
+function paintNavLabel(){
+  var nav = document.querySelector('nav.si-side');
+  if(!nav) return;
+  var isZh = document.documentElement.getAttribute('data-lang') === 'zh';
+  nav.setAttribute('aria-label', isZh ? '板块情报视图' : 'Sector Intelligence views');
+}
+document.addEventListener('langchange', paintNavLabel);
+
 /* F-6: a hash landing can overshoot when its target sits below content that
    mounts lazily (a view's own organs load async, per-view, well after
    activate()'s own scrollIntoView already ran) — measured pre-fix: #tm-mount
@@ -7486,6 +7334,7 @@ var HTML = '' +
 document.addEventListener('DOMContentLoaded', function(){
   document.body.insertAdjacentHTML('beforeend', HTML);
   wireStickyOffset();
+  paintNavLabel();
 
   var root = document.getElementById('ref-harness');
   document.getElementById('ref-harness-head').addEventListener('click', function(){
@@ -7502,7 +7351,17 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('ref-access').addEventListener('change', function(e){
     REF.setAccessState(e.target.value);
   });
-  document.getElementById('ref-failfetch').addEventListener('click', function(e){
+  /* QA3-08: the drawer mounts AFTER _bootFailArmed() already decided
+     REF.simulateFetchFail at parse time — reflect that armed state in the
+     toggle's UI the moment it exists, so `?reffail=1` shows "on" rather than
+     a stale "off" the reader would have to click through (and un-arm). */
+  var failBtn = document.getElementById('ref-failfetch');
+  if(REF.simulateFetchFail){
+    failBtn.textContent = 'on';
+    failBtn.setAttribute('aria-pressed', 'true');
+    failBtn.classList.add('on');
+  }
+  failBtn.addEventListener('click', function(e){
     REF.simulateFetchFail = !REF.simulateFetchFail;
     e.target.textContent = REF.simulateFetchFail ? 'on' : 'off';
     e.target.setAttribute('aria-pressed', String(REF.simulateFetchFail));

@@ -125,6 +125,47 @@ def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def strip_layer_block(css_html: str, layer_name: str) -> str:
+    """Remove exactly one brace-balanced `@layer <layer_name> { ... }` block
+    from `css_html`, if present, and return the result. No-op if the marker
+    is absent.
+
+    QA3-04: money.html/explore.html each carry an `@layer r3fb { ... }`
+    fallback (tokens + resets + the shell base CSS block — bilingual switch,
+    `.si-view [id]{scroll-margin-top:...}`, etc.) whose own comment states it
+    "renders truthfully when assembled against the build harness's throwaway
+    placeholder shell, and goes inert the moment the real shell is in the
+    document." That is true by construction: per the CSS Cascade Layers spec,
+    an `@layer`-origin rule ALWAYS loses to an unlayered rule, regardless of
+    specificity or source order, so shell.html's unlayered copies (never
+    wrapped in `@layer`) already win every one of these declarations in the
+    assembled candidate — this duplication was inert, not a live override,
+    but the assembled file still carried three physical copies of the shell
+    base CSS block. This function is called ONLY at assembly time
+    (build_views_html(), below) against the in-memory partial text — it never
+    rewrites the on-disk view partial, so each partial keeps its own
+    standalone-preview capability intact when opened directly.
+    """
+    marker = f"@layer {layer_name} {{"
+    start = css_html.find(marker)
+    if start == -1:
+        return css_html
+    open_idx = css_html.find("{", start)
+    depth = 1
+    i = open_idx + 1
+    n = len(css_html)
+    while i < n and depth > 0:
+        ch = css_html[i]
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+        i += 1
+    if depth != 0:
+        raise BuildError(f"unbalanced @layer {layer_name} block — refusing to strip")
+    return css_html[:start] + css_html[i:]
+
+
 def verify_entry(base_dir: Path, entry: dict, *, label: str) -> str:
     """Read `base_dir / entry['fixture']`, verify its sha256/size against the
     receipt, and return its raw text. Aborts (raises BuildError) on any
@@ -175,7 +216,11 @@ def build_views_html() -> str:
         p = VIEWS_DIR / f"{vid}.html"
         if not p.exists():
             raise BuildError(f"missing view partial: {p}")
-        parts.append(p.read_text(encoding="utf-8").rstrip("\n"))
+        text = p.read_text(encoding="utf-8").rstrip("\n")
+        # QA3-04: strip each partial's standalone-preview `@layer r3fb{}`
+        # fallback from the ASSEMBLED copy only — see strip_layer_block().
+        text = strip_layer_block(text, "r3fb")
+        parts.append(text)
     return "\n".join(parts)
 
 
