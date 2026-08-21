@@ -2891,7 +2891,11 @@ def write_private_evidence(
 
 
 def verify_private_evidence(
-    root: Path, *, namespace: str, receipt: Mapping[str, Any]
+    root: Path,
+    *,
+    namespace: str,
+    receipt: Mapping[str, Any],
+    _store_locked: bool = False,
 ) -> dict[str, Any]:
     if namespace not in {"event_evidence", "capture_evidence"}:
         raise NbboCohortError("private evidence namespace is not allowed")
@@ -2907,6 +2911,18 @@ def verify_private_evidence(
         or not 0 < size <= MAX_RESPONSE_BYTES
     ):
         raise NbboCohortError("private producer evidence receipt is malformed")
+    # Prove the inode under the writers' lock: `_write_private_bytes` publishes by
+    # `os.link(temporary, target)` and only unlinks the temporary afterwards, so an
+    # unlocked reader can catch `target` at `st_nlink == 2` and fail a guard about a
+    # file that was never anything but an owned 0600 one.
+    if not _store_locked:
+        with _private_store_lock(root):
+            return verify_private_evidence(
+                root,
+                namespace=namespace,
+                receipt=receipt,
+                _store_locked=True,
+            )
     directory = _private_subdir(_validate_private_dir(root, create=True), namespace)
     body = _validate_private_file(
         directory / f"{digest}.json",
@@ -2922,23 +2938,34 @@ def verify_private_evidence(
 
 
 def verify_event_evidence(root: Path, events: Sequence[Mapping[str, Any]]) -> None:
-    for raw in events:
-        event = validate_event(raw)
-        evidence_payload = verify_private_evidence(
-            root, namespace="event_evidence", receipt=event["private_evidence"]
-        )
-        validate_event_evidence_binding(evidence_payload, event)
+    if not events:
+        return
+    # One lock for the whole sweep, not one per event.
+    with _private_store_lock(root):
+        for raw in events:
+            event = validate_event(raw)
+            evidence_payload = verify_private_evidence(
+                root,
+                namespace="event_evidence",
+                receipt=event["private_evidence"],
+                _store_locked=True,
+            )
+            validate_event_evidence_binding(evidence_payload, event)
 
 
 def verify_capture_evidence(root: Path, receipts: Sequence[Mapping[str, Any]]) -> None:
-    for raw in receipts:
-        receipt = validate_capture_receipt(raw)
-        evidence_payload = verify_private_evidence(
-            root,
-            namespace="capture_evidence",
-            receipt=receipt["private_evidence"],
-        )
-        validate_capture_evidence_binding(evidence_payload, receipt)
+    if not receipts:
+        return
+    with _private_store_lock(root):
+        for raw in receipts:
+            receipt = validate_capture_receipt(raw)
+            evidence_payload = verify_private_evidence(
+                root,
+                namespace="capture_evidence",
+                receipt=receipt["private_evidence"],
+                _store_locked=True,
+            )
+            validate_capture_evidence_binding(evidence_payload, receipt)
 
 
 def _read_source_response(root: Path, receipt: Mapping[str, Any]) -> tuple[Any, bytes]:
