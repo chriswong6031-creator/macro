@@ -165,21 +165,26 @@ waves:
       canada.html.j2 + hk.html.j2.
   - id: shadow-contract
     title: Rank/discovery shadow substrate
-    status: in_progress
+    status: done
+    pr: 6178
+    merge_sha: fc5282f438fb7a9566ff650961fc6ea0381e7019
     depends_on: [ledger-era]
-    next_action: >
-      OPENED 2026-08-21 immediately on the ledger-era pass (CEO Sol directive
-      08-20: no extra permission cycle). Contract frozen as
-      research/PROPHET_SHADOW_CONTRACT_V1.md after an Opus adversarial
-      pre-implementation review of the K1–K10 mutation-kill suite; one Sonnet
-      builder wave implements engine/board_shadow.py + stores
-      data/prophet_shadow/{hk,ca}_{rank_pairs,discovery}.parquet with
-      executed mutation kills. Non-negotiables: zero authority (nothing in
-      production reads the stores), board_ledger stays keep-FIRST
-      (date,ticker), challenger registry EMPTY at merge, prospective-only
-      accrual, outcomes only by join to the governed board_ledger grading
-      clock. HK-DISCOVERY / HK-INTEL / CA-INTEL / races stay CLOSED until
-      this wave is merged + verified.
+    completion: >
+      MERGED fc5282f438fb 2026-08-21 (PR #6178, sweeper on concluded-green;
+      origin/main bytes verified over all 9 owned files). Contract frozen as
+      research/PROPHET_SHADOW_CONTRACT_V1.md after TWO Opus adversarial
+      rounds with EXECUTED mutation kills (round 1 failed the draft — 5
+      merge-blocking incl. the false HK isolation-by-ordering claim; round 2
+      MERGE-BLOCKED the build — B1 curated-scope closure red + 6 major, all
+      re-killed after fixes; K-suite K1-K14 + positive-control/non-vacuity/
+      static-fence clauses; 43 tests). Stores
+      data/prophet_shadow/{hk,ca}_{rank_pairs,discovery}.parquet; challenger
+      registry EMPTY (registry_state log lines are the liveness signal);
+      zero authority proven by executed mutation (byte-identity + repo-wide
+      static fence + write-surface fence); prospective collection can begin
+      by registering a challenger with zero schema migration. Design DEC:
+      DEC:PROPHET-HKCA-SHADOW-IS-A-SEPARATELY-KEYED-LANE. do_not_redo +
+      danger_areas in agentos/handoffs/PROPHET-HK-CA-REVAMP-2026-08-21.md.
   - id: hk-discovery
     title: HK candidate-recall shadow
     status: todo
@@ -209,13 +214,14 @@ waves:
     status: todo
     depends_on: [hk-race, ca-race]
 next_action: >
-  LEDGER-ERA settled 2026-08-21 (full receipt in the ledger-era wave entry;
-  sentinel persistence follow-up diarized there for ≈2026-08-26).
-  Shadow-contract wave OPEN: frozen contract
-  research/PROPHET_SHADOW_CONTRACT_V1.md, one builder wave, executed K1–K10
-  mutation kills, zero-authority proven by mutation before merge. No HK
-  discovery / CA intel / challenger experiments before shadow-contract is
-  merged + verified.
+  SHADOW-CONTRACT merged + verified fc5282f438fb 2026-08-21 (wave entry).
+  Next lawful waves per the graph: hk-discovery and ca-intel (both depend
+  only on shadow-contract) and ca-pit (depends on ledger-era) — each needs
+  its own commissioning decision; no challenger REGISTRATION before the
+  wave that owns it wires surface-freshness for the stores. Standing
+  follow-up: ≈2026-08-26 verify the CA board-ledger-era-empty warning
+  self-cleared (ledger-era wave entry); if it persists once gradable
+  current-era rows exist, investigate — never silence.
 ---
 
 # HK + Canada Prophet revamp

@@ -61,7 +61,7 @@ evidence:
     (5 merge-blocking / 9 major); all amendments incorporated before freeze —
     K-suite K1-K14 with positive-control, non-vacuity, and repo-wide static
     reader fence"
-  - "engine/board_shadow.py + tests/test_board_shadow.py (36 tests) implement
+  - "MERGED fc5282f438fb7a9566ff650961fc6ea0381e7019 (PR #6178): engine/board_shadow.py + tests/test_board_shadow.py (43 tests) implement
     the contract; executed mutation kills recorded in the shadow-contract wave
     review"
   - "engine/board_ledger.py append_board — board_pos minted internally after a

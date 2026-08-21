@@ -109,7 +109,7 @@ unresolved:
     the compensating controls. A full-checkout integration test remains an
     option before any challenger PROMOTION wave.
 next_actions:
-  - Merge PR (this branch), verify origin/main bytes, record merge SHA here and in the DEC evidence.
+  - "DONE: PR #6178 merged fc5282f438fb7a9566ff650961fc6ea0381e7019 (2026-08-21T11:36Z, sweeper on concluded-green); origin/main bytes verified identical over all 9 owned files."
   - "≈2026-08-26: sentinel persistence check (workstream ledger-era next_action)."
   - Next lawful waves per graph: hk-discovery, ca-intel (both depend only on shadow-contract); ca-pit is also unblocked (depends on ledger-era).
 do_not_redo:
@@ -135,7 +135,7 @@ danger_areas:
     only liveness signal until a challenger registers. Wire the stores into
     surface-freshness vocabulary in the wave that registers the first
     challenger — not before.
-prs: [pending — this branch]
+prs: [6178]
 ---
 
 # Session narrative (cold-stranger summary)
