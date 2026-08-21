@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T11:15:36.688879+00:00",
-  "count": 1542,
+  "generated_at": "2026-08-21T12:22:16.896435+00:00",
+  "count": 1545,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -116,6 +116,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-d7tebe2vy32-41b8e9",
+      "title": "GS Materials August 21...GOLD path higher, EGO your equity pick..... Copper mispriced and FMG's game of snakes and ladders",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T09:26:51Z",
+      "summary_points": [
+        "**Gold Technical Breakout**: Gold broke 200-day MA at $4500 (China’s Wednesday move, top 5 in 3yrs), with 100-day MA approaching 6/10, signaling strong bullish momentum.",
+        "**Gold ETF Inflows Spike**: $12.7B monthly inflows into spot-gold ETFs (GLD, IAU) in 2026, largest since April, reflecting aggressive safe-haven demand amid geopolitical stress.",
+        "**US-China Rare Earth Friction**: Tariffs driving scarcity pricing and LME stock draws, creating mispricing in copper (Korea/GLEN deal preemptive move), key policy risk.",
+        "**GS Macro Divergence**: GS 2027 growth forecasts exceed consensus (US 2.3% vs 2.1%, China 4.7% vs 4.4%), signaling stronger global growth optimism than markets priced."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gkoxl6hczas-016072",
+      "title": "GS Basics Asymmetric Information. Consumer/WMT. Stagflation Outperforming",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T09:23:06Z",
+      "summary_points": [
+        "**Consumer Demand Slowdown**: Walmart comps growth (2.6%) marks slowest in six years, first miss in five years, signaling deteriorating consumer demand fundamentals.",
+        "**Stagflation Signals Intensify**: Oil +7%, long rates near highs, gold up 3.5%, dollar weaker; stagflation basket up 6.7% confirms inflationary pressures and market positioning.",
+        "**Treasury Policy Shift**: Besent’s $4bn+ buybacks and fiscal consolidation talk signal active Treasury, with market skepticism on execution favoring lower dollar over structural rate cuts.",
+        "**Inflationary Data Confirmation**: Gold > copper, US 10yr break evens up nearly 10bps, stagflation basket up 6.7%—highlighting persistent inflationary pressures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
@@ -906,6 +946,27 @@
         "**CRRC-H valuation & yield**: 21.2% upside to HK$6.4 (12m TP), 6.0% dividend yield (exceeding 1-yr US Treasuries), 11.0x P/E; Buy rating maintained on stable railway demand and operational efficiency.",
         "**Times Electric growth vs.",
         "risk**: 50-70% locomotive market share, 9%+ revenue CAGR in emerging segments (IGBT, EV drives), but Neutral rating due to decelerating EV market growth offsetting rail segment flatness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ztvhk6qahzt-18726d",
+      "title": "Yankershop Food (002847)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:32Z",
+      "summary_points": [
+        "**Earnings Normalization Catalyst**: 4Q26 growth expected to normalize driven by 56%/51% yoy seafood/egg snack sales (strategic SKU expansion), GPM resilience, and structural retailer growth; Q2 miss offset by stronger sales (Rmb195mn vs Rmb186mn NP).",
+        "**Valuation Disconnect**: P/B at 9.2 (extremely elevated) despite 12-month price outperformance (38.9% vs 43.2% for index), signaling potential overvaluation; price target cut to Rmb56 (23.9% upside) from Rmb60.",
+        "**Earnings Revision & Cost Pressures**: FY26 NI revised down 6-8% (2026E-28E) due to EC channel cuts, weaker konjac growth, and higher branding costs; cod/packaging inflation adds Rmb20mn/Rmb30mn/quarter (mitigated by partnerships).",
+        "**Key Downside Risks**: Intense private label competition, slower snack discounter rollout, and elevated raw material costs threatening margin expansion.",
+        "**Growth Constraints**: Captive supply chain limits (e.g., soft-boiled eggs, quail eggs) and channel restructuring (30% distributor reduction) pressure Q3 revenue, though normalization expected in Q4 (8-15% YoY)."
       ],
       "tags": [],
       "tickers": [],
