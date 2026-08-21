@@ -272,7 +272,37 @@ waves:
       server-side). Post-merge render pending at the merge SHA; browser matrix
       + live verification follow the bake. Follow-ups owed: cadence finding
       for the Radar owner (cold-start pass exceeds the 5-min tick), N1 dead-JS
-      heal, N2 macro.html dead CSS, remote-route proof (site-full token)."
+      heal, N2 macro.html dead CSS, remote-route proof (site-full token).
+
+      DAY-5 STATE (2026-08-21, Sol Day-5 directive — B1 CLOSURE): Day-4
+      accepted with one security gate. B1 R2-PLANE PRODUCTION-CLOSED in one
+      session per DEC:B1-PROPHET-PUBLIC-SPLIT — census (2 scouts), health
+      contract prophet/health.json (prophet.public_health/v1, six-field
+      allowlist), producer closure in daily.yml (health-only publisher +
+      self-healing tombstone + guarded_put_object + boundary/mutation tests),
+      consumer rebinds (rescue→health with R2_HEALTH_LAG semantics;
+      marks→canonical git; Terminal prophet_idx fail-closed #439; the
+      Terminal's canonical backend /api/hub/prophet CREATED in
+      app/prophet_lab.py — it had never existed, the Prophet tab was served
+      entirely by the anonymous R2 fallback), object DELETED (anon 404; health
+      200 allowlist-verified; origin 401; edge 401; internal 200/269 plans;
+      rescue dispatch run 32451390875 SUCCESS post-merge). Macro PR #6158
+      (3a0d1eaf0bb3) + terminal PR #439 (b913382b778d). Same-key bridge
+      SKIPPED on the record (Terminal was R2-only in production; twins still
+      public on git/Pages — a bridge broke product while reducing zero
+      exposure). DECISIVE CENSUS DISCOVERY
+      (DSC:PROPHET-BOOK-PUBLIC-GIT-TWIN): the canonical repo is PUBLIC —
+      raw git, anonymous clone, and the nightly-deployed GitHub Pages live
+      mirror all still serve the full book + premiumdata anonymously, so the
+      §8b BOUNDARY PASS is NOT issuable; reduced to ONE Chairman/Sol ruling
+      (repo visibility + Pages premium-stripping + four dependent
+      migrations). P-LAB-UI NOT commissioned (Sol's own gate requires §8b
+      PASS). Also minted DSC:RADAR-SPOOL-PUBLIC-R2 (spool anonymously
+      readable — Radar-owner escalation). Residual chores: tonight's
+      stays-gone receipt (tombstone-enforced), M1 flow-ops-wt pin advance
+      (marks stale during RTH until then), Terminal deploy of #439, site-full
+      token proofs, pixel crops. Handoff:
+      agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-lab-day5.md."
     status: in_progress
   - id: b5b
     depends_on: [b3, b4]
