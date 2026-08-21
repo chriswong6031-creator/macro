@@ -287,10 +287,13 @@ html[data-lang="zh"] [data-view="confluence"] .cf-divs h4{ letter-spacing:0; tex
     border-bottom:0; }
   [data-view="confluence"] .r3-uni button{ padding:0 10px; border-bottom:2px solid var(--line); }
   [data-view="confluence"] .r3-mem{ grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
+  [data-view="confluence"] .cf-lead{ grid-template-columns:minmax(0,1fr); }
+  [data-view="confluence"] .cf-cells{ grid-template-columns:repeat(auto-fill,minmax(142px,1fr)); }
 }
 @media (max-width:359px){
   [data-view="confluence"] .r3-uni{ display:grid; grid-template-columns:minmax(0,1fr); }
   [data-view="confluence"] .r3-mem{ grid-template-columns:minmax(0,1fr); }
+  [data-view="confluence"] .cf-cells{ grid-template-columns:minmax(0,1fr); }
 }
 </style>
 
@@ -339,6 +342,21 @@ html[data-lang="zh"] [data-view="confluence"] .cf-divs h4{ letter-spacing:0; tex
       <div class="r3-tblbox"><table class="r3-tbl" id="cf-table"></table></div>
       <button class="r3-showall" type="button" id="cf-more" hidden></button>
     </div>
+  </section>
+
+  <!-- ══ 4 · SUPPORTING CONTEXT ══ the EVIDENCE slot (§5, "or a following band").
+       Three RETAIN organs from the same production render pass as the board
+       above (subsectors.js:510-516), each behind its own quiet disclosure. The
+       band paints only what the ACTIVE universe's payload carries; where a
+       payload has no fields for an organ, that organ's disclosure does not
+       exist — absence as absence, never a stand-in. Hidden entirely when the
+       active universe carries none of the three. -->
+  <section class="r3-band" id="cf-context-band" aria-labelledby="cf-ctx-h" hidden>
+    <div class="r3-sec">
+      <h2 id="cf-ctx-h"><span class="l-en">Supporting context</span><span class="l-zh">支持背景</span></h2>
+      <span class="r3-sec-sub"><span class="l-en">Deeper evidence for the read above. Open what you need.</span><span class="l-zh">上方判断的更深证据。按需展开。</span></span>
+    </div>
+    <div class="cf-ctx" id="cf-ctx"></div>
   </section>
 
   <!-- ══ 5 · DEEPER PATH ══ the view's one footnote, once — production's own
