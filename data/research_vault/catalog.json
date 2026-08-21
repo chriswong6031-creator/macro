@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T14:23:03.518975+00:00",
-  "count": 1551,
+  "generated_at": "2026-08-21T15:21:44.066561+00:00",
+  "count": 1554,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -84,6 +84,47 @@
   ],
   "items": [
     {
+      "id": "marketdesk-35hhtaon3oi-4faccb",
+      "title": "GS US TMT today",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T14:10:35Z",
+      "summary_points": [
+        "**NDX Momentum & Tech Earnings**: NDX +50 bps breaking 5-day losing streak amid dynamic internals (Rates, Oil, Cryptos, Gold) vs 15-handle VIX; critical Tech earnings week (NVDA, WDAY, CRM, CRWD, OKTA) ahead of Jackson Hole with off-quarter earnings risk.",
+        "**MPWR Forward P/E Compression**: Fwd P/E dropped from ~70x to ~40x in 45 days, signaling aggressive valuation adjustment (fundamentals/technical) amid 2Q earnings.",
+        "**AMZN Performance Resilience**: AMZN up ~5% over month despite 19/26 sessions lower, demonstrating fundamental strength beyond post-earnings consolidation.",
+        "**US Equity EV/Sales Multiple Surge**: 20.0761 spike signals heightened valuation risk or technical momentum, critical for tactical positioning and risk assessment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mano68zw88v-9ffa99",
+      "title": "GS Kaplan Global Equities Call 21 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:29:32Z",
+      "summary_points": [
+        "**Sovereign & AI Financing Risks**: Treasury intervention, AI-driven corporate debt surge (Samsung $80bn, AVGO debt talks), and bipartisan political friction on data centers threaten capex cycles; macro pressures (oil +7%, high rates) outweigh AI demand growth (1-1.5tn next year).",
+        "**Concentrated Shorts Risk**: \"Most concentrated shorts\" achieved 41% YTD return vs.",
+        "10% for Equity Long/Short Hedge Funds, signaling aggressive short positioning and elevated concentration risk amid surging volatility.",
+        "**Hedge Fund Volatility Divergence**: Hedge Fund VIP list volatility significantly exceeds S&P 500 (steeper spike 2022–2024), indicating heightened stress during \"de-grossing episodes\" and market stress for leveraged portfolios.",
+        "**Consumer Sentiment Weakness**: US/Canada Consumer Health Indicators at P40/P35 (below average), with slowing real retail sales (1-1.5% H2) as tax support fades, signaling near-term cyclical equity exposure risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-preyicnumbw-eb204f",
       "title": "GS Armbrust What Matters Today Hedge Funds Very Long Financials Energy 21 Aug 2026",
       "institution": "S&T",
@@ -101,6 +142,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0nqi5a3gpou-790f55",
+      "title": "GS Privorotsky Asymmetric Information, Consumer WMT, Stagflation Outperforming 21 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:29:21Z",
+      "summary_points": [
+        "**Stagflation Indicators**: Japan core CPI 1.8% (BOJ hike likely), Walmart US comps 2.6% (slowest 6y), oil volatility from Iran sanctions (7% weekly gain) signal stagflation risks.",
+        "**Policy Skepticism**: Treasury’s \"Treasury twist\" rhetoric (buybacks, fiscal consolidation skepticism) and market doubt on fiscal execution amplify stagflation concerns.",
+        "**Geopolitical & Flow Shifts**: US \"toughest Iran sanctions\" (oil +7%) combined with Besent’s \"asymmetric information\" comment and AI financing flows drive gold +3.5% and weaker dollar.",
+        "**Risk Amplification**: Treasury’s lean against sovereign issuance and \"lower dollar\" focus intensify stagflation risks amid oil volatility and retail slowdown."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
