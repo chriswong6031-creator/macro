@@ -218,5 +218,18 @@ Per-item mapping (finding id → verdict section → section(s) amended here):
 
 ---
 
+## FOLLOW-UP CAPABILITY — P-MP1-DENSE (recorded per Sol Day-5 §10 DENSE ruling, 2026-08-21)
+
+Sol accepted the Day-4 §10-dense deferral and ruled its shape: the arbitrary
+40-card cap stays retired and must NOT be reintroduced — a cap without a
+genuine full-plan-book table/list escape path makes nonzero lifecycle filters
+functionally incomplete, and the shell's current show-more behavior remains
+the valid interim dense behavior. Follow-up capability **P-MP1-DENSE**:
+its trigger is the existence/design ownership of a real plan-book dense/table
+view; it is not a B1 blocker; and it is not to be smuggled into P-LAB-UI
+unless the frozen P-LAB-UI architecture already owns that table surface.
+
+---
+
 *Record (factory §3.7): mark DONE with the PR number here when merged; deviations/dissents append below this line.*
 *Amendment 1 (above) is packet law as of 2026-08-19, not a deviation — it is bound by the same `A builder that believes this packet is wrong stops and escalates` rule as the rest of this file.*
