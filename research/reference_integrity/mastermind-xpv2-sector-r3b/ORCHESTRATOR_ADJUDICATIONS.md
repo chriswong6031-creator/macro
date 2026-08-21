@@ -175,3 +175,43 @@ No production file modified. No `approval.yml` produced. No self-issued
 verdict. R3A attack suite untouched and green. `R3B_HANDOFF_DRAFT.md` (in-pack,
 DO-NOT-START) not used as commission — the Sol-issued commission supersedes it
 (operator instruction, 2026-08-21).
+
+## 11. Freeze-pass adjudications (2026-08-21)
+
+- **QA3/QA-v1 independent pass**: its Gate-4/5 failures reproduced the PRE-fix
+  build and are closed by the fix wave (`FIX_VERIFICATION.md`); its contest of
+  QA2-07 matches the fix lane's non-repro — the contract-correct fetch-based
+  hydrate stands. Its four NEW items (QA3-01 producer +N-more line, QA3-04
+  triple CSS emission/offset shadowing, QA3-08 boot-time fail arming, QA2-10
+  completion) plus the QA3-05 destination check were all closed in the QA3
+  closure commit (`afc6c8e2394c`) with production-cited determinations:
+  production's +N-more line is `.muted.sm`, never `.pg-more` (hydrate strips
+  only the sign-in tease — mirrored); heatmap `layoutList()`/`hm-mrow` IS the
+  Money per-stock mechanism (503-name Browse-the-names disclosure added,
+  `stock_url`-faithful). QA3-02 (gated stand-aside stacks two disclosures) is
+  production-shaped (both lines render in production's gated state) — recorded,
+  no change. Map having no fetch-dependent content (build-time bake only) is a
+  faithful production property, not a fail-test gap.
+- **Continuity compound findings**: the builder's treatment RATIFIED — five
+  compound findings resolved for their Sector Central half with the LENS half
+  explicitly disclosed unaddressed in the same note; MAC-007 honestly carried
+  (no touch-dispatch harness in this cycle's evidence pack).
+- **§25 taste review (orchestrator, seat of record after the Principal Design
+  Lead's three-round pass)**: inspected the frozen candidate's primary crops —
+  Overview/Confluence (Action tier), Money light (the historically weak
+  quadrant), plus the lanes' 50+ working crops. First-screen hierarchy answers
+  first; panel count within budget; whitespace deliberate; full names wrap and
+  never truncate; charts prominent without outranking the answer; caveats
+  deduplicated to section feet; chip budgets held; authority weight legible
+  pre-linguistically (ledge present only on Action views — QA §7 masquerade
+  PASS with zero `.st-*`/ledge selectors in context views); phone compositions
+  are recompositions, not scales; dark and light are both deliberate art
+  directions; styling institutional throughout. VERDICT: meets the §25 target
+  ("credible as a flagship product from a billion-dollar institutional
+  fintech company") — subject, as commissioned, to the four fresh critics.
+- **Honest limits carried to the critics**: `ai_watch` null in fixture (A8
+  label branch is live code, unprovable visually on this fixture);
+  `n_thin>0` unobserved for Nasdaq/Russell; forming bucket empty everywhere
+  (4-cap path unexercised); loading/partial states not capturable
+  (state_matrix.md documents why); near-bottom deep-link targets land at the
+  scroll ceiling (visible, not buried — §14 satisfied).

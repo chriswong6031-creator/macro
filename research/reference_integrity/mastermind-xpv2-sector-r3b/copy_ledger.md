@@ -131,3 +131,10 @@ no EN/ZH pair to ledger for this surface anymore.
 - **Authored-new (ARIA-only), §3:** 4 `aria-label` pairs.
 - **Total EN/ZH pairs ledgered:** 24 (9 + 14 + 4, less double-counting none
   — §1 and §2 and §3 are disjoint surfaces).
+
+
+## Addendum — freeze pass (2026-08-21)
+
+| EN | ZH | surface | provenance | why |
+|---|---|---|---|---|
+| Sector Intelligence views | 板块情报视图 | workspace nav `aria-label` (shell/runtime shim, language-aware at boot + langchange) | authored-new | production carries no ZH twin for this reference-authored accessible label (QA2-10 completion, FIX_VERIFICATION.md) |
