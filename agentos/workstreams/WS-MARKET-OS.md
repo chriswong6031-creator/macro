@@ -25,14 +25,23 @@ waves:
     status: in_progress
     depends_on: [M0]
     next_action: >
-      Engineering closed and live 2026-08-21: #6098 (initial wave), #6109 (serving
-      allowlist), #6136 (Sol's three blockers + snapshot authority; merge 2633380f800a).
-      Anonymous production matrix PASSED live (receipts in
-      agentos/handoffs/MARKET-OS-2026-08-21.md). Remaining before status done: the
-      AUTHENTICATED production acceptance matrix + Terminal conformance + privacy
-      inspection, which need an operator-supplied authenticated vehicle (connect the
-      Claude Chrome extension with a signed-in session, or designate a test account).
-      Then Sol reviews and accepts. Do not mark done before that.
+      Engineering closed and live 2026-08-21 across three Sol rounds: #6098
+      (initial wave), #6109 (serving allowlist), #6136 (round-2 blockers +
+      snapshot authority; 2633380f800a), #6160 (round-3 P0 auth-generation
+      binding for every portfolio op + consumer request-generation guard, risk
+      provenance {scope,gen} minted at the FX universe resolution with
+      fail-closed consumer rejection, wl-auth AUTO_W latch clear, client-init
+      terminality; merge 9ed19a144a28; two-commit PR, adversarially reviewed,
+      every guard mutation-red-proven). The #6109 merge-over-hold incident is
+      recorded (DEC:MERGE-AUTOMATION-MUST-ENFORCE-RECORDED-HOLDS) and enforced
+      in automation (#6149, merge 8a1b93889061). Anonymous production matrix
+      PASSED live (round-2 receipts in agentos/handoffs/MARKET-OS-2026-08-21.md;
+      round-3 re-verification after render at merge sha). Remaining before
+      status done: the AUTHENTICATED production acceptance matrix + Terminal
+      conformance + privacy inspection, which need an operator-supplied
+      authenticated vehicle (connect the Claude Chrome extension with a
+      signed-in session, or designate a test account). Then Sol reviews and
+      accepts. Do not mark done before that.
   - id: A1B
     title: Portfolio Fast Start Import
     status: todo
