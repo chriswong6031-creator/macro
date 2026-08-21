@@ -93,9 +93,9 @@ is to be normalized away.**
 | X4 | **Lots owned** | **NVR has no standing lots-owned metric at all** (`not_applicable`). LEN's fell **85,428 → 9,525 (−89%)** in one quarter on the Millrose spin-off with no change in land access. |
 | X5 | **Land impairment** | Peers write down owned community inventory to fair value under an ASC 360 undiscounted-cash-flow test — a real-asset markdown at full carrying value. **NVR writes down a deposit asset, capped at ~10% of lot price.** Different asset, different maximum loss. |
 | X6 | **Homes in inventory** | DHI reports one nested all-stage figure (29,600 at FYE25) containing unsold/completed-unsold sub-counts. **LEN has no equivalent combined figure.** PHM reports a unit-level "Homes in production" table (Sold / Unsold split into Under construction + Completed / Models). **NVR reports only combined dollar buckets, not unit counts.** TOL reports a composite home-sites figure. |
-| X7 | **Completed unsold inventory** | PHM splits it out as a unit line. **NVR does not separate it** from under-construction-unsold. **TOL: `missing`.** Not reconstructable across the cohort. |
+| X7 | **Completed unsold inventory** | Disclosed as a quantified count by **DHI** (~9,300), **LEN** (~5,000, plus a derived per-community ratio) and **PHM** (unit-level Unsold split). **KBH is qualitative only** ("we carried a higher number of completed unsold homes"); **NVR does not separate it** from under-construction-unsold, reporting one combined dollar bucket; **TOL: `missing`**. So three of six are comparable on counts, one is prose, two are absent — a coverage gradient, not a uniform absence. **Aged** completed inventory is narrower still: **DHI alone** discloses a cut ("approximately 800 homes had been completed for more than six months"), and it is a single threshold, not an aging schedule. |
 | X8 | **Community count** | **LEN** publishes a formally defined, footnoted point-in-time "Active Communities" count with the JV-built subset quantified. **DHI publishes no equivalent numeric count at all.** PHM and NVR publish period **averages**; KBH publishes **both** average and ending; TOL (in exhibits reviewed) only period-end. An average and a period-end are different estimators of a moving quantity. |
-| X9 | **Cycle / build time** | **KBH quantifies it** — "average build time of four to five months from construction start to home completion", plus a six-to-seven-month sale-to-delivery window. **PHM discusses it only qualitatively. NVR and TOL disclose no numeric figure at all** (both verified by full-text search, not assumed). A cohort cycle-time series does not exist. |
+| X9 | **Cycle / build time** | **KBH quantifies it** — "average build time of four to five months from construction start to home completion", plus a six-to-seven-month sale-to-delivery window. **PHM discusses it only qualitatively.** **NVR and TOL: no numeric figure found in the FY2024/FY2025 10-K full text** — a searched absence in those filings, **not** a swept absence across the window (earlier years were not searched; recorded as a gap). A cohort cycle-time series does not exist on the evidence in hand. |
 | X10 | **JV inclusion** | **TOL excludes unconsolidated JV activity from every headline metric** under a "Total Consolidated" framing, while carrying $956.5M of JV investments — so its headline metrics understate its total controlled footprint. **LEN quantifies its JV backlog share in a footnote every period** (79 homes / $86.0M at FYE25). **TOL publishes no equivalent JV unit count** (verified absence). **DHI's backlog carries no JV carve-out found.** |
 | X11 | **Incentives** | **LEN tabulates a discrete "Average Sales Incentives Per home"**, explicitly excluding unconsolidated-entity deliveries from its denominator. **DHI discloses incentives narratively only** — no isolated figure. **NVR uses "closing cost assistance"** with no defining policy paragraph. PHM has an explicit Note-1 sales-incentives policy but no isolated figure. |
 | X12 | **Spec inventory (conceptual)** | **KBH frames non-BTO homes as a residual** — "homes started without a corresponding buyer and partially constructed homes where the initial buyer cancelled" — i.e. overflow, not strategy. For a volume builder, spec is a deliberate speed-to-close position. A rising KBH spec share signals something different from a rising DHI spec share. |
@@ -185,15 +185,26 @@ Stated plainly so no later reader over-reads the crosswalk.
 
 ## 7. Frozen by this wave (pre-outcome)
 
+**Frozen (records-level findings; no freeze condition or contract clause is amended):**
+
 1. The six cancellation-rate regimes as documented in §1 — **no single canonical cross-issuer
    cancellation rate exists or will be constructed.**
 2. Per-issuer canonical denominators where stated (DHI, PHM FY2016+, NVR, KBH FY2008+); **LEN: none
    freezable**; **TOL: two candidates, requiring an A4 election between them with both printed.**
 3. The X1–X14 incompatibilities as preserved distinctions, never normalized.
-4. The [A18] missing-indicator ban extended to every era-correlated metric in §5.
-5. Denominator-verifiable blocks for the cancellation cell: **blocks 3, 4, 5 only**.
+4. The **finding** that cancellation denominators are verifiable only from the stated-formula era
+   (§4) — a fact about the filings, independent of any block numbering.
 
-**Every one of these requires an amendment-log entry to change.**
+**PROPOSED, not frozen** — each depends on, or extends, something this wave only proposes, and each
+needs an amendment-log entry (see `IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md` §5):
+
+5. Restricting cancellation cells to the `hb_grind`/`hb_pandemic_boom`/`hb_rate_shock` blocks. This is
+   expressed in the **proposed** renumbering of `IMCE_HB0_INDEPENDENT_BLOCK_LIST.md` §5, which that
+   document states is a proposal and whose freezing is an A4 act. The underlying *finding* (item 4) is
+   frozen; the *cell restriction* built on the renumbering is not.
+6. Extending the [A18] missing-indicator ban from LEN's cancellation rate to every era-correlated
+   metric in §5. [A18] is a contract amendment; **widening its scope is itself an amendment** and this
+   wave may not enact it. Recorded here as proposal **C3**.
 
 ---
 

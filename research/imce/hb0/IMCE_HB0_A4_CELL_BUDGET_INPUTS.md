@@ -29,27 +29,37 @@ own wave approval. Nothing here is a registration, a fit, or an outcome.
 
 ---
 
-## 2. The finding A4 most needs — two of the four mechanism states are not measurable
+## 2. The finding A4 most needs — mechanism-state coverage is uneven, and two states rest on one issuer
 
 The D5 homebuilder state vector is `order_softness` / `completed_inventory_build` /
-`incentive_support` / `pace_recovery`. The definition crosswalk determines whether each has a
-cohort-wide measurable basis. **It does not.**
+`incentive_support` / `pace_recovery`. The definition crosswalk determines how many issuers actually
+disclose a usable input for each.
 
-| State | Primary metric | Cohort-wide measurable? | Why |
+> **Corrected under adversarial review.** An earlier draft of this section claimed
+> `completed_inventory_build` had **no** cohort-wide basis and that aged completed inventory was
+> "disclosed by nobody". Both were wrong, and contradicted by this census's own evidence packet:
+> **DHI discloses ~9,300 completed unsold homes and LEN ~5,000** (plus a per-community ratio), and
+> **DHI does disclose an aged cut** — "approximately 800 homes had been completed for more than six
+> months". The corrected table below is materially more permissive for that state, and A4 must act on
+> this version. The error would have driven A4 to drop a cell it should keep.
+
+| State | Primary metric | Issuers with a usable disclosed input | Verdict |
 |---|---|---|---|
-| **`order_softness`** | net orders, backlog, cancellation rate | **YES, with caveats** | Net orders and backlog are disclosed by all six from FY2005. Caveats: TOL's net-orders formula differs structurally (crosswalk X1), and the cancellation leg is denominator-limited to blocks 3–5 (§4). |
-| **`completed_inventory_build`** | completed unsold inventory | **NO** | PHM splits it out (confirmed FY2024, earlier unconfirmed); **NVR does not separate it** from under-construction-unsold; **TOL: `missing`**; aged-completed inventory is disclosed by **nobody**. |
-| **`incentive_support`** | incentives / concessions, rate buydowns | **NO — one issuer only** | **Only LEN tabulates a discrete average-incentive-per-home figure.** DHI is narrative-only; NVR uses "closing cost assistance" with no defining policy; PHM has a policy note but no isolated figure. Buydown cost is never isolated as its own number by anyone. |
-| **`pace_recovery`** | cycle / construction time | **NO** | **Only KBH quantifies build time** (4–5 months construction; 6–7 months sale-to-delivery). PHM is qualitative. **NVR and TOL disclose no numeric figure at all** — both verified by full-text search, not assumed. |
+| **`order_softness`** | net orders, backlog, cancellation rate | **6 of 6** | **Cohort-measurable, with caveats** — TOL's net-orders formula differs structurally (crosswalk X1), and the cancellation leg is denominator-limited to blocks 3–5 (§4). |
+| **`completed_inventory_build`** | completed unsold inventory | **3 of 6 quantified** — DHI (~9,300), LEN (~5,000 + per-community ratio), PHM (unit-level Unsold split). KBH qualitative only; NVR combined dollar bucket only; TOL `missing`. Aged-completed: **DHI alone**, one >6-month threshold. | **Partial** — constructible on a named 3-issuer subset; **not cohort-complete**, and the aged cut is single-issuer. |
+| **`incentive_support`** | incentives / concessions, rate buydowns | **1 of 6 discrete** — only LEN tabulates an average-incentive-per-home figure. DHI narrative-only; NVR "closing cost assistance" with no defining policy; PHM has a policy note but no isolated figure. Buydown cost is isolated by nobody. | **Single-issuer** — not a cohort claim. |
+| **`pace_recovery`** | cycle / construction time | **1 of 6 quantified** — only KBH (4–5 months build; 6–7 months sale-to-delivery). PHM qualitative. NVR and TOL not found in the FY2024/FY2025 10-K full text; **earlier years unsearched**. | **Single-issuer** — not a cohort claim. |
 
-**One of four states is well-measured across the cohort. Two are not measurable at all. One rests on a
-single issuer.**
+**One state is cohort-measurable; one is measurable on a 3-issuer subset; two rest on a single
+issuer each.**
 
-**Consequence for the 6-cell budget.** The budget was set before this census existed. A cell keyed to
-`pace_recovery` or `completed_inventory_build` has no cohort-wide input series to compute from — it
-would be measuring one issuer's disclosure practice, or an imputation. **A4 must either re-scope those
-cells to the issuers that actually disclose the input (accepting m = 1–2, which is not a cohort claim),
-or drop them and re-declare the budget.**
+**Consequence for the 6-cell budget.** The budget was set before this census existed.
+
+- A cell keyed to **`completed_inventory_build`** is constructible, but on **m = 3** (DHI, LEN, PHM)
+  — a named-subset claim, not a cohort claim, and it must be labelled as such.
+- A cell keyed to **`incentive_support`** or **`pace_recovery`** would measure one issuer's disclosure
+  practice. **A4 must either re-scope to that issuer explicitly (m = 1, not a cohort claim) or drop the
+  cell and re-declare the budget.**
 
 Silently populating them by imputing across non-disclosing issuers would violate contract §10
 ("Missing is never zero", `not_reconstructable` is distinct from `missing`) and the ordinal-sensor
@@ -65,9 +75,9 @@ pre-outcome and fits it on train folds only. This is a pre-registered sensitivit
 
 | Cell class | B | m | n_eff @ρ=0.7 | @ρ=0.8 | @ρ=0.9 | vs. floor 40 |
 |---|---|---|---|---|---|---|
-| General (all-issuer) | 5 | 6 | 6.7 | 6.0 | 5.5 | **~7× short** |
-| General (NVR held out) | 5 | 5 | 6.6 | 6.0 | 5.4 | **~7× short** |
-| **Cancellation** | **3** | **4** | **3.9** | **3.5** | **3.2** | **~11× short** |
+| **General (poolable: NVR held out)** | 5 | **5** | 6.6 | 6.0 | 5.4 | **~7× short** |
+| **Cancellation** (LEN excluded, NVR held out) | **3** | **4** | **3.9** | **3.5** | **3.2** | **~11× short** |
+| *(reference only — m=6 pooling NVR is **barred** by freeze §7.2(2))* | *5* | *6* | *6.7* | *6.0* | *5.5* | *not an admissible cell* |
 
 **No cell reaches the floor. No choice available to A4 changes that.** Adding issuers barely moves
 `n_eff` once ρ is high — which is the DEFF rule working as designed.
@@ -84,14 +94,22 @@ Stated denominators are a late-era artifact (crosswalk §4):
 - KBH is gross-denominated from **FY2008**, but its FY2008 10-K **contradicts itself** — "based on net
   orders" in narrative, "based on gross orders" in a segment-table caption, both verified in the same
   filing.
-- LEN states no formula, ever.
+- LEN states no formula anywhere the census could find (the search perimeter is recorded as gap G1 in
+  `evidence/L2_defs_DHI_LEN.md`; pre-2010 10-Ks were not swept).
 
 Blocks 1 (`hb_gfc_bust`) and 2 (`hb_gfc_recovery`) therefore predate the stated-denominator era for
 most of the roster. Freezing a canonical denominator there requires **assuming** the unstated early
 convention matched the later stated one — unverified, and precisely the flattening the census exists
 to prevent.
 
-**Denominator-verifiable blocks: 3, 4, 5 only.**
+**Denominator-verifiable blocks: the `hb_grind` (from FY2016), `hb_pandemic_boom` and `hb_rate_shock`
+blocks only** — three of the five closed blocks.
+
+**One caveat on m = 4 for this cell.** It assumes DHI, PHM, KBH and TOL each carry a usable
+cancellation rate across all three. TOL's dual-denominator format is confirmed in Q1 FY2026 and (by
+its comparative column) Q1 FY2025; **the first year TOL published it is unverified**, so TOL's
+coverage of the earlier two blocks is not established. If TOL drops out, m = 3 and n_eff falls to
+≈ 2.6–3.1 at ρ = 0.7–0.9.
 
 This is the census's sharpest structural cost: **the GFC bust and recovery — the two most
 mechanism-informative episodes in the window — are the two where the signature homebuilder metric has
@@ -145,20 +163,22 @@ freeze are re-stated because this document is where a future reader will look fo
 
 ---
 
-## 7. Come-back arithmetic, reproduced at the hardened count
+## 7. Come-back arithmetic
 
-| Basis | Years/block | 40-block floor reached |
-|---|---|---|
-| **B = 5 (hardened)** | 3.40 | **~2146** |
-| B = 6 | 2.83 | ~2123 |
-| B = 7 (frozen list read literally) | 2.95 | ~2124 |
+| Basis | Span | Years/block | 40-block floor |
+|---|---|---|---|
+| **B = 5 (hardened)** — closed blocks only | 2006-01 → 2023-12 (18.0y) | 3.60 | **~2153** |
+| B = 6 — taper split, closed only | 2006-01 → 2023-12 (18.0y) | 3.00 | ~2129 |
+| B = 6 — counts the open era | 2006-01 → 2026-08 (20.6y) | 3.44 | ~2144 |
+| B = 7 — literal list, counts the open era | 2006-01 → 2026-08 (20.6y) | 2.95 | ~2124 |
 
-The freeze's published headline — homebuilders reach the floor "around **~2145**" — **reproduces only
-at B = 5**. The freeze's own arithmetic was already on a closed-blocks basis; this census makes that
-explicit and confirms it independently.
+**Corrected under review.** An earlier draft claimed the freeze's ~2145 headline reproduced *only* at
+B=5 and offered that as corroboration. It does not: B=6 counting the open era lands at ~2144, closer
+than B=5. The arithmetic corroborates the **magnitude** — a century-plus on every basis, ~2124 to
+~2153 — and does not identify a block count. B=5 rests on the block list's D1 and D2, not on this.
 
-**The honest headline is unchanged and this wave strengthens it:** the historical arm is instrumentation
-and design validation, never a promotion path.
+**The honest headline is unchanged:** on every basis the floor is a century-plus away, so the
+historical arm is instrumentation and design validation, never a promotion path.
 
 ---
 

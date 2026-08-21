@@ -20,9 +20,8 @@ two most distressed GFC-era names sit outside it. Six issuers turn out to have s
 incompatible cancellation-rate regimes, so the "denominator crosswalk, not a standardized column"
 instruction was not a stylistic preference but a description of the data. The honest historical block
 count resolves to **B = 5**, at the bottom of the freeze's 5–7 range, because one listed block overlaps
-another and one is still open — and B = 5 is the only basis on which the freeze's own published
-come-back headline (~2145) reproduces. Two of the four D5 mechanism states have no cohort-wide
-measurable basis at all, which the 6-cell budget was set before anyone knew. Only one macro context
+another and one is still open. Two of the four D5 mechanism states rest on a single issuer each and a
+third is covered for only half the roster, which the 6-cell budget was set before anyone knew. Only one macro context
 leg — Treasury constant-maturity yields — is confirmed point-in-time, public-domain and
 archive-complete, while NAR's terms bar storage outright. Every historical cell's predetermined
 `underpowered_accruing` status is confirmed on this census's own arithmetic rather than inherited.
@@ -40,9 +39,9 @@ archive-complete, while NAR's terms bar storage outright. Every historical cell'
 | 5 | [`IMCE_HB0_SURVIVORSHIP_CENSUS.md`](IMCE_HB0_SURVIVORSHIP_CENSUS.md) | 16 mortality cases; the terminal-year blind spot; explicit inclusion decision; mandatory disclosure |
 | 6 | [`IMCE_HB0_STRUCTURAL_BREAK_LEDGER.md`](IMCE_HB0_STRUCTURAL_BREAK_LEDGER.md) | 28 events; the universal no-restatement rule and its one exception; counts-vs-level breaks |
 | 7 | [`IMCE_HB0_INDEPENDENT_BLOCK_LIST.md`](IMCE_HB0_INDEPENDENT_BLOCK_LIST.md) | B = 5 hardened; five defects in the frozen list; the pseudoreplication ceiling |
-| 8 | [`IMCE_HB0_A4_CELL_BUDGET_INPUTS.md`](IMCE_HB0_A4_CELL_BUDGET_INPUTS.md) | Exact A4 inputs; the two unmeasurable mechanism states; six open elections |
-| 9 | [`IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md`](IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md) | 7 hard blockers, 12 soft, 19 falsifiers, 3 likely misreadings, 2 corrections owed upward |
-| — | [`evidence/`](evidence/) | Seven lane packets preserved verbatim, with their own verification tiering and gaps tables |
+| 8 | [`IMCE_HB0_A4_CELL_BUDGET_INPUTS.md`](IMCE_HB0_A4_CELL_BUDGET_INPUTS.md) | Exact A4 inputs; per-state mechanism coverage; six open elections |
+| 9 | [`IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md`](IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md) | 7 hard blockers, 12 soft, 19 falsifiers, 3 likely misreadings, 3 corrections owed upward |
+| — | [`evidence/`](evidence/) | Seven lane packets preserved verbatim (one carries two marked redactions, §4), with their own verification tiering and gaps tables |
 
 ---
 
@@ -55,8 +54,8 @@ archive-complete, while NAR's terms bar storage outright. Every historical cell'
 | Fiscal/calendar joins are explicit | **PASS** — all six FYEs verified from cover pages *and* 65 quarter-ends each; misalignment measured at up to a full quarter; release lags from 144 issuer-quarters | Artifact 3 |
 | Survivorship addressed, not footnoted | **PASS** — 16 named cases, explicit inclusion decision, a second-order finding (the excluded distressed survivors), and a named claim-impossibility list | Artifact 5 |
 | PIT/vintage state explicit | **PASS** — 17 series classed; vocabulary defect adjudicated without minting a CPI enum value; rights gate placed before vintage gate | Artifact 4 |
-| Block count cannot be inflated by issuer-quarter pseudoreplication | **PASS** — 522 naive rows vs `n_eff` ≈ 5–6, an ~87× factor, with four compounding mechanisms named | Artifact 7 §7–8 |
-| No outcome was read | **PASS** — verified by grep across every artifact and every lane packet | §4 below |
+| Block count cannot be inflated by issuer-quarter pseudoreplication | **PASS** — 498–522 naive rows vs `n_eff` ≈ 5.2–6.7, a ~78–100× factor, with four compounding mechanisms named | Artifact 7 §7–8 |
+| No outcome was read | **PASS with one repaired breach** — no security price/return/market-cap anywhere; two deal-consideration figures found by review in one packet and redacted | §4 below |
 | No fitting occurred | **PASS** — ρ appears only as a pre-registered sensitivity grid; no parameter estimated | Artifact 7 §8 |
 
 ---
@@ -65,22 +64,30 @@ archive-complete, while NAR's terms bar storage outright. Every historical cell'
 
 | Freeze expectation | Census result |
 |---|---|
-| 5–7 honest blocks | **Resolved to B = 5** — the lower bound. Both corrections reduce the count. |
+| 5–7 honest blocks | **Resolved to B = 5** — the lower bound. Both defects found reduce the count. |
 | n_eff ≈ 6–10 | **Reproduced at the lower end, ≈ 5.4–6.7**, and it is an **upper bound** (block-to-block dependence is unmodelled) |
-| ~2145 come-back date | **Reproduced at ~2146 — and only at B = 5**, independently confirming the freeze's arithmetic |
+| ~2145 come-back date | Recomputed consistently: **~2124 to ~2153** depending on B and fencepost convention. The magnitude (a century-plus) is confirmed on every basis; **~2145 does NOT uniquely identify B=5** — an earlier draft claimed it did and that corroboration is withdrawn |
 | "Three cancellation denominators" (G4 census) | **Six regimes, no two alike**; one issuer (LEN) states none at all |
 | LEN excluded — "no press-release cancellation rate" | Press-release absence confirmed; **but LEN discloses 14% in its 10-K MD&A**. Correction C1 |
 | Fully public-source (confirmed) | **Confirmed for the issuer legs.** For macro context: NAR is **rights-blocked for storage**, Case-Shiller licensed, MBA paywalled, Freddie Mac ambiguous, NAHB unverified |
-| Homebuilders are the first *quantitative* family | **Qualified** — two of four mechanism states are not cohort-measurable, and the signature metric has no verifiable denominator in the two GFC-era blocks |
+| Homebuilders are the first *quantitative* family | **Qualified** — one of four mechanism states is cohort-measurable, one is measurable on a 3-issuer subset, two rest on a single issuer; and the signature metric has no verifiable denominator in the two GFC-era blocks |
 
 ---
 
 ## 4. Fence compliance
 
-Verified by grep across all nine artifacts and all seven evidence packets:
+Verified by grep across all nine artifacts and all seven evidence packets, **and corrected once**:
 
-- **No price, return, market-cap or performance figure** anywhere — including deal values surfaced
-  incidentally during survivorship research, which were deliberately excluded.
+- **No security price, return, market-cap or performance figure** for any issuer, anywhere.
+- **One fence breach was found by adversarial review and repaired.** The first-pass grep used
+  patterns ("share price", "closing price", "total return") that did not match the forms actually
+  present: `evidence/L6_structural_breaks.md` carried a per-share merger consideration and an
+  acquisition dollar value, surfaced incidentally while dating two acquisitions. Both are now
+  redacted in place with a visible marker and the packet's provenance header records the redaction.
+  **The original §4 claim was false as written; this is the corrected statement.** No finding in any
+  artifact depends on the redacted values.
+- Deal-consideration figures are market valuation data and are therefore inside this wave's
+  zero-outcome fence, even though they are not returns.
 - **No model, fit, p-value, alpha claim or cycle prediction.**
 - **No FRED or ALFRED content** fetched, quoted, cached or stored — clause (q) binds all use classes.
 - **No behavioural or market-derived epoch** in the structural-break ledger.
@@ -104,7 +111,9 @@ Changing any of these requires an amendment-log entry, not a session decision:
 5. `source_vintage_class` as an HB-0-local vocabulary with a fixed crosswalk down to the three-value
    CPI `pit_class`. **No new CPI enum value is proposed.**
 6. The mandatory survivorship disclosure text.
-7. The missing-indicator ban [A18] extended to every era-correlated metric.
+7. The **finding** that several metrics have era-correlated disclosure availability (crosswalk §5).
+   *Extending* the [A18] missing-indicator ban to cover them is proposal **C3**, not a freeze — widening
+   a contract amendment's scope is itself an amendment.
 
 ---
 
@@ -115,8 +124,9 @@ owed upward and are submitted, not enacted:
 
 - **C1** — restate the LEN cancellation exclusion's *reason* (keep the exclusion).
 - **C2** — resolve the block list's overlap and open-block defects to **B = 5**.
+- **C3** — extend the [A18] missing-indicator ban to every era-correlated metric.
 
-Both are detailed in artifact 9 §5. Both reduce the census's own numbers.
+All three are detailed in artifact 9 §5. None creates headroom.
 
 ---
 

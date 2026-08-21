@@ -12,7 +12,7 @@ inherits an honest account of what this census did and did not establish.
 
 | # | Blocker | What it stops | What resolves it |
 |---|---|---|---|
-| **B1** | **Two of four D5 mechanism states have no cohort-wide measurable basis.** `completed_inventory_build` (NVR does not split it; TOL `missing`; nobody discloses aged completed inventory) and `pace_recovery` (only KBH quantifies build time; NVR and TOL disclose none). `incentive_support` rests on LEN alone. | Any cell keyed to those states. The 6-cell budget cannot be populated as currently scoped. | A4 elects: re-scope to disclosing issuers (m = 1–2, not a cohort claim) or drop and re-declare. Imputation is barred. |
+| **B1** | **Two of four D5 mechanism states rest on a single issuer, and a third is only partially covered.** `incentive_support` — only LEN tabulates a discrete figure. `pace_recovery` — only KBH quantifies build time. `completed_inventory_build` is **3 of 6 quantified** (DHI ~9,300, LEN ~5,000, PHM unit split), KBH qualitative, NVR combined dollars, TOL `missing`; the **aged** cut is DHI alone. **Corrected under review — an earlier draft wrongly said `completed_inventory_build` had NO basis and that aged inventory was disclosed by nobody.** | Any *cohort* claim keyed to `incentive_support` or `pace_recovery`. `completed_inventory_build` is constructible on a named 3-issuer subset. | A4 elects per state: cohort (order_softness), 3-issuer subset (completed_inventory_build), or single-issuer / drop (the other two). Imputation across non-disclosing issuers is barred. |
 | **B2** | **No verifiable cancellation-rate denominator in blocks 1–2.** PHM/NVR formulas confirmed only FY2016+; KBH FY2008+ **and self-contradictory in that filing**; LEN never. | A cancellation-rate cell spanning the GFC bust or recovery. | Locating pre-2016 filings that state the formula (falsifier F-2). Otherwise blocks 1–2 stay out. |
 | **B3** | **LEN has no disclosed cancellation-rate denominator at all.** | Freezing a canonical LEN denominator under condition (4); any LEN cancellation cell. | A LEN filing stating a formula (F-1). Until then the exclusion stands — on the corrected ground. |
 | **B4** | **NAR data may not be stored.** Verbatim: data may not be "reproduced, stored in a retrieval system, transmitted or redistributed… without NAR's prior written consent." | NAR Existing-Home Sales and the NAR Housing Affordability Index as stored context legs — permanently, not pending a workaround. Self-archival does not cure it; archiving *is* the prohibited act. | Written consent from NAR. |
@@ -100,7 +100,7 @@ they compound (block list §7).
 **4.2 "Add MTH, MHO, BZH and HOV and the sample gets stronger."**
 It gets *more representative*, which is worth doing on its own merits — and it adds **no power**. Four
 more issuers inside the same five shocks are correlated rows, not independent draws. At ρ ≈ 0.8,
-going from m=6 to m=10 moves `n_eff` from ~6.0 to ~6.2. Representativeness and power are separate
+going from m=5 to m=9 moves `n_eff` from ~6.0 to ~6.1. Representativeness and power are separate
 problems and only the first is addressable by adding issuers.
 
 **4.3 "TOL started building spec homes in 2023."**
@@ -114,15 +114,17 @@ general form of the era-correlated-availability hazard in crosswalk §5.
 
 ## 5. Corrections this census owes upward
 
-Two items where the census's evidence differs from a statement in the merged freeze. **Neither is
-applied unilaterally** — both require an amendment-log entry and Fable/Sol adjudication.
+Three items where the census's evidence differs from, or would widen, a statement in the merged
+freeze or contract. **None is applied unilaterally** — each requires an amendment-log entry and
+Fable/Sol adjudication.
 
 | # | Freeze statement | What the census found | Proposed |
 |---|---|---|---|
 | **C1** | §7.2(1): LEN excluded — "**no press-release cancellation rate**; its missingness is era-correlated by construction" | Press-release absence **confirmed** (3 of 4 FY2025 quarters, zero hits). But LEN **does disclose 14% in its 10-K MD&A** — missing from a channel, not from the record. The stronger ground is that **LEN states no formula anywhere**, so condition (4) has nothing to freeze. | Keep the exclusion; **restate the reason**. The [A18] missing-indicator ban survives and is better supported. |
 | **C2** | §3 frozen block list [A8] contains "2013 taper (partial)" inside "2010–2013", and "2024–2026" as a listed block | The taper **overlaps** block 2 and is the same transmission channel; the 2024–2026 era is **OPEN** and counting it repeats the unit violation the memory cohort was denied (§7.3). | Taper → sub-episode of block 2. 2024–2026 → `OPEN_ACCRUING`, counts toward `n_blocks_prosp` on close. **B = 5.** |
+| **C3** | [A18] bans a missing-indicator on LEN's cancellation rate, on era-correlated-missingness grounds | The **same structure** was found on other metrics — TOL's "spec homes" label appears only from FY2023 (zero hits 2001–2020), PHM's Unsold split is confirmed only FY2024, and cancellation formulas appear FY2008–FY2016 by issuer. | Extend the [A18] ban to every era-correlated metric in crosswalk §5. **Widening a contract amendment's scope is itself an amendment**, so this wave proposes rather than enacts it. |
 
-**Both corrections reduce the census's own numbers.** Neither creates headroom. That is the direction
+**All three corrections reduce or constrain the census's own numbers.** Neither creates headroom. That is the direction
 a census's self-corrections should run, and it is offered as evidence of the census's posture rather
 than as a claim of correctness.
 

@@ -126,11 +126,13 @@ readout states that its `n_effective_blocks` is an upper bound.
 Block membership is not the same as comparable membership (B-5). Three known events collide with the
 block grid, so a "spanning" issuer is not automatically a comparable one:
 
+Block numbers below are the **proposed §5 renumbering**, used consistently throughout this document.
+
 | Event | Date | Collides with | Consequence |
 |---|---|---|---|
 | PulteGroup / Centex merger | closed Aug 2009 | the block 1 → block 2 boundary | PHM's block-1 entity and block-2 entity are not the same business. PHM does not cleanly span that boundary. |
-| Lennar / CalAtlantic | closed Feb 2018 | inside block 4 | LEN's block-4 series contains a mid-block composition change. |
-| Lennar / Millrose spin-off | Feb 2025 | inside block 7 (open) | LEN's land-holding metrics break inside the open era. |
+| Lennar / CalAtlantic | closed Feb 2018 | inside block 3 (`hb_grind`) | LEN's block-3 series contains a mid-block composition change. |
+| Lennar / Millrose spin-off | Feb 2025 | inside block 6 (`hb_affordability_era`, OPEN) | LEN's land-holding metrics break inside the open era. |
 
 Detail and citations: `IMCE_HB0_STRUCTURAL_BREAK_LEDGER.md`. The point for *this* document is that
 per-block issuer counts must be taken from the break ledger, not from "was the ticker listed".
@@ -151,18 +153,33 @@ Reproducing the freeze's stated **5–7 honest blocks** and resolving it:
 census resolves it to its **lower bound**. The resolution direction matters: both corrections *reduce*
 the count. A census that hardened its way to a larger N would be the one to distrust.
 
-**Corroboration.** The freeze's published come-back headline — homebuilders reach the 40-block
-`PROMOTE_ELIGIBLE` floor "around ~2145" — is reproducible **only at B=5**:
+**Come-back arithmetic — and a corroboration this census withdrew under review.**
 
-| Basis | Years per block | 40-block floor reached |
-|---|---|---|
-| B=5 (hardened) | 3.40 | **~2146** ← matches the freeze's ~2145 |
-| B=6 | 2.83 | ~2123 |
-| B=7 (literal) | 2.95 | ~2124 |
+An earlier draft claimed the freeze's published come-back headline (the 40-block `PROMOTE_ELIGIBLE`
+floor reached "around ~2145") reproduced **only** at B=5, and offered that as independent support for
+the hardening. **Adversarial review falsified the claim and it is withdrawn.** The draft had used a
+different span for the B=7 row than for the others, and measured 2006→2023 as 17 years by
+year-label subtraction rather than 18.0 elapsed years.
 
-(Span 2006 → 2023, i.e. first block start to last *closed* block end; 35 further blocks needed.)
-The freeze's own arithmetic was already computed on a closed-blocks basis. This census makes explicit
-what that headline had implicitly assumed.
+Recomputed on one consistent convention (elapsed years from block-1 start; a basis that counts the
+open era runs its span to the census date, since the counted block is still accruing):
+
+| Basis | Span | Years per block | 40-block floor reached |
+|---|---|---|---|
+| **B=5 (hardened)** — closed blocks only | 2006-01 → 2023-12 (18.0y) | 3.60 | **~2153** |
+| B=6 — taper split out, closed only | 2006-01 → 2023-12 (18.0y) | 3.00 | ~2129 |
+| B=6 — counts the open era | 2006-01 → 2026-08 (20.6y) | 3.44 | **~2144** |
+| B=7 — literal list, counts the open era | 2006-01 → 2026-08 (20.6y) | 2.95 | ~2124 |
+
+**What this actually shows.** The freeze's ~2145 sits inside the range but does **not** uniquely
+identify B=5 — B=6 counting the open era lands at ~2144, closer than B=5 does. The come-back
+arithmetic corroborates the **magnitude** (the floor is a century-plus away on every basis, from
+~2124 to ~2153) and says nothing about which block count is right.
+
+**The hardening argument does not depend on this.** B=5 rests on D1 (the taper overlaps block 2) and
+D2 (block 7 is open), each of which stands on its own reading of the frozen list and the freeze's own
+treatment of the memory cohort. Removing a spurious corroboration leaves that reasoning untouched —
+and the corroboration is removed precisely because it was spurious.
 
 ---
 
@@ -227,10 +244,16 @@ This is the specific inflation the acceptance criteria require be made impossibl
 
 | Quantity | Value |
 |---|---|
-| Calendar quarters in window 2005-01-01 → 2026-08-21 | 87 |
+| Calendar quarters in the **census window** 2005-01-01 → 2026-08-21 | 87 |
 | Naive issuer-quarter rows at 6 issuers | **522** |
-| Honest `n_effective_blocks` (§8) | **≈ 5–6** |
-| Inflation factor if rows were used as N | **≈ 87×** |
+| Calendar quarters in the **block-covered window** 2006-01 → 2026-08 (block 1 opens 2006-01) | 83 |
+| Naive issuer-quarter rows on that window | **498** |
+| Honest `n_effective_blocks` (§8) | **≈ 5.2 – 6.7** |
+| Inflation factor if rows were used as N | **≈ 78× – 100×** |
+
+The window distinction is stated rather than smoothed: the census roster is documented from 2005-01,
+but block 1 opens 2006-01, so the row count on the block-covered window is 498, not 522. Either way
+the inflation factor is two orders of magnitude, and the point does not turn on which window is used.
 
 Four independent mechanisms each defeat the row count, and they compound:
 
