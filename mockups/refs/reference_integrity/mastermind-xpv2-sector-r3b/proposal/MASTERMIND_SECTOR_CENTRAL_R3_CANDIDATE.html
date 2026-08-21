@@ -5621,13 +5621,20 @@ window.addEventListener('resize', function(){
      XPV2-SC-R3B · LANE D1 · VIEW 6 — CONFLUENCE  (ACTION tier)
      User job: "Which subsectors or baskets have timing support?"
 
-     Page grammar (DESIGN_SYSTEM_SPEC §5), five L1 sections:
+     Page grammar (DESIGN_SYSTEM_SPEC §5), the five L1 SLOTS:
        1  .r3-answer        static answer line (Confluence has NO read slot —
                             si_workspace.js contract item 4) + universe tabs
        2  #sc-app           the STATE LEDGE fused with its selected list
        3  stock picks       double-gated picks, PICKS_CAP 12
-       4  all <noun>        the full searchable/sortable table
+       3  all <noun>        the full searchable/sortable table
+       4  #cf-context-band  EVIDENCE — the three supporting organs of the same
+                            production render pass, each behind a quiet
+                            disclosure (see "SUPPORTING CONTEXT" below)
        5  .r3-more          deeper path → #moving
+
+     Slots 3 and 4 hold more than one band each; the GRAMMAR is five slots, not
+     five bands (§5 names slot 4 "EVIDENCE — .r3-rail (2-col) or a following
+     band"). The deeper path stays the view's last word.
 
      ACTIVE-UNIVERSE LAW: counts, distribution, coverage, rows, details, members
      and stock rows are read from the ACTIVE universe's artifact only. Nothing on
@@ -5786,6 +5793,130 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
 /* the receipt button is defined by the Overview partial's .r3-view--action rule;
    this view reuses it unchanged (one definition, two Action views). */
 
+/* ══ SUPPORTING CONTEXT — the three disclosed organs ═════════════════════════
+   The grammar decision, stated once: these three organs belong to the SAME
+   production render pass this view already reproduces (subsectors.js:510-516),
+   so leaving them out drops capability. Composing them OPEN would give the view
+   three more full-weight bands and put ~30 chips above the fold, which is what
+   the §9.2 chip budget and the Action density budget exist to prevent. A CLOSED
+   <details> costs one 44px line at rest and shows no chip at all, so the answer
+   and the ledge keep their dominance and every organ is exactly one keystroke
+   away. Nothing here is a new visual language: cells are the .r3-mem grid, the
+   plain-word badge is .r3-chip, a raw producer slug is .r3-tag (the tertiary
+   rung — plain words outrank slugs), a caution is .r3-callout, the divergence
+   table is .r3-tbl in .r3-tblbox. */
+/* minmax(0,1fr), not the default `auto` track (§12). An auto track's minimum is
+   MIN-CONTENT, so the internals divergence table's own min-width would size this
+   grid instead of scrolling inside its .r3-tblbox — measured: the page itself
+   gained 64px of horizontal scroll at 320. The scroll container only works if
+   nothing above it is min-content-sized. */
+[data-view="confluence"] .cf-ctx{ display:grid; grid-template-columns:minmax(0,1fr);
+  gap:var(--sp-3); }
+
+/* .r3-disc summary is display:flex, which drops the UA list-item marker — so an
+   affordance has to be drawn. It is the .r3-showall chevron, same construction,
+   same rotation, so "there is more under this" reads identically in both places. */
+[data-view="confluence"] .r3-disc summary{ justify-content:flex-start; }
+[data-view="confluence"] .r3-disc summary::-webkit-details-marker{ display:none; }
+[data-view="confluence"] .r3-disc summary::after{ content:""; width:6px; height:6px; flex:none;
+  margin-left:auto; border-right:1.6px solid currentColor; border-bottom:1.6px solid currentColor;
+  color:var(--muted); transform:translateY(-2px) rotate(45deg);
+  transition:transform var(--t-fast) var(--ease-std); }
+[data-view="confluence"] .r3-disc[open] summary::after{ transform:translateY(1px) rotate(-135deg); }
+[data-view="confluence"] .r3-disc summary small{ min-width:0; overflow-wrap:break-word; }
+/* §11: a caps slot loses its tracking and its uppercase under ZH */
+html[data-lang="zh"] [data-view="confluence"] .r3-chip{ letter-spacing:0; text-transform:none; }
+html[data-lang="zh"] [data-view="confluence"] .r3-tag{ letter-spacing:0; }
+
+[data-view="confluence"] .cf-desc{ margin:0 0 10px; max-width:70ch; line-height:1.5; }
+html[data-lang="zh"] [data-view="confluence"] .cf-desc{ max-width:34em; line-height:1.55; }
+[data-view="confluence"] .cf-note{ margin-top:9px; font-size:var(--fs-micro);
+  color:var(--muted); line-height:1.5; }
+
+/* Tiles, not a hairline grid. A gap-lit grid (`gap:1px` over a `--line`
+   background, the .r3-mem idiom) paints its own background wherever the last
+   row is short — 11 cells in a 7-track row leaves four lit rectangles that read
+   as four empty members. The member grid gets away with it at three per row;
+   an 8-to-12-item strip does not. Discrete bordered tiles have no such tail,
+   and they are also production's own anatomy here (.lcard sets its own border).
+   Names WRAP; nothing on this surface ellipsizes. */
+[data-view="confluence"] .cf-cells{ display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:var(--sp-2); }
+[data-view="confluence"] .cf-cell{ display:block; min-width:0; padding:9px 11px;
+  background:var(--panel2); border:1px solid var(--line);
+  border-left:3px solid var(--c,var(--line)); border-radius:var(--r-ctl); }
+[data-view="confluence"] a.cf-cell:hover{ background:var(--panel);
+  border-color:color-mix(in srgb, var(--link) 40%, var(--line)); border-left-color:var(--c,var(--line)); }
+/* the name is text, not link ink: eleven blue names would out-shout the answer
+   this whole band supports. The affordance is the cell's own hover, exactly as
+   .r3-mem's ticker cards work. */
+[data-view="confluence"] .cf-nm{ display:block; font-size:var(--fs-sm); font-weight:700;
+  color:var(--text); line-height:1.35; overflow-wrap:break-word; }
+[data-view="confluence"] .cf-line{ display:block; margin-top:4px; font-size:var(--fs-micro);
+  color:var(--muted); font-variant-numeric:tabular-nums; line-height:1.45; }
+[data-view="confluence"] .cf-line .r3-state{ color:var(--text); }
+
+/* Leadership — the two producer lists STACK, they do not sit side by side.
+   Their populations are wildly unequal by nature (S&P 10/2, Nasdaq 3/0,
+   Russell 12/0), so a two-column layout spends half the width on an empty
+   column on three universes out of four. Stacked, each lane gets the full
+   measure and flows its own cards; the reading order — who is already running,
+   then who is coiling next — is also the sentence the summary promises. */
+[data-view="confluence"] .cf-lead{ display:grid; grid-template-columns:minmax(0,1fr);
+  gap:var(--sp-5); }
+[data-view="confluence"] .cf-col{ min-width:0; }
+[data-view="confluence"] .cf-colhead{ display:flex; align-items:baseline; gap:7px;
+  margin-bottom:7px; font-size:var(--fs-label); font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--text); }
+html[data-lang="zh"] [data-view="confluence"] .cf-colhead{ letter-spacing:0; text-transform:none; }
+[data-view="confluence"] .cf-colhead .cf-n{ font-size:var(--fs-micro); font-weight:700;
+  color:var(--muted); font-variant-numeric:tabular-nums; }
+[data-view="confluence"] .cf-cards{ display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(222px,1fr)); gap:var(--sp-2); }
+[data-view="confluence"] .cf-lcard{ min-width:0; padding:10px 12px; background:var(--panel2);
+  border:1px solid var(--line); border-left:3px solid var(--c,var(--line));
+  border-radius:var(--r-ctl); }
+[data-view="confluence"] .cf-lc-top{ display:flex; align-items:baseline; flex-wrap:wrap; gap:7px; }
+[data-view="confluence"] .cf-lc-nm{ font-size:var(--fs-body); font-weight:700;
+  line-height:1.3; overflow-wrap:break-word; }
+[data-view="confluence"] .cf-lc-sub{ display:block; margin-top:2px;
+  font-size:var(--fs-micro); color:var(--muted); }
+[data-view="confluence"] .cf-lc-row{ display:flex; align-items:center; flex-wrap:wrap;
+  gap:6px; margin-top:8px; }
+[data-view="confluence"] .cf-lc-meta{ margin-top:6px; font-size:var(--fs-micro);
+  color:var(--muted); font-variant-numeric:tabular-nums; }
+[data-view="confluence"] .cf-ok{ color:var(--ink-up); font-weight:700; }
+[data-view="confluence"] .cf-macro{ margin-top:8px; padding:7px 10px;
+  font-size:var(--fs-micro); color:var(--text); }
+
+/* higher-timeframe direction. Unicode arrows are forbidden (§9.3), so the mark
+   is a CSS triangle and the word lives in the accessible name. */
+[data-view="confluence"] .cf-tf{ display:inline-flex; align-items:center; gap:4px;
+  margin-right:9px; font-family:var(--font-mono); font-size:var(--fs-micro);
+  font-weight:700; color:var(--muted); }
+[data-view="confluence"] .cf-tf i{ display:block; width:0; height:0;
+  border-left:3.5px solid transparent; border-right:3.5px solid transparent; }
+[data-view="confluence"] .cf-tf.up i{ border-bottom:5px solid var(--ink-up); }
+[data-view="confluence"] .cf-tf.down i{ border-top:5px solid var(--ink-down); }
+[data-view="confluence"] .cf-tf.flat i{ width:7px; border:0; border-top:1.6px solid var(--muted); }
+[data-view="confluence"] .cf-tf.none i{ width:3px; height:3px; border:0; border-radius:50%;
+  background:var(--muted); }
+
+/* nasdaq internals */
+[data-view="confluence"] .cf-ew{ display:flex; flex-wrap:wrap; align-items:baseline;
+  min-width:0; gap:4px 14px; margin:0 0 10px; padding:9px 12px; background:var(--panel2);
+  border:1px solid var(--line); border-radius:var(--r-ctl);
+  font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
+[data-view="confluence"] .cf-ew b{ font-weight:700; }
+[data-view="confluence"] .cf-mut{ color:var(--muted); font-size:var(--fs-micro); }
+[data-view="confluence"] .cf-divs{ margin-top:14px; }
+[data-view="confluence"] .cf-divs h4{ margin:0 0 7px; font-size:var(--fs-label); font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+html[data-lang="zh"] [data-view="confluence"] .cf-divs h4{ letter-spacing:0; text-transform:none; }
+[data-view="confluence"] .cf-divs .r3-tbl{ min-width:340px; }
+[data-view="confluence"] .cf-foot{ margin-top:10px; font-size:var(--fs-micro);
+  color:var(--muted); line-height:1.5; }
+
 @media (max-width:767px){
   /* Sol §13: all four universe selectors stay visible — two rows of two rather
      than a strip that scrolls the last one off the right edge. */
@@ -5793,10 +5924,14 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
     border-bottom:0; }
   [data-view="confluence"] .r3-uni button{ padding:0 10px; border-bottom:2px solid var(--line); }
   [data-view="confluence"] .r3-mem{ grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
+  [data-view="confluence"] .cf-cells{ grid-template-columns:repeat(auto-fill,minmax(146px,1fr)); }
+  [data-view="confluence"] .cf-cards{ grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); }
 }
 @media (max-width:359px){
   [data-view="confluence"] .r3-uni{ display:grid; grid-template-columns:minmax(0,1fr); }
   [data-view="confluence"] .r3-mem{ grid-template-columns:minmax(0,1fr); }
+  [data-view="confluence"] .cf-cells,
+  [data-view="confluence"] .cf-cards{ grid-template-columns:minmax(0,1fr); }
 }
 </style>
 
@@ -5847,6 +5982,21 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
     </div>
   </section>
 
+  <!-- ══ 4 · SUPPORTING CONTEXT ══ the EVIDENCE slot (§5, "or a following band").
+       Three RETAIN organs from the same production render pass as the board
+       above (subsectors.js:510-516), each behind its own quiet disclosure. The
+       band paints only what the ACTIVE universe's payload carries; where a
+       payload has no fields for an organ, that organ's disclosure does not
+       exist — absence as absence, never a stand-in. Hidden entirely when the
+       active universe carries none of the three. -->
+  <section class="r3-band" id="cf-context-band" aria-labelledby="cf-ctx-h" hidden>
+    <div class="r3-sec">
+      <h2 id="cf-ctx-h"><span class="l-en">Supporting context</span><span class="l-zh">支持背景</span></h2>
+      <span class="r3-sec-sub"><span class="l-en">Deeper evidence for the read above. Open what you need.</span><span class="l-zh">上方判断的更深证据。按需展开。</span></span>
+    </div>
+    <div class="cf-ctx" id="cf-ctx"></div>
+  </section>
+
   <!-- ══ 5 · DEEPER PATH ══ the view's one footnote, once — production's own
        foot sentence (sector_central.html.j2:2511-2512) around its own link. -->
   <div class="r3-band">
@@ -5879,6 +6029,7 @@ function signed(x, d){
   var v = Number(x);
   return '<span class="tnum ' + (v >= 0 ? 'pos' : 'neg') + '">' + (v >= 0 ? '+' : '') + v.toFixed(d == null ? 1 : d) + '</span>';
 }
+function num(x, d){ return (x == null || isNaN(x)) ? '–' : Number(x).toFixed(d == null ? 0 : d); }
 function freshTxt(e){
   if(!e) return '';
   if(e.tier === 'T3' || e.tier === 'T4') return L('about to fire', '即将触发');
@@ -5891,20 +6042,42 @@ function freshTxt(e){
    `url`, `dir`, `prefix`, `groupsKey` and `noun` are verbatim from
    subsectors.js:39-44; the tab labels are verbatim from
    sector_central.html.j2:2499-2502. TAB ORDER is the hard-coded DOM order
-   S&P → Nasdaq → Russell → Baskets (ADJUDICATIONS A4). */
+   S&P → Nasdaq → Russell → Baskets (ADJUDICATIONS A4).
+
+   `rollup` and `rollupDesc` are the sector-backdrop organ's own per-universe
+   heading and standfirst, verbatim from the same DS table (subsectors.js:40-43).
+   Baskets carries `rollup:null` there and the organ omits itself — the same
+   absence-as-absence the coverage foot performs (ledger #66). */
 var DS = {
   subsectors:{url:'marketdata/subsector_confluence.json', dir:'subsector/', prefix:'',
-              groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['S&amp;P 500','标普500']},
+              groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['S&amp;P 500','标普500'],
+              rollup:['Sector backdrop','板块背景'],
+              rollupDesc:['Each sector as one equal-weight basket — the backdrop the subsectors live inside.',
+                          '每个板块作为一个等权篮子——子行业所处的大背景。']},
   nasdaq:{url:'marketdata/subsector_confluence_nasdaq.json', dir:'subsector_nasdaq/', prefix:'',
-          groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['Nasdaq-100','纳斯达克100']},
+          groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['Nasdaq-100','纳斯达克100'],
+          rollup:['Amalgamated complexes','汇聚综合体'],
+          rollupDesc:['Higher-level complexes (semis, software, internet, the ex-tech bucket) — watch whether leadership rotates among them or bleeds out of tech. RS is vs QQQ (within-index).',
+                      '高层级综合体（半导体、软件、互联网、非科技桶）——观察领导地位是在它们之间轮动还是流出科技。相对强弱基准为 QQQ（指数内）。']},
   russell:{url:'marketdata/subsector_confluence_russell.json', dir:'subsector_russell/', prefix:'',
-           groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['Russell-2000','罗素2000']},
+           groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['Russell-2000','罗素2000'],
+           rollup:['Sector amalgamations','板块汇聚'],
+           rollupDesc:['The 11 sectors as equal-weight baskets — the natural small-cap rotation buckets. RS is vs IWM (within-index).',
+                       '11 个板块作为等权篮子——小盘股自然的轮动桶。相对强弱基准为 IWM（指数内）。']},
   baskets:{url:'marketdata/basket_confluence.json', dir:'subsector/', prefix:'b-',
-           groupsKey:'baskets', noun:['baskets','篮子'], tab:['Thematic Baskets','主题篮子']}
+           groupsKey:'baskets', noun:['baskets','篮子'], tab:['Thematic Baskets','主题篮子'],
+           rollup:null}
 };
 var TABS = ['subsectors', 'nasdaq', 'russell', 'baskets'];
 var DATA = {}, TAB = 'subsectors';
 var SORT = {}, FILTER = {}, OPEN = {};
+/* the two artifacts the supporting organs read, exactly as production loads them
+   (subsectors.js:568 and :575-577). Both are universe-agnostic FILES that carry
+   per-universe payloads; nothing joins them across universes. */
+var LEAD = null, NIDATA = null;
+/* which disclosures the reader has opened, so a tab flip or a language flip does
+   not close what they opened. */
+var DISC = {};
 
 /* ── class buckets — VERBATIM producer vocabulary (subsectors.js:81-88) ────────
    `forming` has no bucket of its own and folds into Neutral, exactly as
@@ -6252,9 +6425,229 @@ function paintTable(){
   q2.setAttribute('aria-label', isZh() ? '筛选子行业或板块' : 'Filter subsector or sector');
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   5 · SUPPORTING CONTEXT — three RETAIN organs, each one disclosure away.
+
+   All three come from the SAME production render pass this view reproduces
+   (subsectors.js:510-516: leadershipSection → sectorStrip → niSection), and all
+   three are rendered here in that order. Every label, standfirst, empty line and
+   note below is the producer's own wording, cited line by line. The ONLY strings
+   authored for this reference are the band heading and one `<small>` "why open
+   this" clause per disclosure — they are display copy, they carry no figure, and
+   they are listed in the lane's copy ledger.
+
+   ACTIVE-UNIVERSE LAW holds unchanged: each organ reads the ACTIVE universe's
+   slice and nothing else. Leadership reads LEAD.tabs[TAB]; the backdrop reads
+   payload().sectors; internals is hard-gated on TAB === 'nasdaq' exactly as
+   :509 gates it. No count, rank, class or order below is recomputed — lengths
+   are the producer list's own length, the same figure production prints at :372.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* the four RRG quadrants (:345) and the four coil stages (:347), with production's
+   hue intent mapped onto the board's existing --ink-* rungs. No new token: the
+   producer's var(--up)/var(--info)/var(--orange)/var(--down) are those rungs. */
+var QUAD = {leading:['Leading','领先','var(--ink-up)'], improving:['Improving','改善','var(--ink-info)'],
+            weakening:['Weakening','走弱','var(--ink-orange)'], lagging:['Lagging','落后','var(--ink-down)']};
+var STAGE = {primed:['Primed','就绪','var(--ink-up)'], coiling:['Coiling','蓄势','var(--ink-info)'],
+             watch:['Watch','观察','var(--muted)'], knife:['Knife','刀口','var(--ink-down)']};
+var NI_STATE = {leading:['Leading','领先','var(--ink-up)'], improving:['Improving','改善','var(--ink-info)'],
+                weakening:['Weakening','走弱','var(--ink-orange)'], lagging:['Lagging','落后','var(--ink-down)']};
+function inkOf(map, k){ var m = map[k]; return m ? m[2] : 'var(--line)'; }
+/* a mapped enum is a PLAIN WORD and gets the chip; an unmapped one is a raw
+   producer slug and gets the tertiary tag. Production prints a bare em-dash for
+   the unmapped case (:345, :411); printing the slug instead says what the
+   producer actually said and keeps §9's "never a bare —". */
+function enumChip(map, k){
+  var m = map[k];
+  if(!m) return k ? '<span class="r3-tag">' + esc(k) + '</span>' : '';
+  return '<span class="r3-chip" style="--c:' + m[2] + '">' + L(m[0], m[1]) + '</span>';
+}
+/* side → the cell rail. `side` is the producer's own field (buy / avoid / other);
+   this reads it, it does not derive it. */
+function sideInk(side){ return side === 'buy' ? 'var(--ink-up)' : side === 'avoid' ? 'var(--ink-down)' : 'var(--line)'; }
+
+function disc(id, label, why, body){
+  return '<details class="r3-disc" data-disc="' + id + '"' + (DISC[id] ? ' open' : '') + '>'
+    + '<summary>' + label + ' <small>' + why + '</small></summary>'
+    + '<div class="r3-disc-body">' + body + '</div></details>';
+}
+
+/* ── 5a · Leadership — running & coiling (:367-389) ────────────────────────── */
+/* W / 2W / M higher-timeframe chips (:348). Production draws the direction with
+   ▲ / ▼ / – ; §9.3 forbids every Unicode arrow, so the mark is a CSS triangle
+   and the direction is carried as a bilingual accessible name instead. */
+function tfChip(lbl, dir){
+  var cls = (dir === 'up' || dir === 'down' || dir === 'flat') ? dir : 'none';
+  var name = cls === 'up' ? L('rising', '上行') : cls === 'down' ? L('falling', '下行')
+    : cls === 'flat' ? L('flat', '走平') : L('not stated', '未提供');
+  return '<span class="cf-tf ' + cls + '">' + lbl + '<i aria-hidden="true"></i>'
+    + '<span class="r3-vh">' + name + '</span></span>';
+}
+/* leadCard(), :350-365. The rail is the QUADRANT ink on both branches, exactly
+   as production sets border-left-color from qi[2] in both returns. */
+function leadCard(e){
+  var co = e.coil;
+  var head = '<div class="cf-lc-top"><span class="cf-lc-nm">' + esc(e.label) + '</span>'
+    + (e.entry_tier ? '<span class="r3-tag tnum">' + esc(e.entry_tier) + '</span>' : '') + '</div>'
+    + (e.sector ? '<span class="cf-lc-sub">' + esc(e.sector) + '</span>' : '');
+  var state = e.regime_state ? '<span class="r3-tag">' + esc(e.regime_state) + '</span>' : '';
+  var rs = e.rs_60d != null ? '<span aria-hidden="true"> · </span>RS60 ' + signed(e.rs_60d, 1) : '';
+  var open = '<div class="cf-lcard" style="--c:' + inkOf(QUAD, e.quadrant) + '">' + head;
+  if(co){
+    var tf = co.tf || {};
+    var chips = ['W', '2W', 'M'].map(function(k){ return tfChip(k, tf[k]); }).join('');
+    return open
+      + '<div class="cf-lc-row">' + enumChip(STAGE, co.stage) + state + '</div>'
+      + '<div class="cf-lc-meta">' + L('higher TF', '更高周期') + '<span aria-hidden="true">: </span>' + chips
+      + (co.htf_turning ? '<span class="cf-ok">' + L('confirming', '确认中') + '</span>' : '') + '</div>'
+      + '<div class="cf-lc-meta">' + L('coil', '蓄势') + ' <span class="tnum">' + num(co.coil_score, 0) + '/100</span>' + rs + '</div>'
+      /* the caution is production's own line (:360); its ⚠ is dropped for the
+         .r3-callout rail, which is the light-safe highlight idiom and carries no
+         forbidden glyph. */
+      + (co.macro_caution ? '<p class="r3-callout cf-macro" style="--c:var(--ink-warn)">'
+          + L('macro risk-off — confirm the tape', '宏观避险——请确认大盘') + '</p>' : '')
+      + '</div>';
+  }
+  return open
+    + '<div class="cf-lc-row">' + enumChip(QUAD, e.quadrant) + state + '</div>'
+    + '<div class="cf-lc-meta">' + L('accel', '加速') + ' ' + signed(e.emerging_score, 2) + rs + '</div></div>';
+}
+function leadCol(ten, tzh, den, dzh, list, een, ezh, note){
+  return '<div class="cf-col"><div class="cf-colhead">' + L(ten, tzh)
+    + '<span class="cf-n">' + list.length + '</span></div>'
+    + '<p class="cf-desc">' + L(den, dzh) + '</p>'
+    + (list.length ? '<div class="cf-cards">' + list.map(leadCard).join('') + '</div>'
+      : '<p class="r3-empty-why">' + L(een, ezh) + '</p>')
+    + (note || '') + '</div>';
+}
+function leadershipDisc(){
+  if(!LEAD || !LEAD.ok || !LEAD.tabs || !LEAD.tabs[TAB]) return '';   /* :368 */
+  var t = LEAD.tabs[TAB], run = t.rising || [], coil = t.coiling || [];
+  if(!run.length && !coil.length) return '';                          /* :370 */
+  var filtered = t.coil_filtered || 0;
+  var note = filtered ? '<p class="cf-note">'
+    + L(filtered + ' more dropped by the weekly / 2-week / monthly downtrend veto (a bounce inside a higher-timeframe bear — not a durable coil).',
+        filtered + ' 个被周/双周/月线下跌否决过滤（更高周期熊市中的反弹——非可持续蓄势）。') + '</p>' : '';
+  return disc('leadership', L('Leadership — running &amp; coiling', '领导地位——领跑与蓄势'),
+    L('who is already running, and who is coiling next', '谁已在领跑，谁正在蓄势'),
+    '<div class="cf-lead">'
+    + leadCol('Running — rising leaders', '领跑——上升领导',
+        'Already leading their peers and still accelerating (RRG leading quadrant, not topping). Ranked by acceleration, not level.',
+        '已领先同侪且仍在加速（RRG 领先象限，未见顶）。按加速度而非水平排序。',
+        run, 'None accelerating cleanly in the leading quadrant.', '领先象限中暂无干净加速者。')
+    + leadCol('Coiling — about to run', '蓄势——即将启动',
+        'Laggards turning up that pass a coil confirmation (RSI divergence, multi-timeframe turn, volatility contraction, RS-hold) and survive a weekly / 2-week / monthly downtrend veto. W/2W/M chips show the higher-timeframe trend.',
+        '开始转强的落后组，通过蓄势确认（RSI 背离、多周期转向、波动收缩、相对强弱守稳）并通过周/双周/月线下跌否决。W/2W/M 标签显示更高周期趋势。',
+        coil, 'No laggards passed higher-timeframe coil confirmation.', '暂无落后组通过更高周期蓄势确认。', note)
+    + '</div>');
+}
+
+/* ── 5b · the sector backdrop rollup (sectorStrip, :391-404) ───────────────── */
+/* The cells wear the row-level regime treatment (.r3-state + a 3px side rail),
+   not production's solid pill: the plain-word state IS the reading, the hue was
+   restating it, and eleven solid pills inside a disclosure would out-shout the
+   answer this view exists to give. The tier and RS60 are unchanged. */
+function backdropDisc(){
+  var meta = ds().rollup;
+  if(!meta) return '';                                   /* :393 — Baskets carries none */
+  var secs = (payload() || {}).sectors || [];
+  if(!secs.length) return '';                            /* :395 */
+  var cells = secs.map(function(g){
+    var r = g.regime || {};
+    var inner = '<span class="cf-nm">' + L(esc(g.label), esc(g.label_zh || g.label)) + '</span>'
+      + '<span class="cf-line"><span class="r3-state">'
+      + L(esc(r.label || r.state || ''), esc(r.label_zh || r.label || r.state || '')) + '</span>'
+      + (g.entry && g.entry.tier ? '<span aria-hidden="true"> · </span>' + esc(g.entry.tier) : '') + '</span>'
+      + (r.rs_60d != null ? '<span class="cf-line">RS60 ' + signed(r.rs_60d) + '</span>' : '');
+    var st = ' style="--c:' + sideInk(r.side) + '"';
+    /* production links a cell only where the producer stamped a chart_key (:398) */
+    return g.chart_key
+      ? '<a class="cf-cell" data-ref-nav href="' + esc(detailHref(g.key)) + '"' + st + '>' + inner + '</a>'
+      : '<div class="cf-cell"' + st + '>' + inner + '</div>';
+  }).join('');
+  return disc('backdrop', L(meta[0], meta[1]),
+    L('whether the backdrop supports what you picked', '所选标的是否有背景支持'),
+    '<p class="cf-desc">' + L(ds().rollupDesc[0], ds().rollupDesc[1]) + '</p>'
+    + '<div class="cf-cells">' + cells + '</div>');
+}
+
+/* ── 5c · Nasdaq internals (:406-448) ──────────────────────────────────────── */
+/* Display-only, fail-open, and hard-gated on the Nasdaq universe at :509. This
+   frozen fixture carries NO marketdata/nasdaq_internals.json, so on the Nasdaq
+   tab today this disclosure does not exist. That is the organ's own contract —
+   production's own fetch is `.catch(() => null)` and the panel returns '' — not
+   a stub, not a placeholder, not an invented reading. */
+function niSpread(v){
+  if(v == null || isNaN(v)) return '<span class="tnum">–</span>';
+  var n = Number(v);
+  return '<span class="tnum ' + (n >= 0 ? 'pos' : 'neg') + '">' + (n >= 0 ? '+' : '') + n.toFixed(2) + 'pp</span>';
+}
+function niVal(x, d, suffix){
+  if(x == null || (typeof x === 'number' && isNaN(x))) return '–';
+  return Number(x).toFixed(d == null ? 1 : d) + (suffix || '');
+}
+function internalsDisc(){
+  if(TAB !== 'nasdaq') return '';                                                  /* :509 */
+  var d = NIDATA;
+  if(!d || typeof d !== 'object' || d.schema !== 'nasdaq_internals.v1') return '';  /* :420 */
+  var ew = d.ew_vs_qqq || {}, divs = d.divergences || [], gs = d.groups;
+  var ewHtml = '<p class="cf-ew"><b>' + L('EW vs QQQ', '等权 vs QQQ') + '</b>'
+    + '<span>20d ' + niSpread(ew.spread_20d) + '</span><span>60d ' + niSpread(ew.spread_60d) + '</span>'
+    + (ew.pctile_1y != null ? '<span class="cf-mut">' + L('1y %ile', '1年百分位') + ' ' + niVal(ew.pctile_1y, 0, '%') + '</span>' : '')
+    + (ew.n_members ? '<span class="cf-mut tnum">n=' + ew.n_members + '</span>' : '') + '</p>';
+  var cells = Array.isArray(gs) ? gs.map(function(g){
+    return '<div class="cf-cell" style="--c:' + inkOf(NI_STATE, g.state) + '">'
+      + '<span class="cf-nm">' + L(esc(g.label_en || g.id), esc(g.label_zh || g.label_en || g.id)) + '</span>'
+      + '<span class="cf-line">' + enumChip(NI_STATE, g.state)
+      + (g.state_days != null && g.state_days > 0 ? '<span class="tnum"> ' + g.state_days + 'd</span>' : '') + '</span>'
+      + '<span class="cf-line">RS20 ' + signed(g.rs_20d, 1)
+      + '<span aria-hidden="true"> · </span>RS60 ' + signed(g.rs_60d, 1) + '</span>'
+      + '<span class="cf-line">' + L('Breadth', '宽度') + ' ' + (g.breadth_above_50dma != null ? niVal(g.breadth_above_50dma, 0, '%') : '–')
+      + '<span aria-hidden="true"> · </span>' + L('Disp', '离散') + ' ' + (g.dispersion_20d != null ? niVal(g.dispersion_20d, 1) : '–') + '</span>'
+      + '<span class="cf-line">' + L('Accel', '加速') + ' ' + (g.accel != null ? signed(g.accel, 2) : '–')
+      + '<span aria-hidden="true"> · </span>n=' + (g.n != null ? g.n : '–') + '</span></div>';
+  }).join('') : '';
+  var strip = cells ? '<div class="cf-cells">' + cells + '</div>'
+    : '<p class="r3-empty-why">' + L('Group data unavailable.', '组数据暂不可用。') + '</p>';
+  var divHtml = '';
+  if(divs.length){
+    divHtml = '<div class="cf-divs"><h4>' + L('Divergences', '背离对') + '</h4>'
+      + '<div class="r3-tblbox"><table class="r3-tbl"><thead><tr>'
+      + '<th scope="col">' + L('Pair', '组合') + '</th>'
+      + '<th scope="col" class="num">' + L('Gap Accel Z', '差距加速Z') + '</th>'
+      + '<th scope="col">' + L('Note', '说明') + '</th></tr></thead><tbody>'
+      + divs.map(function(dv){
+          var pair = Array.isArray(dv.pair) ? dv.pair.join(' / ') : '';
+          return '<tr><td>' + (pair ? esc(pair) : '<span class="tnum">–</span>') + '</td>'
+            + '<td class="num">' + (dv.gap_accel_z != null ? signed(dv.gap_accel_z, 2) : '<span class="tnum">–</span>') + '</td>'
+            + '<td style="color:var(--muted)">' + L(esc(dv.note_en || ''), esc(dv.note_zh || dv.note_en || '')) + '</td></tr>';
+        }).join('')
+      + '</tbody></table></div></div>';
+  }
+  var wm = d.watermark_en
+    ? L(esc(d.watermark_en), esc(d.watermark_zh || d.watermark_en)) + '<span aria-hidden="true"> · </span>' : '';
+  return disc('internals', L('Nasdaq internals', '纳斯达克内部结构'),
+    L('breadth and momentum inside the index', '指数内部的宽度与动量'),
+    '<p class="cf-desc">'
+    + L('Archetype group breadth and momentum vs QQQ. Descriptive only — no forward claim.',
+        '各原型组相对 QQQ 的宽度与动量。仅描述性，不构成前瞻性主张。') + '</p>'
+    + ewHtml + strip + divHtml
+    + '<p class="cf-foot">' + wm
+    + L('Descriptive, display-only — no forward claim.', '描述性，仅供展示——不构成前瞻性主张。') + '</p>');
+}
+
+/* production's own organ order (:512-515): leadership → backdrop → internals. */
+function paintContext(){
+  var html = leadershipDisc() + backdropDisc() + internalsDisc();
+  el('cf-ctx').innerHTML = html;
+  /* a band with no organ is not an empty band, it is no band. */
+  el('cf-context-band').hidden = !html;
+}
+
 /* ══ render + wiring ══ */
 function render(){
   paintUniverses(); paintAnswer(); paintLedge(); paintFoot(); paintPanel(); paintPicks(); paintTable();
+  paintContext();
 }
 function setTab(k){
   if(k === TAB) return;
@@ -6269,6 +6662,16 @@ function setBucket(k){
 
 document.addEventListener('DOMContentLoaded', function(){
   TABS.forEach(function(k){ DATA[k] = reg(DS[k].url); });
+  /* the two supporting-organ artifacts (subsectors.js:568, :575-577). */
+  LEAD = reg('marketdata/index_leadership.json');
+  var ni = reg('marketdata/nasdaq_internals.json');
+  if(ni && ni.schema === 'nasdaq_internals.v1') NIDATA = ni;   /* :577 */
+  /* production ALSO issues this over the wire. Re-issuing it through the shim
+     costs nothing and makes the absence auditable: this fixture carries no
+     marketdata/nasdaq_internals.json, so the request genuinely rejects and lands
+     in the recorder as a real miss instead of the panel silently not being here
+     (the same recorded-not-executed treatment README_BUILD gives Time Machine). */
+  try{ REF.fetchJSON('marketdata/nasdaq_internals.json').catch(function(){}); }catch(e){}
   if(!DATA[TAB] || !DATA[TAB].ok){
     el('sc-app').innerHTML = '<div class="r3-empty"><p class="r3-empty-line">'
       + L('No data yet — run the nightly build.', '暂无数据——请运行夜间构建。') + '</p></div>';
@@ -6318,6 +6721,16 @@ document.addEventListener('DOMContentLoaded', function(){
     var again = el('cf-q');
     if(again){ again.focus(); try{ again.setSelectionRange(pos, pos); }catch(x){} }
   });
+  /* `toggle` does not bubble, so the listener is registered in the CAPTURE phase.
+     Remembering the open set is what lets a tab flip or a language flip repaint
+     the organs without closing what the reader deliberately opened. */
+  el('cf-ctx').addEventListener('toggle', function(e){
+    var d = e.target;
+    if(d && d.nodeName === 'DETAILS' && d.hasAttribute('data-disc')){
+      DISC[d.getAttribute('data-disc')] = d.open;
+    }
+  }, true);
+
   document.addEventListener('langchange', function(){ render(); });
 });
 })();
