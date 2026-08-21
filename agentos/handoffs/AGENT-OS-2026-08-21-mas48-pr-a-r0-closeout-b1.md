@@ -6,14 +6,15 @@ ended_because: ci_handoff
 mission: >
   Close out merged PR-A and R0 against the accepted Personal-Pro shell architecture,
   correct stale Agent OS continuation state, and leave one exact cold-session return
-  point for the commissioned B1 wave while S0 proceeds independently.
+  point for the commissioned-but-unclaimed B1 wave while S0 proceeds independently.
 state_before: >
   Agent OS still described MAS-75 as unimplemented at the old #96 builder base and
   treated existing MCP plus a monolithic PR-B -> PR-C sequence as the current
   Personal-Pro path. Since that handoff, Mastermind #99 froze the Pro-native shell and
   read-before-write sequence, #100 implemented/merged PR-A after Sol review, SHELL-1
   became proven live, S0 began its zero-Executive-mutation carrier setup, #103 accepted
-  R0 records-only state-read law, and Sol commissioned B1 without any builder claim yet.
+  R0 records-only state-read law, and Sol sent the B1 operator commission without any
+  builder claim or runtime execution.
 changed:
   - path: agentos/decisions/DEC-MAS48-CEO-INGRESS-V1-ACCEPTED-ARCHITECTURE.md
     what: >
@@ -23,7 +24,7 @@ changed:
   - path: agentos/handoffs/AGENT-OS-2026-08-21-mas48-pr-a-r0-closeout-b1.md
     what: >
       Records immutable PR-A/R0 receipts, B1 commission-without-claim state, S0 setup/admin
-      gate, downstream holds and the exact next cold-session actions.
+      gate, repaired Linear parent/B1 projection, downstream holds and exact next actions.
 verified:
   - claim: Mastermind PR #100 is the accepted merged hermetic PR-A implementation.
     command: >
@@ -62,18 +63,28 @@ verified:
       Skillpack, recovered fresher Git/AgentOS/Linear truth and attempted zero writes.
   - claim: S0 has an isolated real test channel but no fixture receiver yet.
     command: >
-      Read MAS-106 setup receipts and Slack channel C0BRUL9F2V7.
+      Read MAS-106 setup receipts and Slack channel C0BRUL9F2V7 membership.
     result: >
-      Private #s0-sol-carrier-test contains exactly Chris + ChatGPT1/2/3. No existing
-      echo/fixture/Relay bot was found. A minimal disposable Socket Mode app manifest is
-      frozen; workspace-admin provisioning and bot invitation are the remaining setup gate.
+      Private #s0-sol-carrier-test has exactly four members: Chris U0BRET6191C plus
+      ChatGPT1 U0BRETDUAS2, ChatGPT2 U0BSB73JWNL and ChatGPT3 U0BR1GQH7SB. No bot is
+      present. A minimal disposable Socket Mode app manifest is frozen; workspace-admin
+      provisioning and bot invitation are the remaining setup gate before any S0 fixture.
   - claim: B1 has been commissioned but not claimed/executed.
     command: >
-      Read MAS-108, the #agent-dispatch handoff thread, branch search and open Mastermind PRs.
+      Read MAS-108 current state, the #agent-dispatch B1 thread, branch search and open Mastermind PRs.
     result: >
-      MAS-108 is In Progress / NOT_BUILT with the full bounded builder packet and a Slack
-      commission sent from ChatGPT1. The Slack thread has no ACK; no mas-108 branch and no
-      B1 PR exists. Slack delivery is therefore transport only, not execution proof.
+      The full B1 commission was delivered by ChatGPT1 in #agent-dispatch against protected
+      Mastermind 974b809f6861dab064bb24224df2ba6f8dfa3c91, but the thread has no reply/ACK,
+      no MAS-108 builder branch exists and no B1 PR exists. Linear MAS-108 is correctly
+      Todo / NOT_BUILT / Awaiting Runtime Claim. Slack commission delivery is transport
+      only and is not a builder claim, Executive admission, dispatch or execution proof.
+  - claim: MAS-48 and B1 Linear projections now match canonical evidence.
+    command: >
+      Re-read MAS-48 and MAS-108 after projection repair.
+    result: >
+      MAS-48 remains In Progress / PARTIAL and now records PR-A built, R0 spec-only and
+      B1 next; MAS-108 remains Todo / NOT_BUILT / Awaiting Runtime Claim. Neither the
+      records PR nor the Slack commission advanced product/runtime completion.
 unverified:
   - claim: mastermind.executive_ceo_ingress_state.v1 exists in runtime.
     what_would_verify: >
@@ -94,9 +105,9 @@ unverified:
 unresolved:
   - "B1 commission is delivered but no Fable/principal builder has ACKed or claimed a branch; do not call it executing."
   - "S0 disposable fixture app must be created/installed by a Slack workspace admin; tokens must never enter chat/Linear/Slack/Git."
-  - "MAS-48 Linear parent projection still contains stale prose saying PR-A is in Sol review; repair projection after this Agent OS closeout merges."
   - "B1 must implement R0's narrow post-startup schema discrimination without letting unarmed submit/status reach grounding/business code."
   - "Production #sol-runtime/app/principal belong to C1, not B1 or S0."
+  - "The case-colliding Mastermind PR-template paths and Darwin activated-socket/test-hardening residuals from PR-A remain separate nonblocking hardening unless they become concrete B1 blockers."
   - "MAS-29/30/31 generic agent-dispatch work remains held until MAS-48 production proof and fresh architecture review."
 next_actions:
   - "PRIMARY: wait for an explicit MAS-108 B1 builder claim/branch or HOLD-FOR-SOL PR; do not spawn a second builder lane. On return, Sol adversarially reviews against #99/#100/#103 and the MAS-108 commission."
@@ -132,6 +143,8 @@ Read in order before B1 work/review:
 5. Mastermind #103 / `974b809f6861dab064bb24224df2ba6f8dfa3c91` — additive diagnostic state-read source law.
 6. Linear MAS-108 — full B1 builder commission; Linear remains projection, not technical authority.
 7. Linear MAS-106 — current S0 setup/proof state.
+8. Slack #agent-dispatch B1 thread — commission transport only; absence of ACK/branch/PR means no execution claim.
 
 Current capability is still not the full Slack write product. PR-A is built; R0 is spec-only;
-SHELL-1 is proven; B1 is commissioned but unclaimed; S0 is app-gated; C1/B2/C2 are held.
+SHELL-1 is proven; B1 is commissioned but unclaimed and Linear Todo; S0 is app-gated;
+C1/B2/C2 are held.
