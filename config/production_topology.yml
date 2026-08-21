@@ -16,7 +16,7 @@ repositories:
     branch: main
     deployment_contract: origin/main is pulled into /opt/macro and served atomically.
     deployed_probe: {kind: git_head, path: /opt/macro}
-    canonical_probe: {kind: git_remote_ref, remote: "https://github.com/mastermindx-market-intelligence/macro.git", ref: refs/heads/main}
+    canonical_probe: {kind: git_remote_ref, repo_path: /opt/macro, ref: refs/heads/main}
     runtime_probe: {kind: http_json, url: "http://127.0.0.1:8000/api/health", sha_field: commit}
     runtime_match_policy: selective_restart
     refs: [app/deploy/update.sh, app/deploy/setup.sh, app/deploy/macro-api.service]
@@ -124,7 +124,7 @@ scheduled_systems:
     repo: macro
     owner: macro-admin
     host_class: vps
-    probe: {kind: release_match, deployed_repo: /opt/macro, canonical_ref: origin/main, canonical_remote: "https://github.com/mastermindx-market-intelligence/macro.git", required_cron_id: macro_update}
+    probe: {kind: release_match, deployed_repo: /opt/macro, canonical_ref: origin/main, canonical_repo_path: /opt/macro, required_cron_id: macro_update}
     expected_state: active
     cadence: every_3_minutes
     refs: [app/deploy/update.sh, app/deploy/setup.sh]
