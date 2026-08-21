@@ -370,7 +370,10 @@ def test_fail_open_jobs_keep_their_always():
     """`always() &&` is what makes the gate fail-OPEN: an errored gate job must
     double-run the night, never silently zero-run it."""
     jobs = _workflow()["jobs"]
-    for key in ("collect", "engine", "publish"):
+    # `publish` (the GitHub Pages deploy job) was RETIRED pre-private-cutover
+    # (DEC:B1-MACRO-PRIVATE-CUTOVER; see tests/test_no_pages_publish.py) — the
+    # fail-open always() law still governs the surviving gated nightly jobs.
+    for key in ("collect", "engine"):
         assert "always() &&" in str(jobs[key].get("if")), (
             f"{key}: if={jobs[key].get('if')!r} lost its always() — an et_gate error "
             "would now skip it via needs-status and kill the nightly silently"
