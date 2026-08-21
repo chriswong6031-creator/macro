@@ -1,13 +1,13 @@
 {
   "schema": "agent_os_state.v1",
   "generator": "scripts/agentos.py status",
-  "generated_at": "2026-08-20T05:30:57Z",
+  "generated_at": "2026-08-21T01:25:05Z",
   "inputs": {
-    "workstreams": 34,
-    "decisions": 124,
-    "discoveries": 97,
-    "handoffs": 105,
-    "active_builds": "data/governance/active_builds.json@2026-08-20T05:30:56.871125+00:00",
+    "workstreams": 39,
+    "decisions": 145,
+    "discoveries": 120,
+    "handoffs": 139,
+    "active_builds": "data/governance/active_builds.json@2026-08-21T01:25:05.213369+00:00",
     "active_builds_age_hours": 0.0,
     "worktrees": 1,
     "uncommitted_worktrees": [],
@@ -32,18 +32,18 @@
         "macro"
       ],
       "next_action": "Owner restores/rebinds Massive Options Snapshot + daily OI + Greeks/IV on the linked key under a business/enterprise license. Then the normal scheduled nightly must produce two consecutive healthy captures (S then D, coverage_pct >= 0.90, no --force). Only then run AD-1 production acceptance. AD-2 stays closed.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
-        "Massive/Polygon option-chain snapshot entitlement is absent on the linked key. Live 8-probe 2026-08-19T19:59:29Z: GET /v3/snapshot/options/{AAPL,SPY} returns HTTP 403 NOT_AUTHORIZED on BOTH api.polygon.io and api.massive.com, while AAPL stock snapshot and news return 200 on the same key. No repo change can restore this. AD-1 stays BUILT_NOT_PROVEN / SOURCE_BLOCKED until the owner restores a rights-safe Options Snapshot + daily OI + Greeks/IV entitlement and two consecutive healthy scheduled captures exist.\n"
+        "Massive/Polygon option-chain snapshot entitlement is still absent on the linked key after a claimed restoration. Post-entitlement commissioning census 2026-08-20T05:23:23Z: GET /v3/snapshot/options/{AAPL,SPY} returns HTTP 403 NOT_AUTHORIZED on BOTH api.polygon.io and api.massive.com, while AAPL stock snapshot and news return 200 on the same key (MASSIVE_API_KEY). Production adapter PolygonOptions.snapshot() on the mixed probe set [SPY, QQQ, IWM, AG, CDE] returned 5/5 auth_or_entitlement_failure, 0 rows, no production write. The 2026-08-19 scheduled capture wrote a FAILED health receipt (coverage_pct=0.0, aborted_early). No repo change can restore this. AD-1 stays BUILT_NOT_PROVEN / SOURCE_BLOCKED.\n"
       ],
       "waves": {
         "awaiting_ci": 0,
         "done": 4,
         "dropped": 0,
-        "in_progress": 0,
+        "in_progress": 1,
         "todo": 1
       },
       "wave_detail": [
@@ -97,11 +97,23 @@
             "AD-1"
           ],
           "deps_satisfied": true,
-          "next_action": "Merged (d5ebb5d9b3db8c12deed7c267676cb38b6b348dc, 2026-08-19T16:04:26Z). First post-merge scheduled capture has not yet written data/polygon_gex_health/. Do not hand-write a receipt. Let the normal scheduled owner produce S then D.\n",
+          "next_action": "Merged (d5ebb5d9b3db8c12deed7c267676cb38b6b348dc, 2026-08-19T16:04:26Z). First post-merge scheduled capture DID run: data/polygon_gex_health/2026-08-19.json session 2026-08-19 capture_instant 2026-08-20T01:00:18Z health=failed coverage_pct=0.0 aborted_early 5/5 auth_or_entitlement_failure. That is not capture S. Do not hand-write a receipt. Do not --force. After a live 200 entitlement, the next lawful scheduled run may replace this failed vintage.\n",
           "prs": [
             5974
           ],
           "done_at": "2026-08-19T16:04:26Z"
+        },
+        {
+          "id": "AD-1C0.1",
+          "title": "Source-clock integrity + security closure + production commissioning",
+          "status": "in_progress",
+          "depends_on": [
+            "AD-1C0"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Sol handoff 2026-08-20, three jobs. (A) Source-clock adjudication: census measures the nightly accrual's real execution window (a normal collect crosses midnight ET while the resolved session stays the prior NYSE session, so the same-ET-day partial-replacement rule may refuse lawful repairs); Fable rules Option A (earlier close-proximate capture point) vs Option B (bounded lawful capture lease); any timing PR is held UNMERGED for Sol, no merge-on-green. (B) Credential/vendor closure is OPERATOR-EXTERNAL: revoke/rotate the exposed key, delete run 32077948964 logs, register the replacement as a real Actions secret, restore the option-chain entitlement (probe 2026-08-20T08:09Z: chain still 403, logs still served, no POLYGON/MASSIVE key in Actions secrets). (C) Production commissioning BLOCKED_EXTERNAL until (B) closes; then two consecutive healthy scheduled captures (S, D) and AD-1 end-to-end acceptance.\n",
+          "prs": [],
+          "done_at": null
         },
         {
           "id": "AD-2",
@@ -164,7 +176,7 @@
         ],
         "recommendation": "Restore/rebind Options Snapshot on the existing account/key under a business license. Do not attach a personal-use plan. Do not silently route AD-1 to ThetaData. Do not ask a coding agent to \"fix Polygon options.\"",
         "by_when": "2026-08-21",
-        "blocks_waves": 1
+        "blocks_waves": 2
       },
       "collisions": [],
       "warnings": [],
@@ -184,8 +196,8 @@
         "macro"
       ],
       "next_action": "Phase 4 is eligible but not started. Commission it as a separate high-blast-radius, report-only hook wave; keep the readiness envelope graph-only and Mastermind's improvement agenda as the sole ranked queue.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -207,7 +219,7 @@
           "prs": [
             5472
           ],
-          "done_at": "2026-08-13T14:29:00Z"
+          "done_at": null
         },
         {
           "id": "W1",
@@ -221,7 +233,7 @@
           "prs": [
             5556
           ],
-          "done_at": "2026-08-14T00:47:37Z"
+          "done_at": null
         },
         {
           "id": "W2",
@@ -235,7 +247,7 @@
           "prs": [
             5472
           ],
-          "done_at": "2026-08-13T14:29:00Z"
+          "done_at": null
         },
         {
           "id": "W2B",
@@ -263,7 +275,7 @@
           "prs": [
             5561
           ],
-          "done_at": "2026-08-14T05:44:50Z"
+          "done_at": null
         },
         {
           "id": "W4",
@@ -283,21 +295,21 @@
       "prs": [
         {
           "number": 5472,
-          "state": "merged",
+          "state": "unknown",
           "wave": "W0",
-          "merged_at": "2026-08-13T14:29:00Z"
+          "merged_at": null
         },
         {
           "number": 5556,
-          "state": "merged",
+          "state": "unknown",
           "wave": "W1",
-          "merged_at": "2026-08-14T00:47:37Z"
+          "merged_at": null
         },
         {
           "number": 5472,
-          "state": "merged",
+          "state": "unknown",
           "wave": "W2",
-          "merged_at": "2026-08-13T14:29:00Z"
+          "merged_at": null
         },
         {
           "number": 5649,
@@ -307,9 +319,9 @@
         },
         {
           "number": 5561,
-          "state": "merged",
+          "state": "unknown",
           "wave": "W3",
-          "merged_at": "2026-08-14T05:44:50Z"
+          "merged_at": null
         }
       ],
       "claim": null,
@@ -344,9 +356,9 @@
       "repos": [
         "macro"
       ],
-      "next_action": "Operator dispatches FABLE-A under the c0 §5 conditions (contract-first; store build gated on A0 §8 flip condition; FIF acceptance leg fixture-only until Sol rules). Post-merge state 2026-08-19: #5955 (US G0), #5943 (CN-G0), #5933 (this seat's c0/c0g packet) and #5953 (China masterplan, rival G0 copy withdrawn pre-merge) are ALL MERGED — c0/c0g are supplied by main; final merged-object pins live in the seat packet §7. Next session adjudicates the FABLE-A K1 packet; K4-G is authored by operator/Sol carrying the seat packet §6 preconditions verbatim.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "next_action": "Sol dispatch FABLE-A (with the c0 §5.1 rider appended verbatim; contract-first; store build gated on A0 §8 flip condition; FIF acceptance leg fixture-only until Sol rules). FABLE-00 waves p0/c0/c0g are CLOSED and proven on origin/main (operator acceptance 2026-08-19); #5955/#5943/#5933/#5953 ALL MERGED (#5953 rival G0 copy withdrawn pre-merge). A FRESH session adjudicates the K1 packet; Sol authors K4-G carrying the seat packet §6 preconditions unchanged (canonical sources per item: handoff ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19 §\"K4-G preconditions — canonical sources\"). This seat begins neither.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [
         "PROPHET-US-V4-RECOVERY",
@@ -497,6 +509,207 @@
       "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
     },
     {
+      "key": "BIOCATALYST-RECOVERY-V2",
+      "title": "BioCatalyst Recovery V2 — production hydration recovery",
+      "status": "done",
+      "program": "biocatalyst",
+      "p0": null,
+      "p0_active": null,
+      "owner": "coo-fable",
+      "class": "build",
+      "blast_radius": "user_facing",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Recovery program complete. Preserve #6090 as the production proof and close this workstream rather than using it as an implementation catch-all. The MAS-74 post-P0 adjudication was executed 2026-08-20 by the Sol-commissioned P1-0 recharter: research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md (capability ledger, first-vertical verdict Catalyst Radar — Trial Milestones, frozen first slice in research/BIOCATALYST_P1_CONTINUATION_HANDOFF_2026-08-20.md). The P1 workstream home and the verdict's ratification are returned to Sol in that document's §11. No post-P0 implementation is authorized by this closeout or by the recharter records themselves.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 8,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 0
+      },
+      "wave_detail": [
+        {
+          "id": "V2-FREEZE",
+          "title": "Recovery V2 masterplan and PR-by-PR execution law",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Done. The eight-part repository masterplan is canonical recovery history.\n",
+          "prs": [
+            5788
+          ],
+          "done_at": "2026-08-16T08:02:41Z"
+        },
+        {
+          "id": "P0-A",
+          "title": "Production caller-binding repair",
+          "status": "done",
+          "depends_on": [
+            "V2-FREEZE"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Done. Production-shaped authenticated identity binds to the stable user id after site_full enforcement; incidental display tier is not authority.\n",
+          "prs": [
+            5793
+          ],
+          "done_at": "2026-08-16T12:38:04Z"
+        },
+        {
+          "id": "P0-B",
+          "title": "Deployment restart-path decoupling",
+          "status": "done",
+          "depends_on": [
+            "P0-A"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Done. The normal updater can restart macro-api before unrelated Market Memory owner-replay failures; this workstream does not own the shared deploy plane.\n",
+          "prs": [
+            5804
+          ],
+          "done_at": "2026-08-16T17:36:58Z"
+        },
+        {
+          "id": "P0-C1",
+          "title": "Typed client hydration states",
+          "status": "done",
+          "depends_on": [
+            "P0-B"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Done. locked / empty / source_outage / integrity_block / normal remain distinct; strict payload validators were not weakened.\n",
+          "prs": [
+            5810
+          ],
+          "done_at": "2026-08-17T05:59:54Z"
+        },
+        {
+          "id": "P0-C2-DIAG",
+          "title": "Entitled generation-read failure isolation and causal profile",
+          "status": "done",
+          "depends_on": [
+            "P0-C1"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Done. Entitlement completed before the timed-out pointer-bound product read; the causal profile isolated deep validation amplification rather than auth.\n",
+          "prs": [
+            5906,
+            5927
+          ],
+          "done_at": "2026-08-19T18:13:56Z"
+        },
+        {
+          "id": "P0-C2R1",
+          "title": "Request-local single-generation validation seam",
+          "status": "done",
+          "depends_on": [
+            "P0-C2-DIAG"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Done. One logical product-bundle read performs one generation load and remains request-local; no process-lifetime cross-request cache was introduced.\n",
+          "prs": [
+            5934
+          ],
+          "done_at": "2026-08-19T12:45:33Z"
+        },
+        {
+          "id": "P0-C2R2",
+          "title": "Retain admitted generation artifacts request-locally",
+          "status": "done",
+          "depends_on": [
+            "P0-C2R1"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Done. Separately adjudicated PASS by a Chairman/Sol-commissioned COO review; author hold released; #6052 merged as 427d676de1a3ba086e4b63480018ecd733dd666e.\n",
+          "prs": [
+            6052
+          ],
+          "done_at": "2026-08-20T12:15:14Z"
+        },
+        {
+          "id": "P0-C2-PROD-ACCEPT",
+          "title": "Entitled production hydration acceptance",
+          "status": "done",
+          "depends_on": [
+            "P0-C2R2"
+          ],
+          "deps_satisfied": true,
+          "next_action": "PASSED 2026-08-20. Macro #6090 records the real entitled production matrix on macro-api MainPID 2529475 serving #6052 commit 427d676de1a: health 200/fresh, Trial Screen 200 with four real NCT rows, facets 200, lawful empty milestones, Change Tape 200, lawful baseline_not_established prospective state, covered dossier 200, peer-set resolution 200, unsigned 401, invalid-sort 400, no 524 and no 5xx. Entitled product routes completed roughly 4.5-7.9s, inside the ~30s edge budget. This closes the recovery objective; it does not prove product parity.\n",
+          "prs": [
+            6090
+          ],
+          "done_at": "2026-08-20T12:57:05Z"
+        }
+      ],
+      "prs": [
+        {
+          "number": 5788,
+          "state": "merged",
+          "wave": "V2-FREEZE",
+          "merged_at": "2026-08-16T08:02:41Z"
+        },
+        {
+          "number": 5793,
+          "state": "merged",
+          "wave": "P0-A",
+          "merged_at": "2026-08-16T12:38:04Z"
+        },
+        {
+          "number": 5804,
+          "state": "merged",
+          "wave": "P0-B",
+          "merged_at": "2026-08-16T17:36:58Z"
+        },
+        {
+          "number": 5810,
+          "state": "merged",
+          "wave": "P0-C1",
+          "merged_at": "2026-08-17T05:59:54Z"
+        },
+        {
+          "number": 5906,
+          "state": "merged",
+          "wave": "P0-C2-DIAG",
+          "merged_at": "2026-08-19T03:25:53Z"
+        },
+        {
+          "number": 5927,
+          "state": "merged",
+          "wave": "P0-C2-DIAG",
+          "merged_at": "2026-08-19T18:13:56Z"
+        },
+        {
+          "number": 5934,
+          "state": "merged",
+          "wave": "P0-C2R1",
+          "merged_at": "2026-08-19T12:45:33Z"
+        },
+        {
+          "number": 6052,
+          "state": "merged",
+          "wave": "P0-C2R2",
+          "merged_at": "2026-08-20T12:15:14Z"
+        },
+        {
+          "number": 6090,
+          "state": "merged",
+          "wave": "P0-C2-PROD-ACCEPT",
+          "merged_at": "2026-08-20T12:57:05Z"
+        }
+      ],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-BIOCATALYST-RECOVERY-V2.md"
+    },
+    {
       "key": "BPC-JV-RECON",
       "title": "BioPharmCatalyst JV snapshot reconstruction (independent primary sources)",
       "status": "active",
@@ -509,9 +722,9 @@
       "repos": [
         "macro"
       ],
-      "next_action": "After #5909 merges, return to Sol for commissioning of the first bounded SNAPSHOT-ONBOARD vertical. Do not begin it from this PR.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "next_action": "RECON-0 merged (#5909, 2026-08-19). Return to Sol for commissioning of the first bounded SNAPSHOT-ONBOARD vertical — bundled with the post-soak sequencing adjudication proposed in research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md §11. Runtime biopharmcatalyst_jv_snapshot registration remains prohibited until the post-soak successor-registry / successor-launch-manifest transition.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -529,7 +742,7 @@
           "status": "done",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "Architecture accepted; complete pending merge of PR",
+          "next_action": "Done. #5909 merged 2026-08-19T19:51:49Z as 9711c60d3067. Do not start SNAPSHOT-ONBOARD from that PR; commissioning is a separate Sol act.\n",
           "prs": [
             5909
           ],
@@ -543,7 +756,7 @@
             "RECON-0"
           ],
           "deps_satisfied": true,
-          "next_action": "Do not start from PR #5909. After #5909 merges, return to Sol for commissioning of the first bounded SNAPSHOT-ONBOARD vertical. When commissioned and W1–W4 bytes are in the implementation environment, census each workbook (SHA-256 → ordered sheet set → dimensions → content hashes → pair class ADDITIVE_SHEET_EXPORT_IDENTICAL_COMMON_CONTENT | COMMON_SHEET_CONTENT_CHANGED | DISTINCT_CAPTURE | UNRESOLVED). Do not invent predecessor SHA-256 from File Library metadata. Preserve unique predecessor rows if found.\n",
+          "next_action": "#5909 is merged; commissioning is now owed to Sol (bundled with the post-soak sequencing adjudication in research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md §11). Do not start until Sol commissions the first bounded SNAPSHOT-ONBOARD vertical. When commissioned and W1–W4 bytes are in the implementation environment, census each workbook (SHA-256 → ordered sheet set → dimensions → content hashes → pair class ADDITIVE_SHEET_EXPORT_IDENTICAL_COMMON_CONTENT | COMMON_SHEET_CONTENT_CHANGED | DISTINCT_CAPTURE | UNRESOLVED). Do not invent predecessor SHA-256 from File Library metadata. Preserve unique predecessor rows if found.\n",
           "prs": [],
           "done_at": null
         },
@@ -555,7 +768,7 @@
             "RECON-0"
           ],
           "deps_satisfied": true,
-          "next_action": "Do not start from PR",
+          "next_action": "Remains todo; #5909 is merged but grants no start authority. Independent producers, consumer wiring, PIT research; Drugs@FDA matcher is a calibration component, not this wave's proof. Runtime source registration stays post-soak successor-registry gated.\n",
           "prs": [],
           "done_at": null
         },
@@ -608,8 +821,8 @@
         "macro"
       ],
       "next_action": "Land the revival wave (PR-A Massive close truth, PR-B launchd primary clock, PR-C liveness ruler), deploy the launchd agent on the Mac Studio, run replay acceptance, then hold for Monday's live session measurement.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -698,8 +911,8 @@
         "terminal"
       ],
       "next_action": "Check whether R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID has an updated_at later than 2026-08-11T03:27:33Z; if so, dispatch attested-history-aapl-seed.yml from main, approve the protected environment, and independently admit the four downloaded artifacts with verify_fundamental_forensics_attested_history_seed_bundle.py.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
@@ -877,15 +1090,15 @@
       "repos": [
         "macro"
       ],
-      "next_action": "Sol review of W1A PR #6012; do not merge until accepted; do not start W2.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "next_action": "W1B #6044 is Sol-accepted and merged as ec388d963190fe149f1cdb4d0847136ec2eb3c38. Wait for the first NATURAL scheduled collector -> Capital Structure chain containing that merge and record the production receipt. Do not dispatch a second daily run merely to obtain proof. W2 stays unauthorized until the natural receipt passes; after that, W2 is only eligible for a separate Sol commission and does not auto-start.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 2,
+        "done": 3,
         "dropped": 0,
         "in_progress": 1,
         "todo": 6
@@ -911,7 +1124,7 @@
             "W0"
           ],
           "deps_satisfied": true,
-          "next_action": "Merged as #5959 / b7004b132509. Identity defects remain; W1A is the corrective wave. Do not treat W1 as accepted until W1A lands.\n",
+          "next_action": "Merged as #5959 / b7004b132509. Identity defects closed by W1A.\n",
           "prs": [
             5959
           ],
@@ -920,26 +1133,40 @@
         {
           "id": "W1A",
           "title": "Clock-independent event identity, no new legacy occurrence, bundle re-obs",
-          "status": "in_progress",
+          "status": "done",
           "depends_on": [
             "W1"
           ],
           "deps_satisfied": true,
-          "next_action": "Sol review of #6012. Do not merge until accepted. Do not start W2.\n",
+          "next_action": "Merged as #6012. Identity accepted; W1B closes closed-bundle persist.\n",
           "prs": [
             6012
           ],
           "done_at": "2026-08-19T22:08:08Z"
         },
         {
+          "id": "W1B",
+          "title": "Accession-wide closed-bundle atomic persistence",
+          "status": "in_progress",
+          "depends_on": [
+            "W1A"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Sol PASS recorded on accepted head 3ba55c6d68778e29b6bf8b238a1cab39b5ada2f4; #6044 merged as ec388d963190fe149f1cdb4d0847136ec2eb3c38. Implementation/review hold is closed. Keep W1B in_progress only until the first natural scheduled collector -> Capital Structure chain containing the merge is proven. Do not dispatch a second daily. Do not start W2 or create W1C.\n",
+          "prs": [
+            6044
+          ],
+          "done_at": "2026-08-20T09:22:26Z"
+        },
+        {
           "id": "W2",
           "title": "LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health",
           "status": "todo",
           "depends_on": [
-            "W1A"
+            "W1B"
           ],
           "deps_satisfied": false,
-          "next_action": null,
+          "next_action": "Start only after W1B's first natural post-merge CS chain is proven AND Sol separately commissions W2. Natural proof makes W2 eligible; it does not start it automatically.\n",
           "prs": [],
           "done_at": null
         },
@@ -948,7 +1175,7 @@
           "title": "Capital Changes Desk and issuer Capital Twin UX on honest states",
           "status": "todo",
           "depends_on": [
-            "W1A"
+            "W1B"
           ],
           "deps_satisfied": false,
           "next_action": null,
@@ -960,7 +1187,7 @@
           "title": "Registration and remaining-capacity state machine (I.B.6, ATM, ELOC)",
           "status": "todo",
           "depends_on": [
-            "W1A"
+            "W1B"
           ],
           "deps_satisfied": false,
           "next_action": null,
@@ -1024,23 +1251,19 @@
           "state": "merged",
           "wave": "W1A",
           "merged_at": "2026-08-19T22:08:08Z"
+        },
+        {
+          "number": 6044,
+          "state": "merged",
+          "wave": "W1B",
+          "merged_at": "2026-08-20T09:22:26Z"
         }
       ],
       "claim": null,
-      "needs_ceo": {
-        "question": "Accept W1A (#6012) so post-W1 event-version identity is clock-independent, new child writes never mint legacy:{source_id}, and re-observation is a full-bundle decision? Hold W2 until that PR merges.",
-        "options": [
-          "Accept W1A; authorize Wave 2 only after merge and natural CS-path proof",
-          "Accept W1A with further named amendments",
-          "Reject; name which W1A ruling to reopen"
-        ],
-        "recommendation": "Accept W1A. Do not start Wave 2 in this PR. Do not rewrite historical event_ids or v1 manifests.",
-        "by_when": "2026-08-25",
-        "blocks_waves": 7
-      },
+      "needs_ceo": null,
       "collisions": [],
       "warnings": [
-        "record_disagrees_with_execution: wave W1A is 'in_progress' but PR #6012 is merged"
+        "record_disagrees_with_execution: wave W1B is 'in_progress' but PR #6044 is merged"
       ],
       "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
     },
@@ -1057,23 +1280,24 @@
       "repos": [
         "macro"
       ],
-      "next_action": "Gate: Sol's POST-MERGE final freeze acceptance of the canonical main tree (all ten program/authority PRs merged 2026-08-19; receipts in the reconciliation PR and CHINA-ALPHA-INTELLIGENCE-2026-08-19 handoff). Until that acceptance the freeze is NOT effective and nothing spawns. After it: amend the DEC/this record to mark the freeze effective, then spawn PR-0B (builder) and RIGHTS-0 (researcher) in parallel from their commission files; PR-0D (builder) in parallel coordinated with WS:STOCK-IDENTITY; P1 spawns after the RIGHTS-0 verdict on the institutional visit source. Completion law on every build wave: merge = BUILT_NOT_PROVEN; a real production receipt (recorded here) = done. Later tracks (P3–P6, R3–R4, S-lobes, L3+) charter from the masterplan at their wave boundaries.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "next_action": "ACTIVATION CLOSED 2026-08-20 (Sol PR-0D authority adjudication received; freeze effective since Sol post-merge acceptance GO, receipt = main 49533d59b16076630ccd7d8bf48307f658db61da). State: pr0b DONE (#6045 squash fdbf543b2333; receipt = asia-close run 32348780228 -> commit baf4cf7c9291, intel_* columns live), rights0 done, p1 BUILT_NOT_PROVEN (#6050 squash c54d1b55f673; page half proven live, zero real visit rows yet), pr0d BUILT_NOT_PROVEN, adopted by reference from D2B2-CN-HK under WS:PROPHET-US-V4-RECOVERY (PR #6116 squash ed28d0d992a1; CN 0->96.4% / HK 0->100% GMI resolution). Next in this WS: (1) P1 data-half proof — the first asia-close run persisting >=1 real institutional_visit row + production dossier desktop/mobile crops (never manufacture a run; RECEIPT_NOT_YET_ACCRUED leaves the wave BUILT_NOT_PROVEN); (2) record the D2B2-CN-HK immutable merge SHA + the first natural nightly's proof (run id + resolution delta) once observed, flipping pr0d to done. Completion law on every build wave: merge = BUILT_NOT_PROVEN; a real production receipt (recorded here, immutable merge SHAs) = done. Do NOT start P1B, L0, R1, R2, or later verticals without a new Sol directive. Later tracks (P3–P6, R3–R4, S-lobes, L3+) charter from the masterplan at their wave boundaries.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [
         "ALPHA-INTELLIGENCE-INTEGRATION",
         "EARNINGS-INTELLIGENCE-OS",
+        "PROPHET-US-V4-RECOVERY",
         "STOCK-IDENTITY",
         "GMI-THEME-GRAPH"
       ],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 2,
+        "done": 4,
         "dropped": 0,
-        "in_progress": 0,
-        "todo": 10
+        "in_progress": 2,
+        "todo": 6
       },
       "wave_detail": [
         {
@@ -1105,43 +1329,45 @@
         },
         {
           "id": "pr0b",
-          "title": "PR-0B v4 telemetry preservation — persist full intel_interest anatomy prospectively (merge = BUILT_NOT_PROVEN; done only on real-nightly receipt)",
-          "status": "todo",
+          "title": "PR-0B v4 telemetry preservation — persist full intel_interest anatomy prospectively (RECEIPT ACCRUED 2026-08-20)",
+          "status": "done",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "after Sol's final freeze review, spawn builder with research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md",
-          "prs": [],
-          "done_at": null
+          "next_action": "DONE — merged as PR #6045 (squash fdbf543b2333ec6077988ffd571966f180008cc5) and PROVEN by the first qualifying natural post-merge production run: asia-close.yml run 32348780228 (the operator-dispatched real production execution of 2026-08-20; asia job 13:29-15:20Z success; merge is an ancestor of its checkout). Plane write = commit baf4cf7c9291 data/china_prophet_rank/candidates.parquet (24,070 rows): all intel_* columns present, 1,636-1,640 non-null across covered-name fields, 4 rows with intel_unavailable_reason set (typed refusals) — exactly the receipt standard. LANE CORRECTION recorded with the receipt: the China candidate/telemetry plane is written by asia-close.yml, NOT daily.yml — daily.yml resets data/china* in its collect step and can never prove a China wave; every \"real nightly\" phrase in earlier PR-0B prose means the real asia-close production run. Proof-only inspection 2026-08-20; no run was manufactured for this receipt.\n",
+          "prs": [
+            6045
+          ],
+          "done_at": "2026-08-20T06:52:27Z"
         },
         {
           "id": "rights0",
           "title": "RIGHTS-0 source entitlement/rights audit (consumes CN-A",
-          "status": "todo",
+          "status": "done",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "after Sol's final freeze review, spawn researcher with research/china_alpha_intelligence/commissions/RIGHTS-0_source_entitlement_audit.md",
+          "next_action": "P1 verdict (research/china_alpha_intelligence/RIGHTS_REGISTRY.md section 10): do NOT build on Tushare stk_surv (UNKNOWN_RIGHTS, no collector, tier UNKNOWN(operator)); P1 builds on the CNInfo primary-source route instead (rights-clear metadata plane, china_filings.py) -- blocker is the missing 投资者关系活动记录表/调研 category bucket in CATEGORY_PRIORITY (collectors/china_filings.py:139-150), not rights. Family-2 (fund_portfolio) and Family-6 named-actor plane remain GAP with no rights-clear native alternative; spawn builder with research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md next.",
           "prs": [],
           "done_at": null
         },
         {
           "id": "p1",
           "title": "P1 Institutional Visit Tape + dossier (producer, PIT clock, provisional actor ontology, coverage-start semantics, failure isolation; NO score; merge = BUILT_NOT_PROVEN, done only on real asia-close receipt + production dossier desktop/mobile proof)",
-          "status": "todo",
+          "status": "in_progress",
           "depends_on": [
             "rights0"
           ],
-          "deps_satisfied": false,
-          "next_action": "spawn builder with research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md after rights0 verdict on the visit source",
+          "deps_satisfied": true,
+          "next_action": "BUILT_NOT_PROVEN -- merged as PR #6050 (squash c54d1b55f673cb383c00889e8f4ab809614666ba; immutable merge SHA is the canonical proof pointer per Sol 2026-08-20); done only on the real asia-close receipt + production dossier desktop/mobile proof (collectors/china_visits.py derives the visit tape from china_filings' new institutional_visit category bucket; owner-native store data/china_visits/; dossier block in engine/china_intel_hub.py's _dossier(); fixture-driven receipts in the PR body). Follow-up verification session: (1) confirm a real asia-close.yml run has collected real visit rows end-to-end (record the run id), (2) capture desktop+mobile crops of the PRODUCTION dossier showing the visit block for a real company with honest failure states, then flip p1 to done. PARTIAL RECEIPT (proof-only inspection 2026-08-20): page half PROVEN — https://www.mastermind-x.com/china_intel.html serves the K2c visits block with honest not-yet-covered states (render commit baf4cf7c9291; the later render-public 8e73239563ef only re-stamped assets). Data half NOT accrued: asia-close run 32372312243 (first checkout containing the merge; still in progress at inspection) wrote data/china_visits/ via commit a14ac56627c9 with n_candidates=0 ('0 candidate row(s) this run', health ok) — the collector ran end-to-end without error but zero real visit rows exist yet. P1-ZERO-ROW-ATTRIBUTION (Sol-authorized proof-only task, adjudicated 2026-08-20): NOT a quiet day — commit a14ac56627c9 itself carries 73 raw-keyword-matching filings (68 业绩说明会 dated 2026-08-20, 5 投资者关系活动记录表 dated 2026-08-19) and ALL 73 are stored category=institutional_visit, a 100% classifier hit rate. The zero is deterministically attributed to the documented one-cycle serial-loop latency (scripts/collect.py:248): china_visits ran at 16:37Z against the checkout-era store (666ff40c, zero institutional_visit rows — the category was born in this very merge) while china_filings fetched at 16:44Z. One-time bootstrap artifact; nothing lost (rows persist correctly categorized; the candidate filter is not date-gated). NO REPAIR AUTHORIZED — the latency is a design property documented at merge, not a defect; whether the standing 1-cycle delay is acceptable product semantics is a Sol product ruling (DSC:CHINA-VISITS-FIRST-CYCLE-ZERO-IS-BOOTSTRAP-NOT-QUIET). FALSIFIER: the next natural asia-close run must report n_candidates >= 68 and persist the first real rows — a second zero is genuine P1_BROKEN with no bootstrap excuse (bounded repair then: run china_visits after china_filings). Remaining proof unchanged: the first asia-close run persisting >=1 real institutional_visit row, plus the crops. Sol post-activation adjudication 2026-08-20 REJECTED the standing one-cycle latency as permanent semantics and authorized exactly one bounded repair, P1-R1 same-cycle derivation -- BUILT in PR #6142 (cninfo host-group ordering + process-local china_filings.LAST_RUN_OUTCOME flag + upstream_degraded health state; --only china_visits still derives over the committed store; no second ingester, CNInfo concurrency intact). P1 remains BUILT_NOT_PROVEN; it flips done ONLY on the first natural post-merge Asia production run's receipt: filing/visit execution order, upstream health, candidate/new-row accounting, confirmation that every newly fetched eligible institutional_visit row appeared in the visit plane in that same run, plus production desktop+mobile dossier crops. The DSC falsifier (n_candidates >= 68) stays armed, now evaluated under same-cycle order.",
           "prs": [],
           "done_at": null
         },
         {
           "id": "pr0d",
-          "title": "PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; merge = BUILT_NOT_PROVEN)",
-          "status": "todo",
+          "title": "PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; OWNER-ROUTED to D2B2-CN-HK per DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK)",
+          "status": "in_progress",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "after Sol's final freeze review, spawn builder with research/china_alpha_intelligence/commissions/PR-0D_china_identity_extension.md, coordinated with WS:STOCK-IDENTITY",
+          "next_action": "BUILT_NOT_PROVEN 2026-08-20 (adopted by reference from the owner child): D2B2-CN-HK (WS:PROPHET-US-V4-RECOVERY, frozen contract research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md) admitted 984/1021 (96.4%) cn and 147/147 (100%) hk company nodes into the canonical Data OS master via CNInfo + SFC/HKEX committed primary-source evidence, then re-derived the GMI identity_resolution/v1 sidecar — real China/HK company nodes now resolve through canonical Mastermind ids (co:cn:601398.SS -> SEC:CN-XSHG-601398, co:hk:1398.HK -> SEC:HK-XHKG-01398, etc). PR #6116, squash-merged as ed28d0d992a144aec5f0ef2616024e3e32d83b1a (immutable merge SHA) — see the owner WS's D2B2 handoff for full receipts. Status wording: BUILT_NOT_PROVEN by adoption (Sol 2026-08-20): #6116 squash ed28d0d992a144aec5f0ef2616024e3e32d83b1a accepted, proof pending on the first natural nightly containing it (run 32426513915 was in progress 2026-08-20T23:37Z); proof = CN/HK master survives the canonical build_security_master.py --nightly refresh and the resulting GMI current view still resolves CN/HK at the measured rates (CN 96.4%, HK 100%) with US byte-identical, recording run ID, source/master generation receipts, CN/HK resolution counts/rates, and the immutable resulting commit; then pr0d AND owner D2B2 flip done; on a topology/persistence failure stop and return the exact failure, never hand-rebake. Also note: later-wave gate closed — no R1/R2 until pr0d=done; no P1B until P1 and L0 satisfy dependencies; L0 has NO bounded builder commission in research/china_alpha_intelligence/commissions/ — return to Sol for that commission rather than improvising.\n",
           "prs": [],
           "done_at": null
         },
@@ -1175,7 +1401,7 @@
           "depends_on": [
             "rights0"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
           "prs": [],
           "done_at": null
@@ -1248,6 +1474,12 @@
           "state": "merged",
           "wave": "pr0a",
           "merged_at": "2026-08-19T16:05:16Z"
+        },
+        {
+          "number": 6045,
+          "state": "merged",
+          "wave": "pr0b",
+          "merged_at": "2026-08-20T06:52:27Z"
         }
       ],
       "claim": null,
@@ -1270,8 +1502,8 @@
         "macro"
       ],
       "next_action": "Verify contract-delta appears and behaves on the next few ordinary PRs (inherited-immune, catches introduced closure/unwired defects); confirm the armed backlog fully drains post-breaker-open (21 -> 17 within an hour of the 19:06Z green). Then W3 at >=72h from the W2 merge (~08-22): trailing-100 green rate above 90% via scripts/ci_gate_reliability_report.py plus two consecutive ordinary PRs merged with no main-red-repair. W-SEMANTIC-PROOF remains stopped; W-REWRITE remains separately commissioned.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -1355,8 +1587,8 @@
         "macro"
       ],
       "next_action": "Do not purchase. Resume only if a named vendor returns a written grant covering API + persist + derived-feature + customer-facing derived display of disclosure (年报 top-5 / SDB-class) edges. Otherwise leave supply-chain on the public CNInfo floor and CN-B identity work.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -1400,17 +1632,17 @@
         "macro"
       ],
       "next_action": "R6-0 lands with this PR (records only). Then commission P0-ST, DEP-CAI, and DEP-EXACT as separate sessions per research/cn_limit/CN_LIMIT_R6_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md — P0-ST first (program P0). No CN-Limit runtime feature wave starts before its named dependency gates close; no live rank, score, gate, size, or public probability is authorized by any R6 record.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 7,
+        "done": 8,
         "dropped": 1,
         "in_progress": 0,
-        "todo": 15
+        "todo": 14
       },
       "wave_detail": [
         {
@@ -1520,12 +1752,12 @@
         {
           "id": "P0-ST",
           "title": "2026 main-board risk-warning rule parity and replay (program P0)",
-          "status": "todo",
+          "status": "done",
           "depends_on": [
             "R6-0"
           ],
           "deps_satisfied": true,
-          "next_action": "Commission as its own session after R6-0 merges: effective-dated main-board risk-warning band ±5%→±10% from 2026-07-06 in config/cn_limit_rules.yml + engine/china_microstructure.py, with official-source effective-date receipt, boundary tests both venues, affected-row census, bounded replay, correction receipts, and a real asia-close proof (packet §P0-ST; DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06). Affected rows stay quarantined until then.",
+          "next_action": "PROVEN_LIVE 2026-08-20. Repair merged as #6047 (squash 609d883506b3): era-dated main-board risk-warning band ±5%→±10% effective 2026-07-06 in engine/china_microstructure.py (MAIN_ST_BAND_WIDE_DATE) + config/cn_limit_rules.yml interval split, official-source receipts (SSE c_20260424_10816474; SZSE 深证上〔2026〕551号 arts. 3.3.13/10.9), boundary tests both venues, definition hash e0c70f39f62e7639355128644f872c4e992699524bbdca775f24f1e1ad45e4a4. Real asia-close production proof: workflow run 32348780228 (asia job SUCCESS 2026-08-20T15:20Z on head e2ba19c17d73, a descendant of the merge) committed baf4cf7c9291 — microstructure.json as_of 2026-08-20 carries metadata.st_band_regime main_st_width_pct 10.0, packet widths {10,20} only, and the post-run store holds 60,610 event rows with ZERO at limit_width==5.0. Post-run replay: zero corrections required to any produced store; the refreshed ST snapshot (207 names, asof 08-20) grew the affected universe to {600079.SS, 600745.SS}, where the superseded 5% law would have written 17 phantom events on 600745.SS alone — the store's single real row (2026-07-20 failed_down_seal @10.0) matches the lawful arm exactly, and the non-vacuity guard flipped on the real divergence. Receipts: P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.{md,json} (frozen build-time) + P0_ST_PRODUCTION_PROOF_2026-08-20.{md,json} (this proof) + P0_ST_PRODUCTION_CONCLUSION_2026-08-20.json (machine-readable store conclusion: the replay artifact's `zero_corrections_required: false` is the frozen arms-identity predicate, NOT a store defect — the produced store matches the lawful arm and needs zero corrections). DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06 resolved. SCOPE: the quarantine lift covers ONLY this rule defect — no exact-plane authorization, no full-A gate change, no tolerant-label promotion, and DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT binds unchanged.",
           "prs": [],
           "done_at": null
         },
@@ -1702,8 +1934,8 @@
         "macro"
       ],
       "next_action": "Accept or reject the CSG-GD-货物-90d pilot in CN-C_GOV_SOE_DEMAND_SOURCE_MAP.md. If accepted, C1 is a display-tier adapter only.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [
         "DEFENSE-PROCUREMENT-V3"
@@ -1761,8 +1993,8 @@
         "macro"
       ],
       "next_action": "Stay on PR #5734 (armed merge-on-green). After merge, confirm /etc/macro-sentinel.env has a human-watched channel if DELIVER was SKIP.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -1817,8 +2049,8 @@
         "macro"
       ],
       "next_action": "Operator fills docs/RESTORE_RUNBOOK.md §Vendor backup/PITR and §Scratch-Supabase restore receipt by creating mmx-restore-scratch-YYYYMMDD and running `python -m scripts.backup_user_tables restore --backup-id <id> --dest-db-url \"$SCRATCH_DB_URL\" --i-am-restoring-into-scratch`.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
@@ -1889,18 +2121,18 @@
         "terminal",
         "mastermind"
       ],
-      "next_action": "Sol D3 authorization review. D0R/D1/D1.1/D2 are done and accepted; the D2 operational closure chain is #5932 + #5997 + #6004 + #6008, production-proven 2026-08-20. Do not merge #5424 (superseded by defense21-v1). Do not re-baseline. Publisher-vintage alarm is a reliability follow-up, not a D3 prerequisite.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "next_action": "Sol D4 acceptance review. D0R/D1/D1.1/D2/D3 done and accepted; D4 shipped and live 2026-08-20 (#6123, merge b5548ece927d) — GovRev P00032 beside the canonical owner's live IRDM context packet, comparison closed (not_comparable, null ratio) with no lawful denominator asserted. D5 is unauthorized. #5424 is closed/superseded by defense21-v1. Do not re-baseline. Publisher-vintage alarm remains a reliability follow-up; new candidate follow-up: fixture-freeze the D2/D3 law suites out of the unrun-government-revenue holding pen (advisory-only today).",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 4,
+        "done": 6,
         "dropped": 0,
         "in_progress": 0,
-        "todo": 3
+        "todo": 1
       },
       "wave_detail": [
         {
@@ -1967,26 +2199,31 @@
         {
           "id": "D3",
           "title": "Temporal event v3 and Change Tape",
-          "status": "todo",
+          "status": "done",
           "depends_on": [
             "D2"
           ],
           "deps_satisfied": true,
-          "next_action": "Unauthorized. Awaiting Sol D3 authorization review.\n",
-          "prs": [],
-          "done_at": null
+          "next_action": "Done — Sol authorized 2026-08-20 and the bounded charter shipped the same day: typed rail failure_state (source_unavailable / projection_missing) emitted by the workspace read-model, dual-clock tape rows + Late-discovery chip, inspector Clocks block with the NAMED-NULL source-publication row, receipt-bound before/after + successor line from prior_source_identity, budget mode's eternal \"loading\" retired. Additive only — event contract stays v2 (DEC:D3-TEMPORAL-V3-IS-ADDITIVE); frozen spec research/defense_intelligence/DEFENSE_D3_TEMPORAL_CONTRACT_AND_CHANGE_TAPE_SPEC.md. Opus adversarial review found a real blocker (the first cut destroyed the already-working module PROJECTION_MISSING verdict) — repaired same PR chain: the real module's HTTP-receipt status is authoritative, the typed fallback applies only when no module exists. #6059 fitted the page under a ratcheted 296 KiB raw-byte budget after the D3 markup left 65 bytes of headroom. All four D3 families production-proven (browser proof 2026-08-20). ACCEPTED by Sol 2026-08-20 (D4 authorized on the D3 close).\n",
+          "prs": [
+            6048,
+            6059
+          ],
+          "done_at": "2026-08-20T09:32:58Z"
         },
         {
           "id": "D4",
           "title": "Company financial truth bridge",
-          "status": "todo",
+          "status": "done",
           "depends_on": [
             "D3"
           ],
-          "deps_satisfied": false,
-          "next_action": null,
-          "prs": [],
-          "done_at": null
+          "deps_satisfied": true,
+          "next_action": "Done — shipped and live 2026-08-20 (merge b5548ece927d) under Sol's IRDM-only charter. Owner preflight: case A on the v1 context plane (GET /api/company-intelligence/IRDM serves company_intelligence_ context.v1 live; event_workspace.v1 stays AAPL-only; DEC:D4-COMPANY- RAIL-CONSUMES-CI-V1-CONTEXT). Bridge renders GOVERNMENT FACT (P00032, transaction receipt by content_sha256) / COMPANY TRUTH (earnings_history-lineage fields only, fail-closed typed unavailable) / COMPARISON fixed not_comparable with no ratio node / RESEARCH QUESTION. 27-test hostile suite on a committed P00032 fixture in the MERGE-BINDING gate:code job govrev-company-bridge. Opus review found the suite would have shipped dark (gate:data holding pen) and a wrong-receipt link — repaired pre-merge, probes pinned as tests. Page fence unchanged (baked 296,693 <= 303,104). Awaiting Sol acceptance; D5 unauthorized. Residual: one entitled production eyeball (operator-side; all inputs individually live-proven).\n",
+          "prs": [
+            6123
+          ],
+          "done_at": "2026-08-20T21:38:42Z"
         },
         {
           "id": "D5",
@@ -1995,7 +2232,7 @@
           "depends_on": [
             "D4"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
           "prs": [],
           "done_at": null
@@ -2067,6 +2304,24 @@
           "state": "merged",
           "wave": "D2",
           "merged_at": "2026-08-20T01:48:58Z"
+        },
+        {
+          "number": 6048,
+          "state": "merged",
+          "wave": "D3",
+          "merged_at": "2026-08-20T07:56:43Z"
+        },
+        {
+          "number": 6059,
+          "state": "merged",
+          "wave": "D3",
+          "merged_at": "2026-08-20T09:32:58Z"
+        },
+        {
+          "number": 6123,
+          "state": "merged",
+          "wave": "D4",
+          "merged_at": "2026-08-20T21:38:42Z"
         }
       ],
       "claim": null,
@@ -2078,7 +2333,7 @@
     {
       "key": "EARNINGS-INTELLIGENCE-OS",
       "title": "Earnings Intelligence OS — E0 freeze through E2 golden workspace",
-      "status": "active",
+      "status": "done",
       "program": "earnings-intelligence",
       "p0": null,
       "p0_active": null,
@@ -2089,18 +2344,18 @@
         "macro",
         "terminal"
       ],
-      "next_action": "Implement E2-D only: render the live AAPL FY2026 Q3 event_workspace.v1 (generation f709a0a6ec514282d5769e7d, event_id evt_cik0000320193_2026q3_results) in the existing Macro dossier Company Intelligence glance with the same stance and event id as Terminal Brief. Do not reopen E2-T1. Do not re-read the v1 score overlay. Do not start E3+.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "next_action": "E2 arc is complete (E2-T1 Terminal + E2-D public dossier live). Return to Sol for E3 reassessment. Do not begin E3, slides, Q&A ML, publisher work, or corpus backfill from this workstream.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 3,
+        "done": 5,
         "dropped": 0,
-        "in_progress": 1,
-        "todo": 1
+        "in_progress": 0,
+        "todo": 0
       },
       "wave_detail": [
         {
@@ -2144,26 +2399,28 @@
         {
           "id": "E2",
           "title": "Golden Event Workspace in existing Terminal + dossier",
-          "status": "in_progress",
+          "status": "done",
           "depends_on": [
             "E1P"
           ],
           "deps_satisfied": true,
-          "next_action": "E2-T1 is live on Terminal",
+          "next_action": "Arc complete. E2-T1 live on Terminal",
           "prs": [],
           "done_at": null
         },
         {
           "id": "E2-D",
           "title": "Macro dossier glance from the live AAPL FY2026 Q3 workspace",
-          "status": "todo",
+          "status": "done",
           "depends_on": [
             "E2"
           ],
-          "deps_satisfied": false,
-          "next_action": "Render event_workspace.v1 generation f709a0a6ec514282d5769e7d on the existing Macro dossier Company Intelligence block. Same event_id as Terminal Brief. Do not re-read v1 overlay. Do not reopen E2-T1.",
-          "prs": [],
-          "done_at": null
+          "deps_satisfied": true,
+          "next_action": "Landed. Public AAPL dossier is v2 on generation f709a0a6ec514282d5769e7d. Do not begin E3 from this record.",
+          "prs": [
+            6021
+          ],
+          "done_at": "2026-08-20T19:40:20Z"
         }
       ],
       "prs": [
@@ -2178,6 +2435,12 @@
           "state": "merged",
           "wave": "E1P",
           "merged_at": "2026-08-17T15:33:51Z"
+        },
+        {
+          "number": 6021,
+          "state": "merged",
+          "wave": "E2-D",
+          "merged_at": "2026-08-20T19:40:20Z"
         }
       ],
       "claim": null,
@@ -2200,8 +2463,8 @@
         "macro"
       ],
       "next_action": "Merge #5534, #5577 and the P0c-2 PR; then confirm the first nightly writes data/qledger/evidence_clock_start/<family>.json for stock_desk, thematic_desk and demand_chain, and record those three timestamps as the real evidence-clock start.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -2285,8 +2548,8 @@
         "macro"
       ],
       "next_action": "W1 in flight: core + admin built on claude/eval-os-t4-output-health; adversarial review, Agent OS handoff, PR → merge → live verify.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [
         "EVAL-OS-T1-ENGINE-REGISTRY"
@@ -2332,8 +2595,8 @@
         "macro"
       ],
       "next_action": "W3 shipped. Next decision is the CEO's at the next checkpoint: T4 output-health, T12 Agent OS tier interface, or let prospective evidence accrue; T7/T8 stay calendar-bound. Standing residue: 2 deliberate output_class nulls (cortex — needs a CEO ruling on the two-species cell, and its attention grader coerces direction 0 to a long bet, repair before evaluating that half; options_structure — curate when the Package D producer ships), plus the desk hit-rate metric-binding warning (hit is a non-refutation endpoint, no-skill null far above 0.5 — T7 must bind dir_accuracy or placebo-netted rates).",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -2409,8 +2672,8 @@
         "terminal"
       ],
       "next_action": "FIF-1 is DONE / FROZEN. FIF-2A is ACCEPTED / FIXTURE_PROVEN / ON_MAIN (PR #5983). FIF-2 remains IN_PROGRESS. FIF-2B is UNLOCKED / NOT_STARTED. Do not reopen A–D. Do not claim production issuer query coverage.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -2630,8 +2893,8 @@
         "macro"
       ],
       "next_action": "Sol accepted MAX_UNIVERSE_ISSUERS=4000. Squash-merge",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
@@ -2739,8 +3002,8 @@
         "macro"
       ],
       "next_action": "Wait for the 2026-08-15 scrape; then start the transmission layer.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -2834,17 +3097,17 @@
         "terminal",
         "mastermind"
       ],
-      "next_action": "Merge GD-2R1 (semantic-correctness repair, commissioned); then run Gate 8 on the repaired production render; verify GD-4A's Asia-close row proof; Grok executes GD-1C. GD-3 starts only after Gate 8 passes; GD-5A/B/C wait for GD-1C clearing the promotion gate.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "next_action": "Closeout 2026-08-20 complete: GD-2 DONE (Gate 8 passed on production), GD-2R1 DONE, GD-4A DONE (real settled run + idempotent rerun proven), GD-1C DONE / BLOCKED_NO_PROMOTION. Next build = GD-3 against research/grey_deer/commissions/GD-3_LIVE_PROVISIONAL_ENVELOPE_COMMISSION_2026-08-20.md (builder lane). GD-5A/B/C stay closed (only lawful continuation = the named membership+vintage recovery under a NEW prereg, not commissioned). GD-4B/4C open and uncommissioned. GD-6/7, GD-8/9, Portfolio cutover: not authorized.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 3,
+        "done": 7,
         "dropped": 0,
-        "in_progress": 4,
+        "in_progress": 0,
         "todo": 14
       },
       "wave_detail": [
@@ -2889,19 +3152,21 @@
         {
           "id": "GD-1C",
           "title": "leadership_crack.v1 design-era reconstruction + GD-H1/GD-H2 interaction test (research-only prerequisite for GD-5)",
-          "status": "in_progress",
+          "status": "done",
           "depends_on": [
             "GD-1B"
           ],
           "deps_satisfied": true,
           "next_action": null,
-          "prs": [],
-          "done_at": null
+          "prs": [
+            6038
+          ],
+          "done_at": "2026-08-20T06:04:52Z"
         },
         {
           "id": "GD-2",
           "title": "Settled Risk Envelope + three-answer Macro hero",
-          "status": "in_progress",
+          "status": "done",
           "depends_on": [
             "GD-0A"
           ],
@@ -2915,14 +3180,16 @@
         {
           "id": "GD-2R1",
           "title": "Semantic-correctness repair of the settled envelope (pre-acceptance)",
-          "status": "in_progress",
+          "status": "done",
           "depends_on": [
             "GD-2"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
-          "prs": [],
-          "done_at": null
+          "prs": [
+            6037
+          ],
+          "done_at": "2026-08-20T06:25:58Z"
         },
         {
           "id": "GD-3",
@@ -2931,7 +3198,7 @@
           "depends_on": [
             "GD-2"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
           "prs": [],
           "done_at": null
@@ -2939,7 +3206,7 @@
         {
           "id": "GD-4A",
           "title": "CN/HK forward-ledger liveness repair",
-          "status": "in_progress",
+          "status": "done",
           "depends_on": [
             "GD-0A"
           ],
@@ -2981,7 +3248,7 @@
           "depends_on": [
             "GD-1C"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
           "prs": [],
           "done_at": null
@@ -2993,7 +3260,7 @@
           "depends_on": [
             "GD-1C"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
           "prs": [],
           "done_at": null
@@ -3005,7 +3272,7 @@
           "depends_on": [
             "GD-1C"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
           "prs": [],
           "done_at": null
@@ -3017,7 +3284,7 @@
           "depends_on": [
             "GD-2"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
           "prs": [],
           "done_at": null
@@ -3130,10 +3397,22 @@
           "merged_at": "2026-08-19T14:02:46Z"
         },
         {
+          "number": 6038,
+          "state": "merged",
+          "wave": "GD-1C",
+          "merged_at": "2026-08-20T06:04:52Z"
+        },
+        {
           "number": 6026,
           "state": "merged",
           "wave": "GD-2",
           "merged_at": "2026-08-19T23:15:52Z"
+        },
+        {
+          "number": 6037,
+          "state": "merged",
+          "wave": "GD-2R1",
+          "merged_at": "2026-08-20T06:25:58Z"
         },
         {
           "number": 6022,
@@ -3152,11 +3431,119 @@
           ]
         }
       ],
-      "warnings": [
-        "record_disagrees_with_execution: wave GD-2 is 'in_progress' but PR #6026 is merged",
-        "record_disagrees_with_execution: wave GD-4A is 'in_progress' but PR #6022 is merged"
-      ],
+      "warnings": [],
       "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
+    },
+    {
+      "key": "INTRADAY-FLOW-P0-RECOVERY",
+      "title": "Intraday Flow P0 recovery + OPEX clock correction",
+      "status": "done",
+      "program": "options-intelligence",
+      "p0": null,
+      "p0_active": null,
+      "owner": "coo-fable",
+      "class": "build",
+      "blast_radius": "user_facing",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Workstream complete: the board paints in production during RTH, the corrected OPEX calendar is on the live checkout, and the independent live-flow plane is explicitly DEGRADED. Do not re-arm com.mastermind.liveflow here. Route any later live-flow recovery through WS-ADVANCED-DATA-OPTIONS under its existing authority and AD-9 gate.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 3,
+        "dropped": 0,
+        "in_progress": 1,
+        "todo": 0
+      },
+      "wave_detail": [
+        {
+          "id": "PR-1",
+          "title": "Intraday Flow survives missing live data (boot null-safety)",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Merged 2026-08-19T22:12:19Z squash d5de4e62779436f1551ce177b7506ffe468e2884. Production RTH browser proof closed 2026-08-20T13:32:22Z and rechecked at 13:34:53Z in a fresh 1280x720 in-app browser tab: 116 named rows, zero loading rows, lane counts [0, 0, 0, 0, 0, 116], Spotlight rendered, and zero console errors or TypeErrors after polling. The all-stand-aside result is truthful degradation from stale live flow, not a repeat of the boot throw.\n",
+          "prs": [
+            6014
+          ],
+          "done_at": "2026-08-19T22:12:19Z"
+        },
+        {
+          "id": "PR-2",
+          "title": "OPEX calendar must not project future expirations onto the last observation",
+          "status": "done",
+          "depends_on": [
+            "PR-1"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Merged 2026-08-20 as b90011f5d37dc3851f2fe17ad7845e6a2fb480a6 before the ordered PR-1 production browser receipt was completed; that sequencing deviation remains recorded rather than rewritten. Covering engine-render run 32369652484 concluded green and generated e9e9009c240a7c6337028a2c182ffa3b09be870f. Production checkout c3c6534b4b80164203c3c8f07b8dedae75c40eab is a descendant and serves phase=mid_cycle, td_to_opex=null, in_opex_week=false, is_quad_cycle=false, with the false 0d/quad-witching phrase absent.\n",
+          "prs": [
+            6073
+          ],
+          "done_at": "2026-08-20T12:02:18Z"
+        },
+        {
+          "id": "PR-3",
+          "title": "Live Theta/M1/R2 options-flow source-clock verdict",
+          "status": "done",
+          "depends_on": [
+            "PR-1",
+            "PR-2"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Post-gate read at 2026-08-20T14:19:30Z returned HTTP 200 and schema live_flow.meta/v2, but meta.asof remained 2026-08-12T20:09:06.992244Z (built_at 2026-08-12T20:09:45.521589Z), age 186.173 hours: verdict DEGRADED. No launchd unit was loaded or re-armed. Any repair belongs to the existing WS-ADVANCED-DATA-OPTIONS authority lane after its AD-9 gate, not this closed P0.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "PR-4",
+          "title": "Restore honest live quote, pulse, and options transport",
+          "status": "in_progress",
+          "depends_on": [
+            "PR-1",
+            "PR-2",
+            "PR-3"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Production incident reopened the user-facing outcome: the board painted but its three live inputs were dead or falsely labelled live. Recovery is being shipped from a fresh worktree with board-scoped quote coverage, ts-index normalization, semantic pulse health, RTH options-source freshness, and exact live receipts. The operator's direct 2026-08-20 request to investigate and fix superseded the earlier read-only/no-re-arm boundary for this incident. Recovery is limited to the existing canonical com.mastermind.liveflow unit; the retired Studio options fleet remains disarmed and no second engine or publication plane was created.\n",
+          "prs": [
+            6105
+          ],
+          "done_at": "2026-08-20T18:27:05Z"
+        }
+      ],
+      "prs": [
+        {
+          "number": 6014,
+          "state": "merged",
+          "wave": "PR-1",
+          "merged_at": "2026-08-19T22:12:19Z"
+        },
+        {
+          "number": 6073,
+          "state": "merged",
+          "wave": "PR-2",
+          "merged_at": "2026-08-20T12:02:18Z"
+        },
+        {
+          "number": 6105,
+          "state": "merged",
+          "wave": "PR-4",
+          "merged_at": "2026-08-20T18:27:05Z"
+        }
+      ],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [
+        "record_disagrees_with_execution: wave PR-4 is 'in_progress' but PR #6105 is merged"
+      ],
+      "source": "agentos/workstreams/WS-INTRADAY-FLOW-P0-RECOVERY.md"
     },
     {
       "key": "LIVE-ENTRY-RADAR",
@@ -3173,8 +3560,8 @@
         "terminal"
       ],
       "next_action": "#5845 MERGED 2026-08-18T12:40:51Z (squash 8552db805ea6) — Sol's post-merge acceptance of its bounded follow-up is the remaining W6 item; do not redesign the score, do not mark W6 done, do not start W7 or W9. W8 UI reference remains #5737. W4.1 live transport correction commissioned 2026-08-18 (Chairman Prophet Operator Lab program, V4-B5A) is build worker's PR #5929, OPEN and NOT YET MERGED as of this update — see the W4.1 wave row for scope/receipts; the commissioning session owns review and merge, not the build worker. #5897 (W4 test-baseline repair) MERGED 2026-08-19, so W4.1 rebased onto a green W4 baseline.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -3446,8 +3833,8 @@
         "mastermind"
       ],
       "next_action": "Drive the benchmark gates green (W1).",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -3502,7 +3889,7 @@
     {
       "key": "MARKET-MEMORY-W2C",
       "title": "Market Memory W2C prospective activation recovery",
-      "status": "awaiting_ci",
+      "status": "active",
       "program": "market-memory",
       "p0": "US_PROPHET_ENTRY_TIMING",
       "p0_active": null,
@@ -3512,15 +3899,15 @@
       "repos": [
         "macro"
       ],
-      "next_action": "Own the M0A PR through merge and production technicals verification, then stop. Do not repair context freshness, API restart, or mixed-root residue in M0A.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "next_action": "Dispatch exactly M0D from agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-v2-slice.md. Preserve single-ticker REST as the sealed source, the hybrid RTH-price/full-day- activity contract, the 04:30Z registered window, 04:32Z v2 stagger and complete v1 isolation. Stop and return to Sol before admission if the natural-session availability probe falsifies the frozen source clock.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
-        "awaiting_ci": 1,
-        "done": 0,
+        "awaiting_ci": 0,
+        "done": 3,
         "dropped": 0,
         "in_progress": 0,
         "todo": 1
@@ -3528,23 +3915,209 @@
       "wave_detail": [
         {
           "id": "M0A",
-          "title": "First-cause production repair for W2C prospective activation",
-          "status": "awaiting_ci",
+          "title": "First-cause repair and three-window prospective proof",
+          "status": "done",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "Merge the nested __case_v1 technical-intake PR, then verify production technicals against the live listing. Do not start M0B in the same session.\n",
+          "next_action": "Proven. Do not reopen the nested __case_v1 intake repair unless the live technicals journal reproduces the noncanonical-filename exception.\n",
+          "prs": [
+            5805
+          ],
+          "done_at": "2026-08-16T19:45:56Z"
+        },
+        {
+          "id": "M0B",
+          "title": "First-admission clock forensics and causal classification",
+          "status": "done",
+          "depends_on": [
+            "M0A"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Classified A. v1 remains the evidence/control arm. Do not retune v1 timers or source.\n",
+          "prs": [
+            6065
+          ],
+          "done_at": "2026-08-20T10:23:41Z"
+        },
+        {
+          "id": "M0C",
+          "title": "Successor source qualification and v2 architecture freeze",
+          "status": "done",
+          "depends_on": [
+            "M0B"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Ratified by Sol in DEC:W2C-M0C-SOL-RATIFIED-REST-SUCCESSOR, including the hybrid price/activity correction from PR #6083. Do not reopen the source object/profile naming inside M0D unless the natural-session probe falsifies the frozen clock or new evidence falsifies the hybrid scope.\n",
           "prs": [],
           "done_at": null
         },
         {
-          "id": "M0B",
-          "title": "Next proven causal blocker only (not started)",
+          "id": "M0D",
+          "title": "First v2 vertical slice (REST source owner + technicals-v2 + registration v2)",
           "status": "todo",
           "depends_on": [
-            "M0A"
+            "M0C"
+          ],
+          "deps_satisfied": true,
+          "next_action": "Execute agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-v2-slice.md exactly: seal single-ticker REST results[] under a new credentialed source owner; project market_memory.private.spy_rth_price_fullday_activity_daily_aggregate.v2 with RTH price rungs + full-day activity counters; preserve v1 bytes/roots; stagger experience-v2 at 04:32Z; and fail closed if the next natural-session availability probe shows the bar first appears only in the old 04:24-04:54Z race band. Do not mix D-class R2 coherence into this PR.\n",
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [
+        {
+          "number": 5805,
+          "state": "merged",
+          "wave": "M0A",
+          "merged_at": "2026-08-16T19:45:56Z"
+        },
+        {
+          "number": 6065,
+          "state": "merged",
+          "wave": "M0B",
+          "merged_at": "2026-08-20T10:23:41Z"
+        }
+      ],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-MARKET-MEMORY-W2C.md"
+    },
+    {
+      "key": "MARKET-OS",
+      "title": "Market OS — Market, Security, and My Market flagship",
+      "status": "active",
+      "program": "terminal-user-services",
+      "p0": "PRODUCT_TRUST_COHERENCE",
+      "p0_active": null,
+      "owner": "coo-fable",
+      "class": "build",
+      "blast_radius": "user_facing",
+      "repos": [
+        "macro",
+        "terminal"
+      ],
+      "next_action": "Merge M0, then Fable issues A1A Portfolio Population Truth + State Authority as the only authorized runtime wave. A1B and every later wave remain blocked on A1A's live production acceptance.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 1,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 8
+      },
+      "wave_detail": [
+        {
+          "id": "M0",
+          "title": "Durable architecture, decisions, discoveries, and implementation handoff",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Merge the records PR; do not start runtime work from the records branch.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "A1A",
+          "title": "Portfolio Population Truth + State Authority",
+          "status": "todo",
+          "depends_on": [
+            "M0"
+          ],
+          "deps_satisfied": true,
+          "next_action": "After M0 merges, Fable refreshes current heads, worktrees, open PR path collisions, and the Active Build Map, then dispatches exactly one Macro runtime PR from the canonical A1A handoff. Stop after real production proof.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "A1B",
+          "title": "Portfolio Fast Start Import",
+          "status": "todo",
+          "depends_on": [
+            "A1A"
           ],
           "deps_satisfied": false,
-          "next_action": "Start only after M0A is live. If context freshness still blocks owner replay before 2026-08-18 04:30 UTC, that is the next PR.\n",
+          "next_action": "Do not start until Sol accepts A1A in production. Then ship reviewed paste to canonical positions with stable identity, atomic/idempotent persistence, and Macro/Terminal conformance.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "A2-A6",
+          "title": "Persistent sizing assumptions, CSV import, My Market rail, universal add, and Watchlist workspace",
+          "status": "todo",
+          "depends_on": [
+            "A1B"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Commission one independently useful vertical at a time; no broad My Market rewrite.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "B1-B6",
+          "title": "Canonical Security State and chart-first security cockpit",
+          "status": "todo",
+          "depends_on": [
+            "A1A"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Build security_state.v1 into the existing stockdata plane and prove one real dossier consumer before changing the full dossier composition.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "C1-C6",
+          "title": "What Changed and deterministic Market discovery",
+          "status": "todo",
+          "depends_on": [
+            "B1-B6"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Use compact Security State and Change Event projections; no fused rank.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "D1-D9",
+          "title": "Portfolio Brief v3, Risk Packet, Holdings Map, visible risk sections, and scenarios",
+          "status": "todo",
+          "depends_on": [
+            "A2-A6",
+            "B1-B6"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Preserve the existing risk core and one Portfolio composer; current-context mode precedes forecast mode.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "E1-E3",
+          "title": "My Market Overview, personalized change feed, alerts, and digest",
+          "status": "todo",
+          "depends_on": [
+            "C1-C6",
+            "D1-D9"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Use deterministic research-priority precedence and privacy-safe user joins.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "F0-F5",
+          "title": "Forecast Packet, prospective ledgers, shadow evaluation, and earned promotion",
+          "status": "todo",
+          "depends_on": [
+            "B1-B6",
+            "D1-D9"
+          ],
+          "deps_satisfied": false,
+          "next_action": "No live forward claim before point-in-time replay, calibration, forward shadow, and explicit authority promotion.",
           "prs": [],
           "done_at": null
         }
@@ -3554,7 +4127,52 @@
       "needs_ceo": null,
       "collisions": [],
       "warnings": [],
-      "source": "agentos/workstreams/WS-MARKET-MEMORY-W2C.md"
+      "source": "agentos/workstreams/WS-MARKET-OS.md"
+    },
+    {
+      "key": "MASSIVE-STOCK-DAY-R2-COHERENCE",
+      "title": "massive_stock_day public R2 publication coherence",
+      "status": "proposed",
+      "program": "market-memory",
+      "p0": null,
+      "p0_active": null,
+      "owner": "coo-fable",
+      "class": "build",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Do not start until a session claims this wave. Do not mix with W2C v2.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 0,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 1
+      },
+      "wave_detail": [
+        {
+          "id": "C0",
+          "title": "Archaeology + single-writer / atomic-manifest repair",
+          "status": "todo",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Confirm there is no competing writer, then make manifest put strictly after a coherent file set (n_tickers+1==count and manifest Last-Modified not before SPY). Do not weaken engine/neuralweb/market_memory_technical_observation.py.\n",
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-MASSIVE-STOCK-DAY-R2-COHERENCE.md"
     },
     {
       "key": "PROPHET-CONDITIONAL-FUSION",
@@ -3570,8 +4188,8 @@
         "macro"
       ],
       "next_action": "Automatic W3 accrual on the natural us_prophet_ledgers lane. Do not start PR-3E. Do not start C2/C3/C4/C5 or Prophet V4. Do not read C1-vs-shadow outcomes. Durable paired-race N=2 unmatured (stamps 2026-08-17 and 2026-08-18); matured H=10 N=0. First lawful comparison remains PENDING until 20 matured H=10 sessions. Leave the frozen 2026-08-17 W3 parts byte-identical.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -3723,27 +4341,27 @@
         "macro",
         "mastermind"
       ],
-      "next_action": "Verify the first owed TSX session's settlement receipt on the production reader (CA-TRUTH merged e495570eb5d8 and live; receipt spec in the ca-truth wave entry), then open LEDGER-ERA (era-clean scorecard fencing in engine/board_ledger.py). No HK/CA challenger work before LEDGER-ERA lands.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "next_action": "Execute the LEDGER-ERA owed-session receipt (spec in the ledger-era wave entry) after the first nightly on/after merge 273883182d9b; on a clean receipt mark ledger-era done and open shadow-contract (packet §9). CA-TRUTH settled 2026-08-20 (receipt in the ca-truth wave entry). No HK discovery / CA intel / challenger work before shadow-contract exists.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 0,
+        "done": 1,
         "dropped": 0,
         "in_progress": 1,
-        "todo": 9
+        "todo": 8
       },
       "wave_detail": [
         {
           "id": "ca-truth",
           "title": "Canada canonical board truth",
-          "status": "in_progress",
+          "status": "done",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "Execute the first owed-TSX-session settlement receipt (packet §17) after the first nightly that renders Canada on or after merge e495570eb5d8: artifact carries board_definition=ca_prophet_branch_b_v1 + official_pick_authority=false, artifact/page ordered-cohort parity, CA ledger rows for that session stamped, legacy rows untouched. Then mark this wave done and open ledger-era.\n",
+          "next_action": null,
           "prs": [
             5926
           ],
@@ -3752,14 +4370,16 @@
         {
           "id": "ledger-era",
           "title": "Era-clean HK/CA scorecard semantics",
-          "status": "todo",
+          "status": "in_progress",
           "depends_on": [
             "ca-truth"
           ],
-          "deps_satisfied": false,
-          "next_action": null,
-          "prs": [],
-          "done_at": null
+          "deps_satisfied": true,
+          "next_action": "MERGED 273883182d9b 2026-08-20 (bytes verified on origin/main; covering render pending at the merge SHA). Owed-session receipt after the first nightly on/after the merge — verify on production: (1) factordata/ca_track_ledger.json carries prior_record (legacy pool, newest-first rows, own summary with win_pct/n_matured) and era-scoped rows/summary; (2) scorecard block in canada_standouts.json board_track has metrics_scope=current_definition + historical_context with counts_source=raw_ledger, legacy_rows==raw ledger legacy count; (3) hk_track_ledger.json fenced the same way (build_hk_library now passes board_definition into its synthetic scorecard dict); (4) the board-ledger-era-empty ::warning, if it fired, self-cleared once the first stamped CA session graded. Then mark this wave done and open shadow-contract.\n",
+          "prs": [
+            6072
+          ],
+          "done_at": "2026-08-20T12:29:28Z"
         },
         {
           "id": "shadow-contract",
@@ -3865,13 +4485,19 @@
           "state": "merged",
           "wave": "ca-truth",
           "merged_at": "2026-08-19T16:04:48Z"
+        },
+        {
+          "number": 6072,
+          "state": "merged",
+          "wave": "ledger-era",
+          "merged_at": "2026-08-20T12:29:28Z"
         }
       ],
       "claim": null,
       "needs_ceo": null,
       "collisions": [],
       "warnings": [
-        "record_disagrees_with_execution: wave ca-truth is 'in_progress' but PR #5926 is merged"
+        "record_disagrees_with_execution: wave ledger-era is 'in_progress' but PR #6072 is merged"
       ],
       "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
     },
@@ -3889,8 +4515,8 @@
         "macro"
       ],
       "next_action": "W3 (2026-08-17 outage hardening) is the live wave: land its PR, verify all five boards fresh, then fold the wedge/hostage classes into the W2 fire-drill list. W1 operator items stand: launchd installer; plus the new W3 operator asks on issue #5742 (cancel debris run 32077948964 post-recovery; census-lane cadence ruling; M1 host revival owns the collect_tail re-pin).",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -3970,8 +4596,8 @@
         "macro"
       ],
       "next_action": "Verify the 22:30Z bake (W1).",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -4055,8 +4681,8 @@
         "macro"
       ],
       "next_action": "V4-D1 complete. Route to Sol for three adjudications: (1) commission d2 with GMI per research/prophet_v4/V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md; (2) ratify the D3/W3B merge-order recommendation with GMI; (3) optionally commission the d5 contract-only lane in parallel (D1_D5_READINESS_RULING.md). Rights decisions routed in the census §7 await Chairman/Sol. A-lane unchanged: DO NOT SPAWN A1 — sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first. B5A LAB lane (Chairman 2026-08-18): day-1 wave COMPLETE 2026-08-19 — W4.1 #5929 + P-LAB-API #5928 built, twice-reviewed MERGE-SAFE, armed (merge gated on the house-law-registry VMRK self-heal at the next nightly snapshot); R5 RIG cycle verdict REVISE recorded on #5931 (armed); R5.1+R5.2 revision built on #5940 at frozen SHA f40ae70ac989 with its two-pass critic cycle + verdict OWED. Next session: execute agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-19-lab-day1.md §1 in order.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [
         "PROPHET-US-AVAILABILITY",
@@ -4203,7 +4829,7 @@
         },
         {
           "id": "b5a",
-          "title": "V4-B5A — Prophet Operator Lab (LAB-0 recut of b5, Chairman commission 2026-08-18, wave-graph ruling 14, DEC:PROPHET-LAB-B5A-RECUT). Operator-only LIVE|LAB observational surface: read-only projection of canonical Radar output (six Lab boards) over the Prophet page + MP-1 shell migration. ZERO Prophet authority — read/filter/join/decorate only; no B3/B4 dependency. Contract: research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md. Child lanes: R-LAB-1 (= Radar W4.1, executes under WS:LIVE-ENTRY-RADAR), D-LAB-R5 (fresh independent RIG R5 — note R4 reference is committed but carries NO approval.yml; R4 was a closure pass, 10 blocking findings in research/reference_integrity/prophet-board-5514-r4/R4_CLOSURE_LEDGER.md), P-LAB-API, P-MP1-SHELL, P-LAB-UI. Shipping B5A completes NEITHER b5b NOR b6. DAY-2 STATE (2026-08-19): R-LAB-1 DONE (Radar W4.1 #5929 squash 9ef200f + commissioning-prep #5995 squash 85d651bc5bbb, live-verified via /api/health commit match; W4 arming stays an OPERATOR act per research/prophet_v4/P_LAB_COMMISSIONING_NOTES.md). P-LAB-API DONE (#5928 squash 4295c05; /api/prophet/lab/v1 live, 401 fail-closed). D-LAB-R5 DONE — R5.3 APPROVED: approval.yml minted at frozen dcbea7cd (research/reference_integrity/prophet-board-lab-r5-1/, two-pass independent dual-critic, author excluded). R4-composition C8 pass COMPLETE (#5990 squash 2313bdb, verdict REVISE + rulings b1/b8/n1); repairs C8-A/C8-B MERGED (#5998 squash fa9ceeb, 98/98 verify_r4); MP-1 Amendment 1 MERGED (#5994 squash a3c3b69); C8-C DS-PR #6011 in flight (independent review MERGE-SAFE, pre-merge repairs applied; commissioning session merges by hand — never armed). P-MP1-SHELL gated on: #6011 merged + G-D coverage re-measured at a post-#6006 nightly payload (08-19 library collapse was a #5980 partial build; heal #6006 squash 0de8b86 merged 2026-08-19T20:07:23Z; groundwork branch claude/p-mp1-shell at 3f43864e41ce, no PR). P-LAB-UI after the settled shell + API, per the day-2 directive §7.",
+          "title": "V4-B5A — Prophet Operator Lab (LAB-0 recut of b5, Chairman commission 2026-08-18, wave-graph ruling 14, DEC:PROPHET-LAB-B5A-RECUT). Operator-only LIVE|LAB observational surface: read-only projection of canonical Radar output (six Lab boards) over the Prophet page + MP-1 shell migration. ZERO Prophet authority — read/filter/join/decorate only; no B3/B4 dependency. Contract: research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md. Child lanes: R-LAB-1 (= Radar W4.1, executes under WS:LIVE-ENTRY-RADAR), D-LAB-R5 (fresh independent RIG R5 — note R4 reference is committed but carries NO approval.yml; R4 was a closure pass, 10 blocking findings in research/reference_integrity/prophet-board-5514-r4/R4_CLOSURE_LEDGER.md), P-LAB-API, P-MP1-SHELL, P-LAB-UI. Shipping B5A completes NEITHER b5b NOR b6. DAY-2 STATE (2026-08-19): R-LAB-1 DONE (Radar W4.1 #5929 squash 9ef200f + commissioning-prep #5995 squash 85d651bc5bbb, live-verified via /api/health commit match; W4 arming stays an OPERATOR act per research/prophet_v4/P_LAB_COMMISSIONING_NOTES.md). P-LAB-API DONE (#5928 squash 4295c05; /api/prophet/lab/v1 live, 401 fail-closed). D-LAB-R5 DONE — R5.3 APPROVED: approval.yml minted at frozen dcbea7cd (research/reference_integrity/prophet-board-lab-r5-1/, two-pass independent dual-critic, author excluded). R4-composition C8 pass COMPLETE (#5990 squash 2313bdb, verdict REVISE + rulings b1/b8/n1); repairs C8-A/C8-B MERGED (#5998 squash fa9ceeb, 98/98 verify_r4); MP-1 Amendment 1 MERGED (#5994 squash a3c3b69); C8-C DS-PR #6011 in flight (independent review MERGE-SAFE, pre-merge repairs applied; commissioning session merges by hand — never armed). P-MP1-SHELL gated on: #6011 merged + G-D coverage re-measured at a post-#6006 nightly payload (08-19 library collapse was a #5980 partial build; heal #6006 squash 0de8b86 merged 2026-08-19T20:07:23Z; groundwork branch claude/p-mp1-shell at 3f43864e41ce, no PR). P-LAB-UI after the settled shell + API, per the day-2 directive §7. DAY-3 STATE (2026-08-20, Sol Day-3 directive): SEQUENCE CORRECTED — the frozen LAB-0 §6 order is P-LAB-API -> R-LAB-1 -> Radar live commissioning -> P-MP1-SHELL -> P-LAB-UI; the day-2 handoff's shell->UI->commissioning ordering is SUPERSEDED. Gate A (G-D) PASS: measured at blob 251b9351 (the post-#6006 publication 0b0c296f, byte-identical at tip) — frozen Reading A (available/(available+blocked_data), not_applicable:plan_closed excluded per producer law) = 237/237 = 100.0000%, blocked_data 0; gross-row Reading B = 237/262 = 90.46%; ALL plausible readings clear >=90%. BINDING READING ADJUDICATED = Reading A (uniquely reproduces MP-1's literal 225/225). Do NOT wait for another nightly to re-measure — measure the CURRENT artifact (the day-2 'tonight's nightly' wait is CLOSED). Gate B (Radar commissioning) BLOCKED-ON-OPERATOR: W4 was already armed 08-18 by a prior operator; 215 armed passes ALL refused (160 in-window 'no_pack') — the 08-19 pack builder store-gate red self-resolved, but four config blockers remain: B2 writer has NO spool destination (live env lacks R2 creds AND spool dir), B3 same-host split-brain (API env reads R2 mastermindx/live_flow/entry_radar_events; writer resolves to nothing), B4 PROPHET_LAB_OBSERVATION_BASELINE_PATH absent from the API env, B5 ENTRY_RADAR_SLICE_DIR unset (path /opt/terminal/terminal/public/data now VERIFIED live: 5.7G, 44,436 entries). Repairs are STAGED (systemd drop-in referencing the API env file — no credential values handled — + two path appends); the harness permission boundary denies remote production config mutation from any lane, so applying them is an OPERATOR act; receipts: /var/lib/macro-live/state/prophet_lab/commissioning_receipt_2026-08-20.json. Baseline NOT minted (CLI correctly refused: zero spooled passes — never self-baseline). P-MP1-SHELL: bounded prep MERGED #6049 (1ccf7fe8bdba — §8a stance projection plumbing unwired, pv_card parameter byte-parity proven, count plumbing, suites wired into engine-render-guards); CENTRAL ACT OWED on a Sol referral — MP-1 is silent on the W-L1 collision (the pinned provisional-board surface repaints the same #us-standouts .nbgrid the packet re-sources; research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md). DS-PR #6055 MERGED (d78121d6459c: .skel + .mx-error ported from the specimen, additive-only, drift-guarded) discharging the V-B4 primitive gap. Heal #6053 MERGED (zh-rebind test re-pinned to the C8-C structural flip — the test-pinned-retired-literal trap, third instance). The five test_hk_board_ui reds were NOT fixture drift — #6029 proved a sparse-CI checkout artifact (day-2 diagnosis STRUCK, chip dismissed). P-LAB-UI NOT started (directive §9). DAY-4 STATE (2026-08-20, Sol Day-4 directive — CLOSURE): W-L1 RULED by Sol (option b, MP-1 §13 row CLOSED, records #6064). GATE B COMMISSIONED under the Chairman's explicit admin grant: env repairs applied (drop-in EnvironmentFile + slice dir + baseline path + macro-api restart), a NEW code blocker isolated and healed same-day (#6095: live_eval._quote_ts only read 'ts' while the loader normalizes to 'ts_ms' — a healthy 2,089-symbol snapshot darked the whole probe set 0/2979), two bounded resource rulings on the evaluator unit (MemoryHigh 768M/Max 1G; TimeoutStartSec 570 — first full pass is cold-I/O ~10min), first genuine in-window envelope 115834-entry_radar_live.json (240 usable quotes, 54 transitions, 27 events, 237 basis audits 0 mismatch), baseline minted LAWFULLY 16:10:41Z (dry-run first, backend r2, after real passes), post-mint service cycles self-sustaining (~5min cadence) with observation_class live_forward=49 / retrospective_seed=150, pools separate, coverage_verified true. Receipt (verdict COMMISSIONED): /var/lib/macro-live/state/prophet_lab/commissioning_receipt_2026-08-20.json. P-MP1-SHELL CENTRAL ACT MERGED #6076 (squash 31ca4971ba4a) after THREE build rounds + THREE independent adversarial review rounds (final certification MERGE-SAFE; §8b three-part record: mechanism PASS / boundary WITHHELD pending the B1 escalation / candidate split conformant): plan-book grid re-source in published plans_sort_key order, §4b ladder verbatim, ?life= URL law, W-L1 neutralization per ruling (b) (data-mp1-grid marker + :not() choke point; poller+stamp byte-identical), §8a stance wiring, §10 states (dense clause DEFERRED — no plan-book table view exists yet), Candidates shelf gated at the standing 1/3/full idiom, fail-closed gate config, non-US byte parity proven at merge-base. CRITICAL ESCALATION B1 (routed to Sol + operator, DSC:PROPHET-INDEX-PUBLIC-R2-TWIN): the FULL plan book is anonymously world-readable at the public R2 dev URL (200/2.16MB/262 plans with entries/zones/targets/invalidations/theses) while the origin 401s the same path — a LIVE pre-existing leak that the shell's paid boundary now sits on top of. Remedy sketch in the DSC (redacted public stub for the rescue watchdog + credentialed server-side reads for the Terminal's /api/flow route + delete the public object; all consumers are server-side). Post-merge render pending at the merge SHA; browser matrix + live verification follow the bake. Follow-ups owed: cadence finding for the Radar owner (cold-start pass exceeds the 5-min tick), N1 dead-JS heal, N2 macro.html dead CSS, remote-route proof (site-full token).",
           "status": "in_progress",
           "depends_on": [
             "0a"
@@ -4302,7 +4928,7 @@
         },
         {
           "id": "d2",
-          "title": "V4-D2 — canonical ontology + probation mapping, executing INSIDE/WITH the GMI lane. RECUT by Sol 2026-08-18 into bounded child PRs D2A-D2E (one giant PR rejected); Sol AMENDED the D1-generated handoff's Gate 1: exact issuer/security/listing identity = the Mastermind Data OS identity spine (lib/dataos/identity.py + data/reference master/aliases), NOT stock_identity; GMI keeps its co:market:symbol#epoch topology ids (KNOWINGLY-DIFFERENT per config/identity_seams.yml); the bridge projection is the seam. Child D2A (identity authority bridge: gmi.identity_resolution/v1 sidecar + reader + guard, frozen contract research/prophet_v4/d2/D2A_FROZEN_CONTRACT_2026-08-18.md) MERGED 2026-08-18 (#5894). Child D2B1 (issuer authority hardening: economic issuer axis via SEC-CIK evidence — GOOG/GOOGL, FOX/FOXA, NWS/NWSA one issuer each; era issuer_semantic_correction_v1 with durable migration receipts; typed issuer_state refusals; reference.issuer_master + issuer_migrations datasets; receipt authority decomposition; nightly refresh seam in daily.yml collect; frozen contract research/prophet_v4/d2/D2B1_FROZEN_CONTRACT_2026-08-19.md) shipped as #5965 — live-refresh production proof gated on the first post-#5936 listing snapshot (>2026-08-10). D2B2 (broad expansion: 1,868 NOT_IN_MASTER queue), D2B3 (GMI GOLD/B + IBIT corrections), D2C (PIT vintages), D2D (ontology/probation), D2E (rights/acceptance) NOT authorized yet — Sol reviews after each child returns.",
+          "title": "V4-D2 — canonical ontology + probation mapping, executing INSIDE/WITH the GMI lane. RECUT by Sol 2026-08-18 into bounded child PRs D2A-D2E (one giant PR rejected); Sol AMENDED the D1-generated handoff's Gate 1: exact issuer/security/listing identity = the Mastermind Data OS identity spine (lib/dataos/identity.py + data/reference master/aliases), NOT stock_identity; GMI keeps its co:market:symbol#epoch topology ids (KNOWINGLY-DIFFERENT per config/identity_seams.yml); the bridge projection is the seam. Child D2A (identity authority bridge: gmi.identity_resolution/v1 sidecar + reader + guard, frozen contract research/prophet_v4/d2/D2A_FROZEN_CONTRACT_2026-08-18.md) MERGED 2026-08-18 (#5894). Child D2B1 (issuer authority hardening: economic issuer axis via SEC-CIK evidence — GOOG/GOOGL, FOX/FOXA, NWS/NWSA one issuer each; era issuer_semantic_correction_v1 with durable migration receipts; typed issuer_state refusals; reference.issuer_master + issuer_migrations datasets; receipt authority decomposition; nightly refresh seam in daily.yml collect; frozen contract research/prophet_v4/d2/D2B1_FROZEN_CONTRACT_2026-08-19.md) shipped as #5965 — live-refresh production proof gated on the first post-#5936 listing snapshot (>2026-08-10). Child D2B1-R1 (Sol amendment 2026-08-20: the transition race fired on the first natural nightly — duplicate SEC:US-XNYS-VMRK minted for the EQR→VMRK rename; PROVEN, then repaired: dated RenameEvent from SEC 8-K 0001140361-26-033377, supersession onto the continuing EQR identity via new security_state/superseded_by axis + security_migrations receipts + authored SECURITY_SUPERSESSIONS registry, AVB typed exit, general pending-transition fence with typed refusals; contract research/prophet_v4/d2/D2B1_R1_FROZEN_CONTRACT_2026-08-20.md + AMENDMENTS §1-§3) shipped as #6082 — Sol's D2B2 gate = the next natural refresh proving one canonical identity survives (see the R1 handoff for the expected first-night provenance churn). D2B2-CN-HK AUTHORIZED 2026-08-20 (Sol adjudication DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK, resolving the China Alpha pr0d owner collision): exactly one bounded child admitting the source-supported China/HK listing population into the canonical master (or typed refusals for every target) and re-deriving the GMI identity projection — frozen contract research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md; start pin re-censuses NOT_IN_MASTER by market (the 1,868 figure is observation, not contract); China wave pr0d is consumer-verifier and adopts the child's result by reference. The full D2B2 US/Canada backlog, D2B3 (GMI GOLD/B + IBIT corrections), D2C (PIT vintages), D2D (ontology/probation), D2E (rights/acceptance) remain NOT authorized — Sol reviews after each child returns. D2B2-CN-HK BUILT_NOT_PROVEN 2026-08-20: start-pin census 1,021 cn + 147 hk (target N 1,168); admitted via the EXISTING canonical builder (no lib/dataos edits, no new evidence class, no CN/HK issuer grouping) using committed primary-source evidence (CN: CNInfo data/china_filings/filings.parquet, 984/1021 = 96.4%; HK: SFC+HKEX data/hk_shorts/{positions,turnover}.parquet, 147/147 = 100%; 37 CN refused, named in the receipt, no silent drop); GMI sidecar re-derived with zero code changes to engine/theme_graph/identity_resolution.py (already market-agnostic); US coverage byte-identical (702/533/2/1 unchanged); 5 hostile fixtures on real committed data (A/H ICBC, renamed 300223, SOE-naming-collision 601988/601601, unresolved issuer, alias-only vendor id — CN/HK never resolves via rule 5, only rule 6); PR #6116, squash-merged as ed28d0d992a144aec5f0ef2616024e3e32d83b1a (immutable merge SHA). China pr0d wave adopts this result by reference (WS-CHINA-ALPHA-INTELLIGENCE.md). Done requires a natural production nightly proving source -> master -> GMI projection with a recorded run id and the measured CN/HK resolution delta, per Sol's completion law — not yet observed. Sol accepted the D2B2-CN-HK implementation 2026-08-20 (BUILT_NOT_PROVEN); proof rides the first natural nightly containing ed28d0d992a1 per the China WS pr0d entry; no dispatched proof runs.",
           "status": "in_progress",
           "depends_on": [
             "d1"
@@ -4488,6 +5114,125 @@
       "source": "agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md"
     },
     {
+      "key": "RUNNER-FLEET-RESILIENCE",
+      "title": "Runner fleet resilience and physical failure-domain separation",
+      "status": "active",
+      "program": "project-active-build-control",
+      "p0": null,
+      "p0_active": null,
+      "owner": "ceo-sol",
+      "class": "build",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Get M0 records green and merged, then execute W1 only: hosted merge-control environment canary under WS:CI-MERGE-CONTROL-PLANE. Prepare W2/W3 diagnostic host recovery in parallel only if it changes no production labels or default routes.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 1,
+        "done": 0,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 6
+      },
+      "wave_detail": [
+        {
+          "id": "M0",
+          "title": "Physical failure-domain architecture freeze and work identity",
+          "status": "awaiting_ci",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Review and merge the records-only M0 PR; no production route or runner label changes are authorized in M0.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W1",
+          "title": "Hosted merge-control environment canary and bounded cutover",
+          "status": "todo",
+          "depends_on": [
+            "M0"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Commission the hosted environment canary through WS:CI-MERGE-CONTROL-PLANE; require three canaries including one congested-window proof before changing the real merge-on-green runner route.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W2",
+          "title": "Guarded M1 three-listener diagnostic restoration",
+          "status": "todo",
+          "depends_on": [
+            "M0"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Restore the M1 using the existing ops/runner-host/m1 guarded service contract and pass m1-runner-canary with zero production labels.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W3",
+          "title": "PC render recovery and default full-render cutover",
+          "status": "todo",
+          "depends_on": [
+            "M0"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Re-prove at least two render-linux listeners, a real engine-render, and one scope=all render on the PC before changing render.yml's default route.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W4",
+          "title": "Bounded M1 production-capacity return",
+          "status": "todo",
+          "depends_on": [
+            "W2"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Census every current macstudio consumer and its memory/local-capability envelope, then admit one explicitly selected safe production lane through m1-nightly and restore theta-m1 only on the proven store-bearing listener. Do not add the generic macstudio label to the M1 in this wave.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W5",
+          "title": "Retire obsolete M2 roles and add live fleet health projection",
+          "status": "todo",
+          "depends_on": [
+            "W1",
+            "W3",
+            "W4"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Remove routine merge/render roles from the M2 after rollback soak and add a hosted read-only fleet liveness projection without creating scheduler state.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W6",
+          "title": "Nightly critical-path reduction after allocation stabilizes",
+          "status": "todo",
+          "depends_on": [
+            "W5"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Reopen the measured Aug-13 collector/engine decomposition plan and reduce the critical path using nightly timing receipts; do not mix this with fleet recovery.\n",
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md"
+    },
+    {
       "key": "STOCK-IDENTITY",
       "title": "Bottom-Up Stock Identity & Expert Routing",
       "status": "active",
@@ -4501,8 +5246,8 @@
         "macro"
       ],
       "next_action": "Land the #5643 heal: W2 expert replay onto merged W1-A1, without duplicating B onto the program OHLCV plane or rewriting sealed GOLD. W3 still needs its own operator go — no auto-roll.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -4657,8 +5402,8 @@
         "macro"
       ],
       "next_action": "Operator confirms the privilege page (redact token) against the 2026-08-09 SKU list, then asks Tushare in writing the five commercial questions in research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md §3.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -4690,7 +5435,7 @@
     },
     {
       "key": "WATCHLIST-PORTFOLIO-CEO",
-      "title": "Watchlist + Portfolio CEO revamp",
+      "title": "Watchlist + Portfolio CEO revamp — compatibility redirect",
       "status": "active",
       "program": "terminal-user-services",
       "p0": "PRODUCT_TRUST_COHERENCE",
@@ -4702,9 +5447,9 @@
         "macro",
         "terminal"
       ],
-      "next_action": "Obtain the persistence-model ruling, then start W1.",
-      "created": "2026-08-19",
-      "updated": "2026-08-19",
+      "next_action": "Use WS:MARKET-OS. After its M0 records merge, the only authorized runtime continuation is A1A Portfolio Population Truth + State Authority. This legacy record authorizes no implementation of its former W1 persistence proposal.",
+      "created": "2026-08-20",
+      "updated": "2026-08-20",
       "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
@@ -4742,13 +5487,13 @@
         },
         {
           "id": "W1",
-          "title": "Persistence model implementation",
+          "title": "Compatibility redirect into Market OS A1A",
           "status": "todo",
           "depends_on": [
             "P0-HUSK"
           ],
           "deps_satisfied": true,
-          "next_action": "Blocked on the persistence-model decision below.",
+          "next_action": "Do not implement the legacy persistence proposal. Continue only through WS:MARKET-OS A1A Portfolio Population Truth + State Authority.\n",
           "prs": [],
           "done_at": null
         }
@@ -4768,16 +5513,7 @@
         }
       ],
       "claim": null,
-      "needs_ceo": {
-        "question": "Portfolio and Watchlist persistence: one table or two?",
-        "options": [
-          "Single positions table with a kind discriminator",
-          "Separate tables, joined at read time"
-        ],
-        "recommendation": "Single positions table with a kind discriminator. Terminal /portfolio currently has zero portfolio_positions references, so the migration cost is near zero today and rises once W1 ships against either shape.",
-        "by_when": "2026-08-14",
-        "blocks_waves": 1
-      },
+      "needs_ceo": null,
       "collisions": [],
       "warnings": [],
       "source": "agentos/workstreams/WS-WATCHLIST-PORTFOLIO-CEO.md"
@@ -4794,33 +5530,8 @@
       ],
       "recommendation": "Restore/rebind Options Snapshot on the existing account/key under a business license. Do not attach a personal-use plan. Do not silently route AD-1 to ThetaData. Do not ask a coding agent to \"fix Polygon options.\"",
       "by_when": "2026-08-21",
-      "blocks_waves": 1,
+      "blocks_waves": 2,
       "source": "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md"
-    },
-    {
-      "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
-      "question": "Accept W1A (#6012) so post-W1 event-version identity is clock-independent, new child writes never mint legacy:{source_id}, and re-observation is a full-bundle decision? Hold W2 until that PR merges.",
-      "options": [
-        "Accept W1A; authorize Wave 2 only after merge and natural CS-path proof",
-        "Accept W1A with further named amendments",
-        "Reject; name which W1A ruling to reopen"
-      ],
-      "recommendation": "Accept W1A. Do not start Wave 2 in this PR. Do not rewrite historical event_ids or v1 manifests.",
-      "by_when": "2026-08-25",
-      "blocks_waves": 7,
-      "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
-    },
-    {
-      "workstream": "WATCHLIST-PORTFOLIO-CEO",
-      "question": "Portfolio and Watchlist persistence: one table or two?",
-      "options": [
-        "Single positions table with a kind discriminator",
-        "Separate tables, joined at read time"
-      ],
-      "recommendation": "Single positions table with a kind discriminator. Terminal /portfolio currently has zero portfolio_positions references, so the migration cost is near zero today and rises once W1 ships against either shape.",
-      "by_when": "2026-08-14",
-      "blocks_waves": 1,
-      "source": "agentos/workstreams/WS-WATCHLIST-PORTFOLIO-CEO.md"
     }
   ],
   "readiness": {
@@ -4866,6 +5577,18 @@
         "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:ADVANCED-DATA-OPTIONS#AD-1"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md"
+      },
+      {
+        "workstream": "ADVANCED-DATA-OPTIONS",
+        "wave": "AD-1C0.1",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
+        "depends_on": [
+          "WS:ADVANCED-DATA-OPTIONS#AD-1C0"
         ],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md"
@@ -4996,7 +5719,6 @@
         ],
         "unmet_dependencies": [
           "WS:DEFENSE-PROCUREMENT-V3",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:FINANCIAL-INTELLIGENCE-FABRIC",
           "WS:FUNDAMENTAL-FORENSICS",
@@ -5057,7 +5779,7 @@
         "wave": "k1",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:DEFENSE-PROCUREMENT-V3, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#c0",
           "WS:DEFENSE-PROCUREMENT-V3",
@@ -5073,7 +5795,6 @@
         ],
         "unmet_dependencies": [
           "WS:DEFENSE-PROCUREMENT-V3",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:FINANCIAL-INTELLIGENCE-FABRIC",
           "WS:FUNDAMENTAL-FORENSICS",
@@ -5090,7 +5811,7 @@
         "wave": "k2",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k1, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k1, WS:DEFENSE-PROCUREMENT-V3, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
           "WS:DEFENSE-PROCUREMENT-V3",
@@ -5107,7 +5828,6 @@
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
           "WS:DEFENSE-PROCUREMENT-V3",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:FINANCIAL-INTELLIGENCE-FABRIC",
           "WS:FUNDAMENTAL-FORENSICS",
@@ -5124,7 +5844,7 @@
         "wave": "k3",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k1, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k1, WS:DEFENSE-PROCUREMENT-V3, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
           "WS:DEFENSE-PROCUREMENT-V3",
@@ -5141,7 +5861,6 @@
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
           "WS:DEFENSE-PROCUREMENT-V3",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:FINANCIAL-INTELLIGENCE-FABRIC",
           "WS:FUNDAMENTAL-FORENSICS",
@@ -5158,7 +5877,7 @@
         "wave": "k4",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k1, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k1, WS:DEFENSE-PROCUREMENT-V3, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
           "WS:DEFENSE-PROCUREMENT-V3",
@@ -5175,7 +5894,6 @@
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
           "WS:DEFENSE-PROCUREMENT-V3",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:FINANCIAL-INTELLIGENCE-FABRIC",
           "WS:FUNDAMENTAL-FORENSICS",
@@ -5192,7 +5910,7 @@
         "wave": "k5",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k2, WS:ALPHA-INTELLIGENCE-INTEGRATION#k3, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k2, WS:ALPHA-INTELLIGENCE-INTEGRATION#k3, WS:DEFENSE-PROCUREMENT-V3, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k2",
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k3",
@@ -5211,7 +5929,6 @@
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k2",
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k3",
           "WS:DEFENSE-PROCUREMENT-V3",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:FINANCIAL-INTELLIGENCE-FABRIC",
           "WS:FUNDAMENTAL-FORENSICS",
@@ -5228,7 +5945,7 @@
         "wave": "k6",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k5, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k5, WS:DEFENSE-PROCUREMENT-V3, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k5",
           "WS:DEFENSE-PROCUREMENT-V3",
@@ -5245,7 +5962,6 @@
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k5",
           "WS:DEFENSE-PROCUREMENT-V3",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:FINANCIAL-INTELLIGENCE-FABRIC",
           "WS:FUNDAMENTAL-FORENSICS",
@@ -5262,7 +5978,7 @@
         "wave": "k7",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k6, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k6, WS:DEFENSE-PROCUREMENT-V3, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k6",
           "WS:DEFENSE-PROCUREMENT-V3",
@@ -5279,7 +5995,6 @@
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION#k6",
           "WS:DEFENSE-PROCUREMENT-V3",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:FINANCIAL-INTELLIGENCE-FABRIC",
           "WS:FUNDAMENTAL-FORENSICS",
@@ -5311,6 +6026,110 @@
         ],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+      },
+      {
+        "workstream": "BIOCATALYST-RECOVERY-V2",
+        "wave": null,
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored workstream status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BIOCATALYST-RECOVERY-V2.md"
+      },
+      {
+        "workstream": "BIOCATALYST-RECOVERY-V2",
+        "wave": "P0-A",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:BIOCATALYST-RECOVERY-V2#V2-FREEZE"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BIOCATALYST-RECOVERY-V2.md"
+      },
+      {
+        "workstream": "BIOCATALYST-RECOVERY-V2",
+        "wave": "P0-B",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:BIOCATALYST-RECOVERY-V2#P0-A"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BIOCATALYST-RECOVERY-V2.md"
+      },
+      {
+        "workstream": "BIOCATALYST-RECOVERY-V2",
+        "wave": "P0-C1",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:BIOCATALYST-RECOVERY-V2#P0-B"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BIOCATALYST-RECOVERY-V2.md"
+      },
+      {
+        "workstream": "BIOCATALYST-RECOVERY-V2",
+        "wave": "P0-C2-DIAG",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:BIOCATALYST-RECOVERY-V2#P0-C1"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BIOCATALYST-RECOVERY-V2.md"
+      },
+      {
+        "workstream": "BIOCATALYST-RECOVERY-V2",
+        "wave": "P0-C2-PROD-ACCEPT",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:BIOCATALYST-RECOVERY-V2#P0-C2R2"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BIOCATALYST-RECOVERY-V2.md"
+      },
+      {
+        "workstream": "BIOCATALYST-RECOVERY-V2",
+        "wave": "P0-C2R1",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:BIOCATALYST-RECOVERY-V2#P0-C2-DIAG"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BIOCATALYST-RECOVERY-V2.md"
+      },
+      {
+        "workstream": "BIOCATALYST-RECOVERY-V2",
+        "wave": "P0-C2R2",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:BIOCATALYST-RECOVERY-V2#P0-C2R1"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BIOCATALYST-RECOVERY-V2.md"
+      },
+      {
+        "workstream": "BIOCATALYST-RECOVERY-V2",
+        "wave": "V2-FREEZE",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BIOCATALYST-RECOVERY-V2.md"
       },
       {
         "workstream": "BPC-JV-RECON",
@@ -5623,11 +6442,23 @@
       {
         "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
         "wave": "W1A",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
+      },
+      {
+        "workstream": "CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "wave": "W1B",
         "state": "in_progress",
         "reason_code": "status_in_progress",
         "reason": "Authored wave status is in_progress.",
         "depends_on": [
-          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1"
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
         ],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
@@ -5637,12 +6468,12 @@
         "wave": "W2",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A.",
+        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1B.",
         "depends_on": [
-          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1B"
         ],
         "unmet_dependencies": [
-          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1B"
         ],
         "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
       },
@@ -5651,12 +6482,12 @@
         "wave": "W3",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A.",
+        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1B.",
         "depends_on": [
-          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1B"
         ],
         "unmet_dependencies": [
-          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1B"
         ],
         "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
       },
@@ -5665,12 +6496,12 @@
         "wave": "W4",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A.",
+        "reason": "Waiting for declared dependencies: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1B.",
         "depends_on": [
-          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1B"
         ],
         "unmet_dependencies": [
-          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1A"
+          "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2#W1B"
         ],
         "source": "agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md"
       },
@@ -5730,12 +6561,13 @@
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
@@ -5750,6 +6582,7 @@
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [],
@@ -5760,17 +6593,18 @@
         "wave": "l0",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:GMI-THEME-GRAPH, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
@@ -5780,21 +6614,22 @@
         "wave": "l2",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#l0, WS:CHINA-ALPHA-INTELLIGENCE#p1b, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#l0, WS:CHINA-ALPHA-INTELLIGENCE#p1b, WS:GMI-THEME-GRAPH, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:CHINA-ALPHA-INTELLIGENCE#l0",
           "WS:CHINA-ALPHA-INTELLIGENCE#p1b",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:CHINA-ALPHA-INTELLIGENCE#l0",
           "WS:CHINA-ALPHA-INTELLIGENCE#p1b",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
@@ -5802,21 +6637,21 @@
       {
         "workstream": "CHINA-ALPHA-INTELLIGENCE",
         "wave": "p1",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#rights0, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:CHINA-ALPHA-INTELLIGENCE#rights0",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
-          "WS:CHINA-ALPHA-INTELLIGENCE#rights0",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
@@ -5826,21 +6661,22 @@
         "wave": "p1b",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#l0, WS:CHINA-ALPHA-INTELLIGENCE#p1, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#l0, WS:CHINA-ALPHA-INTELLIGENCE#p1, WS:GMI-THEME-GRAPH, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:CHINA-ALPHA-INTELLIGENCE#l0",
           "WS:CHINA-ALPHA-INTELLIGENCE#p1",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:CHINA-ALPHA-INTELLIGENCE#l0",
           "WS:CHINA-ALPHA-INTELLIGENCE#p1",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
@@ -5850,19 +6686,19 @@
         "wave": "p2",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#rights0, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:GMI-THEME-GRAPH, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:CHINA-ALPHA-INTELLIGENCE#rights0",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
-          "WS:CHINA-ALPHA-INTELLIGENCE#rights0",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
@@ -5877,6 +6713,7 @@
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [],
@@ -5885,39 +6722,36 @@
       {
         "workstream": "CHINA-ALPHA-INTELLIGENCE",
         "wave": "pr0b",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
-        "unmet_dependencies": [
-          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
-          "WS:EARNINGS-INTELLIGENCE-OS",
-          "WS:GMI-THEME-GRAPH",
-          "WS:STOCK-IDENTITY"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
       },
       {
         "workstream": "CHINA-ALPHA-INTELLIGENCE",
         "wave": "pr0d",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
@@ -5927,19 +6761,20 @@
         "wave": "r1",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#pr0d, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#pr0d, WS:GMI-THEME-GRAPH, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:CHINA-ALPHA-INTELLIGENCE#pr0d",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:CHINA-ALPHA-INTELLIGENCE#pr0d",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
@@ -5949,19 +6784,20 @@
         "wave": "r2",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#pr0d, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:CHINA-ALPHA-INTELLIGENCE#pr0d, WS:GMI-THEME-GRAPH, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:CHINA-ALPHA-INTELLIGENCE#pr0d",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:CHINA-ALPHA-INTELLIGENCE#pr0d",
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
@@ -5969,21 +6805,17 @@
       {
         "workstream": "CHINA-ALPHA-INTELLIGENCE",
         "wave": "rights0",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:EARNINGS-INTELLIGENCE-OS, WS:GMI-THEME-GRAPH, WS:STOCK-IDENTITY.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:ALPHA-INTELLIGENCE-INTEGRATION",
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:GMI-THEME-GRAPH",
+          "WS:PROPHET-US-V4-RECOVERY",
           "WS:STOCK-IDENTITY"
         ],
-        "unmet_dependencies": [
-          "WS:ALPHA-INTELLIGENCE-INTEGRATION",
-          "WS:EARNINGS-INTELLIGENCE-OS",
-          "WS:GMI-THEME-GRAPH",
-          "WS:STOCK-IDENTITY"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md"
       },
       {
@@ -6135,7 +6967,7 @@
         "wave": "I1A-T1",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#DEP-CAI, WS:CN-LIMIT-ALPHA#DEP-ID-ELIG, WS:CN-LIMIT-ALPHA#P0-ST.",
+        "reason": "Waiting for declared dependencies: WS:CN-LIMIT-ALPHA#DEP-CAI, WS:CN-LIMIT-ALPHA#DEP-ID-ELIG.",
         "depends_on": [
           "WS:CN-LIMIT-ALPHA#DEP-CAI",
           "WS:CN-LIMIT-ALPHA#DEP-ID-ELIG",
@@ -6143,8 +6975,7 @@
         ],
         "unmet_dependencies": [
           "WS:CN-LIMIT-ALPHA#DEP-CAI",
-          "WS:CN-LIMIT-ALPHA#DEP-ID-ELIG",
-          "WS:CN-LIMIT-ALPHA#P0-ST"
+          "WS:CN-LIMIT-ALPHA#DEP-ID-ELIG"
         ],
         "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
       },
@@ -6341,9 +7172,9 @@
       {
         "workstream": "CN-LIMIT-ALPHA",
         "wave": "P0-ST",
-        "state": "ready",
-        "reason_code": "dependencies_satisfied",
-        "reason": "All declared dependencies are done.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:CN-LIMIT-ALPHA#R6-0"
         ],
@@ -6524,9 +7355,9 @@
       {
         "workstream": "DEFENSE-PROCUREMENT-V3",
         "wave": "D3",
-        "state": "ready",
-        "reason_code": "dependencies_satisfied",
-        "reason": "All declared dependencies are done.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:DEFENSE-PROCUREMENT-V3#D2"
         ],
@@ -6536,37 +7367,33 @@
       {
         "workstream": "DEFENSE-PROCUREMENT-V3",
         "wave": "D4",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:DEFENSE-PROCUREMENT-V3#D3.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:DEFENSE-PROCUREMENT-V3#D3"
         ],
-        "unmet_dependencies": [
-          "WS:DEFENSE-PROCUREMENT-V3#D3"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-DEFENSE-PROCUREMENT-V3.md"
       },
       {
         "workstream": "DEFENSE-PROCUREMENT-V3",
         "wave": "D5",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:DEFENSE-PROCUREMENT-V3#D4.",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
         "depends_on": [
           "WS:DEFENSE-PROCUREMENT-V3#D4"
         ],
-        "unmet_dependencies": [
-          "WS:DEFENSE-PROCUREMENT-V3#D4"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-DEFENSE-PROCUREMENT-V3.md"
       },
       {
         "workstream": "EARNINGS-INTELLIGENCE-OS",
         "wave": null,
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored workstream status is active.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored workstream status is done.",
         "depends_on": [],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-EARNINGS-INTELLIGENCE-OS.md"
@@ -6608,9 +7435,9 @@
       {
         "workstream": "EARNINGS-INTELLIGENCE-OS",
         "wave": "E2",
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored wave status is in_progress.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS#E1P"
         ],
@@ -6620,15 +7447,13 @@
       {
         "workstream": "EARNINGS-INTELLIGENCE-OS",
         "wave": "E2-D",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS#E2.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS#E2"
         ],
-        "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS#E2"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-EARNINGS-INTELLIGENCE-OS.md"
       },
       {
@@ -7110,9 +7935,9 @@
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-1C",
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored wave status is in_progress.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1B"
         ],
@@ -7122,9 +7947,9 @@
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-2",
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored wave status is in_progress.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-0A"
         ],
@@ -7134,37 +7959,33 @@
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-2R1",
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored wave status is in_progress.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-2"
         ],
-        "unmet_dependencies": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-2"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
       },
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-3",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-2.",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-2"
         ],
-        "unmet_dependencies": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-2"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
       },
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-4A",
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored wave status is in_progress.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-0A"
         ],
@@ -7198,57 +8019,49 @@
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-5A",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C.",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
         ],
-        "unmet_dependencies": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
       },
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-5B",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C.",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
         ],
-        "unmet_dependencies": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
       },
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-5C",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C.",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
         ],
-        "unmet_dependencies": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-1C"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
       },
       {
         "workstream": "GREY-DEER-RISK-INTELLIGENCE",
         "wave": "GD-6A",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-2.",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-2"
         ],
-        "unmet_dependencies": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-2"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
       },
       {
@@ -7256,13 +8069,12 @@
         "wave": "GD-6B",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-2, WS:GREY-DEER-RISK-INTELLIGENCE#GD-4B.",
+        "reason": "Waiting for declared dependencies: WS:GREY-DEER-RISK-INTELLIGENCE#GD-4B.",
         "depends_on": [
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-2",
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-4B"
         ],
         "unmet_dependencies": [
-          "WS:GREY-DEER-RISK-INTELLIGENCE#GD-2",
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-4B"
         ],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
@@ -7322,6 +8134,65 @@
           "WS:GREY-DEER-RISK-INTELLIGENCE#GD-3"
         ],
         "source": "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "INTRADAY-FLOW-P0-RECOVERY",
+        "wave": null,
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored workstream status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-INTRADAY-FLOW-P0-RECOVERY.md"
+      },
+      {
+        "workstream": "INTRADAY-FLOW-P0-RECOVERY",
+        "wave": "PR-1",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-INTRADAY-FLOW-P0-RECOVERY.md"
+      },
+      {
+        "workstream": "INTRADAY-FLOW-P0-RECOVERY",
+        "wave": "PR-2",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:INTRADAY-FLOW-P0-RECOVERY#PR-1"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-INTRADAY-FLOW-P0-RECOVERY.md"
+      },
+      {
+        "workstream": "INTRADAY-FLOW-P0-RECOVERY",
+        "wave": "PR-3",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:INTRADAY-FLOW-P0-RECOVERY#PR-1",
+          "WS:INTRADAY-FLOW-P0-RECOVERY#PR-2"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-INTRADAY-FLOW-P0-RECOVERY.md"
+      },
+      {
+        "workstream": "INTRADAY-FLOW-P0-RECOVERY",
+        "wave": "PR-4",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
+        "depends_on": [
+          "WS:INTRADAY-FLOW-P0-RECOVERY#PR-1",
+          "WS:INTRADAY-FLOW-P0-RECOVERY#PR-2",
+          "WS:INTRADAY-FLOW-P0-RECOVERY#PR-3"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-INTRADAY-FLOW-P0-RECOVERY.md"
       },
       {
         "workstream": "LIVE-ENTRY-RADAR",
@@ -7533,7 +8404,7 @@
         "wave": null,
         "state": "in_progress",
         "reason_code": "status_in_progress",
-        "reason": "Authored workstream status is awaiting_ci.",
+        "reason": "Authored workstream status is active.",
         "depends_on": [],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-MARKET-MEMORY-W2C.md"
@@ -7541,9 +8412,9 @@
       {
         "workstream": "MARKET-MEMORY-W2C",
         "wave": "M0A",
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored wave status is awaiting_ci.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-MARKET-MEMORY-W2C.md"
@@ -7551,16 +8422,194 @@
       {
         "workstream": "MARKET-MEMORY-W2C",
         "wave": "M0B",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:MARKET-MEMORY-W2C#M0A.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:MARKET-MEMORY-W2C#M0A"
         ],
-        "unmet_dependencies": [
-          "WS:MARKET-MEMORY-W2C#M0A"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-MARKET-MEMORY-W2C.md"
+      },
+      {
+        "workstream": "MARKET-MEMORY-W2C",
+        "wave": "M0C",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:MARKET-MEMORY-W2C#M0B"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-MARKET-MEMORY-W2C.md"
+      },
+      {
+        "workstream": "MARKET-MEMORY-W2C",
+        "wave": "M0D",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [
+          "WS:MARKET-MEMORY-W2C#M0C"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-MARKET-MEMORY-W2C.md"
+      },
+      {
+        "workstream": "MARKET-OS",
+        "wave": null,
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored workstream status is active.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-MARKET-OS.md"
+      },
+      {
+        "workstream": "MARKET-OS",
+        "wave": "A1A",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [
+          "WS:MARKET-OS#M0"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-MARKET-OS.md"
+      },
+      {
+        "workstream": "MARKET-OS",
+        "wave": "A1B",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:MARKET-OS#A1A.",
+        "depends_on": [
+          "WS:MARKET-OS#A1A"
+        ],
+        "unmet_dependencies": [
+          "WS:MARKET-OS#A1A"
+        ],
+        "source": "agentos/workstreams/WS-MARKET-OS.md"
+      },
+      {
+        "workstream": "MARKET-OS",
+        "wave": "A2-A6",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:MARKET-OS#A1B.",
+        "depends_on": [
+          "WS:MARKET-OS#A1B"
+        ],
+        "unmet_dependencies": [
+          "WS:MARKET-OS#A1B"
+        ],
+        "source": "agentos/workstreams/WS-MARKET-OS.md"
+      },
+      {
+        "workstream": "MARKET-OS",
+        "wave": "B1-B6",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:MARKET-OS#A1A.",
+        "depends_on": [
+          "WS:MARKET-OS#A1A"
+        ],
+        "unmet_dependencies": [
+          "WS:MARKET-OS#A1A"
+        ],
+        "source": "agentos/workstreams/WS-MARKET-OS.md"
+      },
+      {
+        "workstream": "MARKET-OS",
+        "wave": "C1-C6",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:MARKET-OS#B1-B6.",
+        "depends_on": [
+          "WS:MARKET-OS#B1-B6"
+        ],
+        "unmet_dependencies": [
+          "WS:MARKET-OS#B1-B6"
+        ],
+        "source": "agentos/workstreams/WS-MARKET-OS.md"
+      },
+      {
+        "workstream": "MARKET-OS",
+        "wave": "D1-D9",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:MARKET-OS#A2-A6, WS:MARKET-OS#B1-B6.",
+        "depends_on": [
+          "WS:MARKET-OS#A2-A6",
+          "WS:MARKET-OS#B1-B6"
+        ],
+        "unmet_dependencies": [
+          "WS:MARKET-OS#A2-A6",
+          "WS:MARKET-OS#B1-B6"
+        ],
+        "source": "agentos/workstreams/WS-MARKET-OS.md"
+      },
+      {
+        "workstream": "MARKET-OS",
+        "wave": "E1-E3",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:MARKET-OS#C1-C6, WS:MARKET-OS#D1-D9.",
+        "depends_on": [
+          "WS:MARKET-OS#C1-C6",
+          "WS:MARKET-OS#D1-D9"
+        ],
+        "unmet_dependencies": [
+          "WS:MARKET-OS#C1-C6",
+          "WS:MARKET-OS#D1-D9"
+        ],
+        "source": "agentos/workstreams/WS-MARKET-OS.md"
+      },
+      {
+        "workstream": "MARKET-OS",
+        "wave": "F0-F5",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:MARKET-OS#B1-B6, WS:MARKET-OS#D1-D9.",
+        "depends_on": [
+          "WS:MARKET-OS#B1-B6",
+          "WS:MARKET-OS#D1-D9"
+        ],
+        "unmet_dependencies": [
+          "WS:MARKET-OS#B1-B6",
+          "WS:MARKET-OS#D1-D9"
+        ],
+        "source": "agentos/workstreams/WS-MARKET-OS.md"
+      },
+      {
+        "workstream": "MARKET-OS",
+        "wave": "M0",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-MARKET-OS.md"
+      },
+      {
+        "workstream": "MASSIVE-STOCK-DAY-R2-COHERENCE",
+        "wave": null,
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-MASSIVE-STOCK-DAY-R2-COHERENCE.md"
+      },
+      {
+        "workstream": "MASSIVE-STOCK-DAY-R2-COHERENCE",
+        "wave": "C0",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-MASSIVE-STOCK-DAY-R2-COHERENCE.md"
       },
       {
         "workstream": "PROPHET-CONDITIONAL-FUSION",
@@ -7751,9 +8800,9 @@
       {
         "workstream": "PROPHET-HK-CA-REVAMP",
         "wave": "ca-truth",
-        "state": "in_progress",
-        "reason_code": "status_in_progress",
-        "reason": "Authored wave status is in_progress.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
@@ -7803,15 +8852,13 @@
       {
         "workstream": "PROPHET-HK-CA-REVAMP",
         "wave": "ledger-era",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:PROPHET-HK-CA-REVAMP#ca-truth.",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
         "depends_on": [
           "WS:PROPHET-HK-CA-REVAMP#ca-truth"
         ],
-        "unmet_dependencies": [
-          "WS:PROPHET-HK-CA-REVAMP#ca-truth"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
       },
       {
@@ -7969,7 +9016,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8024,7 +9070,7 @@
         "wave": "a1",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8037,7 +9083,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8053,7 +9098,7 @@
         "wave": "a2",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#a1, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#a1, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8066,7 +9111,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8083,7 +9127,7 @@
         "wave": "a3",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#a1, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#a1, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8096,7 +9140,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8113,7 +9156,7 @@
         "wave": "a4",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#a2, WS:PROPHET-US-V4-RECOVERY#a3, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#a2, WS:PROPHET-US-V4-RECOVERY#a3, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8127,7 +9170,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8145,7 +9187,7 @@
         "wave": "b1",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#a1, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#a1, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8158,7 +9200,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8175,7 +9216,7 @@
         "wave": "b2",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b1, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b1, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8188,7 +9229,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8205,7 +9245,7 @@
         "wave": "b3",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b1, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b1, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8218,7 +9258,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8235,7 +9274,7 @@
         "wave": "b4",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b2, WS:PROPHET-US-V4-RECOVERY#b3, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b2, WS:PROPHET-US-V4-RECOVERY#b3, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8249,7 +9288,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8280,7 +9318,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8296,7 +9333,7 @@
         "wave": "b5b",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b3, WS:PROPHET-US-V4-RECOVERY#b4, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b3, WS:PROPHET-US-V4-RECOVERY#b4, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8310,7 +9347,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8328,7 +9364,7 @@
         "wave": "b6",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b2, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b2, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8341,7 +9377,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8358,7 +9393,7 @@
         "wave": "b7",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b6, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b6, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8371,7 +9406,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8388,7 +9422,7 @@
         "wave": "c1",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b1, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b1, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8401,7 +9435,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8418,7 +9451,7 @@
         "wave": "c2",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#c1, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#c1, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8431,7 +9464,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8448,7 +9480,7 @@
         "wave": "c3",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b5b, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b5b, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8461,7 +9493,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8511,7 +9542,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8527,7 +9557,7 @@
         "wave": "d3",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d2, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d2, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8540,7 +9570,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8557,7 +9586,7 @@
         "wave": "d4",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d3, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d3, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8570,7 +9599,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8587,7 +9615,7 @@
         "wave": "d5",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8600,7 +9628,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8616,7 +9643,7 @@
         "wave": "d6",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d5, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d5, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8629,7 +9656,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8646,7 +9672,7 @@
         "wave": "d7",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d5, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d5, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8659,7 +9685,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8676,7 +9701,7 @@
         "wave": "e1",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b4, WS:PROPHET-US-V4-RECOVERY#c1, WS:PROPHET-US-V4-RECOVERY#d5, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b4, WS:PROPHET-US-V4-RECOVERY#c1, WS:PROPHET-US-V4-RECOVERY#d5, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8691,7 +9716,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8710,7 +9734,7 @@
         "wave": "e2",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#a4, WS:PROPHET-US-V4-RECOVERY#b7, WS:PROPHET-US-V4-RECOVERY#c2, WS:PROPHET-US-V4-RECOVERY#e1, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#a4, WS:PROPHET-US-V4-RECOVERY#b7, WS:PROPHET-US-V4-RECOVERY#c2, WS:PROPHET-US-V4-RECOVERY#e1, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8726,7 +9750,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8746,7 +9769,7 @@
         "wave": "e3",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#c1, WS:PROPHET-US-V4-RECOVERY#e1, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#c1, WS:PROPHET-US-V4-RECOVERY#e1, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8760,7 +9783,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8778,7 +9800,7 @@
         "wave": "e4",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#e3, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#e3, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8791,7 +9813,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8808,7 +9829,7 @@
         "wave": "e5",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d4, WS:PROPHET-US-V4-RECOVERY#e3, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d4, WS:PROPHET-US-V4-RECOVERY#e3, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8822,7 +9843,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8840,7 +9860,7 @@
         "wave": "e6",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#e3, WS:PROPHET-US-V4-RECOVERY#e4, WS:PROPHET-US-V4-RECOVERY#e5, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#e3, WS:PROPHET-US-V4-RECOVERY#e4, WS:PROPHET-US-V4-RECOVERY#e5, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -8855,7 +9875,6 @@
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
           "WS:GMI-THEME-GRAPH",
           "WS:LIVE-ENTRY-RADAR",
@@ -8868,6 +9887,114 @@
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md"
+      },
+      {
+        "workstream": "RUNNER-FLEET-RESILIENCE",
+        "wave": null,
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored workstream status is active.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md"
+      },
+      {
+        "workstream": "RUNNER-FLEET-RESILIENCE",
+        "wave": "M0",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is awaiting_ci.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md"
+      },
+      {
+        "workstream": "RUNNER-FLEET-RESILIENCE",
+        "wave": "W1",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:RUNNER-FLEET-RESILIENCE#M0.",
+        "depends_on": [
+          "WS:RUNNER-FLEET-RESILIENCE#M0"
+        ],
+        "unmet_dependencies": [
+          "WS:RUNNER-FLEET-RESILIENCE#M0"
+        ],
+        "source": "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md"
+      },
+      {
+        "workstream": "RUNNER-FLEET-RESILIENCE",
+        "wave": "W2",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:RUNNER-FLEET-RESILIENCE#M0.",
+        "depends_on": [
+          "WS:RUNNER-FLEET-RESILIENCE#M0"
+        ],
+        "unmet_dependencies": [
+          "WS:RUNNER-FLEET-RESILIENCE#M0"
+        ],
+        "source": "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md"
+      },
+      {
+        "workstream": "RUNNER-FLEET-RESILIENCE",
+        "wave": "W3",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:RUNNER-FLEET-RESILIENCE#M0.",
+        "depends_on": [
+          "WS:RUNNER-FLEET-RESILIENCE#M0"
+        ],
+        "unmet_dependencies": [
+          "WS:RUNNER-FLEET-RESILIENCE#M0"
+        ],
+        "source": "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md"
+      },
+      {
+        "workstream": "RUNNER-FLEET-RESILIENCE",
+        "wave": "W4",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:RUNNER-FLEET-RESILIENCE#W2.",
+        "depends_on": [
+          "WS:RUNNER-FLEET-RESILIENCE#W2"
+        ],
+        "unmet_dependencies": [
+          "WS:RUNNER-FLEET-RESILIENCE#W2"
+        ],
+        "source": "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md"
+      },
+      {
+        "workstream": "RUNNER-FLEET-RESILIENCE",
+        "wave": "W5",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:RUNNER-FLEET-RESILIENCE#W1, WS:RUNNER-FLEET-RESILIENCE#W3, WS:RUNNER-FLEET-RESILIENCE#W4.",
+        "depends_on": [
+          "WS:RUNNER-FLEET-RESILIENCE#W1",
+          "WS:RUNNER-FLEET-RESILIENCE#W3",
+          "WS:RUNNER-FLEET-RESILIENCE#W4"
+        ],
+        "unmet_dependencies": [
+          "WS:RUNNER-FLEET-RESILIENCE#W1",
+          "WS:RUNNER-FLEET-RESILIENCE#W3",
+          "WS:RUNNER-FLEET-RESILIENCE#W4"
+        ],
+        "source": "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md"
+      },
+      {
+        "workstream": "RUNNER-FLEET-RESILIENCE",
+        "wave": "W6",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:RUNNER-FLEET-RESILIENCE#W5.",
+        "depends_on": [
+          "WS:RUNNER-FLEET-RESILIENCE#W5"
+        ],
+        "unmet_dependencies": [
+          "WS:RUNNER-FLEET-RESILIENCE#W5"
+        ],
+        "source": "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md"
       },
       {
         "workstream": "STOCK-IDENTITY",
@@ -9049,17 +10176,16 @@
     "degraded": []
   },
   "warnings": [
-    "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2 — record_disagrees_with_execution: wave W1A is 'in_progress' but PR #6012 is merged",
+    "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2 — record_disagrees_with_execution: wave W1B is 'in_progress' but PR #6044 is merged",
     "WS:COMMERCIAL-PATH-ALERTING — record_disagrees_with_execution: wave W1 is 'awaiting_ci' but PR #5734 is merged",
     "WS:CUSTOMER-DATA-BACKUP — record_disagrees_with_execution: wave W1 is 'awaiting_ci' but PR #5733 is merged",
     "WS:EVAL-OS-T1-ENGINE-REGISTRY — status is 'active' but every wave is done/dropped — roll the status forward",
     "WS:FINANCIAL-INTELLIGENCE-FABRIC — record_disagrees_with_execution: wave FIF-2 is 'in_progress' but PR #5983 is merged",
     "WS:FUNDAMENTAL-FORENSICS — record_disagrees_with_execution: wave FF-1 is 'in_progress' but PR #5820 is merged",
-    "WS:GREY-DEER-RISK-INTELLIGENCE — record_disagrees_with_execution: wave GD-2 is 'in_progress' but PR #6026 is merged",
-    "WS:GREY-DEER-RISK-INTELLIGENCE — record_disagrees_with_execution: wave GD-4A is 'in_progress' but PR #6022 is merged",
+    "WS:INTRADAY-FLOW-P0-RECOVERY — record_disagrees_with_execution: wave PR-4 is 'in_progress' but PR #6105 is merged",
     "WS:LIVE-ENTRY-RADAR — record_disagrees_with_execution: wave W6 is 'in_progress' but PR #5834 is merged",
     "WS:LIVE-ENTRY-RADAR — record_disagrees_with_execution: wave W6 is 'in_progress' but PR #5845 is merged",
-    "WS:PROPHET-HK-CA-REVAMP — record_disagrees_with_execution: wave ca-truth is 'in_progress' but PR #5926 is merged",
+    "WS:PROPHET-HK-CA-REVAMP — record_disagrees_with_execution: wave ledger-era is 'in_progress' but PR #6072 is merged",
     "WS:STOCK-IDENTITY — record_disagrees_with_execution: wave W2 is 'in_progress' but PR #5643 is merged",
     "agentos/workstreams/WS-EVAL-OS-T1-ENGINE-REGISTRY.md: [active-but-complete] status is 'active' but every wave is done/dropped",
     "agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'scripts/build_live_risk_envelope.py' does not exist in repo 'macro'",

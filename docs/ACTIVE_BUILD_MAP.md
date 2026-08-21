@@ -2,18 +2,24 @@
 
 # Active Build Map
 
-Generated: 2026-08-20T05:30:56.871125+00:00  |  Open PRs: 9  |  Merged (window): 500  |  base: `5761b9791e23d8ef6e5ee6cc3807089061c31fcd`
+Generated: 2026-08-21T01:25:05.213369+00:00  |  Open PRs: 15  |  Merged (window): 500  |  base: `152e3880033a5e3836dfc19b079840e0bc333b2f`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #6041 | fix(stocks): a subsidiary, brand or product line is not the issuer | `claude/dossier-subsidiary-entity-guard` | 2026-08-20 | ⚠ CONFLICTING |
-| #6040 | prophet board: live change on the gated cards, and one "Live now" heading | `claude/prophet-board-live-change-and-duplicate-heading` | 2026-08-20 | — |
-| #6038 | research(gd1c): reconstruct leadership crack design era | `claude/gd1c-design-era-20260819` | 2026-08-20 | DRAFT |
-| #6037 | fix(grey-deer): GD-2R1 — semantic-correctness repair of the settled envelope | `claude/gd2r1-semantic-repair` | 2026-08-20 | ⚠ CONFLICTING |
-| #6036 | docs(alpha-intel): FABLE-00 close-out — canonical K4-G precondition sources; next action = Sol dispatch FABLE-A | `claude/alpha-intel-c0g-handoff-close` | 2026-08-20 | ⚠ CONFLICTING |
-| #6021 | E2-D: Canonical Macro dossier glance from event_workspace.v1 [HOLD] | `claude/earnings-e2-d` | 2026-08-19 | DRAFT / ⚠ protected:1 |
+| #6144 | grey-deer: GD-3 live provisional Risk Envelope overlay | `claude/gd3-live-envelope-build` | 2026-08-21 | — |
+| #6143 | records(market-os): A1A closure — wave state, handoff, FX-latch discovery | `claude/market-os-a1a-closure-records` | 2026-08-21 | — |
+| #6139 | records(biocatalyst): Sol-ratify Trial Milestone Radar and establish canonical P1 workstream | `chatgpt1/mas-96-biocatalyst-catalyst-radar-ratification` | 2026-08-20 | — |
+| #6138 | HOLD-FOR-SOL · sol(P1-0R): BioCatalyst authority closure — vertical ratified, P1 workstream, plane ownership DECs | `claude/biocatalyst-p1-0r-authority-closure` | 2026-08-20 | DRAFT |
+| #6135 | chore(workflow): add tracked-work PR metadata template (MAS-6) | `chatgpt1/mas-6-pr-metadata-template-macro` | 2026-08-21 | — |
+| #6127 | records(imce): IMCE-00 architecture freeze — issuer-mechanism research extension under CPI [HOLD-FOR-SOL] | `claude/imce-00-architecture-freeze` | 2026-08-20 | — |
+| #6126 | records(intraday-flow): reconcile PR-4 merge to current-session production gate | `chatgpt1/mas-86-intraday-pr4-merge-reconcile` | 2026-08-21 | — |
+| #6125 | records(market-os): reconcile A1A merge to bounded production acceptance | `chatgpt1/mas-72-a1a-merge-reconcile` | 2026-08-21 | — |
+| #6119 | records(agentos): harden Linear PR linkage completion law | `chatgpt1/linear-pr-linkage-completion-law` | 2026-08-21 | — |
+| #6113 | ci(runners): add read-only hosted merge-control canary | `sol/runner-fleet-w1a-hosted-merge-canary-v2` | 2026-08-20 | ⚠ protected:1 |
+| #6080 | feat(polygon-gex): AD-1C0.1 — bounded lawful capture lease for partial replacement (HELD FOR SOL) | `claude/ad1c01-capture-lease` | 2026-08-20 | DRAFT |
+| #6051 | scratch(exk): Turn-3 exact repository-price replay — DO NOT MERGE | `sol/exk-turn3-exact-replay-20260820` | 2026-08-20 | DRAFT / ⚠ protected:2 |
 | #5898 | FF-1P2R: current-quarter EDGAR index discovery (do not merge; recovery fail-closed) | `claude/ff-1p2-bulk-census` | 2026-08-19 | ⚠ protected:2 |
 | #5821 | docs(bci): freeze federated Biopharma Cycle Intelligence OS architecture | `sol/biopharma-cycle-intelligence-architecture-20260816` | 2026-08-17 | DRAFT |
 | #5737 | radar(w8): Live Entry Radar reference UX + RIG (Prophet sister language) | `cursor/entry-radar-w8-rig-9f9d` | 2026-08-19 | ⚠ CONFLICTING |
@@ -22,13 +28,105 @@ Generated: 2026-08-20T05:30:56.871125+00:00  |  Open PRs: 9  |  Merged (window):
 
 ## File Collisions
 
-_No file collisions detected among open PRs._
+| PR A | PR B | Shared files | Files |
+|------|------|-------------|-------|
+| #6144 | #5898 | 1 | `.github/ci/legacy-jobs.yml` |
+| #6143 | #6125 | 1 | `agentos/workstreams/WS-MARKET-OS.md` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #6142 | fix(china-alpha): P1-R1 same-cycle visit derivation (cninfo host-group reorder) | 2026-08-21 |
+| #6141 | fix(ci): put the regwall access boundary on the merge gate, and heal the drift it caught | 2026-08-21 |
+| #6140 | nightly-liveness: GD-4A.1 CN/HK risk-forward-ledger freshness | 2026-08-21 |
+| #6137 | test(watchlist): pin the anonymous Risk Center lock shell to the CSS that gates it | 2026-08-21 |
+| #6136 | A1A closure: Sol's three blockers + snapshot authority made real | 2026-08-21 |
+| #6134 | docs(agentos): D4 company-bridge close — WS seal + handoff | 2026-08-20 |
+| #6133 | fix(ci): heal integration-baseline — fence fetch-depth pin + serving-observability scope | 2026-08-21 |
+| #6132 | agentos: P1-ZERO-ROW-ATTRIBUTION receipt — bootstrap latency, not quiet day | 2026-08-20 |
+| #6131 | agentos: V4-D2B2-CN-HK immutable merge SHA backfill | 2026-08-20 |
+| #6130 | docs(agentos): E2-D production landing — close the E2 arc | 2026-08-20 |
+| #6129 | observability: make the Sentry arm banner actually reach the journal | 2026-08-20 |
+| #6128 | research(xpv2-e0a): current estate truth, registry freshness, family exemplars, and the V2 schema delta | 2026-08-20 |
+| #6124 | fix(intel-hub): correct false "policy votes" ranking tooltip (XPV2-IH-T0) | 2026-08-20 |
+| #6123 | D4: IRDM company financial truth bridge — GovRev fact beside the canonical owner's packet, comparison closed | 2026-08-20 |
+| #6122 | XPV2-SC-R3A: Sector Central authority + capability binding pack | 2026-08-20 |
+| #6120 | fix(intel-hub): policy is context, not a voting desk — correct the ranking help | 2026-08-20 |
+| #6118 | records(live-breadth): state precisely what the browser proof does and does not show | 2026-08-20 |
+| #6117 | records(dislocation): P0-A1 price-blind candidate harvest and draft | 2026-08-20 |
+| #6116 | fix(dataos): V4-D2B2-CN-HK — China/HK canonical identity admission | 2026-08-20 |
+| #6115 | observability: arm Sentry on the macro-api serving tier | 2026-08-20 |
+| #6114 | Cover the exact Intraday Flow board in live bars | 2026-08-21 |
+| #6112 | prophet(BIOCATALYST-P1-0): post-P0 recharter — capability ledger + first-vertical architecture freeze (Trial Milestone Radar) | 2026-08-20 |
+| #6111 | records(prophet-lab): day-4 close-out — Gate B COMMISSIONED + shell merged + B1 escalation | 2026-08-20 |
+| #6110 | records(grey-deer): closeout 2026-08-20 — Gate 8 + GD-4A production proofs, GD-3 commissioned | 2026-08-20 |
+| #6109 | fix(deploy): serve portfolio_state.js anonymously (A1A live-verification repair) | 2026-08-20 |
+| #6108 | china-alpha: PR-0D owner-route adjudication records — D2B2-CN-HK authorized, pr0d OWNER_ROUTED_WAIT | 2026-08-20 |
+| #6107 | fix(live-breadth): stamp the vendor delay, not our snapshot's staleness | 2026-08-20 |
+| #6106 | records(cs-v2): reconcile W1B accepted merge to natural-production gate | 2026-08-20 |
+| #6105 | Restore Intraday Flow live transport truth | 2026-08-20 |
+| #6104 | records(agentos): record accepted MAS-48 CEO ingress architecture | 2026-08-20 |
+| #6103 | fix(ci): contain fence checkout to proof surface | 2026-08-20 |
+| #6102 | fix(market-os): Portfolio mode owns its risk universe — no watchlist leak into Concentration | 2026-08-20 |
+| #6101 | records(options): pin flat-file entitlement regression | 2026-08-20 |
+| #6100 | alerts: a source outage cannot make risk disappear, and re-fires are not persistence | 2026-08-20 |
+| #6099 | P0-ST closure: PROVEN_LIVE production proof (records-only) | 2026-08-20 |
+| #6098 | feat(market-os): A1A portfolio population truth + state authority | 2026-08-20 |
+| #6097 | Freeze Mastermind-X XPV2 Turn-3 R2 candidates and critic packet | 2026-08-20 |
+| #6096 | records(intraday): close P0 recovery receipts | 2026-08-20 |
+| #6095 | fix(entry-radar): read_quote accepts the loader's normalized ts_ms shape (commissioning blocker) | 2026-08-20 |
+| #6094 | records(runners): freeze physical fleet resilience architecture | 2026-08-20 |
+| #6093 | alerts: event time is when the EVENT happened, and Open lands on that evidence | 2026-08-20 |
+| #6092 | records(biocatalyst): close recovery after P0 production proof | 2026-08-20 |
+| #6091 | agentos: LEDGER-ERA wave boundary — merge state + session handoff | 2026-08-20 |
+| #6090 | docs(biocatalyst): P0-C2R2 entitled production acceptance — PROVEN_LIVE | 2026-08-20 |
+| #6089 | fix(asia-close): gate real-run classifier uses job-level truth, not run duration | 2026-08-20 |
+| #6088 | Retire BTC midterm allocation veto | 2026-08-20 |
+| #6087 | records(intraday): reconcile out-of-order OPEX PR-2 merge | 2026-08-20 |
+| #6086 | records(w2c): ratify M0C REST successor and authorize bounded M0D | 2026-08-20 |
+| #6085 | Fix Dark Pool session integrity and FINRA freshness clock | 2026-08-20 |
+| #6084 | fix(live-breadth): make the live scoreboard fail closed and give it one canonical owner | 2026-08-20 |
+| #6083 | docs(agentos): version W2C v2 as RTH price / full-day activity | 2026-08-20 |
+| #6082 | fix(dataos): V4-D2B1-R1 — VMRK duplicate-mint supersession onto EQR + pending-transition fence | 2026-08-20 |
+| #6081 | ship-loop: untracked bytes already shipped on origin/main are not dirt | 2026-08-20 |
+| #6079 | records(agentos): recover BioCatalyst Recovery V2 work identity | 2026-08-20 |
+| #6078 | docs(agentos): freeze W2C v2 on single-ticker REST daily (M0C) | 2026-08-20 |
+| #6077 | records(market-os): M0 architecture freeze and A1A commissioning | 2026-08-20 |
+| #6076 | prophet(P-MP1-SHELL): central act — Setups grid re-sourced to plan book + 7-cell lifecycle ladder + W-L1 neutralization | 2026-08-20 |
+| #6074 | fix(options): enforce target-session truth and fail frozen publications | 2026-08-20 |
+| #6073 | fix(opex): stop future expiry tail clamping | 2026-08-20 |
+| #6072 | fix(board-ledger): era-scope selection metrics, not just rank_ic (LEDGER-ERA) | 2026-08-20 |
+| #6071 | docs(agentos): freeze Linear portfolio + Slack transport operating law | 2026-08-20 |
+| #6070 | records(agentos): Intraday Flow P0 recovery continuation handoff | 2026-08-20 |
+| #6069 | agentos: CA-TRUTH settlement receipt passed — ca-truth done, LEDGER-ERA open | 2026-08-20 |
+| #6068 | records(dislocation): Turn 5 source architecture and P0-S0/S1 freeze | 2026-08-20 |
+| #6065 | docs(agentos): record M0B W2C source-clock impossible classification | 2026-08-20 |
+| #6064 | records(mp-1): §13 W-L1 row CLOSED — Sol Day-4 option-(b) ruling | 2026-08-20 |
+| #6063 | docs(agentos): D3 temporal Change Tape close — WS seal + handoff | 2026-08-20 |
+| #6060 | records(dislocation): Turn 4 replay adjudication and blind P0 freeze | 2026-08-20 |
+| #6059 | govrev: fit the D3 page under a ratcheted raw-byte budget (296 KiB) | 2026-08-20 |
+| #6058 | records(prophet-lab): day-3 close-out — G-D PASS + Gate B findings + W-L1 referral + day-3 handoff | 2026-08-20 |
+| #6056 | docs(governance): recorded holds are merge barriers (DEC + fleet-law amendment + AD-1C0.1 wave row) | 2026-08-20 |
+| #6055 | design-system: port .skel + .mx-error verbatim from the specimen (P-MP1-SHELL gate) | 2026-08-20 |
+| #6054 | docs(agentos): record M0A W2C three-window prospective proof | 2026-08-20 |
+| #6053 | test(prophet-card): re-pin zh rebind test to the C8-C structural flip | 2026-08-20 |
+| #6052 | P0-C2R2 — retain request-local validated BioCatalyst artifacts | 2026-08-20 |
+| #6050 | china-alpha: P1 institutional visit tape collector + dossier block | 2026-08-20 |
+| #6049 | prep(p-mp1-shell): §8a stance projection + count plumbing + suite wiring — central act OWED (W-L1 referral to Sol) | 2026-08-20 |
+| #6048 | govrev D3: temporal contract v3 + Change Tape truth | 2026-08-20 |
+| #6047 | P0-ST: main-board risk-warning band ±5%→±10% effective 2026-07-06 (CN-LIMIT R6 wave) | 2026-08-20 |
+| #6046 | china-alpha: RIGHTS-0 source entitlement/rights registry | 2026-08-20 |
+| #6045 | china-alpha PR-0B: persist full intel_interest anatomy to the CN candidate plane | 2026-08-20 |
+| #6044 | fix(cs-v2-w1b): closed-bundle atomic persistence after W1A | 2026-08-20 |
+| #6043 | agentos(options): post-restoration census still 403; AD-1 not ready | 2026-08-20 |
+| #6042 | docs(china-alpha): freeze activation — Sol post-merge acceptance GO, freeze effective, three waves authorized | 2026-08-20 |
+| #6041 | fix(stocks): a subsidiary, brand or product line is not the issuer | 2026-08-20 |
+| #6040 | prophet board: live change on the gated cards, and one "Live now" heading | 2026-08-20 |
 | #6039 | docs(perf): continuation handoff through PR 3, and scout PR 4 | 2026-08-20 |
+| #6038 | research(gd1c): reconstruct leadership crack design era | 2026-08-20 |
+| #6037 | fix(grey-deer): GD-2R1 — semantic-correctness repair of the settled envelope | 2026-08-20 |
+| #6036 | docs(alpha-intel): FABLE-00 close-out — canonical K4-G precondition sources; next action = Sol dispatch FABLE-A | 2026-08-20 |
 | #6035 | docs(china-alpha): post-merge authority reconciliation — hold-merge incident DSC, final merged-object pins, AgentOS reality repair | 2026-08-20 |
 | #6034 | docs(agentos): rescue six orphaned WS:AGENT-OS executive records | 2026-08-20 |
 | #6033 | perf(edge): give every content-hashed public asset the immutable year it already earned | 2026-08-20 |
@@ -43,6 +141,7 @@ _No file collisions detected among open PRs._
 | #6024 | ship-loop: bounded clearing path for authority-frozen merged heads | 2026-08-19 |
 | #6023 | ci: wire all five suites audit_unrun_tests reds on main (consolidates #6015 + #6016 + the unowned dossier three) | 2026-08-19 |
 | #6022 | fix(grey-deer): GD-4A — arm CN/HK forward-ledger advancement per-step in the Asia-close lane | 2026-08-19 |
+| #6021 | E2-D: Canonical Macro dossier glance from event_workspace.v1 | 2026-08-20 |
 | #6020 | ci: overlap contract-delta's head/base censuses, raise timeout margin | 2026-08-19 |
 | #6019 | records(grey-deer): Sol GD-1 acceptance — GD-1 closed, GD-1C prerequisite, GD-2/GD-4A commissioned | 2026-08-19 |
 | #6018 | agentos(options): live entitlement still blocked; reconcile AD-1 merged state | 2026-08-20 |
@@ -438,96 +537,6 @@ _No file collisions detected among open PRs._
 | #5569 | fix(merge-on-green): skip-ci ticks must not invalidate proofs; auto-clear stale merge-blocked | 2026-08-14 |
 | #5567 | fix(altdata): isolate convergence ledger reads and adjudicate first cohort | 2026-08-14 |
 | #5566 | Fix render publish starvation under main contention | 2026-08-14 |
-| #5565 | fix(ci): packing-contract leak, shallow-clone fences, live-inherited-red | 2026-08-14 |
-| #5564 | ci: cut pack wall-clock so the merge queue can drain | 2026-08-13 |
-| #5563 | fix(qledger): a hard exchange suffix is never vetoed by the desk table — make shape_is_decisive load-bearing | 2026-08-14 |
-| #5562 | fix(merge-on-green): drain stale-green batch; stop unowned catch-alls | 2026-08-13 |
-| #5561 | agentos: Phase 3 — compile-context, a bounded cited context bundle over the existing index | 2026-08-14 |
-| #5560 | design(rig-r4): Prophet Board — close the full RIG R3 REVISE verdict (#5552) | 2026-08-14 |
-| #5559 | eval-os P0a-2: the market resolver — shape and provenance must AGREE or the leg is refused | 2026-08-13 |
-| #5557 | fix(agentos): read strategic state from the sibling's local refs when the worktree is stale | 2026-08-13 |
-| #5556 | agent-os: Phase 1 adoption — operating sections + decision/discovery backfill | 2026-08-14 |
-| #5555 | prophet: stale-frame action safety — no current instruction off a dead tape | 2026-08-14 |
-| #5554 | DOS-1.2: identity seam registry + a mutation-proven ADOPT-disagreement gate | 2026-08-13 |
-| #5553 | fix(ci): the merge breaker's cost is the TREE, not history — sparse-checkout the 85% it never reads | 2026-08-13 |
-| #5552 | rig(r3): Prophet Board reference @ 6ad6b51b — VERDICT: REVISE (no approval minted) | 2026-08-13 |
-| #5551 | ci: stop live-store pins, unscoped full-suite, and pack-name waiver holes | 2026-08-13 |
-| #5550 | test(prophet): pin the legacy gate's tier_cascade leg off the nightly tape | 2026-08-13 |
-| #5549 | fix(ci): heal unrun-release-forecast pack red | 2026-08-13 |
-| #5548 | fix(ci): isolate zh-alert hub-feed tests from live vector/commodity tapes | 2026-08-13 |
-| #5547 | fix(ci): heal outcome-spine pack red | 2026-08-13 |
-| #5546 | feat(retention): W6 — portfolio brief v2, population disclosure, since-your-last-visit | 2026-08-13 |
-| #5545 | feat(watchlist): W3 Risk Center — six tabs over existing engines | 2026-08-13 |
-| #5544 | fix(ci): the merge breaker keeps timing out INSIDE checkout — stop cloning history it never reads | 2026-08-13 |
-| #5543 | guards: refuse instead of passing vacuously on a sparse tree (7 guards) | 2026-08-13 |
-| #5542 | feat(options): add unarmed sparse selector core | 2026-08-14 |
-| #5541 | prophet(G-D): publish the plan book's actionability axis and enrichment, or say why not | 2026-08-14 |
-| #5540 | prophet: reconcile Overtime with the horizon clock (ruling §13) — vocabulary defect | 2026-08-14 |
-| #5539 | research(options): adjudicate the unlabelled H+60 backlog — 94% is a universe gap, not the cadence exit | 2026-08-14 |
-| #5538 | prophet(us): adjudicate the duplicate open-key pairs — quarantine frees the slot | 2026-08-14 |
-| #5537 | Data OS DOS-1.1: security master + time-scoped vendor alias table | 2026-08-13 |
-| #5536 | fix(market-memory): a stranded fetch can no longer wedge exit, leak its slot, or 503 the lane | 2026-08-14 |
-| #5535 | fix(hk-board): reviewed allowlist for the G1 marker-widening warning + re-pin for the 08-13 adjustments | 2026-08-14 |
-| #5534 | eval-os P2: append-only assertion law, rebuilt from its own failure | 2026-08-14 |
-| #5533 | rig: r2 cycle on revised Prophet reference (0fc975a) — verdict REVISE, receipts committed | 2026-08-14 |
-| #5532 | prophet(us): force-majeure outage backfill — 2026-08-11 reconstruction | 2026-08-14 |
-| #5531 | worktree: sparse session-checkout profile by default (policy R8) — 3.8 GiB → 348 MiB per tree | 2026-08-14 |
-| #5530 | research(options): adjudicate the 4,096 context-audit ledger bound + early-warning tripwire | 2026-08-14 |
-| #5529 | fix(prophet): the outage-replay lane's quarantine reader resolved nothing (0 vs 12) | 2026-08-13 |
-| #5528 | fix(govrev): compute the late-discovery flag for revised actions — close the GRV-FA1 uncomputed-flag seam | 2026-08-14 |
-| #5527 | test(market-memory): a blown timing budget must never strand the fetch lane | 2026-08-14 |
-| #5526 | fix(govrev): stop reading a hardcoded flag as a live-window claim | 2026-08-14 |
-| #5524 | fix(ci): heal nightly temporal-pin reds (prophet-intake, market-memory, flow-surface) | 2026-08-13 |
-| #5523 | feat(cn-tushare): land range-shard campaign capability (fail-closed) — blockers 1-4 resolved | 2026-08-14 |
-| #5522 | docs(govrev): adjudicate the 2026-08-13 candidate batch — no quarantine; document the projection PIT seam | 2026-08-14 |
-| #5521 | research(cn-limit): P-B case decomposition — washout winners' footprint anatomy (display-tier) | 2026-08-14 |
-| #5520 | governance: Reference Integrity Gate V1 — reference creation gate, founding #5514 fixture, mechanical enforcement | 2026-08-14 |
-| #5519 | eval-os P1: no pooled signed excess_mean for a mixed-direction family | 2026-08-14 |
-| #5518 | test(govrev): derive the graph-vintage issuer coverage constants — 19/21/[BWXT,GE] stop being hand-typed | 2026-08-14 |
-| #5517 | feat(design-system): packet PR-0(a)(b) — site type ramp + shared primitives | 2026-08-14 |
-| #5516 | ci(govrev): make the candidate projection prove itself before it publishes | 2026-08-14 |
-| #5515 | ci: stop the pack/merge traffic jam (full prevention) | 2026-08-13 |
-| #5514 | design: Prophet Board mockup gate (MP-1 G-C) — chart-first card + ruled lifecycle ladder | 2026-08-13 |
-| #5513 | law: retire the terminal CI handoff — a session owns its PR through to merge | 2026-08-14 |
-| #5512 | eval-os: situation report for the CEO, with the T1/T7/T8 decision | 2026-08-14 |
-| #5510 | fix(china): the CN Theme Tape's quiet group printed numbers where every other bucket printed names | 2026-08-14 |
-| #5508 | ops: consolidate the GC launchd onto the canonical installer — immune to every stale checkout | 2026-08-14 |
-| #5507 | guard(china): the CN Theme Tape suite pinned the night's verdict, and CI never ran it | 2026-08-14 |
-| #5506 | prophet: derive lifecycle_state + counts (§J.9(c) PR-0(c)) | 2026-08-14 |
-| #5505 | design: Prophet Board reference conformed to the lifecycle ruling (#5504) + MP-1 migration packet | 2026-08-14 |
-| #5504 | research: Prophet program ruling — §J.9(c)+§J.10 lifecycle cells, surface ownership, stage-name retirement | 2026-08-13 |
-| #5503 | guard(signals): signal-gate pair coherence tripwire (#5490 follow-up) | 2026-08-14 |
-| #5502 | ops: ARM the worktree GC (operator ratification 2026-08-13) + min_age 7d→3d | 2026-08-13 |
-| #5501 | ops(healthcheck): host-disk headroom tripwire — the Studio has hit ENOSPC twice with zero warning | 2026-08-14 |
-| #5500 | research: Prophet decision packet for §J.9(c)+§J.10 — stage semantics | 2026-08-14 |
-| #5499 | fix(live): put the china_stocks board on the live feed (its % pills were dead) | 2026-08-14 |
-| #5498 | research: nightly compute & allocation audit — the 5h30m bake, decomposed, with a P0-P2 plan | 2026-08-13 |
-| #5497 | design-system: resolve --ink-tier to the shipped literals, on measurement | 2026-08-13 |
-| #5496 | feat(watchlist): W2 flagship Portfolio Intelligence workspace | 2026-08-13 |
-| #5495 | fix(close-pass): the evening board lane has NEVER been green — it fails its own proof step | 2026-08-13 |
-| #5493 | ci: consolidate odometer light-mode suite to one canonical home (unrun-page-guards) | 2026-08-13 |
-| #5492 | ops: port the CN lane's cron redundancy to the US nightly | 2026-08-14 |
-| #5491 | research: Sol decision packet for §J.9 (count ladder) | 2026-08-14 |
-| #5490 | fix(ci): heal main-side pack-11 drift (chat nav sync, wrongway stamp, picks-boards) | 2026-08-13 |
-| #5489 | design(design-system): Archetype A (Today) + I (utility) reference mockups + docket amendment | 2026-08-13 |
-| #5488 | hooks: deny cancelling a production lane — the prose law did not bind on 2026-08-12 | 2026-08-14 |
-| #5487 | ops: nightly-liveness dead-man switch — the US bake went dark for two sessions and nothing reported it | 2026-08-14 |
-| #5486 | feat(design-system): DS-PR-1 — archetype re-key + design_system schema + ratchet R0 (report-only) | 2026-08-14 |
-| #5485 | Mastermind Data OS: canonical identity, temporal and price-basis spine + 7 specifications | 2026-08-13 |
-| #5484 | commercial architecture: the Mastermind-X monetization, activation & growth deliverables + chat-allowance derivation | 2026-08-12 |
-| #5483 | Preserve main ref during render checkout compaction | 2026-08-14 |
-| #5482 | research(prophet-us): stop-curvature study — all five chartered forms fail G5 ex ante (ADJUDICATED: family closed, definition-validity null) | 2026-08-12 |
-| #5481 | Attach Policy Watch render checks to an owned suite | 2026-08-12 |
-| #5480 | Restore HK and China Policy Watch render coverage | 2026-08-12 |
-| #5479 | ui: full-estate UI/UX audit — light mode fixed as a design, not a token swap | 2026-08-13 |
-| #5478 | fix(holdings): a currency-shaped ticker is evidence, not a verdict (§6c m12 audit) | 2026-08-14 |
-| #5477 | feat(etfs): W3 — Amplify SILJ/BATT, NCLD on a declared nav_equity_frac, and the government-sweep sleeve leaking into 13 funds | 2026-08-13 |
-| #5476 | research(red-team): pre-launch production failure-mode audit + launch gates | 2026-08-12 |
-| #5475 | chore(design-system): DS-PR-2 — design-migration PR template + harness forced-state capture | 2026-08-14 |
-| #5473 | fix(govrev): restore render budget headroom | 2026-08-12 |
-| #5472 | agent-os: architecture + Phase 0 knowledge plane | 2026-08-13 |
-| #5471 | eval-os: intelligence evaluation architecture + metric-validity gate | 2026-08-12 |
-| #5470 | docs(watchlist-portfolio): W1-cycle program build log | 2026-08-12 |
 
 ---
 
