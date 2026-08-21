@@ -322,6 +322,14 @@ def _visit_block(ticker: str, visit_ctx: dict) -> dict:
     identity (typed, never guessed), and a first-seen-since-coverage-start
     flag. Always names its state from the house ten-state taxonomy
     (masterplan §9.3); NEVER presents a source failure as a quiet tape.
+
+    health.status == "upstream_degraded" (P1-R1: the same-run china_filings
+    refresh this collection's china_visits derivation consumed was itself
+    degraded) never routes into the source_failure branch — the visit tape
+    history is still readable and stays visible. With no rows for this name
+    it reads like a stale refusal instead of a clean "measured_no_event": a
+    degraded upstream proves no absence. Rows present render normally either
+    way — positive evidence from a degraded run is real evidence.
     """
     try:
         parsed = _ticker_to_sec_code(ticker)
@@ -360,6 +368,12 @@ def _visit_block(ticker: str, visit_ctx: dict) -> dict:
                 return {"state": "stale", "stale_days": stale_days,
                         "detail": "visit-tape source has not refreshed recently — "
                                   "absence of visits cannot be confirmed right now",
+                        "recent": [], "coverage_start": coverage_start}
+            if status == "upstream_degraded":
+                return {"state": "stale", "stale_days": stale_days,
+                        "detail": "visit-tape upstream was degraded on the last "
+                                  "collection run — absence of visits cannot be "
+                                  "confirmed right now",
                         "recent": [], "coverage_start": coverage_start}
             return {"state": "measured_no_event",
                     "detail": "no institutional-visit filing observed for this name "
