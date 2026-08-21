@@ -1991,6 +1991,98 @@ def test_concurrent_first_append_tolerates_a_raced_private_lock_creation(
     }
 
 
+def _spawn_evidence_reader(read):
+    """An unstarted reader thread plus the handles that record what it saw."""
+
+    import threading
+
+    finished = threading.Event()
+    outcome: list[BaseException | None] = []
+
+    def run() -> None:
+        try:
+            read()
+        except BaseException as exc:  # noqa: BLE001 - recorded for the assert
+            outcome.append(exc)
+        else:
+            outcome.append(None)
+        finished.set()
+
+    return threading.Thread(target=run, daemon=True), finished, outcome
+
+
+def test_evidence_verifiers_prove_the_inode_only_under_the_store_lock(
+    tmp_path: Path,
+) -> None:
+    """A reader must park on the store lock, not stat through a publish window.
+
+    `_write_private_bytes` publishes by `os.link(temporary, target)` and only unlinks
+    the temporary in its `finally`, so `target` carries `st_nlink == 2` for that
+    window. Standing in for it with a real hardlink taken while the test holds the
+    lock: a verifier that reads outside the lock sees `nlink == 2` immediately and
+    raises "must be an owned private 0600 file" about a file that is fine.
+    """
+
+    enrolled = event()
+    ledger = event_ledger(tmp_path, enrolled)
+    root = ledger.parent
+    receipt = full_capture_receipts(enrolled)[0]
+    install_capture_receipts(root, [receipt])
+    events, _event_receipt = cohort.read_event_ledger(ledger)
+
+    readers = {
+        "verify_private_evidence": lambda: cohort.verify_private_evidence(
+            root,
+            namespace="capture_evidence",
+            receipt=receipt["private_evidence"],
+        ),
+        "verify_capture_evidence": lambda: cohort.verify_capture_evidence(
+            root, [receipt]
+        ),
+        "verify_event_evidence": lambda: cohort.verify_event_evidence(root, events),
+    }
+    targets = [
+        root
+        / "capture_evidence"
+        / f"{receipt['private_evidence']['object_sha256']}.json",
+        root
+        / "event_evidence"
+        / f"{enrolled['private_evidence']['object_sha256']}.json",
+    ]
+
+    for name, read in readers.items():
+        reader, finished, outcome = _spawn_evidence_reader(read)
+        window = [path.with_suffix(".json.window") for path in targets]
+        with cohort._private_store_lock(root):
+            # Close the window BEFORE releasing the lock, in a `finally` that is
+            # itself inside the `with`. Cleaning up after the lock releases would
+            # let the woken reader stat a target that really is still at
+            # `nlink == 2` and fail honestly -- a race in the test, not the code.
+            try:
+                for source, link in zip(targets, window):
+                    os.link(source, link)
+                    assert source.lstat().st_nlink == 2
+                reader.start()
+                # Pre-fix the reader stats straight through and raises here;
+                # post-fix it blocks on the exclusive flock and observes nothing.
+                # Only an absurdly slow reader could false-PASS this; post-fix the
+                # reader is blocked indefinitely, so the wait cannot false-FAIL.
+                assert finished.wait(0.3) is False, (
+                    f"{name} read the evidence store without holding the store lock"
+                )
+            finally:
+                for link in window:
+                    if link.exists():
+                        link.unlink()
+
+        assert finished.wait(5) is True, f"{name} never completed after the release"
+        reader.join(timeout=5)
+        assert outcome == [None], f"{name} raised after the window closed: {outcome}"
+        for path in targets:
+            assert path.lstat().st_nlink == 1
+            assert stat.S_IMODE(path.lstat().st_mode) == 0o600
+
+
 def test_private_store_lock_prevents_cross_writer_staging_unlink(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
