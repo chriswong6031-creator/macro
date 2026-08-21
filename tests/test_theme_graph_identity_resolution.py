@@ -831,15 +831,34 @@ class TestD2B2US:
         receipt = json.loads((ROOT / "data" / "reference" / "_receipt.json").read_text())
         block = receipt["us_gmi_admission"]
         not_in_master = us_rows[us_rows["resolution_state"] == "NOT_IN_MASTER"]
-        # target_n (this run's own re-census, §2.2) is exactly the NOT_IN_MASTER count
-        # PLUS the resolved_this_run delta this same bake just admitted — i.e. every
-        # remaining NOT_IN_MASTER us row is a named refusal in the receipt, and every
-        # refusal in the receipt corresponds to exactly one remaining NOT_IN_MASTER row.
-        assert len(not_in_master) == block["target_n"] - block["resolved_total"]
-        assert len(not_in_master) == block["refused_this_run"]
         refused_symbols = {r["symbol"] for r in block["refusals_this_run"]}
         sidecar_not_in_master_symbols = set(not_in_master["source_native_symbol"])
-        assert refused_symbols == sidecar_not_in_master_symbols
+        # AMENDMENT R2/R6 — `target_n` is now the FULL GMI-U.S. population (legacy
+        # overlap included, one ENTITY_TYPE_CONFLICT node — IBIT — included too,
+        # since that state is a SIDECAR-only concept the security master never
+        # sees), so the two artifacts are no longer a one-to-one bijection:
+        #   * `disclosed_exclusions` codes (e.g. FISV, collapsed onto FI's mint)
+        #     resolve FINE in the sidecar via rule 5, even though the builder's
+        #     OWN accounting treats them as a collapsed duplicate, not a
+        #     "resolved target" — so a disclosed exclusion is never in
+        #     `not_in_master` at all.
+        #   * R6 forces a code whose OWN resolve_universe evidence does not
+        #     independently confirm a match (WBS/SATS: an existing active row's
+        #     identity IS already covered, via a DIFFERENT key spelling or a
+        #     pre-existing symbol-directory staleness gap) to be a GENUINE
+        #     target with its own typed refusal — even though the SIDECAR
+        #     separately resolves that identity fine via rule 5 against the
+        #     row's OWN inception_code.  This is R2's explicit intent ("a future
+        #     lost US row re-enters as a refusal and the invariant must be able
+        #     to see it") — the refusal is about resolve_universe's OWN evidence
+        #     for that SYMBOL, not a claim the identity is unresolvable anywhere.
+        # The invariant that DOES hold unconditionally: every sidecar
+        # NOT_IN_MASTER us row is ALSO a named GMI refusal (a code truly absent
+        # from master cannot have independently resolved to anything) — never
+        # the reverse.
+        assert sidecar_not_in_master_symbols <= refused_symbols, (
+            sidecar_not_in_master_symbols - refused_symbols
+        )
         # RESOLVED us rows all reach EITHER rule 5 (exact inception-code match) or
         # rule 6 (vendor_alias) — never a ticker-equality fallback (module docstring).
         resolved = us_rows[us_rows["resolution_state"] == "RESOLVED"]

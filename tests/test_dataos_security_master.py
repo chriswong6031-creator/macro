@@ -2914,8 +2914,14 @@ def test_gmi_us_ambiguous_registrant_fixture() -> None:
 # 9: reused ticker / pending-transition via the GMI seed path — NO new law (§4): the
 # candidate hits the unchanged R1 fence and the refusal surfaces in the GMI
 # accounting under its EXISTING typed reason, never a silent mint or drop.
-def test_gmi_us_pending_transition_fence_surfaces_in_gmi_accounting() -> None:
-    existing = [{
+# AMENDMENT R8 — exercises the REAL build() accounting path end to end (no
+# re-implemented classification loop in the test body).
+def test_gmi_us_pending_transition_fence_surfaces_in_gmi_accounting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    existing_rows = [{
         "security_id": "SEC:US-XNYS-OLDCO", "issuer_id": None,
         "issuer_state": "RESOLVED", "issuer_cik": "0009000001",
         "issuer_evidence_snapshot": "2026-08-18", "listing_key": "US-XNYS-OLDCO",
@@ -2923,35 +2929,40 @@ def test_gmi_us_pending_transition_fence_surfaces_in_gmi_accounting() -> None:
         "effective_at": "2020-01-01T00:00:00", "ingested_at": "2020-01-01T00:00:00",
         "security_state": None, "superseded_by": None,
     }]
-    # OLDCO is not re-derived this run (unaccounted -> `lost_rows`), and NEWGMI is a
-    # GMI-seeded listing-key MISS with no independent CIK evidence -> the fence
+    BUILD._write_parquet(existing_rows, BUILD.MASTER_COLUMNS,
+                         out_dir / BUILD.MASTER_NAME, BUILD.MASTER_DTYPES)
+
+    # Neither OLDCO nor NEWGMI is a legacy-curated key (empty universe) — OLDCO is
+    # not re-derived this run (unaccounted -> the fence's `lost_rows`), and NEWGMI
+    # is a GMI-only listing-key MISS with no independent CIK evidence -> the fence
     # refuses it (§5.2), exactly like a legacy candidate would.
-    resolutions = [_res("NEWGMI", "XNAS", "NEWGMI")]
-    (rows, ids, notes, resurrection, pending, lost, exc_lost,
-     gmi_refusals) = BUILD.mint_master_rows(
-        resolutions, existing, "2026-08-21T00:00:00",
-        cik_map={}, gmi_admission_targets=frozenset({"NEWGMI"}),
-        directory_flags={"NEWGMI": {"etf": False, "test_issue": False, "is_preferred": False}},
+    monkeypatch.setattr(BUILD, "load_universe", lambda: {})
+    monkeypatch.setattr(BUILD, "load_delisted", lambda: {})
+    monkeypatch.setattr(
+        BUILD, "load_directory",
+        lambda: ({"NEWGMI": "NASDAQ"},
+                 {"NEWGMI": {"etf": False, "test_issue": False, "is_preferred": False}},
+                 "2026-08-21", None),
     )
-    # OLDCO carried forward unchanged (only the `_existed_before` in-memory marker is
-    # new — never a declared column, never written to parquet), NEWGMI never minted.
-    assert len(rows) == 1
-    assert {k: v for k, v in rows[0].items() if k != "_existed_before"} == existing[0]
-    assert "NEWGMI" not in ids
-    assert len(pending) == 1 and pending[0]["symbol"] == "NEWGMI"
-    assert gmi_refusals == []  # the fence refused it BEFORE the GMI eligibility gate
-    # build()'s own accounting loop classifies a pending_transition_refusals hit
-    # under its EXISTING typed reason string — never a silent drop.
-    refused_by_code = {}
-    for r in resolutions:
-        if r.listing_key is not None or r.key not in {"NEWGMI"}:
-            continue
-        refused_by_code[r.key] = BUILD._gmi_us_unresolved_refusal(r, {})
-    for p in pending:
-        refused_by_code[p["symbol"]] = {
-            "code": "pending_transition_fence", "reason": p["reason"],
-        }
-    assert refused_by_code["NEWGMI"]["code"] == "pending_transition_fence"
+    monkeypatch.setattr(BUILD, "load_cik_map", lambda: ({}, None, None, frozenset()))
+    monkeypatch.setattr(BUILD, "load_config_maps", lambda: ({}, {}))
+    monkeypatch.setattr(
+        BUILD, "load_gmi_us_seeds",
+        lambda: [{"symbol": "NEWGMI", "node_id": "co:us:NEWGMI"}],
+    )
+
+    receipt = BUILD.build(out_dir, allow_missing_evidence=True)
+
+    assert receipt["pending_transition_refusals"], "the fence must have fired"
+    assert receipt["pending_transition_refusals"][0]["symbol"] == "NEWGMI"
+    block = receipt["us_gmi_admission"]
+    newgmi = [r for r in block["refusals_this_run"] if r["symbol"] == "NEWGMI"]
+    assert len(newgmi) == 1
+    assert newgmi[0]["code"] == "pending_transition_fence"
+    # OLDCO carried forward unchanged (mint-once) — never re-minted, never dropped.
+    master = pd.read_parquet(out_dir / BUILD.MASTER_NAME)
+    oldco = master[master["security_id"] == "SEC:US-XNYS-OLDCO"]
+    assert len(oldco) == 1
 
 
 # 10: new clean IPO fixture -> mints once; a second run re-derives, never re-mints.
@@ -3055,17 +3066,99 @@ def test_gmi_us_lp_common_unit_mints_real_data(master: pd.DataFrame) -> None:
         assert not rows.iloc[0]["security_state"] or pd.isna(rows.iloc[0]["security_state"])
 
 
-# 14: accounting completeness — the invariant, identity-exception disclosure, and
-# zero unaccounted targets, against the COMMITTED receipt (real data).
+# AMENDMENT R5 — a GMI-only candidate resolved via the EXIT LEDGER is eligibility-
+# EXEMPT BY LAW: no structural-flag check runs at all (there is no directory row
+# to consult), so it mints even with no `directory_flags` entry whatsoever.
+def test_r5_exit_ledger_resolved_candidate_is_eligibility_exempt() -> None:
+    resolutions = [
+        BUILD.Resolution(
+            "FAKEDELISTED", _lk("US", "XNYS", "FAKEDELISTED"), "FAKEDELISTED",
+            None,  # exchange_symbol=None -> resolved via the exit ledger, not the directory
+            "config/delisted_symbols.yml:FAKEDELISTED.exchange=NYSE", None,
+        ),
+    ]
+    rows, ids, *_r, gmi_refusals = BUILD.mint_master_rows(
+        resolutions, [], "2026-08-21T00:00:00",
+        cik_map={"FAKEDELISTED": ("0001234573", "Fake Delisted Co")},
+        gmi_admission_targets=frozenset({"FAKEDELISTED"}),
+        directory_flags={},  # deliberately EMPTY — no directory row exists for a delisted name
+    )
+    assert gmi_refusals == []
+    assert "FAKEDELISTED" in ids
+    assert {r["security_id"] for r in rows} == {"SEC:US-XNYS-FAKEDELISTED"}
+
+
+# AMENDMENT R5 — a DIRECTORY-resolved candidate MISSING a `directory_flags` entry
+# is a hard fail-closed error, never a silent skip (a desync between `directory`
+# and `directory_flags` — both built from the same snapshot row — is a bug worth
+# crashing on).
+def test_r5_directory_resolved_candidate_missing_flags_hard_fails() -> None:
+    resolutions = [_res("FAKENOFLAGS", "XNAS", "FAKENOFLAGS")]
+    with pytest.raises(IdentityError, match="structural-flags entry"):
+        BUILD.mint_master_rows(
+            resolutions, [], "2026-08-21T00:00:00",
+            cik_map={"FAKENOFLAGS": ("0001234574", "Fake No-Flags Co")},
+            gmi_admission_targets=frozenset({"FAKENOFLAGS"}),
+            directory_flags={},  # desynced — FAKENOFLAGS resolved via directory but has no entry
+        )
+
+
+# AMENDMENT R12 — a venue-resolved candidate whose ListingKey construction itself
+# fails (a malformed inception code) is typed `unrenderable_code`, never
+# conflated with the (mic-found-but-unmapped) `unsupported_venue` class.
+def test_r12_unrenderable_code_distinct_from_unsupported_venue() -> None:
+    res = BUILD.Resolution(
+        "FAKEBADCODE", None, None, "FAKEBADCODE",
+        "data/symbol_directory/snapshots/2026-08-21.parquet:FAKEBADCODE.exchange=NASDAQ",
+        None, "ListingKey code must match ^[A-Z0-9.]{1,10}$: got '???'",
+    )
+    refusal = BUILD._gmi_us_unresolved_refusal(res, {})
+    assert refusal["code"] == "unrenderable_code"
+    assert refusal["code"] != "unsupported_venue"
+
+    unmapped = BUILD.Resolution(
+        "FAKEZVENUE", None, None, None,
+        "data/symbol_directory/snapshots/2026-08-21.parquet:FAKEZVENUE.exchange=Z",
+        None, "listed on exchange code 'Z' ... which has no MIC in lib/dataos/identity.KNOWN_MICS",
+    )
+    assert BUILD._gmi_us_unresolved_refusal(unmapped, {})["code"] == "unsupported_venue"
+
+
+# 14: accounting completeness — the R2 THREE-WAY invariant (resolved + refused +
+# disclosed_exclusions == target_n), identity-exception disclosure, and zero
+# unaccounted targets, against the COMMITTED receipt (real data).  AMENDMENT R2:
+# `target_n` is now the FULL GMI-U.S. population (legacy overlap included), and
+# the partition gained a THIRD bucket (`disclosed_exclusions`, R3's duplicate-
+# claim collapse) — this test pins the CORRECTED, standing invariant.
 def test_gmi_us_accounting_completeness_real_data(receipt: dict) -> None:
     block = receipt["us_gmi_admission"]
-    assert block["resolved_total"] + block["refused_this_run"] == block["target_n"]
+    assert (block["resolved_total"] + block["refused_this_run"]
+            + len(block["disclosed_exclusions"])) == block["target_n"]
     assert len(block["refusals_this_run"]) == block["refused_this_run"]
     excluded_codes = {e["code"] for e in block["identity_exception_excluded"]}
     assert "B" in excluded_codes
+    assert "GOLD" in excluded_codes
     # Every named refusal carries a non-empty typed code and reason (no silent drop).
     for r in block["refusals_this_run"]:
         assert r["symbol"] and r["code"] and r["reason"]
+    # Every disclosed exclusion names a winning claimant with a real minted id.
+    for d in block["disclosed_exclusions"]:
+        assert d["symbol"] and d["winning_symbol"] and d["reason"]
+        assert d["winning_security_id"], (
+            f"{d['symbol']!r} discloses a winner {d['winning_symbol']!r} that "
+            "never actually minted — the collapse must never point at nothing"
+        )
+    # The refusal closed set (§3/§4 + AMENDMENT R12) — every code observed today
+    # must be a member; a new, unlisted code here would mean an unclassified
+    # refusal class slipped through.
+    closed_refusal_codes = {
+        "not_common_equity_etf", "not_common_equity_test_issue",
+        "not_common_equity_preferred", "unsupported_venue", "unrenderable_code",
+        "no_registrant_cik", "ambiguous_registrant", "not_listed_cik_present",
+        "not_listed_no_cik", "resurrection_refusal", "pending_transition_fence",
+    }
+    observed_codes = {r["code"] for r in block["refusals_this_run"]}
+    assert observed_codes <= closed_refusal_codes, observed_codes - closed_refusal_codes
 
 
 # 15: regression pins — CN 984 + HK 147 + the pre-existing 705 US rows byte-identical
@@ -3080,9 +3173,14 @@ def test_gmi_us_regression_pins_cn_hk_and_legacy_us_unchanged(
     assert receipt["coverage"]["unresolved"] == 10
 
 
-# 16: idempotency + run-2 stability (§8) — run 2 with the widened seed set must
-# re-derive EVERY pre-existing and newly-minted active US row (the fence never
-# flags any of them lost) and report resolved_this_run=0 with stable refusals.
+# 16: idempotency + run-2 stability — AMENDMENT R9 corrected law.  §8/§9.16's
+# original "fence fired zero times on run 2" was wrongly phrased: the pin's own
+# steady state carries `listing_continuity: [WBS, GOLD-identity-exception]` (WBS
+# is a pre-existing, unrelated symbol-directory staleness gap — VERIFIED present
+# on an unmodified rebuild at this pin, §9 item 4/6/7's own real-data fixtures).
+# The CORRECT law: run 2's `listing_continuity` is IDENTICAL to run 1's (the
+# expected steady set, not empty), zero pending-transition/resurrection
+# refusals, `resolved_this_run == 0`, byte-identical artifacts.
 def test_gmi_us_idempotent_run_2_stability_real_data(tmp_path: Path) -> None:
     shutil.copy(MASTER_PATH, tmp_path / BUILD.MASTER_NAME)
     shutil.copy(ALIASES_PATH, tmp_path / BUILD.ALIASES_NAME)
@@ -3103,7 +3201,182 @@ def test_gmi_us_idempotent_run_2_stability_real_data(tmp_path: Path) -> None:
 
     assert after_master == before_master
     assert after_aliases == before_aliases
-    gmi2 = run2["us_gmi_admission"]
+    # R9: run 2's steady-state listing_continuity is IDENTICAL to run 1's own
+    # (self-consistent, R10 — never hardcode the exact WBS/GOLD shape here; the
+    # dedicated real-data fixtures elsewhere already pin that shape).
+    assert run2["listing_continuity"] == run1["listing_continuity"]
+    assert run1["listing_continuity"], (
+        "this pin is known to carry a non-empty steady-state listing_continuity "
+        "(WBS + the GOLD identity exception) — an empty list here means the "
+        "fixture assumption drifted, not that the law changed"
+    )
+    assert run2["pending_transition_refusals"] == []
+    assert run2["resurrection_refusals"] == []
+    gmi1, gmi2 = run1["us_gmi_admission"], run2["us_gmi_admission"]
     assert gmi2["resolved_this_run"] == 0
-    assert gmi2["refusals_this_run"] == run1["us_gmi_admission"]["refusals_this_run"]
-    assert gmi2["resolved_total"] == run1["us_gmi_admission"]["resolved_total"]
+    assert gmi2["refusals_this_run"] == gmi1["refusals_this_run"]
+    assert gmi2["resolved_total"] == gmi1["resolved_total"]
+    assert gmi2["disclosed_exclusions"] == gmi1["disclosed_exclusions"]
+    assert gmi2["target_n"] == gmi1["target_n"]
+
+
+# AMENDMENT R3 fixture — the reviewer's NEWA/NEWAOLD counterexample: two GMI-only
+# codes sharing a rename-chain root collide on a BRAND-NEW listing key (never
+# pre-existing) — the v1 duplicate-claim guard only inspected pre-existing keys
+# and would have let BOTH claimants reach build_alias_rows, which
+# VendorAliasTable's own uniqueness law would then fail-closed refuse.  This
+# proves the corrected law: build() completes, exactly one row mints, the loser
+# is a named disclosure, and the R2 invariant holds.
+def test_r3_newa_newaold_same_root_new_key_build_completes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    monkeypatch.setattr(BUILD, "load_universe", lambda: {})
+    monkeypatch.setattr(BUILD, "load_delisted", lambda: {})
+    monkeypatch.setattr(
+        BUILD, "load_directory",
+        lambda: (
+            {"NEWA": "NASDAQ", "NEWAOLD": "NASDAQ"},
+            {"NEWA": {"etf": False, "test_issue": False, "is_preferred": False},
+             "NEWAOLD": {"etf": False, "test_issue": False, "is_preferred": False}},
+            "2026-08-21", None,
+        ),
+    )
+    monkeypatch.setattr(
+        BUILD, "load_cik_map",
+        lambda: (
+            {"NEWA": ("0009999999", "New Root Co")}, "2026-08-21", None, frozenset(),
+        ),
+    )
+    monkeypatch.setattr(BUILD, "load_config_maps", lambda: ({}, {}))
+    monkeypatch.setattr(
+        BUILD, "load_gmi_us_seeds",
+        lambda: [
+            {"symbol": "NEWA", "node_id": "co:us:NEWA"},
+            {"symbol": "NEWAOLD", "node_id": "co:us:NEWAOLD"},
+        ],
+    )
+    # NEWAOLD -> NEWA: an undated rename chain, so both codes' inception_code
+    # walks resolve to the SAME root ("NEWAOLD") and therefore the SAME rendered
+    # listing key — the exact reviewer counterexample shape, on a key neither
+    # side has ever minted before.
+    monkeypatch.setattr(BUILD, "UNDATED_RENAMES", (("NEWAOLD", "NEWA", "test fixture"),))
+
+    receipt = BUILD.build(out_dir, allow_missing_evidence=True)  # must not crash
+
+    master = pd.read_parquet(out_dir / BUILD.MASTER_NAME)
+    us_new = master[master["inception_code"] == "NEWAOLD"]
+    assert len(us_new) == 1, "exactly one row must mint for the collapsed pair"
+
+    block = receipt["us_gmi_admission"]
+    disclosed = {d["symbol"]: d for d in block["disclosed_exclusions"]}
+    assert "NEWAOLD" in disclosed
+    assert "NEWA" not in disclosed
+    assert disclosed["NEWAOLD"]["winning_symbol"] == "NEWA"
+    assert disclosed["NEWAOLD"]["winning_security_id"] == us_new.iloc[0]["security_id"]
+    assert (block["resolved_total"] + block["refused_this_run"]
+            + len(block["disclosed_exclusions"])) == block["target_n"]
+
+    aliases = pd.read_parquet(out_dir / BUILD.ALIASES_NAME)  # must not have crashed
+    assert not aliases.empty
+
+
+# AMENDMENT R4(a) — from-EMPTY composition test.  R1's blocker fix: the §3/§4
+# eligibility+CIK gate must NEVER touch a legacy-curated key, regardless of
+# master state.  A from-scratch rebuild (no pre-run master to match a candidate
+# against) is exactly the shape that exposed the v1 bug — AEP/CTRA/EQR/FI/FISV
+# were wrongly refused, and ETHA/IBIT (curated ETFs) were wrongly gated on the
+# structural-flag law that only applies to GMI-ONLY targets.
+def test_r4a_from_empty_build_mints_legacy_gmi_overlap_codes(tmp_path: Path) -> None:
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    receipt = BUILD.build(out_dir, allow_missing_evidence=True)  # must not raise
+
+    master = pd.read_parquet(out_dir / BUILD.MASTER_NAME)
+    us_codes = set(master[master["country"] == "US"]["inception_code"])
+    # AEP/CTRA/EQR: legacy keys with a real GMI seed twin — must mint regardless
+    # of missing CIK evidence (AEP) or any structural flag (none of these are
+    # ETFs, but the POINT is the gate never even runs for them).
+    for code in ("AEP", "CTRA", "EQR"):
+        assert code in us_codes, f"{code} must mint on a from-empty rebuild (R1)"
+    # FI/FISV: the undated-rename chain collapses to ONE row at the shared root
+    # (R3) — the root code itself must mint (test_fi_and_fisv_resolve_to_the_
+    # same_security in test_theme_graph_identity_resolution.py pins the sidecar
+    # side of this same fact).
+    assert "FISV" in us_codes
+    # ETHA/IBIT: curated ETFs — must mint DESPITE etf=True, because they are
+    # legacy keys and R1's gate is GMI-only.
+    for code in ("ETHA", "IBIT"):
+        assert code in us_codes, (
+            f"{code} is a curated ETF seed — it must mint on a from-empty "
+            "rebuild; a missing row here means the eligibility gate wrongly "
+            "caught a legacy key (R1 regression)"
+        )
+    block = receipt["us_gmi_admission"]
+    assert (block["resolved_total"] + block["refused_this_run"]
+            + len(block["disclosed_exclusions"])) == block["target_n"]
+
+
+# AMENDMENT R4(b) — seeded-from-pin-baseline transition test.  The historical
+# pre-D2B2-US master bytes are not separately committed (this contract's own
+# canonical regeneration overwrote them, R7), so the baseline is reconstructed
+# DETERMINISTICALLY from data the repo already carries: every committed US row
+# whose `inception_code` is a GMI-ONLY (non-legacy) admission target is exactly
+# what THIS wave admitted — stripping those rows and rebuilding reproduces the
+# transition this contract's own bake performed, self-consistently (R10).
+def test_r4b_transition_from_pin_baseline_matches_r2_shape(
+    tmp_path: Path, master: pd.DataFrame, aliases: pd.DataFrame,
+) -> None:
+    legacy_keys = frozenset(BUILD.load_universe()) | frozenset(BUILD.load_delisted())
+    gmi_seed_codes = frozenset(s["symbol"] for s in BUILD.load_gmi_us_seeds())
+    identity_exc = frozenset(BUILD.DEFERRED_IDENTITY_KEYS) | frozenset(
+        BUILD.DISCLOSED_IDENTITY_EXCEPTIONS)
+    gmi_only_targets = gmi_seed_codes - legacy_keys - identity_exc
+    assert gmi_only_targets, "fixture stale — no GMI-only targets left to strip"
+
+    candidate = master[
+        (master["country"] == "US")
+        & master["inception_code"].isin(gmi_only_targets)
+        & master["security_state"].isna()
+    ]
+    assert not candidate.empty, "fixture stale — nothing to strip from the baseline"
+    # A GMI-only-target STRING can incidentally match a row that predates this
+    # wave entirely (a stale duplicate graph node sharing a rename-chain root
+    # with an already-legacy-minted security — co:us:SATS beside the legacy-
+    # minted co:us:ECHO row, both rooted at inception_code="SATS"; SATS itself
+    # is NOT a legacy key, so the string match alone cannot tell it apart from a
+    # genuine admission).  Every ROW this wave actually minted shares ONE batch
+    # `ingested_at` stamp (one `build()` call, one `now`); isolate that stamp
+    # rather than trusting the code-string match alone.
+    batch_stamp = candidate["ingested_at"].mode().iloc[0]
+    is_gmi_only_admission_row = candidate["ingested_at"] == batch_stamp
+    stripped_count = int(is_gmi_only_admission_row.sum())
+    assert stripped_count > 0, "fixture stale — could not isolate the admission batch"
+    stripped_ids = frozenset(candidate.loc[is_gmi_only_admission_row, "security_id"])
+    baseline_master = master[~master["security_id"].isin(stripped_ids)].reset_index(drop=True)
+    baseline_aliases = aliases[~aliases["security_id"].isin(stripped_ids)].reset_index(drop=True)
+
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    baseline_master.to_parquet(out_dir / BUILD.MASTER_NAME, index=False)
+    baseline_aliases.to_parquet(out_dir / BUILD.ALIASES_NAME, index=False)
+
+    receipt = BUILD.build(out_dir)
+    block = receipt["us_gmi_admission"]
+    # Self-consistent (R10): the codes stripped are exactly the codes this run
+    # must re-mint — every one of them should resolve back (nothing else in the
+    # environment changed), so resolved_this_run reproduces the strip count.
+    assert block["resolved_this_run"] == stripped_count
+    assert block["refused_this_run"] == len(block["refusals_this_run"])
+    assert (block["resolved_total"] + block["refused_this_run"]
+            + len(block["disclosed_exclusions"])) == block["target_n"]
+    # The named refusal SYMBOLS reproduce the committed receipt's own current
+    # steady-state refusal set (R10 — cross-artifact consistency, never a
+    # hardcoded literal count).
+    committed_receipt = json.loads(RECEIPT_PATH.read_text())
+    committed_symbols = {
+        r["symbol"] for r in committed_receipt["us_gmi_admission"]["refusals_this_run"]
+    }
+    rebuilt_symbols = {r["symbol"] for r in block["refusals_this_run"]}
+    assert rebuilt_symbols == committed_symbols
