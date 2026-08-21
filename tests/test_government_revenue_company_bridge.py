@@ -124,6 +124,7 @@ def _company_packet(**overrides) -> dict:
             },
             "sources": [
                 {"kind": "transcript", "status": "present"},
+                {"kind": "score_overlay", "status": "metadata_only"},
                 {"kind": "press_release", "status": "present"},
             ],
         },
@@ -488,6 +489,7 @@ def test_t10_score_overlay_lineage_fields_never_render(tmp_path: Path) -> None:
     assert "SCORE_OVERLAY_POSITIVE_SENTINEL" not in html
     assert "SCORE_OVERLAY_NEGATIVE_SENTINEL" not in html
     assert "987654" not in html  # risk_score metric, lineage score_overlay
+    assert "score_overlay" not in html
 
 
 @needs_node

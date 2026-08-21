@@ -699,7 +699,10 @@
       return'<div class="atlas-sub">'+esc(label)+'</div><ul class="atlas-open">'+kept.map(function(t){return'<li>'+esc(t)+'</li>'}).join('')+'</ul>';
     }
     function sourcesLine(latest){
-      var rows=arr(latest.sources).filter(obj);
+      /* R15: source-status metadata is lineage too. D4 may disclose the
+       * earnings/transcript rails, but must never surface the banned
+       * score_overlay rail merely because it arrived in latest.sources. */
+      var rows=arr(latest.sources).filter(obj).filter(function(s){return text(s.kind)!=='score_overlay'});
       if(!rows.length)return'';
       return'<div class="limit-copy">'+esc(rows.map(function(s){return text(s.kind)+': '+text(s.status)}).join(' · '))+'</div>';
     }

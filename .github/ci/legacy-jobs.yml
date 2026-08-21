@@ -2238,6 +2238,14 @@ jobs:
       - "tests/test_prophet_lab_timeparse.py"
       - "tests/test_prophet_lab_commissioning.py"
       - "tests/fixtures/prophet_lab/**"
+      # test_caddy_hub_boundary.py's fastapi/starlette half imports
+      # app.prophet_lab (its importorskip reasons literally read "prophet_lab
+      # guard tests need fastapi") — it rides HERE so those tests execute
+      # somewhere; the thin unrun-dark-guards venv runs only its
+      # Caddyfile/string half and skip-only gated red on integration-baseline
+      # (first red main run 32480845137, introduced by #6184).
+      - "tests/test_caddy_hub_boundary.py"
+      - "scripts/check_caddy_hub_boundary.py"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2259,7 +2267,8 @@ jobs:
           tests/test_prophet_lab.py
           tests/test_prophet_lab_api.py
           tests/test_prophet_lab_timeparse.py
-          tests/test_prophet_lab_commissioning.py -q
+          tests/test_prophet_lab_commissioning.py
+          tests/test_caddy_hub_boundary.py -q
 
   attested-history-guards:
     if: ${{ false }}
@@ -12445,6 +12454,9 @@ jobs:
       # binding spec path as a string; contract-delta requires declared paths
       # to cover it (widening is the safe direction).
       - research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md
+      # V4-D2B2-US: same shape — the us_gmi_admission receipt block names its
+      # binding contract path as a string.
+      - research/prophet_v4/d2/D2B2_US_FROZEN_CONTRACT_2026-08-21.md
       - .github/ci/legacy-jobs.yml
       - .github/workflows/ci.yml
       - config/dataset_registry.yml
