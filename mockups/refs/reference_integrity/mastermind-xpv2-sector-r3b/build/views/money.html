@@ -796,7 +796,19 @@ function paintHeat(){
 function renderHeatText(){
   if(!HM) return;
   /* heatmap.js:1718-1725 paintMeta() — `source==='polygon-live'` decides the live label;
-     this capture is a daily close, so the honest stamp is the close date. */
+     this capture is a daily close, so the honest stamp is the close date.
+
+     THE CLOCK, DOCUMENTED (ledger #52). Production is the one organ on Map/Moving/Money
+     that keeps a LIVE clock: heatmap.js:41-62 re-requests marketdata/sp500_heatmap.json on
+     an interval and repaints in place only when the payload's `generated_utc` has ADVANCED
+     past the copy it is already showing — an absolute-stamp comparison against the artifact
+     itself, never a baked age delta, so a dead writer shows a stale stamp instead of a
+     freshness figure that keeps counting. This reference issues NO poll: the fixture is
+     frozen at one epoch and a timer would only re-fetch the same bytes. The poll TARGET is
+     demonstrated instead by the harness recorder, which logs this exact production-relative
+     path when the view mounts (drawer → `marketdata/sp500_heatmap.json`). This capture's
+     stamps: generated_utc "' + (HM.generated_utc||'—') + '", asof
+     '"' + (HM.asof||'—') + '", delay_min ' + (HM.delay_min==null?'—':HM.delay_min) + '. */
   var live = HM.source==='polygon-live';
   var when = HM.asof||'—';
   $('hm-meta').innerHTML =

@@ -2460,6 +2460,10 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
       scope.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed','false'); });
       b.setAttribute('aria-pressed','true');
       SCOPE=b.getAttribute('data-scope'); SEL=null; SHOWALL=false; renderAll();
+      /* the answer line is composed from the SAME array the map draws
+         (si_workspace.js:166 readMap → window.__siRvxData), so a scope change has
+         to re-compose it or the answer and the view disagree. */
+      if(typeof window.__siViewReads==='function'){ try{ window.__siViewReads(); }catch(e){} }
     });
     var sa=el('r3-map-showall');
     if(sa) sa.addEventListener('click',function(){ SHOWALL=!SHOWALL; drawRows(); });
