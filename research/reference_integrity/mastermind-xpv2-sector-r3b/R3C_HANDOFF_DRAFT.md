@@ -469,10 +469,17 @@ R3C's acceptance evidence should include, at minimum:
 
 ## 7. Open items inherited from R3B (fixture-coverage gaps and QA notes)
 
-### 7.1 Findings against the reference itself (not production) — `capability_crosscheck.md`
+### 7.1 Findings against the reference itself (not production) — RESOLVED before freeze
 
-Six distinct defects (F-1 through F-6), none recorded in
-`ORCHESTRATOR_ADJUDICATIONS.md` as approved:
+STATUS UPDATE (orchestrator, freeze pass 2026-08-21): every finding below was
+FIXED in the reference and re-probed green before the candidate froze — see
+`FIX_VERIFICATION.md` (F-1..F-6, QA2-01..12) and the QA3 closure commit
+(`afc6c8e2394c`: pg-plus class taxonomy, layer dedupe, boot-time `?reffail=1`
+arming, nav aria-label ZH, heatmap per-stock "Browse the names" disclosure).
+The one accepted residual: `#tm-mount`/`#grader`/`#scc-leadership` deep links
+land at the page's natural scroll ceiling (near-bottom targets; visible, not
+under chrome — §14 satisfied; page-length property, not a timing defect).
+The original finding text is retained below for critic context:
 
 - **F-1 (MAJOR, ledger #83)** — `#read-<id>` deep link opens the trace card
   then immediately closes it, because the reference's Overview boot handler
