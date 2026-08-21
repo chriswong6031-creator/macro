@@ -2676,7 +2676,45 @@ jobs:
 
   china-native-collectors:
     if: ${{ false }}
-    gate: data
+    # RECLASSIFIED data -> code (2026-08-21). W1 (#5954) put this job on the
+    # data side, which under W2 means ci.yml never packs it: `gate: data` jobs
+    # run only in data-health.yml, and that lane fires on `workflow_run` after
+    # the nightly plus a 13:30Z schedule — it has NO `pull_request` trigger. So
+    # every suite below ran post-merge only. The cost was concrete: #6142's
+    # seven P1-R1 same-cycle acceptance tests in tests/test_china_visits_collector.py
+    # merged having never executed in CI on the PR that wrote them.
+    #
+    # The reclassification is measured, not asserted. Under a sparse checkout
+    # with `data/` absent entirely, 17 of the 18 suites named below pass green
+    # (test_china_visits_collector.py 38 passed; test_china_tushare_spine.py 43
+    # passed; test_tushare_freshness_tripwire.py 7 passed) — a suite that passes
+    # with no data tree at all cannot have a verdict a nightly commit can move.
+    # They are hermetic by construction: test_china_visits_collector.py carries
+    # two autouse fixtures redirecting config.data_dir AND lib.store.read_status/
+    # write_status to tmp_path, test_china_official_corpora.py monkeypatches
+    # _store_dir, test_cn_intel_pit_accrual.py monkeypatches the OUT/OUT_HIST
+    # module globals, and test_china_tushare_spine.py passes tmp_path as an
+    # explicit base_dir to every spine.* call.
+    #
+    # The 18th, tests/test_china_news_intel_w2.py, has one test that reaches the
+    # real tree: tag_tickers -> entity_resolver.resolve_cn -> cn_name_to_ticker()
+    # reads config.data_dir()/"baskets_china"/"membership.json". That file is a
+    # HAND-AUTHORED REGISTRY, not a nightly ledger — 6 commits in its whole life,
+    # five of them PR-authored (newest #4512) and the lone dashboard-bot commit a
+    # page-copy edit. It moves only when a pull request moves it, which is the
+    # exact W1 discriminator (bot-authored vs PR-only) and the exact category W1
+    # already reclassified 56 jobs into: "pinned fixtures, tmp_path roots, and
+    # hand-authored registries the heuristic's read_parquet match over-flagged".
+    # The root-cause doctrine says it outright — "a job that reads `data/` to
+    # build a fixture is code-gated, and a job that reads a pinned golden is
+    # code-gated" (research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md).
+    #
+    # Budget: +44 weight-seconds onto a 2,086s `gate: code` set spread over
+    # twelve packs (max pack 274s before this). `gate` is not an input to scope
+    # inference or to select_jobs, and job_exec_sha256 does not hash it, so the
+    # narrow-diff job/weight ceilings in tests/test_ci_pack.py and every semantic
+    # proof digest are unmoved by this edit — verified before and after.
+    gate: code
     # W1 of the China/HK native-data program: 互动易 / 上证e互动 / sell-side revision tape /
     # 股东户数. WIRING LAW (#1253 precedent): a suite that NO job names never runs — these
     # four files would merge green untested without this job, and their whole point is
