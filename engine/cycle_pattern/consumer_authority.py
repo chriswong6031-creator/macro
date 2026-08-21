@@ -28,14 +28,23 @@ Design (CPI-H1 rulings, referenced by number below):
      or effect_class.
   6. A `promoted_null`-status row may never grant neuralweb_context in
      allowed_consumers — the matrix's promoted_null class forbid wins over
-     any row-level grant (A2 finding F6). Scoped exactly to this ruling: no
-     other status is checked here without a new ruling — see the module
-     docstring on NEURALWEB_FORBIDDEN_STATUSES below for why this is
-     deliberately narrow rather than a general row-vs-class subset check.
-  8. Row allowlists are least-privilege subsets of their status class; this
-     validator does not widen anything — it only rejects orphans, missing
-     universal forbids, and the specific promoted_null/neuralweb_context
-     defect named in ruling 6.
+     any row-level grant (A2 finding F6).
+  8. Row allowlists are least-privilege subsets of their status class.
+
+  Fable adjudication (2026-08-21, extending rulings 6+8): the neuralweb_context
+  check below is matrix-DRIVEN, not a hardcoded single-status allowlist — it
+  checks, for a row's actual status, whether that status's artifact_classes
+  entry in consumer_matrix.yml forbids neuralweb_context, and if so rejects a
+  row-level grant. Originally implemented as a promoted_null-only hardcoded
+  set (the only status A2's F6 enumerated); Fable adjudicated that the
+  identical defect exists one class over — the `candidates`/`retired`
+  classes also forbid neuralweb_context in the matrix, and a row of that
+  status granting it is the same "matrix wins" violation, not a different
+  rule. This is still a bounded, single-token check (not a general
+  row-allowed ⊆ class-allowed subset check for every token) — it only ever
+  fires for neuralweb_context, driven by whatever the matrix currently says
+  for that one token per class, so it self-updates if the matrix's per-class
+  forbids change and needs no further hardcoded edits here.
 """
 from __future__ import annotations
 
@@ -57,18 +66,12 @@ UNIVERSAL_MONEY_PATH_FORBIDS: frozenset[str] = frozenset({
     "position_sizing",
 })
 
-# Status classes where neuralweb_context must never appear in
-# allowed_consumers, even though it is a canonical token elsewhere (CPI-H1
-# ruling 6 / A2 finding F6: the matrix's promoted_null class forbids it —
-# "NW lobe may not cite nulls as positive context" — but 5 seeded rows
-# granted it anyway). Scoped EXACTLY to Sol's ruling, which named only the
-# five promoted_null rows; a broader row-vs-class-allowlist subset check
-# (e.g. also covering `candidates`/`retired`, which the matrix also forbids
-# neuralweb_context for) was explicitly NOT adopted in this wave — see
-# research/imce/IMCE_D1C_RELEASE_RECORD.md GAPS for the two known rows this
-# leaves unhealed (cn_downturn_broken_trend_tail_candidate_v1 v1/v2). Widen
-# this set only via a new, named ruling — never silently.
-NEURALWEB_FORBIDDEN_STATUSES: frozenset[str] = frozenset({"promoted_null"})
+# The specific token this module additionally cross-checks against each
+# row's status-class forbid (CPI-H1 ruling 6 / A2 finding F6, generalized by
+# Fable adjudication 2026-08-21 — see the module docstring). Kept as a named
+# constant rather than inlined so the intent ("this one token, matrix-driven,
+# per class") stays legible.
+_CLASS_CONDITIONAL_TOKEN = "neuralweb_context"
 
 
 class ConsumerAuthorityError(ValueError):
@@ -107,18 +110,34 @@ def retired_aliases(path: Path | None = None) -> dict[str, str | None]:
     return dict(matrix.get("retired_aliases", {}))
 
 
+# The matrix's artifact_classes entry names do not all match the truth
+# `status` enum (engine/cycle_pattern/truths.py VALID_STATUSES) verbatim:
+# the matrix names its Research Factory candidate-artifact class "candidates"
+# (plural — pre-dates CPI-H1, and tests/test_check_cycle_pattern_authority.py
+# pins that exact spelling), while the truth status value is "candidate"
+# (singular). Every other status name matches its matrix class name exactly.
+# Without this bridge, class_allowed_consumers("candidate")/
+# class_forbidden_consumers("candidate") silently returned an empty result
+# (no matching `class:` entry) — discovered when Fable's adjudication
+# extending the neuralweb_context/class-forbid check to the candidates class
+# needed a candidate-status row to actually resolve against it.
+_STATUS_TO_CLASS_NAME: dict[str, str] = {"candidate": "candidates"}
+
+
 def class_allowed_consumers(status: str, path: Path | None = None) -> frozenset[str]:
+    class_name = _STATUS_TO_CLASS_NAME.get(status, status)
     matrix = load_matrix(path)
     for entry in matrix.get("artifact_classes", []):
-        if entry.get("class") == status:
+        if entry.get("class") == class_name:
             return frozenset(entry.get("allowed_consumers", []))
     return frozenset()
 
 
 def class_forbidden_consumers(status: str, path: Path | None = None) -> frozenset[str]:
+    class_name = _STATUS_TO_CLASS_NAME.get(status, status)
     matrix = load_matrix(path)
     for entry in matrix.get("artifact_classes", []):
-        if entry.get("class") == status:
+        if entry.get("class") == class_name:
             return frozenset(entry.get("forbidden_consumers", []))
     return frozenset()
 
@@ -132,9 +151,11 @@ def validate_consumer_vocabulary(row: dict[str, Any], *, path: Path | None = Non
         "retired outright") message rather than a generic orphan message;
       - forbidden_consumers missing any of the four universal money-path
         tokens (CPI-H1 ruling 5);
-      - allowed_consumers containing neuralweb_context on a status where
-        that is class-forbidden (currently: promoted_null only — CPI-H1
-        ruling 6 / A2 F6).
+      - allowed_consumers containing neuralweb_context on a status whose
+        matrix artifact_classes entry forbids it (CPI-H1 ruling 6 / A2 F6,
+        generalized by Fable adjudication to every class the matrix names,
+        not just promoted_null — currently promoted_null, candidates, and
+        retired/superseded).
 
     Does NOT check required-field presence, enum validity, falsifiers, or
     evidence_refs — those remain engine/cycle_pattern/truths.py's
@@ -177,11 +198,13 @@ def validate_consumer_vocabulary(row: dict[str, Any], *, path: Path | None = Non
             f"required on every row (CPI-H1 ruling 5): {sorted(missing_universal)}"
         )
 
-    if status in NEURALWEB_FORBIDDEN_STATUSES and "neuralweb_context" in allowed:
+    class_forbidden = class_forbidden_consumers(status, path)
+    if _CLASS_CONDITIONAL_TOKEN in class_forbidden and _CLASS_CONDITIONAL_TOKEN in allowed:
         raise ConsumerAuthorityError(
-            f"{tid}: status={status!r} rows may not grant neuralweb_context in "
+            f"{tid}: status={status!r} rows may not grant {_CLASS_CONDITIONAL_TOKEN} in "
             f"allowed_consumers — the matrix's {status} class forbid wins over "
-            f"any row-level grant (CPI-H1 ruling 6 / A2 finding F6)"
+            f"any row-level grant (CPI-H1 ruling 6 / A2 finding F6; extended to "
+            f"non-promoted_null classes by Fable adjudication 2026-08-21)"
         )
 
 

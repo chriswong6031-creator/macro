@@ -139,6 +139,35 @@ class TestPromotedNullNeuralwebContextFails:
         )
         validate_consumer_vocabulary(row)  # must not raise
 
+    @pytest.mark.parametrize("status", ["candidate", "retired", "superseded"])
+    def test_class_conditional_check_extended_beyond_promoted_null(self, status):
+        """Fable adjudication (2026-08-21, extending rulings 6+8): the
+        neuralweb_context-vs-class-forbid check is matrix-driven, not
+        hardcoded to promoted_null — the `candidates`, `retired`, and
+        `superseded` classes in consumer_matrix.yml also forbid
+        neuralweb_context, so a row of any of those statuses granting it
+        must fail identically to the original 5 promoted_null rows."""
+        row = _base_row(
+            status=status,
+            allowed_consumers=["neuralweb_context", "cycle_docs", "research_factory"],
+        )
+        with pytest.raises(ConsumerAuthorityError, match="neuralweb_context"):
+            validate_consumer_vocabulary(row)
+
+    @pytest.mark.parametrize("status", ["display", "confirmer", "scored"])
+    def test_class_conditional_check_is_matrix_driven_not_promoted_null_only(self, status):
+        """Direct proof the check reads the matrix rather than a hardcoded
+        status set: the display/confirmer/scored classes do NOT forbid
+        neuralweb_context in consumer_matrix.yml, so those statuses must
+        still pass with it granted — only classes the matrix actually
+        forbids it for (promoted_null, candidates, retired, superseded) may
+        reject it."""
+        row = _base_row(
+            status=status,
+            allowed_consumers=["neuralweb_context", "cycle_docs", "research_factory"],
+        )
+        validate_consumer_vocabulary(row)  # must not raise
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Discriminating test 3: missing universal money-path forbid must FAIL
@@ -284,6 +313,70 @@ class TestFullHealedRegistryPasses:
         assert v1_cpi001["allowed_consumers"] == [
             "measurement_surface", "honesty_display", "research_factory",
         ], "historical CPI-001 v1 row must remain unmutated (append-only)"
+
+    def test_cn_downturn_candidate_row_healed_by_fable_adjudication(self):
+        """Fable adjudication (2026-08-21): cycle_truth_cn_downturn_broken_
+        trend_tail_candidate_v1's successor (originally v2, status=retired)
+        was carrying neuralweb_context against the retired class's matrix
+        forbid — the identical A2 F6 defect one class over from the five
+        named promoted_null rows. The latest version must now be clean and
+        least-privilege per the retired class contract."""
+        rows = {r["truth_id"]: r for r in self._latest_versions()}
+        tid = "cycle_truth_cn_downturn_broken_trend_tail_candidate_v1"
+        assert tid in rows
+        row = rows[tid]
+        assert row["status"] == "retired"
+        assert row["version"] >= 3
+        assert "neuralweb_context" not in row["allowed_consumers"]
+        # Least-privilege: healed to the retired class's own allowlist
+        # (cycle_docs, research_factory) — not mechanically widened to keep
+        # measurement_page just because an earlier version had it.
+        assert set(row["allowed_consumers"]) == {"cycle_docs", "research_factory"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Writer literal audit (Fable adjudication: ruling 10 is categorical, not
+# limited to the originally-named script list)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestNoWriterEmitsRetiredAliases:
+    """No live writer script under scripts/ may emit a retired-alias literal
+    into allowed_consumers/forbidden_consumers. Ruling 10 ("eliminate future
+    writer emissions of retired aliases") is categorical per Fable
+    adjudication — this test scans every writer script that constructs a
+    truths.jsonl row, not just the originally-named four."""
+
+    WRITER_SCRIPTS = [
+        "seed_cycle_truths.py",
+        "build_phase_clock_eval.py",
+        "run_falsosc_trial_v1.py",
+        "run_har1_eval.py",
+        "apply_cycle_pattern_ix1_outcomes.py",
+        "apply_cycle_pattern_lattice_batch2_outcomes.py",
+        "apply_cycle_pattern_tr1_outcomes.py",
+    ]
+
+    @pytest.mark.parametrize("script_name", WRITER_SCRIPTS)
+    def test_writer_script_has_no_retired_alias_literal(self, script_name):
+        """Scoped to the CONTENTS of allowed_consumers:/forbidden_consumers:
+        list literals only — a blanket file-wide substring scan for
+        'display' would false-positive on the unrelated, legitimate
+        `"status": "display"` field these same writers emit."""
+        import re
+
+        text = (_REPO / "scripts" / script_name).read_text(encoding="utf-8")
+        list_bodies = re.findall(
+            r'"(?:allowed|forbidden)_consumers"\s*:\s*\[(.*?)\]', text, re.DOTALL
+        )
+        aliases = retired_aliases()
+        for body in list_bodies:
+            for alias in aliases:
+                quoted = f'"{alias}"'
+                assert quoted not in body, (
+                    f"scripts/{script_name} still emits retired alias {alias!r} "
+                    f"inside an allowed/forbidden_consumers list literal "
+                    f"(ruling 10, extended to every writer by Fable adjudication)"
+                )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

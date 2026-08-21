@@ -822,7 +822,11 @@ def _build_truth_entry(scorecard: dict) -> dict:
             "data/cycle_pattern/har_scorecard.json",
             "research/cycle_masterplan/PREREGISTRATION.md",
         ],
-        "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+        # Canonical consumer_matrix.yml vocabulary (CPI-H1 ruling 2, ruling 10
+        # extended to this writer by Fable adjudication 2026-08-21 — "eliminate
+        # future writer emissions of retired aliases" is categorical, not
+        # limited to the originally-named script list).
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
