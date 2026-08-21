@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T09:24:47.083874+00:00",
-  "count": 1537,
+  "generated_at": "2026-08-21T11:15:36.688879+00:00",
+  "count": 1542,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -83,6 +83,104 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-3vykm2ozlnv-5209a9",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T09:29:37Z",
+      "summary_points": [
+        "**European Sporting Goods Q2**: Tough results with limited guidance upgrades (-12% to -14% growth), DTC focus driving promotional market slowdown; JD Sports inventory controlled, wholesale growth expected Q4-2027 - **Drax EPS Revision**: -27.4% next-period EPS revision signals severe earnings deterioration, critical risk factor for utilities sector - **Rockwool Downgrade**: Neutral rating due to higher capex weighing on FCF and sourcing constraints limiting margin progression (critical risk factor) - **Marks & Spencer**: Online margin growth driving profit transition, fundamental shift enabling margin expansion and earnings momentum - **AI Spending Validity**: Report questions $1.5tr AI expenditure claim by large firms, critical for assessing tech sector investment potential and capital allocation - **European Utilities**: Low gas storage fuels earnings momentum, geopolitical energy supply dynamics underpinning positive earnings for generators - **EPS Revisions Divergence**: Drax (-27.4%) and Puma (-18.3%) severe declines contrast with Holmen (+6.4%) and CTS Eventim modest increases, indicating sectoral earnings fragmentation"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-b75u4seviud-964488",
+      "title": "The Point for Europe Friday, 21 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T09:28:16Z",
+      "summary_points": [
+        "**ThyssenKrupp AG (TKAG.DE)**: Catalysts (TK Accelis spin, elevator/stake monetizations, decarb tech spin) drive target price to €20, reflecting fundamental upside from marine system re-rating.",
+        "**Wacker Chemie AG (WCHG.DE)**: Persistent uncertainties (Elon Musk’s solar plans, Q2 polysilicon miss) maintain Sell rating; target price cut to €85, signaling deteriorating fundamentals and material risk exposure.",
+        "**Geopolitical & Flow Risks**: Unresolved Iran conflict and Strait of Hormuz closure (oil below $90) compound with $21.4bn bond fund inflows and UK outflows, creating critical risk exposure for portfolios."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xc3fnf31vnn-9819b2",
+      "title": "GS flow and positioning observations",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T09:21:09Z",
+      "summary_points": [
+        "**Treasury Policy & Market Skepticism**: Besent’s $4bn+ buyback plans and \"Treasury twist\" comments signal tactical rate expectations; 10s/30s rates reversed (4.7%/5.25%), with market skeptical on fiscal consolidation execution despite \"big toolkit\" rhetoric.",
+        "**Iran Sanctions & Oil Misreading Risk**: US \"toughest sanctions on Iran\" (details Monday) triggered 7% oil rally, but market misreads oil as escalation precursor due to asymmetric information; de-escalation demand persists.",
+        "**China Allocation Critical Point**: China remains most net-bought market globally, yet net allocation near 5-year lows; Japan, Korea, and Taiwan are top net-sold markets MTD, signaling structural outflow pressure.",
+        "**Korea Sentiment & Flow Dynamics**: Prime Book data confirms Korea as net buyer (H2 2026), aligning with \"KOREA FEELING BETTER\" narrative; foreign outflows slowing (MTD -$734m vs prior 3mo -$74bn), supporting regional optimism.",
+        "**Portfolio Guidance**: Maintain long nominal assets (equities + gold), avoid duration; monitor flash PMIs amid mixed signals (AI/capex growth vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 21,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mzbzeqgtm3u-a4f480",
+      "title": "JPM International Market Intelligence | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T09:16:40Z",
+      "summary_points": [
+        "**US-Iran Geopolitics & Buyback Risks**: 30% odds of SoH normalization before year-end; US economic pressure vs.",
+        "Iran's incentives (crack spreads key); buybacks fail to address fundamentals, reinforcing debasement trades (Gold/Miners, bond positioning up).",
+        "**Critical Upcoming Data Releases**: Fed Jackson Hole, ECB Minutes, US PCE & 2Q S GDP, EA Cons Confidence, IFO, M3 & Aug P CPI, Tokyo Aug CPI, NVDA/CRM earnings, UST Auctions (2y/5y/7y).",
+        "**AI Ecosystem Fundamentals**: AI spend accelerating to ~$250bn (29% YoY), cloud margins improving (BABA 3-yr payback); unit economics strong (22% IRR vs 10% cost of capital, 40% steady-state cash on cash).",
+        "**Oil-Equity/Bond Correlation Shift**: Negative cross-asset correlation deepening (Treasury/S&P 500 vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9bmljqe11ts-34dbc4",
+      "title": "Early Morning Reid Macro Strategy",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T09:12:50Z",
+      "summary_points": [
+        "**Geopolitical Inflation Shock**: US-Iran tensions drove Brent crude to $93.78/bbl (+2.36%) and lifted 1yr US inflation swap +16.0bps, pressuring yields (10yr at 4.71%) and S&P 500 (-0.87% in August).",
+        "**Fiscal Policy Limitations**: Treasury’s buyback expansion and fiscal measures viewed as temporary band-aids; investors demand structural consolidation for sustained yield impact amid Fed/ECB hike pricing (23/43bp).",
+        "**Data-Driven Economic Shifts**: Philly Fed Business Outlook at 47.4 (highest since 2021), Japan PMI at 53.4 (accelerating), UK consumer confidence at 2-year high, signaling robust growth despite equity declines.",
+        "**Consumer Health Risks**: US growth +2.6% yoy threatened by high energy prices, rising rates, and low savings; Europe’s gas prices +3.36% (highest since Jan 2023) and Euro 1yr inflation swap at record high amplify energy shock fears."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-zuv7yghwmxb-5c9605",
       "title": "Asia Fund Manager Survey Tech is still king, but defensives are rising",
