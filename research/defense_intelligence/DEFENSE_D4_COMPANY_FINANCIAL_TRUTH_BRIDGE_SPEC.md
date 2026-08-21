@@ -188,6 +188,18 @@ suite to `.github/workflows/ci.yml` paths (contract-delta law). Template
 edits require the byte-matching `site/` twin in the same PR
 (`python -m scripts.check_template_site_sync --fix`).
 
+### D4.1 amendment (2026-08-21, Sol closeout)
+
+Receipt link law is fail-closed: `award_change.source_identity.content_sha256`
+present AND a receipt in `evidence.receipts` whose `content_sha256` is an
+EXACT match => that receipt only. Otherwise NO source link renders — never a
+positional (`rows[0]`), URL-shape, or nearest-receipt fallback. The
+government facts (PIID, obligation, dates) still render unconditionally;
+only the "Open official receipt" link disappears when no exact match exists.
+Pinned by tests R14a–R14d (`tests/test_government_revenue_company_bridge.py`)
+plus mutation discipline (R14d reads the shipped `receiptUrl()` source and
+fails if a positional fallback is reintroduced).
+
 ## §5 Non-changes
 
 No engine/producer edits; no schema edits; no new artifacts; no Earnings

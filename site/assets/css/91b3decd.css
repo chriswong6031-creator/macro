@@ -53,8 +53,19 @@ a{color:var(--ink-link, var(--link));text-decoration:none}
 .pghead h1{margin:0;font-size:23px;font-weight:800;letter-spacing:-.02em;color:var(--text);
   font-family:var(--font-display)}
 .pghead .sub{margin:5px 0 0;font-size:13px;color:var(--muted-strong);max-width:52ch;line-height:1.55}
-.asof{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap}
-.asof b{color:var(--text);font-weight:700}
+/* `white-space:nowrap` was safe for the old one-word "Priced <date>" label, but
+   the Wave 8 clock ("Stage week ended <date> · source tape through <date>") plus
+   the coverage receipt are far longer and overflowed the viewport at 375px —
+   measured .asof scrollWidth 374px inside a 347px .pghead, clipping the second
+   date, "Weekly stage read" and "unknown". Wrap on narrow viewports; keep each
+   clause and its date together so a line never breaks mid-phrase. */
+.asof{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap;
+  max-width:100%;min-width:0}
+.asof b{color:var(--text);font-weight:700;white-space:nowrap}
+.asof .clk{display:inline-block}
+@media (max-width:760px){
+  .pghead .asof{white-space:normal;text-align:left;width:100%}
+}
 
 /* =====================================================================
    HERO — the stage arc (signature). An idealised Weinstein cycle with the
@@ -229,6 +240,15 @@ tr.open .exp-btn{transform:rotate(90deg);color:var(--ink-info, var(--info))}
   color:color-mix(in srgb,var(--s3) 78%,var(--text));
   background:color-mix(in srgb,var(--s3) 10%,transparent)}
 html[data-theme="light"] .seedtag{color:color-mix(in srgb,var(--s3) 55%,var(--text))}
+/* Wave 8 §3 — a stale row stays browseable but must SAY it is stale. Same chip
+   idiom as .seedtag, warmer hue so "old reading" reads differently from
+   "seed universe". The row also carries no rating (rank is withheld upstream). */
+.staletag{display:inline-block;margin-left:5px;font-size:9.5px;font-weight:700;letter-spacing:.04em;
+  padding:1px 6px;border-radius:5px;vertical-align:middle;cursor:help;
+  border:1px solid color-mix(in srgb,var(--s4) 34%,var(--line));
+  color:color-mix(in srgb,var(--s4) 78%,var(--text));
+  background:color-mix(in srgb,var(--s4) 10%,transparent)}
+html[data-theme="light"] .staletag{color:color-mix(in srgb,var(--s4) 55%,var(--text))}
 .addbtn{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:7px;
   width:24px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0}
 .addbtn:hover{color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 45%,var(--line))}
