@@ -1071,12 +1071,10 @@ def test_band_marks_use_the_cli(workflow):
                 )
 
 
-def test_publish_job_carries_no_timings_wrapper():
-    """publish runs on ubuntu-latest with no explicit cap — the wrapper's cap arg
-    would be an invented number; it must stay uninstrumented until it gets one."""
-    steps = _daily_jobs()["publish"].get("steps") or []
-    for step in steps:
-        assert "timings" not in (step.get("name") or ""), step
+# daily.yml's `publish` GitHub Pages deploy job (ubuntu-latest, no explicit cap) was
+# RETIRED pre-private-cutover (DEC:B1-MACRO-PRIVATE-CUTOVER) — see
+# tests/test_no_pages_publish.py for the standing retirement guard. There is no
+# longer a `publish` job for this pin to apply to.
 
 
 def test_asia_gate_job_carries_no_timings_wrapper():

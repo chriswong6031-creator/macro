@@ -5,6 +5,10 @@
 
 
 
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,7 +51,7 @@
 </style>
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=f41f9a21">
-<script defer src="theme.js?v=b1128870"></script>
+<script defer src="theme.js?v=bca7d302"></script>
 <title>Stage Analysis — Where Each Market Sits in Its Cycle</title>
 
 
@@ -67,7 +71,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="assets/css/7b3d1547.css?v=7b3d1547">
+<link rel="stylesheet" href="assets/css/91b3decd.css?v=91b3decd">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 </head>
@@ -328,8 +332,12 @@
       <p class="sub"><span class="l-en">Every stock sorted into one of four seasons — building a base, advancing, topping, or declining. Trend quality, earnings tone, and where the money is rotating, in plain words.</span><span class="l-zh">把每只股票归入四个阶段之一 —— 筑底、上升、见顶、下行。趋势质量、财报语气、资金轮动去向，全用大白话说清。</span></p>
     </div>
     <div class="asof">
-      <span class="l-en">Priced <b>2026-08-20</b></span><span class="l-zh">数据截至 <b>2026-08-20</b></span>
+      
+      
+        <span class="l-en">Build <b>2026-08-21</b></span><span class="l-zh">构建于 <b>2026-08-21</b></span>
+      
       <div style="margin-top:3px"><span class="l-en">Weekly stage read</span><span class="l-zh">周线阶段判定</span></div>
+      
     </div>
   </div>
 
@@ -349,6 +357,7 @@
           <h2 class="arc-state"><span class="l-en">Most stocks are <span class="accent">advancing</span></span><span class="l-zh">多数股票<span class="accent">正在上升</span></span></h2>
           <p class="arc-stance"><span class="l-en">Good weather for fresh breakouts — but the advance is broad and mature, so <span class="em">be picky, not greedy</span>.</span><span class="l-zh">适合新突破的好天气 —— 但涨势已广且成熟，<span class="em">要挑，别贪</span>。</span></p>
           <span class="stancepill act"><span class="dot"></span><span class="l-en">Watch — pick spots</span><span class="l-zh">观察 —— 挑准位置</span></span>
+        
         
 
         <div class="stations">
@@ -709,6 +718,19 @@
     if(row.source!=='seed')return '';
     return ' <span class="seedtag" data-tip-en="Seed data from the EquityDesk backfill — non-US names have no live price feed yet, so this stage read is historical, not fresh." data-tip-zh="来自 EquityDesk 回填的种子数据 —— 非美股暂无实时行情，此阶段判定为历史数据，非最新。">'+TT('seed','种子')+'</span>';
   }
+  /* Wave 8 §3 — observation currentness, which is a DIFFERENT fact from
+     `source`. `source==='live'` means our own classifier rather than the seed;
+     it says nothing about whether the reading is current. A stale row keeps its
+     lifecycle fields (a name can legitimately be `fresh` — early in Stage 2 —
+     while its last reading is weeks old) but carries no current rank, so the
+     chip states the actual Stage week it was last read at. */
+  function staleChip(row){
+    if(row.stage_current!==false)return '';
+    var wk=row.stage_week_end||row.stage_source_asof;
+    var en='Last Stage read '+(wk||'unknown')+' · stale';
+    var zh='最近阶段判定 '+(wk||'未知')+' · 已过时';
+    return ' <span class="staletag" data-tip-en="'+esc(en)+' — this name stopped updating, so it is shown as last-known context and is excluded from today\'s counts, ranks and market weather." data-tip-zh="'+esc(zh)+' —— 该股已停止更新，仅作最近已知情况展示，不计入当日统计、排名与市场天气。">'+TT('stale '+(wk||''),'过时 '+(wk||''))+'</span>';
+  }
   function passFilters(row){
     if(regionOf(row)!==region)return false;
     if(search){var s=search.toLowerCase();if((row.ticker||'').toLowerCase().indexOf(s)<0&&(row.name||'').toLowerCase().indexOf(s)<0)return false;}
@@ -780,7 +802,7 @@
       return '<tr data-tk="'+esc(r.ticker)+'">'+
         '<td class="sticky-l"><button class="exp-btn" aria-label="Expand '+esc(r.ticker)+'" aria-expanded="false">▶</button></td>'+
         '<td class="sticky-l"><span class="tk">'+esc(r.ticker)+'</span></td>'+
-        '<td><span class="nm">'+nm+'</span>'+seedChip(r)+'</td>'+
+        '<td><span class="nm">'+nm+'</span>'+seedChip(r)+staleChip(r)+'</td>'+
         '<td><span class="ind">'+ind+'</span></td>'+
         '<td class="num">'+pctileChip(r.industry_percentile)+'</td>'+
         '<td class="num">'+sataChip(r.sata_score)+'</td>'+
@@ -999,7 +1021,7 @@
       var ev=r.event?'<span class="evchip">'+eventLabel(r.event)+'</span>':'';
       return '<tr>'+
         '<td class="sticky-l"><span class="tk" data-tip-en="'+esc(tdEn)+'" data-tip-zh="'+esc(tdZh)+'">'+esc(r.ticker)+'</span></td>'+
-        '<td><span class="nm">'+displayName(r)+'</span>'+seedChip(r)+' '+ev+bl+'</td>'+
+        '<td><span class="nm">'+displayName(r)+'</span>'+seedChip(r)+staleChip(r)+' '+ev+bl+'</td>'+
         '<td>'+stageChip(r)+'</td>'+
         '<td class="num">'+(r.weeks_in_stage==null?'—':r.weeks_in_stage)+'</td>'+
         '<td><span class="rschip '+pv[2]+'">'+LT(pv[0],pv[1])+'</span></td>'+
@@ -1014,12 +1036,19 @@
   }
   function renderBoardProv(){
     var p=qs('#board-prov');if(!p)return;
-    var d=BOARD[boardCadence];var asof=d&&d.asof?d.asof:'';
+    var d=BOARD[boardCadence];
     /* honesty: daily currently mirrors the weekly stage read. */
     var honesty=boardCadence==='daily'
       ? TT('Daily view: the stage read is still the weekly classification — a daily-specific read lands once intraday history is wired.','日线视图：阶段判定目前仍沿用周线分类 —— 待接入日内历史后才有专属的日线判定。')
       : TT('Weekly stage read — the primary Weinstein classification.','周线阶段判定 —— 主要的温斯坦分类。');
-    p.innerHTML=honesty+(asof?' '+TT('Priced '+asof+'.','数据截至 '+asof+'。'):'')+' '+TT('Context only — a stage classification, never a buy signal.','仅供参考 —— 这是阶段分类，绝非买入信号。');
+    /* Wave 8 observation-truth clock (replaces the retired build-date-only
+       label): the completed Stage week the board is anchored to, plus the
+       daily source tape behind it — never the build date alone. */
+    var stageWeek=d&&d.target_stage_week?d.target_stage_week:'';
+    var srcSession=d&&d.population&&d.population.data_session?d.population.data_session:'';
+    var clockEn=stageWeek?('Stage week ended '+stageWeek+(srcSession?' · source tape through '+srcSession:'')+'.'):'';
+    var clockZh=stageWeek?('阶段周截至 '+stageWeek+(srcSession?' · 数据行情至 '+srcSession:'')+'。'):'';
+    p.innerHTML=honesty+(clockEn?' '+TT(clockEn,clockZh):'')+' '+TT('Context only — a stage classification, never a buy signal.','仅供参考 —— 这是阶段分类，绝非买入信号。');
   }
   function selectCadence(c){
     if(c!=='daily')c='weekly';boardCadence=c;
@@ -1120,7 +1149,26 @@
     return {head:head,body:body,legend:legend};
   }
 
+  function indHeatHistoryNote(){
+    /* Wave 8 §7.4 — the heatmap now accrues from house-native weekly history
+       (industry_rank_history.jsonl) rather than the absent EquityDesk seed.
+       Render the accrual/unavailable state honestly: never a blank panel
+       that reads as healthy, and never a fabricated 26 weeks. */
+    var h=IND.heat&&IND.heat.history;
+    if(!h)return null;
+    if(h.status==='unavailable'){
+      return '<div class="empty soon"><div class="ico">📈</div><h3>'+TT('Rank history unavailable','排名历史暂不可用')+'</h3><p>'+TT('No house-native weekly rank history has accrued yet. Check back after the next completed Stage week.','尚未累积任何自建的每周排名历史。请在下一个已完成的阶段周后再来查看。')+'</p></div>';
+    }
+    if(h.status==='accruing'){
+      var n=h.weeks_available||0,tgt=h.weeks_target||26,fw=esc(h.first_week||'—');
+      return '<p class="subcap accruing-note">'+TT('Rank history accruing from '+fw+' — '+n+' of '+tgt+' weeks','排名历史自'+fw+'起累积 —— '+tgt+'周中的第'+n+'周')+'</p>';
+    }
+    return null;
+  }
   function indHeatmap(){
+    var hstatus=indHeatHistoryNote();
+    var h=IND.heat&&IND.heat.history;
+    if(h&&h.status==='unavailable')return hstatus;
     var map=IND.heat&&IND.heat.regions;if(!map)return indEmpty();
     var g=heatGrid(map,function(row){
       return (row.ranks||[]).map(function(rk){
@@ -1130,7 +1178,7 @@
       }).join('');
     },false,74);
     if(g.head===undefined)return indEmpty();
-    return '<p class="subcap"><b>'+LT('Where each industry ranked, week by week.','每个行业逐周的排名。')+'</b> '+LT('Each cell is that industry’s rank that Friday (1 = strongest). Most-recent week on the left.','每格是该行业当周五的排名（1＝最强）。最新一周在左。')+'</p>'+
+    return (hstatus||'')+'<p class="subcap"><b>'+LT('Where each industry ranked, week by week.','每个行业逐周的排名。')+'</b> '+LT('Each cell is that industry’s rank that Friday (1 = strongest). Most-recent week on the left.','每格是该行业当周五的排名（1＝最强）。最新一周在左。')+'</p>'+
       '<div class="heatscroll"><table class="heat"><thead>'+g.head+'</thead><tbody>'+g.body+'</tbody></table></div>'+
       '<div class="heatlegend"><span>'+LT('rank 1 (best)','排名1（最佳）')+'</span><span class="grad"></span><span>'+LT('rank 74 (worst)','排名74（最差）')+'</span></div>';
   }

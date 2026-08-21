@@ -19,11 +19,177 @@ def triggers(document: dict) -> set[str]:
 
 
 def test_canaries_are_dispatch_only_and_not_merge_authority() -> None:
-    for name in ("selfhosted-ci-canary.yml", "m1-runner-canary.yml"):
+    for name in (
+        "selfhosted-ci-canary.yml",
+        "m1-runner-canary.yml",
+        "merge-control-hosted-canary.yml",
+    ):
         document = workflow(name)
         assert triggers(document) == {"workflow_dispatch"}
         published = {job.get("name", job_id) for job_id, job in document["jobs"].items()}
-        assert not published & {"ci-gate", "fence-pack", "self-mod-fence", "capability-broker", "grader-manifest"}
+        assert not published & {
+            "ci-gate",
+            "fence-pack",
+            "self-mod-fence",
+            "capability-broker",
+            "grader-manifest",
+        }
+
+
+def test_merge_control_hosted_canary_is_read_only_main_pinned_and_non_acting() -> None:
+    document = workflow("merge-control-hosted-canary.yml")
+    production = workflow("merge-on-green.yml")
+    assert document["permissions"] == {"contents": "read"}
+    assert set(document["jobs"]) == {"trust-gate", "hosted-environment"}
+    trust = document["jobs"]["trust-gate"]
+    probe = document["jobs"]["hosted-environment"]
+    assert trust["runs-on"] == "ubuntu-latest"
+    assert probe["runs-on"] == "ubuntu-latest"
+    assert probe["needs"] == "trust-gate"
+    assert "refs/heads/main" in str(trust)
+
+    rendered = str(document)
+    for forbidden in (
+        "self-hosted",
+        "merge-control\"]",
+        "ADMIN_GH_TOKEN",
+        "MERGE_TOKEN",
+        "gh pr merge",
+        "python3 scripts/merge_on_green.py",
+    ):
+        assert forbidden not in rendered
+
+    steps = probe["steps"]
+    exact_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "exact production sparse checkout"
+    )
+    exact = steps[exact_index]
+    assert exact["uses"] == "actions/checkout@v4"
+    options = exact["with"]
+    assert options["filter"] == "blob:none"
+    assert options["persist-credentials"] is False
+    assert options["sparse-checkout-cone-mode"] is False
+    assert set(str(options["sparse-checkout"]).split()) == {
+        "scripts/merge_on_green.py",
+        "scripts/ci_semantic_proof.py",
+        "scripts/ci_authority_paths.py",
+        "scripts/gh_path_filter.py",
+        "scripts/run_ci_pack.py",
+        ".github/workflows",
+    }
+
+    # Canary/production parity is a live contract, not duplicated prose. The canary
+    # is allowed to tighten credential persistence only; the actual materialized
+    # source surface and dependency bootstrap must remain byte-for-byte equivalent.
+    prod_steps = production["jobs"]["sweep"]["steps"]
+    prod_checkout = next(
+        step for step in prod_steps if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert exact["uses"] == prod_checkout["uses"]
+    for key in ("filter", "sparse-checkout", "sparse-checkout-cone-mode"):
+        assert exact["with"][key] == prod_checkout["with"][key]
+    prod_bootstrap = next(step for step in prod_steps if step.get("name") == "install the yaml parser")
+    canary_bootstrap = next(
+        step for step in steps if step.get("name") == "exact production PyYAML bootstrap"
+    )
+    assert canary_bootstrap["run"] == prod_bootstrap["run"]
+    parity = next(
+        step for step in steps if step.get("name") == "assert canary tracks the production environment contract"
+    )
+    assert "merge-on-green.yml" in parity["run"]
+    assert "merge-control-hosted-canary.yml" in parity["run"]
+    assert "production/canary environment contract parity: OK" in parity["run"]
+
+    production_probe_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "prove the production system-Python dependency contract"
+    )
+    production_probe = steps[production_probe_index]
+    command = production_probe["run"]
+    assert 'python3 -c "import yaml"' in command
+    assert "python3 -m py_compile" in command
+    assert "import scripts.merge_on_green as mog" in command
+    assert "mog.main" in command
+
+    broad_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "expand to the hosted control test surface"
+    )
+    broad = steps[broad_index]
+    broad_options = broad["with"]
+    assert broad_options["persist-credentials"] is False
+    assert "/*" in broad_options["sparse-checkout"]
+    assert "!/site/" in broad_options["sparse-checkout"]
+    assert "!/data/" in broad_options["sparse-checkout"]
+
+    tests_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "run existing merge-control and runner-boundary suites"
+    )
+    tests = steps[tests_index]["run"]
+    for suite in (
+        "tests/test_ci_pack.py",
+        "tests/test_merge_on_green.py",
+        "tests/test_runner_policy.py",
+        "tests/test_ci_canary_tools.py",
+        "tests/test_ci_canary_workflows.py",
+    ):
+        assert suite in tests
+
+    # Negative evidence exists before Git is touched, so an early checkout/bootstrap
+    # failure still leaves a receipt. PHASE 1 may advance that record but cannot accept
+    # it; acceptance is reachable only after the real control suites pass. Attempt
+    # identity and the first hosted-step timestamp are part of that negative receipt.
+    initial_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "initialize negative canary receipt"
+    )
+    initial = steps[initial_index]["run"]
+    assert initial_index < exact_index
+    assert '"run_id": os.environ["GITHUB_RUN_ID"]' in initial
+    assert '"run_attempt": os.environ["GITHUB_RUN_ATTEMPT"]' in initial
+    assert '"job_started_at_observed":' in initial
+    assert 'datetime.now(timezone.utc)' in initial
+    assert '"phase1": "pending"' in initial
+    assert '"phase2": "pending"' in initial
+    assert '"production_contract_parity": False' in initial
+    assert '"accepted": False' in initial
+
+    phase1_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "record successful phase-1 environment receipt"
+    )
+    phase1 = steps[phase1_index]["run"]
+    assert production_probe_index < phase1_index < broad_index
+    assert 'receipt["phase1"] = "production_sparse_import_ok"' in phase1
+    assert 'receipt["production_contract_parity"] = True' in phase1
+    assert 'receipt["accepted"] = True' not in phase1
+
+    finalize_index = next(
+        index for index, step in enumerate(steps) if step.get("name") == "finalize successful canary receipt"
+    )
+    finalize = steps[finalize_index]
+    assert tests_index < finalize_index
+    assert 'receipt["phase2"] = "control_tests_ok"' in finalize["run"]
+    assert 'receipt["accepted"] = True' in finalize["run"]
+    upload_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("uses") == "actions/upload-artifact@v4"
+        and str(step.get("with", {}).get("name", "")).startswith("merge-control-hosted-canary-")
+    )
+    assert finalize_index < upload_index
+    assert steps[upload_index]["if"] == "always()"
+    artifact_name = str(steps[upload_index]["with"]["name"])
+    assert "github.run_id" in artifact_name
+    assert "github.run_attempt" in artifact_name
 
 
 def test_normal_ci_and_fences_remain_hosted() -> None:

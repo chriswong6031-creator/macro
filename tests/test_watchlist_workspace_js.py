@@ -2050,7 +2050,17 @@ def test_setmode_into_portfolio_clears_a_watchlists_derived_risk_payload_first()
     MUTATION CHECK: delete the `if (enteringPortfolio) { RISK = {...}; }` reset block
     from setMode() (portfolio.js's `templates/watchlist.js`) and this reds — the
     'WATCHLIST_RESIDUE_MARKER' string, published to RISK.concHTML/rcTabs.conc while
-    in Watchlists mode, then leaks straight into rc_body after the switch."""
+    in Watchlists mode, then leaks straight into rc_body after the switch.
+
+    LAW 3 mechanical accommodation (A1A round-3, F6 adversarial-review finding):
+    setRisk() now rejects any payload without provenance matching the CURRENT
+    scope+generation (fail-closed). Without a `prov` field this call would be
+    rejected BEFORE ever reaching `RISK =`, which would make the assertions
+    below pass vacuously (the enteringPortfolio reset this test exists to pin
+    would no longer be the thing preventing the residue). Stamping
+    `prov: window.WS.prov()`, read live at the moment of the call — exactly
+    what a real producer does — makes the call land in RISK exactly as it did
+    before LAW 3 existed, so the mutation above is red-able again."""
     out = _run(
         """
         var nodes = {};
@@ -2084,7 +2094,8 @@ def test_setmode_into_portfolio_clears_a_watchlists_derived_risk_payload_first()
           shares: null,
           concHTML: '<p>WATCHLIST_RESIDUE_MARKER 21%%</p>',
           rcTabs: { conc: '<p>WATCHLIST_RESIDUE_MARKER 21%%</p>' },
-          labHTML: '', seamItems: null, coverage: null, headline: null
+          labHTML: '', seamItems: null, coverage: null, headline: null,
+          prov: window.WS.prov()
         });
         var duringWatchlists = node('rc_body').innerHTML;   // setRisk() does not paint
                                                              // while mode !== 'portfolio'

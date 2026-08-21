@@ -34,6 +34,14 @@
 {% set counts = (sga.counts) if (sga is defined and sga is not none and sga.counts is defined and sga.counts is not none) else none %}
 {% set market = (sga.market) if (sga is defined and sga is not none and sga.market is defined and sga.market is not none) else none %}
 {% set asof   = (sga.asof)   if (sga is defined and sga is not none and sga.asof   is defined and sga.asof   is not none) else none %}
+{# Wave 8 observation-truth clock (§1/§2.5) — additive alongside `asof`, which
+   keeps its legacy build-date meaning unchanged. `target_stage_week` is the
+   completed Stage week the whole cross-section is anchored to;
+   `data_session` is the daily source tape behind the CURRENT population;
+   `population` is the current/stale/unknown receipt. #}
+{% set target_stage_week = (sga.target_stage_week) if (sga is defined and sga is not none and sga.target_stage_week is defined and sga.target_stage_week is not none) else none %}
+{% set data_session = (sga.data_session) if (sga is defined and sga is not none and sga.data_session is defined and sga.data_session is not none) else none %}
+{% set population = (sga.population) if (sga is defined and sga is not none and sga.population is defined and sga.population is not none) else none %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,8 +111,19 @@ a{color:var(--ink-link, var(--link));text-decoration:none}
 .pghead h1{margin:0;font-size:23px;font-weight:800;letter-spacing:-.02em;color:var(--text);
   font-family:var(--font-display)}
 .pghead .sub{margin:5px 0 0;font-size:13px;color:var(--muted-strong);max-width:52ch;line-height:1.55}
-.asof{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap}
-.asof b{color:var(--text);font-weight:700}
+/* `white-space:nowrap` was safe for the old one-word "Priced <date>" label, but
+   the Wave 8 clock ("Stage week ended <date> · source tape through <date>") plus
+   the coverage receipt are far longer and overflowed the viewport at 375px —
+   measured .asof scrollWidth 374px inside a 347px .pghead, clipping the second
+   date, "Weekly stage read" and "unknown". Wrap on narrow viewports; keep each
+   clause and its date together so a line never breaks mid-phrase. */
+.asof{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap;
+  max-width:100%;min-width:0}
+.asof b{color:var(--text);font-weight:700;white-space:nowrap}
+.asof .clk{display:inline-block}
+@media (max-width:760px){
+  .pghead .asof{white-space:normal;text-align:left;width:100%}
+}
 
 /* =====================================================================
    HERO — the stage arc (signature). An idealised Weinstein cycle with the
@@ -279,6 +298,15 @@ tr.open .exp-btn{transform:rotate(90deg);color:var(--ink-info, var(--info))}
   color:color-mix(in srgb,var(--s3) 78%,var(--text));
   background:color-mix(in srgb,var(--s3) 10%,transparent)}
 html[data-theme="light"] .seedtag{color:color-mix(in srgb,var(--s3) 55%,var(--text))}
+/* Wave 8 §3 — a stale row stays browseable but must SAY it is stale. Same chip
+   idiom as .seedtag, warmer hue so "old reading" reads differently from
+   "seed universe". The row also carries no rating (rank is withheld upstream). */
+.staletag{display:inline-block;margin-left:5px;font-size:9.5px;font-weight:700;letter-spacing:.04em;
+  padding:1px 6px;border-radius:5px;vertical-align:middle;cursor:help;
+  border:1px solid color-mix(in srgb,var(--s4) 34%,var(--line));
+  color:color-mix(in srgb,var(--s4) 78%,var(--text));
+  background:color-mix(in srgb,var(--s4) 10%,transparent)}
+html[data-theme="light"] .staletag{color:color-mix(in srgb,var(--s4) 55%,var(--text))}
 .addbtn{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:7px;
   width:24px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0}
 .addbtn:hover{color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 45%,var(--line))}
@@ -651,8 +679,24 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
       <p class="sub">{{ t('Every stock sorted into one of four seasons — building a base, advancing, topping, or declining. Trend quality, earnings tone, and where the money is rotating, in plain words.', '把每只股票归入四个阶段之一 —— 筑底、上升、见顶、下行。趋势质量、财报语气、资金轮动去向，全用大白话说清。') }}</p>
     </div>
     <div class="asof">
-      {% if asof %}<span class="l-en">Priced <b>{{ asof }}</b></span><span class="l-zh">数据截至 <b>{{ asof }}</b></span>{% endif %}
+      {# Wave 8 §2.5 — the real Stage-week and source-tape clocks replace the
+         retired "Priced <asof>" label. `asof` (build date) may still appear
+         as technical provenance elsewhere, but never labelled "Priced". #}
+      {% if target_stage_week %}
+        {# Each clause is its own inline-block so a narrow viewport wraps BETWEEN
+           the two clocks rather than mid-phrase (the 375px overflow fix). #}
+        <span class="l-en"><span class="clk">Stage week ended <b>{{ target_stage_week }}</b></span>{% if data_session %} <span class="clk">· source tape through <b>{{ data_session }}</b></span>{% endif %}</span>
+        <span class="l-zh"><span class="clk">阶段周截至 <b>{{ target_stage_week }}</b></span>{% if data_session %} <span class="clk">· 数据行情至 <b>{{ data_session }}</b></span>{% endif %}</span>
+      {% elif asof %}
+        <span class="l-en">Build <b>{{ asof }}</b></span><span class="l-zh">构建于 <b>{{ asof }}</b></span>
+      {% endif %}
       <div style="margin-top:3px">{{ t('Weekly stage read', '周线阶段判定') }}</div>
+      {% if population and population.current is not none %}
+        <div class="popreceipt" style="margin-top:3px">
+          <span class="l-en">{{ '{:,}'.format(population.current) }} current · {{ '{:,}'.format(population.stale) }} stale · {{ '{:,}'.format(population.unknown) }} unknown</span>
+          <span class="l-zh">{{ '{:,}'.format(population.current) }} 当前 · {{ '{:,}'.format(population.stale) }} 过时 · {{ '{:,}'.format(population.unknown) }} 未知</span>
+        </div>
+      {% endif %}
     </div>
   </div>
 
@@ -674,7 +718,12 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
           <h2 class="arc-state"><span class="l-en">Most stocks are <span class="accent">advancing</span></span><span class="l-zh">多数股票<span class="accent">正在上升</span></span></h2>
           <p class="arc-stance"><span class="l-en">Good weather for fresh breakouts — but the advance is broad and mature, so <span class="em">be picky, not greedy</span>.</span><span class="l-zh">适合新突破的好天气 —— 但涨势已广且成熟，<span class="em">要挑，别贪</span>。</span></p>
           <span class="stancepill act"><span class="dot"></span>{{ t('Watch — pick spots', '观察 —— 挑准位置') }}</span>
-        {% elif weather == 'declining' %}
+        {# `_weather()` emits 'deteriorating', never 'declining' — this branch
+           was dead, so a deteriorating market fell through to the 'mixed' copy
+           and told the user to "pick spots" while >=40% of names sat in Stage 4.
+           Pre-existing defect, fixed here because the market-weather claim is
+           one of the current market-level reads Wave 8 governs. #}
+        {% elif weather == 'deteriorating' %}
           <h2 class="arc-state"><span class="l-en">Most stocks are <span class="accent s4">declining</span></span><span class="l-zh">多数股票<span class="accent s4">正在下行</span></span></h2>
           <p class="arc-stance"><span class="l-en">Downtrends dominate — bounces here tend to fail. <span class="em">Stand aside; don't chase strength in weak names.</span></span><span class="l-zh">下行趋势主导 —— 此时的反弹往往失败。<span class="em">观望；别在弱势股里追强。</span></span></p>
           <span class="stancepill stand"><span class="dot"></span>{{ t('Stand aside', '暂时观望') }}</span>
@@ -682,6 +731,11 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
           <h2 class="arc-state"><span class="l-en">The market is <span class="accent s3">mixed</span></span><span class="l-zh">市场<span class="accent s3">分化</span></span></h2>
           <p class="arc-stance"><span class="l-en">No clear season — advances and declines roughly balance. <span class="em">Let the strongest names lead; don't force it.</span></span><span class="l-zh">没有明确的季节 —— 上升与下行大致均衡。<span class="em">让最强的股票领路，别硬做。</span></span></p>
           <span class="stancepill watch"><span class="dot"></span>{{ t('Watch — don''t chase', '观察 —— 别追') }}</span>
+        {% elif population and (population.status == 'no_target_week' or population.status == 'unavailable') %}
+          {# Wave 8 §2.4 — a mature-lane failure (SPY unresolved, no current
+             cross-sectional authority) is never described as a first run. #}
+          <h2 class="arc-state mut">{{ t('Stage read unavailable', '阶段判定暂不可用') }}</h2>
+          <p class="arc-stance">{{ t('We could not establish tonight\'s completed stage week, so the market read is withheld rather than shown stale.', '今晚无法确定已完成的阶段周，因此暂不显示市场判读，而不是给出过时数据。') }}</p>
         {% else %}
           <h2 class="arc-state mut">{{ t('Warming up', '正在预热') }}</h2>
           <p class="arc-stance">{{ t('The first stage read runs tonight. The arc fills in once the weekly classification lands.', '首次阶段判定今晚运行。周线分类完成后，曲线即会填充。') }}</p>
@@ -1062,6 +1116,19 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
     if(row.source!=='seed')return '';
     return ' <span class="seedtag" data-tip-en="Seed data from the EquityDesk backfill — non-US names have no live price feed yet, so this stage read is historical, not fresh." data-tip-zh="来自 EquityDesk 回填的种子数据 —— 非美股暂无实时行情，此阶段判定为历史数据，非最新。">'+TT('seed','种子')+'</span>';
   }
+  /* Wave 8 §3 — observation currentness, which is a DIFFERENT fact from
+     `source`. `source==='live'` means our own classifier rather than the seed;
+     it says nothing about whether the reading is current. A stale row keeps its
+     lifecycle fields (a name can legitimately be `fresh` — early in Stage 2 —
+     while its last reading is weeks old) but carries no current rank, so the
+     chip states the actual Stage week it was last read at. */
+  function staleChip(row){
+    if(row.stage_current!==false)return '';
+    var wk=row.stage_week_end||row.stage_source_asof;
+    var en='Last Stage read '+(wk||'unknown')+' · stale';
+    var zh='最近阶段判定 '+(wk||'未知')+' · 已过时';
+    return ' <span class="staletag" data-tip-en="'+esc(en)+' — this name stopped updating, so it is shown as last-known context and is excluded from today\'s counts, ranks and market weather." data-tip-zh="'+esc(zh)+' —— 该股已停止更新，仅作最近已知情况展示，不计入当日统计、排名与市场天气。">'+TT('stale '+(wk||''),'过时 '+(wk||''))+'</span>';
+  }
   function passFilters(row){
     if(regionOf(row)!==region)return false;
     if(search){var s=search.toLowerCase();if((row.ticker||'').toLowerCase().indexOf(s)<0&&(row.name||'').toLowerCase().indexOf(s)<0)return false;}
@@ -1133,7 +1200,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
       return '<tr data-tk="'+esc(r.ticker)+'">'+
         '<td class="sticky-l"><button class="exp-btn" aria-label="Expand '+esc(r.ticker)+'" aria-expanded="false">▶</button></td>'+
         '<td class="sticky-l"><span class="tk">'+esc(r.ticker)+'</span></td>'+
-        '<td><span class="nm">'+nm+'</span>'+seedChip(r)+'</td>'+
+        '<td><span class="nm">'+nm+'</span>'+seedChip(r)+staleChip(r)+'</td>'+
         '<td><span class="ind">'+ind+'</span></td>'+
         '<td class="num">'+pctileChip(r.industry_percentile)+'</td>'+
         '<td class="num">'+sataChip(r.sata_score)+'</td>'+
@@ -1352,7 +1419,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
       var ev=r.event?'<span class="evchip">'+eventLabel(r.event)+'</span>':'';
       return '<tr>'+
         '<td class="sticky-l"><span class="tk" data-tip-en="'+esc(tdEn)+'" data-tip-zh="'+esc(tdZh)+'">'+esc(r.ticker)+'</span></td>'+
-        '<td><span class="nm">'+displayName(r)+'</span>'+seedChip(r)+' '+ev+bl+'</td>'+
+        '<td><span class="nm">'+displayName(r)+'</span>'+seedChip(r)+staleChip(r)+' '+ev+bl+'</td>'+
         '<td>'+stageChip(r)+'</td>'+
         '<td class="num">'+(r.weeks_in_stage==null?'—':r.weeks_in_stage)+'</td>'+
         '<td><span class="rschip '+pv[2]+'">'+LT(pv[0],pv[1])+'</span></td>'+
@@ -1367,12 +1434,19 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
   }
   function renderBoardProv(){
     var p=qs('#board-prov');if(!p)return;
-    var d=BOARD[boardCadence];var asof=d&&d.asof?d.asof:'';
+    var d=BOARD[boardCadence];
     /* honesty: daily currently mirrors the weekly stage read. */
     var honesty=boardCadence==='daily'
       ? TT('Daily view: the stage read is still the weekly classification — a daily-specific read lands once intraday history is wired.','日线视图：阶段判定目前仍沿用周线分类 —— 待接入日内历史后才有专属的日线判定。')
       : TT('Weekly stage read — the primary Weinstein classification.','周线阶段判定 —— 主要的温斯坦分类。');
-    p.innerHTML=honesty+(asof?' '+TT('Priced '+asof+'.','数据截至 '+asof+'。'):'')+' '+TT('Context only — a stage classification, never a buy signal.','仅供参考 —— 这是阶段分类，绝非买入信号。');
+    /* Wave 8 observation-truth clock (replaces the retired build-date-only
+       label): the completed Stage week the board is anchored to, plus the
+       daily source tape behind it — never the build date alone. */
+    var stageWeek=d&&d.target_stage_week?d.target_stage_week:'';
+    var srcSession=d&&d.population&&d.population.data_session?d.population.data_session:'';
+    var clockEn=stageWeek?('Stage week ended '+stageWeek+(srcSession?' · source tape through '+srcSession:'')+'.'):'';
+    var clockZh=stageWeek?('阶段周截至 '+stageWeek+(srcSession?' · 数据行情至 '+srcSession:'')+'。'):'';
+    p.innerHTML=honesty+(clockEn?' '+TT(clockEn,clockZh):'')+' '+TT('Context only — a stage classification, never a buy signal.','仅供参考 —— 这是阶段分类，绝非买入信号。');
   }
   function selectCadence(c){
     if(c!=='daily')c='weekly';boardCadence=c;
@@ -1473,7 +1547,26 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
     return {head:head,body:body,legend:legend};
   }
 
+  function indHeatHistoryNote(){
+    /* Wave 8 §7.4 — the heatmap now accrues from house-native weekly history
+       (industry_rank_history.jsonl) rather than the absent EquityDesk seed.
+       Render the accrual/unavailable state honestly: never a blank panel
+       that reads as healthy, and never a fabricated 26 weeks. */
+    var h=IND.heat&&IND.heat.history;
+    if(!h)return null;
+    if(h.status==='unavailable'){
+      return '<div class="empty soon"><div class="ico">📈</div><h3>'+TT('Rank history unavailable','排名历史暂不可用')+'</h3><p>'+TT('No house-native weekly rank history has accrued yet. Check back after the next completed Stage week.','尚未累积任何自建的每周排名历史。请在下一个已完成的阶段周后再来查看。')+'</p></div>';
+    }
+    if(h.status==='accruing'){
+      var n=h.weeks_available||0,tgt=h.weeks_target||26,fw=esc(h.first_week||'—');
+      return '<p class="subcap accruing-note">'+TT('Rank history accruing from '+fw+' — '+n+' of '+tgt+' weeks','排名历史自'+fw+'起累积 —— '+tgt+'周中的第'+n+'周')+'</p>';
+    }
+    return null;
+  }
   function indHeatmap(){
+    var hstatus=indHeatHistoryNote();
+    var h=IND.heat&&IND.heat.history;
+    if(h&&h.status==='unavailable')return hstatus;
     var map=IND.heat&&IND.heat.regions;if(!map)return indEmpty();
     var g=heatGrid(map,function(row){
       return (row.ranks||[]).map(function(rk){
@@ -1483,7 +1576,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
       }).join('');
     },false,74);
     if(g.head===undefined)return indEmpty();
-    return '<p class="subcap"><b>'+LT('Where each industry ranked, week by week.','每个行业逐周的排名。')+'</b> '+LT('Each cell is that industry’s rank that Friday (1 = strongest). Most-recent week on the left.','每格是该行业当周五的排名（1＝最强）。最新一周在左。')+'</p>'+
+    return (hstatus||'')+'<p class="subcap"><b>'+LT('Where each industry ranked, week by week.','每个行业逐周的排名。')+'</b> '+LT('Each cell is that industry’s rank that Friday (1 = strongest). Most-recent week on the left.','每格是该行业当周五的排名（1＝最强）。最新一周在左。')+'</p>'+
       '<div class="heatscroll"><table class="heat"><thead>'+g.head+'</thead><tbody>'+g.body+'</tbody></table></div>'+
       '<div class="heatlegend"><span>'+LT('rank 1 (best)','排名1（最佳）')+'</span><span class="grad"></span><span>'+LT('rank 74 (worst)','排名74（最差）')+'</span></div>';
   }

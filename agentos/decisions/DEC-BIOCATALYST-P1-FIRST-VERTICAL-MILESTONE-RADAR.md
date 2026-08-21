@@ -8,23 +8,23 @@ question: >
   it is "deliberately not a catalyst calendar" — be graduated into a Catalyst
   Radar surface?
 answer: >
-  Catalyst Radar — Trial Milestones, explicitly architected as the reusable
-  catalyst-event / evidence / identity spine whose second tenant is
-  Regulatory/PDUFA. Named honestly: the source supplies registry
-  primary/overall completion dates (often ESTIMATED, sponsor-submitted), which
-  are NOT sponsor topline-readout announcements — the vertical, its rows, and
-  its API say "trial milestones," and a true readout/announcement calendar
-  remains a future cross-plane capability. The graduation of the milestone
-  monitor into a Catalyst Radar is a named boundary evolution: the no-signal
-  discipline is preserved (no approval/outcome/market-signal claim; rows are
-  registry schedule facts with provenance), while the dates are presented as
-  watchable catalyst-class events under the spine identity. Sol's PDUFA-first
+  SOL-RATIFIED (P1-0R authority closure, 2026-08-20). Canonical ruling:
+  Catalyst Radar — Trial Milestones ships before Regulatory/PDUFA. The larger
+  "Catalyst Radar" is the product container; the first lane is explicitly
+  Trial Milestones — registry schedule facts. Public wording must use "Trial
+  milestone", "Primary completion", "Study completion", and "days to
+  milestone"; it must NOT label a registry completion date a "readout", a
+  "catalyst date", or a market event. The source supplies registry
+  primary/overall completion dates (often ESTIMATED, sponsor-submitted),
+  which are not sponsor topline-readout announcements — a true
+  readout/announcement calendar remains a future cross-plane capability. The
+  graduation of the milestone monitor into a Catalyst Radar lane is a named
+  boundary evolution: the no-signal discipline is preserved (no
+  approval/outcome/market-signal claim; rows are registry schedule facts with
+  provenance), while the dates are presented as watchable events under the
+  spine identity whose second tenant is Regulatory/PDUFA. Sol's PDUFA-first
   prior is revised on readiness evidence (Sol commissioned exactly this
-  falsification test). Ratification of BOTH the revision and the boundary
-  evolution is returned to Sol before the P1-1 implementation PR is
-  commissioned
-  (research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md
-  §11.1).
+  falsification test and has now accepted its result).
 rationale: >
   Current-head archaeology (P1-0 census + opus red-team, 2026-08-20):
   prospective PDUFA has no lawful source at current head — pdufa_date is a
@@ -53,16 +53,19 @@ alternatives:
       Worst end-to-end readiness of the four: blocked on a cross-plane
       issuer-disclosure source contract that does not exist in any form
       (duration unknown), plus Drugs@FDA rights review and the post-soak
-      successor-registry transition. Becomes the spine's second tenant instead.
+      successor-registry transition. Becomes the spine's second tenant instead
+      (prospective PDUFA truth ownership frozen in
+      DEC:BIOCATALYST-PDUFA-TRUTH-IS-CORPORATE-DISCLOSURE-PLANE).
   - option: Keep the milestone monitor's "not a catalyst calendar" boundary
       and ship the radar as a plain calendar upgrade without catalyst framing
     why_not: >
-      Rejected as the default, but preserved as Sol's veto option in §11.1:
-      the catalyst-event spine (source-native event identity, revision
-      lineage, evidence drill-down) is the reusable architecture the program
-      needs for every later tenant; shipping it without the spine identity
-      would rebuild the same surface twice. The no-signal discipline the
-      boundary protects is kept either way.
+      Was preserved as Sol's veto option; Sol did not exercise the veto. The
+      catalyst-event spine (source-native event identity, revision lineage,
+      evidence drill-down) is the reusable architecture the program needs for
+      every later tenant; shipping it without the spine identity would rebuild
+      the same surface twice. The no-signal discipline the boundary protects
+      is kept either way, and the public-wording law above keeps registry
+      schedule facts from masquerading as market events.
   - option: Company/Asset Dossier first
     why_not: >
       A join surface whose inputs (catalysts, pipelines, cash/runway, asset
@@ -72,6 +75,7 @@ alternatives:
       Explicitly ruled out by the commissioning directive as a convenience
       pick; unlocks no event/evidence spine.
 evidence:
+  - "Sol P1-0R authority-closure directive, 2026-08-20 — ratification with amendments (container/lane naming + public wording law)"
   - "research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md §3-§5, §9 falsification table"
   - "config/biocatalyst_sources.yml:52,66 clinicaltrials_gov_v2 production-allowed + launch-critical; :128,142 record-history production-allowed (second production-allowed source, revision-lineage supplier); :221-222 drugs_at_fda false + review_required_before_b4; :267-271 SEC owned_by_corporate_plane / unavailable_to_biocatalyst"
   - "research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md — pdufa_date forbidden claim; forward PDUFA owned by corporate plane"
@@ -83,35 +87,43 @@ evidence:
   - "DEC:BPC-JV-SNAPSHOT-RUNTIME-REGISTRY-POST-SOAK"
 affects:
   - "biocatalyst"
+  - "WS:BIOCATALYST-CORE-PRODUCT"
   - "WS:BPC-JV-RECON"
   - "engine/biocatalyst/"
 confidence: high
 reversibility: easy
-decided_by: coo-fable
+decided_by: ceo-sol
 decided_at: 2026-08-20
 review_by: 2026-08-27
 ---
 
 ## Grounds
 
-Sol's directive commissioned this adjudication with an explicit falsification
-clause: "Do not accept that prior blindly. Falsify it if current-main
-archaeology proves another vertical has materially better end-to-end readiness
-without shrinking the product." The archaeology did exactly that, and an opus
-red-team then attacked the verdict (verdict: UPHOLD WITH REQUIRED CORRECTIONS
-— all corrections applied, including the milestone-not-readout rename, the
-named boundary evolution, and the real-data zero-row falsification). The
-product is not shrunk: the catalyst-event spine (source-native event identity,
-scheduled date + precision + registry date type, known_at,
-revision/cancellation lineage, issuer resolution with typed unresolved states,
+Provenance is preserved deliberately: Fable (COO seat) performed the P1-0
+repo archaeology and adjudication under Sol's directive, and an opus red-team
+attacked the verdict before it was returned (verdict: UPHOLD WITH REQUIRED
+CORRECTIONS — all corrections applied, including the milestone-not-readout
+rename, the named boundary evolution, and the real-data zero-row
+falsification). Sol's original directive commissioned this adjudication with
+an explicit falsification clause: "Do not accept that prior blindly. Falsify
+it if current-main archaeology proves another vertical has materially better
+end-to-end readiness without shrinking the product." The archaeology did
+exactly that, and Sol ratified the revision in the P1-0R authority closure
+(2026-08-20) with amendments: the larger Catalyst Radar is the product
+container, the first lane is explicitly Trial Milestones / registry schedule
+facts, and the public wording law in the answer is binding. The product is
+not shrunk: the catalyst-event spine (source-native event identity, scheduled
+date + precision + registry date type, known_at, revision lineage with exact
+trial status preserved, issuer resolution with typed unresolved states,
 evidence drill-down) is designed regulatory-tenant-ready from day one; PDUFA
 rides the same spine the moment its source plane unlocks.
 
 ## What would reopen this
 
-Sol vetoing the revision or the boundary evolution at ratification (§11.1 of
-the architecture doc); a lawful prospective-PDUFA source materializing before
-P1-1 is commissioned (e.g., an early corporate-plane disclosure-evidence
-contract); or the post-soak successor transition landing with
-SNAPSHOT-ONBOARD commissioned, which would let the PDUFA tenant start in
-parallel rather than second.
+A lawful prospective-PDUFA source materializing before P1-1 lands (e.g., an
+early corporate-plane disclosure-evidence contract per
+DEC:BIOCATALYST-PDUFA-TRUTH-IS-CORPORATE-DISCLOSURE-PLANE), which would let
+the PDUFA tenant start in parallel rather than second; or the post-soak
+successor transition landing with SNAPSHOT-ONBOARD commissioned ahead of
+P1-1. The ratification itself is settled; reopening it requires a new Sol
+ruling, not a session's judgment.

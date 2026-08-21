@@ -2,7 +2,7 @@
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
   "asof": "2026-08-20",
-  "n_events_logged": 378,
+  "n_events_logged": 382,
   "n_events_graded": 254,
   "classes": [
     {
@@ -13,7 +13,7 @@
       "hit_5d": 0.6666666666666666,
       "hit_21d": 1.0,
       "avg_rel_5d": -0.019266309523809522,
-      "avg_rel_21d": -0.010108,
+      "avg_rel_21d": -0.035104750000000004,
       "wilson_low_5d": 0.207655,
       "wilson_high_5d": 0.93851,
       "verdict": "insufficient"
@@ -50,9 +50,9 @@
       "n": 2,
       "n_graded": 1,
       "hit_5d": 1.0,
-      "hit_21d": null,
+      "hit_21d": 1.0,
       "avg_rel_5d": 0.019937,
-      "avg_rel_21d": null,
+      "avg_rel_21d": 0.089276,
       "wilson_low_5d": 0.206543,
       "wilson_high_5d": 1.0,
       "verdict": "insufficient"
@@ -73,12 +73,12 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 88,
+      "n": 90,
       "n_graded": 54,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
       "avg_rel_5d": 0.008999755144032921,
-      "avg_rel_21d": 0.0002556875000000003,
+      "avg_rel_21d": 3.718000000000032e-05,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "context_only"
@@ -128,9 +128,9 @@
       "n": 121,
       "n_graded": 115,
       "hit_5d": 0.46956521739130436,
-      "hit_21d": 0.3625,
-      "avg_rel_5d": 0.004127286956521739,
-      "avg_rel_21d": 0.024052591666666664,
+      "hit_21d": 0.3493975903614458,
+      "avg_rel_5d": 0.004633049275362319,
+      "avg_rel_21d": 0.02551526907630522,
       "wilson_low_5d": 0.380814,
       "wilson_high_5d": 0.560284,
       "verdict": "context_only"
@@ -190,7 +190,7 @@
     {
       "event_type": "policy_trade_control",
       "direction": "mixed",
-      "n": 31,
+      "n": 32,
       "n_graded": 13,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -216,7 +216,7 @@
     {
       "event_type": "product_delay",
       "direction": "bearish",
-      "n": 2,
+      "n": 3,
       "n_graded": 2,
       "hit_5d": 0.5,
       "hit_21d": 0.5,
@@ -267,7 +267,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 762,
+    "n_sampled": 774,
     "n_graded": 0,
     "classes": []
   }

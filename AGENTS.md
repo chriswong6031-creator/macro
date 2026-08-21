@@ -102,6 +102,19 @@ that believes the packet is wrong stops and escalates.
   sweeper honors `git worktree lock`, live process cwds, uncommitted/unpushed
   work, open PRs, and <7-day activity. To park a checkout long-term, lock it:
   `git worktree lock --reason "<why>" <path>`.
+- **A session worktree is planted under the checkout the SESSION was launched in**
+  (2026-08-20). `.claude/hooks/worktree_create_sparse.py` used to derive its
+  destination from `git rev-parse --git-common-dir`, which answers with the MAIN
+  working tree's `.git` from every checkout of a clone — a per-clone CONSTANT — so
+  every Claude worktree landed under `Macro Dashboard/`, the one folder sessions are
+  told never to open, whichever folder the operator actually opened. Placement now
+  follows `--show-toplevel`, climbed out of any session root so a spawn from inside a
+  session tree makes a SIBLING, never a nested child; `MACRO_LOCAL_ROOT` overrides.
+  Only the BYTES moved — the clone is one clone, so every worktree stays registered in
+  `Macro Dashboard/.git/worktrees/` and that folder stays undeletable.
+  `scripts/worktree_gc.py` expands its repo-relative roots under EVERY host checkout
+  for the same reason: a tree the sweeper cannot see it can never reclaim. Pinned by
+  `tests/test_worktree_placement.py`.
 - **Session worktrees are SPARSE by default** (`research/WORKTREE_GC_POLICY.md`
   §0 R8). Claude's `.claude/hooks/worktree_create_sparse.py` mints a worktree
   off fresh `origin/main` sparsely before file checkout. Codex uses the checked-in

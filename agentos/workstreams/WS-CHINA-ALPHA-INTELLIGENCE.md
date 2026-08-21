@@ -129,10 +129,10 @@ waves:
     title: P1 Institutional Visit Tape + dossier (producer, PIT clock, provisional actor ontology, coverage-start semantics, failure isolation; NO score; merge = BUILT_NOT_PROVEN, done only on real asia-close receipt + production dossier desktop/mobile proof)
     status: in_progress
     depends_on: [rights0]
-    next_action: "BUILT_NOT_PROVEN -- merged as PR #6050 (squash c54d1b55f673cb383c00889e8f4ab809614666ba; immutable merge SHA is the canonical proof pointer per Sol 2026-08-20); done only on the real asia-close receipt + production dossier desktop/mobile proof (collectors/china_visits.py derives the visit tape from china_filings' new institutional_visit category bucket; owner-native store data/china_visits/; dossier block in engine/china_intel_hub.py's _dossier(); fixture-driven receipts in the PR body). Follow-up verification session: (1) confirm a real asia-close.yml run has collected real visit rows end-to-end (record the run id), (2) capture desktop+mobile crops of the PRODUCTION dossier showing the visit block for a real company with honest failure states, then flip p1 to done. PARTIAL RECEIPT (proof-only inspection 2026-08-20): page half PROVEN — https://www.mastermind-x.com/china_intel.html serves the K2c visits block with honest not-yet-covered states (render commit baf4cf7c9291; the later render-public 8e73239563ef only re-stamped assets). Data half NOT accrued: asia-close run 32372312243 (first checkout containing the merge; still in progress at inspection) wrote data/china_visits/ via commit a14ac56627c9 with n_candidates=0 ('0 candidate row(s) this run', health ok) — the collector ran end-to-end without error but zero real visit rows exist yet. P1-ZERO-ROW-ATTRIBUTION (Sol-authorized proof-only task, adjudicated 2026-08-20): NOT a quiet day — commit a14ac56627c9 itself carries 73 raw-keyword-matching filings (68 业绩说明会 dated 2026-08-20, 5 投资者关系活动记录表 dated 2026-08-19) and ALL 73 are stored category=institutional_visit, a 100% classifier hit rate. The zero is deterministically attributed to the documented one-cycle serial-loop latency (scripts/collect.py:248): china_visits ran at 16:37Z against the checkout-era store (666ff40c, zero institutional_visit rows — the category was born in this very merge) while china_filings fetched at 16:44Z. One-time bootstrap artifact; nothing lost (rows persist correctly categorized; the candidate filter is not date-gated). NO REPAIR AUTHORIZED — the latency is a design property documented at merge, not a defect; whether the standing 1-cycle delay is acceptable product semantics is a Sol product ruling (DSC:CHINA-VISITS-FIRST-CYCLE-ZERO-IS-BOOTSTRAP-NOT-QUIET). FALSIFIER: the next natural asia-close run must report n_candidates >= 68 and persist the first real rows — a second zero is genuine P1_BROKEN with no bootstrap excuse (bounded repair then: run china_visits after china_filings). Remaining proof unchanged: the first asia-close run persisting >=1 real institutional_visit row, plus the crops. Sol post-activation adjudication 2026-08-20 REJECTED the standing one-cycle latency as permanent semantics and authorized exactly one bounded repair, P1-R1 same-cycle derivation -- BUILT in PR #6142 (cninfo host-group ordering + process-local china_filings.LAST_RUN_OUTCOME flag + upstream_degraded health state; --only china_visits still derives over the committed store; no second ingester, CNInfo concurrency intact). P1 remains BUILT_NOT_PROVEN; it flips done ONLY on the first natural post-merge Asia production run's receipt: filing/visit execution order, upstream health, candidate/new-row accounting, confirmation that every newly fetched eligible institutional_visit row appeared in the visit plane in that same run, plus production desktop+mobile dossier crops. The DSC falsifier (n_candidates >= 68) stays armed, now evaluated under same-cycle order."
+    next_action: "BUILT_NOT_PROVEN -- merged as PR #6050 (squash c54d1b55f673cb383c00889e8f4ab809614666ba; immutable merge SHA is the canonical proof pointer per Sol 2026-08-20); done only on the real asia-close receipt + production dossier desktop/mobile proof (collectors/china_visits.py derives the visit tape from china_filings' new institutional_visit category bucket; owner-native store data/china_visits/; dossier block in engine/china_intel_hub.py's _dossier(); fixture-driven receipts in the PR body). Follow-up verification session: (1) confirm a real asia-close.yml run has collected real visit rows end-to-end (record the run id), (2) capture desktop+mobile crops of the PRODUCTION dossier showing the visit block for a real company with honest failure states, then flip p1 to done. PARTIAL RECEIPT (proof-only inspection 2026-08-20): page half PROVEN — https://www.mastermind-x.com/china_intel.html serves the K2c visits block with honest not-yet-covered states (render commit baf4cf7c9291; the later render-public 8e73239563ef only re-stamped assets). Data half NOT accrued: asia-close run 32372312243 (first checkout containing the merge; still in progress at inspection) wrote data/china_visits/ via commit a14ac56627c9 with n_candidates=0 ('0 candidate row(s) this run', health ok) — the collector ran end-to-end without error but zero real visit rows exist yet. P1-ZERO-ROW-ATTRIBUTION (Sol-authorized proof-only task, adjudicated 2026-08-20): NOT a quiet day — commit a14ac56627c9 itself carries 73 raw-keyword-matching filings (68 业绩说明会 dated 2026-08-20, 5 投资者关系活动记录表 dated 2026-08-19) and ALL 73 are stored category=institutional_visit, a 100% classifier hit rate. The zero is deterministically attributed to the documented one-cycle serial-loop latency (scripts/collect.py:248): china_visits ran at 16:37Z against the checkout-era store (666ff40c, zero institutional_visit rows — the category was born in this very merge) while china_filings fetched at 16:44Z. One-time bootstrap artifact; nothing lost (rows persist correctly categorized; the candidate filter is not date-gated). NO REPAIR AUTHORIZED — the latency is a design property documented at merge, not a defect; whether the standing 1-cycle delay is acceptable product semantics is a Sol product ruling (DSC:CHINA-VISITS-FIRST-CYCLE-ZERO-IS-BOOTSTRAP-NOT-QUIET). FALSIFIER: the next natural asia-close run must report n_candidates >= 68 and persist the first real rows — a second zero is genuine P1_BROKEN with no bootstrap excuse (bounded repair then: run china_visits after china_filings). Remaining proof unchanged: the first asia-close run persisting >=1 real institutional_visit row, plus the crops. Sol post-activation adjudication 2026-08-20 REJECTED the standing one-cycle latency as permanent semantics and authorized exactly one bounded repair, P1-R1 same-cycle derivation -- BUILT in PR #6142 (cninfo host-group ordering + process-local china_filings.LAST_RUN_OUTCOME flag + upstream_degraded health state; --only china_visits still derives over the committed store; no second ingester, CNInfo concurrency intact). P1 remains BUILT_NOT_PROVEN; it flips done ONLY on the first natural post-merge Asia production run's receipt: filing/visit execution order, upstream health, candidate/new-row accounting, confirmation that every newly fetched eligible institutional_visit row appeared in the visit plane in that same run, plus production desktop+mobile dossier crops. The DSC falsifier (n_candidates >= 68) stays armed, now evaluated under same-cycle order. Sol STRENGTHENED ACCEPTANCE (2026-08-21): P1/P1-R1 remains BUILT_NOT_PROVEN — merged PR #6142 (squash 650be4dfe6d5dff774abdc5b5cfee083aaa11596) with proof run 32435629231=success accepted ONLY as post-merge ship-loop proof. Exactly one remaining proof lane: the FIRST natural asia-close.yml run containing #6142. n_candidates >= 68 alone is NOT acceptance -- capture the complete same-invocation accounting: filings health, fresh institutional-visit filings, visit candidates, rows persisted, typed exclusions, and any eligible filing IDs not represented downstream. Every eligible same-run filing must either become a china_visits row in that same invocation or carry a named honest exclusion; any eligible filing deferred to the next Asia cycle means P1 = BROKEN, not quiet. If the data path passes, finish the frozen product proof on the deployed production China dossier for a real company, desktop + mobile, visit block with truthful null/coverage/failure semantics visible. Only then P1 = DONE / PROVEN_LIVE. No P1B, L0, R1/R2, P2, or other China family."
   - id: pr0d
     title: PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; OWNER-ROUTED to D2B2-CN-HK per DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK)
-    status: in_progress
+    status: done
     next_action: >
       BUILT_NOT_PROVEN 2026-08-20 (adopted by reference from the owner child):
       D2B2-CN-HK (WS:PROPHET-US-V4-RECOVERY, frozen contract
@@ -154,10 +154,21 @@ waves:
       source/master generation receipts, CN/HK resolution counts/rates, and
       the immutable resulting commit; then pr0d AND owner D2B2 flip done; on
       a topology/persistence failure stop and return the exact failure,
-      never hand-rebake. Also note: later-wave gate closed — no R1/R2 until
-      pr0d=done; no P1B until P1 and L0 satisfy dependencies; L0 has NO
-      bounded builder commission in research/china_alpha_intelligence/commissions/
-      — return to Sol for that commission rather than improvising.
+      never hand-rebake. DONE / PROVEN_LIVE by adoption (Sol natural-proof
+      adjudication 2026-08-21): see WS:PROPHET-US-V4-RECOVERY wave d2 for
+      the full accounting — natural master receipt generated
+      2026-08-21T01:17:00 and the subsequent GMI/theme-graph build stamped
+      2026-08-21T03:47:15Z lane=nightly (nightly run 32426513915), CN
+      canonical survival 984/1021 (96.4%), HK canonical survival 147/147
+      (100%), GMI RESOLVED 1833 = 702 US + 984 CN + 147 HK — exactly the
+      frozen D2B2 population, US byte-identical. pr0d AND owner D2B2 both
+      flip done on this receipt; no D2B2 repair authorized or required.
+      Later-wave gate REMAINS CLOSED (Sol 2026-08-21): do not start P1B, L0,
+      R1/R2, P2, or another China family — the P1 natural asia-close
+      receipt is the only remaining execution gate from this tranche; L0
+      still has no bounded builder commission in
+      research/china_alpha_intelligence/commissions/ — return to Sol for
+      that commission rather than improvising.
   - id: l0
     title: L0 full-pool canonical outcomes (extract china_standout_track primitives for the candidate plane)
     status: todo
@@ -187,17 +198,26 @@ next_action: >
   49533d59b16076630ccd7d8bf48307f658db61da). State: pr0b DONE (#6045 squash
   fdbf543b2333; receipt = asia-close run 32348780228 -> commit baf4cf7c9291,
   intel_* columns live), rights0 done, p1 BUILT_NOT_PROVEN (#6050 squash
-  c54d1b55f673; page half proven live, zero real visit rows yet), pr0d
-  BUILT_NOT_PROVEN, adopted by reference from D2B2-CN-HK under
-  WS:PROPHET-US-V4-RECOVERY (PR #6116 squash ed28d0d992a1; CN 0->96.4%
-  / HK 0->100% GMI resolution). Next in this WS: (1) P1 data-half proof — the
-  first asia-close run persisting >=1 real institutional_visit row +
-  production dossier desktop/mobile crops (never manufacture a run;
-  RECEIPT_NOT_YET_ACCRUED leaves the wave BUILT_NOT_PROVEN); (2) record the
-  D2B2-CN-HK immutable merge SHA + the first natural nightly's proof (run id
-  + resolution delta) once observed, flipping pr0d to done. Completion
-  law on every build wave: merge = BUILT_NOT_PROVEN; a real production
-  receipt (recorded here, immutable merge SHAs) = done. Do NOT start P1B,
+  c54d1b55f673; page half proven live, zero real visit rows yet; P1-R1
+  BUILT in #6142 squash 650be4dfe6d5; Sol strengthened acceptance
+  2026-08-21 — see the p1 wave entry for the full remaining proof lane),
+  pr0d DONE / PROVEN_LIVE (Sol natural-proof adjudication 2026-08-21,
+  adopted by reference from D2B2-CN-HK under WS:PROPHET-US-V4-RECOVERY:
+  PR #6116 squash ed28d0d992a1; CN 96.4% / HK 100% GMI resolution; natural
+  master receipt 2026-08-21T01:17:00 + GMI build 2026-08-21T03:47:15Z,
+  GMI RESOLVED 1833 = 702 US + 984 CN + 147 HK — see the pr0d wave entry
+  for the full accounting). Next in this WS: (1) P1 data-half proof — the
+  first natural asia-close.yml run containing #6142, with the complete
+  same-invocation accounting (filings health, fresh institutional-visit
+  filings, visit candidates, rows persisted, typed exclusions, no eligible
+  filing left unrepresented) plus production dossier desktop/mobile crops
+  (never manufacture a run; RECEIPT_NOT_YET_ACCRUED leaves the wave
+  BUILT_NOT_PROVEN); (2) DONE — the D2B2-CN-HK immutable merge SHA
+  ed28d0d992a144aec5f0ef2616024e3e32d83b1a proof was recorded 2026-08-21
+  (see the pr0d and V4 d2 wave entries); pr0d is flipped to done.
+  Completion law on every build wave: merge = BUILT_NOT_PROVEN; a real
+  production receipt (recorded here, immutable merge SHAs) = done. Do NOT
+  start P1B,
   L0, R1, R2, or later verticals without a new Sol directive. Later tracks
   (P3–P6, R3–R4, S-lobes, L3+) charter from the masterplan at their wave
   boundaries.

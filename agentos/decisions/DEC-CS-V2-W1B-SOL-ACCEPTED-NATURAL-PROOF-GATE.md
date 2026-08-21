@@ -48,6 +48,7 @@ confidence: high
 reversibility: easy
 decided_by: ceo-sol
 decided_at: 2026-08-20
+superseded_by: DEC:CS-V2-W1-IDENTITY-PUBLICATION-PROVEN-LIVE
 ---
 
 ## Authority consequence

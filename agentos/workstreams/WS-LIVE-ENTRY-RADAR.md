@@ -156,7 +156,19 @@ waves:
     # pools separate, coverage_verified true. OWNER FOLLOW-UP (cadence): any
     # long gap re-creates the cold-start wedge — a first pass after a dark
     # period exceeds the 5-min tick + 570s timeout; consider substrate
-    # caching or a bootstrap path. Pack-unit MemoryMax remains untested for
+    # caching or a bootstrap path. SOL RULING (Day-5, 2026-08-21): accepted
+    # as a Radar-owner follow-up, NOT a Prophet Lab defect. Target
+    # capability: after a genuine dark gap the Radar autonomously reaches
+    # its first valid envelope without timeout/overlap failure while
+    # retaining the healthy 5-min warm cadence. Do NOT solve by arbitrary
+    # timeout/memory inflation — measure the cold-start phases, establish
+    # the actual bottleneck, then commission a bounded Radar-owner wave if
+    # needed. Proceeds independently; blocks neither B1 nor P-LAB-UI.
+    # SECURITY ESCALATION (Day-5, DSC:RADAR-SPOOL-PUBLIC-R2): the canonical
+    # spool prefix live_flow/entry_radar_events/ is ANONYMOUSLY READABLE on
+    # the public R2 dev host with guessable dated keys (verified 200,
+    # 2026-08-21). Radar-owner + delivery-plane-program item; deliberately
+    # untouched by the B1 wave. Pack-unit MemoryMax remains untested for
     # a full in-service build. Per the LAB-0 non-completion rule this
     # commissioning contributes evidence toward B6 but does NOT close it
     # (full-RTH-session cadence proof still owed).

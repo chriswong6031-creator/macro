@@ -92,7 +92,20 @@
   }
   function republishTabs() {
     if (!LAST_READ || !window.WS || !window.WS.setRisk) return;
-    try { window.WS.setRisk(tabPayload(LAST_READ)); } catch (e) {}
+    // LAW 3 (A1A round-3) self-check — belt and braces on top of the consumer's own
+    // rejection: this refresh may have been SCHEDULED before a mode switch or auth
+    // flip and fires only after it, on a deferred rAF/setTimeout tick. Compare the
+    // STORED provenance (minted when LAST_READ was built, never re-read here) to
+    // the CURRENT generation and abort before ever calling setRisk — a stale
+    // republish must not even attempt the paint.
+    var curProv = (window.WS.prov && window.WS.prov()) || null;
+    var prov = LAST_READ.prov;
+    if (!curProv || !prov || prov.scope !== curProv.scope || prov.gen !== curProv.gen) return;
+    try {
+      var payload = tabPayload(LAST_READ);
+      payload.prov = prov;   // forwarded verbatim — never re-stamped at fire time
+      window.WS.setRisk(payload);
+    } catch (e) {}
   }
   function tabPayload(R) {
     var active = R.active, RR = R.RR, cov = R.cov;
@@ -1312,8 +1325,13 @@
       // a thin/uncovered book has no read to cache — drop it, so a later hydration
       // wave cannot republish tab strings describing a book we no longer have
       LAST_READ = null;
+      // LAW 3: CARRY the incoming weights' provenance even for the thin/uncovered
+      // publish — a genuinely empty/thin book is still a real publication for its
+      // own scope+generation, and the consumer must be able to tell it apart from
+      // a stale one.
       publish({ shares: {}, covered: {}, bets: null, modeledN: 0,
-                regime: regimeSentence(null), rcTabs: null, labHTML: labIntroHTML() });
+                regime: regimeSentence(null), rcTabs: null, labHTML: labIntroHTML(),
+                prov: weights.prov });
       return;
     }
 
@@ -1410,11 +1428,16 @@
        `RR` = both lenses) in ONE pass, so no two tabs can describe different books.
        The workspace picks which string to paint; it never recomputes — the same split
        the seam already uses, for the same reason. */
-    LAST_READ = { RR: RR, active: active, cov: cov };
+    // LAW 3: CARRY the incoming weights' provenance into LAST_READ — the cached
+    // read a later hydration wave's republishTabs() rebuilds from — and into this
+    // publication itself. Never re-stamped: `weights.prov` was minted once, at
+    // factor_exposure.js's CUR assignment, and travels verbatim from here on.
+    LAST_READ = { RR: RR, active: active, cov: cov, prov: weights.prov };
     var tabs = tabPayload(LAST_READ);
     out.concHTML = tabs.concHTML;
     out.rcTabs = tabs.rcTabs;
     out.labHTML = tabs.labHTML;
+    out.prov = weights.prov;
     publish(out);
   }
 
@@ -1425,7 +1448,8 @@
         window.WS.setRisk({
           concHTML: payload.concHTML || '',
           rcTabs: payload.rcTabs || null,
-          labHTML: payload.labHTML || ''
+          labHTML: payload.labHTML || '',
+          prov: payload.prov   // LAW 3: forwarded verbatim, never re-stamped here
         });
       } catch (e) {}
     }
@@ -2329,6 +2353,18 @@
 
   function recomputeBook(weights) {
     loadData().then(function (data) {
+      // LAW 3 (A1A round-3) self-check — the WIDEST replay window in this file: a
+      // weights derivation is captured here at CALL time (via the `weights`
+      // closure) but this publish only actually reaches BOTH consumers after the
+      // factor artifact fetch resolves, which can straddle a mode switch or auth
+      // flip. Compare the captured weights' provenance against the CURRENT
+      // generation at resolution and abort the ENTIRE publish — not just one
+      // consumer's half of it — when stale.
+      if (window.WS && window.WS.prov) {
+        var curProv = window.WS.prov();
+        var wprov = weights.prov;
+        if (!wprov || wprov.scope !== curProv.scope || wprov.gen !== curProv.gen) return;
+      }
       if (!data) {
         // no factor model reachable (401 signed out, or the artifact is absent): the
         // workspace still renders — the seam's risk rail becomes a lock shell and the
@@ -2341,7 +2377,7 @@
            publishes the reason instead of the controls. */
         BOOK_SHARES = {}; UNMODELED = {}; LAST_READ = null;
         publish({ shares: {}, covered: {}, bets: null, modeledN: 0, regime: '',
-                  labHTML: labUnavailableHTML() });
+                  labHTML: labUnavailableHTML(), prov: weights.prov });
         return;
       }
       // fill BOOK_SHARES from the default-lens read (MODELED only — a non-USD value
@@ -2373,9 +2409,27 @@
     loadChains().then(function () { scheduleDecorate(); });
     // 1) recompute the book whenever the FX layer republishes weights
     document.addEventListener('fx-weights', function (e) { recomputeBook(e.detail); });
-    // 2) first read: pull current weights if the FX panel already resolved them
+    // 2) first read: pull current weights if the FX panel already resolved them.
+    // F3 (adversarial review, MINOR — documenting a pre-existing accident): this
+    // branch is DEAD on a typical page load. `window.FX` (factor_exposure.js)
+    // exists as a MODULE the instant it is required, but its `CUR.prov` stays
+    // `null` (F3's own fix, factor_exposure.js's initial CUR literal) until the
+    // FIRST real CUR assignment — a render() triggered by some consumer's
+    // FX.update()/setAutoWeights() call, which has not necessarily happened yet
+    // when THIS init() runs. `currentWeights()` therefore hands back `prov: null`
+    // here more often than not, and recomputeBook()'s own self-check (below)
+    // aborts on a null prov exactly like it aborts on any other unstampable
+    // read — this bootstrap call was already effectively a no-op before LAW 3,
+    // this only makes the no-op fail-closed and load-bearing instead of dead by
+    // accident. The REAL first read arrives via the `fx-weights` listener above
+    // once a producer actually mints one.
     if (window.FX && window.FX.currentWeights) recomputeBook(window.FX.currentWeights());
-    else loadData().then(function () { recomputeBook({ universe: [], wmap: {}, mode: 'manual' }); });
+    // LAW 3: no window.FX at all — there is no real producer to mint provenance, so
+    // this synthetic bootstrap weights object carries the same fail-closed gen:-1
+    // stamp the mint site uses when window.WS itself is absent (consumers reject
+    // it the same way a genuinely unstampable read is rejected).
+    else loadData().then(function () { recomputeBook({ universe: [], wmap: {}, mode: 'manual',
+                                                          prov: { scope: 'watchlist', gen: -1 } }); });
     // 3) language / theme flips -> re-derive the wording (the numbers are unchanged)
     document.addEventListener('langchange', onLangTheme);
     document.addEventListener('themechange', onLangTheme);

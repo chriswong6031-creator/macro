@@ -109,6 +109,7 @@ def _empty_result(too_young: bool = True, n_weeks: int = 0) -> dict:
         "weeks_in_stage": 0,
         "fresh": False,
         "n_weeks": int(n_weeks),
+        "stage_week_end": None,
         "ma30": None,
         "ma30_slope_pct5w": None,
         "pct_vs_ma30": None,
@@ -556,11 +557,17 @@ def classify(close: pd.Series,
 
     stage_detailed = _stage_detailed(stage, wis, atr_ext, mansfield, event, fresh)
 
+    try:
+        stage_week_end = wf.index[-1].date().isoformat()
+    except Exception:  # pragma: no cover - defensive, never raise
+        stage_week_end = None
+
     return {
         "stage": int(stage),
         "weeks_in_stage": int(wis),
         "fresh": fresh,
         "n_weeks": int(len(wf)),
+        "stage_week_end": stage_week_end,
         "ma30": round(ma30, 4) if ma30 is not None else None,
         "ma30_slope_pct5w": round(slope, 4) if slope is not None else None,
         "pct_vs_ma30": pct_vs_ma30,

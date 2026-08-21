@@ -2676,7 +2676,45 @@ jobs:
 
   china-native-collectors:
     if: ${{ false }}
-    gate: data
+    # RECLASSIFIED data -> code (2026-08-21). W1 (#5954) put this job on the
+    # data side, which under W2 means ci.yml never packs it: `gate: data` jobs
+    # run only in data-health.yml, and that lane fires on `workflow_run` after
+    # the nightly plus a 13:30Z schedule — it has NO `pull_request` trigger. So
+    # every suite below ran post-merge only. The cost was concrete: #6142's
+    # seven P1-R1 same-cycle acceptance tests in tests/test_china_visits_collector.py
+    # merged having never executed in CI on the PR that wrote them.
+    #
+    # The reclassification is measured, not asserted. Under a sparse checkout
+    # with `data/` absent entirely, 17 of the 18 suites named below pass green
+    # (test_china_visits_collector.py 38 passed; test_china_tushare_spine.py 43
+    # passed; test_tushare_freshness_tripwire.py 7 passed) — a suite that passes
+    # with no data tree at all cannot have a verdict a nightly commit can move.
+    # They are hermetic by construction: test_china_visits_collector.py carries
+    # two autouse fixtures redirecting config.data_dir AND lib.store.read_status/
+    # write_status to tmp_path, test_china_official_corpora.py monkeypatches
+    # _store_dir, test_cn_intel_pit_accrual.py monkeypatches the OUT/OUT_HIST
+    # module globals, and test_china_tushare_spine.py passes tmp_path as an
+    # explicit base_dir to every spine.* call.
+    #
+    # The 18th, tests/test_china_news_intel_w2.py, has one test that reaches the
+    # real tree: tag_tickers -> entity_resolver.resolve_cn -> cn_name_to_ticker()
+    # reads config.data_dir()/"baskets_china"/"membership.json". That file is a
+    # HAND-AUTHORED REGISTRY, not a nightly ledger — 6 commits in its whole life,
+    # five of them PR-authored (newest #4512) and the lone dashboard-bot commit a
+    # page-copy edit. It moves only when a pull request moves it, which is the
+    # exact W1 discriminator (bot-authored vs PR-only) and the exact category W1
+    # already reclassified 56 jobs into: "pinned fixtures, tmp_path roots, and
+    # hand-authored registries the heuristic's read_parquet match over-flagged".
+    # The root-cause doctrine says it outright — "a job that reads `data/` to
+    # build a fixture is code-gated, and a job that reads a pinned golden is
+    # code-gated" (research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md).
+    #
+    # Budget: +44 weight-seconds onto a 2,086s `gate: code` set spread over
+    # twelve packs (max pack 274s before this). `gate` is not an input to scope
+    # inference or to select_jobs, and job_exec_sha256 does not hash it, so the
+    # narrow-diff job/weight ceilings in tests/test_ci_pack.py and every semantic
+    # proof digest are unmoved by this edit — verified before and after.
+    gate: code
     # W1 of the China/HK native-data program: 互动易 / 上证e互动 / sell-side revision tape /
     # 股东户数. WIRING LAW (#1253 precedent): a suite that NO job names never runs — these
     # four files would merge green untested without this job, and their whole point is
@@ -4735,6 +4773,7 @@ jobs:
       - scripts/ci_authority_paths.py
       - scripts/ci_semantic_proof.py
       - scripts/check_self_mod_fence.py
+      - scripts/worktree_gc.py
       - tests/test_agent_worktree_roots.py
       - tests/test_agentos_compile.py
       - tests/test_agentos_schema.py
@@ -4745,6 +4784,8 @@ jobs:
       - tests/test_ship_loop_guard.py
       - tests/test_ship_loop_semantic.py
       - tests/test_sparse_worktree_profile.py
+      - tests/test_worktree_gc.py
+      - tests/test_worktree_placement.py
     # F2 (Metabolism Phase 0 / R-AUT-5): self-modification fence.
     # Hard-fails any PR whose branch name or commit trailers carry the loop
     # namespace (metabolism/* or claude/loop-*, or 'Loop-Authored:' trailer)
@@ -4769,7 +4810,17 @@ jobs:
         # merges and demands a render on a merge commit that can never have one.
         # It also owns the exact claude/* delivery-branch prefix: a look-alike or
         # codex/* branch must fail before stand-down or GitHub probes can release it.
-        run: python -m pytest tests/test_ship_loop_guard.py tests/test_ship_loop_semantic.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py -q
+        # WorktreeCreate placement + the GC that reclaims what it plants are the
+        # same contract seen from both ends: the hook decides where a session tree
+        # is PLANTED and the sweeper decides whether it can ever be RECLAIMED. They
+        # were wrong in mirror-image ways at once (#6164) — the hook derived
+        # placement from `--git-common-dir`, a per-clone constant, and the sweeper
+        # expanded its repo-relative roots under the primary alone — which left 109
+        # registered worktrees holding 299 GB unreclaimable by construction, on a
+        # host that has hit runner ENOSPC twice. tests/test_worktree_gc.py ran in NO
+        # workflow before this line; it is grandfathered-dark rather than waived, so
+        # contract-delta never asked for it.
+        run: python -m pytest tests/test_ship_loop_guard.py tests/test_ship_loop_semantic.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py tests/test_worktree_gc.py tests/test_worktree_placement.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
           BRANCH="${{ github.head_ref }}"
@@ -5819,6 +5870,16 @@ jobs:
     #                             client-sent user id is ignored), validation, the
     #                             user_metadata MERGE, the email_prefs lang mirror, and the
     #                             honest partial/total failure statuses.
+    #   test_shared_pref_atomics.py — the SAME user_metadata keys, from the browser side:
+    #                             templates/theme.js must write the top-level `theme` /
+    #                             `theme_auto` / `lang` atomics and never the nested `prefs`
+    #                             blob, because supabase updateUser REPLACES a nested object
+    #                             and the Mastermind Terminal writes it too. It lives in this
+    #                             job rather than a site-gate one because its subject is the
+    #                             stored-preference contract lib/user_prefs.py owns, which it
+    #                             imports; the assertions are on theme.js SOURCE text (the
+    #                             same idiom as test_canada_build.py) since there is no
+    #                             browser harness here.
     #   test_billing_webhook.py — the spine suite that guards _handle_event, which W3 now
     #                             hooks. It matched NO workflow before this job (it needs
     #                             the pinned Stripe SDK, which prelaunch-hardening does not
@@ -5841,6 +5902,8 @@ jobs:
         run: python -m pytest tests/test_billing_emails.py -v
       - name: account preference tests (app/account_prefs.py)
         run: python -m pytest tests/test_account_prefs.py -v
+      - name: shared preference atomics contract (templates/theme.js)
+        run: python -m pytest tests/test_shared_pref_atomics.py -v
       - name: billing webhook spine regression (app/billing.py::_handle_event)
         run: python -m pytest tests/test_billing_webhook.py -v
 
@@ -10119,6 +10182,7 @@ jobs:
       - "tests/test_prophet_fusion_w3_structural.py"
       - "tests/test_prophet_verb_ink_contrast.py"
       - "tests/test_stage_analysis.py"
+      - "tests/test_stage_industry_live_partition.py"
       - "tests/test_stock_board_v2.py"
       - "tests/test_track_ledger_emitters.py"
       - "tests/test_track_ledger_era.py"
@@ -10207,7 +10271,7 @@ jobs:
       # point-in-time reconstruction.  Same US board-store family as the suites
       # above, so it shares their venv.
       - name: stage-analysis ledger session stamps + heal (forward-ledger audit 2026-08-05)
-        run: python -m pytest tests/test_stage_analysis.py tests/test_weinstein_stage.py tests/test_heal_stage_forward_ledger.py -q
+        run: python -m pytest tests/test_stage_analysis.py tests/test_stage_industry_live_partition.py tests/test_weinstein_stage.py tests/test_heal_stage_forward_ledger.py -q
   prophet-us-context-and-grades:
     # PROPHET US §W7 — the full-population candidate record: the PIT context store that
     # REMEMBERS each night's score, the forward grader that says what those names then did,
@@ -11051,7 +11115,11 @@ jobs:
       # literal, and it carries the four mutation-pinned dispatch-safety invariants
       # (§0.4 a-d) plus the no-stop-a-run AST pin; unrun, all of that is decoration.
       - name: prophet rescue lane — pure decide() matrix + the four dispatch-safety pins
-        run: python -m pytest tests/test_prophet_rescue.py -q
+        # test_prophet_r2_boundary.py rides this step (not a new entry — the
+        # manifest's narrow-diff ceiling reds a 181st job): same publication-
+        # boundary family, and its daily.yml/text pins are exactly the subject
+        # the rescue watchdog polices (DEC:B1-PROPHET-PUBLIC-SPLIT).
+        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py tests/test_live_snapshot_host_guard.py tests/test_no_pages_publish.py -q
 
   # ── THE HK BOARD PAIR — BORN DARK EIGHT DAYS AFTER THE CENSUS (2026-08-05) ──
   # tests/test_hk_board_rank.py (163 tests) + tests/test_hk_board_ui.py landed

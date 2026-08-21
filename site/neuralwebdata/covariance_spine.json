@@ -1,26 +1,26 @@
 {
   "schema": "neuralweb.covariance_spine.v1",
-  "as_of": "2026-08-20",
+  "as_of": "2026-08-21",
   "display_only": true,
   "authority": "context",
   "descriptive_not_gauntleted": true,
   "blocks": {
     "rates": {
-      "dominant_pc_share": 0.8256,
-      "first3_var": 0.9631,
-      "effective_dimension_pr": 1.4434,
+      "dominant_pc_share": 0.8254,
+      "first3_var": 0.9632,
+      "effective_dimension_pr": 1.4439,
       "pc3_to_pc4_gap": null,
       "oos_pctile_vs_null": null,
       "curvature_stability_tag": "stable",
       "vol_match_multipliers": {
-        "pc2": 2.95,
+        "pc2": 2.94,
         "pc3": 4.41
       },
       "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
-      "dominant_factor_pc_share": 0.5908,
-      "effective_factor_bets_pr": 2.5374,
+      "dominant_factor_pc_share": 0.5897,
+      "effective_factor_bets_pr": 2.5442,
       "n_factors_used": 7,
       "n_obs_used": 252,
       "caveat": "~3y history, annual fundamentals; descriptive only",
@@ -30,9 +30,9 @@
       "state": "lean_in",
       "dispersion_pctile": 1.0,
       "avg_corr": 0.06,
-      "dominant_equity_pc_share": 0.1779,
-      "effective_universe_bets_pr": 22.53,
-      "idio_dispersion_share": 0.7217
+      "dominant_equity_pc_share": 0.1782,
+      "effective_universe_bets_pr": 22.54,
+      "idio_dispersion_share": 0.7224
     },
     "lobes": {
       "effective_independent_lobes": 1.0,
@@ -75,7 +75,7 @@
           "policy": 9,
           "radar": 10,
           "reflex.commodity_shock": 2,
-          "reflex.cortex_attention": 4,
+          "reflex.cortex_attention": 5,
           "reflex.options_flow_attention": 7,
           "reflex.regime_stale_selfheal": 6,
           "stock_personality": 1,
@@ -117,7 +117,7 @@
       "policy": 9,
       "radar": 10,
       "reflex.commodity_shock": 2,
-      "reflex.cortex_attention": 4,
+      "reflex.cortex_attention": 5,
       "reflex.options_flow_attention": 7,
       "reflex.regime_stale_selfheal": 6,
       "stock_personality": 1,

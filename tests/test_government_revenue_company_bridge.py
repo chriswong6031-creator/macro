@@ -557,6 +557,109 @@ def test_r4_receipt_link_is_the_actions_own_transaction_receipt_not_the_award_sn
 
 
 # ---------------------------------------------------------------------------
+# R14 -- receipt link fails CLOSED: an exact content_sha256 match is the only
+# way a source link renders. No positional (rows[0]), URL-shape, or nearest-
+# receipt fallback -- a missing match means NO link, never an unrelated
+# receipt presented as "Open official receipt" (D4.1 amendment, 2026-08-21).
+# ---------------------------------------------------------------------------
+
+
+@needs_node
+def test_r14a_no_receipt_carries_the_wanted_sha_yields_no_source_link(tmp_path: Path) -> None:
+    mutated = copy.deepcopy(GOV_EVENT)
+    mutated["award_change"]["source_identity"]["content_sha256"] = "f" * 64
+    decoy_urls = [r["url"] for r in mutated["evidence"]["receipts"]]
+    assert decoy_urls, "fixture must still carry receipts to prove they are never used as a fallback"
+
+    body = f"""
+        var m = mount({{events: [{json.dumps(mutated)}], workspaceComplete: true}});
+        m.ui.loadCompany('IRDM');
+        process.stdout.write(JSON.stringify({{html: m.host.innerHTML}}));
+    """
+    out = _run_bridge(tmp_path, "r14a.js", body)
+    gov_html = _gov_block(out["html"])
+    assert 'class="source-link"' not in gov_html, gov_html
+    for url in decoy_urls:
+        assert f'href="{url}"' not in gov_html
+
+
+@needs_node
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda e: e["award_change"].pop("source_identity", None),
+        lambda e: e["award_change"]["source_identity"].pop("content_sha256", None),
+        lambda e: e["award_change"]["source_identity"].__setitem__("content_sha256", ""),
+    ],
+    ids=["source_identity_absent", "content_sha256_key_missing", "content_sha256_empty"],
+)
+def test_r14b_missing_source_identity_yields_no_source_link_never_an_arbitrary_receipt(
+    tmp_path: Path, mutate
+) -> None:
+    mutated = copy.deepcopy(GOV_EVENT)
+    mutate(mutated)
+    receipt_urls = [r["url"] for r in mutated["evidence"]["receipts"]]
+    assert receipt_urls, "fixture must still carry receipts to prove none get substituted"
+
+    body = f"""
+        var m = mount({{events: [{json.dumps(mutated)}], workspaceComplete: true}});
+        m.ui.loadCompany('IRDM');
+        process.stdout.write(JSON.stringify({{html: m.host.innerHTML}}));
+    """
+    out = _run_bridge(tmp_path, "r14b.js", body)
+    gov_html = _gov_block(out["html"])
+    assert 'class="source-link"' not in gov_html, gov_html
+    for url in receipt_urls:
+        assert f'href="{url}"' not in gov_html
+
+
+@needs_node
+def test_r14c_exact_match_with_a_rejected_url_shape_yields_no_source_link(tmp_path: Path) -> None:
+    mutated = copy.deepcopy(GOV_EVENT)
+    want_sha = mutated["award_change"]["source_identity"]["content_sha256"]
+    for r in mutated["evidence"]["receipts"]:
+        if r["content_sha256"] == want_sha:
+            r["url"] = "javascript:alert(1)"  # safeUrl only accepts protocol 'https:'
+
+    body = f"""
+        var m = mount({{events: [{json.dumps(mutated)}], workspaceComplete: true}});
+        m.ui.loadCompany('IRDM');
+        process.stdout.write(JSON.stringify({{html: m.host.innerHTML}}));
+    """
+    out = _run_bridge(tmp_path, "r14c.js", body)
+    gov_html = _gov_block(out["html"])
+    assert 'class="source-link"' not in gov_html, gov_html
+    assert "javascript:" not in gov_html
+
+
+def _receipt_url_function_source() -> str:
+    source = DOSSIER_JS_PATH.read_text(encoding="utf-8")
+    marker = "function receiptUrl(event){"
+    start = source.index(marker)
+    depth = 0
+    i = start + len(marker) - 1  # index of the opening brace
+    while i < len(source):
+        if source[i] == "{":
+            depth += 1
+        elif source[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return source[start : i + 1]
+        i += 1
+    raise AssertionError("receiptUrl() has unbalanced braces -- extraction pattern drifted")
+
+
+def test_r14d_shipped_receipturl_source_carries_no_positional_fallback() -> None:
+    """Mutation-discipline pin: asserts against the SHIPPED source text
+    directly, so reintroducing `(wantSha && rows.find(...)) || rows[0]`
+    stays red here even if a future harness change weakens R14a/R14b's
+    runtime assertions."""
+    fn_source = _receipt_url_function_source()
+    assert "rows[0]" not in fn_source, fn_source
+    assert re.search(r"\|\|\s*rows\b", fn_source) is None, fn_source
+
+
+# ---------------------------------------------------------------------------
 # R5 -- hydration-aware government fact state (loading vs genuinely absent)
 # ---------------------------------------------------------------------------
 

@@ -8,7 +8,7 @@
     "model": null,
     "probabilities": false
   },
-  "asof": "2026-08-20",
+  "asof": "2026-08-21",
   "null_state": true,
   "null_reason": "panel: no readable tickers in the store",
   "states": {
@@ -18,7 +18,7 @@
     "breaking": []
   },
   "_vintage": {
-    "generated_utc": "2026-08-20T08:08:30Z",
+    "generated_utc": "2026-08-21T03:40:10Z",
     "source": "scripts/build_top_maturation.py",
     "store_vintage": {
       "store": "massive_stock_day",

@@ -81,9 +81,6 @@ checks:
       - workflow: .github/workflows/ci.yml
         job: inline-js
         lane: pr_ci
-      - workflow: .github/workflows/pages.yml
-        job: publish
-        lane: publish
       - workflow: .github/workflows/render.yml
         job: render
         lane: render
@@ -123,9 +120,6 @@ checks:
     severity: hard
     check_script: scripts/check_site_asset_refs.py
     ci_wiring:
-      - workflow: .github/workflows/pages.yml
-        job: publish
-        lane: publish
       - workflow: .github/workflows/render.yml
         job: render
         lane: render
@@ -212,9 +206,6 @@ checks:
       - workflow: .github/workflows/ci.yml
         job: inline-js
         lane: pr_ci
-      - workflow: .github/workflows/pages.yml
-        job: publish
-        lane: publish
     selftest: false
     selftest_exempt_reason: >
       Thin node --check wrapper; covered by the same CI job as ui.inline_js_parses.
@@ -276,9 +267,6 @@ checks:
       - workflow: .github/workflows/ci.yml
         job: nav-gap
         lane: pr_ci
-      - workflow: .github/workflows/pages.yml
-        job: publish
-        lane: publish
     selftest: false
     selftest_exempt_reason: >
       Covered by tests/test_check_nav_gap.py.
@@ -301,9 +289,6 @@ checks:
       - workflow: .github/workflows/ci.yml
         job: nav-mega
         lane: pr_ci
-      - workflow: .github/workflows/pages.yml
-        job: publish
-        lane: publish
     selftest: false
     selftest_exempt_reason: >
       No dedicated selftest; the check is deterministic over committed site HTML.
@@ -332,9 +317,6 @@ checks:
       - workflow: .github/workflows/ci.yml
         job: title-i18n
         lane: pr_ci
-      - workflow: .github/workflows/pages.yml
-        job: publish
-        lane: publish
     selftest: true
     allowlist: null
     ratchet: null
@@ -421,9 +403,6 @@ checks:
       - workflow: .github/workflows/ci.yml
         job: template-site-sync
         lane: pr_ci
-      - workflow: .github/workflows/pages.yml
-        job: publish
-        lane: publish
       - workflow: .github/workflows/render.yml
         job: render
         lane: render
@@ -569,9 +548,6 @@ checks:
       - workflow: .github/workflows/ci.yml
         job: ms-board-coherence
         lane: pr_ci
-      - workflow: .github/workflows/pages.yml
-        job: publish
-        lane: publish
       - workflow: .github/workflows/render.yml
         job: render
         lane: render
@@ -678,9 +654,6 @@ checks:
       - workflow: .github/workflows/ci.yml
         job: conflict-markers
         lane: pr_ci
-      - workflow: .github/workflows/pages.yml
-        job: publish
-        lane: publish
     selftest: true
     allowlist: null
     ratchet: null
@@ -812,9 +785,6 @@ checks:
       - workflow: .github/workflows/ci.yml
         job: validated-claims
         lane: pr_ci
-      - workflow: .github/workflows/pages.yml
-        job: publish
-        lane: publish
     selftest: true
     allowlist: data/regime/validated_claims_allowlist.json
     ratchet: null
@@ -1008,9 +978,6 @@ checks:
       - workflow: .github/workflows/ci.yml
         job: board-contradictions
         lane: pr_ci
-      - workflow: .github/workflows/pages.yml
-        job: publish
-        lane: publish
     selftest: false
     selftest_exempt_reason: >
       No selftest flag; deterministic validation of JSON artifact fields.

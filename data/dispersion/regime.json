@@ -239,9 +239,9 @@
     "basis": "trailing_252d_fixed",
     "n_names_used": 1500,
     "n_days_used": 252,
-    "dominant_equity_pc_share": 0.1779,
-    "effective_universe_bets_pr": 22.53,
-    "idio_dispersion_share": 0.7217,
+    "dominant_equity_pc_share": 0.1782,
+    "effective_universe_bets_pr": 22.54,
+    "idio_dispersion_share": 0.7224,
     "sector_pc_loadings": null,
     "note": "sector map not wired (deferred); display-only \u2014 DISP-EIGEN-1 registered, activation DEFERRED pending DISP-GATE-1 non-stationarity resolution",
     "display_only": true

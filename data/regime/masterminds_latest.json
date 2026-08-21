@@ -1,18 +1,18 @@
 {
   "schema": "masterminds.latest.v2",
   "n": 3,
-  "built": "2026-08-20 08:53 UTC",
-  "asof": "2026-08-19",
+  "built": "2026-08-21 04:09 UTC",
+  "asof": "2026-08-20",
   "stale_after_min": 1440,
   "cards": [
     {
       "key": "mm_conservative",
       "name": "Mastermind \u2014 Conservative",
-      "cagr": 7.88,
+      "cagr": 7.87,
       "sharpe": 1.12,
       "maxdd": -17.3,
-      "asof": "2026-08-19",
-      "gross_now": 0.65,
+      "asof": "2026-08-20",
+      "gross_now": 0.64,
       "alloc": [
         {
           "asset": "SPY",
@@ -27,12 +27,6 @@
           "weight": 13.0
         },
         {
-          "asset": "IEF",
-          "label_en": "7-10y Treasuries",
-          "label_zh": "\u4e2d\u671f\u56fd\u503a",
-          "weight": 13.0
-        },
-        {
           "asset": "HYG",
           "label_en": "High-yield credit",
           "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
@@ -43,35 +37,41 @@
           "label_en": "Copper",
           "label_zh": "\u94dc",
           "weight": 13.0
+        },
+        {
+          "asset": "IEF",
+          "label_en": "7-10y Treasuries",
+          "label_zh": "\u4e2d\u671f\u56fd\u503a",
+          "weight": 12.1
         }
       ]
     },
     {
       "key": "mm_moderate",
       "name": "Mastermind \u2014 Moderate",
-      "cagr": 11.41,
+      "cagr": 11.37,
       "sharpe": 1.06,
       "maxdd": -24.1,
-      "asof": "2026-08-19",
-      "gross_now": 1.2,
+      "asof": "2026-08-20",
+      "gross_now": 1.17,
       "alloc": [
         {
           "asset": "SPY",
           "label_en": "S&P 500",
           "label_zh": "\u6807\u666e500",
-          "weight": 25.4
+          "weight": 25.5
         },
         {
           "asset": "HYG",
           "label_en": "High-yield credit",
           "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
-          "weight": 25.4
+          "weight": 25.5
         },
         {
           "asset": "HG=F",
           "label_en": "Copper",
           "label_zh": "\u94dc",
-          "weight": 25.4
+          "weight": 25.5
         },
         {
           "asset": "QQQ",
@@ -83,18 +83,18 @@
           "asset": "IEF",
           "label_en": "7-10y Treasuries",
           "label_zh": "\u4e2d\u671f\u56fd\u503a",
-          "weight": 21.4
+          "weight": 17.7
         }
       ]
     },
     {
       "key": "mm_aggressive",
       "name": "Mastermind \u2014 Aggressive",
-      "cagr": 17.18,
+      "cagr": 17.11,
       "sharpe": 0.99,
       "maxdd": -34.9,
-      "asof": "2026-08-19",
-      "gross_now": 2.33,
+      "asof": "2026-08-20",
+      "gross_now": 2.28,
       "alloc": [
         {
           "asset": "SPY",
@@ -112,7 +112,7 @@
           "asset": "HG=F",
           "label_en": "Copper",
           "label_zh": "\u94dc",
-          "weight": 46.6
+          "weight": 46.7
         },
         {
           "asset": "QQQ",
@@ -124,7 +124,7 @@
           "asset": "IEF",
           "label_en": "7-10y Treasuries",
           "label_zh": "\u4e2d\u671f\u56fd\u503a",
-          "weight": 35.0
+          "weight": 29.0
         }
       ]
     }

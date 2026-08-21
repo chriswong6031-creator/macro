@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T03:40:53.100859+00:00",
-  "count": 1519,
+  "generated_at": "2026-08-21T09:24:47.083874+00:00",
+  "count": 1537,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -65,6 +65,7 @@
     "ScotiaBank",
     "Scotiabank",
     "Shikhara",
+    "SocGen - Albert Edwards",
     "Societe Generale",
     "Std Chartered",
     "TCW",
@@ -140,6 +141,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h2xjjvpgf4p-68cdbf",
+      "title": "SocGen Albert Edwards The ingredients for a market accident are falling into place",
+      "institution": "SocGen - Albert Edwards",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T00:22:11Z",
+      "summary_points": [
+        "**Geopolitical & Policy Catalysts**: Iran/US negotiations breakdown (immediate risk), Japanese 10y+ yields surge (global long yield driver), and US budget deficit driving yield pressure.",
+        "**US Equity Valuation Risk**: S&P500 at 1987-level optimism with US 30y bond yield/equity dividend yield ratio signaling overextended valuations and susceptibility to profit downturns.",
+        "**China Economic Deterioration**: 10y bond yield at 13-month low + July bank loans decline indicating weak momentum, correlating with US ISM/profits cycle risks.",
+        "**US 10y Technical Breakdown**: MACD momentum indicator broke higher (bearish signal) amid range-bound trading, signaling potential further yield declines."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -311,6 +332,189 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-y6psq60vu8g-d45126",
+      "title": "Amentum Holdings (AMTM) Relatively limited growth keeps us Neutral",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:46Z",
+      "summary_points": [
+        "**Valuation Discrepancy**: Goldman Sachs' $29.00 target (42% above current $20.43) signals potential undervaluation or misalignment vs.",
+        "AMTM's $24.00 price target, creating alpha opportunity.",
+        "**Debt Liquidity Risk**: Net debt/EBITDA at 32.2x poses severe liquidity risk despite strong operational cash flow ($543m) and FCF ($516m).",
+        "**Constrained Growth Trajectory**: Revenue guidance lowered to 0%-1% for 2027 (vs.",
+        "prior growth), offset by margin expansion; FY2026 revenue guidance cut to $13.8B-$13.95B (from $14.3B)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dw2epfzpcu0-47fe9a",
+      "title": "Target Corp",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:43Z",
+      "summary_points": [
+        "**Earnings Beat & Guidance Update**: Target beat Q2 EPS ($4.11 vs.",
+        "$2.34 consensus), raised FY26 net sales growth to +5% (from +4%), operating margin to ~6%, and EPS guidance to $9.90-10.90 (vs.",
+        "$7.50-8.50), excluding tariff refunds.",
+        "**Tariff Impact & Growth Drivers**: Q2 EPS boosted by ~$1.65 from tariff refunds; gross margin 33.7% (incl.",
+        "tariff benefit), but organic comp growth (2.7%/8.7% store/digital) and rising SG&A (6.8% y/y) signal underlying margin pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wvxuh3fensz-5848a8",
+      "title": "SK Hynix Inc. (000660)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:40Z",
+      "summary_points": [
+        "**Buyback Execution & Policy Shift**: 3.3% share buyback/cancellation (W40tn) announced Aug 19, driven by undervaluation; shareholder return target updated to 50%+ of 3-year cumulative FCF (vs.",
+        "50%), reflecting confidence in memory upcycle and cash flow generation.",
+        "**Goldman Sachs EPS & Target Surge**: Raised 2026E-2028E EPS by 4-10% due to buybacks; 12m target W3,500,000 (42% above current price), signaling aggressive growth expectations amid AI memory demand.",
+        "**HBM Leadership & AI Demand Thesis**: SK Hynix leads HBM market, 2nd-largest DRAM/NAND supplier; AI-driven server memory demand to outpace supply in 2026, supporting Buy rating and sustained growth trajectory.",
+        "**Key Risk Exposure**: Memory supply/demand deterioration, weaker PC/server demand, Samsung’s HBM progress, and lower AI capex impacting HBM revenue/profit—critical for portfolio risk assessment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-a0m70bgco0n-88735c",
+      "title": "Macro at a Glance Latest views and forecasts",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:37Z",
+      "summary_points": [
+        "**Global Growth & Inflation Outlook**: Global real GDP growth at 2.5% in 2026 (Middle East energy shocks), core inflation 2.8% (fading tariffs, energy pass-through); US at 2.1% (AI capex), Euro area at 0.8% (energy headwinds).",
+        "**Middle East Conflict Risk**: Fluid geopolitical situation with escalating/de-escalatory headlines driving near-term volatility in global growth and energy prices.",
+        "**Global Growth Disparity**: China’s 2026-2027 GDP forecast (4.6-4.7%) significantly outpaces Global (2.5-2.8%), US (2.1-2.3%), and Euro area (0.8-1.2%), signaling structural divergence in growth drivers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-suweggnvrsc-c9b716",
+      "title": "KONE Corp. (KNEBV.HE) Post 2Q26 update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:35Z",
+      "summary_points": [
+        "**Revenue Stability**: Maintenance dominates revenue (42%) via long-term service contracts (3-5 years, up to 10 years), ensuring predictable cash flow and resilience.",
+        "**Coverage Gap**: No formal analyst rating on KONE, indicating missing institutional coverage and heightened risk assessment challenges.",
+        "**Geographic Leverage**: APAC employs 54% of staff while Americas drives 40% of Maintenance revenue, highlighting operational efficiency and high-margin service growth potential."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5cb3ai50gc1-f63cd3",
+      "title": "Chongqing Brewery (600132)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:33Z",
+      "summary_points": [
+        "**Volume/OPM Miss Drivers**: 6.0% YoY volume decline (863k KL) and 16% YoY core OP contraction (50.7% GPM) driven by adverse weather, weak on-trade, competition, raw material costs, and elevated selling expenses (+5.7% YoY).",
+        "**Regional Drag & Strategic Pressure**: Central China sales down 7.5% YoY (1H26), management cautious on 3Q recovery due to weak on-trade and soft consumption; premiumization (Tuborg/Carlsberg) key strategy amid near-term margin pressure.",
+        "**Revised Earnings & Cost Pressures**: Earnings revised down (sales -3% YoY 2026E, NP -6.5% to -8% 2026-28E) from weaker topline, higher admin costs, and selling expenses up 5.2% YoY (advertising +9.7%).",
+        "**Valuation Downside & Key Risks**: 12-mo TP Rmb39.70 (6.6% downside from Rmb42.51), trading at 17x 2027E P/E; critical risks include Wusu brand growth trajectory, ASP volatility, and cost trends.",
+        "**Premium Segment Growth Outlook**: Revenue growth 2.2% YoY (2028) driven by premium segment (Tuborg/Carlsberg), net income growth 5% YoY (2028), though recovery delayed to 2027E (revenue dip in 2026E)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kxe6n0d6w8m-3d6647",
+      "title": "CEEMEA Inflation Monitor Mixed Developments in Headline Inflation with Smaller Downside Surprises as Core Holds Steady",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:29Z",
+      "summary_points": [
+        "**Hungary Inflation Drop**: Headline inflation fell to 1.2% yoy (vs.",
+        "7% June, below 1.6% consensus), driven by negative oil/FX/food shocks (-1.1% Q1, -0.9% Q2), with 2026 forecast revised sharply to 1.3% (vs.",
+        "9% consensus).",
+        "**Ghana Inflation Surprise**: Headline inflation dropped to 4.6% yoy (vs.",
+        "3% June, missing 5.8% consensus), with oil/FX/food shocks contributing -2.8% Q1 and -1.8% Q2; 2026 forecast slashed to 5.0% (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u6afsvedi5n-1602bc",
+      "title": "CD Projekt (CDR)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:24Z",
+      "summary_points": [
+        "**Sell Rating & Downside**: Goldman Sachs assigns \"Sell\" to CD Projekt (CDR.WA) with 12-month target PLN227 (current PLN258.30), implying 12.1% downside; high P/E (40.0x current, 75.2x 12/26E) contradicts revenue growth expectations (PLN742.6m 12/26E).",
+        "**Overvaluation Metrics**: Enterprise value (PLN26.1bn) and market cap (PLN26.1bn) reflect significant valuation; projected EPS growth (PLN3.27 12/26E) lacks near-term catalysts to justify current price.",
+        "**Upside Risks Not Justifying Price**: Key risks (e.g., stronger Cyberpunk sales, weaker competition) are acknowledged but insufficient to offset overvaluation; revenue growth forecasts (742.6m PLN 12/26E) fail to support current valuation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rvaypnh0smj-fbda17",
+      "title": "Asus (2357)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:20Z",
+      "summary_points": [
+        "**Q2 Beat & Growth Drivers**: 37% YoY revenue growth (24% QoQ), 9% above consensus, driven by PC pull-in and AI server shipments expansion.",
+        "**Forward Revenue Outlook**: Double-digit Q3/Q4 2026 growth supported by AI server ramp-up and PC mix upgrade; $2.5bn bond issuance for capacity expansion.",
+        "**Earnings Revision & Guidance**: 2026-28E net income revised up 30%/2%/4%, fueled by 12%/8%/8% AI server revenue growth and lower opex ratios.",
+        "**Valuation & Target**: Target price raised to NT$1,109 (19.9% upside), 15.7x 2027E P/E, reflecting strong EPS growth (38% to NT$82.98).",
+        "**Key Risks**: PC market growth trajectory, AI/gaming PC demand, and AI server ramp-up speed critically impact upside/downside scenarios."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-3vlzx8aqmtz-af771b",
       "title": "Analog Devices Inc. (ADI) Sustained revenue outperformance relative to peers given idiosyncratic growth drivers, with strong...",
       "institution": "Goldman Sachs",
@@ -328,6 +532,45 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gwfsfmg6tkg-078eed",
+      "title": "China Resources Beer (0291.HK) 1H26 Review Premiumization, Op resilience and outperformance vs industry under appreciated, ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:15Z",
+      "summary_points": [
+        "**Premiumization Drives Outperformance**: Sub-premium/above segments contribute 30-35% of volume, enabling positive volume/ASP growth despite aluminum cost pressure, outperforming industry peers.",
+        "**Recurring EBIT Contraction & Margin Pressure**: Recurring EBIT estimate reduced by 5.4% for 2026E, with Beer segment EBIT margin declining to 20.6% (down from prior), signaling deteriorating profitability fundamentals.",
+        "**Valuation Shift & Analyst Sentiment**: Price target cut to HK$30.10 (from HK$35.15), dividend yield rising to 7.4% (12/28E), while Goldman Sachs rating trend shows declining confidence (45 → 34.73).",
+        "**Key Risk Factors**: Slower premium volume growth, intense premium segment competition, and higher-than-expected cost pressure threaten near-term earnings potential."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-c3tmxaqxorn-3b249d",
+      "title": "Macro at a Glance Latest views and forecasts",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:11Z",
+      "summary_points": [
+        "**Global Growth & Inflation Outlook**: Global real GDP growth at 2.5% in 2026 (Middle East energy shocks), core inflation 2.8% (fading tariffs, energy pass-through); US at 2.1% (AI capex), Euro area at 0.8% (energy headwinds).",
+        "**Middle East Conflict Risk**: Fluid geopolitical situation with escalating/de-escalatory headlines driving near-term volatility in global growth and energy prices.",
+        "**Global Growth Disparity**: China’s 2026-2027 GDP forecast (4.6-4.7%) significantly outpaces Global (2.5-2.8%), US (2.1-2.3%), and Euro area (0.8-1.2%), signaling structural divergence in growth drivers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
@@ -392,6 +635,65 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-znhfzzmtcwf-57dd34",
+      "title": "CEEMEA Inflation Monitor Mixed Developments in Headline Inflation with Smaller Downside Surprises as Core Holds Steady",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:57Z",
+      "summary_points": [
+        "**Hungary Inflation Drop**: Headline inflation fell to 1.2% yoy (vs.",
+        "7% June, below 1.6% consensus), driven by negative oil/FX/food shocks (-1.1% Q1, -0.9% Q2), with 2026 forecast revised sharply to 1.3% (vs.",
+        "9% consensus).",
+        "**Ghana Inflation Surprise**: Headline inflation dropped to 4.6% yoy (vs.",
+        "3% June, missing 5.8% consensus), with oil/FX/food shocks contributing -2.8% Q1 and -1.8% Q2; 2026 forecast slashed to 5.0% (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dttkluczljx-309eb3",
+      "title": "Riksbank on Hold — We Continue to See a Hike in December as Likely",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:55Z",
+      "summary_points": [
+        "**Rate Path & Timing**: Riksbank holds rate at 1.75% but December hike likely; hinges on August/September inflation data (Sep 7, Oct 7) for persistence assessment.",
+        "**Inflation Data Dependency**: Critical August/September inflation prints (Sep 7, Oct 7) dictate rate trajectory; risks include supply shocks, krona volatility, and corporate pricing behavior.",
+        "**Geopolitical Risk Impact**: Middle East war effects on oil markets less severe than spring; Riksbank requires stronger energy shock evidence for pre-December tightening beyond current path."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uh93z7kptec-729f3b",
+      "title": "Riksbank on Hold — We Continue to See a Hike in December as Likely",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:54Z",
+      "summary_points": [
+        "**December Hike Probability**: Riksbank holds rate at 1.75% but December hike likely; hinges on August/September inflation data (Sep 7, Oct 7) to confirm persistent price pressures.",
+        "**Critical Data Windows**: August/September inflation prints are pivotal; risks include supply shocks, krona volatility, and corporate pricing behavior impacting rate trajectory.",
+        "**Geopolitical Threshold**: Middle East conflict effects on oil markets less severe than spring; Riksbank requires stronger energy shock evidence to accelerate hikes beyond December 2024."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-tfeng5wlgfg-7f4e03",
       "title": "Germany Federal Spending Slightly Below Expectations in July, Federal Deficit YTD Remains Above Our Expectations",
       "institution": "Goldman Sachs",
@@ -428,6 +730,68 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iuzpdbsyyrm-a968e8",
+      "title": "Walmart Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:43Z",
+      "summary_points": [
+        "**2Q26 Earnings Beat & Guidance**: Adj.",
+        "EPS $0.81 beat consensus; FY26 net sales growth guidance raised to +4.0-5.0% (from +3.5-4.5%) driven by tariff refunds and customer experience investments, despite underlying comp softness from health/wellness decline (-LSD) and tariff impacts.",
+        "**Gross Margin Expansion**: Gross margin at 25.4% (+91 bps y/y), above consensus, with tariff refunds offsetting price investments; SG&A expense ratio up 7.9% y/y due to higher self-insured claims and healthcare costs.",
+        "**Actuals vs.",
+        "Estimates & Key Risks**: Total Revenue $177.4bn vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ifm0v6xsszj-5fa005",
+      "title": "Kodiak Gas Services Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:41Z",
+      "summary_points": [
+        "**<u>EBITDA Guidance & Growth Acceleration</u>**: Raised 2025–30 EBITDA CAGR to 16% (from 15%) with 2026 guidance $830–860m; power segment driven by 1.5 GW capacity target by 2030 and LNT project catalyst.",
+        "**<u>Compression Pricing Power & Supply Tightness</u>**: 180+ week lead times for 3600 engines enable long-term contracts (2027–2029) and pricing upside; KGS captures pricing on 50% of 2027 uncontracted capacity.",
+        "**<u>Power Segment Deployment & Margin Expansion</u>**: +400 MW/year power deployment (75% gas turbines/Baker Hughes), 100MW hyperscaler data center deals (15% return, 5-yr payback), and legacy portfolio repricing driving margin trajectory.",
+        "**<u>Valuation Upside & Growth Visibility</u>**: $90 PT (49.9% upside from $60) based on 12.5x 2027 EBITDA ($980M), with revenue growing from $1.3B (2025) to $2.0B (2028) and EPS rising to $3.52.",
+        "**<u>Capital Allocation Shift to Power Growth</u>**: Prioritizing power footprint expansion (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-33yj6x3qt5m-21d56f",
+      "title": "CVC Capital Partners (CVC.AS) Strategic partnership with Standard Life to launch PRT platform",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:37Z",
+      "summary_points": [
+        "**Capital Structure & AUM Targets**: £2bn CVC-Standard Life partnership (CVC: £400m, SL: £500m) targets £25-35bn AUM in 5 years with 5.5%-8% capital strain due to monoline structure, leveraging CVC’s private market access and SL’s regulatory infrastructure.",
+        "**Strategic Positioning**: Directly supports CVC’s insurance franchise growth (post-AIG/Marathon acquisitions), enabling capture of UK pension opportunities and enhancing credit origination amid high-capital-strain environment.",
+        "**Valuation Gap & Downgrade**: Goldman Sachs reduced target price from €24.20 (Feb 2025) to €20.90 (Jul 2026), with \"B\" rating; target exceeds closing price (€14.51), signaling overvaluation or analyst skepticism.",
+        "**Key Risk Factors**: Fundraising deterioration, investor allocation shifts to alternatives, fee margin compression, and performance/track record issues threaten capital deployment and profitability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },

@@ -22,12 +22,26 @@ waves:
     next_action: Merge the records PR; do not start runtime work from the records branch.
   - id: A1A
     title: Portfolio Population Truth + State Authority
-    status: todo
+    status: in_progress
     depends_on: [M0]
     next_action: >
-      After M0 merges, Fable refreshes current heads, worktrees, open PR path collisions,
-      and the Active Build Map, then dispatches exactly one Macro runtime PR from the
-      canonical A1A handoff. Stop after real production proof.
+      Engineering closed and live 2026-08-21 across three Sol rounds: #6098
+      (initial wave), #6109 (serving allowlist), #6136 (round-2 blockers +
+      snapshot authority; 2633380f800a), #6160 (round-3 P0 auth-generation
+      binding for every portfolio op + consumer request-generation guard, risk
+      provenance {scope,gen} minted at the FX universe resolution with
+      fail-closed consumer rejection, wl-auth AUTO_W latch clear, client-init
+      terminality; merge 9ed19a144a28; two-commit PR, adversarially reviewed,
+      every guard mutation-red-proven). The #6109 merge-over-hold incident is
+      recorded (DEC:MERGE-AUTOMATION-MUST-ENFORCE-RECORDED-HOLDS) and enforced
+      in automation (#6149, merge 8a1b93889061). Anonymous production matrix
+      PASSED live (round-2 receipts in agentos/handoffs/MARKET-OS-2026-08-21.md;
+      round-3 re-verification after render at merge sha). Remaining before
+      status done: the AUTHENTICATED production acceptance matrix + Terminal
+      conformance + privacy inspection, which need an operator-supplied
+      authenticated vehicle (connect the Claude Chrome extension with a
+      signed-in session, or designate a test account). Then Sol reviews and
+      accepts. Do not mark done before that.
   - id: A1B
     title: Portfolio Fast Start Import
     status: todo
@@ -76,14 +90,18 @@ discoveries:
   - "DSC:MARKET-OS-AUTHENTICATED-PORTFOLIO-FAILS-OPEN-TO-LOCAL"
 landmines:
   - >-
-    `templates/market_books.js::buildModel` currently unions Watchlist symbols with
-    open Portfolio positions, and existing tests pin that rejected behavior.
+    FIXED by A1A (#6098): `templates/market_books.js::buildModel` no longer unions
+    Watchlist symbols into Portfolio books and the pinning tests were replaced.
+    Do not restore the union; population law is §11 of the A1A freeze.
   - >-
     `templates/watchlist.js::runEntry` currently mutates the Watchlist and a temporary
     ENTERED overlay; it is not a canonical Portfolio import.
   - >-
-    An authenticated Portfolio cloud read failure currently falls through to the local
-    anonymous Portfolio and routes later writes locally. That is not an offline outbox.
+    FIXED by A1A closure (#6136): identity decides authority (_isLocalMode := !user);
+    an authenticated cloud failure resolves degraded/error (last-good read-only or
+    explicit unavailability), never the local book, and failed Portfolio writes say
+    "Change not saved" — never the Watchlist's "changes kept locally" claim. There is
+    still NO authenticated offline outbox; do not claim retention on write failure.
   - >-
     The Active Build Map is generated/advisory and can be stale relative to current
     main; regenerate and inspect live worktrees before every runtime dispatch.
@@ -103,10 +121,12 @@ do_not_redo:
 artifacts:
   - research/market_os/MASTERMIND_MARKET_OS_ARCHITECTURE_FREEZE_AND_A1A_COMMISSIONING_2026-08-20.md
   - agentos/handoffs/MARKET-OS-2026-08-20.md
+  - agentos/handoffs/MARKET-OS-2026-08-21.md
 next_action: >
-  Merge M0, then Fable issues A1A Portfolio Population Truth + State Authority as the
-  only authorized runtime wave. A1B and every later wave remain blocked on A1A's live
-  production acceptance.
+  A1A engineering is merged and live (#6136, 2633380f800a) with the anonymous
+  production matrix passed; the authenticated matrix + Terminal conformance + privacy
+  inspection await an operator-supplied authenticated vehicle, then Sol's acceptance.
+  A1B and every later wave remain blocked on Sol accepting A1A in production.
 ---
 
 ## Current state

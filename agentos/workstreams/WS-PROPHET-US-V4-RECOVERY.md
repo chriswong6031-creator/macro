@@ -272,7 +272,37 @@ waves:
       server-side). Post-merge render pending at the merge SHA; browser matrix
       + live verification follow the bake. Follow-ups owed: cadence finding
       for the Radar owner (cold-start pass exceeds the 5-min tick), N1 dead-JS
-      heal, N2 macro.html dead CSS, remote-route proof (site-full token)."
+      heal, N2 macro.html dead CSS, remote-route proof (site-full token).
+
+      DAY-5 STATE (2026-08-21, Sol Day-5 directive — B1 CLOSURE): Day-4
+      accepted with one security gate. B1 R2-PLANE PRODUCTION-CLOSED in one
+      session per DEC:B1-PROPHET-PUBLIC-SPLIT — census (2 scouts), health
+      contract prophet/health.json (prophet.public_health/v1, six-field
+      allowlist), producer closure in daily.yml (health-only publisher +
+      self-healing tombstone + guarded_put_object + boundary/mutation tests),
+      consumer rebinds (rescue→health with R2_HEALTH_LAG semantics;
+      marks→canonical git; Terminal prophet_idx fail-closed #439; the
+      Terminal's canonical backend /api/hub/prophet CREATED in
+      app/prophet_lab.py — it had never existed, the Prophet tab was served
+      entirely by the anonymous R2 fallback), object DELETED (anon 404; health
+      200 allowlist-verified; origin 401; edge 401; internal 200/269 plans;
+      rescue dispatch run 32451390875 SUCCESS post-merge). Macro PR #6158
+      (3a0d1eaf0bb3) + terminal PR #439 (b913382b778d). Same-key bridge
+      SKIPPED on the record (Terminal was R2-only in production; twins still
+      public on git/Pages — a bridge broke product while reducing zero
+      exposure). DECISIVE CENSUS DISCOVERY
+      (DSC:PROPHET-BOOK-PUBLIC-GIT-TWIN): the canonical repo is PUBLIC —
+      raw git, anonymous clone, and the nightly-deployed GitHub Pages live
+      mirror all still serve the full book + premiumdata anonymously, so the
+      §8b BOUNDARY PASS is NOT issuable; reduced to ONE Chairman/Sol ruling
+      (repo visibility + Pages premium-stripping + four dependent
+      migrations). P-LAB-UI NOT commissioned (Sol's own gate requires §8b
+      PASS). Also minted DSC:RADAR-SPOOL-PUBLIC-R2 (spool anonymously
+      readable — Radar-owner escalation). Residual chores: tonight's
+      stays-gone receipt (tombstone-enforced), M1 flow-ops-wt pin advance
+      (marks stale during RTH until then), Terminal deploy of #439, site-full
+      token proofs, pixel crops. Handoff:
+      agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-lab-day5.md."
     status: in_progress
   - id: b5b
     depends_on: [b3, b4]
@@ -371,10 +401,26 @@ waves:
       reference (WS-CHINA-ALPHA-INTELLIGENCE.md). Done requires a natural
       production nightly proving source -> master -> GMI projection with a
       recorded run id and the measured CN/HK resolution delta, per Sol's
-      completion law — not yet observed. Sol accepted the D2B2-CN-HK
-      implementation 2026-08-20 (BUILT_NOT_PROVEN); proof rides the first
-      natural nightly containing ed28d0d992a1 per the China WS pr0d entry;
-      no dispatched proof runs."
+      completion law. Sol accepted the D2B2-CN-HK implementation 2026-08-20
+      (BUILT_NOT_PROVEN); proof rides the first natural nightly containing
+      ed28d0d992a1 per the China WS pr0d entry. D2B2-CN-HK NATURAL-PROOF
+      ADJUDICATION (Sol, 2026-08-21): DONE / PROVEN_LIVE. Sol independently
+      extracted the required production receipt from the completed natural
+      nightly stages (the first nightly containing #6116 squash
+      ed28d0d992a144aec5f0ef2616024e3e32d83b1a). Receipt: canonical
+      security-master refresh verdict REGENERATED (identity inputs
+      advanced); natural master receipt generated 2026-08-21T01:17:00; US
+      canonical coverage 702/712 with 10 unresolved; CN canonical admission
+      survives 984/1021 (96.4%) with 37 typed primary-source refusals; HK
+      canonical admission survives 147/147 (100%); the regenerated master
+      was published to main BEFORE the engine pulled refreshed main;
+      subsequent natural GMI/theme-graph build stamped 2026-08-21T03:47:15Z
+      lane=nightly; GMI state counts RESOLVED 1833 / NOT_IN_MASTER 737 /
+      UNSUPPORTED_MARKET 233 / DEFERRED 1 / ENTITY_TYPE_CONFLICT 1; 1833 =
+      702 US + 984 CN + 147 HK, exactly the frozen D2B2 population. The
+      canonical path primary evidence -> DataOS security master -> GMI
+      identity projection is proven through the natural production topology
+      (nightly run 32426513915). No D2B2 repair authorized or required."
     status: in_progress
   - id: d3
     depends_on: [d2]

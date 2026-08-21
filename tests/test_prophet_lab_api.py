@@ -253,3 +253,127 @@ def test_route_is_mounted_on_the_production_app() -> None:
 
     public_paths = main_mod.app.openapi().get("paths", {})
     assert "/api/prophet/lab/v1" in public_paths
+    assert "/api/hub/prophet" in public_paths
+
+
+# ---------------------------------------------------------------------------
+# GET /api/hub/prophet — INTERNAL-ONLY (DEC:B1-PROPHET-PUBLIC-SPLIT)
+#
+# The guard reads request.client + headers directly rather than through a
+# FastAPI Depends, so it is exercised as a plain function against hand-built
+# Starlette Requests (deterministic — no TestClient transport ambiguity about
+# what "client host" a test harness uses) and the route itself is exercised
+# through TestClient with the guard monkeypatched, matching how every other
+# test in this file isolates the transport layer from its dependency.
+# ---------------------------------------------------------------------------
+from starlette.requests import Request  # noqa: E402
+
+
+def _hub_request(*, client_host: str | None, headers: dict[str, str] | None = None) -> Request:
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/api/hub/prophet",
+        "raw_path": b"/api/hub/prophet",
+        "query_string": b"",
+        "headers": [
+            (k.lower().encode("latin-1"), v.encode("latin-1"))
+            for k, v in (headers or {}).items()
+        ],
+        "client": (client_host, 51000) if client_host is not None else None,
+        "server": ("testserver", 80),
+        "scheme": "http",
+        "http_version": "1.1",
+    }
+    return Request(scope)
+
+
+def test_hub_prophet_guard_allows_loopback_with_no_peer_header() -> None:
+    assert prophet_lab_api._hub_prophet_authorized(  # noqa: SLF001
+        _hub_request(client_host="127.0.0.1")
+    ) is True
+    assert prophet_lab_api._hub_prophet_authorized(  # noqa: SLF001
+        _hub_request(client_host="::1")
+    ) is True
+
+
+def test_hub_prophet_guard_denies_loopback_carrying_a_peer_header() -> None:
+    """Caddy's header_up REPLACES any inbound X-MM-Peer with the real TCP peer on
+    every edge-proxied /api/* request, so its PRESENCE means this request came
+    through the public edge even though the TCP peer still reads 127.0.0.1."""
+    assert prophet_lab_api._hub_prophet_authorized(  # noqa: SLF001
+        _hub_request(client_host="127.0.0.1", headers={"x-mm-peer": "203.0.113.7"})
+    ) is False
+
+
+def test_hub_prophet_guard_denies_non_loopback_peer() -> None:
+    assert prophet_lab_api._hub_prophet_authorized(  # noqa: SLF001
+        _hub_request(client_host="10.0.0.5")
+    ) is False
+
+
+def test_hub_prophet_guard_denies_when_client_is_unknown() -> None:
+    assert prophet_lab_api._hub_prophet_authorized(  # noqa: SLF001
+        _hub_request(client_host=None)
+    ) is False
+
+
+@pytest.fixture()
+def hub_client(monkeypatch):
+    app = FastAPI()
+    app.include_router(prophet_lab_api.router)
+    with TestClient(app) as client:
+        yield client
+
+
+def test_hub_prophet_denied_caller_gets_401_json_no_detail(hub_client, monkeypatch) -> None:
+    monkeypatch.setattr(prophet_lab_api, "_hub_prophet_authorized", lambda request: False)
+    response = hub_client.get("/api/hub/prophet")
+    assert response.status_code == 401
+    assert response.json() == {"error": "unauthorized"}
+
+
+def test_hub_prophet_authorized_caller_gets_the_same_canonical_bytes(
+    hub_client, monkeypatch, tmp_path
+) -> None:
+    index_path = tmp_path / "index.json"
+    index_path.write_bytes(b'{"schema": "prophet.index/v1", "plans": []}')
+    monkeypatch.setattr(prophet_lab_api, "_hub_prophet_authorized", lambda request: True)
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "_resolve_roots",
+        lambda: prophet_lab_api.LabRoots(prophet_index_path=index_path),
+    )
+    response = hub_client.get("/api/hub/prophet")
+    assert response.status_code == 200
+    assert response.content == index_path.read_bytes()
+    assert response.headers.get("content-type", "").startswith("application/json")
+    assert response.headers.get("cache-control") == "no-store"
+
+
+def test_hub_prophet_missing_index_file_is_503(hub_client, monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(prophet_lab_api, "_hub_prophet_authorized", lambda request: True)
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "_resolve_roots",
+        lambda: prophet_lab_api.LabRoots(prophet_index_path=tmp_path / "missing.json"),
+    )
+    response = hub_client.get("/api/hub/prophet")
+    assert response.status_code == 503
+    assert response.json() == {"error": "prophet_index_unavailable"}
+
+
+def test_hub_prophet_reuses_the_lab_routes_own_path_resolution(monkeypatch) -> None:
+    """Both routes must serve ONE file — this pins that hub_prophet reads through
+    the exact same _resolve_roots() helper lab_v1 uses, not a second invented path."""
+    sentinel = object()
+    calls: list[object] = []
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "_resolve_roots",
+        lambda: calls.append(sentinel) or prophet_lab_api.LabRoots(prophet_index_path=None),
+    )
+    monkeypatch.setattr(prophet_lab_api, "_hub_prophet_authorized", lambda request: True)
+    request = _hub_request(client_host="127.0.0.1")
+    prophet_lab_api.hub_prophet(request)
+    assert calls == [sentinel]

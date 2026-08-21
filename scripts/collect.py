@@ -809,7 +809,17 @@ def main() -> int:
             # mode ([] = data/baskets/membership.json) first; each call merges onto prior
             # parquets and is never fatal.
             fetch_basket_ohlcv([])
-            fetch_basket_ohlcv(["--finviz", "idx_ndx,idx_rut"])
+            # --store makes the deep store SELF-MAINTAINING (2026-08-20 fetch-universe
+            # drift). The finviz screener JSONs are re-pulled nightly, so an index
+            # reconstitution silently shrinks the maintained set — and a dropped name was
+            # then never fetched again, freezing its parquet forever while
+            # engine/stage_analysis.build_universe() (which globs the store) kept
+            # classifying it as a live name. Measured that day: 179 orphaned files, 110 of
+            # them frozen on 2026-07-10 alone, and a vendor probe found 10 of 10 sampled
+            # names still trading. Unioning the on-disk tickers means leaving an index can
+            # no longer freeze a file; the only lawful exit is now a resolved row in
+            # config/delisted_symbols.yml, which _resolve_universe subtracts.
+            fetch_basket_ohlcv(["--finviz", "idx_ndx,idx_rut", "--store"])
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("basket OHLCV step failed: %s", e)
 

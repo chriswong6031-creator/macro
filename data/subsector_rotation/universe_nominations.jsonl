@@ -24,3 +24,6 @@
 {"date":"2026-08-19","theme":"Commodities Metals","donor":"commmetalsindustrial","receiver":"commmetalsbattery","confidence":0.228,"both_confirmed":false}
 {"date":"2026-08-19","theme":"Digital Entertainment","donor":"entertainmentinfrastructure","receiver":"entertainmentmusic","confidence":0.33,"both_confirmed":false}
 {"date":"2026-08-19","theme":"Commodities Metals","donor":"commmetalsrecycling","receiver":"commmetalsgold","confidence":0.301,"both_confirmed":false}
+{"date":"2026-08-20","theme":"Agriculture & FoodTech","donor":"agricultureindoorfarming","receiver":"agriculturecropinputs","confidence":0.405,"both_confirmed":false}
+{"date":"2026-08-20","theme":"Digital Entertainment","donor":"entertainmentinfrastructure","receiver":"entertainmentmusic","confidence":0.33,"both_confirmed":false}
+{"date":"2026-08-20","theme":"Autonomous Systems","donor":"autonomousdefense","receiver":"autonomousspecialized","confidence":0.294,"both_confirmed":false}
