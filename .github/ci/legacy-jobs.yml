@@ -116,6 +116,33 @@ jobs:
       - name: vector and crypto Tier-1 shelf governor
         run: python3 scripts/check_crypto_shelves.py
 
+  board-shadow-substrate:
+    if: ${{ false }}
+    gate: code
+    # HK+Canada Prophet zero-authority shadow substrate (WS:PROPHET-HK-CA-REVAMP,
+    # research/PROPHET_SHADOW_CONTRACT_V1.md). K1-K14 + standing clauses for
+    # engine/board_shadow.py. Kept on the CODE gate — unlike its
+    # china_prophet_shadow/board_ledger siblings (unrun-picks-boards /
+    # engine-render-guards, both `gate: data`) — because almost every kill
+    # builds its own tmp_path fixtures rather than asserting against moving
+    # committed data/site bytes; the merge-gate-rides-moving-data trap those
+    # two jobs exist to dodge does not apply here (see
+    # research/CI_MERGE_CONTROL_PLANE... / the moving-data finding). Left
+    # UNSCOPED (no `paths:`), mirroring all-exports-resolve/no-module-leak
+    # above: K6's repo-wide walk for the `prophet_shadow` string literal is
+    # exactly the opaque-traversal shape `infer_job_scopes` cannot narrow
+    # (scripts/run_ci_pack.py), so a declared `paths:` here would either be
+    # wrong or drift — always-on is correct for this job, not lazy.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
+      - name: HK+CA Prophet shadow substrate — K1-K14 + standing clauses
+        run: python -m pytest tests/test_board_shadow.py -q
+
   board-contradictions:
     if: ${{ false }}
     gate: code
