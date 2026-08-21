@@ -12,7 +12,7 @@
    the glance-tier chip/pending copy. */
 (function () {
   "use strict";
-  var URL = "live/risk_envelope.json";
+  var FEED_URL = "live/risk_envelope.json";
   var POLL = (window.LIVE_POLL_SEC && +window.LIVE_POLL_SEC) || 60;
 
   function unpaint() {
@@ -24,12 +24,19 @@
     if (receipt) { receipt.hidden = true; receipt.textContent = ""; }
   }
 
+  /* Healthy live overlay. Every call re-asserts the chip's baked copy — never
+     relies on the DOM still holding it from a render or a prior tick, since
+     paintDegraded() below overwrites it and a paint()->degraded->paint() cycle
+     must not leave the degraded copy stuck (adjudication #4). */
   function paint(d, band) {
     var chip = document.getElementById("gde-live-chip");
     var pending = document.getElementById("gde-pending-chip");
     var receipt = document.getElementById("gde-live-receipt");
 
     if (chip) {
+      var enEl = chip.querySelector(".l-en"), zhEl = chip.querySelector(".l-zh");
+      if (enEl) enEl.textContent = "Live · provisional";
+      if (zhEl) zhEl.textContent = "实时 · 临时";
       var t = chip.querySelector(".gde-live-time");
       if (t) t.textContent = "· " + (d.built || "").slice(11, 16) + " UTC";
       chip.hidden = false;
@@ -63,10 +70,14 @@
 
   /* DEGRADED live state (outage / null candidate): chip stays visible with a
      "not enough to say" plain-word read; pending never shows on a null candidate
-     (freeze §GD-3: a null candidate never ticks in any direction). */
+     (freeze §GD-3: a null candidate never ticks in any direction). The receipt
+     must never keep showing a stale HEALTHY line beside degraded chip copy
+     (adjudication #4), so it is overwritten with a matching degraded receipt
+     rather than left as whatever paint() last wrote. */
   function paintDegraded(d) {
     var chip = document.getElementById("gde-live-chip");
     var pending = document.getElementById("gde-pending-chip");
+    var receipt = document.getElementById("gde-live-receipt");
     if (chip) {
       var enEl = chip.querySelector(".l-en"), zhEl = chip.querySelector(".l-zh");
       if (enEl) enEl.textContent = "Live · not enough to say";
@@ -76,6 +87,15 @@
       chip.hidden = false;
     }
     if (pending) pending.hidden = true;
+    if (receipt) {
+      var trans = d.live_transition || {};
+      var bundle = (d.bundle_id || "").slice(0, 8);
+      receipt.textContent = "live: candidate null · stable " +
+        (trans.stable_stage == null ? "null" : trans.stable_stage) +
+        " · degraded (" + (d.data_state || "unknown") + ") · built " + (d.built || "—") +
+        " · bundle " + (bundle || "—");
+      receipt.hidden = false;
+    }
   }
 
   function active(d, band) {
@@ -97,27 +117,41 @@
     return true;
   }
 
-  function tick() {
+  /* The one entry point that decides paint vs. degraded vs. unpaint for a
+     PARSED feed object — factored out of tick()'s fetch chain so the shipped
+     module is directly testable (tests/test_risk_state_live_session_floor.py
+     drives risk_state_live.js the same way: strip the auto-run tail, call the
+     entry function with a fixture feed, read the DOM back). No behavior change
+     from inlining it in tick() — same band lookup, same try/catch-to-unpaint. */
+  function applyFeed(d) {
     var band = document.getElementById("risk-envelope-band");
     if (!band) return;
-    fetch(URL + "?t=" + Date.now(), { cache: "no-store" })
+    try {
+      if (!d) { unpaint(); return; }
+      if (active(d, band)) {
+        /* Route on the ENVELOPE's own hazard stage alone (adjudication #8):
+           a null stage means "not enough to say" regardless of what
+           data_state happens to read (FRESH-but-null is exactly the shape a
+           laundered empty live block used to produce) — never gate degraded
+           copy on data_state, which is a coverage grade, not a knowability
+           verdict. */
+        var stage = ((d.hazard_summary || {}).stage);
+        if (stage == null) {
+          paintDegraded(d);
+        } else {
+          paint(d, band);
+        }
+      } else {
+        unpaint();
+      }
+    } catch (e) { unpaint(); }
+  }
+
+  function tick() {
+    if (!document.getElementById("risk-envelope-band")) return;   // no wasted fetch
+    fetch(FEED_URL + "?t=" + Date.now(), { cache: "no-store" })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        try {
-          if (!d) { unpaint(); return; }
-          if (active(d, band)) {
-            var stage = ((d.hazard_summary || {}).stage);
-            var dataState = d.data_state;
-            if (stage == null && (dataState === "DEGRADED" || dataState === "STALE" || dataState === "UNKNOWN")) {
-              paintDegraded(d);
-            } else {
-              paint(d, band);
-            }
-          } else {
-            unpaint();
-          }
-        } catch (e) { unpaint(); }
-      })
+      .then(applyFeed)
       .catch(function () {});
   }
 

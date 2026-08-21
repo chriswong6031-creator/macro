@@ -105,7 +105,7 @@
                       'TRANSMITTING': '损伤扩散', 'BREAKDOWN': '已断裂'}
                      .get(_stage, '证据不足') %}
 
-<div class="panel span12 gde-band" id="risk-envelope-band" data-bundle-id="{{ _re.get('bundle_id') }}" data-settled-session="{{ _re.get('source_session') or '' }}">
+<div class="panel span12 gde-band" id="risk-envelope-band" data-bundle-id="{{ _re.get('bundle_id') or '' }}" data-settled-session="{{ _re.get('source_session') or '' }}">
 
   <div class="gde-head">
     <div>

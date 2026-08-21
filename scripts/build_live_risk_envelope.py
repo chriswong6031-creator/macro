@@ -243,30 +243,43 @@ def build_live_sources(
     # "radar live read carries the same freshness verdict as its carrying artifact"
     radar_stale_override = market_stale_override
 
+    # Adjudication #1 (BLOCKER): an EMPTY "live" block must never be laundered into
+    # a present-but-null doc. build_risk_state.py's own recompute-exception path
+    # ships "live": {} while `live_active` stays True (the fast lane still ran; the
+    # recompute inside it failed) — a doc dict with real keys but every value None
+    # would NOT trip the settled adapters' `if not doc:` MISSING branch (it is
+    # truthy), so the source would come back `present=True` and vote on a `stale`
+    # override alone, letting a genuine upstream failure paint as a calm/fresh
+    # read. Gate on the ONE field that actually carries content: `verdict`
+    # (market-state) / `state` (radar). Absent/empty -> pass None so the adapter's
+    # OWN missing-artifact branch fires (`present=False`), same as a settled
+    # artifact that never wrote at all.
     ms_doc = None
     radar_doc = None
     if risk_state_doc is not None:
         live_blk = risk_state_doc.get("live") or {}  # RAW block only — never "display"
-        ms_doc = {
-            "asof": L,
-            "verdict": live_blk.get("verdict"),
-            "score": live_blk.get("score"),
-            "raw_score": live_blk.get("raw_score"),
-            "label_en": live_blk.get("label_en"),
-            "label_zh": live_blk.get("label_zh"),
-            "score_source": "live_fast_lane",
-            "capped": False,
-            "freshness": {"stale": market_stale_override},
-        }
-        radar_raw = live_blk.get("radar") or {}
-        radar_doc = {
-            "state": radar_raw.get("state"),
-            "top_score": radar_raw.get("top_score"),
-            "label_en": radar_raw.get("label_en"),
-            "label_zh": radar_raw.get("label_zh"),
-            "is_warning": bool(radar_raw.get("is_warning")),
-            "is_loud": bool(radar_raw.get("is_loud")),
-        }
+        if live_blk.get("verdict") is not None:
+            ms_doc = {
+                "asof": L,
+                "verdict": live_blk.get("verdict"),
+                "score": live_blk.get("score"),
+                "raw_score": live_blk.get("raw_score"),
+                "label_en": live_blk.get("label_en"),
+                "label_zh": live_blk.get("label_zh"),
+                "score_source": "live_fast_lane",
+                "capped": False,
+                "freshness": {"stale": market_stale_override},
+            }
+            radar_raw = live_blk.get("radar") or {}
+            if radar_raw.get("state") is not None:
+                radar_doc = {
+                    "state": radar_raw.get("state"),
+                    "top_score": radar_raw.get("top_score"),
+                    "label_en": radar_raw.get("label_en"),
+                    "label_zh": radar_raw.get("label_zh"),
+                    "is_warning": bool(radar_raw.get("is_warning")),
+                    "is_loud": bool(radar_raw.get("is_loud")),
+                }
 
     measured = (
         _market_state_read(ms_doc, L, stale_override=market_stale_override)
@@ -298,41 +311,60 @@ def build_live_sources(
     return [measured, leadership, radar]
 
 
-def _clear_transition(settled_stage: str | None) -> dict[str, Any]:
-    return {"stage": settled_stage, "pending": None}
-
-
 def _advance_transition(
     prev: dict[str, Any] | None,
     *,
     live_session: str | None,
     precedence: str,
+    live_active: bool,
     candidate_stage: str | None,
     settled_stage: str | None,
     debounce_ticks: int,
+    observed_built: str | None,
 ) -> dict[str, Any]:
     """The dwell/debounce state (Grey-Deer-owned; never the composer's).
 
-    * `precedence != "live"` -> the settled bake has caught up to or passed this
-      live observation: supersede + CLEAR (stable <- settled stage, no pending, no
-      ticking — freeze §GD-3 "no transition ticking").
-    * a NEW live trading day (`L` advanced past the persisted session) -> the prior
-      day's dwell state does not carry over; re-baseline from the settled stage, and
-      if today's first candidate already differs, `pending` appears IMMEDIATELY.
-    * otherwise: normal debounce. A null candidate NEVER ticks in any direction
-      (frozen, not a calm vote). Symmetric for escalation and de-escalation — the
-      logic below does not special-case direction at all.
+    Ticking (starting a new `pending` or advancing its `ticks`) may happen ONLY
+    when ALL of: `precedence == "live"`, `live_active` is True (the WRAPPER's own
+    live_active — freshness-gated, not just "the artifact exists"), `candidate_stage`
+    is non-null, AND this fire's `observed_built` is a DISTINCT observation from the
+    last one that counted (adjudication #5: this module fires every minute but
+    risk_state.json itself refreshes on a slower cadence, so re-reading the SAME
+    artifact must never count as a second confirmation). Every other case carries
+    `stable_stage`/`pending` forward VERBATIM — frozen. `candidate_stage` in the
+    RETURNED dict always reflects THIS fire's actual read (even null, even while
+    frozen), so a reader can always see what is live right now versus what has been
+    confirmed; only the confirmed state is protected from moving.
+
+    * `precedence != "live"` -> the settled bake is authoritative for this session
+      now: supersede + CLEAR (stable <- settled stage, pending dropped — freeze
+      §GD-3 "session already settled" / "older than settled"). This is a distinct
+      concept from the freeze below: a settle is a definitive new answer, not an
+      absence of one, so it does not merely hold the old state — it replaces it.
+    * a NEW live trading day (`live_session` advanced past the persisted session)
+      -> re-baseline from the settled stage (yesterday's dwell does not carry
+      over); if the day's first LEGITIMATE (live_active + non-null) candidate
+      already differs, `pending` appears IMMEDIATELY.
+    * otherwise, `live_active` False, `candidate_stage` None, or a repeated
+      observation -> FREEZE (adjudication #2/#5): outage, a stale/unusable live
+      read, or no new evidence must never advance a tick, and a null/unusable
+      candidate must never read as a de-escalation toward calm.
+    * otherwise -> normal debounce, symmetric for escalation and de-escalation —
+      the logic below does not special-case direction at all.
     """
     prev = prev or {}
     prev_session = prev.get("session")
     prev_stable = prev.get("stable_stage")
     prev_pending = prev.get("pending") or {}
+    prev_observed_built = prev.get("last_observed_built")
+    last_observed_built = prev_observed_built
 
     if precedence != "live":
         stable_stage, pending = settled_stage, None
     elif live_session != prev_session:
         stable_stage = settled_stage
-        if candidate_stage is not None and candidate_stage != stable_stage:
+        if live_active and candidate_stage is not None and candidate_stage != stable_stage:
+            last_observed_built = observed_built
             ticks = 1
             if ticks >= max(1, debounce_ticks):
                 stable_stage, pending = candidate_stage, None
@@ -340,16 +372,23 @@ def _advance_transition(
                 pending = {"stage": candidate_stage, "ticks": ticks, "needs": debounce_ticks}
         else:
             pending = None
-    elif candidate_stage is None:
-        # outage: freeze exactly as-is — never advance, never clear.
+    elif not live_active or candidate_stage is None:
+        # outage / freshness failure / null read: FREEZE.
+        stable_stage, pending = prev_stable, (prev_pending or None)
+    elif observed_built is not None and observed_built == prev_observed_built:
+        # same underlying observation as the last fire that counted — no NEW
+        # evidence arrived yet (risk_state.json's own cadence is slower than this
+        # module's fire rate): FREEZE.
         stable_stage, pending = prev_stable, (prev_pending or None)
     elif candidate_stage == prev_stable:
         stable_stage, pending = prev_stable, None
+        last_observed_built = observed_built
     else:
         if prev_pending.get("stage") == candidate_stage:
             ticks = int(prev_pending.get("ticks") or 0) + 1
         else:
             ticks = 1
+        last_observed_built = observed_built
         if ticks >= max(1, debounce_ticks):
             stable_stage, pending = candidate_stage, None
         else:
@@ -361,6 +400,7 @@ def _advance_transition(
         "candidate_stage": candidate_stage,
         "stable_stage": stable_stage,
         "pending": pending,
+        "last_observed_built": last_observed_built,
     }
 
 
@@ -385,7 +425,18 @@ def build(root: Path | None = None, now: datetime | None = None) -> dict[str, An
 
     fresh = market_freshness(risk_state_doc, stale_after_min, now)
     built_dt = fresh["built_dt"]
-    L = _live_session(built_dt)
+
+    # Adjudication #3 (MAJOR): a future-refused carrying clock is UNTRUSTED, full
+    # stop — it must never be used to derive L (the live session), never appear as
+    # `clocks.event_time`, and the composed envelope must never carry the future
+    # date as its own session/as_of. `L` stays None for all internal source-
+    # building purposes (LC's future-check ceiling simply has nothing to compare
+    # against, which is correct — LC's own S-based staleness rule still applies
+    # unchanged); the envelope's `source_session`/`as_of` fall back to the known-
+    # good settled anchor `S` instead of inventing or repeating anything untrusted.
+    future_refused = fresh["future_artifact"]
+    L = None if future_refused else _live_session(built_dt)
+    envelope_session = S if future_refused else L
 
     sources = build_live_sources(
         risk_state_doc=risk_state_doc,
@@ -396,14 +447,18 @@ def build(root: Path | None = None, now: datetime | None = None) -> dict[str, An
         now=now,
     )
 
+    # Both clocks are the SAME injected `now` (adjudication #9): the four-clock
+    # receipt (event_time -> observed_at -> produced_at -> browser_seen_at) must be
+    # reproducible from the caller's instant alone, never a second live wall-clock
+    # read inside a supposedly-pure-given-its-arguments build.
     observed_stamp = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    produced_stamp = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    produced_stamp = observed_stamp
 
     envelope = compose_envelope(
         sources=sources,
         market=MARKET,
-        source_session=L,
-        as_of=L,
+        source_session=envelope_session,
+        as_of=envelope_session,
         observed_at=observed_stamp,
         produced_at=produced_stamp,
         stale_after=None,
@@ -411,7 +466,9 @@ def build(root: Path | None = None, now: datetime | None = None) -> dict[str, An
     )
     candidate_stage = envelope["hazard_summary"]["stage"]
 
-    if L is None or S is None:
+    if future_refused:
+        precedence = "settled"
+    elif L is None or S is None:
         precedence = "settled"
     elif L > S:
         precedence = "live"
@@ -422,12 +479,12 @@ def build(root: Path | None = None, now: datetime | None = None) -> dict[str, An
 
     if wrapper_live_active:
         stale_reason = None
+    elif future_refused:
+        stale_reason = "refused_future"
     elif risk_state_doc is None:
         stale_reason = "risk_state artifact unavailable"
     elif not fresh["live_active"]:
         stale_reason = "market closed or no fresh live read"
-    elif fresh["future_artifact"]:
-        stale_reason = "refused_future"
     elif not fresh["fresh_enough"]:
         stale_reason = "stale (older than stale_after_min)"
     elif L is not None and S is not None and L < S:
@@ -442,9 +499,11 @@ def build(root: Path | None = None, now: datetime | None = None) -> dict[str, An
         prev.get("live_transition"),
         live_session=L,
         precedence=precedence,
+        live_active=wrapper_live_active,
         candidate_stage=candidate_stage,
         settled_stage=settled_stage,
         debounce_ticks=debounce_ticks,
+        observed_built=(risk_state_doc or {}).get("built"),
     )
 
     out = dict(envelope)
@@ -457,7 +516,10 @@ def build(root: Path | None = None, now: datetime | None = None) -> dict[str, An
         "overlays": {"settled_bundle_id": B, "settled_source_session": S},
         "live_transition": live_transition,
         "clocks": {
-            "event_time": built_dt.isoformat().replace("+00:00", "Z") if built_dt else None,
+            # An untrusted (future-refused) clock is never republished either —
+            # adjudication #3.
+            "event_time": (None if future_refused else
+                            (built_dt.isoformat().replace("+00:00", "Z") if built_dt else None)),
             "observed_at": observed_stamp,
             "produced_at": produced_stamp,
         },

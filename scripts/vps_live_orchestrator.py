@@ -316,10 +316,16 @@ class Orchestrator:
         if weekday and 11 <= hour <= 22:
             # GD-3: live provisional Risk Envelope. EVERY fire (not the odd/even
             # split below) — it is cheap (no network, reads two small JSON files
-            # plus the risk_state.json this same gate already refreshes) and the
-            # pending/dwell debounce (config `live.risk_envelope.debounce_ticks`)
-            # depends on ticking every minute to reach its 3-tick window in ~3
-            # minutes rather than ~6.
+            # plus the risk_state.json this same gate already refreshes), and the
+            # chip's own freshness timestamp still benefits from a 60s refresh even
+            # though the dwell/debounce below cannot move that often. debounce_ticks
+            # (scripts/build_live_risk_envelope.py, a CODE constant — no config.yml
+            # key exists) counts DISTINCT risk_state.json observations, not fires:
+            # this module runs every minute but risk_state.json itself only
+            # refreshes on odd minutes (the odd/even split below), so 3 ticks is
+            # ~3 distinct confirmations spread over ~6 minutes of wall-clock at the
+            # current cadence, not ~3.
+
             self.module(
                 "risk_envelope_live",
                 "scripts.build_live_risk_envelope",

@@ -28,6 +28,7 @@ from scripts.build_risk_envelope import (
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _GD1_FIXTURE = _REPO_ROOT / "tests" / "fixtures" / "risk_envelope" / "gd1_dual_read_2026-08-18.json"
 _LIVE_MODULE = _REPO_ROOT / "scripts" / "build_live_risk_envelope.py"
+_THEME_CSS = _REPO_ROOT / "templates" / "theme.css"
 
 # The GD1 fixture's settled bundle_id, composed through the SAME code path this
 # file's adapter refactor touches — pinned so a change to the refactor's default
@@ -75,6 +76,23 @@ def _risk_state(built, *, live_active=True, verdict="RISK_OFF", score=40,
                       "label_en": "x", "label_zh": "y"},
         },
         "display": {"verdict": display_verdict, "score": 5, "label_en": "SHOULD NEVER BE READ"},
+    }
+
+
+def _risk_state_empty_live(built, *, live_active=True):
+    """build_risk_state.py:233-239's own recompute-exception path: the fast lane
+    RAN (live_active stays True, `built` is a fresh timestamp) but the recompute
+    inside it raised, so it ships `"live": {}` — content-empty, not artifact-
+    missing. Adjudication #1's regression fixture."""
+    return {
+        "schema": "risk_state.v1",
+        "built": built,
+        "session": {"region": "us", "open": True, "local_time": "11:31 EDT"},
+        "live_active": live_active,
+        "realtime": True,
+        "delayed_min": 15,
+        "live": {},
+        "display": {"verdict": "RISK_ON", "score": 81, "label_en": "SHOULD NEVER BE READ"},
     }
 
 
@@ -180,6 +198,68 @@ class TestSameAdaptersNoNewMapping:
                 pytest.fail(f"live module sets stage_ceiling at line {node.value.lineno}")
 
 
+# ══ adjudication #1 (BLOCKER) — an empty "live" block must never launder as a
+#    present-but-null FRESH/calm read; it must degrade like a missing source. ════
+
+class TestEmptyLiveBlockIsNeverLaundered:
+
+    def test_empty_live_block_is_not_present_never_fresh_calm(self, tmp_path):
+        """build_risk_state.py's own recompute-exception path ships `live_active:
+        true` with `"live": {}` when the fast-lane recompute itself raised. Before
+        the fix, a doc dict with every value None still passed the settled
+        adapters' truthiness check (`if not doc:`), so the source came back
+        present=True and voted on staleness alone — laundering a genuine upstream
+        failure into a calm/fresh-looking read. After the fix, market-state must
+        come back NOT present, and the WRAPPER must never claim `live_active` off
+        the presence of an empty block."""
+        S = "2026-08-19"
+        root = _write_root(
+            tmp_path, risk_state=_risk_state_empty_live("2026-08-20 15:00:00 UTC"),
+            leadership=_leadership(S, state="INTACT"), settled=_settled(S, stage="NONE"),
+        )
+        env = blre.build(root=root, now=datetime(2026, 8, 20, 15, 1, tzinfo=timezone.utc))
+        measured = next(s for s in env["provenance"]["sources"]
+                        if s["source_id"] == "market-state-latest")
+        assert measured["coverage"] == "MISSING"
+        assert env["measured_state"]["usable"] is False
+        assert env["measured_state"]["verdict"] is None
+        assert env["data_state"] != "FRESH", (
+            "an empty live block must never be laundered into FRESH coverage"
+        )
+
+    def test_empty_radar_sub_block_is_also_not_present(self, tmp_path):
+        """Same fix, the radar leg: a verdict-bearing `live` block whose nested
+        `radar` sub-block is empty must not launder the radar source present
+        either (it is optional, so this degrades coverage rather than nulling the
+        stage — but it must never silently vote 'calm')."""
+        risk_state = _risk_state("2026-08-20 15:00:00 UTC")
+        risk_state["live"]["radar"] = {}
+        root = _write_root(
+            tmp_path, risk_state=risk_state,
+            leadership=_leadership("2026-08-19"), settled=_settled("2026-08-19"),
+        )
+        env = blre.build(root=root, now=datetime(2026, 8, 20, 15, 1, tzinfo=timezone.utc))
+        radar = next(s for s in env["provenance"]["sources"]
+                    if s["source_id"] == "risk-radar-us")
+        assert radar["coverage"] == "MISSING"
+        assert radar["hazard_stage"] is None
+
+    def test_stage_never_reads_none_from_a_laundered_empty_live_block(self, tmp_path):
+        """The full reviewer scenario: live_active true + "live": {} while LC is
+        ALSO unusable (a realistic joint failure) must null the stage — never
+        report NONE (a positive 'we looked and found nothing') from evidence that
+        was never actually looked at."""
+        S = "2026-08-19"
+        root = _write_root(
+            tmp_path, risk_state=_risk_state_empty_live("2026-08-20 15:00:00 UTC"),
+            leadership=_leadership("2026-08-11", state="INTACT"),  # stale vs S -> unusable
+            settled=_settled(S, stage="FRAGILE"),
+        )
+        env = blre.build(root=root, now=datetime(2026, 8, 20, 15, 1, tzinfo=timezone.utc))
+        assert env["hazard_summary"]["stage"] is None
+        assert env["hazard_summary"]["stage"] != "NONE"
+
+
 # ══ item 4 — the clock law: future-dated input is refused, never a calmer read ═══
 
 class TestClockLaw:
@@ -212,6 +292,36 @@ class TestClockLaw:
         assert env["hazard_summary"]["stage"] is None
         assert env["hazard_summary"]["stage_reason"] == "required_coverage_unavailable"
         assert env["hazard_summary"]["stage"] != "NONE"
+
+    # ── adjudication #3: the ORIGINAL suite only covered the LC leg's future
+    #    refusal; the MARKET leg's carrying artifact (risk_state.json's own
+    #    `built` clock) needs the same law, PLUS it must never be half-refused —
+    #    a future-dated `built` must not be used to derive L at all. ────────────
+
+    def test_market_leg_future_dated_artifact_is_refused_and_never_used_as_l(self, tmp_path):
+        """A risk_state.json whose OWN `built` clock sits >120s ahead of wall-clock
+        (a corrupted/clock-skewed publish) must be refused WHOLESALE: never used to
+        derive L, never republished as `clocks.event_time`, and the envelope must
+        fall back to the settled anchor S rather than carrying the untrusted future
+        date as its own session."""
+        S = "2026-08-19"
+        now = datetime(2026, 8, 20, 15, 0, tzinfo=timezone.utc)
+        future_built = "2026-08-20 15:10:00 UTC"   # 10min ahead of `now`, past the 120s tolerance
+        root = _write_root(
+            tmp_path, risk_state=_risk_state(future_built),
+            leadership=_leadership(S), settled=_settled(S),
+        )
+        env = blre.build(root=root, now=now)
+        assert env["precedence"] == "settled"
+        assert env["live_active"] is False
+        assert env["stale_reason"] == "refused_future"
+        assert env["source_session"] == S            # never the future date, never null
+        assert env["as_of"] == S
+        assert env["clocks"]["event_time"] is None    # untrusted clock is never republished
+        assert env["live_transition"]["pending"] is None   # transition frozen/superseded
+        measured = next(s for s in env["provenance"]["sources"]
+                        if s["source_id"] == "market-state-latest")
+        assert measured["coverage"] != "FRESH"
 
 
 # ══ item 5 — LC judged against S, never NONE from missing/stale required evidence ═
@@ -320,7 +430,8 @@ class TestPrecedence:
         assert env2["overlays"]["settled_source_session"] == "2026-08-20"
 
 
-# ══ item 7 — the dwell/debounce law ═══════════════════════════════════════════════
+# ══ item 7 — the dwell/debounce law (adjudication #2/#5 add live_active +
+#    observed_built gating) ════════════════════════════════════════════════════
 
 class TestDwellLaw:
 
@@ -329,24 +440,27 @@ class TestDwellLaw:
         state = None
         # fire 1: cold start, candidate escalates immediately away from settled FRAGILE
         state = blre._advance_transition(
-            state, live_session=L, precedence="live", candidate_stage="TRANSMITTING",
-            settled_stage="FRAGILE", debounce_ticks=3,
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage="TRANSMITTING", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-1",
         )
         assert state["stable_stage"] == "FRAGILE"
         assert state["pending"] == {"stage": "TRANSMITTING", "ticks": 1, "needs": 3}
 
-        # fire 2: same candidate repeats
+        # fire 2: same candidate repeats, a DISTINCT observation
         state = blre._advance_transition(
-            state, live_session=L, precedence="live", candidate_stage="TRANSMITTING",
-            settled_stage="FRAGILE", debounce_ticks=3,
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage="TRANSMITTING", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-2",
         )
         assert state["pending"]["ticks"] == 2
         assert state["stable_stage"] == "FRAGILE"   # not yet flipped
 
-        # fire 3: third consecutive same candidate -> flip
+        # fire 3: third consecutive same candidate, distinct observation -> flip
         state = blre._advance_transition(
-            state, live_session=L, precedence="live", candidate_stage="TRANSMITTING",
-            settled_stage="FRAGILE", debounce_ticks=3,
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage="TRANSMITTING", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-3",
         )
         assert state["stable_stage"] == "TRANSMITTING"
         assert state["pending"] is None
@@ -354,8 +468,9 @@ class TestDwellLaw:
         # fire 4: outage — a null candidate must NEVER tick in any direction
         frozen_before = dict(state)
         state = blre._advance_transition(
-            state, live_session=L, precedence="live", candidate_stage=None,
-            settled_stage="FRAGILE", debounce_ticks=3,
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage=None, settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-4",
         )
         assert state["stable_stage"] == frozen_before["stable_stage"]
         assert state["pending"] == frozen_before["pending"]
@@ -363,33 +478,136 @@ class TestDwellLaw:
 
         # fires 5-7: symmetric DE-escalation — same 3-tick mechanism, opposite direction
         state = blre._advance_transition(
-            state, live_session=L, precedence="live", candidate_stage="NONE",
-            settled_stage="FRAGILE", debounce_ticks=3,
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage="NONE", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-5",
         )
         assert state["pending"] == {"stage": "NONE", "ticks": 1, "needs": 3}
         state = blre._advance_transition(
-            state, live_session=L, precedence="live", candidate_stage="NONE",
-            settled_stage="FRAGILE", debounce_ticks=3,
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage="NONE", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-6",
         )
         assert state["pending"]["ticks"] == 2
         state = blre._advance_transition(
-            state, live_session=L, precedence="live", candidate_stage="NONE",
-            settled_stage="FRAGILE", debounce_ticks=3,
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage="NONE", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-7",
         )
         assert state["stable_stage"] == "NONE"
         assert state["pending"] is None
 
     def test_new_live_day_reinitializes_from_settled_not_from_yesterdays_dwell(self):
         prev = {"session": "2026-08-19", "stable_stage": "TRANSMITTING", "pending": None,
-                "candidate_stage": "TRANSMITTING"}
+                "candidate_stage": "TRANSMITTING", "last_observed_built": "yesterday"}
         state = blre._advance_transition(
-            prev, live_session="2026-08-20", precedence="live", candidate_stage="TRANSMITTING",
-            settled_stage="NONE", debounce_ticks=3,
+            prev, live_session="2026-08-20", precedence="live", live_active=True,
+            candidate_stage="TRANSMITTING", settled_stage="NONE", debounce_ticks=3,
+            observed_built="obs-today-1",
         )
         # yesterday's stable TRANSMITTING must not silently carry into a new session;
         # today re-baselines from the settled stage and starts a FRESH pending count.
         assert state["stable_stage"] == "NONE"
         assert state["pending"] == {"stage": "TRANSMITTING", "ticks": 1, "needs": 3}
+
+    # ── adjudication #2: ticking is gated on wrapper live_active, not just
+    #    precedence — an outage (live_active False) must freeze the dwell state
+    #    exactly, never de-escalate it toward calm, and ticking must resume from
+    #    the frozen pending (not reset to zero) once live_active recovers. ──────
+
+    def test_outage_freezes_pending_and_resumes_without_resetting(self):
+        L = "2026-08-20"
+        # fire 1: live, first candidate differs from settled -> pending starts at 1/3
+        state = blre._advance_transition(
+            None, live_session=L, precedence="live", live_active=True,
+            candidate_stage="TRANSMITTING", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-1",
+        )
+        assert state["pending"] == {"stage": "TRANSMITTING", "ticks": 1, "needs": 3}
+
+        # fire 2: a second distinct observation -> ticks advance to 2/3
+        state = blre._advance_transition(
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage="TRANSMITTING", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-2",
+        )
+        assert state["pending"]["ticks"] == 2
+
+        # fires 3-6: outage — live_active False for FOUR consecutive fires (the
+        # reviewer's literal reproduction scenario), even though the (stale) read
+        # would still claim to differ from stable. stable_stage must never move
+        # off its baseline, and pending must not advance OR reset.
+        pre_outage = dict(state)
+        for i, obs in enumerate(("obs-3", "obs-4", "obs-5", "obs-6")):
+            state = blre._advance_transition(
+                state, live_session=L, precedence="live", live_active=False,
+                candidate_stage="TRANSMITTING", settled_stage="FRAGILE", debounce_ticks=3,
+                observed_built=obs,
+            )
+            assert state["stable_stage"] == pre_outage["stable_stage"] == "FRAGILE", i
+            assert state["pending"] == pre_outage["pending"], i   # frozen at 2/3, not 3/3, not reset
+
+        # fire 7: recovery — live_active True again, a genuinely NEW observation,
+        # SAME candidate as before the outage -> ticking RESUMES from the frozen
+        # 2/3 (not from 0), reaching the debounce window on this one fire.
+        state = blre._advance_transition(
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage="TRANSMITTING", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-7",
+        )
+        assert state["stable_stage"] == "TRANSMITTING"
+        assert state["pending"] is None
+
+    def test_null_candidate_during_live_precedence_freezes_not_just_outage(self):
+        """A null candidate (composer degraded to stage=null) must freeze even
+        when live_active is True — a source-side null is not the same signal as a
+        wrapper-side freshness outage, but both must refuse to tick."""
+        L = "2026-08-20"
+        state = blre._advance_transition(
+            None, live_session=L, precedence="live", live_active=True,
+            candidate_stage="FRAGILE", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-1",
+        )
+        assert state["pending"] is None and state["stable_stage"] == "FRAGILE"
+        frozen = dict(state)
+        state = blre._advance_transition(
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage=None, settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-2",
+        )
+        assert state["stable_stage"] == frozen["stable_stage"]
+        assert state["pending"] == frozen["pending"]
+
+    # ── adjudication #5: ticks are keyed to DISTINCT risk_state.json
+    #    observations, not fires — this module runs every minute but risk_state
+    #    only refreshes on odd minutes, so re-reading the SAME built timestamp
+    #    must never count as a second confirmation. ─────────────────────────────
+
+    def test_repeated_observation_does_not_double_tick(self):
+        L = "2026-08-20"
+        state = blre._advance_transition(
+            None, live_session=L, precedence="live", live_active=True,
+            candidate_stage="TRANSMITTING", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-1",
+        )
+        assert state["pending"]["ticks"] == 1
+
+        # SAME observed_built as fire 1 (risk_state.json has not been rewritten
+        # yet) -> must NOT advance to ticks=2.
+        state = blre._advance_transition(
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage="TRANSMITTING", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-1",
+        )
+        assert state["pending"]["ticks"] == 1, "reusing the same observation must not tick again"
+
+        # a genuinely new observation -> now it advances to 2.
+        state = blre._advance_transition(
+            state, live_session=L, precedence="live", live_active=True,
+            candidate_stage="TRANSMITTING", settled_stage="FRAGILE", debounce_ticks=3,
+            observed_built="obs-2",
+        )
+        assert state["pending"]["ticks"] == 2
 
 
 # ══ item 8 — no forward ledger, no write beyond site/live/risk_envelope.json ═════
@@ -504,3 +722,17 @@ class TestDisplayBlockIsNeverConsulted:
         env = blre.build(root=root, now=datetime(2026, 8, 20, 15, 1, tzinfo=timezone.utc))
         assert env["measured_state"]["verdict"] == "RISK_OFF"
         assert "RISK_ON" not in json.dumps(env)
+
+
+# ══ adjudication #6 — the band's live-dot reuses theme.css's existing .dtp-dot /
+#    @keyframes dtp-pulse; pin their presence so a theme refactor can't silently
+#    kill the overlay's only motion without anyone noticing here. ════════════════
+
+class TestLiveDotReusesTheThemeIdiom:
+
+    def test_theme_css_still_carries_the_reused_dot_idiom(self):
+        src = _THEME_CSS.read_text(encoding="utf-8")
+        assert ".dtp-dot" in src, "templates/theme.css dropped .dtp-dot — the GD-3 live chip reuses it"
+        assert "@keyframes dtp-pulse" in src, (
+            "templates/theme.css dropped @keyframes dtp-pulse — the GD-3 live chip reuses it"
+        )
