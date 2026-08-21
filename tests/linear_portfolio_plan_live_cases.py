@@ -8,7 +8,7 @@ from pathlib import Path
 from scripts import linear_portfolio_plan as lpp
 
 
-def test_current_repository_plan_is_deterministic_and_emits_ci_receipt():
+def test_current_repository_plan_is_deterministic_and_emits_ci_receipt(pytestconfig):
     repo = Path(__file__).resolve().parents[1]
     kwargs = {
         "programs": lpp.agentos._load_programs(),
@@ -47,6 +47,11 @@ def test_current_repository_plan_is_deterministic_and_emits_ci_receipt():
         "record_counts": receipt["record_counts"],
         "validator_warning_count": receipt["validator_warning_count"],
     }
+    rendered = json.dumps(proof, ensure_ascii=False, sort_keys=True)
+
+    terminal = pytestconfig.pluginmanager.getplugin("terminalreporter")
+    if terminal is not None:
+        terminal.write_line("MAS65_LINEAR_PORTFOLIO_PLAN_RECEIPT=" + rendered)
 
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
