@@ -3,10 +3,16 @@
 # The MD document BINDS. This YAML carries no independent authority; on any
 # apparent divergence, the MD controls. [A26]
 # Supersedes IMCE_PREREGISTRATION_CANDIDATE.yaml (schema v0).
+# V1.1 (2026-08-21): applies Sol's 18 A4G amendments (AG1-AG18) atop the 26
+# Round 3 amendments (A1-A26). Full rationale: IMCE_A4G_AMENDMENT_LOG.md.
 
 schema: imce.preregistration_candidate.v1
 status: candidate_not_registered
+version: "1.1"                                 # [AG-header] was 1.0/V1
 date: 2026-08-20
+amended_date: "2026-08-21"                     # [AG-header] A4G amendment gate
+amendment_gate: A4G
+amendment_gate_authority: sol_a4g_authorization_2026_08_21
 binds: research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md
 supersedes:
   md: IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT.md
@@ -42,8 +48,11 @@ primary_question: >-
   the mechanism-only baseline for a registered next-state or 63-trading-day
   risk target?
 
-prospective_accrual_first_posture:            # [A24]
+prospective_accrual_first_posture:            # [A24, strengthened AG1]
   historical_arm_is_promotion_path: false
+  promotion_bearing_evidence_pct_prospective: 100      # [AG1] A4G binding
+  historical_replay_weight_in_promotion_decision: 0    # [AG1]
+  historical_replay_may_supply_prior_to_prospective_cell: false  # [AG1]
   historical_arm_role: instrumentation_episode_record_design_validation
   claim_classes:
     - name: cycle_block_claims
@@ -147,13 +156,49 @@ min_effective_blocks_provenance:               # [A12]
     exists_today: false
     condition_if_added_later: own_preregistered_floor_plus_hard_authority_ceiling_bound_to_all_false_authority_flags
 
-effective_block_law:                           # [A9]
+effective_block_law:                           # [A9, amended AG2/AG3/AG4/AG5/AG6/AG9]
   unit: independent_shock_realization
   forbidden_inflators: [issuers, rows, targets, horizons, directions, overlapping_windows]
-  deff_rule:
-    applies_to: issuer_episode_derived_n_effective_blocks
-    rho_estimator: frozen_pre_outcome_fit_on_train_folds_only
-    raw_block_count: always_printed_alongside_effective_count
+  issuer_replication_may_raise_n: false          # [AG2] statistical-unit law amendment
+  deff_formula_as_n_definition:                  # [AG3] STRUCK
+    status: struck
+    formula: "n_eff = (B x m) / [1 + (m-1)*rho]"
+    struck_because: violates_AG2_A9_whenever_it_exceeds_B_for_any_rho_lt_1
+    rho_required_frozen_parameter_for_n: false   # [AG3] closes lane-1 HB0 census gap 9
+    superseded_by: n_effective_blocks_capped_at_raw_block_count
+  n_effective_blocks_capped_at_raw_block_count:  # [AG3][AG5][AG6]
+    definition: "n_effective_blocks := min(B, any_other_candidate_estimator)"
+    general_cells:
+      b_upper_bound: 5
+      basis: five_closed_non_overlapping_blocks_1_2_3_4_5
+      is_upper_bound_not_point_estimate: true
+    cancellation_rate_cells:
+      b_upper_bound: 3
+      basis: only_grind_pandemic_boom_rate_shock_carry_denominator_reconstructable_disclosure
+      blocks_1_2_excluded_because: unstated_early_convention_cannot_be_assumed_to_match_later_stated_one
+    exact_pseudo_n_necessary: false               # upper bound already fails floor=40 by ~order of magnitude
+  block_count_reconciliation:                    # [AG5] records the C2 disposition
+    lane1_source: research/imce/IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md
+    lane2_source: research/imce/hb0/IMCE_HB0_INDEPENDENT_BLOCK_LIST.md
+    lane1_named_list_entries: 7
+    lane2_hardened_count_for_n: 5
+    ruling: b_equals_5_wins_for_n_accounting
+    named_7_list_retained: true
+    zero_contributing_entries: [taper_2013_subepisode, affordability_era_2024_2026_open]
+  sub_episodes_contribute_zero_n: true           # [AG7] closes lane-1 HB0 census gap 12
+  sub_episode_boundary_minting_required_for_n: false
+  open_era_contributes_zero_historical_n: true   # [AG8]
+  within_block_issuer_dependence:                # [AG4] renamed, demoted
+    status: precision_diagnostic_only
+    proposed_field_name: n_issuer_precision_diagnostic
+    may_substitute_for_n_effective_blocks: false
+    can_satisfy_40_block_floor: false
+    carries_promotion_authority: false
+  inference_unit: block_cluster_leave_one_block_out   # [AG9]
+  dependence_adjustment_direction: may_only_reduce_never_increase_shock_count  # [AG9]
+  macro_boundary_receipt_required_before_outcome_partition: true  # [AG17]
+  not_yet_receipted_boundary_manufactures_new_block: false        # [AG17]
+  raw_block_count: always_printed_alongside_effective_count
 
 frozen_hierarchy:                              # [A10]
   meaning: frozen_in_the_pre_outcome_registration_commit
@@ -172,29 +217,63 @@ issuer_residual_rungs:                         # [A11]
     authority: requires_separate_promotion
   both_rungs_reachable_for_any_current_cohort: false
 
-frozen_historical_block_list:                  # [A8]
+frozen_historical_block_list:                  # [A8, restructured AG5/AG7/AG8]
   - name: gfc_bust
     start: 2006
     end: 2009
+    proposed_month_start: "2006-01"            # A3 lane-2 proposal, not_yet_receipted
+    proposed_month_end: "2009-12"
+    counts_toward_n_effective_blocks: true
   - name: gfc_recovery_land_light
     start: 2010
     end: 2013
+    proposed_month_start: "2010-01"
+    proposed_month_end: "2013-12"
+    counts_toward_n_effective_blocks: true
   - name: taper_2013_partial
     start: 2013
     end: 2013
+    proposed_month_start: "2013-05"
+    proposed_month_end: "2013-12"
+    type: named_sub_episode_of_gfc_recovery_land_light   # [AG7]
+    counts_toward_n_effective_blocks: false              # [AG7] zero N, no boundary minting required for N
   - name: grind_2014_2019_incl_2018_air_pocket
     start: 2014
     end: 2019
+    proposed_month_start: "2014-01"
+    proposed_month_end: "2019-12"
+    counts_toward_n_effective_blocks: true
+  - name: air_pocket_2018
+    start: 2018
+    end: 2018
+    proposed_month_start: "2018-07"
+    proposed_month_end: "2018-12"
+    type: named_sub_episode_of_grind_2014_2019           # [AG7]
+    counts_toward_n_effective_blocks: false              # [AG7] zero N
   - name: pandemic_boom
     start: 2020
     end: 2021
+    proposed_month_start: "2020-03"
+    proposed_month_end: "2021-12"
+    counts_toward_n_effective_blocks: true
   - name: rate_shock_cancellation_spike
     start: 2022
     end: 2023
+    proposed_month_start: "2022-01"
+    proposed_month_end: "2023-12"
+    counts_toward_n_effective_blocks: true
   - name: affordability_incentive_era
     start: 2024
     end: 2026
+    proposed_month_start: "2024-01"
+    proposed_month_end: open                             # [AG8] OPEN_ACCRUING
+    status: open_accruing                                # [AG8]
+    counts_toward_n_effective_blocks: false               # [AG8] zero historical N
+    counts_toward_n_blocks_prosp_on_close: true
+named_list_entries_total: 7
+n_effective_blocks_contributing_entries: 5     # [AG5] hardened B=5 for N-accounting
 change_requires: new_amendment_log_entry
+month_boundaries_receipt_status: proposed_not_yet_receipted   # [AG17] see IMCE_A4G_SOURCE_BOUNDARY_TABLE.md
 
 reachable_status_table:                        # [A1]
   celh:
@@ -285,13 +364,63 @@ homebuilders:                                  # [A1][A17][A18][G8-B4][G8-M2][G8
     flip_under_alternate_convention: not_a_pass
   len:
     excluded_from_cancellation_rate_cells: true
-    exclusion_reason: era_correlated_missingness_no_press_release_cancellation_rate
+    exclusion_reason: no_stated_formula_denominator_unverifiable_plus_era_correlated_press_release_absence  # [AG10, restates C1] was era_correlated_missingness_no_press_release_cancellation_rate
+    exclusion_reason_note: 10k_mda_does_disclose_14_pct_fy2025_missingness_is_press_release_channel_scoped_not_absolute
     break_flag: millrose_2025_02
     exclusion_printed: true
   nvr:
     treatment: separate_stratum_or_designated_transfer_test
     pooled_to_raise_n: false
     inclusion_exclusion_frozen_pre_outcome: true
+    reaffirmed_by: AG13_no_change                  # [AG13]
+    mechanism_basis: strong_majority_option_lot_model_per_nvr_own_fy2025_10k  # corrected from "~100% option"
+  tol_cancellation_denominator:                     # [AG12] settles election E1
+    primary_convention: gross_signed_contracts_in_quarter
+    mandatory_printed_sensitivity: beginning_quarter_backlog
+    flip_under_sensitivity_is_a_pass: false
+  roster_widening: forbidden                        # [AG16]
+  roster_widening_rationale: improves_representativeness_supplies_zero_additional_power
+  state_vector_observability_scoping:               # [AG14] settles election E2 for 3 of 4 D5 states
+    d5_states: [order_softness, completed_inventory_build, incentive_support, pace_recovery]
+    order_softness:
+      observability: cohort_wide
+      basis: net_orders_backlog_cancellation_rate_disclosed_by_all_six_issuers_with_caveats
+    completed_inventory_build:
+      observability: named_three_issuer_subset
+      subset: [DHI, LEN, PHM]
+      is_cohort_claim: false
+      is_named_subset_claim: true
+    incentive_support:
+      observability: descriptive_only
+      may_be_imputed_into_cohort_cell: false
+      single_disclosing_issuer: LEN
+    pace_recovery:
+      observability: descriptive_only
+      may_be_imputed_into_cohort_cell: false
+      single_disclosing_issuer: KBH
+    exact_phase_family_target_to_d5_state_mapping: open_a4_registration_item  # not invented by this amendment
+  pit_class_enum:                                   # [AG15]
+    closed: true
+    values: [pit_pure, revision_optimistic, mixed]
+    source: config/cycle_pattern/truth_schema.md
+    no_new_tokens_permitted: true
+    hb0_source_vintage_class_is_local_diagnostic_must_crosswalk_down: true
+  rights_safe_macro_legs_only:                      # [AG18]
+    fred_alfred: excluded_categorically
+    fred_clause: q_do_not_ingest_binds_all_use_classes_incl_display_tier
+    pmms:
+      status: held
+      reason: pit_pure_archive_but_redistribution_commercial_exploitation_terms_ambiguity
+    treasury_cmt:
+      status: pit_pure_public_domain_full_archive
+      role: primary_rate_leg_pending_pmms_resolution
+    nar_series:
+      may_be_stored: false
+      reason: nar_terms_bar_storage_in_retrieval_system_not_merely_redistribution
+      series: [existing_home_sales, housing_affordability_index]
+    affordability_leg_construction: house_constructed_from_census_nrs_price_plus_treasury_rate_plus_census_bls_income
+    affordability_leg_never: nar_or_nahb_index_adopted_directly
+    default_pit_class_without_lawful_vintages: revision_optimistic
 
 banks:                                         # [A1][A13]
   honest_historical_blocks: 3
@@ -337,6 +466,8 @@ missingness_law:                               # [A19][A20]
     metrics_reported_on: intersection_population
     dropped_row_counts_reported_by_reason: true
   era_correlated_missing_indicator_in_primary_comparison: forbidden
+  era_correlated_missing_indicator_ban_scope: every_era_correlated_metric_not_only_len_cancellation  # [AG11, restates C3]
+  era_correlated_missing_indicator_ban_examples: [len_cancellation_rate, tol_spec_homes_label_fy2023_plus, phm_unsold_split_fy2024_plus, cancellation_formula_disclosure_fy2008_fy2016]
   disclosure_alone_sufficient: false
   coverage_degradation_can_demote_or_abstain: true
   coverage_degradation_imputed_by_llm: false
@@ -368,6 +499,7 @@ stop_conditions:                               # [A25]
   - structural_epoch_not_frozen
   - criteria_commit_does_not_precede_outcome_access
   - reachable_status_table_not_recorded            # [A25] new
+  - macro_block_boundary_lacks_dated_source_receipt_and_outcome_run_would_partition_on_it  # [AG17] new
 
 prospective_law:                               # [A24]
   nightly_is_sole_forward_ledger_advancer: true
