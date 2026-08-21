@@ -696,7 +696,12 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
           <h2 class="arc-state"><span class="l-en">Most stocks are <span class="accent">advancing</span></span><span class="l-zh">多数股票<span class="accent">正在上升</span></span></h2>
           <p class="arc-stance"><span class="l-en">Good weather for fresh breakouts — but the advance is broad and mature, so <span class="em">be picky, not greedy</span>.</span><span class="l-zh">适合新突破的好天气 —— 但涨势已广且成熟，<span class="em">要挑，别贪</span>。</span></p>
           <span class="stancepill act"><span class="dot"></span>{{ t('Watch — pick spots', '观察 —— 挑准位置') }}</span>
-        {% elif weather == 'declining' %}
+        {# `_weather()` emits 'deteriorating', never 'declining' — this branch
+           was dead, so a deteriorating market fell through to the 'mixed' copy
+           and told the user to "pick spots" while >=40% of names sat in Stage 4.
+           Pre-existing defect, fixed here because the market-weather claim is
+           one of the current market-level reads Wave 8 governs. #}
+        {% elif weather == 'deteriorating' %}
           <h2 class="arc-state"><span class="l-en">Most stocks are <span class="accent s4">declining</span></span><span class="l-zh">多数股票<span class="accent s4">正在下行</span></span></h2>
           <p class="arc-stance"><span class="l-en">Downtrends dominate — bounces here tend to fail. <span class="em">Stand aside; don't chase strength in weak names.</span></span><span class="l-zh">下行趋势主导 —— 此时的反弹往往失败。<span class="em">观望；别在弱势股里追强。</span></span></p>
           <span class="stancepill stand"><span class="dot"></span>{{ t('Stand aside', '暂时观望') }}</span>

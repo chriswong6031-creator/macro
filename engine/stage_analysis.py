@@ -1755,13 +1755,16 @@ def _resolve_target_stage_week_detail(dr: Path,
         }
     spy_week = str(spy_week)
 
-    # Population modal completed week (ties -> the LATER week).
+    # Population modal completed week (ties -> the LATER week). `str(wk)` is
+    # load-bearing: a classify shim returning a date object would otherwise make
+    # the max()/comparison below raise TypeError out of this fail-open engine.
     week_counts: dict[str, int] = {}
     for res in classified.values():
         if not res:
             continue
         wk = res.get("stage_week_end")
         if wk:
+            wk = str(wk)
             week_counts[wk] = week_counts.get(wk, 0) + 1
 
     if not week_counts:
@@ -1773,12 +1776,36 @@ def _resolve_target_stage_week_detail(dr: Path,
 
     modal_week = max(week_counts.items(), key=lambda kv: (kv[1], kv[0]))[0]
 
+    # THE MODE IS THE TARGET IN EVERY CASE — never min(spy, modal).
+    #
+    # An earlier draft capped the mode at SPY's week "whichever direction the
+    # divergence runs". That cap is two-sided and INVERTS the population when the
+    # BENCHMARK store is the one that freezes: SPY stuck at 2026-06-26 while 2,600
+    # names classify to 2026-08-14 makes min() pick June, so the ~100 genuinely
+    # stale rows become `stage_current=True` (and get stamped that way into the
+    # machine snapshot, which the §4.2 consumer gate then passes) while the 2,600
+    # current rows are marked stale. Single-store freezes are the norm here — see
+    # research/STAGE_OBSERVATION_TRUTH_WAVE8.md §9, 183 frozen OHLCV files with a
+    # tripwire blind to all of them — and data/yahoo/ can freeze the same way.
+    #
+    # Worked both directions, the modal week is correct in BOTH: SPY ahead (benign
+    # Friday store skew) -> the population's week is the valid cross-section; SPY
+    # behind (benchmark broken) -> the population's week is still the valid
+    # cross-section. min() was right in the first case only because modal < spy
+    # there. SPY's real job is corroboration, so a divergence in either direction
+    # is disclosed loudly rather than silently resolved.
+    target = modal_week
     if modal_week == spy_week:
-        target, source = spy_week, "spy_benchmark"
+        source = "spy_benchmark"
     else:
-        # Capped at SPY: never later than SPY's own completed week, whichever
-        # direction the divergence runs.
-        target, source = min(spy_week, modal_week), "population_mode_capped_at_spy"
+        source = ("population_mode_benchmark_ahead" if spy_week > modal_week
+                  else "population_mode_benchmark_lagging")
+        # Bare print, NOT a logger call: GitHub only parses a workflow command
+        # when "::" STARTS the line, and this module's logging format prefixes
+        # every record, which silently drops the annotation.
+        print(f"::warning title=stage-target-week::benchmark week {spy_week} "
+              f"diverges from the population's modal completed week {modal_week} "
+              f"— anchoring the cross-section to {target} ({source})", flush=True)
 
     return {
         "target_stage_week": target, "target_week_source": source,
@@ -1790,11 +1817,13 @@ def _resolve_target_stage_week(dr: Path,
                                classified: dict[str, dict | None]) -> tuple[str | None, str]:
     """Resolve the completed Stage week the whole cross-section is anchored to.
 
-    (week, source) — source is "spy_benchmark" (SPY and the population's modal
-    week agree, the normal case) or "population_mode_capped_at_spy" (they
-    diverge; the earlier of the two wins). `(None, "unresolved")` when SPY
-    itself cannot be classified — this resolver must run before the
-    population is partitioned (§1.2/§2.1).
+    (week, source) — the target is ALWAYS the population's modal completed week;
+    SPY corroborates but never overrides it. source is "spy_benchmark" (they
+    agree, the normal case), "population_mode_benchmark_ahead" (SPY is later —
+    benign cross-store skew) or "population_mode_benchmark_lagging" (SPY is
+    earlier — the benchmark store has frozen). `(None, "unresolved")` when SPY
+    itself cannot be classified. This resolver must run before the population is
+    partitioned (§1.2/§2.1).
     """
     d = _resolve_target_stage_week_detail(dr, classified)
     return d["target_stage_week"], d["target_week_source"]
@@ -1856,6 +1885,14 @@ def _population_receipt(current_recs: list[dict], stale_recs: list[dict],
     coverage = round(100.0 * current_n / total, 1) if total else 0.0
     issues: list[str] = []
     status = "ready"
+    # A benchmark/population week disagreement is a data-integrity alarm in BOTH
+    # directions (one of the two stores has frozen), so it is named in the receipt
+    # rather than silently resolved by the resolver. It does not suppress the
+    # render: the cross-section is still assembled at the population's own week.
+    if (spy_stage_week and population_modal_week
+            and spy_stage_week != population_modal_week):
+        status = "warn"
+        issues.append("benchmark_week_divergence")
     if coverage < 60.0:
         status = "warn"
         issues.append("current_coverage_below_floor")
@@ -1919,7 +1956,19 @@ def build_context_feed(root: Path | None = None,
     # back into `classified["SPY"]` — the spy_stage/spy_weeks market fields
     # below reuse that same result rather than classifying SPY a second time.
     # This resolver MUST run before the population is partitioned (§2.1).
-    _week_detail = _resolve_target_stage_week_detail(dr, classified)
+    # Fail-open like every other side input in this builder: a resolver that
+    # raises (a classify shim handing back an odd `stage_week_end`, an unreadable
+    # benchmark) must degrade to "no current authority" — §2.4's honest
+    # unavailable state — never take the whole nightly context build down.
+    try:
+        _week_detail = _resolve_target_stage_week_detail(dr, classified)
+    except Exception as e:  # noqa: BLE001
+        print(f"::warning title=stage-target-week::target-week resolver failed "
+              f"({e}) — no current cross-sectional authority this run", flush=True)
+        _week_detail = {
+            "target_stage_week": None, "target_week_source": "unresolved",
+            "spy_stage_week": None, "population_modal_week": None,
+        }
     target_stage_week = _week_detail["target_stage_week"]
     target_week_source = _week_detail["target_week_source"]
     spy_stage_week = _week_detail["spy_stage_week"]
@@ -2163,7 +2212,12 @@ def build_context_feed(root: Path | None = None,
         # §2.4 — no current cross-sectional authority: every counts value is
         # NULL, not zero (zero is a measurement; null is the absence of one),
         # and market.weather is null so the template's unavailable branch fires.
-        counts_full = {k: None for k in counts_full}
+        # `too_young` is EXEMPT: it counts names the classifier could not stage
+        # at all, which is measured in the record loop and does not depend on the
+        # target week. Nulling a value we did in fact measure is the mirror error
+        # of reporting zero for one we did not (§11).
+        counts_full = {k: (too_young if k == "too_young" else None)
+                       for k in counts_full}
         pct_stage2 = None
         pct_stage4 = None
         weather = None
@@ -2216,9 +2270,17 @@ def build_context_feed(root: Path | None = None,
 
     # _current_by_key is a carry-forward UNION (§5): without it, a name that
     # goes stale drops out of the key map and then fires a spurious
-    # entered_stage2 "first sighting" when it returns. Bounded by universe size.
+    # entered_stage2 "first sighting" when it returns.
+    #
+    # PRUNED to this run's universe. A plain union grows monotonically and this
+    # dict ships inside the artifact the client downloads, so a name that leaves
+    # the roster for good would keep its last-known stage dict forever. Pruning
+    # is safe precisely because a ticker outside `tickers` cannot be classified,
+    # so it can never come back as a current row needing a diff base.
     old_current_by_key = (old_contract or {}).get("_current_by_key") or {}
-    current_by_key_union = dict(old_current_by_key)
+    _universe_keys = set(tickers)
+    current_by_key_union = {k: v for k, v in old_current_by_key.items()
+                            if k in _universe_keys}
     current_by_key_union.update(new_by_key)
 
     contract = {

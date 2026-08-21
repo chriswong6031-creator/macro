@@ -227,3 +227,93 @@ def test_no_css_width_over_100pct():
     assert widths, "expected at least one percentage width in the rendered page"
     over = [w for w in widths if float(w) > 100.0]
     assert not over, f"CSS width exceeds 100%: {over}"
+
+
+# ---------------------------------------------------------------------------
+# Wave 8 — market-weather branch reachability
+# ---------------------------------------------------------------------------
+def _render_weather(tmp_path: Path, weather: str) -> str:
+    """Render the hero with a synthetic market.weather value."""
+    base = json.loads(FIXTURE.read_text())
+    base.setdefault("market", {})["weather"] = weather
+    fx = tmp_path / f"weather_{weather}.json"
+    fx.write_text(json.dumps(base))
+    return render(REPO, fixture=fx)
+
+
+def test_deteriorating_weather_renders_the_declining_stance(tmp_path):
+    """`_weather()` emits 'deteriorating'; the hero must render the STAND-ASIDE
+    copy for it.
+
+    Regression pin: the template branched on 'declining', a value the engine
+    never emits, so the branch was dead and a deteriorating market fell through
+    to the 'mixed' copy — telling the user to "pick spots" while >=40% of names
+    sat in Stage 4. The wrong-way assertion is the point: rendering 'mixed' for
+    a deteriorating tape is the defect, not a formatting nit.
+    """
+    html = _render_weather(tmp_path, "deteriorating")
+    # "Downtrends dominate" is unique to the hero's declining stance; the bare
+    # words "Stand aside" also live in the client-side stage-label map, which
+    # renders regardless of weather, so they cannot discriminate the branch.
+    assert "Downtrends dominate" in html, (
+        "deteriorating weather must render the declining/stand-aside hero")
+    assert "No clear season" not in html, (
+        "deteriorating weather fell through to the 'mixed' stance copy")
+
+
+def test_mixed_weather_still_renders_the_mixed_stance(tmp_path):
+    html = _render_weather(tmp_path, "mixed")
+    assert "No clear season" in html
+    assert "Downtrends dominate" not in html
+
+
+def test_advancing_weather_still_renders_the_advancing_stance(tmp_path):
+    html = _render_weather(tmp_path, "advancing")
+    assert "Good weather for fresh breakouts" in html
+    assert "No clear season" not in html
+    assert "Downtrends dominate" not in html
+
+
+def test_no_target_week_renders_unavailable_not_warming_up(tmp_path):
+    """Acceptance gate §2.4: a MATURE-lane failure (no completed Stage week could
+    be resolved) must never be described as a first run.
+
+    "Warming up" is honest copy only when there is no artifact at all. Here the
+    artifact exists and is well-formed — it just has no current cross-sectional
+    authority — so the page must say so. Asserting the ABSENCE of the warm-up
+    string is the whole point of the test.
+    """
+    base = json.loads(FIXTURE.read_text())
+    base["target_stage_week"] = None
+    base.setdefault("market", {})["weather"] = None
+    base["counts"] = {k: None for k in (base.get("counts") or {"total": None})}
+    base["population"] = {
+        "status": "no_target_week", "target_stage_week": None,
+        "target_week_source": "unresolved", "spy_stage_week": None,
+        "population_modal_week": None,
+        "current": 0, "stale": 0, "unknown": 2741, "total": 2741,
+        "current_coverage_pct": None, "data_session": None,
+        "week_histogram": [], "issues": ["no_target_week"],
+    }
+    fx = tmp_path / "no_target_week.json"
+    fx.write_text(json.dumps(base))
+    html = render(REPO, fixture=fx)
+
+    assert "Stage read unavailable" in html
+    # Scoped to the HERO. The bare words "Warming up" also live in the client-side
+    # screener-table empty state, which is a DIFFERENT surface and still carries
+    # first-run copy for a mature-lane failure — tracked as PR B scope (spec §8),
+    # not something this assertion should mask.
+    assert "The first stage read runs tonight" not in html, (
+        "the hero must not describe a mature-lane failure as a first run")
+    assert "The arc fills in once the weekly classification lands" not in html
+    # The retired build-date label must not come back on this path either.
+    assert "Priced <b>" not in html
+
+
+def test_warmup_with_no_artifact_still_says_warming_up():
+    """The genuine first-run state keeps its warm-up copy — the §2.4 unavailable
+    branch must not swallow it."""
+    html = _render_warmup()
+    assert "The first stage read runs tonight" in html
+    assert "Stage read unavailable" not in html

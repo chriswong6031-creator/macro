@@ -571,6 +571,50 @@ def test_stage_week_advance_fires_genuine_transitions(env):
     assert c["prev_state"]["stage_week"] == prior_week
 
 
+def test_same_stage_week_roll_preserves_a_NON_EMPTY_change_set(env):
+    """The "not WIPED" half of §5, which the sibling test above cannot reach.
+
+    That test starts from an empty prior contract, so every day it asserts an
+    EMPTY item list — which would also pass if a same-week rerun silently wiped
+    a real change set. Here day 1 starts from a prior contract on a DIFFERENT
+    Stage week, so it produces a genuinely non-empty `items`; the wall clock then
+    rolls twice with the Stage week held constant, and the change set must come
+    back byte-identical: neither wiped nor duplicated.
+    """
+    dr, _ = env
+    outpath = dr / "stage_analysis" / "context" / "latest.json"
+    outpath.parent.mkdir(parents=True, exist_ok=True)
+    outpath.write_text(json.dumps({
+        "schema": "stage_context.v1",
+        "asof": "2026-07-10",
+        "target_stage_week": "2026-07-10",
+        "_current_by_key": {
+            "NVDA": {"stage": 1, "fresh": False, "event": None},  # -> entered_stage2
+            "AVGO": {"stage": 2, "fresh": True, "event": None},
+        },
+        "prev_state": {"asof": "2026-07-03", "stage_week": "2026-07-03", "by_key": {}},
+    }))
+
+    day1 = sa.build_context_feed(root=dr, asof="2026-07-17")
+    items1 = day1["changes"]["items"]
+    assert items1, "day 1 must produce a NON-EMPTY change set for this test to mean anything"
+    assert ("entered_stage2", "NVDA") in {(i["kind"], i["ticker"]) for i in items1}
+    new_today1 = day1["counts"]["new_today"]
+    assert new_today1 >= 1
+
+    # Wall clock rolls; Stage week does not.
+    day2 = sa.build_context_feed(root=dr, asof="2026-07-18")
+    assert day2["target_stage_week"] == day1["target_stage_week"]
+    assert day2["changes"]["items"] == items1, (
+        "a same-Stage-week rerun must PRESERVE the change set, not wipe it")
+    assert day2["counts"]["new_today"] == new_today1, (
+        "new_today must neither reset to 0 nor double-count on a clock roll")
+
+    day3 = sa.build_context_feed(root=dr, asof="2026-07-19")
+    assert day3["changes"]["items"] == items1
+    assert day3["counts"]["new_today"] == new_today1
+
+
 # ---------------------------------------------------------------------------
 # 6. Forward ledger dedup — same-day re-runs never duplicate.
 # ---------------------------------------------------------------------------
@@ -1215,11 +1259,22 @@ def test_snapshot_unreadable_existing_file_refuses_overwrite(tmp_path, capsys):
     assert warn_lines and warn_lines[0].startswith("::warning")
 
 
-def test_snapshot_excludes_stale_rows_and_downstream_pool_cannot_reacquire(tmp_path, capsys):
-    """Wave 8 §4.1/§4.2 end-to-end: a stale per-row entry cannot enter current
-    Stage marketing candidates even though the GLOBAL snapshot date is fresh —
-    it is never admitted to the snapshot at all, so a downstream candidate
-    pool has no row to reacquire."""
+def test_snapshot_excludes_stale_rows_so_no_pool_can_reacquire_them(tmp_path, capsys):
+    """Wave 8 §4.1 (PRODUCER half): a stale per-row entry is never admitted to
+    the snapshot even though the GLOBAL snapshot date is fresh, so a downstream
+    candidate pool has no row to reacquire in the first place.
+
+    The CONSUMER half — `stage2_leaders` / `stage_transitions` refusing a stale
+    row — is pinned in `tests/test_marketing_supply_feeds.py` (all four ladder
+    rungs), deliberately NOT here. This suite runs in the `unrun-picks-boards`
+    job, which is `scope: exclusive`: a single
+    `from engine.marketing.attention_source import ...` in this file drags the
+    whole `engine/marketing/*` closure (plus `lib.pages` -> `scripts/*`) into
+    that job's curated `paths:`, which covers none of it — measured 78
+    uncovered modules, contract-delta red. Same reasoning the job's own
+    comments record for `scripts.build_site`. Keep marketing imports out of
+    this file.
+    """
     dr = tmp_path / "data"
     recs = _snap_recs(2, current=True) + _snap_recs(1, current=False)
     recs[-1] = dict(recs[-1], ticker="FROZEN")  # avoid the SNP0/SNP1 id collision
@@ -1234,10 +1289,6 @@ def test_snapshot_excludes_stale_rows_and_downstream_pool_cannot_reacquire(tmp_p
     out = capsys.readouterr().out
     warn = [l for l in out.splitlines() if "excluded from the" in l]
     assert warn and warn[0].startswith("::warning")
-
-    from engine.marketing.attention_source import stage2_leaders
-    rows = stage2_leaders(dr, 10, as_of="2026-08-20")
-    assert "FROZEN" not in {r["ticker"] for r in rows}
 
 
 def test_snapshot_refuses_to_advance_without_a_target_stage_week(tmp_path, capsys):
@@ -1267,12 +1318,10 @@ def test_target_week_resolver_agrees_with_spy_when_population_matches(tmp_path):
     assert source == "spy_benchmark"
 
 
-def test_target_week_resolver_caps_at_spy_when_population_mode_diverges(tmp_path):
-    """Spec amendment: SPY resolves to a LATER week (its store — data/yahoo/ —
-    ran a week ahead of data/baskets/ohlcv/) while the population's modal
-    completed week is earlier. target_stage_week is the EARLIER of the two
-    (capped at SPY), source is 'population_mode_capped_at_spy', and that
-    earlier week's population is CURRENT — not mass-stale."""
+def test_target_week_resolver_uses_mode_when_benchmark_runs_ahead(tmp_path):
+    """SPY's store (data/yahoo/) ran a week ahead of data/baskets/ohlcv/. The
+    target is the POPULATION's modal week, so that week's names stay CURRENT
+    instead of the whole cross-section going mass-stale on a benign store skew."""
     classified = {
         "SPY": {"stage": 2, "stage_week_end": "2026-08-21"},
         "AAA": {"stage": 2, "stage_week_end": "2026-08-14"},
@@ -1281,9 +1330,52 @@ def test_target_week_resolver_caps_at_spy_when_population_mode_diverges(tmp_path
     }
     week, source = sa._resolve_target_stage_week(tmp_path, classified)
     assert week == "2026-08-14"
-    assert source == "population_mode_capped_at_spy"
+    assert source == "population_mode_benchmark_ahead"
     for tk in ("AAA", "BBB", "CCC"):
         assert classified[tk]["stage_week_end"] == week  # genuinely CURRENT
+
+
+def test_target_week_resolver_does_not_invert_when_benchmark_lags(tmp_path):
+    """REGRESSION PIN for the two-sided-cap inversion (adversarial review
+    2026-08-20).
+
+    An earlier draft used ``min(spy_week, modal_week)``. When the BENCHMARK
+    store is the one that freezes — SPY stuck in June while the universe
+    advances to August — that cap picked SPY's June week, which flipped the
+    partition inside out: the handful of genuinely stale June rows became
+    ``stage_current=True`` (and would have been stamped that way into the
+    machine snapshot, which the consumer gate then passes) while the whole
+    current population was marked stale. Single-store freezes are the norm in
+    this repo, so this was one file-freeze away from publishing June as today.
+
+    The mode is the target in BOTH divergence directions. Asserting the
+    NEGATIVE is the point: `week != spy` is what min() would have violated.
+    """
+    classified = {
+        "SPY": {"stage": 2, "stage_week_end": "2026-06-26"},   # frozen benchmark
+        "AAA": {"stage": 2, "stage_week_end": "2026-08-14"},
+        "BBB": {"stage": 1, "stage_week_end": "2026-08-14"},
+        "CCC": {"stage": 4, "stage_week_end": "2026-08-14"},
+        "OLD": {"stage": 2, "stage_week_end": "2026-06-26"},   # genuinely stale
+    }
+    week, source = sa._resolve_target_stage_week(tmp_path, classified)
+    assert week == "2026-08-14", "benchmark lag must not drag the target backwards"
+    assert week != "2026-06-26", "min(spy, modal) would have inverted the population"
+    assert source == "population_mode_benchmark_lagging"
+
+
+def test_target_week_resolver_tolerates_a_non_string_week(tmp_path):
+    """A classify shim handing back a `date` object must not raise out of this
+    fail-open engine (the resolver coerces with str())."""
+    from datetime import date as _date
+    classified = {
+        "SPY": {"stage": 2, "stage_week_end": "2026-08-14"},
+        "AAA": {"stage": 2, "stage_week_end": _date(2026, 8, 14)},
+        "BBB": {"stage": 1, "stage_week_end": "2026-08-14"},
+    }
+    week, source = sa._resolve_target_stage_week(tmp_path, classified)
+    assert week == "2026-08-14"
+    assert source == "spy_benchmark"
 
 
 def test_build_context_feed_uses_population_mode_when_spy_diverges(env, monkeypatch):
@@ -1296,7 +1388,7 @@ def test_build_context_feed_uses_population_mode_when_spy_diverges(env, monkeypa
     monkeypatch.setattr(sa, "_classify_one", lambda tk: (tk, m.get(tk)))
     contract = sa.build_context_feed(root=dr, asof="2026-07-17")
     assert contract["target_stage_week"] == _FAKE_STAGE_WEEK
-    assert contract["target_week_source"] == "population_mode_capped_at_spy"
+    assert contract["target_week_source"] == "population_mode_benchmark_ahead"
     assert contract["population"]["status"] in ("ready", "warn")
     assert contract["counts"]["total"] and contract["counts"]["total"] > 0
     assert contract["top_stage2"], "population must stay current, not mass-evicted"

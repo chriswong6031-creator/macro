@@ -95,27 +95,56 @@ _resolve_target_stage_week(dr, classified) -> (week: str|None, source: str)
   current cross-sectional authority (§2.4).
 - Compute `population_modal_week` = the most common `stage_week_end` across the
   classified records (argmax; ties broken by taking the LATER week).
-- **`target_stage_week = min(spy_stage_week, population_modal_week)`** — the modal
-  week, capped so it is never ahead of the benchmark's own completed week.
-  - `target_week_source = "spy_benchmark"` when the two agree (the normal case).
-  - `target_week_source = "population_mode_capped_at_spy"` when they diverge.
+- **`target_stage_week = population_modal_week`.** The modal week is the only week
+  that actually has a comparable cross-section, so it is the target in every case.
+  SPY is required as a corroborating benchmark but **never overrides the mode**.
+  - `target_week_source = "spy_benchmark"` — the two agree (the normal case).
+  - `target_week_source = "population_mode_benchmark_ahead"` — SPY is later.
+  - `target_week_source = "population_mode_benchmark_lagging"` — SPY is earlier.
+- Any divergence adds the issue `benchmark_week_divergence` to the receipt and
+  emits `::warning title=stage-target-week::` naming BOTH weeks.
 - Record BOTH `spy_stage_week` and `population_modal_week` in the receipt (§2.5) so
   the resolution is fully auditable.
 
-**Why the cap rather than SPY alone.** SPY and the universe live in *different
-stores* — `data/yahoo/SPY.parquet` versus `data/baskets/ohlcv/` — refreshed by
-different collectors. Measured 2026-08-20 they agree (both max Aug 20 → completed
-week Aug 14), but a one-day drift that crosses a Friday flips SPY to its own new
-week while the universe still sits on the prior one. Under a SPY-only rule that
-benign store-timing skew would mark the ENTIRE population stale and black out a
-market read that is perfectly valid — `weekly_frame` computes each name's Mansfield
-RS on that name's own weekly grid with the benchmark reindexed and forward-filled
-onto it (`bw.reindex(wclose.index, method="ffill")`), so a cross-section assembled
-at the shared modal week is genuinely comparable even when SPY's tape runs a week
-longer. The cap keeps the benchmark authoritative about how far forward we may
-claim to see, while the population decides which week actually has a comparable
-cross-section. Both candidates come from `_w_fri_completed`, so this is still one
-Stage calendar, and no threshold or day-count is involved.
+**Why the mode, and why NOT `min(spy, modal)`.** An earlier draft of this section
+specified `min(spy_stage_week, population_modal_week)`. **That was wrong and is
+superseded** — adversarial review (2026-08-20) proved the cap is two-sided and
+inverts the population whenever the benchmark store is the one that freezes:
+
+> `data/yahoo/SPY.parquet` freezes for a week while `data/baskets/ohlcv/` keeps
+> advancing. SPY classifies to `2026-06-26`, 2,600 names classify to `2026-08-14`,
+> and `min()` picks **`2026-06-26`**. `stage_current` is then `True` for the ~100
+> genuinely stale June rows and `False` for the 2,600 current ones. Counts,
+> weather, `top_stage2`, the change feed and `data_session` all recompute from the
+> June rows, and `append_stage_snapshot` stamps those June rows `stage_current=True`
+> into the machine snapshot — so the §4.2 consumer gate *passes* them. The wave's
+> stated goal is achieved exactly in reverse, behind nothing louder than a
+> coverage warning.
+
+This is not hypothetical: §9 records that single-store freezes are the norm here
+(183 frozen OHLCV files, a 110-file cluster, and a tripwire blind to all of it).
+`data/yahoo/` can freeze the same way.
+
+Working both directions through, the correct target is the **modal week in both**:
+SPY ahead (benign Friday skew) → the population's week is the valid cross-section;
+SPY behind (benchmark store broken) → the population's week is still the valid
+cross-section. `min()` happened to be right in the first case only because
+`modal < spy` there. So the mode is the rule, and SPY's real job is corroboration:
+it is our independent read of what week the market is in, and a divergence in
+either direction is a data-integrity alarm — which is why divergence is disclosed
+loudly rather than silently resolved.
+
+A stale benchmark degrades Mansfield RS (each name's RS is computed on its own
+weekly grid with the benchmark reindexed and forward-filled,
+`bw.reindex(wclose.index, method="ffill")`), but RS is one scoring input among
+several and the stage classification itself — price versus the 30-week MA — does
+not depend on SPY at all. Degrading one input with a loud warning is strictly
+better than inverting the entire population. SPY remains REQUIRED: an unclassifiable
+SPY still yields `(None, "unresolved")` and no current authority (§2.4), because
+that failure also tells us the classifier or benchmark store is broken.
+
+No threshold or day-count is involved, and both candidate weeks still come from
+`_w_fri_completed`, so there remains exactly one Stage calendar.
 
 Verified against the real completed-week machinery: tapes ending Thu Aug 20, Wed
 Aug 19, Mon Aug 17 and Fri Aug 14 ALL resolve to completed week `2026-08-14`;
@@ -551,6 +580,20 @@ Return a small report `(copied, revoked, stale)` and log it.
 
 Client: an artifact that 404s already lands in the existing `.catch()` branches;
 those must render a mature-lane unavailable state, **not** "warming up" copy.
+
+**Concrete instance found while testing PR A (2026-08-20).** The screener table's
+client-side empty state in `templates/stage_analysis.html.j2` still reads:
+
+> `Warming up` / `The screener table is generated tonight. Check back after the
+> first stage run.` (ZH `正在预热` / `选股器表格今晚生成。首次阶段运行后再来查看。`)
+
+That fires whenever `stagedata/screener.json` fails to load — including on a mature
+lane whose artifact was revoked by §8 — so a production failure reads as a first
+run. PR A fixed the equivalent copy in the HERO (§2.4) and its render test is
+deliberately scoped to the hero so it does not mask this one. Sweep the remaining
+per-surface `.catch()` empty states (screener, boards, industry, earnings, altdata,
+research) and give each a mature-lane unavailable state distinct from genuine
+first-run copy.
 
 ---
 
