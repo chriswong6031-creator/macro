@@ -16,10 +16,10 @@
   "engine_version": "theme_graph.v1",
   "era": "observed",
   "identity_resolution_state_counts": {
-    "DEFERRED_IDENTITY_EXCEPTION": 1,
+    "DEFERRED_IDENTITY_EXCEPTION": 2,
     "ENTITY_TYPE_CONFLICT": 1,
-    "NOT_IN_MASTER": 737,
-    "RESOLVED": 1833,
+    "NOT_IN_MASTER": 229,
+    "RESOLVED": 2341,
     "UNSUPPORTED_MARKET": 233
   },
   "lane": "nightly",

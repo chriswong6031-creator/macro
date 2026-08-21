@@ -12445,6 +12445,9 @@ jobs:
       # binding spec path as a string; contract-delta requires declared paths
       # to cover it (widening is the safe direction).
       - research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md
+      # V4-D2B2-US: same shape — the us_gmi_admission receipt block names its
+      # binding contract path as a string.
+      - research/prophet_v4/d2/D2B2_US_FROZEN_CONTRACT_2026-08-21.md
       - .github/ci/legacy-jobs.yml
       - .github/workflows/ci.yml
       - config/dataset_registry.yml

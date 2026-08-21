@@ -15,6 +15,7 @@ carrying ONLY the historical vendor space under test.
 from __future__ import annotations
 
 import json
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -27,6 +28,9 @@ from lib import config as lib_config
 from lib.dataos.identity import AliasRow, VendorAliasTable
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from scripts import build_security_master as BUILD  # noqa: E402
+
 NODES_PATH = ROOT / "data" / "theme_graph" / "nodes.parquet"
 MASTER_PATH = ROOT / "data" / "reference" / "security_master.parquet"
 BAKED_IDRES_PATH = ROOT / "data" / "theme_graph" / "identity_resolution.parquet"
@@ -797,3 +801,141 @@ def test_r1_section_6_1_the_four_sidecar_assertions_against_the_committed_parque
 
     # 4. Zero sidecar cells reference the superseded SEC:US-XNYS-VMRK id at all.
     assert not (current_view["security_id"] == "SEC:US-XNYS-VMRK").any()
+
+
+# ---------------------------------------------------------------------------
+# V4-D2B2-US — GMI-U.S. canonical identity admission
+# research/prophet_v4/d2/D2B2_US_FROZEN_CONTRACT_2026-08-21.md §9 second half:
+# new-generation assertions (us RESOLVED/NOT_IN_MASTER match the master receipt's
+# own accounting), prior generations untouched (append-only history), the ca-only
+# NOT_IN_MASTER law still holds (already covered by
+# TestSection6HostileCases.test_every_ca_node_is_not_in_master above — this class
+# does not repeat it), and cn/hk unchanged.
+# ---------------------------------------------------------------------------
+
+#: The `computed_at` stamp of the FIRST generation baked after the D2B2-US GMI-U.S.
+#: admission (this builder session).  Every OLDER generation legitimately still
+#: reads us NOT_IN_MASTER for the ~508 codes this wave admitted — this is the
+#: before/after boundary the acceptance criterion's delta is drawn across, the
+#: same pattern D2B2_FIRST_COMPUTED_AT already establishes for CN/HK above.
+D2B2_US_FIRST_COMPUTED_AT = "2026-08-21T11:48:22Z"
+
+
+class TestD2B2US:
+    def test_new_generation_us_counts_match_the_master_receipts_own_accounting(
+        self, baked_idres,
+    ) -> None:
+        """The sidecar's CURRENT view (max computed_at per node) for market_scope=us
+        must agree EXACTLY with `data/reference/_receipt.json`'s `us_gmi_admission`
+        block — the two artifacts can never silently disagree (same discipline as
+        `test_cn_hk_resolution_rate_after_d2b2_matches_the_receipt` above)."""
+        current = baked_idres.loc[baked_idres.groupby("node_id")["computed_at"].idxmax()]
+        us_rows = current[current["market_scope"] == "us"]
+        assert not us_rows.empty
+        receipt = json.loads((ROOT / "data" / "reference" / "_receipt.json").read_text())
+        block = receipt["us_gmi_admission"]
+        not_in_master = us_rows[us_rows["resolution_state"] == "NOT_IN_MASTER"]
+        refused_symbols = {r["symbol"] for r in block["refusals_this_run"]}
+        sidecar_not_in_master_symbols = set(not_in_master["source_native_symbol"])
+        # AMENDMENT R13 (fix pass 2) — `resolved_total` now counts a target
+        # RESOLVED whenever an ACTIVE master row covers its identity post-run
+        # (WBS/SATS: an existing active row's identity IS already covered, via a
+        # DIFFERENT key spelling or a pre-existing symbol-directory staleness
+        # gap — disclosed as `resolved_not_rederivable`, never a refusal). This
+        # restores the STRICT bijection the v1 (pre-AMENDMENT-§2) shape claimed
+        # but did not actually hold: the sidecar's us NOT_IN_MASTER symbol set
+        # and the receipt's named refusal set are now the SAME 25 codes, one
+        # for one — reverting the containment weakening this suite carried
+        # between fix pass 1 and fix pass 2.
+        assert sidecar_not_in_master_symbols == refused_symbols, (
+            sidecar_not_in_master_symbols ^ refused_symbols
+        )
+
+        # AMENDMENT R13 — closed-set RESOLVED reconciliation. The sidecar's us
+        # RESOLVED set and the receipt's own "identity is covered by an active
+        # row" set (`ids`-resolved + `resolved_not_rederivable`, i.e. every
+        # target NOT in refusals/identity-exceptions) are not quite the SAME
+        # set — there are exactly TWO structural divergence classes, named
+        # here as a CLOSED set. A new, unnamed divergence class must fail this
+        # test rather than silently pass.
+        resolved = us_rows[us_rows["resolution_state"] == "RESOLVED"]
+        sidecar_resolved_symbols = set(resolved["source_native_symbol"])
+        # The receipt's own "identity is covered" population: every GMI-US seed
+        # code minus the registered identity exceptions (mirrors build()'s own
+        # `gmi_us_all_targets`, minus what the receipt itself already names as
+        # refused).
+        gmi_seed_codes = frozenset(s["symbol"] for s in BUILD.load_gmi_us_seeds())
+        identity_exception_keys = frozenset(BUILD.DEFERRED_IDENTITY_KEYS) | frozenset(
+            BUILD.DISCLOSED_IDENTITY_EXCEPTIONS
+        )
+        gmi_us_all_targets = gmi_seed_codes - identity_exception_keys
+        # A disclosed duplicate-claim exclusion (FISV) is DROPPED from
+        # `resolutions` before `mint_master_rows` ever runs (R3) — it is
+        # structurally NEVER part of build()'s own `ids`-covered set, so it
+        # must be subtracted here too, exactly like a refusal.
+        disclosed_exclusion_symbols = {
+            d["symbol"] for d in block["disclosed_exclusions"]
+        }
+        receipt_covered_symbols = (
+            gmi_us_all_targets - refused_symbols - disclosed_exclusion_symbols
+        )
+        # sidecar-only (RESOLVED there, but not in the receipt's "covered" set):
+        # the disclosed duplicate-claim exclusions (FISV) — resolved via rule 5
+        # against the WINNER's inception_code even though the builder's own
+        # accounting treats the LOSER as a collapsed duplicate, not a target
+        # outcome in its own right.
+        sidecar_only = sidecar_resolved_symbols - receipt_covered_symbols
+        assert sidecar_only == disclosed_exclusion_symbols, sidecar_only
+        # receipt-only (covered in the receipt's accounting, but NOT sidecar
+        # RESOLVED): the ENTITY_TYPE_CONFLICT node(s) — a real master row exists
+        # (the security master has no ETF/company kind-conflict concept at all),
+        # but the SIDECAR types the node ENTITY_TYPE_CONFLICT (D2A rule 4, an
+        # etf-kind node sharing the symbol in the SAME generation) rather than
+        # RESOLVED.
+        entity_type_conflict_symbols = set(
+            us_rows[us_rows["resolution_state"] == "ENTITY_TYPE_CONFLICT"][
+                "source_native_symbol"
+            ]
+        )
+        receipt_only = receipt_covered_symbols - sidecar_resolved_symbols
+        assert receipt_only <= entity_type_conflict_symbols, receipt_only - entity_type_conflict_symbols
+        # RESOLVED us rows all reach EITHER rule 5 (exact inception-code match) or
+        # rule 6 (vendor_alias) — never a ticker-equality fallback (module docstring).
+        resolved = us_rows[us_rows["resolution_state"] == "RESOLVED"]
+        assert set(resolved["join_method"]) <= {"master_inception_exact", "vendor_alias"}
+
+    def test_prior_generations_still_read_pre_d2b2_us_not_in_master(self, baked_idres):
+        """Append-only history is never rewritten: every generation OLDER than this
+        wave's own bake must still show the pre-admission ~533 us NOT_IN_MASTER
+        population — the SAME discipline
+        `test_every_cn_hk_node_was_not_in_master_before_d2b2` pins for CN/HK."""
+        rows = baked_idres[baked_idres["market_scope"] == "us"]
+        pre = rows[rows["computed_at"] < D2B2_US_FIRST_COMPUTED_AT]
+        assert not pre.empty, "no pre-D2B2-US us generation in the baked sidecar — fixture stale"
+        # A pre-wave generation's own NOT_IN_MASTER population must be a SUPERSET of
+        # (at least as large as) this run's remaining refusals — the admission can
+        # only ever SHRINK that set, never grow it, on any generation after the pin.
+        oldest = pre[pre["computed_at"] == pre["computed_at"].min()]
+        oldest_not_in_master = oldest[oldest["resolution_state"] == "NOT_IN_MASTER"]
+        assert len(oldest_not_in_master) >= 500, (
+            "the oldest committed us generation should still show ~533 NOT_IN_MASTER "
+            f"(pre-D2B2-US) — found {len(oldest_not_in_master)}, fixture may be stale"
+        )
+
+    def test_cn_hk_resolution_unchanged_by_the_us_admission(self, baked_idres):
+        """The D2B2-US wave touches only `market_scope=us` seeds (§0) — CN/HK's own
+        CURRENT resolution counts must stay exactly what D2B2-CN-HK left them at."""
+        current = baked_idres.loc[baked_idres.groupby("node_id")["computed_at"].idxmax()]
+        for market, expected in (("cn", 984), ("hk", 147)):
+            rows = current[current["market_scope"] == market]
+            resolved = rows[rows["resolution_state"] == "RESOLVED"]
+            assert len(resolved) == expected
+
+    def test_gold_b_deferred_identity_exception_unchanged(self, master_inputs, etf_symbols):
+        """The D2B2-US wave never touches the registered identity-exception codes
+        (§2.2) — B/GOLD stay DEFERRED_IDENTITY_EXCEPTION, exactly as
+        TestSection6HostileCases already pins for the pre-wave state."""
+        b = _resolve("co:us:B", master_inputs, etf_symbols)
+        gold = _resolve("co:us:GOLD", master_inputs, etf_symbols)
+        assert b["resolution_state"] == "DEFERRED_IDENTITY_EXCEPTION"
+        assert gold["resolution_state"] == "DEFERRED_IDENTITY_EXCEPTION"

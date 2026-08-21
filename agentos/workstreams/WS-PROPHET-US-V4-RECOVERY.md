@@ -420,7 +420,32 @@ waves:
       702 US + 984 CN + 147 HK, exactly the frozen D2B2 population. The
       canonical path primary evidence -> DataOS security master -> GMI
       identity projection is proven through the natural production topology
-      (nightly run 32426513915). No D2B2 repair authorized or required."
+      (nightly run 32426513915). No D2B2 repair authorized or required.
+      D2B2-US BUILT_NOT_PROVEN 2026-08-21 (Sol commission; frozen contract
+      research/prophet_v4/d2/D2B2_US_FROZEN_CONTRACT_2026-08-21.md +
+      AMENDMENTS §1-§2 = 16 adjudicated rulings, 3-pass opus review ending
+      PASS): start-pin 0c097d0f9621 re-census target_n 533 U.S. NOT_IN_MASTER
+      (seed-scope gap — load_universe's 710 curated keys never wired to the
+      1,238 GMI U.S. company nodes); admitted via tagged GMI-U.S. seed intake
+      through the EXISTING resolution/mint path (R1 fence live; structural
+      etf/test_issue/is_preferred eligibility on GMI-ONLY targets — legacy
+      curated keys never gated; closed EXCHANGE_MIC untouched; CIK mandatory
+      fail-closed). +508 U.S. active rows (master 1,836 → 2,344; pre-existing
+      rows byte-identical); us_gmi_admission accounting target_n 1,236 =
+      resolved_total 1,210 + 25 named typed refusals (21 not_listed_no_cik,
+      3 not_listed_cik_present, 1 unsupported_venue CBOE) + 1 disclosed
+      FISV→FI duplicate-claim exclusion, invariant fail-closed in-build;
+      resolved_not_rederivable discloses WBS/SATS (active rows the current
+      rail snapshot cannot re-derive — resolved, never refusals). Sidecar
+      rebake: us RESOLVED 702 → 1,210, NOT_IN_MASTER 533 → 25 (strict set
+      equality with receipt refusals); cn/hk/ca/intl unchanged; GMI node
+      ids/memberships untouched. PR #6190 (immutable squash SHA recorded here
+      once merged; handoff
+      agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-D2B2-US.md). DONE
+      requires the next natural production nightly showing source → master →
+      fresh GMI projection with measured before/after U.S. counts. D2B2-Canada
+      (167 ca nodes) and D2B3+ remain NOT authorized — Sol reviews after this
+      child returns."
     status: in_progress
   - id: d3
     depends_on: [d2]
