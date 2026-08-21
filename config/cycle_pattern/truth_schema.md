@@ -66,11 +66,47 @@ This ensures a machine-readable verdict artifact backs the claim.
 | `revision_optimistic` | Some features use revised macro/regime data without ALFRED vintages (P-D5-1) |
 | `mixed` | PIT-pure for the primary signal; revision-optimistic for regime features (e.g. hazard model) |
 
-## Consumer categories (non-exhaustive)
+## Consumer categories — canonical authority lives in `consumer_matrix.yml`
 
-Allowed: `measurement_surface`, `honesty_display`, `research_factory`, `hazard_cone_display`, `risk_context_strip`, `tripwire_context`, `sync_gauge_display`, `cone_rendering`, `mechanism_summary`, `hypothesis_generation`, `monitoring`
+**`config/cycle_pattern/consumer_matrix.yml` is the SINGLE canonical registry
+of `allowed_consumers`/`forbidden_consumers` vocabulary (CPI-H1, Sol ruling
+1).** This section used to carry its own competing "non-exhaustive" token
+list, which silently diverged from the matrix for years: 17 of the
+registry's 29 rows used this doc's vocabulary while 11 used the matrix's, and
+no code path checked either against the other (`research/imce/
+IMCE_A2_CPI_TRUTH_VOCABULARY_AUDIT_V1.md` findings F3/F4). This doc now
+documents the RULES; it does not maintain a second list.
 
-Forbidden (must appear in `forbidden_consumers` for null/structural truths): `board_rank`, `oracle_escalation`, `sector_central_direction_score`, `position_sizing`, `lead_lag_interaction_layer`, `ladder_calibration_input`, `high_authority_truth_evidence`
+**The rules, enforced by `engine/cycle_pattern/consumer_authority.py`
+(reused by both `validate_truth()` and the CI-wired
+`scripts/check_cycle_pattern_authority.py` scan — CPI-H1 ruling 11):**
+
+- Every `allowed_consumers`/`forbidden_consumers` token must be one of the
+  names declared in `consumer_matrix.yml`'s `surfaces:` section. Any other
+  token is rejected — with a specific "retired alias" message for the tokens
+  named in `consumer_matrix.yml`'s `retired_aliases:` map, or a generic
+  "orphan token" message otherwise.
+- **Universal money-path floor (CPI-H1 ruling 5):** `forbidden_consumers`
+  must carry all four of `board_rank`, `oracle_escalation`,
+  `sector_central_direction_score`, `position_sizing` on EVERY row,
+  regardless of `status` or `effect_class` — this resolves A2 finding F7's
+  ambiguity in favor of the "money-path-four" reading. The other three
+  schema-doc tokens (`lead_lag_interaction_layer`, `ladder_calibration_input`,
+  `high_authority_truth_evidence`) remain row/class-level narrow forbids —
+  not part of the universal floor.
+- **Row allowlists are least-privilege subsets of their status class** — a
+  row is never mechanically widened just because its status class could
+  permit a surface (CPI-H1 ruling 8).
+- A `promoted_null`-status row may never grant `neuralweb_context` in
+  `allowed_consumers` — the matrix's `promoted_null` class forbid wins over
+  any row-level grant (CPI-H1 ruling 6 / A2 finding F6).
+- `retired` and `superseded` status rows now have explicit
+  `artifact_classes` entries in the matrix (CPI-H1 ruling 7 — previously
+  undefined, A2 §3 nit).
+
+See `config/cycle_pattern/consumer_matrix.yml` for the full canonical token
+list and per-status contracts, and `research/imce/IMCE_D1C_RELEASE_RECORD.md`
+for the heal record.
 
 ## API (`engine/cycle_pattern/truths.py`)
 

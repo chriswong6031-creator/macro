@@ -518,13 +518,12 @@ _NULL_TRUTH = {
         "data/hazard/falsosc_trial_v1.json",
         "research/cycle_masterplan/PREREGISTRATION.md §18",
     ],
-    "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+    "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
     "forbidden_consumers": [
         "board_rank",
         "oracle_escalation",
         "sector_central_direction_score",
         "position_sizing",
-        "hazard_score_design",
     ],
     "falsifiers": [
         (

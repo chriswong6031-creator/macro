@@ -2,15 +2,28 @@
 # ======================================================
 # Defines which pipeline surfaces are ALLOWED or FORBIDDEN to consume each
 # class of cycle-pattern artifact.  Enforced by
-# scripts/check_cycle_pattern_authority.py (hard CI gate).
+# scripts/check_cycle_pattern_authority.py (hard CI gate, literal-path reader
+# scan) AND by engine/cycle_pattern/consumer_authority.py (the single
+# canonical consumer-vocabulary validator, reused by both
+# engine/cycle_pattern/truths.py's validate_truth() at write time and by
+# check_cycle_pattern_authority.py at CI scan time — CPI-H1 ruling 11).
 #
 # Artifact classes mirror the truth status enum in the truth registry
 # (engine/cycle_pattern/truths.py) plus two structural classes for lake
-# and candidate artifacts.
+# and candidate artifacts, and explicit retired/superseded classes
+# (CPI-H1 ruling 7 — previously undefined; see IMCE_A2_CPI_TRUTH_VOCABULARY_
+# AUDIT_V1.md §3 nit).
 #
-# Surface names are consistent with the seed truths in
-# data/cycle_pattern/truths.jsonl and the forbidden_consumers list in
-# config/cycle_pattern/truth_schema.md.
+# THIS FILE IS THE SINGLE CANONICAL REGISTRY of allowed_consumers /
+# forbidden_consumers vocabulary for the CPI truth registry (CPI-H1 ruling 1,
+# research/imce/IMCE_A2_CPI_TRUTH_VOCABULARY_AUDIT_V1.md). Prior to CPI-H1 two
+# disagreeing vocabularies coexisted (this matrix's `surfaces:` section vs.
+# config/cycle_pattern/truth_schema.md's prose "Consumer categories" list) —
+# 17 of 29 registry rows used the schema-doc's now-canonicalized aliases
+# (measurement_surface, honesty_display) undetected, because no code path
+# checked token identity (A2 F3/F4). truth_schema.md now documents this
+# authority rather than maintaining a second list. Any new consumer surface
+# MUST be added here first — the token is not valid anywhere else until it is.
 #
 # Design principles:
 #   - Allowed/forbidden lists are DISJOINT (a surface cannot appear in both).
@@ -20,8 +33,14 @@
 #     that have passed the explicit authority-grant check may consume it.
 #   - Lake artifacts (parquet data files) have a wide allowlist; only the
 #     money-path surfaces are explicitly forbidden.
+#   - EVERY truth row's forbidden_consumers must carry all four money_path
+#     tokens below, regardless of status/effect_class (CPI-H1 ruling 5) —
+#     enforced by engine/cycle_pattern/consumer_authority.py.
+#   - Row allowlists are LEAST-PRIVILEGE subsets of their status class — a
+#     row is never mechanically widened just because its class could permit
+#     a surface (CPI-H1 ruling 8).
 #
-# Schema version: v0  (2026-07-06)
+# Schema version: v0  (2026-07-06; CPI-H1 heal 2026-08-21)
 # Owner: cycle-intelligence
 
 schema_version: "v0"
@@ -29,27 +48,81 @@ owner_program: "cycle-intelligence"
 created: "2026-07-06"
 
 # ── Surface name registry ─────────────────────────────────────────────────────
-# Canonical names used throughout this file.  Adding a surface here does NOT
-# grant access — surfaces must appear in the allowed_consumers list of the
-# relevant artifact class.
+# Canonical names used throughout this file — the ONLY tokens permitted in any
+# truth row's allowed_consumers/forbidden_consumers
+# (engine/cycle_pattern/consumer_authority.py rejects any other token as an
+# orphan, with a specific "retired alias" message for the tokens named in the
+# CPI-H1 heal). Adding a surface here does NOT grant access — surfaces must
+# also appear in the allowed_consumers list of the relevant artifact class to
+# be usable by a specific status.
 surfaces:
   # Money-path surfaces (scored authority; any read of a restricted artifact
-  # by these surfaces is a HARD CI failure regardless of allowlist).
+  # by these surfaces is a HARD CI failure regardless of allowlist). Every
+  # truth row's forbidden_consumers must carry all four (CPI-H1 ruling 5) —
+  # this is the "universal money-path floor" referenced throughout this file.
   money_path:
     - board_rank
     - oracle_escalation
     - sector_central_direction_score
     - position_sizing
 
-  # Display and measurement surfaces (allowed to cite display/confirmer truths)
+  # Display, measurement, and research/documentation surfaces (allowed to
+  # cite display/confirmer truths per their status class). measurement_page
+  # and cycle_docs are the canonicalized targets of the retired
+  # measurement_surface/honesty_display aliases (CPI-H1 ruling 2); the
+  # remaining names were previously documented only in truth_schema.md's
+  # prose list and are folded in here so this file is complete (ruling 1).
   display:
     - measurement_page
     - cycle_docs
     - neuralweb_context
+    - hazard_cone_display
+    - risk_context_strip
+    - tripwire_context
+    - sync_gauge_display
+    - cone_rendering
+    - mechanism_summary
+    - hypothesis_generation
+    - monitoring
 
   # Research / factory surfaces
   research:
     - research_factory
+
+  # Narrow/contextual forbidden tokens — row- or class-specific, NOT part of
+  # the universal four-token money-path floor above (CPI-H1 ruling 5 /
+  # A2 F7: this is the "money-path-four" reading of truth_schema.md's
+  # forbidden-token requirement — these three remain row-level, not
+  # universally required).
+  narrow_forbidden:
+    - lead_lag_interaction_layer
+    - ladder_calibration_input
+    - high_authority_truth_evidence
+
+# ── Retired aliases (CPI-H1 heal; DO NOT reintroduce) ─────────────────────────
+# Tokens formerly written by one or more scripts before the vocabulary was
+# reconciled (research/imce/IMCE_A2_CPI_TRUTH_VOCABULARY_AUDIT_V1.md §1/§5/
+# §8a). engine/cycle_pattern/consumer_authority.py rejects every one of these
+# with a specific message; listed here for documentation only — this is NOT a
+# second live vocabulary. Canonicalized aliases map to their replacement;
+# retired-outright tokens map to null (no established pipeline surface named
+# this — A2 F1, CPI-H1 ruling 4; any real future surface needs its own
+# reviewed registration above, and any underlying research restriction
+# belongs in the truth's falsifiers/notes prose, not a forbidden_consumers
+# token).
+retired_aliases:
+  measurement_surface: measurement_page
+  honesty_display: cycle_docs
+  research_factory_intake: research_factory
+  display_descriptive: cycle_docs
+  display: null            # CPI-016's private vocabulary — retired to the
+  display_only: null       # ordinary promoted_null contract (ruling 3)
+  forward_allocation: null       # not an established pipeline surface (ruling 4)
+  signal_generation: null        # not an established pipeline surface (ruling 4)
+  hazard_score_design: null      # not an established pipeline surface (ruling 4)
+  hazard_baseline_override: null # latent, never-fired code token — retired
+                                  # before the branch that would have minted
+                                  # it ever fires (A2 F1, ruling 4)
 
 
 # ── Artifact classes ──────────────────────────────────────────────────────────
@@ -140,10 +213,19 @@ artifact_classes:
       - position_sizing       # requires DL-1 + DL-2 gates — not yet granted
     notes: >
       When a truth passes DL-1, its entry in truths.jsonl must be updated to
-      add the relevant money-path surface to allowed_consumers (via
-      transition_truth); the authority check re-reads truths.jsonl at scan
-      time.  No surface may self-add itself — only human_review transitions
-      may expand the allowed list for scored truths.
+      add the relevant money-path surface to allowed_consumers via a
+      human_review-driven transition_truth() call, which appends a NEW
+      versioned row (append-only — the old row is never mutated).
+      CORRECTION (CPI-H1, A2 finding F3): the authority check
+      (scripts/check_cycle_pattern_authority.py) does NOT re-read
+      truths.jsonl at scan time — it is a literal-path reader-module scan
+      with no knowledge of this file's content at all. Consumer-vocabulary
+      content, including this expansion rule, is enforced separately by
+      engine/cycle_pattern/consumer_authority.py at truth-write time (via
+      validate_truth()) and by check_cycle_pattern_authority.py's CI-wired
+      registry scan (CPI-H1 ruling 11/12). No surface may self-add itself —
+      only an explicit human_review transition may expand the allowed list
+      for scored truths.
 
   # ── candidates ────────────────────────────────────────────────────────────
   # Proposed / registered / screened candidates in the Research Factory;
@@ -192,3 +274,43 @@ artifact_classes:
       the raw lake files.  Direct reads of data/cycle_pattern/*.parquet by
       NW cortex modules are a WARN-level finding (not HARD) unless the module
       is also in the money-path set.
+
+  # ── retired ───────────────────────────────────────────────────────────────
+  # No longer active (status=retired in truths.jsonl); excluded from
+  # active_truths(). Previously undefined in this file — CPI-H1 ruling 7
+  # (A2 §3 nit: retired/superseded answered to no artifact_classes entry).
+  - class: retired
+    description: >
+      Retired truth (status=retired in truths.jsonl). Excluded from
+      active_truths(). Memory is preserved for provenance per
+      truth_schema.md's append-only design principle, but a retired truth
+      must never feed board_rank, oracle_escalation,
+      sector_central_direction_score, or position_sizing, and must not be
+      cited by the NW lobe as live context — it is historical record only.
+    allowed_consumers:
+      - cycle_docs            # historical record / provenance display
+      - research_factory      # factory lifecycle audit trail
+    forbidden_consumers:
+      - board_rank
+      - oracle_escalation
+      - sector_central_direction_score
+      - position_sizing
+      - neuralweb_context      # retired truths are not live NW context
+
+  # ── superseded ────────────────────────────────────────────────────────────
+  # Replaced by a newer truth (status=superseded in truths.jsonl); same
+  # posture as retired. Previously undefined in this file — CPI-H1 ruling 7.
+  - class: superseded
+    description: >
+      Superseded truth (status=superseded in truths.jsonl). Excluded from
+      active_truths(). Same posture as retired: memory preserved for
+      provenance, never a money-path or live NW-context input.
+    allowed_consumers:
+      - cycle_docs
+      - research_factory
+    forbidden_consumers:
+      - board_rank
+      - oracle_escalation
+      - sector_central_direction_score
+      - position_sizing
+      - neuralweb_context

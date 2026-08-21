@@ -687,8 +687,25 @@ def _write_truths_entry(verdict_status: str, scorecard: dict) -> None:
         ),
         "era_stability": "unknown",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["display", "hazard_baseline_override" if verdict_status == "scored" else "display_only"],
-        "forbidden_consumers": ["forward_allocation", "signal_generation"],
+        # Canonical consumer_matrix.yml vocabulary (CPI-H1 ruling 3/4/10): the
+        # private display/display_only + hazard_baseline_override/
+        # forward_allocation/signal_generation tokens this used to mint are
+        # retired — they were never established pipeline surfaces (A2 F1).
+        # Use the ordinary per-status artifact_classes contract instead; a
+        # 'scored' verdict gets the matrix's scored-class allowlist (context
+        # only — no money-path grant is minted here), 'promoted_null' gets
+        # the ordinary promoted_null contract.
+        "allowed_consumers": (
+            ["measurement_page", "cycle_docs", "research_factory", "neuralweb_context"]
+            if verdict_status == "scored"
+            else ["measurement_page", "cycle_docs", "research_factory"]
+        ),
+        "forbidden_consumers": [
+            "board_rank",
+            "oracle_escalation",
+            "sector_central_direction_score",
+            "position_sizing",
+        ],
         "falsifiers": [
             "phase_clock_no_lift: phase-conditioned 6m Brier not strictly below KM for >=2/3 families on post-2010 OOS"
         ],

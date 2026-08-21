@@ -69,7 +69,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -134,8 +134,8 @@ TRUTHS: list[dict] = [
         "era_stability": "fragile",
         "pit_class": "pit_pure",
         "allowed_consumers": [
-            "measurement_surface",
-            "honesty_display",
+            "measurement_page",
+            "cycle_docs",
             "risk_context_strip",
             "research_factory",
         ],
@@ -208,7 +208,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -272,7 +272,7 @@ TRUTHS: list[dict] = [
         "era_stability": "stable",
         "pit_class": "mixed",
         "allowed_consumers": [
-            "measurement_surface",
+            "measurement_page",
             "hazard_cone_display",
             "research_factory",
             "tripwire_context",
@@ -351,7 +351,7 @@ TRUTHS: list[dict] = [
         "era_stability": "stable",
         "pit_class": "mixed",
         "allowed_consumers": [
-            "measurement_surface",
+            "measurement_page",
             "hazard_cone_display",
             "research_factory",
             "tripwire_context",
@@ -419,7 +419,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "mixed",
-        "allowed_consumers": ["measurement_surface", "research_factory"],
+        "allowed_consumers": ["measurement_page", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -487,7 +487,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -561,7 +561,7 @@ TRUTHS: list[dict] = [
         "era_stability": "stable",
         "pit_class": "pit_pure",
         "allowed_consumers": [
-            "measurement_surface",
+            "measurement_page",
             "sync_gauge_display",
             "research_factory",
         ],
@@ -639,7 +639,7 @@ TRUTHS: list[dict] = [
         "era_stability": "unknown",
         "pit_class": "revision_optimistic",
         "allowed_consumers": [
-            "measurement_surface",
+            "measurement_page",
             "research_factory",
         ],
         "forbidden_consumers": [
@@ -713,7 +713,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -780,15 +780,16 @@ TRUTHS: list[dict] = [
         "era_stability": "stable",
         "pit_class": "pit_pure",
         "allowed_consumers": [
-            "measurement_surface",
+            "measurement_page",
             "cone_rendering",
-            "honesty_display",
+            "cycle_docs",
             "research_factory",
         ],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
             "position_sizing",
+            "sector_central_direction_score",
         ],
         "falsifiers": [
             "If after applying cone_recalibration.json multipliers the forward-only "
@@ -852,7 +853,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -922,8 +923,8 @@ TRUTHS: list[dict] = [
         "era_stability": "stable",
         "pit_class": "pit_pure",
         "allowed_consumers": [
-            "measurement_surface",
-            "display_descriptive",
+            "measurement_page",
+            "cycle_docs",
             "research_factory",
         ],
         "forbidden_consumers": [
@@ -996,8 +997,8 @@ TRUTHS: list[dict] = [
         "era_stability": "unknown",
         "pit_class": "pit_pure",
         "allowed_consumers": [
-            "measurement_surface",
-            "honesty_display",
+            "measurement_page",
+            "cycle_docs",
             "research_factory",
             "monitoring",
         ],
@@ -1081,7 +1082,7 @@ TRUTHS: list[dict] = [
         "allowed_consumers": [
             "mechanism_summary",
             "hypothesis_generation",
-            "research_factory_intake",
+            "research_factory",
         ],
         "forbidden_consumers": [
             "board_rank",

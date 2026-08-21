@@ -9,10 +9,24 @@ HARD FAIL with a clear message.  Money-path surfaces (board_rank,
 oracle_escalation, sector_central_direction_score, position_sizing) yield a
 HARD finding regardless of any allowlist.
 
+CPI-H1 EXTENSION (ruling 11/12): this scan is a LITERAL-PATH reader-module
+scan only — it has never had any concept of the CONTENT of
+``data/cycle_pattern/truths.jsonl`` (research/imce/
+IMCE_A2_CPI_TRUTH_VOCABULARY_AUDIT_V1.md finding F3/F6). A second, additive
+check now runs alongside it (never replacing it): every truth registry row's
+``allowed_consumers``/``forbidden_consumers`` tokens are validated against
+the canonical vocabulary in ``consumer_matrix.yml`` via
+``engine/cycle_pattern/consumer_authority.py`` — the SAME module
+``engine/cycle_pattern/truths.py``'s ``validate_truth()`` uses at write time.
+Only each truth_id's LATEST version is checked (the registry is
+append-only — a historical row written before a vocabulary heal can never be
+corrected in place; see IMCE_D1C_RELEASE_RECORD.md).
+
 Exit codes
 ----------
 0 : No violations found (clean).
-1 : One or more HARD violations found.
+1 : One or more HARD violations found (literal-path scan OR registry
+    vocabulary scan).
 
 Allowlist
 ---------
@@ -52,6 +66,12 @@ import json as _json_mod
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+sys.path.insert(0, str(ROOT))
+from engine.cycle_pattern.consumer_authority import (  # noqa: E402
+    validate_registry as _validate_consumer_registry,
+)
+from engine.cycle_pattern.truths import TRUTHS_PATH, load_truths  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Scan pattern
@@ -220,6 +240,33 @@ def scan(root: Path,
 
     findings.sort(key=lambda f: (f["module"], f["line_no"]))
     return findings
+
+
+# ---------------------------------------------------------------------------
+# Registry consumer-vocabulary scan (CPI-H1 extension — additive, never
+# replaces the literal-path scan above)
+# ---------------------------------------------------------------------------
+
+def scan_registry_vocabulary(root: Path, path: Path | None = None) -> list[str]:
+    """Validate every truth_id's LATEST version against the canonical matrix.
+
+    Returns a list of error strings (empty = clean). Historical (non-latest)
+    versions are never checked here — the registry is append-only, so an old
+    row written before a vocabulary heal can never be corrected in place.
+    """
+    truths_path = path if path is not None else (root / "data" / "cycle_pattern" / "truths.jsonl")
+    rows = load_truths(truths_path)
+    if not rows:
+        return []
+
+    latest: dict[str, dict] = {}
+    for row in rows:
+        tid = row.get("truth_id", "")
+        prev = latest.get(tid)
+        if prev is None or row.get("version", 0) > prev.get("version", 0):
+            latest[tid] = row
+
+    return _validate_consumer_registry(list(latest.values()))
 
 
 # ---------------------------------------------------------------------------
@@ -396,12 +443,29 @@ def main() -> int:
             f"recorded in the truth registry (CPI governance).",
             file=sys.stderr,
         )
+
+    # ── CPI-H1: registry consumer-vocabulary scan (additive, never replaces
+    # the literal-path scan above) ─────────────────────────────────────────
+    vocab_errors = scan_registry_vocabulary(root)
+    if vocab_errors:
+        for err in vocab_errors:
+            print(f"  [HARD] consumer-vocabulary: {err}", file=sys.stderr)
+        print(
+            f"\n::error::check_cycle_pattern_authority: {len(vocab_errors)} "
+            f"truth registry row(s) fail consumer-vocabulary validation "
+            f"against config/cycle_pattern/consumer_matrix.yml (CPI-H1). "
+            f"See engine/cycle_pattern/consumer_authority.py.",
+            file=sys.stderr,
+        )
+
+    if hard or vocab_errors:
         return 1
 
-    if not findings:
+    if not findings and not vocab_errors:
         print(
             "check_cycle_pattern_authority: OK — "
-            "no money-path modules read data/cycle_pattern/."
+            "no money-path modules read data/cycle_pattern/, and the truth "
+            "registry's consumer vocabulary is canonical."
         )
     return 0
 
