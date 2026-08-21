@@ -61,3 +61,8 @@ higher-priority keyword (investigation/inquiry_letter/holder_change families)
 classifies away from the visits plane by design. On 2026-08-20 that loss was
 zero (73/73 agreement), but a future zero-or-low day should re-run the raw
 keyword scan against stored categories before trusting the candidate count.
+
+P1-R1 (PR #6142) moved china_visits into the cninfo host group directly after
+china_filings, so the serial-before-source ordering this landmine describes is
+historical for THIS pair; the trap still applies to any future derived
+collector wired serial-before-its-concurrent-source.

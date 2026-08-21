@@ -32,6 +32,21 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
+# P1-R1 same-cycle derivation contract: process-local outcome of the MOST RECENT
+# fetch() call in THIS process. Read by collectors/china_visits.py when both run in
+# one collect invocation (same cninfo host-group thread, china_filings then
+# china_visits — see scripts/collect.py _CONCURRENT_HOSTS). None means china_filings
+# has not run in this process (e.g. `--only china_visits`) and the derived plane
+# then reads the committed store — the legitimate proof/debug path. Set FAIL-CLOSED
+# at fetch() entry so an escape (an exception that somehow skips every later
+# assignment) reads as a failed refresh, never as "not run". Process-local by
+# design, never persisted to disk — a sidecar file would make a later
+# `--only china_visits` run inherit a stale verdict from a prior process. Exchange
+# budget truncation (_EXCHANGE_BUDGET_S) is deliberately NOT a degradation signal
+# here: it is self-healing by design (keep-FIRST dedup + the 3-day re-pull), so a
+# truncated-but-successful exchange still counts as ok.
+LAST_RUN_OUTCOME: dict | None = None
+
 # ------------------------------------------------------------------ constants --
 
 _BROWSER_UA = (
@@ -404,6 +419,14 @@ class ChinaFilingsAdapter(Adapter):
         date_range = self._date_range(full_history)
         collected_at = datetime.now(timezone.utc).isoformat()
 
+        global LAST_RUN_OUTCOME
+        LAST_RUN_OUTCOME = {
+            "ok": False,
+            "errors": ["refresh started but did not complete"],
+            "per_exchange": {},
+            "at": collected_at,
+        }
+
         session = requests.Session()
         all_rows: list[dict] = []
         per_exchange: dict[str, int] = {}
@@ -425,6 +448,12 @@ class ChinaFilingsAdapter(Adapter):
                 )
 
         if not all_rows and errors:
+            LAST_RUN_OUTCOME = {
+                "ok": False,
+                "errors": errors,
+                "per_exchange": per_exchange,
+                "at": collected_at,
+            }
             raise RuntimeError(
                 "china_filings: all exchanges failed — " + " | ".join(errors)
             )
@@ -434,6 +463,12 @@ class ChinaFilingsAdapter(Adapter):
             "china_filings: %d raw rows collected, %d net-new stored (%s)",
             len(all_rows), net_new, per_exchange,
         )
+        LAST_RUN_OUTCOME = {
+            "ok": not errors,
+            "errors": errors,
+            "per_exchange": per_exchange,
+            "at": collected_at,
+        }
 
         # Summary frame — DatetimeIndex is required by base.validate() /
         # store.upsert(). Follow china_official_corpora precedent (line 468):

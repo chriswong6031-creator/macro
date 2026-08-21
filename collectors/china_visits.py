@@ -38,6 +38,23 @@ source failure) degrades to a typed, PERSISTED health record
 (data/china_visits/health.json) that engine/china_intel_hub.py's dossier
 block reads before it will ever assert "measured_no_event" for a name — a run
 whose source read failed must never present a quiet tape as a clean null.
+
+Same-cycle ordering (P1-R1, Sol product ruling 2026-08-20): scripts/collect.py
+now runs this adapter in the SAME cninfo host-group thread as china_filings,
+immediately after it (registry order china_filings -> china_visits ->
+china_irm), so a single collect invocation's china_filings refresh is
+consumed by this plane in the SAME cycle instead of the prior night's. The
+contract is carried by a process-local flag, collectors.china_filings.
+LAST_RUN_OUTCOME: refresh() reads it (lazily, to avoid an import cycle) right
+after the existing store-missing/unreadable checks. None means china_filings
+did not run in THIS process (the `--only china_visits` proof/debug path) and
+this plane derives over whatever store is already committed to disk — legal,
+unchanged behavior. A present outcome that is not ok means today's CNInfo
+refresh degraded (partially or wholly): derivation and write_visits() still
+run exactly as before — positive rows (real filings) are NEVER discarded on
+account of a degraded refresh — but the run is typed "upstream_degraded"
+instead of "ok", coverage_start is not stamped, and last_success_utc is not
+advanced, because a degraded run proves nothing about absence.
 """
 from __future__ import annotations
 
@@ -268,12 +285,21 @@ def _stamp_coverage_start_once(today_iso: str) -> None:
 #   no_coverage      — no successful run has EVER completed (coverage_start unset).
 #   source_failure   — the filings store exists but could not be read
 #                       (corrupt / schema drift) — LOUD, never silently a quiet tape.
+#   upstream_degraded — (P1-R1) producible when the SAME-RUN china_filings
+#                       refresh failed entirely or lost an exchange
+#                       (collectors.china_filings.LAST_RUN_OUTCOME.ok is
+#                       False). Derived rows (positive evidence) are still
+#                       kept — a degraded refresh never discards a real
+#                       filing — but the run advances no absence evidence
+#                       (last_success_utc stays frozen, coverage_start is not
+#                       stamped) and the dossier must never read
+#                       measured_no_event from it.
 # Reserved, not producible by this collector build: rights_suppressed (rights
 # are settled — RIGHTS-0), low_extraction_confidence and contradicted (no LLM
 # extraction in this PR). not_yet_available / identity_unresolved /
 # not_applicable / stale / measured_no_event are computed at DOSSIER read
 # time (engine/china_intel_hub.py), not stored here.
-_HEALTH_STATES = ("ok", "no_coverage", "source_failure")
+_HEALTH_STATES = ("ok", "no_coverage", "source_failure", "upstream_degraded")
 
 
 def read_health() -> dict:
@@ -369,6 +395,21 @@ def refresh() -> dict:
             _write_health("source_failure", f"filings store unreadable: {e}", success=False)
             return {"status": "source_failure", "n_candidates": 0, "n_new": 0}
 
+        # P1-R1 same-cycle derivation contract: when china_filings ran earlier
+        # in THIS process (same cninfo host-group thread, china_filings then
+        # china_visits — see scripts/collect.py _CONCURRENT_HOSTS), its
+        # outcome names whether the store just read above is a clean
+        # same-run refresh or a degraded one. Lazy import to avoid an import
+        # cycle; any failure to even read the flag degrades to None, which is
+        # the same as "china_filings did not run in this process" — the
+        # legitimate `--only china_visits` proof/debug path where this plane
+        # derives over whatever is already committed.
+        try:
+            from collectors import china_filings as _cf  # noqa: PLC0415
+            same_run_outcome = _cf.LAST_RUN_OUTCOME
+        except Exception:  # noqa: BLE001 — must never sink this plane
+            same_run_outcome = None
+
         if filings is None or filings.empty or "category" not in filings.columns:
             candidates: list[dict] = []
         else:
@@ -377,6 +418,18 @@ def refresh() -> dict:
         rows = [_derive_row(f, system_recorded_at) for f in candidates
                 if f.get("announcementId")]
         n_new = write_visits(rows)
+
+        if same_run_outcome is not None and not same_run_outcome.get("ok"):
+            errors = same_run_outcome.get("errors") or []
+            detail = (
+                "derived over a DEGRADED same-run china_filings refresh "
+                f"({'; '.join(errors)}) — this run contributes no absence evidence"
+            )
+            log.warning("china_visits: %s", detail)
+            _write_health("upstream_degraded", detail, success=False)
+            log.info("china_visits: %d candidate rows, %d net-new stored (upstream degraded)",
+                      len(candidates), n_new)
+            return {"status": "upstream_degraded", "n_candidates": len(candidates), "n_new": n_new}
 
         _stamp_coverage_start_once(today_iso)
         _write_health("ok", f"{len(candidates)} candidate row(s) this run", success=True)
