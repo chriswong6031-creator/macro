@@ -2703,11 +2703,14 @@ jobs:
         run: pip install pytest pandas pyarrow requests beautifulsoup4 lxml pyyaml jsonschema
       - name: china native interaction + sell-side collector tests (W1 CNH)
         run: python -m pytest tests/test_china_irm_collector.py tests/test_china_einteraction_collector.py tests/test_china_reports_collector.py tests/test_china_holder_counts_collector.py -q
-      # China Alpha Intelligence P1 (#6050): institutional-visit tape, derived
-      # from china_filings' own store — same wiring-hole class this job exists
-      # for (a fixture-pinned collector named by NO job would rot silently).
-      - name: china institutional-visit tape collector tests (P1)
-        run: python -m pytest tests/test_china_visits_collector.py -q
+      # China Alpha Intelligence P1's institutional-visit tape suite
+      # (tests/test_china_visits_collector.py, #6050 + P1-R1 #6142) used to run
+      # here. It MOVED to `china-native-w2` — see the note on that job. It is a
+      # pure-code suite (its own `_tmp_data_dir` fixture monkeypatches
+      # lib.config.data_dir to tmp_path for the whole module), and this job is
+      # `gate: data`, so parking it here kept it off the merge gate for no
+      # reason. Not a wiring hole: it is still named by exactly one `run:` step,
+      # just one that can block the regression it exists to catch.
       - name: china native policy / OMO / trade-detail collector tests (W3 CNH)
         run: python -m pytest tests/test_china_omo_collector.py tests/test_china_trade_detail_collector.py tests/test_china_official_corpora.py -q
       # W3 part B: the five native flash wires (futu/ths joined here) and the forward
@@ -4212,6 +4215,33 @@ jobs:
         run: python -m pytest tests/test_china_fund_issuance_collector.py -q
       - name: china_flows full-universe ETF shares tests
         run: python -m pytest tests/test_china_flows_etf_universe.py -q
+      # China Alpha Intelligence P1 institutional-visit tape (#6050; P1-R1
+      # same-cycle derivation #6142), MOVED here from `china-native-collectors`
+      # on 2026-08-21. That job is `gate: data` — correctly, because ONE of its
+      # eighteen suites, test_china_news_intel_w2.py, resolves CN names through
+      # engine/entity_resolver.py's read of data/baskets_china/membership.json,
+      # which the nightly rewrites — and `gate` is a per-JOB field, so that one
+      # coupling took the other seventeen off the merge gate with it (W2 of
+      # research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md, classified
+      # in #5954). The visit-tape suite is not data-coupled: its `_tmp_data_dir`
+      # fixture monkeypatches lib.config.data_dir() to tmp_path for the whole
+      # module and `_isolate_run_status` covers the one path that resolves off
+      # config.ROOT, so all 38 tests are a pure function of the PR's tree.
+      # Measured: 38 passed with data/ absent from disk entirely, under THIS
+      # job's exact install line (no beautifulsoup4/lxml/jsonschema needed —
+      # the visits collector derives from china_filings' committed store rather
+      # than parsing a vendor HTML plane, so it adds no dependency here).
+      # This is the job the suite belongs in on subject as well as on gate:
+      # china_visits is a China-native collector over collectors/china_filings,
+      # exactly like the four already named above. It rides an existing
+      # `gate: code` job rather than a new one deliberately — a new always-on
+      # job would add a job to every narrow-diff probe in
+      # tests/test_ci_pack.py::test_exclusive_curation_narrows_ordinary_code_prs,
+      # whose templates/index.html ceiling is already breached on main (128 of
+      # 127). china-native-w2 is ALREADY selected by all three probes, so this
+      # step moves the job COUNT on none of them and costs +3 weight-seconds.
+      - name: china institutional-visit tape collector tests (P1)
+        run: python -m pytest tests/test_china_visits_collector.py -q
 
   wri-risk-core:
     if: ${{ false }}
