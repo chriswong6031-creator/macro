@@ -4216,6 +4216,12 @@ jobs:
         run: python -m pytest tests/test_portfolio_state_js.py -q
       - name: portfolio truth — A1A mutation battery + page wiring (A1A)
         run: python -m pytest tests/test_portfolio_truth_a1a_js.py -q
+      # Consumer-level auth-transition proof (Sol blocker 2, A1A closure): drives the
+      # REAL watchstore.js + portfolio.js + portfolio_state.js together over a genuine
+      # event bus — the delayed-cloud window, a permanently-failed Supabase client
+      # init, and write-failure honesty (blocker 3) end to end.
+      - name: portfolio auth-transition — consumer-level proof (A1A closure)
+        run: python -m pytest tests/test_portfolio_auth_transition_js.py -q
       # Repo hygiene, wired here because this wave introduced the class it closes: a crop
       # harness borrows site/stockdata/ from the main checkout for the duration of a
       # shoot, and an aborted run once left the symlink behind long enough for a broad

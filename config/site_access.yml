@@ -516,6 +516,7 @@ public:
     - /watchstore.js
     - /market_books.js
     - /portfolio.js
+    - /portfolio_state.js
     - /mtf.js
     # The unified chat widget client — public theme.js injects it on every
     # root-level page for every visitor (document-relative src, so the SEO
