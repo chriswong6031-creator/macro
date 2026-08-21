@@ -63,16 +63,19 @@ DEFAULT_LEDGER_DIRECTORY = DEFAULT_STATE_ROOT / "canonical_ledger"
 DEFAULT_LEDGER_PATH = DEFAULT_LEDGER_DIRECTORY / "ledger.jsonl"
 DEFAULT_LEDGER_RECEIPT_PATH = DEFAULT_LEDGER_DIRECTORY / "receipt.json"
 
+#: Display-only provenance label recorded on the ledger snapshot receipt — never
+#: used for network access (DEC:B1-MACRO-PRIVATE-CUTOVER).
 CANONICAL_LEDGER_REPOSITORY = (
     "https://github.com/mastermindx-market-intelligence/macro"
 )
-CANONICAL_LEDGER_GIT_REMOTE = CANONICAL_LEDGER_REPOSITORY + ".git"
 CANONICAL_LEDGER_REF = "refs/heads/main"
 CANONICAL_LEDGER_SOURCE_PATH = "data/prophet/ledger.jsonl"
-CANONICAL_LEDGER_RAW_TEMPLATE = (
-    "https://raw.githubusercontent.com/mastermindx-market-intelligence/macro/"
-    "{commit}/data/prophet/ledger.jsonl"
-)
+# DEC:B1-MACRO-PRIVATE-CUTOVER: the anonymous `git ls-remote` / public raw-blob
+# HTTPS `curl` legs are gone — both 404 the moment the repository is flipped
+# private. Commit resolution and the ledger read now go through the
+# local checkout's own already-authenticated `origin` remote (the host's
+# `core.sshCommand`/deploy key, persisted by app/deploy/bootstrap_repo.sh),
+# mirroring scripts/build_prophet_marks.py::_load_index_canonical_git().
 
 MAX_LEDGER_BYTES = 32 * 1024 * 1024
 MAX_RECEIPT_BYTES = 64 * 1024
@@ -678,16 +681,35 @@ def _ledger_paths(
 
 
 def _resolve_current_main_commit() -> str:
+    """Resolve canonical current-main via the local checkout's own authenticated
+    ``origin`` remote (DEC:B1-MACRO-PRIVATE-CUTOVER) — never an anonymous
+    ``git ls-remote`` against a hard-coded public HTTPS URL, which 404s once the
+    repository is private. Mirrors
+    ``scripts/build_prophet_marks.py::_load_index_canonical_git()``.
+    """
     environment = dict(os.environ)
     environment["GIT_TERMINAL_PROMPT"] = "0"
     try:
-        result = subprocess.run(
+        fetch = subprocess.run(
             [
                 "/usr/bin/git",
-                "ls-remote",
-                CANONICAL_LEDGER_GIT_REMOTE,
-                CANONICAL_LEDGER_REF,
+                "fetch",
+                "origin",
+                f"+{CANONICAL_LEDGER_REF}:refs/remotes/origin/main",
             ],
+            cwd=_REPO,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env=environment,
+        )
+        if fetch.returncode != 0:
+            detail = fetch.stderr.strip()[:240] or f"exit {fetch.returncode}"
+            raise ValueError(f"canonical current-main ref resolution failed: {detail}")
+        result = subprocess.run(
+            ["/usr/bin/git", "rev-parse", "FETCH_HEAD"],
+            cwd=_REPO,
             check=False,
             capture_output=True,
             text=True,
@@ -696,42 +718,36 @@ def _resolve_current_main_commit() -> str:
         )
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError(f"could not resolve canonical current main: {exc}") from exc
-    matches: list[str] = []
-    for line in result.stdout.splitlines():
-        fields = line.split()
-        if len(fields) == 2 and fields[1] == CANONICAL_LEDGER_REF:
-            matches.append(fields[0])
-    if result.returncode != 0 or len(matches) != 1 or not _GIT_COMMIT_RE.fullmatch(matches[0]):
+    commit = result.stdout.strip()
+    if result.returncode != 0 or not _GIT_COMMIT_RE.fullmatch(commit):
         detail = result.stderr.strip()[:240] or f"exit {result.returncode}"
         raise ValueError(f"canonical current-main ref resolution failed: {detail}")
-    return matches[0]
+    return commit
 
 
 def _download_current_main_ledger(source_commit: str) -> bytes:
+    """Read the exact committed ledger bytes via the local checkout's
+    authenticated ``origin`` remote (DEC:B1-MACRO-PRIVATE-CUTOVER) — never the
+    anonymous public-raw-blob ``curl`` leg, which 404s once the repository is
+    private. Reads the working tree's own object database (populated by
+    ``_resolve_current_main_commit``'s fetch), never a public URL.
+    """
     if not _GIT_COMMIT_RE.fullmatch(source_commit):
         raise ValueError("canonical current-main commit is malformed")
-    url = CANONICAL_LEDGER_RAW_TEMPLATE.format(commit=source_commit)
+    environment = dict(os.environ)
+    environment["GIT_TERMINAL_PROMPT"] = "0"
     try:
         result = subprocess.run(
             [
-                "/usr/bin/curl",
-                "--fail",
-                "--silent",
-                "--show-error",
-                "--location",
-                "--max-time",
-                "30",
-                "--max-filesize",
-                str(MAX_LEDGER_BYTES),
-                "--proto",
-                "=https",
-                "--user-agent",
-                "macro-prophet-shadow-lifecycle/1",
-                url,
+                "/usr/bin/git",
+                "show",
+                f"{source_commit}:{CANONICAL_LEDGER_SOURCE_PATH}",
             ],
+            cwd=_REPO,
             check=False,
             capture_output=True,
             timeout=35,
+            env=environment,
         )
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError(f"canonical current-main ledger download failed: {exc}") from exc

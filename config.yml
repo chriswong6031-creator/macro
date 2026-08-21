@@ -3622,10 +3622,13 @@ alerts:
   ticker_max_events: 50               # cap on events kept per feed (most-recent-first)
 
 notify:
-  # public base URL of the published site (e.g. https://user.github.io/repo).
+  # public base URL of the published site (e.g. https://www.example.com).
   # When set, alert pings deep-link to the exact scorecard panel on macro.html.
   # Leave blank to send alerts without a link.
-  site_url: "https://mastermindx-market-intelligence.github.io/macro"
+  # The GitHub Pages mirror is retired at the private cutover
+  # (DEC:B1-MACRO-PRIVATE-CUTOVER); this now points at the real production
+  # origin.
+  site_url: "https://www.mastermind-x.com"
   telegram:
     enabled: true                 # needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID secrets
   discord:
