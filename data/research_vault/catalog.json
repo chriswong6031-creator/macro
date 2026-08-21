@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T07:33:53.057873+00:00",
-  "count": 1532,
+  "generated_at": "2026-08-21T08:25:18.967764+00:00",
+  "count": 1534,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -652,6 +652,44 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dttkluczljx-309eb3",
+      "title": "Riksbank on Hold — We Continue to See a Hike in December as Likely",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:55Z",
+      "summary_points": [
+        "**Rate Path & Timing**: Riksbank holds rate at 1.75% but December hike likely; hinges on August/September inflation data (Sep 7, Oct 7) for persistence assessment.",
+        "**Inflation Data Dependency**: Critical August/September inflation prints (Sep 7, Oct 7) dictate rate trajectory; risks include supply shocks, krona volatility, and corporate pricing behavior.",
+        "**Geopolitical Risk Impact**: Middle East war effects on oil markets less severe than spring; Riksbank requires stronger energy shock evidence for pre-December tightening beyond current path."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uh93z7kptec-729f3b",
+      "title": "Riksbank on Hold — We Continue to See a Hike in December as Likely",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:54Z",
+      "summary_points": [
+        "**December Hike Probability**: Riksbank holds rate at 1.75% but December hike likely; hinges on August/September inflation data (Sep 7, Oct 7) to confirm persistent price pressures.",
+        "**Critical Data Windows**: August/September inflation prints are pivotal; risks include supply shocks, krona volatility, and corporate pricing behavior impacting rate trajectory.",
+        "**Geopolitical Threshold**: Middle East conflict effects on oil markets less severe than spring; Riksbank requires stronger energy shock evidence to accelerate hikes beyond December 2024."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
