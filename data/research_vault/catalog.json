@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T15:21:44.066561+00:00",
-  "count": 1554,
+  "generated_at": "2026-08-21T16:18:47.839775+00:00",
+  "count": 1557,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -84,6 +84,27 @@
   ],
   "items": [
     {
+      "id": "marketdesk-g4wdspqk1iz-efd060",
+      "title": "DB Coty Aug 21",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T15:18:01Z",
+      "summary_points": [
+        "**Revised FY27 Guidance**: LFL sales revised to -0.5% (vs.",
+        "0.9%), adjusted EBITDA $805M (vs.",
+        "$787M), price target raised to $3 (from $2) on improved near-term earnings and productivity initiatives.",
+        "**Critical Risk Factors**: Downside risks include struggling brands, cost-cutting failures, macro challenges (inflation, supply issues, FX/tariffs), high leverage; upside tied to Prestige rebound or tariff headwinds.",
+        "**Margin Compression**: Gross margin down 1.4pp to 60.9%, adjusted EBITDA down 26.1% to $94M (4Q26), Prestige segment operating margin fell 2.0pp to 7.8% amid severe margin pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-35hhtaon3oi-4faccb",
       "title": "GS US TMT today",
       "institution": "S&T",
@@ -121,6 +142,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uj2m1ahycsj-06898b",
+      "title": "GS Crook GS Morning 21 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:29:30Z",
+      "summary_points": [
+        "**NPS Hedging Unwind**: NPS may unwind strategic hedging at ~1390, turning into a $6.8bn/month USD buyer, shifting KRW flows from financial to current account-driven.",
+        "**US Fiscal Deficit Peak**: 2026 fiscal deficit peak signals heightened fiscal pressure, driving USD weakness via policy uncertainty and fiscal burden shift.",
+        "**CHF Safe-Haven Surge**: CHF emerged as top FX outperformer due to safe-haven demand amplified by trade-of-trade (ToT) dynamics amid US fiscal volatility.",
+        "**KRW Corporate Buyback Flow**: SK Hynix/Samsung fund USD buybacks (e.g., SK Hynix’s $29bn) using KRW cash (80% exporter conversion), avoiding large USD sales."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -183,6 +224,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gjjqorcby3e-25b291",
+      "title": "Americas Business & Information Services What's Powering Your Services Recap 8 21 26",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:27:38Z",
+      "summary_points": [
+        "**AI Monetization Acceleration**: SPGI's MCP-connected API customers surged >70% q/q to 500+, with API calls up >5x to 1.1bn, directly driving proprietary data revenue conversion and validating AI workflow monetization (IRM, MCO, SPGI).",
+        "**Sector Valuation Compression**: Information Services (mean EV/EBITDA 13.2x) trades at 29% premium to Business Services (10.1x), yet both show declining multiples since 2021 vs.",
+        "SPY, signaling sector-wide overvaluation risk amid robust growth expectations.",
+        "**Extreme EPS Revisions**: Select names exhibit critical mispricing signals: KLC (-82.5% EPS revision), VSTS (+77.5%), and RHI (-25.0%), requiring immediate portfolio risk monitoring despite overall consensus stability (0.2% avg YTD revision).",
+        "**Sector-Specific Risk Exposure**: Information Services shows steeper NTM multiple declines vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
