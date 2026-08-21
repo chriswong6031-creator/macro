@@ -26,9 +26,13 @@
      · posture    → achromatic. Zero policies means nothing is restricted; there is
                     no reserved meaning for hue to carry, so it takes none.
 
-   Nothing here animates. Motion law: an animated element must encode a live or
-   ongoing fact, and this artifact is settled. The stillness is deliberate — it is
-   what will read as "settled" once the GD-3 live lane sits beside it.
+   The SETTLED band itself does not animate. Motion law: an animated element must
+   encode a live or ongoing fact, and this artifact is settled. The stillness is
+   deliberate — it reads as "settled" beside the GD-3 live overlay's one earned
+   exception: the live-provisional chip's dot, which reuses theme.css's existing
+   `.dtp-dot` / `@keyframes dtp-pulse` (never a new animation) because it encodes
+   the ONE ongoing fact this band ever carries — "this is ticking right now" — see
+   the "GD-3 live-provisional overlay" block below.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 body.page-macro .gde-band { padding: var(--sp-5) var(--pad) var(--sp-5); }
@@ -136,6 +140,23 @@ body.page-macro .gde-clock {
 /* shown ONLY when coverage is not clean — a caveat that changes how the row's
    answer should be read belongs beside it, never only behind the drawer */
 body.page-macro .gde-flag { color: var(--ink-warn); white-space: normal; }
+
+/* ── GD-3 live-provisional overlay — same idiom, no new tokens. The live dot
+   reuses theme.css's existing .dtp-dot / @keyframes dtp-pulse (already shared by
+   etfs.html.j2, sector_central.html.j2 and the dashboard's own #dtp-token) rather
+   than inventing a new animation — motion here encodes the SAME "this is ticking
+   right now" fact that idiom already carries elsewhere on the site (etfs.html.j2,
+   sector_central.html.j2, the dashboard's own #dtp-token). Painted/hidden only by
+   risk_envelope_live.js; every rule here is dormant until the `hidden` attribute
+   is removed. ─────────────────────────────────────────────────────────────── */
+body.page-macro .gde-stamp-live {
+  color: var(--ink-ok); display: inline-flex; align-items: center; gap: 5px;
+}
+body.page-macro .gde-live-time { color: var(--ink-3); font-weight: 500; }
+/* pending badge — the SAME warn ink the coverage flag already uses; a candidate
+   shift is a caveat on how to read the row, not a new health verdict */
+body.page-macro .gde-pending { color: var(--ink-warn); }
+body.page-macro .gde-receipt-live { border-top: none; padding-top: 0; margin-top: var(--sp-2); }
 
 /* ── evidence drawer: the only home for source enums, receipts and technicals ── */
 body.page-macro .gde-disc { margin: var(--sp-3) 0 0; min-width: 0; }

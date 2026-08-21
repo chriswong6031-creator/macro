@@ -105,7 +105,7 @@
                       'TRANSMITTING': '损伤扩散', 'BREAKDOWN': '已断裂'}
                      .get(_stage, '证据不足') %}
 
-<div class="panel span12 gde-band" id="risk-envelope-band">
+<div class="panel span12 gde-band" id="risk-envelope-band" data-bundle-id="{{ _re.get('bundle_id') or '' }}" data-settled-session="{{ _re.get('source_session') or '' }}">
 
   <div class="gde-head">
     <div>
@@ -119,6 +119,19 @@
           data-tip-en="Settled session — the close these reads were taken from. Each source below also keeps its own clock."
           data-tip-zh="已结算交易日 — 本次判读所依据的收盘。下方每个来源另有各自的时间戳。">
       <span class="l-en">Settled</span><span class="l-zh">已结算</span> {{ _re.get('source_session') or '—' }}
+    </span>
+    {# ── GD-3 live-provisional overlay hooks — PRE-BAKED HIDDEN, painted only by
+       risk_envelope_live.js when its fetched artifact passes every identity/freshness
+       check (schema, revision, precedence, settled_bundle_id match, freshness window).
+       No falsifier/refutation vocabulary; stage vocabulary stays in the drawer receipt
+       (below), never front-facing. #}
+    <span class="gde-stamp gde-stamp-live" id="gde-live-chip" hidden>
+      {# reuse the site's existing live-dot idiom (theme.css .dtp-dot / @keyframes
+         dtp-pulse — already shared by etfs.html.j2/sector_central.html.j2/the
+         dashboard's own #dtp-token), not a new animation #}
+      <i class="dtp-dot" aria-hidden="true"></i>
+      <span class="l-en">Live · provisional</span><span class="l-zh">实时 · 临时</span>
+      <span class="gde-live-time"></span>
     </span>
   </div>
 
@@ -206,6 +219,11 @@
       {% set _unread = _hz.get('unreadable_sources') or [] %}
       <span class="gde-clock tnum">{{ (_ns.lead.as_of if _ns.lead else none) or _re.get('source_session') or '—' }}{% if _unread %}
         <span class="gde-flag"><span class="l-en">· {{ _unread | length }} source{{ 's' if _unread | length != 1 else '' }} couldn't be read</span><span class="l-zh">· {{ _unread | length }} 个来源无法读取</span></span>{% endif %}</span>
+      {# ── GD-3 live-provisional pending badge — hidden until risk_envelope_live.js
+         finds an active overlay AND live_transition.pending is non-null. Copy is
+         filled by the script (plain-word: "live read shifting · confirming n/m" /
+         "实时读数变化 · 确认中 n/m") — no stage vocabulary front-facing. #}
+      <span class="gde-flag gde-pending" id="gde-pending-chip" hidden><span class="l-en"></span><span class="l-zh"></span></span>
      </div>
 
       {# Tier 2/3 lives here: source states, per-source clocks, contradictions,
@@ -263,6 +281,11 @@
             {%- if _hz.get('capped_sources') %} · capped at source competence: {{ _hz.get('capped_sources') | join(', ') }}{% endif %} ·
             engine/risk_envelope.py
           </p>
+          {# ── GD-3 live-provisional machine receipt — hidden until risk_envelope_live.js
+             finds an active overlay. Stage vocabulary lives ONLY here (drawer), never at
+             the glance tier. Filled: "live: candidate <stage> · stable <stage> ·
+             pending n/m · built <ts> · bundle <live bundle_id[:8]>". #}
+          <div class="gde-receipt gde-receipt-live" id="gde-live-receipt" hidden></div>
         </div>
       </details>
     </div>
