@@ -5870,6 +5870,16 @@ jobs:
     #                             client-sent user id is ignored), validation, the
     #                             user_metadata MERGE, the email_prefs lang mirror, and the
     #                             honest partial/total failure statuses.
+    #   test_shared_pref_atomics.py — the SAME user_metadata keys, from the browser side:
+    #                             templates/theme.js must write the top-level `theme` /
+    #                             `theme_auto` / `lang` atomics and never the nested `prefs`
+    #                             blob, because supabase updateUser REPLACES a nested object
+    #                             and the Mastermind Terminal writes it too. It lives in this
+    #                             job rather than a site-gate one because its subject is the
+    #                             stored-preference contract lib/user_prefs.py owns, which it
+    #                             imports; the assertions are on theme.js SOURCE text (the
+    #                             same idiom as test_canada_build.py) since there is no
+    #                             browser harness here.
     #   test_billing_webhook.py — the spine suite that guards _handle_event, which W3 now
     #                             hooks. It matched NO workflow before this job (it needs
     #                             the pinned Stripe SDK, which prelaunch-hardening does not
@@ -5892,6 +5902,8 @@ jobs:
         run: python -m pytest tests/test_billing_emails.py -v
       - name: account preference tests (app/account_prefs.py)
         run: python -m pytest tests/test_account_prefs.py -v
+      - name: shared preference atomics contract (templates/theme.js)
+        run: python -m pytest tests/test_shared_pref_atomics.py -v
       - name: billing webhook spine regression (app/billing.py::_handle_event)
         run: python -m pytest tests/test_billing_webhook.py -v
 
