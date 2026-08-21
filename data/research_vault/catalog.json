@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T21:13:07.034723+00:00",
-  "count": 1563,
+  "generated_at": "2026-08-21T22:11:32.107900+00:00",
+  "count": 1566,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -83,6 +83,65 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-8ogzlznkejo-81ce20",
+      "title": "GS Gillard Gold Macro buying w a physical kicker 21 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:25:02Z",
+      "summary_points": [
+        "**Macro Buying Surge**: China/Western macros driving Treasury buyback-linked gold demand; Shanghai buying at 25% off highs + $90/oz digital demand surge amid dollar pressure and central bank re-engagement - **Central Bank Flows Shift**: UK-China gold exports up 147% Q2 (37 MT vs 15 MT 2025), Turkey buying back, Russia liquidating; China’s net exporter status fuels gold over silver demand - **China Demand Structural Shift**: Physical imports down (135 MT vs 173 MT), but non-monetary imports surge 80% y/y YTD, offsetting lower CB/ETF flows via policy-driven strategic accumulation - **Global Drawdown Trend**: Sustained LBMA drawdown growth (China + CB + India + ETF) in 2025 vs 2026, indicating rising global demand and price support momentum"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0klbilkbcbq-b873b2",
+      "title": "Taiwan Weekly Kickstart TAIEX retreated 1 as Tech stocks dragged on performance amid foreign and local institutional sellin...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:03:23Z",
+      "summary_points": [
+        "**TAIEX Tech Drag & Flow Shift**: TAIEX down 1% (TSMC +0.6% offset by Tech Hardware/Semis decline), QFIs net sold Tech ($1.1bn), bought Financials; TWD strengthened 0.5% vs USD.",
+        "**Earnings Momentum & Beat Rate**: Q2 Taiwan earnings show **+176% YoY net income growth**, **49% beat rate** (vs.",
+        "38% misses), **+14% median earnings/sales surprise**; Tech Hardware led with **89% beat rate**.",
+        "**TSMC Concentration & Geopolitical Risk**: EM funds hold 12.1% in TSMC (350bp underweight vs.",
+        "EM benchmark); **50% foreign ownership** (Exhibit 16) exposes sector to US-China tensions and export controls."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zk32ow3ambz-2a152b",
+      "title": "Korea Weekly Kickstart KOSPI declined marginally amid volatility triggered by the global bond yields and foreign outflows",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:03:13Z",
+      "summary_points": [
+        "**Foreign Flow Divergence**: Foreigners net outflow (-1,851bn KRW) vs.",
+        "domestic institutions/pension funds net buying (+1,851bn KRW), signaling capital withdrawal pressure amid sector-specific underperformance (Tech/Retail).",
+        "**Buyback Surge & Capital Return**: Record buyback activity (SK Hynix-driven, 36,456 KRWbn in Tech/Financials), with post-announcement returns exceeding prior periods, fueling shareholder yield outlook (SEC/SHY 14-16% by 2027-28).",
+        "**Extreme Valuation Discount**: Korea’s KOSPI trades at -67% NTP/E and -25% P/B vs.",
+        "peers (Z-scores -2.61/-3.38), indicating statistically significant undervaluation despite high EPS growth (34.9% 2026E) and low P/E (6.3)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 21,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-4zfjlbotwm9-7d6e11",
       "title": "MS AI Sovereignty Policy, Market, and Economic Implications",
