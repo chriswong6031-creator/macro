@@ -46,7 +46,9 @@ class _NoRedirectHandler(HTTPRedirectHandler):
         return None
 
 
-def _private_file(path: Path, *, create: bool) -> Path:
+def _private_path(path: Path) -> Path:
+    """Prove a private ledger path without touching the inode behind it."""
+
     expanded = path.expanduser()
     if not expanded.is_absolute():
         raise cohort.NbboCohortError("private event ledger must be absolute")
@@ -56,18 +58,29 @@ def _private_file(path: Path, *, create: bool) -> Path:
     repo = ROOT.resolve()
     if resolved == repo or repo in resolved.parents:
         raise cohort.NbboCohortError("private event ledger cannot be inside repository")
+    return resolved
+
+
+def _private_file(path: Path, *, create: bool) -> Path:
+    resolved = _private_path(path)
     parent = cohort._validate_private_dir(resolved.parent, create=create)
-    if create and not resolved.exists():
-        fd = os.open(resolved, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    if create:
+        # Create atomically rather than testing for absence first: a concurrent
+        # writer that wins the race must lose the open, not the whole append.
         try:
-            os.fsync(fd)
-        finally:
-            os.close(fd)
-        parent_fd = os.open(parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
-        try:
-            os.fsync(parent_fd)
-        finally:
-            os.close(parent_fd)
+            fd = os.open(resolved, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        except FileExistsError:
+            pass  # Another writer created it; the checks below still prove it.
+        else:
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+            parent_fd = os.open(parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+            try:
+                os.fsync(parent_fd)
+            finally:
+                os.close(parent_fd)
     if resolved.exists():
         info = resolved.lstat()
         if (
@@ -158,11 +171,15 @@ def _append_canonical_row(
     max_bytes: int,
     reconcile: Callable[[list[dict[str, Any]]], Any] | None = None,
 ) -> str:
-    ledger = _private_file(ledger, create=True)
-    lock_path = _private_file(ledger.parent / lock_name, create=True)
+    lock_path = _private_file(_private_path(ledger).parent / lock_name, create=True)
     line = cohort.canonical_json_bytes(validate_row(row))
     with lock_path.open("r+b", buffering=0) as lock_handle:
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+        # Prove the ledger only under the writer lock.  os.replace() is atomic
+        # for the name but not for the inode a concurrent reader sees: mid
+        # rename the target stats with a link count other than 1, which reads
+        # to the ownership guard as a tampered ledger.
+        ledger = _private_file(ledger, create=True)
         rows, _receipt = read_ledger(ledger)
         existing = ledger.read_bytes()
         row_id = row[id_field]
