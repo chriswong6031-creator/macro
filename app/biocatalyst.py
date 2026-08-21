@@ -2842,6 +2842,110 @@ def _decode_catalyst_radar_cursor(
     return offset, generation_digest, query_digest
 
 
+# The engine's `_revision_block` selects rows for a milestone kind by a
+# json_path substring marker (see engine/biocatalyst/catalyst_events.py).
+# These are the same ClinicalTrials.gov API v2 field names that module
+# checks against -- restated here only as a match target, never as a value
+# that reaches the response body.
+_CATALYST_RADAR_REVISION_MARKERS: dict[str, str] = {
+    "primary_completion": "primaryCompletionDateStruct",
+    "completion": "completionDateStruct",
+}
+
+
+def _catalyst_radar_revision_value(entry: object) -> Any:
+    """Decode one disclosed change-tape value entry into its raw JSON value.
+
+    Returns ``None`` whenever the value was never disclosed (budget
+    exhausted, not representable, or the tape doesn't disclose exact values
+    at all) -- the engine's own ``_revision_side_date`` already treats
+    ``None`` as an honest "value not available", never a guess.
+    """
+
+    if not isinstance(entry, Mapping) or entry.get("state") != "present":
+        return None
+    raw = entry.get("value_json")
+    if not isinstance(raw, str):
+        return None
+    try:
+        return json.loads(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _catalyst_radar_revisions_by_nct(
+    trials: Sequence[Mapping[str, Any]],
+    change_tapes_by_nct: object,
+) -> dict[str, list[dict[str, Any]]]:
+    """Shape revision-lineage rows for the pure engine (MINOR 9).
+
+    Reuses the SAME vetted public projection the change-tape endpoint reads
+    (``_change_tape_model_rows``) -- never a raw tape internal -- so this
+    costs zero extra I/O beyond the ``_read_bundle()`` this route already
+    performs.
+
+    A trial's public field-class history distinguishes
+    ``milestone_date_constraint`` from every other registry field, but not
+    which of the two milestone dates moved within that family -- that
+    granularity is intentionally not retained past publication and is not
+    reconstructed here.  A row is therefore only ever attached to a specific
+    milestone kind when the trial records exactly one of the two radar
+    kinds; a trial with both dates on file is left unattributed rather than
+    guessed. A trial whose tape was collected but carries no matching row
+    still gets its NCT id recorded (with an empty row list) so the engine
+    reports the honest ``no_revisions_recorded`` -- distinct from
+    ``history_not_collected`` for a trial with no tape at all.
+    """
+
+    if not isinstance(change_tapes_by_nct, Mapping):
+        return {}
+    revisions: dict[str, list[dict[str, Any]]] = {}
+    for trial in trials:
+        nct_id = trial.get("nct_id")
+        if not isinstance(nct_id, str) or not nct_id:
+            continue
+        tape = change_tapes_by_nct.get(nct_id)
+        if not isinstance(tape, Mapping):
+            continue
+        try:
+            tape_state, _reason, tape_rows = _change_tape_model_rows(tape, nct_id=nct_id)
+        except HTTPException:
+            # A malformed tape for THIS trial must degrade this trial's
+            # revision lineage, never the whole radar request.
+            continue
+        if tape_state != "available":
+            continue
+        dates = trial.get("dates")
+        dates = dates if isinstance(dates, Mapping) else {}
+        kinds_present = [
+            kind
+            for kind in ("primary_completion", "completion")
+            if isinstance(dates.get(kind), Mapping)
+        ]
+        milestone_rows = [
+            row
+            for row in tape_rows
+            if isinstance(row, Mapping) and row.get("field_class") == "milestone_date_constraint"
+        ]
+        shaped: list[dict[str, Any]] = []
+        if milestone_rows and len(kinds_present) == 1:
+            marker = _CATALYST_RADAR_REVISION_MARKERS[kinds_present[0]]
+            for row in milestone_rows:
+                exact_values = row.get("exact_values")
+                exact_values = exact_values if isinstance(exact_values, Mapping) else {}
+                shaped.append(
+                    {
+                        "json_path": marker,
+                        "source_versions": row.get("source_versions"),
+                        "before": _catalyst_radar_revision_value(exact_values.get("before")),
+                        "after": _catalyst_radar_revision_value(exact_values.get("after")),
+                        "observed_at": row.get("observed_at"),
+                    }
+                )
+        revisions[nct_id] = shaped
+    return revisions
+
+
 @router.get("/api/biocatalyst/v1/catalyst-radar")
 def catalyst_radar(
     horizon: str = "next_365d",
@@ -2964,15 +3068,19 @@ def catalyst_radar(
                 "coverage": evidence.get("coverage"),
             }
 
+    # Reused from the SAME `_read_bundle()` call above -- zero extra I/O.
+    # Absent on a projection that never populated it (e.g. a fixture built
+    # before revision lineage existed): degrade to no revisions collected,
+    # never a 503.
+    change_tapes_by_nct = getattr(projection, "change_tapes_by_nct", None)
+    revisions_by_nct = _catalyst_radar_revisions_by_nct(trials, change_tapes_by_nct)
+
     projected = project_trial_milestones(
         trials=trials,
         anchor_date=anchor_date,
         horizon_days=horizon_days,
         kinds=kinds,
-        # No public, in-process read of per-NCT revision rows exists on this
-        # serving path without adding a new I/O path (out of scope for this
-        # slice) -- every row correctly reports history_not_collected.
-        revisions_by_nct={},
+        revisions_by_nct=revisions_by_nct,
         sponsor_document=sponsor_document,
         sponsor_as_of=anchor_date.isoformat(),
         evidence_by_nct=evidence_by_nct,

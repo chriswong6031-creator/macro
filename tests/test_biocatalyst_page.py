@@ -133,7 +133,7 @@ def test_biocatalyst_client_uses_authenticated_source_fact_pages_and_current_dos
     js = (TEMPLATES / "biocatalyst.js").read_text(encoding="utf-8")
     for token in (
             "/api/biocatalyst/v1/trials",
-            "/api/biocatalyst/v1/trials/milestones",
+            "/api/biocatalyst/v1/catalyst-radar",
             "/api/biocatalyst/v1/trials/change-tape",
             "/api/biocatalyst/v1/trials:screen",
             "/api/biocatalyst/v1/trials:screen/facets",
@@ -165,7 +165,7 @@ def test_biocatalyst_client_uses_authenticated_source_fact_pages_and_current_dos
             "incomplete_chain",
             "next_cursor",
             "milestone_kind",
-            "next_30d",
+            "next_365d",
             "last_30d",
             "change_kind",
             "before_display_version",
@@ -267,10 +267,18 @@ def test_biocatalyst_modes_default_to_milestones_and_preserve_verified_pages():
     assert re.search(r'class="bci-window is-active"[^>]*aria-checked="true"[^>]*data-window="90"', html)
     assert re.search(r'class="bci-window"[^>]*aria-checked="false"[^>]*data-window="30"', html)
     assert "mode: 'milestones'" in js
-    assert "filters: { field: 'primary_completion', change_kind: '', prospective_change_kind: '', window: '90'" in js
+    # The literal pins the FULL live state initializer, including the radar
+    # mode's real horizon default (horizon: DEFAULT_RADAR_HORIZON = '365') --
+    # window: '90' here is First-seen Tape's own default, still live and
+    # unrelated to the radar's own horizon default appended at the end.
+    assert (
+        "filters: { field: 'primary_completion', change_kind: '', prospective_change_kind: '', window: '90', "
+        "q: '', phase: '', status: '', condition: '', sponsor: '', intervention: '', study_type: '', "
+        "pc_from: '', pc_to: '', review_state: 'all', horizon: DEFAULT_RADAR_HORIZON }"
+    ) in js
     assert "WINDOW_VALUES[windowName] ? windowName : '90'" in js
     assert "change_kind: '', prospective_change_kind: '', window: '90', q: '', phase: '', status: '', condition: ''" in js
-    assert "MILESTONE_WINDOWS = { '30': 'next_30d', '90': 'next_90d'" in js
+    assert "RADAR_WINDOWS = { '180': 'next_180d', '365': 'next_365d'" in js
     assert "PROSPECTIVE_WINDOWS = { '30': 'last_30d', '90': 'last_90d'" in js
 
     for token in (

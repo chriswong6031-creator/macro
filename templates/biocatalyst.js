@@ -1,11 +1,12 @@
 (function () {
   'use strict';
 
-  var MILESTONE_API = '/api/biocatalyst/v1/trials/milestones';
   // Catalyst Radar (BioCatalyst P1-1) replaces the milestones mode data
-  // source. MILESTONE_API/MILESTONE_WINDOWS below are retained, unused, only
-  // because tests/test_biocatalyst_page.py pins their literal source text;
-  // every live request now goes through RADAR_API/RADAR_WINDOWS.
+  // source; every live milestones-mode request goes through RADAR_API /
+  // RADAR_WINDOWS. The retired MILESTONE_API / MILESTONE_WINDOWS constants
+  // were deleted (dead code review verdict) rather than kept as an inert
+  // fossil -- activeApi()/activeWindow() never had a live path that could
+  // reach them.
   var RADAR_API = '/api/biocatalyst/v1/catalyst-radar';
   var CHANGE_API = '/api/biocatalyst/v1/trials/change-tape';
   var PROSPECTIVE_API = '/api/biocatalyst/v1/trials/prospective-changes';
@@ -16,7 +17,6 @@
   var TRIAL_ID = /^NCT\d{8}$/;
   var DATE_PARTS = /^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/;
   var WINDOW_VALUES = { '30': true, '90': true, '180': true, all: true };
-  var MILESTONE_WINDOWS = { '30': 'next_30d', '90': 'next_90d', '180': 'next_180d', all: 'all' };
   // Catalyst Radar own horizon vocabulary (engine RADAR_HORIZONS keys):
   // 180 / 365 / 730 / All, 365 active by default -- a 90-day default would
   // render the known lawful-empty state for most trial cuts. Kept as a
@@ -362,16 +362,18 @@
     if (isProspectiveMode()) state.filters.prospective_change_kind = activeChangeKindValues()[value] ? value : '';
     else state.filters.change_kind = activeChangeKindValues()[value] ? value : '';
   }
+  // Only milestones and prospective mode ever call activeApi()/activeWindow()
+  // for a page fetch (screen/peer/change build their own request elsewhere),
+  // so each has exactly two live branches -- no unreachable fallback.
   function activeApi() {
     if (isProspectiveMode()) return PROSPECTIVE_API;
     if (isScreenMode()) return SCREEN_API;
     if (isPeerMode()) return PEER_API;
     if (isChangeMode()) return CHANGE_API;
-    return isMilestonesMode() ? RADAR_API : MILESTONE_API;
+    return RADAR_API;
   }
   function activeWindow() {
-    if (isProspectiveMode()) return PROSPECTIVE_WINDOWS[state.filters.window];
-    return isMilestonesMode() ? RADAR_WINDOWS[state.filters.horizon] : MILESTONE_WINDOWS[state.filters.window];
+    return isProspectiveMode() ? PROSPECTIVE_WINDOWS[state.filters.window] : RADAR_WINDOWS[state.filters.horizon];
   }
   function usesWindow() { return !isChangeMode() && !isScreenMode() && !isPeerMode(); }
   function activeNoun() {
@@ -1057,8 +1059,12 @@
     ui.changeKindControl.hidden = !(isChangeMode() || isProspectiveMode());
     text(ui.changeKindLabel, isProspectiveMode() ? tr('Observed field', '观测字段') : tr('Registry field', '登记字段'));
     ui.changeKind.setAttribute('aria-label', isProspectiveMode() ? tr('Observed field', '观测字段') : tr('Registry field', '登记字段'));
-    text(ui.windowLabel, isProspectiveMode() ? tr('Observation window', '观测窗口') : tr('Record window', '记录窗口'));
-    ui.windowControl.querySelector('.bci-window-options').setAttribute('aria-label', isProspectiveMode() ? tr('First-observed window', '首次观测窗口') : tr('Registry date window', '登记日期窗口'));
+    // NIT 13: the payload and subtitle both say "horizon" for the radar
+    // mode, so its own window-control legend/aria-label must say the same
+    // thing rather than the legacy "record window" copy First-seen Tape
+    // still uses.
+    text(ui.windowLabel, isProspectiveMode() ? tr('Observation window', '观测窗口') : (isMilestonesMode() ? tr('Horizon', '窗口范围') : tr('Record window', '记录窗口')));
+    ui.windowControl.querySelector('.bci-window-options').setAttribute('aria-label', isProspectiveMode() ? tr('First-observed window', '首次观测窗口') : (isMilestonesMode() ? tr('Trial milestone horizon', '试验里程碑窗口范围') : tr('Registry date window', '登记日期窗口')));
     text(ui.queueKicker, modeKicker());
     text(ui.queueTitle, modeTitle());
     text(ui.sourceNote, sourceNoteCopy());
@@ -1207,13 +1213,24 @@
     badge.setAttribute('aria-label', tr('Registry date type: ', '登记日期类型：') + dateTypeLabel(normalized));
     return badge;
   }
+  // MAJOR 14: a resolved ticker is not always the sponsor own listing --
+  // `parent_of_subsidiary_sponsor` means the ticker is the sponsor PARENT.
+  // Rendering a bare ticker chip for that row implies the trial belongs to
+  // the parent listed security with no qualification, the same class of
+  // error as guessing a ticker. `direct_issuer` needs no extra chrome.
+  function isParentIssuer(issuer) { return clean(valueAt(issuer, 'issuer_relationship')) === 'parent_of_subsidiary_sponsor'; }
   // Catalyst Radar issuer chip (§3): a resolved ticker, or a typed
   // plain-word unresolved state -- never a guessed ticker.
   function issuerChip(issuer) {
     var issuerState = clean(valueAt(issuer, 'state'));
     if (issuerState === 'ticker_only') {
       var ticker = clean(valueAt(issuer, 'ticker'));
-      if (ticker) return el('span', 'bci-issuer-chip is-resolved', ticker);
+      if (ticker) {
+        var label = isParentIssuer(issuer) ? tr(ticker + ' (parent)', ticker + '（母公司）') : ticker;
+        var chip = el('span', 'bci-issuer-chip is-resolved' + (isParentIssuer(issuer) ? ' is-parent' : ''), label);
+        if (isParentIssuer(issuer)) chip.setAttribute('aria-label', tr(ticker + ' is the parent company of the sponsor, not the sponsor itself', ticker + ' 是申办方的母公司，并非申办方本身'));
+        return chip;
+      }
     }
     var labels = {
       sponsor_name_absent: ['Sponsor not on record', '未记录申办方'],
@@ -1240,19 +1257,30 @@
     if (clean(valueAt(revision, 'state')) !== 'has_revisions') return null;
     return el('span', 'bci-revision-chip', tr('Date moved', '日期已变更'));
   }
+  // Current-state honesty (MAJOR 6): a year/month-precision date that
+  // straddles the anchor is "sometime in that interval", not a fact the
+  // module may assert happened today -- state the interval, not certainty.
+  function currentWindowLabel(milestone) {
+    var start = clean(valueAt(milestone, 'interval_start')), end = clean(valueAt(milestone, 'interval_end'));
+    var interval = start && end ? (start === end ? start : (start + ' – ' + end)) : '';
+    return interval
+      ? tr('Scheduled window includes today (' + interval + ')', '计划窗口含今天（' + interval + '）')
+      : tr('Scheduled window includes today', '计划窗口含今天');
+  }
   // Exact for day precision; an honest [min, max] range for month/year
   // precision -- never a fabricated point estimate (§5 of the frozen
   // projection contract).
-  function daysToMilestoneLabel(timing) {
+  function daysToMilestoneLabel(timing, milestone) {
     var timingState = clean(valueAt(timing, 'state'));
     if (timingState === 'occurred') {
       var since = valueAt(timing, 'days_since_milestone');
-      return Number.isSafeInteger(since) ? tr(since + ' days ago', since + ' 天前') : tr('Not available', '暂不可用');
+      if (!Number.isSafeInteger(since)) return tr('Not available', '暂不可用');
+      return since === 1 ? tr('1 day ago', '1 天前') : tr(since + ' days ago', since + ' 天前');
     }
-    if (timingState === 'current') return tr('In progress now', '正在进行中');
+    if (timingState === 'current') return currentWindowLabel(milestone);
     var days = valueAt(timing, 'days_to_milestone');
     if (!days || typeof days !== 'object') return tr('Not available', '暂不可用');
-    if (Number.isSafeInteger(days.exact)) return tr(days.exact + ' days to milestone', '距里程碑 ' + days.exact + ' 天');
+    if (Number.isSafeInteger(days.exact)) return days.exact === 1 ? tr('1 day to milestone', '距里程碑 1 天') : tr(days.exact + ' days to milestone', '距里程碑 ' + days.exact + ' 天');
     if (Number.isSafeInteger(days.min) && Number.isSafeInteger(days.max)) return tr(days.min + '–' + days.max + ' days to milestone', '距里程碑 ' + days.min + '–' + days.max + ' 天');
     return tr('Not available', '暂不可用');
   }
@@ -1275,7 +1303,7 @@
     date.appendChild(el('strong', '', dateLabel(valueAt(milestone, 'date'), precisionOf(milestone))));
     date.appendChild(typeBadge(clean(valueAt(milestone, 'date_type'))));
     date.setAttribute('data-precision', precisionOf(milestone));
-    date.appendChild(el('span', 'bci-days-to-milestone', daysToMilestoneLabel(timing)));
+    date.appendChild(el('span', 'bci-days-to-milestone', daysToMilestoneLabel(timing, milestone)));
     button.appendChild(date);
     button.addEventListener('click', function () { selectTrial(id, trial, evidence, true, button, rowKey); });
     return button;
@@ -1295,7 +1323,7 @@
     state.rows.forEach(function (item) { buckets[radarTimingBucket(item)].push(item); });
     [
       ['upcoming', null],
-      ['current', tr('Happening now', '正在进行中')],
+      ['current', tr('Scheduled window includes today', '计划窗口含今天')],
       ['unusable', tr('Needs source review', '需核对来源')],
       ['occurred', tr('Reached', '已到达')]
     ].forEach(function (entry) {
@@ -1620,18 +1648,34 @@
           : ''));
       return;
     }
-    if (typeof total !== 'number') { text(ui.subtitle, isProspectiveMode() ? tr('First observed by this current-record collector', '由当前记录采集器首次观测') : tr('Registry-recorded primary completion and completion dates', '登记记录的主要完成和完成日期')); return; }
+    if (typeof total !== 'number') { text(ui.subtitle, isProspectiveMode() ? tr('First observed by this current-record collector', '由当前记录采集器首次观测') : tr('Registry-recorded primary completion and study completion dates', '登记记录的主要完成和研究完成日期')); return; }
     if (isMilestonesMode()) {
       // Partial-coverage denominator, stated in plain words (§3): the
       // decision-sentence banner stays a static message (STATE_PRECEDENCE
       // regex contract), so the actual counts live here instead.
+      //
+      // MAJOR 2: the headline count must be events_in_horizon (upcoming-only),
+      // never pagination.total -- total also counts occurred/current rows the
+      // engine still returns on this page, so it overstates "within the
+      // selected horizon". MAJOR 3: half of a cohort events can legally be
+      // beyond_horizon and excluded from every rendered row; that must be
+      // stated in plain words, never silently omitted.
       var horizon = valueAt(payload, 'effective_horizon') || {}, radarCoverage = valueAt(valueAt(payload, 'coverage'), 'radar') || {};
       var cohort = valueAt(radarCoverage, 'trials_in_cohort'), withEvents = valueAt(radarCoverage, 'trials_with_events');
+      var inHorizon = valueAt(radarCoverage, 'events_in_horizon'), reached = valueAt(radarCoverage, 'events_occurred'), beyond = valueAt(radarCoverage, 'events_beyond_horizon');
       var horizonLabel = valueAt(horizon, 'horizon_days') == null ? tr('across the full available record', '覆盖全部可用记录') : tr('within the selected horizon', '位于所选窗口内');
+      var mainCount = Number.isSafeInteger(inHorizon) ? inHorizon : total;
+      var headline = mainCount === 1 ? tr('1 trial milestone ' + horizonLabel, '1项试验里程碑' + horizonLabel) : tr(mainCount + ' trial milestones ' + horizonLabel, mainCount + '项试验里程碑' + horizonLabel);
+      var reachedLabel = Number.isSafeInteger(reached) && reached > 0
+        ? tr(' · ' + reached + ' already reached', ' · 另有 ' + reached + ' 项已到达')
+        : '';
+      var beyondLabel = Number.isSafeInteger(beyond) && beyond > 0
+        ? tr(' · Beyond horizon: ' + beyond + (beyond === 1 ? ' milestone not shown' : ' milestones not shown'), ' · 超出窗口：' + beyond + ' 项未显示')
+        : '';
       var coverageLabel = Number.isSafeInteger(cohort) && Number.isSafeInteger(withEvents)
         ? tr(' · Current cohort: ' + cohort + ' registered trials, ' + withEvents + ' with a recorded milestone date.', ' · 当前队列：' + cohort + ' 项已登记试验，其中 ' + withEvents + ' 项有已记录的里程碑日期。')
         : '';
-      text(ui.subtitle, (total === 1 ? tr('1 trial milestone ' + horizonLabel, '1项试验里程碑' + horizonLabel) : tr(total + ' trial milestones ' + horizonLabel, total + '项试验里程碑' + horizonLabel)) + coverageLabel);
+      text(ui.subtitle, headline + reachedLabel + beyondLabel + coverageLabel);
       return;
     }
     var timeLabel = clean(valueAt(window, 'from_date')) && clean(valueAt(window, 'to_date'))
@@ -2161,8 +2205,9 @@
       section.appendChild(el('p', 'bci-detail-note', copy));
       return section;
     }
-    var latest = valueAt(revision, 'latest') || {}, card = el('article', 'bci-endpoint');
-    card.appendChild(el('strong', '', tr('Date moved', '日期已变更') + ' · ' + tr(valueAt(revision, 'count') + ' revision(s) recorded', '已记录 ' + valueAt(revision, 'count') + ' 次变更')));
+    var latest = valueAt(revision, 'latest') || {}, card = el('article', 'bci-endpoint'), revisionCount = valueAt(revision, 'count');
+    var countLabel = revisionCount === 1 ? tr('1 revision recorded', '已记录 1 次变更') : tr(revisionCount + ' revisions recorded', '已记录 ' + revisionCount + ' 次变更');
+    card.appendChild(el('strong', '', tr('Date moved', '日期已变更') + ' · ' + countLabel));
     card.appendChild(el('p', '', tr('Before: ', '之前：') + (clean(valueAt(latest, 'from')) || tr('Not recorded', '未记录'))));
     card.appendChild(el('p', '', tr('After: ', '之后：') + (clean(valueAt(latest, 'to')) || tr('Not recorded', '未记录'))));
     if (clean(valueAt(latest, 'observed_at'))) card.appendChild(el('p', '', tr('Observed at ', '观测于 ') + observationTimestampLabel(valueAt(latest, 'observed_at'))));
@@ -2177,9 +2222,18 @@
     strip.appendChild(fact(tr('Milestone', '里程碑'), milestoneKindLabel(milestoneKindOf(item))));
     strip.appendChild(fact(tr('Scheduled date', '计划日期'), dateLabel(valueAt(milestone, 'date'), precisionOf(milestone))));
     strip.appendChild(fact(tr('Registry date type', '登记日期类型'), dateTypeLabel(clean(valueAt(milestone, 'date_type')).toUpperCase() || 'UNKNOWN')));
-    strip.appendChild(fact(tr('Days to milestone', '距里程碑天数'), daysToMilestoneLabel(timing)));
+    strip.appendChild(fact(tr('Days to milestone', '距里程碑天数'), daysToMilestoneLabel(timing, milestone)));
     strip.appendChild(fact(tr('Registry status', '登记状态'), clean(valueAt(trialStatus, 'value')) || tr('Not recorded', '未记录')));
     strip.appendChild(fact(tr('Sponsor on record', '记录中的申办方'), clean(valueAt(issuer, 'sponsor_name')) || tr('Not recorded', '未记录')));
+    // MAJOR 14: state the ticker relationship plainly -- a parent-company
+    // ticker is never presented as the sponsor own listing.
+    var tickerOnRecord = clean(valueAt(issuer, 'ticker'));
+    if (tickerOnRecord) {
+      strip.appendChild(fact(
+        tr('Ticker on record', '记录中的代码'),
+        isParentIssuer(issuer) ? tr(tickerOnRecord + ' — parent company, not the sponsor', tickerOnRecord + ' — 母公司，非申办方本身') : tickerOnRecord
+      ));
+    }
     section.appendChild(strip);
     var clocks = el('div', 'bci-evidence-strip');
     clocks.appendChild(fact(tr('Source update', '来源更新'), clean(valueAt(sourceClocks, 'updated_at')) ? timestampLabel(clean(valueAt(sourceClocks, 'updated_at'))) : tr('Not recorded', '未记录')));
@@ -2569,14 +2623,25 @@
       if (state.detail) { var activeRow = selectedRow(); showDetail(state.detail, activeRow && (valueAt(activeRow, 'evidence') || valueAt(activeRow, 'source')), activeRow); }
       else if (state.detailController && ui.inspector.classList.contains('is-open')) detailLoading();
     });
-    window.addEventListener('popstate', function () { abort('listController'); closeInspector({ restoreFocus: false, writeUrl: false, render: false }); readUrl(); syncControls(); loadMilestones({ replace: true }); });
+    // MAJOR 5, every path: readUrl() below can change state.mode (e.g. a
+    // back/forward navigation that crosses modes), and localizeControls()
+    // must re-run after syncControls() repaints the shared window buttons
+    // for the new mode, or their aria-label stays the PREVIOUS mode's text.
+    window.addEventListener('popstate', function () { abort('listController'); closeInspector({ restoreFocus: false, writeUrl: false, render: false }); readUrl(); syncControls(); localizeControls(); loadMilestones({ replace: true }); });
     window.addEventListener('resize', function () {
       syncInspectorDialog();
       if (isPeerMode() && state.rows.length && state.peerNarrow !== window.matchMedia('(max-width: 760px)').matches) renderQueue();
     });
   }
   function init() {
-    cacheUi(); readUrl(); localizeControls(); syncControls(); bindEvents();
+    // syncControls() must run before localizeControls(): paintWindowOptions()
+    // (invoked at the top of syncControls()) repaints the shared window
+    // buttons into the radar 180/365/730/All vocabulary, and
+    // localizeControls() is the sole writer of those buttons' aria-label,
+    // reading data-window/data-label-en/zh at call time. Reversed, the
+    // active "365" button announces as "90 days" for the whole first-load
+    // session (MAJOR 5).
+    cacheUi(); readUrl(); syncControls(); localizeControls(); bindEvents();
     writeUrl(); paintFrame();
     showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source receipt.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源凭证。'));
     loadMilestones({ replace: true });

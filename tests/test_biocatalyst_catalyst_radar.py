@@ -190,6 +190,11 @@ def test_timing_totality_and_coverage_sums():
         _trial("NCT20000002", primary_completion=("2026-08-20", "ACTUAL")),  # current (== anchor)
         _trial("NCT20000003", primary_completion=("2026-09-01", "ESTIMATED")),  # upcoming
         _trial("NCT20000004", primary_completion=("2030-01-01", "ESTIMATED")),  # beyond_horizon
+        # No primary_completion entry at all -- the ONLY requested kind is
+        # absent from this trial's `dates`, so this must actually exercise
+        # absent_date_events rather than the assertion being trivially
+        # satisfied by every other trial simply not requesting "completion".
+        _trial("NCT20000005"),
     ]
     proj = project_trial_milestones(
         trials=trials, anchor_date=anchor, horizon_days=365, kinds=("primary_completion",)
@@ -216,8 +221,14 @@ def test_timing_totality_and_coverage_sums():
     assert cov["events_beyond_horizon"] == 1
     assert cov["unusable_date_events"] == 0
     # kinds=("primary_completion",) only, so a missing "completion" date is
-    # never even considered -- absent_date_events counts only requested kinds.
-    assert cov["absent_date_events"] == 0
+    # never even considered -- absent_date_events counts only requested
+    # kinds. NCT20000005 requests primary_completion but has none recorded,
+    # so the counter this assertion names is actually exercised (nonzero),
+    # not just trivially satisfied by trials that never requested a
+    # different, unrelated kind.
+    assert cov["absent_date_events"] == 1
+    assert cov["trials_in_cohort"] == 5
+    assert cov["trials_with_events"] == 4
 
 
 # ---------------------------------------------------------------------------
@@ -243,6 +254,47 @@ def test_horizon_boundary_inclusive_then_exclusive():
     assert "NCT30000002" not in by_nct  # beyond_horizon rows are excluded from events
     assert proj.coverage["events_beyond_horizon"] == 1
     assert proj.coverage["events_in_horizon"] == 1
+
+
+def test_forward_horizon_uses_overlap_not_whole_interval_containment():
+    """MAJOR 4 review finding: occurred/current already classify a row by
+    whether its interval OVERLAPS a single day (today) -- the forward rule
+    must use the same test, or a coarse-precision date that STARTS inside
+    the horizon silently vanishes because its own imprecision pushes its
+    LATER end date past the threshold.
+    """
+    anchor = date(2026, 1, 1)
+    horizon_days = 180
+    # threshold = anchor + 179 days = 2026-06-29. A month-precision "2026-06"
+    # interval is [2026-06-01, 2026-06-30]: starts 15 days before the
+    # threshold, ends one day after it -- whole-interval containment would
+    # wrongly classify this beyond_horizon and drop the row entirely.
+    straddling = _trial("NCT40000001", primary_completion=("2026-06", "ESTIMATED"))
+    proj = project_trial_milestones(
+        trials=[straddling],
+        anchor_date=anchor,
+        horizon_days=horizon_days,
+        kinds=("primary_completion",),
+    )
+    events = {e.nct_id: e.as_dict() for e in proj.events}
+    assert "NCT40000001" in events
+    assert events["NCT40000001"]["timing"]["state"] == "upcoming"
+    assert proj.coverage["events_in_horizon"] == 1
+    assert proj.coverage["events_beyond_horizon"] == 0
+
+    # A date that genuinely starts after the threshold is still excluded --
+    # the rule change only fixes the overlap case, it does not widen the gate.
+    truly_beyond = _trial("NCT40000002", primary_completion=("2026-07-15", "ESTIMATED"))
+    proj_beyond = project_trial_milestones(
+        trials=[truly_beyond],
+        anchor_date=anchor,
+        horizon_days=horizon_days,
+        kinds=("primary_completion",),
+    )
+    beyond_events = {e.nct_id: e.as_dict() for e in proj_beyond.events}
+    assert "NCT40000002" not in beyond_events
+    assert proj_beyond.coverage["events_beyond_horizon"] == 1
+    assert proj_beyond.coverage["events_in_horizon"] == 0
 
 
 # ---------------------------------------------------------------------------
@@ -641,6 +693,34 @@ def test_acceptance_cohort_horizon_180():
     occurred = [e for e in proj.events if e.as_dict()["timing"]["state"] == "occurred"]
     assert len(upcoming) == 1
     assert len(occurred) == 1
+
+
+# ---------------------------------------------------------------------------
+# 12. Missing trial identity
+# ---------------------------------------------------------------------------
+
+
+def test_trials_with_missing_nct_id_are_skipped_and_counted_not_collided():
+    """MINOR 11 review finding: two trials with no usable nct_id used to
+    both produce event_id "nct::<kind>" -- a collision the client's own
+    de-dupe correctly rejects as a duplicate identity, integrity-blocking
+    the whole page. Such trials must be skipped and counted, never emitted.
+    """
+    missing_none = _trial(None, primary_completion=("2026-06-01", "ESTIMATED"))
+    missing_empty = _trial("", primary_completion=("2026-06-01", "ESTIMATED"))
+    normal = _trial("NCT50000001", primary_completion=("2026-06-01", "ESTIMATED"))
+    proj = project_trial_milestones(
+        trials=[missing_none, missing_empty, normal],
+        anchor_date=date(2026, 1, 1),
+        horizon_days=365,
+        kinds=("primary_completion",),
+    )
+    event_ids = [e.event_id for e in proj.events]
+    assert len(event_ids) == len(set(event_ids))
+    assert [e.nct_id for e in proj.events] == ["NCT50000001"]
+    assert proj.coverage["trials_missing_identity"] == 2
+    assert proj.coverage["trials_in_cohort"] == 3
+    assert proj.coverage["trials_with_events"] == 1
 
 
 # ---------------------------------------------------------------------------

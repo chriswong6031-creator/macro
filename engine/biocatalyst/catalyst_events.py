@@ -172,8 +172,18 @@ def _classify_timing(
     elif horizon_days is None:
         state = "upcoming"
     else:
+        # Overlap, not whole-interval containment (MAJOR 4 review finding):
+        # "occurred" and "current" above already classify on overlap with a
+        # single day (today), so the forward rule must use the same test --
+        # whole-interval containment silently classified a coarse-precision
+        # date that STARTS inside the horizon (e.g. a "2027-02" interval at
+        # horizon=next_180d, 165 days out) as beyond_horizon and dropped it,
+        # because its LATER end date fell past the threshold. The row is
+        # honestly "sometime in Feb 2027, which may or may not fall inside
+        # the next 180 days" -- overlap is the classification that matches
+        # what the row's own days_to_milestone (§5) already discloses.
         threshold = anchor_date + timedelta(days=horizon_days - 1)
-        state = "upcoming" if interval_end <= threshold else "beyond_horizon"
+        state = "upcoming" if interval_start <= threshold else "beyond_horizon"
 
     days_to_milestone: dict[str, int | None] | None = None
     days_since_milestone: int | None = None
@@ -409,10 +419,19 @@ def project_trial_milestones(
     events_beyond_horizon = 0
     unusable_date_events = 0
     absent_date_events = 0
+    trials_missing_identity = 0
 
     for trial in trials:
         nct_id = trial.get("nct_id")
-        nct_key = nct_id if isinstance(nct_id, str) else ""
+        if not isinstance(nct_id, str) or not nct_id:
+            # A trial with no usable nct_id has no safe event_id (§ MINOR 11
+            # review finding): two such trials would both collide on
+            # "nct::<kind>", which the client's de-dupe correctly rejects as
+            # a duplicate identity and integrity-blocks the whole page.
+            # Never emit a row for it; count it instead of guessing an id.
+            trials_missing_identity += 1
+            continue
+        nct_key = nct_id
         dates = trial.get("dates")
         dates = dates if isinstance(dates, Mapping) else {}
         trial_status = _trial_status_block(trial.get("status"))
@@ -534,6 +553,7 @@ def project_trial_milestones(
         "events_beyond_horizon": events_beyond_horizon,
         "unusable_date_events": unusable_date_events,
         "absent_date_events": absent_date_events,
+        "trials_missing_identity": trials_missing_identity,
         "kinds": list(kinds_tuple),
         "horizon_days": horizon_days,
         "anchor_date": anchor_date.isoformat(),

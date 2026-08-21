@@ -69,24 +69,47 @@ def _meta(**extra: object) -> dict:
     return body
 
 
-def milestone_empty() -> dict:
+def catalyst_radar_empty() -> dict:
+    """A valid, empty Catalyst Radar envelope (BioCatalyst P1-1).
+
+    Shape matches ``GET /api/biocatalyst/v1/catalyst-radar`` exactly: the
+    ``catalyst_radar`` row array, the ``effective_horizon`` block, the
+    ``coverage.radar`` denominators, and a query echo of the milestones
+    mode's real default request (horizon=next_365d, milestone_kind=all).
+    """
     return _meta(
-        milestones=[],
+        catalyst_radar=[],
         pagination={"limit": 50, "total": 0, "next_cursor": None},
         query={
-            "milestone_kind": "primary_completion",
-            "window": "next_90d",
-            "from_date": "",
-            "to_date": "",
+            "horizon": "next_365d",
+            "milestone_kind": "all",
             "q": "",
             "phase": "",
             "status": "",
             "condition": "",
         },
-        effective_window={
-            "from_date": "2026-08-16",
-            "to_date": "2026-11-14",
+        effective_horizon={
+            "horizon": "next_365d",
+            "horizon_days": 365,
             "anchor_date": "2026-08-16",
+        },
+        coverage={
+            "class": "current_only",
+            "radar": {
+                "trials_in_cohort": 0,
+                "trials_with_events": 0,
+                "events_total": 0,
+                "events_in_horizon": 0,
+                "events_occurred": 0,
+                "events_current": 0,
+                "events_beyond_horizon": 0,
+                "unusable_date_events": 0,
+                "absent_date_events": 0,
+                "trials_missing_identity": 0,
+                "kinds": ["primary_completion", "completion"],
+                "horizon_days": 365,
+                "anchor_date": "2026-08-16",
+            },
         },
     )
 
@@ -243,7 +266,7 @@ def test_401_paints_locked_not_generic_unavailable(tmp_path: Path) -> None:
         tmp_path,
         {
             "routes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(401, '{"detail":"auth"}')
+                "/api/biocatalyst/v1/catalyst-radar": _route(401, '{"detail":"auth"}')
             }
         },
     )["first"]
@@ -278,11 +301,11 @@ def test_trial_screen_valid_nonzero_is_normal(tmp_path: Path) -> None:
 def test_milestones_valid_zero_is_empty_not_outage(tmp_path: Path) -> None:
     out = _run(
         tmp_path,
-        {"routes": {"/api/biocatalyst/v1/trials/milestones": _route(200, _json(milestone_empty()))}},
+        {"routes": {"/api/biocatalyst/v1/catalyst-radar": _route(200, _json(catalyst_radar_empty()))}},
     )["first"]
     assert out["workspaceState"] == "empty"
     assert out["decisionState"] == "empty"
-    assert "No recorded dates" in out["queue"]
+    assert "No trial milestones" in out["queue"]
     assert "Registry page unavailable" not in out["queue"]
     assert "source_outage" not in (out["workspaceState"], out["decisionState"])
 
@@ -313,7 +336,7 @@ def test_503_paints_source_outage(tmp_path: Path) -> None:
         tmp_path,
         {
             "routes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(
+                "/api/biocatalyst/v1/catalyst-radar": _route(
                     503, '{"detail":"trial intelligence temporarily unavailable"}'
                 )
             }
@@ -333,8 +356,8 @@ def test_valid_json_wrong_contract_is_integrity_block(tmp_path: Path) -> None:
         tmp_path,
         {
             "routes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(
-                    200, _json({"schema_version": "not-the-contract", "milestones": []})
+                "/api/biocatalyst/v1/catalyst-radar": _route(
+                    200, _json({"schema_version": "not-the-contract", "catalyst_radar": []})
                 )
             }
         },
@@ -353,7 +376,7 @@ def test_malformed_200_json_is_integrity_block(tmp_path: Path) -> None:
         tmp_path,
         {
             "routes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(200, "{not json", "application/json")
+                "/api/biocatalyst/v1/catalyst-radar": _route(200, "{not json", "application/json")
             }
         },
     )["first"]
@@ -373,7 +396,7 @@ def test_validator_throw_cannot_reach_generic_unavailable_painter(tmp_path: Path
         tmp_path,
         {
             "routes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(
+                "/api/biocatalyst/v1/catalyst-radar": _route(
                     200, _json({"ok": True, "rows": "this is not a milestone envelope"})
                 )
             }
@@ -390,7 +413,7 @@ def test_switching_from_failed_mode_to_healthy_mode_clears_failure(tmp_path: Pat
         tmp_path,
         {
             "routes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(503, '{"detail":"down"}')
+                "/api/biocatalyst/v1/catalyst-radar": _route(503, '{"detail":"down"}')
             },
             "clickMode": "screen",
             "secondRoutes": {
@@ -412,13 +435,13 @@ def test_same_mode_refresh_from_integrity_to_503_is_source_outage(tmp_path: Path
         tmp_path,
         {
             "routes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(
-                    200, _json({"schema_version": "not-the-contract", "milestones": []})
+                "/api/biocatalyst/v1/catalyst-radar": _route(
+                    200, _json({"schema_version": "not-the-contract", "catalyst_radar": []})
                 )
             },
             "clickRefresh": True,
             "secondRoutes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(
+                "/api/biocatalyst/v1/catalyst-radar": _route(
                     503, '{"detail":"trial intelligence temporarily unavailable"}'
                 )
             },
@@ -441,14 +464,14 @@ def test_same_mode_refresh_from_503_to_wrong_contract_is_integrity_block(tmp_pat
         tmp_path,
         {
             "routes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(
+                "/api/biocatalyst/v1/catalyst-radar": _route(
                     503, '{"detail":"trial intelligence temporarily unavailable"}'
                 )
             },
             "clickRefresh": True,
             "secondRoutes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(
-                    200, _json({"schema_version": "not-the-contract", "milestones": []})
+                "/api/biocatalyst/v1/catalyst-radar": _route(
+                    200, _json({"schema_version": "not-the-contract", "catalyst_radar": []})
                 )
             },
         },
@@ -469,8 +492,8 @@ def test_html_content_type_on_valid_json_is_integrity_block(tmp_path: Path) -> N
         tmp_path,
         {
             "routes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(
-                    200, _json(milestone_empty()), "text/html"
+                "/api/biocatalyst/v1/catalyst-radar": _route(
+                    200, _json(catalyst_radar_empty()), "text/html"
                 )
             }
         },
@@ -499,7 +522,7 @@ def test_post_validation_render_exception_is_not_source_or_integrity(tmp_path: P
     assert mutated != source
     out = _run(
         tmp_path,
-        {"routes": {"/api/biocatalyst/v1/trials/milestones": _route(200, _json(milestone_empty()))}},
+        {"routes": {"/api/biocatalyst/v1/catalyst-radar": _route(200, _json(catalyst_radar_empty()))}},
         js_text=mutated,
     )["first"]
     copy = (out["queue"] + out["notice"] + out["status"] + out["statusDetail"] + out["why"]).lower()
@@ -597,7 +620,7 @@ def test_mutation_routing_validator_through_generic_unavailable_fails_regression
         tmp_path,
         {
             "routes": {
-                "/api/biocatalyst/v1/trials/milestones": _route(
+                "/api/biocatalyst/v1/catalyst-radar": _route(
                     200, _json({"schema_version": "not-the-contract"})
                 )
             }

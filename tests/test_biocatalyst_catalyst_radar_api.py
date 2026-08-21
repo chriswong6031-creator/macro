@@ -18,6 +18,7 @@ scenario control), reused here rather than re-implemented.
 """
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 from typing import Any, Iterator
@@ -39,6 +40,8 @@ from engine.biocatalyst.catalyst_events import (  # noqa: E402
 )
 from tests.test_biocatalyst_api import (  # noqa: E402
     _assert_private_headers,
+    _classified_change_tape,
+    _classified_change_tape_projection,
     _milestone_operational,
     _milestone_projection,
     _milestone_snapshot,
@@ -332,6 +335,196 @@ def test_catalyst_radar_never_leaks_a_path_object_key_or_private_hash(entitled_c
 
 
 # ---------------------------------------------------------------------------
+# 11 (MINOR 9): revision lineage wiring THROUGH THE ENDPOINT.
+#
+# projection.change_tapes_by_nct hangs off the SAME `_read_bundle()` call
+# this route already makes (the change-tape endpoint reads the identical
+# attribute), so populating revisions_by_nct costs zero new I/O. This proves
+# the wiring end to end: a real milestone-date change tape row renders
+# has_revisions with correct from/to/from_version/to_version, and a
+# same-shaped enrollment-only change never counts as a milestone revision.
+# ---------------------------------------------------------------------------
+
+
+def _exact_value_entry(value: str) -> dict[str, Any]:
+    encoded = json.dumps(value)
+    return {
+        "state": "present",
+        "value_json": encoded,
+        "value_byte_length": len(encoded.encode("utf-8")),
+        "value_truncated": False,
+        "unavailable_reason": None,
+    }
+
+
+def _milestone_date_constraint_row() -> dict[str, Any]:
+    """A milestone_date_constraint change row disclosing exact before/after values."""
+
+    return {
+        "field_class": "milestone_date_constraint",
+        "exact_operation_index": 0,
+        "review_state": "not_required",
+        "semantic_resolution": "registry_field_class_only",
+        "op": "replace",
+        "before_state": "present",
+        "after_state": "present",
+        "source_versions": {"before": 1, "after": 2},
+        "observed_at": "2026-08-02T12:00:00.000000Z",
+        "protocol_change_asserted": False,
+        "materiality_assessed": False,
+        "correction_assessed": False,
+        "exact_values": {
+            "source_pointer": "/protocolSection/statusModule/primaryCompletionDateStruct/date",
+            "before": _exact_value_entry("2027-01"),
+            "after": _exact_value_entry("2027-06"),
+        },
+        "correction_lineage": {
+            "relation": "supersedes_prior_recorded_value",
+            "predecessor_basis": "before_version_record",
+            "predecessor_source_version": 1,
+            "predecessor_exact_operation_index": None,
+            "correction_assessed": False,
+        },
+    }
+
+
+def test_catalyst_radar_wires_revision_lineage_through_the_endpoint_from_the_change_tape(
+    entitled_client, monkeypatch
+) -> None:
+    revised_nct = "NCT60000001"
+    enrollment_only_nct = "NCT60000002"
+    snapshots = [
+        _milestone_snapshot(revised_nct, primary_completion=("2027-06", "ESTIMATED")),
+        _milestone_snapshot(enrollment_only_nct, primary_completion=("2027-06", "ESTIMATED")),
+    ]
+    revised_tape = _classified_change_tape(revised_nct, rows=[_milestone_date_constraint_row()])
+    revised_tape["value_disclosure"] = {
+        "encoding": "canonical_json_utf8",
+        "locator_grammar": "rfc6901_json_pointer_into_source_record",
+        "max_value_bytes": biocatalyst_api._CHANGE_TAPE_MAX_VALUE_JSON_BYTES,
+        "max_tape_value_bytes": biocatalyst_api._CHANGE_TAPE_MAX_TAPE_VALUE_JSON_BYTES,
+        "truncation_behavior": "declared_prefix_with_original_byte_length",
+        "unavailable_behavior": "explicit_row_marker_never_empty_and_never_guessed",
+        "correction_assessed": False,
+        "state": "exact_values_present",
+    }
+    enrollment_tape = _classified_change_tape(
+        enrollment_only_nct,
+        rows=[
+            {
+                "field_class": "enrollment",
+                "exact_operation_index": 0,
+                "review_state": "not_required",
+                "semantic_resolution": "registry_field_class_only",
+                "op": "replace",
+                "before_state": "present",
+                "after_state": "present",
+                "source_versions": {"before": 1, "after": 2},
+                "observed_at": "2026-08-02T12:00:00.000000Z",
+                "protocol_change_asserted": False,
+                "materiality_assessed": False,
+                "correction_assessed": False,
+            }
+        ],
+    )
+    projection = _classified_change_tape_projection(
+        snapshots, {revised_nct: revised_tape, enrollment_only_nct: enrollment_tape}
+    )
+    monkeypatch.setattr(biocatalyst_api, "_read_bundle", lambda: (projection, _milestone_operational()))
+
+    response = entitled_client.get("/api/biocatalyst/v1/catalyst-radar?horizon=all")
+    assert response.status_code == 200
+    rows = {row["nct_id"]: row for row in response.json()["catalyst_radar"]}
+    assert set(rows) == {revised_nct, enrollment_only_nct}
+
+    revision = rows[revised_nct]["revision"]
+    assert revision["state"] == "has_revisions"
+    assert revision["count"] == 1
+    assert revision["latest"]["from"] == "2027-01"
+    assert revision["latest"]["to"] == "2027-06"
+    assert revision["latest"]["from_version"] == 1
+    assert revision["latest"]["to_version"] == 2
+
+    # An enrollment-only change on a covered NCT is real change-tape history,
+    # but it is not a milestone-date revision -- it must never be misread as
+    # one, and it must not fabricate a "no revisions collected" state either.
+    enrollment_revision = rows[enrollment_only_nct]["revision"]
+    assert enrollment_revision["state"] == "no_revisions_recorded"
+    assert enrollment_revision["count"] == 0
+
+
+# ---------------------------------------------------------------------------
+# 12 (MAJOR 14): a parent-company ticker is never rendered as the sponsor's
+# own listing.
+# ---------------------------------------------------------------------------
+
+
+def test_catalyst_radar_surfaces_issuer_relationship_for_parent_and_direct_issuers(
+    entitled_client, monkeypatch
+) -> None:
+    sponsor_document = {
+        "rows": [
+            {
+                "sponsor_name": "Acme Subsidiary Trials",
+                "valid_from": "2020-01-01",
+                "valid_to": None,
+                "review_state": "reviewed_admitted",
+                "ticker": "PARENTCO",
+                "issuer_relationship": "parent_of_subsidiary_sponsor",
+            },
+            {
+                "sponsor_name": "Beta Direct Pharma",
+                "valid_from": "2020-01-01",
+                "valid_to": None,
+                "review_state": "reviewed_admitted",
+                "ticker": "BETA",
+                "issuer_relationship": "direct_issuer",
+            },
+        ]
+    }
+    parent_snapshot = _milestone_snapshot("NCT61000001", primary_completion=("2027-06-01", "ESTIMATED"))
+    parent_snapshot["facts"]["sponsor"] = {"state": "observed", "value": {"name": "Acme Subsidiary Trials"}}
+    direct_snapshot = _milestone_snapshot("NCT61000002", primary_completion=("2027-06-01", "ESTIMATED"))
+    direct_snapshot["facts"]["sponsor"] = {"state": "observed", "value": {"name": "Beta Direct Pharma"}}
+    projection = _milestone_projection([parent_snapshot, direct_snapshot])
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_catalyst_radar_runtime",
+        lambda: (
+            RADAR_HORIZONS,
+            RADAR_EVENT_KINDS,
+            project_trial_milestones,
+            lambda _repo_root: sponsor_document,
+        ),
+    )
+    monkeypatch.setattr(biocatalyst_api, "_read_bundle", lambda: (projection, _milestone_operational()))
+
+    response = entitled_client.get("/api/biocatalyst/v1/catalyst-radar?horizon=all")
+    assert response.status_code == 200
+    rows = {row["nct_id"]: row["issuer"] for row in response.json()["catalyst_radar"]}
+
+    parent_issuer = rows["NCT61000001"]
+    assert parent_issuer["state"] == "ticker_only"
+    assert parent_issuer["ticker"] == "PARENTCO"
+    assert parent_issuer["issuer_relationship"] == "parent_of_subsidiary_sponsor"
+
+    direct_issuer = rows["NCT61000002"]
+    assert direct_issuer["state"] == "ticker_only"
+    assert direct_issuer["ticker"] == "BETA"
+    assert direct_issuer["issuer_relationship"] == "direct_issuer"
+
+    # The UI-side qualifier: the row renderer must brand a parent-company
+    # ticker differently from a direct issuer's -- never a bare ticker chip
+    # implying the trial belongs to the parent's own listed security.
+    js = (_TEMPLATES / "biocatalyst.js").read_text(encoding="utf-8")
+    assert "parent_of_subsidiary_sponsor" in js
+    assert "isParentIssuer" in js
+    parent_chip_body = js[js.index("function issuerChip(") : js.index("function trialStatusChip(")]
+    assert "isParentIssuer" in parent_chip_body
+    assert "is-parent" in parent_chip_body
+
+
+# ---------------------------------------------------------------------------
 # 10: static UI-contract checks (string-level, like test_biocatalyst_page.py).
 # ---------------------------------------------------------------------------
 
@@ -360,6 +553,7 @@ def test_ui_contract_wires_the_radar_api_and_365_day_window() -> None:
 def test_ui_contract_never_speaks_forbidden_market_wording() -> None:
     js = (_TEMPLATES / "biocatalyst.js").read_text(encoding="utf-8")
     html = (_TEMPLATES / "biocatalyst.html.j2").read_text(encoding="utf-8")
+    engine_src = (_ROOT / "engine" / "biocatalyst" / "catalyst_events.py").read_text(encoding="utf-8")
     # "readout" is checked as a standalone word: the pre-existing, unrelated
     # Temporal Braid feature owns the compound id/variable "braid-readout" /
     # "braidReadout" (bci-braid-readout), which is not the forbidden market
@@ -368,6 +562,17 @@ def test_ui_contract_never_speaks_forbidden_market_wording() -> None:
     html_without_braid = re.sub(r"braid-?readout", "", html, flags=re.IGNORECASE)
     assert "readout" not in js_without_braid.lower()
     assert "readout" not in html_without_braid.lower()
-    for forbidden in ("catalyst date", "cancelled"):
+    # WEAK TEST fix: the US spelling "canceled" is just as forbidden as
+    # "cancelled", and the frozen projection engine (which never imports
+    # app.* and could still smuggle market wording into its own
+    # docstrings/comments) is in scope too, not only the two template files.
+    for forbidden in ("catalyst date", "cancelled", "canceled"):
         assert forbidden not in js.lower(), forbidden
         assert forbidden not in html.lower(), forbidden
+        assert forbidden not in engine_src.lower(), forbidden
+    # The ZH side of the same prohibition: no Chinese "cancelled/withdrawn as
+    # a market event" wording either -- only the frozen registry-status ZH
+    # labels (already exercised elsewhere) may speak trial-status language.
+    for forbidden_zh in ("取消",):
+        assert forbidden_zh not in js, forbidden_zh
+        assert forbidden_zh not in html, forbidden_zh
