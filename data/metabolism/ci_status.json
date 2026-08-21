@@ -1,6 +1,6 @@
 {
-  "ts": "2026-08-21T02:18:22+00:00",
-  "main_sha": "68475f00b53ee1b5b3cf01b8b8ca57a49c8b47ab",
+  "ts": "2026-08-21T03:31:30+00:00",
+  "main_sha": "7ebddd10d50443863f69405654b3d02d572ed3d2",
   "red_required": [
     {
       "name": "tier-gate",
@@ -15,6 +15,12 @@
       "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32438204844/job/96643541574"
     },
     {
+      "name": "project",
+      "conclusion": "cancelled",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32438050368/job/96643106879"
+    },
+    {
       "name": "health",
       "conclusion": "cancelled",
       "status": "completed",
@@ -22,9 +28,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 9,
+  "consecutive_failures": 10,
   "sensed_shas": [
-    "68475f00b53ee1b5b3cf01b8b8ca57a49c8b47ab",
+    "7ebddd10d50443863f69405654b3d02d572ed3d2",
     "9d9c830ecd614b064dc4530ad9b9db9bbe123054"
   ],
   "heartbeat_degraded": false
