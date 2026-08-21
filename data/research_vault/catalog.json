@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T16:18:47.839775+00:00",
-  "count": 1557,
+  "generated_at": "2026-08-21T17:18:38.076566+00:00",
+  "count": 1560,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -83,6 +83,46 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-tahiacdewgo-97a5ef",
+      "title": "GS Gold Macro buying w a physical kicker",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T16:30:31Z",
+      "summary_points": [
+        "**China Demand Fundamentals**: Shanghai's top 5 2-day gold buying in 5 years and 25% off highs signal strong underlying demand, with imports surging +444 MT (80% y/y YTD) offsetting central bank/ETF declines despite tariff volatility.",
+        "**Geopolitical Flow Divergence**: UK-China trade (37 MT Q2 vs 15 MT 2025), Turkey buying back, and Russia liquidating highlight geopolitical drivers reshaping gold flows, creating asymmetric demand/supply dynamics.",
+        "**EFP Speculative Signals**: Rolling 2nd Matched EFP spikes correlate with tariff events, indicating elevated speculative activity and potential short-term volatility in gold pricing.",
+        "**CTA Momentum Buildup**: CTAs increasing long positions with positive momentum indicators confirm sustained bullish sentiment, reinforcing technical support for gold's upward trajectory."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wo7l8b171me-ba2862",
+      "title": "High Yield and Loan Strategy Q2 earnings AI Winners Extend Their Lead",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T15:27:56Z",
+      "summary_points": [
+        "**AI Exposure Gap**: LevFin's AI beneficiary share (18%) lags S&P 500 (31%), driving weaker revenue growth (65% vs 70%) and margin expansion (37% vs 39%), highlighting structural underperformance in AI monetization.",
+        "**AI-Driven Spread Premium**: AI-related HY spreads at 320bps (vs ex-AI 172bps) reflect a 147bps premium, signaling elevated risk perception and critical for relative value assessment in AI debt.",
+        "**Sector Performance Divergence**: AI-tailwind cohorts (e.g., Capital Goods, Energy) show 16.2% revenue growth vs.",
+        "AI-risk sectors (e.g., Healthcare Tech, Travel) at -2.0%, underscoring fundamental dispersion requiring active sector rotation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 36,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-g4wdspqk1iz-efd060",
       "title": "DB Coty Aug 21",
@@ -224,6 +264,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nvcuq5zrs2s-797790",
+      "title": "GS Novak US Industrials and Materials two points 20 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:29:17Z",
+      "summary_points": [
+        "**ISM Data Beat**: Philly Fed Manufacturing Survey shows expansion (current activity, new orders, shipments above nonrecession averages; employment at multiyear high), with desk favoring PH, MMM, IR, LECO, IEX, GTES, RAL.",
+        "**DE Valuation & Growth Gap**: DE's 5-year earnings growth lags broader industrials, trading at 28x NTM P/E (vs.",
+        "23-24x historical trough), with consensus fiscal 2027 net income ($6bn) elevated but not extreme.",
+        "**Forestry Sector Weakness**: Global forestry down 10% due to Brazil/Europe softening and weaker North American residential markets, driving PPA sales to low end.",
+        "**Technical Resistance**: DE/SSINDU index ratio at historical high (0.5287), setting a high bar for fiscal 2027 recovery; EOP programs unlikely to sustain 30% EPS growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
