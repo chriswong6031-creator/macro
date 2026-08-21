@@ -1,37 +1,1017 @@
-<section class="si-view" data-view="money">
-  <h2><span class="l-en">Money &amp; Breadth</span><span class="l-zh">资金与广度</span></h2>
-  <p class="si-view-read" id="si-read-money" hidden></p>
-  <div id="money-proof" class="ref-proof">Loading proof-of-data…</div>
+<!-- ══════════════════════════════════════════════════════════════════════════════
+     XPV2-SC-R3B · LANE D3 · MONEY & BREADTH  (dense-research tier, CONTEXT authority)
+     Binds: build/DESIGN_SYSTEM_SPEC.md §5 grammar · §6 authority table · §8.1 mount-width
+            law · §9 components · §10 dense-research density · §11 EN/ZH · §12 a11y floor
+     Job (COMMISSION §11): "Where is money actually flowing, and how broad is the market?"
 
-  <div id="si-money">
-    <h3 id="internals-section">Market internals (placeholder)</h3>
-    <div id="scc-leadership" style="color:var(--muted)">Sector-ETF flow board mount — the extracted
-      <code>#sc-flows</code> fragment (fixture_supplement/fragments/sc_flows.html) is embedded verbatim
-      and inserted here by the script below, exactly as the server bakes it in production (never
-      re-rendered from the raw flow numbers).</div>
-    <div id="sc-flows-mount"></div>
+     COMPOSITION — one answer, then FOUR L1 bands (dense budget is 5), each one object:
+       1  #internals-section  The breadth board .......... verdict + money-flow + 3 measures
+       2  #sc-flows           Sector-ETF flow table ...... server-rendered fragment, verbatim
+       3  #sc-heatmap         Market heat ................ treemap + mandatory table equivalent
+       4  #scc-leadership     Index leadership ........... hero + universe table + drivers
+       +  deeper path (one .r3-more text link; zero filled controls on a context view)
+
+     THE VIEW THESIS — COLOUR LIVES ONLY WHERE IT IS DATA.
+     Production paints the breadth verdict word and three mini-bars in --up/--warn/--down
+     (sector_central.html.j2:3041-3051). On a context view that reads as a verdict board,
+     which is the exact defect §6 exists to prevent. Here every measure is ACHROMATIC and
+     prints its own THRESHOLD as a hairline tick instead — the A/D=1 line, and production's
+     own 40% / 60% above-200 cut-offs (:3050-3051). A reader sees where the number sits
+     against the rule that names it, which a colour never showed. The only chromatic marks
+     on this view are the two organs whose colour IS the measurement: the heat treemap and
+     the sector-ETF flow table. Deliberate divergence, recorded here, not absorbed.
+
+     NO FUSION (commission §11): the organs are never combined into a health/action score.
+     Every figure below is a field read straight off a frozen producer artifact.
+     ══════════════════════════════════════════════════════════════════════════════ -->
+<section class="si-view r3-view--context r3-view--dense" data-view="money">
+
+<style>
+/* ── fallback token/primitive layer ────────────────────────────────────────────
+   @layer is a LOSING cascade origin: any UNLAYERED declaration in the document
+   (the design shell's verbatim theme.css mirror + .r3-* primitives) beats every
+   rule in here regardless of order or specificity. It exists only so this partial
+   renders truthfully when assembled against the build harness's throwaway
+   placeholder shell, and goes inert the moment the real shell is in the document.
+   Values are COPIED from build/shell_specimen.html §1 (itself a verbatim mirror of
+   templates/theme.css) — nothing is retuned and no new token name is minted. */
+@layer r3fb {
+  :root{
+    --font-ui:-apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, "Helvetica Neue",
+      "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC", sans-serif;
+    --font-mono:ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+    --fs-num-lg:22px; --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-sm:12.5px;
+    --fs-label:11px; --fs-micro:10px;
+    --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3; --muted:#8b93a1; --line:#3a4150;
+    --warn:#e0a030; --up:#45b873; --down:#e06464; --info:#5b9bf0; --link:#7aa7e0;
+    --card-shadow:0 1px 0 rgba(255,255,255,.02);
+    --gbtn-bg:color-mix(in srgb, var(--panel2) 52%, transparent);
+    --gbtn-brd:color-mix(in srgb, var(--text) 12%, transparent);
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-7:32px; --sp-8:44px;
+    --gap-grid:18px;
+    --r-ctl:8px; --r-btn:10px; --r-card:12px; --r-panel:14px; --r-pill:999px;
+    --t-fast:.16s; --t-med:.2s; --ease-std:ease; --ease-lift:cubic-bezier(.2,.7,.3,1);
+    --ink-mix-up:100%; --ink-mix-down:100%; --ink-mix-warn:100%; --ink-mix-link:100%; --ink-mix-info:100%;
+    --r3-thread:var(--link);
+  }
+  html[data-theme="light"]{
+    --bg:#f7f8fa; --panel:#ffffff; --panel2:#eef1f6; --text:#1c2430; --muted:#5d6b7e;
+    --line:color-mix(in srgb, #1c2430 16%, #eaecf0);
+    --warn:#b9791a; --up:#1f9a55; --down:#cf4040; --info:#285fff; --link:#285fff;
+    --card-shadow:0 1px 3px rgba(20,30,50,.07);
+    --gbtn-bg:color-mix(in srgb, var(--panel2) 78%, var(--panel));
+    --gbtn-brd:color-mix(in srgb, #1c2430 50%, transparent);
+    --ink-mix-up:62%; --ink-mix-down:84%; --ink-mix-warn:62%; --ink-mix-link:88%; --ink-mix-info:88%;
+    --r3-thread:color-mix(in srgb, var(--link) 74%, var(--line));
+  }
+  html[data-lang="zh"]{ --up:#e06464; --down:#45b873; }
+  html[data-theme="light"][data-lang="zh"]{ --up:#cf4040; --down:#1f9a55; --ink-mix-up:84%; --ink-mix-down:62%; }
+  :root{
+    --ink-up:color-mix(in srgb, var(--up) var(--ink-mix-up), var(--text));
+    --ink-down:color-mix(in srgb, var(--down) var(--ink-mix-down), var(--text));
+    --ink-warn:color-mix(in srgb, var(--warn) var(--ink-mix-warn), var(--text));
+    --ink-link:color-mix(in srgb, var(--link) var(--ink-mix-link), var(--text));
+    --ink-info:color-mix(in srgb, var(--info) var(--ink-mix-info), var(--text));
+  }
+  html[data-lang] .l-zh{ display:none; }
+  html[data-lang="zh"] .l-en{ display:none; }
+  html[data-lang="zh"] .l-zh{ display:inline; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-ui);
+    font-size:var(--fs-body); line-height:1.55; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; text-decoration:none; } h1,h2,h3{ margin:0; } p{ margin:0; }
+  .tnum{ font-variant-numeric:tabular-nums; }
+  .si-view{ display:none; } .si-view.on{ display:block; }
+  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--r3-chrome-h,40px) + var(--r3-mnav-h,0px) + 16px); }
+  :where(a,button,summary,select,[tabindex]):focus-visible{
+    outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; border-radius:var(--r-ctl); }
+  /* .r3-* primitives, copied verbatim from build/shell_specimen.html §7/§9/§10 */
+  .r3-eyebrow{ display:block; font-size:var(--fs-label); font-weight:600; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted); }
+  .r3-answer{ border-left:3px solid var(--r3-thread); padding:2px 0 2px var(--sp-4); margin:0 0 var(--sp-6); }
+  .r3-answer-view{ font-size:var(--fs-label); font-weight:700; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+  .r3-answer-line, .r3-answer .si-view-read{ font-size:var(--fs-num-lg); font-weight:500;
+    line-height:1.36; letter-spacing:-.01em; color:var(--text); max-width:62ch; }
+  html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){ letter-spacing:0; line-height:1.55; max-width:34em; }
+  .r3-answer .si-view-read{ display:flex; align-items:flex-start; gap:11px; margin:0; padding:0;
+    background:none; border:0; border-radius:0; }
+  .si-view-read[hidden]{ display:none; }
+  .r3-answer .si-vr-g{ width:20px; height:20px; flex:none; margin-top:5px; color:var(--ink-link,var(--link)); }
+  .r3-answer .si-vr-t{ flex:0 1 auto; min-width:0; }
+  .r3-answer .si-vr-q{ flex:none; margin-top:7px; display:inline-flex; align-items:center;
+    justify-content:center; width:16px; height:16px; border:1px solid var(--line); border-radius:50%;
+    font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+  .r3-answer .si-view-read:not([hidden]) ~ .r3-answer-line{ display:none; }
+  .r3-answer-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
+    margin-top:12px; font-size:var(--fs-sm); color:var(--muted); }
+  .r3-q{ display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
+    border:1px solid var(--line); border-radius:50%; font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+  .r3-asof{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.05em;
+    color:var(--muted); font-variant-numeric:tabular-nums; }
+  .r3-sec{ display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3); margin:0 0 var(--sp-3); }
+  .r3-sec h2{ font-size:var(--fs-h2); font-weight:700; letter-spacing:-.01em; }
+  .r3-sec .r3-sec-sub{ font-size:var(--fs-sm); color:var(--muted); }
+  .r3-sec .r3-asof{ margin-left:auto; }
+  .r3-band{ margin-top:var(--sp-7); }
+  .r3-panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel);
+    box-shadow:var(--card-shadow); }
+  html[data-theme="light"] .r3-panel{ border-color:color-mix(in srgb, var(--text) 9%, var(--line)); }
+  .r3-more{ display:inline-flex; align-items:center; gap:7px; min-height:44px; font-size:var(--fs-sm);
+    font-weight:700; color:var(--ink-link,var(--link)); }
+  .r3-more::after{ content:""; width:6px; height:6px; flex:none; border-right:1.6px solid currentColor;
+    border-top:1.6px solid currentColor; transform:rotate(45deg); transition:transform var(--t-fast) var(--ease-std); }
+  .r3-more:hover::after{ transform:translateX(2px) rotate(45deg); }
+  .r3-vh{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+    clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
+  .r3-tblbox{ overflow-x:auto; }
+  .r3-tbl{ width:100%; min-width:420px; border-collapse:collapse; font-size:var(--fs-sm); }
+  .r3-tbl th{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); }
+  .r3-tbl td{ padding:9px 12px; border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent);
+    font-variant-numeric:tabular-nums; }
+  .r3-tbl td:first-child{ font-weight:700; font-size:var(--fs-body); }
+  .r3-tbl tr:last-child td{ border-bottom:0; }
+  .r3-tbl .num{ text-align:right; }
+  .r3-chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 9px; border-radius:var(--r-pill);
+    border:1px solid color-mix(in srgb, var(--c,var(--muted)) 34%, transparent);
+    background:color-mix(in srgb, var(--c,var(--muted)) 11%, var(--panel)); color:var(--c,var(--muted));
+    font-size:var(--fs-label); font-weight:700; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; }
+  .r3-tag{ display:inline-flex; align-items:center; padding:1px 7px; border-radius:var(--r-ctl);
+    border:1px solid var(--line); color:var(--muted); font-size:var(--fs-micro); font-weight:600;
+    letter-spacing:.05em; white-space:nowrap; }
+  .r3-disc{ border:1px solid var(--line); border-radius:var(--r-card); background:var(--panel); }
+  .r3-disc summary{ cursor:pointer; padding:12px 15px; font-size:var(--fs-sm); font-weight:700;
+    min-height:44px; display:flex; align-items:center; gap:9px; }
+  .r3-disc summary small{ color:var(--muted); font-weight:400; }
+  .r3-mount{ display:grid; place-items:center; gap:6px; min-height:var(--h,300px);
+    border:1px dashed color-mix(in srgb, var(--muted) 40%, transparent); border-radius:var(--r-panel);
+    background:color-mix(in srgb, var(--panel) 70%, transparent); color:var(--muted);
+    font-size:var(--fs-sm); text-align:center; padding:var(--sp-4); }
+  .r3-mount b{ color:var(--text); font-weight:700; font-size:var(--fs-body); }
+  /* sanctioned monoline icon base + the one mask this view uses (dashboard-icons.css verbatim) */
+  .dash-icon{ position:relative; display:inline-grid; place-items:center; width:1.08em; height:1.08em;
+    margin:0 .14em; color:var(--dash-icon-color,currentColor); vertical-align:-.16em; flex:none; opacity:.88; }
+  .dash-icon::before{ content:""; width:100%; height:100%; background:currentColor;
+    -webkit-mask:var(--dash-icon-mask,var(--submenu-icon-mask)) center / contain no-repeat;
+    mask:var(--dash-icon-mask,var(--submenu-icon-mask)) center / contain no-repeat; }
+  .dash-icon-table{ --dash-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='4' width='17' height='16' rx='2'/%3E%3Cpath d='M3.5 9.3h17M3.5 14.7h17M9 4v16'/%3E%3C/g%3E%3C/svg%3E"); }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important;
+      transition-duration:.001ms !important; scroll-behavior:auto !important; }
+  }
+}
+
+/* ══ VIEW-SCOPED LAW (unlayered; wins over the shell by specificity, never by accident) ══
+   Every selector below is anchored on .si-view[data-view="money"] so this partial can
+   never reach another lane's view, and so the DENSE-tier overrides (§10: 32px band gap,
+   14/16 panel padding) beat the shell's generic context-tier 44px rule.
+   §11 trap: every display-setting rule uses a DIRECT-CHILD combinator so it can never
+   reach an .l-en/.l-zh language span. */
+.si-view[data-view="money"]{ --mny-pad:14px 16px; }
+.si-view[data-view="money"] .r3-band{ margin-top:var(--sp-7); }
+.si-view[data-view="money"] .r3-answer{ margin-bottom:var(--sp-7); }
+
+/* ── band 1 · the breadth board ─────────────────────────────────────────────── */
+.si-view[data-view="money"] .mny-lede{ margin:0 0 var(--sp-4); max-width:82ch;
+  font-size:var(--fs-sm); line-height:1.5; color:var(--muted); }
+html[data-lang="zh"] .si-view[data-view="money"] .mny-lede{ max-width:44em; }
+.si-view[data-view="money"] .mny-verdict{ display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
+  gap:1px; background:var(--line); border-radius:var(--r-panel) var(--r-panel) 0 0; overflow:hidden; }
+.si-view[data-view="money"] .mny-vcell{ background:var(--panel); padding:15px 16px 14px; min-width:0; }
+.si-view[data-view="money"] .mny-big{ display:block; margin-top:6px; font-size:var(--fs-num-lg);
+  font-weight:800; letter-spacing:-.02em; line-height:1.15; color:var(--text); }
+html[data-lang="zh"] .si-view[data-view="money"] .mny-big{ letter-spacing:0; font-weight:700; }
+.si-view[data-view="money"] .mny-vsub{ display:block; margin-top:5px; font-size:var(--fs-sm);
+  line-height:1.45; color:var(--muted); }
+.si-view[data-view="money"] .mny-flowline{ display:block; margin-top:6px; font-size:var(--fs-md);
+  font-weight:700; letter-spacing:-.008em; line-height:1.3; color:var(--text); overflow-wrap:anywhere; }
+.si-view[data-view="money"] .mny-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+
+/* the style-tilt legs: production renders one CHIP per leg (sector_central.html.j2:2829-2836),
+   which is five chip-class elements in one section — over the §9.2 budget of two, and it
+   throws away the leg's own magnitude. Same fields (`label`, `lead`, `tilt`, `chg_20d`),
+   rendered as a legible list instead: the reading gets a name, and the number gets a column. */
+.si-view[data-view="money"] .mny-legs-band{ padding:var(--mny-pad); border-top:1px solid var(--line); }
+.si-view[data-view="money"] .mny-legs{ list-style:none; margin:9px 0 0; padding:0;
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(292px,1fr)); gap:0 var(--sp-7); }
+.si-view[data-view="money"] .mny-leg{ display:grid; grid-template-columns:minmax(0,1fr) auto;
+  align-items:baseline; gap:2px var(--sp-3); padding:7px 0;
+  border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.si-view[data-view="money"] .mny-leg > b{ font-size:var(--fs-sm); font-weight:700; min-width:0;
+  overflow-wrap:anywhere; }
+.si-view[data-view="money"] .mny-leg > .lead{ grid-column:1; font-size:var(--fs-sm); color:var(--muted); }
+.si-view[data-view="money"] .mny-leg > .fig{ grid-column:2; grid-row:1 / span 2; align-self:center;
+  font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums; }
+.si-view[data-view="money"] .pos{ color:var(--ink-up); }
+.si-view[data-view="money"] .neg{ color:var(--ink-down); }
+.si-view[data-view="money"] .flat{ color:var(--muted); }
+
+/* the three measures — ACHROMATIC, each printing its own threshold (view thesis) */
+.si-view[data-view="money"] .mny-measures{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:1px; background:var(--line); }
+.si-view[data-view="money"] .mny-m{ background:var(--panel); padding:var(--mny-pad); min-width:0; }
+.si-view[data-view="money"] .mny-mv{ display:block; margin-top:7px; font-size:var(--fs-num-lg);
+  font-weight:800; letter-spacing:-.02em; line-height:1.1; font-variant-numeric:tabular-nums; }
+.si-view[data-view="money"] .mny-mv .sep{ color:var(--muted); font-weight:400; font-size:15px; }
+.si-view[data-view="money"] .mny-mv .pctsign{ font-size:13px; font-weight:700; }
+.si-view[data-view="money"] .mny-ms{ display:block; margin-top:3px; font-size:var(--fs-sm); color:var(--muted); }
+.si-view[data-view="money"] .mny-bar{ display:block; position:relative; height:5px; margin-top:13px;
+  border-radius:3px; background:color-mix(in srgb, var(--line) 55%, transparent); overflow:visible; }
+.si-view[data-view="money"] .mny-bar > i{ display:block; height:100%; border-radius:3px;
+  background:color-mix(in srgb, var(--text) 82%, var(--line)); }
+.si-view[data-view="money"] .mny-bar > u{ position:absolute; top:-4px; bottom:-4px; width:1px;
+  background:color-mix(in srgb, var(--muted) 90%, transparent); }
+.si-view[data-view="money"] .mny-ticks{ display:block; margin-top:7px; font-size:var(--fs-micro);
+  letter-spacing:.04em; line-height:1.5; color:var(--muted); font-variant-numeric:tabular-nums; }
+.si-view[data-view="money"] .mny-noread{ display:block; margin-top:13px; font-size:var(--fs-micro);
+  letter-spacing:.05em; color:var(--muted); }
+/* [hidden] must outrank the display rules above it (0,2,1) — the classic override bug */
+.si-view[data-view="money"] .mny-bar[hidden],
+.si-view[data-view="money"] .mny-ticks[hidden],
+.si-view[data-view="money"] .mny-noread[hidden]{ display:none; }
+.si-view[data-view="money"] .mny-foot{ padding:11px 16px; border-top:1px solid var(--line);
+  background:color-mix(in srgb, var(--panel2) 45%, transparent); border-radius:0 0 var(--r-panel) var(--r-panel);
+  font-size:var(--fs-micro); line-height:1.6; color:var(--muted); }
+
+/* ── band 2 · the server-rendered sector-ETF flow fragment ───────────────────
+   SCOPED WRAPPER ONLY. Not one byte of fragments/sc_flows.html is edited: its markup,
+   its numbers, its ZH twins (production ships English inside the .l-zh spans for the
+   sector names — a recorded production trait, preserved, not repaired) and its inline
+   per-cell flow tint all arrive verbatim. The rules below restyle the frame, the type
+   and the box's scroll behaviour; the tint stays because on this view colour that IS a
+   measurement is exactly what is allowed to be coloured. */
+.si-view[data-view="money"] .mny-flowfrag{ background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--r-panel); box-shadow:var(--card-shadow); overflow:hidden; }
+html[data-theme="light"] .si-view[data-view="money"] .mny-flowfrag{
+  border-color:color-mix(in srgb, var(--text) 9%, var(--line)); }
+.si-view[data-view="money"] .mny-flowfrag .scc-section-h{ display:flex; align-items:baseline;
+  flex-wrap:wrap; gap:var(--sp-2) var(--sp-3); padding:15px 16px 12px; }
+.si-view[data-view="money"] .mny-flowfrag .scc-section-h h2{ font-size:var(--fs-h2); font-weight:700;
+  letter-spacing:-.01em; }
+.si-view[data-view="money"] .mny-flowfrag .scc-section-sub{ font-size:var(--fs-sm); color:var(--muted); }
+.si-view[data-view="money"] .mny-flowfrag .scf-wrap{ overflow-x:auto; }
+.si-view[data-view="money"] .mny-flowfrag table.scf{ width:100%; min-width:520px; border-collapse:collapse;
+  font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
+.si-view[data-view="money"] .mny-flowfrag .scf th{ font-size:var(--fs-micro); font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--muted); text-align:right;
+  padding:8px 12px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.si-view[data-view="money"] .mny-flowfrag .scf th.scf-s{ text-align:left; }
+.si-view[data-view="money"] .mny-flowfrag .scf td{ padding:9px 12px; text-align:right;
+  border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); font-family:var(--font-mono); }
+.si-view[data-view="money"] .mny-flowfrag .scf td.scf-s{ text-align:left; font-family:var(--font-ui);
+  font-size:var(--fs-body); font-weight:700; overflow-wrap:anywhere; }
+.si-view[data-view="money"] .mny-flowfrag .scf td.scf-s .muted{ color:var(--muted); font-weight:400;
+  font-size:var(--fs-sm); }
+.si-view[data-view="money"] .mny-flowfrag .scf-net td{ border-top:1px solid var(--line); font-weight:700; }
+.si-view[data-view="money"] .mny-flowfrag .scf tr:last-child td{ border-bottom:0; }
+.si-view[data-view="money"] .mny-flowfrag > div > p.muted{ padding:11px 16px; margin:0;
+  border-top:1px solid var(--line); background:color-mix(in srgb, var(--panel2) 45%, transparent);
+  font-size:var(--fs-micro); line-height:1.6; color:var(--muted); }
+html[data-lang="zh"] .si-view[data-view="money"] .mny-flowfrag .scc-section-h h2{ letter-spacing:0; }
+
+/* ── band 3 · the market-heat treemap + its mandatory table equivalent ───────── */
+.si-view[data-view="money"] .mny-heatbox{ padding:var(--mny-pad); }
+.si-view[data-view="money"] .mny-heatmeta{ display:flex; align-items:baseline; flex-wrap:wrap;
+  gap:var(--sp-2) var(--sp-4); margin:0 0 11px; font-size:var(--fs-sm); color:var(--muted); }
+.si-view[data-view="money"] .mny-tm{ position:relative; width:100%; min-height:340px;
+  border-radius:var(--r-card); overflow:hidden; }
+.si-view[data-view="money"] .mny-tm.is-empty{ display:grid; place-items:center; gap:6px;
+  border:1px dashed color-mix(in srgb, var(--muted) 40%, transparent);
+  background:color-mix(in srgb, var(--panel) 70%, transparent); color:var(--muted);
+  font-size:var(--fs-sm); text-align:center; padding:var(--sp-4); }
+.si-view[data-view="money"] .hm-sec{ position:absolute; }
+.si-view[data-view="money"] .hm-sechd{ position:absolute; left:0; right:0; top:0; height:17px;
+  display:flex; align-items:center; justify-content:space-between; gap:6px; padding:0 5px;
+  font-size:11px; font-weight:700; letter-spacing:.02em; color:var(--muted);
+  border-bottom:1px solid color-mix(in srgb, var(--muted) 22%, transparent); white-space:nowrap; overflow:hidden; }
+.si-view[data-view="money"] .hm-sechd > .agg{ font-variant-numeric:tabular-nums; font-weight:700; }
+.si-view[data-view="money"] .hm-t{ position:absolute; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; overflow:hidden; color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.42); }
+.si-view[data-view="money"] .hm-t > .sym{ font-weight:700; letter-spacing:-.01em; line-height:1.05; }
+.si-view[data-view="money"] .hm-t > .pc{ font-weight:600; font-variant-numeric:tabular-nums;
+  line-height:1.15; opacity:.92; }
+/* Bin scale — the SAME nine bins and the SAME edges heatmap.js:203-215 binIndex() assigns
+   (±1 / ±2 / ±3 % on 1D, with the ±0.5 half-step so a slightly-green name never reads flat).
+   The anchor hue is the theme's own --up / --down instead of heatmap.js's --hm-up-v /
+   --hm-dn-v (whose fallbacks are literal hexes, and this system carries no literal hue).
+   Consequence: the ZH 红涨绿跌 flip and the light/dark swap are free — the map never repaints
+   for theme or language, only for width. */
+.si-view[data-view="money"]{ --hm-nu:color-mix(in srgb, var(--muted) 22%, var(--panel2)); }
+html[data-theme="light"] .si-view[data-view="money"]{ --hm-nu:color-mix(in srgb, var(--muted) 88%, var(--text)); }
+.si-view[data-view="money"] .b3 { background:var(--up); }
+.si-view[data-view="money"] .b2 { background:color-mix(in srgb, var(--up) 82%, var(--hm-nu)); }
+.si-view[data-view="money"] .b1 { background:color-mix(in srgb, var(--up) 46%, var(--hm-nu)); }
+.si-view[data-view="money"] .bh { background:color-mix(in srgb, var(--up) 26%, var(--hm-nu)); }
+.si-view[data-view="money"] .b0 { background:var(--hm-nu); }
+.si-view[data-view="money"] .bhd{ background:color-mix(in srgb, var(--down) 26%, var(--hm-nu)); }
+.si-view[data-view="money"] .b1d{ background:color-mix(in srgb, var(--down) 46%, var(--hm-nu)); }
+.si-view[data-view="money"] .b2d{ background:color-mix(in srgb, var(--down) 82%, var(--hm-nu)); }
+.si-view[data-view="money"] .b3d{ background:var(--down); }
+.si-view[data-view="money"] .bna{ background:color-mix(in srgb, var(--panel2) 55%, var(--hm-nu)); }
+/* light board: deepen the two extreme bins so a white tile label clears its own surface */
+html[data-theme="light"] .si-view[data-view="money"] .b3 { background:color-mix(in srgb, var(--up) 86%, #000); }
+html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(in srgb, var(--down) 86%, #000); }
+.si-view[data-view="money"] .mny-takeaway{ margin:11px 0 0; font-size:var(--fs-sm); line-height:1.5; color:var(--text); }
+.si-view[data-view="money"] .mny-scale{ display:flex; align-items:center; flex-wrap:wrap; gap:6px;
+  margin-top:9px; font-size:var(--fs-micro); letter-spacing:.05em; color:var(--muted); }
+.si-view[data-view="money"] .mny-scale > i{ width:16px; height:9px; border-radius:2px; }
+.si-view[data-view="money"] .mny-alt{ margin-top:var(--sp-3); }
+.si-view[data-view="money"] .mny-alt .r3-tbl{ min-width:560px; }
+.si-view[data-view="money"] .mny-alt .r3-tbl th{ border-top:1px solid var(--line); }
+.si-view[data-view="money"] .mny-alt-body{ padding:0 0 var(--sp-2); }
+
+/* ── band 4 · index leadership ───────────────────────────────────────────────── */
+.si-view[data-view="money"] .lead-hero{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:1px; background:var(--line); border-radius:var(--r-panel) var(--r-panel) 0 0; overflow:hidden; }
+.si-view[data-view="money"] .lead-cell{ background:var(--panel); padding:15px 16px; min-width:0; }
+.si-view[data-view="money"] .lead-name{ display:block; margin-top:6px; font-size:var(--fs-md);
+  font-weight:700; letter-spacing:-.008em; line-height:1.3; overflow-wrap:anywhere; }
+.si-view[data-view="money"] .lead-las{ margin-left:8px; font-size:var(--fs-sm); font-weight:700;
+  font-variant-numeric:tabular-nums; color:var(--muted); }
+.si-view[data-view="money"] .lead-why{ display:block; margin-top:4px; font-size:var(--fs-sm);
+  line-height:1.45; color:var(--muted); }
+.si-view[data-view="money"] .lead-body{ padding:0; }
+.si-view[data-view="money"] .lead-drivers{ padding:var(--mny-pad); border-top:1px solid var(--line); }
+.si-view[data-view="money"] .drv{ display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1.6fr) auto;
+  align-items:baseline; gap:4px var(--sp-4); padding:9px 0;
+  border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.si-view[data-view="money"] .drv:last-child{ border-bottom:0; padding-bottom:0; }
+.si-view[data-view="money"] .drv > .n{ min-width:0; font-size:var(--fs-sm); font-weight:700; overflow-wrap:anywhere; }
+.si-view[data-view="money"] .drv > .n > small{ display:block; font-weight:400; color:var(--muted);
+  font-size:var(--fs-micro); letter-spacing:.04em; }
+.si-view[data-view="money"] .drv > .r{ min-width:0; font-size:var(--fs-sm); color:var(--muted); line-height:1.4; }
+.si-view[data-view="money"] .drv > .m{ text-align:right; font-size:var(--fs-sm); font-weight:700;
+  font-variant-numeric:tabular-nums; white-space:nowrap; }
+.si-view[data-view="money"] .lead-regime{ margin:0 0 11px; font-size:var(--fs-sm); line-height:1.5; color:var(--muted); }
+.si-view[data-view="money"] .lead-regime b{ color:var(--text); }
+.si-view[data-view="money"] .lead-foot{ padding:11px 16px; border-top:1px solid var(--line);
+  background:color-mix(in srgb, var(--panel2) 45%, transparent);
+  border-radius:0 0 var(--r-panel) var(--r-panel); display:flex; align-items:center; flex-wrap:wrap;
+  gap:var(--sp-2) var(--sp-3); font-size:var(--fs-micro); line-height:1.6; color:var(--muted); }
+.si-view[data-view="money"] .mny-deeper{ margin-top:var(--sp-5); }
+
+/* ── responsive: the phone RECOMPOSES; no document overflow at 320 → 820 ─────── */
+@media (max-width:1100px){
+  .si-view[data-view="money"] .mny-verdict{ grid-template-columns:minmax(0,1fr); }
+  .si-view[data-view="money"] .mny-tm{ min-height:320px; }
+}
+@media (max-width:767px){
+  .si-view[data-view="money"] .r3-band{ margin-top:var(--sp-6); }
+  .si-view[data-view="money"] .mny-measures{ grid-template-columns:minmax(0,1fr); }
+  .si-view[data-view="money"] .mny-m{ display:grid; grid-template-columns:minmax(0,1fr) auto;
+    align-items:center; column-gap:var(--sp-3); }
+  .si-view[data-view="money"] .mny-m > .r3-eyebrow{ grid-column:1; }
+  .si-view[data-view="money"] .mny-mv{ grid-column:2; grid-row:1; margin-top:0; font-size:var(--fs-md); text-align:right; }
+  .si-view[data-view="money"] .mny-ms{ grid-column:1 / -1; margin-top:2px; }
+  .si-view[data-view="money"] .mny-bar,
+  .si-view[data-view="money"] .mny-ticks,
+  .si-view[data-view="money"] .mny-noread{ grid-column:1 / -1; }
+  .si-view[data-view="money"] .lead-hero{ grid-template-columns:minmax(0,1fr); }
+  .si-view[data-view="money"] .drv{ grid-template-columns:minmax(0,1fr) auto; }
+  .si-view[data-view="money"] .drv > .r{ grid-column:1 / -1; }
+  .si-view[data-view="money"] .mny-tm{ min-height:380px; }
+  .si-view[data-view="money"] .r3-disc summary{ min-height:48px; }
+}
+@media (max-width:359px){
+  .si-view[data-view="money"] .mny-vcell,
+  .si-view[data-view="money"] .mny-m,
+  .si-view[data-view="money"] .lead-cell{ padding:12px 13px; }
+  .si-view[data-view="money"] .mny-heatbox{ padding:12px; }
+}
+</style>
+
+  <!-- ═══ 1 · THE ANSWER — one per view, one voice (spec §5.1) ═══
+       The nightly composed read IS the answer line; the static line below it is the
+       null path and is hidden by a pure-CSS sibling rule whenever the read is present.
+       #si-read-money's data-regime is baked from si_handoff.json flow.cluster.regime,
+       exactly the field sector_central.html.j2:2389 bakes server-side. -->
+  <div class="r3-answer">
+    <h2 class="r3-answer-view"><span class="l-en">Money &amp; Breadth</span><span class="l-zh">资金与广度</span></h2>
+    <p class="si-view-read" id="si-read-money" hidden></p>
+    <p class="r3-answer-line"><span class="l-en">Tonight&#39;s money-flow read is being updated. The breadth measures below are today&#39;s reading.</span><span class="l-zh">今晚的资金流向研判正在更新。下方广度指标即为今日读数。</span></p>
+    <div class="r3-answer-meta">
+      <span class="r3-asof" id="mny-asof"></span>
+      <span><span class="l-en">Context only — this view carries no call</span><span class="l-zh">仅为背景 — 本视图不给出操作判断</span>
+        <span class="r3-q" role="img" aria-labelledby="mny-q1-name">?</span>
+        <span class="r3-vh" id="mny-q1-name"><span class="l-en">Where this reading comes from</span><span class="l-zh">这句话的来源</span></span></span>
+    </div>
   </div>
 
-  <script>
-  document.addEventListener('DOMContentLoaded', function(){
-    try{
-      var d = REF.parseJSON(REF.registry['marketdata/sp500_heatmap.json']);
-      document.getElementById('money-proof').textContent =
-        'Heatmap generated_utc: ' + (d.generated_utc || '—') + ' (marketdata/sp500_heatmap.json.generated_utc, ' +
-        (d.n_tiles != null ? d.n_tiles + ' tiles) ' : '') + '.';
-    }catch(e){
-      document.getElementById('money-proof').textContent = 'proof-of-data read failed: ' + e;
+  <!-- legacy anchor: LEGACY_ANCHORS['si-money'] → ['money','si-money'] (si_workspace.js:51) -->
+  <span id="si-money" aria-hidden="true"></span>
+
+  <!-- ═══ 2 · BAND 1 — THE BREADTH BOARD (dominant object) ═══ -->
+  <section class="r3-band" id="internals-section">
+    <div class="r3-sec">
+      <h2><span class="l-en">Under the hood</span><span class="l-zh">市场内部</span></h2>
+      <span class="r3-sec-sub"><span class="l-en">— is the whole market participating?</span><span class="l-zh">— 整个市场都在参与吗？</span></span>
+    </div>
+    <p class="mny-lede"><span class="l-en">Breadth tells you whether the rotation is a broad tide or a narrow few. Be selective when it is narrow.</span><span class="l-zh">广度告诉你这是全面上涨还是少数领涨。领涨面窄时应精挑细选。</span></p>
+
+    <div class="r3-panel">
+      <div class="mny-verdict">
+        <div class="mny-vcell">
+          <span class="r3-eyebrow"><span class="l-en">Market breadth</span><span class="l-zh">市场广度</span></span>
+          <span class="mny-big" id="mkt-breadth">—</span>
+          <span class="mny-vsub" id="mkt-breadth-sub"></span>
+        </div>
+        <div class="mny-vcell">
+          <span class="r3-eyebrow"><span class="l-en">Money flow</span><span class="l-zh">资金流向</span></span>
+          <span class="mny-flowline" id="mkt-flow">—</span>
+          <span class="mny-chips"><span id="mf-etf-chips"></span><span id="mf-vol-chip"></span></span>
+        </div>
+      </div>
+
+      <div class="mny-measures">
+        <div class="mny-m">
+          <span class="r3-eyebrow"><span class="l-en">Advancers / decliners</span><span class="l-zh">上涨 / 下跌</span></span>
+          <span class="mny-mv tnum" id="mkt-ad">—</span>
+          <span class="mny-ms" id="mkt-ad-sub"></span>
+          <span class="mny-bar" id="mkt-ad-bar" hidden><i></i><u style="left:50%"></u></span>
+          <span class="mny-ticks" id="mkt-ad-ticks" hidden></span>
+          <span class="mny-noread" id="mkt-ad-none" hidden><span class="l-en">No reading tonight.</span><span class="l-zh">今晚无读数。</span></span>
+        </div>
+        <div class="mny-m">
+          <span class="r3-eyebrow"><span class="l-en">52-wk highs / lows</span><span class="l-zh">52周新高 / 新低</span></span>
+          <span class="mny-mv tnum" id="mkt-hilo">—</span>
+          <span class="mny-ms" id="mkt-hilo-sub"></span>
+          <span class="mny-bar" id="mkt-hilo-bar" hidden><i></i><u style="left:50%"></u></span>
+          <span class="mny-ticks" id="mkt-hilo-ticks" hidden></span>
+          <span class="mny-noread" id="mkt-hilo-none" hidden><span class="l-en">No reading tonight.</span><span class="l-zh">今晚无读数。</span></span>
+        </div>
+        <div class="mny-m">
+          <span class="r3-eyebrow"><span class="l-en">Above 200-day</span><span class="l-zh">站上200日线</span></span>
+          <span class="mny-mv tnum" id="mkt-above">—</span>
+          <span class="mny-ms" id="mkt-above-sub"></span>
+          <span class="mny-bar" id="mkt-above-bar" hidden><i></i><u style="left:40%"></u><u style="left:60%"></u></span>
+          <span class="mny-ticks" id="mkt-above-ticks" hidden></span>
+          <span class="mny-noread" id="mkt-above-none" hidden><span class="l-en">No reading tonight.</span><span class="l-zh">今晚无读数。</span></span>
+        </div>
+      </div>
+
+      <div class="mny-legs-band">
+        <span class="r3-eyebrow"><span class="l-en">How style and risk ETFs have been trading · 20 days</span><span class="l-zh">风格与风险 ETF 近期走势 · 20 个交易日</span></span>
+        <ul class="mny-legs" id="mf-style-legs"></ul>
+      </div>
+
+      <!-- ONE merged footnote per panel (§9.2): the two display-only disclaimers the
+           producers ship, plus their own clocks. Never repeated per row. -->
+      <p class="mny-foot" id="mny-board-foot"></p>
+    </div>
+  </section>
+
+  <!-- ═══ 3 · BAND 2 — SECTOR-ETF FLOW (server-rendered fragment, verbatim) ═══
+       Production ships this as pre-rendered server HTML: `{% if flows_html %}{{ flows_html|safe }}{% endif %}`
+       (sector_central.html.j2:2411). ABSENCE BEHAVIOUR: when the producer returns None the
+       WHOLE section is omitted — no heading, no placeholder, no empty state. The script
+       below removes this band entirely if the fragment is missing, mirroring that exactly. -->
+  <section class="r3-band mny-flowfrag" id="mny-flow-band"></section>
+
+  <!-- ═══ 4 · BAND 3 — MARKET HEAT + THE MANDATORY TABLE EQUIVALENT ═══ -->
+  <section class="r3-band" id="sc-heatmap">
+    <div class="r3-sec">
+      <h2><span class="l-en">Market heat — breadth &amp; cap-weighted moves</span><span class="l-zh">市场热度 — 宽度与市值加权涨跌</span></h2>
+      <span class="r3-sec-sub"><span class="l-en">Coincident colour — display context, not a call</span><span class="l-zh">同步色 — 展示背景，非操作判断</span></span>
+    </div>
+    <div class="r3-panel mny-heatbox">
+      <p class="mny-heatmeta" id="hm-meta"></p>
+      <!-- §8.1 mount-width law: this box is NEVER inside a closed <details> or a
+           display:none wrapper at activation. It is painted from the si:view event,
+           i.e. after the router has made the view visible and forced a reflow. -->
+      <div class="mny-tm is-empty" id="heatmap-scorecard" role="img" aria-labelledby="hm-a11y-name">
+        <b><span class="l-en">Market heat map</span><span class="l-zh">市场热力图</span></b>
+        <span class="l-en">Mounts when this view opens.</span><span class="l-zh">打开本视图时载入。</span>
+      </div>
+      <span class="r3-vh" id="hm-a11y-name"><span class="l-en">Market heat map: every S&amp;P 500 name as a rectangle sized by market value and shaded by its one-day move. The same figures are listed as a table below.</span><span class="l-zh">市场热力图：标普500每只个股为一个矩形，面积按市值、底色按当日涨跌。相同数据在下方以表格列出。</span></span>
+      <p class="mny-takeaway" id="hm-takeaway"></p>
+      <p class="mny-scale" id="hm-scale"></p>
+
+      <details class="r3-disc mny-alt" id="hm-alt">
+        <summary>
+          <span class="dash-icon dash-icon-table" aria-hidden="true"></span>
+          <span class="l-en">Read the map as a table</span><span class="l-zh">以表格阅读该图</span>
+          <small id="hm-alt-count"></small>
+        </summary>
+        <div class="r3-tblbox mny-alt-body">
+          <table class="r3-tbl" id="hm-alt-tbl"></table>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ═══ 5 · BAND 4 — INDEX LEADERSHIP ═══
+       Production's strip vanishes entirely when the artifact is absent or `ok` is false
+       (sector_central.html.j2:3477 `if (!d || !d.ok) { el.innerHTML=''; return; }`). The
+       script below removes this whole band on that same condition. -->
+  <section class="r3-band" id="scc-leadership"></section>
+
+  <p class="mny-deeper">
+    <a class="r3-more" href="#explore"><span class="l-en">Look under the hood — every basket, sortable</span><span class="l-zh">深入探索 — 全部篮子，可排序</span></a>
+  </p>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════════
+   MONEY — display-tier binding. Every value below is a field read off a frozen
+   producer artifact through REF.registry / window.fetch (the shim resolves both
+   against the embedded bytes). Nothing here computes a rank, a lane, a state or a
+   score. The two aggregations that DO run — the treemap's sector roll-up and its
+   advance/decline count — are production's own client-side helpers over the same
+   payload (heatmap.js:252-285), reproduced, cited, and used for nothing else.
+   ══════════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+var V = document.querySelector('.si-view[data-view="money"]');
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+/* si_workspace.js:126 L() — the dual-emit bilingual span pair */
+function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
+function reg(p){ try{ return REF.parseJSON(REF.registry[p]); }catch(e){ return null; } }
+/* heatmap.js:87-91 fmtPc — verbatim, including the U+2212 minus */
+function fmtPc(v){ if(v==null||isNaN(v)) return '—';
+  var a=Math.abs(v), d=a>=100?0:(a>=10?1:2);
+  return (v>0?'+':(v<0?'−':''))+a.toFixed(d)+'%'; }
+function sgn(v,d){ if(v==null||isNaN(v)) return '—';
+  return (v>=0?'+':'−')+Math.abs(v).toFixed(d==null?2:d); }
+function cls(v){ return v==null||isNaN(v)?'flat':(v>0?'pos':(v<0?'neg':'flat')); }
+function pctOf(n,d){ return d>0?(n/d*100):0; }
+
+/* ───────────────────────────────────────────────────────────────────────────────
+   A · the answer line's data-regime, and the money-flow verdict card
+   ─────────────────────────────────────────────────────────────────────────────── */
+/* si_workspace.js:190 readMoney() reads this attribute; production bakes it server-side
+   at sector_central.html.j2:2389 from flow.cluster.regime. Here the same field is baked
+   from the embedded si_handoff.json bytes on DOMContentLoaded, then the router's own
+   composer is re-run through its exported entry point (contract item 18) so the read
+   paints exactly as it does in production. */
+function bakeRegime(){
+  var h = reg('basketdata/si_handoff.json');
+  var r = h && h.flow && h.flow.cluster && h.flow.cluster.regime;
+  var el = $('si-read-money');
+  if(el && r) el.setAttribute('data-regime', r);
+  return r || null;
+}
+/* sector_central.html.j2:2401-2404 — the server-rendered money-flow card label.
+   Deliberately the SHORT phrase, not the router's full sentence: the 22px answer line
+   above already carries the sentence, and printing the same answer twice is the defect
+   §5.2 names. This is the card's NAME; the answer is the answer. */
+var FLOW_EN={concentrated:'Crowding into a few',broad:'Spread across many',mixed:'No single group leads'};
+var FLOW_ZH={concentrated:'向少数板块集中',broad:'广泛分布',mixed:'暂无单一板块主导'};
+
+/* ───────────────────────────────────────────────────────────────────────────────
+   B · breadth measures — THEME.market_concentration, production's null guards
+   sector_central.html.j2:3037-3052 renderInternals()
+   ─────────────────────────────────────────────────────────────────────────────── */
+function bar(id,pct){ var b=$(id); if(!b) return; b.hidden=false;
+  b.firstElementChild.style.width=Math.max(2,Math.min(100,pct)).toFixed(1)+'%'; }
+function ticks(id,html){ var t=$(id); if(!t) return; t.hidden=false; t.innerHTML=html; }
+function noread(id){ var n=$(id); if(n) n.hidden=false; }
+
+function renderInternals(mc){
+  mc = mc || {};
+  /* :3039-3042 — verdict word + its plain-word sub-line, verbatim strings.
+     DIVERGENCE (view thesis): production tints the word --up/--down/--warn. On a context
+     view state ink above 12.5px is forbidden (spec §6), so the word is achromatic and
+     the sub-line carries the meaning in plain words. */
+  var vmap={narrow:['Narrow','狭窄'],broad:['Broad','广泛'],mixed:['Mixed','中性']};
+  var vv=vmap[mc.verdict]||vmap.mixed;
+  $('mkt-breadth').innerHTML=L(vv[0],vv[1]);
+  $('mkt-breadth-sub').innerHTML = mc.verdict==='broad'
+    ? L('Broad participation — a risk-on tide.','广泛参与 — 全面上涨。')
+    : mc.verdict==='narrow'
+      ? L('Narrow — a few names carry it.','狭窄 — 少数个股主导。')
+      : L('No strong consensus. Leadership is narrow.','无明显共识，领涨面较窄。');
+
+  /* :3043-3045 — advancers / decliners. Guard is production's, field for field. */
+  if(mc.adv!=null && mc.dec!=null){
+    $('mkt-ad').innerHTML = mc.adv+'<span class="sep"> / </span>'+mc.dec;
+    $('mkt-ad-sub').innerHTML = L('A/D '+(mc.ad_ratio!=null?(+mc.ad_ratio).toFixed(2):'—'),
+                                  '涨跌比 '+(mc.ad_ratio!=null?(+mc.ad_ratio).toFixed(2):'—'));
+    bar('mkt-ad-bar', pctOf(mc.adv, (mc.adv+mc.dec)||1));
+    ticks('mkt-ad-ticks', L('tick = an even tape (A/D 1.00)','刻度 = 涨跌持平（涨跌比 1.00）'));
+  } else { noread('mkt-ad-none'); }
+
+  /* :3046-3048 — 52-week highs / lows. */
+  if(mc.nh!=null){
+    $('mkt-hilo').innerHTML = mc.nh+'<span class="sep"> / </span>'+(mc.nl==null?'—':mc.nl);
+    $('mkt-hilo-sub').innerHTML = (mc.nh>=mc.nl)
+      ? L('more highs than lows','新高多于新低') : L('more lows than highs','新低多于新高');
+    bar('mkt-hilo-bar', pctOf(mc.nh, ((mc.nh||0)+(mc.nl||0))||1));
+    ticks('mkt-hilo-ticks', L('tick = highs and lows level','刻度 = 新高与新低持平'));
+  } else { noread('mkt-hilo-none'); }
+
+  /* :3049-3051 — % above the 200-day, and production's own 60% / 40% cut-offs, which
+     this view PRINTS as ticks rather than encoding as a colour. */
+  if(mc.pct_above_200!=null){
+    $('mkt-above').innerHTML = Math.round(mc.pct_above_200)+'<span class="pctsign">%</span>';
+    $('mkt-above-sub').innerHTML = mc.pct_above_200>=60 ? L('healthy majority','健康多数')
+      : mc.pct_above_200>=40 ? L('mixed','中性') : L('weak','偏弱');
+    bar('mkt-above-bar', mc.pct_above_200);
+    ticks('mkt-above-ticks', L('ticks = 40% weak · 60% healthy majority','刻度 = 40% 偏弱 · 60% 健康多数'));
+  } else { noread('mkt-above-none'); }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+   C · money-flow evidence — etf_pulse.json + vol_sentiment.json
+   Production fetches both and fails silent (sector_central.html.j2:2824-2852). These
+   go through window.fetch so the shim records them and the drawer's "Simulate fetch
+   fail" toggle exercises production's OWN fail-silent branch for real.
+   ─────────────────────────────────────────────────────────────────────────────── */
+function renderEtfPulse(){
+  fetch('basketdata/etf_pulse.json',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
+    .catch(function(){ return null; }).then(function(d){
+    if(!d) return;
+    /* :2838-2841 risk tone — ONE chip. `tilt` sign chooses the ink; the chip stays
+       inside the §9.2 budget of two chip-class elements for this section. */
+    var el=$('mf-etf-chips');
+    if(el && d.risk && d.risk.label_en){
+      var ink = d.risk.tilt>0?'var(--ink-up)':d.risk.tilt<0?'var(--ink-down)':'var(--muted)';
+      el.innerHTML='<span class="r3-chip" style="--c:'+ink+'">'+L(esc(d.risk.label_en),esc(d.risk.label_zh))+'</span>';
     }
-    try{
-      var h = REF.parseJSON(REF.registry['basketdata/si_handoff.json']);
-      var regime = h.flow && h.flow.cluster && h.flow.cluster.regime;
-      var el = document.getElementById('si-read-money');
-      if(el && regime) el.setAttribute('data-regime', regime);
-    }catch(e){}
-    try{
-      var frag = REF.fragments['fragments/sc_flows.html'];
-      if(frag) document.getElementById('sc-flows-mount').innerHTML = frag;
-    }catch(e){}
+    /* :2829-2836 style legs — production emits one chip per leg with tilt!==0.
+       Same fields, rendered as a named list with its own 20d magnitude (`horizons`
+       carries 1/5/20/60; 20d is the window the rest of this workspace defaults to). */
+    var ul=$('mf-style-legs');
+    if(ul && d.style && d.style.length){
+      ul.innerHTML = d.style.map(function(s){
+        var v=s.chg_20d;
+        return '<li class="mny-leg">'
+          + '<b>'+L(esc(s.label_en),esc(s.label_zh))+'</b>'
+          + '<span class="lead">'+L(esc(s.lead_en),esc(s.lead_zh))+'</span>'
+          + '<span class="fig tnum '+cls(v)+'">'+(v==null?'—':(v>=0?'+':'−')+Math.abs(v).toFixed(2)+'%')
+          + '<span class="r3-vh"> '+L('over 20 days','近20个交易日')+'</span></span>'
+          + '</li>';
+      }).join('');
+    }
   });
-  </script>
+}
+function renderVolChip(){
+  fetch('basketdata/vol_sentiment.json',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
+    .catch(function(){ return null; }).then(function(d){
+    var el=$('mf-vol-chip'); if(!el||!d||!d.vol_regime) return;
+    /* :2845-2852 — the vol pill. tone→ink map is production's; the VIX / percentile /
+       term-structure detail moves from a title-style tip into the panel footnote, because
+       a bilingual hover is not an accessible home for a number (spec §11, §12). */
+    var vr=d.vol_regime;
+    var ink={warn:'var(--ink-warn)',ok:'var(--ink-up)',dn:'var(--ink-down)'}[vr.tone]||'var(--muted)';
+    el.innerHTML='<span class="r3-chip" style="--c:'+ink+'">'
+      + L('Volatility: '+esc(String(vr.label_en).toLowerCase()),'波动率：'+esc(vr.label_zh))+'</span>';
+  });
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+   D · the heat treemap + its MANDATORY table equivalent (commission §11)
+   Both are driven from marketdata/sp500_heatmap.json. No alternate scoring: the table
+   lists the SAME fields the map draws, in the SAME order the map lays them out.
+   ─────────────────────────────────────────────────────────────────────────────── */
+var HM=null, HM_TF='1D';
+/* heatmap.js:68-76 — 1D keeps the canonical ±1/2/3% bin edges. */
+var HM_EDGES=[1,2,3];
+/* heatmap.js:203-215 binIndex() — the same nine bins, expressed as class names so the
+   palette is CSS (and therefore theme- and language-reactive with no repaint). */
+var BIN={'3':'b3','2':'b2','1':'b1','0.5':'bh','0':'b0','-0.5':'bhd','-1':'b1d','-2':'b2d','-3':'b3d'};
+function binClass(pc){
+  if(pc==null||isNaN(pc)) return 'bna';
+  if(pc===0) return 'b0';
+  var a=Math.abs(pc), s=pc<0?-1:1;
+  var lvl = a>=HM_EDGES[2]?3 : a>=HM_EDGES[1]?2 : a>=HM_EDGES[0]?1 : 0;
+  return BIN[String(lvl===0 ? s*0.5 : s*lvl)]||'b0';
+}
+/* heatmap.js:214-249 squarify() — Bruls/van Wijk, verbatim structure. */
+function squarify(items,x,y,w,h){
+  var out=[], nodes=items.filter(function(d){return d.value>0;})
+                         .sort(function(a,b){return b.value-a.value;});
+  var total=0; nodes.forEach(function(d){ total+=d.value; });
+  if(total<=0||w<=0||h<=0) return out;
+  var scale=(w*h)/total; nodes.forEach(function(d){ d._a=d.value*scale; });
+  var rx=x, ry=y, rw=w, rh=h, row=[], i=0;
+  function worst(r,len){ if(!r.length) return Infinity;
+    var sum=0,mx=0,mn=Infinity;
+    r.forEach(function(d){ sum+=d._a; if(d._a>mx)mx=d._a; if(d._a<mn)mn=d._a; });
+    var s2=sum*sum,l2=len*len; return Math.max(l2*mx/s2, s2/(l2*mn)); }
+  function place(r){ var sum=0; r.forEach(function(d){ sum+=d._a; });
+    if(rw>=rh){ var colW=sum/rh, yy=ry;
+      r.forEach(function(d){ var hh=d._a/colW; out.push({x:rx,y:yy,w:colW,h:hh,ref:d.ref}); yy+=hh; });
+      rx+=colW; rw-=colW;
+    } else { var rowH=sum/rw, xx=rx;
+      r.forEach(function(d){ var ww=d._a/rowH; out.push({x:xx,y:ry,w:ww,h:rowH,ref:d.ref}); xx+=ww; });
+      ry+=rowH; rh-=rowH; } }
+  while(i<nodes.length){ var len=Math.min(rw,rh);
+    if(!row.length || worst(row,len)>=worst(row.concat(nodes[i]),len)){ row.push(nodes[i]); i++; }
+    else { place(row); row=[]; } }
+  if(row.length) place(row);
+  return out;
+}
+/* heatmap.js:252-266 groupHierarchy() — sector roll-up. The compact map skips the
+   sub-industry level exactly as renderScorecard() does. */
+function hierarchy(d){
+  var s={}; (d.tiles||[]).forEach(function(t){
+    var k=t.sector, o=s[k]||(s[k]={name:k,value:0,tiles:[]});
+    o.tiles.push(t); o.value+=(t.size||0); });
+  return s;
+}
+/* heatmap.js:277-279 sectorAgg() — cap-weighted when size_basis is marketcap, else median. */
+function weightedPc(tiles,tf){ var n=0,de=0;
+  tiles.forEach(function(t){ var v=t.perf[tf]; if(v!=null&&!isNaN(v)){ n+=(t.size||0)*v; de+=(t.size||0); } });
+  return de>0?n/de:null; }
+function medianPc(tiles,tf){ var a=[];
+  tiles.forEach(function(t){ var v=t.perf[tf]; if(v!=null&&!isNaN(v)) a.push(v); });
+  if(!a.length) return null; a.sort(function(x,y){return x-y;});
+  var m=a.length>>1; return a.length%2?a[m]:(a[m-1]+a[m])/2; }
+function sectorAgg(d,tiles,tf){ return d.size_basis==='marketcap'?weightedPc(tiles,tf):medianPc(tiles,tf); }
+/* heatmap.js:281-285 breadth() — the same ±0.05% dead band. */
+function breadth(tiles,tf){ var adv=0,dec=0;
+  tiles.forEach(function(t){ var v=t.perf[tf]; if(v>0.05) adv++; else if(v<-0.05) dec++; });
+  return {adv:adv,dec:dec}; }
+/* heatmap.js:288-289 sectorLabels() */
+function secLabels(d){ var m={}; (d.sectors||[]).forEach(function(s){ m[s.key]={en:s.en,zh:s.zh}; }); return m; }
+/* heatmap.js:118 dispT() */
+function dispT(t){ return String(t).replace(/\.(SS|SZ|SH|HK|TO|V|TSX|NE|CN)$/i,''); }
+
+var SEC_GAP=5, TILE_GAP=1.5, SEC_HD=17;
+function paintHeat(){
+  var box=$('heatmap-scorecard'); if(!box||!HM) return;
+  var W=box.clientWidth;
+  if(W<=0) return;                     /* §8.1: never draw into a zero-width box */
+  var mob=window.matchMedia('(max-width:767px)').matches;
+  var H=Math.round(Math.max(300,Math.min(mob?520:460, W*(mob?1.05:0.42))));
+  box.style.height=H+'px'; box.classList.remove('is-empty');
+  var labs=secLabels(HM), sectors=hierarchy(HM);
+  var items=Object.keys(sectors).map(function(k){ return {value:sectors[k].value, ref:sectors[k]}; });
+  var out=[];
+  squarify(items,0,0,W,H).forEach(function(sr){
+    var s=sr.ref;
+    var x=sr.x+SEC_GAP/2, y=sr.y+SEC_GAP/2, w=sr.w-SEC_GAP, h=sr.h-SEC_GAP;
+    if(w<=2||h<=2) return;
+    var lab=labs[s.name]||{en:s.name,zh:s.name};
+    var hd=(h>34 && w>72)?SEC_HD:0;
+    out.push('<div class="hm-sec" style="left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;width:'+w.toFixed(1)+'px;height:'+h.toFixed(1)+'px">');
+    if(hd){
+      var agg=sectorAgg(HM,s.tiles,HM_TF);
+      out.push('<div class="hm-sechd">'+L(esc(lab.en),esc(lab.zh||lab.en))
+        +'<span class="agg">'+fmtPc(agg)+'</span></div>');
+    }
+    var tr=squarify(s.tiles.map(function(t){ return {value:(t.size||0.0001), ref:t}; }), 0, hd, w, h-hd);
+    tr.forEach(function(r){
+      var tw=r.w-TILE_GAP, th=r.h-TILE_GAP;
+      if(tw<=1||th<=1) return;
+      var t=r.ref, v=t.perf?t.perf[HM_TF]:null;
+      /* heatmap.js:1737-1766 label rule, compact edition: no text under 11px — a tile
+         that cannot fit an 11px ticker drops the label rather than shrinking it. */
+      var body='';
+      if(tw>=30 && th>=16){
+        var sym=dispT(t.t);
+        if(tw >= sym.length*7.4){
+          body='<span class="sym" style="font-size:'+(tw>=62&&th>=34?12:11)+'px">'+esc(sym)+'</span>';
+          if(tw>=48 && th>=32) body+='<span class="pc" style="font-size:11px">'+fmtPc(v)+'</span>';
+        }
+      }
+      out.push('<div class="hm-t '+binClass(v)+'" style="left:'+(r.x+TILE_GAP/2).toFixed(1)+'px;top:'
+        +(r.y+TILE_GAP/2).toFixed(1)+'px;width:'+tw.toFixed(1)+'px;height:'+th.toFixed(1)+'px">'+body+'</div>');
+    });
+    out.push('</div>');
+  });
+  box.innerHTML=out.join('');
+}
+
+function renderHeatText(){
+  if(!HM) return;
+  /* heatmap.js:1718-1725 paintMeta() — `source==='polygon-live'` decides the live label;
+     this capture is a daily close, so the honest stamp is the close date. */
+  var live = HM.source==='polygon-live';
+  var when = HM.asof||'—';
+  $('hm-meta').innerHTML =
+      L((live?'Live · 15-min delayed':'Daily close')+' · '+esc(when)+' · '+HM.n_tiles+' names',
+        (live?'实时 · 延迟15分钟':'日线收盘')+' · '+esc(when)+' · '+HM.n_tiles+' 只')
+    + ' <span class="r3-tag">' + L('display only','仅供展示') + '</span>';
+
+  /* the chart's concise textual takeaway (spec §12, commission §17) */
+  var b=breadth(HM.tiles||[],HM_TF);
+  $('hm-takeaway').innerHTML = L(
+    '<b>'+b.adv+'</b> of '+HM.n_tiles+' names rose today, <b>'+b.dec+'</b> fell. Rectangle size is market value; shade is the one-day move.',
+    '今日 '+HM.n_tiles+' 只中有 <b>'+b.adv+'</b> 只上涨，<b>'+b.dec+'</b> 只下跌。矩形面积代表市值，底色代表当日涨跌。');
+
+  /* the colour scale, named — a figure channel may never be unlabelled (doctrine Law 3) */
+  $('hm-scale').innerHTML = L('One-day move','当日涨跌')
+    + '<i class="b3d"></i><i class="b2d"></i><i class="b1d"></i><i class="b0"></i><i class="b1"></i><i class="b2"></i><i class="b3"></i>'
+    + '<span class="tnum">' + L('−3% → +3%','−3% → +3%') + '</span>';
+
+  /* ── the MANDATORY table equivalent ──────────────────────────────────────────
+     Same producer fields, same layout order. squarify() sorts descending by value,
+     so listing the sectors by that same value IS the order the map draws them in —
+     no new rank is minted, and no alternate score exists anywhere in this table. */
+  var labs=secLabels(HM), sectors=hierarchy(HM);
+  var rows=Object.keys(sectors).map(function(k){ return sectors[k]; })
+                 .sort(function(a,b){ return b.value-a.value; });
+  var total=0; rows.forEach(function(s){ total+=s.value; });
+  var head='<thead><tr>'
+    +'<th>'+L('Sector','板块')+'</th>'
+    +'<th class="num">'+L('Share of map','图面占比')+'</th>'
+    +'<th class="num">'+L('Move today','当日涨跌')+'</th>'
+    +'<th class="num">'+L('Up / down','上涨 / 下跌')+'</th>'
+    +'<th class="num">'+L('Names','只数')+'</th>'
+    +'<th>'+L('Largest name','最大成分')+'</th></tr></thead>';
+  var body=rows.map(function(s){
+    var lab=labs[s.name]||{en:s.name,zh:s.name};
+    var agg=sectorAgg(HM,s.tiles,HM_TF), br=breadth(s.tiles,HM_TF);
+    var big=s.tiles.slice().sort(function(a,b){ return (b.size||0)-(a.size||0); })[0];
+    var bigV=big&&big.perf?big.perf[HM_TF]:null;
+    return '<tr><td>'+L(esc(lab.en),esc(lab.zh||lab.en))+'</td>'
+      +'<td class="num">'+(total>0?(s.value/total*100).toFixed(1):'—')+'%</td>'
+      +'<td class="num '+cls(agg)+'">'+fmtPc(agg)+'</td>'
+      +'<td class="num">'+br.adv+' / '+br.dec+'</td>'
+      +'<td class="num">'+s.tiles.length+'</td>'
+      +'<td>'+(big?esc(big.name||big.t)+' <span class="'+cls(bigV)+'">'+fmtPc(bigV)+'</span>':'—')+'</td></tr>';
+  }).join('');
+  $('hm-alt-tbl').innerHTML=head+'<tbody>'+body+'</tbody>';
+  $('hm-alt-count').innerHTML=L(esc(rows.length)+' sectors · '+HM.n_tiles+' names',
+                                esc(rows.length)+' 个板块 · '+HM.n_tiles+' 只');
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+   E · index-leadership strip — marketdata/index_leadership.json
+   sector_central.html.j2:3475-3524 leadershipStrip(). Same fields, same order, same
+   vanish-when-absent rule. Production's decorative emoji (star, globe, chart, status
+   dot) are dropped: commission §18 and spec §9.3 permit only the estate's monoline
+   masked set, and none of these four carries information the words do not.
+   ─────────────────────────────────────────────────────────────────────────────── */
+function renderLeadership(){
+  fetch('marketdata/index_leadership.json',{cache:'no-cache'})
+    .then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
+    .then(function(d){
+      var host=$('scc-leadership'); if(!host) return;
+      if(!d||!d.ok){ host.remove(); return; }      /* :3477 — vanishes entirely */
+      var star=d.rising_star, ln=d.leader_now, T=d.tabs||{};
+      var order=['subsectors','nasdaq','russell','baskets'].filter(function(t){ return T[t]; });
+      function num(x,dd){ return (x==null||isNaN(x))?'–':Number(x).toFixed(dd==null?0:dd); }
+      function signed(x,dd){ if(x==null||isNaN(x)) return '<span class="flat">–</span>';
+        var v=Number(x); return '<span class="'+(v>=0?'pos':'neg')+'">'+(v>=0?'+':'−')
+          +Math.abs(v).toFixed(dd==null?1:dd)+'</span>'; }
+      var QUAD={leading:['Leading','领先'],improving:['Improving','改善'],
+                weakening:['Weakening','走弱'],lagging:['Lagging','落后']};
+      function quad(q){ var i=QUAD[q]||['—','—']; return '<span class="r3-tag">'+L(i[0],i[1])+'</span>'; }
+
+      var whyTxt=(star&&star.why&&star.why.length)?star.why.map(function(w){return w.leg;}).join(' · ')
+                                                  :null;
+      var hero='<div class="lead-hero">';
+      if(star) hero+='<div class="lead-cell"><span class="r3-eyebrow">'+L('Rising star','上升之星')+'</span>'
+        +'<span class="lead-name">'+L(esc(star.label[0]),esc(star.label[1]))
+        +'<span class="lead-las tnum">LAS '+sgn(star.las,2)+'</span></span>'
+        +'<span class="lead-why">'+L('leadership accelerating fastest'+(whyTxt?' — '+esc(whyTxt):''),
+                                     '领导加速最快'+(whyTxt?'——'+esc(whyTxt):''))+'</span></div>';
+      if(ln){
+        var lq=(T[ln.tab]||{}).quadrant;
+        var note=(lq==='weakening'||lq==='lagging')?L(' · but weakening',' · 但走弱'):'';
+        hero+='<div class="lead-cell"><span class="r3-eyebrow">'+L('Leader now','当前领导')+'</span>'
+          +'<span class="lead-name">'+L(esc(ln.label[0]),esc(ln.label[1]))+'</span>'
+          +'<span class="lead-why">'+L('highest RS level','相对强弱水平最高')+note+'</span></div>';
+      }
+      hero+='</div>';
+
+      var rows=order.map(function(t){
+        var v=T[t];
+        return '<tr><td>'+L(esc(v.label[0]),esc(v.label[1]))+'</td>'
+          +'<td class="num tnum">'+sgn(v.las,2)+'</td>'
+          +'<td class="num tnum">'+num(v.rs_ratio,2)+'</td>'
+          +'<td class="num tnum">'+signed(v.rs_mom,2)+'</td>'
+          +'<td class="num tnum">'+signed(v.breadth_thrust!=null?v.breadth_thrust*100:null,1)+'</td>'
+          +'<td class="num tnum">'+(v.participation!=null?num(v.participation*100,0)+'%':'–')+'</td>'
+          +'<td class="num">'+quad(v.quadrant)+'</td></tr>';
+      }).join('');
+      var tbl='<div class="r3-tblbox"><table class="r3-tbl"><thead><tr>'
+        +'<th>'+L('Universe','指数域')+'</th><th class="num">LAS</th>'
+        +'<th class="num">'+L('RS level','RS水平')+'</th><th class="num">'+L('RS mom','RS动量')+'</th>'
+        +'<th class="num">'+L('Breadth thrust','广度推力')+'</th><th class="num">'+L('Particip.','参与度')+'</th>'
+        +'<th class="num">'+L('Quadrant','象限')+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+
+      /* :3498-3511 drivers — production draws these as coloured chip cards. Rendered here
+         as named rows: the chip budget is two per section, and a driver has a name, a
+         reading and two magnitudes, which is a row's job, not a pill's. */
+      var drv=((d.drivers&&d.drivers.ratios)||[]).map(function(r){
+        return '<div class="drv"><span class="n">'+L(esc(r.label_en),esc(r.label_zh))
+          +'<small>'+L(esc(r.sub_en),esc(r.sub_zh))+'</small></span>'
+          +'<span class="r">'+L(esc(r.read_en),esc(r.read_zh))+'</span>'
+          +'<span class="m tnum"><span class="'+cls(r.mom20)+'">'+sgn(r.mom20,1)+'</span>'
+          +' <span class="flat">20d</span>'+(r.pctile!=null?' · '+Math.round(r.pctile)+'<span class="flat">%ile</span>':'')
+          +'</span></div>'; }).join('');
+      var rg=d.regime, regLine='';
+      if(rg){
+        var liqZh={expanding:'扩张',contracting:'收缩',neutral:'中性',unknown:'未知'}[rg.liquidity]||rg.liquidity;
+        var liq=rg.liquidity?L(' · liquidity '+esc(rg.liquidity),' · 流动性'+esc(liqZh)):'';
+        regLine='<p class="lead-regime">'+L('Regime backdrop','宏观象限')+': <b>'+esc(rg.quad)+' '
+          +L(esc(rg.name_en),esc(rg.name_zh))+'</b> ('+L(esc(rg.axes_en),esc(rg.axes_zh))+')'+liq
+          +' → '+L('expected tilt: ','预期倾向：')+L(esc(rg.tilt_en),esc(rg.tilt_zh))+' '
+          +L('Odds-tilt, not a rule — compare it to what is actually leading.',
+             '仅为概率倾向，非规则——请对照上方实际领涨。')+'</p>';
+      }
+      var mac=d.macro, macLine='';
+      if(mac) macLine=L('Macro backdrop','宏观背景')+': <b>'+L(esc(mac.label_en||mac.verdict||'—'),
+        esc(mac.label_zh||mac.verdict||'—'))+'</b>'+(mac.score!=null?' ('+mac.score+'/100)':'');
+
+      /* :3458-3474 trackBox() — the SELF-GRADED sub-line. A calibration note, never a
+         gate: it reports what the forward log has measured so far and nothing else. */
+      var tr=d.track_record, trLine='';
+      if(tr){
+        var vlab = tr.verdict==='validated'?L('Validated','已验证')
+                 : tr.verdict==='measuring'?L('Measuring','测量中') : L('Accruing','积累中');
+        var days=tr.n_days||0;
+        trLine='<span class="r3-tag">'+L('Forward track record','前瞻战绩')+': '+vlab+'</span>'
+          +'<span>'+L((tr.n_snapshots||0)+' calls logged over '+days+(days===1?' day':' days'),
+                      (tr.n_snapshots||0)+' 条记录，历时 '+days+' 天')+'</span>';
+        var h21=(tr.horizons||{})['21'], parts=[];
+        if(tr.any_matured&&h21&&h21.n_matured){
+          var bs=h21.by_stage||{};
+          ['running','coiling','coiling_primed'].forEach(function(st){
+            if(bs[st]&&bs[st].hit_rate!=null)
+              parts.push((st==='coiling_primed'?'coil✓':st)+' '+Math.round(bs[st].hit_rate*100)+'% ('+bs[st].n+')'); });
+        }
+        trLine += parts.length
+          ? '<span>'+L('21d hit-rate: ','21日命中率：')+esc(parts.join(', '))+'</span>'
+          : '<span>'+L('grades mature at 5 / 10 / 21 / 63d — measured, not asserted',
+                       '5 / 10 / 21 / 63 日后成熟评级——实测而非断言')+'</span>';
+      }
+
+      host.innerHTML =
+        '<div class="r3-sec"><h2>'+L('Index leadership rotation','指数领导轮动')+'</h2>'
+        +'<span class="r3-sec-sub">'+L('which index family is pulling ahead','哪一指数族群正在领先')+'</span>'
+        +'<span class="r3-asof">'+L('as of '+esc(d.as_of||'—'),'截至 '+esc(d.as_of||'—'))+'</span></div>'
+        +'<div class="r3-panel">'+hero+'<div class="lead-body">'+tbl+'</div>'
+        +(drv||regLine?'<div class="lead-drivers"><span class="r3-eyebrow">'
+            +L('Why — leadership drivers','为什么 — 领导驱动')+'</span>'+regLine+drv+'</div>':'')
+        +'<p class="lead-foot">'+macLine+(macLine&&trLine?'<span></span>':'')+trLine+'</p></div>';
+    });
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+   F · boot
+   ─────────────────────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function(){
+  /* the answer */
+  bakeRegime();
+  try{ if(typeof window.__siViewReads==='function') window.__siViewReads(); }catch(e){}
+
+  /* the money-flow card label — the same field the answer line is composed from */
+  var h=reg('basketdata/si_handoff.json');
+  var r=h&&h.flow&&h.flow.cluster&&h.flow.cluster.regime;
+  if($('mkt-flow')) $('mkt-flow').innerHTML = (r&&FLOW_EN[r]) ? L(FLOW_EN[r],FLOW_ZH[r])
+                                                              : L(FLOW_EN.mixed,FLOW_ZH.mixed);
+
+  /* breadth measures + the panel's one merged footnote and its one as-of stamp */
+  var B=reg('basketdata/baskets.json');
+  var TI=(B&&B.theme_intel)||null;
+  renderInternals(TI&&TI.market_concentration);
+  if($('mny-asof')&&B&&B.as_of) $('mny-asof').innerHTML=L('as of '+esc(B.as_of),'截至 '+esc(B.as_of));
+
+  renderEtfPulse(); renderVolChip();
+
+  /* the merged footnote: both display-only disclaimers, both clocks, once. */
+  var EP=reg('basketdata/etf_pulse.json'), VS=reg('basketdata/vol_sentiment.json');
+  var fp=[];
+  if(EP&&EP.disclaimer_en) fp.push(L(esc(EP.disclaimer_en),esc(EP.disclaimer_zh)));
+  if(VS&&VS.disclaimer_en) fp.push(L(esc(VS.disclaimer_en),esc(VS.disclaimer_zh)));
+  /* the numbers behind the volatility chip: a bilingual hover is not an accessible home
+     for a figure (spec §11/§12), so they live here in plain sight instead of in a tip. */
+  if(VS&&VS.vol_regime) fp.push(L('VIX '+VS.vol_regime.vix+' ('+Math.round(VS.vol_regime.vix_pctile*100)
+      +'th percentile) · term structure '+esc(VS.vol_regime.term_state||'—'),
+    'VIX '+VS.vol_regime.vix+'（'+Math.round(VS.vol_regime.vix_pctile*100)+' 分位）· 期限结构 '
+      +esc(VS.vol_regime.term_state||'—')));
+  if(VS&&VS.put_call&&VS.put_call.sentiment_en) fp.push(L(
+    'options traders '+esc(String(VS.put_call.sentiment_en).replace(/\s*\(.*\)$/,''))
+      +' (put/call '+VS.put_call.equity_pc+')',
+    '期权交易者'+esc(VS.put_call.sentiment_zh)+'（看跌/看涨 '+VS.put_call.equity_pc+'）'));
+  if(EP&&EP.as_of) fp.push(L('ETF flow context as of '+esc(EP.as_of),'ETF 轮动背景截至 '+esc(EP.as_of)));
+  if($('mny-board-foot')) $('mny-board-foot').innerHTML=fp.join(' · ');
+
+  /* the server-rendered flow fragment — injected verbatim, or the band is removed */
+  var band=$('mny-flow-band');
+  var frag=(window.REF&&REF.fragments)?REF.fragments['fragments/sc_flows.html']:null;
+  if(band){ if(frag) band.innerHTML=frag; else band.remove(); }
+
+  /* the heat map: parse now, paint when the view is really on screen (§8.1) */
+  HM=reg('marketdata/sp500_heatmap.json');
+  if(HM&&HM.tiles&&HM.tiles.length){ renderHeatText(); }
+  else {
+    var hb=$('heatmap-scorecard');
+    if(hb) hb.innerHTML='<b>'+L('No heat map tonight','今晚无热力图')+'</b>'
+      +'<span>'+L('The market-heat artifact did not build. Every other reading on this view is unaffected.',
+                  '市场热度数据未生成。本视图其他读数不受影响。')+'</span>';
+    var alt=$('hm-alt'); if(alt) alt.remove();
+  }
+
+  renderLeadership();
+});
+
+/* §8.1 mount-width law: si_workspace.js:302 dispatches si:view on EVERY activation with
+   the section already laid out, so this is the first moment the box has a real width. */
+document.addEventListener('si:view', function(e){ if(e&&e.detail==='money') paintHeat(); });
+var _rz=null;
+window.addEventListener('resize', function(){
+  if(!V||!V.classList.contains('on')) return;
+  clearTimeout(_rz); _rz=setTimeout(paintHeat,140);
+}, {passive:true});
+/* No repaint on theme or language change: the tile palette is CSS (bins are class names,
+   anchored on --up/--down) and every label ships both language spans. */
+})();
+</script>
 </section>

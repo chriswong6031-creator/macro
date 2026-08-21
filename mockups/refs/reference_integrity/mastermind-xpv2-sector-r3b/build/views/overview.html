@@ -1,162 +1,971 @@
-<section class="si-view on" data-view="overview">
-  <h2><span class="l-en">Overview</span><span class="l-zh">总览</span></h2>
-  <p class="si-view-read" id="si-read-overview" hidden></p>
-  <div id="ov-proof" class="ref-proof">Loading proof-of-data…</div>
+<!-- ══════════════════════════════════════════════════════════════════════════════
+     XPV2-SC-R3B · LANE D1 · VIEW 1 — OVERVIEW  (ACTION tier)
+     User job: "What should I do right now?"
 
-  <h3 id="actnow-section" style="margin-bottom:4px">Act-Now board</h3>
-  <p class="ref-proof" style="margin-top:0">Access state controls the row lists below (drawer: "Access state").
-    Lane header counts are ALWAYS the full <code>action_board.&lt;lane&gt;.length</code> —
-    production never gates the counts, only the row bodies
-    (<code>access_hydration_contract.md</code> §2).</p>
-  <div id="actnow">
-    <div class="ab-lane" data-lane="buy_now">
-      <h4><span class="l-en">Buy Now</span><span class="l-zh">立即买入</span> <span class="ab-count" id="cnt-buy_now">—</span></h4>
-      <div class="actbody" id="ab-buy-fold"></div>
-      <div class="pg-more" id="more-buy_now"></div>
-    </div>
-    <div class="ab-lane" data-lane="buy_soon">
-      <h4><span class="l-en">Buy Soon</span><span class="l-zh">即将买入</span> <span class="ab-count" id="cnt-buy_soon">—</span></h4>
-      <div class="actbody" id="ab-soon-fold"></div>
-      <div class="pg-more" id="more-buy_soon"></div>
-    </div>
-    <div class="ab-lane" data-lane="on_the_run">
-      <h4><span class="l-en">On The Run</span><span class="l-zh">持续上涨</span> <span class="ab-count" id="cnt-on_the_run">—</span></h4>
-      <div class="actbody" id="ab-run-fold"></div>
-      <div class="pg-more" id="more-on_the_run"></div>
-    </div>
-    <div class="ab-lane" data-lane="take_profits">
-      <h4><span class="l-en">Take Profits</span><span class="l-zh">止盈</span> <span class="ab-count" id="cnt-take_profits">—</span></h4>
-      <div class="actbody" id="ab-trim-fold"></div>
-      <div class="pg-more" id="more-take_profits"></div>
-    </div>
-    <div class="ab-lane" data-lane="stand_aside">
-      <h4><span class="l-en">Stand Aside</span><span class="l-zh">观望</span> <span class="ab-count" id="cnt-stand_aside">—</span> <span style="color:var(--muted);font-weight:400">(hold + avoid, TS-R5 combined lane)</span></h4>
-      <div class="actbody" id="dash-hold-fold"></div>
-      <div class="pg-more" id="more-stand_aside"></div>
+     Page grammar (DESIGN_SYSTEM_SPEC §5), five L1 sections and nothing else:
+       1  .r3-answer          the composed read IS the answer line
+       2  #regime             leadership context — structurally independent (§7.3)
+       3  #actnow-section     the STATE LEDGE fused with its selected lane (dominant)
+       4  bottoming watch     full-width watch strip, never a sixth lane
+       5  #grader             Track Record
+
+     Every rendered value is read from the embedded fixture registry or from copy
+     quoted verbatim from a production template (each quote carries its file+line).
+     Nothing here re-ranks, re-lanes, re-counts, re-classifies or re-orders.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<section class="si-view on r3-view--action" data-view="overview">
+
+<style>
+/* Lane-local composition only. Every shared component (.r3-answer/.r3-board/
+   .r3-row/.r3-watch/.r3-cols/.r3-sec/.r3-panel/.st-*) is the shell's; nothing
+   below re-declares one. No new token, no new :root, no hue outside theme.css. */
+
+/* ── receipt button — a real 44px target wearing a 16px ring ─────────────────
+   The system's `?` receipt must be tappable (hover is never the only path,
+   spec §12) AND must not inflate the line it sits in. The button box is 44×44
+   for target size; negative margins give the visual rhythm back. */
+.r3-view--action .r3-rcpt{ appearance:none; display:inline-flex; align-items:center;
+  justify-content:center; width:44px; height:44px; margin:-14px -13px; padding:0;
+  background:none; border:0; cursor:help; flex:none; vertical-align:middle; }
+.r3-view--action .r3-rcpt::before{ content:"?"; display:flex; align-items:center;
+  justify-content:center; width:16px; height:16px; border:1px solid var(--line);
+  border-radius:50%; font-size:9.5px; font-weight:700; color:var(--muted);
+  transition:color var(--t-fast) var(--ease-std), border-color var(--t-fast) var(--ease-std); }
+.r3-view--action .r3-rcpt:hover::before,
+.r3-view--action .r3-rcpt[aria-expanded="true"]::before{
+  color:var(--text); border-color:color-mix(in srgb, var(--link) 55%, var(--line)); }
+
+/* ── 2 · LEADERSHIP CONTEXT (#regime) ───────────────────────────────────────
+   The dual-read law (§7.3) is answered with GRAMMAR, not with a label: this
+   band is UNBOXED (a hairline-ruled editorial note on the canvas) while the
+   board below is a bordered object with a 3px state rail. Two object
+   grammars = two systems. No arrow, no shared hue, no causal prose crosses
+   between them; the only arrow on this band sits INSIDE the handoff pair,
+   where it describes leadership moving between two themes — which is the
+   producer's own statement, not a link to a lane. */
+[data-view="overview"] .r3-ov-ctx{ border-top:1px solid var(--line); padding-top:var(--sp-4); }
+[data-view="overview"] .r3-ov-grid{ display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);
+  gap:var(--sp-5) var(--sp-7); align-items:start; }
+[data-view="overview"] .r3-ov-hand{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:var(--sp-3); align-items:center; }
+[data-view="overview"] .r3-ov-hcol{ min-width:0; }
+[data-view="overview"] .r3-ov-hname{ display:block; margin-top:5px; font-size:var(--fs-body);
+  font-weight:700; line-height:1.3; overflow-wrap:anywhere; }
+[data-view="overview"] .r3-ov-hmeta{ display:block; margin-top:2px; font-size:var(--fs-micro);
+  letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+html[data-lang="zh"] [data-view="overview"] .r3-ov-hmeta{ letter-spacing:0; text-transform:none; }
+[data-view="overview"] .r3-ov-state{ display:block; font-size:var(--fs-label); font-weight:700;
+  letter-spacing:.055em; text-transform:uppercase; color:var(--muted); }
+html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text-transform:none; }
+[data-view="overview"] .r3-ov-stanceline{ margin-top:6px; font-size:var(--fs-md); font-weight:600;
+  line-height:1.45; }
+[data-view="overview"] .r3-ov-days{ margin-top:4px; font-size:var(--fs-sm); color:var(--muted); }
+[data-view="overview"] .r3-ov-season{ margin-top:11px; padding-top:10px;
+  border-top:1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
+
+/* ── 3 · THE BOARD ──────────────────────────────────────────────────────────
+   The ledge cells, foot and rows are the shell's. What this lane owns is the
+   figure column's two-value stack, the fold control and the trace panel. */
+[data-view="overview"] .r3-cols{ grid-template-columns:minmax(0,1.6fr) 74px minmax(0,1.25fr) 16px; }
+[data-view="overview"] .r3-colfig{ text-align:right; }
+[data-view="overview"] .r3-colfig em{ display:block; font-style:normal; font-size:9px;
+  font-weight:600; letter-spacing:.03em; text-transform:none; line-height:1.25;
+  color:color-mix(in srgb, var(--muted) 78%, transparent); }
+[data-view="overview"] .r3-fig{ line-height:1.2; }
+[data-view="overview"] .r3-delta{ display:block; margin-top:2px; font-size:var(--fs-micro);
+  font-weight:700; letter-spacing:0; }
+[data-view="overview"] .r3-delta.up{ color:var(--ink-up); }
+[data-view="overview"] .r3-delta.dn{ color:var(--ink-down); }
+
+/* the five lane bodies all live in the DOM (hydration lands by fold id on every
+   lane, not only the visible one); only the selected lane's body is shown. */
+[data-view="overview"] .actbody[hidden]{ display:none; }
+[data-view="overview"] .actbody.is-collapsed > a:nth-child(n+4){ display:none; }
+[data-view="overview"] .pg-more{ margin:0; padding:12px 16px; border-top:1px solid var(--line);
+  font-size:var(--fs-sm); color:var(--muted); }
+[data-view="overview"] .pg-more a{ color:var(--ink-link); font-weight:700; }
+[data-view="overview"] .r3-lane-empty{ margin:0; padding:var(--sp-6) var(--sp-4);
+  font-size:var(--fs-md); font-weight:700; text-align:center; }
+[data-view="overview"] .r3-lane-empty small{ display:block; margin-top:5px; font-size:var(--fs-sm);
+  font-weight:400; color:var(--muted); }
+
+/* Show more / Show less — production's control, in the board's foot grammar.
+   The ▾/▴ characters production types are drawn as CSS borders here (§9.3:
+   chevrons are borders, never characters); the WORDS are unchanged. */
+[data-view="overview"] .r3-showmore{ appearance:none; display:flex; align-items:center;
+  justify-content:center; gap:8px; width:100%; min-height:44px; padding:0 16px;
+  background:color-mix(in srgb, var(--panel2) 45%, transparent);
+  border:0; border-top:1px solid var(--line); color:var(--muted);
+  font-size:var(--fs-sm); font-weight:700; cursor:pointer;
+  transition:color var(--t-fast) var(--ease-std); }
+[data-view="overview"] .r3-showmore:hover{ color:var(--text); }
+[data-view="overview"] .r3-showmore::after{ content:""; width:6px; height:6px; flex:none;
+  border-right:1.6px solid currentColor; border-bottom:1.6px solid currentColor;
+  transform:translateY(-2px) rotate(45deg); }
+[data-view="overview"] .r3-showmore[aria-expanded="true"]::after{ transform:translateY(1px) rotate(-135deg); }
+[data-view="overview"] .r3-showmore .lm-hide{ display:none; }
+[data-view="overview"] .r3-showmore[aria-expanded="true"] .lm-show{ display:none; }
+[data-view="overview"] .r3-showmore[aria-expanded="true"] .lm-hide{ display:inline; }
+
+/* trace expand — E2 inside the E1 board, nothing nests inside it */
+[data-view="overview"] .si-trace{ padding:14px 16px 12px; background:var(--panel2);
+  border-bottom:1px solid var(--line); }
+[data-view="overview"] .si-trace-nm{ font-size:var(--fs-md); font-weight:700; line-height:1.3;
+  overflow-wrap:anywhere; }
+[data-view="overview"] .si-trace-sub{ display:block; margin-top:2px; font-size:var(--fs-micro);
+  letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+html[data-lang="zh"] [data-view="overview"] .si-trace-sub{ letter-spacing:0; text-transform:none; }
+[data-view="overview"] .si-trace-facts{ display:flex; flex-wrap:wrap; gap:var(--sp-2) var(--sp-6);
+  margin-top:11px; }
+[data-view="overview"] .si-trace-facts > div{ min-width:0; }
+[data-view="overview"] .si-trace-k{ display:block; font-size:var(--fs-micro); font-weight:700;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-transform:none; }
+[data-view="overview"] .si-trace-v{ display:block; margin-top:2px; font-size:var(--fs-md);
+  font-weight:700; font-variant-numeric:tabular-nums; }
+[data-view="overview"] .si-trace-foot{ margin-top:6px; }
+
+/* ── 4 · BOTTOMING WATCH ────────────────────────────────────────────────────
+   Watch grammar, enforced: no state ink (the turn figure is --muted, not the
+   info ink production tints it), no count cell, no filled control, no entry
+   verb, and `signal` / `timing_state` are never read. */
+[data-view="overview"] .r3-watch-cell > strong{ display:flex; align-items:baseline; gap:8px; }
+[data-view="overview"] .r3-watch-nm{ min-width:0; flex:1 1 auto; overflow-wrap:anywhere; }
+[data-view="overview"] .r3-turn{ flex:none; display:inline-flex; align-items:center; gap:5px;
+  font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums; color:var(--muted); }
+[data-view="overview"] .r3-turn::before{ content:""; width:7px; height:7px; flex:none;
+  border-right:1.5px solid currentColor; border-top:1.5px solid currentColor;
+  transform:rotate(-45deg); }
+[data-view="overview"] .r3-watch-foot p{ margin:0 0 5px; }
+[data-view="overview"] .r3-watch-foot p:last-child{ margin-bottom:0; }
+
+/* ── 5 · TRACK RECORD ───────────────────────────────────────────────────────*/
+[data-view="overview"] .r3-gr{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:1px; background:var(--line); border-radius:var(--r-card); overflow:hidden; }
+[data-view="overview"] .r3-gr-cell{ background:var(--panel); padding:13px 14px; min-height:88px; }
+[data-view="overview"] .r3-gr-k{ display:block; font-size:var(--fs-micro); font-weight:700;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--muted); font-variant-numeric:tabular-nums; }
+[data-view="overview"] .r3-gr-v{ display:block; margin-top:6px; font-size:var(--fs-num-lg);
+  font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+[data-view="overview"] .r3-gr-v.accruing{ font-size:var(--fs-body); font-weight:600; color:var(--muted);
+  letter-spacing:0; }
+[data-view="overview"] .r3-gr-d{ display:block; margin-top:3px; font-size:var(--fs-sm);
+  color:var(--muted); font-variant-numeric:tabular-nums; }
+[data-view="overview"] .r3-gr-note{ margin-top:12px; font-size:var(--fs-sm); color:var(--muted);
+  line-height:1.5; }
+
+/* stale: the as-of stamp takes health ink + one plain line. Never a banner. */
+[data-view="overview"] .r3-asof.r3-stale{ color:var(--c); font-weight:600; }
+[data-view="overview"] .r3-staleline{ font-size:var(--fs-sm); color:var(--muted); }
+
+/* ── receipt popover (the LENS idiom, E3 glass; opens on TAP as well as hover) */
+.r3-tipbox{ position:fixed; z-index:80; max-width:min(360px, calc(100vw - 24px));
+  padding:11px 13px; background:var(--glass-bg); border:1px solid var(--glass-brd);
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+  border-radius:var(--r-card); box-shadow:var(--popover-shadow);
+  font-size:var(--fs-sm); line-height:1.5; color:var(--text); }
+.r3-tipbox[hidden]{ display:none; }
+
+/* ── responsive: the phone RECOMPOSES ───────────────────────────────────────*/
+@media (max-width:1100px){
+  [data-view="overview"] .r3-ov-grid{ grid-template-columns:minmax(0,1fr); }
+}
+@media (max-width:767px){
+  [data-view="overview"] .r3-ov-hand{ grid-template-columns:minmax(0,1fr); gap:var(--sp-2); }
+  [data-view="overview"] .r3-ov-hand .r3-arrow{ transform:rotate(90deg); margin:2px 0 2px 4px; }
+  [data-view="overview"] .r3-gr{ grid-template-columns:minmax(0,1fr); }
+  [data-view="overview"] .r3-delta{ display:inline; margin-left:7px; }
+}
+@media (max-width:359px){
+  [data-view="overview"] .r3-watch-cell > strong{ flex-wrap:wrap; }
+}
+</style>
+
+  <!-- ══ 1 · VIEW ANSWER ══ one answer per view, one voice (§5.1).
+       The composed read (#si-read-overview, written by si_workspace.js) IS the
+       22px sentence; the static line below it is the sanctioned "read being
+       updated" fallback and is hidden by the shell's pure-CSS sibling rule
+       whenever the read paints. -->
+  <div class="r3-answer">
+    <h2 class="r3-answer-view"><span class="l-en">Overview</span><span class="l-zh">总览</span></h2>
+    <p class="si-view-read" id="si-read-overview" hidden></p>
+    <p class="r3-answer-line"><span class="l-en">Tonight&#39;s read is being updated. The graded lanes below are today&#39;s board.</span><span class="l-zh">今晚的研判正在更新。下方分级清单即为今日看板。</span></p>
+    <div class="r3-answer-meta">
+      <span class="r3-asof" id="ov-asof"></span>
+      <span id="ov-staleline" hidden class="r3-staleline"></span>
+      <span><span class="l-en">Graded call · this view only</span><span class="l-zh">分级判断 · 仅此视图</span></span>
     </div>
   </div>
 
-  <p id="regime" class="si-view-read" style="margin-top:16px">Placeholder anchor target for the legacy
-    <code>#regime</code> / <code>#grader</code> hashes (routing_contract.md §2) — the design lane's real
-    regime/grader panels land here.</p>
-  <p id="grader"></p>
+  <!-- ══ 2 · LEADERSHIP CONTEXT ══ #regime is a legacy-anchor target
+       (si_workspace.js LEGACY_ANCHORS 'regime' → ['overview','regime']); it lands
+       on the market-context band, which is what that hash has always meant. -->
+  <section class="r3-band r3-ov-ctx" id="regime" aria-labelledby="ov-ctx-h">
+    <div class="r3-sec">
+      <h2 id="ov-ctx-h"><span class="l-en">Leadership context</span><span class="l-zh">领涨格局背景</span></h2>
+      <span class="r3-sec-sub"><span class="l-en">Display only — it does not set a lane below.</span><span class="l-zh">仅供展示 — 不决定下方分组归属。</span></span>
+      <span class="r3-asof" id="ov-ctx-asof"></span>
+    </div>
+    <div class="r3-ov-grid" id="ov-ctx-body"></div>
+  </section>
 
-  <script>
-  (function(){
-    /* ── proof-of-data: five action lanes, counts read directly from the
-       embedded FULL action_board.json (.length over the full list — the same
-       mirror production's own template performs, never a re-rank). ── */
-    function renderCounts(){
-      try{
-        var ab = REF.parseJSON(REF.registry['basketdata/action_board.json']).action_board;
-        var LANES = [['buy_now','cnt-buy_now','Buy Now'], ['buy_soon','cnt-buy_soon','Buy Soon'],
-                     ['on_the_run','cnt-on_the_run','On The Run'], ['take_profits','cnt-take_profits','Take Profits']];
-        var parts = [];
-        LANES.forEach(function(L){
-          var n = (ab[L[0]] || []).length;
-          var el = document.getElementById(L[1]); if(el) el.textContent = '(' + n + ')';
-          parts.push(L[2] + ' ' + n);
-        });
-        var holdN = (ab.hold || []).length, avoidN = (ab.avoid || []).length;
-        var sa = document.getElementById('cnt-stand_aside'); if(sa) sa.textContent = '(' + (holdN + avoidN) + ')';
-        parts.push('Stand Aside ' + (holdN + avoidN));
-        document.getElementById('ov-proof').textContent =
-          'Five action lanes (basketdata/action_board.json, .length over the full list): ' + parts.join(' · ');
-      }catch(e){
-        document.getElementById('ov-proof').textContent = 'proof-of-data read failed: ' + e;
+  <!-- ══ 3 · THE STATE LEDGE + ITS SELECTED LANE ══ one object, one border.
+       A separate "Buy now" section header under a "Buy now" ledge cell would be
+       the same answer printed twice — the ledge IS the header (§5.2). -->
+  <section class="r3-band" id="actnow-section" aria-labelledby="ov-board-h">
+    <h2 class="r3-vh" id="ov-board-h"><span class="l-en">What to act on now</span><span class="l-zh">当前可操作</span></h2>
+    <div class="r3-board st-buy" id="actnow">
+      <div class="r3-ledge-grid" role="tablist" id="ov-ledge"
+           aria-label="Action lanes"></div>
+      <p class="r3-board-foot" id="ov-foot"></p>
+      <div id="ov-panel" role="tabpanel"></div>
+    </div>
+    <div style="margin-top:var(--sp-2)">
+      <a class="r3-more" href="#confluence"><span class="l-en">Drill to stocks</span><span class="l-zh">下钻到个股</span></a>
+    </div>
+  </section>
+
+  <!-- ══ 4 · BOTTOMING WATCH ══ full-width strip UNDER the lanes, never a sixth
+       lane. Self-hides when the producer ships no payload. -->
+  <section class="r3-band" id="ov-watch-band" hidden aria-labelledby="ov-watch-h">
+    <div class="r3-sec">
+      <h2 id="ov-watch-h"><span class="l-en">Bottoming watch</span><span class="l-zh">筑底观察</span></h2>
+      <span class="r3-sec-sub"><span class="l-en">cycle lows forming — watch, don&#39;t chase</span><span class="l-zh">周期底部形成中——观察，勿追</span></span>
+    </div>
+    <div class="r3-panel">
+      <div class="r3-watch" id="ov-watch"></div>
+      <div class="r3-watch-foot" id="ov-watch-foot"></div>
+    </div>
+  </section>
+
+  <!-- ══ 5 · TRACK RECORD ══ #grader's DOM home is Overview (ledger #35). -->
+  <section class="r3-band" id="grader" aria-labelledby="ov-gr-h">
+    <div class="r3-sec">
+      <h2 id="ov-gr-h" class="l-en">Self-grader — measured accuracy</h2>
+      <h2 class="l-zh">自评分器 — 已衡量准确度</h2>
+      <span class="r3-sec-sub" id="ov-gr-sub"></span>
+    </div>
+    <div id="ov-gr-body"></div>
+  </section>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════════
+   OVERVIEW — display code. Reads the embedded fixture registry; recomputes
+   nothing. The only arithmetic performed anywhere below is:
+     · `.length` over a FULL producer list (the lane counts — the identical
+       mirror `_us_act_now_board.html.j2:524-528` performs server-side), and
+     · the preview slice budget `scripts/build_sector_central.py::split_actnow()`
+       already defines (hold spends the budget first, avoid takes the remainder).
+   No rank, lane assignment, state classification or producer ordering is
+   derived here.
+   ════════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+/* ── shared receipt popover (installed once; both Action views use it) ──────── */
+if(!window.__r3TipInstalled){
+  window.__r3TipInstalled = true;
+  var box = null, owner = null;
+  function zh(){ return document.documentElement.getAttribute('data-lang') === 'zh'; }
+  function close(){
+    if(box) box.hidden = true;
+    if(owner) owner.setAttribute('aria-expanded', 'false');
+    owner = null;
+  }
+  function open(el){
+    var txt = zh() ? (el.getAttribute('data-tip-zh') || el.getAttribute('data-tip-en'))
+                   : el.getAttribute('data-tip-en');
+    if(!txt) return;
+    if(!box){
+      box = document.createElement('div');
+      box.className = 'r3-tipbox'; box.setAttribute('role', 'status'); box.hidden = true;
+      document.body.appendChild(box);
+    }
+    box.textContent = txt; box.hidden = false;
+    var r = el.getBoundingClientRect(), bw = box.offsetWidth, bh = box.offsetHeight;
+    var left = Math.min(Math.max(8, r.left + r.width / 2 - bw / 2), window.innerWidth - bw - 8);
+    var top = (r.top > bh + 14) ? (r.top - bh - 8) : (r.bottom + 8);
+    box.style.left = left + 'px'; box.style.top = top + 'px';
+    owner = el; el.setAttribute('aria-expanded', 'true');
+  }
+  document.addEventListener('click', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('[data-tip-en]') : null;
+    if(!t){ close(); return; }
+    e.preventDefault();
+    if(owner === t){ close(); return; }
+    close(); open(t);
+  });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
+  document.addEventListener('mouseover', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('[data-tip-en]') : null;
+    if(t && t !== owner){ close(); open(t); }
+  });
+  document.addEventListener('mouseout', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('[data-tip-en]') : null;
+    if(t && t === owner && !e.relatedTarget) close();
+  });
+  window.addEventListener('scroll', close, true);
+  document.addEventListener('langchange', close);
+}
+
+/* ── helpers ────────────────────────────────────────────────────────────────── */
+function L(en, zh){ return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh == null ? en : zh) + '</span>'; }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
+  return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+function reg(path){
+  try{ return REF.parseJSON(REF.registry[path]); }catch(e){ return null; }
+}
+function el(id){ return document.getElementById(id); }
+
+/* dispshort() — curated abbreviation table, verbatim from
+   templates/_us_act_now_board.html.j2:33-42 (capability ledger #33). The name
+   still WRAPS and is never ellipsized; the table only supplies production's own
+   short spelling so a preview row and a hydrated row can never read differently. */
+var ABBR = {'Consumer Staples':'Cons Staples', 'Consumer Discretionary':'Cons Disc',
+            'Communication Services':'Comm Services', 'Reshoring & Industrial Capex':'Industrial Capex'};
+function dispshort(name){
+  var n = String(name == null ? '' : name);
+  var ew = n.indexOf(' (Equal-Weight)') >= 0 ? ' (EW)' : '';
+  var base = n.replace(' (Equal-Weight)', '');
+  return (ABBR[base] || base) + ew;
+}
+
+/* ── embedded producer artifacts ──────────────────────────────────────────────
+   Read at DOMContentLoaded, never at parse time: this partial lands at the
+   REF:VIEWS slot, which precedes both REF:DATA and REF:RUNTIME, so REF.registry
+   does not exist yet while this <script> is being parsed. */
+var AB = null, PG = null, HND = null, SCD = null, BOT = null, MORE = {};
+var ZH_TICKER = {}, ZH_ID = {};
+function loadArtifacts(){
+  var ABJ = reg('basketdata/action_board.json');
+  AB  = (ABJ && ABJ.action_board) || null;
+  MORE = (AB && AB.more) || {};
+  PG  = reg('premiumdata/sector_central.json');
+  HND = reg('basketdata/si_handoff.json');
+  SCD = window.SECTOR_CENTRAL || reg('sectordata/sector_central.json');
+  /* the watch strip is server-baked on production; here it is read from the same
+     bytes the build embedded, so it degrades INDEPENDENTLY of the client fetch
+     below (capability ledger #30). */
+  var b = reg('basketdata/baskets.json');
+  var an = b && b.theme_intel && b.theme_intel.act_now;
+  BOT = an ? {rows: an.bottoming_watch || [], dual: an.dual_read_ids || [],
+              recovering: an.recovering_ids || [], auth: an.bottoming_authority || {},
+              as_of: b.as_of} : null;
+  /* ZH display names for sector rows. `action_board.json` sector rows carry no
+     name_zh — production resolves it through the host env's tr(); the fixture's
+     own name map is sectordata/sector_central.json (`name_zh` per ticker / id),
+     which is what is joined here. Resolves DESIGN_SYSTEM_SPEC §15 GAP-2. */
+  if(SCD){
+    (SCD.sectors || []).concat(SCD.baskets || []).forEach(function(s){
+      if(s.ticker && s.name_zh) ZH_TICKER[s.ticker] = s.name_zh;
+      if(s.id && s.name_zh) ZH_ID[s.id] = s.name_zh;
+    });
+  }
+}
+function rowZh(r){
+  if(r.name_zh) return r.name_zh;
+  if(r.ticker && ZH_TICKER[r.ticker]) return ZH_TICKER[r.ticker];
+  var bid = traceId(r.href);
+  if(bid && ZH_ID[bid]) return ZH_ID[bid];
+  if(bid && ZH_ID['b-' + bid]) return ZH_ID['b-' + bid];
+  return r.name;
+}
+/* the id `#read-<id>` addresses, derived exactly the way production's own
+   trace wiring derives it (sector_central.html.j2:3101 — `basket/(.+)\.html`). */
+function traceId(href){
+  var m = String(href || '').match(/^basket\/(.+)\.html$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+/* ── the five rendered columns, from six producer keys ──────────────────────────
+   EN/ZH labels, subcopy and empty-state copy are quoted VERBATIM from
+   templates/_us_act_now_board.html.j2 (lines cited per lane). hold+avoid share
+   one column, one .actbody and one fold id, exactly as :626-651 renders it. */
+var LANES = [
+  {key:'buy_now',      fold:'ab-buy-fold',    st:'st-buy',
+   en:'Buy now', zh:'立即买入',                                                  /* :555 */
+   sEn:'Entry confirmed today', sZh:'今日已确认入场',                             /* :558 */
+   eEn:'None today — nothing has fully confirmed a fresh cycle low.',
+   eZh:'今日无 — 尚无标的完全确认新的周期低点。'},                                 /* :563 */
+  {key:'buy_soon',     fold:'ab-soon-fold',   st:'st-soon',
+   en:'Almost ready', zh:'接近就绪',                                             /* :574 */
+   sEn:'Setting up — wait for the trigger, not a buy yet', sZh:'构筑中 — 等待触发，尚不可买', /* :577 */
+   eEn:'No imminent setups.', eZh:'暂无临近的构筑。'},                             /* :582 */
+  {key:'on_the_run',   fold:'ab-run-fold',    st:'st-run',
+   en:'In favour — don&#39;t chase', zh:'看好 — 勿追高',                          /* :593 */
+   sEn:'Uptrend intact but extended · wait for a pullback', sZh:'趋势完好但已延伸 · 等待回调', /* :596 */
+   eEn:'Nothing extended right now.', eZh:'当前无过度延伸的标的。'},               /* :601 */
+  {key:'take_profits', fold:'ab-trim-fold',   st:'st-trim',
+   en:'Take profits', zh:'止盈',                                                 /* :612 */
+   sEn:'Late in the cycle / topping — protect gains', sZh:'周期晚期／做顶 — 保护利润', /* :615 */
+   eEn:'Nothing topping.', eZh:'无标的做顶。'},                                   /* :620 */
+  {key:'stand_aside',  fold:'dash-hold-fold', st:'st-aside',
+   en:'Stand aside', zh:'观望',                                                  /* :632 */
+   sEn:'Hold what you own · no new buying', sZh:'持有勿动 · 不新开仓',             /* :635 */
+   eEn:'', eZh:''}   /* :637-647 ships no {% else %} — an absent lane renders nothing */
+];
+var FOLD_CAP = 3;   /* every V2 action lane shows its top three rows (:219-229) */
+
+/* lane rows, in producer order. `stand_aside` concatenates hold then avoid — the
+   same two arrays into the same one .actbody, never re-sorted, never re-merged. */
+function laneRows(key){
+  if(!AB) return [];
+  if(key === 'stand_aside') return (AB.hold || []).concat(AB.avoid || []);
+  return AB[key] || [];
+}
+function laneCount(key){
+  /* ALWAYS the full board — "state and totals are free, names are paid"
+     (_us_act_now_board.html.j2:52-57; capability ledger #3). */
+  if(key === 'stand_aside') return ((AB.hold || []).length) + ((AB.avoid || []).length);
+  return (AB[key] || []).length;
+}
+
+/* ── row markup ─────────────────────────────────────────────────────────────── */
+function rowHTML(r){
+  var isTheme = r.kind === 'theme';
+  var bid = traceId(r.href);
+  var fig = '';
+  if(isTheme){
+    var sc = (r.score == null) ? '' : String(Math.round(r.score));
+    var p20 = '';
+    if(r.perf_20d_rel != null){
+      var v = r.perf_20d_rel * 100;
+      p20 = '<span class="r3-delta ' + (v >= 0 ? 'up' : 'dn') + ' tnum">'
+          + (v >= 0 ? '+' : '') + v.toFixed(1) + '%</span>';
+    }
+    fig = sc + p20;
+  }
+  /* WHY: theme rows carry the producer's own reason prose; sector rows carry the
+     qualitative stat pair (ledger #7 — sector rows have no blended score). Both
+     verbatim, neither synthesised. */
+  var why = isTheme
+    ? (r.reco_why_en ? L(esc(r.reco_why_en), esc(r.reco_why_zh || r.reco_why_en)) : '')
+    : (r.stat_en ? L(esc(r.stat_en), esc(r.stat_zh || r.stat_en)) : '');
+  /* the sub line: the row's KIND in the legend's own words (:293-294), then —
+     for a theme basket — its leaders, the same top-three the decision card
+     names (:446 `'leaders': ('Leaders','龙头')`, `top_members[:3]`). The kind
+     word is a constant; the leaders are what make one theme row legible as
+     itself at a glance. */
+  var kind = isTheme ? L('theme', '主题') : L('sector fund', '板块基金');
+  if(isTheme && r.top_members && r.top_members.length){
+    kind += '<span aria-hidden="true"> · </span>' + esc(r.top_members.slice(0, 3).join(' · '));
+  }
+  return '<a class="r3-row rvx-trow" data-ref-nav'
+       + (bid ? ' data-mlc-bid="' + esc(bid) + '"' : '')
+       + ' href="' + esc(r.href) + '">'
+       + '<span class="r3-name">' + L(esc(dispshort(r.name)), esc(rowZh(r)))
+       + '<span class="r3-sub">' + kind + '</span></span>'
+       + '<span class="r3-fig tnum">' + fig + '</span>'
+       + '<span class="r3-why">' + why + '</span>'
+       + '<span class="r3-chev" aria-hidden="true"></span></a>';
+}
+
+/* ── the ledge ──────────────────────────────────────────────────────────────── */
+var SEL = 'buy_now';
+function paintLedge(){
+  el('ov-ledge').innerHTML = LANES.map(function(L1){
+    var on = L1.key === SEL;
+    return '<button class="r3-ledge-cell ' + L1.st + '" type="button" role="tab"'
+         + ' aria-selected="' + on + '" data-lane="' + L1.key + '"'
+         + ' aria-controls="ov-panel" id="ov-tab-' + L1.key + '">'
+         + '<span class="r3-ledge-name">' + L(L1.en, L1.zh) + '</span>'
+         + '<span class="r3-ledge-count tnum">' + laneCount(L1.key) + '</span>'
+         + '</button>';
+  }).join('');
+}
+
+/* ── the board foot: producer subcopy · receipt · honest count ───────────────── */
+/* Receipt copy: the board legend, verbatim from _us_act_now_board.html.j2:293-294
+   minus its trailing "Symbols:" sentence — those marks describe row glyphs this
+   composition does not draw, and the template's own comment warns that a legend
+   for marks the board no longer shows is a legend for a board that does not
+   exist. Nothing else is re-worded. */
+var LEGEND_EN = 'Every sector and theme is grouped by where it sits in the cycle. The lane name tells you what to do; open a row for detail.';
+var LEGEND_ZH = '所有板块与主题都按当前周期位置分组。分组名称就是操作建议；打开任意一行可查看详情。';
+function paintFoot(){
+  var L1 = laneOf(SEL);
+  var body = el(L1.fold);
+  var inDom = body ? body.querySelectorAll(':scope > a').length : 0;
+  /* honest count = what the reader can actually see: the fold caps it at three
+     while collapsed, and the gate caps what is in the DOM at all. */
+  var shown = (body && body.classList.contains('is-collapsed')) ? Math.min(inDom, FOLD_CAP) : inDom;
+  var total = laneCount(SEL);
+  el('ov-foot').innerHTML =
+      '<span>' + L(L1.sEn, L1.sZh) + '</span>'
+    + '<button class="r3-rcpt" type="button" aria-expanded="false"'
+    + ' data-tip-en="' + esc(LEGEND_EN) + '" data-tip-zh="' + esc(LEGEND_ZH) + '">'
+    + '<span class="r3-vh">' + L('How lanes are graded', '分级方式说明') + '</span></button>'
+    + '<span class="r3-asof">' + L(shown + ' of ' + total + ' shown', '已显示 ' + shown + ' / ' + total) + '</span>';
+}
+function laneOf(key){
+  for(var i = 0; i < LANES.length; i++) if(LANES[i].key === key) return LANES[i];
+  return LANES[0];
+}
+
+/* ── the panel: column legend + five lane bodies (only the selected one shown) ─
+   Every lane body exists in the DOM at all times because hydration lands rows by
+   fold id on EVERY lane, not only the visible one (access_hydration_contract §3
+   step 6). */
+function paintPanel(){
+  var cols = '<div class="r3-cols" aria-hidden="true">'
+    + '<span>' + L('Sector or theme', '板块或主题') + '</span>'
+    + '<span class="r3-colfig">' + L('Score', '评分')
+    + '<em>' + L('20d vs market', '20日对比市场') + '</em></span>'
+    + '<span>' + L('Why it is here', '入选原因') + '</span><span></span></div>';
+  var bodies = LANES.map(function(L1){
+    var cls = (L1.key === 'stand_aside') ? 'actbody lst-collapse lst-cap3' : 'actbody act-fold';
+    return '<div class="' + cls + '" id="' + L1.fold + '" role="group"'
+         + ' aria-labelledby="ov-tab-' + L1.key + '"' + (L1.key === SEL ? '' : ' hidden') + '></div>'
+         + '<div class="r3-lanefoot" id="ov-lf-' + L1.key + '"' + (L1.key === SEL ? '' : ' hidden') + '></div>';
+  }).join('');
+  el('ov-panel').innerHTML = cols + bodies;
+  el('ov-panel').setAttribute('aria-labelledby', 'ov-tab-' + SEL);
+}
+
+/* ── fold control — production's own threshold and wording ───────────────────── */
+function foldControl(foldId){
+  var body = el(foldId); if(!body) return;
+  var host = el('ov-lf-' + laneKeyOfFold(foldId)); if(!host) return;
+  var n = body.querySelectorAll(':scope > a').length;
+  var existing = host.querySelector('.r3-showmore');
+  if(n <= FOLD_CAP){
+    body.classList.remove('is-collapsed');
+    if(existing) existing.remove();
+    return;
+  }
+  body.classList.add('is-collapsed');
+  if(existing){
+    existing.querySelector('.lm-n').textContent = '(' + (n - FOLD_CAP) + ')';
+    return;
+  }
+  var btn = document.createElement('button');
+  btn.className = 'r3-showmore'; btn.type = 'button';
+  btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-controls', foldId);
+  btn.innerHTML = '<span class="lm-show">' + L('Show more', '显示更多')
+    + ' <span class="lm-n tnum">(' + (n - FOLD_CAP) + ')</span></span>'
+    + '<span class="lm-hide">' + L('Show less', '收起') + '</span>';
+  btn.addEventListener('click', function(){
+    var open = body.classList.toggle('is-collapsed') === false;
+    btn.setAttribute('aria-expanded', String(open));
+    paintFoot();
+  });
+  host.appendChild(btn);
+}
+function laneKeyOfFold(foldId){
+  for(var i = 0; i < LANES.length; i++) if(LANES[i].fold === foldId) return LANES[i].key;
+  return '';
+}
+/* restoreFold() — the DOM-side twin of sector_central.html.j2:3580-3595: after a
+   hydrate the lanes are full again, so a lane now over three rows needs the
+   control the gated shell baked out. */
+function restoreFolds(){ LANES.forEach(function(L1){ foldControl(L1.fold); }); }
+
+/* ── disclosure lines ───────────────────────────────────────────────────────── */
+/* ab_more(), verbatim from _us_act_now_board.html.j2:30-32. */
+function abMore(n){
+  return '<p class="pg-more">'
+    + '<span class="l-en">' + n + ' more here — <a data-ref-nav href="plans.html">sign in to see the full lane</a></span>'
+    + '<span class="l-zh">此处还有 ' + n + ' 个 — <a data-ref-nav href="plans.html">登录后查看完整分组</a></span></p>';
+}
+/* the "+N more" basket-items line, verbatim from :565 / :646. Its production href
+   is `sector_central.html#actnow-section`; this page IS sector_central, so the
+   same destination is written as the in-page hash it resolves to. */
+function abPlus(n){
+  return '<p class="pg-more"><a href="#actnow-section">'
+    + '<span class="l-en">+' + n + ' more — full list on Sector Intelligence</span>'
+    + '<span class="l-zh">还有 ' + n + ' 个 — 完整列表见行业情报页</span></a></p>';
+}
+function plusCount(key){
+  if(key === 'stand_aside') return (MORE.hold || 0) + (MORE.avoid || 0);
+  return MORE[key] || 0;
+}
+
+/* ── the three access states ─────────────────────────────────────────────────── */
+function fillLane(L1, rows, withheld){
+  var body = el(L1.fold); if(!body) return;
+  if(!rows.length && !withheld){
+    body.innerHTML = L1.eEn
+      ? '<p class="r3-lane-empty">' + L(L1.eEn, L1.eZh) + '</p>'
+      : '';
+  }else{
+    body.innerHTML = rows.map(rowHTML).join('');
+  }
+  var tail = '';
+  if(withheld > 0) tail += abMore(withheld);
+  var pc = plusCount(L1.key);
+  if(pc > 0) tail += abPlus(pc);
+  if(tail) body.insertAdjacentHTML('beforeend', tail);
+}
+
+window.REF = window.REF || {};
+REF.renderActNow = function(state){
+  if(!AB) return;
+  paintPanel();
+  var gated = (state !== 'ungated');
+  var preview = 3;
+  if(PG && PG.panels && PG.panels.actnow && PG.panels.actnow.preview != null){
+    preview = PG.panels.actnow.preview;
+  }
+  LANES.forEach(function(L1){
+    var full = laneRows(L1.key);
+    if(!gated){ fillLane(L1, full, 0); return; }
+    if(L1.key === 'stand_aside'){
+      /* split_actnow(): hold spends the preview budget first, avoid takes the
+         remainder — mirrored exactly, not re-derived. */
+      var hold = (AB.hold || []), avoid = (AB.avoid || []);
+      var hs = hold.slice(0, preview);
+      var as = avoid.slice(0, Math.max(0, preview - hs.length));
+      fillLane(L1, hs.concat(as), (hold.length - hs.length) + (avoid.length - as.length));
+      return;
+    }
+    var shown = full.slice(0, preview);
+    fillLane(L1, shown, full.length - shown.length);
+  });
+  if(state === 'hydrated') hydrate();
+  restoreFolds();
+  paintFoot();
+};
+
+/* hydrate() — the same insert-by-`data-ab-lane` mechanic production performs
+   (sector_central.html.j2:3597-3620), against the real `actnow_html` bytes. The
+   inserted rows are genuine production markup; they are given `data-ref-nav` so
+   their real destinations are RECORDED rather than followed (router contract),
+   and nothing about their content is rewritten. */
+function hydrate(){
+  try{
+    if(!PG || PG.schema !== 'tier_payload.v1' || PG.page !== 'sector_central') throw new Error('invalid payload');
+    if(!PG.actnow_html) return;
+    var box = document.createElement('div');
+    box.innerHTML = PG.actnow_html;
+    var lanes = box.querySelectorAll('[data-ab-lane]');
+    for(var i = 0; i < lanes.length; i++){
+      var dest = el(lanes[i].getAttribute('data-ab-lane'));
+      if(dest) dest.insertAdjacentHTML('beforeend', lanes[i].innerHTML);
+    }
+    var ins = document.querySelectorAll('#actnow a.actitem:not([data-ref-nav])');
+    for(var j = 0; j < ins.length; j++) ins[j].setAttribute('data-ref-nav', '');
+    var notes = document.querySelectorAll('#actnow .pg-more');
+    for(var k = 0; k < notes.length; k++) notes[k].remove();
+  }catch(e){ /* fail-soft: 401/403/5xx/offline/schema-mismatch all collapse to a
+                no-op that keeps the baked preview and its disclosure (§A6). */ }
+}
+
+/* ── lane selection ─────────────────────────────────────────────────────────── */
+function selectLane(key){
+  if(key === SEL) return;
+  SEL = key;
+  var board = el('actnow');
+  board.className = 'r3-board ' + laneOf(key).st;
+  Array.prototype.forEach.call(el('ov-ledge').querySelectorAll('.r3-ledge-cell'), function(b){
+    b.setAttribute('aria-selected', String(b.getAttribute('data-lane') === key));
+  });
+  LANES.forEach(function(L1){
+    var body = el(L1.fold), foot = el('ov-lf-' + L1.key);
+    if(body) body.hidden = (L1.key !== key);
+    if(foot) foot.hidden = (L1.key !== key);
+  });
+  el('ov-panel').setAttribute('aria-labelledby', 'ov-tab-' + key);
+  paintFoot();
+}
+
+/* ── #read-<id> trace expand ────────────────────────────────────────────────────
+   Mirrors sector_central.html.j2:3096-3115 exactly, including the `basket/(.+)`
+   href match and the "row keeps its normal link" fallback (which the reference
+   turns into a RECORDED navigation rather than a real page leave).
+   The listener is installed at parse time, in the CAPTURE phase, so it runs
+   before runtime_shim.js's own capture-phase data-ref-nav handler — otherwise a
+   board row could only ever record a navigation and si_workspace.js's
+   openTrace() (`row.click()`) could never open a trace. */
+document.addEventListener('click', function(ev){
+  var row = ev.target && ev.target.closest ? ev.target.closest('a.rvx-trow') : null;
+  if(!row || !row.closest('#actnow')) return;
+  if(ev.target.closest && ev.target.closest('.si-trace')) return;
+  var id = traceId(row.getAttribute('href'));
+  if(!id || !window.__siTrace) return;
+  ev.preventDefault(); ev.stopPropagation();
+  var lanes = el('actnow');
+  var open = lanes.querySelector('.si-trace');
+  var was = open && row.nextElementSibling === open;
+  if(open) open.remove();
+  if(was){ row.setAttribute('aria-expanded', 'false'); return; }
+  var html = window.__siTrace(id);
+  if(!html){ REF.nav(row.getAttribute('href')); return; }
+  var d = document.createElement('div');
+  d.className = 'si-trace';
+  d.innerHTML = html + '<div class="si-trace-foot"><a class="r3-more" data-ref-nav href="basket/'
+    + encodeURIComponent(id) + '.html">' + L('members', '打开成分页') + '</a></div>';
+  row.after(d);
+  row.setAttribute('aria-expanded', 'true');
+}, true);
+
+/* the trace card, from the conviction payload — the same lookup rule production
+   uses (`id===bid || id==='b-'+bid`, sector_central.html.j2:3419-3423). */
+window.__siTrace = function(bid){
+  if(!SCD) return null;
+  var all = (SCD.baskets || []).concat(SCD.sectors || []);
+  for(var i = 0; i < all.length; i++){
+    if(all[i].id === bid || all[i].id === 'b-' + bid) return traceCard(all[i]);
+  }
+  return null;
+};
+function traceCard(s){
+  var c = s.conviction || {}, cy = s.cycle || {};
+  var sub = [];
+  if(s.kind === 'sector' && s.ticker) sub.push(L(esc(s.ticker), esc(s.ticker)));
+  else if(s.etf_proxy) sub.push(L(esc(s.etf_proxy), esc(s.etf_proxy)));
+  if(s.group) sub.push(L(esc(s.group), esc(s.group_zh || s.group)));
+  var facts = [];
+  if(cy.phaseLabel || cy.phase){
+    facts.push(fact(L('Cycle', '周期'), L(esc(cy.phaseLabel || cy.phase), esc(cy.phaseLabel || cy.phase))));
+  }
+  if(c.score != null){
+    facts.push(fact(L('Conviction', '信心'), '<span class="tnum">' + esc(c.score) + '</span> '
+      + L(esc(c.label_en || ''), esc(c.label_zh || c.label_en || ''))));
+  }
+  if(c.confluence && c.confluence.agree != null){
+    facts.push(fact(L('Confluence', '共振'),
+      '<span class="tnum">' + esc(c.confluence.agree) + '/' + esc(c.confluence.of) + '</span>'));
+  }
+  if(cy.pos != null){
+    facts.push(fact(L('Cycle position', '周期位置'),
+      '<span class="tnum">' + Number(cy.pos).toFixed(0) + '</span>/100'));
+  }
+  return '<div class="si-trace-nm">' + L(esc(s.name), esc(s.name_zh || s.name))
+    + '<span class="si-trace-sub">' + sub.join(' · ') + '</span></div>'
+    + '<div class="si-trace-facts">' + facts.join('') + '</div>';
+}
+function fact(k, v){
+  return '<div><span class="si-trace-k">' + k + '</span><span class="si-trace-v">' + v + '</span></div>';
+}
+
+/* ── 2 · leadership context ─────────────────────────────────────────────────── */
+/* Every string below is either a producer field (stance_en/zh, names, chip_en/zh,
+   tip_en/zh) or copy quoted verbatim from sector_central.html.j2:2115-2165. */
+function paintContext(){
+  var tc = HND && HND.theme_context;
+  var host = el('ov-ctx-body');
+  if(!tc || !tc.leadership){
+    /* fail-soft fallback hero (:2168-2176), verbatim */
+    host.innerHTML = '<div class="r3-ov-hcol"><span class="r3-ov-state">'
+      + L('Thematic baskets', '主题篮子') + '</span>'
+      + '<p class="r3-ov-stanceline">'
+      + L('Equal-weight US theme baskets measured against the S&amp;P 500. Use them to see which themes are leading or fading.',
+          '等权重美国主题篮子，对标标普 500。用于观察哪些主题在走强或走弱。')
+      + '</p></div>';
+    return;
+  }
+  var l = tc.leadership, tl = l.trailing_leader || {}, st = l.state;
+  var stateWord = st === 'rotating' ? L('Money is rotating', '资金正在轮动')
+                : st === 'strain'   ? L('Leadership under strain', '领涨承压')
+                                    : L('Leadership steady', '领涨格局稳定');
+  var takers = (l.strength || []).slice(0, 2);
+  var takeEn = takers.map(function(x){ return esc(x.name); }).join(' · ');
+  var takeZh = takers.map(function(x){ return esc(x.name_zh || x.name); }).join(' · ');
+
+  var hand = '<div class="r3-ov-hand">'
+    + '<div class="r3-ov-hcol"><span class="r3-eyebrow">' + L('Losing the lead', '失去领先') + '</span>'
+    + '<strong class="r3-ov-hname">' + L(esc(tl.name || ''), esc(tl.name_zh || tl.name || '')) + '</strong>'
+    + '<span class="r3-ov-hmeta">' + L('was #1', '原第一') + '</span></div>'
+    + '<span class="r3-arrow" aria-hidden="true"></span>'
+    + '<div class="r3-ov-hcol"><span class="r3-eyebrow">' + L('Taking the lead', '接过领先') + '</span>'
+    + '<strong class="r3-ov-hname">' + (takeEn ? L(takeEn, takeZh || takeEn) : '') + '</strong></div>'
+    + '</div>';
+
+  var days = (l.days_in_state != null && l.days_in_state)
+    ? '<p class="r3-ov-days">' + L(l.days_in_state + ' days in', l.days_in_state + ' 天') + '</p>' : '';
+  var fs = HND.factor_season;
+  var season = (fs && fs.chip_en)
+    ? '<p class="r3-ov-season">' + L(esc(fs.chip_en), esc(fs.chip_zh || fs.chip_en))
+      + '<button class="r3-rcpt" type="button" aria-expanded="false" data-tip-en="' + esc(fs.tip_en || '')
+      + '" data-tip-zh="' + esc(fs.tip_zh || fs.tip_en || '') + '"><span class="r3-vh">'
+      + L('Where this seasonal note comes from', '该季节性说明的来源') + '</span></button></p>'
+    : '';
+  var align = (tc.alignment && tc.alignment.sector_rotation_agrees && tc.alignment.note_en)
+    ? '<p class="r3-ov-days">' + L(esc(tc.alignment.note_en), esc(tc.alignment.note_zh || tc.alignment.note_en)) + '</p>'
+    : '';
+
+  host.innerHTML = hand
+    + '<div><span class="r3-ov-state">' + stateWord + '</span>'
+    + '<p class="r3-ov-stanceline">' + L(esc(l.stance_en || ''), esc(l.stance_zh || l.stance_en || '')) + '</p>'
+    + days + align + season + '</div>';
+
+  if(tc.as_of) el('ov-ctx-asof').innerHTML = L('as of ' + esc(tc.as_of), '截至 ' + esc(tc.as_of));
+}
+
+/* ── 4 · bottoming watch ────────────────────────────────────────────────────── */
+function paintWatch(){
+  if(!BOT || BOT.rows == null) return;                 /* absent payload → self-hides */
+  var band = el('ov-watch-band');
+  band.hidden = false;
+  var rows = BOT.rows;
+  if(!rows.length){
+    el('ov-watch').innerHTML = '<div class="r3-watch-cell"><strong>'
+      + L('no basing candidates tonight', '今晚无筑底候选') + '</strong></div>';   /* :119 */
+    el('ov-watch-foot').innerHTML = '';
+    return;
+  }
+  var dual = BOT.dual || [];
+  el('ov-watch').innerHTML = rows.map(function(x){
+    /* `signal` and `timing_state` are NEVER read here — copy law, :23-28. */
+    var clauses = [];
+    if(x.pos != null){
+      clauses.push(L('position in cycle range ' + Number(x.pos).toFixed(0) + '/100',
+                     '周期区间位置 ' + Number(x.pos).toFixed(0) + '/100'));      /* :113 */
+    }
+    if(x.gate_conflict){
+      clauses.push(L('below 200-day trend — gate shut', '低于200日趋势——闸门关闭')); /* :108 */
+    }
+    var turn = (x.osc_slope != null)
+      ? '<span class="r3-turn tnum" data-tip-en="Momentum is turning up from the low — a bigger number is a sharper turn. A first hint, not a buy signal."'
+        + ' data-tip-zh="动能正从低位回升——数字越大转向越明显。仅是初步迹象，非买入信号。">'
+        + Number(x.osc_slope).toFixed(1) + '</span>' : '';
+    return '<div class="r3-watch-cell">'
+      + '<strong><span class="r3-watch-nm">' + L(esc(x.name), esc(x.name_zh || x.name)) + '</span>'
+      + turn + '</strong>'
+      + '<span>' + clauses.join('<span aria-hidden="true"> · </span>') + '</span></div>';
+  }).join('');
+
+  /* Merged foot — a constant never repeats per row (doctrine Law 4). Every chip
+     that is true of EVERY rendered row is stated once, here, in the producer's
+     own words; a chip true of only some rows stays on its own cell above. */
+  var all = rows.length;
+  var allSignal = rows.every(function(x){ return !!x.cycle_signal; });
+  var allDual = rows.every(function(x){ return dual.indexOf(x.id) >= 0 || dual.indexOf(x.cid) >= 0; });
+  var merged = [];
+  if(allSignal) merged.push(L('cycle turn signal — watch only', '周期转折信号——仅观察'));   /* :107 */
+  if(allDual) merged.push(L('may be bottoming', '或正筑底'));                              /* :109 */
+  var foot = '';
+  if(merged.length){
+    foot += '<p>' + L('All ' + all + ' rows: ', all + ' 行均为：')
+      + merged.join('<span aria-hidden="true"> · </span>') + '</p>';
+  }
+  var auth = BOT.auth || {};
+  if(auth.null_disclosure_en){
+    foot += '<p>' + L(esc(auth.null_disclosure_en), esc(auth.null_disclosure_zh || auth.null_disclosure_en)) + '</p>';
+  }
+  /* the graduation note prints only when a recovering chip was actually rendered
+     on the board above (:125,:130) — the fixture's recovering_ids is empty, so
+     absence renders as absence. */
+  if((BOT.recovering || []).length && auth.recovering_disclosure_en){
+    foot += '<p>' + L(esc(auth.recovering_disclosure_en), esc(auth.recovering_disclosure_zh || auth.recovering_disclosure_en)) + '</p>';
+  }
+  el('ov-watch-foot').innerHTML = foot;
+}
+
+/* ── 5 · track record ───────────────────────────────────────────────────────── */
+/* Copy verbatim from sector_central.html.j2:3386-3405 (renderGrader). */
+function paintGrader(){
+  var GR = (SCD && SCD.grader) || null;
+  var body = el('ov-gr-body'), sub = el('ov-gr-sub');
+  if(!GR || !GR.available){
+    sub.innerHTML = '';
+    body.innerHTML = '<div class="r3-panel r3-panel--pad r3-gr-note" style="margin:0">'
+      + L('Accruing — dated calls are logged and will be graded against realized forward returns as time passes (' + ((GR && GR.n_calls) || 0) + ' calls logged).',
+          '累积中 — 带日期的判断已记录，将随时间推移对照已实现的前瞻收益进行评分（已记录 ' + ((GR && GR.n_calls) || 0) + ' 个判断）。')
+      + '</div>';
+    return;
+  }
+  sub.innerHTML = L('Realized directional hit-rate, cross-sectional rank-IC and excess-vs-SPY of the conviction calls, by horizon. Sparse until it accrues; never fed back into the live score.',
+                    '按时间跨度衡量信念判断的已实现方向命中率、横截面秩相关与超越SPY的超额收益。数据累积前较稀疏；绝不回灌入实时评分。');
+  var bh = GR.by_horizon || {}, cells = [];
+  ['21d', '63d', '126d'].forEach(function(k){
+    var h = bh[k]; if(!h) return;
+    if(h.dir_hit_rate == null){
+      cells.push('<div class="r3-gr-cell"><span class="r3-gr-k">' + k + '</span>'
+        + '<span class="r3-gr-v accruing">' + L('accruing', '累积中') + ' (n=' + (h.n || 0) + ')</span></div>');
+      return;
+    }
+    cells.push('<div class="r3-gr-cell"><span class="r3-gr-k">' + k + ' · n=' + h.n + '</span>'
+      + '<span class="r3-gr-v">' + Math.round(h.dir_hit_rate * 100) + '% ' + L('hit', '命中') + '</span>'
+      + '<span class="r3-gr-d">' + L('rank-IC', '秩相关') + ' ' + (h.rank_ic != null ? h.rank_ic : '—')
+      + ' · ' + L('excess', '超额') + ' '
+      + (h.mean_excess_vs_bench != null ? (h.mean_excess_vs_bench * 100).toFixed(1) + '%' : '—')
+      + '</span></div>');
+  });
+  var note = GR.pre_freeze_note
+    ? '<p class="r3-gr-note">' + esc(GR.pre_freeze_note) + '</p>' : '';
+  body.innerHTML = '<div class="r3-gr">' + (cells.join('')
+    || '<div class="r3-gr-cell"><span class="r3-gr-v accruing">' + L('accruing', '累积中') + '</span></div>')
+    + '</div>' + note;
+}
+
+/* ── clock ──────────────────────────────────────────────────────────────────── */
+/* The board's absolute-clock stale guard: 12 hours vs Date.now(), the same
+   threshold sector_central.html.j2:1799-1800 applies. The frozen fixture's
+   stamp is necessarily older than that, so the honest stale token is what a
+   reader sees — a stamp in health ink plus one plain line, never a banner. */
+function paintClock(){
+  var asof = (BOT && BOT.as_of) || (SCD && SCD.as_of) || null;
+  if(!asof) return;
+  var stamp = el('ov-asof');
+  stamp.innerHTML = L('board as of ' + esc(asof), '看板截至 ' + esc(asof));
+  var ms = Date.parse(asof + 'T00:00:00Z');
+  if(isFinite(ms) && (Date.now() - ms) > 12 * 3600e3){
+    stamp.classList.add('r3-stale');
+    var line = el('ov-staleline');
+    line.hidden = false;
+    line.innerHTML = L('This board&#39;s clock is more than 12 hours old.', '本看板的时间戳已超过 12 小时。');
+  }
+}
+
+/* ── boot ───────────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function(){
+  loadArtifacts();
+  if(!AB){
+    el('actnow').innerHTML = '<div class="r3-empty"><p class="r3-empty-line">'
+      + L('Data failed to load — please refresh.', '数据加载失败 — 请刷新。') + '</p></div>';
+    return;
+  }
+  paintClock();
+  paintContext();
+  paintLedge();
+  REF.renderActNow(REF.accessState || 'gated');
+  paintWatch();
+  paintGrader();
+
+  el('ov-ledge').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('.r3-ledge-cell') : null;
+    if(b) selectLane(b.getAttribute('data-lane'));
+  });
+  el('ov-ledge').addEventListener('keydown', function(e){
+    if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var tabs = Array.prototype.slice.call(this.querySelectorAll('.r3-ledge-cell'));
+    var i = tabs.indexOf(document.activeElement); if(i < 0) return;
+    var j = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+    e.preventDefault(); tabs[j].focus(); selectLane(tabs[j].getAttribute('data-lane'));
+  });
+  document.addEventListener('langchange', function(){ paintFoot(); });
+
+  /* The client fetch production performs at boot (__siBoot → __siInitPage). Its
+     ONLY consumers here are window.BASKETS (which the router's composer and rail
+     footer read) — a failure collapses the board to production's single fixed
+     string, exactly as sector_central.html.j2:3093 does, while the
+     server-baked watch strip and context band survive independently. */
+  REF.fetchJSON('basketdata/baskets.json').then(function(p){
+    window.BASKETS = p;
+    var l = HND && HND.theme_context && HND.theme_context.leadership;
+    var slot = el('si-read-overview');
+    if(slot && l){
+      if(l.trailing_leader && l.trailing_leader.name){
+        slot.setAttribute('data-from-en', l.trailing_leader.name);
+        slot.setAttribute('data-from-zh', l.trailing_leader.name_zh || l.trailing_leader.name);
+      }
+      if(l.strength && l.strength[0] && l.strength[0].name){
+        slot.setAttribute('data-to-en', l.strength[0].name);
+        slot.setAttribute('data-to-zh', l.strength[0].name_zh || l.strength[0].name);
       }
     }
-
-    /* ── access-state rendering: gated (default, preview slice + disclosure) /
-       hydrated (apply premiumdata actnow_html by data-ab-lane) / ungated (full
-       lists). Registered on window.REF so the drawer's access-state selector
-       (runtime_shim.js) can call it. ── */
-    var FOLD = {buy_now:'ab-buy-fold', buy_soon:'ab-soon-fold', on_the_run:'ab-run-fold', take_profits:'ab-trim-fold'};
-    var MORE = {buy_now:'more-buy_now', buy_soon:'more-buy_soon', on_the_run:'more-on_the_run', take_profits:'more-take_profits'};
-
-    function laneRow(r){
-      var a = document.createElement('a');
-      a.className = 'actitem'; a.setAttribute('data-ref-nav', '');
-      a.href = r.href || '#';
-      var label = (r.ticker ? r.ticker + ' — ' : '') + (r.name || '');
-      a.textContent = label || '(row)';
-      return a;
-    }
-    function clearBoard(){
-      ['ab-buy-fold','ab-soon-fold','ab-run-fold','ab-trim-fold','dash-hold-fold'].forEach(function(id){
-        var el = document.getElementById(id); if(el) el.innerHTML = '';
-      });
-      ['more-buy_now','more-buy_soon','more-on_the_run','more-take_profits','more-stand_aside'].forEach(function(id){
-        var el = document.getElementById(id); if(el) el.textContent = '';
-      });
-    }
-    function disclosure(id, left){
-      var el = document.getElementById(id);
-      if(el) el.textContent = left > 0
-        ? left + ' more — sign in to see the full lane'
-        : '';
-    }
-    function renderPreview(ab, preview){
-      clearBoard();
-      Object.keys(FOLD).forEach(function(k){
-        var rows = ab[k] || [], shown = rows.slice(0, preview);
-        var fold = document.getElementById(FOLD[k]);
-        shown.forEach(function(r){ fold.appendChild(laneRow(r)); });
-        disclosure(MORE[k], rows.length - shown.length);
-      });
-      /* Stand-aside: hold spends the budget first, avoid gets the remainder —
-         mirrors scripts/build_sector_central.py::split_actnow() exactly
-         (same rule, same order, not a new construction). */
-      var hold = ab.hold || [], avoid = ab.avoid || [];
-      var holdShown = hold.slice(0, preview);
-      var avoidBudget = Math.max(0, preview - holdShown.length);
-      var avoidShown = avoid.slice(0, avoidBudget);
-      var fold = document.getElementById('dash-hold-fold');
-      holdShown.concat(avoidShown).forEach(function(r){ fold.appendChild(laneRow(r)); });
-      disclosure('more-stand_aside', (hold.length - holdShown.length) + (avoid.length - avoidShown.length));
-    }
-    function renderFull(ab){
-      clearBoard();
-      Object.keys(FOLD).forEach(function(k){
-        var fold = document.getElementById(FOLD[k]);
-        (ab[k] || []).forEach(function(r){ fold.appendChild(laneRow(r)); });
-      });
-      var fold = document.getElementById('dash-hold-fold');
-      (ab.hold || []).concat(ab.avoid || []).forEach(function(r){ fold.appendChild(laneRow(r)); });
-    }
-    function applyHydration(){
-      try{
-        var pg = REF.parseJSON(REF.registry['premiumdata/sector_central.json']);
-        var html = pg.actnow_html || '';
-        var tmp = document.createElement('div'); tmp.innerHTML = html;
-        var blocks = tmp.querySelectorAll('.ab-locked[data-ab-lane]');
-        blocks.forEach(function(b){
-          var laneId = b.getAttribute('data-ab-lane');
-          var fold = document.getElementById(laneId);
-          if(fold) fold.insertAdjacentHTML('beforeend', b.innerHTML);
-        });
-        /* restoreFold()-equivalent, simplified for the placeholder: the "N
-           more" disclosure lines are removed once the withheld rows are
-           actually in the DOM — access_hydration_contract.md §3 step 6. */
-        document.querySelectorAll('#actnow .pg-more').forEach(function(el){ el.textContent = ''; });
-      }catch(e){ /* fail-soft, matches production's silent hydration catch (§4) */ }
-    }
-    window.REF = window.REF || {};
-    REF.renderActNow = function(state){
-      var ab;
-      try{ ab = REF.parseJSON(REF.registry['basketdata/action_board.json']).action_board; }catch(e){ return; }
-      if(state === 'ungated'){ renderFull(ab); return; }
-      var preview = 3, pg = null;
-      try{ pg = REF.parseJSON(REF.registry['premiumdata/sector_central.json']); }catch(e){}
-      if(pg && pg.panels && pg.panels.actnow && pg.panels.actnow.preview != null) preview = pg.panels.actnow.preview;
-      renderPreview(ab, preview);
-      if(state === 'hydrated') applyHydration();
-    };
-
-    document.addEventListener('DOMContentLoaded', function(){
-      renderCounts();
-      REF.renderActNow(REF.accessState || 'gated');
-    });
-  })();
-  </script>
+    if(window.__siViewReads) window.__siViewReads();
+    /* a `#read-<id>` deep link is dispatched before this board exists; re-running
+       the verbatim router resolves the held trace now that the rows are here. */
+    if(window.__siRoute) window.__siRoute();
+  }).catch(function(){
+    var lanes = el('actnow');
+    if(lanes) lanes.innerHTML = '<div class="r3-empty"><p class="r3-empty-line">'
+      + L('Data failed to load — please refresh.', '数据加载失败 — 请刷新。') + '</p></div>';
+  });
+});
+})();
+</script>
 </section>

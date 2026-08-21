@@ -1,82 +1,1183 @@
-<section class="si-view" data-view="explore">
-  <h2><span class="l-en">Explore</span><span class="l-zh">深入探索</span></h2>
-  <p class="si-view-read" id="si-read-explore" hidden></p>
-  <div id="explore-proof" class="ref-proof">Loading proof-of-data…</div>
+<!-- ══════════════════════════════════════════════════════════════════════════════
+     XPV2-SC-R3B · LANE D3 · EXPLORE  (dense-research tier, CONTEXT authority)
+     Binds: build/DESIGN_SYSTEM_SPEC.md §5 grammar · §6 authority table · §8.1 mount-width
+            law · §9 components · §10 dense-research density · §11 EN/ZH · §12 a11y floor
+     Job (COMMISSION §12): "Let me look under the hood." A real research workflow.
 
-  <div id="explore-section">
-    <h3 id="table-section">Basket table (placeholder)</h3>
-    <h3 id="chart-section">Basket overlay chart (placeholder)</h3>
-    <div id="forming-narratives" style="color:var(--muted)">Forming-narratives panel mount (placeholder) —
-      driven by <code>basketdata/narrative_emergence.json</code> when present.</div>
-    <div id="tm-mount" style="color:var(--muted)">
-      <h3>Time Machine (placeholder — manifest-driven)</h3>
-      <p>Per the orchestrator's Time Machine ruling: this mount renders from the in-fixture
-        <code>oracledata/tm_manifest.json</code> only. Any per-year episode/chunk fetch it would
-        normally issue is <strong>recorded-not-executed</strong> — the shim's fetch interception has
-        no registry entry for those paths on purpose, so the request genuinely rejects and is logged,
-        never faked as a success. See build/README_BUILD.md §"Time Machine".</p>
-      <div id="tm-proof" class="ref-proof">Loading…</div>
+     COMPOSITION — one answer, then FOUR L1 bands (dense budget is 5):
+       1  #table-section      Filters + the full 49-basket comparison table (dominant object)
+       2  #chart-section      Rebased performance chart + its legend (= its text equivalent)
+       3  #forming-narratives  Forming Narratives — deterministic score, 5 legs, ticker chips
+       4  #tm-mount           Rotation Time Machine, closed, fetching nothing until opened
+       +  deeper path to the Track Record (its DOM home is Overview #grader — one link, no copy)
+
+     THE VIEW THESIS — ONE INSTRUMENT, TWO FACES.
+     Production ships the table and the chart as two unrelated panels: the chart carries a
+     14-colour hard-coded palette and a 49-chip legend wall, the table carries a coloured dot
+     that means nothing. Here they are ONE instrument. A basket's identity in the chart is a
+     stroke — one of the four --ser-* series tokens crossed with one of four dash patterns,
+     sixteen distinguishable strokes with no new hue and a second, achromatic channel that
+     survives colour-blindness, greyscale print and both themes. That same stroke is echoed
+     as a 14px swatch in the table's first column, so "on the chart" is readable from the
+     table and the legend is the chart's text equivalent rather than a wall of pills.
+
+     NO RECOMPUTE (R3 design brief §8): the six return columns, the z-scores, the sparklines
+     and the rebase are production's OWN client-side transforms over the fetched payload,
+     reproduced line-for-line and cited. Client re-sort of an already-fetched list is
+     explicitly lawful there. Nothing here mints a rank, a lane, a count or a state.
+     ══════════════════════════════════════════════════════════════════════════════ -->
+<section class="si-view r3-view--context r3-view--dense" data-view="explore">
+
+<style>
+/* ── fallback token/primitive layer — see the identical note in views/money.html ────
+   @layer is a LOSING origin: every UNLAYERED declaration in the design shell wins over
+   everything in here, whatever its specificity. Present only so this partial renders
+   truthfully against the harness's placeholder shell. Values copied from
+   build/shell_specimen.html §1 (a verbatim theme.css mirror). No token is retuned. */
+@layer r3fb {
+  :root{
+    --font-ui:-apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, "Helvetica Neue",
+      "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC", sans-serif;
+    --font-mono:ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+    --fs-num-lg:22px; --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-sm:12.5px;
+    --fs-label:11px; --fs-micro:10px;
+    --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3; --muted:#8b93a1; --line:#3a4150;
+    --warn:#e0a030; --up:#45b873; --down:#e06464; --info:#5b9bf0; --link:#7aa7e0;
+    --ser-1:#5b9bf0; --ser-2:#d4a017; --ser-3:#0ea5e9; --ser-4:#e08b45;
+    --card-shadow:0 1px 0 rgba(255,255,255,.02);
+    --popover-shadow:0 6px 18px rgba(0,0,0,.5);
+    --gbtn-bg:color-mix(in srgb, var(--panel2) 52%, transparent);
+    --gbtn-brd:color-mix(in srgb, var(--text) 12%, transparent);
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-7:32px; --sp-8:44px;
+    --gap-grid:18px;
+    --r-ctl:8px; --r-btn:10px; --r-card:12px; --r-panel:14px; --r-pill:999px;
+    --t-fast:.16s; --t-med:.2s; --ease-std:ease; --ease-lift:cubic-bezier(.2,.7,.3,1);
+    --ink-mix-up:100%; --ink-mix-down:100%; --ink-mix-warn:100%; --ink-mix-link:100%; --ink-mix-info:100%;
+    --r3-thread:var(--link);
+  }
+  html[data-theme="light"]{
+    --bg:#f7f8fa; --panel:#ffffff; --panel2:#eef1f6; --text:#1c2430; --muted:#5d6b7e;
+    --line:color-mix(in srgb, #1c2430 16%, #eaecf0);
+    --warn:#b9791a; --up:#1f9a55; --down:#cf4040; --info:#285fff; --link:#285fff;
+    --ser-1:#2f63c4; --ser-2:#8f6a04; --ser-3:#0284c7; --ser-4:#b06a25;
+    --card-shadow:0 1px 3px rgba(20,30,50,.07);
+    --popover-shadow:0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
+    --gbtn-bg:color-mix(in srgb, var(--panel2) 78%, var(--panel));
+    --gbtn-brd:color-mix(in srgb, #1c2430 50%, transparent);
+    --ink-mix-up:62%; --ink-mix-down:84%; --ink-mix-warn:62%; --ink-mix-link:88%; --ink-mix-info:88%;
+    --r3-thread:color-mix(in srgb, var(--link) 74%, var(--line));
+  }
+  html[data-lang="zh"]{ --up:#e06464; --down:#45b873; }
+  html[data-theme="light"][data-lang="zh"]{ --up:#cf4040; --down:#1f9a55; --ink-mix-up:84%; --ink-mix-down:62%; }
+  :root{
+    --ink-up:color-mix(in srgb, var(--up) var(--ink-mix-up), var(--text));
+    --ink-down:color-mix(in srgb, var(--down) var(--ink-mix-down), var(--text));
+    --ink-warn:color-mix(in srgb, var(--warn) var(--ink-mix-warn), var(--text));
+    --ink-link:color-mix(in srgb, var(--link) var(--ink-mix-link), var(--text));
+    --ink-info:color-mix(in srgb, var(--info) var(--ink-mix-info), var(--text));
+  }
+  html[data-lang] .l-zh{ display:none; }
+  html[data-lang="zh"] .l-en{ display:none; }
+  html[data-lang="zh"] .l-zh{ display:inline; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-ui);
+    font-size:var(--fs-body); line-height:1.55; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; text-decoration:none; } button{ font:inherit; color:inherit; }
+  h1,h2,h3{ margin:0; } p{ margin:0; }
+  .tnum{ font-variant-numeric:tabular-nums; }
+  .si-view{ display:none; } .si-view.on{ display:block; }
+  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--r3-chrome-h,40px) + var(--r3-mnav-h,0px) + 16px); }
+  :where(a,button,summary,select,[tabindex]):focus-visible{
+    outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; border-radius:var(--r-ctl); }
+  .r3-eyebrow{ display:block; font-size:var(--fs-label); font-weight:600; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted); }
+  .r3-answer{ border-left:3px solid var(--r3-thread); padding:2px 0 2px var(--sp-4); margin:0 0 var(--sp-6); }
+  .r3-answer-view{ font-size:var(--fs-label); font-weight:700; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+  .r3-answer-line, .r3-answer .si-view-read{ font-size:var(--fs-num-lg); font-weight:500;
+    line-height:1.36; letter-spacing:-.01em; color:var(--text); max-width:62ch; }
+  html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){ letter-spacing:0; line-height:1.55; max-width:34em; }
+  .r3-answer .si-view-read{ display:flex; align-items:flex-start; gap:11px; margin:0; padding:0;
+    background:none; border:0; border-radius:0; }
+  .si-view-read[hidden]{ display:none; }
+  .r3-answer .si-vr-g{ width:20px; height:20px; flex:none; margin-top:5px; color:var(--ink-link,var(--link)); }
+  .r3-answer .si-vr-t{ flex:0 1 auto; min-width:0; }
+  .r3-answer .si-vr-q{ flex:none; margin-top:7px; display:inline-flex; align-items:center;
+    justify-content:center; width:16px; height:16px; border:1px solid var(--line); border-radius:50%;
+    font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+  .r3-answer .si-view-read:not([hidden]) ~ .r3-answer-line{ display:none; }
+  .r3-answer-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
+    margin-top:12px; font-size:var(--fs-sm); color:var(--muted); }
+  .r3-q{ display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
+    border:1px solid var(--line); border-radius:50%; font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+  .r3-asof{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.05em;
+    color:var(--muted); font-variant-numeric:tabular-nums; }
+  .r3-sec{ display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3); margin:0 0 var(--sp-3); }
+  .r3-sec h2{ font-size:var(--fs-h2); font-weight:700; letter-spacing:-.01em; }
+  .r3-sec .r3-sec-sub{ font-size:var(--fs-sm); color:var(--muted); }
+  .r3-sec .r3-asof{ margin-left:auto; }
+  .r3-band{ margin-top:var(--sp-7); }
+  .r3-panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel);
+    box-shadow:var(--card-shadow); }
+  html[data-theme="light"] .r3-panel{ border-color:color-mix(in srgb, var(--text) 9%, var(--line)); }
+  .r3-more{ display:inline-flex; align-items:center; gap:7px; min-height:44px; font-size:var(--fs-sm);
+    font-weight:700; color:var(--ink-link,var(--link)); }
+  .r3-more::after{ content:""; width:6px; height:6px; flex:none; border-right:1.6px solid currentColor;
+    border-top:1.6px solid currentColor; transform:rotate(45deg); transition:transform var(--t-fast) var(--ease-std); }
+  .r3-more:hover::after{ transform:translateX(2px) rotate(45deg); }
+  .r3-vh{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+    clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
+  .r3-tblbox{ overflow-x:auto; }
+  .r3-tbl{ width:100%; min-width:420px; border-collapse:collapse; font-size:var(--fs-sm); }
+  .r3-tbl th{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); }
+  .r3-tbl td{ padding:9px 12px; border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent);
+    font-variant-numeric:tabular-nums; }
+  .r3-tbl tr:last-child td{ border-bottom:0; }
+  .r3-tbl .num{ text-align:right; }
+  .r3-tag{ display:inline-flex; align-items:center; padding:1px 7px; border-radius:var(--r-ctl);
+    border:1px solid var(--line); color:var(--muted); font-size:var(--fs-micro); font-weight:600;
+    letter-spacing:.05em; white-space:nowrap; }
+  .r3-seg{ display:inline-flex; flex-wrap:wrap; gap:6px; }
+  .r3-seg button{ min-height:40px; padding:0 14px; border-radius:var(--r-ctl);
+    border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
+    font-size:var(--fs-sm); font-weight:600; cursor:pointer; }
+  .r3-seg button[aria-pressed="true"]{ color:var(--text); background:var(--panel2);
+    border-color:color-mix(in srgb, var(--link) 45%, var(--line)); }
+  .r3-disc{ border:1px solid var(--line); border-radius:var(--r-card); background:var(--panel); }
+  .r3-disc summary{ cursor:pointer; padding:12px 15px; font-size:var(--fs-sm); font-weight:700;
+    min-height:44px; display:flex; align-items:center; gap:9px; }
+  .r3-disc summary small{ color:var(--muted); font-weight:400; }
+  .r3-empty{ padding:var(--sp-7) var(--sp-4); text-align:center; }
+  .r3-empty-line{ font-size:var(--fs-md); font-weight:700; }
+  .r3-empty-why{ color:var(--muted); font-size:var(--fs-sm); margin-top:5px; }
+  .r3-mount{ display:grid; place-items:center; gap:6px; min-height:var(--h,300px);
+    border:1px dashed color-mix(in srgb, var(--muted) 40%, transparent); border-radius:var(--r-panel);
+    background:color-mix(in srgb, var(--panel) 70%, transparent); color:var(--muted);
+    font-size:var(--fs-sm); text-align:center; padding:var(--sp-4); }
+  .r3-mount b{ color:var(--text); font-weight:700; font-size:var(--fs-body); }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important;
+      transition-duration:.001ms !important; scroll-behavior:auto !important; }
+  }
+}
+
+/* ══ VIEW-SCOPED LAW (unlayered) — every selector anchored on this view ══ */
+.si-view[data-view="explore"]{ --exp-pad:14px 16px; }
+.si-view[data-view="explore"] .r3-band{ margin-top:var(--sp-7); }
+.si-view[data-view="explore"] .r3-answer{ margin-bottom:var(--sp-7); }
+.si-view[data-view="explore"] .exp-lede{ margin:0 0 var(--sp-4); max-width:88ch;
+  font-size:var(--fs-sm); line-height:1.5; color:var(--muted); }
+html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
+.si-view[data-view="explore"] .pos{ color:var(--ink-up); }
+.si-view[data-view="explore"] .neg{ color:var(--ink-down); }
+.si-view[data-view="explore"] .flat{ color:var(--muted); }
+
+/* ── the filter strip ─────────────────────────────────────────────────────────
+   Real semantics, never faked: mode + category are role="group" with aria-pressed
+   (spec §9, §12), exactly the shape production gives #btbl-mode (role="group"). */
+.si-view[data-view="explore"] .exp-filters{ padding:var(--exp-pad);
+  border-bottom:1px solid var(--line);
+  display:grid; grid-template-columns:auto minmax(0,1fr); gap:var(--sp-3) var(--sp-5); align-items:start; }
+.si-view[data-view="explore"] .exp-frow{ display:contents; }
+.si-view[data-view="explore"] .exp-flab{ padding-top:13px; white-space:nowrap; }
+.si-view[data-view="explore"] .exp-cats button{ min-height:36px; padding:0 11px; font-size:var(--fs-sm); }
+.si-view[data-view="explore"] .exp-modes button{ min-height:40px; }
+.si-view[data-view="explore"] .exp-count{ grid-column:1 / -1; font-size:var(--fs-micro);
+  letter-spacing:.05em; color:var(--muted); }
+
+/* ── the comparison table ─────────────────────────────────────────────────────── */
+.si-view[data-view="explore"] #btable{ min-width:760px; }
+.si-view[data-view="explore"] #btable th{ cursor:pointer; white-space:nowrap; user-select:none; }
+.si-view[data-view="explore"] #btable th.num{ text-align:right; }
+.si-view[data-view="explore"] #btable th[aria-sort]:not([aria-sort="none"]){ color:var(--text); }
+.si-view[data-view="explore"] #btable th .dir{ font-size:8px; margin-left:3px; }
+.si-view[data-view="explore"] #btable td.bname{ min-width:0; }
+/* NAMES NEVER ELLIPSIZE — they wrap; the numbers are what compress (spec §0) */
+.si-view[data-view="explore"] .bnm{ display:inline-flex; align-items:baseline; gap:9px;
+  font-size:var(--fs-body); font-weight:700; letter-spacing:-.008em; line-height:1.3;
+  overflow-wrap:anywhere; color:var(--text); }
+.si-view[data-view="explore"] .bnm:hover{ color:var(--ink-link); }
+.si-view[data-view="explore"] .swatch{ flex:none; width:16px; height:9px; align-self:center; }
+.si-view[data-view="explore"] .bcat{ display:block; margin-top:2px; font-size:var(--fs-micro);
+  font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.si-view[data-view="explore"] .spark{ display:block; }
+.si-view[data-view="explore"] .exp-bench td{ background:color-mix(in srgb, var(--panel2) 55%, transparent); }
+.si-view[data-view="explore"] .exp-bench td:first-child{ font-weight:600; }
+.si-view[data-view="explore"] .exp-showall{ text-align:center; }
+.si-view[data-view="explore"] .exp-showall button{ min-height:44px; padding:0 18px; border-radius:var(--r-ctl);
+  border:1px solid var(--gbtn-brd); background:transparent; color:var(--ink-link);
+  font-size:var(--fs-sm); font-weight:700; cursor:pointer; }
+.si-view[data-view="explore"] .exp-showall button:hover{ background:var(--gbtn-bg); }
+.si-view[data-view="explore"] .exp-tfoot{ padding:11px 16px; border-top:1px solid var(--line);
+  background:color-mix(in srgb, var(--panel2) 45%, transparent);
+  border-radius:0 0 var(--r-panel) var(--r-panel);
+  font-size:var(--fs-micro); line-height:1.6; color:var(--muted); }
+.si-view[data-view="explore"] .clab{ display:none; }
+
+/* ── the performance chart ────────────────────────────────────────────────────── */
+.si-view[data-view="explore"] .exp-chartbar{ padding:var(--exp-pad); border-bottom:1px solid var(--line);
+  display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-3) var(--sp-5); }
+.si-view[data-view="explore"] .rangeN{ min-height:40px; width:104px; padding:0 10px;
+  border-radius:var(--r-ctl); border:1px solid var(--gbtn-brd); background:var(--gbtn-bg);
+  color:var(--text); font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
+.si-view[data-view="explore"] #chart{ position:relative; width:100%; min-height:380px; padding:var(--exp-pad); }
+.si-view[data-view="explore"] #chart svg{ display:block; width:100%; height:auto; }
+.si-view[data-view="explore"] .cx-grid{ stroke:color-mix(in srgb, var(--line) 75%, transparent); stroke-width:1; }
+.si-view[data-view="explore"] .cx-zero{ stroke:color-mix(in srgb, var(--muted) 60%, transparent); stroke-width:1; }
+.si-view[data-view="explore"] .cx-lab{ fill:var(--muted); font-size:10px; font-family:var(--font-mono); }
+.si-view[data-view="explore"] .cx-s{ fill:none; stroke-width:1.8; stroke-linejoin:round; stroke-linecap:round; }
+.si-view[data-view="explore"] .s1{ stroke:var(--ser-1); color:var(--ser-1); }
+.si-view[data-view="explore"] .s2{ stroke:var(--ser-2); color:var(--ser-2); }
+.si-view[data-view="explore"] .s3{ stroke:var(--ser-3); color:var(--ser-3); }
+.si-view[data-view="explore"] .s4{ stroke:var(--ser-4); color:var(--ser-4); }
+.si-view[data-view="explore"] .sbench{ stroke:var(--muted); color:var(--muted); }
+/* the legend IS the chart's text equivalent (spec §12): every drawn series, its stroke,
+   its name and its own rebased return over the selected window. */
+.si-view[data-view="explore"] .exp-legend{ padding:var(--exp-pad); border-top:1px solid var(--line); }
+.si-view[data-view="explore"] .exp-legbtns{ display:flex; gap:6px; margin-bottom:9px; }
+.si-view[data-view="explore"] .exp-legbtns button{ min-height:32px; padding:0 12px; border-radius:var(--r-ctl);
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
+  font-size:var(--fs-micro); font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+.si-view[data-view="explore"] .exp-leglist{ list-style:none; margin:0; padding:0; max-height:168px;
+  overflow-y:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(212px,1fr)); gap:0 var(--sp-5); }
+.si-view[data-view="explore"] .exp-leglist > li{ border-bottom:1px solid color-mix(in srgb, var(--line) 45%, transparent); }
+.si-view[data-view="explore"] .lchip{ display:grid; grid-template-columns:18px minmax(0,1fr) auto;
+  align-items:center; gap:9px; width:100%; min-height:34px; padding:4px 0; background:none; border:0;
+  text-align:left; font-size:var(--fs-sm); color:var(--text); cursor:pointer; }
+.si-view[data-view="explore"] .lchip[aria-pressed="false"]{ color:var(--muted); opacity:.55; }
+.si-view[data-view="explore"] .lchip > .nm{ min-width:0; overflow-wrap:anywhere; line-height:1.25; }
+.si-view[data-view="explore"] .lchip > .lv{ font-variant-numeric:tabular-nums; font-weight:700; }
+.si-view[data-view="explore"] .exp-cfoot{ padding:11px 16px; border-top:1px solid var(--line);
+  background:color-mix(in srgb, var(--panel2) 45%, transparent);
+  border-radius:0 0 var(--r-panel) var(--r-panel);
+  font-size:var(--fs-micro); line-height:1.6; color:var(--muted); }
+
+/* ── Forming Narratives ───────────────────────────────────────────────────────── */
+.si-view[data-view="explore"] .ne-attn{ display:flex; flex-wrap:wrap; align-items:center;
+  gap:6px var(--sp-3); margin:0 0 var(--sp-4); font-size:var(--fs-sm); color:var(--muted); }
+.si-view[data-view="explore"] .ne-attn .r3-tag{ text-transform:uppercase; }
+/* ai_watch — the ONE model-originated field on this panel (A8). The label is scoped to the
+   field and to nothing else; the deterministic score and its five legs are never so marked. */
+.si-view[data-view="explore"] .ne-watch{ border-left:3px solid var(--ink-info);
+  border-radius:0 var(--r-ctl) var(--r-ctl) 0;
+  background:color-mix(in srgb, var(--ink-info) 8%, var(--panel));
+  padding:11px 15px; margin:0 0 var(--sp-4); font-size:var(--fs-sm); line-height:1.5; }
+.si-view[data-view="explore"] .ne-watch > .lab{ display:block; font-size:var(--fs-micro); font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--ink-info); margin-bottom:3px; }
+.si-view[data-view="explore"] .ne-grid{ display:grid; gap:1px; background:var(--line);
+  grid-template-columns:repeat(auto-fill,minmax(318px,1fr)); }
+.si-view[data-view="explore"] .ne-card{ background:var(--panel); padding:15px 16px; min-width:0; }
+.si-view[data-view="explore"] .ne-hd{ display:grid; grid-template-columns:minmax(0,1fr) auto;
+  align-items:start; gap:var(--sp-3); }
+.si-view[data-view="explore"] .ne-name{ font-size:var(--fs-md); font-weight:700; letter-spacing:-.008em;
+  line-height:1.3; overflow-wrap:anywhere; }
+.si-view[data-view="explore"] .ne-badge{ text-align:right; }
+.si-view[data-view="explore"] .ne-score{ display:block; font-size:var(--fs-num-lg); font-weight:800;
+  letter-spacing:-.02em; line-height:1; font-variant-numeric:tabular-nums; }
+.si-view[data-view="explore"] .ne-lab{ display:block; margin-top:3px; font-size:var(--fs-micro);
+  font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+.si-view[data-view="explore"] .ne-why{ margin:9px 0 0; font-size:var(--fs-sm); line-height:1.5; color:var(--muted); }
+/* the five legs: production draws five unlabelled bars whose only key is a title=
+   attribute — banned outright (spec §9, CI-guarded) and hover-only besides (§12).
+   Same five values, same order, each one labelled where it sits. */
+.si-view[data-view="explore"] .ne-legs{ list-style:none; margin:12px 0 0; padding:0;
+  display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:var(--sp-2); }
+.si-view[data-view="explore"] .ne-legs > li{ min-width:0; }
+.si-view[data-view="explore"] .ne-legs .lg{ display:block; font-size:var(--fs-micro); font-weight:600;
+  letter-spacing:.04em; color:var(--muted); line-height:1.3; overflow-wrap:anywhere; }
+.si-view[data-view="explore"] .ne-legs .bar{ display:block; height:4px; margin-top:5px; border-radius:2px;
+  background:color-mix(in srgb, var(--line) 55%, transparent); }
+.si-view[data-view="explore"] .ne-legs .bar > i{ display:block; height:100%; border-radius:2px;
+  background:color-mix(in srgb, var(--text) 74%, var(--line)); }
+.si-view[data-view="explore"] .ne-legs .pc{ display:block; margin-top:3px; font-size:var(--fs-micro);
+  font-variant-numeric:tabular-nums; color:var(--muted); }
+.si-view[data-view="explore"] .ne-rec-h{ margin:13px 0 6px; }
+.si-view[data-view="explore"] .ne-recs{ display:flex; flex-wrap:wrap; gap:6px; }
+.si-view[data-view="explore"] .ne-tk{ position:relative; display:inline-flex; align-items:center; gap:7px;
+  min-height:34px; padding:0 10px; border-radius:var(--r-ctl); border:1px solid var(--gbtn-brd);
+  background:var(--gbtn-bg); color:var(--text); font-size:var(--fs-sm); cursor:pointer; }
+.si-view[data-view="explore"] .ne-tk > .dot{ flex:none; width:7px; height:7px; border-radius:50%; }
+.si-view[data-view="explore"] .ne-tk > .nm{ font-weight:700; }
+.si-view[data-view="explore"] .ne-tk > .ext{ color:var(--muted); font-variant-numeric:tabular-nums; }
+.si-view[data-view="explore"] .ne-pop{ position:absolute; left:50%; bottom:calc(100% + 9px); z-index:50;
+  display:none; min-width:158px; transform:translateX(-50%); padding:9px 11px; text-align:left;
+  border:1px solid var(--line); border-radius:var(--r-card); background:var(--panel2);
+  box-shadow:var(--popover-shadow); }
+.si-view[data-view="explore"] .ne-tk.on > .ne-pop,
+.si-view[data-view="explore"] .ne-tk:focus-within > .ne-pop{ display:block; }
+.si-view[data-view="explore"] .ne-pop > .pl{ display:block; font-size:9px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.si-view[data-view="explore"] .ne-pop > .pc{ display:block; margin-top:2px; font-size:15.5px; font-weight:700;
+  font-family:var(--font-mono); color:var(--text); }
+.si-view[data-view="explore"] .ne-pop > .ps{ display:block; margin-top:3px; font-size:var(--fs-micro);
+  line-height:1.4; color:var(--muted); }
+.si-view[data-view="explore"] .ne-flags{ display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.si-view[data-view="explore"] .ne-foot{ padding:11px 16px; border-top:1px solid var(--line);
+  background:color-mix(in srgb, var(--panel2) 45%, transparent);
+  border-radius:0 0 var(--r-panel) var(--r-panel);
+  font-size:var(--fs-micro); line-height:1.6; color:var(--muted); }
+.si-view[data-view="explore"] .ne-flash{ box-shadow:inset 0 0 0 2px var(--ink-link); }
+
+/* ── Time Machine ─────────────────────────────────────────────────────────────── */
+.si-view[data-view="explore"] #tm-details > summary::after{ content:""; margin-left:auto; width:7px; height:7px;
+  flex:none; border-right:1.6px solid var(--muted); border-bottom:1.6px solid var(--muted);
+  transform:translateY(-2px) rotate(45deg); transition:transform var(--t-fast) var(--ease-std); }
+.si-view[data-view="explore"] #tm-details[open] > summary::after{ transform:translateY(1px) rotate(-135deg); }
+.si-view[data-view="explore"] #tm-details > summary{ list-style:none; }
+.si-view[data-view="explore"] #tm-details > summary::-webkit-details-marker{ display:none; }
+.si-view[data-view="explore"] .tm-body{ padding:0 15px 15px; }
+.si-view[data-view="explore"] .tm-sub{ margin:0 0 var(--sp-4); max-width:96ch; font-size:var(--fs-sm);
+  line-height:1.55; color:var(--muted); }
+html[data-lang="zh"] .si-view[data-view="explore"] .tm-sub{ max-width:50em; }
+.si-view[data-view="explore"] .tm-tiers{ margin-bottom:var(--sp-3); }
+.si-view[data-view="explore"] .tm-years{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:var(--sp-3);
+  max-height:104px; overflow-y:auto; }
+.si-view[data-view="explore"] .tm-years button{ min-height:34px; min-width:52px; padding:0 9px;
+  border-radius:var(--r-ctl); border:1px solid var(--gbtn-brd); background:var(--gbtn-bg);
+  color:var(--muted); font-size:var(--fs-sm); font-variant-numeric:tabular-nums; cursor:pointer; }
+.si-view[data-view="explore"] .tm-years button[aria-pressed="true"]{ color:var(--text);
+  background:var(--panel2); border-color:color-mix(in srgb, var(--link) 45%, var(--line)); }
+.si-view[data-view="explore"] .tm-note{ margin:0; padding:11px 14px; border:1px solid var(--line);
+  border-radius:var(--r-ctl); background:color-mix(in srgb, var(--panel2) 50%, transparent);
+  font-size:var(--fs-sm); line-height:1.5; color:var(--muted); }
+.si-view[data-view="explore"] .tm-note b{ color:var(--text); }
+.si-view[data-view="explore"] .tm-meta{ margin-top:var(--sp-3); font-size:var(--fs-micro);
+  line-height:1.6; color:var(--muted); }
+.si-view[data-view="explore"] .exp-deeper{ margin-top:var(--sp-5); }
+
+/* ── responsive ───────────────────────────────────────────────────────────────
+   ≥1101  the full table, every column
+   768–1100 / 820  the table scrolls INSIDE its own box — the page never does (§9)
+   ≤767   the table RECOMPOSES into labelled rows: no horizontal scroll on a phone,
+          nothing dropped, the name is the card title and the six windows form a grid. */
+@media (max-width:1100px){
+  .si-view[data-view="explore"] .exp-filters{ grid-template-columns:minmax(0,1fr); }
+  .si-view[data-view="explore"] .exp-flab{ padding-top:0; }
+  .si-view[data-view="explore"] #chart{ min-height:320px; }
+}
+@media (max-width:767px){
+  .si-view[data-view="explore"] .r3-band{ margin-top:var(--sp-6); }
+  .si-view[data-view="explore"] .r3-tblbox{ overflow-x:visible; }
+  .si-view[data-view="explore"] #btable{ min-width:0; display:block; }
+  .si-view[data-view="explore"] #btable > thead{ display:none; }
+  .si-view[data-view="explore"] #btable > tbody{ display:block; }
+  .si-view[data-view="explore"] #btable > tbody > tr{ display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp-2) var(--sp-3); padding:13px 16px;
+    border-bottom:1px solid var(--line); }
+  .si-view[data-view="explore"] #btable > tbody > tr > td{ display:block; padding:0; border:0; }
+  .si-view[data-view="explore"] #btable > tbody > tr > td.bname{ grid-column:1 / -1; }
+  .si-view[data-view="explore"] #btable > tbody > tr > td.spark-td{ grid-column:1 / -1; }
+  .si-view[data-view="explore"] #btable > tbody > tr > td.num{ text-align:left; font-size:var(--fs-body);
+    font-weight:700; }
+  .si-view[data-view="explore"] #btable > tbody > tr > td.gpr-td{ grid-column:1 / -1; }
+  .si-view[data-view="explore"] .clab{ display:block; font-size:var(--fs-micro); font-weight:700;
+    letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-bottom:1px; }
+  .si-view[data-view="explore"] #btable > tbody > tr.exp-showall{ display:block; text-align:center; }
+  .si-view[data-view="explore"] #btable > tbody > tr.exp-showall > td{ display:block; }
+  .si-view[data-view="explore"] .exp-cats button,
+  .si-view[data-view="explore"] .exp-modes button,
+  .si-view[data-view="explore"] .tm-years button{ min-height:44px; }
+  .si-view[data-view="explore"] .exp-legbtns button{ min-height:44px; }
+  .si-view[data-view="explore"] .exp-leglist{ grid-template-columns:minmax(0,1fr); max-height:220px; }
+  .si-view[data-view="explore"] .ne-legs{ grid-template-columns:repeat(3,minmax(0,1fr)); row-gap:var(--sp-3); }
+  .si-view[data-view="explore"] #chart{ min-height:280px; }
+  .si-view[data-view="explore"] .r3-disc summary{ min-height:48px; }
+}
+@media (max-width:359px){
+  .si-view[data-view="explore"] #btable > tbody > tr{ grid-template-columns:repeat(2,minmax(0,1fr)); padding:12px 13px; }
+  .si-view[data-view="explore"] .ne-card{ padding:12px 13px; }
+  .si-view[data-view="explore"] .ne-legs{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .si-view[data-view="explore"] .exp-filters,
+  .si-view[data-view="explore"] .exp-chartbar,
+  .si-view[data-view="explore"] #chart,
+  .si-view[data-view="explore"] .exp-legend{ padding:12px 13px; }
+}
+</style>
+
+  <!-- ═══ 1 · THE ANSWER ═══ -->
+  <div class="r3-answer">
+    <h2 class="r3-answer-view"><span class="l-en">Explore</span><span class="l-zh">深入探索</span></h2>
+    <p class="si-view-read" id="si-read-explore" hidden></p>
+    <p class="r3-answer-line"><span class="l-en">The basket record is being updated. Everything below is tonight&#39;s payload.</span><span class="l-zh">篮子记录正在更新。下方内容来自今晚的数据。</span></p>
+    <div class="r3-answer-meta">
+      <span class="r3-asof" id="exp-asof"></span>
+      <span><span class="l-en">Context only — descriptive, never a buy list</span><span class="l-zh">仅为背景 — 描述性信息，并非买入清单</span>
+        <span class="r3-q" role="img" aria-labelledby="exp-q1-name">?</span>
+        <span class="r3-vh" id="exp-q1-name"><span class="l-en">Where this reading comes from</span><span class="l-zh">这句话的来源</span></span></span>
     </div>
   </div>
 
-  <p id="explore-fetch-status" class="ref-proof"></p>
+  <!-- legacy anchor: LEGACY_ANCHORS['explore-section'] → ['explore','explore-section'] -->
+  <span id="explore-section" aria-hidden="true"></span>
 
-  <script>
-  document.addEventListener('DOMContentLoaded', function(){
-    /* proof-of-data: baskets count, read directly from the embedded registry —
-       exactly mirrors readExplore() in templates/si_workspace.js:201-205. */
-    try{
-      var b = REF.parseJSON(REF.registry['basketdata/baskets.json']);
-      var n = (b.baskets || []).length;
-      document.getElementById('explore-proof').textContent =
-        n + ' baskets — every member, every record. (basketdata/baskets.json.baskets.length)';
-    }catch(e){
-      document.getElementById('explore-proof').textContent = 'proof-of-data read failed: ' + e;
-    }
+  <!-- ═══ 2 · BAND 1 — THE COMPARISON TABLE (dominant object) ═══ -->
+  <section class="r3-band" id="table-section">
+    <div class="r3-sec">
+      <h2><span class="l-en">Explore all</span><span class="l-zh">浏览全部</span></h2>
+      <span class="r3-sec-sub"><span class="l-en">— every basket, sortable</span><span class="l-zh">— 全部篮子，可排序</span></span>
+    </div>
+    <p class="exp-lede"><span class="l-en">Every basket, sortable. Switch between plain return, return against S&amp;P 500, and how unusual the move is for that basket. Click one to see what is in it.</span><span class="l-zh">所有篮子的可排序快照。可切换原始回报、相对标普 500 回报和篮子自身 z 分数。点击篮子查看成分。</span></p>
 
-    try{
-      var tm = REF.parseJSON(REF.registry['oracledata/tm_manifest.json']);
-      var tiers = tm.tiers ? Object.keys(tm.tiers).length : 0;
-      var reg = tm.registry ? (Array.isArray(tm.registry) ? tm.registry.length : Object.keys(tm.registry).length) : 0;
-      document.getElementById('tm-proof').textContent =
-        'Time Machine manifest: schema ' + tm.schema_version + ', ' + tiers + ' tier(s), ' + reg +
-        ' registry entr(y/ies) (oracledata/tm_manifest.json). Episode/chunk fetches recorded-not-executed.';
-    }catch(e){
-      document.getElementById('tm-proof').textContent = 'proof-of-data read failed: ' + e;
-    }
+    <div class="r3-panel">
+      <div class="exp-filters">
+        <div class="exp-frow">
+          <span class="r3-eyebrow exp-flab"><span class="l-en">Measure</span><span class="l-zh">口径</span></span>
+          <span class="r3-seg exp-modes" id="btbl-mode" role="group" aria-labelledby="exp-mode-name"></span>
+          <span class="r3-vh" id="exp-mode-name"><span class="l-en">Return measure</span><span class="l-zh">回报口径</span></span>
+        </div>
+        <div class="exp-frow">
+          <span class="r3-eyebrow exp-flab"><span class="l-en">Category</span><span class="l-zh">分类</span></span>
+          <span class="r3-seg exp-cats" id="btbl-cat-filter" role="group" aria-labelledby="exp-cat-name"></span>
+          <span class="r3-vh" id="exp-cat-name"><span class="l-en">Basket category</span><span class="l-zh">篮子分类</span></span>
+        </div>
+        <span class="exp-count" id="btbl-count"></span>
+      </div>
 
-    /* Genuine fetch-fail demo: reimplements production's __siBoot() fetch of
-       basketdata/baskets.json (templates/sector_central.html.j2, inline script
-       near EOF) — including its VERBATIM catch-branch error text. This is the
-       one code path in this artifact that issues a real window.fetch() through
-       the shim's interception, so toggling "Simulate fetch fail" in the drawer
-       makes production's OWN error string render for real, not a fake. */
-    function showBaskets(p){
-      var n = ((p && p.baskets) || []).length;
-      document.getElementById('explore-fetch-status').innerHTML =
-        '<span class="l-en">' + n + ' baskets — every member, every record.</span>' +
-        '<span class="l-zh">' + n + ' 个篮子 — 全部成分，全部记录。</span>';
-    }
-    function showFetchFailure(){
-      document.getElementById('explore-fetch-status').innerHTML =
-        '<div class="rvx-lane-desc">' +
-        '<span class="l-en">Data failed to load — please refresh.</span>' +
-        '<span class="l-zh">数据加载失败 — 请刷新。</span></div>';
-    }
-    function runFetchDemo(){
-      fetch('basketdata/baskets.json')
-        .then(function(r){ if(!r.ok) throw new Error('not ok'); return r.json(); })
-        .then(showBaskets)
-        .catch(showFetchFailure);
-    }
-    runFetchDemo();
-    /* Re-run on every Explore activation (si_workspace.js:302 dispatches this on
-       EVERY activate() call, not just the first mount) so toggling "Simulate
-       fetch fail" in the drawer and then revisiting #explore demonstrates the
-       genuine catch-branch text without requiring a full page reload. */
-    document.addEventListener('si:view', function(e){
-      if(e && e.detail === 'explore') runFetchDemo();
-    });
+      <div class="r3-tblbox">
+        <table class="r3-tbl" id="btable"></table>
+      </div>
+      <p class="exp-tfoot" id="btbl-gr-rule"></p>
+    </div>
+  </section>
+
+  <!-- ═══ 3 · BAND 2 — THE REBASED PERFORMANCE CHART ═══ -->
+  <section class="r3-band" id="chart-section">
+    <div class="r3-sec">
+      <h2><span class="l-en">Performance</span><span class="l-zh">走势对比</span></h2>
+      <span class="r3-sec-sub"><span class="l-en">— rebased to 0% at the start of the window</span><span class="l-zh">— 在窗口起点重设为 0%</span></span>
+    </div>
+    <p class="exp-lede"><span class="l-en">Lines are rebased to 0% at the start of the window. Toggle baskets from the list below the chart; &quot;All&quot; covers the available cache history.</span><span class="l-zh">曲线在窗口起点重设为 0%。可在图表下方的列表中开关篮子；&quot;全部&quot;覆盖可用缓存历史。</span></p>
+
+    <div class="r3-panel">
+      <div class="exp-chartbar">
+        <span class="r3-eyebrow"><span class="l-en">Measure</span><span class="l-zh">口径</span></span>
+        <span class="r3-seg" id="chart-modes" role="group" aria-labelledby="exp-cmode-name"></span>
+        <span class="r3-vh" id="exp-cmode-name"><span class="l-en">Chart measure</span><span class="l-zh">图表口径</span></span>
+        <span class="r3-eyebrow"><span class="l-en">Window</span><span class="l-zh">窗口</span></span>
+        <span class="r3-seg" id="chart-ranges" role="group" aria-labelledby="exp-crange-name"></span>
+        <span class="r3-vh" id="exp-crange-name"><span class="l-en">Chart window</span><span class="l-zh">图表窗口</span></span>
+        <label class="r3-vh" for="exp-rangeN"><span class="l-en">Window length in trading days</span><span class="l-zh">窗口长度（交易日）</span></label>
+        <input class="rangeN" id="exp-rangeN" type="number" min="5" max="600" step="1">
+      </div>
+
+      <!-- §8.1 mount-width law: #chart is never inside a closed <details> or a display:none
+           wrapper at activation — it is drawn from the si:view event, the first moment the
+           box has a real width. Production encodes the same rule at :2731-2740. -->
+      <div id="chart" role="img" aria-labelledby="exp-chart-name"></div>
+      <span class="r3-vh" id="exp-chart-name"><span class="l-en">Basket performance since the start of the selected window, every line rebased to zero per cent. The same figures are listed under the chart.</span><span class="l-zh">所选窗口起点以来的篮子走势，每条曲线均重设为 0%。相同数据在图表下方以列表列出。</span></span>
+
+      <div class="exp-legend">
+        <div class="exp-legbtns">
+          <button type="button" id="leg-all"><span class="l-en">All</span><span class="l-zh">全选</span></button>
+          <button type="button" id="leg-none"><span class="l-en">None</span><span class="l-zh">全不选</span></button>
+        </div>
+        <ul class="exp-leglist" id="chart-legend" aria-labelledby="exp-leg-name"></ul>
+        <span class="r3-vh" id="exp-leg-name"><span class="l-en">Series list — each basket, its stroke, and its return over the selected window</span><span class="l-zh">曲线列表 — 每个篮子、其线型，以及所选窗口内的回报</span></span>
+      </div>
+      <p class="exp-cfoot" id="chart-foot"></p>
+    </div>
+  </section>
+
+  <!-- ═══ 4 · BAND 3 — FORMING NARRATIVES ═══ -->
+  <section class="r3-band" id="forming-narratives"></section>
+
+  <!-- ═══ 5 · BAND 4 — ROTATION TIME MACHINE ═══
+       Mount is a CLOSED <details> shell that fetches NOTHING until first open
+       (time_machine.js:12-16, :189-200). Nothing width-measuring lives inside it, so the
+       §8.1 mount-width law is satisfied by construction. -->
+  <section class="r3-band" id="tm-mount">
+    <details class="r3-disc" id="tm-details">
+      <summary>
+        <span class="l-en">Rotation Time Machine — replay 25 years of rotation</span><span class="l-zh">轮动时光机 — 回放25年轮动史</span>
+        <small><span class="l-en">nothing loads until you open it</span><span class="l-zh">打开后才会载入</span></small>
+      </summary>
+      <div class="tm-body" id="tm-body"></div>
+    </details>
+  </section>
+
+  <p class="exp-deeper">
+    <!-- Track Record's DOM home is Overview's #grader; LEGACY_ANCHORS['grader'] routes there
+         (si_workspace.js:43). The grader is NOT duplicated here — one link, no second copy. -->
+    <a class="r3-more" href="#grader"><span class="l-en">See the forward track record</span><span class="l-zh">查看前瞻战绩</span></a>
+  </p>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════════
+   EXPLORE — display-tier binding. Every transform below is production's own,
+   reproduced with its line reference. Client re-sort of an already-fetched list is
+   explicitly lawful (R3 design brief §8). Nothing mints a rank, a lane or a count.
+   ══════════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+var V=document.querySelector('.si-view[data-view="explore"]');
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
+function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
+
+/* ── production constants, verbatim (sector_central.html.j2:2557-2559, :2605) ── */
+var TBL_COLS=['1d','5d','20d','60d','MTD','YTD'];
+var TBL_MODES=[['raw',['Raw','原始']],['rel',['vs S&P','对标普']],['sigma',['σ','σ']]];
+var RANGES=[['3M',63],['6M',126],['YTD','ytd'],['1Y',252],['All',0]];
+var TABLE_SHOW=8;
+
+/* ── production number formatting (:2565-2569) ── */
+var fmtPct=function(x){ return x==null?'—':(x>=0?'+':'−')+Math.abs(x*100).toFixed(1)+'%'; };
+var fmtZ  =function(x){ return x==null?'—':(x>=0?'+':'−')+Math.abs(x).toFixed(1)+'σ'; };
+var cls   =function(x){ return x==null?'flat':(x>=0?'pos':'neg'); };
+function lastIdx(a){ for(var i=a.length-1;i>=0;i--) if(a[i]!=null) return i; return -1; }
+
+var BASKETS=null, CHART=null;
+var btblMode, btblSort, btblCat='All', btblShowAll=false, GPULSE=null;
+try{ btblMode=localStorage.getItem('fw-btbl-mode')||'rel'; }catch(e){ btblMode='rel'; }
+try{ btblSort=JSON.parse(localStorage.getItem('fw-btbl-sort')||'{"col":"20d","dir":-1}'); }
+catch(e){ btblSort={col:'20d',dir:-1}; }
+if(!btblSort||!btblSort.col) btblSort={col:'20d',dir:-1};
+function save(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+/* ── production window maths (:2571-2582), verbatim ── */
+function startIdxFor(col,dates,li){
+  var u=col.toUpperCase();
+  if(u==='MTD'||u==='YTD'){ var p=dates[li].slice(0,u==='MTD'?7:4), i=li;
+    while(i>0 && dates[i-1].indexOf(p)===0) i--; return i>0?i-1:null; }
+  var j=li-parseInt(col,10); return j>=0?j:null;
+}
+function winRet(levels,col){ if(!levels) return null; var li=lastIdx(levels); if(li<0) return null;
+  var si=startIdxFor(col,CHART.dates,li); if(si==null||levels[si]==null) return null;
+  return levels[li]/levels[si]-1; }
+function winZ(levels,col){ var n=parseInt(col,10); if(!n||!levels) return null;
+  var li=lastIdx(levels); if(li<252+n) return null;
+  var hr=[],i; for(i=li-252;i<=li;i++) hr.push((levels[i]!=null&&levels[i-n]!=null)?levels[i]/levels[i-n]-1:null);
+  var cur=hr[hr.length-1], base=hr.slice(0,-1).filter(function(v){return v!=null;});
+  if(cur==null||base.length<200) return null;
+  var m=base.reduce(function(a,b){return a+b;},0)/base.length;
+  var sd=Math.sqrt(base.reduce(function(a,b){return a+Math.pow(b-m,2);},0)/(base.length-1));
+  return sd>0?(cur-m)/sd:null; }
+function ratio(a){ return a.map(function(v,i){ return (v!=null&&CHART.bench[i]!=null)?v/CHART.bench[i]:null; }); }
+function sparkTail(levels,n){ return (levels||[]).filter(function(x){return x!=null;}).slice(-(n||60)); }
+
+/* ── SERIES IDENTITY — the view thesis ────────────────────────────────────────
+   Production assigns each basket one of fourteen HARD-CODED hexes (:2560-2561). This
+   system carries no literal hue, and fourteen hues are not fourteen distinguishable
+   lines anyway. Identity here is a STROKE: one of the four --ser-* chart tokens crossed
+   with one of four dash patterns — sixteen distinguishable strokes, a second channel
+   that survives greyscale and colour-blindness, and no new token. Index is the basket's
+   position in the producer's own `baskets` array, so identity is stable across sorts,
+   filters, themes and languages. */
+var SER_CLS=['s1','s2','s3','s4'];
+var SER_DASH=['', '7 4', '2 3', '9 3 2 3'];
+var styleIx={};
+function serStyle(id){
+  var i=styleIx[id]; if(i==null) i=0;
+  return { c:SER_CLS[i%4], d:SER_DASH[Math.floor(i/4)%4] };
+}
+function swatch(id,w){
+  var s=serStyle(id), W=w||16;
+  return '<svg class="swatch" width="'+W+'" height="9" viewBox="0 0 '+W+' 9" aria-hidden="true">'
+    +'<path class="cx-s '+s.c+'" d="M0 4.5H'+W+'"'+(s.d?' stroke-dasharray="'+s.d+'"':'')+'/></svg>';
+}
+/* the sparkline (:2584-2592): same series, drawn achromatic in the table — the coloured
+   channel in that column is the series SWATCH, which means "this line is on the chart". */
+function sparkSvg(values,w,h){
+  var vs=(values||[]).filter(function(v){return v!=null;});
+  if(vs.length<2) return '';
+  w=w||92; h=h||24;
+  var min=Math.min.apply(null,vs), max=Math.max.apply(null,vs), span=(max-min)||1;
+  var pts=vs.map(function(v,i){ return [i/(vs.length-1)*w, h-3-(v-min)/span*(h-7)]; });
+  var d=pts.map(function(p,i){ return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1); }).join(' ');
+  var e=pts[pts.length-1];
+  return '<svg class="spark" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true">'
+    +'<path d="'+d+'" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="1.4"/>'
+    +'<circle cx="'+e[0].toFixed(1)+'" cy="'+e[1].toFixed(1)+'" r="1.7" fill="currentColor"/></svg>';
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+   THE TABLE — sector_central.html.j2:2654-2699 renderBTable(), field for field
+   ─────────────────────────────────────────────────────────────────────────────── */
+/* GR1 group pulse (:2620-2634): the vocabulary and the disclosed ordering rule. The
+   artifact is absent from this capture, so — exactly as in production before the first
+   nightly — the column simply never appears and the rule line stays empty. */
+var GR_CHG={strengthening:['Broadening','扩散中'],steady:['Steady','持平'],
+            cooling:['Narrowing','收窄中'],quiet:['Quiet','安静']};
+var GR_RANK={strengthening:0,steady:1,cooling:2,quiet:3};
+function grPulseOf(id){ return (GPULSE&&GPULSE[id])||null; }
+function grCmp(a,b){
+  var pa=grPulseOf(a.id), pb=grPulseOf(b.id);
+  if(!pa&&!pb) return 0; if(!pa) return 1; if(!pb) return -1;
+  var ca=GR_RANK[(pa.episode||{}).state_change], cb=GR_RANK[(pb.episode||{}).state_change];
+  if(ca==null) ca=3; if(cb==null) cb=3;
+  if(ca!==cb) return ca-cb;
+  var sa=(pa.participation||{}).activity_share, sb=(pb.participation||{}).activity_share;
+  if(sa==null) sa=-1; if(sb==null) sb=-1;
+  if(sa!==sb) return sb-sa;
+  var ga=(pa.direction||{}).agreement_pct, gb=(pb.direction||{}).agreement_pct;
+  if(ga==null) ga=-1; if(gb==null) gb=-1;
+  return gb-ga;
+}
+function grPulseCell(id){
+  var p=grPulseOf(id);
+  if(!p) return '<span class="flat">—</span>';
+  var chg=((p.episode||{}).state_change)||'quiet', w=GR_CHG[chg]||GR_CHG.quiet;
+  var pa=p.participation||{}, n=pa.activity_n, nc=p.n_covered;
+  var mv=(n!=null&&nc!=null)?' <span class="flat">'+L(n+' of '+nc+' moving', nc+' 只中 '+n+' 只在动')+'</span>':'';
+  return '<span>'+L(esc(w[0]),esc(w[1]))+mv+'</span>';
+}
+
+function renderModes(){
+  var el=$('btbl-mode'); if(!el) return;
+  el.innerHTML=TBL_MODES.map(function(m){
+    return '<button type="button" data-v="'+m[0]+'" aria-pressed="'+(m[0]===btblMode)+'">'
+      +L(esc(m[1][0]),esc(m[1][1]))+'</button>'; }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('button'), function(b){
+    b.onclick=function(){ btblMode=b.dataset.v; save('fw-btbl-mode',btblMode);
+      renderModes(); renderCats(); renderBTable(); }; });
+}
+function renderCats(){
+  var el=$('btbl-cat-filter'); if(!el||!BASKETS) return;
+  /* :2609 — 'All' plus the producer's own category list, in producer order. */
+  var cats=['All'].concat(BASKETS.categories||[]);
+  el.innerHTML=cats.map(function(c){
+    var lab = c==='All' ? L('All','全部') : esc(c);
+    return '<button type="button" data-cat="'+esc(c)+'" aria-pressed="'+(btblCat===c)+'">'+lab+'</button>';
+  }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('button'), function(b){
+    b.onclick=function(){ btblCat=b.dataset.cat; btblShowAll=false; renderCats(); renderBTable(); }; });
+}
+
+function renderBTable(){
+  var tbl=$('btable'); if(!tbl||!CHART) return;
+  var allRows=Object.keys(CHART.baskets).map(function(id){
+    var lv=CHART.baskets[id];
+    var b=(BASKETS.baskets||[]).filter(function(x){ return x.id===id; })[0];
+    var rl=ratio(lv), src=(btblMode==='raw')?lv:rl, vals={};
+    TBL_COLS.forEach(function(c){
+      vals[c]= btblMode==='sigma' ? (/^\d/.test(c)?winZ(rl,c):null) : winRet(src,c); });
+    return {id:id, name:b?b.name:id, nameZh:(b&&b.name_zh)||null, cat:b?b.category:'',
+            spark:sparkTail(src), vals:vals};
   });
-  </script>
+  if(btblCat&&btblCat!=='All') allRows=allRows.filter(function(r){ return r.cat===btblCat; });
+  var sc=btblSort.col, dir=btblSort.dir;
+  allRows.sort(function(a,b){
+    if(sc==='name') return a.name.localeCompare(b.name)*dir;
+    if(sc==='group') return grCmp(a,b)*(dir<0?1:-1);
+    var x=a.vals[sc], y=b.vals[sc];
+    if(x==null) return 1; if(y==null) return -1; return (x-y)*dir; });
+  /* :2667-2671 — top 8 + bottom 8 at rest; no duplication when ≤16 rows survive the filter. */
+  var rows=allRows;
+  if(!btblShowAll && allRows.length>TABLE_SHOW*2)
+    rows=allRows.slice(0,TABLE_SHOW).concat(allRows.slice(-TABLE_SHOW));
+
+  var fmt=(btblMode==='sigma')?fmtZ:fmtPct;
+  var gp=!!GPULSE, span=TBL_COLS.length+2+(gp?1:0);
+  function th(c,lab,cn){
+    var on=(c===sc);
+    return '<th class="'+(cn||'')+'" data-c="'+c+'" tabindex="0" role="columnheader" aria-sort="'
+      +(on?(dir<0?'descending':'ascending'):'none')+'">'+lab
+      +(on?'<span class="dir" aria-hidden="true">'+(dir<0?'▾':'▴')+'</span>':'')+'</th>';
+  }
+  var head='<thead><tr>'
+    + th('name', L('Basket','篮子'))
+    + (gp?th('group', L('Group pulse','整体动向')):'')
+    + '<th class="num">'+L('60d trend','60日走势')+'</th>'
+    + TBL_COLS.map(function(c){ return th(c,c,'num'); }).join('')
+    + '</tr></thead>';
+
+  var body=rows.map(function(r){
+    /* the name cell is a real link carrying its REAL destination; the shim records the
+       navigation instead of leaving the quarantined artifact (README_BUILD §Shim API). */
+    return '<tr>'
+      +'<td class="bname"><a class="bnm" data-ref-nav href="basket/'+esc(r.id)+'.html">'
+        + swatch(r.id) + '<span>'+L(esc(r.name), esc(r.nameZh||r.name))+'</span></a>'
+        + (r.cat?'<span class="bcat">'+esc(r.cat)+'</span>':'') + '</td>'
+      + (gp?'<td class="gpr-td">'+grPulseCell(r.id)+'</td>':'')
+      +'<td class="num spark-td flat">'+sparkSvg(r.spark)+'</td>'
+      + TBL_COLS.map(function(c){
+          return '<td class="num '+cls(r.vals[c])+'" data-l="'+c+'"><span class="clab">'+c+'</span>'
+            +(r.vals[c]==null?'—':fmt(r.vals[c]))+'</td>'; }).join('')
+      +'</tr>';
+  }).join('');
+
+  var more='';
+  if(!btblShowAll && allRows.length>TABLE_SHOW*2)
+    more='<tr class="exp-showall"><td colspan="'+span+'"><button type="button" id="btbl-showall">'
+      +L('Show all','显示全部')+' ('+allRows.length+')</button></td></tr>';
+
+  /* :2686-2687 — the synthetic S&P 500 benchmark row exists in RAW mode only: in the two
+     relative modes every line is already measured against it, so a bench row would read 0. */
+  var bench='';
+  if(btblMode==='raw'){
+    var bv={}; TBL_COLS.forEach(function(c){ bv[c]=winRet(CHART.bench,c); });
+    bench='<tr class="exp-bench"><td class="bname"><span class="bnm">'
+      +swatch('__bench')+'<span>'+L('S&amp;P 500','标普 500')+'</span></span></td>'
+      +(gp?'<td></td>':'')+'<td class="num"></td>'
+      + TBL_COLS.map(function(c){ return '<td class="num '+cls(bv[c])+'" data-l="'+c+'">'
+          +'<span class="clab">'+c+'</span>'+fmtPct(bv[c])+'</td>'; }).join('')+'</tr>';
+  }
+
+  tbl.innerHTML=head+'<tbody>'+body+more+bench+'</tbody>';
+
+  var cnt=$('btbl-count');
+  if(cnt) cnt.innerHTML=L(
+    (btblShowAll||allRows.length<=TABLE_SHOW*2 ? 'Showing all '+allRows.length : 'Showing the top '+TABLE_SHOW+' and bottom '+TABLE_SHOW+' of '+allRows.length)
+      +' baskets'+(btblCat!=='All'?' in '+esc(btblCat):''),
+    (btblShowAll||allRows.length<=TABLE_SHOW*2 ? '显示全部 '+allRows.length : '显示 '+allRows.length+' 个中的前 '+TABLE_SHOW+' 与后 '+TABLE_SHOW)
+      +' 个篮子'+(btblCat!=='All'?' · '+esc(btblCat):''));
+
+  var sa=$('btbl-showall'); if(sa) sa.onclick=function(){ btblShowAll=true; renderBTable(); };
+  Array.prototype.forEach.call(tbl.querySelectorAll('th[data-c]'), function(h){
+    function sort(){ var c=h.dataset.c;
+      if(c===btblSort.col) btblSort.dir*=-1; else btblSort={col:c,dir:(c==='name'?1:-1)};
+      save('fw-btbl-sort',JSON.stringify(btblSort)); renderBTable(); }
+    h.onclick=sort;
+    h.onkeydown=function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); sort(); } };
+  });
+}
+/* :2648-2652 — absent artifact before the first nightly → no column, no rule line, no error. */
+function loadGroupPulse(){
+  fetch('basketdata/pulse.json',{cache:'no-cache'})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(j){ if(!j) return; GPULSE=j; renderBTable(); renderGrRule(); })
+    .catch(function(){});
+}
+function renderGrRule(){
+  var el=$('btbl-gr-rule'); if(!el) return;
+  var base=L('Baskets are equal-weighted and benchmarked to the S&amp;P 500. Membership is curated, so the record is descriptive — not an out-of-sample backtest and not a buy list.',
+             '篮子等权重，并以标普 500 为基准。成分为人工整理，因此该记录属描述性信息——不是样本外回测，也不是买入清单。');
+  el.innerHTML = GPULSE ? base+' '+L(
+    'Group pulse: how many members are actually moving, and whether that count is broadening or narrowing. Sorting by it orders on state change, then breadth of movement, then agreement — no composite score.',
+    '「整体动向」：有多少成分股真正在动，以及这个数量在扩散还是收窄。按它排序的依据为：参与度变化，其次是在动成分股的广度，再次是方向一致度 — 不使用任何综合评分。') : base;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+   THE CHART — inline SVG, production's own rebase transform (:2748)
+   value = 100 × (level / firstLevelInWindow − 1)
+   CHART OPTION (a), chosen over capturing lightweight-charts.js into the fixture
+   supplement: identical data, identical transform, and an SVG inherits the theme's
+   tokens, flips with 红涨绿跌, prints, scales at 200% zoom and can be read by assistive
+   technology — none of which a <canvas> does. It also leaves the harness-owned
+   supplement/receipts/PROVENANCE files untouched.
+   ─────────────────────────────────────────────────────────────────────────────── */
+var chartMode='rel', chartRange=252, hidden={}, chartDrawn=false;
+try{ chartRange=parseInt(localStorage.getItem('fw-brange')||'252',10)||252; }catch(e){}
+if(String(chartRange)==='NaN') chartRange=252;
+try{ if(localStorage.getItem('fw-brange')==='ytd') chartRange='ytd'; }catch(e){}
+
+function rangeStart(dates){
+  if(chartRange==='ytd'){ var y=dates[dates.length-1].slice(0,4);
+    var i=-1,k; for(k=0;k<dates.length;k++){ if(dates[k].indexOf(y)===0){ i=k; break; } }
+    return i<=0?0:i-1; }
+  return chartRange?Math.max(0,dates.length-chartRange):0;
+}
+function chartSets(){
+  var sets=Object.keys(CHART.baskets).map(function(id){
+    var b=(BASKETS.baskets||[]).filter(function(x){ return x.id===id; })[0];
+    return {key:id,label:b?b.name:id,labelZh:(b&&b.name_zh)||null,levels:CHART.baskets[id]}; });
+  if(chartMode==='rel') return sets.map(function(s){
+    return {key:s.key,label:s.label,labelZh:s.labelZh,levels:ratio(s.levels)}; });
+  return sets.concat([{key:'__bench',label:'S&P 500',labelZh:'标普 500',levels:CHART.bench}]);
+}
+/* :2791-2793 initChartDefaults() — the six baskets with the largest absolute 20-day move
+   against the S&P start visible. Producer field (`perf['20d'].rel`), producer ordering. */
+function initChartDefaults(){
+  var ranked=(BASKETS.baskets||[]).slice().sort(function(a,b){
+    var ra=Math.abs(((a.perf&&a.perf['20d']&&a.perf['20d'].rel)||0));
+    var rb=Math.abs(((b.perf&&b.perf['20d']&&b.perf['20d'].rel)||0));
+    return rb-ra; });
+  ranked.slice(6).forEach(function(b){ hidden[b.id]=true; });
+}
+function niceStep(span){
+  var raw=span/5, mag=Math.pow(10,Math.floor(Math.log(raw)/Math.LN10));
+  var n=raw/mag; return (n<=1?1:n<=2?2:n<=5?5:10)*mag;
+}
+function renderChart(){
+  var el=$('chart'); if(!el||!CHART) return;
+  var W=el.clientWidth - 32;                       /* minus the panel padding */
+  if(W<=0){ return; }                              /* §8.1 — never draw zero-wide */
+  var mob=window.matchMedia('(max-width:767px)').matches;
+  var H=mob?250:340, PL=6, PR=46, PB=20, PT=8;
+  var iw=Math.max(40,W-PL-PR), ih=H-PT-PB;
+  var start=rangeStart(CHART.dates), n=CHART.dates.length-start;
+  var sets=chartSets().filter(function(s){ return !hidden[s.key]; });
+  var series=[], lo=0, hi=0;
+  sets.forEach(function(s){
+    var base=null, pts=[], i;
+    for(i=start;i<CHART.dates.length;i++){
+      var v=s.levels[i]; if(v==null) continue;
+      if(base===null) base=v;
+      var y=100*(v/base-1);
+      if(y<lo) lo=y; if(y>hi) hi=y;
+      pts.push([i,y]);
+    }
+    if(pts.length<2) return;
+    var last=pts[pts.length-1][1];
+    series.push({key:s.key,label:s.label,labelZh:s.labelZh,pts:pts,last:last});
+  });
+  if(!series.length){
+    el.innerHTML='<div class="r3-empty"><div class="r3-empty-line">'
+      +L('No basket selected','未选择篮子')+'</div><div class="r3-empty-why">'
+      +L('Nothing is switched on in the list below — turn one back on to draw it.',
+         '下方列表中没有开启任何篮子 — 打开一个即可绘制。')+'</div></div>';
+    renderLegend(start); return;
+  }
+  var step=niceStep(Math.max(1,hi-lo));
+  var y0=Math.floor(lo/step)*step, y1=Math.ceil(hi/step)*step;
+  if(y1===y0) y1=y0+step;
+  var X=function(i){ return PL+(i-start)/(n-1)*iw; };
+  var Y=function(v){ return PT+(y1-v)/(y1-y0)*ih; };
+  var out=['<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" aria-hidden="true">'];
+  for(var g=y0; g<=y1+1e-9; g+=step){
+    var yy=Y(g).toFixed(1);
+    out.push('<line class="'+(Math.abs(g)<1e-9?'cx-zero':'cx-grid')+'" x1="'+PL+'" x2="'+(PL+iw).toFixed(1)+'" y1="'+yy+'" y2="'+yy+'"/>');
+    out.push('<text class="cx-lab" x="'+(PL+iw+6).toFixed(1)+'" y="'+(Y(g)+3.5).toFixed(1)+'">'
+      +(g>0?'+':'')+Math.round(g)+'%</text>');
+  }
+  var ticks=mob?3:5, t;
+  for(t=0;t<ticks;t++){
+    var idx=start+Math.round((n-1)*t/(ticks-1));
+    var d=CHART.dates[idx]||'';
+    out.push('<text class="cx-lab" x="'+X(idx).toFixed(1)+'" y="'+(H-6)+'" text-anchor="'
+      +(t===0?'start':t===ticks-1?'end':'middle')+'">'+esc(d.slice(0,7))+'</text>');
+  }
+  series.forEach(function(s){
+    var st=serStyle(s.key);
+    var d=s.pts.map(function(p,i){ return (i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1); }).join(' ');
+    out.push('<path class="cx-s '+(s.key==='__bench'?'sbench':st.c)+'" d="'+d+'"'
+      +(s.key==='__bench'?' stroke-dasharray="5 4"':(st.d?' stroke-dasharray="'+st.d+'"':''))+'/>');
+  });
+  out.push('</svg>');
+  el.innerHTML=out.join('');
+  chartDrawn=true;
+  renderLegend(start);
+}
+/* :2779-2789 renderChartLegend() — every series' own rebased return over the window.
+   This list is the chart's text equivalent (spec §12): name, stroke, value, toggle. */
+function renderLegend(start){
+  var el=$('chart-legend'); if(!el) return;
+  if(start==null) start=rangeStart(CHART.dates);
+  el.innerHTML=chartSets().map(function(s){
+    var li=lastIdx(s.levels), base=null, i;
+    for(i=start;i<=li;i++){ if(s.levels[i]!=null){ base=s.levels[i]; break; } }
+    var v=(base!=null&&s.levels[li]!=null)?100*(s.levels[li]/base-1):null;
+    var on=!hidden[s.key];
+    return '<li><button type="button" class="lchip" data-k="'+esc(s.key)+'" aria-pressed="'+on+'">'
+      + swatch(s.key,18)
+      + '<span class="nm">'+L(esc(s.label),esc(s.labelZh||s.label))+'</span>'
+      + '<span class="lv '+(v==null?'flat':(v>=0?'pos':'neg'))+'">'
+        +(v==null?'—':(v>=0?'+':'−')+Math.abs(v).toFixed(1)+'%')+'</span>'
+      + '</button></li>';
+  }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('.lchip'), function(c){
+    c.onclick=function(){ hidden[c.dataset.k]=!hidden[c.dataset.k]; renderChart(); renderBTable(); }; });
+}
+function renderChartControls(){
+  var m=$('chart-modes');
+  var MODES=[['rel',['vs S&P 500','对标普 500']],['abs',['Absolute','绝对']]];
+  m.innerHTML=MODES.map(function(x){
+    return '<button type="button" data-v="'+x[0]+'" aria-pressed="'+(x[0]===chartMode)+'">'
+      +L(esc(x[1][0]),esc(x[1][1]))+'</button>'; }).join('');
+  Array.prototype.forEach.call(m.querySelectorAll('button'), function(b){
+    b.onclick=function(){ chartMode=b.dataset.v; renderChartControls(); renderChart(); }; });
+  var r=$('chart-ranges');
+  r.innerHTML=RANGES.map(function(x){
+    var on=String(x[1])===String(chartRange);
+    return '<button type="button" data-v="'+x[1]+'" aria-pressed="'+on+'">'+esc(x[0])+'</button>'; }).join('');
+  Array.prototype.forEach.call(r.querySelectorAll('button'), function(b){
+    b.onclick=function(){ chartRange=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10);
+      save('fw-brange',String(chartRange)); renderChartControls(); renderChart(); }; });
+  var inp=$('exp-rangeN');
+  if(inp){ inp.value=(chartRange==='ytd'||chartRange===0)?'':chartRange;
+    inp.onchange=function(){ var v=Math.min(600,Math.max(5,parseInt(this.value,10)||252));
+      chartRange=v; save('fw-brange',String(v)); renderChartControls(); renderChart(); }; }
+  var f=$('chart-foot');
+  if(f) f.innerHTML=L(
+    'Every line is rebased to 0% at the first session in the window, so the chart compares paths, not price levels. History comes from the S&amp;P 1500 and baskets-only price caches; 35 of the 49 baskets are back-projected over their current roster, so the line before a member joined is context, never a track record.',
+    '每条曲线均在窗口首个交易日重设为 0%，因此图表比较的是路径而非价格水平。历史数据来自标普 1500 与篮子价格缓存；49 个篮子中有 35 个按当前成分回溯投影，故成分加入前的曲线仅为背景，并非实际战绩。');
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+   FORMING NARRATIVES — templates/forming_narratives.js, field for field
+   ─────────────────────────────────────────────────────────────────────────────── */
+/* :22-28 — the falsifier-register LABEL rewrite (operator ruling #3821). Idempotent, and
+   the condition text itself is never touched. The register itself never surfaces. */
+var WATCH_LABEL=/\bkill[\s\-_]?criteri(?:on|a)\s*[:：]\s*|\bkill\s*[:：]\s*/gi;
+var WATCH_NOUN=/\bkill[\s\-_]?criteri(?:on|a)\b/gi;
+function watchEn(s){ return (s==null?'':String(s)).replace(WATCH_LABEL,'Watching for: ').replace(WATCH_NOUN,'watch condition'); }
+function watchZh(s){ return watchEn(s).replace(/Watching for:\s*/g,'关注条件：'); }
+var NE_LEGS=[['tighten',['Tightening','收紧']],['cohesion',['Co-movement','共动']],
+             ['momentum',['Momentum','动能']],['novelty',['Novelty','新颖']],['size',['Size','规模']]];
+var GRADE_INK={intrend:'var(--ink-up)',steady:'var(--ink-up)',na:'var(--muted)',
+               stretched:'var(--ink-warn)',parabolic:'var(--ink-down)'};
+
+function renderNarratives(){
+  var sec=$('forming-narratives'); if(!sec) return;
+  fetch('basketdata/narrative_emergence.json',{cache:'no-store'})
+    .then(function(r){ return r.ok?r.json():null; })
+    .then(function(d){
+      /* :170 — no payload or no narratives → the panel is not drawn at all. */
+      if(!d||!(d.narratives||[]).length){ sec.remove(); return; }
+
+      /* the standing caveats are the ones EVERY narrative carries: one merged footnote for
+         the panel (doctrine Law 4 — a constant never repeats per row). Anything a single
+         narrative adds on top of that is conditional, and stays on its own card. */
+      var standing=(d.narratives[0].caveats_en||[]).filter(function(c,i){
+        return d.narratives.every(function(n){ return (n.caveats_en||[]).indexOf(c)>=0; }); });
+      var standingZh=(d.narratives[0].caveats_zh||[]).filter(function(c,i){
+        return d.narratives.every(function(n){ return (n.caveats_zh||[]).indexOf(c)>=0; }); });
+
+      function tickerChip(r){
+        var ink=GRADE_INK[r.grade]||'var(--muted)';
+        var nmEn=r.name||r.ticker, nmZh=r.name_zh||r.name||r.ticker;
+        var ext=(r.ext==null)?'':'<span class="ext">'+(r.ext>=0?'+':'−')+Math.abs(r.ext).toFixed(1)+'%</span>';
+        return '<span class="ne-tk" tabindex="0" role="button" aria-labelledby="tkn-'+esc(r.ticker)+'-'+esc(r.sector||'').replace(/\W/g,'')+'">'
+          +'<span class="dot" style="background:'+ink+'"></span>'
+          +'<span class="nm">'+L(esc(nmEn),esc(nmZh))+'</span>'+ext
+          +'<span class="r3-vh" id="tkn-'+esc(r.ticker)+'-'+esc(r.sector||'').replace(/\W/g,'')+'">'
+            +L(esc(nmEn)+' ('+esc(r.ticker)+'), '+esc(r.grade_en||r.grade)+' entry',
+               esc(nmZh)+'（'+esc(r.ticker)+'），'+esc(r.grade_zh||r.grade)+' 入场')+'</span>'
+          +'<span class="ne-pop" role="tooltip">'
+            +'<span class="pl">'+L('Code','代码')+'</span>'
+            +'<span class="pc">'+esc(r.ticker)+'</span>'
+            +'<span class="ps">'+(r.sector?esc(r.sector)+' · ':'')
+              +L(esc(r.grade_en||r.grade)+' entry',esc(r.grade_zh||r.grade)+' 入场')+'</span>'
+          +'</span></span>';
+      }
+      function card(nv){
+        var legs=nv.legs||{};
+        var legHtml=NE_LEGS.map(function(k){
+          var v=Math.round((legs[k[0]]||0)*100);
+          return '<li><span class="lg">'+L(esc(k[1][0]),esc(k[1][1]))+'</span>'
+            +'<span class="bar"><i style="width:'+v+'%"></i></span>'
+            +'<span class="pc tnum">'+v+'%</span></li>'; }).join('');
+        var flags=[];
+        if(nv.hype&&nv.hype.ipo_wave) flags.push('<span class="r3-tag">'+L('IPO wave','IPO潮')+'</span>');
+        if(nv.hype&&nv.hype.stretched_share>=0.4)
+          flags.push('<span class="r3-tag">'+Math.round(nv.hype.stretched_share*100)+'% '+L('stretched','超伸')+'</span>');
+        if(nv.attention_aligned) flags.push('<span class="r3-tag">'+L('hot narrative','热门叙事')+'</span>');
+        var extraEn=(nv.caveats_en||[]).filter(function(c){ return standing.indexOf(c)<0; });
+        var extraZh=(nv.caveats_zh||[]).filter(function(c){ return standingZh.indexOf(c)<0; });
+        var extra=extraEn.length?'<p class="ne-why">'+L(esc(extraEn.join(' ')),esc(extraZh.join(' ')))+'</p>':'';
+        return '<div class="ne-card" id="ne-'+esc(nv.signature)+'">'
+          +'<div class="ne-hd"><div class="ne-name">'+L(esc(nv.name_en),esc(nv.name_zh))+'</div>'
+          +'<div class="ne-badge"><span class="ne-score tnum">'+esc(nv.score)+'</span>'
+          +'<span class="ne-lab">'+L(esc((nv.score_label||{}).en),esc((nv.score_label||{}).zh))+'</span></div></div>'
+          +'<p class="ne-why">'+L(esc(nv.why_en),esc(nv.why_zh))+'</p>'
+          +'<ul class="ne-legs">'+legHtml+'</ul>'
+          +(flags.length?'<div class="ne-flags">'+flags.join('')+'</div>':'')
+          +'<span class="r3-eyebrow ne-rec-h">'+L('Cleaner entries first','入场更干净者优先')+'</span>'
+          +'<div class="ne-recs">'+((nv.recommended||[]).map(tickerChip).join('')
+             ||'<span class="flat">'+L('no clean read','无清晰读数')+'</span>')+'</div>'
+          +extra+'</div>';
+      }
+
+      /* :147-152 — ai_watch is the ONE model-originated field on this panel (A8). It is
+         labelled "Model analysis / 模型分析" and NOTHING ELSE on the panel is: the score,
+         its five legs and the ticker order are deterministic producer output.
+         NOTE for the reviewer: in this frozen fixture `ai_watch` is null, so production's
+         own absence path runs and no watch block is drawn. The branch below is live code,
+         not a mock — a payload carrying the field renders it labelled. */
+      var watch='';
+      if(d.ai_watch&&d.ai_watch.text){
+        var conf=d.ai_watch.confidence?' ('+L(esc(d.ai_watch.confidence)+' confidence',esc(d.ai_watch.confidence)+' 信心')+')':'';
+        watch='<p class="ne-watch"><span class="lab">'+L('Model analysis','模型分析')+conf+'</span>'
+          +L(esc(watchEn(d.ai_watch.text)),esc(watchZh(d.ai_watch.text)))+'</p>';
+      }
+      var attn='';
+      if(d.attention&&(d.attention.dominant||[]).length){
+        /* the producer's theme keys are slugs; underscores become spaces so the tag reads as
+           words (a formatting transform, never new copy — no label is authored here). */
+        var tags=d.attention.dominant.map(function(t){
+          return '<span class="r3-tag">'+esc(String(t.theme).replace(/_/g,' '))+' · '+t.n+'</span>'; }).join('');
+        attn='<p class="ne-attn">'+L('Macro attention now:','当前宏观关注：')+tags
+          +'<span style="flex-basis:100%;height:0"></span>'
+          +'<span>'+L(esc(d.attention.note_en),esc(d.attention.note_zh))+'</span></p>';
+      }
+
+      sec.innerHTML=
+        '<div class="r3-sec"><h2>'+L('Forming Narratives','成形叙事')+'</h2>'
+        +'<span class="r3-sec-sub">'+L('emerging themes our models see · '+esc(d.market_en),
+                                       '模型识别的新兴主题 · '+esc(d.market_zh))+'</span>'
+        +'<span class="r3-asof">'+L('as of '+esc(d.as_of),'截至 '+esc(d.as_of))+'</span></div>'
+        +'<p class="exp-lede">'+L(esc(d.note_en),esc(d.note_zh))+'</p>'
+        +'<div class="r3-panel">'
+        +(watch||attn?'<div style="padding:15px 16px 0">'+watch+attn+'</div>':'')
+        +'<div class="ne-grid">'+d.narratives.map(card).join('')+'</div>'
+        +'<p class="ne-foot">'
+          +L('Scanned '+(d.n_universe||'—')+' names as of '+esc(d.as_of)
+             +'. Scores rank narrative formation, not expected return.',
+             '截至 '+esc(d.as_of)+' 扫描了 '+(d.n_universe||'—')+' 只个股。分数衡量叙事成形程度，并非预期回报。')
+          +' '+L(esc(standing.join(' ')),esc(standingZh.join(' ')))
+        +'</p></div>';
+
+      /* hover/focus reveals the code popover; a tap pins it (touch, where hover is
+         unreliable). Close on outside tap or Escape; only one pinned at a time. */
+      Array.prototype.forEach.call(sec.querySelectorAll('.ne-tk'), function(chip){
+        chip.addEventListener('click', function(e){
+          var open=chip.classList.contains('on');
+          Array.prototype.forEach.call(sec.querySelectorAll('.ne-tk.on'), function(c){ c.classList.remove('on'); });
+          if(!open) chip.classList.add('on');
+          e.stopPropagation();
+        });
+        chip.addEventListener('keydown', function(e){
+          if(e.key==='Enter'||e.key===' '){ e.preventDefault(); chip.classList.toggle('on'); } });
+      });
+      document.addEventListener('click', function(){
+        Array.prototype.forEach.call(sec.querySelectorAll('.ne-tk.on'), function(c){ c.classList.remove('on'); }); });
+      document.addEventListener('keydown', function(e){ if(e.key==='Escape')
+        Array.prototype.forEach.call(sec.querySelectorAll('.ne-tk.on'), function(c){ c.classList.remove('on'); }); });
+
+      /* :202-207 — deep-link flash from an alert anchor (#ne-<signature>) */
+      if(location.hash.indexOf('#ne-')===0){
+        var el=document.getElementById(location.hash.slice(1));
+        if(el){ el.classList.add('ne-flash'); try{ el.scrollIntoView({block:'center'}); }catch(e){}
+          setTimeout(function(){ el.classList.remove('ne-flash'); },1400); }
+      }
+    })
+    .catch(function(){ sec.remove(); });        /* :209 — fail-silent, exactly as production */
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+   TIME MACHINE — manifest-driven, RECORDED-NOT-EXECUTED beyond the manifest
+   (orchestrator ruling, build/README_BUILD.md §"Time Machine")
+   ─────────────────────────────────────────────────────────────────────────────── */
+var TM_BASE='oracledata/';
+var TM_TIERS=[['s',['Sectors 1998→','板块 1998→']],
+              ['m',['Subsectors + Themes 2021→','子行业与主题 2021→']],
+              ['f',['Factors 2013→','因子 2013→']]];
+var tmBuilt=false, tmMani=null, tmTier='s', tmYear=null;
+function tmBuild(){
+  if(tmBuilt) return; tmBuilt=true;
+  var body=$('tm-body'); if(!body) return;
+  /* time_machine.js:209-212 — the standing sub, verbatim EN + ZH. It carries the
+     "No predictive claim — this replays measured history." sentence in both languages. */
+  body.innerHTML='<p class="tm-sub">'+L(
+    'Replay the full measured history of sector &amp; subsector relative rotation. Each dot is a sector or subsector; horizontal axis = relative strength (right = stronger vs peers), vertical = whether that strength is heating up or cooling (up = gaining momentum). Short trails show the last 6 dates so each path stays readable. Episode annotations mark measured rotation events from the catalog. No predictive claim — this replays measured history.',
+    '回放板块与子行业相对轮动的完整实测历史。每个点代表一个板块或子行业；横轴 = 相对强度（越靠右越强），纵轴 = 该强度是在升温还是降温（越靠上越热）。短轨迹显示近6个交易日，令每条路径清晰可辨。情节注释标记了来自数据库的实际轮动事件。无预测性主张——仅回放实测历史。')
+    +'</p>'
+    +'<span class="r3-eyebrow"><span class="l-en">Unit</span><span class="l-zh">单位</span></span>'
+    +'<div class="r3-seg tm-tiers" id="tm-tiers" role="group" aria-labelledby="tm-tier-name" style="margin-top:6px"></div>'
+    +'<span class="r3-vh" id="tm-tier-name">'+L('Replay unit','回放单位')+'</span>'
+    +'<span class="r3-eyebrow" style="margin-top:14px"><span class="l-en">Year</span><span class="l-zh">年份</span></span>'
+    +'<div class="r3-seg tm-years" id="tm-years" role="group" aria-labelledby="tm-year-name" style="margin-top:6px"></div>'
+    +'<span class="r3-vh" id="tm-year-name">'+L('Replay year','回放年份')+'</span>'
+    +'<p class="tm-note" id="tm-note"></p>'
+    +'<p class="tm-meta" id="tm-meta"></p>';
+
+  /* FIRST OPEN is the first fetch. The manifest resolves against the embedded bytes; the
+     episode feed has no embedded artifact, so the request genuinely rejects and the shim
+     records it as recorded-not-executed. Nothing is faked either way. */
+  fetch(TM_BASE+'tm_manifest.json',{cache:'no-cache'})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(m){ tmMani=m; tmRenderTiers(); tmRenderYears(); tmMeta(); })
+    .catch(function(){
+      $('tm-note').innerHTML=L('Could not load Time Machine data.','无法加载时光机数据。'); });
+
+  fetch(TM_BASE+'tm_episodes.json',{cache:'no-cache'})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .catch(function(){ tmNote(); });
+}
+function tmRenderTiers(){
+  var el=$('tm-tiers'); if(!el||!tmMani) return;
+  el.innerHTML=TM_TIERS.filter(function(t){ return tmMani.tiers&&tmMani.tiers[t[0]]; })
+    .map(function(t){ return '<button type="button" data-t="'+t[0]+'" aria-pressed="'+(t[0]===tmTier)+'">'
+      +L(esc(t[1][0]),esc(t[1][1]))+'</button>'; }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('button'), function(b){
+    b.onclick=function(){ tmTier=b.dataset.t; tmYear=null; tmRenderTiers(); tmRenderYears(); tmMeta(); tmNote(); }; });
+}
+function tmRenderYears(){
+  var el=$('tm-years'); if(!el||!tmMani) return;
+  /* time_machine.js:416-430 — years derived from the chunk keys, no chunk fetch needed. */
+  var chunks=((tmMani.tiers||{})[tmTier]||{}).chunks||[], years=[], seen={};
+  chunks.forEach(function(c){ var y=c.key.slice(0,4); if(!seen[y]){ seen[y]=true; years.push(y); } });
+  el.innerHTML=years.map(function(y){
+    return '<button type="button" data-y="'+y+'" aria-pressed="'+(y===tmYear)+'">'+y+'</button>'; }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('button'), function(b){
+    b.onclick=function(){
+      tmYear=b.dataset.y; tmRenderYears();
+      /* the chunk fetch is issued FOR REAL against its real production path, so the drawer
+         records the exact URL a replay would request. There is no embedded chunk, so it
+         rejects — recorded, never faked. */
+      var chs=(((tmMani.tiers||{})[tmTier]||{}).chunks||[]).filter(function(c){ return c.key.indexOf(tmYear)===0; });
+      if(chs.length) fetch(TM_BASE+chs[0].file,{cache:'no-cache'})
+        .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+        .catch(function(){ tmNote(chs[0]); });
+      else tmNote();
+    }; });
+}
+function tmNote(chunk){
+  var el=$('tm-note'); if(!el) return;
+  /* plain words, no error tone: this reference carries the manifest, not the frames. */
+  el.innerHTML='<b>'+L('The manifest is real; the frames are not carried here.',
+                       '目录为真实数据；此处未附带逐帧回放数据。')+'</b> '
+    +L('Full replay reads the episode feed and one file per period. This reference carries the manifest only, so those requests are recorded rather than served — open the harness recorder to see the exact paths a replay asks for'
+       +(chunk?', including <b>'+esc(chunk.file)+'</b>':'')+'.',
+       '完整回放需读取情节数据与各期分片文件。本参考件仅附带目录，因此这些请求被记录而非返回数据——打开工具抽屉的记录器可查看回放实际请求的路径'
+       +(chunk?'，包括 <b>'+esc(chunk.file)+'</b>':'')+'。');
+}
+function tmMeta(){
+  var el=$('tm-meta'); if(!el||!tmMani) return;
+  var t=(tmMani.tiers||{})[tmTier]||{};
+  var reg=((tmMani.registry||{})[tmTier]||[]).length;
+  var bits=[L(esc(t.date_from||'—')+' → '+esc(t.date_to||'—'),esc(t.date_from||'—')+' → '+esc(t.date_to||'—')),
+            L(t.n_nodes+' nodes',t.n_nodes+' 个节点'),
+            L(t.n_chunks+' periods',t.n_chunks+' 个分期'),
+            L(reg+' named in the registry',reg+' 个已登记名称')];
+  if(t.survivorship_note) bits.push(L(esc(t.survivorship_note),'成员截至2026年6月 — 历史成份为近似估算'));
+  if(t.context_note) bits.push(L(esc(t.context_note),'6 个风格因子，相关性约 0.9；以 SPY 超额收益回放，仅为背景，非优势来源。'));
+  el.innerHTML=bits.join(' · ');
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+   BOOT — the payload arrives through a REAL fetch, so the drawer's "Simulate fetch
+   fail" toggle exercises the genuine failure branch (production's __siFetch/:3091-3094).
+   ─────────────────────────────────────────────────────────────────────────────── */
+function tableFailed(){
+  var tbl=$('btable'); if(!tbl) return;
+  tbl.innerHTML='<tbody><tr><td><div class="r3-empty">'
+    +'<div class="r3-empty-line">'+L('Data failed to load — please refresh.','数据加载失败 — 请刷新。')+'</div>'
+    +'<div class="r3-empty-why">'+L('The basket payload did not arrive, so there is nothing to compare yet. Every other view is unaffected.',
+      '篮子数据未能送达，暂时无法比较。其他视图不受影响。')+'</div></div></td></tr></tbody>';
+  var c=$('chart'); if(c) c.innerHTML='<div class="r3-empty"><div class="r3-empty-line">'
+    +L('No series to draw','暂无可绘制曲线')+'</div><div class="r3-empty-why">'
+    +L('The same payload feeds this chart.','本图表使用同一份数据。')+'</div></div>';
+  var lg=$('chart-legend'); if(lg) lg.innerHTML='';
+  var cnt=$('btbl-count'); if(cnt) cnt.innerHTML='';
+}
+function boot(payload){
+  BASKETS=payload;
+  /* si_workspace.js:127 readExplore() reads window.BASKETS, and the rail footer reads its
+     as_of — production sets both in __siInitPage (:2534-2537). Guarded so whichever view
+     partial gets there first wins and no second copy is created. */
+  if(!window.BASKETS) window.BASKETS=payload;
+  CHART=payload.chart||{dates:[],bench:[],baskets:{}};
+  (payload.baskets||[]).forEach(function(b,i){ styleIx[b.id]=i; });
+  styleIx['__bench']=-1;
+  if($('exp-asof')&&payload.as_of) $('exp-asof').innerHTML=L('as of '+esc(payload.as_of),'截至 '+esc(payload.as_of));
+  initChartDefaults();
+  renderModes(); renderCats(); renderBTable(); renderGrRule();
+  renderChartControls(); renderLegend();
+  loadGroupPulse();
+  try{ if(typeof window.__siViewReads==='function') window.__siViewReads(); }catch(e){}
+  if(V&&V.classList.contains('on')) renderChart();
+}
+document.addEventListener('DOMContentLoaded', function(){
+  fetch('basketdata/baskets.json',{cache:'no-store'})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(boot).catch(tableFailed);
+  renderNarratives();
+  var d=$('tm-details');
+  if(d){ d.addEventListener('toggle', function(){ if(d.open) tmBuild(); });
+         if(d.open) tmBuild(); }
+});
+/* §8.1 — draw only once the view is really on screen and the box has a real width. */
+document.addEventListener('si:view', function(e){ if(e&&e.detail==='explore') renderChart(); });
+var _rz=null;
+window.addEventListener('resize', function(){
+  if(!V||!V.classList.contains('on')||!CHART) return;
+  clearTimeout(_rz); _rz=setTimeout(renderChart,140);
+}, {passive:true});
+/* the SVG inherits every colour from the theme's tokens and ships both language spans in
+   the legend, so a theme flip needs no repaint; a language flip only re-measures nothing. */
+})();
+</script>
 </section>

@@ -1,45 +1,656 @@
-<section class="si-view" data-view="confluence" id="si-confluence">
-  <!-- Confluence has NO .si-view-read slot — its own hero is its read
-       (routing_contract.md §1: "Confluence has NO .si-view-read slot — its own
-       hero (.sc-top/.sc-lede) is its read"). This placeholder's proof element
-       stands in for that hero until the design lane builds the real one.
-       NOTE: id="sc-top" is deliberately NOT reproduced here — routing_contract.md
-       §2 records that sc-top does not exist as a literal DOM id in production
-       either (only an unrelated <div class="sc-top">); the legacy hash still
-       routes to this VIEW correctly (target-not-found is a silent no-op per
-       si_workspace.js activate()), only the intra-view scroll no-ops. This is
-       recorded seam (c) — carried forward, not repaired, per the commission's
-       OUT-OF-SCOPE instruction. -->
-  <div class="sc-top">
-    <h2><span class="l-en">Confluence</span><span class="l-zh">子行业汇聚</span></h2>
-  </div>
-  <div id="confluence-proof" class="ref-proof">Loading proof-of-data…</div>
+<!-- ══════════════════════════════════════════════════════════════════════════════
+     XPV2-SC-R3B · LANE D1 · VIEW 6 — CONFLUENCE  (ACTION tier)
+     User job: "Which subsectors or baskets have timing support?"
 
-  <div id="sc-app">
-    <p style="color:var(--muted)">Four universe tabs mount here (placeholder) — the design lane's real
-      confluence table/board reads the same four embedded artifacts named below.</p>
+     Page grammar (DESIGN_SYSTEM_SPEC §5), five L1 sections:
+       1  .r3-answer        static answer line (Confluence has NO read slot —
+                            si_workspace.js contract item 4) + universe tabs
+       2  #sc-app           the STATE LEDGE fused with its selected list
+       3  stock picks       double-gated picks, PICKS_CAP 12
+       4  all <noun>        the full searchable/sortable table
+       5  .r3-more          deeper path → #moving
+
+     ACTIVE-UNIVERSE LAW: counts, distribution, coverage, rows, details, members
+     and stock rows are read from the ACTIVE universe's artifact only. Nothing on
+     this view ever joins two universes.
+
+     `id="sc-top"` is deliberately NOT reproduced. routing_contract.md §8 seam (c)
+     records that this id does not exist as a DOM id in production either, so
+     minting one here would repair a recorded-not-repaired seam (ADJUDICATIONS A7).
+     ══════════════════════════════════════════════════════════════════════════ -->
+<section class="si-view r3-view--action" data-view="confluence" id="si-confluence">
+
+<style>
+/* ── receipt button + receipt popover ───────────────────────────────────────
+   Byte-identical twins of the rules the Overview partial carries, so either
+   Action view stands alone. Duplicate identical rules are inert. */
+.r3-view--action .r3-rcpt{ appearance:none; display:inline-flex; align-items:center;
+  justify-content:center; width:44px; height:44px; margin:-14px -13px; padding:0;
+  background:none; border:0; cursor:help; flex:none; vertical-align:middle; }
+.r3-view--action .r3-rcpt::before{ content:"?"; display:flex; align-items:center;
+  justify-content:center; width:16px; height:16px; border:1px solid var(--line);
+  border-radius:50%; font-size:9.5px; font-weight:700; color:var(--muted);
+  transition:color var(--t-fast) var(--ease-std), border-color var(--t-fast) var(--ease-std); }
+.r3-view--action .r3-rcpt:hover::before,
+.r3-view--action .r3-rcpt[aria-expanded="true"]::before{
+  color:var(--text); border-color:color-mix(in srgb, var(--link) 55%, var(--line)); }
+.r3-tipbox{ position:fixed; z-index:80; max-width:min(360px, calc(100vw - 24px));
+  padding:11px 13px; background:var(--glass-bg); border:1px solid var(--glass-brd);
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+  border-radius:var(--r-card); box-shadow:var(--popover-shadow);
+  font-size:var(--fs-sm); line-height:1.5; color:var(--text); }
+.r3-tipbox[hidden]{ display:none; }
+
+/* directional ink inside the answer sentence and the figures. Action tier, so
+   state ink is permitted above 12.5px; both rungs flip under 红涨绿跌. */
+[data-view="confluence"] .accent-up{ color:var(--ink-up); font-weight:700; }
+[data-view="confluence"] .accent-down{ color:var(--ink-down); font-weight:700; }
+[data-view="confluence"] .pos{ color:var(--ink-up); font-weight:700; }
+[data-view="confluence"] .neg{ color:var(--ink-down); font-weight:700; }
+
+/* ── the fifth graded ink ────────────────────────────────────────────────────
+   The board's reserved .st-* set carries up / info / link / warn / muted. This
+   view's fifth bucket is Headwind, for which the honest ink is --ink-down (an
+   existing theme.css rung, not a new token). It is bound ONLY inside this
+   view's .r3-board — the same reservation §3 states for the other five — and it
+   flips with 红涨绿跌 by construction, exactly as .st-buy does. */
+[data-view="confluence"] .r3-board .st-head{ --c:var(--ink-down); }
+
+/* ── universe selector ──────────────────────────────────────────────────────
+   Real tab semantics (never faked). Four destinations, always all four on
+   screen — no horizontal continuation at any width. */
+[data-view="confluence"] .r3-uni{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:2px; margin:0 0 var(--sp-4); border-bottom:1px solid var(--line); }
+[data-view="confluence"] .r3-uni button{ appearance:none; display:flex; align-items:baseline;
+  justify-content:center; gap:7px; min-height:44px; padding:0 10px; background:none;
+  border:0; border-bottom:2px solid transparent; color:var(--muted);
+  font-size:var(--fs-sm); font-weight:600; line-height:1.25; cursor:pointer;
+  transition:color var(--t-fast) var(--ease-std); }
+[data-view="confluence"] .r3-uni button:hover{ color:var(--text); }
+[data-view="confluence"] .r3-uni button[aria-selected="true"]{ color:var(--text); font-weight:700;
+  border-bottom-color:var(--r3-thread); }
+[data-view="confluence"] .r3-uni .n{ font-size:var(--fs-micro); font-weight:700;
+  font-variant-numeric:tabular-nums; color:var(--muted); }
+
+/* ── the distribution spread ────────────────────────────────────────────────
+   The OPTIONAL secondary proportional visualisation Sol's §13 amendment
+   permits. It sits UNDER the fixed cells, is 5px tall, carries no text of its
+   own, and cannot resize a label or a count: the cells above are the reading,
+   this is only the shape of it. Its accessible equivalent is the cells. */
+[data-view="confluence"] .r3-spread{ display:flex; height:5px; gap:1px;
+  background:var(--line); border-bottom:1px solid var(--line); }
+[data-view="confluence"] .r3-spread i{ display:block; min-width:2px;
+  background:color-mix(in srgb, var(--c) 62%, var(--panel)); }
+
+/* ── rows ───────────────────────────────────────────────────────────────────*/
+[data-view="confluence"] .r3-cols{ grid-template-columns:minmax(0,1.6fr) 74px minmax(0,1.25fr) 16px; }
+[data-view="confluence"] button.r3-row{ appearance:none; width:100%; text-align:left;
+  background:none; border:0; border-bottom:1px solid var(--line); font:inherit;
+  color:inherit; cursor:pointer; }
+[data-view="confluence"] button.r3-row:last-of-type{ border-bottom:0; }
+[data-view="confluence"] .r3-row[aria-expanded="true"]{ background:color-mix(in srgb, var(--panel2) 62%, transparent); }
+[data-view="confluence"] .r3-row[aria-expanded="true"] .r3-chev{ transform:rotate(135deg); }
+[data-view="confluence"] .r3-state{ font-weight:700; color:var(--muted); }
+[data-view="confluence"] .r3-thin{ display:inline-block; width:6px; height:6px; margin-left:7px;
+  border-radius:50%; border:1px solid var(--muted); vertical-align:1px; }
+
+/* group detail — E2 inside the E1 board */
+[data-view="confluence"] .r3-detail{ padding:14px 16px 12px; background:var(--panel2);
+  border-bottom:1px solid var(--line); }
+[data-view="confluence"] .r3-detail h4{ margin:0 0 9px; font-size:var(--fs-label); font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; text-transform:none; }
+[data-view="confluence"] .r3-mem{ display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(178px,1fr)); gap:1px;
+  background:color-mix(in srgb, var(--line) 70%, transparent); }
+[data-view="confluence"] .r3-mem a{ display:block; min-height:52px; padding:9px 11px;
+  background:var(--panel2); }
+[data-view="confluence"] .r3-mem a:hover{ background:var(--panel); }
+[data-view="confluence"] .r3-mem-tk{ font-family:var(--font-mono); font-size:var(--fs-body);
+  font-weight:700; letter-spacing:-.01em; }
+[data-view="confluence"] .r3-mem-m{ display:block; margin-top:3px; font-size:var(--fs-sm);
+  color:var(--muted); font-variant-numeric:tabular-nums; }
+[data-view="confluence"] .r3-mem-m .pos{ color:var(--ink-up); font-weight:700; }
+[data-view="confluence"] .r3-mem-m .neg{ color:var(--ink-down); font-weight:700; }
+[data-view="confluence"] .r3-detail-foot{ margin-top:10px; }
+
+/* ── search + table ─────────────────────────────────────────────────────────*/
+[data-view="confluence"] .r3-find{ display:flex; align-items:center; gap:10px;
+  padding:10px 14px; border-bottom:1px solid var(--line); }
+[data-view="confluence"] .r3-find input{ flex:1 1 auto; min-width:0; min-height:44px;
+  padding:0 12px; background:var(--bg); color:var(--text);
+  border:1px solid var(--line); border-radius:var(--r-ctl);
+  font:inherit; font-size:var(--fs-sm); }
+[data-view="confluence"] .r3-find input::placeholder{ color:var(--muted); }
+[data-view="confluence"] .r3-find .cnt{ flex:none; font-family:var(--font-mono);
+  font-size:var(--fs-micro); letter-spacing:.05em; color:var(--muted);
+  font-variant-numeric:tabular-nums; }
+[data-view="confluence"] .r3-tbl th.sortable{ cursor:pointer; white-space:nowrap; }
+[data-view="confluence"] .r3-tbl th .arr{ display:inline-block; width:6px; height:6px;
+  margin-left:6px; border-right:1.4px solid currentColor; border-bottom:1.4px solid currentColor;
+  transform:translateY(-2px) rotate(45deg); opacity:.3; }
+[data-view="confluence"] .r3-tbl th.sorted{ color:var(--text); }
+[data-view="confluence"] .r3-tbl th.sorted .arr{ opacity:1; }
+[data-view="confluence"] .r3-tbl th.sorted.desc .arr{ transform:translateY(1px) rotate(-135deg); }
+[data-view="confluence"] .r3-tbl a{ color:var(--ink-link); font-weight:700; }
+[data-view="confluence"] .r3-tbl .pos{ color:var(--ink-up); }
+[data-view="confluence"] .r3-tbl .neg{ color:var(--ink-down); }
+[data-view="confluence"] .r3-note{ padding:12px 16px; border-top:1px solid var(--line);
+  font-size:var(--fs-sm); color:var(--muted); }
+[data-view="confluence"] .r3-note a{ color:var(--ink-link); font-weight:700; }
+[data-view="confluence"] .r3-cf-foot{ margin-top:2px; max-width:62ch;
+  font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
+
+/* the receipt button is defined by the Overview partial's .r3-view--action rule;
+   this view reuses it unchanged (one definition, two Action views). */
+
+@media (max-width:767px){
+  /* Sol §13: all four universe selectors stay visible — two rows of two rather
+     than a strip that scrolls the last one off the right edge. */
+  [data-view="confluence"] .r3-uni{ grid-template-columns:repeat(2,minmax(0,1fr)); border-bottom:0; }
+  [data-view="confluence"] .r3-uni button{ border-bottom:2px solid var(--line); }
+  [data-view="confluence"] .r3-mem{ grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
+}
+@media (max-width:359px){
+  [data-view="confluence"] .r3-uni{ grid-template-columns:minmax(0,1fr); }
+  [data-view="confluence"] .r3-mem{ grid-template-columns:minmax(0,1fr); }
+}
+</style>
+
+  <!-- ══ 1 · VIEW ANSWER ══ -->
+  <div class="r3-answer">
+    <h2 class="r3-answer-view"><span class="l-en">Confluence</span><span class="l-zh">子行业汇聚</span></h2>
+    <p class="r3-answer-line" id="cf-answer"></p>
+    <div class="r3-answer-meta">
+      <span class="r3-asof" id="cf-asof"></span>
+      <span><span class="l-en">Graded call · this view only</span><span class="l-zh">分级判断 · 仅此视图</span></span>
+    </div>
   </div>
 
-  <script>
-  document.addEventListener('DOMContentLoaded', function(){
-    var FILES = [
-      ['marketdata/subsector_confluence.json', 'subsectors'],
-      ['marketdata/subsector_confluence_nasdaq.json', 'subsectors'],
-      ['marketdata/subsector_confluence_russell.json', 'subsectors'],
-      ['marketdata/basket_confluence.json', 'baskets']
-    ];
-    var out = [];
-    FILES.forEach(function(F){
-      try{
-        var d = REF.parseJSON(REF.registry[F[0]]);
-        var rows = (d[F[1]] || []).length;
-        out.push((d.universe || F[0]) + ': ' + rows + ' row(s)');
-      }catch(e){
-        out.push(F[0] + ': read failed');
-      }
-    });
-    document.getElementById('confluence-proof').textContent =
-      'Four universe tabs (row counts from the embedded confluence artifacts): ' + out.join(' · ');
+  <!-- universe selector — DOM order S&P → Nasdaq → Russell → Baskets (A4) -->
+  <div class="r3-uni sc-top" role="tablist" id="cf-uni" aria-label="Universe"></div>
+
+  <!-- ══ 2 · THE STATE LEDGE + ITS SELECTED LIST ══ -->
+  <div class="r3-board st-buy" id="sc-app">
+    <div class="r3-ledge-grid" role="tablist" id="cf-ledge" aria-label="Timing states"></div>
+    <div class="r3-spread" id="cf-spread" aria-hidden="true"></div>
+    <p class="r3-board-foot" id="cf-foot"></p>
+    <div id="cf-panel" role="tabpanel"></div>
+  </div>
+
+  <!-- ══ 3 · STOCK PICKS ══ -->
+  <section class="r3-band" id="cf-picks-band" aria-labelledby="cf-picks-h">
+    <div class="r3-sec">
+      <h2 id="cf-picks-h" class="l-en">Stock picks</h2>
+      <h2 class="l-zh">个股精选</h2>
+      <span class="r3-sec-sub" id="cf-picks-sub"></span>
+    </div>
+    <div class="r3-list" id="cf-picks"></div>
+  </section>
+
+  <!-- ══ 4 · THE FULL TABLE ══ -->
+  <section class="r3-band" aria-labelledby="cf-all-h">
+    <div class="r3-sec">
+      <h2 id="cf-all-h"><span id="cf-all-title"></span></h2>
+      <span class="r3-sec-sub"><span class="l-en">Sortable. Filter by subsector or sector name.</span><span class="l-zh">可排序。可按子行业或板块名称筛选。</span></span>
+    </div>
+    <div class="r3-list">
+      <div class="r3-find">
+        <input type="text" id="cf-q" autocomplete="off">
+        <span class="cnt" id="cf-cnt"></span>
+      </div>
+      <div class="r3-tblbox"><table class="r3-tbl" id="cf-table"></table></div>
+    </div>
+  </section>
+
+  <!-- ══ 5 · DEEPER PATH ══ the view's one footnote, once — production's own
+       foot sentence (sector_central.html.j2:2511-2512) around its own link. -->
+  <div class="r3-band">
+    <a class="r3-more" href="#moving"><span class="l-en">See the rotation map</span><span class="l-zh">查看轮动图</span></a>
+    <p class="r3-cf-foot"><span class="l-en">for where each group sits in the leading / lagging cycle.</span><span class="l-zh">了解各组在领先/落后周期中的位置。</span></p>
+  </div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════════
+   CONFLUENCE — display code. State vocabulary, class buckets, caps, coverage
+   wording, empty states and destinations are all BOUND from the producer
+   artifacts and from templates/subsectors.js (line refs inline). Nothing here
+   authors a state name, recomputes a class, re-sorts producer order (the full
+   table's client re-sort is production behaviour, :464-478), or invents a
+   freshness threshold (ADJUDICATIONS A6 — Confluence has no staleness rule).
+   ════════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+function L(en, zh){ return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh == null ? en : zh) + '</span>'; }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
+  return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+function el(id){ return document.getElementById(id); }
+function reg(p){ try{ return REF.parseJSON(REF.registry[p]); }catch(e){ return null; } }
+function isZh(){ return document.documentElement.getAttribute('data-lang') === 'zh'; }
+
+/* signed(), num(), freshTxt() — verbatim behaviour from subsectors.js:53-64 */
+function signed(x, d){
+  if(x == null || isNaN(x)) return '<span class="tnum">–</span>';
+  var v = Number(x);
+  return '<span class="tnum ' + (v >= 0 ? 'pos' : 'neg') + '">' + (v >= 0 ? '+' : '') + v.toFixed(d == null ? 1 : d) + '</span>';
+}
+function freshTxt(e){
+  if(!e) return '';
+  if(e.tier === 'T3' || e.tier === 'T4') return L('about to fire', '即将触发');
+  if(e.ticks != null) return e.ticks === 0 ? L('just fired', '刚刚触发')
+    : L('fired ' + e.ticks + ' bar' + (e.ticks > 1 ? 's' : '') + ' ago', e.ticks + ' 根K线前触发');
+  return '';
+}
+
+/* ── the four universes ────────────────────────────────────────────────────────
+   `url`, `dir`, `prefix`, `groupsKey` and `noun` are verbatim from
+   subsectors.js:39-44; the tab labels are verbatim from
+   sector_central.html.j2:2499-2502. TAB ORDER is the hard-coded DOM order
+   S&P → Nasdaq → Russell → Baskets (ADJUDICATIONS A4). */
+var DS = {
+  subsectors:{url:'marketdata/subsector_confluence.json', dir:'subsector/', prefix:'',
+              groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['S&amp;P 500','标普500']},
+  nasdaq:{url:'marketdata/subsector_confluence_nasdaq.json', dir:'subsector_nasdaq/', prefix:'',
+          groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['Nasdaq-100','纳斯达克100']},
+  russell:{url:'marketdata/subsector_confluence_russell.json', dir:'subsector_russell/', prefix:'',
+           groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['Russell-2000','罗素2000']},
+  baskets:{url:'marketdata/basket_confluence.json', dir:'subsector/', prefix:'b-',
+           groupsKey:'baskets', noun:['baskets','篮子'], tab:['Thematic Baskets','主题篮子']}
+};
+var TABS = ['subsectors', 'nasdaq', 'russell', 'baskets'];
+var DATA = {}, TAB = 'subsectors';
+var SORT = {}, FILTER = {}, OPEN = {};
+
+/* ── class buckets — VERBATIM producer vocabulary (subsectors.js:81-88) ────────
+   `forming` has no bucket of its own and folds into Neutral, exactly as
+   universeStats() does at :93 (`else counts.neutral++`). The ink each bucket
+   wears is the board's reserved set plus --ink-down for Headwind. */
+var CLASS_META = {
+  entry_now:{label:['Entry now','现可入场'], st:'st-buy'},     /* :82 */
+  tailwind: {label:['Tailwind','顺风'],      st:'st-soon'},    /* :83 */
+  neutral:  {label:['Neutral','中性'],       st:'st-aside'},   /* :84 */
+  late:     {label:['Late','偏晚'],          st:'st-trim'},    /* :85 */
+  headwind: {label:['Headwind','逆风'],      st:'st-head'}     /* :86 */
+};
+var ORDER = ['entry_now', 'tailwind', 'neutral', 'late', 'headwind'];  /* RIBBON_ORDER, :88 */
+var SEL = 'entry_now';
+
+/* caps, as coded. subsectors.js:302 `forming.slice(0,4)`, :307 `avoid.slice(0,8)`,
+   :318 `PICKS_CAP = 12` — capability ledger #91 ("Confluence caps 4/8/12"). */
+var FORMING_CAP = 4, LANE_CAP = 8, PICKS_CAP = 12;
+
+function ds(){ return DS[TAB]; }
+function payload(){ return DATA[TAB]; }
+function groups(){ var p = payload(); return (p && p[ds().groupsKey]) || []; }
+function detailHref(key){ return ds().dir + ds().prefix + key + '.html'; }
+function stockHref(tk){ return 'stock.html#' + encodeURIComponent(tk); }
+
+/* universeStats() — counts over the ACTIVE universe's groups only (:90-108). */
+function stats(){
+  var c = {entry_now:0, tailwind:0, neutral:0, late:0, headwind:0};
+  groups().forEach(function(g){ var k = g['class']; if(c[k] != null) c[k]++; else c.neutral++; });
+  return c;
+}
+function rowsOf(bucket){
+  /* producer order, never re-sorted. A group whose class is not one of the five
+     (i.e. `forming`) reads as Neutral — the same fold the counts perform. */
+  return groups().filter(function(g){
+    var k = g['class'];
+    return (CLASS_META[k] ? k : 'neutral') === bucket;
   });
-  </script>
+}
+
+/* ══ 1 · the answer ══ verdictProse's count-and-stance body, verbatim from
+   subsectors.js:161-170. The backdrop/breadth clauses that sentence can also
+   carry are omitted so this view keeps ONE answer at one measure. */
+function paintAnswer(){
+  var c = stats(), e = c.entry_now, tail = c.tailwind, head = c.headwind + c.late;
+  var en, zh;
+  if(e > 0){
+    en = '<b>' + e + '</b> group' + (e > 1 ? 's' : '') + ' just turned <span class="accent-up">buyable</span>'
+       + (tail ? ' and <b>' + tail + '</b> more carry a tailwind' : '')
+       + '. Entries have the wind at their back — confirm the group before chasing.';
+    zh = '<b>' + e + '</b> 个子行业刚转为<span class="accent-up">可买</span>'
+       + (tail ? '，另有 <b>' + tail + '</b> 个处于顺风' : '') + '。入场有顺风——追涨前请先确认该组。';
+  }else if(tail > 0){
+    en = 'No group is firing a <span class="accent-up">fresh entry</span> right now, but <b>' + tail
+       + '</b> carry a tailwind — watch for the cross, don\'t force it.';
+    zh = '当前无子行业触发<span class="accent-up">新入场</span>，但有 <b>' + tail
+       + '</b> 个处于顺风——等待交叉，不要勉强。';
+  }else{
+    en = 'No fresh entries and no tailwind groups — this is a <b>patience</b> tape'
+       + (head ? ', with <span class="accent-down">' + head + '</span> group' + (head > 1 ? 's' : '') + ' late or fading' : '')
+       + '. Wait for rotation to set up.';
+    zh = '既无新入场也无顺风组——这是需要<b>耐心</b>的行情'
+       + (head ? '，其中 <span class="accent-down">' + head + '</span> 个偏晚或转弱' : '') + '。等待轮动成形。';
+  }
+  el('cf-answer').innerHTML = L(en, zh);
+  var p = payload();
+  el('cf-asof').innerHTML = p && p.as_of ? L('as of ' + esc(p.as_of), '截至 ' + esc(p.as_of)) : '';
+}
+
+/* ══ universe tabs ══ counts are the active artifact's own group count, the same
+   figure production writes into #tabn-* (:564-567). */
+function paintUniverses(){
+  el('cf-uni').innerHTML = TABS.map(function(k){
+    var p = DATA[k], n = p ? ((p[DS[k].groupsKey] || []).length) : 0;
+    var on = k === TAB;
+    return '<button type="button" role="tab" data-uni="' + k + '" id="cf-uni-' + k + '"'
+      + ' aria-selected="' + on + '" aria-controls="sc-app">'
+      + L(DS[k].tab[0], DS[k].tab[1]) + '<span class="n tnum">' + n + '</span></button>';
+  }).join('');
+}
+
+/* ══ 2 · the ledge ══ fixed readable cells: every label and every count stays
+   legible at every width and is NEVER scaled by population (Sol §13). */
+function paintLedge(){
+  var c = stats();
+  el('cf-ledge').innerHTML = ORDER.map(function(k){
+    var m = CLASS_META[k], on = k === SEL;
+    return '<button class="r3-ledge-cell ' + m.st + '" type="button" role="tab"'
+      + ' aria-selected="' + on + '" data-bucket="' + k + '" id="cf-tab-' + k + '" aria-controls="cf-panel">'
+      + '<span class="r3-ledge-name">' + L(m.label[0], m.label[1]) + '</span>'
+      + '<span class="r3-ledge-count tnum">' + c[k] + '</span></button>';
+  }).join('');
+  /* the optional proportional strip — shape only, no text, cannot resize a cell */
+  var total = ORDER.reduce(function(a, k){ return a + c[k]; }, 0);
+  el('cf-spread').innerHTML = !total ? '' : ORDER.map(function(k){
+    return c[k] ? '<i class="' + CLASS_META[k].st + '" style="flex:' + c[k] + ' 1 0"></i>' : '';
+  }).join('');
+  el('sc-app').className = 'r3-board ' + CLASS_META[SEL].st;
+}
+
+/* ══ the board foot ══ coverage wording is rendered ONLY where the active
+   universe's producer emits the fields. subsectors.js:220-223, verbatim, with
+   the per-universe noun swap. basket_confluence.json carries only `n_baskets`,
+   so the Baskets tab renders NOTHING here — absence as absence, never an
+   invented Baskets disclosure (ledger #66 / ADJUDICATIONS A5). */
+var FOOT_TIP_EN = 'Every subsector is an equal-weight basket of its members, scored on a 3-day cadence for entry timing — not a buy list. Tiers rank freshness of the confluence cross (T1 freshest).';
+var FOOT_TIP_ZH = '每个子行业为其成分的等权篮子，按 3 日周期为入场时机评分——并非买入清单。层级衡量汇聚交叉的新鲜度（T1 最新）。';
+function paintFoot(){
+  var p = payload() || {}, cov = p.coverage || {}, noun = ds().noun;
+  var honest = '';
+  if(cov.n_gateable != null){
+    honest = L('<span class="tnum">' + cov.n_gateable + '</span> of <span class="tnum">' + cov.n_subsectors
+        + '</span> ' + noun[0] + ' have enough live data to time'
+        + (cov.n_thin ? ' · <span class="tnum">' + cov.n_thin + '</span> thin (listed in the table, not timed)' : ''),
+      '<span class="tnum">' + cov.n_gateable + '</span>/<span class="tnum">' + cov.n_subsectors
+        + '</span> 个' + noun[1] + '有足够实时数据可计时'
+        + (cov.n_thin ? ' · <span class="tnum">' + cov.n_thin + '</span> 个数据稀疏（列于表内，不计时）' : ''));
+  }
+  var n = rowsOf(SEL).length;
+  var shown = Math.min(n, LANE_CAP);
+  /* When the active universe emits no coverage fields this slot renders NOTHING.
+     There is no fallback sentence: an absent producer field is absence, and a
+     stand-in here would be the invented Baskets disclosure #66 forbids. */
+  el('cf-foot').innerHTML = (honest ? '<span>' + honest + '</span>' : '')
+    + '<button class="r3-rcpt" type="button" aria-expanded="false" data-tip-en="' + esc(FOOT_TIP_EN)
+    + '" data-tip-zh="' + esc(FOOT_TIP_ZH) + '"><span class="r3-vh">'
+    + L('How timing support is graded', '时机支持的评分方式') + '</span></button>'
+    + '<span class="r3-asof">' + L(shown + ' of ' + n + ' shown', '已显示 ' + shown + ' / ' + n) + '</span>';
+}
+
+/* ══ the selected list ══ */
+function relDot(rel){
+  /* subsectors.js:58 renders this as an EN-only title=; house law + spec §9 put a
+     bilingual accessible name in .r3-vh instead — title= is CI-guarded and a
+     single-language aria-label is not permitted on a bilingual surface. */
+  if(String(rel || '').toLowerCase() !== 'low') return '';
+  return '<span class="r3-thin" aria-hidden="true"></span><span class="r3-vh">'
+    + L('Thin data — read with caution', '数据稀疏 — 请谨慎解读') + '</span>';
+}
+function groupRow(g){
+  var e = g.entry || {}, r = g.regime || {};
+  var n = (g.n_priced || g.n_members);
+  /* the sub line: the row's own regime label (the 9-state producer vocabulary,
+     ledger #68), then its sector and member count — gcardHTML's own sub, :282 */
+  var sub = '<span class="r3-state">' + L(esc(r.label || r.state || ''), esc(r.label_zh || r.label || r.state || '')) + '</span>'
+    + '<span aria-hidden="true"> · </span>' + L(esc(g.sector || ''), esc(g.sector_zh || g.sector || ''))
+    + '<span aria-hidden="true"> · </span>' + L(n + ' names', n + ' 只');
+  /* WHY: for a fresh cross, entryRead()'s own bilingual framing (:252-257);
+     otherwise the regime's own action sentence (:258). Both verbatim. */
+  var why = '';
+  if(g['class'] === 'entry_now') why = L('Fresh ' + (e.tier || '') + ' entry — just crossed', '刚触发 ' + (e.tier || '') + ' 入场交叉');
+  else if(g['class'] === 'forming') why = L('Forming — ' + (e.tier || '') + ', earliest &amp; weakest', '构筑中——' + (e.tier || '') + '，最早最弱');
+  else if(r.action) why = L(esc(r.action), esc(r.action_zh || r.action));
+  var open = OPEN[TAB] === g.key;
+  return '<button class="r3-row" type="button" data-key="' + esc(g.key) + '" aria-expanded="' + open + '">'
+    + '<span class="r3-name">' + L(esc(g.label), esc(g.label_zh || g.label)) + relDot(g.reliability)
+    + '<span class="r3-sub">' + sub + '</span></span>'
+    + '<span class="r3-fig tnum">' + (e.tier ? esc(e.tier) : '') + '</span>'
+    + '<span class="r3-why">' + why + '</span>'
+    + '<span class="r3-chev" aria-hidden="true"></span></button>';
+}
+function detailHTML(g){
+  var mem = g.members || [];
+  var cards = mem.map(function(m){
+    /* member order is the producer's own cascade (weight desc, vs_basket
+       tie-break — ledger #75). It is rendered as received; nothing re-sorts. */
+    return '<a data-ref-nav href="' + esc(stockHref(m.ticker)) + '">'
+      + '<span class="r3-mem-tk">' + esc(m.ticker) + '</span>'
+      + '<span class="r3-mem-m">' + L('20d', '20日') + ' ' + signed(m.ret_20d)
+      + '<span aria-hidden="true"> · </span>' + L('vs group', '相对组') + ' ' + signed(m.vs_basket)
+      + (m.stock_tier ? '<span aria-hidden="true"> · </span>' + esc(m.stock_tier) : '') + '</span></a>';
+  }).join('');
+  var body = mem.length ? '<div class="r3-mem">' + cards + '</div>'
+    : '<p class="r3-empty-why">' + L('No member reads carried for this group tonight.', '今晚此组未附带成分读数。') + '</p>';
+  var sig = (g.regime && g.regime.signal_line)
+    ? '<p class="r3-empty-why" style="margin:0 0 9px">' + esc(g.regime.signal_line) + '</p>' : '';
+  return '<div class="r3-detail">'
+    + '<h4>' + L('Members', '成分股') + ' <span class="tnum">' + mem.length + '</span></h4>'
+    + sig + body
+    + '<div class="r3-detail-foot"><a class="r3-more" data-ref-nav href="' + esc(detailHref(g.key)) + '">'
+    + L('Open the full group page', '打开完整子行业页') + '</a></div></div>';
+}
+function paintPanel(){
+  var rows = rowsOf(SEL);
+  var cols = '<div class="r3-cols" aria-hidden="true">'
+    + '<span>' + L(ds().noun[0] === 'baskets' ? 'Basket' : 'Subsector', ds().noun[0] === 'baskets' ? '篮子' : '子行业') + '</span>'
+    + '<span style="text-align:right">' + L('Entry tier', '入场层级') + '</span>'
+    + '<span>' + L('Why it is here', '入选原因') + '</span><span></span></div>';
+  var host = el('cf-panel');
+  host.setAttribute('aria-labelledby', 'cf-tab-' + SEL);
+  if(!rows.length){
+    host.innerHTML = cols + emptyLane();
+    return;
+  }
+  var capped = rows.slice(0, LANE_CAP);
+  var html = capped.map(function(g){
+    return groupRow(g) + (OPEN[TAB] === g.key ? detailHTML(g) : '');
+  }).join('');
+  /* the producer's own overflow wording for a capped list (:308) */
+  if(rows.length > LANE_CAP){
+    html += '<p class="r3-note">' + L('+ ' + (rows.length - LANE_CAP) + ' more in the full table below',
+                                      '+ 另有 ' + (rows.length - LANE_CAP) + ' 个见下方完整表格') + '</p>';
+  }
+  /* `payload.forming` is a separate producer list that the class buckets fold
+     into Neutral; where it is non-empty it is shown under Neutral with its own
+     verbatim heading and its coded cap of four (:300-303). It is empty on every
+     universe in this frozen fixture, so nothing renders here today. */
+  if(SEL === 'neutral'){
+    var forming = (payload() || {}).forming || [];
+    if(forming.length){
+      html += '<p class="r3-note">' + L('Also forming (T4 — earliest, weakest)', '构筑中（T4 — 最早、最弱）')
+        + ' <span class="tnum">' + forming.length + '</span></p>'
+        + forming.slice(0, FORMING_CAP).map(groupRow).join('');
+    }
+  }
+  host.innerHTML = cols + html;
+}
+/* empty lane — "an empty lane, not a missing one". The Entry-now wording is the
+   producer's own (:299); the other buckets get a plain-word twin of it. */
+function emptyLane(){
+  var noun = ds().noun;
+  if(SEL === 'entry_now'){
+    return '<div class="r3-empty"><p class="r3-empty-line">'
+      + L('No ' + noun[0] + ' is firing a fresh entry tier right now.', '当前无' + noun[1] + '触发新的入场层级。')
+      + '</p><p class="r3-empty-why">'
+      + L('When one crosses, it lands here first.', '一旦有交叉，将最先显示于此。') + '</p></div>';
+  }
+  var nm = CLASS_META[SEL].label;
+  return '<div class="r3-empty"><p class="r3-empty-line">'
+    + L('Nothing reads as ' + nm[0].toLowerCase() + ' in this set today', '今日此范围内没有' + nm[1] + '的' + noun[1])
+    + '</p><p class="r3-empty-why">'
+    + L('An empty state, not a missing one — every group in this universe carries a reading.',
+        '此为空清单，而非数据缺失 — 此范围内每个组都有读数。') + '</p></div>';
+}
+
+/* ══ 3 · stock picks ══ double_gated.double_buy, sorted by the producer's own
+   combined_score the same way :321 does, capped at PICKS_CAP with the verbatim
+   "Show all N picks" control. */
+function paintPicks(){
+  var p = payload() || {}, dg = p.double_gated || {};
+  var buys = (dg.double_buy || []).slice().sort(function(a, b){
+    return (b.combined_score || 0) - (a.combined_score || 0);
+  });
+  el('cf-picks-sub').innerHTML = L('Stocks with an active or forming T1–T4 entry read inside a subsector that is also working. Strongest combined reads come first'
+      + (buys.length > PICKS_CAP ? '; the top ' + PICKS_CAP + ' are shown.' : '.'),
+    '这些股票出现了已生效或正在形成的 T1–T4 入场判断，同时所在子行业也在走强。综合判断最强的排在前面'
+      + (buys.length > PICKS_CAP ? '；默认显示前 ' + PICKS_CAP + ' 个。' : '。'));
+  if(!buys.length){
+    el('cf-picks').innerHTML = '<div class="r3-empty"><p class="r3-empty-line">'
+      + L('No qualified picks right now', '目前没有符合条件的个股')
+      + '</p><p class="r3-empty-why">'
+      + L('No stock has a timely entry read inside a subsector that is working.',
+          '暂时没有股票在走强的子行业中出现及时的入场判断。') + '</p></div>';
+    return;
+  }
+  el('cf-picks').innerHTML = buys.slice(0, PICKS_CAP).map(function(r){
+    return '<a class="r3-row" data-ref-nav href="' + esc(stockHref(r.ticker)) + '">'
+      + '<span class="r3-name"><span class="r3-mem-tk">' + esc(r.ticker) + '</span>'
+      + '<span class="r3-sub">' + L(esc(r.subsector || ''), esc(r.subsector || '')) + '</span></span>'
+      + '<span class="r3-fig tnum">' + (r.combined_score == null ? '' : r.combined_score.toFixed(2)) + '</span>'
+      + '<span class="r3-why">' + L('Its tier', '个股层级') + ' ' + esc(r.stock_tier || '–')
+      + '<span aria-hidden="true"> · </span>' + L('vs sub 20d', '相对子行业20日') + ' ' + signed(r.vs_subsector_20d)
+      + '</span><span class="r3-chev" aria-hidden="true"></span></a>';
+  }).join('');
+}
+
+/* ══ 4 · the full table ══ FULL_COLS verbatim (:451-459); the client re-sort and
+   its tier-ascending default are production behaviour (:467), not a producer
+   re-order. Zero matches leave the count-only `0 / N` header and no message —
+   production has none and must not gain an invented one (ledger #79). */
+var FULL_COLS = [
+  {k:'label',  t:['Subsector','子行业'],  num:false},
+  {k:'sector', t:['Sector','板块'],       num:false},
+  {k:'tier',   t:['Entry','入场'],        num:false},
+  {k:'state',  t:['Regime','状态'],       num:false},
+  {k:'fresh',  t:['Freshness','新鲜度'],  num:false},
+  {k:'rs60',   t:['RS60','RS60'],         num:true},
+  {k:'n',      t:['N','数'],              num:true}
+];
+function fullRowVals(g){
+  var e = g.entry || {}, r = g.regime || {};
+  return {label:g.label || '', sector:g.sector || '', tier:e.tier || '',
+    state:r.label || r.state || '',
+    fresh:(e.ticks != null ? e.ticks : (e.bars_to_cross != null ? 100 + e.bars_to_cross : 999)),
+    rs60:r.rs_60d, n:(g.n_priced || g.n_members || 0), _g:g, _e:e, _r:r};
+}
+function paintTable(){
+  var all = groups().slice();
+  var s = SORT[TAB] || {col:'tier', dir:1};
+  var q = (FILTER[TAB] || '').toLowerCase();
+  var rows = all.map(fullRowVals);
+  if(q) rows = rows.filter(function(v){ return (v.label + ' ' + v.sector).toLowerCase().indexOf(q) >= 0; });
+  rows.sort(function(a, b){
+    var col = s.col, av = a[col], bv = b[col];
+    if(col === 'tier'){ av = av || 'Z'; bv = bv || 'Z'; }
+    if(av == null) av = s.dir === 1 ? Infinity : -Infinity;
+    if(bv == null) bv = s.dir === 1 ? Infinity : -Infinity;
+    if(typeof av === 'string'){ av = av.toLowerCase(); bv = (bv || '').toString().toLowerCase();
+      return av < bv ? -s.dir : av > bv ? s.dir : 0; }
+    return (av - bv) * s.dir;
+  });
+  var thead = '<thead><tr>' + FULL_COLS.map(function(c){
+    var on = s.col === c.k;
+    return '<th class="sortable' + (on ? ' sorted' + (s.dir === -1 ? ' desc' : '') : '') + '"'
+      + ' scope="col" data-col="' + c.k + '" aria-sort="' + (on ? (s.dir === 1 ? 'ascending' : 'descending') : 'none') + '">'
+      + L(c.t[0], c.t[1]) + '<span class="arr" aria-hidden="true"></span></th>';
+  }).join('') + '</tr></thead>';
+  var body = '<tbody>' + rows.map(function(v){
+    var g = v._g, e = v._e, r = v._r;
+    return '<tr><td><a data-ref-nav href="' + esc(detailHref(g.key)) + '">'
+      + L(esc(g.label), esc(g.label_zh || g.label)) + '</a>' + relDot(g.reliability) + '</td>'
+      + '<td style="color:var(--muted)">' + L(esc(g.sector || ''), esc(g.sector_zh || g.sector || '')) + '</td>'
+      + '<td>' + esc(e.tier || '–') + '</td>'
+      + '<td>' + L(esc(r.label || r.state || '–'), esc(r.label_zh || r.label || r.state || '–')) + '</td>'
+      + '<td style="color:var(--muted)">' + (freshTxt(e) || '') + '</td>'
+      + '<td class="num">' + signed(r.rs_60d) + '</td>'
+      + '<td class="num tnum">' + (g.n_priced || g.n_members) + '</td></tr>';
+  }).join('') + '</tbody>';
+  el('cf-table').innerHTML = thead + body;
+  el('cf-cnt').textContent = rows.length + ' / ' + all.length;
+  el('cf-all-title').innerHTML = L('All ' + ds().noun[0], '全部' + ds().noun[1])
+    + ' <span class="tnum" style="color:var(--muted);font-weight:400">' + all.length + '</span>';
+  var q2 = el('cf-q');
+  q2.setAttribute('placeholder', isZh() ? '筛选子行业或板块…' : 'Filter subsector or sector…');
+  q2.setAttribute('aria-label', isZh() ? '筛选子行业或板块' : 'Filter subsector or sector');
+}
+
+/* ══ render + wiring ══ */
+function render(){
+  paintUniverses(); paintAnswer(); paintLedge(); paintFoot(); paintPanel(); paintPicks(); paintTable();
+}
+function setTab(k){
+  if(k === TAB) return;
+  TAB = k; SEL = 'entry_now';
+  render();
+}
+function setBucket(k){
+  if(k === SEL) return;
+  SEL = k; OPEN[TAB] = null;
+  paintLedge(); paintFoot(); paintPanel();
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  TABS.forEach(function(k){ DATA[k] = reg(DS[k].url); });
+  if(!DATA[TAB] || !DATA[TAB].ok){
+    el('sc-app').innerHTML = '<div class="r3-empty"><p class="r3-empty-line">'
+      + L('No data yet — run the nightly build.', '暂无数据——请运行夜间构建。') + '</p></div>';
+    return;
+  }
+  render();
+
+  el('cf-uni').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-uni]') : null;
+    if(b) setTab(b.getAttribute('data-uni'));
+  });
+  el('cf-ledge').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-bucket]') : null;
+    if(b) setBucket(b.getAttribute('data-bucket'));
+  });
+  el('cf-ledge').addEventListener('keydown', function(e){
+    if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var tabs = Array.prototype.slice.call(this.querySelectorAll('.r3-ledge-cell'));
+    var i = tabs.indexOf(document.activeElement); if(i < 0) return;
+    var j = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+    e.preventDefault(); tabs[j].focus(); setBucket(tabs[j].getAttribute('data-bucket'));
+  });
+  el('cf-panel').addEventListener('click', function(e){
+    var row = e.target.closest ? e.target.closest('button.r3-row[data-key]') : null;
+    if(!row) return;
+    var key = row.getAttribute('data-key');
+    OPEN[TAB] = (OPEN[TAB] === key) ? null : key;
+    paintPanel();
+  });
+  el('cf-table').addEventListener('click', function(e){
+    var th = e.target.closest ? e.target.closest('th.sortable') : null;
+    if(!th) return;
+    var col = th.getAttribute('data-col'), s = SORT[TAB] || {col:'tier', dir:1};
+    SORT[TAB] = {col:col, dir:(s.col === col ? -s.dir
+      : ((col === 'label' || col === 'sector') ? 1 : ((col === 'rs60' || col === 'n') ? -1 : 1)))};
+    paintTable();
+  });
+  el('cf-q').addEventListener('input', function(){
+    FILTER[TAB] = this.value || '';
+    var pos = this.selectionStart;
+    paintTable();
+    var again = el('cf-q');
+    if(again){ again.focus(); try{ again.setSelectionRange(pos, pos); }catch(x){} }
+  });
+  document.addEventListener('langchange', function(){ render(); });
+});
+})();
+</script>
 </section>
