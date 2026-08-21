@@ -10157,6 +10157,7 @@ jobs:
       - "tests/test_prophet_fusion_w3_structural.py"
       - "tests/test_prophet_verb_ink_contrast.py"
       - "tests/test_stage_analysis.py"
+      - "tests/test_stage_industry_live_partition.py"
       - "tests/test_stock_board_v2.py"
       - "tests/test_track_ledger_emitters.py"
       - "tests/test_track_ledger_era.py"
@@ -10245,7 +10246,7 @@ jobs:
       # point-in-time reconstruction.  Same US board-store family as the suites
       # above, so it shares their venv.
       - name: stage-analysis ledger session stamps + heal (forward-ledger audit 2026-08-05)
-        run: python -m pytest tests/test_stage_analysis.py tests/test_weinstein_stage.py tests/test_heal_stage_forward_ledger.py -q
+        run: python -m pytest tests/test_stage_analysis.py tests/test_stage_industry_live_partition.py tests/test_weinstein_stage.py tests/test_heal_stage_forward_ledger.py -q
   prophet-us-context-and-grades:
     # PROPHET US §W7 — the full-population candidate record: the PIT context store that
     # REMEMBERS each night's score, the forward grader that says what those names then did,
