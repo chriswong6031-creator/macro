@@ -2756,6 +2756,18 @@ def test_workspace_runtime_contracts_can_start_the_ci_that_validates_them() -> N
 # ---------------------------------------------------------------------------
 
 CURATED_EXCLUSIVE = {
+    # 2026-08-20. `regwall-boundary` carries tests/test_regwall_json_gate.py out
+    # of `tier-gate` (`gate: data`, never packed by ci.yml) and onto the merge
+    # gate. It is curated for COVERAGE, not to narrow: the suite names its two
+    # subjects — app/deploy/Caddyfile and config/site_access.yml — as segment
+    # literals (REPO_ROOT / "app" / "deploy" / "Caddyfile"), and no segment
+    # holds a `/`, so inference cannot see them and the job would not re-run on
+    # the Caddyfile edit that is the whole regression class. Exclusive is what
+    # makes the declared paths replace inference instead of riding a whole-tree
+    # fallback tier. Sole probe delta: templates/index.html +1, from the five
+    # public documents test_public_pages_fetch_nothing_under_paid_prefixes
+    # actually reads; the other two probes are unmoved.
+    "regwall-boundary",
     # 2026-08-19 wave 5. #6027 moved #5984's three dossier suites into
     # conviction-profile — the right call, because their #6023 home
     # (unrun-publish-ops) is `gate: data`, which ci.yml never plans, so they

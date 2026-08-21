@@ -1302,8 +1302,15 @@ jobs:
         run: python -m pytest tests/test_site_access_boundary.py -q
       - name: delivery-plane census (exact families, alternate origins, consumers, defaults)
         run: python -m pytest tests/test_r2_delivery_plane_classification.py -q
-      - name: registration wall (anonymous stage + /factordata /labdata JSON gate)
-        run: python -m pytest tests/test_regwall.py tests/test_regwall_json_gate.py -q
+      # tests/test_regwall_json_gate.py used to run HERE and no longer does: it
+      # is the Caddyfile <-> config/site_access.yml cross-check, and this job is
+      # `gate: data`, which ci.yml never packs — so the access boundary was
+      # advisory on every PR that could breach it. It now has its own
+      # `gate: code` job (`regwall-boundary`, immediately below). What stays
+      # here is the anonymous-stage endpoint contract, which needs this job's
+      # fastapi/httpx line.
+      - name: registration wall (anonymous stage)
+        run: python -m pytest tests/test_regwall.py -q
       # #4409 shipped the member Earnings Wire API suite named only in
       # unrun-publish-ops, whose 21-job venv line has no fastapi/httpx — so the
       # auth-gate/private-header tests skipped in every job that named them
@@ -1312,6 +1319,64 @@ jobs:
       # with exactly `pytest pyyaml jinja2 fastapi httpx`: 10 passed.
       - name: member Earnings Wire API transport (auth gate + private headers)
         run: python -m pytest tests/test_earnings_api.py -q
+
+  regwall-boundary:
+    if: ${{ false }}
+    gate: code
+    # THE ACCESS BOUNDARY, ON THE MERGE GATE (2026-08-20).
+    #
+    # tests/test_regwall_json_gate.py cross-checks the edge's own public
+    # matchers in app/deploy/Caddyfile against the reviewed policy in
+    # config/site_access.yml: @public_static / @public_versioned /
+    # @factordata_public may claim only paths that policy calls public, the
+    # broad @reg_asset matcher must keep protecting the paid JSON, its handler
+    # must run BOTH auth stages and stay `private, no-store`, its error branch
+    # must fail closed, and the pages-open/payloads-gated split must hold.
+    #
+    # It ran only in `tier-gate` above, which is `gate: data`. ci.yml packs
+    # `--gate code`, so this suite could go red and merge-on-green would still
+    # merge the PR that broke it. That is not theoretical: on the A1A closure
+    # branch (#6109 lineage, 2026-08-20) /portfolio_state.js was added to the
+    # Caddyfile allowlist with no matching config/site_access.yml entry, this
+    # guard went red, and nothing on the merge gate objected — an adversarial
+    # review caught it. An access boundary that only advises is not a boundary.
+    #
+    # CURATED SCOPE, and the declaration is a CORRECTNESS fix, not a narrowing.
+    # The suite reaches its subjects as SEGMENT literals — REPO_ROOT / "app" /
+    # "deploy" / "Caddyfile" — and no segment contains a `/`, so scope
+    # inference's path regex never sees them. Inferred, this job would own only
+    # the test file and would NOT re-run on the Caddyfile edit that is the
+    # entire regression class. Every path below is a file the suite actually
+    # opens: the two policy halves, plus the five public documents
+    # test_public_pages_fetch_nothing_under_paid_prefixes reads to prove no
+    # anonymous page fetches under /factordata or /labdata.
+    #
+    # `scope: exclusive` (with the job id registered in CURATED_EXCLUSIVE in
+    # tests/test_ci_pack.py) is what makes these paths REPLACE inference rather
+    # than be unioned under a whole-tree fallback tier.
+    #
+    # Hermetic: reads files, starts no app, imports no engine module. pytest +
+    # pyyaml is the whole dependency line.
+    scope: exclusive
+    paths:
+      - "app/deploy/Caddyfile"
+      - "config/site_access.yml"
+      - "templates/index.html"
+      - "templates/live.js"
+      - "templates/onboard.js"
+      - "templates/plans.html.j2"
+      - "templates/theme.js"
+      - "tests/test_regwall_json_gate.py"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: access boundary (Caddyfile public matchers <-> site_access.yml policy)
+        run: python -m pytest tests/test_regwall_json_gate.py -q
 
   cycles-payload-split:
     if: ${{ false }}
