@@ -15,7 +15,10 @@ import sys
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from scripts import agentos
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts import agentos  # noqa: E402
 
 PLAN_SCHEMA = "linear_portfolio_plan.v1"
 RECEIPT_SCHEMA = "linear_portfolio_plan_receipt.v1"
