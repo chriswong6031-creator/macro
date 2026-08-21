@@ -2053,8 +2053,12 @@ def test_evidence_verifiers_prove_the_inode_only_under_the_store_lock(
     for name, read in readers.items():
         reader, finished, outcome = _spawn_evidence_reader(read)
         window = [path.with_suffix(".json.window") for path in targets]
-        try:
-            with cohort._private_store_lock(root):
+        with cohort._private_store_lock(root):
+            # Close the window BEFORE releasing the lock, in a `finally` that is
+            # itself inside the `with`. Cleaning up after the lock releases would
+            # let the woken reader stat a target that really is still at
+            # `nlink == 2` and fail honestly -- a race in the test, not the code.
+            try:
                 for source, link in zip(targets, window):
                     os.link(source, link)
                     assert source.lstat().st_nlink == 2
@@ -2066,10 +2070,10 @@ def test_evidence_verifiers_prove_the_inode_only_under_the_store_lock(
                 assert finished.wait(0.3) is False, (
                     f"{name} read the evidence store without holding the store lock"
                 )
-        finally:
-            for link in window:
-                if link.exists():
-                    link.unlink()
+            finally:
+                for link in window:
+                    if link.exists():
+                        link.unlink()
 
         assert finished.wait(5) is True, f"{name} never completed after the release"
         reader.join(timeout=5)

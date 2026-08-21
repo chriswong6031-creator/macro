@@ -2938,7 +2938,8 @@ def verify_private_evidence(
 
 
 def verify_event_evidence(root: Path, events: Sequence[Mapping[str, Any]]) -> None:
-    if not events:
+    # `len`, not falsiness: a non-Sequence must still raise rather than pass empty.
+    if len(events) == 0:
         return
     # One lock for the whole sweep, not one per event.
     with _private_store_lock(root):
@@ -2954,7 +2955,7 @@ def verify_event_evidence(root: Path, events: Sequence[Mapping[str, Any]]) -> No
 
 
 def verify_capture_evidence(root: Path, receipts: Sequence[Mapping[str, Any]]) -> None:
-    if not receipts:
+    if len(receipts) == 0:
         return
     with _private_store_lock(root):
         for raw in receipts:
