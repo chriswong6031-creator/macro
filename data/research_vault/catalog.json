@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T02:16:42.278567+00:00",
-  "count": 1516,
+  "generated_at": "2026-08-21T03:40:53.100859+00:00",
+  "count": 1519,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -32,6 +32,7 @@
     "Franklin",
     "GMO",
     "Goldman Sachs",
+    "Greed and Fear",
     "HSBC",
     "Halcyon",
     "Handelsbanken",
@@ -143,6 +144,29 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-axhatayfku7-6748cb",
+      "title": "Jefferies Greed & Fear AI and credit",
+      "institution": "Greed and Fear",
+      "side": "sell",
+      "desk": "Chris Wood",
+      "published_at": "2026-08-21T00:19:10Z",
+      "summary_points": [
+        "**Anthropic Revenue Surge**: Annualized revenue jumped to $47bn (May 2024), confirming robust corporate demand for agentic AI and validating monetization trends.",
+        "**Hyperscalers' Hidden Debt Exposure**: Moody’s/Nikkei report $1.65tn hidden debt (vs.",
+        "$1.35tn on balance sheets), with capex ($130bn) outpacing depreciation ($41.6bn), signaling unpriced credit risk.",
+        "**China-US AI Parity Shift**: Chinese models (e.g., Qwen 3.7 Max) rival US models (e.g., GPT-5.6) in performance (Exhibit 8), shifting narrative from \"cheap models\" to technological parity.",
+        "**AI Capex Scrutiny Intensifies**: Market questions returns on AI capex amid Korean ETF restrictions, declining presidential approval, and Chinese open-source model competition."
+      ],
+      "tags": [
+        "Chris Wood"
+      ],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-mlugwqsgs4i-0103ab",
       "title": "H2 outlook The pillars remain supportive",
       "institution": "Other",
@@ -201,6 +225,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tu7zd9jaddl-d83adc",
+      "title": "IS FISCAL REFORM POSSIBLE UNDER LULA",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-20T17:16:28Z",
+      "summary_points": [
+        "**Fiscal fundamentals critical**: Debt-to-GDP at 83.2% (2024), nominal deficit 8%, projected to 117.6% by 2036; unsustainable debt servicing costs risk default without urgent reform.",
+        "**Political credibility gap**: Market sell-off triggered by government’s fiscal projections exceeding consensus (debt-to-GDP 2036), compounded by Durigan’s weak credibility vs.",
+        "Haddad and Lula’s uncommitted reform stance.",
+        "**Fiscal Outlook Risks**: Primary surplus target (1.3% GDP by 2029) far exceeds market consensus (-0.1%); widening gap due to \"excluded\" spending and tax breaks, risking deficit escalation.",
+        "**BPC Reform Priority**: Continual Payment Benefit (BPC) spending growing 9.1% in 2025 (14.9% in 2024), top fiscal priority to curb rapid expenditure growth and address deficit."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
@@ -543,6 +588,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-donrltypljz-ab80cc",
+      "title": "Americas Energy Oil & Gas E&P Highlight Capital Efficient Growth Outlook and Flexibility of Capital Returns Through Volat...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:37:50Z",
+      "summary_points": [
+        "**FANG Production Beat**: 2026 production at 1,018 Mboe/d (exceeding high-end guidance) driven by technical improvements (surfactant program) and Barnett development.",
+        "**VNOM FCF Yield Premium**: 11% FCF yield vs.",
+        "6% peer average; management shifted to base dividend/repurchase for opportunistic flexibility.",
+        "**Capital Allocation Flexibility**: FANG/VNOM eliminated capital program guardrails via share repurchases (FANG: $141mn) and Riverbend acquisition, enabling volatile market responsiveness.",
+        "**Elevated Target Prices**: FANG $220 (vs $190.31 closing) and VNOM $57 (vs $55 prior) reflect strong bullish sentiment on near-term upside and valuation gaps."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
