@@ -3902,54 +3902,111 @@
      Uses supabase.auth.updateUser() directly; no external broker needed.
      =========================================================================*/
 
-  /* ---- preference sync via user_metadata.prefs ----------------------------
+  /* ---- shared preference sync — v2 ATOMICS -------------------------------
      Fired on sign-in (apply server prefs) and on theme/lang change (save back).
-     Guard: _prefSyncing flag prevents apply→save loops. */
-  var _prefSyncing = false, _prefSaveTimer = null;
+     Guard: _prefSyncing flag prevents apply→save loops.
+
+     ── Why this no longer writes user_metadata.prefs ──────────────────────────
+     `prefs` is a NESTED object, and supabase `auth.updateUser` REPLACES a nested
+     object wholesale rather than merging into it. TWO products write it — this
+     dashboard and the Mastermind Terminal — so each one's write silently
+     discards whatever the other changed since it last read:
+
+       1. Terminal reads  { theme: dark, lang: en }
+       2. here: user picks Light  → we write the WHOLE object
+       3. Terminal, still holding its snapshot, changes language to Chinese
+       4. Terminal sends { theme: dark, lang: zh }
+       5. the Light choice from step 2 is GONE.
+
+     Serializing our own writes cannot fix that — the race is BETWEEN the
+     products — and neither can a fresh-read-before-write, because read and write
+     are not atomic; that only shrinks the window.
+
+     The fix removes the shared container. Each field becomes its own TOP-LEVEL
+     key, and updateUser MERGES top-level keys, so a writer that touches only the
+     field it changed cannot clobber a sibling it never looked at:
+
+         prefs.theme     -> theme
+         prefs.themeAuto -> theme_auto
+         prefs.lang      -> lang
+
+     `theme` and `lang` are NOT new names — they are the top-level keys our own
+     lib/user_prefs.py already calls canonical ("the ONE reader/writer for a
+     signed-in user's stored preferences"), with the same closed value sets, and
+     app/account_prefs.py already writes them. Minting a parallel `ui_*` namespace
+     would have made THREE representations of one preference; the browsers now
+     join the one that already exists. `theme_auto` is the only field with no
+     existing home: it is a browser-side presentation flag (we compute the theme
+     from local time when it is set) and no server route writes it.
+
+     Readers prefer the atomic and fall back to the legacy nested value PER FIELD
+     (not per blob), so an account that has only ever had `prefs`, and one that is
+     half migrated, both read correctly. Nothing writes the nested blob any more;
+     it survives as a read-only fallback. The Terminal half of this change is
+     terminal/lib/accountPrefs.ts (readSharedPrefs / sharedPrefsPatch). */
+  var _prefSyncing = false, _prefSaveTimer = null, _prefSavePending = null;
+
+  /* v2 atomic if valid, else the legacy nested sibling. Per FIELD. */
+  function _sharedPref(meta, atomicKey, legacyKey, ok) {
+    if (ok(meta[atomicKey])) return meta[atomicKey];
+    var legacy = meta.prefs;
+    if (legacy && typeof legacy === 'object' && ok(legacy[legacyKey])) return legacy[legacyKey];
+    return null;
+  }
+  function _isTheme(v) { return v === 'light' || v === 'dark'; }
+  function _isFlag(v) { return v === '1' || v === '0'; }
+  function _isLang(v) { return v === 'en' || v === 'zh'; }
 
   function _applyServerPrefs(user) {
     if (!user) return;
     var meta = user.user_metadata || {};
-    var prefs = meta.prefs;
-    if (!prefs) return;
+    var theme = _sharedPref(meta, 'theme', 'theme', _isTheme);
+    var themeAuto = _sharedPref(meta, 'theme_auto', 'themeAuto', _isFlag);
+    var lang = _sharedPref(meta, 'lang', 'lang', _isLang);
+    if (theme === null && themeAuto === null && lang === null) return;
     _prefSyncing = true;
     try {
-      if (prefs.theme && (prefs.theme === 'light' || prefs.theme === 'dark') && prefs.theme !== curTheme()) {
-        setTheme(prefs.theme);
-      }
-      if (prefs.themeAuto && prefs.themeAuto === '1') {
-        setThemeAuto();
-      }
+      if (theme && theme !== curTheme()) setTheme(theme);
+      if (themeAuto === '1') setThemeAuto();
       var lg = docEl.getAttribute('data-lang') || 'en';
-      if (prefs.lang && (prefs.lang === 'en' || prefs.lang === 'zh') && prefs.lang !== lg) {
-        setLang(prefs.lang);
-      }
+      if (lang && lang !== lg) setLang(lang);
     } catch (e) {}
     _prefSyncing = false;
   }
 
-  function _savePrefToServer() {
+  /* Save ONLY the atomics the caller actually changed. A language change must not
+     carry a theme along with it — that restraint is the whole point. Coalesced
+     over the 800 ms debounce, so a burst still costs one request. */
+  function _savePrefToServer(which) {
     if (_prefSyncing || !_curUser || !_authEnabled) return;
+    var patch = _prefSavePending || {};
+    if (which === 'theme') {
+      try { patch.theme = localStorage.getItem('theme') || curTheme(); } catch (e) { patch.theme = curTheme(); }
+      try { patch.theme_auto = localStorage.getItem('themeAuto') || '0'; } catch (e) { patch.theme_auto = '0'; }
+    } else if (which === 'lang') {
+      patch.lang = curLang();
+    }
+    if (!Object.keys(patch).length) return;
+    _prefSavePending = patch;
     clearTimeout(_prefSaveTimer);
     _prefSaveTimer = setTimeout(function () {
-      var prefs = {};
-      try { prefs.theme = localStorage.getItem('theme') || curTheme(); } catch (e) { prefs.theme = curTheme(); }
-      try { prefs.themeAuto = localStorage.getItem('themeAuto') || '0'; } catch (e) { prefs.themeAuto = '0'; }
-      prefs.lang = curLang();
+      var data = _prefSavePending;
+      _prefSavePending = null;
       getSupabaseClient().then(function (sb) {
         if (!sb || !_curUser) return;
-        return sb.auth.updateUser({ data: { prefs: prefs } });
+        return sb.auth.updateUser({ data: data });
       }).catch(function () {});
     }, 800);
   }
 
-  /* Hook into theme/lang events — wired once in initSettings() */
+  /* Hook into theme/lang events — wired once in initSettings(). Each event names
+     the field it changed, so the write carries nothing else. */
   var _prefHooked = false;
   function _hookPrefSync() {
     if (_prefHooked) return;
     _prefHooked = true;
-    document.addEventListener('themechange', function () { _savePrefToServer(); });
-    document.addEventListener('langchange', function () { _savePrefToServer(); });
+    document.addEventListener('themechange', function () { _savePrefToServer('theme'); });
+    document.addEventListener('langchange', function () { _savePrefToServer('lang'); });
   }
 
   /* (The old "page 2" account panel state + ACCT_L labels were removed — account
