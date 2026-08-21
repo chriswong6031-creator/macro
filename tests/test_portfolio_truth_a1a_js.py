@@ -818,12 +818,19 @@ def test_s5_degraded_banner_is_wired_into_render():
 
 
 def test_s5_pf_count_never_returns_zero_for_a_genuinely_unknown_read():
-    """MUTATION CHECK: change `count: function () { return (rows === null &&
-    readState.state === 'error') ? null : openRows().length; }` to plain `return
-    openRows().length;` (dropping the null branch) and this reds — window.PF.count()
-    must resolve to `null`, never a false 0, when the canonical count is unknown."""
+    """MUTATION CHECK: change `count: function () { return rows === null ? null :
+    openRows().length; }` to plain `return openRows().length;` (dropping the null
+    branch) and this reds — window.PF.count() must resolve to `null`, never a false
+    0, when the canonical count is unknown.
+    F1 (Sol post-review, blocker): the check is now `rows === null` alone (not
+    gated on `readState.state === 'error'`) — the old gate let the 'loading'
+    delayed-cloud window fall through to a false 0 (proofD_count_zero.py); a
+    'degraded' read always arrives WITH non-null last-good rows, so this one check
+    still covers exactly the two genuinely-unknown states (loading, error) and
+    nothing else. See test_f1_count_is_null_during_loading_and_error_null_after_ready
+    in tests/test_portfolio_auth_transition_js.py for the behavioral proof."""
     code = _pf_code()
-    assert "rows === null && readState.state === 'error') ? null : openRows().length" in code
+    assert "count: function () { return rows === null ? null : openRows().length; }" in code
 
 
 @needs_node
@@ -929,15 +936,73 @@ def test_ma_unresolved_basis_gets_its_own_copy_not_the_mixed_sizing_message():
 
 
 def test_mc_error_state_with_stale_rows_still_shows_the_degraded_banner():
-    """MUTATION CHECK: revert renderReadBanner()'s condition to
-    `readState.state === 'degraded'` alone and this reds — an 'error' read that still
-    has STALE rows on screen (a later read failed after an earlier success) must show
-    the same disclosure a 'degraded' read does, never silently render as if nothing
-    happened."""
+    """MUTATION CHECK: revert renderReadBanner()'s condition to `rs === 'degraded'`
+    alone and this reds — an 'error' read that still has STALE rows on screen (a later
+    read failed after an earlier success) must show the same disclosure a 'degraded'
+    read does, never silently render as if nothing happened.
+    Post-commissioning (Part B, snapshot authority): the condition now reads `rs`,
+    sourced from `refreshSnapshot()` (portfolio_snapshot.v1's `read_state`) rather
+    than `readState.state` directly — see test_partB_read_banner_is_snapshot_derived
+    for the mutation pin on THAT routing."""
     code = _pf_code()
     idx = code.index("function renderReadBanner() {")
     fn = code[idx:code.index("\n  function ", idx + 10)]
-    assert "readState.state === 'error' && rows && rows.length" in fn
+    assert "rs === 'error' && rows && rows.length" in fn
+
+
+# ===========================================================================
+# Part B (commissioning, 2026-08-20): portfolio_snapshot.v1 becomes the REAL
+# consumed Portfolio state authority — Sol's blocker 2 decision ("either make
+# portfolio_snapshot.v1 the real consumed Portfolio state authority or explicitly
+# amend the architecture"; the decision taken is to make it real).
+# ===========================================================================
+def test_partB_read_banner_is_snapshot_derived():
+    """MUTATION CHECK: revert renderReadBanner()'s condition to read `readState.state`
+    UNCONDITIONALLY (dropping the `snap ? snap.read_state : ...` routing, i.e. deleting
+    `refreshSnapshot()`/`snap.read_state` and using `readState.state` as the sole
+    source even when PS IS present) and this reds — the read banner must prefer the
+    ONE portfolio_snapshot.v1 this file assembles per render() whenever PS is present;
+    `readState.state` may remain only as the B2 split-deploy PS-absent fallback."""
+    code = _pf_code()
+    idx = code.index("function renderReadBanner() {")
+    fn = code[idx:code.index("\n  function ", idx + 10)]
+    assert "refreshSnapshot()" in fn
+    assert "snap.read_state" in fn
+    assert "rs === 'degraded' || (rs === 'error' && rows && rows.length)" in fn
+
+
+def test_partB_open_and_closed_rows_are_snapshot_derived():
+    """MUTATION CHECK: revert openRows()/closedRows() to filter `rows` directly
+    without consulting refreshSnapshot() and this reds — population (open.length ===
+    0/1/many, driving the zero/one/many Book Read branches) and the table's row set
+    must both come from the ONE snapshot, PS-present, never a second independent
+    filter of the same raw rows."""
+    code = _pf_code()
+    for name in ("function openRows() {", "function closedRows() {"):
+        idx = code.index(name)
+        fn = code[idx:code.index("\n  function ", idx + 10)]
+        assert "refreshSnapshot()" in fn, name
+
+
+def test_partB_render_assembles_the_snapshot_once_per_pass():
+    """MUTATION CHECK: delete the `refreshSnapshot();` call from render() (leaving
+    openRows()/closedRows()/renderReadBanner() to each lazily refresh their own copy
+    with no single assembly point) and this reds."""
+    code = _pf_code()
+    start = code.index("function render() {")
+    render_fn = code[start:]
+    render_fn = render_fn[:render_fn.index("\n  function ", 10)]
+    assert "refreshSnapshot();" in render_fn
+
+
+def test_partB_ps_absent_read_banner_falls_back_to_readState_directly():
+    """B2 (split-deploy window): when window.PS has not deployed yet, refreshSnapshot()
+    must return null and every consumer must fall back to its OWN pre-PS literal
+    check — never a weighting-law or read-state claim manufactured without PS."""
+    code = _pf_code()
+    idx = code.index("function refreshSnapshot() {")
+    fn = code[idx:code.index("\n  function ", idx + 10)]
+    assert "if (!ps) { snapshot = null; return null; }" in fn
 
 
 def test_md_a_plain_read_never_claims_saved():
@@ -997,3 +1062,75 @@ def test_single_position_lead_book_never_gets_the_mixed_sizing_copy():
     # both language tables carry the copy
     assert "One position in this book" in code
     assert "这本账簿只有一笔持仓" in code
+
+
+# ===========================================================================
+# F5 (Sol post-review, MAJOR) — snapshot consumption was a 3-field pass-through
+# (only open_rows/closed_rows/read_state read; population, weighting, write_state,
+# authority, warning all discarded). Extends the Part B section above: every
+# consumer now routes through the ONE snapshot, PS-present.
+# ===========================================================================
+def test_f5_renderbookread_single_book_reads_snapshot_weighting():
+    """MUTATION CHECK: delete the `singleBookSnap`/`refreshSnapshot()` routing
+    (reverting to the bare `ps.computeWeighting(leadRows, priceOf)` call for every
+    book) and this reds — a single-currency book must read the snapshot's own
+    `weighting` field, not a second independently-computed one. The multi-currency
+    §12 carve-out keeps the direct call (commented) — this test pins that both
+    still exist."""
+    code = _pf_code()
+    idx = code.index("var ps = PS();\n    var W;\n    if (ps) {")
+    block = code[idx:idx + 900]
+    assert "singleBookSnap" in block
+    assert "refreshSnapshot()" in block
+    assert "ps.computeWeighting(leadRows, priceOf)" in block  # §12 multi-currency carve-out
+
+
+def test_f5_pfchipstatefor_and_dispatch_helpers_read_the_snapshot():
+    """MUTATION CHECK: revert pfChipStateFor()/dispatchWriteFailure()/
+    dispatchReadUnavailable() to read `writeState`/`readState.authority` directly
+    (dropping `refreshSnapshot()`) and this reds — every authority/write_state
+    check in the chip-dispatch path must route through the ONE snapshot,
+    PS-present."""
+    code = _pf_code()
+    for fn_name in ("function pfChipStateFor(", "function dispatchWriteFailure() {",
+                     "function dispatchReadUnavailable() {"):
+        idx = code.index(fn_name)
+        fn = code[idx:code.index("\n  function ", idx + 10)]
+        assert "refreshSnapshot()" in fn, fn_name
+
+
+def test_f5_renderreadbanner_reads_snapshot_warning():
+    """MUTATION CHECK: delete the `data-warning` attribute writes from
+    renderReadBanner() and this reds — the snapshot's `warning` field must be
+    consumed (exposed machine-readably), not silently discarded."""
+    code = _pf_code()
+    idx = code.index("function renderReadBanner() {")
+    fn = code[idx:code.index("\n  function ", idx + 10)]
+    assert "snap.warning" in fn or ("snap ? snap.warning" in fn)
+    assert "data-warning" in fn
+
+
+def test_f5_ps_absent_open_rows_filter_matches_openrowsof_truthy_ticker():
+    """MUTATION CHECK: revert openRows()/closedRows()'s PS-absent fallback filter
+    to `rows.filter(function (r) { return r.status !== 'closed'; })` (dropping the
+    `r && r.ticker` guard) and this reds — the fallback must filter IDENTICALLY to
+    portfolio_state.js's own openRowsOf()/closedRowsOf(), never a second,
+    divergent notion of what counts as an open/closed row."""
+    code = _pf_code()
+    for name in ("function openRows() {", "function closedRows() {"):
+        idx = code.index(name)
+        fn = code[idx:code.index("\n  function ", idx + 10)]
+        assert "return r && r.ticker && r.status" in fn, name
+
+
+def test_f5_pushfxweights_ps_absent_never_fabricates_a_partial_distribution():
+    """MUTATION CHECK: delete the `allCurrent` gate from pushFxWeights()'s
+    PS-absent branch (falling back to silently dropping unsized/unpriced rows from
+    `w`) and this reds — a PS-absent book with even ONE row that is not sized+
+    priced must push the honest-empty `{}`, never a partial weight map that sums
+    to less than the whole book while implying it is complete."""
+    code = _pf_code()
+    idx = code.index("function pushFxWeights() {")
+    fn = code[idx:code.index("\n  function ", idx + 10)]
+    assert "allCurrent = modeled.length > 0 && modeled.every" in fn
+    assert fn.count("window.FX.setAutoWeights({})") >= 2  # S3 abstain + F5 non-allCurrent

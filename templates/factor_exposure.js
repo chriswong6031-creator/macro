@@ -278,7 +278,12 @@
   }
 
   function render(panel, tickers, data) {
-    if (!data || !data.factors) { panel.style.display = 'none'; return; }
+    // N5 (Sol post-review, NIT): hiding the panel must also clear its innerHTML —
+    // the pattern portfolio.js's showLoading()/showError() already follow. A
+    // hidden-but-still-populated panel leaves the PRIOR book's factor bars sitting
+    // in the DOM; a hidden node is still a leak the moment anything un-hides it
+    // (a CSS bug, a screen reader, view-source) without a repaint in between.
+    if (!data || !data.factors) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
     // AUTO_W (from portfolio.js dollar values) takes precedence over manual editor weights.
     // When AUTO_W is active, use its keys as the universe (not the watchlist tickers arg)
     // so off-watchlist holdings contribute their real weight and no eqPct fallback applies.
@@ -299,7 +304,7 @@
     CUR = { universe: universe.slice(), wmap: wmap, mode: autoMode ? 'auto' : 'manual' };
     announceWeights();
     var a = aggregate(universe, data, wmap);
-    if (!a.ok) { panel.style.display = 'none'; return; }
+    if (!a.ok) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
     panel.style.display = 'block';
     // In auto mode: hide weight editor, show a one-line note instead.
     var editorOrNote = autoMode
@@ -350,6 +355,12 @@
     setAutoWeights: function (w) {
       AUTO_W = w || null;
       var p = panelEl(); if (!p) return;
+      /* #6102 (main truth) removed the bail entirely — "no early return" — which
+         supersedes A1A F2's narrower `AUTO_W === null && !LAST.length` guard: F2
+         fixed the honest-empty-{} case specifically, #6102's retraction law covers
+         it AND the "delete down to one position" case F2 never addressed. F2's own
+         regression test (test_f2_factor_exposure_honest_empty_announces_with_last_empty)
+         is kept and now passes through THIS mechanism. */
       load().then(function (data) { render(p, LAST, data); });
     }
   };
