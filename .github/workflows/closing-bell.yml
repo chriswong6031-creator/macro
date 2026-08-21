@@ -70,8 +70,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   # Own group — never shares with pipeline-daily, pipeline-earlyclose, pipeline-render.
@@ -650,35 +648,11 @@ jobs:
             push_backoff
           done
           push_lost
-          echo "::error title=closingbell rendered site NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — main does not carry this render (the Pages artifact still deploys it; the nightly re-lands main). Check the per-attempt [class] tags above: repeated [contention] means main is simply busier than this budget, repeated [rebase-conflict] means a NEW deterministic conflict class — see scripts/rebase_autoresolve_hashed_css.sh."
-          echo "### ⚠️ closingbell rendered site NOT pushed after $PUSH_ATTEMPT attempts (artifact still deploys; nightly re-lands main)" >> "$GITHUB_STEP_SUMMARY"
+          echo "::error title=closingbell rendered site NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — main does not carry this render (no Pages-artifact fallback anymore; the nightly re-lands main). Check the per-attempt [class] tags above: repeated [contention] means main is simply busier than this budget, repeated [rebase-conflict] means a NEW deterministic conflict class — see scripts/rebase_autoresolve_hashed_css.sh."
+          echo "### ⚠️ closingbell rendered site NOT pushed after $PUSH_ATTEMPT attempts (no Pages-artifact fallback anymore; nightly re-lands main)" >> "$GITHUB_STEP_SUMMARY"
 
-      # ── strip heavy per-ticker stores from the Pages artifact (served from R2) ───────
-      - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
-        if: always()
-        run: |
-          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday site/feeds site/oddsmatrix 2>/dev/null || true
-
-      # ── upload pages artifact ────────────────────────────────────────────────────────
-      - name: upload pages artifact
-        if: always()
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/
-
-  # Publish to GitHub Pages.
-  # Mirrors daily.yml's publish job: ubuntu-latest, needs: closingbell (the render job),
-  # if: always() so Pages always gets an artifact even if the commit-push step raced.
-  publish:
-    needs: closingbell
-    if: always()
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+  # The `publish` GitHub Pages deploy job (ubuntu-latest, needs: closingbell,
+  # deploy-pages@v4) was RETIRED pre-private-cutover (DEC:B1-MACRO-PRIVATE-CUTOVER) —
+  # the Pages mirror served the premium book/premiumdata anonymously and must not
+  # keep re-publishing once the repo goes private. The VPS/origin deploy (the site's
+  # real serving path) is untouched; only the Pages producer went away.

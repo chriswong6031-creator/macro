@@ -1,11 +1,13 @@
 {
-  "generated_at": "2026-08-21T00:56:50.783296+00:00",
+  "generated_at": "2026-08-21T09:36:46.069063+00:00",
   "ok": false,
   "fail_reasons": [
     "CHAINS STALE: latest chain file is 2026-08-13 (5 NYSE session(s) behind last_session=2026-08-20); threshold=1 \u2014 OI snapshot may have been missed",
     "CHAINS SESSION FAILED: session 2026-08-20 has a health-receipt attempt but NO chain parquet was ever written for it \u2014 the accrual captured nothing for the most recently attempted session (see data/polygon_gex_health/2026-08-20.json)"
   ],
-  "warnings": [],
+  "warnings": [
+    "OPTIONS FLOW CREDS ABSENT: MASSIVE_S3_ACCESS_KEY_ID / MASSIVE_S3_SECRET_ACCESS_KEY / MASSIVE_S3_ENDPOINT not set \u2014 build_options_flow will no-op silently (F1 from masterplan \u00a71)"
+  ],
   "detail": {
     "today_utc": "2026-08-21",
     "last_trading_day": "2026-08-20",
@@ -14,7 +16,7 @@
     "chains_count": 28,
     "chains_age_sessions": 5,
     "health_latest_receipt_session": "2026-08-20",
-    "options_flow_creds_present": true,
+    "options_flow_creds_present": false,
     "options_flow_summary_count": 387
   }
 }
