@@ -205,15 +205,30 @@ GIT_TERM_GRACE_SECONDS = 10
 # silently does not happen at all, which is a fail-OPEN — strictly worse than the
 # block it was trying to file. So the numbers below are chosen so that the WHOLE
 # pathological path fits, sweeps and grace periods included, not just the two
-# status attempts: 60 + 10 grace, + a first sweep (5 + 10 grace to resolve the
-# gitdir, 5 for lsof), + 70 + 10 grace, + a second sweep (5 for lsof; the gitdir
-# is cached by then) = 175 of 180. That path ends in a raise and a `guard_error`
-# emit, so 5s is all it needs after it. The path that SUCCEEDS on the retry — the
-# 13s-warm one this is built for — leaves ~77s for the rest of the evaluation.
+# status attempts: 100 + 10 grace, + a first sweep (5 + 10 grace to resolve the
+# gitdir, 5 for lsof), + 150 + 10 grace, + a second sweep (5 for lsof; the gitdir
+# is cached by then) = 295 of 300. That path ends in a raise and a `guard_error`
+# emit, so 5s is all it needs after it.
+#
+# The 2026-08-21 rebalance (60/70 of a 180s wall -> 100/150 of a 300s wall) fixed a
+# tree the old split could not answer at all. The retry's whole premise is that the
+# first pass leaves a warmed index for the second — but that only holds if the first
+# pass is allowed to FINISH. A sparse, blobless worktree on a slow (iCloud-backed)
+# volume measured a ~78s cold `status` against a ~3s warm one: at a 60s first budget
+# the cold pass was SIGKILLed at ~77% done, warmed nothing, and the 70s retry then
+# paid full cold cost and died too — filing `guard_error` on a tree that answers in
+# 3s once warm. BOTH attempts sat under the cold cost, so the pair could never
+# succeed no matter how often it ran. The first budget must therefore clear a
+# realistic cold walk on its own (100 > 78), while the retry stays the longer of the
+# two for the genuinely pathological tree the original incident recorded (161s cold
+# / 13s warm): that one still misses the first pass and lands on the warm retry,
+# exactly as designed. Raising the wall is the cost of covering both shapes; a Stop
+# that takes 5 minutes on the pathological path still beats one that is killed
+# mid-evaluation, because a killed Stop hook fails OPEN.
 # `tests/test_ship_loop_guard.py` pins that arithmetic against the settings file
 # so the two cannot drift apart unnoticed.
-STATUS_TIMEOUT_SECONDS = 60
-STATUS_RETRY_TIMEOUT_SECONDS = 70
+STATUS_TIMEOUT_SECONDS = 100
+STATUS_RETRY_TIMEOUT_SECONDS = 150
 # Metadata-only probes (`rev-parse`, `lsof`) that must never become the reason
 # the wall above is missed. Both are sub-second in health; this is the leash for
 # the pathological case, not a target.
