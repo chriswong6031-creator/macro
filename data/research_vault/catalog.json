@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T00:36:17.307370+00:00",
-  "count": 1511,
+  "generated_at": "2026-08-21T02:16:42.278567+00:00",
+  "count": 1516,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -82,6 +82,67 @@
   ],
   "items": [
     {
+      "id": "marketdesk-zuv7yghwmxb-5c9605",
+      "title": "Asia Fund Manager Survey Tech is still king, but defensives are rising",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T01:29:05Z",
+      "summary_points": [
+        "**AI Hedging Rotation**: 59% of fund managers shifting to value/cyclical/defensive sectors to hedge AI downside risk (vs.",
+        "41% vs.",
+        "20% prior), signaling market underpricing of AI-driven growth.",
+        "**BoJ Rate Hike & FX Intervention**: 59% expect BoJ rate hike in September 2026; 55% identify USD/JPY 165 as key intervention trigger, critical for JPY exposure hedging.",
+        "**Asia ex-Japan Equity Undervaluation**: Sentiment at 89th percentile (August), with equities viewed as undervalued (89th percentile), driving strong near-term upside potential."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wfqaebrcaoc-3ba3cf",
+      "title": "SpaceX Aug 17 1",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T00:27:58Z",
+      "summary_points": [
+        "**SpaceX-Cursor Synergy**: Enterprise adoption (64% Fortune 500 penetration, 3,000+ $100k+ accounts) and vertical integration with SpaceX’s >2GW compute drive AI monetization, validating $4B ARR by June 2026 and enabling 25-40% gross margins.",
+        "**Financial Upside**: Revised 2026-27 forecasts beat consensus (Revenue $115.3M vs.",
+        "$97.1M, EBITDA $78.3M vs.",
+        "$63.3M), with EPS rising 10.9% (0.96→1.06 USD) and revenue growing 0.9% (46,041→46,439 USD).",
+        "**Strategic Shift & Competitive Edge**: Reduced Claude dependency via Composer 2.5 (SpaceX compute, 25x synthetic tasks), accelerating internal model development amid frontier labs subsidizing tokens."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jrbtympa4si-985ccf",
+      "title": "JPM US Market Intelligence Macro Week Ahead Aug 20",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T00:26:46Z",
+      "summary_points": [
+        "**Jackson Hole Symposium (Aug 27-29)**: Fed policy expectations driven by Warsh’s speech and agenda directly impact equity/bond flows and rate-sensitive asset volatility.",
+        "**PCE Price Index (Aug 26)**: Core inflation data is pivotal for Fed policy direction; deviations trigger immediate rate hike expectations or market turbulence.",
+        "**Geopolitical & Tech Catalysts**: US-China AI talks, Mid-term elections, and major tech earnings (NVDA, AVGO, AWS) create sector-specific volatility and policy-driven risk shifts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-mlugwqsgs4i-0103ab",
       "title": "H2 outlook The pillars remain supportive",
       "institution": "Other",
@@ -99,6 +160,47 @@
       "tickers": [],
       "top_pick": false,
       "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-42iq6rtqumj-822968",
+      "title": "am perspectives 3Q26 better together",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T23:58:25Z",
+      "summary_points": [
+        "**Regime Complementarity**: Quantitative excels in macro/policy-driven rotations (e.g., tariff events +0.21, post-election +0.43), while fundamental dominates idiosyncratic stress events; inverse performance in 2020 (fundamental +0.46 vs quant -0.73) and 2022 (fundamental -1.17 vs quant +1.75) enables regime-specific allocation.",
+        "**Cross-Asset Diversification**: Fundamental and quantitative managers exhibit low-to-negative correlations (-0.41 to 0.27) across US, global ex-US, emerging markets, and Japan equities, reducing portfolio volatility and enhancing risk-adjusted returns when combined.",
+        "**Manager Scale Validation**: 430+ US, 731+ global ex-US, 581+ emerging market, and 379+ Japan equity managers (as of May 2026) confirm consistent complementarity across regions and market regimes.",
+        "**Fundamental Style Dominance**: 687 US Large Cap active managers (vs.",
+        "134 quantitative) with 3+ year history, led by Value (282) and Core (211) segments, enables broader style expression and risk diversification."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uaspagutbnx-6489f7",
+      "title": "Bessents game of chicken with the bond vigilantes",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T23:49:29Z",
+      "summary_points": [
+        "**Treasury's Intervention Limits**: Doubled 10-30yr buybacks (up to $4bn) temporarily halted yield rises but yields rebounded, exposing unsustainable \"game of chicken\" with Fed; debt ceiling constraints (2027) limit Treasury's capacity, risking forced Fed intervention and credibility loss.",
+        "**Fundamental Yield Pressures**: Elevated inflation, AI-driven investment demand, and defense spending-driven deficits sustain yield pressures; Treasury’s shift to short-term debt is debt-ceiling constrained, amplifying market risk premiums.",
+        "**2027 Debt Ceiling Crisis**: Public debt nearing statutory limit (2027) with political hurdles (Democrats in House, GOP reluctance) preventing fiscal stabilization; unresolved fundamentals may force Fed to buy bonds, contradicting balance sheet reduction goals.",
+        "**Fed Intervention Risk**: Treasury’s exhaustion of intervention ammo (debt ceiling) could trigger unlimited Fed bond purchases, deepening fiscal space, disrupting market credibility, and escalating volatility amid oil supply disruptions and fiscal discipline erosion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
