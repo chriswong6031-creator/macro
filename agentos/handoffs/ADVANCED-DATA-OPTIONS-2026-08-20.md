@@ -17,9 +17,9 @@ changed:
   - path: agentos/decisions/DEC-SOL-HOLD-IS-A-MERGE-BARRIER.md (+ CLAUDE.md/AGENTS.md amendment)
     what: merged separately as #6056 (a9bfe324) — holds bind every merge path; authority never transfers across PRs.
   - path: scripts/build_polygon_gex.py
-    what: ON PR #6080 (HELD DRAFT) — bounded capture lease (expected_last_session prong + 03:00-ET-next-day endpoint) + same-book OI proof (ticker-preferred join, symmetric float32 grid, overlap floor) replaces the same-ET-day predicate; new skip literals skipped_outside_lease / skipped_vintage_mismatch / skipped_unverifiable_vintage.
+    what: ON PR #6080 (HELD DRAFT) — bounded capture lease (expected_last_session prong + 03:00-ET-next-day endpoint) + same-book OI proof (ticker-preferred join, symmetric float32 grid, overlap floor) replaces the same-ET-day predicate; new skip literals skipped_outside_lease / skipped_vintage_mismatch / skipped_unverifiable_vintage. AMENDED per Sol review 4989933857 (2026-08-21) — the lease now gates EVERY non-forced write via a single PRE-FETCH gate (first writes included; explicit --date old-session refused; zero vendor calls outside the lease); overlap floor hardened to min(stored, max(20, ceil(0.25*stored))); receipts persist lease + vintage_proof audit dicts incl. oi_mismatch_count.
   - path: tests/test_polygon_gex.py
-    what: Sol §4 time-boundary matrix (14 cases) + 7 boundary-review repair tests; 123 total in the file.
+    what: Sol §4 time-boundary matrix (14 cases) + 7 boundary-review repair tests; amendment round adds the 7-case first-write matrix, the _NoFetchClient zero-call proof, floor regressions (4-contract and 1,000-contract books), and receipt-audit cases a-d; 142 total in the file.
 verified:
   - claim: the same-ET-day rule refuses lawful production repairs
     command: "scripted census — daily.yml crons + et_gate; gh run view 32077948964 collect job 21:07->00:08 ET; run_status checked_at samples 18:20 ET..00:42 ET; accrual position scripts/collect.py:842 after the membership rebuild at :823"
@@ -27,6 +27,9 @@ verified:
   - claim: the lease boundary is sound and the proof repairs bite
     command: "opus boundary review (DST 2026-2028, 02:59/03:00 edge, holiday-adjacent, early-close, naive instants) + builder self-flip (4 flips)"
     result: every clock attack held; F1 major + 5 minors repaired; each flip fails a named test; pytest tests/test_polygon_gex.py -q = 123 passed
+  - claim: Sol review 4989933857's four amendments are load-bearing (first-write lease, pre-fetch refusal, real overlap floor, receipt provenance)
+    command: "python3 -m pytest tests/test_polygon_gex.py -q (142 passed) + per-amendment flip-verification (each amendment reverted alone fails 1-16 named tests, e.g. TestAD1C01FirstWriteLease, TestAD1C01NoFetchOutsideLease, TestAD1C01OverlapFloorIsAMinimum, TestAD1C01ReceiptAudit)"
+    result: all four amendments implemented at commit 662342a0ece6; reverting any one fails named tests; suite green
   - claim: Job B external closure is NOT done (recorded, not litigated)
     command: "secret-safe probe 2026-08-20T08:09Z + gh api runs/32077948964/logs -i + actions/secrets listing"
     result: option chain 403 NOT_AUTHORIZED (stock 200, same key); exposed run logs still HTTP 200; no POLYGON_API_KEY/MASSIVE_API_KEY in Actions secrets
@@ -44,7 +47,7 @@ do_not_redo:
   - The Option A vs B adjudication (ruled; reversal requires new evidence about the membership dependency or a dedicated capture lane).
   - Broad vendor probing while the chain endpoint is 403 (one bounded secret-safe probe per status check is enough).
 danger_areas:
-  - The lease governs REPLACEMENT only; first writes at any session-resolving instant remain lawful and visible via receipts.
+  - The lease governs EVERY non-forced write (Sol review 4989933857, 2026-08-21): a first write outside the lawful lease is refused BEFORE any vendor fetch and the hole stays missing; only --force overrides, visibly receipted with lease.valid=false.
   - skipped_wrong_day is retired from new writes but must remain readable in old receipts.
   - Never arm or un-draft #6080 without Sol's release — DEC:SOL-HOLD-IS-A-MERGE-BARRIER.
 ---
