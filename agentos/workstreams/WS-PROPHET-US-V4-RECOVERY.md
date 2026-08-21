@@ -371,10 +371,26 @@ waves:
       reference (WS-CHINA-ALPHA-INTELLIGENCE.md). Done requires a natural
       production nightly proving source -> master -> GMI projection with a
       recorded run id and the measured CN/HK resolution delta, per Sol's
-      completion law — not yet observed. Sol accepted the D2B2-CN-HK
-      implementation 2026-08-20 (BUILT_NOT_PROVEN); proof rides the first
-      natural nightly containing ed28d0d992a1 per the China WS pr0d entry;
-      no dispatched proof runs."
+      completion law. Sol accepted the D2B2-CN-HK implementation 2026-08-20
+      (BUILT_NOT_PROVEN); proof rides the first natural nightly containing
+      ed28d0d992a1 per the China WS pr0d entry. D2B2-CN-HK NATURAL-PROOF
+      ADJUDICATION (Sol, 2026-08-21): DONE / PROVEN_LIVE. Sol independently
+      extracted the required production receipt from the completed natural
+      nightly stages (the first nightly containing #6116 squash
+      ed28d0d992a144aec5f0ef2616024e3e32d83b1a). Receipt: canonical
+      security-master refresh verdict REGENERATED (identity inputs
+      advanced); natural master receipt generated 2026-08-21T01:17:00; US
+      canonical coverage 702/712 with 10 unresolved; CN canonical admission
+      survives 984/1021 (96.4%) with 37 typed primary-source refusals; HK
+      canonical admission survives 147/147 (100%); the regenerated master
+      was published to main BEFORE the engine pulled refreshed main;
+      subsequent natural GMI/theme-graph build stamped 2026-08-21T03:47:15Z
+      lane=nightly; GMI state counts RESOLVED 1833 / NOT_IN_MASTER 737 /
+      UNSUPPORTED_MARKET 233 / DEFERRED 1 / ENTITY_TYPE_CONFLICT 1; 1833 =
+      702 US + 984 CN + 147 HK, exactly the frozen D2B2 population. The
+      canonical path primary evidence -> DataOS security master -> GMI
+      identity projection is proven through the natural production topology
+      (nightly run 32426513915). No D2B2 repair authorized or required."
     status: in_progress
   - id: d3
     depends_on: [d2]
