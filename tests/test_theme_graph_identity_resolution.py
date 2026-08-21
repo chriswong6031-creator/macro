@@ -818,7 +818,7 @@ def test_r1_section_6_1_the_four_sidecar_assertions_against_the_committed_parque
 #: reads us NOT_IN_MASTER for the ~508 codes this wave admitted — this is the
 #: before/after boundary the acceptance criterion's delta is drawn across, the
 #: same pattern D2B2_FIRST_COMPUTED_AT already establishes for CN/HK above.
-D2B2_US_FIRST_COMPUTED_AT = "2026-08-21T11:20:44Z"
+D2B2_US_FIRST_COMPUTED_AT = "2026-08-21T11:48:22Z"
 
 
 class TestD2B2US:
@@ -869,15 +869,21 @@ class TestD2B2US:
             BUILD.DISCLOSED_IDENTITY_EXCEPTIONS
         )
         gmi_us_all_targets = gmi_seed_codes - identity_exception_keys
-        receipt_covered_symbols = gmi_us_all_targets - refused_symbols
+        # A disclosed duplicate-claim exclusion (FISV) is DROPPED from
+        # `resolutions` before `mint_master_rows` ever runs (R3) — it is
+        # structurally NEVER part of build()'s own `ids`-covered set, so it
+        # must be subtracted here too, exactly like a refusal.
+        disclosed_exclusion_symbols = {
+            d["symbol"] for d in block["disclosed_exclusions"]
+        }
+        receipt_covered_symbols = (
+            gmi_us_all_targets - refused_symbols - disclosed_exclusion_symbols
+        )
         # sidecar-only (RESOLVED there, but not in the receipt's "covered" set):
         # the disclosed duplicate-claim exclusions (FISV) — resolved via rule 5
         # against the WINNER's inception_code even though the builder's own
         # accounting treats the LOSER as a collapsed duplicate, not a target
         # outcome in its own right.
-        disclosed_exclusion_symbols = {
-            d["symbol"] for d in block["disclosed_exclusions"]
-        }
         sidecar_only = sidecar_resolved_symbols - receipt_covered_symbols
         assert sidecar_only == disclosed_exclusion_symbols, sidecar_only
         # receipt-only (covered in the receipt's accounting, but NOT sidecar

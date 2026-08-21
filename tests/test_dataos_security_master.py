@@ -3397,19 +3397,31 @@ def test_r4b_transition_from_pin_baseline_matches_r2_shape(
     # statistical heuristic that only holds while ONE dominant batch exists; a
     # LATER, larger admission wave sharing a different timestamp would break
     # it). Isolate DETERMINISTICALLY instead, from the committed receipt's own
-    # R13 disclosure: `resolved_not_rederivable` NAMES every GMI-only code whose
-    # identity is covered by an EXISTING active row this wave never minted (a
-    # GMI-only-target STRING can incidentally match such a row — co:us:SATS
-    # shares its inception_code root with the already-legacy-minted co:us:ECHO
-    # row, even though SATS itself predates this wave). Excluding exactly those
-    # named codes — and no others — from the strip set survives any future,
-    # larger wave: the exclusion set tracks staleness gaps, not wave size.
+    # disclosures: `resolved_not_rederivable` (R13) NAMES every GMI-only code
+    # whose identity is covered by an EXISTING active row this wave never
+    # minted (a GMI-only-target STRING can incidentally match such a row —
+    # co:us:SATS shares its inception_code root with the already-legacy-minted
+    # co:us:ECHO row, even though SATS itself predates this wave), and
+    # `disclosed_exclusions` (R3) NAMES every GMI-only code collapsed onto a
+    # DIFFERENT winning claimant's mint (co:us:FISV shares its root with the
+    # legacy-minted co:us:FI row — stripping the shared row by the "FISV"
+    # string would remove FI's own legacy row too, and FI's re-mint would then
+    # spuriously trip the pending-transition fence on the OTHER rows this same
+    # strip removes — VERIFIED: an earlier version of this fixture that only
+    # excluded `resolved_not_rederivable` stripped 509 rows for a 508-code
+    # wave and failed exactly this way). Excluding exactly these two named
+    # sets — and no others — from the strip set survives any future, larger
+    # wave: both exclusion sets track structural facts, not wave size.
     committed_receipt = json.loads(RECEIPT_PATH.read_text())
+    committed_block = committed_receipt["us_gmi_admission"]
     not_rederivable_codes = frozenset(
-        d["code"] for d in committed_receipt["us_gmi_admission"]["resolved_not_rederivable"]
+        d["code"] for d in committed_block["resolved_not_rederivable"]
     )
-    strippable_targets = gmi_only_targets - not_rederivable_codes
-    assert strippable_targets, "fixture stale — every GMI-only target is not-rederivable"
+    disclosed_exclusion_codes = frozenset(
+        d["symbol"] for d in committed_block["disclosed_exclusions"]
+    )
+    strippable_targets = gmi_only_targets - not_rederivable_codes - disclosed_exclusion_codes
+    assert strippable_targets, "fixture stale — no strippable GMI-only targets remain"
 
     candidate = master[
         (master["country"] == "US")
