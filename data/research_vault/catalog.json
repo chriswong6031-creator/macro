@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T03:40:53.100859+00:00",
-  "count": 1519,
+  "generated_at": "2026-08-21T04:52:07.845653+00:00",
+  "count": 1524,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -65,6 +65,7 @@
     "ScotiaBank",
     "Scotiabank",
     "Shikhara",
+    "SocGen - Albert Edwards",
     "Societe Generale",
     "Std Chartered",
     "TCW",
@@ -140,6 +141,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h2xjjvpgf4p-68cdbf",
+      "title": "SocGen Albert Edwards The ingredients for a market accident are falling into place",
+      "institution": "SocGen - Albert Edwards",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T00:22:11Z",
+      "summary_points": [
+        "**Geopolitical & Policy Catalysts**: Iran/US negotiations breakdown (immediate risk), Japanese 10y+ yields surge (global long yield driver), and US budget deficit driving yield pressure.",
+        "**US Equity Valuation Risk**: S&P500 at 1987-level optimism with US 30y bond yield/equity dividend yield ratio signaling overextended valuations and susceptibility to profit downturns.",
+        "**China Economic Deterioration**: 10y bond yield at 13-month low + July bank loans decline indicating weak momentum, correlating with US ISM/profits cycle risks.",
+        "**US 10y Technical Breakdown**: MACD momentum indicator broke higher (bearish signal) amid range-bound trading, signaling potential further yield declines."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -311,6 +332,67 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-y6psq60vu8g-d45126",
+      "title": "Amentum Holdings (AMTM) Relatively limited growth keeps us Neutral",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:46Z",
+      "summary_points": [
+        "**Valuation Discrepancy**: Goldman Sachs' $29.00 target (42% above current $20.43) signals potential undervaluation or misalignment vs.",
+        "AMTM's $24.00 price target, creating alpha opportunity.",
+        "**Debt Liquidity Risk**: Net debt/EBITDA at 32.2x poses severe liquidity risk despite strong operational cash flow ($543m) and FCF ($516m).",
+        "**Constrained Growth Trajectory**: Revenue guidance lowered to 0%-1% for 2027 (vs.",
+        "prior growth), offset by margin expansion; FY2026 revenue guidance cut to $13.8B-$13.95B (from $14.3B)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dw2epfzpcu0-47fe9a",
+      "title": "Target Corp",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:43Z",
+      "summary_points": [
+        "**Earnings Beat & Guidance Update**: Target beat Q2 EPS ($4.11 vs.",
+        "$2.34 consensus), raised FY26 net sales growth to +5% (from +4%), operating margin to ~6%, and EPS guidance to $9.90-10.90 (vs.",
+        "$7.50-8.50), excluding tariff refunds.",
+        "**Tariff Impact & Growth Drivers**: Q2 EPS boosted by ~$1.65 from tariff refunds; gross margin 33.7% (incl.",
+        "tariff benefit), but organic comp growth (2.7%/8.7% store/digital) and rising SG&A (6.8% y/y) signal underlying margin pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-a0m70bgco0n-88735c",
+      "title": "Macro at a Glance Latest views and forecasts",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:37Z",
+      "summary_points": [
+        "**Global Growth & Inflation Outlook**: Global real GDP growth at 2.5% in 2026 (Middle East energy shocks), core inflation 2.8% (fading tariffs, energy pass-through); US at 2.1% (AI capex), Euro area at 0.8% (energy headwinds).",
+        "**Middle East Conflict Risk**: Fluid geopolitical situation with escalating/de-escalatory headlines driving near-term volatility in global growth and energy prices.",
+        "**Global Growth Disparity**: China’s 2026-2027 GDP forecast (4.6-4.7%) significantly outpaces Global (2.5-2.8%), US (2.1-2.3%), and Euro area (0.8-1.2%), signaling structural divergence in growth drivers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-3vlzx8aqmtz-af771b",
       "title": "Analog Devices Inc. (ADI) Sustained revenue outperformance relative to peers given idiosyncratic growth drivers, with strong...",
       "institution": "Goldman Sachs",
@@ -328,6 +410,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-c3tmxaqxorn-3b249d",
+      "title": "Macro at a Glance Latest views and forecasts",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:11Z",
+      "summary_points": [
+        "**Global Growth & Inflation Outlook**: Global real GDP growth at 2.5% in 2026 (Middle East energy shocks), core inflation 2.8% (fading tariffs, energy pass-through); US at 2.1% (AI capex), Euro area at 0.8% (energy headwinds).",
+        "**Middle East Conflict Risk**: Fluid geopolitical situation with escalating/de-escalatory headlines driving near-term volatility in global growth and energy prices.",
+        "**Global Growth Disparity**: China’s 2026-2027 GDP forecast (4.6-4.7%) significantly outpaces Global (2.5-2.8%), US (2.1-2.3%), and Euro area (0.8-1.2%), signaling structural divergence in growth drivers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
