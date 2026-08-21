@@ -15,6 +15,7 @@ carrying ONLY the historical vendor space under test.
 from __future__ import annotations
 
 import json
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -27,6 +28,9 @@ from lib import config as lib_config
 from lib.dataos.identity import AliasRow, VendorAliasTable
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from scripts import build_security_master as BUILD  # noqa: E402
+
 NODES_PATH = ROOT / "data" / "theme_graph" / "nodes.parquet"
 MASTER_PATH = ROOT / "data" / "reference" / "security_master.parquet"
 BAKED_IDRES_PATH = ROOT / "data" / "theme_graph" / "identity_resolution.parquet"
@@ -833,32 +837,62 @@ class TestD2B2US:
         not_in_master = us_rows[us_rows["resolution_state"] == "NOT_IN_MASTER"]
         refused_symbols = {r["symbol"] for r in block["refusals_this_run"]}
         sidecar_not_in_master_symbols = set(not_in_master["source_native_symbol"])
-        # AMENDMENT R2/R6 — `target_n` is now the FULL GMI-U.S. population (legacy
-        # overlap included, one ENTITY_TYPE_CONFLICT node — IBIT — included too,
-        # since that state is a SIDECAR-only concept the security master never
-        # sees), so the two artifacts are no longer a one-to-one bijection:
-        #   * `disclosed_exclusions` codes (e.g. FISV, collapsed onto FI's mint)
-        #     resolve FINE in the sidecar via rule 5, even though the builder's
-        #     OWN accounting treats them as a collapsed duplicate, not a
-        #     "resolved target" — so a disclosed exclusion is never in
-        #     `not_in_master` at all.
-        #   * R6 forces a code whose OWN resolve_universe evidence does not
-        #     independently confirm a match (WBS/SATS: an existing active row's
-        #     identity IS already covered, via a DIFFERENT key spelling or a
-        #     pre-existing symbol-directory staleness gap) to be a GENUINE
-        #     target with its own typed refusal — even though the SIDECAR
-        #     separately resolves that identity fine via rule 5 against the
-        #     row's OWN inception_code.  This is R2's explicit intent ("a future
-        #     lost US row re-enters as a refusal and the invariant must be able
-        #     to see it") — the refusal is about resolve_universe's OWN evidence
-        #     for that SYMBOL, not a claim the identity is unresolvable anywhere.
-        # The invariant that DOES hold unconditionally: every sidecar
-        # NOT_IN_MASTER us row is ALSO a named GMI refusal (a code truly absent
-        # from master cannot have independently resolved to anything) — never
-        # the reverse.
-        assert sidecar_not_in_master_symbols <= refused_symbols, (
-            sidecar_not_in_master_symbols - refused_symbols
+        # AMENDMENT R13 (fix pass 2) — `resolved_total` now counts a target
+        # RESOLVED whenever an ACTIVE master row covers its identity post-run
+        # (WBS/SATS: an existing active row's identity IS already covered, via a
+        # DIFFERENT key spelling or a pre-existing symbol-directory staleness
+        # gap — disclosed as `resolved_not_rederivable`, never a refusal). This
+        # restores the STRICT bijection the v1 (pre-AMENDMENT-§2) shape claimed
+        # but did not actually hold: the sidecar's us NOT_IN_MASTER symbol set
+        # and the receipt's named refusal set are now the SAME 25 codes, one
+        # for one — reverting the containment weakening this suite carried
+        # between fix pass 1 and fix pass 2.
+        assert sidecar_not_in_master_symbols == refused_symbols, (
+            sidecar_not_in_master_symbols ^ refused_symbols
         )
+
+        # AMENDMENT R13 — closed-set RESOLVED reconciliation. The sidecar's us
+        # RESOLVED set and the receipt's own "identity is covered by an active
+        # row" set (`ids`-resolved + `resolved_not_rederivable`, i.e. every
+        # target NOT in refusals/identity-exceptions) are not quite the SAME
+        # set — there are exactly TWO structural divergence classes, named
+        # here as a CLOSED set. A new, unnamed divergence class must fail this
+        # test rather than silently pass.
+        resolved = us_rows[us_rows["resolution_state"] == "RESOLVED"]
+        sidecar_resolved_symbols = set(resolved["source_native_symbol"])
+        # The receipt's own "identity is covered" population: every GMI-US seed
+        # code minus the registered identity exceptions (mirrors build()'s own
+        # `gmi_us_all_targets`, minus what the receipt itself already names as
+        # refused).
+        gmi_seed_codes = frozenset(s["symbol"] for s in BUILD.load_gmi_us_seeds())
+        identity_exception_keys = frozenset(BUILD.DEFERRED_IDENTITY_KEYS) | frozenset(
+            BUILD.DISCLOSED_IDENTITY_EXCEPTIONS
+        )
+        gmi_us_all_targets = gmi_seed_codes - identity_exception_keys
+        receipt_covered_symbols = gmi_us_all_targets - refused_symbols
+        # sidecar-only (RESOLVED there, but not in the receipt's "covered" set):
+        # the disclosed duplicate-claim exclusions (FISV) — resolved via rule 5
+        # against the WINNER's inception_code even though the builder's own
+        # accounting treats the LOSER as a collapsed duplicate, not a target
+        # outcome in its own right.
+        disclosed_exclusion_symbols = {
+            d["symbol"] for d in block["disclosed_exclusions"]
+        }
+        sidecar_only = sidecar_resolved_symbols - receipt_covered_symbols
+        assert sidecar_only == disclosed_exclusion_symbols, sidecar_only
+        # receipt-only (covered in the receipt's accounting, but NOT sidecar
+        # RESOLVED): the ENTITY_TYPE_CONFLICT node(s) — a real master row exists
+        # (the security master has no ETF/company kind-conflict concept at all),
+        # but the SIDECAR types the node ENTITY_TYPE_CONFLICT (D2A rule 4, an
+        # etf-kind node sharing the symbol in the SAME generation) rather than
+        # RESOLVED.
+        entity_type_conflict_symbols = set(
+            us_rows[us_rows["resolution_state"] == "ENTITY_TYPE_CONFLICT"][
+                "source_native_symbol"
+            ]
+        )
+        receipt_only = receipt_covered_symbols - sidecar_resolved_symbols
+        assert receipt_only <= entity_type_conflict_symbols, receipt_only - entity_type_conflict_symbols
         # RESOLVED us rows all reach EITHER rule 5 (exact inception-code match) or
         # rule 6 (vendor_alias) — never a ticker-equality fallback (module docstring).
         resolved = us_rows[us_rows["resolution_state"] == "RESOLVED"]

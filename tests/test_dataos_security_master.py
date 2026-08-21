@@ -3107,10 +3107,16 @@ def test_r5_directory_resolved_candidate_missing_flags_hard_fails() -> None:
 # fails (a malformed inception code) is typed `unrenderable_code`, never
 # conflated with the (mic-found-but-unmapped) `unsupported_venue` class.
 def test_r12_unrenderable_code_distinct_from_unsupported_venue() -> None:
+    # AMENDMENT R15 — the discriminator is the STRUCTURAL `venue_mapped` field
+    # (set explicitly at each construction site in resolve_universe), never a
+    # substring match on the human-readable `reason` text. A fixture with a
+    # deliberately UNRECOGNIZABLE reason string still classifies correctly
+    # purely from `venue_mapped`, proving the discrimination is structural.
     res = BUILD.Resolution(
         "FAKEBADCODE", None, None, "FAKEBADCODE",
         "data/symbol_directory/snapshots/2026-08-21.parquet:FAKEBADCODE.exchange=NASDAQ",
-        None, "ListingKey code must match ^[A-Z0-9.]{1,10}$: got '???'",
+        None, "some arbitrary IdentityError text with no recognizable substring",
+        venue_mapped=True,  # mic WAS found+mapped; only the CODE failed to render
     )
     refusal = BUILD._gmi_us_unresolved_refusal(res, {})
     assert refusal["code"] == "unrenderable_code"
@@ -3119,7 +3125,8 @@ def test_r12_unrenderable_code_distinct_from_unsupported_venue() -> None:
     unmapped = BUILD.Resolution(
         "FAKEZVENUE", None, None, None,
         "data/symbol_directory/snapshots/2026-08-21.parquet:FAKEZVENUE.exchange=Z",
-        None, "listed on exchange code 'Z' ... which has no MIC in lib/dataos/identity.KNOWN_MICS",
+        None, "some arbitrary reason text with no recognizable substring either",
+        venue_mapped=False,  # mic itself was never found/mapped
     )
     assert BUILD._gmi_us_unresolved_refusal(unmapped, {})["code"] == "unsupported_venue"
 
@@ -3148,6 +3155,19 @@ def test_gmi_us_accounting_completeness_real_data(receipt: dict) -> None:
             f"{d['symbol']!r} discloses a winner {d['winning_symbol']!r} that "
             "never actually minted — the collapse must never point at nothing"
         )
+    # AMENDMENT R13 — every resolved_not_rederivable entry names a code and a
+    # real, currently-active security_id (a staleness fact, never a fabricated
+    # or dangling reference); WBS and SATS are the known real-data instances.
+    not_rederivable_codes = {d["code"] for d in block["resolved_not_rederivable"]}
+    for d in block["resolved_not_rederivable"]:
+        assert d["code"] and d["security_id"]
+    assert {"WBS", "SATS"} <= not_rederivable_codes
+    # A code can never appear in more than one of the four buckets.
+    refused_codes = {r["symbol"] for r in block["refusals_this_run"]}
+    disclosed_codes = {d["symbol"] for d in block["disclosed_exclusions"]}
+    assert not (refused_codes & not_rederivable_codes)
+    assert not (refused_codes & disclosed_codes)
+    assert not (not_rederivable_codes & disclosed_codes)
     # The refusal closed set (§3/§4 + AMENDMENT R12) — every code observed today
     # must be a member; a new, unlisted code here would mean an unclassified
     # refusal class slipped through.
@@ -3282,6 +3302,43 @@ def test_r3_newa_newaold_same_root_new_key_build_completes(
     assert not aliases.empty
 
 
+# AMENDMENT R14 — a synthetic legacy PAIR (>=2 LEGACY claimants render one key)
+# must NEVER collapse: this is exactly the D2B1-R1 dated-alias EQR/VMRK shape,
+# where BOTH the pre-rename and post-rename symbol stay live universe keys ON
+# PURPOSE, and `mint_master_rows`'s OWN existing collision handling (not this
+# mechanism) is what dedups them. Collapsing here would itself become the
+# "silently dropping a legacy resolution" violation R1's absolute law forbids.
+def test_r14_two_legacy_claimants_on_one_key_never_collapse() -> None:
+    legacy_keys = frozenset({"OLDCO", "NEWCO"})
+    resolutions = [
+        _res("OLDCO", "XNYS", "OLDCO"),
+        _res("NEWCO", "XNYS", "OLDCO"),  # same inception_code -> same rendered key
+    ]
+    kept, disclosures = BUILD._collapse_duplicate_claims(resolutions, legacy_keys)
+    assert disclosures == [], "zero drops — both legacy claimants must survive"
+    assert {r.key for r in kept} == {"OLDCO", "NEWCO"}
+    assert len(kept) == len(resolutions)
+
+
+# AMENDMENT R14 — a MIXED group (one legacy + >=2 GMI-only claimants) still
+# collapses correctly: the legacy claimant always wins, every GMI-only claimant
+# is dropped and disclosed — the pair-only case above must not regress the
+# mixed case this same mechanism already handles.
+def test_r14_legacy_plus_multiple_gmi_only_claimants_legacy_wins() -> None:
+    legacy_keys = frozenset({"LEGACYCO"})
+    resolutions = [
+        _res("LEGACYCO", "XNYS", "LEGACYCO"),
+        _res("GMIA", "XNYS", "LEGACYCO"),
+        _res("GMIB", "XNYS", "LEGACYCO"),
+    ]
+    kept, disclosures = BUILD._collapse_duplicate_claims(resolutions, legacy_keys)
+    assert {r.key for r in kept} == {"LEGACYCO"}
+    dropped_symbols = {d["symbol"] for d in disclosures}
+    assert dropped_symbols == {"GMIA", "GMIB"}
+    for d in disclosures:
+        assert d["winning_symbol"] == "LEGACYCO"
+
+
 # AMENDMENT R4(a) — from-EMPTY composition test.  R1's blocker fix: the §3/§4
 # eligibility+CIK gate must NEVER touch a legacy-curated key, regardless of
 # master state.  A from-scratch rebuild (no pre-run master to match a candidate
@@ -3318,13 +3375,14 @@ def test_r4a_from_empty_build_mints_legacy_gmi_overlap_codes(tmp_path: Path) -> 
             + len(block["disclosed_exclusions"])) == block["target_n"]
 
 
-# AMENDMENT R4(b) — seeded-from-pin-baseline transition test.  The historical
-# pre-D2B2-US master bytes are not separately committed (this contract's own
-# canonical regeneration overwrote them, R7), so the baseline is reconstructed
-# DETERMINISTICALLY from data the repo already carries: every committed US row
-# whose `inception_code` is a GMI-ONLY (non-legacy) admission target is exactly
-# what THIS wave admitted — stripping those rows and rebuilding reproduces the
-# transition this contract's own bake performed, self-consistently (R10).
+# AMENDMENT R4(b), corrected by R16 — seeded-from-pin-baseline transition test.
+# The historical pre-D2B2-US master bytes are not separately committed (this
+# contract's own canonical regeneration overwrote them, R7), so the baseline is
+# reconstructed DETERMINISTICALLY from data the repo already carries: every
+# committed US row whose `inception_code` is a GMI-ONLY (non-legacy) admission
+# target is exactly what THIS wave admitted — stripping those rows and
+# rebuilding reproduces the transition this contract's own bake performed,
+# self-consistently (R10).
 def test_r4b_transition_from_pin_baseline_matches_r2_shape(
     tmp_path: Path, master: pd.DataFrame, aliases: pd.DataFrame,
 ) -> None:
@@ -3335,25 +3393,32 @@ def test_r4b_transition_from_pin_baseline_matches_r2_shape(
     gmi_only_targets = gmi_seed_codes - legacy_keys - identity_exc
     assert gmi_only_targets, "fixture stale — no GMI-only targets left to strip"
 
+    # AMENDMENT R16 — batch isolation must NOT depend on `ingested_at` mode (a
+    # statistical heuristic that only holds while ONE dominant batch exists; a
+    # LATER, larger admission wave sharing a different timestamp would break
+    # it). Isolate DETERMINISTICALLY instead, from the committed receipt's own
+    # R13 disclosure: `resolved_not_rederivable` NAMES every GMI-only code whose
+    # identity is covered by an EXISTING active row this wave never minted (a
+    # GMI-only-target STRING can incidentally match such a row — co:us:SATS
+    # shares its inception_code root with the already-legacy-minted co:us:ECHO
+    # row, even though SATS itself predates this wave). Excluding exactly those
+    # named codes — and no others — from the strip set survives any future,
+    # larger wave: the exclusion set tracks staleness gaps, not wave size.
+    committed_receipt = json.loads(RECEIPT_PATH.read_text())
+    not_rederivable_codes = frozenset(
+        d["code"] for d in committed_receipt["us_gmi_admission"]["resolved_not_rederivable"]
+    )
+    strippable_targets = gmi_only_targets - not_rederivable_codes
+    assert strippable_targets, "fixture stale — every GMI-only target is not-rederivable"
+
     candidate = master[
         (master["country"] == "US")
-        & master["inception_code"].isin(gmi_only_targets)
+        & master["inception_code"].isin(strippable_targets)
         & master["security_state"].isna()
     ]
-    assert not candidate.empty, "fixture stale — nothing to strip from the baseline"
-    # A GMI-only-target STRING can incidentally match a row that predates this
-    # wave entirely (a stale duplicate graph node sharing a rename-chain root
-    # with an already-legacy-minted security — co:us:SATS beside the legacy-
-    # minted co:us:ECHO row, both rooted at inception_code="SATS"; SATS itself
-    # is NOT a legacy key, so the string match alone cannot tell it apart from a
-    # genuine admission).  Every ROW this wave actually minted shares ONE batch
-    # `ingested_at` stamp (one `build()` call, one `now`); isolate that stamp
-    # rather than trusting the code-string match alone.
-    batch_stamp = candidate["ingested_at"].mode().iloc[0]
-    is_gmi_only_admission_row = candidate["ingested_at"] == batch_stamp
-    stripped_count = int(is_gmi_only_admission_row.sum())
-    assert stripped_count > 0, "fixture stale — could not isolate the admission batch"
-    stripped_ids = frozenset(candidate.loc[is_gmi_only_admission_row, "security_id"])
+    stripped_count = len(candidate)
+    assert stripped_count > 0, "fixture stale — nothing to strip from the baseline"
+    stripped_ids = frozenset(candidate["security_id"])
     baseline_master = master[~master["security_id"].isin(stripped_ids)].reset_index(drop=True)
     baseline_aliases = aliases[~aliases["security_id"].isin(stripped_ids)].reset_index(drop=True)
 
@@ -3374,7 +3439,6 @@ def test_r4b_transition_from_pin_baseline_matches_r2_shape(
     # The named refusal SYMBOLS reproduce the committed receipt's own current
     # steady-state refusal set (R10 — cross-artifact consistency, never a
     # hardcoded literal count).
-    committed_receipt = json.loads(RECEIPT_PATH.read_text())
     committed_symbols = {
         r["symbol"] for r in committed_receipt["us_gmi_admission"]["refusals_this_run"]
     }
