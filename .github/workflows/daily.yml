@@ -2905,7 +2905,7 @@ jobs:
           push_lost
           echo "::error title=Prophet checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); R2 remains on its prior accepted object, and the final engine commit is fenced from publishing this uncheckpointed Prophet tree"
           exit 1
-      - name: publish Prophet public health receipt to R2 (and enforce index tombstone)
+      - name: publish Prophet public health receipt to R2
         if: steps.prophet_checkpoint.outputs.r2_ready == 'true'
         timeout-minutes: 5
         continue-on-error: true
@@ -2921,9 +2921,11 @@ jobs:
         # machinery as before. What changed is the PAYLOAD (DEC:B1-PROPHET-PUBLIC-
         # SPLIT): the full plan book is premium/private and must never reach public
         # R2 again, so this publisher builds and puts ONLY the minimal public health
-        # projection (prophet/health.json), and self-heals the forbidden public key
-        # (prophet/index.json) closed via a tombstone delete on every successful
-        # wake — both on a fresh publish and on the already-current early exit.
+        # projection (prophet/health.json). It no longer owns the forbidden-key
+        # tombstone — that self-heal runs unconditionally in the dedicated
+        # "enforce Prophet R2 index tombstone" step below, on every nightly wake
+        # regardless of whether this step ran (r2_ready gates ONLY on an index
+        # content change, so an unchanged-index night must not skip the tombstone).
         run: |
           set -euo pipefail
           R2_INDEX_FILE="$(mktemp "${RUNNER_TEMP}/prophet-r2-index.XXXXXX.json")"
@@ -2989,47 +2991,6 @@ jobs:
           checkpoint_sha = os.environ["PROPHET_CHECKPOINT_SHA"]
           published_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-          # Forbidden public key literal (DEC:B1-PROPHET-PUBLIC-SPLIT). Named
-          # here, not imported, so the tombstone check/delete never even needs
-          # a live index — it must run on the already-current early exit too,
-          # where no index bytes are read at all.
-          FORBIDDEN_INDEX_KEY = "prophet/index.json"
-
-          def enforce_index_tombstone() -> None:
-              """Self-healing closure: the full plan book must never be
-              reachable from public R2. Delete it if any writer — this one or
-              a stale/reverted one — ever puts it back. Runs on every
-              successful wake of this publisher (fresh publish AND the
-              already-current early exit); deletion failure is non-fatal."""
-              try:
-                  client.head_object(Bucket=bucket, Key=FORBIDDEN_INDEX_KEY)
-              except ClientError as exc:
-                  response = exc.response or {}
-                  status = (response.get("ResponseMetadata") or {}).get("HTTPStatusCode")
-                  code = str((response.get("Error") or {}).get("Code") or "")
-                  if status == 404 or code in {"404", "NoSuchKey", "NotFound"}:
-                      return
-                  print(
-                      "::warning title=Prophet R2 tombstone check failed::"
-                      f"could not verify {FORBIDDEN_INDEX_KEY} absence: {exc}",
-                      flush=True,
-                  )
-                  return
-              try:
-                  client.delete_object(Bucket=bucket, Key=FORBIDDEN_INDEX_KEY)
-              except Exception as exc:  # noqa: BLE001 — deletion failure is non-fatal
-                  print(
-                      "::warning title=Prophet R2 tombstone delete failed::"
-                      f"forbidden public object {FORBIDDEN_INDEX_KEY} could not be removed: {exc}",
-                      flush=True,
-                  )
-                  return
-              print(
-                  "::notice title=Prophet R2 tombstone::"
-                  f"removed forbidden public object {FORBIDDEN_INDEX_KEY}",
-                  flush=True,
-              )
-
           index = json.loads(local_path.read_text(encoding="utf-8"))
           health_payload = build_public_health_projection(
               index,
@@ -3070,7 +3031,6 @@ jobs:
                       "the guarded checkpoint hash is already published",
                       flush=True,
                   )
-                  enforce_index_tombstone()
                   raise SystemExit(0)
               if not etag:
                   print(
@@ -3134,7 +3094,86 @@ jobs:
               "uploaded the public health receipt for the guarded Git checkpoint",
               flush=True,
           )
-          enforce_index_tombstone()
+          PY
+      - name: enforce Prophet R2 index tombstone (unconditional)
+        if: ${{ !cancelled() }}
+        timeout-minutes: 5
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        # Reviewer finding (§8b): the previous tombstone lived inside the
+        # publisher step above, which is gated `r2_ready == 'true'` — and
+        # r2_ready is set ONLY when the checkpointed index content actually
+        # changed that night. On an unchanged-index night the publisher step
+        # is skipped entirely, so NO tombstone ran and a reappeared
+        # prophet/index.json on public R2 (DEC:B1-PROPHET-PUBLIC-SPLIT
+        # forbids it — the full plan book must never be public) would sit
+        # undetected until the next content-changing night. This step is
+        # decoupled from that gate: it runs on every nightly wake the R2
+        # creds exist, independent of whether the health publish ran, and is
+        # the sole tombstone owner (the publisher step no longer enforces
+        # it). `!cancelled()` runs this even if an earlier step in the job
+        # failed, so a red upstream step never suppresses the self-heal.
+        run: |
+          python3 - <<'PY'
+          import os
+
+          from scripts.build_prophet import _r2_client
+
+          # Forbidden public key literal (DEC:B1-PROPHET-PUBLIC-SPLIT), named
+          # here rather than imported — the tombstone check/delete never
+          # needs a live index, only the key it must never let stand.
+          FORBIDDEN_INDEX_KEY = "prophet/index.json"
+
+          client = _r2_client()
+          if client is None:
+              print(
+                  "::notice title=Prophet R2 tombstone skipped::"
+                  "R2 credentials unavailable; nothing to enforce",
+                  flush=True,
+              )
+              raise SystemExit(0)
+          from botocore.exceptions import ClientError
+
+          bucket = os.environ.get("R2_BUCKET") or "mastermindx"
+
+          try:
+              client.head_object(Bucket=bucket, Key=FORBIDDEN_INDEX_KEY)
+          except ClientError as exc:
+              response = exc.response or {}
+              status = (response.get("ResponseMetadata") or {}).get("HTTPStatusCode")
+              code = str((response.get("Error") or {}).get("Code") or "")
+              if status == 404 or code in {"404", "NoSuchKey", "NotFound"}:
+                  print(
+                      "::notice title=Prophet R2 tombstone::"
+                      f"{FORBIDDEN_INDEX_KEY} already absent",
+                      flush=True,
+                  )
+                  raise SystemExit(0)
+              print(
+                  "::warning title=Prophet R2 tombstone check failed::"
+                  f"could not verify {FORBIDDEN_INDEX_KEY} absence: {exc}",
+                  flush=True,
+              )
+              raise SystemExit(0)
+
+          try:
+              client.delete_object(Bucket=bucket, Key=FORBIDDEN_INDEX_KEY)
+          except Exception as exc:  # noqa: BLE001 — deletion failure is non-fatal
+              print(
+                  "::warning title=Prophet R2 tombstone delete failed::"
+                  f"forbidden public object {FORBIDDEN_INDEX_KEY} could not be removed: {exc}",
+                  flush=True,
+              )
+              raise SystemExit(0)
+          print(
+              "::notice title=Prophet R2 tombstone::"
+              f"removed forbidden public object {FORBIDDEN_INDEX_KEY}",
+              flush=True,
+          )
           PY
       - name: restore accepted Prophet source for downstream derivations
         id: prophet_accepted_source
