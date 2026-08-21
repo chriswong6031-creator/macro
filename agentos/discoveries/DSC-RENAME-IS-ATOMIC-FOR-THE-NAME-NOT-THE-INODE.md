@@ -29,8 +29,8 @@ so_what: >
   trust the message's noun when triaging. (2) The same shape lives elsewhere in this module
   and is unfixed: `verify_private_evidence` reads an evidence file with no store lock while
   `_write_private_bytes` publishes by `os.link(temporary, target)` and only then unlinks the
-  temporary, so a reader can catch that target at `nlink == 2`. Reachable when two concurrent
-  appends carry byte-identical evidence.
+  temporary, so a reader can catch that target at `nlink == 2`. FIXED in PR #6186 - and the
+  reachability guess in this line was WRONG, see the amendment below.
 kind: landmine
 verified_at: 2026-08-21
 verified_by: >
@@ -84,3 +84,54 @@ never right. `O_CREAT|O_EXCL` already answers "did I create it, or did someone e
 single syscall; the `exists()` pre-check only adds a window in which both callers decide they
 are the creator and one of them dies. Catching `FileExistsError` and falling through to the
 validation that was going to run anyway is both safer and less code.
+
+## Amendment 2026-08-21 (PR #6186) — the sibling window is closed, and its stated reachability was wrong
+
+The `so_what` corollary (2) was right that `verify_private_evidence` read the evidence store
+with no store lock, and right about the mechanism. PR #6186 closed it: the three readers
+(`verify_private_evidence`, `verify_event_evidence`, `verify_capture_evidence`) now prove the
+inode under `_private_store_lock`, with the loop functions holding it once for a whole sweep
+via the same `_store_locked: bool = False` passthrough `_write_private_bytes` already used.
+
+**But "Reachable when two concurrent appends carry byte-identical evidence" is REFUTED.**
+Measured on darwin 2026-08-21: 300 rounds × 4 threads appending byte-identical evidence to one
+private root, against the PRE-FIX engine, produced **1,200 appends and 0 failures** — and still
+0 at 4 ms of artificial widening injected between `os.link` and the temporary's `unlink`. The
+same result for 1,200 plain concurrent `append_event` calls.
+
+Two structural reasons, both worth knowing before hunting this shape again:
+
+1. **The whole link→unlink window is already inside `.store.lock`.** `_write_private_bytes`
+   recurses into itself *inside* `with _private_store_lock(root)` when `_store_locked=False`,
+   so the `finally: temporary.unlink()` runs under the lock too. Only a reader that skips the
+   lock can observe `nlink == 2` — which is exactly what made this a reader-side defect, and
+   also why no *writer* ever sees it.
+2. **Every publisher writes evidence BEFORE its row becomes visible.** `append_event` and
+   `append_capture_receipt` call `write_private_evidence` and only then `_append_canonical_row`.
+   So any event a concurrent verifier can read from the ledger already has fully-published
+   evidence, and a verifier reading the ledger can never be pointed at a digest mid-publish.
+
+What remains genuinely exposed is the caller-held-receipt shape, not the ledger-read one:
+`scripts/capture_options_nbbo_cohort.py:285` verifies a receipt the caller is holding rather
+than one read back from the ledger, which is one concurrent actor away from the window.
+
+**So the fix is defense-in-depth, not an active-flake repair** — unlike the `_append_canonical_row`
+race this record was minted for, which had a real CI receipt. Do not go looking for a red
+`options-nbbo-cohort` run to blame on this one; there isn't one.
+
+Proof that the window is nonetheless real, and that the fix is what closes it: against the
+GENUINE `_write_private_bytes` publisher with its `os.link` slowed (no hardlink stand-in), a
+concurrent `verify_private_evidence` raises `producer evidence must be an owned private 0600
+file` pre-fix and is clean post-fix. The standing experiment is
+`tests/test_options_nbbo_cohort.py::test_evidence_verifiers_prove_the_inode_only_under_the_store_lock`.
+
+Still unfixed, and deliberately out of #6186's scope: `_read_source_response` and
+`read_observations` call `_validate_private_file` with no store lock. Both their writer
+(`write_source_response`, :3348) and their reader (:3226) sit inside `_advance_locked` under
+`.advance.lock`, so they are serialized and not concurrently reachable today — the exposure is
+latent on that serialization holding, not on the lock they skip.
+
+A trap for whoever writes the next test here: cleaning up a hardlink stand-in AFTER releasing
+the store lock makes the test flaky rather than the code — the woken reader stats a target that
+really is still at `nlink == 2` and fails honestly. Measured 4/25 (16%) before the cleanup was
+moved inside the `with`; 25/25 after.
