@@ -78,12 +78,25 @@ evidence:
 related:
   - "DSC:PROPHET-INDEX-PUBLIC-R2-TWIN"
   - "WS:PROPHET-US-V4-RECOVERY"
-reversibility: >
-  Reversible by a superseding Sol/operator ruling: the guard constants, tests,
-  and tombstone are ordinary code. The bridge is self-expiring (deleted at
-  cutover step 8). Re-publishing the full book publicly would require reverting
-  the guard, the tests, and the publisher — deliberately loud.
+affects:
+  - ".github/workflows/daily.yml"
+  - "scripts/build_prophet.py"
+  - "scripts/prophet_rescue.py"
+  - "scripts/build_prophet_marks.py"
+  - "app/prophet_lab.py"
+  - "tests/test_prophet_r2_boundary.py"
+  - "terminal/lib/flowSource.ts (mastermind-terminal)"
+confidence: high
+reversibility: costly
+decided_by: sol
+decided_at: 2026-08-21
 ---
+
+Reversal note: reversible only by a superseding Sol/operator ruling — the
+guard constants, boundary tests, and tombstone-enforcing publisher make
+re-publishing the full book publicly a deliberately loud, multi-file revert
+(hence `costly`, not `easy`). The temporary same-key bridge authorization is
+self-expiring at cutover step 8.
 
 Recorded by the Day-5 Prophet Lab session executing Sol's B1 ruling. The ordered
 cutover (census → containment → health contract → rebinds → producer closure →

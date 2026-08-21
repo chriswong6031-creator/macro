@@ -14,11 +14,13 @@ claim: >
   (mastermindx) is the same one exposed by the public dev URL, so every
   non-curated key written to it is world-readable.
 falsifier: >
-  An anonymous GET of a known spool key returning 403/404 (public dev URL
-  disabled for the prefix/bucket, or the spool moved to a private bucket)
-  retires this. A ruling that radar envelopes are deliberately public-tier
-  would retire the concern half but must square with the Lab's
-  evidence-plane privacy assumptions.
+  Run `curl -s -o /dev/null -w '%{http_code}' -H 'User-Agent:
+  mastermind-audit/1.0' https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/live_flow/entry_radar_events/2026-08-20/115834-entry_radar_live.json`
+  — any non-200 answer (403/404: public dev URL disabled for the
+  bucket, or the spool moved to a private bucket) retires this. A ruling
+  that radar envelopes are deliberately public-tier would retire the
+  concern half but must square with the Lab's evidence-plane privacy
+  assumptions.
 so_what: >
   Escalation for the WS:LIVE-ENTRY-RADAR owner and the R2 delivery-plane
   migration program — NOT fixed in the B1 wave (Sol scoped B1 to the Prophet
