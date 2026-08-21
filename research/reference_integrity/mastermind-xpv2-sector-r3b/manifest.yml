@@ -10,12 +10,12 @@
 # status: in_review is deliberate -- this is the SCAFFOLDING pass (manifest/baseline/proposal/
 # continuity) that COMMISSION.md S21 calls "RIG successor manifest/proposal/continuity packet",
 # produced BEFORE the R3B design lanes build the actual candidate artifact (COMMISSION.md S19).
-# The orchestrator flips status: in_review at freeze, once proposed_artifact.frozen_sha in
+# The orchestrator flips status: draft -> in_review at freeze, once proposed_artifact.frozen_sha in
 # proposal.yml and reference_files[].frozen_sha below are real 40-hex SHAs and evidence lands.
 schema: mastermind.rig_manifest.v1
 reference_id: mastermind-xpv2-sector-r3b
 scope: full
-status: draft
+status: in_review
 
 surface:
   route: sector_central.html
