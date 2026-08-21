@@ -17,6 +17,7 @@ blast_radius: user_facing
 ambiguity: specified
 owns_paths:
   - app/biocatalyst.py
+  - engine/biocatalyst/catalyst_events.py
   - templates/biocatalyst.html.j2
   - templates/biocatalyst.js
   - templates/biocatalyst.css
@@ -29,23 +30,31 @@ owns_paths:
   - tests/test_biocatalyst_hydration.py
   - tests/biocatalyst_hydration_harness.js
   - tests/test_biocatalyst_peer_api_contract.py
+  - tests/test_biocatalyst_catalyst_radar.py
+  - tests/test_biocatalyst_catalyst_radar_api.py
   - research/BIOCATALYST_P1_*
   - agentos/workstreams/WS-BIOCATALYST-CORE-PRODUCT.md
   - agentos/handoffs/BIOCATALYST-CORE-PRODUCT-*
 waves:
   - id: P1-1
     title: Catalyst Radar — Trial Milestones first slice
-    status: todo
+    status: in_progress
     next_action: >
-      Commissioned automatically when the P1-0R authority-closure PR merges
-      after Sol review (commissioned_after_this_PR_merges). Execute
-      research/BIOCATALYST_P1_CONTINUATION_HANDOFF_2026-08-20.md as amended
-      by P1-0R — including the identity, evidence-projection, trial-status,
-      coverage (PROVEN_LIVE_COHORT_LIMITED), and stop-for-Sol-review
-      corrections. The implementing session has no self-merge authority:
-      implementation → focused tests → full CI/fences → production-shaped
-      browser evidence → open PR → STOP FOR SOL REVIEW; merge/deploy/entitled
-      production proof only after Sol approval.
+      Implemented and held: PR #6191 (HOLD-FOR-SOL, unmerged, no arming label,
+      no auto-merge). Delivered per the amended continuation handoff —
+      engine/biocatalyst/catalyst_events.py projection, the entitled
+      GET /api/biocatalyst/v1/catalyst-radar, and the Milestones tab graduated
+      in place into Catalyst Radar — Trial Milestones. Acceptance is
+      PROVEN_LIVE_COHORT_LIMITED on a production-shaped run (real app over a
+      worker-published generation carrying the four real cohort NCTs, anchor
+      2026-08-20): 4 rows at next_365d (3 upcoming + 1 reached), 2 at
+      next_180d, 4 beyond horizon and disclosed — matching the frozen §9
+      falsification table. An opus review returned DO NOT SHIP on the first
+      checkpoint; all findings are fixed in the second commit. NEXT: Sol
+      adversarially reviews; only on approval does merge → deploy → the
+      entitled production journey against the deployed process happen, to the
+      #6090 receipt standard. Handoff:
+      agentos/handoffs/BIOCATALYST-CORE-PRODUCT-2026-08-21.md.
 decisions:
   - "DEC:BIOCATALYST-P1-FIRST-VERTICAL-MILESTONE-RADAR"
   - "DEC:BIOCATALYST-PDUFA-TRUTH-IS-CORPORATE-DISCLOSURE-PLANE"
