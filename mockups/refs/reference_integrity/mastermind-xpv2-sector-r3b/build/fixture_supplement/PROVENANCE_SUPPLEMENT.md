@@ -113,6 +113,37 @@ reads `data-regime` and the footer date directly from the embedded
 `si_handoff.json` bytes at assembly/render time rather than from any new
 capture.
 
+## Addendum — 2026-08-21: `marketdata/nasdaq_internals.json`
+
+Captured after the D1 follow-up lane identified that the Confluence view's
+Nasdaq internals organ (`templates/subsectors.js:417-448` — a RETAIN
+capability, rendered by `build/views/confluence.html`'s `internalsDisc()`)
+was fully built but rendered nowhere: its producer artifact was in neither
+the R3A fixture nor this supplement's original five entries, so the organ's
+code path had only been proven via an in-memory smoke test, never against
+real producer bytes.
+
+- **Capture commit**: `4c55fe433490adfd75fd901ef25f5793db2202db` — the SAME
+  commit as every other entry in this supplement and the R3A fixture, so
+  this addendum does not introduce a second epoch.
+- **Capture date**: 2026-08-21 (this addendum's capture date; the commit and
+  fixture epoch remain 2026-08-20 as recorded above).
+- Byte-for-byte copy of `site/marketdata/nasdaq_internals.json` at the
+  capture commit — `git show 4c55fe433490adfd75fd901ef25f5793db2202db:site/marketdata/nasdaq_internals.json`,
+  no recompute, no reformatting, no reordering.
+
+| supplement path | source path (at capture commit) | producer | bytes | sha256 |
+|---|---|---|---|---|
+| `marketdata/nasdaq_internals.json` | `site/marketdata/nasdaq_internals.json` | Nasdaq internals organ (`templates/subsectors.js:417-448` `niSection()`, mounted by `build/views/confluence.html` `internalsDisc()`, hard-gated on the Nasdaq tab) | 4,004 | `d21d64ee2a417d88097386479cbc02b968c1693d249881c87081042046dfb4d6` |
+
+Embedded the same way as the other supplement JSON entries (`marketdata/sp500_heatmap.json`,
+`basketdata/etf_pulse.json`, `basketdata/vol_sentiment.json`): a plain
+`application/json` data-registry `<script>` block keyed by its
+production-relative path (`build/build_reference.py`'s `SUPPLEMENT_JSON_PATHS`
+set), read via `reg('marketdata/nasdaq_internals.json')` exactly as
+production's own client fetch resolves it
+(`build/views/confluence.html:1048`).
+
 ## What this supplement explicitly does NOT capture
 
 Per the commission's OUT-OF-SCOPE instruction and the orchestrator's Time

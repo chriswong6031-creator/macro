@@ -42,7 +42,7 @@ in this fixed order by `build_reference.py`:
    canonical view order (overview → confluence).
 3. `REF:DATA` — the embedded data registry: one `<script type="application/json"
    id="ref-data" data-path="…">` block per R3A fixture file (17, sorted) and
-   per supplement JSON file (3, sorted), one `<script type="text/x-ref-fragment"
+   per supplement JSON file (4, sorted), one `<script type="text/x-ref-fragment"
    data-path="fragments/sc_flows.html">` for the extracted flow-board fragment,
    one plain **executed** `<script>` for `sector_cycles_data.js` (it assigns
    `window.SECTOR_CYCLES`), and one plain executed `<script>` baking

@@ -1,7 +1,7 @@
 {
   "assembler_self": {
-    "sha256": "c7c8c03883383d8830b0229b0a5ddf138079e783fe66908c2fcadebf0a58dc79",
-    "size_bytes": 15296,
+    "sha256": "920800244b7c3790c3d48c91280fd8ae6ad488caed34919a08ea635807dc2b86",
+    "size_bytes": 15336,
     "source": "build/build_reference.py"
   },
   "fixture_capture_commit": "4c55fe433490adfd75fd901ef25f5793db2202db",
@@ -73,6 +73,12 @@
       "source": "R3A fixture"
     },
     {
+      "path": "marketdata/nasdaq_internals.json",
+      "sha256": "d21d64ee2a417d88097386479cbc02b968c1693d249881c87081042046dfb4d6",
+      "size_bytes": 4004,
+      "source": "R3B supplement"
+    },
+    {
       "path": "marketdata/rotation_events.json",
       "sha256": "48e492e4b3cbd169cdbf67614dfb1a3416c3f63caa17294338352c701a38a30d",
       "size_bytes": 10591,
@@ -141,8 +147,8 @@
   ],
   "output": {
     "path": "proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
-    "sha256": "b676e74229351c75272f1f4524ffa8822d9812fa4596b32c644ea7a743cc7876",
-    "size_bytes": 5427602
+    "sha256": "7721939dc84ad8ccea72adab4e475046803b7a3d17199489d06f91233a4a9d0e",
+    "size_bytes": 5431707
   },
   "runtime_shim_js": {
     "sha256": "18387654f25feaa1d5b61fc39d2ec4f770ff8eb62edac42c9df6fbe905142f57",

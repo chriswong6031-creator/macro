@@ -96,6 +96,7 @@ SUPPLEMENT_JSON_PATHS = {
     "marketdata/sp500_heatmap.json",
     "basketdata/etf_pulse.json",
     "basketdata/vol_sentiment.json",
+    "marketdata/nasdaq_internals.json",
 }
 SUPPLEMENT_SCRIPT_PATH = "sector_cycles_data.js"
 SUPPLEMENT_FRAGMENT_PATH = "fragments/sc_flows.html"

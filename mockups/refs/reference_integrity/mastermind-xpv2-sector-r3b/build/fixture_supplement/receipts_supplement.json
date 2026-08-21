@@ -39,7 +39,15 @@
       "sha256": "a0a3805fb339f9659dac6d1ec81883481246f8b13d8f9f153c060aa0e17cafd3",
       "size_bytes": 8860,
       "note": "the #sc-flows section as rendered verbatim in site/sector_central.html at the capture commit; server producer is scripts/build_sector_central.py:263-328 _flows_section_html()"
+    },
+    {
+      "path": "marketdata/nasdaq_internals.json",
+      "source": "site/marketdata/nasdaq_internals.json",
+      "fixture": "fixture_supplement/marketdata/nasdaq_internals.json",
+      "sha256": "d21d64ee2a417d88097386479cbc02b968c1693d249881c87081042046dfb4d6",
+      "size_bytes": 4004,
+      "note": "Nasdaq internals organ producer artifact (templates/subsectors.js:417-448 niSection); added after the D1 follow-up lane so the Confluence view's internals disclosure renders real producer bytes on the Nasdaq tab"
     }
   ],
-  "total_supplement_bytes": 450407
+  "total_supplement_bytes": 454411
 }
