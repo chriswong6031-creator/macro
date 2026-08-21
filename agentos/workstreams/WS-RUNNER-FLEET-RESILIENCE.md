@@ -37,27 +37,30 @@ waves:
     status: in_progress
     depends_on: [M0]
     next_action: >
-      Land W1-A's read-only hosted canary, then dispatch it three times from main,
-      including one congested-window run. Every accepted attempt must retain a unique
-      run_id + run_attempt receipt and the observed first hosted-step timestamp. The
-      <60s pickup gate is adjudicated from GitHub Actions run/job created_at and
-      started_at metadata together with that artifact; accepted:true alone is never
-      pickup proof. Only after all three meet the frozen pickup, checkout, dependency,
-      and test gates may W1-B change merge-on-green's runner route.
+      W1-A PR #6113 is merged as 29d52200af45d2a8afe44e8bdf8a29aacc63809c.
+      Dispatch the read-only hosted canary three times from main, including one
+      congested-window run. Every accepted attempt must retain a unique run_id +
+      run_attempt receipt and the observed first hosted-step timestamp. The <60s
+      pickup gate is adjudicated from GitHub Actions run/job timing metadata together
+      with that artifact; accepted:true alone is never pickup proof. Only after all
+      three meet the frozen pickup, checkout, dependency, parity and test gates may
+      Sol authorize W1-B to change merge-on-green's runner route.
   - id: W2
     title: Guarded M1 three-listener diagnostic restoration
     status: todo
     depends_on: [M0]
     next_action: >
-      Restore the M1 using the existing ops/runner-host/m1 guarded service contract
-      and pass m1-runner-canary with zero production labels.
+      Diagnostic execution is authorized. Restore the M1 using the existing
+      ops/runner-host/m1 guarded service contract and pass m1-runner-canary with zero
+      production labels; then prove one-listener crash recovery and a 12-hour soak.
   - id: W3
     title: PC render recovery and default full-render cutover
     status: todo
     depends_on: [M0]
     next_action: >
-      Re-prove at least two render-linux listeners, a real engine-render, and one
-      scope=all render on the PC before changing render.yml's default route.
+      Diagnostic execution is authorized. Re-prove at least two render-linux
+      listeners, a real engine-render, and one scope=all render on the PC before any
+      change to render.yml's default route.
   - id: W4
     title: Bounded M1 production-capacity return
     status: todo
@@ -89,6 +92,8 @@ artifacts:
   - research/PRIVATE_REPO_RUNNER_STORAGE_ALLOCATION_AUDIT_2026_08_14.md
   - docs/CI_SELFHOSTED_WAVE_BC_RUNBOOK.md
   - .github/workflows/merge-control-hosted-canary.yml
+  - agentos/handoffs/RUNNER-FLEET-W1A-HOSTED-CANARY-DISPATCH-HANDOFF-2026-08-20.md
+  - agentos/handoffs/RUNNER-FLEET-W2-W3-DIAGNOSTIC-HANDOFF-2026-08-20.md
 landmines:
   - >
     `parked` is not an exclusion label; positive label matching still routes jobs to
@@ -108,6 +113,10 @@ landmines:
   - >
     `render-linux` being declared in runner-policy does not prove it is online; the
     registry is static operator-maintained state. Re-prove current PC liveness.
+  - >
+    The older Wave B/C runbook's single reserved `pc-render-1` description does not
+    override the later W3 freeze: default full-render cutover requires at least two
+    distinct live render-linux listeners and real PC render receipts.
 do_not_redo:
   - >
     Do not buy hardware before restoring and measuring the existing M1/PC fleet; the
@@ -131,8 +140,11 @@ do_not_redo:
     is a two-source receipt: GitHub Actions run/job timing metadata plus the uniquely
     named run_id + run_attempt artifact containing job_started_at_observed.
 next_action: >
-  Land W1-A and obtain three main-ref hosted canary receipts. W1-B remains blocked until
-  those receipts pass, including one during the congested nightly/render window.
+  Execute the three post-merge main-ref hosted canary attempts using
+  RUNNER-FLEET-W1A-HOSTED-CANARY-DISPATCH-HANDOFF-2026-08-20.md. W1-B remains blocked
+  until all attempts are reviewed and three are accepted, including one with real M2
+  congestion overlap. Run W2/W3 diagnostics in parallel under their bounded handoff;
+  neither diagnostic wave authorizes a production route change.
 ---
 
 ## Current incident
