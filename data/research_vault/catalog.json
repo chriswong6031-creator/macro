@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T13:36:42.639626+00:00",
-  "count": 1549,
+  "generated_at": "2026-08-21T14:23:03.518975+00:00",
+  "count": 1551,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -83,6 +83,48 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-preyicnumbw-eb204f",
+      "title": "GS Armbrust What Matters Today Hedge Funds Very Long Financials Energy 21 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:29:22Z",
+      "summary_points": [
+        "**Nasdaq-100 Futures Shorts Surge**: Leveraged funds increased Nasdaq-100 futures shorts by 35% since mid-June (CFTC/GS), signaling heightened bearish positioning and near-term volatility risk.",
+        "**AI Infrastructure Overcrowding**: Extreme correlation (0.9) between hedge fund positions and AI infrastructure (semiconductors, hyperscalers), indicating severe capital concentration and reversal risk amid recent underperformance.",
+        "**Mega-Cap Tech Dominance**: Mega-cap tech (AMZN, MSFT, NVDA, etc.) dominates hedge fund longs, with AMZN top for 11 consecutive quarters and 9 of top 10 VIP stocks being mega-cap tech.",
+        "**Sector Tilts at Decade Highs**: Financials (highest since pre-GFC) and Energy (highest since 2015) exhibit net sector tilts near 10-year highs, aligning with stagflation signals (oil +7%, long rates near highs).",
+        "**Sharpest Leverage Drawdown**: Hedge fund gross leverage decline in Q3 2026 is the sharpest since Q1 2020, exceeding prior episodes (Q1 2020, Q2 2022), highlighting acute risk management challenges."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1x35ekrgfkx-f82281",
+      "title": "GS Pasquariello markets macro 21 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:29:19Z",
+      "summary_points": [
+        "**UST Buyback Catalyst**: Wednesday’s UST buyback triggered macro volatility; S&P 500 momentum resurgence after consolidation (7700 vs.",
+        "signals immediate market shift.",
+        "**Debt-and-Deficits Risk**: Persistent market worry over debt-and-deficits with USTs adding ballast; bears on notice remains critical for fixed-income positioning.",
+        "**Gold Hedge Dynamics**: Gold shows tentative 200-day MA recovery, with capital inflows into GLD providing technical and flow support as geopolitical hedge against debt risks.",
+        "**Momentum Volatility**: YTD 24 distinct 1-day selloffs >5% (exceeding prior 5 years), software largest weight in both LONG/SHORT baskets raising systemic momentum risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-l4pv4nrqo9i-0bf02a",
       "title": "GS markets macro",
