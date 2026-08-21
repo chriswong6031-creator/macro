@@ -1196,6 +1196,42 @@ def test_flow_pulse_quality_rejects_age_fresh_no_data(tmp_path: Path):
     assert vlo.flow_pulse_error(path, min_coverage=0.8) is None
 
 
+def test_intraday_flow_symbols_resolves_exact_disclosed_board(tmp_path: Path):
+    path = tmp_path / "base.json"
+    path.write_text(json.dumps({
+        "leaders": [
+            {"ticker": "SNOW"},
+            {"symbol": "aapl"},
+            {"ticker": "SNOW"},
+            {"ticker": ""},
+        ],
+    }))
+    assert vlo.intraday_flow_symbols(path) == ["AAPL", "SNOW"]
+
+
+def test_bars_lane_requests_exact_intraday_flow_symbols(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+):
+    monkeypatch.setattr(vlo, "intraday_flow_symbols", lambda path: ["AAPL", "SNOW"])
+    calls = []
+    orch = vlo.Orchestrator(
+        live_dir=tmp_path / "public" / "live",
+        state_dir=tmp_path / "state",
+        data_dir=tmp_path / "data",
+    )
+
+    def module(name, module, args, **kwargs):
+        calls.append((name, module, args))
+        return vlo.TaskResult(name, "ok", 0.01)
+
+    monkeypatch.setattr(orch, "module", module)
+    orch.bars()
+
+    assert calls[0][0:2] == ("intraday_bars", "scripts.build_polygon_intraday")
+    assert calls[0][2][calls[0][2].index("--symbols") + 1] == "AAPL,SNOW"
+    assert calls[1][0:2] == ("intraday_flow", "scripts.build_intraday_flow")
+
+
 def test_command_can_publish_private_state_outside_public_root(tmp_path: Path):
     source = tmp_path / "stage" / "quotes_full.json"
     source.parent.mkdir()

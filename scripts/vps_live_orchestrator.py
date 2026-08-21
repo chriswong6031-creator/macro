@@ -135,6 +135,21 @@ def flow_pulse_error(path: Path, *, min_coverage: float) -> str | None:
         return f"flow pulse quality check failed: {exc}"
 
 
+def intraday_flow_symbols(path: Path) -> list[str]:
+    """Return the exact disclosed Intraday Flow board universe."""
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    leaders = payload.get("leaders") or []
+    symbols = {
+        str(row.get("ticker") or row.get("symbol") or "").strip().upper()
+        for row in leaders
+        if isinstance(row, dict)
+    }
+    symbols.discard("")
+    if not symbols:
+        raise RuntimeError(f"Intraday Flow board has no leader symbols: {path}")
+    return sorted(symbols)
+
+
 class Orchestrator:
     def __init__(
         self,
@@ -417,10 +432,15 @@ class Orchestrator:
     def bars(self) -> None:
         """Hourly low-priority bar accrual followed by the site-only flow pulse."""
         intraday_dir = self.data_dir / "intraday"
+        symbols = intraday_flow_symbols(ROOT / "site" / "flowtracker" / "base.json")
         bars = self.module(
             "intraday_bars",
             "scripts.build_polygon_intraday",
-            ["--lookback-days", "5", "--out-dir", str(intraday_dir)],
+            [
+                "--lookback-days", "5",
+                "--symbols", ",".join(symbols),
+                "--out-dir", str(intraday_dir),
+            ],
             timeout=720,
         )
         if bars.status != "ok":
