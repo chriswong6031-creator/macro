@@ -371,7 +371,10 @@ waves:
       reference (WS-CHINA-ALPHA-INTELLIGENCE.md). Done requires a natural
       production nightly proving source -> master -> GMI projection with a
       recorded run id and the measured CN/HK resolution delta, per Sol's
-      completion law — not yet observed."
+      completion law — not yet observed. Sol accepted the D2B2-CN-HK
+      implementation 2026-08-20 (BUILT_NOT_PROVEN); proof rides the first
+      natural nightly containing ed28d0d992a1 per the China WS pr0d entry;
+      no dispatched proof runs."
     status: in_progress
   - id: d3
     depends_on: [d2]
