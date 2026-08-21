@@ -598,7 +598,12 @@ html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
   .r3-pagehead h1{ font-size:var(--fs-body); }
   .r3-pagehead .r3-asof{ margin-left:0; flex-basis:100%; }
   .r3-specnote{ margin-top:10px; padding:8px 12px; }
-  /* every repeated touch target clears 44 CSS px on a phone */
+}
+/* QA2-06: the 44px segmented-control floor above only fired ≤767, leaving a
+   media-query gap at the 768-820 iPad-portrait band (Map's "Themes N" /
+   "Sectors N" universe switch measured 40.0px there, both languages) — a
+   repeated/primary target needs the same floor through 820, not only ≤767. */
+@media (max-width:820px){
   .r3-seg button{ min-height:44px; }
 }
 @media (max-width:359px){
@@ -672,6 +677,16 @@ html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
 /* Lane-local composition only. Every shared component (.r3-answer/.r3-board/
    .r3-row/.r3-watch/.r3-cols/.r3-sec/.r3-panel/.st-*) is the shell's; nothing
    below re-declares one. No new token, no new :root, no hue outside theme.css. */
+
+/* QA2-04: at extreme zoom the answer's read-slot (.si-vr-t, shell.html) shrinks
+   to ~57px — narrower than a single word ("leadership", "Storage") at this
+   font-size. The slot DOES wrap (`white-space:normal`, confirmed 15 wrapped
+   lines under CDP measurement) but `overflow-wrap:normal` refuses to break
+   INSIDE an unbreakable word, so that one word's own line still exceeds the
+   box and leaks to the document. overflow-wrap:anywhere is the same idiom
+   already used elsewhere in this build (.r3-ov-hname, .ne-name) for exactly
+   this shape of overflow; scoped to Overview only, shell.html untouched. */
+[data-view="overview"] .si-vr-t{ overflow-wrap:anywhere; }
 
 /* ── receipt button — a real 44px target wearing a 16px ring ─────────────────
    The system's `?` receipt must be tappable (hover is never the only path,
@@ -1165,11 +1180,21 @@ function rowHTML(r){
 
 /* ── the ledge ──────────────────────────────────────────────────────────────── */
 var SEL = 'buy_now';
+/* QA2-10: "Action lanes" was English-only under ZH — the group's own visible
+   lane names already twin (立即买入 etc.), only the tablist's own accessible
+   name did not. */
+function paintLedgeLabel(){
+  var isZh = document.documentElement.getAttribute('data-lang') === 'zh';
+  el('ov-ledge').setAttribute('aria-label', isZh ? '操作分组' : 'Action lanes');
+}
 function paintLedge(){
   el('ov-ledge').innerHTML = LANES.map(function(L1){
     var on = L1.key === SEL;
+    /* QA2-12: roving tabindex (APG tabs pattern) — the selected tab is the
+       only one in the sequential tab order; arrow keys move focus among the
+       rest. */
     return '<button class="r3-ledge-cell ' + L1.st + '" type="button" role="tab"'
-         + ' aria-selected="' + on + '" data-lane="' + L1.key + '"'
+         + ' aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '" data-lane="' + L1.key + '"'
          + ' aria-controls="ov-panel" id="ov-tab-' + L1.key + '">'
          + '<span class="r3-ledge-name">' + L(L1.en, L1.zh) + '</span>'
          + '<span class="r3-ledge-count tnum">' + laneCount(L1.key) + '</span>'
@@ -1330,22 +1355,40 @@ REF.renderActNow = function(state){
     var shown = full.slice(0, preview);
     fillLane(L1, shown, full.length - shown.length);
   });
-  if(state === 'hydrated') hydrate();
+  /* the GATED-looking preview (rows + disclosures) is what the reader sees
+     immediately, and — per access_hydration_contract.md §4 — is also exactly
+     what a hydrate failure leaves in place, "nothing to undo". restoreFolds()/
+     paintFoot() run synchronously here for every state; hydrate() (below) runs
+     them again, asynchronously, only once its own fetch actually resolves. */
   restoreFolds();
   paintFoot();
+  if(state === 'hydrated') hydrate();
 };
 
-/* hydrate() — the same insert-by-`data-ab-lane` mechanic production performs
-   (sector_central.html.j2:3597-3620), against the real `actnow_html` bytes. The
-   inserted rows are genuine production markup; they are given `data-ref-nav` so
-   their real destinations are RECORDED rather than followed (router contract),
-   and nothing about their content is rewritten. */
+/* hydrate() — QA2-07 / F-3: production's real flow FETCHES
+   premiumdata/sector_central.json client-side (access_hydration_contract.md §3
+   step 4) rather than reading the build-time-embedded registry synchronously;
+   this reference used to take the synchronous shortcut (`PG`, loaded once at
+   boot for the unrelated ZH-name lookups in loadArtifacts()), which left the
+   fetch leg undemonstrated — a simulated fetch failure could not be told apart
+   from a fetch success, and the runtime access-state switch and a hydrated
+   boot state were two different code paths that could drift. Routing BOTH
+   through the same REF.fetchJSON() call (shim §2 — resolves the embedded
+   registry unless REF.simulateFetchFail is on, in which case it genuinely
+   rejects) makes the fetch real, demonstrable, and the single code path both
+   entry points share. The insert-by-`data-ab-lane` mechanic itself is
+   unchanged production behaviour (sector_central.html.j2:3597-3620): the
+   inserted rows are genuine production markup, given `data-ref-nav` so their
+   real destinations are RECORDED rather than followed (router contract), and
+   nothing about their content is rewritten. */
 function hydrate(){
-  try{
-    if(!PG || PG.schema !== 'tier_payload.v1' || PG.page !== 'sector_central') throw new Error('invalid payload');
-    if(!PG.actnow_html) return;
+  return REF.fetchJSON('premiumdata/sector_central.json').then(function(payload){
+    if(!payload || payload.schema !== 'tier_payload.v1' || payload.page !== 'sector_central'){
+      throw new Error('invalid payload');
+    }
+    if(!payload.actnow_html) return;
     var box = document.createElement('div');
-    box.innerHTML = PG.actnow_html;
+    box.innerHTML = payload.actnow_html;
     var lanes = box.querySelectorAll('[data-ab-lane]');
     for(var i = 0; i < lanes.length; i++){
       var dest = el(lanes[i].getAttribute('data-ab-lane'));
@@ -1355,8 +1398,11 @@ function hydrate(){
     for(var j = 0; j < ins.length; j++) ins[j].setAttribute('data-ref-nav', '');
     var notes = document.querySelectorAll('#actnow .pg-more');
     for(var k = 0; k < notes.length; k++) notes[k].remove();
-  }catch(e){ /* fail-soft: 401/403/5xx/offline/schema-mismatch all collapse to a
-                no-op that keeps the baked preview and its disclosure (§A6). */ }
+    restoreFolds();
+    paintFoot();
+  }).catch(function(){ /* fail-soft: 401/403/5xx/offline/schema-mismatch all
+    collapse to a no-op that keeps the baked preview and its disclosure — the
+    shell was already rendered that way, synchronously, above (§4). */ });
 }
 
 /* ── lane selection ─────────────────────────────────────────────────────────── */
@@ -1366,7 +1412,9 @@ function selectLane(key){
   var board = el('actnow');
   board.className = 'r3-board ' + laneOf(key).st;
   Array.prototype.forEach.call(el('ov-ledge').querySelectorAll('.r3-ledge-cell'), function(b){
-    b.setAttribute('aria-selected', String(b.getAttribute('data-lane') === key));
+    var on = b.getAttribute('data-lane') === key;
+    b.setAttribute('aria-selected', String(on));
+    b.setAttribute('tabindex', on ? '0' : '-1');
   });
   LANES.forEach(function(L1){
     var body = el(L1.fold), foot = el('ov-lf-' + L1.key);
@@ -1391,7 +1439,14 @@ document.addEventListener('click', function(ev){
   if(ev.target.closest && ev.target.closest('.si-trace')) return;
   var id = traceId(row.getAttribute('href'));
   if(!id || !window.__siTrace) return;
-  ev.preventDefault(); ev.stopPropagation();
+  /* F-1: stopPropagation() alone does not stop a SIBLING listener on the same
+     node (runtime_shim.js's own capture-phase click listener is ALSO bound to
+     `document`) from still running — sibling listeners on one node only stop
+     with stopImmediatePropagation(). Without it, a trace-open click (the row
+     itself carries data-ref-nav for its own real destination) fell through to
+     the shim's data-ref-nav handler too and recorded a false "nav" for a click
+     that never navigated anywhere. */
+  ev.preventDefault(); ev.stopImmediatePropagation();
   var lanes = el('actnow');
   var open = lanes.querySelector('.si-trace');
   var was = open && row.nextElementSibling === open;
@@ -1529,10 +1584,16 @@ function paintWatch(){
       ? '<span class="r3-turn tnum" data-tip-en="Momentum is turning up from the low — a bigger number is a sharper turn. A first hint, not a buy signal."'
         + ' data-tip-zh="动能正从低位回升——数字越大转向越明显。仅是初步迹象，非买入信号。">'
         + Number(x.osc_slope).toFixed(1) + '</span>' : '';
-    return '<div class="r3-watch-cell">'
+    /* F-2: production renders each watch row as a real link to its basket
+       (_us_bottoming_watch.html.j2:95) — this reference used to render a
+       destination-less <div>. data-ref-nav routes it through the recorder
+       instead of a real page leave, same as every other row on the board. */
+    var tag = x.href ? 'a' : 'div';
+    var hrefAttr = x.href ? ' data-ref-nav href="' + esc(x.href) + '"' : '';
+    return '<' + tag + ' class="r3-watch-cell"' + hrefAttr + '>'
       + '<strong><span class="r3-watch-nm">' + L(esc(x.name), esc(x.name_zh || x.name)) + '</span>'
       + turn + '</strong>'
-      + '<span>' + clauses.join('<span aria-hidden="true"> · </span>') + '</span></div>';
+      + '<span>' + clauses.join('<span aria-hidden="true"> · </span>') + '</span></' + tag + '>';
   }).join('');
 
   /* Merged foot — a constant never repeats per row (doctrine Law 4). Every chip
@@ -1638,13 +1699,19 @@ document.addEventListener('DOMContentLoaded', function(){
     if(b) selectLane(b.getAttribute('data-lane'));
   });
   el('ov-ledge').addEventListener('keydown', function(e){
-    if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    /* QA2-12: Home/End join Left/Right — the full APG tabs keyboard contract. */
+    if(['ArrowRight','ArrowLeft','Home','End'].indexOf(e.key) < 0) return;
     var tabs = Array.prototype.slice.call(this.querySelectorAll('.r3-ledge-cell'));
     var i = tabs.indexOf(document.activeElement); if(i < 0) return;
-    var j = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+    var j = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1
+      : (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
     e.preventDefault(); tabs[j].focus(); selectLane(tabs[j].getAttribute('data-lane'));
   });
-  document.addEventListener('langchange', function(){ paintFoot(); });
+  /* QA2-10: reference-authored accessible labels are copy too — twin them the
+     same way the visible .l-en/.l-zh mechanism does, just via an attribute
+     write instead of a CSS display flip (aria-label has no CSS equivalent). */
+  paintLedgeLabel();
+  document.addEventListener('langchange', function(){ paintFoot(); paintLedgeLabel(); });
 
   /* The client fetch production performs at boot (__siBoot → __siInitPage). Its
      ONLY consumers here are window.BASKETS (which the router's composer and rail
@@ -1666,9 +1733,13 @@ document.addEventListener('DOMContentLoaded', function(){
       }
     }
     if(window.__siViewReads) window.__siViewReads();
-    /* a `#read-<id>` deep link is dispatched before this board exists; re-running
-       the verbatim router resolves the held trace now that the rows are here. */
-    if(window.__siRoute) window.__siRoute();
+    /* F-1: production does NOT re-run the router here (sector_central.html.j2:3088
+       calls window.__siViewReads(BASKETS) alone) — the extra window.__siRoute()
+       call this reference used to make ran openTrace() a SECOND time for a
+       pending `#read-<id>` deep link, and the second row.click() toggled the
+       just-opened trace card closed again. The board's own #read-<id> handling
+       (below, and the click-capture listener above) already opens the trace once
+       the rows exist; no second router pass is needed or correct. */
   }).catch(function(){
     var lanes = el('actnow');
     if(lanes) lanes.innerHTML = '<div class="r3-empty"><p class="r3-empty-line">'
@@ -2123,6 +2194,19 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
   function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
   function el(id){ return document.getElementById(id); }
 
+  /* F-4: the #board reasoning chain rendered `r.layer`/`r.tier` raw (esc() only,
+     no ZH resolution) — 114 leaf nodes leaking English under ZH. Bound from the
+     production China sibling's own twin map (templates/sector_central_china.html.j2
+     ~:1425, LAYER_ZH) wherever it already carries the word; "Trend gate" is
+     absent there (that map only has bare "Trend") so it is authored here, listed
+     for the copy ledger. Tier words come from the producer's own established
+     twins: confirmer/display from templates/signal_lab.html.j2:548's
+     tier_labels, validated from templates/sector_central.html.j2:3463 (the same
+     "Validated" the Money view's own tag already renders, QA2-13). */
+  var LAYER_ZH={'Cycle state':'周期状态','Regime gate':'市况把关','Momentum':'动量',
+    'Fragility':'脆弱度','Heat':'热度','Trend gate':'趋势把关'};
+  var TIER_ZH={'validated':'已验证','confirmer':'确认项','display':'仅展示'};
+
   /* ── payload access ──────────────────────────────────────────────────────
      window.BASKETS is the same global production's own page fetch populates.
      runtime_shim.js already performs this exact synchronous parse for
@@ -2446,9 +2530,9 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
         :(st.phaseLabel||'');
       var chain=(s.reasoning||[]).map(function(r){
         return '<div class="r3-chainrow">'
-          +'<span class="r3-chainlay">'+esc(r.layer||'')+'</span>'
+          +'<span class="r3-chainlay">'+L(esc(r.layer||''),esc(LAYER_ZH[r.layer]||r.layer||''))+'</span>'
           +'<span class="r3-chaintx">'+L(esc(r.en||''),esc(r.zh||r.en||''))
-          +'<span class="r3-chaintier">'+esc(r.tier||'')+'</span></span></div>';
+          +'<span class="r3-chaintier">'+L(esc(r.tier||''),esc(TIER_ZH[r.tier]||r.tier||''))+'</span></span></div>';
       }).join('');
       var split=s.split_view
         ? '<p class="r3-callout r3-greadsplit">'+L(esc(s.split_copy_en||''),esc(s.split_copy_zh||s.split_copy_en||''))+'</p>'
@@ -2531,12 +2615,20 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
       });
     }
     document.addEventListener('langchange',function(){
-      renderAll(); cycRows(); cycDraw(); boardRender(); syncToggle();
+      renderAll(); cycRows(); cycDraw(); boardRender(); syncToggle(); syncScopeLabel();
     });
   }
 
+  /* QA2-10: the universe-switch group's own accessible name was English-only
+     under ZH; the two button labels it contains already twin (主题/板块). */
+  function syncScopeLabel(){
+    var scope=el('r3-map-scope'); if(!scope) return;
+    scope.setAttribute('aria-label', isZh()
+      ? '切换轮动图的主题或板块' : 'Show themes or sectors on the rotation map');
+  }
+
   function boot(){
-    renderAll(); cycInit(); boardRender(); wire();
+    renderAll(); cycInit(); boardRender(); wire(); syncScopeLabel();
     /* the composed read strip can only be built once __siRvxData answers */
     if(typeof window.__siViewReads==='function'){ try{ window.__siViewReads(); }catch(e){} }
   }
@@ -2680,6 +2772,36 @@ html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
    opportunity; at 200% zoom on a 390 phone it is wider than the column. */
 .r3-note{ margin-top:var(--sp-3); font-size:var(--fs-sm); color:var(--muted); line-height:1.5;
   max-width:88ch; overflow-wrap:anywhere; }
+
+/* F-5: whole-market track-record / calibration scorecard — production
+   templates/subsector_rotation.js:319-345 (drawTrackRecord), ported field-for-
+   field. Placed as a quiet context-tier card after the note, the same
+   composition idiom the rest of this view already uses for supporting detail
+   (r3-panel, r3-tbl — both the shell's shared components, not redeclared). */
+.r3-tr{ margin-top:var(--sp-4); }
+.r3-tr-hd{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3);
+  padding:12px 16px; border-bottom:1px solid var(--line); font-size:var(--fs-sm); font-weight:700; }
+.r3-tr-q{ padding:1px 8px; border-radius:var(--r-ctl); border:1px solid currentColor;
+  font-size:var(--fs-micro); font-weight:700; letter-spacing:.03em; }
+.r3-tr-meta{ margin-left:auto; font-size:var(--fs-micro); color:var(--muted); font-weight:400;
+  font-variant-numeric:tabular-nums; }
+.r3-tr-note{ padding:10px 16px 0; font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
+.r3-tr-body{ padding:10px 16px 4px; overflow-x:auto; }
+.r3-tr-body .r3-tbl{ min-width:520px; }
+.r3-tr-ok{ color:var(--up); }
+.r3-tr-misses{ padding:2px 16px 12px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
+.r3-tr-mlab{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--muted); }
+.r3-tr-miss{ font-size:var(--fs-sm); }
+.r3-tr-miss i{ font-style:normal; margin-left:4px; font-variant-numeric:tabular-nums; }
+.r3-tr-miss i.up{ color:var(--ink-up); } .r3-tr-miss i.dn{ color:var(--ink-down); }
+.r3-tr-disc{ padding:10px 16px 14px; border-top:1px solid var(--line);
+  font-size:var(--fs-micro); color:var(--muted); line-height:1.5; }
+.r3-tr-help{ appearance:none; display:inline-flex; align-items:center; justify-content:center;
+  width:16px; height:16px; margin-left:5px; padding:0; border:1px solid var(--line); border-radius:50%;
+  background:none; color:var(--muted); font-size:9.5px; font-weight:700; line-height:1; cursor:help;
+  vertical-align:middle; }
+.r3-tr-help[aria-expanded="true"]{ color:var(--text); border-color:color-mix(in srgb, var(--link) 55%, var(--line)); }
 .r3-mv{ font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
 .r3-mv.up{ color:var(--ink-up); } .r3-mv.dn{ color:var(--ink-down); }
 
@@ -2818,7 +2940,11 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
   function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
   function el(id){ return document.getElementById(id); }
-  var ARROW='<span class="r3-arrow" role="img" aria-label="moved to"></span>';
+  /* QA2-11: this CSS-drawn connector glyph is decorative — the flanking
+     source/destination names carry the meaning, so a screen reader should
+     skip it rather than announce the content-free fragment "moved to" nine
+     times with no subject or object. */
+  var ARROW='<span class="r3-arrow" aria-hidden="true"></span>';
   /* rotation_events.js:181-201, verbatim EN/ZH pairs.  Only `handoff` and
      `faltering` occur in the frozen fixture, so nothing else ever renders here;
      the other two branches are carried so the capability is not silently dropped
@@ -3094,12 +3220,72 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
       +'</div></div>'
       +'<p class="r3-note">'+L(
         'Emerging and fading are named by tonight’s producer run, in its own order. A context lens over the broadest universe: it measures the speed of relative strength — it ranks nothing, gates nothing and sizes nothing.',
-        '「新兴」与「消退」由今晚数据方标记，顺序沿用其输出。这是覆盖最广市场范围的背景视角：衡量相对强度的速度 — 不排序、不门控、不定仓。')+'</p>';
+        '「新兴」与「消退」由今晚数据方标记，顺序沿用其输出。这是覆盖最广市场范围的背景视角：衡量相对强度的速度 — 不排序、不门控、不定仓。')+'</p>'
+      +trackRecordHtml(d.track_record);
 
     var a=el('r3-wm-asof');
     if(a&&d.asof) a.innerHTML=L('as of '+esc(d.asof),'截至 '+esc(d.asof));
     drawWholeMarket(subs, byKey['megacapgenerals']);
     wireWmToggle();
+  }
+
+  /* F-5: whole-market calibration scorecard — production
+     templates/subsector_rotation.js:319-345 (drawTrackRecord), field-for-field:
+     same horizons table, same verdict badge, same recent-misses strip, same
+     at-rest disclosure sentence. Adapted to this reference's own single-string
+     data-tip-en/zh receipt mechanism (shared, installed once by overview.html)
+     rather than production's separate title/body/receipt tip attributes, which
+     this build has no wiring for. */
+  var TR_V={accruing:['Accruing','记录累积中','--muted'],measuring:['Still measuring','测量中','--warn'],
+            validated:['Clears the bar','已达标','--up']};
+  function trFpct(v){ return v==null?'—':(v*100).toFixed(0)+'%'; }
+  function trFic(v){ return v==null?'—':(v>0?'+':'')+(+v).toFixed(3); }
+  function trFt(v){ return v==null?'—':(+v).toFixed(1); }
+  function trackRecordHtml(tr){
+    if(!tr) return '';
+    var vb=TR_V[tr.verdict]||TR_V.accruing;
+    var hs=tr.horizons||{};
+    var rows=Object.keys(hs).map(function(h){
+      var e=hs[h]||{}, bs=e.by_stage||{}, em=bs.emerging||{}, fa=bs.fading||{};
+      var prov=(tr.proven||{})[h];
+      return '<tr><td>'+esc(h)+'d</td><td class="num">'+(e.n_matured||0)+'</td>'
+        +'<td class="num">'+trFpct(em.hit_rate)+'</td><td class="num">'+trFpct(fa.hit_rate)+'</td>'
+        +'<td class="num">'+trFic(e.score_ic)+'</td><td class="num">'+trFt(e.score_ic_t_hac)
+        +(prov?' <span class="r3-tr-ok" aria-hidden="true">&#10003;</span>'
+              +'<span class="r3-vh">'+L('cleared','已达标')+'</span>':'')+'</td></tr>';
+    }).join('');
+    var misses=(tr.recent_misses||[]).slice(0,8).map(function(mi){
+      var v=mi.fwd_rel==null?0:mi.fwd_rel;
+      return '<span class="r3-tr-miss"><b>'+esc(mi.name)+'</b>'
+        +'<i class="'+(mi.stage==='emerging'?'dn':'up')+'">'+(v>0?'+':'')+(v*100).toFixed(1)+'%</i></span>';
+    }).join('');
+    return '<div class="r3-panel r3-tr">'
+      +'<div class="r3-tr-hd">' + L('&#128202; Track record','&#128202; 跟踪记录')
+        +'<span class="r3-tr-q" style="color:var('+vb[2]+');border-color:var('+vb[2]+')">'+L(vb[0],vb[1])+'</span>'
+        +'<span class="r3-tr-meta">'+(tr.n_days||0)+' '+L('days logged','天')+' &middot; '
+          +(tr.n_snapshots||0)+' '+L('calls logged','次记录')+'</span></div>'
+      +'<div class="r3-tr-note">'+L(esc(tr.note||''),esc(tr.note_zh||tr.note||''))+'</div>'
+      +'<div class="r3-tr-body"><table class="r3-tbl"><thead><tr>'
+        +'<th>'+L('Horizon','周期')+'</th><th class="num">'+L('Matured','已到期')+'</th>'
+        +'<th class="num">'+L('Emerging hit','升温命中')+'</th><th class="num">'+L('Fading hit','退潮命中')+'</th>'
+        +'<th class="num">'+L('Rank fit','排序吻合')
+          +'<button type="button" class="r3-tr-help" aria-expanded="false"'
+          +' data-tip-en="Rank fit is how closely the ranking matched what happened next."'
+          +' data-tip-zh="排序吻合是指排序与后续实际走势的接近程度。">?</button></th>'
+        +'<th class="num">'+L('Reliability','可靠度')
+          +'<button type="button" class="r3-tr-help" aria-expanded="false"'
+          +' data-tip-en="Reliability is how unlikely that match is to be luck &mdash; a check means it clears the bar for that horizon."'
+          +' data-tip-zh="可靠度是指这种吻合有多不可能出于偶然&mdash;&mdash;对勾表示该周期已达标。">?</button></th>'
+        +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +(misses?'<div class="r3-tr-misses"><span class="r3-tr-mlab">'+L('Recently wrong (logged)','近期误判（已记录）')
+        +'</span>'+misses+'</div>':'')
+      +'<div class="r3-tr-disc">'
+        +L('A scorecard of this page&#39;s own calls, checked against what happened next. Until a time-window has enough history, it is still measuring &mdash; read it as &#8220;measuring&#8221;, not proof.',
+           '本页自身判断的记分卡，对照后续实际走势检验。在某一周期积累足够历史前仍为「测量中」——请视为「测量」，而非定论。')
+        +'<button type="button" class="r3-tr-help" aria-expanded="false"'
+        +' data-tip-en="' + esc(tr.disclaimer || '') + '"'
+        +' data-tip-zh="' + esc(tr.disclaimer_zh || tr.disclaimer || '') + '">?</button>'
+        +'</div></div>';
   }
   function svgEl(t,at){ var e=document.createElementNS('http://www.w3.org/2000/svg',t);
     for(var k in at) e.setAttribute(k,at[k]); return e; }
@@ -3368,7 +3554,9 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
   a{ color:inherit; text-decoration:none; } h1,h2,h3{ margin:0; } p{ margin:0; }
   .tnum{ font-variant-numeric:tabular-nums; }
   .si-view{ display:none; } .si-view.on{ display:block; }
-  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--r3-chrome-h,40px) + var(--r3-mnav-h,0px) + 16px); }
+  /* F-6: see explore.html's identical fix — this local reset shadowed
+     shell.html's --ref-sticky-offset-based rule with a static fallback. */
+  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--ref-sticky-offset, var(--r3-chrome-h,40px)) + var(--r3-mnav-h,0px) + 16px); }
   :where(a,button,summary,select,[tabindex]):focus-visible{
     outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; border-radius:var(--r-ctl); }
   /* .r3-* primitives, copied verbatim from build/shell_specimen.html §7/§9/§10 */
@@ -3579,7 +3767,16 @@ html[data-lang="zh"] .si-view[data-view="money"] .mny-flowfrag .scc-section-h h2
 .si-view[data-view="money"] .hm-sechd{ position:absolute; left:0; right:0; top:0; height:17px;
   display:flex; align-items:center; justify-content:space-between; gap:6px; padding:0 5px;
   font-size:11px; font-weight:700; letter-spacing:.02em; color:var(--muted);
-  border-bottom:1px solid color-mix(in srgb, var(--muted) 22%, transparent); white-space:nowrap; overflow:hidden; }
+  border-bottom:1px solid color-mix(in srgb, var(--muted) 22%, transparent); white-space:nowrap;
+  /* QA2-05: a narrow sector tile at extreme zoom can be too tight for its own
+     name even though the tile passed the h>34&&w>84 header-eligibility gate —
+     `overflow:hidden` here clipped the name with ZERO document overflow (invisible
+     to a scrollWidth-only gate). Primary names may never be clipped (spec law),
+     so the label is left free to extend past its own tile's edge — it stays
+     inside the treemap's own bounds (`.mny-tm{overflow:hidden}` still clips at
+     the outer edge only) and z-order simply lets it read over a neighbour tile
+     in this rare extreme-zoom case, which is preferable to truncation. */
+  overflow:visible; z-index:1; }
 .si-view[data-view="money"] .hm-sechd > .agg{ font-variant-numeric:tabular-nums; font-weight:700; }
 .si-view[data-view="money"] .hm-t{ position:absolute; display:flex; flex-direction:column;
   align-items:center; justify-content:center; overflow:hidden; color:#fff;
@@ -3645,6 +3842,11 @@ html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(
   background:color-mix(in srgb, var(--panel2) 45%, transparent);
   border-radius:0 0 var(--r-panel) var(--r-panel); display:flex; align-items:center; flex-wrap:wrap;
   gap:var(--sp-2) var(--sp-3); font-size:var(--fs-micro); line-height:1.6; color:var(--muted); }
+/* QA2-01: the "Forward track record" tag's own white-space:nowrap (from the
+   shared .r3-tag definition above) cannot shrink at narrow widths and drives
+   document overflow at 200% zoom / css320-390 — allow ONLY this instance to
+   wrap; the badge wording is unchanged. */
+.si-view[data-view="money"] .lead-foot .r3-tag{ white-space:normal; min-width:0; max-width:100%; }
 .si-view[data-view="money"] .mny-deeper{ margin-top:var(--sp-5); }
 
 /* ── responsive: the phone RECOMPOSES; no document overflow at 320 → 820 ─────── */
@@ -4172,14 +4374,27 @@ function renderLeadership(){
                 weakening:['Weakening','走弱'],lagging:['Lagging','落后']};
       function quad(q){ var i=QUAD[q]||['—','—']; return '<span class="r3-tag">'+L(i[0],i[1])+'</span>'; }
 
+      /* F-4: `w.leg` is a raw producer driver-phrase with no zh twin in the
+         fixture — it used to be glued into the ZH sentence untranslated
+         (esc(whyTxt) on both sides). "breadth thrust" reuses production's own
+         established phrase (templates/_risk_radar_card.html.j2:205); the china
+         sibling template (templates/sector_central_china.html.j2's LAYER_ZH
+         neighbourhood) carries no twin for any of these three legs, so the
+         other two are authored here — plain and short, listed for the copy
+         ledger. */
+      var LEG_ZH={'breadth thrust':'广度推进','broad participation':'参与广泛',
+                  'return acceleration':'回报加速'};
       var whyTxt=(star&&star.why&&star.why.length)?star.why.map(function(w){return w.leg;}).join(' · ')
                                                   :null;
+      var whyZh=(star&&star.why&&star.why.length)
+        ?star.why.map(function(w){return LEG_ZH[w.leg]||w.leg;}).join(' · ')
+        :null;
       var hero='<div class="lead-hero">';
       if(star) hero+='<div class="lead-cell"><span class="r3-eyebrow">'+L('Rising star','上升之星')+'</span>'
         +'<span class="lead-name">'+L(esc(star.label[0]),esc(star.label[1]))
         +'<span class="lead-las tnum">LAS '+sgn(star.las,2)+'</span></span>'
         +'<span class="lead-why">'+L('leadership accelerating fastest'+(whyTxt?' — '+esc(whyTxt):''),
-                                     '领导加速最快'+(whyTxt?'——'+esc(whyTxt):''))+'</span></div>';
+                                     '领导加速最快'+(whyZh?'——'+esc(whyZh):''))+'</span></div>';
       if(ln){
         var lq=(T[ln.tab]||{}).quadrant;
         var note=(lq==='weakening'||lq==='lagging')?L(' · but weakening',' · 但走弱'):'';
@@ -4447,7 +4662,14 @@ document.addEventListener('langchange', function(){
   h1,h2,h3{ margin:0; } p{ margin:0; }
   .tnum{ font-variant-numeric:tabular-nums; }
   .si-view{ display:none; } .si-view.on{ display:block; }
-  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--r3-chrome-h,40px) + var(--r3-mnav-h,0px) + 16px); }
+  /* F-6: this standalone-preview reset used a STATIC fallback
+     (--r3-chrome-h) instead of the shim-measured --ref-sticky-offset shell.html's
+     own rule consumes — since this partial's <style> loads AFTER shell.html's in
+     the assembled candidate, equal specificity meant this rule WON and silently
+     ignored wireStickyOffset()'s real measurement for every id on this view.
+     --ref-sticky-offset first (falls back to the static token only when standalone,
+     i.e. outside the full assembly) makes it one consumed value again. */
+  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--ref-sticky-offset, var(--r3-chrome-h,40px)) + var(--r3-mnav-h,0px) + 16px); }
   :where(a,button,summary,select,[tabindex]):focus-visible{
     outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; border-radius:var(--r-ctl); }
   .r3-eyebrow{ display:block; font-size:var(--fs-label); font-weight:600; letter-spacing:.08em;
@@ -4539,9 +4761,15 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
    (spec §9, §12), exactly the shape production gives #btbl-mode (role="group"). */
 .si-view[data-view="explore"] .exp-filters{ padding:var(--exp-pad); border-bottom:1px solid var(--line);
   display:flex; flex-direction:column; gap:var(--sp-2); }
-.si-view[data-view="explore"] .exp-frow{ display:flex; align-items:flex-start; gap:var(--sp-5); }
+/* QA2-03: at extreme zoom the 80px label + gap can leave the segmented control
+   less room than even one button's own min-content width; wrapping the ROW
+   (not just the segment's own buttons) lets the control drop to a full-width
+   line instead of forcing document overflow, and min-width:0 lets it actually
+   use that room (a flex item's default min-width is its content size). */
+.si-view[data-view="explore"] .exp-frow{ display:flex; align-items:flex-start; gap:var(--sp-5); flex-wrap:wrap; }
 .si-view[data-view="explore"] .exp-flab{ flex:none; width:80px; padding-top:13px; }
 .si-view[data-view="explore"] .exp-cats button{ min-height:40px; padding:0 12px; font-size:var(--fs-sm); }
+.si-view[data-view="explore"] .exp-modes{ min-width:0; }
 .si-view[data-view="explore"] .exp-modes button{ min-height:40px; }
 .si-view[data-view="explore"] .exp-count{ font-size:var(--fs-micro); letter-spacing:.05em; color:var(--muted); }
 /* ONE mechanism at every width. The sixteen category filters are a real research affordance
@@ -4549,11 +4777,16 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
    summary always names the ACTIVE category — open by default ≥768, closed below. Nothing is
    removed and nothing is hidden behind a hover: the current state is on the summary. */
 .si-view[data-view="explore"] .exp-catwrap{ display:flex; flex-direction:column; }
+/* QA2-03 (same class): the disclosure summary is its OWN flex row, so the
+   outer .exp-frow flex-wrap fix above does not reach it — at extreme zoom the
+   fixed 80px label + gap + chevron leave .exp-catnow less room than its
+   default (unshrinkable) min-width, and it pushed 10px past the viewport. */
 .si-view[data-view="explore"] .exp-catwrap > summary{ display:flex; align-items:center;
-  gap:var(--sp-5); min-height:44px; cursor:pointer; list-style:none; }
+  flex-wrap:wrap; gap:var(--sp-5); min-height:44px; cursor:pointer; list-style:none; }
 .si-view[data-view="explore"] .exp-catwrap > summary::-webkit-details-marker{ display:none; }
 .si-view[data-view="explore"] .exp-catwrap > summary .exp-flab{ padding-top:0; }
-.si-view[data-view="explore"] .exp-catnow{ font-size:var(--fs-sm); font-weight:700; color:var(--text); }
+.si-view[data-view="explore"] .exp-catnow{ min-width:0; max-width:100%; overflow-wrap:anywhere;
+  font-size:var(--fs-sm); font-weight:700; color:var(--text); }
 .si-view[data-view="explore"] .exp-catwrap > summary::after{ content:""; width:7px; height:7px; flex:none;
   border-right:1.6px solid var(--muted); border-bottom:1.6px solid var(--muted);
   transform:translateY(-2px) rotate(45deg); transition:transform var(--t-fast) var(--ease-std); }
@@ -4677,8 +4910,14 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
   font-variant-numeric:tabular-nums; color:var(--muted); }
 .si-view[data-view="explore"] .ne-rec-h{ margin:13px 0 6px; }
 .si-view[data-view="explore"] .ne-recs{ display:flex; flex-wrap:wrap; gap:6px; }
+/* QA2-02: `.ne-recs{flex-wrap:wrap}` only wraps at a CHIP boundary — a single
+   chip whose own name+percentage sit on one line (a flex row has no wrap by
+   default) is still wider than the viewport at extreme zoom and forces
+   document overflow. Letting the chip's own contents wrap (and shrink to fit
+   its flex parent) fixes it without touching the wording. */
 .si-view[data-view="explore"] .ne-tk{ position:relative; display:inline-flex; align-items:center; gap:7px;
-  min-height:34px; padding:0 10px; border-radius:var(--r-ctl); border:1px solid var(--gbtn-brd);
+  flex-wrap:wrap; max-width:100%; min-width:0;
+  min-height:34px; padding:5px 10px; border-radius:var(--r-ctl); border:1px solid var(--gbtn-brd);
   background:var(--gbtn-bg); color:var(--text); font-size:var(--fs-sm); cursor:pointer; }
 .si-view[data-view="explore"] .ne-tk > .dot{ flex:none; width:7px; height:7px; border-radius:50%; }
 .si-view[data-view="explore"] .ne-tk > .nm{ font-weight:700; }
@@ -6158,8 +6397,11 @@ function paintUniverses(){
   el('cf-uni').innerHTML = TABS.map(function(k){
     var p = DATA[k], n = p ? ((p[DS[k].groupsKey] || []).length) : 0;
     var on = k === TAB;
+    /* QA2-08: aria-controls used to name #sc-app, an element with no role — the
+       page's only role=tabpanel is #cf-panel (the list this tab's content
+       actually determines), so point there instead. QA2-12: roving tabindex. */
     return '<button type="button" role="tab" data-uni="' + k + '" id="cf-uni-' + k + '"'
-      + ' aria-selected="' + on + '" aria-controls="sc-app">'
+      + ' aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '" aria-controls="cf-panel">'
       + L(DS[k].tab[0], DS[k].tab[1]) + '<span class="n tnum">' + n + '</span></button>';
   }).join('');
 }
@@ -6171,7 +6413,7 @@ function paintLedge(){
   el('cf-ledge').innerHTML = ORDER.map(function(k){
     var m = CLASS_META[k], on = k === SEL;
     return '<button class="r3-ledge-cell ' + m.st + '" type="button" role="tab"'
-      + ' aria-selected="' + on + '" data-bucket="' + k + '" id="cf-tab-' + k + '" aria-controls="cf-panel">'
+      + ' aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '" data-bucket="' + k + '" id="cf-tab-' + k + '" aria-controls="cf-panel">'
       + '<span class="r3-ledge-name">' + L(m.label[0], m.label[1]) + '</span>'
       + '<span class="r3-ledge-count tnum">' + c[k] + '</span></button>';
   }).join('');
@@ -6644,10 +6886,17 @@ function paintContext(){
   el('cf-context-band').hidden = !html;
 }
 
+/* QA2-10: both tablists' own accessible names were English-only under ZH; the
+   tabs each already twin their visible labels. */
+function paintTablistLabels(){
+  el('cf-uni').setAttribute('aria-label', isZh() ? '范围' : 'Universe');
+  el('cf-ledge').setAttribute('aria-label', isZh() ? '时机状态' : 'Timing states');
+}
+
 /* ══ render + wiring ══ */
 function render(){
   paintUniverses(); paintAnswer(); paintLedge(); paintFoot(); paintPanel(); paintPicks(); paintTable();
-  paintContext();
+  paintContext(); paintTablistLabels();
 }
 function setTab(k){
   if(k === TAB) return;
@@ -6683,16 +6932,44 @@ document.addEventListener('DOMContentLoaded', function(){
     var b = e.target.closest ? e.target.closest('[data-uni]') : null;
     if(b) setTab(b.getAttribute('data-uni'));
   });
+  /* QA2-08 (keyboard half) + QA2-12: the Universe tablist previously had no
+     arrow-key handling at all. */
+  el('cf-uni').addEventListener('keydown', function(e){
+    if(['ArrowRight','ArrowLeft','Home','End'].indexOf(e.key) < 0) return;
+    var tabs = Array.prototype.slice.call(this.querySelectorAll('[role="tab"]'));
+    var i = tabs.indexOf(document.activeElement); if(i < 0) return;
+    var j = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1
+      : (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+    e.preventDefault();
+    var key = tabs[j].getAttribute('data-uni');
+    setTab(key);
+    /* setTab() -> render() -> paintUniverses() REBUILDS every tab button, so the
+       pre-repaint reference (tabs[j]) is gone from the DOM by the time this
+       line runs; the fresh node is re-queried by id AFTER the repaint. Focusing
+       BEFORE the repaint (as the old handler did on #cf-ledge) is exactly the
+       QA2-09 defect — focus lands on a node that is about to be removed and
+       falls back to the document. */
+    var fresh = el('cf-uni-' + key);
+    if(fresh) fresh.focus();
+  });
   el('cf-ledge').addEventListener('click', function(e){
     var b = e.target.closest ? e.target.closest('[data-bucket]') : null;
     if(b) setBucket(b.getAttribute('data-bucket'));
   });
+  /* QA2-09: focus used to move to the (about-to-be-destroyed) old button BEFORE
+     setBucket()'s paintLedge() rebuilt #cf-ledge, so it fell through to the
+     shell root. Focus is now (re)applied to the freshly painted button. */
   el('cf-ledge').addEventListener('keydown', function(e){
-    if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    if(['ArrowRight','ArrowLeft','Home','End'].indexOf(e.key) < 0) return;
     var tabs = Array.prototype.slice.call(this.querySelectorAll('.r3-ledge-cell'));
     var i = tabs.indexOf(document.activeElement); if(i < 0) return;
-    var j = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
-    e.preventDefault(); tabs[j].focus(); setBucket(tabs[j].getAttribute('data-bucket'));
+    var j = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1
+      : (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+    e.preventDefault();
+    var key = tabs[j].getAttribute('data-bucket');
+    setBucket(key);
+    var fresh = el('cf-tab-' + key);
+    if(fresh) fresh.focus();
   });
   el('cf-panel').addEventListener('click', function(e){
     var row = e.target.closest ? e.target.closest('button.r3-row[data-key]') : null;
@@ -7090,6 +7367,62 @@ function wireStickyOffset(){
   var h = bar ? Math.ceil(bar.getBoundingClientRect().height) : 56;
   document.documentElement.style.setProperty('--ref-sticky-offset', h + 'px');
 }
+
+/* F-6: a hash landing can overshoot when its target sits below content that
+   mounts lazily (a view's own organs load async, per-view, well after
+   activate()'s own scrollIntoView already ran) — measured pre-fix: #tm-mount
+   landed at scrollY 2613 against a target top of 846; #grader landed 452
+   against 737. Root cause (confirmed with instrumented CDP measurement): the
+   router's OWN initial scrollIntoView call runs at PARSE TIME, before a
+   single view has populated a row, so it computes against a near-empty page;
+   the browser then leaves scrollY exactly where that early call put it even
+   as later content grows the page underneath. si_workspace.js's
+   activate()/route() are verbatim and off-limits, and expose no target id
+   this shim could re-resolve without duplicating their own LEGACY_ANCHORS
+   table — so instead of re-deriving the target, this WRAPS (never overrides
+   the behavior of) Element.prototype.scrollIntoView to remember whichever
+   element was last asked to scroll into view, by anyone, including the
+   router, then re-issues ONE scrollIntoView call — never a loop — against
+   the FINAL, settled layout after a short delay; confirmed firing correctly
+   (target identity + DOM presence re-checked at settle time) against this
+   candidate's own #tm-mount and #grader. This build's fetch shim resolves
+   near-synchronously (Promise.resolve() over the embedded registry, no real
+   network latency), so the drift window this closes is small here — the
+   settle delay is what production's own real fetch latency would need. A
+   residual gap can remain regardless of timing for a target that sits close
+   enough to the very BOTTOM of its view that the page has no more room to
+   scroll it further up — confirmed on both #tm-mount and #grader by scrollY
+   landing exactly at `document.body.scrollHeight - window.innerHeight` (the
+   browser's own hard ceiling): a content-length property of the page, not
+   something any re-scroll timing can correct. */
+var _lastScrollTarget = null;
+var _nativeScrollIntoView = Element.prototype.scrollIntoView;
+Element.prototype.scrollIntoView = function(opts){
+  _lastScrollTarget = this;
+  return _nativeScrollIntoView.apply(this, arguments);
+};
+function rescrollSettle(){
+  var target = _lastScrollTarget;
+  if(!target || !document.contains(target)) return;
+  setTimeout(function(){
+    /* Re-check identity (not position): the router's OWN initial scrollIntoView
+       call happens at parse time, BEFORE any view's DOMContentLoaded handler has
+       populated a single row — by the time this shim's own DOMContentLoaded
+       listener runs (after every view's, since views assemble ahead of the
+       runtime slot), the page has typically already grown past that early
+       snapshot, so the drift has usually ALREADY happened before any "did it
+       move" window could observe it. A single unconditional re-scroll (never a
+       loop — this timer fires once per settle cycle) is therefore the correct
+       shape: scrollIntoView is a no-op when the target is already positioned
+       correctly, and corrects it when it is not. Superseded-target and
+       removed-target guards keep this from fighting a newer hash landing. */
+    if(target !== _lastScrollTarget || !document.contains(target)) return;
+    try{ _nativeScrollIntoView.call(target, {block:'start'}); }
+    catch(e){ target.scrollIntoView(); }
+  }, 350);
+}
+window.addEventListener('hashchange', rescrollSettle);
+document.addEventListener('DOMContentLoaded', function(){ rescrollSettle(); });
 
 /* ── 6. Access-state board (Overview Act-Now) hook ───────────────────────────
    overview.html registers REF.renderActNow(state) on DOMContentLoaded. This

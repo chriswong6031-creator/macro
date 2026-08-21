@@ -598,7 +598,12 @@ html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
   .r3-pagehead h1{ font-size:var(--fs-body); }
   .r3-pagehead .r3-asof{ margin-left:0; flex-basis:100%; }
   .r3-specnote{ margin-top:10px; padding:8px 12px; }
-  /* every repeated touch target clears 44 CSS px on a phone */
+}
+/* QA2-06: the 44px segmented-control floor above only fired ≤767, leaving a
+   media-query gap at the 768-820 iPad-portrait band (Map's "Themes N" /
+   "Sectors N" universe switch measured 40.0px there, both languages) — a
+   repeated/primary target needs the same floor through 820, not only ≤767. */
+@media (max-width:820px){
   .r3-seg button{ min-height:44px; }
 }
 @media (max-width:359px){

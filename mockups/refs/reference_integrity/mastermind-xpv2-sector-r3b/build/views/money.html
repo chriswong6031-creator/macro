@@ -81,7 +81,9 @@
   a{ color:inherit; text-decoration:none; } h1,h2,h3{ margin:0; } p{ margin:0; }
   .tnum{ font-variant-numeric:tabular-nums; }
   .si-view{ display:none; } .si-view.on{ display:block; }
-  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--r3-chrome-h,40px) + var(--r3-mnav-h,0px) + 16px); }
+  /* F-6: see explore.html's identical fix — this local reset shadowed
+     shell.html's --ref-sticky-offset-based rule with a static fallback. */
+  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--ref-sticky-offset, var(--r3-chrome-h,40px)) + var(--r3-mnav-h,0px) + 16px); }
   :where(a,button,summary,select,[tabindex]):focus-visible{
     outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; border-radius:var(--r-ctl); }
   /* .r3-* primitives, copied verbatim from build/shell_specimen.html §7/§9/§10 */
@@ -292,7 +294,16 @@ html[data-lang="zh"] .si-view[data-view="money"] .mny-flowfrag .scc-section-h h2
 .si-view[data-view="money"] .hm-sechd{ position:absolute; left:0; right:0; top:0; height:17px;
   display:flex; align-items:center; justify-content:space-between; gap:6px; padding:0 5px;
   font-size:11px; font-weight:700; letter-spacing:.02em; color:var(--muted);
-  border-bottom:1px solid color-mix(in srgb, var(--muted) 22%, transparent); white-space:nowrap; overflow:hidden; }
+  border-bottom:1px solid color-mix(in srgb, var(--muted) 22%, transparent); white-space:nowrap;
+  /* QA2-05: a narrow sector tile at extreme zoom can be too tight for its own
+     name even though the tile passed the h>34&&w>84 header-eligibility gate —
+     `overflow:hidden` here clipped the name with ZERO document overflow (invisible
+     to a scrollWidth-only gate). Primary names may never be clipped (spec law),
+     so the label is left free to extend past its own tile's edge — it stays
+     inside the treemap's own bounds (`.mny-tm{overflow:hidden}` still clips at
+     the outer edge only) and z-order simply lets it read over a neighbour tile
+     in this rare extreme-zoom case, which is preferable to truncation. */
+  overflow:visible; z-index:1; }
 .si-view[data-view="money"] .hm-sechd > .agg{ font-variant-numeric:tabular-nums; font-weight:700; }
 .si-view[data-view="money"] .hm-t{ position:absolute; display:flex; flex-direction:column;
   align-items:center; justify-content:center; overflow:hidden; color:#fff;
@@ -358,6 +369,11 @@ html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(
   background:color-mix(in srgb, var(--panel2) 45%, transparent);
   border-radius:0 0 var(--r-panel) var(--r-panel); display:flex; align-items:center; flex-wrap:wrap;
   gap:var(--sp-2) var(--sp-3); font-size:var(--fs-micro); line-height:1.6; color:var(--muted); }
+/* QA2-01: the "Forward track record" tag's own white-space:nowrap (from the
+   shared .r3-tag definition above) cannot shrink at narrow widths and drives
+   document overflow at 200% zoom / css320-390 — allow ONLY this instance to
+   wrap; the badge wording is unchanged. */
+.si-view[data-view="money"] .lead-foot .r3-tag{ white-space:normal; min-width:0; max-width:100%; }
 .si-view[data-view="money"] .mny-deeper{ margin-top:var(--sp-5); }
 
 /* ── responsive: the phone RECOMPOSES; no document overflow at 320 → 820 ─────── */
@@ -885,14 +901,27 @@ function renderLeadership(){
                 weakening:['Weakening','走弱'],lagging:['Lagging','落后']};
       function quad(q){ var i=QUAD[q]||['—','—']; return '<span class="r3-tag">'+L(i[0],i[1])+'</span>'; }
 
+      /* F-4: `w.leg` is a raw producer driver-phrase with no zh twin in the
+         fixture — it used to be glued into the ZH sentence untranslated
+         (esc(whyTxt) on both sides). "breadth thrust" reuses production's own
+         established phrase (templates/_risk_radar_card.html.j2:205); the china
+         sibling template (templates/sector_central_china.html.j2's LAYER_ZH
+         neighbourhood) carries no twin for any of these three legs, so the
+         other two are authored here — plain and short, listed for the copy
+         ledger. */
+      var LEG_ZH={'breadth thrust':'广度推进','broad participation':'参与广泛',
+                  'return acceleration':'回报加速'};
       var whyTxt=(star&&star.why&&star.why.length)?star.why.map(function(w){return w.leg;}).join(' · ')
                                                   :null;
+      var whyZh=(star&&star.why&&star.why.length)
+        ?star.why.map(function(w){return LEG_ZH[w.leg]||w.leg;}).join(' · ')
+        :null;
       var hero='<div class="lead-hero">';
       if(star) hero+='<div class="lead-cell"><span class="r3-eyebrow">'+L('Rising star','上升之星')+'</span>'
         +'<span class="lead-name">'+L(esc(star.label[0]),esc(star.label[1]))
         +'<span class="lead-las tnum">LAS '+sgn(star.las,2)+'</span></span>'
         +'<span class="lead-why">'+L('leadership accelerating fastest'+(whyTxt?' — '+esc(whyTxt):''),
-                                     '领导加速最快'+(whyTxt?'——'+esc(whyTxt):''))+'</span></div>';
+                                     '领导加速最快'+(whyZh?'——'+esc(whyZh):''))+'</span></div>';
       if(ln){
         var lq=(T[ln.tab]||{}).quadrant;
         var note=(lq==='weakening'||lq==='lagging')?L(' · but weakening',' · 但走弱'):'';

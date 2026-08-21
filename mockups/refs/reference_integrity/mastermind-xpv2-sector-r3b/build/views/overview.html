@@ -20,6 +20,16 @@
    .r3-row/.r3-watch/.r3-cols/.r3-sec/.r3-panel/.st-*) is the shell's; nothing
    below re-declares one. No new token, no new :root, no hue outside theme.css. */
 
+/* QA2-04: at extreme zoom the answer's read-slot (.si-vr-t, shell.html) shrinks
+   to ~57px — narrower than a single word ("leadership", "Storage") at this
+   font-size. The slot DOES wrap (`white-space:normal`, confirmed 15 wrapped
+   lines under CDP measurement) but `overflow-wrap:normal` refuses to break
+   INSIDE an unbreakable word, so that one word's own line still exceeds the
+   box and leaks to the document. overflow-wrap:anywhere is the same idiom
+   already used elsewhere in this build (.r3-ov-hname, .ne-name) for exactly
+   this shape of overflow; scoped to Overview only, shell.html untouched. */
+[data-view="overview"] .si-vr-t{ overflow-wrap:anywhere; }
+
 /* ── receipt button — a real 44px target wearing a 16px ring ─────────────────
    The system's `?` receipt must be tappable (hover is never the only path,
    spec §12) AND must not inflate the line it sits in. The button box is 44×44
@@ -512,11 +522,21 @@ function rowHTML(r){
 
 /* ── the ledge ──────────────────────────────────────────────────────────────── */
 var SEL = 'buy_now';
+/* QA2-10: "Action lanes" was English-only under ZH — the group's own visible
+   lane names already twin (立即买入 etc.), only the tablist's own accessible
+   name did not. */
+function paintLedgeLabel(){
+  var isZh = document.documentElement.getAttribute('data-lang') === 'zh';
+  el('ov-ledge').setAttribute('aria-label', isZh ? '操作分组' : 'Action lanes');
+}
 function paintLedge(){
   el('ov-ledge').innerHTML = LANES.map(function(L1){
     var on = L1.key === SEL;
+    /* QA2-12: roving tabindex (APG tabs pattern) — the selected tab is the
+       only one in the sequential tab order; arrow keys move focus among the
+       rest. */
     return '<button class="r3-ledge-cell ' + L1.st + '" type="button" role="tab"'
-         + ' aria-selected="' + on + '" data-lane="' + L1.key + '"'
+         + ' aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '" data-lane="' + L1.key + '"'
          + ' aria-controls="ov-panel" id="ov-tab-' + L1.key + '">'
          + '<span class="r3-ledge-name">' + L(L1.en, L1.zh) + '</span>'
          + '<span class="r3-ledge-count tnum">' + laneCount(L1.key) + '</span>'
@@ -677,22 +697,40 @@ REF.renderActNow = function(state){
     var shown = full.slice(0, preview);
     fillLane(L1, shown, full.length - shown.length);
   });
-  if(state === 'hydrated') hydrate();
+  /* the GATED-looking preview (rows + disclosures) is what the reader sees
+     immediately, and — per access_hydration_contract.md §4 — is also exactly
+     what a hydrate failure leaves in place, "nothing to undo". restoreFolds()/
+     paintFoot() run synchronously here for every state; hydrate() (below) runs
+     them again, asynchronously, only once its own fetch actually resolves. */
   restoreFolds();
   paintFoot();
+  if(state === 'hydrated') hydrate();
 };
 
-/* hydrate() — the same insert-by-`data-ab-lane` mechanic production performs
-   (sector_central.html.j2:3597-3620), against the real `actnow_html` bytes. The
-   inserted rows are genuine production markup; they are given `data-ref-nav` so
-   their real destinations are RECORDED rather than followed (router contract),
-   and nothing about their content is rewritten. */
+/* hydrate() — QA2-07 / F-3: production's real flow FETCHES
+   premiumdata/sector_central.json client-side (access_hydration_contract.md §3
+   step 4) rather than reading the build-time-embedded registry synchronously;
+   this reference used to take the synchronous shortcut (`PG`, loaded once at
+   boot for the unrelated ZH-name lookups in loadArtifacts()), which left the
+   fetch leg undemonstrated — a simulated fetch failure could not be told apart
+   from a fetch success, and the runtime access-state switch and a hydrated
+   boot state were two different code paths that could drift. Routing BOTH
+   through the same REF.fetchJSON() call (shim §2 — resolves the embedded
+   registry unless REF.simulateFetchFail is on, in which case it genuinely
+   rejects) makes the fetch real, demonstrable, and the single code path both
+   entry points share. The insert-by-`data-ab-lane` mechanic itself is
+   unchanged production behaviour (sector_central.html.j2:3597-3620): the
+   inserted rows are genuine production markup, given `data-ref-nav` so their
+   real destinations are RECORDED rather than followed (router contract), and
+   nothing about their content is rewritten. */
 function hydrate(){
-  try{
-    if(!PG || PG.schema !== 'tier_payload.v1' || PG.page !== 'sector_central') throw new Error('invalid payload');
-    if(!PG.actnow_html) return;
+  return REF.fetchJSON('premiumdata/sector_central.json').then(function(payload){
+    if(!payload || payload.schema !== 'tier_payload.v1' || payload.page !== 'sector_central'){
+      throw new Error('invalid payload');
+    }
+    if(!payload.actnow_html) return;
     var box = document.createElement('div');
-    box.innerHTML = PG.actnow_html;
+    box.innerHTML = payload.actnow_html;
     var lanes = box.querySelectorAll('[data-ab-lane]');
     for(var i = 0; i < lanes.length; i++){
       var dest = el(lanes[i].getAttribute('data-ab-lane'));
@@ -702,8 +740,11 @@ function hydrate(){
     for(var j = 0; j < ins.length; j++) ins[j].setAttribute('data-ref-nav', '');
     var notes = document.querySelectorAll('#actnow .pg-more');
     for(var k = 0; k < notes.length; k++) notes[k].remove();
-  }catch(e){ /* fail-soft: 401/403/5xx/offline/schema-mismatch all collapse to a
-                no-op that keeps the baked preview and its disclosure (§A6). */ }
+    restoreFolds();
+    paintFoot();
+  }).catch(function(){ /* fail-soft: 401/403/5xx/offline/schema-mismatch all
+    collapse to a no-op that keeps the baked preview and its disclosure — the
+    shell was already rendered that way, synchronously, above (§4). */ });
 }
 
 /* ── lane selection ─────────────────────────────────────────────────────────── */
@@ -713,7 +754,9 @@ function selectLane(key){
   var board = el('actnow');
   board.className = 'r3-board ' + laneOf(key).st;
   Array.prototype.forEach.call(el('ov-ledge').querySelectorAll('.r3-ledge-cell'), function(b){
-    b.setAttribute('aria-selected', String(b.getAttribute('data-lane') === key));
+    var on = b.getAttribute('data-lane') === key;
+    b.setAttribute('aria-selected', String(on));
+    b.setAttribute('tabindex', on ? '0' : '-1');
   });
   LANES.forEach(function(L1){
     var body = el(L1.fold), foot = el('ov-lf-' + L1.key);
@@ -738,7 +781,14 @@ document.addEventListener('click', function(ev){
   if(ev.target.closest && ev.target.closest('.si-trace')) return;
   var id = traceId(row.getAttribute('href'));
   if(!id || !window.__siTrace) return;
-  ev.preventDefault(); ev.stopPropagation();
+  /* F-1: stopPropagation() alone does not stop a SIBLING listener on the same
+     node (runtime_shim.js's own capture-phase click listener is ALSO bound to
+     `document`) from still running — sibling listeners on one node only stop
+     with stopImmediatePropagation(). Without it, a trace-open click (the row
+     itself carries data-ref-nav for its own real destination) fell through to
+     the shim's data-ref-nav handler too and recorded a false "nav" for a click
+     that never navigated anywhere. */
+  ev.preventDefault(); ev.stopImmediatePropagation();
   var lanes = el('actnow');
   var open = lanes.querySelector('.si-trace');
   var was = open && row.nextElementSibling === open;
@@ -876,10 +926,16 @@ function paintWatch(){
       ? '<span class="r3-turn tnum" data-tip-en="Momentum is turning up from the low — a bigger number is a sharper turn. A first hint, not a buy signal."'
         + ' data-tip-zh="动能正从低位回升——数字越大转向越明显。仅是初步迹象，非买入信号。">'
         + Number(x.osc_slope).toFixed(1) + '</span>' : '';
-    return '<div class="r3-watch-cell">'
+    /* F-2: production renders each watch row as a real link to its basket
+       (_us_bottoming_watch.html.j2:95) — this reference used to render a
+       destination-less <div>. data-ref-nav routes it through the recorder
+       instead of a real page leave, same as every other row on the board. */
+    var tag = x.href ? 'a' : 'div';
+    var hrefAttr = x.href ? ' data-ref-nav href="' + esc(x.href) + '"' : '';
+    return '<' + tag + ' class="r3-watch-cell"' + hrefAttr + '>'
       + '<strong><span class="r3-watch-nm">' + L(esc(x.name), esc(x.name_zh || x.name)) + '</span>'
       + turn + '</strong>'
-      + '<span>' + clauses.join('<span aria-hidden="true"> · </span>') + '</span></div>';
+      + '<span>' + clauses.join('<span aria-hidden="true"> · </span>') + '</span></' + tag + '>';
   }).join('');
 
   /* Merged foot — a constant never repeats per row (doctrine Law 4). Every chip
@@ -985,13 +1041,19 @@ document.addEventListener('DOMContentLoaded', function(){
     if(b) selectLane(b.getAttribute('data-lane'));
   });
   el('ov-ledge').addEventListener('keydown', function(e){
-    if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    /* QA2-12: Home/End join Left/Right — the full APG tabs keyboard contract. */
+    if(['ArrowRight','ArrowLeft','Home','End'].indexOf(e.key) < 0) return;
     var tabs = Array.prototype.slice.call(this.querySelectorAll('.r3-ledge-cell'));
     var i = tabs.indexOf(document.activeElement); if(i < 0) return;
-    var j = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+    var j = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1
+      : (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
     e.preventDefault(); tabs[j].focus(); selectLane(tabs[j].getAttribute('data-lane'));
   });
-  document.addEventListener('langchange', function(){ paintFoot(); });
+  /* QA2-10: reference-authored accessible labels are copy too — twin them the
+     same way the visible .l-en/.l-zh mechanism does, just via an attribute
+     write instead of a CSS display flip (aria-label has no CSS equivalent). */
+  paintLedgeLabel();
+  document.addEventListener('langchange', function(){ paintFoot(); paintLedgeLabel(); });
 
   /* The client fetch production performs at boot (__siBoot → __siInitPage). Its
      ONLY consumers here are window.BASKETS (which the router's composer and rail
@@ -1013,9 +1075,13 @@ document.addEventListener('DOMContentLoaded', function(){
       }
     }
     if(window.__siViewReads) window.__siViewReads();
-    /* a `#read-<id>` deep link is dispatched before this board exists; re-running
-       the verbatim router resolves the held trace now that the rows are here. */
-    if(window.__siRoute) window.__siRoute();
+    /* F-1: production does NOT re-run the router here (sector_central.html.j2:3088
+       calls window.__siViewReads(BASKETS) alone) — the extra window.__siRoute()
+       call this reference used to make ran openTrace() a SECOND time for a
+       pending `#read-<id>` deep link, and the second row.click() toggled the
+       just-opened trace card closed again. The board's own #read-<id> handling
+       (below, and the click-capture listener above) already opens the trace once
+       the rows exist; no second router pass is needed or correct. */
   }).catch(function(){
     var lanes = el('actnow');
     if(lanes) lanes.innerHTML = '<div class="r3-empty"><p class="r3-empty-line">'

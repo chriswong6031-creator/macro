@@ -443,6 +443,19 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
   function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
   function el(id){ return document.getElementById(id); }
 
+  /* F-4: the #board reasoning chain rendered `r.layer`/`r.tier` raw (esc() only,
+     no ZH resolution) — 114 leaf nodes leaking English under ZH. Bound from the
+     production China sibling's own twin map (templates/sector_central_china.html.j2
+     ~:1425, LAYER_ZH) wherever it already carries the word; "Trend gate" is
+     absent there (that map only has bare "Trend") so it is authored here, listed
+     for the copy ledger. Tier words come from the producer's own established
+     twins: confirmer/display from templates/signal_lab.html.j2:548's
+     tier_labels, validated from templates/sector_central.html.j2:3463 (the same
+     "Validated" the Money view's own tag already renders, QA2-13). */
+  var LAYER_ZH={'Cycle state':'周期状态','Regime gate':'市况把关','Momentum':'动量',
+    'Fragility':'脆弱度','Heat':'热度','Trend gate':'趋势把关'};
+  var TIER_ZH={'validated':'已验证','confirmer':'确认项','display':'仅展示'};
+
   /* ── payload access ──────────────────────────────────────────────────────
      window.BASKETS is the same global production's own page fetch populates.
      runtime_shim.js already performs this exact synchronous parse for
@@ -766,9 +779,9 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
         :(st.phaseLabel||'');
       var chain=(s.reasoning||[]).map(function(r){
         return '<div class="r3-chainrow">'
-          +'<span class="r3-chainlay">'+esc(r.layer||'')+'</span>'
+          +'<span class="r3-chainlay">'+L(esc(r.layer||''),esc(LAYER_ZH[r.layer]||r.layer||''))+'</span>'
           +'<span class="r3-chaintx">'+L(esc(r.en||''),esc(r.zh||r.en||''))
-          +'<span class="r3-chaintier">'+esc(r.tier||'')+'</span></span></div>';
+          +'<span class="r3-chaintier">'+L(esc(r.tier||''),esc(TIER_ZH[r.tier]||r.tier||''))+'</span></span></div>';
       }).join('');
       var split=s.split_view
         ? '<p class="r3-callout r3-greadsplit">'+L(esc(s.split_copy_en||''),esc(s.split_copy_zh||s.split_copy_en||''))+'</p>'
@@ -851,12 +864,20 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
       });
     }
     document.addEventListener('langchange',function(){
-      renderAll(); cycRows(); cycDraw(); boardRender(); syncToggle();
+      renderAll(); cycRows(); cycDraw(); boardRender(); syncToggle(); syncScopeLabel();
     });
   }
 
+  /* QA2-10: the universe-switch group's own accessible name was English-only
+     under ZH; the two button labels it contains already twin (主题/板块). */
+  function syncScopeLabel(){
+    var scope=el('r3-map-scope'); if(!scope) return;
+    scope.setAttribute('aria-label', isZh()
+      ? '切换轮动图的主题或板块' : 'Show themes or sectors on the rotation map');
+  }
+
   function boot(){
-    renderAll(); cycInit(); boardRender(); wire();
+    renderAll(); cycInit(); boardRender(); wire(); syncScopeLabel();
     /* the composed read strip can only be built once __siRvxData answers */
     if(typeof window.__siViewReads==='function'){ try{ window.__siViewReads(); }catch(e){} }
   }

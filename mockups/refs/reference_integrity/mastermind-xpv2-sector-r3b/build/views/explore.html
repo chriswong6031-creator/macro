@@ -85,7 +85,14 @@
   h1,h2,h3{ margin:0; } p{ margin:0; }
   .tnum{ font-variant-numeric:tabular-nums; }
   .si-view{ display:none; } .si-view.on{ display:block; }
-  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--r3-chrome-h,40px) + var(--r3-mnav-h,0px) + 16px); }
+  /* F-6: this standalone-preview reset used a STATIC fallback
+     (--r3-chrome-h) instead of the shim-measured --ref-sticky-offset shell.html's
+     own rule consumes — since this partial's <style> loads AFTER shell.html's in
+     the assembled candidate, equal specificity meant this rule WON and silently
+     ignored wireStickyOffset()'s real measurement for every id on this view.
+     --ref-sticky-offset first (falls back to the static token only when standalone,
+     i.e. outside the full assembly) makes it one consumed value again. */
+  .si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--ref-sticky-offset, var(--r3-chrome-h,40px)) + var(--r3-mnav-h,0px) + 16px); }
   :where(a,button,summary,select,[tabindex]):focus-visible{
     outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; border-radius:var(--r-ctl); }
   .r3-eyebrow{ display:block; font-size:var(--fs-label); font-weight:600; letter-spacing:.08em;
@@ -177,9 +184,15 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
    (spec §9, §12), exactly the shape production gives #btbl-mode (role="group"). */
 .si-view[data-view="explore"] .exp-filters{ padding:var(--exp-pad); border-bottom:1px solid var(--line);
   display:flex; flex-direction:column; gap:var(--sp-2); }
-.si-view[data-view="explore"] .exp-frow{ display:flex; align-items:flex-start; gap:var(--sp-5); }
+/* QA2-03: at extreme zoom the 80px label + gap can leave the segmented control
+   less room than even one button's own min-content width; wrapping the ROW
+   (not just the segment's own buttons) lets the control drop to a full-width
+   line instead of forcing document overflow, and min-width:0 lets it actually
+   use that room (a flex item's default min-width is its content size). */
+.si-view[data-view="explore"] .exp-frow{ display:flex; align-items:flex-start; gap:var(--sp-5); flex-wrap:wrap; }
 .si-view[data-view="explore"] .exp-flab{ flex:none; width:80px; padding-top:13px; }
 .si-view[data-view="explore"] .exp-cats button{ min-height:40px; padding:0 12px; font-size:var(--fs-sm); }
+.si-view[data-view="explore"] .exp-modes{ min-width:0; }
 .si-view[data-view="explore"] .exp-modes button{ min-height:40px; }
 .si-view[data-view="explore"] .exp-count{ font-size:var(--fs-micro); letter-spacing:.05em; color:var(--muted); }
 /* ONE mechanism at every width. The sixteen category filters are a real research affordance
@@ -187,11 +200,16 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
    summary always names the ACTIVE category — open by default ≥768, closed below. Nothing is
    removed and nothing is hidden behind a hover: the current state is on the summary. */
 .si-view[data-view="explore"] .exp-catwrap{ display:flex; flex-direction:column; }
+/* QA2-03 (same class): the disclosure summary is its OWN flex row, so the
+   outer .exp-frow flex-wrap fix above does not reach it — at extreme zoom the
+   fixed 80px label + gap + chevron leave .exp-catnow less room than its
+   default (unshrinkable) min-width, and it pushed 10px past the viewport. */
 .si-view[data-view="explore"] .exp-catwrap > summary{ display:flex; align-items:center;
-  gap:var(--sp-5); min-height:44px; cursor:pointer; list-style:none; }
+  flex-wrap:wrap; gap:var(--sp-5); min-height:44px; cursor:pointer; list-style:none; }
 .si-view[data-view="explore"] .exp-catwrap > summary::-webkit-details-marker{ display:none; }
 .si-view[data-view="explore"] .exp-catwrap > summary .exp-flab{ padding-top:0; }
-.si-view[data-view="explore"] .exp-catnow{ font-size:var(--fs-sm); font-weight:700; color:var(--text); }
+.si-view[data-view="explore"] .exp-catnow{ min-width:0; max-width:100%; overflow-wrap:anywhere;
+  font-size:var(--fs-sm); font-weight:700; color:var(--text); }
 .si-view[data-view="explore"] .exp-catwrap > summary::after{ content:""; width:7px; height:7px; flex:none;
   border-right:1.6px solid var(--muted); border-bottom:1.6px solid var(--muted);
   transform:translateY(-2px) rotate(45deg); transition:transform var(--t-fast) var(--ease-std); }
@@ -315,8 +333,14 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
   font-variant-numeric:tabular-nums; color:var(--muted); }
 .si-view[data-view="explore"] .ne-rec-h{ margin:13px 0 6px; }
 .si-view[data-view="explore"] .ne-recs{ display:flex; flex-wrap:wrap; gap:6px; }
+/* QA2-02: `.ne-recs{flex-wrap:wrap}` only wraps at a CHIP boundary — a single
+   chip whose own name+percentage sit on one line (a flex row has no wrap by
+   default) is still wider than the viewport at extreme zoom and forces
+   document overflow. Letting the chip's own contents wrap (and shrink to fit
+   its flex parent) fixes it without touching the wording. */
 .si-view[data-view="explore"] .ne-tk{ position:relative; display:inline-flex; align-items:center; gap:7px;
-  min-height:34px; padding:0 10px; border-radius:var(--r-ctl); border:1px solid var(--gbtn-brd);
+  flex-wrap:wrap; max-width:100%; min-width:0;
+  min-height:34px; padding:5px 10px; border-radius:var(--r-ctl); border:1px solid var(--gbtn-brd);
   background:var(--gbtn-bg); color:var(--text); font-size:var(--fs-sm); cursor:pointer; }
 .si-view[data-view="explore"] .ne-tk > .dot{ flex:none; width:7px; height:7px; border-radius:50%; }
 .si-view[data-view="explore"] .ne-tk > .nm{ font-weight:700; }

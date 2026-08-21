@@ -539,8 +539,11 @@ function paintUniverses(){
   el('cf-uni').innerHTML = TABS.map(function(k){
     var p = DATA[k], n = p ? ((p[DS[k].groupsKey] || []).length) : 0;
     var on = k === TAB;
+    /* QA2-08: aria-controls used to name #sc-app, an element with no role — the
+       page's only role=tabpanel is #cf-panel (the list this tab's content
+       actually determines), so point there instead. QA2-12: roving tabindex. */
     return '<button type="button" role="tab" data-uni="' + k + '" id="cf-uni-' + k + '"'
-      + ' aria-selected="' + on + '" aria-controls="sc-app">'
+      + ' aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '" aria-controls="cf-panel">'
       + L(DS[k].tab[0], DS[k].tab[1]) + '<span class="n tnum">' + n + '</span></button>';
   }).join('');
 }
@@ -552,7 +555,7 @@ function paintLedge(){
   el('cf-ledge').innerHTML = ORDER.map(function(k){
     var m = CLASS_META[k], on = k === SEL;
     return '<button class="r3-ledge-cell ' + m.st + '" type="button" role="tab"'
-      + ' aria-selected="' + on + '" data-bucket="' + k + '" id="cf-tab-' + k + '" aria-controls="cf-panel">'
+      + ' aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '" data-bucket="' + k + '" id="cf-tab-' + k + '" aria-controls="cf-panel">'
       + '<span class="r3-ledge-name">' + L(m.label[0], m.label[1]) + '</span>'
       + '<span class="r3-ledge-count tnum">' + c[k] + '</span></button>';
   }).join('');
@@ -1025,10 +1028,17 @@ function paintContext(){
   el('cf-context-band').hidden = !html;
 }
 
+/* QA2-10: both tablists' own accessible names were English-only under ZH; the
+   tabs each already twin their visible labels. */
+function paintTablistLabels(){
+  el('cf-uni').setAttribute('aria-label', isZh() ? '范围' : 'Universe');
+  el('cf-ledge').setAttribute('aria-label', isZh() ? '时机状态' : 'Timing states');
+}
+
 /* ══ render + wiring ══ */
 function render(){
   paintUniverses(); paintAnswer(); paintLedge(); paintFoot(); paintPanel(); paintPicks(); paintTable();
-  paintContext();
+  paintContext(); paintTablistLabels();
 }
 function setTab(k){
   if(k === TAB) return;
@@ -1064,16 +1074,44 @@ document.addEventListener('DOMContentLoaded', function(){
     var b = e.target.closest ? e.target.closest('[data-uni]') : null;
     if(b) setTab(b.getAttribute('data-uni'));
   });
+  /* QA2-08 (keyboard half) + QA2-12: the Universe tablist previously had no
+     arrow-key handling at all. */
+  el('cf-uni').addEventListener('keydown', function(e){
+    if(['ArrowRight','ArrowLeft','Home','End'].indexOf(e.key) < 0) return;
+    var tabs = Array.prototype.slice.call(this.querySelectorAll('[role="tab"]'));
+    var i = tabs.indexOf(document.activeElement); if(i < 0) return;
+    var j = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1
+      : (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+    e.preventDefault();
+    var key = tabs[j].getAttribute('data-uni');
+    setTab(key);
+    /* setTab() -> render() -> paintUniverses() REBUILDS every tab button, so the
+       pre-repaint reference (tabs[j]) is gone from the DOM by the time this
+       line runs; the fresh node is re-queried by id AFTER the repaint. Focusing
+       BEFORE the repaint (as the old handler did on #cf-ledge) is exactly the
+       QA2-09 defect — focus lands on a node that is about to be removed and
+       falls back to the document. */
+    var fresh = el('cf-uni-' + key);
+    if(fresh) fresh.focus();
+  });
   el('cf-ledge').addEventListener('click', function(e){
     var b = e.target.closest ? e.target.closest('[data-bucket]') : null;
     if(b) setBucket(b.getAttribute('data-bucket'));
   });
+  /* QA2-09: focus used to move to the (about-to-be-destroyed) old button BEFORE
+     setBucket()'s paintLedge() rebuilt #cf-ledge, so it fell through to the
+     shell root. Focus is now (re)applied to the freshly painted button. */
   el('cf-ledge').addEventListener('keydown', function(e){
-    if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    if(['ArrowRight','ArrowLeft','Home','End'].indexOf(e.key) < 0) return;
     var tabs = Array.prototype.slice.call(this.querySelectorAll('.r3-ledge-cell'));
     var i = tabs.indexOf(document.activeElement); if(i < 0) return;
-    var j = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
-    e.preventDefault(); tabs[j].focus(); setBucket(tabs[j].getAttribute('data-bucket'));
+    var j = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1
+      : (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+    e.preventDefault();
+    var key = tabs[j].getAttribute('data-bucket');
+    setBucket(key);
+    var fresh = el('cf-tab-' + key);
+    if(fresh) fresh.focus();
   });
   el('cf-panel').addEventListener('click', function(e){
     var row = e.target.closest ? e.target.closest('button.r3-row[data-key]') : null;

@@ -133,6 +133,36 @@ html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
    opportunity; at 200% zoom on a 390 phone it is wider than the column. */
 .r3-note{ margin-top:var(--sp-3); font-size:var(--fs-sm); color:var(--muted); line-height:1.5;
   max-width:88ch; overflow-wrap:anywhere; }
+
+/* F-5: whole-market track-record / calibration scorecard — production
+   templates/subsector_rotation.js:319-345 (drawTrackRecord), ported field-for-
+   field. Placed as a quiet context-tier card after the note, the same
+   composition idiom the rest of this view already uses for supporting detail
+   (r3-panel, r3-tbl — both the shell's shared components, not redeclared). */
+.r3-tr{ margin-top:var(--sp-4); }
+.r3-tr-hd{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3);
+  padding:12px 16px; border-bottom:1px solid var(--line); font-size:var(--fs-sm); font-weight:700; }
+.r3-tr-q{ padding:1px 8px; border-radius:var(--r-ctl); border:1px solid currentColor;
+  font-size:var(--fs-micro); font-weight:700; letter-spacing:.03em; }
+.r3-tr-meta{ margin-left:auto; font-size:var(--fs-micro); color:var(--muted); font-weight:400;
+  font-variant-numeric:tabular-nums; }
+.r3-tr-note{ padding:10px 16px 0; font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
+.r3-tr-body{ padding:10px 16px 4px; overflow-x:auto; }
+.r3-tr-body .r3-tbl{ min-width:520px; }
+.r3-tr-ok{ color:var(--up); }
+.r3-tr-misses{ padding:2px 16px 12px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
+.r3-tr-mlab{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--muted); }
+.r3-tr-miss{ font-size:var(--fs-sm); }
+.r3-tr-miss i{ font-style:normal; margin-left:4px; font-variant-numeric:tabular-nums; }
+.r3-tr-miss i.up{ color:var(--ink-up); } .r3-tr-miss i.dn{ color:var(--ink-down); }
+.r3-tr-disc{ padding:10px 16px 14px; border-top:1px solid var(--line);
+  font-size:var(--fs-micro); color:var(--muted); line-height:1.5; }
+.r3-tr-help{ appearance:none; display:inline-flex; align-items:center; justify-content:center;
+  width:16px; height:16px; margin-left:5px; padding:0; border:1px solid var(--line); border-radius:50%;
+  background:none; color:var(--muted); font-size:9.5px; font-weight:700; line-height:1; cursor:help;
+  vertical-align:middle; }
+.r3-tr-help[aria-expanded="true"]{ color:var(--text); border-color:color-mix(in srgb, var(--link) 55%, var(--line)); }
 .r3-mv{ font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
 .r3-mv.up{ color:var(--ink-up); } .r3-mv.dn{ color:var(--ink-down); }
 
@@ -271,7 +301,11 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
   function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
   function el(id){ return document.getElementById(id); }
-  var ARROW='<span class="r3-arrow" role="img" aria-label="moved to"></span>';
+  /* QA2-11: this CSS-drawn connector glyph is decorative — the flanking
+     source/destination names carry the meaning, so a screen reader should
+     skip it rather than announce the content-free fragment "moved to" nine
+     times with no subject or object. */
+  var ARROW='<span class="r3-arrow" aria-hidden="true"></span>';
   /* rotation_events.js:181-201, verbatim EN/ZH pairs.  Only `handoff` and
      `faltering` occur in the frozen fixture, so nothing else ever renders here;
      the other two branches are carried so the capability is not silently dropped
@@ -547,12 +581,72 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
       +'</div></div>'
       +'<p class="r3-note">'+L(
         'Emerging and fading are named by tonight’s producer run, in its own order. A context lens over the broadest universe: it measures the speed of relative strength — it ranks nothing, gates nothing and sizes nothing.',
-        '「新兴」与「消退」由今晚数据方标记，顺序沿用其输出。这是覆盖最广市场范围的背景视角：衡量相对强度的速度 — 不排序、不门控、不定仓。')+'</p>';
+        '「新兴」与「消退」由今晚数据方标记，顺序沿用其输出。这是覆盖最广市场范围的背景视角：衡量相对强度的速度 — 不排序、不门控、不定仓。')+'</p>'
+      +trackRecordHtml(d.track_record);
 
     var a=el('r3-wm-asof');
     if(a&&d.asof) a.innerHTML=L('as of '+esc(d.asof),'截至 '+esc(d.asof));
     drawWholeMarket(subs, byKey['megacapgenerals']);
     wireWmToggle();
+  }
+
+  /* F-5: whole-market calibration scorecard — production
+     templates/subsector_rotation.js:319-345 (drawTrackRecord), field-for-field:
+     same horizons table, same verdict badge, same recent-misses strip, same
+     at-rest disclosure sentence. Adapted to this reference's own single-string
+     data-tip-en/zh receipt mechanism (shared, installed once by overview.html)
+     rather than production's separate title/body/receipt tip attributes, which
+     this build has no wiring for. */
+  var TR_V={accruing:['Accruing','记录累积中','--muted'],measuring:['Still measuring','测量中','--warn'],
+            validated:['Clears the bar','已达标','--up']};
+  function trFpct(v){ return v==null?'—':(v*100).toFixed(0)+'%'; }
+  function trFic(v){ return v==null?'—':(v>0?'+':'')+(+v).toFixed(3); }
+  function trFt(v){ return v==null?'—':(+v).toFixed(1); }
+  function trackRecordHtml(tr){
+    if(!tr) return '';
+    var vb=TR_V[tr.verdict]||TR_V.accruing;
+    var hs=tr.horizons||{};
+    var rows=Object.keys(hs).map(function(h){
+      var e=hs[h]||{}, bs=e.by_stage||{}, em=bs.emerging||{}, fa=bs.fading||{};
+      var prov=(tr.proven||{})[h];
+      return '<tr><td>'+esc(h)+'d</td><td class="num">'+(e.n_matured||0)+'</td>'
+        +'<td class="num">'+trFpct(em.hit_rate)+'</td><td class="num">'+trFpct(fa.hit_rate)+'</td>'
+        +'<td class="num">'+trFic(e.score_ic)+'</td><td class="num">'+trFt(e.score_ic_t_hac)
+        +(prov?' <span class="r3-tr-ok" aria-hidden="true">&#10003;</span>'
+              +'<span class="r3-vh">'+L('cleared','已达标')+'</span>':'')+'</td></tr>';
+    }).join('');
+    var misses=(tr.recent_misses||[]).slice(0,8).map(function(mi){
+      var v=mi.fwd_rel==null?0:mi.fwd_rel;
+      return '<span class="r3-tr-miss"><b>'+esc(mi.name)+'</b>'
+        +'<i class="'+(mi.stage==='emerging'?'dn':'up')+'">'+(v>0?'+':'')+(v*100).toFixed(1)+'%</i></span>';
+    }).join('');
+    return '<div class="r3-panel r3-tr">'
+      +'<div class="r3-tr-hd">' + L('&#128202; Track record','&#128202; 跟踪记录')
+        +'<span class="r3-tr-q" style="color:var('+vb[2]+');border-color:var('+vb[2]+')">'+L(vb[0],vb[1])+'</span>'
+        +'<span class="r3-tr-meta">'+(tr.n_days||0)+' '+L('days logged','天')+' &middot; '
+          +(tr.n_snapshots||0)+' '+L('calls logged','次记录')+'</span></div>'
+      +'<div class="r3-tr-note">'+L(esc(tr.note||''),esc(tr.note_zh||tr.note||''))+'</div>'
+      +'<div class="r3-tr-body"><table class="r3-tbl"><thead><tr>'
+        +'<th>'+L('Horizon','周期')+'</th><th class="num">'+L('Matured','已到期')+'</th>'
+        +'<th class="num">'+L('Emerging hit','升温命中')+'</th><th class="num">'+L('Fading hit','退潮命中')+'</th>'
+        +'<th class="num">'+L('Rank fit','排序吻合')
+          +'<button type="button" class="r3-tr-help" aria-expanded="false"'
+          +' data-tip-en="Rank fit is how closely the ranking matched what happened next."'
+          +' data-tip-zh="排序吻合是指排序与后续实际走势的接近程度。">?</button></th>'
+        +'<th class="num">'+L('Reliability','可靠度')
+          +'<button type="button" class="r3-tr-help" aria-expanded="false"'
+          +' data-tip-en="Reliability is how unlikely that match is to be luck &mdash; a check means it clears the bar for that horizon."'
+          +' data-tip-zh="可靠度是指这种吻合有多不可能出于偶然&mdash;&mdash;对勾表示该周期已达标。">?</button></th>'
+        +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +(misses?'<div class="r3-tr-misses"><span class="r3-tr-mlab">'+L('Recently wrong (logged)','近期误判（已记录）')
+        +'</span>'+misses+'</div>':'')
+      +'<div class="r3-tr-disc">'
+        +L('A scorecard of this page&#39;s own calls, checked against what happened next. Until a time-window has enough history, it is still measuring &mdash; read it as &#8220;measuring&#8221;, not proof.',
+           '本页自身判断的记分卡，对照后续实际走势检验。在某一周期积累足够历史前仍为「测量中」——请视为「测量」，而非定论。')
+        +'<button type="button" class="r3-tr-help" aria-expanded="false"'
+        +' data-tip-en="' + esc(tr.disclaimer || '') + '"'
+        +' data-tip-zh="' + esc(tr.disclaimer_zh || tr.disclaimer || '') + '">?</button>'
+        +'</div></div>';
   }
   function svgEl(t,at){ var e=document.createElementNS('http://www.w3.org/2000/svg',t);
     for(var k in at) e.setAttribute(k,at[k]); return e; }

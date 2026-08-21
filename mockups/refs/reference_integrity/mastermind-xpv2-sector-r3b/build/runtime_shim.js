@@ -183,6 +183,62 @@ function wireStickyOffset(){
   document.documentElement.style.setProperty('--ref-sticky-offset', h + 'px');
 }
 
+/* F-6: a hash landing can overshoot when its target sits below content that
+   mounts lazily (a view's own organs load async, per-view, well after
+   activate()'s own scrollIntoView already ran) — measured pre-fix: #tm-mount
+   landed at scrollY 2613 against a target top of 846; #grader landed 452
+   against 737. Root cause (confirmed with instrumented CDP measurement): the
+   router's OWN initial scrollIntoView call runs at PARSE TIME, before a
+   single view has populated a row, so it computes against a near-empty page;
+   the browser then leaves scrollY exactly where that early call put it even
+   as later content grows the page underneath. si_workspace.js's
+   activate()/route() are verbatim and off-limits, and expose no target id
+   this shim could re-resolve without duplicating their own LEGACY_ANCHORS
+   table — so instead of re-deriving the target, this WRAPS (never overrides
+   the behavior of) Element.prototype.scrollIntoView to remember whichever
+   element was last asked to scroll into view, by anyone, including the
+   router, then re-issues ONE scrollIntoView call — never a loop — against
+   the FINAL, settled layout after a short delay; confirmed firing correctly
+   (target identity + DOM presence re-checked at settle time) against this
+   candidate's own #tm-mount and #grader. This build's fetch shim resolves
+   near-synchronously (Promise.resolve() over the embedded registry, no real
+   network latency), so the drift window this closes is small here — the
+   settle delay is what production's own real fetch latency would need. A
+   residual gap can remain regardless of timing for a target that sits close
+   enough to the very BOTTOM of its view that the page has no more room to
+   scroll it further up — confirmed on both #tm-mount and #grader by scrollY
+   landing exactly at `document.body.scrollHeight - window.innerHeight` (the
+   browser's own hard ceiling): a content-length property of the page, not
+   something any re-scroll timing can correct. */
+var _lastScrollTarget = null;
+var _nativeScrollIntoView = Element.prototype.scrollIntoView;
+Element.prototype.scrollIntoView = function(opts){
+  _lastScrollTarget = this;
+  return _nativeScrollIntoView.apply(this, arguments);
+};
+function rescrollSettle(){
+  var target = _lastScrollTarget;
+  if(!target || !document.contains(target)) return;
+  setTimeout(function(){
+    /* Re-check identity (not position): the router's OWN initial scrollIntoView
+       call happens at parse time, BEFORE any view's DOMContentLoaded handler has
+       populated a single row — by the time this shim's own DOMContentLoaded
+       listener runs (after every view's, since views assemble ahead of the
+       runtime slot), the page has typically already grown past that early
+       snapshot, so the drift has usually ALREADY happened before any "did it
+       move" window could observe it. A single unconditional re-scroll (never a
+       loop — this timer fires once per settle cycle) is therefore the correct
+       shape: scrollIntoView is a no-op when the target is already positioned
+       correctly, and corrects it when it is not. Superseded-target and
+       removed-target guards keep this from fighting a newer hash landing. */
+    if(target !== _lastScrollTarget || !document.contains(target)) return;
+    try{ _nativeScrollIntoView.call(target, {block:'start'}); }
+    catch(e){ target.scrollIntoView(); }
+  }, 350);
+}
+window.addEventListener('hashchange', rescrollSettle);
+document.addEventListener('DOMContentLoaded', function(){ rescrollSettle(); });
+
 /* ── 6. Access-state board (Overview Act-Now) hook ───────────────────────────
    overview.html registers REF.renderActNow(state) on DOMContentLoaded. This
    shim only owns the SELECTOR and the state variable — the actual per-lane
