@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T22:11:32.107900+00:00",
-  "count": 1566,
+  "generated_at": "2026-08-21T23:12:46.806052+00:00",
+  "count": 1568,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -118,6 +118,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 29,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bjywcjvoman-cd487c",
+      "title": "Weekly Fund Flows Brazil Outflows into the Election Window",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:03:15Z",
+      "summary_points": [
+        "**Brazil Election Window Outflows**: Brazil equity funds saw net outflows during election period amid MSCI Brazil/BRL underperformance, contrasting with $40bn global equity inflows; financial funds led outflows, signaling political volatility risk.",
+        "**China Equity Flow Volatility**: Sharp December 2025 outflows in mainland China equity funds indicate potential regulatory shifts or market stress, diverging from stable Rest of World flows and heightening EM policy risk.",
+        "**US Equity Dominance**: Sustained capital allocation toward US equities from multiple regions (Euro Area, Japan, South Korea), with Japan showing $16bn inflows and Euro Area spikes, reflecting strong investor confidence amid Euro area slowdown.",
+        "**EM Flow Advantage**: Emerging Markets equity flows show higher relative inflows (0.19% AUM weekly vs.",
+        "DM’s 0.11%) despite lower absolute sums, with lower volatility (Z-score 0.58 vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
@@ -407,6 +428,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-z9dubploh2t-9ea4b6",
+      "title": "GS McGeoch GOLD path higher EGO Copper FMG 21 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:29:16Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
