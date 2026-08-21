@@ -14,19 +14,22 @@ answer: >
   Skillpack + private SOL_STATE become the intended Pro-native shell, existing MCP is
   retained as optional independent audit infrastructure rather than a mandatory
   Personal-Pro dependency, and the old monolithic PR-B -> PR-C sequence is replaced
-  by PR-A -> R0 -> B1 -> C1 -> B2 -> C2 with S0 as an independent transport kill gate.
-  PR-A is now implemented and Sol-accepted in Mastermind PR #100, squash-merged as
-  ada77ab927394c5e406108f2e0d48d96bd89a785. It provides the hermetic two-schema
-  dedicated CeoIngress and one shared high-level CEO-request law, creates/reconciles
-  exactly one canonical QUEUED Job/JOB_CREATED with zero Attempts/workers/providers,
-  and remains BUILT_NOT_PROVEN because no production Slack journey is installed.
-  R0 is now accepted records-only source law in Mastermind PR #103, merged as
-  974b809f6861dab064bb24224df2ba6f8dfa3c91: it authorizes, but does not implement,
-  the later diagnostic state frame and mastermind.executive_hot_state.v1 contract.
-  B1 / MAS-108 is therefore the next critical unclaimed implementation wave; S0 /
-  MAS-106 is independently In Progress and must pass before B2. Executive SQLite
-  remains the sole Job/Attempt/Worker/Event lifecycle authority and Slack remains
-  transport/hot-state projection, never a second control or lifecycle plane.
+  by PR-A -> R0 -> B1 -> C1 -> B2 -> C2 with S0 as an independent transport kill gate
+  required before B2, not before C1. PR-A is now implemented and Sol-accepted in
+  Mastermind PR #100, squash-merged as ada77ab927394c5e406108f2e0d48d96bd89a785.
+  It provides the hermetic two-schema dedicated CeoIngress and one shared high-level
+  CEO-request law, creates/reconciles exactly one canonical QUEUED Job/JOB_CREATED
+  with zero Attempts/workers/providers, and remains BUILT_NOT_PROVEN because no
+  production Slack journey is installed. R0 is accepted records-only source law in
+  Mastermind PR #103, merged as 974b809f6861dab064bb24224df2ba6f8dfa3c91:
+  it authorizes, but does not implement, the later diagnostic state frame and
+  mastermind.executive_hot_state.v1 contract. B1 / MAS-108 is therefore the next
+  critical implementation wave: it has been commissioned but has no builder ACK,
+  branch or PR and remains NOT_BUILT. S0 / MAS-106 is independently In Progress;
+  its private four-seat test channel exists but the disposable fixture app remains an
+  admin prerequisite. Executive SQLite remains the sole Job/Attempt/Worker/Event
+  lifecycle authority and Slack remains transport/hot-state projection, never a
+  second control or lifecycle plane.
 rationale: >
   The accepted design solves the Chairman's actual product job: keep the highest-value
   Personal-Pro Sol cognition seat while giving fresh Sol sessions a safe, recoverable
@@ -69,7 +72,10 @@ evidence:
   - "Mastermind #100 exact-head CI run 32468367040 SUCCESS — discovered=274 excluded=0 running=274; compile and shell validation PASS"
   - "Mastermind #100 CodeQL run 32468363790 SUCCESS; final head and merge share tree 450bfba9f9058f47c9565d50d0aca919d29c06b0"
   - "Mastermind PR #103 merged 974b809f6861dab064bb24224df2ba6f8dfa3c91 — records-only R0 hot-state authorization; exact-head CI run 32469401632 SUCCESS"
-  - "Linear MAS-75 Done with BUILT_NOT_PROVEN; MAS-107 Done with SPEC_ONLY; MAS-106 In Progress; MAS-108 Backlog/NOT_BUILT"
+  - "Linear MAS-75 Done / BUILT_NOT_PROVEN; MAS-107 Done / SPEC_ONLY; MAS-110 Done / PROVEN_LIVE; MAS-106 In Progress; MAS-108 In Progress / NOT_BUILT with no builder claim"
+  - "Slack private S0 channel C0BRUL9F2V7 exists for Chris + ChatGPT1/2/3; disposable fixture app remains the setup gate"
+  - "B1 commission transported through #agent-dispatch with explicit no-execution semantics; no ACK, branch or PR exists at reconciliation"
+  - "Linear MAS-109 hard prerequisites require B1 but not S0; stale S0 blocking relation was removed. MAS-102 remains blocked by C1 + S0."
   - "Mastermind protected Sol Skillpack 1.0.0 is live under docs/sol_skills; Linear MAS-110 records SHELL-1 PROVEN_LIVE"
   - "Macro PR #6071 merged 58da4615788e219634a6d8defc09d1e5c80f62d5 — Linear/Slack layer law"
 affects:
@@ -126,9 +132,9 @@ no-new-store, or admission-vs-execution laws of #91/#96/#100.
 - `SHELL-1 / MAS-110`: `PROVEN_LIVE` for protected Skillpack + fresh-session cold-start procedure/evaluation.
 - `PR-A / MAS-75`: `BUILT_NOT_PROVEN` — hermetic dedicated submit/status + shared CEO-request law is merged and tested; production Slack transport/install is absent.
 - `R0 / MAS-107`: `SPEC_ONLY` — state-read architecture/source law is merged; the third state schema does not yet exist in runtime.
-- `S0 / MAS-106`: `NOT_BUILT` as a proven capability; experiment is In Progress and must return a transport PASS/BLOCK receipt.
-- `B1 / MAS-108`: `NOT_BUILT` — next critical implementation wave, currently unclaimed at this closeout.
-- `C1 / MAS-109`: `NOT_BUILT` — production private read proof; blocked behind B1 and S0 according to current Linear projection.
+- `S0 / MAS-106`: `NOT_BUILT` as a proven capability; experiment is In Progress, the private four-seat test channel exists, and the disposable fixture app is still required before fixtures run.
+- `B1 / MAS-108`: `NOT_BUILT` — commissioned against current R0 authority, but no principal-builder ACK/branch/PR exists; Slack handoff delivery is not execution.
+- `C1 / MAS-109`: `NOT_BUILT` — production private read proof; blocked behind accepted B1. S0 is not a C1 prerequisite.
 - `B2 / MAS-102`: `NOT_BUILT` — inbound write transport remains held until accepted C1 + successful S0 + explicit Sol release.
 - `C2 / MAS-101`: `NOT_BUILT` — first real Personal-Pro modifying canary; held behind B2.
 - `MAS-48`: `PARTIAL` — end-to-end Personal-Pro writeback is not production-proven.
@@ -151,11 +157,11 @@ no-new-store, or admission-vs-execution laws of #91/#96/#100.
 
 ```text
 SHELL-1  PROVEN_LIVE
-S0       In Progress, zero Executive mutation
+S0       In Progress, private test channel ready, fixture app pending
 
 PR-A     BUILT_NOT_PROVEN
   -> R0  SPEC_ONLY / accepted source law
-  -> B1  next implementation: state frame + executive_hot_state + outbound SOL_STATE publisher
+  -> B1  commissioned NOT_BUILT: state frame + executive_hot_state + outbound SOL_STATE publisher
   -> C1  production private read proof
   -> require successful S0
   -> B2  inbound Socket Mode CEO write transport
@@ -176,15 +182,16 @@ fields merely because these records are maintained under Agent OS.
 
 ## Exact continuation
 
-The primary critical-path action is **MAS-108 / B1** only after a principal builder explicitly
-claims the wave against current protected Mastermind `master`. B1 must consume merged R0, implement
-the diagnostic state frame + transport-neutral hot-state producer + outbound `MMX/SOL_STATE_V1`
-behavior against a development Slack fake/fixture, prove zero Executive mutation and no new store,
+The primary critical-path action is now to **wait for one explicit principal-builder claim and
+return on MAS-108 / B1**, not to spawn another builder lane. The accepted commission requires B1
+to consume merged #103, implement the diagnostic state frame + transport-neutral hot-state
+producer + deterministic outbound `MMX/SOL_STATE_V1` publisher behavior against a development
+Slack fake/fixture, prove zero Executive mutation and no new store, open one HOLD-FOR-SOL PR,
 and stop before C1/B2.
 
-**MAS-106 / S0 may continue independently in parallel** because it performs zero Executive
-mutation and tests the Personal-Pro ↔ Slack carrier itself. S0 must return PASS before B2 can be
-released.
+**MAS-106 / S0 continues independently in parallel.** Workspace admin must first provision the
+disposable S0 Fixture app from the frozen MAS-106 manifest and invite it only to private channel
+C0BRUL9F2V7. S0 must PASS before B2 can be released, but it does not block C1 read proof.
 
-Do not start B2 or C2 merely because PR-A and R0 are merged. C1 owns production read installation
-and proof; B2 additionally requires successful S0 and explicit Sol release.
+After B1 Sol acceptance, C1 owns production private #sol-runtime/app/principal/read proof. Do not
+start B2 or C2 merely because PR-A/R0 are merged or because Slack APIs are technically available.
