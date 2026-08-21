@@ -195,6 +195,137 @@ class TestMissingUniversalForbidFails:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# MAJOR-1 (Fable adjudication, 2026-08-21): close the allow-side money-path
+# leak — a row may forbid a money-path token, never grant it; and
+# allowed_consumers/forbidden_consumers must never overlap on any token
+# (the matrix's own stated DISJOINT design principle).
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestAllowSideMoneyPathLeakFails:
+    @pytest.mark.parametrize("token", sorted(UNIVERSAL_MONEY_PATH_FORBIDS))
+    def test_money_path_token_in_allowed_consumers_fails(self, token):
+        row = _base_row(
+            allowed_consumers=["measurement_page", token],
+            forbidden_consumers=sorted(UNIVERSAL_MONEY_PATH_FORBIDS),
+        )
+        with pytest.raises(ConsumerAuthorityError, match="money-path"):
+            validate_consumer_vocabulary(row)
+
+    def test_allowed_is_exactly_one_money_path_token_fails(self):
+        """allowed=[position_sizing] — the exact case named in MAJOR-1."""
+        row = _base_row(
+            allowed_consumers=["position_sizing"],
+            forbidden_consumers=sorted(UNIVERSAL_MONEY_PATH_FORBIDS),
+        )
+        with pytest.raises(ConsumerAuthorityError, match="money-path"):
+            validate_consumer_vocabulary(row)
+
+    def test_allowed_grants_board_rank_fails(self):
+        """The exact case named in MAJOR-1: a row granting board_rank."""
+        row = _base_row(
+            allowed_consumers=["measurement_page", "board_rank"],
+            forbidden_consumers=sorted(UNIVERSAL_MONEY_PATH_FORBIDS),
+        )
+        with pytest.raises(ConsumerAuthorityError, match="board_rank"):
+            validate_consumer_vocabulary(row)
+
+    def test_allowed_forbidden_overlap_on_non_money_path_token_fails(self):
+        row = _base_row(
+            allowed_consumers=["measurement_page", "cycle_docs"],
+            forbidden_consumers=sorted(UNIVERSAL_MONEY_PATH_FORBIDS) + ["cycle_docs"],
+        )
+        with pytest.raises(ConsumerAuthorityError, match="overlap"):
+            validate_consumer_vocabulary(row)
+
+    def test_disjoint_allowed_and_forbidden_passes(self):
+        row = _base_row(
+            allowed_consumers=["measurement_page", "cycle_docs"],
+            forbidden_consumers=sorted(UNIVERSAL_MONEY_PATH_FORBIDS),
+        )
+        validate_consumer_vocabulary(row)  # must not raise
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MINOR-1 (Fable adjudication, 2026-08-21): an unknown/unmapped status must
+# RAISE, never silently fall through as a vacuous empty class-forbid.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestUnknownStatusRaises:
+    def test_typo_status_raises(self):
+        row = _base_row(status="promted_null")  # typo, not a real status
+        with pytest.raises(ConsumerAuthorityError, match="no matching"):
+            validate_consumer_vocabulary(row)
+
+    def test_typo_status_does_not_silently_pass(self):
+        """A typo'd status must not silently disable the class-conditional
+        check — this reproduces exactly the vacuous-empty-set failure mode
+        MINOR-1 exists to close: before the fix, class_forbidden_consumers()
+        returned frozenset() for an unmapped status, so a promoted_null-like
+        row misspelled as 'promted_null' with neuralweb_context granted
+        would have PASSED instead of failing on either axis."""
+        row = _base_row(
+            status="promted_null",
+            allowed_consumers=["neuralweb_context", "cycle_docs", "research_factory"],
+        )
+        with pytest.raises(ConsumerAuthorityError):
+            validate_consumer_vocabulary(row)
+
+    @pytest.mark.parametrize(
+        "status",
+        ["candidate", "display", "confirmer", "scored", "promoted_null", "retired", "superseded"],
+    )
+    def test_every_real_status_resolves_without_raising_on_class_lookup(self, status):
+        """Sanity: every truths.py VALID_STATUSES value DOES map to a matrix
+        class (including the candidate/candidates bridge) — the raise is for
+        genuine typos/unregistered statuses only, not real ones."""
+        row = _base_row(status=status, allowed_consumers=["measurement_page"])
+        validate_consumer_vocabulary(row)  # must not raise
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MINOR-2 (Fable adjudication, 2026-08-21): type-validate allowed_consumers/
+# forbidden_consumers as lists of strings — reject None/bare-str with a sane
+# message (a bare str used to iterate character-by-character, a silent and
+# dangerous misparse).
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestTypeValidation:
+    def test_allowed_consumers_none_raises(self):
+        row = _base_row(allowed_consumers=None)
+        with pytest.raises(ConsumerAuthorityError, match="allowed_consumers"):
+            validate_consumer_vocabulary(row)
+
+    def test_forbidden_consumers_none_raises(self):
+        row = _base_row(forbidden_consumers=None)
+        with pytest.raises(ConsumerAuthorityError, match="forbidden_consumers"):
+            validate_consumer_vocabulary(row)
+
+    def test_allowed_consumers_bare_string_raises(self):
+        """A bare str like "measurement_page" is iterable char-by-char — the
+        dangerous silent misparse this check exists to catch."""
+        row = _base_row(allowed_consumers="measurement_page")
+        with pytest.raises(ConsumerAuthorityError, match="allowed_consumers"):
+            validate_consumer_vocabulary(row)
+
+    def test_forbidden_consumers_bare_string_raises(self):
+        row = _base_row(forbidden_consumers="board_rank")
+        with pytest.raises(ConsumerAuthorityError, match="forbidden_consumers"):
+            validate_consumer_vocabulary(row)
+
+    def test_allowed_consumers_non_string_entries_raise(self):
+        row = _base_row(allowed_consumers=["measurement_page", 42])
+        with pytest.raises(ConsumerAuthorityError, match="allowed_consumers"):
+            validate_consumer_vocabulary(row)
+
+    def test_well_typed_lists_pass(self):
+        row = _base_row(
+            allowed_consumers=["measurement_page"],
+            forbidden_consumers=sorted(UNIVERSAL_MONEY_PATH_FORBIDS),
+        )
+        validate_consumer_vocabulary(row)  # must not raise
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Discriminating test 4: a writer attempting hazard_baseline_override must FAIL
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -239,7 +370,10 @@ class TestHazardBaselineOverrideFails:
 # Discriminating test 5: every existing legal row passes after its heal
 # ─────────────────────────────────────────────────────────────────────────────
 
+@pytest.mark.needs_full_checkout("data")
 class TestFullHealedRegistryPasses:
+    """Reads the real TRUTHS_PATH — absent in a sparse worktree (policy R8)."""
+
     def _latest_versions(self) -> list[dict]:
         rows = load_truths(TRUTHS_PATH)
         latest: dict[str, dict] = {}
@@ -361,22 +495,34 @@ class TestNoWriterEmitsRetiredAliases:
         """Scoped to the CONTENTS of allowed_consumers:/forbidden_consumers:
         list literals only — a blanket file-wide substring scan for
         'display' would false-positive on the unrelated, legitimate
-        `"status": "display"` field these same writers emit."""
+        `"status": "display"` field these same writers emit.
+
+        BOUNDEDNESS (nit, Fable adjudication 2026-08-21): this is a literal-
+        text regex match, not a static/AST analysis — it catches a hardcoded
+        string token (single- or double-quoted) sitting inside an
+        allowed_consumers:/forbidden_consumers: list literal in one of the
+        7 scripts named in WRITER_SCRIPTS above. It would NOT catch a token
+        built via string concatenation, an f-string, a variable, or a
+        retired alias reintroduced by a writer script outside this named
+        list. The 7-script scope mirrors ruling 10 as adjudicated (every
+        script that currently constructs a truths.jsonl row) — adding a new
+        writer script requires adding it to WRITER_SCRIPTS by hand.
+        """
         import re
 
         text = (_REPO / "scripts" / script_name).read_text(encoding="utf-8")
         list_bodies = re.findall(
-            r'"(?:allowed|forbidden)_consumers"\s*:\s*\[(.*?)\]', text, re.DOTALL
+            r'["\'](?:allowed|forbidden)_consumers["\']\s*:\s*\[(.*?)\]', text, re.DOTALL
         )
         aliases = retired_aliases()
         for body in list_bodies:
             for alias in aliases:
-                quoted = f'"{alias}"'
-                assert quoted not in body, (
-                    f"scripts/{script_name} still emits retired alias {alias!r} "
-                    f"inside an allowed/forbidden_consumers list literal "
-                    f"(ruling 10, extended to every writer by Fable adjudication)"
-                )
+                for quoted in (f'"{alias}"', f"'{alias}'"):
+                    assert quoted not in body, (
+                        f"scripts/{script_name} still emits retired alias {alias!r} "
+                        f"inside an allowed/forbidden_consumers list literal "
+                        f"(ruling 10, extended to every writer by Fable adjudication)"
+                    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -401,7 +547,10 @@ class TestValidateTruthWiring:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestCIWiredRegistryScan:
+    @pytest.mark.needs_full_checkout("data")
     def test_scan_registry_vocabulary_clean_on_real_registry(self):
+        """Reads the real repo's data/cycle_pattern/truths.jsonl — absent in
+        a sparse worktree (policy R8)."""
         sys.path.insert(0, str(_REPO / "scripts"))
         try:
             import check_cycle_pattern_authority as guard
@@ -409,6 +558,35 @@ class TestCIWiredRegistryScan:
             assert not errors, "\n".join(errors)
         finally:
             sys.path.pop(0)
+
+    @pytest.mark.needs_full_checkout("data")
+    def test_scan_registry_vocabulary_advisories_names_exactly_seven_known_rows(self):
+        """WARN-tier report (MAJOR-2, Fable adjudication): must name exactly
+        the 7 known class-subset violations documented in
+        research/imce/IMCE_D1C_RELEASE_RECORD.md as escalated to Sol — never
+        more (no unrelated row swept in), never fewer (no accidental
+        widening/shrinking silently absorbing one), and never fatal
+        (non-empty here does not signal a failure)."""
+        sys.path.insert(0, str(_REPO / "scripts"))
+        try:
+            import check_cycle_pattern_authority as guard
+            advisories = guard.scan_registry_vocabulary_advisories(_REPO)
+        finally:
+            sys.path.pop(0)
+        expected_ids = {
+            "CPI-002", "CPI-004", "CPI-005", "CPI-008",
+            "CPI-011", "CPI-014", "CPI-015",
+        }
+        found_ids = set()
+        for note in advisories:
+            for tid in expected_ids:
+                if note.startswith(f"{tid} ("):
+                    found_ids.add(tid)
+        assert found_ids == expected_ids, (
+            f"expected exactly {sorted(expected_ids)}, got {sorted(found_ids)} "
+            f"(full advisories: {advisories})"
+        )
+        assert len(advisories) == 7
 
     def test_scan_registry_vocabulary_catches_planted_orphan(self, tmp_path):
         import json

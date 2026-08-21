@@ -107,6 +107,7 @@ from engine.cycle_pattern.har import (  # noqa: E402
     query as har_query,
 )
 from scripts.build_analog_library import build_library  # noqa: E402
+from engine.cycle_pattern.truths import append_truth  # noqa: E402
 
 # ── Frozen constants (§18; not tuned) ─────────────────────────────────────────
 EMBARGO_DATE = pd.Timestamp("2024-01-01")    # OOS window: end_date >= this
@@ -757,8 +758,15 @@ def _build_truth_entry(scorecard: dict) -> dict:
     """Build the truths.jsonl entry for HAR-1."""
     run_at = scorecard["run_at"]
     overall = scorecard["overall_verdict"]
+    # "deferred" is NOT a valid truths.py status (VALID_STATUSES has no such
+    # value) — this branch has never fired in production (only promoted_null
+    # has, per the live CPI-017 registry row), but routing this writer
+    # through append_truth() (Fable adjudication MAJOR-4) means an invalid
+    # status here would now hard-crash instead of silently writing a
+    # non-compliant line. Mapped to the closest valid semantic: "candidate"
+    # ("proposed; not yet display-eligible" fits "verdict not yet resolved").
     status = "promoted_null" if overall in ("promoted_null", "FAIL") else (
-        "scored" if overall == "PASS" else "deferred"
+        "scored" if overall == "PASS" else "candidate"
     )
 
     fam_summaries = []
@@ -785,7 +793,14 @@ def _build_truth_entry(scorecard: dict) -> dict:
         "owner_program": "cycle-intelligence",
         "pit_class": "revision_optimistic",  # macro fingerprint not PIT-vintaged (P-D5-1)
         "target": "remaining_months_to_turn_distribution_crps",
-        "effect_class": "null" if status == "promoted_null" else "scored",
+        # "scored" is NOT a valid effect_class (truths.py VALID_EFFECT_CLASSES
+        # is positive/risk_only/null/structural) — pre-existing bug, never
+        # exercised (only the promoted_null/null branch has ever fired in
+        # production). Fixed as a direct, minimal consequence of routing this
+        # writer through append_truth() (MAJOR-4): "positive" for a genuine
+        # PASS (demonstrated skill), "null" otherwise (promoted_null, or the
+        # not-yet-resolved candidate branch).
+        "effect_class": "positive" if status == "scored" else "null",
         "era_stability": "unknown",
         "statement": (
             f"HAR-1 (§18): Historical-analog kNN retrieval over normalized completed "
@@ -1022,10 +1037,13 @@ def main(argv=None):
               f"coverage={cell.get('cone_coverage_p25_p75')}")
     print("=" * 72)
 
-    # Append truth
+    # Append truth. Routed through append_truth() (Fable adjudication,
+    # MAJOR-4, 2026-08-21) rather than a raw file write — this is what makes
+    # the write-time consumer-vocabulary gate (validate_truth() ->
+    # validate_consumer_vocabulary()) actually cover CPI-017's writer, same
+    # as every other writer in this heal.
     truth = _build_truth_entry(scorecard)
-    with open(TRUTHS_PATH, "a") as f:
-        f.write(json.dumps(truth, ensure_ascii=False) + "\n")
+    append_truth(truth, TRUTHS_PATH)
     print(f"\nAppended truth entry: truth_id={truth['truth_id']}, status={truth['status']}")
 
     # Append PREREGISTRATION.md results

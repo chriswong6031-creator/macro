@@ -3929,7 +3929,11 @@ jobs:
       - name: authority guard selftest (gate fires on planted violation)
         run: python scripts/check_cycle_pattern_authority.py --selftest
       - name: cycle-pattern authority test suite
-        run: python -m pytest tests/test_check_cycle_pattern_authority.py -q
+        run: >-
+          python -m pytest
+          tests/test_check_cycle_pattern_authority.py
+          tests/test_cpi_h1_consumer_authority.py
+          -q
 
   private-boundary:
     if: ${{ false }}

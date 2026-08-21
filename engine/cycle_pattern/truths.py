@@ -27,16 +27,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-# CPI-H1: the single canonical consumer-vocabulary validator (also reused by
-# scripts/check_cycle_pattern_authority.py's CI-wired registry scan) — see
-# engine/cycle_pattern/consumer_authority.py. Not sklearn/statsmodels/scipy,
-# so this import is compatible with this module's own forbidden-import audit
-# (tests/test_cycle_pattern_truths.py::test_no_forbidden_imports_in_truths).
-from engine.cycle_pattern.consumer_authority import (
-    ConsumerAuthorityError,
-    validate_consumer_vocabulary,
-)
-
 log = logging.getLogger(__name__)
 
 TRUTHS_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "cycle_pattern" / "truths.jsonl"
@@ -130,6 +120,17 @@ def validate_truth(
         raise ValueError(f"{tid}: falsifiers must be a non-empty list")
 
     if check_consumer_vocabulary:
+        # Lazy import (Fable adjudication, MINOR-8, 2026-08-21): consumer_
+        # authority.py imports PyYAML. Importing it only inside this call
+        # path — rather than at module load — means a caller that only wants
+        # load_truths()/active_truths() (read-only consumers, e.g. a display
+        # surface with no PyYAML dependency) does not fail at import time if
+        # PyYAML is unavailable; only a validate_truth()/append_truth()/
+        # transition_truth() call (an actual write-path use) needs it.
+        from engine.cycle_pattern.consumer_authority import (
+            ConsumerAuthorityError,
+            validate_consumer_vocabulary,
+        )
         try:
             validate_consumer_vocabulary(row)
         except ConsumerAuthorityError as exc:

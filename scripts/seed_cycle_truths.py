@@ -6,6 +6,21 @@ Re-runnable / idempotent: if truths.jsonl already contains the same
 Evidence paths are validated on disk before any write; the script aborts
 loudly if a referenced artifact is missing (do not seed hypothetical refs).
 
+CPI-H1 GENESIS-VS-HISTORY DIVERGENCE (documented, Fable adjudication MINOR-7,
+2026-08-21): the templates below emit the CANONICAL vocabulary
+(measurement_page/cycle_docs/research_factory, per config/cycle_pattern/
+consumer_matrix.yml) at v1 — a fresh, never-before-seeded store therefore
+seeds already-healed rows. The PRODUCTION store's actual historical v1 rows
+differ: they were written before the CPI-H1 heal with the then-current
+retired-alias vocabulary (measurement_surface/honesty_display/etc.) and were
+healed forward via versioned v2 appends rather than rewritten in place
+(append-only — see data/cycle_pattern/truths.jsonl history and
+research/imce/IMCE_D1C_RELEASE_RECORD.md). This is intentional, not a bug:
+idempotency here keys on (truth_id, version) tuples, so re-running this
+seeder against the real store is always a no-op (all 15 already present at
+v1) — this divergence is purely a fresh-store-genesis property, exercised
+only in tests that seed into a tmp_path, never in production.
+
 Run:
     cd /path/to/repo && python3 -m scripts.seed_cycle_truths
 """

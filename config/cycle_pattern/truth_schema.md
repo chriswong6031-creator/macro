@@ -77,15 +77,18 @@ no code path checked either against the other (`research/imce/
 IMCE_A2_CPI_TRUTH_VOCABULARY_AUDIT_V1.md` findings F3/F4). This doc now
 documents the RULES; it does not maintain a second list.
 
-**The rules, enforced by `engine/cycle_pattern/consumer_authority.py`
+**The HARD rules below are enforced by `engine/cycle_pattern/consumer_authority.py`
 (reused by both `validate_truth()` and the CI-wired
-`scripts/check_cycle_pattern_authority.py` scan — CPI-H1 ruling 11):**
+`scripts/check_cycle_pattern_authority.py` scan — CPI-H1 ruling 11) —
+`validate_consumer_vocabulary()` raises on any violation:**
 
 - Every `allowed_consumers`/`forbidden_consumers` token must be one of the
   names declared in `consumer_matrix.yml`'s `surfaces:` section. Any other
   token is rejected — with a specific "retired alias" message for the tokens
   named in `consumer_matrix.yml`'s `retired_aliases:` map, or a generic
   "orphan token" message otherwise.
+- `allowed_consumers` and `forbidden_consumers` must each be a list of
+  strings — `None`, a bare string, or any other shape is rejected.
 - **Universal money-path floor (CPI-H1 ruling 5):** `forbidden_consumers`
   must carry all four of `board_rank`, `oracle_escalation`,
   `sector_central_direction_score`, `position_sizing` on EVERY row,
@@ -94,15 +97,36 @@ documents the RULES; it does not maintain a second list.
   schema-doc tokens (`lead_lag_interaction_layer`, `ladder_calibration_input`,
   `high_authority_truth_evidence`) remain row/class-level narrow forbids —
   not part of the universal floor.
-- **Row allowlists are least-privilege subsets of their status class** — a
-  row is never mechanically widened just because its status class could
-  permit a surface (CPI-H1 ruling 8).
-- A `promoted_null`-status row may never grant `neuralweb_context` in
-  `allowed_consumers` — the matrix's `promoted_null` class forbid wins over
-  any row-level grant (CPI-H1 ruling 6 / A2 finding F6).
+- **`allowed_consumers` may never contain a money-path token**
+  (`consumer_matrix.yml`'s own `surfaces:money_path` group), and
+  `allowed_consumers`/`forbidden_consumers` may never overlap on any token
+  (Fable adjudication, 2026-08-21 — the matrix's own DISJOINT design
+  principle, now machine-enforced rather than merely stated).
+- A row whose `status` has no matching `consumer_matrix.yml`
+  `artifact_classes` entry (a typo, or a genuinely new status registered in
+  `engine/cycle_pattern/truths.py` without a matching matrix class) is
+  rejected outright — never silently treated as having no class-level
+  forbids (Fable adjudication, 2026-08-21).
+- A row of ANY of the four statuses whose matrix class forbids
+  `neuralweb_context` — `promoted_null`, `candidate`, `retired`,
+  `superseded` — may never grant it in `allowed_consumers`; the matrix class
+  forbid wins over any row-level grant (CPI-H1 ruling 6 / A2 finding F6,
+  extended from `promoted_null`-only to all four by Fable adjudication,
+  2026-08-21, via a matrix-driven check rather than a hardcoded status list).
 - `retired` and `superseded` status rows now have explicit
   `artifact_classes` entries in the matrix (CPI-H1 ruling 7 — previously
   undefined, A2 §3 nit).
+
+**Row allowlists are least-privilege subsets of their status class** (CPI-H1
+ruling 8) is a NORMATIVE CONVENTION, not a hard rule — `consumer_matrix.yml`'s
+per-status `allowed_consumers` lists were never widened to include every
+narrow display token some pre-existing rows legitimately carry (e.g.
+CPI-008's `sync_gauge_display` on a `promoted_null` row). Machine tooling is
+ADVISORY only: `engine/cycle_pattern/consumer_authority.py`'s
+`advisory_class_subset_violations()` reports a non-fatal WARN for any row
+whose `allowed_consumers` exceeds its class's — never a hard fail. The 7
+known violations as of the CPI-H1 heal are escalated to Sol in
+`research/imce/IMCE_D1C_RELEASE_RECORD.md`, not resolved by this module.
 
 See `config/cycle_pattern/consumer_matrix.yml` for the full canonical token
 list and per-status contracts, and `research/imce/IMCE_D1C_RELEASE_RECORD.md`

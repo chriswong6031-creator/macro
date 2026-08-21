@@ -691,15 +691,15 @@ def _write_truths_entry(verdict_status: str, scorecard: dict) -> None:
         # private display/display_only + hazard_baseline_override/
         # forward_allocation/signal_generation tokens this used to mint are
         # retired — they were never established pipeline surfaces (A2 F1).
-        # Use the ordinary per-status artifact_classes contract instead; a
-        # 'scored' verdict gets the matrix's scored-class allowlist (context
-        # only — no money-path grant is minted here), 'promoted_null' gets
-        # the ordinary promoted_null contract.
-        "allowed_consumers": (
-            ["measurement_page", "cycle_docs", "research_factory", "neuralweb_context"]
-            if verdict_status == "scored"
-            else ["measurement_page", "cycle_docs", "research_factory"]
-        ),
+        # Same minimal display-tier set on BOTH branches (nit, Fable
+        # adjudication 2026-08-21): the matrix's 'scored' class ALLOWS
+        # neuralweb_context, but this writer's old display/display_only
+        # vocabulary never intended NW-lobe consumption — granting it merely
+        # because the class permits it would be exactly the mechanical
+        # widening ruling 8 (least-privilege) warns against. No row here has
+        # ever reached 'scored' in production, so this is a forward-looking
+        # floor, not a live correction.
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",

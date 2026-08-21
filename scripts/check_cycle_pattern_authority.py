@@ -69,9 +69,10 @@ ROOT = Path(__file__).resolve().parent.parent
 
 sys.path.insert(0, str(ROOT))
 from engine.cycle_pattern.consumer_authority import (  # noqa: E402
+    advisory_class_subset_violations as _advisory_class_subset_violations,
     validate_registry as _validate_consumer_registry,
 )
-from engine.cycle_pattern.truths import TRUTHS_PATH, load_truths  # noqa: E402
+from engine.cycle_pattern.truths import load_truths  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Scan pattern
@@ -247,12 +248,53 @@ def scan(root: Path,
 # replaces the literal-path scan above)
 # ---------------------------------------------------------------------------
 
-def scan_registry_vocabulary(root: Path, path: Path | None = None) -> list[str]:
+def scan_registry_vocabulary(
+    root: Path, path: Path | None = None, *, allow_empty: bool = False
+) -> list[str]:
     """Validate every truth_id's LATEST version against the canonical matrix.
 
     Returns a list of error strings (empty = clean). Historical (non-latest)
     versions are never checked here — the registry is append-only, so an old
     row written before a vocabulary heal can never be corrected in place.
+
+    REFUSES (non-empty error list) on a missing file or zero parsed rows,
+    unless allow_empty=True (Fable adjudication, MINOR-3 — house pattern, cf.
+    scripts/check_template_site_sync.py's sparse-worktree refusal). Silently
+    returning "clean" on zero rows would let a wrong path, a missing file, or
+    a sparse worktree with data/ omitted (config/sparse_worktree.json) report
+    a false-green scan instead of the load failure it actually is.
+    """
+    truths_path = path if path is not None else (root / "data" / "cycle_pattern" / "truths.jsonl")
+    rows = load_truths(truths_path)
+    if not rows:
+        if allow_empty:
+            return []
+        return [
+            f"registry vocabulary scan found ZERO rows at {truths_path} — "
+            f"refusing rather than silently reporting 'clean'. Likely causes: "
+            f"missing/empty file, wrong --root, or a sparse worktree with "
+            f"data/ omitted (python3 scripts/worktree_sparse.py add data). "
+            f"Pass allow_empty=True if an empty registry is genuinely expected."
+        ]
+
+    latest: dict[str, dict] = {}
+    for row in rows:
+        tid = row.get("truth_id", "")
+        prev = latest.get(tid)
+        if prev is None or row.get("version", 0) > prev.get("version", 0):
+            latest[tid] = row
+
+    return _validate_consumer_registry(list(latest.values()))
+
+
+def scan_registry_vocabulary_advisories(root: Path, path: Path | None = None) -> list[str]:
+    """WARN-tier (non-fatal) class-subset advisories for every latest-version row.
+
+    Never affects exit code — see
+    engine.cycle_pattern.consumer_authority.advisory_class_subset_violations
+    for the full rationale (Fable adjudication, MAJOR-2). Returns [] on a
+    missing/empty registry rather than refusing — this report is advisory,
+    so there is nothing to warn about when there is nothing to scan.
     """
     truths_path = path if path is not None else (root / "data" / "cycle_pattern" / "truths.jsonl")
     rows = load_truths(truths_path)
@@ -266,7 +308,7 @@ def scan_registry_vocabulary(root: Path, path: Path | None = None) -> list[str]:
         if prev is None or row.get("version", 0) > prev.get("version", 0):
             latest[tid] = row
 
-    return _validate_consumer_registry(list(latest.values()))
+    return _advisory_class_subset_violations(list(latest.values()))
 
 
 # ---------------------------------------------------------------------------
@@ -456,6 +498,20 @@ def main() -> int:
             f"against config/cycle_pattern/consumer_matrix.yml (CPI-H1). "
             f"See engine/cycle_pattern/consumer_authority.py.",
             file=sys.stderr,
+        )
+
+    # ── CPI-H1: WARN-tier (non-fatal) least-privilege class-subset advisory
+    # (Fable adjudication, MAJOR-2) — never affects exit code ─────────────
+    advisories = scan_registry_vocabulary_advisories(root)
+    if advisories:
+        for note in advisories:
+            print(f"  [WARN-ADVISORY] consumer-vocabulary class-subset: {note}")
+        print(
+            f"::notice::check_cycle_pattern_authority: {len(advisories)} truth "
+            f"registry row(s) grant an allowed_consumers token outside their "
+            f"status class's matrix allowed_consumers — least-privilege (CPI-H1 "
+            f"ruling 8) is a normative convention, ADVISORY only, not enforced. "
+            f"See research/imce/IMCE_D1C_RELEASE_RECORD.md."
         )
 
     if hard or vocab_errors:

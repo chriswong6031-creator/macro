@@ -35,10 +35,25 @@
 #     money-path surfaces are explicitly forbidden.
 #   - EVERY truth row's forbidden_consumers must carry all four money_path
 #     tokens below, regardless of status/effect_class (CPI-H1 ruling 5) —
-#     enforced by engine/cycle_pattern/consumer_authority.py.
+#     HARD-enforced by engine/cycle_pattern/consumer_authority.py
+#     (validate_consumer_vocabulary raises).
+#   - allowed_consumers may NEVER contain a money_path token, and
+#     allowed_consumers/forbidden_consumers may never overlap on any token —
+#     both HARD-enforced by the same module (Fable adjudication, 2026-08-21).
 #   - Row allowlists are LEAST-PRIVILEGE subsets of their status class — a
 #     row is never mechanically widened just because its class could permit
-#     a surface (CPI-H1 ruling 8).
+#     a surface (CPI-H1 ruling 8). This is a NORMATIVE CONVENTION with
+#     ADVISORY tooling only (Fable adjudication, 2026-08-21): per-status
+#     `allowed_consumers` below were never widened to include every narrow
+#     display token some pre-existing rows legitimately use (e.g. CPI-008's
+#     `sync_gauge_display` on a `promoted_null` row), so
+#     engine/cycle_pattern/consumer_authority.py reports class-subset
+#     mismatches as a non-fatal WARN
+#     (`advisory_class_subset_violations()`), never a hard fail — hard-failing
+#     would either wrongly reject pre-existing rows or force an unreviewed
+#     vocabulary-governance call this module has no authority to make. The 7
+#     known violations as of the CPI-H1 heal are escalated to Sol in
+#     research/imce/IMCE_D1C_RELEASE_RECORD.md, not resolved here.
 #
 # Schema version: v0  (2026-07-06; CPI-H1 heal 2026-08-21)
 # Owner: cycle-intelligence
@@ -216,16 +231,21 @@ artifact_classes:
       add the relevant money-path surface to allowed_consumers via a
       human_review-driven transition_truth() call, which appends a NEW
       versioned row (append-only — the old row is never mutated).
-      CORRECTION (CPI-H1, A2 finding F3): the authority check
-      (scripts/check_cycle_pattern_authority.py) does NOT re-read
-      truths.jsonl at scan time — it is a literal-path reader-module scan
-      with no knowledge of this file's content at all. Consumer-vocabulary
-      content, including this expansion rule, is enforced separately by
-      engine/cycle_pattern/consumer_authority.py at truth-write time (via
-      validate_truth()) and by check_cycle_pattern_authority.py's CI-wired
-      registry scan (CPI-H1 ruling 11/12). No surface may self-add itself —
-      only an explicit human_review transition may expand the allowed list
-      for scored truths.
+      CORRECTION (CPI-H1, A2 finding F3): the authority check's ORIGINAL
+      literal-path reader-module scan (scripts/check_cycle_pattern_
+      authority.py's scan()) does NOT re-read truths.jsonl at scan time — it
+      has no knowledge of this file's content, only of which Python modules
+      contain the literal string "data/cycle_pattern/". CPI-H1 added a
+      SECOND, additive check to the same script — scan_registry_vocabulary()
+      — that DOES open and parse truths.jsonl directly, validating every
+      truth_id's latest version against this matrix via
+      engine/cycle_pattern/consumer_authority.py. So: the literal-path scan
+      still never reads this file; the registry-vocabulary scan does, every
+      CI run, not just at DL-1 time. Consumer-vocabulary content, including
+      this expansion rule, is enforced at both truth-write time
+      (validate_truth()) and CI scan time via the same module (CPI-H1 ruling
+      11/12). No surface may self-add itself — only an explicit human_review
+      transition may expand the allowed list for scored truths.
 
   # ── candidates ────────────────────────────────────────────────────────────
   # Proposed / registered / screened candidates in the Research Factory;
