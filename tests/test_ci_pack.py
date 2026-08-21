@@ -3087,12 +3087,56 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     ~1,550 weight-seconds/3-pack fallback-regression bound this file guards;
     ratcheting the ceiling is the correct-risk response, not curation.
     WEIGHT and PACK ceilings stay unmoved (5,600 / 9 packs, unchanged).
+
+    JOB COUNTS RE-BASED to 129/125/121 (wave 7, 2026-08-21) — a ratchet on the
+    templates probe, and the wave-3 headroom promise re-funded on all three.
+    Measured against the last commit at which this job's own lane was green
+    (48bfd3c97e8a, data-health run 32380507121), diffing the selected-job NAME
+    sets isolates one sole entrant per probe and nothing leaves:
+
+        templates/index.html          127 -> 128 jobs, 5,390 -> 5,420 weight
+        scripts/build_free_content.py 123 -> 124 jobs, 5,141 -> 5,173 weight
+        engine/prophet/plan_book.py   119 -> 120 jobs, 5,143 -> 5,175 weight
+
+    Only templates/index.html BREACHED (128 > 127). Its sole entrant is
+    ``regwall-boundary``, the new ``gate: code`` job #6141 added so that
+    tests/test_regwall_json_gate.py — whose only CI home had been the
+    ``gate: data`` job ``tier-gate``, i.e. off the merge gate entirely — can
+    actually block a merge. It matches on the DECLARED tier, not fallback:
+    #6141 gave it an explicit ``scope: exclusive`` + ``paths:`` precisely
+    because that suite names its subjects as segment literals
+    (``REPO_ROOT / "templates" / "index.html"``, tests/test_regwall_json_gate.py:102),
+    which SCOPE_REFERENCE_RE cannot see. So this is the ``intelligence-registry``
+    case verbatim (wave 3 note above), not the ``options-estate-guards`` smear:
+    there is no fallback claim to curate away, because the job arrived already
+    curated to the narrowest honest scope it has. Narrowing it further would
+    drop ``templates/index.html`` from the declaration of the one job whose
+    entire purpose is to assert the regwall boundary inside that file — a
+    silent false green, and ``curated_exclusive_closure_findings`` would hard-
+    fail the manifest for it anyway. Ratcheting is the correct-risk response.
+
+    The other two probes did NOT breach — but both sat at EXACTLY their
+    ceiling (124/124 and 120/120), which is the zero-headroom defect the #5620
+    note above already diagnosed once ("the very first honest new job breached
+    all three") and which wave 6 re-introduced by re-basing plan_book exact.
+    That is how this red reached main unseen: ``workflow-yaml`` is itself
+    ``gate: data``, so under W2 of
+    research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md this assertion
+    is packed only by data-health.yml, which has no ``pull_request`` trigger —
+    no PR can be blocked by it, so a zero-headroom ceiling does not red the
+    newcomer's PR, it reds MAIN, silently, one commit later. All three are
+    therefore set at measurement + 1 per the wave-3 rule, restoring the one
+    job of slack that makes the NEXT newcomer a visible event rather than a
+    fait accompli. WEIGHT and PACK ceilings stay unmoved (5,800 / 5,600 /
+    5,600 and 10 packs): weights are 5,420 / 5,173 / 5,175, and a fallback-
+    tier regression is still ~1,550 weight-seconds above them, so the bound
+    this file exists to hold is untouched.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 127, 5_800),
-        ("scripts/build_free_content.py", 124, 5_600),
-        ("engine/prophet/plan_book.py", 120, 5_600),
+        ("templates/index.html", 129, 5_800),
+        ("scripts/build_free_content.py", 125, 5_600),
+        ("engine/prophet/plan_book.py", 121, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)
