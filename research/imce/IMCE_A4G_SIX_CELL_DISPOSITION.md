@@ -20,16 +20,18 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 
 ## 1. Per-cell disposition
 
+**Cell-level ruling applied throughout this section [MAJ-1, MAJ-2 — Fable adjudication of Opus red-team findings, A4G revision 2026-08-21]:** AG6's B≤3 cancellation cap binds a cell IN ITS ENTIRETY whenever that cell's registered input basis includes cancellation-rate data — never merely "a feature's contribution" inside an otherwise B≤5 cell. `order_softness` (contract §2, AG14) is the one D5 state whose registered basis today names cancellation-rate disclosure, so any cell targeting `order_softness` or a `next_local_state`-class target built from it is a **B≤3 cell as currently registered**, not a conditional B≤5-unless-drawn cell. Correspondingly, LEN's cancellation exclusion is **cell-level**: LEN is excluded entirely (issuer-level, not feature-level) from any B≤3 cell, and remains a full roster member in any B≤5 cell, where its cancellation-rate feature (if ever referenced non-primarily) is typed `missing` and never imputed (AG11 ban) rather than "excluded." (The prior draft's "contract §2(b) confirmation note" attribution for feature-level scoping was fabricated — no such note exists in the contract; that language was HB0 census evidence, not a contract clause — corrected here per the amended contract's `[AG10-clarif]` paragraph.) The 2014–2019 grind block, one of the three B≤3-contributing blocks, carries only **partial FY2016+ coverage** for PHM/NVR (AG6, M9-fix) — disclosed at every citation below.
+
 ### Cell 1 — `rf.cycle_pattern.imce_phase_v0`, target: next family-local state at 1 reporting period
 
 | Field | Value |
 |---|---|
 | Target | next family-local state, 1 reporting period (D5 mechanism-local state transition) |
-| Block basis | **B ≤ 5** (general cell — AG5) — GFC bust, GFC recovery, 2014–2019 grind, pandemic boom, 2022–2023 rate shock. Taper (2013) and 2018 air-pocket are subepisodes, zero N (AG7); affordability era is `OPEN_ACCRUING`, zero N (AG8). |
-| LEN membership | Roster member (issuer-level). Cancellation-rate exclusion does not bind this cell's `M_t` construction unless a cancellation-rate feature is drawn in; per contract §2(b) confirmation note, exclusion is feature-level, universal across all 6 cells where the feature is used. |
+| Block basis | **B ≤ 3** (cancellation-scoped, AG6, MAJ-1) — 2014–2019 grind (**partial, FY2016+ PHM/NVR coverage**), 2020–2021 pandemic boom, 2022–2023 rate shock. GFC bust/recovery excluded (unstated early denominator convention); taper/air-pocket subepisodes zero N (AG7); affordability era `OPEN_ACCRUING` zero N (AG8). Applies because this cell's registered basis draws `order_softness`, which names cancellation-rate disclosure (AG14) — see the cell-level ruling above and §4's open item on the exact target-to-state mapping. |
+| LEN membership | **EXCLUDED — cell-level** (AG10-clarif, MAJ-2). LEN is a B≤3-cell exclusion, issuer-level, matching its cancellation-rate-cell exclusion (contract §2 [A18]/AG10). |
 | NVR stratum handling | Separate stratum, never pooled to raise n (AG13, reaffirmed unchanged). A transfer test is a future registered cell, not this one. |
 | Predetermined status | `underpowered_accruing` (mechanical, §12 zero-pass rule — all 6 historical cells pre-labeled) |
-| State-vector observability (AG14) | **Depends on which D5 state this target tracks — open A4 registration item (AG14).** If it tracks `order_softness`: full cohort. If `completed_inventory_build`: named 3-issuer subset (DHI/LEN/PHM) only, not a cohort claim. If `incentive_support` or `pace_recovery`: **may not run as a cohort cell at all** under AG14 — descriptive only. This ambiguity is not resolved by A4G; it is an explicit open item (see §3 below). |
+| State-vector observability (AG14) | **Depends on which D5 state this target tracks — open A4 registration item (AG14), now BINDING at registration (§15/§15a, MAJ-5).** If it tracks `order_softness` (the working basis assumed for the B≤3 block-basis line above): full cohort, minus LEN. If `completed_inventory_build`: named 3-issuer subset (DHI/LEN/PHM — note LEN membership here would need reconciling against the cell-level cancellation exclusion if the two bases combine) only, not a cohort claim. If `incentive_support` or `pace_recovery`: **may not run as a cohort cell at all** under AG14 — descriptive only, and per the new binding stop condition, may not be registered unmapped. This ambiguity is not resolved by A4G; it is an explicit open item (see §3 below). |
 | Six elections touched | E2 (partial, via AG14) |
 
 ### Cell 2 — `rf.cycle_pattern.imce_phase_v0`, target: next family-local state at 3 reporting periods
@@ -37,11 +39,11 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 | Field | Value |
 |---|---|
 | Target | next family-local state, 3 reporting periods |
-| Block basis | **B ≤ 5** (general cell — AG5), same composition as Cell 1 |
-| LEN membership | Same as Cell 1 |
+| Block basis | **B ≤ 3** (cancellation-scoped, AG6, MAJ-1), same composition and grind-block partial-coverage caveat as Cell 1 |
+| LEN membership | **EXCLUDED — cell-level**, same as Cell 1 |
 | NVR stratum handling | Same as Cell 1 |
 | Predetermined status | `underpowered_accruing` |
-| State-vector observability (AG14) | Same open item as Cell 1 — target-to-D5-state mapping not registered by A4G |
+| State-vector observability (AG14) | Same open item as Cell 1 — target-to-D5-state mapping not registered by A4G, now binding at registration |
 | Six elections touched | E2 (partial, via AG14) |
 
 ### Cell 3 — `rf.cycle_pattern.imce_phase_v0`, target: false repair/relapse within 3 reporting periods
@@ -49,8 +51,8 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 | Field | Value |
 |---|---|
 | Target | false repair / relapse within 3 reporting periods |
-| Block basis | **B ≤ 5** (general cell — AG5), same composition as Cell 1 |
-| LEN membership | Same as Cell 1 |
+| Block basis | **B ≤ 3** (cancellation-scoped, AG6, MAJ-1), same composition and grind-block partial-coverage caveat as Cell 1 |
+| LEN membership | **EXCLUDED — cell-level**, same as Cell 1 |
 | NVR stratum handling | Same as Cell 1 |
 | Predetermined status | `underpowered_accruing` |
 | State-vector observability (AG14) | Same open item as Cell 1 |
@@ -61,11 +63,11 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 | Field | Value |
 |---|---|
 | Target | `next_local_state_1rp`, contrast [M+R vs M] |
-| Block basis | **B ≤ 5** (general cell — AG5) unless the mechanism vector's feature set draws a cancellation-rate input, in which case the cancellation-scoped B ≤ 3 (AG6) applies to that feature's contribution — feature-level scoping, contract §2(b) note |
-| LEN membership | Roster member; cancellation-rate feature exclusion applies at feature level if drawn |
+| Block basis | **B ≤ 3** (cancellation-scoped, AG6, MAJ-1) — same D5 next-state target class as Cells 1–3, so the same cell-level cancellation basis applies; same grind-block partial-coverage caveat |
+| LEN membership | **EXCLUDED — cell-level**, same as Cell 1 |
 | NVR stratum handling | Separate stratum, never pooled |
 | Predetermined status | `underpowered_accruing` |
-| State-vector observability (AG14) | `next_local_state_1rp` is the same D5 next-state target family as Cells 1–3; same open target-to-state mapping item |
+| State-vector observability (AG14) | `next_local_state_1rp` is the same D5 next-state target family as Cells 1–3; same open target-to-state mapping item, now binding at registration |
 | Six elections touched | E2 (partial) |
 
 ### Cell 5 — `rf.cycle_pattern.imce_sync_v0`, target: `forward_63d_drawdown_tail` (M+R vs M)
@@ -73,10 +75,10 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 | Field | Value |
 |---|---|
 | Target | `forward_63d_drawdown_tail`, contrast [M+R vs M] |
-| Block basis | **B ≤ 5** (general cell — AG5); a market/risk target, not itself a cancellation-denominator construction, so the general cap applies unless a cancellation-rate feature enters `M_t` |
-| LEN membership | Roster member; feature-level exclusion if a cancellation feature is drawn |
+| Block basis | **Not yet settled to a single cap.** This is a market/risk target, not itself a `next_local_state`/D5 target — its `M_t` feature composition (and specifically whether it draws cancellation-rate data) is not finalized in the contract. Per the cell-level ruling (MAJ-1): **if** cancellation-rate is included in this cell's registered `M_t` basis at actual A4 registration, **B ≤ 3 applies to the cell entire**; **if** excluded, **B ≤ 5** (general cap, AG5) applies. This is a registration-time decision with its own review, not an open election of this gate (MAJ-1 explicitly removes the "open election" framing for the cap-scoping question itself — what remains open is only the underlying feature-composition fact, a separate, ordinary registration-time detail). |
+| LEN membership | Conditional on the same basis: EXCLUDED (cell-level) if this cell registers as B≤3; roster member (cancellation feature typed missing, never imputed, AG11) if B≤5. |
 | NVR stratum handling | Separate stratum, never pooled |
-| Predetermined status | `underpowered_accruing` |
+| Predetermined status | `underpowered_accruing` (invariant to which basis this cell resolves to — both B≤3 and B≤5 fail the 40-block floor by a wide margin) |
 | State-vector observability (AG14) | Not directly D5-state-keyed (this is a market drawdown target, not a next-mechanism-state target) — AG14's scoping bears on `M_t`'s input features, not this cell's target itself |
 | Six elections touched | none directly; E2 bears on feature construction only |
 
@@ -85,8 +87,8 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 | Field | Value |
 |---|---|
 | Target | `forward_63_trading_day_drawdown_tail`, [M vs family/stratum prior] |
-| Block basis | **B ≤ 5** (general cell — AG5); same feature-level cancellation scoping as Cell 5 if applicable |
-| LEN membership | Roster member; feature-level exclusion if applicable |
+| Block basis | Same not-yet-settled conditional as Cell 5 — B≤3 entire if cancellation-rate is in the registered `M_t` basis, B≤5 if not; a registration-time decision, not an open election |
+| LEN membership | Same conditional as Cell 5 |
 | NVR stratum handling | Separate stratum, never pooled |
 | Predetermined status | `underpowered_accruing` |
 | State-vector observability (AG14) | Same as Cell 5 |
@@ -98,14 +100,14 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 
 | Cell | Family | Block basis (B) | LEN | NVR | Status | Max ladder rung |
 |---|---|---|---|---|---|---|
-| 1 | `imce_phase_v0` | ≤5 (general) | member; feature-level cancellation exclusion if drawn | separate stratum | `underpowered_accruing` | `REGISTERED`→`REPLAYED`, never `DISPLAY`/`PROMOTE_ELIGIBLE` |
-| 2 | `imce_phase_v0` | ≤5 (general) | same | separate stratum | `underpowered_accruing` | same |
-| 3 | `imce_phase_v0` | ≤5 (general) | same | separate stratum | `underpowered_accruing` | same |
-| 4 | `imce_sync_v0` | ≤5 general / ≤3 if cancellation feature drawn | same | separate stratum | `underpowered_accruing` | same |
-| 5 | `imce_sync_v0` | ≤5 general / ≤3 if cancellation feature drawn | same | separate stratum | `underpowered_accruing` | same |
-| 6 | `imce_risk_v0` | ≤5 general / ≤3 if cancellation feature drawn | same | separate stratum | `underpowered_accruing` | same |
+| 1 | `imce_phase_v0` | **≤3 entire** (cancellation-scoped, order_softness basis — AG6, MAJ-1) | **EXCLUDED — cell-level** | separate stratum | `underpowered_accruing` | `REGISTERED`→`REPLAYED`, never `DISPLAY`/`PROMOTE_ELIGIBLE` |
+| 2 | `imce_phase_v0` | **≤3 entire** | **EXCLUDED — cell-level** | separate stratum | `underpowered_accruing` | same |
+| 3 | `imce_phase_v0` | **≤3 entire** | **EXCLUDED — cell-level** | separate stratum | `underpowered_accruing` | same |
+| 4 | `imce_sync_v0` | **≤3 entire** (same D5 next-state class) | **EXCLUDED — cell-level** | separate stratum | `underpowered_accruing` | same |
+| 5 | `imce_sync_v0` | ≤3 entire if cancellation in registered basis, else ≤5 entire (registration-time decision, MAJ-1) | conditional on basis (excluded if ≤3, roster member with missing-typed feature if ≤5) | separate stratum | `underpowered_accruing` | same |
+| 6 | `imce_risk_v0` | same conditional as Cell 5 | conditional, same as Cell 5 | separate stratum | `underpowered_accruing` | same |
 
-**All 6 cells are pre-labeled `underpowered_accruing`, mechanically, invariant to any future outcome** (contract §12 zero-pass rule, unamended by A4G — the mechanism, not the label, is what A4G touches). Every cell fails the 40-block floor by roughly an order of magnitude on its stated block basis (5 or 3), whether measured against the general cap or the cancellation cap.
+**All 6 cells are pre-labeled `underpowered_accruing`, mechanically, invariant to any future outcome** (contract §12 zero-pass rule, unamended by A4G — the mechanism, not the label, is what A4G touches). Every cell fails the 40-block floor by roughly an order of magnitude on its stated block basis (3 or 5), whether measured against the cancellation cap or the general cap. **Cells 1–4 are settled at B≤3 entire under the cell-level ruling (MAJ-1); only Cells 5–6's basis remains conditional on a registration-time feature-composition fact, not on any open scoping election.**
 
 ---
 

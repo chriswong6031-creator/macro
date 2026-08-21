@@ -22,13 +22,13 @@ The trial can return a null. A null becomes durable CPI truth memory.
 
 ## 0a. Prospective-accrual-first posture [A24][AG1]
 
-The historical arm of this contract is instrumentation, episode-record construction, and design validation. It is **explicitly not a promotion path** — see §9a for the predetermined per-cohort historical status table and §13 for the counters and minimum prospective share that gate any future promotion. Two claim classes exist and must never be conflated:
+The historical arm of this contract is instrumentation, episode-record construction, and design validation. It is **explicitly not a promotion path** — see §9a for the predetermined per-cohort historical status table and §13 for the counters and minimum prospective share that gate any future promotion. **Three** claim classes exist and must never be conflated: [corrected — was mis-stated "Two" against the three bullets below; fixed under A4G red-team review, no ruling tag, pre-existing Round-3 defect]
 
 **Promotion-bearing evidence is 100% PROSPECTIVE [AG1, A4G binding].** Historical homebuilder replay (or replay of any other cohort) carries **zero weight** in any future promotion decision, full stop. This is stronger than "not a promotion path": historical replay may not supply a prior, a weight, a hyperparameter, a tiebreak, or any other quantitative influence to a prospective cell's promotion decision, by any mechanism, direct or indirect. §12's "no role of any kind — prior, weight, hyperparameter, or otherwise" clause (deleting the sub-floor "prospective PRIOR" carry-path) already enacted this for the specific sub-floor-pass case; AG1 generalizes it to the historical arm as a whole, for every cell, pass or fail.
 
 - **Cycle-block claims** (forecast/edge): unreachable from history at any current cohort's honest N; prospective-only.
 - **Transcription/reproduction-fidelity claims** (passport-field reproduction, denominator-crosswalk fidelity): natural replicate is the issuer-quarter row; honest N is in the hundreds; reachable now; carry **zero forecast authority**. [G8-B5]
-- **Coverage and abstention-calibration claims**: block-dependent by construction — a source outage or disclosure change hits every issuer in a period simultaneously — so these are denominated in effective blocks under the §3 independent-shock law and the DEFF rule; row counts are printed but never used as N. [G8-B5]
+- **Coverage and abstention-calibration claims**: block-dependent by construction — a source outage or disclosure change hits every issuer in a period simultaneously — so these are denominated in effective blocks under the §3 independent-shock law and the AG3 cap (`n_effective_blocks ≤ B`) [BLK-2, corrects the struck DEFF-rule citation]; row counts are printed but never used as N. [G8-B5]
 
 ---
 
@@ -74,10 +74,10 @@ Eligible after definition crosswalk, source-vintage policy, and macro-block clus
 
 - (a) Episodes are re-keyed on **calendar month**; the fiscal→calendar crosswalk is frozen pre-outcome; no re-key is permitted after outcome access. [A17]
 - (b) **One** canonical cancellation-rate denominator per issuer is frozen with a printed conversion; a mandatory alternate-convention sensitivity re-run is required; a result that flips under the alternate convention is **not a pass**. [A17]
-- **LEN** is excluded from cancellation-rate cells. **[A18, restated by AG10 / C1]** Reason restated from the original "no press-release cancellation rate; era-correlated missingness by construction": LEN's own 10-K MD&A **does** disclose a cancellation figure (14%, FY2025) — the missingness is channel-scoped (absent from EX-99.1 press releases), not absolute. The exclusion **stands**, but its recorded ground is now: **"no stated formula anywhere in LEN's disclosure record (denominator unverifiable) + era-correlated absence from the press-release channel specifically."** It carries a Millrose Feb-2025 break flag (structural, independent of the cancellation exclusion); the exclusion is printed.
+- **LEN** is excluded from cancellation-rate cells. **[A18, restated by AG10 / C1]** Reason restated from the original "no press-release cancellation rate; era-correlated missingness by construction": LEN's own 10-K MD&A **does** disclose a cancellation figure (14%, FY2025) — the missingness is channel-scoped (absent from EX-99.1 press releases), not absolute. The exclusion **stands**, but its recorded ground is now: **"no stated formula anywhere in LEN's disclosure record (denominator unverifiable) + era-correlated absence from the press-release channel specifically."** It carries a Millrose Feb-2025 break flag (structural, independent of the cancellation exclusion); the exclusion is printed. **[AG10-clarif, MAJ-2 fix]** Scope of "excluded from cancellation-rate cells" is CELL-LEVEL, matching the AG6 cancellation-rate-cell class (B≤3, MAJ-1): LEN is excluded entirely — as an issuer, not merely as a feature — from any cell whose registered basis draws cancellation-rate input. In every OTHER cell (the general/non-cancellation class, B≤5), LEN remains a roster member and its cancellation-rate FEATURE, if ever referenced non-primarily, is typed `missing` and never imputed, per the [A19]/AG11 era-correlated-missingness ban — it is not separately "excluded" from those cells. (The prior draft's citation of a "contract §2(b) confirmation note" for this scoping was fabricated — no such note exists in this contract; that language was HB0 census evidence (`IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` §6b), not a contract clause, and is corrected here to an actual contract-level ruling.)
 - **NVR** is a mechanism outlier (100%-option land model, corrected to a strong-majority option-lot model per NVR's own FY2025 10-K — "we generally do not engage in land development"): it is a separate stratum or a designated transfer test, **never pooled to raise n**. Inclusion/exclusion is frozen pre-outcome. **[A18, reaffirmed AG13 — no change; carried forward unmodified by A4G.]**
 - **TOL cancellation-rate denominator [AG12, A4G binding — settles election E1].** TOL discloses cancellation on two conventions in the same exhibit: "as a percentage of signed contracts in quarter" and "as a percentage of beginning-quarter backlog." **Primary convention = gross signed contracts in the period** (cross-issuer comparable with DHI/PHM/KBH's gross-orders basis). **Beginning-quarter backlog basis is a MANDATORY printed sensitivity** for every TOL cancellation readout, not an optional alternate — a result that flips under the backlog basis is not a pass (contract §2(b) alternate-convention rule, unchanged).
-- **Roster widening — NO. [AG16, A4G binding]** The six-name roster (DHI, PHM, TOL, KBH, LEN, NVR) stays frozen. Widening it (e.g. to HOV, BZH, MHO, MTH — the listed, continuously-public non-roster survivors named in `IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` §2d) improves representativeness but supplies **zero** additional independent-shock power (survivorship census falsifier F-V4 / F-4: at ρ≈0.8, going from m=5 to m=9 moves `n_eff` from ~6.0 to ~6.1) — more issuers inside the same closed blocks are correlated rows, not new draws. Representativeness and statistical power are separate problems; only the roster question is open to future amendment, never as a power lever.
+- **Roster widening — NO. [AG16, A4G binding]** The six-name roster (DHI, PHM, TOL, KBH, LEN, NVR) stays frozen. Widening it (e.g. to HOV, BZH, MHO, MTH — the listed, continuously-public non-roster survivors named in `IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` §2d) improves representativeness but supplies **zero** additional independent-shock power. **[MAJ-3 correction]** The supporting arithmetic — at ρ≈0.8, moving from m=5 (the five pooled general-cell issuers: DHI, PHM, TOL, KBH, LEN; NVR held out as its own stratum) to m=9 moves the struck-and-renamed `n_issuer_precision_diagnostic` from ~6.0 to ~6.1 (survivorship census falsifier F-V4 / `IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md` §4.2 F-4) — is the **struck DEFF estimator** (AG3), relabeled `n_issuer_precision_diagnostic` per AG4: it is **shown here only to demonstrate insensitivity to issuer count**, never as `n_effective_blocks`. `n_effective_blocks` itself stays capped at B (≤5 general / ≤3 cancellation, AG5/AG6) regardless of m, roster width, or this diagnostic's value. More issuers inside the same closed blocks are correlated rows, not new draws. Representativeness and statistical power are separate problems; only the roster question is open to future amendment, never as a power lever.
 - **Survivorship condition [G8-B4]:** the roster is a 2026-survivor roster over a window containing the 2006–2011 sector mortality event, and the ported episode substrate is survivor-stamped. IMCE-HB-0 must produce a named census of delisted/bankrupt/acquired homebuilders for the study window with an explicit inclusion decision; until it lands, every homebuilder cell readout carries a mandatory survivorship-bias disclosure and no cohort mean is quoted without it.
 - **Epoch-clock rule [G8-M2]:** structural epochs drawn on the operating clock (business events) are descriptive partitions only; any block or epoch used to partition a **recognition-outcome** statistic must use recognition-clock (`available_at`) boundaries. Epochs are frozen before any outcome inspection, not merely before fitting.
 - **Vintage rider [G8-M6]:** IMCE-HB-0 adds a per-source vintage audit for every macro/homebuilder source; a leg without retrievable vintages is declared `revision_optimistic` in `pit_class` and disclosed in every readout using it. **`pit_class` is a CLOSED enum of exactly three tokens [AG15, A4G binding]: `pit_pure`, `revision_optimistic`, `mixed`** (identical to `config/cycle_pattern/truth_schema.md`'s CPI enum) — no fourth token may ever be minted for this family; a source-census vocabulary finer than these three (e.g. HB-0's five-way `source_vintage_class`) is a local diagnostic that must crosswalk down to one of the three before it touches any cell, never substitute for the enum. See `IMCE_A4G_SOURCE_BOUNDARY_TABLE.md` for the per-source mapping.
@@ -141,10 +141,11 @@ The effective block count is the number of independent shock realizations. **It 
 
 **STRUCK: the `n_eff = (B × m) / [1 + (m − 1)·ρ]` construction as a definition of `n_effective_blocks` [AG3].** This design-effect (DEFF) formula — proposed in `IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` §3/§8 and `IMCE_HB0_INDEPENDENT_BLOCK_LIST.md` §8 as a candidate `n_effective_blocks` estimator — is struck from this contract as the definition of the statistical unit. It violates AG2/A9 by construction whenever it exceeds B: at ρ < 1 (any ρ short of perfect correlation), `DEFF = 1 + (m−1)ρ < m`, so `n_eff = B·m/DEFF > B` — the formula manufactures independent-shock count out of issuer count exactly as A9 forbids, regardless of how ρ is chosen. This closes lane-1 gap 9 (`IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` §8 item 9): **ρ is no longer a required frozen parameter for `n_effective_blocks`** — the parameter this contract now requires is B (the raw closed-block count) and nothing else. The prior Round-3 text ("DEFF rule: `n_effective_blocks` may be derived from issuer-episodes only via a design-effect estimator using a correlation parameter (ρ)...") is deleted in its entirety and replaced by this clause.
 
-**`n_effective_blocks` is capped at the raw block count [AG3, AG5, AG6]: `n_effective_blocks := min(B, [any other candidate estimator])`, where:**
+**`n_effective_blocks` is capped at the raw block count [AG3, AG5, AG6, M3-fix]: `n_effective_blocks = B, reduced only by a registered dependence adjustment (AG9)` — never derived upward from issuer count, and never exceeding B, where:**
 
 - **General cells (all cell classes not scoped to cancellation-rate): B ≤ 5** — the five CLOSED, non-overlapping blocks in the table above (#1, #2, #3, #4, #5). This is an **upper bound**, not a point estimate — block-to-block serial dependence (AG9 below) can only push it lower. [AG5]
-- **Cancellation-rate cells: B ≤ 3** — of the five closed blocks, only three carry a denominator-reconstructable cancellation-rate disclosure across the roster: the 2014–2019 grind (from FY2016), the 2020–2021 pandemic boom, and the 2022–2023 rate shock. Blocks #1 (GFC bust) and #2 (GFC recovery) predate the stated-denominator era for most of the roster (PHM/NVR confirmed only FY2016+; KBH FY2008+ and self-contradictory in that filing; LEN never states a formula) — freezing a canonical denominator there would require assuming an unstated early convention matched the later stated one, which is exactly the flattening this contract exists to prevent. **[AG6]**
+- **Cancellation-rate cells: B ≤ 3** — of the five closed blocks, only three carry a denominator-reconstructable cancellation-rate disclosure across the roster: the 2014–2019 grind, the 2020–2021 pandemic boom, and the 2022–2023 rate shock. **The 2014–2019 grind block carries only PARTIAL coverage** — its cancellation-rate denominator is confirmed only from FY2016 onward for PHM and NVR (2014–FY2015 within that block predate their stated-denominator disclosure), so even this block's contribution to B≤3 is a within-block partial-period claim, not full-block coverage; this is disclosed wherever the grind block is cited as one of the three cancellation-basis blocks. **[AG6, M9-fix]** Blocks #1 (GFC bust) and #2 (GFC recovery) predate the stated-denominator era for most of the roster entirely (PHM/NVR confirmed only FY2016+; KBH FY2008+ and self-contradictory in that filing; LEN never states a formula) — freezing a canonical denominator there would require assuming an unstated early convention matched the later stated one, which is exactly the flattening this contract exists to prevent.
+- **Cell-level scoping, not feature-level [MAJ-1 ruling — settles the prior draft's ambiguity].** The B≤3 cap applies to a cell IN ITS ENTIRETY whenever that cell's REGISTERED input basis includes cancellation-rate data — never to "a feature's contribution" within an otherwise B≤5 cell. Today, `order_softness` (contract §2, AG14) is the one D5 state whose registered basis names cancellation-rate disclosure, so every cell whose target draws on `order_softness` (or on `next_local_state`-class targets built from it) is a B≤3 cell as currently registered. A future A4 registration that strips cancellation-rate out of a cell's basis to move it to the B≤5 general class is a registration-time amendment with its own review — not an open election of this gate, and not decided here. See `IMCE_A4G_SIX_CELL_DISPOSITION.md` for the settled per-cell disposition under this rule.
 - **Exact pseudo-N (a fitted ρ/DEFF point estimate) is unnecessary** — the upper bound already fails the §8 item 5 floor of 40 by roughly an order of magnitude on every cell class, so no analytic refinement changes any cell's predetermined `underpowered_accruing` status (§9a, §12). [AG5]
 
 **Reconciliation of the A3-pair block counts [AG5, records the C2 disposition].** Lane 1 (`IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md`) carried the frozen list's 7 labelled entries forward without resolving how many count toward N (its own gap 12: "the exact boundary-date determination is left as an open A4 item"). Lane 2 (`IMCE_HB0_INDEPENDENT_BLOCK_LIST.md` §2–§4) audited the same 7 entries against five admissibility conditions and hardened to **B = 5**, on two independent grounds: the 2013 taper overlaps block 2 and is the same rate/credit transmission channel (fails non-overlap and distinct-shock), and the 2024–2026 era is open (fails the "closed" condition already applied to the memory cohort's open HBM/AI episode, freeze §7.3). **RULING: B = 5 wins for N-accounting [AG5].** This is not a rejection of lane 1's 7-item NAMED list — that list is retained verbatim above as the frozen historical-episode taxonomy — it is a ruling that of the 7 named entries, 2 (the taper, the open era) contribute zero to `n_effective_blocks`, leaving 5 that do. Both lanes' language is preserved in this reconciliation rather than one being silently discarded.
@@ -258,7 +259,7 @@ The CPI HAR-1 promoted null is a standing prior against generic analogues. No an
 - no source published after the test cutoff;
 - embargo **exactly 63 trading days** between train and test labels when windows overlap, replacing "at least the target horizon"; [A22]
 - acquisition/identity epochs do not cross folds by default;
-- no parameter refit on the embargoed 2024+ prospective holdout — **that holdout is selected now**, replacing "if that holdout is selected"; [A22]
+- no parameter refit on the embargoed 2024+ prospective holdout — **that holdout is selected now**, replacing "if that holdout is selected"; [A22] **[AG8, M8-fix]** the embargoed 2024+ prospective holdout IS the `OPEN_ACCRUING` affordability era (§3) — it contributes zero historical N (AG8) precisely because it is still open, and only becomes a closed prospective block, hence a genuine holdout episode, once lawfully closed by a future pre-registered closing rule.
 - every fold prints population, missingness, class balance, and source coverage.
 
 ---
@@ -313,7 +314,7 @@ A point estimate without the full conjunction is not a pass.
 | Cohort | Honest historical blocks | Historical cells | Max reachable ladder rung on history |
 |---|---|---|---|
 | CELH | barred by rule | 0 | `DESCRIPTIVE` |
-| Homebuilders | 5–7 | 6 (one BH partition `imce_hist_v0`, q=0.10) | `REGISTERED`→`REPLAYED`, estimation-only; never `DISPLAY`, never `PROMOTE_ELIGIBLE` |
+| Homebuilders | ≤5 general / ≤3 cancellation [AG5, AG6] (named 7-entry list retains 5 N-contributing blocks — §3) | 6 (one BH partition `imce_hist_v0`, q=0.10) | `REGISTERED`→`REPLAYED`, estimation-only; never `DISPLAY`, never `PROMOTE_ELIGIBLE` |
 | Memory | 2 completed + 1 open (ungradeable) | 0 | `REGISTERED` only |
 | Banks | ~3, 0 PIT-clean | 0 | `DESCRIPTIVE` / feasibility |
 
@@ -341,7 +342,7 @@ Before any real run, register:
 - parameter ranges — **single frozen values are required**, replacing "preferably single frozen values"; any grid is counted into the cell budget; [A22]
 - FDR family and q — single partition `imce_hist_v0` at q=0.10; [A6]
 - bootstrap draws and seed;
-- holdout dates — the 2024+ prospective holdout;
+- holdout dates — the 2024+ prospective holdout; **[AG8, M8-fix]** this holdout IS the `OPEN_ACCRUING` affordability era (§3, AG8) — zero historical N until lawfully closed, at which point it becomes a prospective block, never backfilled into `n_blocks_hist`;
 - outcome handling for 0-pass, partial-pass, and harmful cells (§12).
 
 Exploration may use shrunken estimates, but promotion remains subject to the frozen family-wide FDR.
@@ -352,10 +353,10 @@ Exploration may use shrunken estimates, but promotion remains subject to the fro
 
 ## Zero pass
 
-`promoted_null` and `underpowered_accruing` are distinct labels, determined **mechanically** by preregistered `n_eff` versus the floor computed pre-outcome — never by post-hoc judgment. [A2]
+`promoted_null` and `underpowered_accruing` are distinct labels, determined **mechanically** by preregistered `n_effective_blocks` [MAJ-4 fix, was bare `n_eff`] versus the floor computed pre-outcome — never by post-hoc judgment. [A2]
 
-- `promoted_null`: a cell that reached its preregistered `n_eff` floor and returned a genuine, adequately powered null; write one scoped `promoted_null` truth; numeric-reject candidates with gate artifact; no page or authority change; reopen only under a new registration naming the null and a structural reason.
-- `underpowered_accruing`: a cell whose preregistered `n_eff` sits below its floor. **All 6 historical cells in this contract are pre-labeled `underpowered_accruing`** (§9a); requeue-pointer semantics per house Research Factory runbook apply. [A2]
+- `promoted_null`: a cell that reached its preregistered `n_effective_blocks` [MAJ-4 fix] floor and returned a genuine, adequately powered null; write one scoped `promoted_null` truth; numeric-reject candidates with gate artifact; no page or authority change; reopen only under a new registration naming the null and a structural reason.
+- `underpowered_accruing`: a cell whose preregistered `n_effective_blocks` [MAJ-4 fix] sits below its floor. **All 6 historical cells in this contract are pre-labeled `underpowered_accruing`** (§9a); requeue-pointer semantics per house Research Factory runbook apply. [A2]
 - **Status governance [G8-M7]:** `underpowered_accruing` is a Research-Factory/trial-ledger status ONLY. It is not a CPI truth status (the truth-schema enum is candidate/display/confirmer/scored/promoted_null/retired/superseded), and no row may enter the CPI registry under it without an explicit schema + consumer-matrix amendment — an unknown status would fence no surface. A sub-floor historical readout is not an earned null and is never printed as one; "no display" means no product-surface authority, not the hiding of an adjudicated null.
 
 ## Partial pass
@@ -363,7 +364,7 @@ Exploration may use shrunken estimates, but promotion remains subject to the fro
 - truth statement names passing and failing cells;
 - no extrapolation to issuers/families/horizons not tested;
 - display-only until prospective evidence matures;
-- **Fourth branch [A3, hardened per G8-B7]:** a sub-floor nominal pass — a bootstrap/point-estimate pass on a cell below its preregistered `n_eff` floor — is relabeled `underpowered_accruing`. The point estimate is **archived as a descriptive number only**: no display, no truth statement, no citation, **and no role of any kind — prior, weight, hyperparameter, or otherwise — in any prospective cell. Prospective cells are graded prior-free.** (The earlier "prospective PRIOR" carry-path is deleted: it was a laundering channel from the historical arm into the promotion arm.)
+- **Fourth branch [A3, hardened per G8-B7]:** a sub-floor nominal pass — a bootstrap/point-estimate pass on a cell below its preregistered `n_effective_blocks` [MAJ-4 fix, was bare `n_eff`] floor — is relabeled `underpowered_accruing`. The point estimate is **archived as a descriptive number only**: no display, no truth statement, no citation, **and no role of any kind — prior, weight, hyperparameter, or otherwise — in any prospective cell. Prospective cells are graded prior-free.** (The earlier "prospective PRIOR" carry-path is deleted: it was a laundering channel from the historical arm into the promotion arm.)
 
 ## Harmful
 
@@ -383,10 +384,10 @@ After registration:
 - corrections append and supersede, never rewrite the original decision-time packet;
 - market and mechanism outcomes accrue separately;
 - live and backtest badges never blend;
-- come-back date is computed from accrual rate and n floor **and published at registration** (homebuilders reach the 40-block floor around ~2145 at the census accrual rate — §9a; memory and banks later still). [A24]
+- come-back date is computed from accrual rate and n floor **and published at registration** (homebuilders reach the 40-block floor around **~2153** at the census accrual rate, on the **B=5 hardened basis [AG5, BLK-1 correction]** — §9a, §3; memory and banks later still). **The ~2145 figure in the pre-A4G record was computed against a different, non-hardened block-count reading and is superseded — B=5 is the N-accounting law (AG5), so ~2153 is the one published figure; there is no basis election.** [A24, AG5]
 - two separate counters are maintained: `n_blocks_hist` and `n_blocks_prosp`. [A24]
 - a **preregistered minimum prospective share** is required before any promotion. [A24]
-- **claim-class taxonomy** (§0a, three classes per G8-B5): cycle-block claims (forecast/edge) are prospective-only and unreachable from history; transcription/reproduction-fidelity claims use the issuer-quarter row as the natural replicate, are reachable now, and carry zero forecast authority; coverage/abstention-calibration claims are block-denominated under the §3 independent-shock law with the DEFF rule. [A24]
+- **claim-class taxonomy** (§0a, three classes per G8-B5): cycle-block claims (forecast/edge) are prospective-only and unreachable from history; transcription/reproduction-fidelity claims use the issuer-quarter row as the natural replicate, are reachable now, and carry zero forecast authority; coverage/abstention-calibration claims are block-denominated under the §3 independent-shock law and the AG3 cap (`n_effective_blocks ≤ B`) [BLK-2 correction — was "the DEFF rule", now struck]. [A24]
 
 ---
 
@@ -412,6 +413,7 @@ This contract ends at preregistration design. Do not run it until:
 - the criteria commit precedes real outcome access;
 - **the reachable-status table (§9a) is recorded.** [A25]
 - **every macro block boundary used to partition an outcome run is receipted against a dated macro-series or issuer-event source (§3 AG17); a `not_yet_receipted` boundary may not be used to partition an outcome run.** [AG17]
+- **no `rf.cycle_pattern.imce_phase_v0` state target may be registered unless it is mapped to a named D5 state whose observability class is registered (§2 Homebuilders, AG14).** [AG14, MAJ-5] A target left unmapped, or mapped to a state typed `descriptive_only` (`incentive_support`, `pace_recovery`) without an explicit named-subset or single-issuer re-scoping accepted at registration, blocks that target's registration — this is binding on the registration act, not merely a disclosed open item.
 
 ---
 
@@ -424,6 +426,7 @@ This contract ends at preregistration design. Do not run it until:
 - **`config_hash`:** recorded at registration.
 - **New stop condition** (folded into §15 above): "reachable-status table not recorded."
 - **A4G stop condition** (folded into §15 above): "a macro block boundary lacks a dated-source receipt and an outcome run would partition on it." [AG17]
+- **A4G stop condition** (folded into §15 above): "a phase-family state target lacks a registered mapping to a named D5 state with a registered observability class." [AG14, MAJ-5]
 
 ---
 
@@ -441,7 +444,7 @@ Traceability map from each of the 26 adjudicated amendments to the section(s) it
 | A6 | §1, §8 item 3, §11 |
 | A7 | §5 Synchronization family |
 | A8 | §3 (frozen historical block list) |
-| A9 | §3 (effective-block-count law, DEFF rule) |
+| A9 | §3 (effective-block-count law, DEFF rule — **struck by AG3**, see Appendix B) |
 | A10 | §9 (frozen hierarchy) |
 | A11 | §9 (issuer-residual rungs) |
 | A12 | §8 item 5, §9 |
@@ -472,16 +475,16 @@ Traceability map from each of Sol's 18 A4G rulings (authorized 2026-08-21, the p
 | AG2 | Statistical-unit law: issuer replication may never raise independent-shock N | §3 (effective-block-count law) |
 | AG3 | STRIKE `n_eff = B·m/[1+(m−1)ρ]` as the `n_effective_blocks` definition; ρ no longer a required frozen N-parameter (closes lane-1 gap 9) | §3 |
 | AG4 | Within-block issuer dependence survives only as a differently-named precision diagnostic; never satisfies the 40-block floor | §3 |
-| AG5 | Historical replay ≤5 closed non-overlapping blocks as an upper bound; exact pseudo-N unnecessary; reconciles lane-1 7-list vs lane-2 5-list (C2) | §3, §2 Homebuilders |
-| AG6 | Cancellation cells ≤3 denominator-reconstructable historical blocks | §3, §2 Homebuilders |
+| AG5 | Historical replay ≤5 closed non-overlapping blocks as an upper bound; exact pseudo-N unnecessary; reconciles lane-1 7-list vs lane-2 5-list (C2); come-back date published on the B=5 basis (~2153) | §3, §2 Homebuilders, §9a, §13 |
+| AG6 | Cancellation cells ≤3 denominator-reconstructable historical blocks (2014–2019 grind carries only partial FY2016+ coverage); cell-level scoping (MAJ-1) | §3, §2 Homebuilders |
 | AG7 | "2013 taper" and "2018 air-pocket" are named sub-episodes, zero N; no boundary minting needed for N (closes lane-1 gap 12) | §3 (frozen historical block list) |
-| AG8 | 2024–2026 affordability era is `OPEN_ACCRUING`: zero historical N until lawfully closed | §3, §13 |
-| AG9 | Inference = block-cluster / leave-one-block-out; a dependence adjustment may only reduce, never increase, the shock count | §3, §7, §8 |
-| AG10 | C1 accepted: LEN exclusion reason restated (no stated formula + era-correlated press-release absence; 10-K MD&A does disclose 14%) | §2 Homebuilders |
+| AG8 | 2024–2026 affordability era is `OPEN_ACCRUING`: zero historical N until lawfully closed; the 2024+ prospective holdout IS this era | §3, §7, §11 |
+| AG9 | Inference = block-cluster / leave-one-block-out; a dependence adjustment may only reduce, never increase, the shock count | §3 (effective-block-count law) |
+| AG10 | C1 accepted: LEN exclusion reason restated (no stated formula + era-correlated press-release absence; 10-K MD&A does disclose 14%); AG10-clarif settles cell-level vs feature-level scoping (MAJ-2) | §2 Homebuilders |
 | AG11 | C3 accepted: era-correlated-missingness ban [A19] extended to every era-correlated metric | §10 |
 | AG12 | TOL primary cancellation denominator = signed contracts in quarter; beginning-quarter backlog = mandatory printed sensitivity | §2 Homebuilders |
 | AG13 | NVR separate stratum — reaffirmed, no change | §2 Homebuilders |
-| AG14 | State-vector observability scoping: `order_softness` cohort-wide; `completed_inventory_build` named 3-issuer subset; `incentive_support`/`pace_recovery` descriptive-only, never imputed into a cohort cell | §2 Homebuilders |
+| AG14 | State-vector observability scoping: `order_softness` cohort-wide; `completed_inventory_build` named 3-issuer subset; `incentive_support`/`pace_recovery` descriptive-only, never imputed into a cohort cell; mapping requirement made BINDING at registration (MAJ-5) | §2 Homebuilders, §15, §15a |
 | AG15 | `pit_class` enum closed at exactly `{pit_pure, revision_optimistic, mixed}` | §2 Homebuilders |
 | AG16 | No roster widening | §2 Homebuilders |
 | AG17 | Exact source-dated macro boundaries must be receipted before any outcome partition runs; a descriptive sub-episode's date uncertainty may not manufacture another block | §3, §15, §15a |

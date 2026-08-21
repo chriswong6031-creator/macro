@@ -40,7 +40,7 @@
 }
 ```
 
-**Cell definition (unchanged from contract §1):** 3 state targets × pooled homebuilder stratum × contrast [M vs family/age prior]. **Open item this row inherits (§4 of `IMCE_A4G_SIX_CELL_DISPOSITION.md`):** the exact D5-state mapping of the 3 targets is not registered by A4G — a future A4 registration session must confirm or re-map before this row's `n=3` cells are individually itemized in code.
+**Cell definition (unchanged from contract §1):** 3 state targets × pooled homebuilder stratum × contrast [M vs family/age prior]. **Settled block basis (MAJ-1, A4G revision):** all 3 cells in this family are B≤3-entire cancellation-scoped cells under the cell-level ruling in `IMCE_A4G_SIX_CELL_DISPOSITION.md` §1 (Cells 1–3), not the general B≤5 cap — the reason string above states the law in general form; the per-cell settlement is in the disposition document. **Open item this row inherits (§4 of `IMCE_A4G_SIX_CELL_DISPOSITION.md`, now binding at registration per §15/§15a AG14/MAJ-5):** the exact D5-state mapping of the 3 targets is not registered by A4G — a future A4 registration session must confirm or re-map before this row's `n=3` cells are individually itemized in code, and may NOT register a target left unmapped.
 
 ---
 
@@ -57,7 +57,7 @@
 }
 ```
 
-**Cell definition (unchanged):** targets {`next_local_state_1rp`, `forward_63d_drawdown_tail`} × contrast [M+R vs M]. Only the primary incremental comparison (M+R vs M) supports the synchronization claim (contract §5); secondary comparisons are print-only, zero budget, outside the FDR partition [A7].
+**Cell definition (unchanged):** targets {`next_local_state_1rp`, `forward_63d_drawdown_tail`} × contrast [M+R vs M]. Only the primary incremental comparison (M+R vs M) supports the synchronization claim (contract §5); secondary comparisons are print-only, zero budget, outside the FDR partition [A7]. **Settled block basis (MAJ-1):** `next_local_state_1rp` (Cell 4) is B≤3-entire (same D5 next-state class as the phase family); `forward_63d_drawdown_tail` (Cell 5) is conditional on its `M_t` feature composition at registration — B≤3 entire if cancellation-rate is included, B≤5 if not. See `IMCE_A4G_SIX_CELL_DISPOSITION.md` §1.
 
 ---
 
@@ -74,7 +74,7 @@
 }
 ```
 
-**Cell definition (unchanged):** `forward_63_trading_day_drawdown_tail` × [M vs family/stratum prior]. Market grading uses QLedger's 63-trading-day ruler and canonical exchange calendar (contract §5).
+**Cell definition (unchanged):** `forward_63_trading_day_drawdown_tail` × [M vs family/stratum prior]. Market grading uses QLedger's 63-trading-day ruler and canonical exchange calendar (contract §5). **Settled block basis (MAJ-1):** conditional on this cell's `M_t` feature composition at registration — B≤3 entire if cancellation-rate is included, B≤5 if not; a registration-time decision, not an open election. See `IMCE_A4G_SIX_CELL_DISPOSITION.md` §1 (Cell 6).
 
 ---
 
@@ -88,9 +88,12 @@ Per contract §1/§11 (A6): all 6 cells across the three families above run unde
   "q": 0.10,
   "member_cells": 6,
   "member_families": ["rf.cycle_pattern.imce_phase_v0", "rf.cycle_pattern.imce_sync_v0", "rf.cycle_pattern.imce_risk_v0"],
-  "note": "single BH-FDR partition over the union of all 6 historical cells; the three rf.* family names are trial-ledger provenance labels, not separate FDR partitions"
+  "note": "single BH-FDR partition over the union of all 6 historical cells; the three rf.* family names are trial-ledger provenance labels, not separate FDR partitions",
+  "producer": "A4 registration session — no current repo writer for this shape; deliberate, this is proposed content only [M6 fix]"
 }
 ```
+
+**[M6 fix]** Unlike the `declared_budget` row (§1, written by `engine/trial_ledger.py`'s `log_declared_budget`), this repository has **no existing writer** for an FDR-partition registration record — no module, script, or schema in `engine/` or `scripts/` currently accepts or persists this shape. That absence is deliberate to this proposal, not an oversight: the FDR-partition registration mechanism itself (where it lives, what module writes it, what file it lives in) is unspecified A4/IMCE-03 design work, separate from the already-built `declared_budget` mechanism. A future A4 registration session must either build that writer or fold this content into an existing mechanism before this JSON shape has anywhere real to go.
 
 ---
 
@@ -104,11 +107,12 @@ Per contract §15a ("Two-commit discipline: the criteria commit strictly precede
 - [ ] **Source/boundary table recorded** — `IMCE_A4G_SOURCE_BOUNDARY_TABLE.md`, including every macro block boundary's receipt status (`not_yet_receipted` where applicable — no invented dates).
 - [ ] **Three `declared_budget` rows appended** to `data/trial_ledger.jsonl` — the exact contents in §2–§4 above, with `ts` populated at the moment of the actual write.
 - [ ] **FDR partition registered** — `imce_hist_v0` at q=0.10, per §5 above.
-- [ ] **`n_effective_blocks` computation path frozen** — B ≤ 5 (general) / B ≤ 3 (cancellation), per AG3/AG5/AG6; no ρ-based estimator used as N; the precision-diagnostic field name (AG4) fixed if it is to be computed at all.
+- [ ] **`n_effective_blocks` computation path frozen** — B ≤ 5 (general) / B ≤ 3 (cancellation), per AG3/AG5/AG6, applied **cell-level per the MAJ-1 ruling** (not feature-level); no ρ-based estimator used as N; the precision-diagnostic field name (AG4) fixed if it is to be computed at all.
+- [ ] **Phase-family (and any other) state target mapped to a named D5 state with a registered observability class** (contract §15/§15a, AG14/MAJ-5) — **BINDING**: no `rf.cycle_pattern.imce_phase_v0` target may be registered unmapped or mapped to a `descriptive_only` state without an explicit accepted re-scoping.
 - [ ] **Bootstrap draws and seed registered** (contract §11) — not yet chosen by any A4G document; must be frozen at actual registration, before any outcome access.
 - [ ] **Preregistered minimum prospective share registered** (contract §13, A24) — not yet chosen by any A4G document; must be frozen at actual registration.
-- [ ] **Come-back date published** (contract §13) — carried forward from the freeze/census (~2145 at census accrual rate on the pre-A4G 7-list reading; the A4G-hardened B=5 basis computes to ~2153 per `IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` §7 — actual registration must state which basis it publishes and why).
-- [ ] **`config_hash` recorded** (contract §15a) — computed at registration from the actual committed contract content, not the placeholder hashes in §2–§4 above (those hash only the `declared_budget` row content, a different and narrower hash than the contract-level `config_hash`).
+- [ ] **Come-back date published on the B=5 hardened basis: ~2153** (contract §13, AG5) — **there is no basis election to make; the A4G revision (BLK-1) settled B=5 as the sole N-accounting law, so ~2153 is the one figure to publish.** The pre-A4G ~2145 figure was computed against a superseded, non-hardened reading and must not be republished.
+- [ ] **`config_hash` recorded** (contract §15a) — computed at registration from the actual committed contract content, not the exact-but-narrower `declared_budget` row hashes in §2–§4 above (those are genuinely exact, computed against `engine/trial_ledger.py:53-62` — they are simply a different, narrower hash over `(family, n, reason)` only, not the contract-level `config_hash`).
 - [ ] **Repository pin recorded** (contract §15a) — the exact commit SHA of the contract as registered.
 - [ ] **Zero outcome access verified** — a final, explicit statement in the actual A4 registration commit message or record that no forward return, drawdown, Brier score, calibration statistic, p-value, correlation, or regression was computed on any cell before this checklist's items above were all committed.
 

@@ -8,6 +8,9 @@
 **Authority for every amendment below:** Sol, A4G authorization 2026-08-21.
 **Binds:** `research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md` (V1.1). This log is the detailed rationale/citation record behind the contract's Appendix B index and its inline `[AG<n>]` tags — the contract MD binds; this log explains, it does not itself amend anything not already reflected in the contract and its YAML projection.
 **Scope discipline:** every amendment below is RECORDS-ONLY. None writes `data/trial_ledger.jsonl`, accesses any outcome, or registers the three `rf.cycle_pattern.imce_*` families. Registration remains a separate, future A4/IMCE-03 act.
+**Ownership note [M10, A4G revision]:** this record, and the other four A4G deliverables, do not touch `agentos/`. The wave-boundary `WS-CYCLE-PATTERN-ISSUER-MECHANISM` state update and any handoff record for this wave are owned by the commissioning (Fable) session's closure, not by this packet — the same convention the A-waves used (e.g. `IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md`'s own "Ownership note [M17]").
+
+**Revision history:** V1 initial draft (this session, 2026-08-21) encoded all 18 rulings across the six-file scope. **Revision 1 (same session, 2026-08-21)** applies Fable's adjudication of an Opus red-team pass — verdict REVISE, 3 blockers + 7 majors + 10 minors, structure sound, 12/18 rulings clean on first pass, defects were stale references surviving outside the amended home clauses. Every blocker/major/minor is fixed in place (marked inline `[BLK-n]` / `[MAJ-n]` / `[M<n>-fix]`) rather than superseding this log with a second document. Headline fixes: AG5's cap reaches the binding §9a table and the come-back date (~2153, no basis election — BLK-1); the struck DEFF-rule citations in §0a/§13/Appendix A are corrected (BLK-2); the YAML block list is restored to a genuine 7-entry named taxonomy with `air_pocket_2018` folded back as a `sub_episodes` child (BLK-3); AG6's B≤3 cap is now cell-level, not feature-level, with the grind block's partial FY2016+ coverage disclosed (MAJ-1/M9); the LEN scoping fabricated a nonexistent "contract §2(b) confirmation note," now corrected with a genuine `[AG10-clarif]` ruling (MAJ-2); the struck-DEFF arithmetic in the roster-widening bullet no longer prints a bare `n_eff` (MAJ-3); four bare `n_eff` symbols in §12 are now `n_effective_blocks` (MAJ-4); the AG14 target-mapping requirement is now a binding stop condition (MAJ-5); Treasury CMT's rights verdict is downgraded to `S` after three failed owner-direct verification attempts this session (MAJ-6); and this AG3 entry's grep claim is corrected with exhaustive, exact counts (MAJ-7).
 
 ---
 
@@ -35,7 +38,11 @@
 **Why struck:** `DEFF = 1 + (m−1)·ρ`; `n_eff = (B×m)/DEFF`. For any ρ < 1 (i.e. anything short of perfect correlation), `DEFF < m`, so `n_eff = B·m/DEFF > B` — the formula mechanically manufactures independent-shock count out of issuer count, which is exactly what AG2/A9 forbid. This is not a parameter-choice problem (no value of ρ avoids it, short of ρ=1) — it is a structural defect in the construction itself.
 **Consequence — closes lane-1 gap 9:** `IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` §8 item 9 flagged: *"ρ (the DEFF correlation parameter) is NOT frozen in HB-0 ... Until ρ is frozen, `n_effective_blocks` cannot be computed for any cell, and ρ remains a live analyst degree of freedom."* AG3 resolves this not by freezing ρ but by removing ρ from the definition of `n_effective_blocks` altogether — **ρ is no longer a required frozen parameter for N.** The parameter this contract now requires for N-accounting is B (the raw closed-block count), which is fixed by AG5/AG6 below.
 **Where:** Contract §3 (STRUCK paragraph + capped-definition paragraph); YAML `effective_block_law.deff_formula_as_n_definition` (status: struck) and `.n_effective_blocks_capped_at_raw_block_count`.
-**Grep verification:** the formula text appears exactly once in the amended contract MD, inside the STRUCK clause itself (`grep -n "m − 1" research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md`) — no live/operative instance of the formula as an N-definition survives.
+**Grep verification [MAJ-7 fix, A4G revision 2026-08-21 — restates the original claim truthfully]:** the original AG3 entry undercounted this. Exact counts against the revised contract MD (`grep -noE '\(m[^)]{0,4}1\)' research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md`):
+
+- The formula pattern `(m−1)` / `(m − 1)` appears **4 times across 3 locations**: §3's STRUCK clause (2 occurrences — the struck formula's own restatement, quoting the deleted Round-3 text), §3's AG4 "renamed and demoted" precision-diagnostic clause (1 occurrence — describing what the struck formula becomes, never `n_effective_blocks`), and Appendix B's own AG3 row (1 occurrence — traceability text describing what was struck, the same treatment Appendix B gives every amendment).
+- The token `DEFF` appears **12 times total**: 4 inside the STRUCK clause itself (quoting/describing the struck formula), 2 inside the AG4 renamed-diagnostic clause, and 6 single-occurrence citation/annotation references acknowledging the strike (§0a line ~31, §2 roster-widening bullet ~line 80, §3 "pseudo-N unnecessary" note ~line 149, §3 AG9 clause ~line 159, §13 line ~390, Appendix A row A9 ~line 447) — every one of these six explicitly says "struck," "AG3 cap," or "was the DEFF rule, now struck."
+- **Every occurrence, without exception, is either (a) inside the STRUCK clause describing what was deleted, (b) inside the AG4 clause describing the renamed, demoted, never-used-as-N precision diagnostic, or (c) an annotation/citation acknowledging the strike.** No occurrence anywhere in the contract defines, computes, or asserts `n_effective_blocks` via the DEFF/`(m−1)` construction as a live, operative rule. This is the corrected, exhaustively-counted version of the original (undercounted, single-example) grep claim.
 **Authority:** Sol, A4G authorization 2026-08-21.
 
 ---
@@ -47,6 +54,8 @@
 **Why:** Preserves the analytic content lane 2 built (`IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` §3, `IMCE_HB0_INDEPENDENT_BLOCK_LIST.md` §8 — the full ρ ∈ {0.5...0.95} sensitivity grid) as a legitimate, disclosed diagnostic, while closing the promotion-authority leak AG3 identified.
 **Authority:** Sol, A4G authorization 2026-08-21.
 
+**Revision note (2026-08-21, A4G revision, MAJ-4):** the pre-existing Round 3 promotion-decision text in contract §12 (Outcome handling) used the bare symbol `` `n_eff` `` at four sites — indistinguishable from the struck DEFF estimator's own variable name, and easy to misread as endorsing it post-AG3/AG4. All four replaced with the spelled-out `` `n_effective_blocks` ``: the zero-pass mechanical-determination sentence, the `promoted_null` bullet, the `underpowered_accruing` bullet, and the partial-pass fourth-branch sentence.
+
 ---
 
 ## AG5 — Historical replay carries FIVE closed non-overlapping blocks as an upper bound; reconciles C2
@@ -56,6 +65,8 @@
 **Where:** Contract §3 "Frozen historical block list" (restructured table) and "Effective-block-count law" (capped-definition paragraph, reconciliation paragraph); YAML `frozen_historical_block_list` (per-entry `counts_toward_n_effective_blocks`) and `effective_block_law.block_count_reconciliation`.
 **Authority:** Sol, A4G authorization 2026-08-21.
 
+**Revision note (2026-08-21, A4G revision — Fable adjudication of Opus red-team findings, BLK-1):** the original draft left AG5's cap out of the §9a BINDING reachable-status table (still reading the pre-AG5 "5–7" range there) and published the come-back date at the pre-hardening ~2145 figure with no basis stated. Both fixed: §9a's Homebuilders row now reads "≤5 general / ≤3 cancellation [AG5, AG6]"; the come-back date is now published at **~2153** (the B=5 hardened basis, `IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` §7 second row) everywhere it appears (contract §13, Appendix B, YAML `prospective_law.come_back_date`) — **there is no basis election; B=5 is the sole N-accounting law (AG5), so ~2153 is the one figure.** The registration packet's "actual registration must state which basis it publishes and why" checklist item is deleted and replaced with the settled figure.
+
 ---
 
 ## AG6 — Cancellation cells have at most THREE denominator-reconstructable historical blocks
@@ -64,6 +75,8 @@
 **Where:** Contract §3 "Effective-block-count law" (capped-definition paragraph, bullet 2); YAML `effective_block_law.n_effective_blocks_capped_at_raw_block_count.cancellation_rate_cells`.
 **Source:** `IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` §4 ("Why the cancellation cell gets B = 3, not 5").
 **Authority:** Sol, A4G authorization 2026-08-21.
+
+**Revision note (2026-08-21, A4G revision, MAJ-1/M9):** two corrections. (1) **Cell-level, not feature-level scoping** — the original draft's six-cell disposition treated the B≤3 cap as applying only to "a feature's contribution" within an otherwise B≤5 cell; Fable's adjudication of the Opus red-team ruled this wrong: AG6 caps the CELL entire whenever its registered basis includes cancellation-rate data. Since `order_softness` (AG14) currently names cancellation-rate disclosure as part of its basis, every cell targeting it is a B≤3 cell as registered, not a conditional one; a future registration stripping cancellation from a cell's basis is a registration-time amendment with its own review, never an open election of this gate. (2) **Grind-block partial coverage** — the 2014–2019 grind block, one of the three B≤3-contributing blocks, itself carries only partial coverage: PHM's and NVR's cancellation-formula disclosures are confirmed only from FY2016 onward, so the 2014–FY2015 span within that block predates stated-denominator disclosure for those two issuers. Both corrections are now stated at every citation of the grind block and the cell-level cap (contract §3, §2; `IMCE_A4G_SIX_CELL_DISPOSITION.md`; YAML `effective_block_law.n_effective_blocks_capped_at_raw_block_count.cap_scoping` / `.grind_block_cancellation_coverage`).
 
 ---
 
@@ -101,6 +114,8 @@
 **Resolves C1** (`IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md` §5, row C1; WS A3 entry: "C1 ACCEPTED in direction — the LEN exclusion STANDS but its recorded reason restates").
 **Where:** Contract §2 Homebuilders (LEN bullet); YAML `homebuilders.len.exclusion_reason` / `.exclusion_reason_note`.
 **Authority:** Sol, A4G authorization 2026-08-21.
+
+**AG10-clarif (2026-08-21, A4G revision, MAJ-2):** the original draft's six-cell disposition attributed the exclusion's scope to a "contract §2(b) confirmation note" — **no such note exists in the contract.** That language was HB0 census evidence (`IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` §6b: "this document treats the exclusion as feature-level and universal ... pending confirmation"), never a contract clause, and the fabricated attribution is struck. In its place, a genuine contract-level clarifying ruling is added: LEN's exclusion is **cell-level** — LEN is excluded entirely (as an issuer) from any cell whose registered basis draws cancellation-rate input (the AG6/MAJ-1 B≤3 class); in every other cell, LEN remains a roster member and its cancellation-rate feature, if referenced non-primarily, is typed `missing` and never imputed under the [A19]/AG11 ban — it is not separately "excluded" from those cells. Where: contract §2 Homebuilders (LEN bullet, `[AG10-clarif]` paragraph); YAML `homebuilders.len.exclusion_scope` / `.non_cancellation_cell_treatment`; `IMCE_A4G_SIX_CELL_DISPOSITION.md` §1 (all six cells' LEN column restated on this clause).
 
 ---
 
@@ -141,6 +156,8 @@ The exact mapping of the `rf.cycle_pattern.imce_phase_v0` family's 3 declared st
 **Source:** `IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` §2 ("mechanism-state coverage is uneven, and two states rest on one issuer") and §8 election E2.
 **Authority:** Sol, A4G authorization 2026-08-21.
 
+**Revision note (2026-08-21, A4G revision, MAJ-5):** the target-to-D5-state mapping open item was originally disclosed but not enforced — a future registration could in principle register an unmapped or descriptive-only-mapped target without anything stopping it. Made **BINDING**: contract §15/§15a now carries a new stop condition, "no `rf.cycle_pattern.imce_phase_v0` state target may be registered unless it is mapped to a named D5 state whose observability class is registered"; mirrored in YAML `stop_conditions` and the registration packet's criteria-commit checklist (§6 of `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md`).
+
 ---
 
 ## AG15 — `pit_class` enum closed at exactly {pit_pure, revision_optimistic, mixed}
@@ -154,9 +171,11 @@ The exact mapping of the `rf.cycle_pattern.imce_phase_v0` family's 3 declared st
 
 ## AG16 — No roster widening
 
-**What changed:** Explicit statement that the six-name roster (DHI, PHM, TOL, KBH, LEN, NVR) stays frozen. Widening it — e.g. to the listed, continuously-public non-roster survivors named in `IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` §2d (HOV, BZH, MHO, MTH) — improves representativeness but supplies zero additional independent-shock power: at ρ≈0.8, going from m=5 to m=9 moves `n_eff` from ~6.0 to ~6.1 (survivorship census falsifier F-V4 / `IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md` §4.2, F-4). Representativeness and power are separate problems; the roster question is open to future amendment on representativeness grounds only, never as a power lever.
+**What changed:** Explicit statement that the six-name roster (DHI, PHM, TOL, KBH, LEN, NVR) stays frozen. Widening it — e.g. to the listed, continuously-public non-roster survivors named in `IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` §2d (HOV, BZH, MHO, MTH) — improves representativeness but supplies zero additional independent-shock power: at ρ≈0.8, going from m=5 to m=9 moves the struck-and-renamed `n_issuer_precision_diagnostic` (AG3/AG4 — never `n_eff`/`n_effective_blocks`) from ~6.0 to ~6.1 (survivorship census falsifier F-V4 / `IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md` §4.2, F-4), shown only to demonstrate insensitivity — `n_effective_blocks` itself stays capped at B regardless of roster width. Representativeness and power are separate problems; the roster question is open to future amendment on representativeness grounds only, never as a power lever.
 **Where:** Contract §2 Homebuilders (new bullet); YAML `homebuilders.roster_widening` / `.roster_widening_rationale`.
 **Authority:** Sol, A4G authorization 2026-08-21.
+
+**Revision note (2026-08-21, A4G revision, MAJ-3):** the original entry (and the contract clause it describes) printed this arithmetic as a bare "`n_eff`" figure — indistinguishable, on its face, from a live `n_effective_blocks` value, and one that exceeds the AG5 cap (B≤5) if misread that way. Relabeled per AG4 as the struck DEFF estimator's renamed diagnostic, with an explicit "shown only to demonstrate insensitivity" caveat, and the m=5 basis stated explicitly (the five pooled general-cell issuers — DHI, PHM, TOL, KBH, LEN; NVR held out as its own stratum).
 
 ---
 
@@ -179,6 +198,8 @@ The exact mapping of the `rf.cycle_pattern.imce_phase_v0` family's 3 declared st
 **Where:** Contract §2 Homebuilders (new bullet), §4 Context `C_t` (cross-reference); YAML `homebuilders.rights_safe_macro_legs_only`.
 **Source:** `IMCE_HB0_SOURCE_PIT_VINTAGE_MATRIX.md` §2 ("the rights finding — the affordability leg cannot be taken off the shelf") and §4 (mandatory disclosure list).
 **Authority:** Sol, A4G authorization 2026-08-21.
+
+**Revision note (2026-08-21, A4G revision, MAJ-6):** "Treasury constant-maturity yields ... the primary rate leg" was carried forward from prior HB0 evidence without this wave attempting its own owner-direct verification. This session attempted it: three `WebFetch` calls against `home.treasury.gov` (the daily Treasury par yield curve TextView page, the interest-rates-data landing page, and the domain root) each timed out at 60 seconds; a control fetch to `example.com` in the same session succeeded, ruling out a general tool failure. Per the ruling: **Treasury CMT (#13 in `IMCE_A4G_SOURCE_BOUNDARY_TABLE.md`) is downgraded from an implied `V` to explicit `S`**, with a note that the primary rate leg is unresolved-at-A4-verification while PMMS (#10) remains rights-HELD — both candidate rate legs currently lack a session-verified `V`-grade citation. Where: `IMCE_A4G_SOURCE_BOUNDARY_TABLE.md` §2 (row #13, Notes column), §4 (PMMS detail, "Interim primary rate leg" bullet), §5 (affordability-leg table).
 
 ---
 

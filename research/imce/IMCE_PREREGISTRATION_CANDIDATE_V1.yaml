@@ -136,6 +136,8 @@ validation:
   prospective_holdout_2024_plus:
     selected: true                             # [A22] was "if that holdout is selected"
     no_parameter_refit: true
+    is_the_open_accruing_affordability_era: true   # [AG8][M8-fix]
+    contributes_historical_n: false                # [AG8][M8-fix] zero until lawfully closed
   leave_issuer_out: pre_declared_list_DHI_PHM_TOL_KBH   # [A22] was "where_estimable"
   leave_cycle_out: required
   fdr_q: 0.10
@@ -177,6 +179,8 @@ effective_block_law:                           # [A9, amended AG2/AG3/AG4/AG5/AG
       basis: only_grind_pandemic_boom_rate_shock_carry_denominator_reconstructable_disclosure
       blocks_1_2_excluded_because: unstated_early_convention_cannot_be_assumed_to_match_later_stated_one
     exact_pseudo_n_necessary: false               # upper bound already fails floor=40 by ~order of magnitude
+    cap_scoping: cell_level_not_feature_level      # [MAJ-1] a cell whose registered basis includes cancellation-rate data is B<=3 ENTIRE; order_softness (contract section 2, AG14) currently draws cancellation rate, so any cell targeting it is B<=3 as registered; stripping cancellation from a cell's basis is a future registration-time amendment, not an open election
+    grind_block_cancellation_coverage: partial_fy2016_plus_for_phm_and_nvr  # [AG6][M9-fix]
   block_count_reconciliation:                    # [AG5] records the C2 disposition
     lane1_source: research/imce/IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md
     lane2_source: research/imce/hb0/IMCE_HB0_INDEPENDENT_BLOCK_LIST.md
@@ -184,7 +188,7 @@ effective_block_law:                           # [A9, amended AG2/AG3/AG4/AG5/AG
     lane2_hardened_count_for_n: 5
     ruling: b_equals_5_wins_for_n_accounting
     named_7_list_retained: true
-    zero_contributing_entries: [taper_2013_subepisode, affordability_era_2024_2026_open]
+    zero_contributing_entries: [taper_2013_partial, air_pocket_2018, affordability_incentive_era]  # [BLK-3 fix] was missing air_pocket_2018 and used non-matching names
   sub_episodes_contribute_zero_n: true           # [AG7] closes lane-1 HB0 census gap 12
   sub_episode_boundary_minting_required_for_n: false
   open_era_contributes_zero_historical_n: true   # [AG8]
@@ -243,13 +247,14 @@ frozen_historical_block_list:                  # [A8, restructured AG5/AG7/AG8]
     proposed_month_start: "2014-01"
     proposed_month_end: "2019-12"
     counts_toward_n_effective_blocks: true
-  - name: air_pocket_2018
-    start: 2018
-    end: 2018
-    proposed_month_start: "2018-07"
-    proposed_month_end: "2018-12"
-    type: named_sub_episode_of_grind_2014_2019           # [AG7]
-    counts_toward_n_effective_blocks: false              # [AG7] zero N
+    sub_episodes:                                        # [AG7][BLK-3 fix] folded back in, was a flat 8th list entry
+      - name: air_pocket_2018
+        start: 2018
+        end: 2018
+        proposed_month_start: "2018-07"
+        proposed_month_end: "2018-12"
+        type: named_sub_episode_of_grind_2014_2019
+        counts_toward_n_effective_blocks: false          # [AG7] zero N
   - name: pandemic_boom
     start: 2020
     end: 2021
@@ -281,7 +286,7 @@ reachable_status_table:                        # [A1]
     historical_cells: 0
     max_reachable_ladder_rung_on_history: DESCRIPTIVE
   homebuilders:
-    honest_historical_blocks: "5-7"
+    honest_historical_blocks: "cap_general_5_cap_cancellation_3"  # [AG5][AG6] BLK-1 fix, was "5-7"
     historical_cells: 6
     fdr_partition: imce_hist_v0
     fdr_q: 0.10
@@ -338,8 +343,9 @@ memory:                                        # [A14][A15]
     mechanism_grammar_epochs_cross_folds: false
 
 homebuilders:                                  # [A1][A17][A18][G8-B4][G8-M2][G8-M6]
-  honest_historical_blocks_min: 5
-  honest_historical_blocks_max: 7
+  n_effective_blocks_cap_general: 5              # [AG5] BLK-3 fix, was honest_historical_blocks_min/max: 5/7 (stale)
+  n_effective_blocks_cap_cancellation: 3         # [AG6] BLK-3 fix
+  named_list_entries: 7                          # unchanged — the 7-entry named taxonomy (§3), never widened
   historical_cells: 6
   max_reachable_ladder_rung_on_history: REGISTERED_TO_REPLAYED_ESTIMATION_ONLY
   never_reaches: [DISPLAY, PROMOTE_ELIGIBLE]
@@ -364,8 +370,10 @@ homebuilders:                                  # [A1][A17][A18][G8-B4][G8-M2][G8
     flip_under_alternate_convention: not_a_pass
   len:
     excluded_from_cancellation_rate_cells: true
+    exclusion_scope: cell_level_entire_issuer_excluded_from_cancellation_basis_cells  # [AG10-clarif][MAJ-2 fix]
     exclusion_reason: no_stated_formula_denominator_unverifiable_plus_era_correlated_press_release_absence  # [AG10, restates C1] was era_correlated_missingness_no_press_release_cancellation_rate
     exclusion_reason_note: 10k_mda_does_disclose_14_pct_fy2025_missingness_is_press_release_channel_scoped_not_absolute
+    non_cancellation_cell_treatment: roster_member_cancellation_feature_typed_missing_never_imputed  # [AG10-clarif][MAJ-2 fix] AG11 ban applies, not an exclusion
     break_flag: millrose_2025_02
     exclusion_printed: true
   nvr:
@@ -500,6 +508,7 @@ stop_conditions:                               # [A25]
   - criteria_commit_does_not_precede_outcome_access
   - reachable_status_table_not_recorded            # [A25] new
   - macro_block_boundary_lacks_dated_source_receipt_and_outcome_run_would_partition_on_it  # [AG17] new
+  - phase_family_state_target_lacks_registered_mapping_to_named_d5_state_with_registered_observability_class  # [AG14][MAJ-5] new
 
 prospective_law:                               # [A24]
   nightly_is_sole_forward_ledger_advancer: true
@@ -511,7 +520,7 @@ prospective_law:                               # [A24]
   come_back_date:
     computed_from: [accrual_rate, n_floor]
     published_at_registration: true
-    homebuilders_estimate: "~2145 at census accrual rate"
+    homebuilders_estimate: "~2153 at census accrual rate, B=5 hardened basis"  # [AG5] BLK-1 fix, was "~2145" (non-hardened basis, superseded, no basis election)
     memory_and_banks: later_still
   counters:
     n_blocks_hist: 0

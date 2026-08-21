@@ -31,32 +31,32 @@ No fourth or fifth token may be minted for this family (AG15). A3 lane-1's own f
 
 ## 2. Macro/context source table
 
-`V` = agency page opened directly. `S` = search-summarized (403 or not located) — a source claim pending verification, never treated as verified.
+`V` = agency page opened directly (this session or, where noted, a prior cited HB0 session). `S` = search-summarized or not independently re-verified this session — a source claim pending verification, never treated as verified. **[M4 fix, A4G revision]** The `pit_class` column below carries ONLY a closed-enum token (`pit_pure` / `revision_optimistic` / `mixed`) or `—` (no registrable `pit_class` — rights-blocked, unverified-rights, held, or categorically excluded); all qualifying prose ("not usable until…", "once rights clear", etc.) has moved to the Notes column.
 
-| # | Series | Owning agency (never FRED) | Rights verdict | `source_vintage_class` (local) | `pit_class` (registered, via crosswalk) |
-|---|---|---|---|---|---|
-| 1 | New Residential Sales (sold/for-sale/months-supply/price) | Census (w/ HUD) | public domain | `revision_optimistic` (upgradeable — §3) | `revision_optimistic` |
-| 2 | New Residential Construction (starts/permits/completions) | Census (w/ HUD) | public domain | `revision_optimistic` | `revision_optimistic` |
-| 3 | Survey of Construction | Census | public domain | `current_revised_only` | `revision_optimistic` |
-| 4 | Quarterly Starts & Completions by Purpose/Design | Census | public domain | `revision_optimistic` | `revision_optimistic` |
-| 5 | Existing-Home Sales | NAR | **RIGHTS-BLOCKED** `V` | `current_revised_only` | **none — rights-blocked** |
-| 6 | Housing Affordability Index | NAR | **RIGHTS-BLOCKED** | `current_revised_only` | **none — rights-blocked** |
-| 7 | NAHB/Wells Fargo Housing Market Index (HMI) | NAHB | **UNVERIFIED**, not cleared `S` | `pit_pure` (tentative) | not usable until rights verified |
-| 8 | NAHB/Wells Fargo Housing Opportunity Index (HOI) | NAHB | **UNVERIFIED**; discontinued after Q4 2023 | `current_revised_only`, then `not_applicable` | not usable |
-| 9 | Weekly Applications Survey (incl. Purchase Index) | MBA | **not_licensed** for numeric series `S` | `current_revised_only` | **none — rights-blocked** |
-| 10 | Primary Mortgage Market Survey, 30-yr fixed (PMMS) | Freddie Mac | **HELD** `V` — see §4 | `pit_pure` | `pit_pure` **once rights clear; HELD until then** |
-| 11 | House Price Index | FHFA | freely available | `revision_optimistic` | `revision_optimistic` |
-| 12 | S&P CoreLogic Case-Shiller HPI | S&P Dow Jones Indices | **RIGHTS-BLOCKED** `S` | `current_revised_only` | **none — rights-blocked** |
-| 13 | Constant-maturity yields (Treasury CMT) | U.S. Treasury | public domain | `pit_pure` | `pit_pure` — **primary rate leg** |
-| 14 | CPI shelter / owners' equivalent rent | BLS | public domain | `revision_optimistic` (SA layer) | `revision_optimistic` |
-| 15 | Residential fixed investment | BEA | public domain | `revision_optimistic` | `revision_optimistic` |
-| 16 | Construction spending (C30) | Census | public domain | `revision_optimistic` | `revision_optimistic` |
-| 17 | PPI — lumber and wood products | BLS | public domain | `pit_pure` (provisional) | `pit_pure` (provisional) |
-| — | SEC EDGAR (all 6 roster issuers' filings) | SEC | public domain | `pit_pure` (vintage-clean via filing immutability) | `pit_pure` |
-| — | DHI_IR / PEER_BUILDER_IR (issuer 8-K exhibits) | issuers, via SEC EDGAR | public domain | `pit_pure` (vintage-clean via filing immutability) | `pit_pure` |
-| — | FRED / ALFRED (all series) | St. Louis Fed | **`DO_NOT_INGEST`** — clause (q), binds all use classes incl. display tier | n/a — categorically excluded | **none — excluded, never a `pit_class` question [AG18]** |
+| # | Series | Owning agency (never FRED) | Rights verdict | `source_vintage_class` (local) | `pit_class` (registered) | Notes |
+|---|---|---|---|---|---|---|
+| 1 | New Residential Sales (sold/for-sale/months-supply/price) | Census (w/ HUD) | public domain `V` | `revision_optimistic` | `revision_optimistic` | Upgradeable to `pit_pure` — §3 |
+| 2 | New Residential Construction (starts/permits/completions) | Census (w/ HUD) | public domain `V` | `revision_optimistic` | `revision_optimistic` | — |
+| 3 | Survey of Construction | Census | public domain `V` | `current_revised_only` | `revision_optimistic` | Crosswalked per §1 (strictly-worse case) |
+| 4 | Quarterly Starts & Completions by Purpose/Design | Census | public domain `V` | `revision_optimistic` | `revision_optimistic` | — |
+| 5 | Existing-Home Sales | NAR | **RIGHTS-BLOCKED** `V` | `current_revised_only` | **—** | Rights-blocked — no `pit_class` question (§1 crosswalk, rights gate precedes vintage gate) |
+| 6 | Housing Affordability Index | NAR | **RIGHTS-BLOCKED** `V` | `current_revised_only` | **—** | Rights-blocked, same basis as #5 |
+| 7 | NAHB/Wells Fargo Housing Market Index (HMI) | NAHB | **UNVERIFIED**, not cleared `S` | `pit_pure` (tentative) | **—** | Rights not yet verified — `pit_class` withheld pending rights; would be `pit_pure` if/when cleared |
+| 8 | NAHB/Wells Fargo Housing Opportunity Index (HOI) | NAHB | **UNVERIFIED**; discontinued after Q4 2023 `S` | `current_revised_only`, then `not_applicable` | **—** | Discontinued + rights unverified — not usable regardless |
+| 9 | Weekly Applications Survey (incl. Purchase Index) | MBA | **not_licensed** for numeric series `S` | `current_revised_only` | **—** | Not licensed — treated as rights-blocked for the numeric series |
+| 10 | Primary Mortgage Market Survey, 30-yr fixed (PMMS) | Freddie Mac | **HELD** `V` — see §4 | `pit_pure` | **—** | Genuinely `pit_pure` by construction, but HELD pending rights determination — `pit_class` not assignable until rights clear (§1 crosswalk) |
+| 11 | House Price Index | FHFA | freely available `V` | `revision_optimistic` | `revision_optimistic` | — |
+| 12 | S&P CoreLogic Case-Shiller HPI | S&P Dow Jones Indices | **RIGHTS-BLOCKED** `S` | `current_revised_only` | **—** | Rights-blocked absent an S&P DJI licence |
+| 13 | Constant-maturity yields (Treasury CMT) | U.S. Treasury | public domain **`S` — DOWNGRADED [MAJ-6]** | `pit_pure` | `pit_pure` | **Primary rate leg.** This session attempted owner-direct re-verification (`home.treasury.gov`, 3 WebFetch attempts across two URL paths) — every attempt timed out (60s), while a control fetch to `example.com` succeeded in the same session, ruling out a general tool failure. Rights/vintage verdict is carried forward from the general public-record understanding of Treasury's own published CMT series (a `.gov` first-party rate series with no known rights dispute, unlike NAR/Case-Shiller) but is **NOT independently re-verified this session** and is graded `S`, not `V`. **Unresolved at A4: both candidate rate legs — Treasury CMT (this row, `S`) and PMMS (HELD, row 10) — currently lack a session-verified `V`-grade citation; a future A4 registration session must complete owner-direct verification of at least the primary leg (Treasury CMT) before relying on it in a registered cell.** |
+| 14 | CPI shelter / owners' equivalent rent | BLS | public domain `V` | `revision_optimistic` (SA layer) | `revision_optimistic` | — |
+| 15 | Residential fixed investment | BEA | public domain `V` | `revision_optimistic` | `revision_optimistic` | — |
+| 16 | Construction spending (C30) | Census | public domain `V` | `revision_optimistic` | `revision_optimistic` | — |
+| 17 | PPI — lumber and wood products | BLS | public domain `V` | `pit_pure` (provisional) | `pit_pure` | Provisional — revision policy unconfirmed |
+| — | SEC EDGAR (all 6 roster issuers' filings) | SEC | public domain `V` | `pit_pure` (vintage-clean via filing immutability) | `pit_pure` | — |
+| — | DHI_IR / PEER_BUILDER_IR (issuer 8-K exhibits) | issuers, via SEC EDGAR | public domain `V` | `pit_pure` (vintage-clean via filing immutability) | `pit_pure` | — |
+| — | FRED / ALFRED (all series) | St. Louis Fed | **`DO_NOT_INGEST`** — clause (q), binds all use classes incl. display tier | n/a — categorically excluded | **—** | Excluded categorically [AG18] — never a `pit_class` question |
 
-**Tally (macro/context legs, `source_vintage_class`):** `pit_pure` 2 confirmed (#10 rights-pending, #13) + 2 tentative/provisional (#7 unverified, #17) · `revision_optimistic` 7 · `current_revised_only` 6 · `rights_blocked` 3 sources / 4 series (#5, #6, #12, plus #9 not_licensed) · rights unverified 2 (#7, #8).
+**Tally — row-derivable directly from the table above [M4 fix]:** 20 total rows (17 numbered series + SEC EDGAR + DHI_IR/PEER_BUILDER_IR + FRED/ALFRED). `pit_class = pit_pure`: 4 rows (#13, #17, SEC EDGAR, DHI_IR/PEER_BUILDER_IR). `pit_class = revision_optimistic`: 8 rows (#1, #2, #3, #4, #11, #14, #15, #16). `pit_class = —` (no registrable `pit_class`): 8 rows (#5, #6, #7, #8, #9, #10, #12, FRED/ALFRED) — of which rights-blocked: 3 (#5, #6, #12); not-licensed: 1 (#9); rights-unverified: 2 (#7, #8); HELD: 1 (#10); categorically excluded: 1 (FRED/ALFRED). `4 + 8 + 8 = 20` — identity check against the row total.
 
 ---
 
@@ -70,10 +70,10 @@ Census NRS maintains a first-print press-release archive back to **January 1995*
 
 **Freddie Mac Primary Mortgage Market Survey, 30-year fixed, is HELD [AG18].** Neither GO nor blocked by default.
 
-- **PIT basis:** genuinely `pit_pure` — weekly published rate, archived back to 1971 (`freddiemac.com/pmms/pmms_archives`, retrieved 2026-08-21), not revised after publication.
+- **PIT basis:** genuinely `pit_pure` in construction — weekly published rate, archived back to 1971 (`freddiemac.com/pmms/pmms_archives`, retrieved 2026-08-21), not revised after publication. **Registered `pit_class` today is `—`** (§2, M4 fix), not `pit_pure` — rights gate precedes vintage gate (§1 crosswalk), so a HELD source carries no registrable `pit_class` until its rights question resolves, even though its vintage properties are known and clean.
 - **Rights tension:** the PMMS page condones attribution-only use, but the site-wide Terms of Use bar redistributing, publishing, or commercially exploiting "Data" without a separate written licence (`freddiemac.com/terms/`, retrieved 2026-08-21). The two statements are in tension and not resolved by this document.
 - **Construction break, independent of the rights question:** PMMS underwent a methodology change on **2022-11-17** — survey-of-lenders methodology replaced by applications submitted to Freddie Mac's Loan Product Advisor (LPA); the fees/points and 5/1 ARM series were discontinued at the same date. [Freddie Mac Economic & Housing Research Note, `freddiemac.com/research/pdf/202210-Note-PMMS-12.pdf`, retrieved 2026-08-21; corroborated by National Mortgage Professional, `nationalmortgageprofessional.com/news/freddie-mac-updates-its-mortgage-rate-survey`, retrieved 2026-08-21.] Any cell pooling PMMS observations across 2022-11-17 pools two different measurement instruments under one series name — a construction break, distinct from and in addition to the vintage/rights question.
-- **Interim primary rate leg:** Treasury constant-maturity yields (#13) — confirmed `pit_pure`, public domain, full daily archive, no rights ambiguity.
+- **Interim primary rate leg:** Treasury constant-maturity yields (#13) — `pit_pure`, public domain, no known rights ambiguity, but **downgraded to `S` this session [MAJ-6]**: three owner-direct verification attempts (`home.treasury.gov`) timed out and were not completed. Both candidate rate legs (PMMS here, Treasury CMT at #13) are therefore currently unresolved-at-`V` in different ways — PMMS on rights, Treasury CMT on this session's failed re-verification — and a future A4 registration session should complete owner-direct verification of at least Treasury CMT before relying on it in a registered cell.
 - **Falsifier registered:** Freddie Mac's terms determined to permit internal research storage → PMMS becomes a confirmed `pit_pure` mortgage-rate leg back to 1971 (`IMCE_HB0_SOURCE_PIT_VINTAGE_MATRIX.md` §6, F-2).
 
 ---
@@ -87,8 +87,8 @@ Verbatim from `nar.realtor` (retrieved 2026-08-21): *"No part of this data may b
 | Leg | Clean source | `pit_class` |
 |---|---|---|
 | Price | Census NRS median/average price (#1) | `revision_optimistic`, upgradeable (§3) |
-| Rate | U.S. Treasury CMT (#13) | `pit_pure` |
-| Rate (mortgage-specific, optional refinement) | Freddie Mac PMMS (#10) | `pit_pure` archive, but HELD pending rights (§4) |
+| Rate | U.S. Treasury CMT (#13) | `pit_pure`, but graded `S` this session pending owner-direct re-verification (§2, MAJ-6) |
+| Rate (mortgage-specific, optional refinement) | Freddie Mac PMMS (#10) | `pit_pure` in construction, but registered `pit_class` is `—` — HELD pending rights (§4) |
 | Income | Census / BLS income series | public domain |
 
 Never presented as "the affordability index" — it is a house construction, disclosed as such in every readout.
