@@ -69,8 +69,17 @@ _RADAR_SOURCE = "risk-radar-us"
 # descriptive V0 stage does its OWN state vocabulary mean?".  Adapters never threshold
 # a score into a stage and never look at another organ.
 
-def _market_state_read(doc: Mapping[str, Any] | None, session: str | None) -> SourceRead:
-    """Market State — the slow confirmed trend.  Carried verbatim, never recomputed."""
+def _market_state_read(
+    doc: Mapping[str, Any] | None, session: str | None, *,
+    stale_override: bool | None = None,
+) -> SourceRead:
+    """Market State — the slow confirmed trend.  Carried verbatim, never recomputed.
+
+    `stale_override` (GD-3): when given, it REPLACES this adapter's own staleness
+    expression rather than combining with it — the live lane (scripts/build_live_
+    risk_envelope.py) computes freshness from the live plane's own clock and hands
+    it straight through.  `None` (the default) is a no-op: the settled lane's
+    behaviour is unchanged byte-for-byte."""
     if not doc:
         return SourceRead(
             source_id=_MEASURED_SOURCE, role="measured_state",
@@ -80,7 +89,9 @@ def _market_state_read(doc: Mapping[str, Any] | None, session: str | None) -> So
     as_of = doc.get("asof")
     # Two independent staleness signals, both from the organ itself: its own
     # `freshness.stale` verdict, and whether its clock matches the session we bake.
-    stale = bool(fresh.get("stale")) or (bool(session) and bool(as_of) and as_of != session)
+    stale = stale_override if stale_override is not None else (
+        bool(fresh.get("stale")) or (bool(session) and bool(as_of) and as_of != session)
+    )
     return SourceRead(
         source_id=_MEASURED_SOURCE,
         role="measured_state",
@@ -121,8 +132,14 @@ _LEADERSHIP_STAGE = {
 }
 
 
-def _leadership_crack_read(doc: Mapping[str, Any] | None, session: str | None) -> SourceRead:
-    """Leadership Crack — has the leadership cohort taken damage this session?"""
+def _leadership_crack_read(
+    doc: Mapping[str, Any] | None, session: str | None, *,
+    stale_override: bool | None = None,
+) -> SourceRead:
+    """Leadership Crack — has the leadership cohort taken damage this session?
+
+    `stale_override` (GD-3): see `_market_state_read`.  `None` preserves the
+    settled lane's original expression exactly."""
     if not doc:
         return SourceRead(
             source_id=_LEADERSHIP_SOURCE, role="hazard_evidence",
@@ -130,7 +147,9 @@ def _leadership_crack_read(doc: Mapping[str, Any] | None, session: str | None) -
         )
     as_of = doc.get("asof")
     state = doc.get("state")
-    stale = bool(session) and bool(as_of) and as_of != session
+    stale = stale_override if stale_override is not None else (
+        bool(session) and bool(as_of) and as_of != session
+    )
     stage = _LEADERSHIP_STAGE.get(str(state).upper()) if state else None
     # GD-2R1 (Sol post-merge review): `dislocation` does NOT promote to TRANSMITTING.
     # Dislocation is precisely "the cohort is damaged while the INDEX still holds" —
@@ -174,11 +193,15 @@ _RADAR_STAGE = {
 
 
 def _risk_radar_read(radar: Mapping[str, Any] | None, session: str | None,
-                     ms_asof: str | None) -> SourceRead:
+                     ms_asof: str | None, *,
+                     stale_override: bool | None = None) -> SourceRead:
     """US Risk Radar — the cross-asset scare monitor, source-native on Market State.
 
     Optional coverage: the radar corroborates but is not required for the stage to be
     knowable, so its absence degrades coverage rather than nulling the answer.
+
+    `stale_override` (GD-3): see `_market_state_read`.  `None` preserves the
+    settled lane's original expression exactly.
     """
     if not radar:
         return SourceRead(
@@ -186,7 +209,9 @@ def _risk_radar_read(radar: Mapping[str, Any] | None, session: str | None,
             present=False, required=False,
         )
     state = radar.get("state")
-    stale = bool(session) and bool(ms_asof) and ms_asof != session
+    stale = stale_override if stale_override is not None else (
+        bool(session) and bool(ms_asof) and ms_asof != session
+    )
     return SourceRead(
         source_id=_RADAR_SOURCE,
         role="hazard_evidence",

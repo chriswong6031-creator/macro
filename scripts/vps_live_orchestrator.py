@@ -314,6 +314,19 @@ class Orchestrator:
         weekday = self.now.weekday() < 5
         hour, minute = self.now.hour, self.now.minute
         if weekday and 11 <= hour <= 22:
+            # GD-3: live provisional Risk Envelope. EVERY fire (not the odd/even
+            # split below) — it is cheap (no network, reads two small JSON files
+            # plus the risk_state.json this same gate already refreshes) and the
+            # pending/dwell debounce (config `live.risk_envelope.debounce_ticks`)
+            # depends on ticking every minute to reach its 3-tick window in ~3
+            # minutes rather than ~6.
+            self.module(
+                "risk_envelope_live",
+                "scripts.build_live_risk_envelope",
+                [],
+                outputs=self._publish_pairs(("risk_envelope.json",)),
+                timeout=30,
+            )
             if minute % 2 == 0:
                 self.module(
                     "live_overlay",
