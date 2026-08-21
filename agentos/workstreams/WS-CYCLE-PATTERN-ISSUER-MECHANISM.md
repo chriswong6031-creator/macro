@@ -36,42 +36,82 @@ waves:
     status: done
     depends_on: [IMCE-00]
     next_action: >
-      Delivered: eight records-only artifacts under research/imce/ (autopsy + 6 CSVs +
-      falsifier list + prospective-observation registration, plus a non-runtime
-      reproduction receipt). Zero outcome computation; scanned and asserted. Returned to
-      Fable for adjudication — see the executive note in §8 of the autopsy and open
-      question U7 (is the 2026 assortment reset a distinct epoch or a phase inside M5?).
+      DONE + RECONCILED (Fable adjudication 2026-08-21). TWO independent A1 lanes
+      converged: (1) the Fable-commissioned, Opus-red-teamed narrative record
+      research/imce/IMCE_CELH1_CYCLE_AUTOPSY_V1.md — PR #6150, merge 44ac9b89ff9e
+      2026-08-21T05:19:45Z — is the CANONICAL A1 deliverable (strict crossover
+      predicate frozen in-record; 33 events, 16 bullish / 17 bearish,
+      2009-11-27 → 2025-12-05; zero outcome computation verified by adversarial
+      re-derivation). (2) The operator-lane packet CELH_CYCLE_AUTOPSY_2018_2026.md
+      + research/imce/celh/ (PR #6153, merge 0d5bc41d3d67) is ACCEPTED as the
+      COMPANION machine-readable evidence packet: its recognition-event tape is
+      byte-consistent with the canonical record (same 33 events, same 16 bullish
+      dates), its CSVs carry bar-state columns only (no outcome fields), and its
+      prospective-observation YAML is proposed_records_only_NOT_ACTIVATED —
+      activation is A4-gated. U7 (2026 assortment reset: distinct epoch or phase?)
+      RULED: phase inside the existing epoch until a mechanism boundary receipt
+      dates a new one; revisit at first prospective review, not before.
   - id: A2
     title: CPI truth-contract audit (D-4) — reconcile truth_schema consumer vocabulary with consumer_matrix; annotate split registry rows
-    status: todo
+    status: done
     depends_on: [IMCE-00]
+    next_action: >
+      DONE — research/imce/IMCE_A2_CPI_TRUTH_VOCABULARY_AUDIT_V1.md, PR #6147,
+      merge 2a0fae4672ea 2026-08-21T04:57:17Z, after Opus red-team REVISE fully
+      dispositioned (census/orphan verdicts survived byte-exact; F6 minted: five
+      promoted_null rows grant neuralweb_context against their own matrix class —
+      heal direction ADJUDICATED, matrix wins). Adjudicated release condition:
+      freeze D1(c) releases only when the APPLIED heal lands and is verified in a
+      CPI-owned follow-on wave — NOT on this audit's landing. Open decisions
+      (i)-(v),(vii) reserved to Fable at the heal wave.
   - id: A3
     title: IMCE-HB-0 — homebuilder source/definition census freeze (roster, denominator crosswalk, calendar re-key, frozen block list)
     status: done
     depends_on: [IMCE-00]
     next_action: >
-      Delivered: nine adjudication artifacts + seven verbatim evidence packets under
-      research/imce/hb0/. Both debts the freeze assigned to A3 are discharged (named
-      survivorship census; per-source vintage audit). Block count hardened to B=5;
-      cancellation cells restricted to the stated-denominator era; six mutually
-      incompatible cancellation regimes recorded. THREE CORRECTIONS ARE PROPOSED, NOT
-      APPLIED, and need Fable/Sol adjudication as amendment-log entries: C1 restate the
-      LEN exclusion's reason (LEN discloses 14% in its 10-K MD&A; the robust ground is
-      that it states no formula), C2 resolve the block list's overlap and open-block
-      defects, C3 extend the [A18] missing-indicator ban to every era-correlated metric.
-      A4 must then make the six elections in IMCE_HB0_A4_CELL_BUDGET_INPUTS.md §8.
+      DONE via TWO parallel lanes, RECONCILED (Fable adjudication 2026-08-21).
+      Lane 1 (commissioned, Opus-red-teamed): research/imce/IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md
+      — PR #6148, merge b7b173efde83 2026-08-21T05:21:18Z; REVISE (4 blockers incl.
+      missing Centex→PHM 2009 absorption) fully dispositioned: survivorship census
+      to a stated population rule (20 mortality/context entities + 6 excluded
+      listed survivors + 11 entry-side names); two-key re-key frozen (dating month
+      key + majority-month pooling key, zero-collision verified); NVR = separate
+      stratum FROZEN; PMMS re-verdicted construction-broken 2022-11-17; no
+      pit_class tokens minted; thirteen typed gaps, four REQUIRED-BEFORE-A4.
+      Lane 2 (operator): PR #6154, merge c15d76130046 05:42:56Z — nine adjudication
+      artifacts + seven verbatim evidence packets under research/imce/hb0/, B=5
+      block-hardening proposal, six-regime cancellation record, corrections C1-C3.
+      RULINGS: C1 ACCEPTED in direction — the LEN exclusion STANDS but its recorded
+      reason restates to "no stated formula (denominator unverifiable) + era-
+      correlated press-release absence"; LEN's 10-K MD&A does disclose 14%
+      (verified against hb0/evidence/L2_defs_DHI_LEN.md rows 3/3a), so the freeze's
+      "no press-release cancellation rate" ground was true of EX-99.1s only —
+      amendment-log entry owed at the A4 gate. C2 (B=5 vs the #6148 frozen 7-list
+      with its open "2013 taper" item) and C3 ([A18] extension) are DEFERRED to
+      the Sol/Fable A4-gate adjudication with both block lists on the table.
+      Lane 1's frozen operational rulings (NVR stratum, two-key re-key, no minted
+      tokens) BIND pre-A4; the full A3-pair reconciliation (roster/denominator
+      deltas + the six elections in hb0/IMCE_HB0_A4_CELL_BUDGET_INPUTS.md §8) is
+      REQUIRED-BEFORE-A4.
   - id: A4
     title: IMCE-03 — preregistration finalization (declared_budget trial-ledger rows; criteria commit before any outcome access)
     status: todo
     depends_on: [A2, A3]
 next_action: >
-  A1 and A3 are both delivered and returned to Fable (they ran in parallel, as the freeze
-  §13 permits). Next: A2 (CPI truth-contract audit — the precondition for ANY issuer
-  truth), the last wave gating A4. Before A4, Fable/Sol must adjudicate A3's three
-  proposed corrections (C1 LEN exclusion reason, C2 block-list defects -> B=5, C3 [A18]
-  scope) as amendment-log entries, and A4 must make the six elections in
-  research/imce/hb0/IMCE_HB0_A4_CELL_BUDGET_INPUTS.md §8. A1's DSC on epoch-boundary lag
-  classes remains a concrete test A3's homebuilder family can be run against.
+  A1/A2/A3 are all MERGED and reconciled (each wave delivered by both the
+  commissioned lane and, for A1/A3, an operator lane — dispositions in the wave
+  entries above); per Sol's release directive every wave returned independently
+  and A4 is NOT authorized. A4 opens only on the Sol/Fable gate adjudication of:
+  minimum prospective share; ρ (DEFF correlation) and the statistical-unit/power
+  questions; the A3-pair reconciliation — C2 block-list election (B=5 proposal vs
+  the frozen 7-list), C3 [A18] scope, the C1 amendment-log entry (LEN exclusion
+  reason restated), and the six elections in
+  research/imce/hb0/IMCE_HB0_A4_CELL_BUDGET_INPUTS.md §8; pit_class candidate
+  vocabulary; macro-series evidence at block boundaries; the "2013 taper"
+  boundary dates; G6 UNDERLYING_MACRO_OWNERS leg-list confirmation. Separately,
+  the CPI-owned heal wave (A2 §8) is the release condition for freeze D1(c) — no
+  issuer truth before it lands. A1's DSC on epoch-boundary lag classes remains a
+  concrete test for the homebuilder family. No auto-roll anywhere.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."
