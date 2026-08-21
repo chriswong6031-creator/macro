@@ -201,6 +201,9 @@ html[data-lang="zh"] .si-view[data-view="money"] .mny-big{ letter-spacing:0; fon
   overflow-wrap:anywhere; }
 .si-view[data-view="money"] .mny-leg > .lead{ grid-column:1; font-size:var(--fs-sm); color:var(--muted); }
 .si-view[data-view="money"] .mny-leg > .fig{ grid-column:2; grid-row:1 / span 2; align-self:center;
+  position:relative;   /* anchors the .r3-vh 1px box INSIDE the cell — a statically
+                          positioned visually-hidden span at a right edge is the classic
+                          one-pixel document overflow, measured here at 320 */
   font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums; }
 .si-view[data-view="money"] .pos{ color:var(--ink-up); }
 .si-view[data-view="money"] .neg{ color:var(--ink-down); }
@@ -231,7 +234,13 @@ html[data-lang="zh"] .si-view[data-view="money"] .mny-big{ letter-spacing:0; fon
 .si-view[data-view="money"] .mny-noread[hidden]{ display:none; }
 .si-view[data-view="money"] .mny-foot{ padding:11px 16px; border-top:1px solid var(--line);
   background:color-mix(in srgb, var(--panel2) 45%, transparent); border-radius:0 0 var(--r-panel) var(--r-panel);
-  font-size:var(--fs-micro); line-height:1.6; color:var(--muted); }
+  font-size:var(--fs-sm); line-height:1.55; color:var(--muted); }
+/* the Tier-2 receipt: the sanctioned home for the scope and the raw figures behind a
+   reading, on its own mono line under a hairline perforation */
+.si-view[data-view="money"] .mny-receipt{ display:block; margin-top:7px; padding-top:7px;
+  border-top:1px dashed color-mix(in srgb, var(--muted) 32%, transparent);
+  font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.02em;
+  font-variant-numeric:tabular-nums; }
 
 /* ── band 2 · the server-rendered sector-ETF flow fragment ───────────────────
    SCOPED WRAPPER ONLY. Not one byte of fragments/sc_flows.html is edited: its markup,
@@ -355,9 +364,12 @@ html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(
 @media (max-width:1100px){
   .si-view[data-view="money"] .mny-verdict{ grid-template-columns:minmax(0,1fr); }
   .si-view[data-view="money"] .mny-tm{ min-height:320px; }
+  /* THE TOUCH BAND — see the twin note in views/explore.html */
+  .si-view[data-view="money"] .r3-disc summary{ min-height:48px; }
 }
 @media (max-width:767px){
   .si-view[data-view="money"] .r3-band{ margin-top:var(--sp-6); }
+  .si-view[data-view="money"] .mny-legs{ grid-template-columns:minmax(0,1fr); }
   .si-view[data-view="money"] .mny-measures{ grid-template-columns:minmax(0,1fr); }
   .si-view[data-view="money"] .mny-m{ display:grid; grid-template-columns:minmax(0,1fr) auto;
     align-items:center; column-gap:var(--sp-3); }
@@ -527,6 +539,7 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
   return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
 /* si_workspace.js:126 L() — the dual-emit bilingual span pair */
 function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
+function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
 function reg(p){ try{ return REF.parseJSON(REF.registry[p]); }catch(e){ return null; } }
 /* heatmap.js:87-91 fmtPc — verbatim, including the U+2212 minus */
 function fmtPc(v){ if(v==null||isNaN(v)) return '—';
@@ -745,12 +758,17 @@ function paintHeat(){
     var x=sr.x+SEC_GAP/2, y=sr.y+SEC_GAP/2, w=sr.w-SEC_GAP, h=sr.h-SEC_GAP;
     if(w<=2||h<=2) return;
     var lab=labs[s.name]||{en:s.name,zh:s.name};
-    var hd=(h>34 && w>72)?SEC_HD:0;
+    /* heatmap.js:1783-1800 — a sector header appears only where its own text FITS at the
+       11px floor, and its aggregate only where there is budget left for it. A clipped
+       "+0" is worse than no number, so the number is dropped rather than truncated. */
+    var hd=(h>34 && w>84)?SEC_HD:0;
     out.push('<div class="hm-sec" style="left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;width:'+w.toFixed(1)+'px;height:'+h.toFixed(1)+'px">');
     if(hd){
       var agg=sectorAgg(HM,s.tiles,HM_TF);
+      var nm=(isZh()&&lab.zh)?lab.zh:lab.en;
+      var showAgg = w > (nm.length*6.6 + 62);
       out.push('<div class="hm-sechd">'+L(esc(lab.en),esc(lab.zh||lab.en))
-        +'<span class="agg">'+fmtPc(agg)+'</span></div>');
+        +(showAgg?'<span class="agg">'+fmtPc(agg)+'</span>':'')+'</div>');
     }
     var tr=squarify(s.tiles.map(function(t){ return {value:(t.size||0.0001), ref:t}; }), 0, hd, w, h-hd);
     tr.forEach(function(r){
@@ -795,7 +813,7 @@ function renderHeatText(){
   /* the colour scale, named — a figure channel may never be unlabelled (doctrine Law 3) */
   $('hm-scale').innerHTML = L('One-day move','当日涨跌')
     + '<i class="b3d"></i><i class="b2d"></i><i class="b1d"></i><i class="b0"></i><i class="b1"></i><i class="b2"></i><i class="b3"></i>'
-    + '<span class="tnum">' + L('−3% → +3%','−3% → +3%') + '</span>';
+    + '<span class="tnum">' + L('−3% … +3%','−3% … +3%') + '</span>';
 
   /* ── the MANDATORY table equivalent ──────────────────────────────────────────
      Same producer fields, same layout order. squarify() sorts descending by value,
@@ -844,7 +862,7 @@ function renderLeadership(){
       if(!d||!d.ok){ host.remove(); return; }      /* :3477 — vanishes entirely */
       var star=d.rising_star, ln=d.leader_now, T=d.tabs||{};
       var order=['subsectors','nasdaq','russell','baskets'].filter(function(t){ return T[t]; });
-      function num(x,dd){ return (x==null||isNaN(x))?'–':Number(x).toFixed(dd==null?0:dd); }
+      function num(x,dd){ return (x==null||isNaN(x))?'–':Number(x).toFixed(dd==null?0:dd).replace('-','−'); }
       function signed(x,dd){ if(x==null||isNaN(x)) return '<span class="flat">–</span>';
         var v=Number(x); return '<span class="'+(v>=0?'pos':'neg')+'">'+(v>=0?'+':'−')
           +Math.abs(v).toFixed(dd==null?1:dd)+'</span>'; }
@@ -901,22 +919,23 @@ function renderLeadership(){
         var liq=rg.liquidity?L(' · liquidity '+esc(rg.liquidity),' · 流动性'+esc(liqZh)):'';
         regLine='<p class="lead-regime">'+L('Regime backdrop','宏观象限')+': <b>'+esc(rg.quad)+' '
           +L(esc(rg.name_en),esc(rg.name_zh))+'</b> ('+L(esc(rg.axes_en),esc(rg.axes_zh))+')'+liq
-          +' → '+L('expected tilt: ','预期倾向：')+L(esc(rg.tilt_en),esc(rg.tilt_zh))+' '
+          +'. '+L('Expected tilt: ','预期倾向：')+L(esc(rg.tilt_en),esc(rg.tilt_zh))+'. '
           +L('Odds-tilt, not a rule — compare it to what is actually leading.',
              '仅为概率倾向，非规则——请对照上方实际领涨。')+'</p>';
       }
       var mac=d.macro, macLine='';
-      if(mac) macLine=L('Macro backdrop','宏观背景')+': <b>'+L(esc(mac.label_en||mac.verdict||'—'),
-        esc(mac.label_zh||mac.verdict||'—'))+'</b>'+(mac.score!=null?' ('+mac.score+'/100)':'');
+      if(mac) macLine='<span>'+L('Macro backdrop: <b>'+esc(mac.label_en||mac.verdict||'—')+'</b>',
+        '宏观背景：<b>'+esc(mac.label_zh||mac.verdict||'—')+'</b>')
+        +(mac.score!=null?' ('+mac.score+'/100)':'')+'</span>';
 
       /* :3458-3474 trackBox() — the SELF-GRADED sub-line. A calibration note, never a
          gate: it reports what the forward log has measured so far and nothing else. */
       var tr=d.track_record, trLine='';
       if(tr){
-        var vlab = tr.verdict==='validated'?L('Validated','已验证')
-                 : tr.verdict==='measuring'?L('Measuring','测量中') : L('Accruing','积累中');
+        var vlab = tr.verdict==='validated'?['Validated','已验证']
+                 : tr.verdict==='measuring'?['Measuring','测量中'] : ['Accruing','积累中'];
         var days=tr.n_days||0;
-        trLine='<span class="r3-tag">'+L('Forward track record','前瞻战绩')+': '+vlab+'</span>'
+        trLine='<span class="r3-tag">'+L('Forward track record: '+vlab[0],'前瞻战绩：'+vlab[1])+'</span>'
           +'<span>'+L((tr.n_snapshots||0)+' calls logged over '+days+(days===1?' day':' days'),
                       (tr.n_snapshots||0)+' 条记录，历时 '+days+' 天')+'</span>';
         var h21=(tr.horizons||{})['21'], parts=[];
@@ -965,23 +984,25 @@ document.addEventListener('DOMContentLoaded', function(){
 
   renderEtfPulse(); renderVolChip();
 
-  /* the merged footnote: both display-only disclaimers, both clocks, once. */
+  /* ONE merged footnote per panel, in two registers: the producers' own display-only
+     disclaimers in prose, then the numbers behind the two chips on their own mono
+     receipt line. A bilingual hover is not an accessible home for a figure (spec §11/§12),
+     so nothing here hides in a tip. */
   var EP=reg('basketdata/etf_pulse.json'), VS=reg('basketdata/vol_sentiment.json');
-  var fp=[];
-  if(EP&&EP.disclaimer_en) fp.push(L(esc(EP.disclaimer_en),esc(EP.disclaimer_zh)));
-  if(VS&&VS.disclaimer_en) fp.push(L(esc(VS.disclaimer_en),esc(VS.disclaimer_zh)));
-  /* the numbers behind the volatility chip: a bilingual hover is not an accessible home
-     for a figure (spec §11/§12), so they live here in plain sight instead of in a tip. */
-  if(VS&&VS.vol_regime) fp.push(L('VIX '+VS.vol_regime.vix+' ('+Math.round(VS.vol_regime.vix_pctile*100)
-      +'th percentile) · term structure '+esc(VS.vol_regime.term_state||'—'),
+  var say=[], receipt=[];
+  if(EP&&EP.disclaimer_en) say.push(L(esc(EP.disclaimer_en),esc(EP.disclaimer_zh)));
+  if(VS&&VS.disclaimer_en) say.push(L(esc(VS.disclaimer_en),esc(VS.disclaimer_zh)));
+  if(VS&&VS.vol_regime) receipt.push(L('VIX '+VS.vol_regime.vix+' ('+Math.round(VS.vol_regime.vix_pctile*100)
+      +'th pctile) · term structure '+esc(VS.vol_regime.term_state||'—'),
     'VIX '+VS.vol_regime.vix+'（'+Math.round(VS.vol_regime.vix_pctile*100)+' 分位）· 期限结构 '
       +esc(VS.vol_regime.term_state||'—')));
-  if(VS&&VS.put_call&&VS.put_call.sentiment_en) fp.push(L(
-    'options traders '+esc(String(VS.put_call.sentiment_en).replace(/\s*\(.*\)$/,''))
-      +' (put/call '+VS.put_call.equity_pc+')',
-    '期权交易者'+esc(VS.put_call.sentiment_zh)+'（看跌/看涨 '+VS.put_call.equity_pc+'）'));
-  if(EP&&EP.as_of) fp.push(L('ETF flow context as of '+esc(EP.as_of),'ETF 轮动背景截至 '+esc(EP.as_of)));
-  if($('mny-board-foot')) $('mny-board-foot').innerHTML=fp.join(' · ');
+  if(VS&&VS.put_call&&VS.put_call.sentiment_en) receipt.push(L(
+    'put/call '+VS.put_call.equity_pc+' — options traders '
+      +esc(String(VS.put_call.sentiment_en).replace(/\s*\(.*\)$/,'')),
+    '看跌/看涨 '+VS.put_call.equity_pc+' — 期权交易者'+esc(VS.put_call.sentiment_zh)));
+  if(EP&&EP.as_of) receipt.push(L('ETF flow context as of '+esc(EP.as_of),'ETF 轮动背景截至 '+esc(EP.as_of)));
+  if($('mny-board-foot')) $('mny-board-foot').innerHTML=
+      say.join(' ') + (receipt.length?'<span class="mny-receipt">'+receipt.join(' · ')+'</span>':'');
 
   /* the server-rendered flow fragment — injected verbatim, or the band is removed */
   var band=$('mny-flow-band');
@@ -1010,8 +1031,14 @@ window.addEventListener('resize', function(){
   if(!V||!V.classList.contains('on')) return;
   clearTimeout(_rz); _rz=setTimeout(paintHeat,140);
 }, {passive:true});
-/* No repaint on theme or language change: the tile palette is CSS (bins are class names,
-   anchored on --up/--down) and every label ships both language spans. */
+/* A THEME flip needs no repaint at all: the tile palette is pure CSS (the nine bins are
+   class names anchored on --up/--down, so 红涨绿跌 and light/dark are free). A LANGUAGE flip
+   repaints only because the sector-header fit budget is measured against the ACTIVE label,
+   and a hanzi label needs a different budget than its English twin. */
+document.addEventListener('langchange', function(){
+  if(V&&V.classList.contains('on')) paintHeat();
+  renderHeatText();
+});
 })();
 </script>
 </section>

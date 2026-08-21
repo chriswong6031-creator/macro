@@ -44,6 +44,7 @@
    where it describes leadership moving between two themes — which is the
    producer's own statement, not a link to a lane. */
 [data-view="overview"] .r3-ov-ctx{ border-top:1px solid var(--line); padding-top:var(--sp-4); }
+[data-view="overview"] .r3-ov-deeper{ margin-top:var(--sp-3); }
 [data-view="overview"] .r3-ov-grid{ display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);
   gap:var(--sp-5) var(--sp-7); align-items:start; }
 [data-view="overview"] .r3-ov-hand{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
@@ -60,7 +61,9 @@ html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text
 [data-view="overview"] .r3-ov-stanceline{ margin-top:6px; font-size:var(--fs-md); font-weight:600;
   line-height:1.45; }
 [data-view="overview"] .r3-ov-days{ margin-top:4px; font-size:var(--fs-sm); color:var(--muted); }
-[data-view="overview"] .r3-ov-season{ margin-top:11px; padding-top:10px;
+/* the seasonal note is the band's footnote, not a third column: it spans both
+   tracks so the left column does not end in a hole. */
+[data-view="overview"] .r3-ov-season{ grid-column:1 / -1; margin-top:2px; padding-top:11px;
   border-top:1px solid color-mix(in srgb, var(--line) 60%, transparent);
   font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
 
@@ -78,13 +81,30 @@ html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text
 [data-view="overview"] .r3-delta.up{ color:var(--ink-up); }
 [data-view="overview"] .r3-delta.dn{ color:var(--ink-down); }
 
+/* Stand aside is the one lane whose ink IS --muted, so the shell's
+   "selected name takes --c" rule leaves selection legible only as a tint.
+   The name goes to full --text instead: selection stays readable without
+   lending the lane a hue it must not have. */
+[data-view="overview"] .r3-ledge-cell.st-aside[aria-selected="true"] .r3-ledge-name{
+  color:var(--text); }
+
 /* the five lane bodies all live in the DOM (hydration lands by fold id on every
    lane, not only the visible one); only the selected lane's body is shown. */
 [data-view="overview"] .actbody[hidden]{ display:none; }
-[data-view="overview"] .actbody.is-collapsed > a:nth-child(n+4){ display:none; }
+/* the fold hides everything past the third ROW. A hydrated theme row arrives
+   wrapped in the TS-R5 `<div data-theme-id>` (the auto-expand contract), so —
+   exactly like production's own rule (:220-221) — the selector has to name both
+   shapes or a stand-aside lane silently unfolds itself after a hydrate. */
+[data-view="overview"] .actbody.is-collapsed > a:nth-child(n+4),
+[data-view="overview"] .actbody.is-collapsed > div[data-theme-id]:nth-child(n+4){ display:none; }
+[data-view="overview"] .actbody > div[data-theme-id] > a{ border-bottom:1px solid var(--line); }
 [data-view="overview"] .pg-more{ margin:0; padding:12px 16px; border-top:1px solid var(--line);
   font-size:var(--fs-sm); color:var(--muted); }
-[data-view="overview"] .pg-more a{ color:var(--ink-link); font-weight:700; }
+/* the sign-in disclosure IS the access-locked UI, so its link is a primary
+   target and has to clear 44px. It stays inside its sentence: the box grows by
+   padding and gives the space back with an equal negative margin. */
+[data-view="overview"] .pg-more a{ display:inline-block; padding:14px 0; margin:-14px 0;
+  color:var(--ink-link); font-weight:700; }
 [data-view="overview"] .r3-lane-empty{ margin:0; padding:var(--sp-6) var(--sp-4);
   font-size:var(--fs-md); font-weight:700; text-align:center; }
 [data-view="overview"] .r3-lane-empty small{ display:block; margin-top:5px; font-size:var(--fs-sm);
@@ -172,6 +192,17 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
   [data-view="overview"] .r3-ov-grid{ grid-template-columns:minmax(0,1fr); }
 }
 @media (max-width:767px){
+  /* THE PHONE RECOMPOSES. On the desk the leadership context reads as a quiet
+     preamble between the answer and the board; on a phone that preamble costs a
+     whole swipe before the reader reaches the thing the view is FOR. So the
+     order changes: answer → board → context → watch → record. Nothing is
+     removed, and the ledge itself never moves off the top of the object. */
+  [data-view="overview"].si-view.on{ display:flex; flex-direction:column; }
+  [data-view="overview"] > .r3-answer{ order:1; }
+  [data-view="overview"] > #actnow-section{ order:2; margin-top:0; }
+  [data-view="overview"] > #regime{ order:3; }
+  [data-view="overview"] > #ov-watch-band{ order:4; }
+  [data-view="overview"] > #grader{ order:5; }
   [data-view="overview"] .r3-ov-hand{ grid-template-columns:minmax(0,1fr); gap:var(--sp-2); }
   [data-view="overview"] .r3-ov-hand .r3-arrow{ transform:rotate(90deg); margin:2px 0 2px 4px; }
   [data-view="overview"] .r3-gr{ grid-template-columns:minmax(0,1fr); }
@@ -221,7 +252,7 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
       <p class="r3-board-foot" id="ov-foot"></p>
       <div id="ov-panel" role="tabpanel"></div>
     </div>
-    <div style="margin-top:var(--sp-2)">
+    <div class="r3-ov-deeper">
       <a class="r3-more" href="#confluence"><span class="l-en">Drill to stocks</span><span class="l-zh">下钻到个股</span></a>
     </div>
   </section>
@@ -336,7 +367,7 @@ function dispshort(name){
    REF:VIEWS slot, which precedes both REF:DATA and REF:RUNTIME, so REF.registry
    does not exist yet while this <script> is being parsed. */
 var AB = null, PG = null, HND = null, SCD = null, BOT = null, MORE = {};
-var ZH_TICKER = {}, ZH_ID = {};
+var ZH_TICKER = {}, ZH_HREF = {};
 function loadArtifacts(){
   var ABJ = reg('basketdata/action_board.json');
   AB  = (ABJ && ABJ.action_board) || null;
@@ -352,23 +383,41 @@ function loadArtifacts(){
   BOT = an ? {rows: an.bottoming_watch || [], dual: an.dual_read_ids || [],
               recovering: an.recovering_ids || [], auth: an.bottoming_authority || {},
               as_of: b.as_of} : null;
-  /* ZH display names for sector rows. `action_board.json` sector rows carry no
-     name_zh — production resolves it through the host env's tr(); the fixture's
-     own name map is sectordata/sector_central.json (`name_zh` per ticker / id),
-     which is what is joined here. Resolves DESIGN_SYSTEM_SPEC §15 GAP-2. */
+  /* ZH display names for SECTOR rows (theme rows carry their own `name_zh`).
+     `action_board.json` sector rows carry none — production resolves them
+     through the host env's tr(). Two fixture sources, in this order, and the
+     order is load-bearing:
+
+       1. `premiumdata/sector_central.json`'s `actnow_html`, keyed by href —
+          production's OWN tr() output for the 29 rows it withheld. Using it
+          first is what keeps a preview row and its hydrated twin spelling the
+          same name (XLY reads 可选消费 in both, not 可选消费 vs 非必需消费).
+       2. `sectordata/sector_central.json`'s `sectors[]`, keyed by ticker, for
+          the four sector rows production never rendered here.
+
+     `baskets[]` is deliberately NOT joined by ticker: `b-retail` also carries
+     ticker "XLY", so a ticker join over the concatenated list silently renames
+     Consumer Discretionary to 零售 (measured 2026-08-20).
+     Resolves DESIGN_SYSTEM_SPEC §15 GAP-2. */
+  if(PG && PG.actnow_html){
+    var box = document.createElement('div');
+    box.innerHTML = PG.actnow_html;
+    Array.prototype.forEach.call(box.querySelectorAll('a.actitem[href]'), function(a){
+      var nm = a.querySelector('.act-row-name');
+      var zh = nm && nm.querySelector('.l-zh');
+      if(zh && zh.textContent) ZH_HREF[a.getAttribute('href')] = zh.textContent;
+    });
+  }
   if(SCD){
-    (SCD.sectors || []).concat(SCD.baskets || []).forEach(function(s){
+    (SCD.sectors || []).forEach(function(s){
       if(s.ticker && s.name_zh) ZH_TICKER[s.ticker] = s.name_zh;
-      if(s.id && s.name_zh) ZH_ID[s.id] = s.name_zh;
     });
   }
 }
 function rowZh(r){
   if(r.name_zh) return r.name_zh;
+  if(r.href && ZH_HREF[r.href]) return ZH_HREF[r.href];
   if(r.ticker && ZH_TICKER[r.ticker]) return ZH_TICKER[r.ticker];
-  var bid = traceId(r.href);
-  if(bid && ZH_ID[bid]) return ZH_ID[bid];
-  if(bid && ZH_ID['b-' + bid]) return ZH_ID['b-' + bid];
   return r.name;
 }
 /* the id `#read-<id>` addresses, derived exactly the way production's own
@@ -486,7 +535,7 @@ var LEGEND_ZH = '所有板块与主题都按当前周期位置分组。分组名
 function paintFoot(){
   var L1 = laneOf(SEL);
   var body = el(L1.fold);
-  var inDom = body ? body.querySelectorAll(':scope > a').length : 0;
+  var inDom = body ? rowCount(body) : 0;
   /* honest count = what the reader can actually see: the fold caps it at three
      while collapsed, and the gate caps what is in the DOM at all. */
   var shown = (body && body.classList.contains('is-collapsed')) ? Math.min(inDom, FOLD_CAP) : inDom;
@@ -527,7 +576,7 @@ function paintPanel(){
 function foldControl(foldId){
   var body = el(foldId); if(!body) return;
   var host = el('ov-lf-' + laneKeyOfFold(foldId)); if(!host) return;
-  var n = body.querySelectorAll(':scope > a').length;
+  var n = rowCount(body);
   var existing = host.querySelector('.r3-showmore');
   if(n <= FOLD_CAP){
     body.classList.remove('is-collapsed');
@@ -551,6 +600,12 @@ function foldControl(foldId){
     paintFoot();
   });
   host.appendChild(btn);
+}
+/* a lane's ROW count: a bare <a> row, or a hydrated theme row inside its
+   TS-R5 `<div data-theme-id>` wrapper. Counting only `> a` undercounts a
+   hydrated stand-aside lane by every theme row it holds. */
+function rowCount(body){
+  return body.querySelectorAll(':scope > a, :scope > div[data-theme-id]').length;
 }
 function laneKeyOfFold(foldId){
   for(var i = 0; i < LANES.length; i++) if(LANES[i].fold === foldId) return LANES[i].key;
@@ -788,7 +843,8 @@ function paintContext(){
   host.innerHTML = hand
     + '<div><span class="r3-ov-state">' + stateWord + '</span>'
     + '<p class="r3-ov-stanceline">' + L(esc(l.stance_en || ''), esc(l.stance_zh || l.stance_en || '')) + '</p>'
-    + days + align + season + '</div>';
+    + days + align + '</div>'
+    + season;
 
   if(tc.as_of) el('ov-ctx-asof').innerHTML = L('as of ' + esc(tc.as_of), '截至 ' + esc(tc.as_of));
 }

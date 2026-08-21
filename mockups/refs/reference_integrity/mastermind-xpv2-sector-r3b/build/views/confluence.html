@@ -59,10 +59,14 @@
 /* ── universe selector ──────────────────────────────────────────────────────
    Real tab semantics (never faked). Four destinations, always all four on
    screen — no horizontal continuation at any width. */
-[data-view="confluence"] .r3-uni{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:2px; margin:0 0 var(--sp-4); border-bottom:1px solid var(--line); }
+/* Desk: a real tab bar — auto-width, left-aligned, sitting on one hairline, so
+   the four universes read as four names rather than four equal buttons.
+   Phone (below): a 2×2 grid, because a strip that scrolls its last universe off
+   the right edge would hide a whole dataset (Sol §13). */
+[data-view="confluence"] .r3-uni{ display:flex; flex-wrap:wrap; gap:2px;
+  margin:0 0 var(--sp-4); border-bottom:1px solid var(--line); }
 [data-view="confluence"] .r3-uni button{ appearance:none; display:flex; align-items:baseline;
-  justify-content:center; gap:7px; min-height:44px; padding:0 10px; background:none;
+  justify-content:center; gap:7px; min-height:44px; padding:0 18px; background:none;
   border:0; border-bottom:2px solid transparent; color:var(--muted);
   font-size:var(--fs-sm); font-weight:600; line-height:1.25; cursor:pointer;
   transition:color var(--t-fast) var(--ease-std); }
@@ -100,8 +104,10 @@
 [data-view="confluence"] .r3-detail h4{ margin:0 0 9px; font-size:var(--fs-label); font-weight:700;
   letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
 html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; text-transform:none; }
+/* auto-FIT, not auto-fill: an auto-fill track that holds nothing still paints
+   the grid's background and reads as a fourth, empty member card. */
 [data-view="confluence"] .r3-mem{ display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(178px,1fr)); gap:1px;
+  grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:1px;
   background:color-mix(in srgb, var(--line) 70%, transparent); }
 [data-view="confluence"] .r3-mem a{ display:block; min-height:52px; padding:9px 11px;
   background:var(--panel2); }
@@ -132,7 +138,11 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
 [data-view="confluence"] .r3-tbl th.sorted{ color:var(--text); }
 [data-view="confluence"] .r3-tbl th.sorted .arr{ opacity:1; }
 [data-view="confluence"] .r3-tbl th.sorted.desc .arr{ transform:translateY(1px) rotate(-135deg); }
-[data-view="confluence"] .r3-tbl a{ color:var(--ink-link); font-weight:700; }
+/* a table row's name link is a REPEATED target and has to clear 44px. Padding
+   grows the hit box, an equal negative margin gives the row its rhythm back —
+   the same technique the receipt button and the sign-in disclosure use. */
+[data-view="confluence"] .r3-tbl a{ display:inline-block; padding:13px 0; margin:-13px 0;
+  color:var(--ink-link); font-weight:700; }
 [data-view="confluence"] .r3-tbl .pos{ color:var(--ink-up); }
 [data-view="confluence"] .r3-tbl .neg{ color:var(--ink-down); }
 [data-view="confluence"] .r3-note{ padding:12px 16px; border-top:1px solid var(--line);
@@ -140,6 +150,19 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
 [data-view="confluence"] .r3-note a{ color:var(--ink-link); font-weight:700; }
 [data-view="confluence"] .r3-cf-foot{ margin-top:2px; max-width:62ch;
   font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
+/* the counted reveal under a capped table — the board's foot grammar again */
+[data-view="confluence"] .r3-showall{ appearance:none; display:flex; align-items:center;
+  justify-content:center; gap:8px; width:100%; min-height:44px; padding:0 16px;
+  background:color-mix(in srgb, var(--panel2) 45%, transparent);
+  border:0; border-top:1px solid var(--line); color:var(--muted);
+  font-size:var(--fs-sm); font-weight:700; cursor:pointer;
+  transition:color var(--t-fast) var(--ease-std); }
+[data-view="confluence"] .r3-showall:hover{ color:var(--text); }
+[data-view="confluence"] .r3-showall::after{ content:""; width:6px; height:6px; flex:none;
+  border-right:1.6px solid currentColor; border-bottom:1.6px solid currentColor;
+  transform:translateY(-2px) rotate(45deg); }
+[data-view="confluence"] .r3-showall[aria-expanded="true"]::after{ transform:translateY(1px) rotate(-135deg); }
+[data-view="confluence"] .r3-showall[hidden]{ display:none; }
 
 /* the receipt button is defined by the Overview partial's .r3-view--action rule;
    this view reuses it unchanged (one definition, two Action views). */
@@ -147,12 +170,13 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
 @media (max-width:767px){
   /* Sol §13: all four universe selectors stay visible — two rows of two rather
      than a strip that scrolls the last one off the right edge. */
-  [data-view="confluence"] .r3-uni{ grid-template-columns:repeat(2,minmax(0,1fr)); border-bottom:0; }
-  [data-view="confluence"] .r3-uni button{ border-bottom:2px solid var(--line); }
+  [data-view="confluence"] .r3-uni{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+    border-bottom:0; }
+  [data-view="confluence"] .r3-uni button{ padding:0 10px; border-bottom:2px solid var(--line); }
   [data-view="confluence"] .r3-mem{ grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
 }
 @media (max-width:359px){
-  [data-view="confluence"] .r3-uni{ grid-template-columns:minmax(0,1fr); }
+  [data-view="confluence"] .r3-uni{ display:grid; grid-template-columns:minmax(0,1fr); }
   [data-view="confluence"] .r3-mem{ grid-template-columns:minmax(0,1fr); }
 }
 </style>
@@ -200,6 +224,7 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
         <span class="cnt" id="cf-cnt"></span>
       </div>
       <div class="r3-tblbox"><table class="r3-tbl" id="cf-table"></table></div>
+      <button class="r3-showall" type="button" id="cf-more" hidden></button>
     </div>
   </section>
 
@@ -279,6 +304,11 @@ var SEL = 'entry_now';
 /* caps, as coded. subsectors.js:302 `forming.slice(0,4)`, :307 `avoid.slice(0,8)`,
    :318 `PICKS_CAP = 12` — capability ledger #91 ("Confluence caps 4/8/12"). */
 var FORMING_CAP = 4, LANE_CAP = 8, PICKS_CAP = 12;
+/* the table component's own L1 budget (DESIGN_SYSTEM_SPEC §9): eight rows at
+   rest plus a COUNTED reveal — a 93-row table at L1 is not a dense view, it is
+   an un-composed one. Filtering reveals whatever it matches. */
+var TBL_CAP = 8;
+var EXPANDED = {};
 
 function ds(){ return DS[TAB]; }
 function payload(){ return DATA[TAB]; }
@@ -388,7 +418,9 @@ function paintFoot(){
     + '<button class="r3-rcpt" type="button" aria-expanded="false" data-tip-en="' + esc(FOOT_TIP_EN)
     + '" data-tip-zh="' + esc(FOOT_TIP_ZH) + '"><span class="r3-vh">'
     + L('How timing support is graded', '时机支持的评分方式') + '</span></button>'
-    + '<span class="r3-asof">' + L(shown + ' of ' + n + ' shown', '已显示 ' + shown + ' / ' + n) + '</span>';
+    /* an honest count only where there is something to count — "0 of 0 shown"
+       over an empty state prints the same fact twice. */
+    + (n ? '<span class="r3-asof">' + L(shown + ' of ' + n + ' shown', '已显示 ' + shown + ' / ' + n) + '</span>' : '');
 }
 
 /* ══ the selected list ══ */
@@ -568,7 +600,9 @@ function paintTable(){
       + ' scope="col" data-col="' + c.k + '" aria-sort="' + (on ? (s.dir === 1 ? 'ascending' : 'descending') : 'none') + '">'
       + L(c.t[0], c.t[1]) + '<span class="arr" aria-hidden="true"></span></th>';
   }).join('') + '</tr></thead>';
-  var body = '<tbody>' + rows.map(function(v){
+  var open = !!EXPANDED[TAB] || !!q;
+  var shownRows = open ? rows : rows.slice(0, TBL_CAP);
+  var body = '<tbody>' + shownRows.map(function(v){
     var g = v._g, e = v._e, r = v._r;
     return '<tr><td><a data-ref-nav href="' + esc(detailHref(g.key)) + '">'
       + L(esc(g.label), esc(g.label_zh || g.label)) + '</a>' + relDot(g.reliability) + '</td>'
@@ -581,6 +615,17 @@ function paintTable(){
   }).join('') + '</tbody>';
   el('cf-table').innerHTML = thead + body;
   el('cf-cnt').textContent = rows.length + ' / ' + all.length;
+  var more = el('cf-more'), noun = ds().noun;
+  if(rows.length > TBL_CAP && !q){
+    more.hidden = false;
+    more.setAttribute('aria-expanded', String(open));
+    more.setAttribute('aria-controls', 'cf-table');
+    more.innerHTML = open
+      ? L('Show fewer', '收起')
+      : L('Show all ' + rows.length + ' ' + noun[0], '展开全部 ' + rows.length + ' 个' + noun[1]);
+  }else{
+    more.hidden = true;
+  }
   el('cf-all-title').innerHTML = L('All ' + ds().noun[0], '全部' + ds().noun[1])
     + ' <span class="tnum" style="color:var(--muted);font-weight:400">' + all.length + '</span>';
   var q2 = el('cf-q');
@@ -641,6 +686,11 @@ document.addEventListener('DOMContentLoaded', function(){
     SORT[TAB] = {col:col, dir:(s.col === col ? -s.dir
       : ((col === 'label' || col === 'sector') ? 1 : ((col === 'rs60' || col === 'n') ? -1 : 1)))};
     paintTable();
+  });
+  el('cf-more').addEventListener('click', function(){
+    EXPANDED[TAB] = !EXPANDED[TAB];
+    paintTable();
+    if(!EXPANDED[TAB]) el('cf-more').focus();
   });
   el('cf-q').addEventListener('input', function(){
     FILTER[TAB] = this.value || '';

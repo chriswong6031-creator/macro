@@ -683,6 +683,7 @@ html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
    where it describes leadership moving between two themes — which is the
    producer's own statement, not a link to a lane. */
 [data-view="overview"] .r3-ov-ctx{ border-top:1px solid var(--line); padding-top:var(--sp-4); }
+[data-view="overview"] .r3-ov-deeper{ margin-top:var(--sp-3); }
 [data-view="overview"] .r3-ov-grid{ display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);
   gap:var(--sp-5) var(--sp-7); align-items:start; }
 [data-view="overview"] .r3-ov-hand{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
@@ -699,7 +700,9 @@ html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text
 [data-view="overview"] .r3-ov-stanceline{ margin-top:6px; font-size:var(--fs-md); font-weight:600;
   line-height:1.45; }
 [data-view="overview"] .r3-ov-days{ margin-top:4px; font-size:var(--fs-sm); color:var(--muted); }
-[data-view="overview"] .r3-ov-season{ margin-top:11px; padding-top:10px;
+/* the seasonal note is the band's footnote, not a third column: it spans both
+   tracks so the left column does not end in a hole. */
+[data-view="overview"] .r3-ov-season{ grid-column:1 / -1; margin-top:2px; padding-top:11px;
   border-top:1px solid color-mix(in srgb, var(--line) 60%, transparent);
   font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
 
@@ -717,13 +720,30 @@ html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text
 [data-view="overview"] .r3-delta.up{ color:var(--ink-up); }
 [data-view="overview"] .r3-delta.dn{ color:var(--ink-down); }
 
+/* Stand aside is the one lane whose ink IS --muted, so the shell's
+   "selected name takes --c" rule leaves selection legible only as a tint.
+   The name goes to full --text instead: selection stays readable without
+   lending the lane a hue it must not have. */
+[data-view="overview"] .r3-ledge-cell.st-aside[aria-selected="true"] .r3-ledge-name{
+  color:var(--text); }
+
 /* the five lane bodies all live in the DOM (hydration lands by fold id on every
    lane, not only the visible one); only the selected lane's body is shown. */
 [data-view="overview"] .actbody[hidden]{ display:none; }
-[data-view="overview"] .actbody.is-collapsed > a:nth-child(n+4){ display:none; }
+/* the fold hides everything past the third ROW. A hydrated theme row arrives
+   wrapped in the TS-R5 `<div data-theme-id>` (the auto-expand contract), so —
+   exactly like production's own rule (:220-221) — the selector has to name both
+   shapes or a stand-aside lane silently unfolds itself after a hydrate. */
+[data-view="overview"] .actbody.is-collapsed > a:nth-child(n+4),
+[data-view="overview"] .actbody.is-collapsed > div[data-theme-id]:nth-child(n+4){ display:none; }
+[data-view="overview"] .actbody > div[data-theme-id] > a{ border-bottom:1px solid var(--line); }
 [data-view="overview"] .pg-more{ margin:0; padding:12px 16px; border-top:1px solid var(--line);
   font-size:var(--fs-sm); color:var(--muted); }
-[data-view="overview"] .pg-more a{ color:var(--ink-link); font-weight:700; }
+/* the sign-in disclosure IS the access-locked UI, so its link is a primary
+   target and has to clear 44px. It stays inside its sentence: the box grows by
+   padding and gives the space back with an equal negative margin. */
+[data-view="overview"] .pg-more a{ display:inline-block; padding:14px 0; margin:-14px 0;
+  color:var(--ink-link); font-weight:700; }
 [data-view="overview"] .r3-lane-empty{ margin:0; padding:var(--sp-6) var(--sp-4);
   font-size:var(--fs-md); font-weight:700; text-align:center; }
 [data-view="overview"] .r3-lane-empty small{ display:block; margin-top:5px; font-size:var(--fs-sm);
@@ -811,6 +831,17 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
   [data-view="overview"] .r3-ov-grid{ grid-template-columns:minmax(0,1fr); }
 }
 @media (max-width:767px){
+  /* THE PHONE RECOMPOSES. On the desk the leadership context reads as a quiet
+     preamble between the answer and the board; on a phone that preamble costs a
+     whole swipe before the reader reaches the thing the view is FOR. So the
+     order changes: answer → board → context → watch → record. Nothing is
+     removed, and the ledge itself never moves off the top of the object. */
+  [data-view="overview"].si-view.on{ display:flex; flex-direction:column; }
+  [data-view="overview"] > .r3-answer{ order:1; }
+  [data-view="overview"] > #actnow-section{ order:2; margin-top:0; }
+  [data-view="overview"] > #regime{ order:3; }
+  [data-view="overview"] > #ov-watch-band{ order:4; }
+  [data-view="overview"] > #grader{ order:5; }
   [data-view="overview"] .r3-ov-hand{ grid-template-columns:minmax(0,1fr); gap:var(--sp-2); }
   [data-view="overview"] .r3-ov-hand .r3-arrow{ transform:rotate(90deg); margin:2px 0 2px 4px; }
   [data-view="overview"] .r3-gr{ grid-template-columns:minmax(0,1fr); }
@@ -860,7 +891,7 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
       <p class="r3-board-foot" id="ov-foot"></p>
       <div id="ov-panel" role="tabpanel"></div>
     </div>
-    <div style="margin-top:var(--sp-2)">
+    <div class="r3-ov-deeper">
       <a class="r3-more" href="#confluence"><span class="l-en">Drill to stocks</span><span class="l-zh">下钻到个股</span></a>
     </div>
   </section>
@@ -975,7 +1006,7 @@ function dispshort(name){
    REF:VIEWS slot, which precedes both REF:DATA and REF:RUNTIME, so REF.registry
    does not exist yet while this <script> is being parsed. */
 var AB = null, PG = null, HND = null, SCD = null, BOT = null, MORE = {};
-var ZH_TICKER = {}, ZH_ID = {};
+var ZH_TICKER = {}, ZH_HREF = {};
 function loadArtifacts(){
   var ABJ = reg('basketdata/action_board.json');
   AB  = (ABJ && ABJ.action_board) || null;
@@ -991,23 +1022,41 @@ function loadArtifacts(){
   BOT = an ? {rows: an.bottoming_watch || [], dual: an.dual_read_ids || [],
               recovering: an.recovering_ids || [], auth: an.bottoming_authority || {},
               as_of: b.as_of} : null;
-  /* ZH display names for sector rows. `action_board.json` sector rows carry no
-     name_zh — production resolves it through the host env's tr(); the fixture's
-     own name map is sectordata/sector_central.json (`name_zh` per ticker / id),
-     which is what is joined here. Resolves DESIGN_SYSTEM_SPEC §15 GAP-2. */
+  /* ZH display names for SECTOR rows (theme rows carry their own `name_zh`).
+     `action_board.json` sector rows carry none — production resolves them
+     through the host env's tr(). Two fixture sources, in this order, and the
+     order is load-bearing:
+
+       1. `premiumdata/sector_central.json`'s `actnow_html`, keyed by href —
+          production's OWN tr() output for the 29 rows it withheld. Using it
+          first is what keeps a preview row and its hydrated twin spelling the
+          same name (XLY reads 可选消费 in both, not 可选消费 vs 非必需消费).
+       2. `sectordata/sector_central.json`'s `sectors[]`, keyed by ticker, for
+          the four sector rows production never rendered here.
+
+     `baskets[]` is deliberately NOT joined by ticker: `b-retail` also carries
+     ticker "XLY", so a ticker join over the concatenated list silently renames
+     Consumer Discretionary to 零售 (measured 2026-08-20).
+     Resolves DESIGN_SYSTEM_SPEC §15 GAP-2. */
+  if(PG && PG.actnow_html){
+    var box = document.createElement('div');
+    box.innerHTML = PG.actnow_html;
+    Array.prototype.forEach.call(box.querySelectorAll('a.actitem[href]'), function(a){
+      var nm = a.querySelector('.act-row-name');
+      var zh = nm && nm.querySelector('.l-zh');
+      if(zh && zh.textContent) ZH_HREF[a.getAttribute('href')] = zh.textContent;
+    });
+  }
   if(SCD){
-    (SCD.sectors || []).concat(SCD.baskets || []).forEach(function(s){
+    (SCD.sectors || []).forEach(function(s){
       if(s.ticker && s.name_zh) ZH_TICKER[s.ticker] = s.name_zh;
-      if(s.id && s.name_zh) ZH_ID[s.id] = s.name_zh;
     });
   }
 }
 function rowZh(r){
   if(r.name_zh) return r.name_zh;
+  if(r.href && ZH_HREF[r.href]) return ZH_HREF[r.href];
   if(r.ticker && ZH_TICKER[r.ticker]) return ZH_TICKER[r.ticker];
-  var bid = traceId(r.href);
-  if(bid && ZH_ID[bid]) return ZH_ID[bid];
-  if(bid && ZH_ID['b-' + bid]) return ZH_ID['b-' + bid];
   return r.name;
 }
 /* the id `#read-<id>` addresses, derived exactly the way production's own
@@ -1125,7 +1174,7 @@ var LEGEND_ZH = '所有板块与主题都按当前周期位置分组。分组名
 function paintFoot(){
   var L1 = laneOf(SEL);
   var body = el(L1.fold);
-  var inDom = body ? body.querySelectorAll(':scope > a').length : 0;
+  var inDom = body ? rowCount(body) : 0;
   /* honest count = what the reader can actually see: the fold caps it at three
      while collapsed, and the gate caps what is in the DOM at all. */
   var shown = (body && body.classList.contains('is-collapsed')) ? Math.min(inDom, FOLD_CAP) : inDom;
@@ -1166,7 +1215,7 @@ function paintPanel(){
 function foldControl(foldId){
   var body = el(foldId); if(!body) return;
   var host = el('ov-lf-' + laneKeyOfFold(foldId)); if(!host) return;
-  var n = body.querySelectorAll(':scope > a').length;
+  var n = rowCount(body);
   var existing = host.querySelector('.r3-showmore');
   if(n <= FOLD_CAP){
     body.classList.remove('is-collapsed');
@@ -1190,6 +1239,12 @@ function foldControl(foldId){
     paintFoot();
   });
   host.appendChild(btn);
+}
+/* a lane's ROW count: a bare <a> row, or a hydrated theme row inside its
+   TS-R5 `<div data-theme-id>` wrapper. Counting only `> a` undercounts a
+   hydrated stand-aside lane by every theme row it holds. */
+function rowCount(body){
+  return body.querySelectorAll(':scope > a, :scope > div[data-theme-id]').length;
 }
 function laneKeyOfFold(foldId){
   for(var i = 0; i < LANES.length; i++) if(LANES[i].fold === foldId) return LANES[i].key;
@@ -1427,7 +1482,8 @@ function paintContext(){
   host.innerHTML = hand
     + '<div><span class="r3-ov-state">' + stateWord + '</span>'
     + '<p class="r3-ov-stanceline">' + L(esc(l.stance_en || ''), esc(l.stance_zh || l.stance_en || '')) + '</p>'
-    + days + align + season + '</div>';
+    + days + align + '</div>'
+    + season;
 
   if(tc.as_of) el('ov-ctx-asof').innerHTML = L('as of ' + esc(tc.as_of), '截至 ' + esc(tc.as_of));
 }
@@ -1695,6 +1751,7 @@ document.addEventListener('DOMContentLoaded', function(){
         </div>
         <div class="r3-rmap-foot">
           <button type="button" class="r3-textbtn" id="r3-map-showall" hidden></button>
+          <span class="r3-asof r3-scrollhint"><span class="l-en">Scroll the table sideways for every column</span><span class="l-zh">左右滑动表格查看全部列</span></span>
           <span class="r3-asof" id="r3-map-count"></span>
         </div>
         <!-- the context disclaimer, verbatim from sector_central.html.j2:2267 -->
@@ -1752,14 +1809,13 @@ document.addEventListener('DOMContentLoaded', function(){
           <span class="r3-cyc-lit" id="r3-cyc-lit"></span>
         </div>
         <div class="r3-cyc-plot" id="sc-chart">
+          <div class="r3-cyc-y" aria-hidden="true"><span class="tnum">100</span><span class="tnum">50</span><span class="tnum">0</span></div>
           <svg id="r3-cyc-svg" class="r3-cyc-svg" viewBox="0 0 720 240" role="img" preserveAspectRatio="none"
                aria-labelledby="r3-cyc-name r3-cyc-desc"></svg>
           <span class="r3-vh" id="r3-cyc-name"><span class="l-en">Sector cycle clock — every sector's 0 to 100 cycle position over the last seven years, one line per sector.</span><span class="l-zh">行业周期时钟 — 各板块过去七年的 0 至 100 周期位置，每个板块一条曲线。</span></span>
           <span class="r3-vh" id="r3-cyc-desc"><span class="l-en">The table beneath this chart lists every sector's current position, its phase, its last confirmed turn and its next projected turn window.</span><span class="l-zh">图表下方的表格列出每个板块的当前位置、所处阶段、最近一次确认拐点与下一次预计拐点窗口。</span></span>
         </div>
-        <div class="r3-cyc-axis">
-          <span class="tnum">0</span><span class="tnum">50</span><span class="tnum">100</span>
-        </div>
+        <div class="r3-cyc-axis" id="r3-cyc-axis"></div>
       </div>
 
       <div class="r3-panel r3-tblbox r3-cyc-tblbox">
@@ -1815,7 +1871,7 @@ document.addEventListener('DOMContentLoaded', function(){
 /* ── the rotation-map instrument ─────────────────────────────────────────── */
 .r3-rmap-grid{ display:grid; gap:var(--gap-grid);
   grid-template-columns:minmax(0,1.72fr) minmax(272px,.92fr);
-  grid-template-areas:"figure detail" "figure summary" "list list"; align-items:start; }
+  grid-template-areas:"figure detail" "summary summary" "list list"; align-items:start; }
 .r3-rmap-sum{ grid-area:summary; }
 .r3-rmap-detail{ grid-area:detail; }
 .r3-rmap-list{ grid-area:list; }
@@ -1823,6 +1879,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 .r3-rmap-take{ display:block; margin:0 0 var(--sp-2); }
 .r3-quads .r3-quad{ min-height:74px; }
+@media (min-width:901px){ .r3-rmap-sum .r3-quads{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
 .r3-quadn{ display:block; margin-top:4px; font-size:var(--fs-md); font-weight:700;
   letter-spacing:-.01em; font-variant-numeric:tabular-nums; color:var(--text); }
 .r3-quad-sub{ display:block; margin-top:3px; font-size:var(--fs-sm); color:var(--muted);
@@ -1902,15 +1959,24 @@ html[data-lang="zh"] .r3-rmap-detail .r3-selcat{ letter-spacing:0; text-transfor
 .r3-rmap-tbl td:first-child{ font-size:var(--fs-sm); font-weight:600; color:var(--muted);
   text-align:right; width:1%; white-space:nowrap; }
 .r3-rmap-tbl td:nth-child(2){ font-size:var(--fs-md); font-weight:700; letter-spacing:-.008em;
-  overflow-wrap:anywhere; min-width:180px; }
-.r3-rmap-tbl td:nth-child(2) a{ color:inherit; }
+  overflow-wrap:anywhere; min-width:180px; padding:0; }
+/* the repeated primary target on this view: the anchor fills its cell so the whole
+   row-name box clears 44 CSS px at every width (spec §12). */
+.r3-rmap-tbl td:nth-child(2) a{ display:flex; align-items:center; min-height:44px;
+  padding:9px 12px; color:inherit; }
 .r3-rmap-tbl td:nth-child(2) a:hover{ color:var(--ink-link,var(--link)); }
 .r3-rmap-tbl tr.is-sel td{ background:color-mix(in srgb, var(--panel2) 72%, transparent); }
 .r3-rmap-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4);
   padding:10px 2px 0; }
-.r3-rmap-foot .r3-asof{ margin-left:auto; }
+.r3-rmap-foot #r3-map-count{ margin-left:auto; }
+/* the in-container scroll is lawful (the box scrolls, the page never does) but it
+   has to be discoverable, so it says so — on the widths where it actually happens. */
+.r3-scrollhint{ display:none; }
+@media (max-width:900px){ .r3-scrollhint{ display:inline; } }
+/* a slash-joined vocabulary list ("Leading/Improving/…") has no natural break
+   opportunity; at 200% zoom on a 390 phone it is wider than the column. */
 .r3-note{ margin-top:var(--sp-3); font-size:var(--fs-sm); color:var(--muted); line-height:1.5;
-  max-width:88ch; }
+  max-width:88ch; overflow-wrap:anywhere; }
 .r3-textbtn{ display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:0;
   border:0; background:none; color:var(--ink-link,var(--link)); font-size:var(--fs-sm);
   font-weight:700; cursor:pointer; }
@@ -1926,16 +1992,32 @@ html[data-lang="zh"] .r3-rmap-detail .r3-selcat{ letter-spacing:0; text-transfor
 .r3-cyc-head{ display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3);
   margin-bottom:var(--sp-2); }
 .r3-cyc-lit{ margin-left:auto; font-size:var(--fs-sm); font-weight:700; color:var(--text);
-  min-width:0; overflow-wrap:anywhere; }
-.r3-cyc-plot{ position:relative; }
+  min-width:0; max-width:100%; overflow-wrap:anywhere; }
+.r3-cyc-plot{ position:relative; padding-left:30px; }
+.r3-cyc-y{ position:absolute; left:0; top:0; bottom:0; width:26px;
+  display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end;
+  font-size:var(--fs-micro); color:var(--muted); font-variant-numeric:tabular-nums; }
 .r3-cyc-svg{ display:block; width:100%; height:216px; }
-.r3-cyc-svg .r3-cycline{ fill:none; stroke:color-mix(in srgb, var(--muted) 30%, transparent);
+.r3-cyc-svg .r3-cycline{ fill:none; stroke:color-mix(in srgb, var(--muted) 26%, transparent);
   stroke-width:1; }
 .r3-cyc-svg .r3-cycline.is-lit{ stroke:var(--text); stroke-width:1.9; }
 .r3-cyc-svg .r3-cycgrid{ stroke:var(--line); stroke-width:1; }
 .r3-cyc-svg .r3-cycnow{ stroke:var(--text); stroke-width:1.6; }
-.r3-cyc-axis{ display:flex; justify-content:space-between; margin-top:5px;
-  font-size:var(--fs-micro); color:var(--muted); font-variant-numeric:tabular-nums; }
+.r3-cyc-axis{ display:flex; justify-content:space-between; margin:5px 0 0 30px;
+  font-size:var(--fs-micro); color:var(--muted); font-variant-numeric:tabular-nums;
+  white-space:nowrap; }
+/* a time tick is a reading aid, not a capability: when the plot is too narrow to
+   hold every year the axis thins to alternate years, then to its two ends.  The
+   window itself is still stated in full by the table beneath. */
+@media (max-width:767px){ .r3-cyc-axis > span:nth-child(even){ display:none; } }
+@media (max-width:359px){
+  .r3-cyc-axis > span:not(:first-child):not(:last-child){ display:none; }
+}
+/* a primary name WRAPS, it never ellipsizes — but it must not shatter into
+   five-letter shards either.  A floor on the name column keeps "Communication
+   Services" breaking at its space; the box scrolls, the page never does. */
+.r3-cyc-tbl{ min-width:560px; }
+.r3-cyc-tbl td:first-child, .r3-cyc-tbl th:first-child{ min-width:150px; }
 .r3-cyc-tbl td:first-child{ font-size:var(--fs-md); font-weight:700; overflow-wrap:anywhere; }
 .r3-cyc-tbl tr.is-lit td{ background:color-mix(in srgb, var(--panel2) 72%, transparent); }
 .r3-cyc-tbl .r3-tk{ display:block; font-size:var(--fs-micro); font-weight:600;
@@ -1990,7 +2072,6 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
        out; only its box is clipped away. */
     max-height:0; overflow:hidden; visibility:hidden; margin-top:0; }
   .r3-rmap-fig[data-collapsed="false"] .r3-rmap-frame{ margin-top:var(--sp-2); }
-  .r3-rmap-svg{ height:290px; }
   .r3-quads{ grid-template-columns:1fr 1fr; }
   .r3-rmap-tbl{ min-width:520px; }
   .r3-gread > summary{ grid-template-columns:minmax(0,1fr) auto; row-gap:5px; min-height:64px; }
@@ -2006,8 +2087,7 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
 }
 @media (max-width:359px){
   .r3-quads{ grid-template-columns:1fr; }
-  .r3-rmap-svg{ height:260px; }
-  .r3-cyc-svg{ height:190px; }
+  .r3-cyc-svg{ height:180px; }
 }
 </style>
 
@@ -2285,6 +2365,13 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
     var CW=720, CH=240;
     var dom=(CYC.meta&&CYC.meta.xDomainDefault)||(CYC.meta&&CYC.meta.xDomain)||[0,1];
     var x0=dom[0], x1=dom[1], span=(x1-x0)||1;
+    /* the time axis, from the producer's own default window */
+    var ax=el('r3-cyc-axis');
+    if(ax){
+      var yrs=[], y=Math.ceil(x0);
+      while(y<=Math.floor(x1)){ yrs.push(y); y++; }
+      ax.innerHTML=yrs.map(function(v){ return '<span class="tnum">'+v+'</span>'; }).join('');
+    }
     [0,50,100].forEach(function(v){
       var y=CH-(v/100)*CH;
       svg.appendChild(svgEl('line',{class:'r3-cycgrid',x1:0,y1:y,x2:CW,y2:y}));
@@ -2545,6 +2632,7 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
 html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
 .r3-flowday{ text-align:right; font-size:var(--fs-md); font-weight:700;
   font-variant-numeric:tabular-nums; letter-spacing:-.01em; white-space:nowrap; }
+.r3-flowst{ color:var(--text); font-weight:700; }
 .r3-flowwhy{ min-width:0; font-size:var(--fs-sm); color:var(--muted); line-height:1.45; }
 .r3-quiet{ padding:var(--sp-5) 16px; font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
 
@@ -2564,8 +2652,10 @@ html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
   padding:11px 16px; border-top:1px solid var(--line);
   font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
 .r3-foot .r3-asof{ margin-left:auto; }
+/* a slash-joined vocabulary list ("Leading/Improving/…") has no natural break
+   opportunity; at 200% zoom on a 390 phone it is wider than the column. */
 .r3-note{ margin-top:var(--sp-3); font-size:var(--fs-sm); color:var(--muted); line-height:1.5;
-  max-width:88ch; }
+  max-width:88ch; overflow-wrap:anywhere; }
 .r3-mv{ font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
 .r3-mv.up{ color:var(--ink-up); } .r3-mv.dn{ color:var(--ink-down); }
 
@@ -2577,7 +2667,8 @@ html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
 .r3-closednm{ color:var(--text); font-weight:700; }
 
 /* crosscurrents — one sector, its two opposite legs, side by side */
-.r3-cross{ display:grid; gap:var(--gap-grid); grid-template-columns:repeat(2,minmax(0,1fr)); }
+.r3-cross{ display:grid; gap:var(--gap-grid); grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:start; }
 .r3-crosscard{ padding:15px 17px; }
 .r3-crossnm{ font-size:var(--fs-md); font-weight:700; letter-spacing:-.008em; line-height:1.3;
   overflow-wrap:anywhere; }
@@ -2626,7 +2717,7 @@ html[data-lang="zh"] .r3-rmap-q b{ letter-spacing:0; text-transform:none; }
   text-transform:uppercase; color:var(--muted); margin-bottom:var(--sp-2); }
 html[data-lang="zh"] .r3-strip h3{ letter-spacing:0; text-transform:none; }
 .r3-striplist{ display:flex; flex-wrap:wrap; gap:2px 0; }
-.r3-striplist a{ display:inline-flex; align-items:center; min-height:32px; padding:2px 0;
+.r3-striplist a{ display:inline-flex; align-items:center; min-height:44px; padding:2px 0;
   font-size:var(--fs-sm); font-weight:600; color:var(--text); overflow-wrap:anywhere; }
 .r3-striplist a:hover{ color:var(--ink-link,var(--link)); }
 .r3-striplist a::after{ content:"·"; margin:0 8px; color:var(--muted); font-weight:400; }
@@ -2675,8 +2766,7 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     border-right:1.5px solid currentColor; border-top:0; border-bottom:1.5px solid currentColor; }
   .r3-vel{ grid-template-columns:repeat(2,minmax(0,1fr)); }
   .r3-cross{ grid-template-columns:minmax(0,1fr); }
-  .r3-legs{ grid-template-columns:minmax(0,1fr) auto; }
-  .r3-legs > span.r3-legv:last-of-type, .r3-leghead:last-of-type{ display:none; }
+  .r3-legs{ gap:0 var(--sp-2); }
   /* the whole-market plot follows its own lists on a phone, behind a disclosure —
      collapsed by clip, NEVER display:none (spec §8.1). */
   .r3-wm{ grid-template-areas:"lists" "plot"; }
@@ -2705,6 +2795,22 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
   function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
   function el(id){ return document.getElementById(id); }
   var ARROW='<span class="r3-arrow" role="img" aria-label="moved to"></span>';
+  /* rotation_events.js:181-201, verbatim EN/ZH pairs.  Only `handoff` and
+     `faltering` occur in the frozen fixture, so nothing else ever renders here;
+     the other two branches are carried so the capability is not silently dropped
+     (ledger #44 RETAIN).  Flagged for the orchestrator in the lane report. */
+  var STANCE={
+    into_strength:['In favour — watch for entry','处于优势——留意入场'],
+    contagion_break:['Stand aside — diversification fading','暂避——分散效果减弱'],
+    correlation_break:['Stand aside — diversification fading','暂避——分散效果减弱'],
+    faltering:['Rotation weakening — may close','轮动转弱——或将关闭'],
+    handoff:['Watch — don\'t chase','观望，不要追高']
+  };
+  function effType(e){
+    var h=e.health||null;
+    if(h&&(h.weakening||h.lapse_count>=2||h.neg_run>=2)) return 'faltering';
+    return e.event_type||'handoff';
+  }
 
   /* si_workspace.js:176-188 readMoving() counts up/down movers off
      window.BASKETS.theme_intel.themes[].pulse_rank_delta_5d.  Guarded parse of the
@@ -2729,11 +2835,15 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     /* production's single failure string for this surface (rotation_events.js:497) —
        both feeds absent means the surface has nothing, not that it is empty. */
     if(!ev&&!frag){
-      host.innerHTML='<p class="r3-quiet">'
-        +L('Rotation-event data unavailable.','轮动事件数据暂不可用。')+'</p>';
+      host.innerHTML='<div class="r3-panel"><p class="r3-quiet">'
+        +L('Rotation-event data unavailable.','轮动事件数据暂不可用。')+'</p></div>';
       return;
     }
     var active=(ev&&ev.active)||[];
+    var stances={};
+    active.forEach(function(e){ var s=STANCE[effType(e)]||STANCE.handoff; stances[s[0]]=s; });
+    var stKeys=Object.keys(stances);
+    var sharedStance=stKeys.length===1?stances[stKeys[0]]:null;
     var html='<div class="r3-list">';
     if(!active.length){
       html+='<p class="r3-quiet">'
@@ -2781,7 +2891,10 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
           +'<span class="r3-flownm">'+L(esc(fEn),esc(fZh))+ARROW+L(esc(tEn),esc(tZh))
             +'<span class="r3-flowsub">'+L(esc(e.sector_name_en||''),esc(e.sector_name_zh||e.sector_name_en||''))+'</span></span>'
           +'<span class="r3-flowday">'+L('Day '+day,'第 '+day+' 天')+'</span>'
-          +'<span class="r3-flowwhy">'+L(bEn.join(' '),bZh.join(''))+'</span>'
+          +'<span class="r3-flowwhy">'+L(bEn.join(' '),bZh.join(''))
+            +(sharedStance?'':' <b class="r3-flowst">'
+               +L(esc((STANCE[effType(e)]||STANCE.handoff)[0]),esc((STANCE[effType(e)]||STANCE.handoff)[1]))+'</b>')
+            +'</span>'
           +'</div>';
       });
     }
@@ -2830,11 +2943,10 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
 
     /* one foot line for the whole surface — a constant never repeats per row */
     var asof=(ev&&ev.as_of)||'—';
-    var ceiling=(vb&&vb._stance_ceiling)||null;
     html+='<div class="r3-foot">'
       +'<span>'+L('A heads-up on shifting leadership — not a buy list.',
                   '领导权变化的提示——非买入清单。')
-      +(ceiling?' '+L(esc(ceiling)+'.',esc(ceiling)+'。'):'')+'</span>'
+      +(sharedStance?' '+L(esc(sharedStance[0])+'.',esc(sharedStance[1])+'。'):'')+'</span>'
       +'<span class="r3-asof">'+L('as of '+esc(asof),'截至 '+esc(asof))+'</span>'
       +'</div></div>';
     host.innerHTML=html;
@@ -2847,9 +2959,11 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     var host=el('r3-cross-mount'); if(!host) return;
     var cnt=el('r3-cross-count');
     if(!frag){
-      host.innerHTML='<p class="r3-quiet">'
-        +L(evPresent?'Sector-spread data unavailable.':'Rotation-event data unavailable.',
-           evPresent?'板块内部差异数据暂不可用。':'轮动事件数据暂不可用。')+'</p>';
+      /* A6: one user-facing failure string per surface — crosscurrents is fed by
+         the same producer script as the transitions, so it collapses to the same
+         sentence rather than minting a second one. */
+      host.innerHTML='<div class="r3-panel"><p class="r3-quiet">'
+        +L('Rotation-event data unavailable.','轮动事件数据暂不可用。')+'</p></div>';
       if(cnt) cnt.innerHTML='';
       return;
     }
@@ -2896,8 +3010,8 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     var host=el('r3-wm-mount'); if(!host) return;
     if(!d){
       /* production's own explicit failure state (subsector_rotation.js) */
-      host.innerHTML='<p class="r3-quiet">'
-        +L('Could not load rotation data.','无法加载轮动数据。')+'</p>';
+      host.innerHTML='<div class="r3-panel"><p class="r3-quiet">'
+        +L('Could not load rotation data.','无法加载轮动数据。')+'</p></div>';
       return;
     }
     var subs=(d.subsectors||[]).filter(function(s){
@@ -2925,7 +3039,7 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
         +'<button type="button" class="r3-textbtn r3-wm-toggle" id="r3-wm-toggle"'
         +' aria-expanded="true" aria-controls="r3-wm-plot"></button>'
         +'<div class="r3-wm-plot" id="r3-wm-plot">'
-        +'<svg id="r3-wm-svg" class="r3-wm-svg" viewBox="0 0 600 340" role="img"'
+        +'<svg id="r3-wm-svg" class="r3-wm-svg" viewBox="0 0 600 420" role="img"'
         +' aria-labelledby="r3-wm-name r3-wm-desc"></svg>'
         +'<span class="r3-vh" id="r3-wm-name">'+L(
             'Whole-market rotation map — relative strength on the horizontal axis, its change of speed on the vertical axis, one dot per subsector.',
@@ -2949,14 +3063,14 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
       +'<div class="r3-panel r3-wm-lists">'
         +'<div class="r3-strip"><h3>'+L('Emerging','新兴')+'</h3>'
         +'<div class="r3-striplist">'+(emerging.length?list(emerging):'<span class="r3-stripsub">'+L('none tonight','今晚为空')+'</span>')+'</div>'
-        +'<p class="r3-stripsub">'+L('Named by tonight’s producer run, in its own order.','由今晚数据方标记，顺序沿用其输出。')+'</p></div>'
+        +'</div>'
         +'<div class="r3-strip"><h3>'+L('Fading','消退')+'</h3>'
         +'<div class="r3-striplist">'+(fading.length?list(fading):'<span class="r3-stripsub">'+L('none tonight','今晚为空')+'</span>')+'</div>'
-        +'<p class="r3-stripsub">'+L('Named by tonight’s producer run, in its own order.','由今晚数据方标记，顺序沿用其输出。')+'</p></div>'
+        +'</div>'
       +'</div></div>'
       +'<p class="r3-note">'+L(
-        'A context lens over the broadest universe: it measures the speed of relative strength — it ranks nothing, gates nothing and sizes nothing.',
-        '覆盖最广市场范围的背景视角：衡量相对强度的速度 — 不排序、不门控、不定仓。')+'</p>';
+        'Emerging and fading are named by tonight’s producer run, in its own order. A context lens over the broadest universe: it measures the speed of relative strength — it ranks nothing, gates nothing and sizes nothing.',
+        '「新兴」与「消退」由今晚数据方标记，顺序沿用其输出。这是覆盖最广市场范围的背景视角：衡量相对强度的速度 — 不排序、不门控、不定仓。')+'</p>';
 
     var a=el('r3-wm-asof');
     if(a&&d.asof) a.innerHTML=L('as of '+esc(d.asof),'截至 '+esc(d.asof));
@@ -2968,13 +3082,15 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
   function drawWholeMarket(subs, mag){
     var svg=el('r3-wm-svg'); if(!svg) return;
     while(svg.firstChild) svg.removeChild(svg.firstChild);
-    var W=600,H=340;
+    var W=600,H=420;
     /* axis extent from the data's own spread — a chart scale, not a score: no
        rank, state, count or ordering is produced by it. */
     var mx=0,my=0;
     subs.forEach(function(s){
       mx=Math.max(mx,Math.abs(s.rs_ratio)); my=Math.max(my,Math.abs(s.rs_mom)); });
-    mx=mx||1; my=my||1;
+    /* production's own domain rule, verbatim: symmetric max-abs with a 0.6 floor
+       and 12% headroom (templates/subsector_rotation.js:528) */
+    mx=Math.max(0.6,mx)*1.12; my=Math.max(0.6,my)*1.12;
     var px=function(v){ return ((Math.max(-mx,Math.min(mx,v))+mx)/(2*mx))*W; };
     var py=function(v){ return H-((Math.max(-my,Math.min(my,v))+my)/(2*my))*H; };
     svg.appendChild(svgEl('line',{class:'r3-ax',x1:W/2,y1:0,x2:W/2,y2:H}));
@@ -3023,8 +3139,8 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     var host=el('desk-watch-mount'); if(!host) return;
     if(td===undefined&&tpo===undefined) return;
     if(td===null&&tpo===null){
-      host.innerHTML='<p class="r3-quiet">'
-        +L('Desk-watch data unavailable.','值守台数据暂不可用。')+'</p>';
+      host.innerHTML='<div class="r3-panel"><p class="r3-quiet">'
+        +L('Desk-watch data unavailable.','值守台数据暂不可用。')+'</p></div>';
       return;
     }
     var armed=(td&&td.armed)||[];
@@ -3348,6 +3464,9 @@ html[data-lang="zh"] .si-view[data-view="money"] .mny-big{ letter-spacing:0; fon
   overflow-wrap:anywhere; }
 .si-view[data-view="money"] .mny-leg > .lead{ grid-column:1; font-size:var(--fs-sm); color:var(--muted); }
 .si-view[data-view="money"] .mny-leg > .fig{ grid-column:2; grid-row:1 / span 2; align-self:center;
+  position:relative;   /* anchors the .r3-vh 1px box INSIDE the cell — a statically
+                          positioned visually-hidden span at a right edge is the classic
+                          one-pixel document overflow, measured here at 320 */
   font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums; }
 .si-view[data-view="money"] .pos{ color:var(--ink-up); }
 .si-view[data-view="money"] .neg{ color:var(--ink-down); }
@@ -3378,7 +3497,13 @@ html[data-lang="zh"] .si-view[data-view="money"] .mny-big{ letter-spacing:0; fon
 .si-view[data-view="money"] .mny-noread[hidden]{ display:none; }
 .si-view[data-view="money"] .mny-foot{ padding:11px 16px; border-top:1px solid var(--line);
   background:color-mix(in srgb, var(--panel2) 45%, transparent); border-radius:0 0 var(--r-panel) var(--r-panel);
-  font-size:var(--fs-micro); line-height:1.6; color:var(--muted); }
+  font-size:var(--fs-sm); line-height:1.55; color:var(--muted); }
+/* the Tier-2 receipt: the sanctioned home for the scope and the raw figures behind a
+   reading, on its own mono line under a hairline perforation */
+.si-view[data-view="money"] .mny-receipt{ display:block; margin-top:7px; padding-top:7px;
+  border-top:1px dashed color-mix(in srgb, var(--muted) 32%, transparent);
+  font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.02em;
+  font-variant-numeric:tabular-nums; }
 
 /* ── band 2 · the server-rendered sector-ETF flow fragment ───────────────────
    SCOPED WRAPPER ONLY. Not one byte of fragments/sc_flows.html is edited: its markup,
@@ -3502,9 +3627,12 @@ html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(
 @media (max-width:1100px){
   .si-view[data-view="money"] .mny-verdict{ grid-template-columns:minmax(0,1fr); }
   .si-view[data-view="money"] .mny-tm{ min-height:320px; }
+  /* THE TOUCH BAND — see the twin note in views/explore.html */
+  .si-view[data-view="money"] .r3-disc summary{ min-height:48px; }
 }
 @media (max-width:767px){
   .si-view[data-view="money"] .r3-band{ margin-top:var(--sp-6); }
+  .si-view[data-view="money"] .mny-legs{ grid-template-columns:minmax(0,1fr); }
   .si-view[data-view="money"] .mny-measures{ grid-template-columns:minmax(0,1fr); }
   .si-view[data-view="money"] .mny-m{ display:grid; grid-template-columns:minmax(0,1fr) auto;
     align-items:center; column-gap:var(--sp-3); }
@@ -3674,6 +3802,7 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
   return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
 /* si_workspace.js:126 L() — the dual-emit bilingual span pair */
 function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
+function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
 function reg(p){ try{ return REF.parseJSON(REF.registry[p]); }catch(e){ return null; } }
 /* heatmap.js:87-91 fmtPc — verbatim, including the U+2212 minus */
 function fmtPc(v){ if(v==null||isNaN(v)) return '—';
@@ -3892,12 +4021,17 @@ function paintHeat(){
     var x=sr.x+SEC_GAP/2, y=sr.y+SEC_GAP/2, w=sr.w-SEC_GAP, h=sr.h-SEC_GAP;
     if(w<=2||h<=2) return;
     var lab=labs[s.name]||{en:s.name,zh:s.name};
-    var hd=(h>34 && w>72)?SEC_HD:0;
+    /* heatmap.js:1783-1800 — a sector header appears only where its own text FITS at the
+       11px floor, and its aggregate only where there is budget left for it. A clipped
+       "+0" is worse than no number, so the number is dropped rather than truncated. */
+    var hd=(h>34 && w>84)?SEC_HD:0;
     out.push('<div class="hm-sec" style="left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;width:'+w.toFixed(1)+'px;height:'+h.toFixed(1)+'px">');
     if(hd){
       var agg=sectorAgg(HM,s.tiles,HM_TF);
+      var nm=(isZh()&&lab.zh)?lab.zh:lab.en;
+      var showAgg = w > (nm.length*6.6 + 62);
       out.push('<div class="hm-sechd">'+L(esc(lab.en),esc(lab.zh||lab.en))
-        +'<span class="agg">'+fmtPc(agg)+'</span></div>');
+        +(showAgg?'<span class="agg">'+fmtPc(agg)+'</span>':'')+'</div>');
     }
     var tr=squarify(s.tiles.map(function(t){ return {value:(t.size||0.0001), ref:t}; }), 0, hd, w, h-hd);
     tr.forEach(function(r){
@@ -3942,7 +4076,7 @@ function renderHeatText(){
   /* the colour scale, named — a figure channel may never be unlabelled (doctrine Law 3) */
   $('hm-scale').innerHTML = L('One-day move','当日涨跌')
     + '<i class="b3d"></i><i class="b2d"></i><i class="b1d"></i><i class="b0"></i><i class="b1"></i><i class="b2"></i><i class="b3"></i>'
-    + '<span class="tnum">' + L('−3% → +3%','−3% → +3%') + '</span>';
+    + '<span class="tnum">' + L('−3% … +3%','−3% … +3%') + '</span>';
 
   /* ── the MANDATORY table equivalent ──────────────────────────────────────────
      Same producer fields, same layout order. squarify() sorts descending by value,
@@ -3991,7 +4125,7 @@ function renderLeadership(){
       if(!d||!d.ok){ host.remove(); return; }      /* :3477 — vanishes entirely */
       var star=d.rising_star, ln=d.leader_now, T=d.tabs||{};
       var order=['subsectors','nasdaq','russell','baskets'].filter(function(t){ return T[t]; });
-      function num(x,dd){ return (x==null||isNaN(x))?'–':Number(x).toFixed(dd==null?0:dd); }
+      function num(x,dd){ return (x==null||isNaN(x))?'–':Number(x).toFixed(dd==null?0:dd).replace('-','−'); }
       function signed(x,dd){ if(x==null||isNaN(x)) return '<span class="flat">–</span>';
         var v=Number(x); return '<span class="'+(v>=0?'pos':'neg')+'">'+(v>=0?'+':'−')
           +Math.abs(v).toFixed(dd==null?1:dd)+'</span>'; }
@@ -4048,22 +4182,23 @@ function renderLeadership(){
         var liq=rg.liquidity?L(' · liquidity '+esc(rg.liquidity),' · 流动性'+esc(liqZh)):'';
         regLine='<p class="lead-regime">'+L('Regime backdrop','宏观象限')+': <b>'+esc(rg.quad)+' '
           +L(esc(rg.name_en),esc(rg.name_zh))+'</b> ('+L(esc(rg.axes_en),esc(rg.axes_zh))+')'+liq
-          +' → '+L('expected tilt: ','预期倾向：')+L(esc(rg.tilt_en),esc(rg.tilt_zh))+' '
+          +'. '+L('Expected tilt: ','预期倾向：')+L(esc(rg.tilt_en),esc(rg.tilt_zh))+'. '
           +L('Odds-tilt, not a rule — compare it to what is actually leading.',
              '仅为概率倾向，非规则——请对照上方实际领涨。')+'</p>';
       }
       var mac=d.macro, macLine='';
-      if(mac) macLine=L('Macro backdrop','宏观背景')+': <b>'+L(esc(mac.label_en||mac.verdict||'—'),
-        esc(mac.label_zh||mac.verdict||'—'))+'</b>'+(mac.score!=null?' ('+mac.score+'/100)':'');
+      if(mac) macLine='<span>'+L('Macro backdrop: <b>'+esc(mac.label_en||mac.verdict||'—')+'</b>',
+        '宏观背景：<b>'+esc(mac.label_zh||mac.verdict||'—')+'</b>')
+        +(mac.score!=null?' ('+mac.score+'/100)':'')+'</span>';
 
       /* :3458-3474 trackBox() — the SELF-GRADED sub-line. A calibration note, never a
          gate: it reports what the forward log has measured so far and nothing else. */
       var tr=d.track_record, trLine='';
       if(tr){
-        var vlab = tr.verdict==='validated'?L('Validated','已验证')
-                 : tr.verdict==='measuring'?L('Measuring','测量中') : L('Accruing','积累中');
+        var vlab = tr.verdict==='validated'?['Validated','已验证']
+                 : tr.verdict==='measuring'?['Measuring','测量中'] : ['Accruing','积累中'];
         var days=tr.n_days||0;
-        trLine='<span class="r3-tag">'+L('Forward track record','前瞻战绩')+': '+vlab+'</span>'
+        trLine='<span class="r3-tag">'+L('Forward track record: '+vlab[0],'前瞻战绩：'+vlab[1])+'</span>'
           +'<span>'+L((tr.n_snapshots||0)+' calls logged over '+days+(days===1?' day':' days'),
                       (tr.n_snapshots||0)+' 条记录，历时 '+days+' 天')+'</span>';
         var h21=(tr.horizons||{})['21'], parts=[];
@@ -4112,23 +4247,25 @@ document.addEventListener('DOMContentLoaded', function(){
 
   renderEtfPulse(); renderVolChip();
 
-  /* the merged footnote: both display-only disclaimers, both clocks, once. */
+  /* ONE merged footnote per panel, in two registers: the producers' own display-only
+     disclaimers in prose, then the numbers behind the two chips on their own mono
+     receipt line. A bilingual hover is not an accessible home for a figure (spec §11/§12),
+     so nothing here hides in a tip. */
   var EP=reg('basketdata/etf_pulse.json'), VS=reg('basketdata/vol_sentiment.json');
-  var fp=[];
-  if(EP&&EP.disclaimer_en) fp.push(L(esc(EP.disclaimer_en),esc(EP.disclaimer_zh)));
-  if(VS&&VS.disclaimer_en) fp.push(L(esc(VS.disclaimer_en),esc(VS.disclaimer_zh)));
-  /* the numbers behind the volatility chip: a bilingual hover is not an accessible home
-     for a figure (spec §11/§12), so they live here in plain sight instead of in a tip. */
-  if(VS&&VS.vol_regime) fp.push(L('VIX '+VS.vol_regime.vix+' ('+Math.round(VS.vol_regime.vix_pctile*100)
-      +'th percentile) · term structure '+esc(VS.vol_regime.term_state||'—'),
+  var say=[], receipt=[];
+  if(EP&&EP.disclaimer_en) say.push(L(esc(EP.disclaimer_en),esc(EP.disclaimer_zh)));
+  if(VS&&VS.disclaimer_en) say.push(L(esc(VS.disclaimer_en),esc(VS.disclaimer_zh)));
+  if(VS&&VS.vol_regime) receipt.push(L('VIX '+VS.vol_regime.vix+' ('+Math.round(VS.vol_regime.vix_pctile*100)
+      +'th pctile) · term structure '+esc(VS.vol_regime.term_state||'—'),
     'VIX '+VS.vol_regime.vix+'（'+Math.round(VS.vol_regime.vix_pctile*100)+' 分位）· 期限结构 '
       +esc(VS.vol_regime.term_state||'—')));
-  if(VS&&VS.put_call&&VS.put_call.sentiment_en) fp.push(L(
-    'options traders '+esc(String(VS.put_call.sentiment_en).replace(/\s*\(.*\)$/,''))
-      +' (put/call '+VS.put_call.equity_pc+')',
-    '期权交易者'+esc(VS.put_call.sentiment_zh)+'（看跌/看涨 '+VS.put_call.equity_pc+'）'));
-  if(EP&&EP.as_of) fp.push(L('ETF flow context as of '+esc(EP.as_of),'ETF 轮动背景截至 '+esc(EP.as_of)));
-  if($('mny-board-foot')) $('mny-board-foot').innerHTML=fp.join(' · ');
+  if(VS&&VS.put_call&&VS.put_call.sentiment_en) receipt.push(L(
+    'put/call '+VS.put_call.equity_pc+' — options traders '
+      +esc(String(VS.put_call.sentiment_en).replace(/\s*\(.*\)$/,'')),
+    '看跌/看涨 '+VS.put_call.equity_pc+' — 期权交易者'+esc(VS.put_call.sentiment_zh)));
+  if(EP&&EP.as_of) receipt.push(L('ETF flow context as of '+esc(EP.as_of),'ETF 轮动背景截至 '+esc(EP.as_of)));
+  if($('mny-board-foot')) $('mny-board-foot').innerHTML=
+      say.join(' ') + (receipt.length?'<span class="mny-receipt">'+receipt.join(' · ')+'</span>':'');
 
   /* the server-rendered flow fragment — injected verbatim, or the band is removed */
   var band=$('mny-flow-band');
@@ -4157,8 +4294,14 @@ window.addEventListener('resize', function(){
   if(!V||!V.classList.contains('on')) return;
   clearTimeout(_rz); _rz=setTimeout(paintHeat,140);
 }, {passive:true});
-/* No repaint on theme or language change: the tile palette is CSS (bins are class names,
-   anchored on --up/--down) and every label ships both language spans. */
+/* A THEME flip needs no repaint at all: the tile palette is pure CSS (the nine bins are
+   class names anchored on --up/--down, so 红涨绿跌 and light/dark are free). A LANGUAGE flip
+   repaints only because the sector-header fit budget is measured against the ACTIVE label,
+   and a hanzi label needs a different budget than its English twin. */
+document.addEventListener('langchange', function(){
+  if(V&&V.classList.contains('on')) paintHeat();
+  renderHeatText();
+});
 })();
 </script>
 </section>
@@ -4339,29 +4482,48 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
 /* ── the filter strip ─────────────────────────────────────────────────────────
    Real semantics, never faked: mode + category are role="group" with aria-pressed
    (spec §9, §12), exactly the shape production gives #btbl-mode (role="group"). */
-.si-view[data-view="explore"] .exp-filters{ padding:var(--exp-pad);
-  border-bottom:1px solid var(--line);
-  display:grid; grid-template-columns:auto minmax(0,1fr); gap:var(--sp-3) var(--sp-5); align-items:start; }
-.si-view[data-view="explore"] .exp-frow{ display:contents; }
-.si-view[data-view="explore"] .exp-flab{ padding-top:13px; white-space:nowrap; }
-.si-view[data-view="explore"] .exp-cats button{ min-height:36px; padding:0 11px; font-size:var(--fs-sm); }
+.si-view[data-view="explore"] .exp-filters{ padding:var(--exp-pad); border-bottom:1px solid var(--line);
+  display:flex; flex-direction:column; gap:var(--sp-2); }
+.si-view[data-view="explore"] .exp-frow{ display:flex; align-items:flex-start; gap:var(--sp-5); }
+.si-view[data-view="explore"] .exp-flab{ flex:none; width:80px; padding-top:13px; }
+.si-view[data-view="explore"] .exp-cats button{ min-height:40px; padding:0 12px; font-size:var(--fs-sm); }
 .si-view[data-view="explore"] .exp-modes button{ min-height:40px; }
-.si-view[data-view="explore"] .exp-count{ grid-column:1 / -1; font-size:var(--fs-micro);
-  letter-spacing:.05em; color:var(--muted); }
+.si-view[data-view="explore"] .exp-count{ font-size:var(--fs-micro); letter-spacing:.05em; color:var(--muted); }
+/* ONE mechanism at every width. The sixteen category filters are a real research affordance
+   on a desk and nine stacked rows on a phone, so the group lives inside a disclosure whose
+   summary always names the ACTIVE category — open by default ≥768, closed below. Nothing is
+   removed and nothing is hidden behind a hover: the current state is on the summary. */
+.si-view[data-view="explore"] .exp-catwrap{ display:flex; flex-direction:column; }
+.si-view[data-view="explore"] .exp-catwrap > summary{ display:flex; align-items:center;
+  gap:var(--sp-5); min-height:44px; cursor:pointer; list-style:none; }
+.si-view[data-view="explore"] .exp-catwrap > summary::-webkit-details-marker{ display:none; }
+.si-view[data-view="explore"] .exp-catwrap > summary .exp-flab{ padding-top:0; }
+.si-view[data-view="explore"] .exp-catnow{ font-size:var(--fs-sm); font-weight:700; color:var(--text); }
+.si-view[data-view="explore"] .exp-catwrap > summary::after{ content:""; width:7px; height:7px; flex:none;
+  border-right:1.6px solid var(--muted); border-bottom:1.6px solid var(--muted);
+  transform:translateY(-2px) rotate(45deg); transition:transform var(--t-fast) var(--ease-std); }
+.si-view[data-view="explore"] .exp-catwrap[open] > summary::after{ transform:translateY(1px) rotate(-135deg); }
+.si-view[data-view="explore"] .exp-catwrap > .r3-seg{ margin:6px 0 4px 100px; }
 
 /* ── the comparison table ─────────────────────────────────────────────────────── */
 .si-view[data-view="explore"] #btable{ min-width:760px; }
-.si-view[data-view="explore"] #btable th{ cursor:pointer; white-space:nowrap; user-select:none; }
+.si-view[data-view="explore"] #btable th{ cursor:pointer; white-space:nowrap; user-select:none;
+  padding:11px 12px; }
 .si-view[data-view="explore"] #btable th.num{ text-align:right; }
 .si-view[data-view="explore"] #btable th[aria-sort]:not([aria-sort="none"]){ color:var(--text); }
-.si-view[data-view="explore"] #btable th .dir{ font-size:8px; margin-left:3px; }
+/* the sort caret is DRAWN, never typed — no Unicode arrow exists in this system (§9.3) */
+.si-view[data-view="explore"] #btable th .dir{ display:inline-block; width:0; height:0;
+  margin-left:5px; vertical-align:middle; border-left:4px solid transparent;
+  border-right:4px solid transparent; border-top:5px solid currentColor; }
+.si-view[data-view="explore"] #btable th .dir.up{ border-top:0; border-bottom:5px solid currentColor; }
 .si-view[data-view="explore"] #btable td.bname{ min-width:0; }
 /* NAMES NEVER ELLIPSIZE — they wrap; the numbers are what compress (spec §0) */
-.si-view[data-view="explore"] .bnm{ display:inline-flex; align-items:baseline; gap:9px;
+.si-view[data-view="explore"] .bnm{ display:inline-flex; align-items:center; gap:9px; min-height:36px;
   font-size:var(--fs-body); font-weight:700; letter-spacing:-.008em; line-height:1.3;
   overflow-wrap:anywhere; color:var(--text); }
 .si-view[data-view="explore"] .bnm:hover{ color:var(--ink-link); }
 .si-view[data-view="explore"] .swatch{ flex:none; width:16px; height:9px; align-self:center; }
+.si-view[data-view="explore"] .bnm > span{ min-width:0; }
 .si-view[data-view="explore"] .bcat{ display:block; margin-top:2px; font-size:var(--fs-micro);
   font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
 .si-view[data-view="explore"] .spark{ display:block; }
@@ -4402,8 +4564,10 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
 .si-view[data-view="explore"] .exp-legbtns button{ min-height:32px; padding:0 12px; border-radius:var(--r-ctl);
   border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
   font-size:var(--fs-micro); font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
-.si-view[data-view="explore"] .exp-leglist{ list-style:none; margin:0; padding:0; max-height:168px;
-  overflow-y:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(212px,1fr)); gap:0 var(--sp-5); }
+.si-view[data-view="explore"] .exp-leglist{ list-style:none; margin:0; padding:0 var(--sp-3); max-height:176px;
+  overflow-y:auto; overscroll-behavior:contain; border:1px solid var(--line); border-radius:var(--r-card);
+  background:color-mix(in srgb, var(--panel2) 34%, transparent);
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(212px,1fr)); gap:0 var(--sp-5); }
 .si-view[data-view="explore"] .exp-leglist > li{ border-bottom:1px solid color-mix(in srgb, var(--line) 45%, transparent); }
 .si-view[data-view="explore"] .lchip{ display:grid; grid-template-columns:18px minmax(0,1fr) auto;
   align-items:center; gap:9px; width:100%; min-height:34px; padding:4px 0; background:none; border:0;
@@ -4429,7 +4593,7 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
 .si-view[data-view="explore"] .ne-watch > .lab{ display:block; font-size:var(--fs-micro); font-weight:700;
   letter-spacing:.08em; text-transform:uppercase; color:var(--ink-info); margin-bottom:3px; }
 .si-view[data-view="explore"] .ne-grid{ display:grid; gap:1px; background:var(--line);
-  grid-template-columns:repeat(auto-fill,minmax(318px,1fr)); }
+  grid-template-columns:repeat(auto-fill,minmax(420px,1fr)); }
 .si-view[data-view="explore"] .ne-card{ background:var(--panel); padding:15px 16px; min-width:0; }
 .si-view[data-view="explore"] .ne-hd{ display:grid; grid-template-columns:minmax(0,1fr) auto;
   align-items:start; gap:var(--sp-3); }
@@ -4446,7 +4610,8 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
    Same five values, same order, each one labelled where it sits. */
 .si-view[data-view="explore"] .ne-legs{ list-style:none; margin:12px 0 0; padding:0;
   display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:var(--sp-2); }
-.si-view[data-view="explore"] .ne-legs > li{ min-width:0; }
+.si-view[data-view="explore"] .ne-legs > li{ min-width:0; display:grid;
+  grid-template-rows:2.7em auto auto; align-content:start; }
 .si-view[data-view="explore"] .ne-legs .lg{ display:block; font-size:var(--fs-micro); font-weight:600;
   letter-spacing:.04em; color:var(--muted); line-height:1.3; overflow-wrap:anywhere; }
 .si-view[data-view="explore"] .ne-legs .bar{ display:block; height:4px; margin-top:5px; border-radius:2px;
@@ -4515,9 +4680,21 @@ html[data-lang="zh"] .si-view[data-view="explore"] .tm-sub{ max-width:50em; }
    ≤767   the table RECOMPOSES into labelled rows: no horizontal scroll on a phone,
           nothing dropped, the name is the card title and the six windows form a grid. */
 @media (max-width:1100px){
-  .si-view[data-view="explore"] .exp-filters{ grid-template-columns:minmax(0,1fr); }
-  .si-view[data-view="explore"] .exp-flab{ padding-top:0; }
   .si-view[data-view="explore"] #chart{ min-height:320px; }
+  /* THE TOUCH BAND. Every repeated/primary target clears 44 CSS px from the tablet down —
+     768-1100 is the iPad range the shell already treats separately, and a finger is a
+     finger at 820 as much as at 390 (commission §17). */
+  .si-view[data-view="explore"] .r3-seg button,
+  .si-view[data-view="explore"] .exp-legbtns button,
+  .si-view[data-view="explore"] .tm-years button{ min-height:44px; min-width:44px; }
+  .si-view[data-view="explore"] .lchip,
+  .si-view[data-view="explore"] .ne-tk,
+  .si-view[data-view="explore"] .bnm,
+  .si-view[data-view="explore"] .rangeN{ min-height:44px; }
+  .si-view[data-view="explore"] #btable th{ padding:14px 12px; }
+  .si-view[data-view="explore"] .exp-leglist{ max-height:220px; }
+  .si-view[data-view="explore"] .tm-years{ max-height:140px; }
+  .si-view[data-view="explore"] .exp-catwrap > .r3-seg{ margin-left:0; }
 }
 @media (max-width:767px){
   .si-view[data-view="explore"] .r3-band{ margin-top:var(--sp-6); }
@@ -4544,8 +4721,11 @@ html[data-lang="zh"] .si-view[data-view="explore"] .tm-sub{ max-width:50em; }
   .si-view[data-view="explore"] .exp-legbtns button{ min-height:44px; }
   .si-view[data-view="explore"] .exp-leglist{ grid-template-columns:minmax(0,1fr); max-height:220px; }
   .si-view[data-view="explore"] .ne-legs{ grid-template-columns:repeat(3,minmax(0,1fr)); row-gap:var(--sp-3); }
+  .si-view[data-view="explore"] .ne-grid{ grid-template-columns:minmax(0,1fr); }
   .si-view[data-view="explore"] #chart{ min-height:280px; }
   .si-view[data-view="explore"] .r3-disc summary{ min-height:48px; }
+  .si-view[data-view="explore"] .bnm{ display:flex; align-items:center; min-height:44px; }
+  .si-view[data-view="explore"] .exp-catwrap > .r3-seg{ margin-left:0; }
 }
 @media (max-width:359px){
   .si-view[data-view="explore"] #btable > tbody > tr{ grid-template-columns:repeat(2,minmax(0,1fr)); padding:12px 13px; }
@@ -4578,7 +4758,6 @@ html[data-lang="zh"] .si-view[data-view="explore"] .tm-sub{ max-width:50em; }
   <section class="r3-band" id="table-section">
     <div class="r3-sec">
       <h2><span class="l-en">Explore all</span><span class="l-zh">浏览全部</span></h2>
-      <span class="r3-sec-sub"><span class="l-en">— every basket, sortable</span><span class="l-zh">— 全部篮子，可排序</span></span>
     </div>
     <p class="exp-lede"><span class="l-en">Every basket, sortable. Switch between plain return, return against S&amp;P 500, and how unusual the move is for that basket. Click one to see what is in it.</span><span class="l-zh">所有篮子的可排序快照。可切换原始回报、相对标普 500 回报和篮子自身 z 分数。点击篮子查看成分。</span></p>
 
@@ -4589,11 +4768,14 @@ html[data-lang="zh"] .si-view[data-view="explore"] .tm-sub{ max-width:50em; }
           <span class="r3-seg exp-modes" id="btbl-mode" role="group" aria-labelledby="exp-mode-name"></span>
           <span class="r3-vh" id="exp-mode-name"><span class="l-en">Return measure</span><span class="l-zh">回报口径</span></span>
         </div>
-        <div class="exp-frow">
-          <span class="r3-eyebrow exp-flab"><span class="l-en">Category</span><span class="l-zh">分类</span></span>
+        <details class="exp-frow exp-catwrap" id="exp-catwrap">
+          <summary>
+            <span class="r3-eyebrow exp-flab"><span class="l-en">Category</span><span class="l-zh">分类</span></span>
+            <span class="exp-catnow" id="exp-catnow"></span>
+          </summary>
           <span class="r3-seg exp-cats" id="btbl-cat-filter" role="group" aria-labelledby="exp-cat-name"></span>
           <span class="r3-vh" id="exp-cat-name"><span class="l-en">Basket category</span><span class="l-zh">篮子分类</span></span>
-        </div>
+        </details>
         <span class="exp-count" id="btbl-count"></span>
       </div>
 
@@ -4608,7 +4790,6 @@ html[data-lang="zh"] .si-view[data-view="explore"] .tm-sub{ max-width:50em; }
   <section class="r3-band" id="chart-section">
     <div class="r3-sec">
       <h2><span class="l-en">Performance</span><span class="l-zh">走势对比</span></h2>
-      <span class="r3-sec-sub"><span class="l-en">— rebased to 0% at the start of the window</span><span class="l-zh">— 在窗口起点重设为 0%</span></span>
     </div>
     <p class="exp-lede"><span class="l-en">Lines are rebased to 0% at the start of the window. Toggle baskets from the list below the chart; &quot;All&quot; covers the available cache history.</span><span class="l-zh">曲线在窗口起点重设为 0%。可在图表下方的列表中开关篮子；&quot;全部&quot;覆盖可用缓存历史。</span></p>
 
@@ -4752,7 +4933,7 @@ function sparkSvg(values,w,h){
   var d=pts.map(function(p,i){ return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1); }).join(' ');
   var e=pts[pts.length-1];
   return '<svg class="spark" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true">'
-    +'<path d="'+d+'" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="1.4"/>'
+    +'<path d="'+d+'" fill="none" stroke="currentColor" stroke-opacity=".8" stroke-width="1.4"/>'
     +'<circle cx="'+e[0].toFixed(1)+'" cy="'+e[1].toFixed(1)+'" r="1.7" fill="currentColor"/></svg>';
 }
 
@@ -4807,6 +4988,8 @@ function renderCats(){
   }).join('');
   Array.prototype.forEach.call(el.querySelectorAll('button'), function(b){
     b.onclick=function(){ btblCat=b.dataset.cat; btblShowAll=false; renderCats(); renderBTable(); }; });
+  var now=$('exp-catnow');
+  if(now) now.innerHTML = btblCat==='All' ? L('All','全部') : esc(btblCat);
 }
 
 function renderBTable(){
@@ -4838,7 +5021,7 @@ function renderBTable(){
     var on=(c===sc);
     return '<th class="'+(cn||'')+'" data-c="'+c+'" tabindex="0" role="columnheader" aria-sort="'
       +(on?(dir<0?'descending':'ascending'):'none')+'">'+lab
-      +(on?'<span class="dir" aria-hidden="true">'+(dir<0?'▾':'▴')+'</span>':'')+'</th>';
+      +(on?'<span class="dir'+(dir<0?'':' up')+'" aria-hidden="true"></span>':'')+'</th>';
   }
   var head='<thead><tr>'
     + th('name', L('Basket','篮子'))
@@ -4853,7 +5036,7 @@ function renderBTable(){
     return '<tr>'
       +'<td class="bname"><a class="bnm" data-ref-nav href="basket/'+esc(r.id)+'.html">'
         + swatch(r.id) + '<span>'+L(esc(r.name), esc(r.nameZh||r.name))+'</span></a>'
-        + (r.cat?'<span class="bcat">'+esc(r.cat)+'</span>':'') + '</td>'
+        + '</td>'
       + (gp?'<td class="gpr-td">'+grPulseCell(r.id)+'</td>':'')
       +'<td class="num spark-td flat">'+sparkSvg(r.spark)+'</td>'
       + TBL_COLS.map(function(c){
@@ -5115,8 +5298,10 @@ function renderNarratives(){
             +'<span class="pc tnum">'+v+'%</span></li>'; }).join('');
         var flags=[];
         if(nv.hype&&nv.hype.ipo_wave) flags.push('<span class="r3-tag">'+L('IPO wave','IPO潮')+'</span>');
-        if(nv.hype&&nv.hype.stretched_share>=0.4)
-          flags.push('<span class="r3-tag">'+Math.round(nv.hype.stretched_share*100)+'% '+L('stretched','超伸')+'</span>');
+        /* production ALSO draws a "N% stretched" flag chip here (:128-129) from the same
+           `hype.stretched_share` the producer's own conditional caveat already states in
+           plain words below. One fact, said once, in the producer's own sentence — the
+           chip is dropped rather than printing the same reading twice (doctrine Law 4). */
         if(nv.attention_aligned) flags.push('<span class="r3-tag">'+L('hot narrative','热门叙事')+'</span>');
         var extraEn=(nv.caveats_en||[]).filter(function(c){ return standing.indexOf(c)<0; });
         var extraZh=(nv.caveats_zh||[]).filter(function(c){ return standingZh.indexOf(c)<0; });
@@ -5205,9 +5390,7 @@ function renderNarratives(){
    (orchestrator ruling, build/README_BUILD.md §"Time Machine")
    ─────────────────────────────────────────────────────────────────────────────── */
 var TM_BASE='oracledata/';
-var TM_TIERS=[['s',['Sectors 1998→','板块 1998→']],
-              ['m',['Subsectors + Themes 2021→','子行业与主题 2021→']],
-              ['f',['Factors 2013→','因子 2013→']]];
+var TM_TIERS=[['s',['Sectors','板块']],['m',['Subsectors + Themes','子行业与主题']],['f',['Factors','因子']]];
 var tmBuilt=false, tmMani=null, tmTier='s', tmYear=null;
 function tmBuild(){
   if(tmBuilt) return; tmBuilt=true;
@@ -5243,8 +5426,12 @@ function tmBuild(){
 function tmRenderTiers(){
   var el=$('tm-tiers'); if(!el||!tmMani) return;
   el.innerHTML=TM_TIERS.filter(function(t){ return tmMani.tiers&&tmMani.tiers[t[0]]; })
-    .map(function(t){ return '<button type="button" data-t="'+t[0]+'" aria-pressed="'+(t[0]===tmTier)+'">'
-      +L(esc(t[1][0]),esc(t[1][1]))+'</button>'; }).join('');
+    .map(function(t){
+      var m=tmMani.tiers[t[0]]||{};
+      var span=(m.date_from||'').slice(0,4)+'–'+(m.date_to||'').slice(0,4);
+      return '<button type="button" data-t="'+t[0]+'" aria-pressed="'+(t[0]===tmTier)+'">'
+        +L(esc(t[1][0]),esc(t[1][1]))+' <small class="tnum" style="color:var(--muted);font-weight:400">'
+        +esc(span)+'</small></button>'; }).join('');
   Array.prototype.forEach.call(el.querySelectorAll('button'), function(b){
     b.onclick=function(){ tmTier=b.dataset.t; tmYear=null; tmRenderTiers(); tmRenderYears(); tmMeta(); tmNote(); }; });
 }
@@ -5282,7 +5469,7 @@ function tmMeta(){
   var el=$('tm-meta'); if(!el||!tmMani) return;
   var t=(tmMani.tiers||{})[tmTier]||{};
   var reg=((tmMani.registry||{})[tmTier]||[]).length;
-  var bits=[L(esc(t.date_from||'—')+' → '+esc(t.date_to||'—'),esc(t.date_from||'—')+' → '+esc(t.date_to||'—')),
+  var bits=[L(esc(t.date_from||'—')+' – '+esc(t.date_to||'—'),esc(t.date_from||'—')+' – '+esc(t.date_to||'—')),
             L(t.n_nodes+' nodes',t.n_nodes+' 个节点'),
             L(t.n_chunks+' periods',t.n_chunks+' 个分期'),
             L(reg+' named in the registry',reg+' 个已登记名称')];
@@ -5307,7 +5494,21 @@ function tableFailed(){
   var lg=$('chart-legend'); if(lg) lg.innerHTML='';
   var cnt=$('btbl-count'); if(cnt) cnt.innerHTML='';
 }
+/* :2538-2549 deepStrip() — production strips the "(Equal-Weight)" / "（等权）" suffix from
+   every string in the payload at boot, so "Utilities (Equal-Weight)" is a name production
+   never actually shows. Mirrored here, on this partial's own parsed copy: the embedded
+   fixture bytes are never touched, only what this display code renders. */
+function deepStrip(obj){
+  if(!obj || typeof obj!=='object') return;
+  var re=/\s*[（(]\s*(?:equal[-\s]?weight(?:ed)?|等权(?:重)?)\s*[）)]/gi;
+  Object.keys(obj).forEach(function(k){
+    var v=obj[k];
+    if(typeof v==='string') obj[k]=v.replace(re,'');
+    else if(v&&typeof v==='object') deepStrip(v);
+  });
+}
 function boot(payload){
+  deepStrip(payload);
   BASKETS=payload;
   /* si_workspace.js:127 readExplore() reads window.BASKETS, and the rail footer reads its
      as_of — production sets both in __siInitPage (:2534-2537). Guarded so whichever view
@@ -5318,23 +5519,39 @@ function boot(payload){
   styleIx['__bench']=-1;
   if($('exp-asof')&&payload.as_of) $('exp-asof').innerHTML=L('as of '+esc(payload.as_of),'截至 '+esc(payload.as_of));
   initChartDefaults();
+  var cw=$('exp-catwrap');
+  /* open at the desk, closed from the tablet down — the same 1101px seam the shell's rail
+     uses, and the width at which sixteen filters stop being a strip and start being a wall */
+  if(cw && cw.dataset.userset!=='1'){ cw.open=window.matchMedia('(min-width:1101px)').matches;
+    cw.addEventListener('toggle', function(){ cw.dataset.userset='1'; }, {once:true}); }
   renderModes(); renderCats(); renderBTable(); renderGrRule();
   renderChartControls(); renderLegend();
   loadGroupPulse();
   try{ if(typeof window.__siViewReads==='function') window.__siViewReads(); }catch(e){}
   if(V&&V.classList.contains('on')) renderChart();
 }
-document.addEventListener('DOMContentLoaded', function(){
+function loadPayload(){
   fetch('basketdata/baskets.json',{cache:'no-store'})
     .then(function(r){ if(!r.ok) throw 0; return r.json(); })
     .then(boot).catch(tableFailed);
+}
+document.addEventListener('DOMContentLoaded', function(){
+  loadPayload();
   renderNarratives();
   var d=$('tm-details');
   if(d){ d.addEventListener('toggle', function(){ if(d.open) tmBuild(); });
          if(d.open) tmBuild(); }
 });
-/* §8.1 — draw only once the view is really on screen and the box has a real width. */
-document.addEventListener('si:view', function(e){ if(e&&e.detail==='explore') renderChart(); });
+/* §8.1 — draw only once the view is really on screen and the box has a real width.
+   The payload is re-requested on an activation only when the last attempt did not land, or
+   while the harness drawer's "Simulate fetch fail" switch is on — so the drawer exercises
+   production's genuine catch branch (and its recovery) without a page reload, and an ordinary
+   visit still fetches exactly once and keeps the reader's chart selection. */
+document.addEventListener('si:view', function(e){
+  if(!e||e.detail!=='explore') return;
+  var failing = !!(window.REF && REF.simulateFetchFail);
+  if(!BASKETS || failing) loadPayload(); else renderChart();
+});
 var _rz=null;
 window.addEventListener('resize', function(){
   if(!V||!V.classList.contains('on')||!CHART) return;
@@ -5406,10 +5623,14 @@ window.addEventListener('resize', function(){
 /* ── universe selector ──────────────────────────────────────────────────────
    Real tab semantics (never faked). Four destinations, always all four on
    screen — no horizontal continuation at any width. */
-[data-view="confluence"] .r3-uni{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:2px; margin:0 0 var(--sp-4); border-bottom:1px solid var(--line); }
+/* Desk: a real tab bar — auto-width, left-aligned, sitting on one hairline, so
+   the four universes read as four names rather than four equal buttons.
+   Phone (below): a 2×2 grid, because a strip that scrolls its last universe off
+   the right edge would hide a whole dataset (Sol §13). */
+[data-view="confluence"] .r3-uni{ display:flex; flex-wrap:wrap; gap:2px;
+  margin:0 0 var(--sp-4); border-bottom:1px solid var(--line); }
 [data-view="confluence"] .r3-uni button{ appearance:none; display:flex; align-items:baseline;
-  justify-content:center; gap:7px; min-height:44px; padding:0 10px; background:none;
+  justify-content:center; gap:7px; min-height:44px; padding:0 18px; background:none;
   border:0; border-bottom:2px solid transparent; color:var(--muted);
   font-size:var(--fs-sm); font-weight:600; line-height:1.25; cursor:pointer;
   transition:color var(--t-fast) var(--ease-std); }
@@ -5447,8 +5668,10 @@ window.addEventListener('resize', function(){
 [data-view="confluence"] .r3-detail h4{ margin:0 0 9px; font-size:var(--fs-label); font-weight:700;
   letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
 html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; text-transform:none; }
+/* auto-FIT, not auto-fill: an auto-fill track that holds nothing still paints
+   the grid's background and reads as a fourth, empty member card. */
 [data-view="confluence"] .r3-mem{ display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(178px,1fr)); gap:1px;
+  grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:1px;
   background:color-mix(in srgb, var(--line) 70%, transparent); }
 [data-view="confluence"] .r3-mem a{ display:block; min-height:52px; padding:9px 11px;
   background:var(--panel2); }
@@ -5479,7 +5702,11 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
 [data-view="confluence"] .r3-tbl th.sorted{ color:var(--text); }
 [data-view="confluence"] .r3-tbl th.sorted .arr{ opacity:1; }
 [data-view="confluence"] .r3-tbl th.sorted.desc .arr{ transform:translateY(1px) rotate(-135deg); }
-[data-view="confluence"] .r3-tbl a{ color:var(--ink-link); font-weight:700; }
+/* a table row's name link is a REPEATED target and has to clear 44px. Padding
+   grows the hit box, an equal negative margin gives the row its rhythm back —
+   the same technique the receipt button and the sign-in disclosure use. */
+[data-view="confluence"] .r3-tbl a{ display:inline-block; padding:13px 0; margin:-13px 0;
+  color:var(--ink-link); font-weight:700; }
 [data-view="confluence"] .r3-tbl .pos{ color:var(--ink-up); }
 [data-view="confluence"] .r3-tbl .neg{ color:var(--ink-down); }
 [data-view="confluence"] .r3-note{ padding:12px 16px; border-top:1px solid var(--line);
@@ -5487,6 +5714,19 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
 [data-view="confluence"] .r3-note a{ color:var(--ink-link); font-weight:700; }
 [data-view="confluence"] .r3-cf-foot{ margin-top:2px; max-width:62ch;
   font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
+/* the counted reveal under a capped table — the board's foot grammar again */
+[data-view="confluence"] .r3-showall{ appearance:none; display:flex; align-items:center;
+  justify-content:center; gap:8px; width:100%; min-height:44px; padding:0 16px;
+  background:color-mix(in srgb, var(--panel2) 45%, transparent);
+  border:0; border-top:1px solid var(--line); color:var(--muted);
+  font-size:var(--fs-sm); font-weight:700; cursor:pointer;
+  transition:color var(--t-fast) var(--ease-std); }
+[data-view="confluence"] .r3-showall:hover{ color:var(--text); }
+[data-view="confluence"] .r3-showall::after{ content:""; width:6px; height:6px; flex:none;
+  border-right:1.6px solid currentColor; border-bottom:1.6px solid currentColor;
+  transform:translateY(-2px) rotate(45deg); }
+[data-view="confluence"] .r3-showall[aria-expanded="true"]::after{ transform:translateY(1px) rotate(-135deg); }
+[data-view="confluence"] .r3-showall[hidden]{ display:none; }
 
 /* the receipt button is defined by the Overview partial's .r3-view--action rule;
    this view reuses it unchanged (one definition, two Action views). */
@@ -5494,12 +5734,13 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
 @media (max-width:767px){
   /* Sol §13: all four universe selectors stay visible — two rows of two rather
      than a strip that scrolls the last one off the right edge. */
-  [data-view="confluence"] .r3-uni{ grid-template-columns:repeat(2,minmax(0,1fr)); border-bottom:0; }
-  [data-view="confluence"] .r3-uni button{ border-bottom:2px solid var(--line); }
+  [data-view="confluence"] .r3-uni{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+    border-bottom:0; }
+  [data-view="confluence"] .r3-uni button{ padding:0 10px; border-bottom:2px solid var(--line); }
   [data-view="confluence"] .r3-mem{ grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
 }
 @media (max-width:359px){
-  [data-view="confluence"] .r3-uni{ grid-template-columns:minmax(0,1fr); }
+  [data-view="confluence"] .r3-uni{ display:grid; grid-template-columns:minmax(0,1fr); }
   [data-view="confluence"] .r3-mem{ grid-template-columns:minmax(0,1fr); }
 }
 </style>
@@ -5547,6 +5788,7 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
         <span class="cnt" id="cf-cnt"></span>
       </div>
       <div class="r3-tblbox"><table class="r3-tbl" id="cf-table"></table></div>
+      <button class="r3-showall" type="button" id="cf-more" hidden></button>
     </div>
   </section>
 
@@ -5626,6 +5868,11 @@ var SEL = 'entry_now';
 /* caps, as coded. subsectors.js:302 `forming.slice(0,4)`, :307 `avoid.slice(0,8)`,
    :318 `PICKS_CAP = 12` — capability ledger #91 ("Confluence caps 4/8/12"). */
 var FORMING_CAP = 4, LANE_CAP = 8, PICKS_CAP = 12;
+/* the table component's own L1 budget (DESIGN_SYSTEM_SPEC §9): eight rows at
+   rest plus a COUNTED reveal — a 93-row table at L1 is not a dense view, it is
+   an un-composed one. Filtering reveals whatever it matches. */
+var TBL_CAP = 8;
+var EXPANDED = {};
 
 function ds(){ return DS[TAB]; }
 function payload(){ return DATA[TAB]; }
@@ -5735,7 +5982,9 @@ function paintFoot(){
     + '<button class="r3-rcpt" type="button" aria-expanded="false" data-tip-en="' + esc(FOOT_TIP_EN)
     + '" data-tip-zh="' + esc(FOOT_TIP_ZH) + '"><span class="r3-vh">'
     + L('How timing support is graded', '时机支持的评分方式') + '</span></button>'
-    + '<span class="r3-asof">' + L(shown + ' of ' + n + ' shown', '已显示 ' + shown + ' / ' + n) + '</span>';
+    /* an honest count only where there is something to count — "0 of 0 shown"
+       over an empty state prints the same fact twice. */
+    + (n ? '<span class="r3-asof">' + L(shown + ' of ' + n + ' shown', '已显示 ' + shown + ' / ' + n) + '</span>' : '');
 }
 
 /* ══ the selected list ══ */
@@ -5915,7 +6164,9 @@ function paintTable(){
       + ' scope="col" data-col="' + c.k + '" aria-sort="' + (on ? (s.dir === 1 ? 'ascending' : 'descending') : 'none') + '">'
       + L(c.t[0], c.t[1]) + '<span class="arr" aria-hidden="true"></span></th>';
   }).join('') + '</tr></thead>';
-  var body = '<tbody>' + rows.map(function(v){
+  var open = !!EXPANDED[TAB] || !!q;
+  var shownRows = open ? rows : rows.slice(0, TBL_CAP);
+  var body = '<tbody>' + shownRows.map(function(v){
     var g = v._g, e = v._e, r = v._r;
     return '<tr><td><a data-ref-nav href="' + esc(detailHref(g.key)) + '">'
       + L(esc(g.label), esc(g.label_zh || g.label)) + '</a>' + relDot(g.reliability) + '</td>'
@@ -5928,6 +6179,17 @@ function paintTable(){
   }).join('') + '</tbody>';
   el('cf-table').innerHTML = thead + body;
   el('cf-cnt').textContent = rows.length + ' / ' + all.length;
+  var more = el('cf-more'), noun = ds().noun;
+  if(rows.length > TBL_CAP && !q){
+    more.hidden = false;
+    more.setAttribute('aria-expanded', String(open));
+    more.setAttribute('aria-controls', 'cf-table');
+    more.innerHTML = open
+      ? L('Show fewer', '收起')
+      : L('Show all ' + rows.length + ' ' + noun[0], '展开全部 ' + rows.length + ' 个' + noun[1]);
+  }else{
+    more.hidden = true;
+  }
   el('cf-all-title').innerHTML = L('All ' + ds().noun[0], '全部' + ds().noun[1])
     + ' <span class="tnum" style="color:var(--muted);font-weight:400">' + all.length + '</span>';
   var q2 = el('cf-q');
@@ -5988,6 +6250,11 @@ document.addEventListener('DOMContentLoaded', function(){
     SORT[TAB] = {col:col, dir:(s.col === col ? -s.dir
       : ((col === 'label' || col === 'sector') ? 1 : ((col === 'rs60' || col === 'n') ? -1 : 1)))};
     paintTable();
+  });
+  el('cf-more').addEventListener('click', function(){
+    EXPANDED[TAB] = !EXPANDED[TAB];
+    paintTable();
+    if(!EXPANDED[TAB]) el('cf-more').focus();
   });
   el('cf-q').addEventListener('input', function(){
     FILTER[TAB] = this.value || '';

@@ -85,6 +85,7 @@
         </div>
         <div class="r3-rmap-foot">
           <button type="button" class="r3-textbtn" id="r3-map-showall" hidden></button>
+          <span class="r3-asof r3-scrollhint"><span class="l-en">Scroll the table sideways for every column</span><span class="l-zh">左右滑动表格查看全部列</span></span>
           <span class="r3-asof" id="r3-map-count"></span>
         </div>
         <!-- the context disclaimer, verbatim from sector_central.html.j2:2267 -->
@@ -142,14 +143,13 @@
           <span class="r3-cyc-lit" id="r3-cyc-lit"></span>
         </div>
         <div class="r3-cyc-plot" id="sc-chart">
+          <div class="r3-cyc-y" aria-hidden="true"><span class="tnum">100</span><span class="tnum">50</span><span class="tnum">0</span></div>
           <svg id="r3-cyc-svg" class="r3-cyc-svg" viewBox="0 0 720 240" role="img" preserveAspectRatio="none"
                aria-labelledby="r3-cyc-name r3-cyc-desc"></svg>
           <span class="r3-vh" id="r3-cyc-name"><span class="l-en">Sector cycle clock — every sector's 0 to 100 cycle position over the last seven years, one line per sector.</span><span class="l-zh">行业周期时钟 — 各板块过去七年的 0 至 100 周期位置，每个板块一条曲线。</span></span>
           <span class="r3-vh" id="r3-cyc-desc"><span class="l-en">The table beneath this chart lists every sector's current position, its phase, its last confirmed turn and its next projected turn window.</span><span class="l-zh">图表下方的表格列出每个板块的当前位置、所处阶段、最近一次确认拐点与下一次预计拐点窗口。</span></span>
         </div>
-        <div class="r3-cyc-axis">
-          <span class="tnum">0</span><span class="tnum">50</span><span class="tnum">100</span>
-        </div>
+        <div class="r3-cyc-axis" id="r3-cyc-axis"></div>
       </div>
 
       <div class="r3-panel r3-tblbox r3-cyc-tblbox">
@@ -205,7 +205,7 @@
 /* ── the rotation-map instrument ─────────────────────────────────────────── */
 .r3-rmap-grid{ display:grid; gap:var(--gap-grid);
   grid-template-columns:minmax(0,1.72fr) minmax(272px,.92fr);
-  grid-template-areas:"figure detail" "figure summary" "list list"; align-items:start; }
+  grid-template-areas:"figure detail" "summary summary" "list list"; align-items:start; }
 .r3-rmap-sum{ grid-area:summary; }
 .r3-rmap-detail{ grid-area:detail; }
 .r3-rmap-list{ grid-area:list; }
@@ -213,6 +213,7 @@
 
 .r3-rmap-take{ display:block; margin:0 0 var(--sp-2); }
 .r3-quads .r3-quad{ min-height:74px; }
+@media (min-width:901px){ .r3-rmap-sum .r3-quads{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
 .r3-quadn{ display:block; margin-top:4px; font-size:var(--fs-md); font-weight:700;
   letter-spacing:-.01em; font-variant-numeric:tabular-nums; color:var(--text); }
 .r3-quad-sub{ display:block; margin-top:3px; font-size:var(--fs-sm); color:var(--muted);
@@ -292,15 +293,24 @@ html[data-lang="zh"] .r3-rmap-detail .r3-selcat{ letter-spacing:0; text-transfor
 .r3-rmap-tbl td:first-child{ font-size:var(--fs-sm); font-weight:600; color:var(--muted);
   text-align:right; width:1%; white-space:nowrap; }
 .r3-rmap-tbl td:nth-child(2){ font-size:var(--fs-md); font-weight:700; letter-spacing:-.008em;
-  overflow-wrap:anywhere; min-width:180px; }
-.r3-rmap-tbl td:nth-child(2) a{ color:inherit; }
+  overflow-wrap:anywhere; min-width:180px; padding:0; }
+/* the repeated primary target on this view: the anchor fills its cell so the whole
+   row-name box clears 44 CSS px at every width (spec §12). */
+.r3-rmap-tbl td:nth-child(2) a{ display:flex; align-items:center; min-height:44px;
+  padding:9px 12px; color:inherit; }
 .r3-rmap-tbl td:nth-child(2) a:hover{ color:var(--ink-link,var(--link)); }
 .r3-rmap-tbl tr.is-sel td{ background:color-mix(in srgb, var(--panel2) 72%, transparent); }
 .r3-rmap-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4);
   padding:10px 2px 0; }
-.r3-rmap-foot .r3-asof{ margin-left:auto; }
+.r3-rmap-foot #r3-map-count{ margin-left:auto; }
+/* the in-container scroll is lawful (the box scrolls, the page never does) but it
+   has to be discoverable, so it says so — on the widths where it actually happens. */
+.r3-scrollhint{ display:none; }
+@media (max-width:900px){ .r3-scrollhint{ display:inline; } }
+/* a slash-joined vocabulary list ("Leading/Improving/…") has no natural break
+   opportunity; at 200% zoom on a 390 phone it is wider than the column. */
 .r3-note{ margin-top:var(--sp-3); font-size:var(--fs-sm); color:var(--muted); line-height:1.5;
-  max-width:88ch; }
+  max-width:88ch; overflow-wrap:anywhere; }
 .r3-textbtn{ display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:0;
   border:0; background:none; color:var(--ink-link,var(--link)); font-size:var(--fs-sm);
   font-weight:700; cursor:pointer; }
@@ -316,16 +326,32 @@ html[data-lang="zh"] .r3-rmap-detail .r3-selcat{ letter-spacing:0; text-transfor
 .r3-cyc-head{ display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3);
   margin-bottom:var(--sp-2); }
 .r3-cyc-lit{ margin-left:auto; font-size:var(--fs-sm); font-weight:700; color:var(--text);
-  min-width:0; overflow-wrap:anywhere; }
-.r3-cyc-plot{ position:relative; }
+  min-width:0; max-width:100%; overflow-wrap:anywhere; }
+.r3-cyc-plot{ position:relative; padding-left:30px; }
+.r3-cyc-y{ position:absolute; left:0; top:0; bottom:0; width:26px;
+  display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end;
+  font-size:var(--fs-micro); color:var(--muted); font-variant-numeric:tabular-nums; }
 .r3-cyc-svg{ display:block; width:100%; height:216px; }
-.r3-cyc-svg .r3-cycline{ fill:none; stroke:color-mix(in srgb, var(--muted) 30%, transparent);
+.r3-cyc-svg .r3-cycline{ fill:none; stroke:color-mix(in srgb, var(--muted) 26%, transparent);
   stroke-width:1; }
 .r3-cyc-svg .r3-cycline.is-lit{ stroke:var(--text); stroke-width:1.9; }
 .r3-cyc-svg .r3-cycgrid{ stroke:var(--line); stroke-width:1; }
 .r3-cyc-svg .r3-cycnow{ stroke:var(--text); stroke-width:1.6; }
-.r3-cyc-axis{ display:flex; justify-content:space-between; margin-top:5px;
-  font-size:var(--fs-micro); color:var(--muted); font-variant-numeric:tabular-nums; }
+.r3-cyc-axis{ display:flex; justify-content:space-between; margin:5px 0 0 30px;
+  font-size:var(--fs-micro); color:var(--muted); font-variant-numeric:tabular-nums;
+  white-space:nowrap; }
+/* a time tick is a reading aid, not a capability: when the plot is too narrow to
+   hold every year the axis thins to alternate years, then to its two ends.  The
+   window itself is still stated in full by the table beneath. */
+@media (max-width:767px){ .r3-cyc-axis > span:nth-child(even){ display:none; } }
+@media (max-width:359px){
+  .r3-cyc-axis > span:not(:first-child):not(:last-child){ display:none; }
+}
+/* a primary name WRAPS, it never ellipsizes — but it must not shatter into
+   five-letter shards either.  A floor on the name column keeps "Communication
+   Services" breaking at its space; the box scrolls, the page never does. */
+.r3-cyc-tbl{ min-width:560px; }
+.r3-cyc-tbl td:first-child, .r3-cyc-tbl th:first-child{ min-width:150px; }
 .r3-cyc-tbl td:first-child{ font-size:var(--fs-md); font-weight:700; overflow-wrap:anywhere; }
 .r3-cyc-tbl tr.is-lit td{ background:color-mix(in srgb, var(--panel2) 72%, transparent); }
 .r3-cyc-tbl .r3-tk{ display:block; font-size:var(--fs-micro); font-weight:600;
@@ -380,7 +406,6 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
        out; only its box is clipped away. */
     max-height:0; overflow:hidden; visibility:hidden; margin-top:0; }
   .r3-rmap-fig[data-collapsed="false"] .r3-rmap-frame{ margin-top:var(--sp-2); }
-  .r3-rmap-svg{ height:290px; }
   .r3-quads{ grid-template-columns:1fr 1fr; }
   .r3-rmap-tbl{ min-width:520px; }
   .r3-gread > summary{ grid-template-columns:minmax(0,1fr) auto; row-gap:5px; min-height:64px; }
@@ -396,8 +421,7 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
 }
 @media (max-width:359px){
   .r3-quads{ grid-template-columns:1fr; }
-  .r3-rmap-svg{ height:260px; }
-  .r3-cyc-svg{ height:190px; }
+  .r3-cyc-svg{ height:180px; }
 }
 </style>
 
@@ -675,6 +699,13 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
     var CW=720, CH=240;
     var dom=(CYC.meta&&CYC.meta.xDomainDefault)||(CYC.meta&&CYC.meta.xDomain)||[0,1];
     var x0=dom[0], x1=dom[1], span=(x1-x0)||1;
+    /* the time axis, from the producer's own default window */
+    var ax=el('r3-cyc-axis');
+    if(ax){
+      var yrs=[], y=Math.ceil(x0);
+      while(y<=Math.floor(x1)){ yrs.push(y); y++; }
+      ax.innerHTML=yrs.map(function(v){ return '<span class="tnum">'+v+'</span>'; }).join('');
+    }
     [0,50,100].forEach(function(v){
       var y=CH-(v/100)*CH;
       svg.appendChild(svgEl('line',{class:'r3-cycgrid',x1:0,y1:y,x2:CW,y2:y}));

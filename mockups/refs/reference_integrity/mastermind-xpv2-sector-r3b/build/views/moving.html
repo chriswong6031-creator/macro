@@ -109,6 +109,7 @@
 html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
 .r3-flowday{ text-align:right; font-size:var(--fs-md); font-weight:700;
   font-variant-numeric:tabular-nums; letter-spacing:-.01em; white-space:nowrap; }
+.r3-flowst{ color:var(--text); font-weight:700; }
 .r3-flowwhy{ min-width:0; font-size:var(--fs-sm); color:var(--muted); line-height:1.45; }
 .r3-quiet{ padding:var(--sp-5) 16px; font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
 
@@ -128,8 +129,10 @@ html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
   padding:11px 16px; border-top:1px solid var(--line);
   font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
 .r3-foot .r3-asof{ margin-left:auto; }
+/* a slash-joined vocabulary list ("Leading/Improving/…") has no natural break
+   opportunity; at 200% zoom on a 390 phone it is wider than the column. */
 .r3-note{ margin-top:var(--sp-3); font-size:var(--fs-sm); color:var(--muted); line-height:1.5;
-  max-width:88ch; }
+  max-width:88ch; overflow-wrap:anywhere; }
 .r3-mv{ font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
 .r3-mv.up{ color:var(--ink-up); } .r3-mv.dn{ color:var(--ink-down); }
 
@@ -141,7 +144,8 @@ html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
 .r3-closednm{ color:var(--text); font-weight:700; }
 
 /* crosscurrents — one sector, its two opposite legs, side by side */
-.r3-cross{ display:grid; gap:var(--gap-grid); grid-template-columns:repeat(2,minmax(0,1fr)); }
+.r3-cross{ display:grid; gap:var(--gap-grid); grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:start; }
 .r3-crosscard{ padding:15px 17px; }
 .r3-crossnm{ font-size:var(--fs-md); font-weight:700; letter-spacing:-.008em; line-height:1.3;
   overflow-wrap:anywhere; }
@@ -190,7 +194,7 @@ html[data-lang="zh"] .r3-rmap-q b{ letter-spacing:0; text-transform:none; }
   text-transform:uppercase; color:var(--muted); margin-bottom:var(--sp-2); }
 html[data-lang="zh"] .r3-strip h3{ letter-spacing:0; text-transform:none; }
 .r3-striplist{ display:flex; flex-wrap:wrap; gap:2px 0; }
-.r3-striplist a{ display:inline-flex; align-items:center; min-height:32px; padding:2px 0;
+.r3-striplist a{ display:inline-flex; align-items:center; min-height:44px; padding:2px 0;
   font-size:var(--fs-sm); font-weight:600; color:var(--text); overflow-wrap:anywhere; }
 .r3-striplist a:hover{ color:var(--ink-link,var(--link)); }
 .r3-striplist a::after{ content:"·"; margin:0 8px; color:var(--muted); font-weight:400; }
@@ -239,8 +243,7 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     border-right:1.5px solid currentColor; border-top:0; border-bottom:1.5px solid currentColor; }
   .r3-vel{ grid-template-columns:repeat(2,minmax(0,1fr)); }
   .r3-cross{ grid-template-columns:minmax(0,1fr); }
-  .r3-legs{ grid-template-columns:minmax(0,1fr) auto; }
-  .r3-legs > span.r3-legv:last-of-type, .r3-leghead:last-of-type{ display:none; }
+  .r3-legs{ gap:0 var(--sp-2); }
   /* the whole-market plot follows its own lists on a phone, behind a disclosure —
      collapsed by clip, NEVER display:none (spec §8.1). */
   .r3-wm{ grid-template-areas:"lists" "plot"; }
@@ -269,6 +272,22 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
   function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
   function el(id){ return document.getElementById(id); }
   var ARROW='<span class="r3-arrow" role="img" aria-label="moved to"></span>';
+  /* rotation_events.js:181-201, verbatim EN/ZH pairs.  Only `handoff` and
+     `faltering` occur in the frozen fixture, so nothing else ever renders here;
+     the other two branches are carried so the capability is not silently dropped
+     (ledger #44 RETAIN).  Flagged for the orchestrator in the lane report. */
+  var STANCE={
+    into_strength:['In favour — watch for entry','处于优势——留意入场'],
+    contagion_break:['Stand aside — diversification fading','暂避——分散效果减弱'],
+    correlation_break:['Stand aside — diversification fading','暂避——分散效果减弱'],
+    faltering:['Rotation weakening — may close','轮动转弱——或将关闭'],
+    handoff:['Watch — don\'t chase','观望，不要追高']
+  };
+  function effType(e){
+    var h=e.health||null;
+    if(h&&(h.weakening||h.lapse_count>=2||h.neg_run>=2)) return 'faltering';
+    return e.event_type||'handoff';
+  }
 
   /* si_workspace.js:176-188 readMoving() counts up/down movers off
      window.BASKETS.theme_intel.themes[].pulse_rank_delta_5d.  Guarded parse of the
@@ -293,11 +312,15 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     /* production's single failure string for this surface (rotation_events.js:497) —
        both feeds absent means the surface has nothing, not that it is empty. */
     if(!ev&&!frag){
-      host.innerHTML='<p class="r3-quiet">'
-        +L('Rotation-event data unavailable.','轮动事件数据暂不可用。')+'</p>';
+      host.innerHTML='<div class="r3-panel"><p class="r3-quiet">'
+        +L('Rotation-event data unavailable.','轮动事件数据暂不可用。')+'</p></div>';
       return;
     }
     var active=(ev&&ev.active)||[];
+    var stances={};
+    active.forEach(function(e){ var s=STANCE[effType(e)]||STANCE.handoff; stances[s[0]]=s; });
+    var stKeys=Object.keys(stances);
+    var sharedStance=stKeys.length===1?stances[stKeys[0]]:null;
     var html='<div class="r3-list">';
     if(!active.length){
       html+='<p class="r3-quiet">'
@@ -345,7 +368,10 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
           +'<span class="r3-flownm">'+L(esc(fEn),esc(fZh))+ARROW+L(esc(tEn),esc(tZh))
             +'<span class="r3-flowsub">'+L(esc(e.sector_name_en||''),esc(e.sector_name_zh||e.sector_name_en||''))+'</span></span>'
           +'<span class="r3-flowday">'+L('Day '+day,'第 '+day+' 天')+'</span>'
-          +'<span class="r3-flowwhy">'+L(bEn.join(' '),bZh.join(''))+'</span>'
+          +'<span class="r3-flowwhy">'+L(bEn.join(' '),bZh.join(''))
+            +(sharedStance?'':' <b class="r3-flowst">'
+               +L(esc((STANCE[effType(e)]||STANCE.handoff)[0]),esc((STANCE[effType(e)]||STANCE.handoff)[1]))+'</b>')
+            +'</span>'
           +'</div>';
       });
     }
@@ -394,11 +420,10 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
 
     /* one foot line for the whole surface — a constant never repeats per row */
     var asof=(ev&&ev.as_of)||'—';
-    var ceiling=(vb&&vb._stance_ceiling)||null;
     html+='<div class="r3-foot">'
       +'<span>'+L('A heads-up on shifting leadership — not a buy list.',
                   '领导权变化的提示——非买入清单。')
-      +(ceiling?' '+L(esc(ceiling)+'.',esc(ceiling)+'。'):'')+'</span>'
+      +(sharedStance?' '+L(esc(sharedStance[0])+'.',esc(sharedStance[1])+'。'):'')+'</span>'
       +'<span class="r3-asof">'+L('as of '+esc(asof),'截至 '+esc(asof))+'</span>'
       +'</div></div>';
     host.innerHTML=html;
@@ -411,9 +436,11 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     var host=el('r3-cross-mount'); if(!host) return;
     var cnt=el('r3-cross-count');
     if(!frag){
-      host.innerHTML='<p class="r3-quiet">'
-        +L(evPresent?'Sector-spread data unavailable.':'Rotation-event data unavailable.',
-           evPresent?'板块内部差异数据暂不可用。':'轮动事件数据暂不可用。')+'</p>';
+      /* A6: one user-facing failure string per surface — crosscurrents is fed by
+         the same producer script as the transitions, so it collapses to the same
+         sentence rather than minting a second one. */
+      host.innerHTML='<div class="r3-panel"><p class="r3-quiet">'
+        +L('Rotation-event data unavailable.','轮动事件数据暂不可用。')+'</p></div>';
       if(cnt) cnt.innerHTML='';
       return;
     }
@@ -460,8 +487,8 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     var host=el('r3-wm-mount'); if(!host) return;
     if(!d){
       /* production's own explicit failure state (subsector_rotation.js) */
-      host.innerHTML='<p class="r3-quiet">'
-        +L('Could not load rotation data.','无法加载轮动数据。')+'</p>';
+      host.innerHTML='<div class="r3-panel"><p class="r3-quiet">'
+        +L('Could not load rotation data.','无法加载轮动数据。')+'</p></div>';
       return;
     }
     var subs=(d.subsectors||[]).filter(function(s){
@@ -489,7 +516,7 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
         +'<button type="button" class="r3-textbtn r3-wm-toggle" id="r3-wm-toggle"'
         +' aria-expanded="true" aria-controls="r3-wm-plot"></button>'
         +'<div class="r3-wm-plot" id="r3-wm-plot">'
-        +'<svg id="r3-wm-svg" class="r3-wm-svg" viewBox="0 0 600 340" role="img"'
+        +'<svg id="r3-wm-svg" class="r3-wm-svg" viewBox="0 0 600 420" role="img"'
         +' aria-labelledby="r3-wm-name r3-wm-desc"></svg>'
         +'<span class="r3-vh" id="r3-wm-name">'+L(
             'Whole-market rotation map — relative strength on the horizontal axis, its change of speed on the vertical axis, one dot per subsector.',
@@ -513,14 +540,14 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
       +'<div class="r3-panel r3-wm-lists">'
         +'<div class="r3-strip"><h3>'+L('Emerging','新兴')+'</h3>'
         +'<div class="r3-striplist">'+(emerging.length?list(emerging):'<span class="r3-stripsub">'+L('none tonight','今晚为空')+'</span>')+'</div>'
-        +'<p class="r3-stripsub">'+L('Named by tonight’s producer run, in its own order.','由今晚数据方标记，顺序沿用其输出。')+'</p></div>'
+        +'</div>'
         +'<div class="r3-strip"><h3>'+L('Fading','消退')+'</h3>'
         +'<div class="r3-striplist">'+(fading.length?list(fading):'<span class="r3-stripsub">'+L('none tonight','今晚为空')+'</span>')+'</div>'
-        +'<p class="r3-stripsub">'+L('Named by tonight’s producer run, in its own order.','由今晚数据方标记，顺序沿用其输出。')+'</p></div>'
+        +'</div>'
       +'</div></div>'
       +'<p class="r3-note">'+L(
-        'A context lens over the broadest universe: it measures the speed of relative strength — it ranks nothing, gates nothing and sizes nothing.',
-        '覆盖最广市场范围的背景视角：衡量相对强度的速度 — 不排序、不门控、不定仓。')+'</p>';
+        'Emerging and fading are named by tonight’s producer run, in its own order. A context lens over the broadest universe: it measures the speed of relative strength — it ranks nothing, gates nothing and sizes nothing.',
+        '「新兴」与「消退」由今晚数据方标记，顺序沿用其输出。这是覆盖最广市场范围的背景视角：衡量相对强度的速度 — 不排序、不门控、不定仓。')+'</p>';
 
     var a=el('r3-wm-asof');
     if(a&&d.asof) a.innerHTML=L('as of '+esc(d.asof),'截至 '+esc(d.asof));
@@ -532,13 +559,15 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
   function drawWholeMarket(subs, mag){
     var svg=el('r3-wm-svg'); if(!svg) return;
     while(svg.firstChild) svg.removeChild(svg.firstChild);
-    var W=600,H=340;
+    var W=600,H=420;
     /* axis extent from the data's own spread — a chart scale, not a score: no
        rank, state, count or ordering is produced by it. */
     var mx=0,my=0;
     subs.forEach(function(s){
       mx=Math.max(mx,Math.abs(s.rs_ratio)); my=Math.max(my,Math.abs(s.rs_mom)); });
-    mx=mx||1; my=my||1;
+    /* production's own domain rule, verbatim: symmetric max-abs with a 0.6 floor
+       and 12% headroom (templates/subsector_rotation.js:528) */
+    mx=Math.max(0.6,mx)*1.12; my=Math.max(0.6,my)*1.12;
     var px=function(v){ return ((Math.max(-mx,Math.min(mx,v))+mx)/(2*mx))*W; };
     var py=function(v){ return H-((Math.max(-my,Math.min(my,v))+my)/(2*my))*H; };
     svg.appendChild(svgEl('line',{class:'r3-ax',x1:W/2,y1:0,x2:W/2,y2:H}));
@@ -587,8 +616,8 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     var host=el('desk-watch-mount'); if(!host) return;
     if(td===undefined&&tpo===undefined) return;
     if(td===null&&tpo===null){
-      host.innerHTML='<p class="r3-quiet">'
-        +L('Desk-watch data unavailable.','值守台数据暂不可用。')+'</p>';
+      host.innerHTML='<div class="r3-panel"><p class="r3-quiet">'
+        +L('Desk-watch data unavailable.','值守台数据暂不可用。')+'</p></div>';
       return;
     }
     var armed=(td&&td.armed)||[];
