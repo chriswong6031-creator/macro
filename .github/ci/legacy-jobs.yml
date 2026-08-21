@@ -11051,7 +11051,11 @@ jobs:
       # literal, and it carries the four mutation-pinned dispatch-safety invariants
       # (§0.4 a-d) plus the no-stop-a-run AST pin; unrun, all of that is decoration.
       - name: prophet rescue lane — pure decide() matrix + the four dispatch-safety pins
-        run: python -m pytest tests/test_prophet_rescue.py -q
+        # test_prophet_r2_boundary.py rides this step (not a new entry — the
+        # manifest's narrow-diff ceiling reds a 181st job): same publication-
+        # boundary family, and its daily.yml/text pins are exactly the subject
+        # the rescue watchdog polices (DEC:B1-PROPHET-PUBLIC-SPLIT).
+        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py -q
 
   # ── THE HK BOARD PAIR — BORN DARK EIGHT DAYS AFTER THE CENSUS (2026-08-05) ──
   # tests/test_hk_board_rank.py (163 tests) + tests/test_hk_board_ui.py landed
