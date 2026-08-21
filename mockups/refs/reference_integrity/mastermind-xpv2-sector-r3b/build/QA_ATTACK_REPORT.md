@@ -495,3 +495,137 @@ ARIA **PARTIAL** (QA2-08, QA2-09, QA2-12); keyboard **PARTIAL** (same); access s
   RTL, print, and the `#theme-` hash family (outside the six named gates).
 - Zero uncaught page errors across every pass; the only console error is a `404` for
   `/favicon.ico`, an artifact of the static test server, not of the candidate.
+
+---
+
+# §11 — SECOND INDEPENDENT ATTACK PASS (lane QA3, appended 2026-08-21T13:52Z)
+
+Independent re-attack of the same frozen candidate, run without reading §1–§10 first
+(§1–§10 were discovered mid-pass, already written by a sibling QA lane). Server:
+`python3 -m http.server 8791` on `proposal/`; browser `playwright-core` + `Google Chrome for
+Testing` (ms-playwright `chromium-1234`), headless; all geometry from CDP
+`Emulation.setDeviceMetricsOverride` + in-page `getBoundingClientRect`/`getComputedStyle`.
+
+**This section exists to give the orchestrator a second opinion on contested cells.**
+Where QA3 agrees with QA2 it says so briefly; where it does NOT reproduce a QA2 finding it says
+so with the counter-measurement; new findings are numbered `QA3-*`.
+
+## §11.1 QA3 sweep-matrix statistics (raw)
+
+| pass | cells | metric | result |
+|---|---|---|---|
+| Width sweep | **216** (9 widths x 2 themes x 2 langs x 6 views) | `documentElement.scrollWidth - clientWidth` | **0/216 overflow**; **0/216** active-view mismatch; 0 page errors |
+| Classified off-screen walk | **108** (9 widths x 2 langs x 6 views, dark) | leaf nodes right of the viewport that are neither inside an `overflow-x:auto|scroll` scroller nor `.r3-vh` | **0/108 genuine** clipped/unreachable leaves |
+| Target-size sweep | 216 cells, global (active view + chrome, harness excluded) | any focusable with w or h < 44 | violations only in `map` at 768/820 (see QA3 agrees QA2-06) |
+| 200% zoom | **48** (4 css widths x 2 langs x 6 views) | halved layout viewport, dsf=2 | **6/48 overflow**, **6/48** clipped-or-offscreen |
+| Hash landings | **60** (30 cases x 2 widths: 390, 1440) | landing top vs sticky-chrome bottom | **0 under-chrome**, **0 view mismatches**, 1 absent target (`sc-top`, recorded seam) |
+| Access states | 3 states x 5 lanes x 2 langs, fresh browser context per state | DOM children by class, visible children, click-to-expand | see §11.3 |
+
+Gate-6 chrome model used by QA3 (differs from §1.6 and is worth recording): at <=767 the
+`nav.si-side` rail becomes a horizontal top tab bar and IS top chrome (`frame.bottom 40` +
+`rail.bottom 148.8`); at >=768 the rail is a LEFT column (`bottom 844`) and must NOT be counted
+as top chrome. Counting it at desktop produces 21 spurious "UNDER-CHROME" verdicts. With the
+correct model: 390 clearances **+10.7 to +522.9 px**; 1440 clearances **+15.5 to +650.4 px**.
+Computed `scroll-margin-top`: **160px** at 390 (= 40 chrome + 104 mnav + 16) and **56px** at 1440
+(= 40 + 0 + 16). QA3 concurs with the Gate-6 **PASS**.
+
+## §11.2 CONTESTED — QA3 cannot reproduce QA2-07 (the report's only CRITICAL)
+
+**QA2-07 claims:** `hydrated` never inserts rows; `dash-hold-fold` holds 3 DOM rows; clicking
+"Show more (24)" goes 3 -> 3.
+
+**QA3 measures the opposite.** Fresh browser context per access state, harness `#ref-access`
+driven by `select.value = state` + `dispatchEvent(new Event('change',{bubbles:true}))`, 800 ms
+settle, no lane click before the read:
+
+```
+HYDRATED  #dash-hold-fold children = 27
+  kinds = A.r3-row x3, DIV[data-theme-id] x9, A.actitem, DIV[data-theme-id] x12, A.actitem x2
+  ledge count = 27   (3 + 9 + 1 + 12 + 2 = 27)
+UNGATED   #dash-hold-fold children = 28  (27 x A.r3-row + 1 x P.pg-more)
+GATED     #dash-hold-fold children =  5  (3 x A.r3-row + 2 x P.pg-more)
+```
+
+Click test (`.r3-showmore` inside the lane's own `.r3-lanefoot`, visible-children before/after):
+
+| access | lane | visible before | button | visible after click |
+|---|---|---|---|---|
+| hydrated | buy_now | 3 | `Show more (1)` | **4** |
+| hydrated | buy_soon | 3 | `Show more (2)` | **5** |
+| hydrated | on_the_run | 3 | `Show more (2)` | **5** |
+| hydrated | take_profits | 3 | none (3 of 3) | 3 |
+| hydrated | **stand_aside** | 3 | `Show more (24)` | **27** |
+| ungated | stand_aside | 4 | `Show more (24)` | **28** |
+| gated | every lane | 3–5 | **none** (not collapsed) | unchanged |
+
+Every hydrated lane expands to its full producer population. **QA3 therefore records QA2-07 as
+NOT REPRODUCED.** Two plausible explanations for the divergence, both worth the orchestrator's
+time before any repair is commissioned:
+
+1. **Read-too-early.** `REF.setAccessState` -> `REF.renderActNow(state)` -> `hydrate()` runs
+   asynchronously relative to a `change` event; a probe that measures immediately after the
+   select change sees the pre-hydrate 3-row fold.
+2. **Click-before-read.** Clicking a ledge tab re-runs `paintPanel()`/`restoreFolds()`; a probe
+   that clicks the lane and then reads within the same tick can observe an intermediate DOM.
+   QA3's first attempt did exactly this and produced misleading child counts before being redone
+   without the click.
+
+**Do not dispatch a hydration repair on QA2-07 alone.** Re-run both harnesses side by side first.
+If QA2's measurement is confirmed on a different machine, the divergence is itself the finding
+(a timing-dependent hydration race), which is a different repair from "never inserts".
+
+## §11.3 NEW FINDINGS (QA3)
+
+| id | sev | view | width / lang / theme | symptom | measurement | suggested owner lane |
+|---|---|---|---|---|---|---|
+| **QA3-01** | MAJOR | overview | any / en+zh / any | The producer-bound `+5 more — full list on Sector Intelligence` overflow disclosure is present in `gated` and `ungated` but **disappears in `hydrated`**. `abPlus()` is emitted by `fillLane()`; `hydrate()` rebuilds the fold without re-appending it. A signed-in user silently loses the only statement that 5 groups exist beyond the board. §24 `access split collapse`. | `#dash-hold-fold` `P.pg-more` children: gated **2**, ungated **1**, hydrated **0**. The line is producer-bound: `action_board.more = {hold:4, avoid:1}`, `plusCount('stand_aside') = 4+1 = 5` (candidate `:1288`) | access/hydration lane |
+| **QA3-02** | MINOR | overview | any / en+zh / any | `gated` STAND ASIDE stacks **two contradictory overflow affordances** in one lane: `24 more here — sign in to see the full lane` immediately followed by `+5 more — full list on Sector Intelligence`. Correct-by-construction (one is the gate tease, one is the board cap) but reads as a self-contradiction. | `#dash-hold-fold` children = `A.r3-row x3, P.pg-more, P.pg-more`; texts as quoted | D1 (Overview) |
+| **QA3-03** | MINOR | (fixture) | n/a | `basketdata/action_board.json` ships **two bare `NaN` tokens** (`"factor_z": NaN`). That is not valid JSON: a browser `JSON.parse` / `Response.json()` throws `SyntaxError: Unexpected token 'N'`. The board only renders because `REF.parseJSON` (`:7011`) pre-substitutes `null`. The reference therefore demonstrates a render that **production's own fetch path could not reproduce from the same bytes**. The candidate documents this at `:7005-7010`, but the fixture is still the defect. | `json.loads(body, parse_constant=raise)` -> `FAIL const NaN`; occurrences at `"alpha_entry": "neutral", "factor_z": NaN` x2. Playwright `page.evaluate(JSON.parse)` on the same block throws | fixture/provenance lane |
+| **QA3-04** | MINOR | (shell) | any | `wireStickyOffset()` writes the MEASURED `.si-topbar` height into `--ref-sticky-offset`, and `:263` consumes it — but the **same global selector is re-declared twice more**, at `:3371` and `:4450`, inside the Money and Explore view-partial `<style>` blocks, using the STATIC `var(--r3-chrome-h,40px)` instead. Equal specificity, later in document order, unscoped selector -> the later rules win for ALL views and the measurement is discarded. Harmless today (both compute to 40 px) but it **silently neutralises the shim for any future taller shell** — precisely the case the shim's own comment says it exists for. | `.si-view [id], .si-view[id]{ scroll-margin-top: ... }` declared 3x; the shell base CSS block (`html[data-lang="zh"] .l-en{display:none}`) is emitted **3x** in the single file | build/shell lane |
+| **QA3-05** | MINOR | money | any / any / any | Money carries **zero `stock.html#<TICKER>` destinations** while the capability ledger row 76 marks "Stock detail destination (`stockHref`, uniform `stock.html#<TICKER>` across all four universes)" **RETAIN**, and routing_contract §7 records `hm-mrow` rows carrying that pattern in production. Confluence honours it; Money does not. Either a capability regression or an undocumented DEFER. | `money`: total hrefs **1** (`#explore`), `stock.html` **0**. `confluence`: hrefs **22**, `stock.html` **2** (`stock.html#COIN`, `stock.html#NSC`) | capability-ledger adjudication |
+| **QA3-06** | MINOR | map, money, explore | any / any / any | Chart-equivalent tables are under-labelled. Map's two equivalents carry `<caption>`; **Money's three tables carry none** — including `table#hm-alt-tbl`, one of the three mandatory chart equivalents (its only name is the enclosing `<details><summary>`). `th[scope]` is set on **1 of 6** tables (`#cf-table`, `scope="col"` x7); `#rvx-board` (7 th), `.r3-cyc-tbl` (5), `#scf` (6), `#hm-alt-tbl` (6), `#btable` (8) set none. | `caption`: rvx-board yes, r3-cyc-tbl yes, scf **null**, hm-alt-tbl **null**, r3-tbl **null**, btable **null**. `th[scope]` non-null only on `#cf-table` | a11y lane |
+| **QA3-07** | MINOR | moving | any / any / any | The whole-market rotation map plots **269 subsectors** but its nonvisual equivalent is only the four quadrant counts plus **24** named emerging/fading links — there is no table or list of the plotted population (`table`s in `#rotation-app`: **0**; `ul/ol/dl`: **0**). Compare Map's rotation map, which ships a full 38-group table. The `aria-describedby` text is honest about what it lists, so this is a coverage gap, not a false claim. | `#rotation-app`: `querySelectorAll('table').length === 0`, `('ul,ol,dl').length === 0`, `a[href]` **24**; rendered text "65 leading · 91 improving · 58 weakening · 55 lagging, across 269 subsectors" | D2 (Moving) |
+| **QA3-08** | NOTE | (harness) | n/a | `REF.simulateFetchFail` is **post-boot only**. Eight payloads (`baskets`, `etf_pulse`, `vol_sentiment`, `sp500_heatmap`, `index_leadership`, `narrative_emergence`, `nasdaq_internals`, +1) resolve `hit` before the drawer mounts, so toggling the switch afterwards **cannot** exercise the failure path for Overview / Map / Money / Confluence organs — those views stay fully populated (node counts identical to a clean boot: 452 / 1268 / 1403 / 764). Only Moving and Explore were genuinely fail-tested. Two attempts to force the flag pre-boot via `addInitScript` were defeated by the shim re-initialising `REF.simulateFetchFail = false`. **§6's fetch-fail PASS therefore rests on 2 of 6 views**, not 6. | recorder after toggle: seq 1-8 `hit`, seq 10-16 `simulated-fail` (rotation_events, sector_fragmentation, subsector_rotation, oracle_turn_desk, oracle_tape_onset, baskets x2). `window.__FAILSET === true` while `REF.simulateFetchFail === false` | harness lane |
+| **QA3-09** | NOTE | overview | any / any / any | The STAND ASIDE ledge count reads **27** (array length) beside a `+5 more` line implying a population of 32. Faithful to production — `templates/_us_act_now_board.html.j2:528` `(action_board.hold\|length) + (action_board.avoid\|length)` and `:548` sums `more`. **Recorded production seam, not a candidate defect.** | ledge counts 4/5/5/3/27 sum to **44** = `action_board.total` exactly; `more` = `{buy_now:0, buy_soon:0, on_the_run:0, take_profits:0, hold:4, avoid:1}` | — |
+| **QA3-10** | NOTE | explore | any / en+zh / any | `out-of-sample backtest` / `样本外回测` is untranslated statistical vocabulary in visible customer copy. It is a **hedged negative disclaimer** ("the record is descriptive — not an out-of-sample backtest and not a buy list"), ZH-twinned at `:5147-5148`, and sits in a Tier-2 footnote, so it is compliant null disclosure rather than a stats leak. Flagged for the doctrine reviewer only. | candidate `:5147` EN + `:5148` ZH; TreeWalker finds the string in a visible `span.l-en`. The token `falsifier` appears **only** inside a `<script>` comment (`visible:false`) — no user-facing falsifier vocabulary, confirming §7 | doctrine review |
+
+**QA3 new counts: 1 MAJOR, 6 MINOR, 3 NOTE.**
+
+## §11.4 QA3 CONFIRMATIONS of QA2 findings (independent re-measurement)
+
+| QA2 id | QA3 verdict | QA3 counter-measurement |
+|---|---|---|
+| QA2-01 (Money `.r3-tag` nowrap) | **CONFIRMED** | `span.r3-tag` in `p.lead-foot` (`#scc-leadership`), `white-space:nowrap`, right edge **219.8** vs `clientWidth 160` -> doc `sw 220`, **+60**; at `cw 195` -> `sw 221`, **+26**. Root CSS `:481 .r3-tag{ ... white-space:nowrap; }` |
+| QA2-02 (Explore `.ne-tk` no wrap) | **CONFIRMED** | `span.ne-tk` right **196.1** vs `cw 160` (EN, +36); `191.8` (ZH, +32); `196.1` vs `cw 195` (+1). Root CSS `:4680 .ne-tk{ display:inline-flex; min-height:34px; }` — inline-flex is the non-wrapping mechanism |
+| QA2-03 (Explore `#btbl-mode`) | **CONFIRMED** | `button` right **181.6** vs `cw 160`; `min-width: 44px` per button x3 |
+| QA2-04 (Overview lede) | **CONFIRMED** | `span.l-en` in `p#si-read-overview.si-view-read` right **163.9** vs `cw 160`, doc **+4** |
+| QA2-05 (css820 clipped name) | **CONFIRMED, and worse than reported** | two `.hm-sechd` clip, not one: `Communication Services` `scrollWidth 154 / clientWidth 129` (**25 px cut**) and `Consumer Defensive` `129 / 84` (**45 px cut**), `overflow-x:hidden`, doc overflow **0** |
+| QA2-06 (map segments 40 px) | **CONFIRMED** | `#r3-map-scope button`: `98.4 x 40.0` / `96.9 x 40.0` (EN), `74.2 x 40.0` / `69.4 x 40.0` (ZH) at 768 and 820; `min-height: 40px`, `padding 0px/0px`, `font-size 12.5px`. Clean at <=430 |
+| QA2-10 (EN-only aria-labels) | **CONFIRMED (narrower set)** | Under `#ref-lang=zh`, **5 of 6** `aria-label`s on the page are byte-identical to EN: `nav.si-side` "Sector Intelligence views", `#ov-ledge` "Action lanes", `#r3-map-scope` "Show themes or sectors on the rotation map", `#cf-uni` "Universe", `#cf-ledge` "Timing states". Only `input#cf-q` translates ("Filter subsector or sector" -> "筛选子行业或板块") — **the mechanism exists and was simply not applied**, which strengthens the finding |
+| QA2-14 (screenshot clears CDP override) | **CONFIRMED independently** | Same trap hit in QA3's first screenshot script: cases 2+ reported `iw=1440 sw=1440 over=0` for cells that measure `+36`/`+32` with a fresh context per case |
+| §7 authority masquerade PASS | **CONFIRMED** | `.r3-ledge-grid` and `.st-*` action inks exist ONLY in the two `r3-view--action` views (overview 7 `st-*` nodes, confluence 11); `map/moving/money/explore` all carry `r3-view--context` and **0** ledge grids, **0** ledge cells, **0** `st-*` nodes. `a[href="#"]`: **0/0/0/0/0/0**. `[title]`: **0/0/0/0/0/0**. No accent-filled CTA in any context view (only `rgb(30,34,42)` = panel2 segment surface) |
+| Gate 1 / Gate 2 / Gate 3 PASS | **CONFIRMED** | Gate 1: 5 tabs `294 x 56` at 320, all names+counts rendered, `nameClipX=false` on all 5, doc overflow 0. Gate 2: phone order `si-read-map 239` -> `r3-map-quads 536` -> `r3-map-detail 835` -> `rvx-board 1174` -> `r3-map-fig 2054`; desktop inverts it (`r3-map-fig 309` above `r3-map-quads 871`). Gate 3: 4/4 universe tabs at **44 px** height and `inView:true` at every one of 9 widths x 2 langs; `.r3-ledge-grid` is an equal-fraction grid (`repeat(5, minmax(0,1fr))`), the population-scaled `#cf-spread` bar carries **no labels** and is `aria-hidden="true"` |
+
+## §11.5 QA3 hypotheses raised and FALSIFIED (do not re-open)
+
+| hypothesis | falsifying evidence |
+|---|---|
+| "`stand_aside` merging `hold`+`avoid` and summing their lengths is client-side count recomputation (§24)" | **FALSE.** Production does the same: `templates/_us_act_now_board.html.j2:528` `_hold_cnt = (action_board.hold\|length) + (action_board.avoid\|length)`, `:539-541` the identical preview-budget split (hold first, avoid takes the remainder). Candidate `:1116/:1122` mirrors it verbatim |
+| "`Forward track record: Validated` is an unearned BC-2 claim" | **FALSE.** Production emits the same string (`templates/sector_central.html.j2:3463`) and `data/regime/validated_claims_allowlist.json` carries an entry whose `surfaces` list names `sector_central` |
+| "Money is keyboard-inert / has hidden-only capability (2 focusables in a dense view)" | **FALSE.** Money's 27 `tbody tr` rows are display-only: `cursor:auto`, no `a[href]`, no `tabindex`, no `role`, no `data-*` handles, zero `[onclick]/[data-href]/[data-tk]/[data-ticker]`. Nothing is mouse-reachable that is not keyboard-reachable |
+| "Hydration mutates producer order in `stand_aside`" | **NOT ESTABLISHED — probe artifact.** The apparent mismatch came from a name extractor that read score cells on hydrated nodes (`DIV[data-theme-id] > a` has a different inner structure than `A.r3-row`). Withdrawn |
+| "`svg` `aria-labelledby` targets are missing (`MISSING(r3-rmap-name r3-rmap-desc)`)" | **FALSE — probe artifact.** A shell-escaping bug turned `/\\s+/` into a literal-`\\s` regex, so the id list was never split. All four ids (`r3-rmap-name/desc`, `r3-cyc-name/desc`, `r3-wm-name/desc`) resolve to real text |
+| "User-facing falsifier-register vocabulary in Explore" | **FALSE.** `falsifier` occurs once, inside a `<script>` comment (`visible:false`). `out-of-sample` is a hedged negative disclaimer with ZH parity (QA3-10) |
+
+## §11.6 QA3 limits
+
+- 200% zoom emulated as layout-viewport halving with `deviceScaleFactor:2`; **text-only zoom was
+  not separately simulated**. The fixed-height clipping analogue was probed instead via
+  `overflow:hidden` ancestors with `scrollWidth > clientWidth` (found QA2-05 / QA3's two
+  `.hm-sechd` cuts). A true text-only-zoom pass remains open.
+- Boot-time fetch failure could not be forced (QA3-08), so 4 of 6 views were never fail-tested.
+- Keyboard was assessed by focusable-inventory + arrow-key probes, not by a screen reader.
+- Colour contrast, reduced motion, RTL, print and the `#theme-` hash family were out of scope.
+- `build/qa_findings/` is shared with the QA2 lane; QA3 wrote only `GATE4-*` and `GATE5-*` files
+  and deleted only its own three redundant/passing-state captures. No `QA2-*` file was touched.
+
