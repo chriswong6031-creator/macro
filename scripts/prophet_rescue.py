@@ -10,9 +10,12 @@ DIVISION OF LABOUR (read this before adding anything here).
   scripts/prophet_rescue.py (this)   RESPONDS.  It re-arms the nightly within bounds,
       opens/updates one public issue per stranded session with a receipt per wake,
       pushes to the ops channel, and additionally covers two failure shapes the
-      detector does not model: a SERVE SPLIT (main fresh, the public R2 mirror or the
-      VPS pull loop stale) and the ZERO-ORIGINATION WEDGE (source_asof fresh, plans
-      for the expected session absent while intake says candidates were eligible).
+      detector does not model: a PUBLISH LAG (main fresh, the public R2 health
+      receipt or the VPS pull loop stale — DEC:B1-PROPHET-PUBLIC-SPLIT: users are
+      served by the protected origin, never by the R2 receipt, so a lagging receipt
+      is a publish-leg defect, not a user-visible split) and the ZERO-ORIGINATION
+      WEDGE (source_asof fresh, plans for the expected session absent while intake
+      says candidates were eligible).
 
 The overlap in staleness arithmetic between the two is DELIBERATE.  A responder that
 imports its detector shares its fate; on 2026-08-11 the thing that broke was a single
@@ -80,6 +83,7 @@ Run:  python3 scripts/prophet_rescue.py [--lane actions|launchd] [--dry-run] [--
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -121,14 +125,17 @@ DEFAULT_REPO = (
     os.environ.get("GITHUB_REPOSITORY") or "mastermindx-market-intelligence/macro"
 )
 
-#: The public R2 data plane — ``config.yml: r2_data_plane.public_base``, hardcoded
-#: because this module is stdlib-only by contract (importing lib.config would drag
-#: in PyYAML and the whole engine tree, defeating the independence this lane exists
-#: for).  Mirrors the base charting-app ``lib/flowSource.ts`` and
-#: templates/data_base.js read from, i.e. the bytes a logged-in browser actually
-#: paints Prophet from.  scripts/build_prophet_marks.py:91 reads the same URL.
-R2_INDEX_URL = (
-    "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/prophet/index.json"
+#: The public R2 health receipt — ``config.yml: r2_data_plane.public_base``,
+#: hardcoded because this module is stdlib-only by contract (importing lib.config
+#: would drag in PyYAML and the whole engine tree, defeating the independence this
+#: lane exists for).  DEC:B1-PROPHET-PUBLIC-SPLIT: this is NOT the plan book and
+#: NOT what a logged-in browser paints Prophet from — the full book is
+#: premium/private and is served only by the protected origin / authenticated
+#: server-side paths.  This receipt carries only publication metadata
+#: (source_asof, published_at, checkpoint, index_sha256): a public proof that the
+#: nightly's health-publish leg completed, nothing decision-bearing.
+R2_HEALTH_URL = (
+    "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/prophet/health.json"
 )
 
 #: The VPS's own read-only health view (app/main.py:559).  ``checks.site.commit_time``
@@ -237,7 +244,7 @@ WAIT = "WAIT"
 STRAND = "STRAND"
 STALE = "STALE"
 NO_COHORT = "NO_COHORT"
-SERVE_SPLIT_R2 = "SERVE_SPLIT_R2"
+R2_HEALTH_LAG = "R2_HEALTH_LAG"
 # There is deliberately no SERVE_SPLIT_VPS: see VPS_COMMIT_CONTEXT_ONLY above.
 API_DARK = "API_DARK"
 DISK_LOW = "DISK_LOW"          # launchd lane only
@@ -281,8 +288,8 @@ class WatchdogState:
     now: datetime
     main_index: dict | None = None
     main_error: str | None = None
-    r2_index: dict | None = None
-    r2_error: str | None = None
+    r2_health: dict | None = None
+    r2_health_error: str | None = None
     vps_status: dict | None = None
     vps_error: str | None = None
     runs: list[dict] | None = None
@@ -328,6 +335,28 @@ def _parse_date(value: object) -> date | None:
     try:
         return date.fromisoformat(value[:10])
     except ValueError:
+        return None
+
+
+def _reserialized_index_sha256(index: dict) -> str | None:
+    """Best-effort sha256 of ``index`` reserialized the same way
+    ``scripts/build_prophet.py::_write_json`` writes it (``indent=2,
+    allow_nan=False, default=str``, no trailing newline).
+
+    NOT a byte-exact substitute for hashing the committed file directly — this
+    lane only ever holds ``main_index`` as an already-parsed dict (fetched
+    through the GitHub contents API), never the raw bytes the nightly hashed.
+    Reserializing with the writer's own parameters reproduces those bytes
+    whenever nothing downstream re-serialized the object differently, which is
+    the common case; a mismatch is therefore a signal worth printing, never an
+    authoritative "the objects differ" claim.  Used only for the receipt's
+    informational health-hash detail (never a verdict) — see ``receipt()``.
+    """
+    try:
+        return hashlib.sha256(
+            json.dumps(index, allow_nan=False, default=str, indent=2).encode("utf-8")
+        ).hexdigest()
+    except (TypeError, ValueError):
         return None
 
 
@@ -846,16 +875,23 @@ def decide(state: WatchdogState) -> list[Action]:
             "`source_mixed_vintage` and `gate_go` in the index.",
         ))
 
-    # ── serve split: main is the truth, the edges are what users read ───────
+    # ── publish lag: main is the truth, the health receipt only proves publication ──
+    # DEC:B1-PROPHET-PUBLIC-SPLIT: the public R2 object is a health receipt, never
+    # the plan book — users are served by the protected origin regardless of what
+    # this receipt reads, so a lagging receipt is a publish-leg defect (the
+    # nightly's R2 health-publish step did not complete), not a user-visible split.
     if state.main_index is not None and src is not None:
-        r2_src = _parse_date(state.r2_index.get("source_asof")) if state.r2_index else None
-        if r2_src is not None and r2_src < src:
+        health_src = (
+            _parse_date(state.r2_health.get("source_asof")) if state.r2_health else None
+        )
+        if health_src is not None and health_src < src:
             actions.append(Action(
-                ALERT, SERVE_SPLIT_R2,
-                f"SERVE SPLIT: main source_asof {src.isoformat()} but the public R2 "
-                f"mirror reads {r2_src.isoformat()} ({R2_INDEX_URL}). The browser "
-                "paints from R2, so users are on the older board. Check the publish "
-                "leg of the last render and the R2 sync.",
+                ALERT, R2_HEALTH_LAG,
+                f"PUBLISH LAG: main source_asof {src.isoformat()} but the public "
+                f"health receipt reads {health_src.isoformat()} ({R2_HEALTH_URL}). "
+                "Users are served by the protected origin, not by this receipt; a "
+                "lagging receipt means the nightly's R2 health-publish leg did not "
+                "complete — check daily.yml's Prophet health publisher step.",
             ))
 
     # The VPS's `checks.site.commit_time` is CONTEXT, never a verdict — it stamps
@@ -950,8 +986,10 @@ def fetch_main_index(repo: str, token: str | None) -> tuple[dict | None, str | N
     return (payload, None) if isinstance(payload, dict) else (None, "not a JSON object")
 
 
-def fetch_r2_index() -> tuple[dict | None, str | None]:
-    payload, err = _get_json(R2_INDEX_URL)
+def fetch_r2_health() -> tuple[dict | None, str | None]:
+    """The public prophet.public_health/v1 receipt — publication metadata only,
+    never the plan book (DEC:B1-PROPHET-PUBLIC-SPLIT)."""
+    payload, err = _get_json(R2_HEALTH_URL)
     if err is not None:
         return None, err
     return (payload, None) if isinstance(payload, dict) else (None, "not a JSON object")
@@ -1099,14 +1137,14 @@ def collect_state(repo: str, token: str | None, now: datetime, *,
     on ``/var/folders`` instead of on the volume the runners actually fill.
     """
     main_index, main_error = fetch_main_index(repo, token)
-    r2_index, r2_error = fetch_r2_index()
+    r2_health, r2_health_error = fetch_r2_health()
     vps_status, vps_error = fetch_vps_status()
     runs, runs_error = fetch_runs(repo, token)
     budget, budget_error = fetch_dispatch_budget(repo, token, now)
     return WatchdogState(
         now=now,
         main_index=main_index, main_error=main_error,
-        r2_index=r2_index, r2_error=r2_error,
+        r2_health=r2_health, r2_health_error=r2_health_error,
         vps_status=vps_status, vps_error=vps_error,
         runs=runs, runs_error=runs_error,
         dispatch_runs_today=budget, dispatch_probe_error=budget_error,
@@ -1301,6 +1339,36 @@ def receipt(actions: list[Action], state: WatchdogState, session: date,
     ]
     if facts.anomalies:
         lines.append("- ⚠ run-list parse anomalies: " + "; ".join(facts.anomalies))
+    # Info-only detail, never a verdict: the health receipt's source_asof already
+    # matches main (no R2_HEALTH_LAG), but its recorded index_sha256 disagrees with
+    # a reserialization of the index this lane holds — worth a human's eye, not
+    # worth alarming on (the reserialization is best-effort, see
+    # _reserialized_index_sha256).
+    main_src_date = _parse_date(src) if src else None
+    health_src_date = (
+        _parse_date(state.r2_health.get("source_asof")) if state.r2_health else None
+    )
+    if (
+        state.main_index is not None
+        and state.r2_health is not None
+        and main_src_date is not None
+        and health_src_date == main_src_date
+    ):
+        health_hash = state.r2_health.get("index_sha256")
+        main_hash = _reserialized_index_sha256(state.main_index)
+        if (
+            isinstance(health_hash, str)
+            and health_hash
+            and main_hash is not None
+            and health_hash != main_hash
+        ):
+            lines.append(
+                "- ⚠ public health receipt `source_asof` matches main but "
+                f"`index_sha256` disagrees (receipt `{health_hash}` vs a "
+                f"reserialization of main `{main_hash}`) — informational only, the "
+                "reserialization is best-effort and not a verdict; may indicate a "
+                "stale receipt from a superseded checkpoint."
+            )
     lines += ["", "**Verdicts**"]
     lines += [f"- `{a.verdict}` ({a.kind}) — {a.message}" for a in actions]
     if results:

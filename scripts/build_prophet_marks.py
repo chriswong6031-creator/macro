@@ -1,12 +1,18 @@
 """scripts/build_prophet_marks.py — Prophet live-premium marks publisher (Item E).
 
-Reads active Prophet plans from the canonical R2 index in publish mode (local checkout
-first, then R2, for debug builds), binds each defined option_contract to an exact OCC
-identity, and pulls one bounded-age trade-paired quote per contract.  Every open option
-plan is accounted for in a host-private immutable prospective observation before the
-mutable public prophet.live_marks/v1 object advances.  The evidence is a prerequisite
-mark path only: it assumes no position, provider-observed entry, exit, or fill and has
-no execution or product authority.
+Reads active Prophet plans from the canonical accepted index, binds each defined
+option_contract to an exact OCC identity, and pulls one bounded-age trade-paired quote
+per contract.  Every open option plan is accounted for in a host-private immutable
+prospective observation before the mutable public prophet.live_marks/v1 object
+advances.  The evidence is a prerequisite mark path only: it assumes no position,
+provider-observed entry, exit, or fill and has no execution or product authority.
+
+Index source (DEC:B1-PROPHET-PUBLIC-SPLIT): the full Prophet plan book is
+premium/private and is never fetched from a public URL.  Publish mode reads the
+canonical accepted bytes via git (``origin/main:site/prophet/index.json``) — correct
+even from a pinned ops checkout, and authenticated, unlike an anonymous R2 GET.  Debug
+builds (no ``--publish``) read only the local checkout's generated index; there is no
+public-URL fallback.
 
 RTH behaviour
 -------------
@@ -36,7 +42,6 @@ Environment variables
     R2_ACCESS_KEY_ID     R2 access key
     R2_SECRET_ACCESS_KEY R2 secret
     R2_BUCKET            R2 bucket name (default: mastermindx)
-    PROPHET_INDEX_URL    Override for the R2 fallback URL (optional)
     PROPHET_OPTION_EVIDENCE_STATE_ROOT
                          Host-private 0700 evidence root (optional)
     PROPHET_OPTION_EVIDENCE_SCHEMA_PATH
@@ -63,8 +68,8 @@ from pathlib import Path
 import re
 import secrets
 import stat
+import subprocess
 import sys
-import urllib.request
 from typing import Any
 
 # ── repo path ─────────────────────────────────────────────────────────────────
@@ -86,10 +91,10 @@ EVIDENCE_POINTER_SCHEMA = "prophet.option_mark_pointer/v1"
 EVIDENCE_HEAD_SCHEMA = "prophet.option_mark_local_head/v1"
 EVIDENCE_PREFIX = "observations"
 MAX_QUOTE_AGE_SECONDS = 30 * 60
-R2_FALLBACK_URL = os.environ.get(
-    "PROPHET_INDEX_URL",
-    "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/prophet/index.json",
-)
+#: Canonical index provenance evidence field (DEC:B1-PROPHET-PUBLIC-SPLIT — the
+#: full plan book is never fetched from a public URL; publish mode reads it via
+#: authenticated git instead, see ``_load_index_canonical_git``).
+CANONICAL_INDEX_SOURCE_URL = "git:origin/main:site/prophet/index.json"
 
 # Regular trading hours: 09:30–16:00 ET (inclusive on open, exclusive on close)
 _RTH_OPEN  = dtime(9, 30, 0)
@@ -229,17 +234,37 @@ def _load_index_local() -> dict | None:
     return None
 
 
-def _load_index_r2() -> dict | None:
-    """Fetch the canonical published index.json from R2."""
+def _load_index_canonical_git() -> dict | None:
+    """Fetch the canonical accepted ``site/prophet/index.json`` via git, never a
+    public URL (DEC:B1-PROPHET-PUBLIC-SPLIT).
+
+    A deployed publisher may run from an intentionally pinned operations
+    checkout, so its local generated index is not canonical.  The authenticated
+    origin remote is the one canonical source: fetch main, then read the exact
+    committed bytes at that ref with ``git show`` — never the working tree,
+    which may be stale or absent entirely on a pinned ops host.  Returns
+    ``None`` on ANY failure; callers treat that as "index unavailable" and
+    refuse the publish cycle rather than falling back to a stale local file or
+    an anonymous public URL.
+    """
     try:
-        req = urllib.request.Request(
-            R2_FALLBACK_URL,
-            headers={"User-Agent": "macro-prophet-marks/1.0"},
+        subprocess.run(
+            ["git", "fetch", "origin", "+refs/heads/main:refs/remotes/origin/main"],
+            cwd=_REPO,
+            check=True,
+            capture_output=True,
+            timeout=120,
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+        result = subprocess.run(
+            ["git", "show", "origin/main:site/prophet/index.json"],
+            cwd=_REPO,
+            check=True,
+            capture_output=True,
+            timeout=120,
+        )
+        return json.loads(result.stdout.decode("utf-8"))
     except Exception as exc:  # noqa: BLE001
-        log.warning("prophet_marks: R2 fallback index load failed: %s", exc)
+        log.warning("prophet_marks: canonical git index load failed: %s", exc)
     return None
 
 
@@ -247,18 +272,15 @@ def _load_index(*, publish: bool = False) -> dict | None:
     """Load the Prophet index appropriate for the requested output mode.
 
     A deployed publisher may run from an intentionally pinned operations
-    checkout, so its local generated index is not canonical.  Publish mode is
-    therefore R2-only and fail-closed.  Local-first loading remains useful for
-    explicit debug builds in a development checkout.
+    checkout, so its local generated index is not canonical.  Publish mode
+    therefore reads the canonical accepted bytes via git (never a public URL —
+    DEC:B1-PROPHET-PUBLIC-SPLIT) and is fail-closed on any git error.  Debug
+    builds read only the local checkout's generated index; there is no
+    public-URL fallback for either mode.
     """
     if publish:
-        return _load_index_r2()
-
-    idx = _load_index_local()
-    if idx is not None:
-        return idx
-    log.info("prophet_marks: local index not found, trying R2 fallback")
-    return _load_index_r2()
+        return _load_index_canonical_git()
+    return _load_index_local()
 
 
 # ---------------------------------------------------------------------------
@@ -821,7 +843,7 @@ def _build_observation(
             "asof": index_asof,
             "recorded_at": index_recorded_at,
             "semantic_sha256": sha256(_canonical_json_bytes(index)).hexdigest(),
-            "source_url": R2_FALLBACK_URL,
+            "source_url": CANONICAL_INDEX_SOURCE_URL,
         },
         "source": {
             "provider": "licensed_options_history_feed",

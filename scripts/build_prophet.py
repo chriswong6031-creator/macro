@@ -122,7 +122,17 @@ INDEX_PATH     = SITE_PROPHET / "index.json"
 LEDGER_DIR     = _REPO / "data" / "prophet"
 LEDGER_PATH    = LEDGER_DIR / "ledger.jsonl"
 
-R2_INDEX_KEY   = "prophet/index.json"
+# R2_INDEX_KEY is GONE ON PURPOSE (DEC:B1-PROPHET-PUBLIC-SPLIT).  The full
+# Prophet plan book (site/prophet/index.json) is premium/private and must
+# never be reachable from public R2 — the 262+-plan book was anonymously
+# GETtable at the public dev URL while the origin 401s the same path.  Public
+# R2 carries ONLY the minimal, non-decision-bearing health projection below.
+R2_HEALTH_KEY  = "prophet/health.json"
+
+#: Keys the R2 publish path must NEVER put to.  A frozenset of one today —
+#: never grown into a second full-book alias — but modeled as a set so a
+#: future forbidden key never needs a second guard.
+R2_PUBLIC_FORBIDDEN_KEYS = frozenset({"prophet/index.json"})
 
 # R0.7 market-overlay inputs (compute_management_state macro_stance/futures_chg)
 MARKET_STATE_PATH = _REPO / "data" / "market_state" / "latest.json"
@@ -181,6 +191,55 @@ def _upload_r2(s3, bucket: str, local_path: Path, r2_key: str) -> bool:
     except Exception as e:  # noqa: BLE001
         log.warning("build_prophet: R2 upload failed for %s: %s", r2_key, e)
         return False
+
+
+def guarded_put_object(client, *, bucket: str, key: str, **kwargs: Any):
+    """``client.put_object`` wrapper that refuses a forbidden public key.
+
+    DEC:B1-PROPHET-PUBLIC-SPLIT closure: the full Prophet plan book must never
+    reach public R2, structurally — not just "the current writer happens not
+    to try it".  Every writer that puts to the Prophet R2 prefix, this
+    module's own future callers and the daily.yml health publisher alike,
+    routes through this helper rather than calling ``client.put_object``
+    directly, so a reintroduced write to a forbidden key raises here instead
+    of silently republishing the book.
+    """
+    if key in R2_PUBLIC_FORBIDDEN_KEYS:
+        raise ValueError(f"build_prophet: refusing R2 put of forbidden public key: {key}")
+    return client.put_object(Bucket=bucket, Key=key, **kwargs)
+
+
+def build_public_health_projection(
+    index: dict,
+    *,
+    checkpoint_sha: str,
+    index_sha256: str,
+    published_at: str,
+) -> dict:
+    """The ONLY payload public R2 may ever carry for Prophet (DEC:B1-PROPHET-
+    PUBLIC-SPLIT).  Built STRICTLY field-by-field from ``index`` — never a
+    dict-copy or ``**index`` spread — so a new field added to the plan book
+    schema does not silently leak into the public projection.  Every field
+    here is proven required by a surviving public-safe consumer:
+    ``source_asof`` for the rescue watchdog's staleness comparison, plus
+    publication identity (``published_at``/``checkpoint``/``index_sha256``)
+    so a human or a script can prove which build produced this receipt.
+    Nothing decision-bearing (plans, entries, targets, invalidations,
+    theses, scores) is ever allowed into this projection.
+    """
+    source_asof = str(index.get("source_asof") or "")[:10] or None
+    return {
+        "schema": "prophet.public_health/v1",
+        "source_asof": source_asof,
+        "published_at": published_at,
+        "checkpoint": checkpoint_sha,
+        "index_sha256": index_sha256,
+        "note": (
+            "Public publication receipt only. The full Prophet plan book is "
+            "premium and is never served from public R2 "
+            "(DEC:B1-PROPHET-PUBLIC-SPLIT)."
+        ),
+    }
 
 
 # ---------------------------------------------------------------------------

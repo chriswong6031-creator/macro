@@ -1249,8 +1249,10 @@ esac
     assert "outside 09:25–16:05 ET window" in at_close.stdout
 
 
-def test_prophet_marks_publish_uses_canonical_r2_and_tombstones_empty(monkeypatch):
-    """A stale operations checkout cannot keep an obsolete contract alive."""
+def test_prophet_marks_publish_uses_canonical_git_and_tombstones_empty(monkeypatch):
+    """A stale operations checkout cannot keep an obsolete contract alive
+    (DEC:B1-PROPHET-PUBLIC-SPLIT: publish mode reads the canonical accepted
+    bytes via git, never a public R2 URL)."""
     published: list[tuple[dict, dict]] = []
     index = {
         "schema": "prophet.index/v1",
@@ -1260,7 +1262,7 @@ def test_prophet_marks_publish_uses_canonical_r2_and_tombstones_empty(monkeypatc
     }
 
     monkeypatch.setattr(prophet_marks, "_is_rth_now", lambda: True)
-    monkeypatch.setattr(prophet_marks, "_load_index_r2", lambda: index)
+    monkeypatch.setattr(prophet_marks, "_load_index_canonical_git", lambda: index)
     monkeypatch.setattr(
         prophet_marks,
         "_load_index_local",
@@ -1288,12 +1290,13 @@ def test_prophet_marks_publish_uses_canonical_r2_and_tombstones_empty(monkeypatc
     assert published[0][1]["evidence_rows"] == []
 
 
-def test_prophet_marks_publish_refuses_local_fallback_when_r2_index_is_unavailable(
+def test_prophet_marks_publish_refuses_local_fallback_when_canonical_git_index_is_unavailable(
     monkeypatch,
 ):
-    """Missing canonical state must not resurrect a stale local plan set."""
+    """Missing canonical state must not resurrect a stale local plan set, and
+    must not fall through to any public URL either."""
     monkeypatch.setattr(prophet_marks, "_is_rth_now", lambda: True)
-    monkeypatch.setattr(prophet_marks, "_load_index_r2", lambda: None)
+    monkeypatch.setattr(prophet_marks, "_load_index_canonical_git", lambda: None)
     monkeypatch.setattr(
         prophet_marks,
         "_load_index_local",
@@ -1313,7 +1316,7 @@ def test_prophet_marks_publish_failure_is_a_build_failure(monkeypatch):
     monkeypatch.setattr(prophet_marks, "_is_rth_now", lambda: True)
     monkeypatch.setattr(
         prophet_marks,
-        "_load_index_r2",
+        "_load_index_canonical_git",
         lambda: {
             "schema": "prophet.index/v1",
             "asof": "2026-08-11",
@@ -1324,6 +1327,35 @@ def test_prophet_marks_publish_failure_is_a_build_failure(monkeypatch):
     monkeypatch.setattr(prophet_marks, "_publish_r2", lambda *_args, **_kwargs: None)
 
     assert prophet_marks.build_marks(publish=True) is None
+
+
+def test_prophet_marks_debug_mode_never_reads_canonical_git_or_any_public_url(
+    monkeypatch,
+):
+    """publish=False (debug) reads ONLY the local checkout's generated index —
+    no git call, no R2/public-URL fallback of any kind (DEC:B1-PROPHET-PUBLIC-
+    SPLIT deleted the debug-mode R2 fallback leg entirely)."""
+    monkeypatch.setattr(prophet_marks, "_is_rth_now", lambda: True)
+    monkeypatch.setattr(
+        prophet_marks,
+        "_load_index_canonical_git",
+        lambda: (_ for _ in ()).throw(AssertionError("git must not be read in debug mode")),
+    )
+    monkeypatch.setattr(
+        prophet_marks,
+        "_load_index_local",
+        lambda: {
+            "schema": "prophet.index/v1",
+            "asof": "2026-08-11",
+            "recorded_at": "2026-08-11",
+            "plans": [],
+        },
+    )
+
+    payload = prophet_marks.build_marks(publish=False, dry_run=True)
+
+    assert payload is not None
+    assert payload["marks"] == {}
 
 
 def _option_mark_plan(

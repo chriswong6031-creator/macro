@@ -2905,7 +2905,7 @@ jobs:
           push_lost
           echo "::error title=Prophet checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); R2 remains on its prior accepted object, and the final engine commit is fenced from publishing this uncheckpointed Prophet tree"
           exit 1
-      - name: publish checkpointed Prophet index to R2
+      - name: publish Prophet public health receipt to R2 (and enforce index tombstone)
         if: steps.prophet_checkpoint.outputs.r2_ready == 'true'
         timeout-minutes: 5
         continue-on-error: true
@@ -2917,9 +2917,13 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         # Reconstruct from the accepted Git commit, verify its content hash, then
-        # re-check current main immediately before upload. A failed/rejected Git
-        # checkpoint never sets r2_ready, and a newer Prophet/correction commit
-        # supersedes this publisher rather than being overwritten in R2.
+        # re-check current main immediately before upload — same checkpoint-proof
+        # machinery as before. What changed is the PAYLOAD (DEC:B1-PROPHET-PUBLIC-
+        # SPLIT): the full plan book is premium/private and must never reach public
+        # R2 again, so this publisher builds and puts ONLY the minimal public health
+        # projection (prophet/health.json), and self-heals the forbidden public key
+        # (prophet/index.json) closed via a tombstone delete on every successful
+        # wake — both on a fresh publish and on the already-current early exit.
         run: |
           set -euo pipefail
           R2_INDEX_FILE="$(mktemp "${RUNNER_TEMP}/prophet-r2-index.XXXXXX.json")"
@@ -2955,12 +2959,19 @@ jobs:
             exit 0
           fi
           python3 - "$R2_INDEX_FILE" <<'PY'
+          import json
           import os
           import subprocess
           import sys
+          from datetime import datetime, timezone
           from pathlib import Path
 
-          from scripts.build_prophet import R2_INDEX_KEY, _r2_client
+          from scripts.build_prophet import (
+              R2_HEALTH_KEY,
+              _r2_client,
+              build_public_health_projection,
+              guarded_put_object,
+          )
 
           local_path = Path(sys.argv[1])
           client = _r2_client()
@@ -2976,11 +2987,64 @@ jobs:
           bucket = os.environ.get("R2_BUCKET") or "mastermindx"
           expected_sha = os.environ["PROPHET_INDEX_SHA256"]
           checkpoint_sha = os.environ["PROPHET_CHECKPOINT_SHA"]
+          published_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+          # Forbidden public key literal (DEC:B1-PROPHET-PUBLIC-SPLIT). Named
+          # here, not imported, so the tombstone check/delete never even needs
+          # a live index — it must run on the already-current early exit too,
+          # where no index bytes are read at all.
+          FORBIDDEN_INDEX_KEY = "prophet/index.json"
+
+          def enforce_index_tombstone() -> None:
+              """Self-healing closure: the full plan book must never be
+              reachable from public R2. Delete it if any writer — this one or
+              a stale/reverted one — ever puts it back. Runs on every
+              successful wake of this publisher (fresh publish AND the
+              already-current early exit); deletion failure is non-fatal."""
+              try:
+                  client.head_object(Bucket=bucket, Key=FORBIDDEN_INDEX_KEY)
+              except ClientError as exc:
+                  response = exc.response or {}
+                  status = (response.get("ResponseMetadata") or {}).get("HTTPStatusCode")
+                  code = str((response.get("Error") or {}).get("Code") or "")
+                  if status == 404 or code in {"404", "NoSuchKey", "NotFound"}:
+                      return
+                  print(
+                      "::warning title=Prophet R2 tombstone check failed::"
+                      f"could not verify {FORBIDDEN_INDEX_KEY} absence: {exc}",
+                      flush=True,
+                  )
+                  return
+              try:
+                  client.delete_object(Bucket=bucket, Key=FORBIDDEN_INDEX_KEY)
+              except Exception as exc:  # noqa: BLE001 — deletion failure is non-fatal
+                  print(
+                      "::warning title=Prophet R2 tombstone delete failed::"
+                      f"forbidden public object {FORBIDDEN_INDEX_KEY} could not be removed: {exc}",
+                      flush=True,
+                  )
+                  return
+              print(
+                  "::notice title=Prophet R2 tombstone::"
+                  f"removed forbidden public object {FORBIDDEN_INDEX_KEY}",
+                  flush=True,
+              )
+
+          index = json.loads(local_path.read_text(encoding="utf-8"))
+          health_payload = build_public_health_projection(
+              index,
+              checkpoint_sha=checkpoint_sha,
+              index_sha256=expected_sha,
+              published_at=published_at,
+          )
+          health_bytes = json.dumps(
+              health_payload, allow_nan=False, default=str, indent=2,
+          ).encode("utf-8")
 
           # Snapshot the destination generation first. The conditional put below
           # makes any concurrent R2 writer win rather than be overwritten.
           try:
-              current = client.head_object(Bucket=bucket, Key=R2_INDEX_KEY)
+              current = client.head_object(Bucket=bucket, Key=R2_HEALTH_KEY)
           except ClientError as exc:
               response = exc.response or {}
               status = (response.get("ResponseMetadata") or {}).get("HTTPStatusCode")
@@ -3006,6 +3070,7 @@ jobs:
                       "the guarded checkpoint hash is already published",
                       flush=True,
                   )
+                  enforce_index_tombstone()
                   raise SystemExit(0)
               if not etag:
                   print(
@@ -3035,10 +3100,11 @@ jobs:
               raise SystemExit(0)
 
           try:
-              client.put_object(
-                  Bucket=bucket,
-                  Key=R2_INDEX_KEY,
-                  Body=local_path.read_bytes(),
+              guarded_put_object(
+                  client,
+                  bucket=bucket,
+                  key=R2_HEALTH_KEY,
+                  Body=health_bytes,
                   ContentType="application/json",
                   Metadata={
                       "git-checkpoint": checkpoint_sha,
@@ -3059,15 +3125,16 @@ jobs:
                   raise SystemExit(0) from exc
               print(
                   "::error title=Prophet R2 upload failed::"
-                  "guarded Git checkpoint landed but its verified index did not reach R2",
+                  "guarded Git checkpoint landed but its verified health receipt did not reach R2",
                   flush=True,
               )
               raise SystemExit(1) from exc
           print(
               "::notice title=Prophet R2 published::"
-              "uploaded the hash-verified index from the guarded Git checkpoint",
+              "uploaded the public health receipt for the guarded Git checkpoint",
               flush=True,
           )
+          enforce_index_tombstone()
           PY
       - name: restore accepted Prophet source for downstream derivations
         id: prophet_accepted_source
