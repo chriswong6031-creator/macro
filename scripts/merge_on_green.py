@@ -5137,10 +5137,33 @@ HOLD_MARKER_RE = re.compile(
     r"\bHOLD-FOR-[A-Z0-9_-]+|\bHELD[- ]FOR[- ][A-Z0-9_-]+|\bHOLD\s*[—:-]|\bDO\s+NOT\s+MERGE\b",
     re.IGNORECASE,
 )
+# 2026-08-21 round-4 item R2: the TITLE scan (see `recorded_hold`'s `title`
+# parameter) uses this NARROWER pattern, not `HOLD_MARKER_RE` — the generic
+# bare `HOLD\s*[—:-]` branch matches any hyphenated word that starts with
+# "hold", and this feature's OWN vocabulary is exactly that shape ("hold-
+# guard"), so a title like "fix(merge-on-green): hold-guard regression test"
+# would otherwise hold itself. `HOLD_MARKER_RE` itself is UNCHANGED and still
+# used as-is for the body/comment line-start machinery, where the same bare
+# branch is safe (a real bare hold is written `HOLD:`/`HOLD—`, at a line
+# start, never as a mid-word hyphen).
+TITLE_HOLD_MARKER_RE = re.compile(
+    r"\bHOLD-FOR-[A-Z0-9_-]+|\bHELD[- ]FOR[- ][A-Z0-9_-]+|\bDO\s+NOT\s+MERGE\b",
+    re.IGNORECASE,
+)
 HOLD_RELEASE_RE = re.compile(r"\bHOLD-RELEASED\b", re.IGNORECASE)
 _QUOTE_LINE_RE = re.compile(r"^\s*>")
 _FENCE_LINE_RE = re.compile(r"^\s*```")
 _BOLD_SPAN_RE = re.compile(r"\*\*(.+?)\*\*")
+# 2026-08-21 round-4 item R1: a bold span that FOLLOWS a field separator
+# (middle dot, em-dash, or pipe — the punctuation this corpus uses to chain
+# multiple "**Label:** value" clauses on one line, e.g. PR #6080's real body
+# ``**Program:** X · **HELD FOR SOL — draft, unarmed, do NOT merge**``) is
+# ALSO a candidate, in addition to (never instead of) the line's single
+# FIRST bold span from `_leading_bold_span`. This does not reopen the N3
+# mid-sentence defect: ordinary prose has no separator character sitting
+# immediately before the bold span ("This sweeper now refuses
+# **HOLD-FOR-SOL** pull requests..." has no ``·``/``—``/``|`` before it).
+_SEPARATOR_BOLD_RE = re.compile(r"[·—|]\s*\*\*(.+?)\*\*")
 _HEADING_LINE_RE = re.compile(r"^\s*#+\s+(.+)$")
 # 2026-08-21 round-3 item N1(b): the separator a heading commonly uses between
 # its descriptive title and a trailing status clause — "Title — STATUS",
@@ -5189,20 +5212,37 @@ def _leading_bold_span(line: str) -> str | None:
     return match.group(1) if match else None
 
 
-def _candidate_marker_lines(text: str) -> list[str]:
+_TRAILING_PUNCTUATION_RE = re.compile(r"[\s.!,;:]*$")
+
+
+def _candidate_marker_lines(text: str) -> list[tuple[str, bool]]:
     """Every position a hold/release marker is allowed to BEGIN (item B1).
 
-    Three sources, because the live corpus writes status markers three ways:
+    Returns `(candidate_text, terminal_only)` pairs. `terminal_only=True`
+    (item R3, round-4) means the candidate binds ONLY when the marker match
+    consumes the candidate to its end (allowing trailing whitespace/simple
+    punctuation) — see `_marker_at_line_start`. Every source below is
+    `terminal_only=False` EXCEPT the heading-separator segment, source 4.
+
+    Four sources, because the live corpus writes status markers four ways:
 
     1. The start of a physical line, after stripping leading markdown/list
        decoration (see `_strip_leading_decoration`).
     2. The start of a **bold** span that itself opens the line — see
-       `_leading_bold_span` — e.g. PR #6080's
-       ``**Program:** X · **HELD FOR SOL — draft, unarmed, do NOT merge**``.
-    3. The segment following a HEADING line's ``—``/``:``/``-`` separator
+       `_leading_bold_span` — e.g. a field label like ``**Program:** X``.
+    3. A **bold** span that FOLLOWS a field separator (``·``/``—``/``|``,
+       item R1, round-4) — e.g. PR #6080's real body
+       ``**Program:** X · **HELD FOR SOL — draft, unarmed, do NOT merge**``,
+       where the marker's own bold span is the SECOND one on the line (only
+       the first is source 2's candidate) but is immediately preceded by the
+       ``·`` chaining it to the field before it.
+    4. The segment following a HEADING line's ``—``/``:``/``-`` separator
        (item N1(b)) — e.g. PR #6051's
-       ``## Scratch research harness — DO NOT MERGE``, where the marker
-       follows the heading's own descriptive title, never opens the line.
+       ``## Scratch research harness — DO NOT MERGE``. TERMINAL ONLY (item
+       R3): the marker must be the LAST thing in the segment (optional
+       trailing punctuation aside) — a heading NARRATING a hold, e.g.
+       ``## Incident - HOLD-FOR-SOL was ignored on #6109``, has real prose
+       after the marker phrase and must not bind.
 
     A line beginning with '>' (a markdown blockquote — a quote-reply) is
     dropped ENTIRELY before any source is derived from it, so quoting the
@@ -5214,7 +5254,7 @@ def _candidate_marker_lines(text: str) -> list[str]:
     without this, a body pasting a sample commit message or comment
     containing the marker text inside a ``` block would bind.
     """
-    candidates: list[str] = []
+    candidates: list[tuple[str, bool]] = []
     in_fence = False
     for line in (text or "").splitlines():
         if _FENCE_LINE_RE.match(line):
@@ -5224,23 +5264,39 @@ def _candidate_marker_lines(text: str) -> list[str]:
             continue
         if _QUOTE_LINE_RE.match(line):
             continue
-        candidates.append(_strip_leading_decoration(line))
+        candidates.append((_strip_leading_decoration(line), False))
         bold = _leading_bold_span(line)
         if bold is not None:
-            candidates.append(_strip_leading_decoration(bold))
+            candidates.append((_strip_leading_decoration(bold), False))
+        for separator_bold in _SEPARATOR_BOLD_RE.finditer(line):
+            candidates.append(
+                (_strip_leading_decoration(separator_bold.group(1)), False)
+            )
         heading = _HEADING_LINE_RE.match(line)
         if heading is not None:
             for segment in _HEADING_SEPARATOR_RE.split(heading.group(1))[1:]:
-                candidates.append(_strip_leading_decoration(segment))
+                candidates.append((_strip_leading_decoration(segment), True))
     return candidates
 
 
 def _marker_at_line_start(text: str, pattern: "re.Pattern[str]") -> str | None:
-    """First candidate line (see above) matching `pattern` at its own start."""
-    for candidate in _candidate_marker_lines(text):
+    """First candidate line (see above) matching `pattern` at its own start.
+
+    A `terminal_only` candidate (item R3, round-4 — currently only the
+    heading-separator segment) additionally requires the match to consume
+    the candidate to its end, modulo trailing whitespace/simple punctuation:
+    a heading NARRATING a hold has real prose after the marker phrase, and
+    a bare prefix match there would bind on that narration.
+    """
+    for candidate, terminal_only in _candidate_marker_lines(text):
         match = pattern.match(candidate)
-        if match:
-            return match.group(0)
+        if not match:
+            continue
+        if terminal_only and not _TRAILING_PUNCTUATION_RE.match(
+            candidate, match.end()
+        ):
+            continue
+        return match.group(0)
     return None
 
 
@@ -5430,7 +5486,10 @@ def recorded_hold(
     )
     if body_match is None:
         # Title fallback (item N1(a)): plain anywhere-search, not line-start.
-        title_match = HOLD_MARKER_RE.search(title or "")
+        # `TITLE_HOLD_MARKER_RE` (item R2, round-4), NOT `HOLD_MARKER_RE` — the
+        # generic bare `HOLD\s*[—:-]` branch fires on this feature's own
+        # vocabulary ("hold-guard") mid-title; see the constant's own comment.
+        title_match = TITLE_HOLD_MARKER_RE.search(title or "")
         if title_match:
             body_match = title_match.group(0)
     if body_match is None:

@@ -1331,25 +1331,28 @@ def test_recorded_hold_pure_function_matches_and_releases():
         is None
     )
 
-    # A **bold** span is a marker position ONLY when it is the FIRST
-    # non-decoration content of its line (item N3, round-3 — narrowed from
-    # round-2, which collected EVERY bold span on a line and re-opened
-    # mid-sentence prose matching: "This sweeper now refuses **HOLD-FOR-SOL**
-    # pull requests automatically." used to hold). A line whose bold span
-    # opens the line — a field label, e.g. "**Program:** X · **STATUS**" —
-    # has only its FIRST span (here, "Program:") checked; a SECOND, later
-    # bold span on the same physical line (PR #6080's own
-    # `**Program:** X · **HELD FOR SOL...**`) is no longer independently a
-    # candidate — #6080 is still caught, but via its TITLE (item N1(a),
-    # see `test_corpus_true_positives_match`), not this body mechanism.
+    # A **bold** span is a marker position when it is the FIRST non-decoration
+    # content of its line (item N3, round-3 — narrowed from round-2, which
+    # collected EVERY bold span on a line and re-opened mid-sentence prose
+    # matching: "This sweeper now refuses **HOLD-FOR-SOL** pull requests
+    # automatically." used to hold) OR when it immediately FOLLOWS a field
+    # separator — ``·``/``—``/``|`` (item R1, round-4, additive: a SECOND
+    # field-label bold span, e.g. PR #6080's real body
+    # ``**Program:** X · **HELD FOR SOL — draft, unarmed, do NOT merge**``,
+    # is now caught too — `_leading_bold_span` itself is UNCHANGED and still
+    # returns only the line's first span, "Program:").
     assert (
         MOG.recorded_hold(
             "**Program:** `WS:ADVANCED-DATA-OPTIONS` · **HELD FOR SOL — draft, "
             "unarmed, do NOT merge** (release condition: Sol PASS).",
             [],
         )
-        is None
+        == "HELD FOR SOL"
     )
+    assert MOG._leading_bold_span(
+        "**Program:** `WS:ADVANCED-DATA-OPTIONS` · **HELD FOR SOL — draft, "
+        "unarmed, do NOT merge** (release condition: Sol PASS)."
+    ) == "Program:", "the FIRST-bold-span helper itself is unchanged by item R1"
     assert MOG.recorded_hold("**HOLD-FOR-SOL** is the whole line's bold span", []) \
         == "HOLD-FOR-SOL"
     assert (
@@ -1358,7 +1361,7 @@ def test_recorded_hold_pure_function_matches_and_releases():
             [],
         )
         is None
-    )
+    ), "ordinary prose still has no separator before the bold span — R1 does not reopen N3"
     # A backtick is NO LONGER decoration to strip (item N3, round-3 — reverses
     # round-2): an inline-code marker is a MENTION, not a declaration, whether
     # it opens the line or sits mid-sentence.
@@ -1395,9 +1398,32 @@ def test_recorded_hold_pure_function_matches_and_releases():
     assert (
         MOG.recorded_hold("Scratch research harness — DO NOT MERGE", []) is None
     )
+    # A heading-separator segment binds ONLY when TERMINAL — nothing after the
+    # marker phrase but optional trailing punctuation (item R3, round-4). A
+    # heading NARRATING a hold — real prose continues after the marker — must
+    # not bind; #6051's real heading (nothing follows the marker) still does.
+    assert (
+        MOG.recorded_hold("## Incident - HOLD-FOR-SOL was ignored on #6109", [])
+        is None
+    ), "narration after the marker phrase must not bind"
+    assert (
+        MOG.recorded_hold("## Why: DO NOT MERGE was the operator's ruling", [])
+        is None
+    ), "narration after the marker phrase must not bind"
+    assert (
+        MOG.recorded_hold("## Scratch research harness — DO NOT MERGE", [])
+        == "DO NOT MERGE"
+    ), "the terminal case (#6051's real heading) must still bind"
+    assert (
+        MOG.recorded_hold("## Status: HOLD-FOR-SOL.", []) == "HOLD-FOR-SOL"
+    ), "optional trailing punctuation after the marker is still terminal"
     # A HOLD marker binds via the TITLE too (item N1(a), round-3): titles are
     # short and declarative (near-zero false-positive surface), matched with a
-    # plain anywhere-search rather than the line-start machinery.
+    # plain anywhere-search rather than the line-start machinery — but NOT via
+    # the generic bare `HOLD\s*[—:-]` branch (item R2, round-4): that branch
+    # matches any hyphenated word starting with "hold", and this feature's OWN
+    # vocabulary ("hold-guard") is exactly that shape, so a title merely
+    # MENTIONING the feature must not hold itself.
     assert (
         MOG.recorded_hold(
             "",
@@ -1414,6 +1440,41 @@ def test_recorded_hold_pure_function_matches_and_releases():
         )
         == "HELD FOR SOL"
     )
+    for title in (
+        "fix(merge-on-green): hold-guard regression test",
+        "chore: re-enable the hold-guard sweep",
+        "docs: hold-for review checklist",
+        "feat: add holding-period metric",
+    ):
+        assert MOG.recorded_hold("", [], title=title) is None, title
+    # The narrower title regex is used ONLY for the title fallback — the
+    # standalone `HOLD_MARKER_RE` constant (still used for body/comment
+    # line-start matching, where the bare-branch is safe) is UNCHANGED, and
+    # still fires on the real titles of every PR that actually declares a
+    # hold, and on none of the false-positive PRs' real titles (verbatim
+    # titles from scratchpad/rev6149/open_prs.json, fetched 2026-08-20).
+    real_hold_titles = {
+        6138: "HOLD-FOR-SOL · sol(P1-0R): BioCatalyst authority closure — "
+        "vertical ratified, P1 workstream, plane ownership DECs",
+        6080: "feat(polygon-gex): AD-1C0.1 — bounded lawful capture lease for "
+        "partial replacement (HELD FOR SOL)",
+        6051: "scratch(exk): Turn-3 exact repository-price replay — DO NOT MERGE",
+        5898: "FF-1P2R: current-quarter EDGAR index discovery (do not merge; "
+        "recovery fail-closed)",
+    }
+    real_non_hold_titles = {
+        6149: "fix(merge-on-green): recorded hold in body/comments blocks the "
+        "merge path",
+        6143: "records(market-os): A1A closure — wave state, handoff, "
+        "FX-latch discovery",
+        6146: "fix(ship-loop): terminally park lawfully held PRs",
+        6151: "agentos: reconcile Personal-Pro Sol shell F0 into durable "
+        "memory (MAS-105)",
+    }
+    for number, title in real_hold_titles.items():
+        assert MOG.HOLD_MARKER_RE.search(title), (number, title)
+    for number, title in real_non_hold_titles.items():
+        assert MOG.HOLD_MARKER_RE.search(title) is None, (number, title)
     # RELEASE-OUTRANKS-HOLD applies to the BODY too, not only comments (item
     # N2, round-3): a body line stating the release is never a hold via the
     # generic `HOLD\s*[—:-]` sub-pattern.
@@ -1695,17 +1756,18 @@ def test_corpus_true_positives_match(monkeypatch):
             "user": {"login": "chriswong6031-creator", "type": "User"},
         }],
     ) == "HOLD-FOR-SOL"
-    # #6080's body ALONE no longer matches (item N3, round-3 — its marker
-    # sits in a SECOND bold span, not the first non-decoration content of the
-    # line; see the pure-function test above for the isolated case) — but its
-    # real TITLE (item N1(a)) still catches it, exactly as `sweep_pull` would
-    # see both together in production.
+    # #6080's body ALONE — a round-3 regression (item N3's first-bold-only
+    # restriction dropped its SECOND bold span, "HELD FOR SOL...") that item
+    # R1 (round-4) closes: a bold span immediately following a field
+    # separator (`·`/`—`/`|`) is ALSO a candidate, in addition to the line's
+    # first span. Its real TITLE (item N1(a)) independently catches it too,
+    # exactly as `sweep_pull` would see both together in production.
     assert MOG.recorded_hold(
         "**Program:** `WS:ADVANCED-DATA-OPTIONS` · **HELD FOR SOL — draft, "
         "unarmed, do NOT merge** (release condition: Sol PASS on this PR; "
         "authority: Sol AD-1C0.1 handoff §4; per `DEC:SOL-HOLD-IS-A-MERGE-BARRIER`).",
         [],
-    ) is None
+    ) == "HELD FOR SOL"
     assert MOG.recorded_hold(
         "**Program:** `WS:ADVANCED-DATA-OPTIONS` · **HELD FOR SOL — draft, "
         "unarmed, do NOT merge** (release condition: Sol PASS on this PR; "
