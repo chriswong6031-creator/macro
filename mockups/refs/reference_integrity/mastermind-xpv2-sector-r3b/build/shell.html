@@ -307,6 +307,17 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
 .r3-answer .si-view-read{ display:flex; align-items:flex-start; gap:11px;
   margin:0; padding:0; background:none; border:0; border-radius:0; }
 .r3-answer .si-vr-g{ width:20px; height:20px; margin-top:5px; }
+/* D1: the router paints #si-read-overview with GLYPH.overview
+   (submenu-icon-intelligence — a 5-node network) via si_workspace.js, which
+   this shell cannot edit. Its cluster of small circles + crossing strokes
+   reads as a scissors mark at this 20px read-strip size. Swap the mask this
+   ONE element resolves to a cleaner glyph already sanctioned in this file
+   (dash-icon-info, defined above, unused elsewhere) by setting --dash-icon-mask
+   here — it wins the .dash-icon::before fallback chain
+   (var(--dash-icon-mask,var(--submenu-icon-mask))) without touching the shared
+   .submenu-icon-intelligence rule the nav rail still uses at 17px. */
+.r3-answer .si-vr-g.submenu-icon-intelligence{
+  --dash-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.65' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='M12 10.5V17M12 7h.01'/%3E%3C/g%3E%3C/svg%3E"); }
 .r3-answer .si-vr-t{ flex:0 1 auto; }
 .r3-answer .si-vr-q{ margin-top:7px; }
 /* pure-CSS fallback: hide the static line whenever a composed read is present */
@@ -540,7 +551,10 @@ html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
 @media (max-width:1100px){
   .si-shell{ --si-rail-w:172px; }
   .si-side{ padding:var(--sp-3) 9px; }
-  .si-view-btn{ font-size:12.5px; padding:8px; gap:8px; }
+  /* rail items are a touch target at this width (tablet, no hover) — the base
+     38px min-height falls under the 44px floor; hold the same visual rhythm
+     by raising the floor rather than adding padding that would widen the rail. */
+  .si-view-btn{ font-size:12.5px; padding:8px; gap:8px; min-height:44px; }
   .si-stage{ padding:var(--sp-5) var(--sp-5) var(--sp-8) var(--sp-5); }
   .r3-stagegrid{ grid-template-columns:minmax(0,1fr); }
 }

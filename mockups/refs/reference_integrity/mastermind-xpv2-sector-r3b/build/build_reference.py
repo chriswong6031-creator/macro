@@ -71,6 +71,20 @@ VIEWS = [
     ("confluence", "Confluence", "子行业汇聚"),
 ]
 
+#: Per-view nav glyph classes, verbatim from the Principal Design Lead's own
+#: nav in build/shell_specimen.html:643-648 — the sanctioned masked-monoline
+#: `.dash-icon` set already defined in shell.html's CSS (DESIGN_SYSTEM_SPEC.md
+#: §8 item 10). Not a new construction — a literal restatement of the
+#: specimen's per-view icon choice.
+VIEW_GLYPHS = {
+    "overview": "dash-icon submenu-icon-intelligence",
+    "map": "dash-icon dash-icon-compass",
+    "moving": "dash-icon submenu-icon-rotation",
+    "money": "dash-icon submenu-icon-flow",
+    "explore": "dash-icon dash-icon-search",
+    "confluence": "dash-icon submenu-icon-confluence",
+}
+
 #: R3A fixture entries this artifact embeds as data-registry <script> blocks.
 #: Excludes `correction/UNREPRESENTED.md` (an authored doc, not a data artifact
 #: any view reads) — every OTHER receipts.json entry (17 of 18) is embedded.
@@ -144,9 +158,12 @@ def data_script(path: str, text: str, *, script_type: str) -> str:
 def build_nav_html() -> str:
     parts = []
     for vid, en, zh in VIEWS:
+        glyph_class = VIEW_GLYPHS[vid]
         parts.append(
             f'    <a class="si-view-btn" data-view="{vid}" href="#{vid}">'
-            f'<span class="l-en">{en}</span><span class="l-zh">{zh}</span></a>'
+            f'<span class="si-vb-g {glyph_class}" aria-hidden="true"></span>'
+            f'<span class="si-vb-l"><span class="l-en">{en}</span>'
+            f'<span class="l-zh">{zh}</span></span></a>'
         )
     return "\n".join(parts)
 

@@ -2,13 +2,20 @@
      XPV2-SC-R3B · LANE D1 · VIEW 6 — CONFLUENCE  (ACTION tier)
      User job: "Which subsectors or baskets have timing support?"
 
-     Page grammar (DESIGN_SYSTEM_SPEC §5), five L1 sections:
+     Page grammar (DESIGN_SYSTEM_SPEC §5), the five L1 SLOTS:
        1  .r3-answer        static answer line (Confluence has NO read slot —
                             si_workspace.js contract item 4) + universe tabs
        2  #sc-app           the STATE LEDGE fused with its selected list
        3  stock picks       double-gated picks, PICKS_CAP 12
-       4  all <noun>        the full searchable/sortable table
+       3  all <noun>        the full searchable/sortable table
+       4  #cf-context-band  EVIDENCE — the three supporting organs of the same
+                            production render pass, each behind a quiet
+                            disclosure (see "SUPPORTING CONTEXT" below)
        5  .r3-more          deeper path → #moving
+
+     Slots 3 and 4 hold more than one band each; the GRAMMAR is five slots, not
+     five bands (§5 names slot 4 "EVIDENCE — .r3-rail (2-col) or a following
+     band"). The deeper path stays the view's last word.
 
      ACTIVE-UNIVERSE LAW: counts, distribution, coverage, rows, details, members
      and stock rows are read from the ACTIVE universe's artifact only. Nothing on
@@ -166,6 +173,112 @@ html[data-lang="zh"] [data-view="confluence"] .r3-detail h4{ letter-spacing:0; t
 
 /* the receipt button is defined by the Overview partial's .r3-view--action rule;
    this view reuses it unchanged (one definition, two Action views). */
+
+/* ══ SUPPORTING CONTEXT — the three disclosed organs ═════════════════════════
+   The grammar decision, stated once: these three organs belong to the SAME
+   production render pass this view already reproduces (subsectors.js:510-516),
+   so leaving them out drops capability. Composing them OPEN would give the view
+   three more full-weight bands and put ~30 chips above the fold, which is what
+   the §9.2 chip budget and the Action density budget exist to prevent. A CLOSED
+   <details> costs one 44px line at rest and shows no chip at all, so the answer
+   and the ledge keep their dominance and every organ is exactly one keystroke
+   away. Nothing here is a new visual language: cells are the .r3-mem grid, the
+   plain-word badge is .r3-chip, a raw producer slug is .r3-tag (the tertiary
+   rung — plain words outrank slugs), a caution is .r3-callout, the divergence
+   table is .r3-tbl in .r3-tblbox. */
+[data-view="confluence"] .cf-ctx{ display:grid; gap:var(--sp-3); }
+
+/* .r3-disc summary is display:flex, which drops the UA list-item marker — so an
+   affordance has to be drawn. It is the .r3-showall chevron, same construction,
+   same rotation, so "there is more under this" reads identically in both places. */
+[data-view="confluence"] .r3-disc summary{ justify-content:flex-start; }
+[data-view="confluence"] .r3-disc summary::-webkit-details-marker{ display:none; }
+[data-view="confluence"] .r3-disc summary::after{ content:""; width:6px; height:6px; flex:none;
+  margin-left:auto; border-right:1.6px solid currentColor; border-bottom:1.6px solid currentColor;
+  color:var(--muted); transform:translateY(-2px) rotate(45deg);
+  transition:transform var(--t-fast) var(--ease-std); }
+[data-view="confluence"] .r3-disc[open] summary::after{ transform:translateY(1px) rotate(-135deg); }
+[data-view="confluence"] .r3-disc summary small{ min-width:0; overflow-wrap:break-word; }
+/* §11: a caps slot loses its tracking and its uppercase under ZH */
+html[data-lang="zh"] [data-view="confluence"] .r3-chip{ letter-spacing:0; text-transform:none; }
+html[data-lang="zh"] [data-view="confluence"] .r3-tag{ letter-spacing:0; }
+
+[data-view="confluence"] .cf-desc{ margin:0 0 10px; max-width:70ch; line-height:1.5; }
+html[data-lang="zh"] [data-view="confluence"] .cf-desc{ max-width:34em; line-height:1.55; }
+[data-view="confluence"] .cf-note{ margin-top:9px; font-size:var(--fs-micro);
+  color:var(--muted); line-height:1.5; }
+
+/* cell grid — the .r3-mem anatomy (auto-FIT, 1px hairline gaps, panel2 cells),
+   plus a 3px --c rail carrying the producer's own side / state. Names WRAP;
+   nothing on this surface ellipsizes. */
+[data-view="confluence"] .cf-cells{ display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(174px,1fr)); gap:1px;
+  background:color-mix(in srgb, var(--line) 70%, transparent);
+  border:1px solid var(--line); border-radius:var(--r-ctl); overflow:hidden; }
+[data-view="confluence"] .cf-cell{ display:block; min-width:0; padding:10px 12px;
+  background:var(--panel2); border-left:3px solid var(--c,var(--line)); }
+[data-view="confluence"] a.cf-cell:hover{ background:var(--panel); }
+[data-view="confluence"] .cf-nm{ display:block; font-size:var(--fs-sm); font-weight:700;
+  color:var(--text); line-height:1.35; overflow-wrap:break-word; }
+[data-view="confluence"] a.cf-cell .cf-nm{ color:var(--ink-link); }
+[data-view="confluence"] .cf-line{ display:block; margin-top:4px; font-size:var(--fs-micro);
+  color:var(--muted); font-variant-numeric:tabular-nums; line-height:1.45; }
+[data-view="confluence"] .cf-line .r3-state{ color:var(--text); }
+
+/* leadership — two columns of cards, one per producer list */
+[data-view="confluence"] .cf-lead{ display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--sp-4) var(--sp-5); }
+[data-view="confluence"] .cf-colhead{ display:flex; align-items:baseline; gap:7px;
+  margin-bottom:7px; font-size:var(--fs-label); font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--text); }
+html[data-lang="zh"] [data-view="confluence"] .cf-colhead{ letter-spacing:0; text-transform:none; }
+[data-view="confluence"] .cf-colhead .cf-n{ font-size:var(--fs-micro); font-weight:700;
+  color:var(--muted); font-variant-numeric:tabular-nums; }
+[data-view="confluence"] .cf-cards{ display:grid; gap:1px;
+  background:color-mix(in srgb, var(--line) 70%, transparent);
+  border:1px solid var(--line); border-radius:var(--r-ctl); overflow:hidden; }
+[data-view="confluence"] .cf-lcard{ min-width:0; padding:10px 12px; background:var(--panel2);
+  border-left:3px solid var(--c,var(--line)); }
+[data-view="confluence"] .cf-lc-top{ display:flex; align-items:baseline; flex-wrap:wrap; gap:7px; }
+[data-view="confluence"] .cf-lc-nm{ font-size:var(--fs-body); font-weight:700;
+  line-height:1.3; overflow-wrap:break-word; }
+[data-view="confluence"] .cf-lc-sub{ display:block; margin-top:2px;
+  font-size:var(--fs-micro); color:var(--muted); }
+[data-view="confluence"] .cf-lc-row{ display:flex; align-items:center; flex-wrap:wrap;
+  gap:6px; margin-top:8px; }
+[data-view="confluence"] .cf-lc-meta{ margin-top:6px; font-size:var(--fs-micro);
+  color:var(--muted); font-variant-numeric:tabular-nums; }
+[data-view="confluence"] .cf-ok{ color:var(--ink-up); font-weight:700; }
+[data-view="confluence"] .cf-macro{ margin-top:8px; padding:7px 10px;
+  font-size:var(--fs-micro); color:var(--text); }
+
+/* higher-timeframe direction. Unicode arrows are forbidden (§9.3), so the mark
+   is a CSS triangle and the word lives in the accessible name. */
+[data-view="confluence"] .cf-tf{ display:inline-flex; align-items:center; gap:4px;
+  margin-right:9px; font-family:var(--font-mono); font-size:var(--fs-micro);
+  font-weight:700; color:var(--muted); }
+[data-view="confluence"] .cf-tf i{ display:block; width:0; height:0;
+  border-left:3.5px solid transparent; border-right:3.5px solid transparent; }
+[data-view="confluence"] .cf-tf.up i{ border-bottom:5px solid var(--ink-up); }
+[data-view="confluence"] .cf-tf.down i{ border-top:5px solid var(--ink-down); }
+[data-view="confluence"] .cf-tf.flat i{ width:7px; border:0; border-top:1.6px solid var(--muted); }
+[data-view="confluence"] .cf-tf.none i{ width:3px; height:3px; border:0; border-radius:50%;
+  background:var(--muted); }
+
+/* nasdaq internals */
+[data-view="confluence"] .cf-ew{ display:flex; flex-wrap:wrap; align-items:baseline;
+  gap:4px 14px; margin:0 0 10px; padding:9px 12px; background:var(--panel2);
+  border:1px solid var(--line); border-radius:var(--r-ctl);
+  font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
+[data-view="confluence"] .cf-ew b{ font-weight:700; }
+[data-view="confluence"] .cf-mut{ color:var(--muted); font-size:var(--fs-micro); }
+[data-view="confluence"] .cf-divs{ margin-top:14px; }
+[data-view="confluence"] .cf-divs h4{ margin:0 0 7px; font-size:var(--fs-label); font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+html[data-lang="zh"] [data-view="confluence"] .cf-divs h4{ letter-spacing:0; text-transform:none; }
+[data-view="confluence"] .cf-divs .r3-tbl{ min-width:340px; }
+[data-view="confluence"] .cf-foot{ margin-top:10px; font-size:var(--fs-micro);
+  color:var(--muted); line-height:1.5; }
 
 @media (max-width:767px){
   /* Sol §13: all four universe selectors stay visible — two rows of two rather
