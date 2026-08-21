@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.health.v1",
-  "produced_at": "2026-08-21T04:49:18.801759+00:00",
+  "produced_at": "2026-08-21T06:24:13.734803+00:00",
   "as_of": "2026-08-20",
   "overall_status": "warn",
   "lobes": [
@@ -2794,8 +2794,8 @@
     }
   ],
   "cortex": {
-    "cortex_source": "previous_run",
-    "memo_as_of": "2026-08-20T11:39:08+00:00",
+    "cortex_source": "current_run",
+    "memo_as_of": "2026-08-21T06:22:27+00:00",
     "run_status": {
       "status": "ok",
       "degraded": false,
@@ -2803,36 +2803,12 @@
       "model_used": "claude-opus-4-8",
       "provider_attempts": [
         {
-          "provider": "oauth",
-          "model": "claude-opus-4-8",
+          "provider": "codex",
+          "model": "gpt-5.6-sol",
           "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeDwECoWJq845jPmh6cf7'}"
-        },
-        {
-          "provider": "oauth",
-          "model": "claude-opus-4-8",
-          "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeDwFXwikrSqomA7JsNcZ'}"
-        },
-        {
-          "provider": "oauth",
-          "model": "claude-opus-4-8",
-          "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeDwLBjgAXXmHuqSk4JaC'}"
-        },
-        {
-          "provider": "oauth",
-          "model": "claude-opus-4-8",
-          "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeDwZfFG4LPG6FqZr22R1'}"
+          "ok": true,
+          "error_type": null,
+          "error_message": null
         },
         {
           "provider": "codex",
@@ -2875,11 +2851,11 @@
           "error_message": null
         }
       ],
-      "tool_call_batches": 4,
-      "individual_tool_calls": 9,
+      "tool_call_batches": 5,
+      "individual_tool_calls": 10,
       "expected_min_tool_calls": 1,
       "context_stale": false,
-      "context_as_of": "2026-08-20T09:27:34Z"
+      "context_as_of": "2026-08-21T04:45:54Z"
     },
     "probation": {
       "granted": false,
