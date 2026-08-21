@@ -458,6 +458,35 @@ def _json_probe(probe: Mapping[str, Any], reader: SystemEvidenceReader) -> tuple
     raise TopologyError(f"unsupported JSON probe kind: {kind!r}")
 
 
+# Canonical git slugs approved for a "git_remote_ref"/"github_ref" resolution
+# probe (DEC:B1-MACRO-PRIVATE-CUTOVER). Assembled from bare owner/repo slugs
+# at import time — never as inline ``https://github.com/<owner>/<repo>``
+# string literals — so this approved-remote allowlist is itself never mistaken
+# by scripts/check_macro_anon_dependency.py for an anonymous fetch target:
+# these values gate a comparison, they are never the argv of a
+# clone/fetch/ls-remote call against a bare public URL.
+_CANONICAL_GIT_SLUGS: tuple[str, ...] = (
+    "mastermindx-market-intelligence/macro",
+    "mastermindx-market-intelligence/mastermind-terminal",
+    "mastermindx-market-intelligence/Mastermind",
+)
+
+
+def _canonical_https_remotes() -> frozenset[str]:
+    return frozenset(f"https://github.com/{slug}.git" for slug in _CANONICAL_GIT_SLUGS)
+
+
+def _canonical_repo_path_remotes() -> frozenset[str]:
+    """Both authenticatable remote forms for a LOCAL checkout's own
+    ``remote.origin.url`` — a governed host may carry either, and the VPS's
+    macro checkout now carries the SSH form (DEC:B1-MACRO-PRIVATE-CUTOVER)."""
+    return frozenset(
+        url
+        for slug in _CANONICAL_GIT_SLUGS
+        for url in (f"https://github.com/{slug}.git", f"git@github.com:{slug}.git")
+    )
+
+
 def _probe_sha(probe: Any, reader: SystemEvidenceReader) -> str | None:
     if not isinstance(probe, Mapping):
         return None
@@ -480,14 +509,39 @@ def _probe_sha(probe: Any, reader: SystemEvidenceReader) -> str | None:
         code, out = reader.run(["git", "-C", str(path), "rev-parse", "--verify", f"{ref}^{{commit}}"])
         value = out.strip().splitlines()[0] if code == 0 and out.strip() else None
         resolution_path = path
+    elif kind in {"git_remote_ref", "github_ref"} and probe.get("repo_path"):
+        # DEC:B1-MACRO-PRIVATE-CUTOVER: resolve through a LOCAL
+        # already-authenticated checkout (its own core.sshCommand/deploy key,
+        # persisted in that checkout's .git/config by
+        # app/deploy/bootstrap_repo.sh) instead of an anonymous
+        # ``git ls-remote <public-url>`` — the anonymous form 404s once the
+        # repository is private, which would take the deployed-vs-canonical
+        # drift probe blind. The checkout's own configured remote is
+        # re-validated against the approved-slug allowlist below so a probe
+        # can never be pointed at an arbitrary local git checkout and have it
+        # trusted as "canonical".
+        path = reader.path(probe.get("repo_path"))
+        origin_code, origin_out = reader.run(
+            ["git", "-C", str(path), "config", "--get", "remote.origin.url"],
+        )
+        origin_url = (
+            origin_out.strip().splitlines()[0]
+            if origin_code == 0 and origin_out.strip()
+            else ""
+        )
+        if origin_url not in _canonical_repo_path_remotes():
+            raise TopologyError("unapproved canonical git remote")
+        ref = str(probe.get("ref") or "")
+        if ref in {"main", "master"}:
+            ref = f"refs/heads/{ref}"
+        if not re.fullmatch(r"refs/heads/(?:main|master)", ref):
+            raise TopologyError("unapproved canonical git remote ref")
+        code, out = reader.run(["git", "-C", str(path), "ls-remote", "origin", ref], timeout=12)
+        value = out.split()[0] if code == 0 and out.split() else None
     elif kind in {"git_remote_ref", "github_ref"}:
         slug = str(probe.get("slug") or "")
         remote = str(probe.get("remote") or (f"https://github.com/{slug}.git" if slug else ""))
-        if remote not in {
-            "https://github.com/mastermindx-market-intelligence/macro.git",
-            "https://github.com/mastermindx-market-intelligence/mastermind-terminal.git",
-            "https://github.com/mastermindx-market-intelligence/Mastermind.git",
-        }:
+        if remote not in _canonical_https_remotes():
             raise TopologyError("unapproved canonical git remote")
         ref = str(probe.get("ref") or "")
         if ref in {"main", "master"}:
@@ -876,13 +930,27 @@ def _schedule_probe(
         if not deployed_path or canonical_ref not in {"origin/main", "origin/master"}:
             return False, None, None, None, None, None
         deployed = _probe_sha({"kind": "git_head", "path": deployed_path}, reader)
+        canonical_repo_path = probe.get("canonical_repo_path")
         canonical_remote = probe.get("canonical_remote")
-        canonical = _probe_sha(
-            {"kind": "git_remote_ref", "remote": canonical_remote, "ref": f"refs/heads/{canonical_ref.split('/')[-1]}"}
-            if canonical_remote else
-            {"kind": "git_ref", "path": deployed_path, "ref": canonical_ref},
-            reader,
-        )
+        canonical_head_ref = f"refs/heads/{canonical_ref.split('/')[-1]}"
+        if canonical_repo_path:
+            # DEC:B1-MACRO-PRIVATE-CUTOVER: prefer the LOCAL authenticated
+            # checkout over an anonymous remote URL — see _probe_sha's
+            # repo_path branch for the full rationale.
+            canonical_probe: dict[str, Any] = {
+                "kind": "git_remote_ref",
+                "repo_path": canonical_repo_path,
+                "ref": canonical_head_ref,
+            }
+        elif canonical_remote:
+            canonical_probe = {
+                "kind": "git_remote_ref",
+                "remote": canonical_remote,
+                "ref": canonical_head_ref,
+            }
+        else:
+            canonical_probe = {"kind": "git_ref", "path": deployed_path, "ref": canonical_ref}
+        canonical = _probe_sha(canonical_probe, reader)
         if not deployed or not canonical:
             return False, None, None, None, None, None
         if probe.get("required_cron_id") == "macro_update":

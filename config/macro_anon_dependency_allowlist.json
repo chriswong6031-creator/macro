@@ -1,0 +1,25 @@
+{
+  "$schema_note": "Reviewed exceptions for scripts/check_macro_anon_dependency.py. An allowlisted path is still REPORTED (as ::notice, not ::error) — it is never silently skipped. Do not add app/deploy/setup.sh or app/deploy/bootstrap_repo.sh here (B1 Day-6 AMENDMENT clause E, DEC:B1-MACRO-PRIVATE-CUTOVER): those are live migration targets a parallel builder is actively de-anonymizing, and allowlisting them would hide regressions in that work rather than surface them. scripts/build_prophet_option_shadow_lifecycle.py's migration is COMPLETE (its git-ls-remote/curl-raw fetch legs were removed under the same DEC) — the entry below covers only its remaining display-only source_repository identity label, not a fetch path; a reappearance of an actual fetch leg in that file is still a real regression and must NOT be hidden by this entry.",
+  "entries": [
+    {
+      "path": "config/r2_delivery_plane_classification.v1.json",
+      "reason": "Pre-migration delivery-plane exposure CATALOG (DEC:B1-MACRO-PRIVATE-CUTOVER lineage) — its whole purpose is to enumerate the current/legacy anonymous public URLs (raw.githubusercontent.com, github.io) each classified artifact was reachable at before migration, exactly the same 'must be free to NAME the banned strings' rationale the tests/ scope exclusion already gets. It is a read-only audit record consumed by tests/test_r2_delivery_plane_classification.py, not a runtime fetch path.",
+      "reviewed_by": "claude/b1-day6-amendment build session, 2026-08-21"
+    },
+    {
+      "path": "contracts/options/options.sparse_selector_runtime.v1.schema.json",
+      "reason": "The flagged string is the 'source_repository' provenance IDENTITY label recorded on a prophet.canonical_ledger_snapshot_receipt/v1 receipt example embedded in this runtime contract fixture — it carries no network use, it is never dereferenced as a URL. The fetch legs that used to resolve this receipt (anonymous git ls-remote / curl raw.githubusercontent.com) were removed from scripts/build_prophet_option_shadow_lifecycle.py by DEC:B1-MACRO-PRIVATE-CUTOVER; both the commit resolution and the ledger read now go through the local checkout's own authenticated origin remote.",
+      "reviewed_by": "fable-day6-amendment"
+    },
+    {
+      "path": "contracts/options/prophet.option_shadow_lifecycle_event.v1.schema.json",
+      "reason": "The flagged string is the 'source_repository' provenance IDENTITY label — a JSON Schema 'const' validator on the prophet.canonical_ledger_snapshot_receipt/v1 receipt's source_repository field — it carries no network use, it is never dereferenced as a URL. The fetch legs that used to resolve this receipt (anonymous git ls-remote / curl raw.githubusercontent.com) were removed from scripts/build_prophet_option_shadow_lifecycle.py by DEC:B1-MACRO-PRIVATE-CUTOVER; both the commit resolution and the ledger read now go through the local checkout's own authenticated origin remote.",
+      "reviewed_by": "fable-day6-amendment"
+    },
+    {
+      "path": "scripts/build_prophet_option_shadow_lifecycle.py",
+      "reason": "The flagged string is CANONICAL_LEDGER_REPOSITORY, the 'source_repository' provenance IDENTITY label recorded on the prophet.canonical_ledger_snapshot_receipt/v1 receipt — it carries no network use; it is never passed to git or curl as a fetch target. The fetch legs that used to resolve this receipt (anonymous git ls-remote against CANONICAL_LEDGER_GIT_REMOTE, and curl against a raw.githubusercontent.com CANONICAL_LEDGER_RAW_TEMPLATE) were removed by DEC:B1-MACRO-PRIVATE-CUTOVER; _resolve_current_main_commit() and _download_current_main_ledger() now both go through the local checkout's own authenticated origin remote (git fetch + git show), mirroring scripts/build_prophet_marks.py::_load_index_canonical_git().",
+      "reviewed_by": "fable-day6-amendment"
+    }
+  ]
+}

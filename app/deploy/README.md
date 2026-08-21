@@ -40,11 +40,15 @@ That's it — once it prints `KEY_ADDED`, the agent can SSH in with
 
 ## Step 3 — provision (agent runs this once Step 1 is done)
 
-Public repo, so the droplet self-clones:
+The canonical repo is private (DEC:B1-MACRO-PRIVATE-CUTOVER). The droplet needs a
+read-only deploy key installed at `/root/.ssh/macro_ro_selfupdate` first (provisioned
+out of band — never embedded in this repo), then self-clones over the governed
+authenticated remote — see `app/deploy/setup.sh`'s header comment for the exact
+one-shot command, or once a checkout already exists:
 
 ```bash
 ssh -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17 \
-  'curl -fsSL https://raw.githubusercontent.com/mastermindx-market-intelligence/macro/main/app/deploy/setup.sh | bash'
+  'bash /opt/macro/app/deploy/setup.sh'
 ```
 
 `setup.sh` is idempotent: installs Caddy, clones the repo to `/opt/macro`, installs the
