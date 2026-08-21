@@ -102,10 +102,15 @@ disclosed**, so mix cannot be separated from intensity with public sources. Unre
 
 ### H6 — The portfolio acquisitions mask continued core-brand erosion in consolidated numbers
 **Evidence for:** consolidated revenue +83.9%/+172.9%/+117.2%/+137.7% across 2025Q2–2026Q1 while the
-CELSIUS brand lost share every quarter measured (11.0% → 9.5%, 2025Q2 → 2026Q2); Alani reached 8.7%
-share, within 0.8pt of the core brand (E036, E047).
+the CELSIUS brand lost share **year over year in every quarter with a disclosed YoY comparison**
+(2024Q4 −0.5pt, 2025Q1 −140bps, 2025Q2 −1.3pt, 2025Q3 −0.5pt), ending at 9.5% in 2026Q2 against
+11.0% in 2025Q2; Alani reached 8.7% share, within 0.8pt of the core brand (E036, E047).
 
-**Named falsifier:** CELSIUS brand dollar share stabilizing or rising for two consecutive quarters
+**Note on the level series:** share is *not* monotone quarter to quarter (10.9% → 11.0% → 11.2%
+across 2025Q1–Q3 before falling to 9.9%/9.5% in 2026). The claim is about the year-over-year
+comparisons the issuer disclosed, not about a monotone decline.
+
+**Named falsifier:** CELSIUS brand dollar share rising year over year for two consecutive quarters
 while portfolio revenue grows.
 
 **Competing explanation:** category-level share loss for CELSIUS may be partly *internal* substitution

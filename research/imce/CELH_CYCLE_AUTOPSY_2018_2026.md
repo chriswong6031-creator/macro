@@ -112,7 +112,7 @@ FY2025 distribution: portfolio points **+15%**; CELSIUS **+20% at 98.5% ACV**; A
 
 In 2026Q2 the issuer accepted **fewer** points of distribution and reported **dollars per point of distribution +16% QoQ** — the first productivity-over-breadth trade in the window, and the first time the metric is quantified at all.
 
-Meanwhile the core brand's share fell every measured quarter: **11.0% (2025Q2) → 11.2% → … → 9.9% (2026Q1) → 9.5% (2026Q2)**, while Alani rose to **8.7%** — within 0.8pt of CELSIUS.
+Meanwhile the core brand's share fell **year over year in every quarter for which the issuer disclosed a YoY comparison** — 2024Q4 −0.5pt, 2025Q1 −140bps, 2025Q2 −1.3pt, 2025Q3 −0.5pt. The *level* is not monotone (10.9% → 11.0% → 11.2% across 2025Q1–Q3) but ends far lower: **9.9% (2026Q1), 9.5% (2026Q2)**, while Alani rose to **8.7%** — within 0.8pt of CELSIUS.
 
 ---
 
@@ -174,7 +174,7 @@ Accrued promotional allowance, from filed balance sheets:
 | Q1–Q2 2024 | **weaker** | distributor days-on-hand reduction; ~−$20M in Q1 alone |
 | Q3 2024 | **much weaker** | −$123.9M distributor revenue + retailer promotional allowances that "would have otherwise been offset by proportional distributor sell-in" |
 | Q4 2024 | **weaker** | "higher domestic allowances… including our distributor incentive program" |
-| Q2 2025 – Q1 2026 | **stronger** | acquisition arithmetic: consolidated growth of +84% to +173% while the core brand lost share every quarter |
+| Q2 2025 – Q1 2026 | **stronger** | acquisition arithmetic: consolidated growth of +84% to +173% while the core brand lost share year over year in every quarter with a disclosed YoY comparison |
 | Q3 2025 | **stronger** | +44% brand revenue against a base quarter the destock had cut 31% |
 | Q2 2026 | **weaker** | trade investment, shipment timing on inventory rebalancing, club-channel softness |
 
