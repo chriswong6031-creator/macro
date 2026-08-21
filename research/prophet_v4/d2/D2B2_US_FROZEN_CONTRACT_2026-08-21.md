@@ -209,3 +209,75 @@ No session declares this wave done before that proof is recorded.
 Canada; GOLD/B; IBIT graph-kind correction; PIT vintages; ontology/probation; rights closure; ThemeState;
 Prophet ranking/admission/UI; EQR/VMRK duplicate price-store cleanup; MIC-list widening; legacy-universe
 eligibility retrofit; any CN/HK issuer-evidence class.
+
+---
+
+## AMENDMENT §1 — post-review rulings (Fable, 2026-08-21; binding on the fix pass)
+
+Adversarial review verdict FAIL (1 blocker, 3 majors, 8 minors). Rulings R1-R12 map to the reviewer's findings 1-12.
+
+**R1 (blocker — fix).** The §3/§4 eligibility+CIK gate applies to GMI-ONLY admission targets. A candidate whose key
+is in the legacy curated universe (`legacy_keys`, the 710-key set) is NEVER gated by this wave's law, regardless of
+master state — legacy mint law is untouched, exactly as §3's closing line intended (its "no ETFs" premise was
+false: ETHA/IBIT are curated seeds AND ETFs AND committed rows; they must keep minting on a from-scratch rebuild).
+Gate condition: GMI target ∧ NOT legacy. Regression pin required: from-empty `build()` mints AEP, CTRA, EQR, FI,
+FISV-chain, ETHA, IBIT (composition test, R4).
+
+**R2 (major — fix).** `us_gmi_admission` becomes the true `china_hk_admission` mirror: `target_n` = FULL GMI-U.S.
+company population net of registered identity exceptions (expected 1,236 at pin); `resolved_total` = CUMULATIVE
+count of target codes with an active master resolution post-run (expected 1,210 = 702 pre + 508 new);
+`resolved_this_run` (expected 508 on this bake, 0 at steady state); `refused_this_run` named per code (expected
+25); plus explicit disclosure entries for every code excluded by the root-code-equality path (R6) so the partition
+is COMPLETE and STANDING: `resolved_total + refusals + disclosed_exclusions == target_n`, enforced in-build. A
+future lost US row re-enters as a refusal and moves the counts — the invariant must be able to see it. §12's
+nightly proof reads before/after from this block.
+
+**R3 (major — fix).** Generalize the duplicate-claim guard to ALL rendered listing keys, not only pre-existing
+ones: when ≥2 target codes render to one key, exactly ONE claimant wins (deterministic: spelling equal to the
+resolved row's current symbol, else lexicographically smallest), one mint, one alias-row set; every non-winning
+claimant lands in the receipt as a typed disclosure naming the winning id. `build()` must be structurally unable
+to hand `VendorAliasTable.from_records` duplicate coverage from this path. Fixture test: the reviewer's
+NEWA/NEWAOLD same-root pair on a NEW key — build() completes, one row, disclosed duplicate, invariant holds.
+
+**R4 (major — fix).** End-to-end `build()` tests are mandatory: (a) from-EMPTY composition test asserting the R1
+names mint and the master's US row count matches the legacy+GMI union expectation; (b) seeded-from-pin-baseline
+transition test asserting `resolved_this_run == 508`, the 25 named refusals, and the R2 block shape. The
+`load_gmi_us_seeds → []` monkeypatch stays only in tests whose subject is explicitly legacy-only behavior.
+
+**R5 (minor — fix).** Structural-flag law: a GMI candidate resolved via the DIRECTORY is always flag-checked
+(missing flags for a directory-resolved candidate = hard `IdentityError`, never a skip). A GMI candidate resolved
+via the EXIT LEDGER is eligibility-EXEMPT BY LAW: the hand-curated ledger (authored from SEC filings) is itself
+the human-verified security-type evidence; the exemption is documented in code and disclosed in the receipt entry.
+
+**R6 (minor — fix).** Root-code-equality exclusion is valid ONLY when the code's own resolution outcome lands on
+the matching existing active row (rename-chain/current-symbol coverage verified), else the code is a genuine
+target. All exclusions taken by this path are disclosed per R2.
+
+**R7 (minor — fix).** Re-run the canonical regeneration AFTER the final fix-pass code commit so
+`_receipt.json.code_version` names a commit whose builder actually produces these bytes. The sidecar rebake and
+its `computed_at`-pinned test constant update accordingly.
+
+**R8 (minor — fix within bounds).** §9 item 9's test must exercise the REAL `build()` accounting path (no
+re-implemented loop in the test body); items 4/6/7/13/14/15 may remain artifact-pinned per house precedent, with
+item 14's completeness now also covered end-to-end by R4(b).
+
+**R9 (minor — contract correction, then fix).** §8/§9.16's "fence fired zero times on run 2" was wrongly phrased
+(the pin's own steady state carries `listing_continuity: [WBS, GOLD-identity-exception]`). Corrected law: run-2
+stability = `listing_continuity` identical to the expected steady set, zero pending-transition and resurrection
+refusals, `resolved_this_run == 0`, byte-identical artifacts. Test asserts exactly that.
+
+**R10 (minor — fix within bounds).** Where a new test's intent is CROSS-ARTIFACT CONSISTENCY, derive expected
+numbers from the committed receipt rather than hardcoding; hardcode only where the intent is pinning this wave's
+delivered magnitude. The 25 refusals are directory-staleness misses and WILL heal — tests must not make rail
+healing a merge-gate red beyond the existing house exposure.
+
+**R11 (minor — fix).** Receipt scoping: `symbol_directory.universe_keys` reverts to the legacy curated count
+(710); the GMI seed population gets its own named field (e.g. `gmi_seed_keys: 1238`). No reader of the existing
+field changes meaning.
+
+**R12 (nit — fix).** A venue-resolved candidate whose `ListingKey` construction fails is typed
+`unrenderable_code` (added to the §4 closed set), not `unsupported_venue`.
+
+Fix-pass order: code (R1, R2, R3, R5, R6, R11, R12) → tests (R4, R8, R9, R10) → regeneration + rebake LAST (R7)
+→ full §11 gates re-run. The reviewer re-verifies findings 1-12 individually (CONFIRMED/NOT-CONFIRMED per
+finding) before the ship loop starts.
