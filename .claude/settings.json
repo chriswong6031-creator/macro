@@ -91,7 +91,7 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ship_loop_guard.py\"",
-            "timeout": 300,
+            "timeout": 540,
             "statusMessage": "Verifying commit, PR, merge, deploy, and live state"
           }
         ]

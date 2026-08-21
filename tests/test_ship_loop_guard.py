@@ -4985,6 +4985,17 @@ def test_the_whole_pathological_status_path_fits_the_hooks_own_wall():
     probe = GUARD.SWEEP_PROBE_TIMEOUT_SECONDS
     first_sweep = probe + grace + probe  # resolve the gitdir, then lsof
     later_sweep = probe  # the gitdir is cached by then, so lsof only
+    # The heal runs AFTER the status is read (never between the attempts — see
+    # `test_the_heal_runs_only_after_the_status_it_could_contaminate`), but it is
+    # on the worst path either way: read the config, test the filesystem, write it.
+    heal = (
+        probe
+        + grace
+        + GUARD.UNTRACKED_CACHE_TEST_TIMEOUT_SECONDS
+        + grace
+        + probe
+        + grace
+    )
     worst = (
         GUARD.STATUS_TIMEOUT_SECONDS
         + grace
@@ -4992,12 +5003,336 @@ def test_the_whole_pathological_status_path_fits_the_hooks_own_wall():
         + GUARD.STATUS_RETRY_TIMEOUT_SECONDS
         + grace
         + later_sweep
+        + heal
     )
     assert worst <= min(walls), (
         "the pathological status path must still reach its own guard_error block: "
         f"{worst}s of a {min(walls)}s wall"
     )
-    assert GUARD.STATUS_RETRY_TIMEOUT_SECONDS > GUARD.STATUS_TIMEOUT_SECONDS
+    # The costlier shape is the one that SUCCEEDS. A retry answering just under its
+    # budget still owes the whole rest of `_stop` — PR lookup, CI attribution (up to
+    # ~16 REST calls when there is a red to attribute), render coverage, live checks
+    # — and a wall sized flush to `worst` would cancel the hook mid-evaluation there,
+    # which fails OPEN. This is the residual that makes that path survivable, not
+    # slack to be reclaimed by a later budget rise.
+    answered = (
+        GUARD.STATUS_TIMEOUT_SECONDS
+        + grace
+        + first_sweep
+        + GUARD.STATUS_RETRY_TIMEOUT_SECONDS
+        + heal
+    )
+    assert min(walls) - answered >= 60, (
+        "a retry that ANSWERS must leave the rest of the Stop evaluation room to "
+        f"run: {min(walls) - answered}s left of a {min(walls)}s wall"
+    )
+    # MATERIALLY larger, not merely larger. The retry has to finish the part of the
+    # walk the warm-up pass never reached, so a retry sized like the first attempt
+    # is the exact arithmetic that failed twice: 60/70 could not answer a 78s tree,
+    # and 100/150 could not answer the 333s one (2026-08-21). Both attempts sitting
+    # under the cold cost is a pair that can never succeed however often it runs.
+    assert (
+        GUARD.STATUS_RETRY_TIMEOUT_SECONDS >= 2 * GUARD.STATUS_TIMEOUT_SECONDS
+    ), "the retry must be able to absorb a cold walk the first attempt could not"
+
+
+# --------------------------------------------------------------------------
+# A tree too slow to READ must be repaired, not merely retried (2026-08-21):
+# 333s cold `status` on 75,427 index entries with `core.untrackedCache` unset,
+# against 1s warm. The retry budget lets that Stop answer; the untracked cache is
+# what stops the next one from having to.
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _reset_untracked_cache_heal(monkeypatch):
+    """The heal is once-per-process; tests must not inherit a sibling's attempt."""
+    monkeypatch.setattr(GUARD, "_UNTRACKED_CACHE_HEAL_TRIED", False)
+
+
+def _heal_capture(calls: list[tuple[str, ...]], codes: dict[str, int]):
+    """A `_capture` stand-in recording the heal's git calls and faking their rc."""
+
+    def fake_capture(_root, args, timeout):
+        calls.append(tuple(args))
+        for key, code in codes.items():
+            if key in args:
+                return subprocess.CompletedProcess(list(args), code, "", "")
+        return subprocess.CompletedProcess(list(args), 0, "", "")
+
+    return fake_capture
+
+
+def test_a_timed_out_status_enables_the_untracked_cache(monkeypatch, tmp_path):
+    """The blown first budget is the evidence that this tree is too slow to read.
+
+    A healthy checkout never reaches that line, so the timeout is a well-targeted
+    trigger: the heal costs nothing on every tree that answers in time.
+    """
+    calls: list[tuple[str, ...]] = []
+    # `--get` returns 1 (unset), the filesystem test passes, the write succeeds.
+    monkeypatch.setattr(GUARD, "_capture", _heal_capture(calls, {"--get": 1}))
+
+    budgets: list[int] = []
+
+    def fake_run_raw(_root, *args, timeout):
+        budgets.append(timeout)
+        if len(budgets) == 1:
+            raise subprocess.TimeoutExpired(list(args), timeout)
+        return ""
+
+    monkeypatch.setattr(GUARD, "_run_raw", fake_run_raw)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda _root: None)
+
+    assert GUARD._status_output(tmp_path) == ""
+    assert calls == [
+        ("git", "config", "--get", "core.untrackedCache"),
+        ("git", "update-index", "--test-untracked-cache"),
+        ("git", "config", "core.untrackedCache", "true"),
+    ], "the heal must test the filesystem BEFORE it writes the config"
+
+
+def test_a_status_that_answers_first_time_never_pays_for_the_heal(
+    monkeypatch, tmp_path
+):
+    """The trigger is a blown budget, not "every Stop".
+
+    Without this, moving the heal ahead of the first attempt would pass every
+    other test in this block while charging ~6s and an `index.lock` take to every
+    healthy tree in the fleet, on every Stop.
+    """
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr(GUARD, "_capture", _heal_capture(calls, {"--get": 1}))
+    monkeypatch.setattr(GUARD, "_run_raw", lambda _root, *args, timeout: "?? a.txt\n")
+
+    assert GUARD._status_output(tmp_path) == "?? a.txt\n"
+    assert calls == [], "a tree that answers in time must not be probed at all"
+
+
+def test_the_heal_runs_only_after_the_status_it_could_contaminate(
+    monkeypatch, tmp_path
+):
+    """Ordering is load-bearing: the mtime test writes INTO the worktree root.
+
+    `--test-untracked-cache` builds `mtime-test-XXXXXX/` in the working directory
+    and a killed one leaves it behind (measured). Run between the two attempts, the
+    retry would report `?? mtime-test-XXXXXX/newfile` and the guard would file a
+    false `uncommitted` block naming a file it created itself. Reading status first
+    means even a failed cleanup cannot contaminate this invocation's answer.
+    """
+    order: list[str] = []
+
+    def fake_run_raw(_root, *args, timeout):
+        order.append("status")
+        if len(order) == 1:
+            raise subprocess.TimeoutExpired(list(args), timeout)
+        return ""
+
+    monkeypatch.setattr(GUARD, "_run_raw", fake_run_raw)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda _root: None)
+    monkeypatch.setattr(
+        GUARD, "_enable_untracked_cache", lambda _root: order.append("heal") or True
+    )
+
+    GUARD._status_output(tmp_path)
+    assert order == ["status", "status", "heal"], (
+        "the heal must not run between the two status attempts"
+    )
+
+
+def _mtime_scratch(root: Path, name: str = "mtime-test-abc123") -> Path:
+    """The scratch tree a killed `--test-untracked-cache` leaves in the worktree."""
+    scratch = root / name
+    (scratch / "new-dir").mkdir(parents=True)
+    (scratch / "newfile").write_text("", encoding="utf-8")
+    (scratch / "new-dir" / "new").write_text("", encoding="utf-8")
+    return scratch
+
+
+def test_a_killed_mtime_test_does_not_leave_dirt_the_guard_would_block_on(
+    monkeypatch, tmp_path
+):
+    """The guard must never file `uncommitted` against a file the guard created."""
+    repo = _repo(tmp_path)
+    scratch = repo / "mtime-test-abc123"
+
+    def fake_capture(_root, args, _timeout):
+        if "--test-untracked-cache" in args:
+            # git creates its scratch tree, then is killed before removing it.
+            _mtime_scratch(repo, scratch.name)
+            raise subprocess.TimeoutExpired(list(args), 20)
+        return subprocess.CompletedProcess(list(args), 1 if "--get" in args else 0, "", "")
+
+    monkeypatch.setattr(GUARD, "_capture", fake_capture)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda _root: None)
+
+    assert GUARD._enable_untracked_cache(repo) is False
+    assert not scratch.exists(), "a timed-out mtime test must clean up after itself"
+    assert "mtime-test" not in GUARD._status_output(repo)
+
+
+def test_the_scratch_cleanup_refuses_anything_it_did_not_recognise(tmp_path):
+    """It deletes inside somebody's worktree, so every doubt keeps the directory.
+
+    An unexpected `mtime-test-*` is far better reported as dirt than removed on a
+    guess — a wrong delete here is silent data loss in a tree somebody is using.
+    """
+    repo = _repo(tmp_path)
+
+    # Real shape, but already present when the call started: somebody else's.
+    old = _mtime_scratch(repo, "mtime-test-old123")
+    # Right shape, but carries a file git never writes.
+    extra = _mtime_scratch(repo, "mtime-test-xtra12")
+    (extra / "mine.txt").write_text("precious", encoding="utf-8")
+    # Wrong name shape entirely.
+    unrelated = repo / "mtime-test-not-git"
+    unrelated.mkdir()
+    (unrelated / "newfile").write_text("", encoding="utf-8")
+
+    GUARD._remove_mtime_test_scratch(repo, GUARD._mtime_test_scratches(repo))
+    assert old.exists(), "a directory that predates the call is not ours to remove"
+
+    # Now with an empty snapshot: everything above counts as having appeared.
+    GUARD._remove_mtime_test_scratch(repo, set())
+    assert extra.exists(), "an unrecognised entry must keep the whole directory"
+    assert (extra / "mine.txt").read_text(encoding="utf-8") == "precious"
+    assert unrelated.exists(), "only git's own glob shape is ever removed"
+    assert not old.exists(), "the exact shape, newly appeared, IS removed"
+
+
+def test_a_real_killed_mtime_test_is_cleaned_up(tmp_path):
+    """End to end against real git: a SIGTERMed mtime test leaves a real scratch.
+
+    The mocked tests above construct the leftover by hand, so they cannot catch a
+    glob or entry-name that drifts from what git actually writes.
+    """
+    repo = _repo(tmp_path)
+    before = GUARD._mtime_test_scratches(repo)
+    proc = subprocess.Popen(
+        ("git", "update-index", "--test-untracked-cache"),
+        cwd=repo,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    time.sleep(3)  # long enough for the scratch tree to exist
+    proc.terminate()
+    proc.wait(timeout=30)
+    assert list(repo.glob("mtime-test-*")), "git should have left its scratch behind"
+
+    GUARD._remove_mtime_test_scratch(repo, before)
+    assert not list(repo.glob("mtime-test-*"))
+    assert "mtime-test" not in GUARD._status_output(repo)
+
+
+def test_the_untracked_cache_heal_never_overwrites_a_configured_value(
+    monkeypatch, tmp_path
+):
+    """rc 0 means somebody already decided this, in either direction.
+
+    An operator who set `false` did so deliberately, and this hook is a dirty
+    check, not a config manager. Only git's specific "unset" (rc 1) is permission.
+    """
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr(GUARD, "_capture", _heal_capture(calls, {"--get": 0}))
+
+    assert GUARD._enable_untracked_cache(tmp_path) is False
+    assert calls == [("git", "config", "--get", "core.untrackedCache")]
+
+
+@pytest.mark.parametrize("rc", [2, 128])
+def test_an_unreadable_untracked_cache_setting_is_never_interpreted(
+    monkeypatch, tmp_path, rc
+):
+    """Neither 0 nor 1: an erroring `git config` is not evidence the key is unset."""
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr(GUARD, "_capture", _heal_capture(calls, {"--get": rc}))
+
+    assert GUARD._enable_untracked_cache(tmp_path) is False
+    assert calls == [("git", "config", "--get", "core.untrackedCache")]
+
+
+def test_a_filesystem_that_fails_the_mtime_test_never_gets_the_cache(
+    monkeypatch, tmp_path
+):
+    """Enabling it on unreliable mtimes would make `status` LIE — a fail-OPEN.
+
+    The untracked cache trusts directory mtimes to decide a directory is
+    unchanged. Where they are not reliable, git would skip the directory and the
+    session's new untracked files would simply not appear in the dirty check this
+    whole hook exists to make. Saving the test's ~6s would buy a fast wrong answer.
+    """
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr(
+        GUARD,
+        "_capture",
+        _heal_capture(calls, {"--get": 1, "--test-untracked-cache": 1}),
+    )
+
+    assert GUARD._enable_untracked_cache(tmp_path) is False
+    assert ("git", "config", "core.untrackedCache", "true") not in calls
+
+
+def test_a_failed_heal_still_leaves_the_retry_its_full_budget(monkeypatch, tmp_path):
+    """The heal is an optimisation; it must never become why the retry is skipped."""
+
+    def exploding_capture(_root, _args, _timeout):
+        raise OSError("git is not on PATH")
+
+    monkeypatch.setattr(GUARD, "_capture", exploding_capture)
+
+    budgets: list[int] = []
+
+    def fake_run_raw(_root, *args, timeout):
+        budgets.append(timeout)
+        if len(budgets) == 1:
+            raise subprocess.TimeoutExpired(list(args), timeout)
+        return "?? warm.txt\n"
+
+    monkeypatch.setattr(GUARD, "_run_raw", fake_run_raw)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda _root: None)
+
+    assert GUARD._status_output(tmp_path) == "?? warm.txt\n"
+    assert budgets == [
+        GUARD.STATUS_TIMEOUT_SECONDS,
+        GUARD.STATUS_RETRY_TIMEOUT_SECONDS,
+    ]
+
+
+def test_the_untracked_cache_heal_is_attempted_only_once_per_process(
+    monkeypatch, tmp_path
+):
+    """Its answer cannot change mid-run, and re-learning it costs ~6s each time."""
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr(GUARD, "_capture", _heal_capture(calls, {"--get": 1}))
+
+    assert GUARD._enable_untracked_cache(tmp_path) is True
+    first = len(calls)
+    assert GUARD._enable_untracked_cache(tmp_path) is False
+    assert len(calls) == first, "the second attempt must not re-run the git calls"
+
+
+def test_the_heal_really_enables_the_untracked_cache_on_a_real_repository(tmp_path):
+    """End to end against real git: the mocks above cannot prove the rc contract.
+
+    Every other test in this block fakes `_capture`, so a wrong subcommand name or
+    a misread exit code would pass all of them. This one pays the real
+    `--test-untracked-cache` (~6s, dominated by its own mtime-granularity sleeps)
+    to pin that the three invocations are the ones git actually implements.
+    """
+    repo = _repo(tmp_path)
+    unset = GUARD._capture(repo, ("git", "config", "--get", "core.untrackedCache"), 30)
+    assert unset.returncode == 1, "git's 'this key is unset' rc is what the heal reads"
+
+    enabled = GUARD._enable_untracked_cache(repo)
+    if not enabled:
+        pytest.skip("this filesystem does not support git's untracked cache")
+    assert (
+        GUARD._run(repo, "git", "config", "--get", "core.untrackedCache", timeout=30)
+        == "true"
+    )
+    # The dirty check must still see everything it saw before the heal.
+    (repo / "fresh.txt").write_text("x", encoding="utf-8")
+    assert "fresh.txt" in GUARD._status_output(repo)
 
 
 def _orphaned_lock(repo: Path) -> Path:
