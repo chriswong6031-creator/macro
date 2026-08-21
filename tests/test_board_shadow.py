@@ -14,6 +14,7 @@ import ast
 import copy
 import datetime as dt
 import json
+import re
 import subprocess
 import sys
 import uuid
@@ -102,23 +103,32 @@ def _lane_b_frame(market: str) -> pd.DataFrame | None:
 # K1 — zero-authority breach (byte-identity harness) + non-vacuity
 # ---------------------------------------------------------------------------
 def test_k1_ca_zero_authority_breach_and_non_vacuity(tmp_path, monkeypatch):
-    """K1 CA leg (F1/F2). Byte-identity harness over everything DOWNSTREAM of
-    the CA shadow call site, using the REAL production wiring function
-    (scripts.build_canada._canada_board_ledger — the exact code path the
-    contract wires the shadow call into), across four variants:
-    shadow module absent / present-empty / present-with-adversarial-
-    challenger (non-vacuous order) / present-with-a-mutating-writer.
+    """K1 CA leg (F1/F2). Byte-identity REGRESSION harness over everything
+    DOWNSTREAM of the CA shadow call site, using the REAL production wiring
+    function (scripts.build_canada._canada_board_ledger — the exact code path
+    the contract wires the shadow call into), across four variants: shadow
+    module absent / present-empty / present-with-adversarial-challenger
+    (non-vacuous order) / present-with-a-mutating-writer.
 
-    The 'must FAIL' language in contract §6 K1 describes what this test
-    catches under mutation (e.g. removing write_shadow's deep-copy of the
-    population): with F1's protection in place, all four variants must be
-    byte-identical on both halves of the identity set this narrow harness
-    covers — setups["buy"]/["board_track"] (the JSON body that becomes
-    canada_standouts.json) and data/board_ledger/ca_board.parquet (the CA
-    slice of K1's named identity set). The template-rendered HTML pages named
-    in the contract's identity set are NOT exercised here (see DEVIATIONS in
-    the build packet) — a full render needs the live site template + data
-    tree this sparse suite does not check out.
+    CORRECTED DOCSTRING (M5, review round 2): this test does NOT detect a
+    removal of write_shadow's deep-copy, and was WRONGLY described as doing
+    so in the original draft. Structural reason: `_canada_board_ledger`
+    builds `calls` as brand-new dicts via `calls.append({"ticker": r.get(...),
+    ...})` from `setups["buy"]` rows — `calls` and `setups["buy"]` never share
+    row-dict identity in the first place, so a hostile challenger mutating
+    `calls[0]` was never going to reach `setups["buy"][0]` regardless of
+    board_shadow's own protections. What this test DOES genuinely verify is
+    the byte-identity regression on setups["buy"]/["board_track"] (the JSON
+    body that becomes canada_standouts.json) and
+    data/board_ledger/ca_board.parquet across all four variants — a real and
+    useful guard, just not the F1 aliasing kill. F1's actual load-bearing
+    kill for a genuine aliasing/write-surface channel is the write-surface
+    fence test below (m2, review round 2), which snapshots the filesystem
+    itself rather than relying on an object graph that happens not to alias
+    here. The template-rendered HTML pages named in the contract's identity
+    set are NOT exercised here (see DEVIATIONS in the build packet) — a full
+    render needs the live site template + data tree this sparse suite does
+    not check out.
     """
     sys.path.insert(0, str(ROOT))
     from scripts import build_canada  # noqa: PLC0415
@@ -189,49 +199,108 @@ def test_k1_ca_zero_authority_breach_and_non_vacuity(tmp_path, monkeypatch):
     assert incumbent_order != challenger_order, "fixture challenger must reorder the board"
 
 
-def test_k1_hk_zero_authority_and_aliasing_unit_level(monkeypatch):
-    """K1 HK leg (F1/F2), UNIT-LEVEL SCOPE. build_hk_library.compute_hk_standouts
-    reads real per-ticker chart JSON from site/hkstockdata/ through several
-    other engine modules (dispersion/entry_signal/extension/risk_sizing/
-    hk_ah/hk_southbound_stocks/hk_stock_signals) and cannot be exercised
-    end-to-end without the full checked-out data/site tree (F18) — see
-    DEVIATIONS. This test instead exercises the SAME aliasing/byte-identity
-    property at the exact granularity build_hk_library's wiring call
-    operates on: an `out` dict holding the same `calls`/`buy` list object
-    passed to append_board, mirroring the real call site's shape
-    (`out["buy"] = calls`, board_shadow.write_shadow(calls, ...) called after).
+def test_k1_hk_zero_authority_byte_identity(monkeypatch):
+    """K1 HK leg (F1/F2), rebuilt on the REAL production transform (M5,
+    review round 2). The earlier draft's fixture set `out["buy"] = calls` —
+    WRONG: production's published artifact is `out["buy"] = buys` (the
+    ORIGINAL per-name board rows), and `calls` is a SEPARATELY-BUILT list
+    scripts.build_hk_library._board_ledger_calls(buys, watch, ...) constructs
+    from `buys`/`watch` via fresh dicts (`calls.append({"ticker": e.get(...),
+    ...})`) — `calls` and `buys` never share row-dict identity to begin with.
+    This test uses the REAL `_board_ledger_calls` function so the object
+    graph matches production exactly, and (like the CA leg) is a genuine
+    byte-identity regression on `out["buy"]`, not an F1 aliasing kill — that
+    structural fact is the same reason the CA leg cannot detect a deep-copy
+    removal either. F1's real load-bearing kill is the write-surface fence
+    test below (m2).
     """
     _lane_on(monkeypatch, "HK")
-    calls = _population()
-    out = {"buy": calls, "board_definition": "hk_prophet_v1"}
+    sys.path.insert(0, str(ROOT))
+    from scripts import build_hk_library  # noqa: PLC0415
+
+    buys = [
+        {"ticker": "AAA", "group": "entry_open", "edge_z": 1.5,
+         "signal": {"tier": "T1"}, "entry_window": {"kind": "open-now"}, "price": 10.0},
+        {"ticker": "BBB", "group": "entry_open", "edge_z": 1.2,
+         "signal": {"tier": "T2"}, "entry_window": {"kind": "pullback"}, "price": 20.0},
+        {"ticker": "CCC", "group": "setting_up", "edge_z": 0.8,
+         "signal": {"tier": "T2"}, "entry_window": {"kind": "wait-for-weekly"}, "price": 30.0},
+    ]
+    watch = [
+        {"ticker": "DDD", "edge_z": -0.5,
+         "signal": {"tier": "T3"}, "entry_window": {}, "price": 40.0},
+    ]
+    calls = build_hk_library._board_ledger_calls(buys, watch)
+    out = {"buy": buys, "board_definition": "hk_prophet_v1"}
     before = json.dumps(out, sort_keys=True, default=str)
 
     _seed_board_ledger(monkeypatch, "HK", "2026-08-21", calls)
 
-    identity_checks: dict = {}
-
     def _hostile_rank_fn(inner_calls):
-        # F1 aliasing assertion (contract §4, explicit part of K1): the
-        # object the writer works with must share NO identity with the
-        # caller's `calls` (== out["buy"]) list or any of its rows.
-        identity_checks["list_is_same"] = inner_calls is calls
-        identity_checks["row0_is_same"] = (
-            len(inner_calls) > 0 and len(calls) > 0 and inner_calls[0] is calls[0]
-        )
-        inner_calls[0]["ticker"] = "HACKED"
+        inner_calls[0]["ticker"] = "HACKED"  # attempt to mutate the writer's population
         return _reversed_rank_fn(inner_calls)
 
     bs.register_challenger("hostile_v1", rank_fn=_hostile_rank_fn)
     result = bs.write_shadow(calls, market="HK", asof="2026-08-21")
     assert result["written"] > 0  # POSITIVE CONTROL
 
-    assert identity_checks == {"list_is_same": False, "row0_is_same": False}, (
-        "write_shadow's F1 deep-copy must give the challenger an object graph "
-        "sharing NO identity with the caller's population"
-    )
     after = json.dumps(out, sort_keys=True, default=str)
-    assert before == after, "the artifact dict holding `calls` must be byte-identical after write_shadow"
-    assert out["buy"][0]["ticker"] == "AAA", "the hostile challenger must never mutate the caller's population"
+    assert before == after, "out['buy'] (== buys) must be byte-identical after write_shadow"
+    assert out["buy"][0]["ticker"] == "AAA", "buys must never be touched — it never shared identity with calls"
+
+
+def test_write_surface_fence_only_data_prophet_shadow_is_touched(tmp_path, monkeypatch):
+    """m2 (M5, review round 2): the REAL F1/K1 load-bearing kill. Snapshots
+    every file under the tmp data root before and after a positive-control
+    write_shadow pass and asserts every path CREATED or MODIFIED lies under
+    data/prophet_shadow/. This closes the residual channel the review proved
+    live: neither K1's byte-identity harness (which only compares the
+    PUBLISHED artifact + board_ledger's own store, and — per the corrected
+    docstrings above — cannot even see an aliasing violation in the CA/HK
+    object graphs as they actually exist) nor K6's static string fence (which
+    only catches the literal 'prophet_shadow', not an arbitrary stray write)
+    would notice a writer that also emits, say,
+    `pd.DataFrame(...).to_parquet(data/hk_pick_lab/x.parquet)` — a write
+    entirely outside this module's own two lanes.
+
+    MUTATION THIS KILLS: adding any write inside write_shadow/_write_lane_a/
+    _write_lane_b/_merge_write_lane_a/_merge_write_lane_b that targets a path
+    outside data/prophet_shadow/.
+    """
+    data_root = tmp_path / "data"
+    monkeypatch.setattr(config, "data_dir", lambda: data_root)
+    _lane_on(monkeypatch, "CA")
+    calls = _population()
+    # Seed board_ledger's own store FIRST (a legitimate prior write) so its
+    # mtime/size are already part of the "before" snapshot — write_shadow
+    # itself must not re-touch it either.
+    n = board_ledger.append_board(copy.deepcopy(calls), market="CA", asof="2026-08-21")
+    assert n > 0
+
+    def _snapshot() -> dict[str, tuple[int, int]]:
+        if not data_root.exists():
+            return {}
+        return {
+            str(p.relative_to(data_root)): (p.stat().st_mtime_ns, p.stat().st_size)
+            for p in data_root.rglob("*") if p.is_file()
+        }
+
+    before = _snapshot()
+    _register_adversarial()
+    result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    assert result["written"] > 0  # POSITIVE CONTROL
+    after = _snapshot()
+
+    changed = {p for p in (set(before) | set(after)) if before.get(p) != after.get(p)}
+    offenders = sorted(p for p in changed if not (p == "prophet_shadow" or p.startswith("prophet_shadow/")))
+    assert not offenders, (
+        f"write_shadow touched path(s) outside data/prophet_shadow/: {offenders}"
+    )
+    # Sanity: the positive control DID write something under prophet_shadow/,
+    # so this is not passing merely because nothing happened on disk.
+    assert any(p.startswith("prophet_shadow/") for p in changed), (
+        "positive control: the write must actually touch data/prophet_shadow/"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -303,6 +372,13 @@ class _K3Visitor(ast.NodeVisitor):
                 joined.startswith("grading.")
                 or joined == "store.read"
                 or joined in ("pd.read_parquet", "pd.read_csv")
+                # The trailing `.attr` alone is forbidden regardless of what
+                # precedes it — `board_ledger._hk_close(...)`, `_bl.grading.
+                # forward_metrics(...)`, `something._bench_close(...)` are all
+                # the same private-grader surface wearing a different prefix,
+                # and a prefix-anchored check (`joined.startswith(...)`) never
+                # sees them (review finding M1).
+                or node.attr in _K3_FORBIDDEN_NAMES
             ):
                 self.hits.append(joined)
         self.generic_visit(node)
@@ -343,10 +419,15 @@ def test_k3_private_grader_ast_guard():
 
 
 def test_k3_private_grader_runtime_guard(monkeypatch):
-    """K3(ii): monkeypatch pandas.read_parquet to raise for anything that is
-    NOT the sanctioned board_ledger read-back path, and assert a full
-    positive-control writer pass still succeeds — the writer's own execution
-    never depends on reading anything else.
+    """K3(ii): monkeypatch pandas.read_parquet AND lib.store.read to raise for
+    anything that is NOT the sanctioned board_ledger read-back path, and
+    assert a full positive-control writer pass still succeeds — the writer's
+    own execution never depends on reading anything else. Contract §6 K3(ii)
+    names BOTH `lib.store.read` and `pandas.read_parquet` as the runtime half;
+    guarding only pandas would miss a mutation that reaches price data via
+    `store.read` (e.g. calling board_ledger._hk_close, which itself calls
+    `store.read("hk_stocks", ticker)`) without ever calling pd.read_parquet
+    directly — review finding M1(b).
     """
     _lane_on(monkeypatch, "CA")
     calls = _population()
@@ -360,9 +441,17 @@ def test_k3_private_grader_runtime_guard(monkeypatch):
             return real_read_parquet(path, *args, **kwargs)
         raise AssertionError(f"private grader detected: read_parquet({path})")
 
+    def _guarded_store_read(*args, **kwargs):
+        # board_shadow.py has ZERO legitimate reason to call lib.store.read —
+        # unlike the board_ledger parquet, there is no sanctioned exception.
+        raise AssertionError(f"private grader detected: store.read{args!r}")
+
+    from lib import store as _store_module
+
     # Seed the shadow store's own prior state via the real path BEFORE arming
     # the guard, then register the challenger and run under the guard.
     monkeypatch.setattr(bs.pd, "read_parquet", _guarded_read_parquet)
+    monkeypatch.setattr(_store_module, "read", _guarded_store_read)
     _register_adversarial()
     result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
     assert result["written"] > 0, "POSITIVE CONTROL: writer must still succeed under the guard"
@@ -376,6 +465,38 @@ def test_k3_schema_denylist_blocks_outcome_columns():
     out = bs._apply_write_seam(frame, bs._SCHEMA_A, "lane_a")
     assert "fwd_ret_5" not in out.columns
     assert "hit_rate" not in out.columns
+
+
+def test_k3_denylist_outranks_schema_membership_even_for_a_pinned_column(monkeypatch):
+    """K3(iii)/M3: the denylist must strip a column EVEN IF that exact name
+    is a member of the schema being reindexed to — not just when the column
+    was already outside the allowlist (which 'not in schema' alone already
+    handles trivially). Uses a SYNTHETIC schema containing a denylisted-
+    shaped name, since no real _SCHEMA_A/schema_b() member matches a deny
+    pattern today (pinned by the import-time assertion in
+    engine/board_shadow.py).
+
+    MUTATION THIS KILLS: neutering `_is_denylisted` (or reverting
+    `_apply_write_seam` to reindex against the raw `schema` instead of an
+    `effective_schema` with denylisted names stripped) lets `fwd_ret_5`
+    survive here, because it IS nominally part of this synthetic schema.
+    """
+    synthetic_schema = (*bs._SCHEMA_A, "fwd_ret_5")
+    frame = pd.DataFrame([{**{c: None for c in bs._SCHEMA_A}, "fwd_ret_5": 0.03}])
+
+    out = bs._apply_write_seam(frame, synthetic_schema, "lane_a")
+    assert "fwd_ret_5" not in out.columns, (
+        "a column matching a deny pattern must be stripped even when it is "
+        "nominally a schema member"
+    )
+
+    monkeypatch.setattr(bs, "_is_denylisted", lambda _col: False)
+    neutered_out = bs._apply_write_seam(frame, synthetic_schema, "lane_a")
+    assert "fwd_ret_5" in neutered_out.columns, (
+        "sanity check: with the denylist neutered, the synthetic schema "
+        "member DOES survive — proving the guard above is load-bearing, not "
+        "a byproduct of 'fwd_ret_5' being absent from the schema"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -460,60 +581,125 @@ _K6_ALLOWED_FILES = {
     "engine/board_shadow.py",
     "tests/test_board_shadow.py",
 }
-#: Pre-existing, unrelated uses of the exact literal 'prophet_shadow' that
-#: predate this contract and name a DIFFERENT feature (US board_rank's
-#: retired-v2-scorer `row["prophet_shadow"]` leg block, and the standalone
-#: options-flow schema string 'options.prophet_shadow/v1'). A blind substring
-#: scan for 'prophet_shadow' collides with these unconditionally — they are
-#: not a store-path reference and cannot leak this module's store. Allowlisted
-#: by FILE (not by count) so a NEW hit anywhere in these files (beyond the
-#: already-audited occurrences) still fails loudly the moment the file grows
-#: an actual reference to this module's store.
-#: {file: (audited occurrence count, reason)} — PINNED, not just allowlisted:
-#: a new occurrence beyond this exact count still fails, so the exemption
-#: cannot silently absorb a genuinely new store-path reference.
-_K6_PREEXISTING_UNRELATED_FILES = {
-    "engine/us_board_rank.py": (9, (
+
+#: Named FORMS the literal 'prophet_shadow' legitimately takes in pre-existing,
+#: unrelated code (review finding M2, replacing a per-file occurrence COUNT
+#: that a masking probe defeated: deleting one legitimate line and adding a
+#: genuinely dangerous one in the same file nets the SAME count). Each form is
+#: a regex tied to the SHAPE the safe usage takes; classification is by
+#: MATCHING SPAN, not raw substring count, so a occurrence's position must
+#: fall inside a form's match to be excused — a masking edit that changes
+#: WHICH forms appear (not just how many) is caught even at constant count.
+_K6_FORMS: dict[str, re.Pattern] = {
+    # prophet_shadow_definition / _score / _score_rank / _{component}[_points] —
+    # a LONGER identifier that merely starts with "prophet_shadow_"; this is
+    # the US fusion-override's own column-name family, never a bare
+    # "prophet_shadow" token.
+    "prefixed_identifier": re.compile(r"prophet_shadow_[A-Za-z{]"),
+    # row["prophet_shadow"] / row.get("prophet_shadow") / board.get("prophet_shadow")
+    # — a dict-key ACCESS on some unrelated in-memory row/board dict.
+    "dict_access": re.compile(r'(\[|\.get\(\s*)["\']prophet_shadow["\']'),
+    # "prophet_shadow": (...) — a dict LITERAL key.
+    "dict_literal_key": re.compile(r'["\']prophet_shadow["\']\s*:'),
+    # ("prophet", "prophet_shadow", "score_rank", ...) — a bare member of a
+    # tuple/list of field-name string constants (iterate-and-pop idiom).
+    "tuple_member": re.compile(r'[,(]\s*["\']prophet_shadow["\']\s*[,)]'),
+    # `prophet_shadow` / ``prophet_shadow`` — a bare backtick-wrapped
+    # docstring/comment mention (prose, not executable).
+    "backtick_bare_mention": re.compile(r"`{1,2}prophet_shadow`{1,2}"),
+    # engine/china_prophet_shadow.py / china_prophet_shadow — the DIFFERENT,
+    # pre-existing CN module name (substring collision: "china_prophet_shadow"
+    # contains "prophet_shadow" starting at its 6th character).
+    "china_module_reference": re.compile(r"china_prophet_shadow(\.py)?"),
+    # options.prophet_shadow/v1 — the options-flow schema string literal.
+    "options_schema_string": re.compile(r"options\.prophet_shadow/v1"),
+    # "prophet_shadow.score_rank" / "prophet_shadow.score" as a quoted VALUE
+    # (a human-readable label, not a key access) in us_prophet_fusion_compare.py.
+    "label_literal": re.compile(r'["\']prophet_shadow\.(score_rank|score)["\']'),
+    # `prophet_shadow.score` — the same label above, but backtick-wrapped
+    # prose in prophet_bridge.py's docstring rather than a quoted string.
+    "bridge_prose_attribute": re.compile(r"`prophet_shadow\.score`"),
+}
+
+#: {file: (allowed form names, reason)} — PER-FILE, not global: a file may
+#: only excuse an occurrence via the specific forms audited to be present in
+#: IT, so a masking edit that deletes one file's legitimate occurrence and
+#: adds a differently-shaped one (the review's demonstrated probe: delete the
+#: line-488 comment in engine/us_candidate_lanes.py, add
+#: `pd.read_parquet(config.data_dir()/"prophet_shadow"/...)` — net count
+#: unchanged) is caught because the ADDED occurrence's shape (a path-segment
+#: literal, preceded by `/` not `[`/`.get(`/a backtick/a comma) matches NONE
+#: of that file's declared forms.
+_K6_PREEXISTING_UNRELATED_FILES: dict[str, tuple[tuple[str, ...], str]] = {
+    "engine/us_board_rank.py": (("dict_access", "backtick_bare_mention"), (
         "US C1 fusion override's own `prophet_shadow` dict key (the retired "
         "v2 scorer's legs), unrelated to engine/board_shadow.py — see that "
         "module's own SHADOW_COLUMNS-style docstring."
     )),
-    "engine/us_context_vector.py": (16, (
+    "engine/us_context_vector.py": (
+        ("china_module_reference", "backtick_bare_mention", "prefixed_identifier", "dict_access"), (
         "reads/documents the same US `prophet_shadow` dict key above via "
-        "us_board_rank; same unrelated feature."
+        "us_board_rank, plus its own `prophet_shadow_*` SHADOW_COLUMNS family "
+        "and the unrelated pre-existing china_prophet_shadow.py mention."
     )),
-    "scripts/build_options_prophet.py": (2, (
+    "scripts/build_options_prophet.py": (("options_schema_string",), (
         "options-flow schema literal 'options.prophet_shadow/v1' — an "
         "unrelated schema name that happens to share the substring."
     )),
-    "scripts/mirror_flow_idx.py": (1, (
+    "scripts/mirror_flow_idx.py": (("options_schema_string",), (
         "reads the same options-flow schema literal above."
     )),
-    "engine/us_prophet_w3.py": (16, (
-        "US W3 evidence module's own `prophet_shadow` dict key family "
+    "engine/us_prophet_w3.py": (("prefixed_identifier",), (
+        "US W3 evidence module's own `prophet_shadow_*` dict key family "
         "(same US fusion-override feature as us_board_rank.py above)."
     )),
-    "engine/us_candidate_lanes.py": (3, (
-        "reads the same US `prophet_shadow` dict key family above."
+    "engine/us_candidate_lanes.py": (
+        ("dict_access", "backtick_bare_mention", "dict_literal_key"), (
+        "reads the same US `prophet_shadow` dict key family above (subscript "
+        "access, a docstring mention, and a dict-literal key)."
     )),
-    "scripts/us_prophet_fusion_compare.py": (7, (
+    "scripts/us_prophet_fusion_compare.py": (
+        ("backtick_bare_mention", "dict_access", "tuple_member", "label_literal"), (
         "compares the US `prophet_shadow` dict key family above — a fusion "
         "research script, not this module's caller."
     )),
-    "engine/cn_theme_tape.py": (1, (
+    "engine/cn_theme_tape.py": (("china_module_reference",), (
         "names the DIFFERENT, pre-existing engine/china_prophet_shadow.py "
         "module (substring collision: 'china_prophet_shadow' contains "
         "'prophet_shadow') — not this contract's engine/board_shadow.py."
     )),
-    "engine/prophet_bridge.py": (1, (
+    "engine/prophet_bridge.py": (("bridge_prose_attribute",), (
         "`prophet_shadow.score` — the same US retired-v2-scorer dict key "
-        "above, read from the bridge module."
+        "above, mentioned in prose in the bridge module's docstring."
     )),
-    "scripts/build_china_library.py": (1, (
+    "scripts/build_china_library.py": (("china_module_reference",), (
         "`from engine import china_prophet_shadow` — the different, "
         "pre-existing CN shadow module (substring collision as above)."
     )),
 }
+
+
+def _k6_unclassified_occurrences(text: str, allowed_forms: tuple[str, ...]) -> list[str]:
+    """Every raw 'prophet_shadow' occurrence in `text` whose position is not
+    covered by any of `allowed_forms`'s matched spans — the actual leak
+    detector. A NEW occurrence whose shape matches none of a file's declared
+    forms is unclassified regardless of whether the file's total count of
+    'prophet_shadow' happens to be unchanged (M2's fix: count alone cannot
+    tell 'a legitimate line moved' from 'a legitimate line was traded for a
+    dangerous one')."""
+    raw_positions = [m.start() for m in re.finditer("prophet_shadow", text)]
+    if not raw_positions:
+        return []
+    classified_spans: list[tuple[int, int]] = []
+    for form_name in allowed_forms:
+        pattern = _K6_FORMS[form_name]
+        classified_spans.extend((m.start(), m.end()) for m in pattern.finditer(text))
+    unclassified = []
+    for pos in raw_positions:
+        if not any(start <= pos < end for start, end in classified_spans):
+            lo, hi = max(0, pos - 40), min(len(text), pos + 40)
+            unclassified.append(text[lo:hi].replace("\n", "\\n"))
+    return unclassified
 
 
 def test_k6_prophet_shadow_literal_is_confined_to_its_own_module_and_tests():
@@ -527,17 +713,23 @@ def test_k6_prophet_shadow_literal_is_confined_to_its_own_module_and_tests():
 
     DEVIATION NOTE (reported in the build packet): the literal
     'prophet_shadow' already appears, pre-existing and unrelated, in the US
-    board_rank fusion-override dict key and the options-flow schema string
-    (see _K6_PREEXISTING_UNRELATED_FILES) — a blind scan as literally
+    board_rank fusion-override dict key family and the options-flow schema
+    string (see _K6_PREEXISTING_UNRELATED_FILES) — a blind scan as literally
     specified is permanently red from day one regardless of this module.
-    Those files are allowlisted explicitly (by file, not by count) rather
-    than weakening the scan generally, so any NEW occurrence in them still
-    fails.
+    Those files are excused by a PER-FILE set of named regex FORMS (M2 fix,
+    2026-08-21 review round 2 — a raw occurrence COUNT allowlist was proven
+    maskable: delete one legitimate occurrence, add a differently-shaped
+    dangerous one, net count unchanged), so a NEW occurrence whose shape
+    matches none of that file's declared forms still fails loudly.
 
     MUTATION THIS KILLS: any production module importing
     engine.board_shadow / referencing 'prophet_shadow' by name (e.g. a
-    template or admin page rendering the store path), OR a new reference
-    added to one of the allowlisted pre-existing files."""
+    template or admin page rendering the store path), a new reference added
+    to one of the excused pre-existing files in an UNRECOGNISED shape (the
+    review's masking probe: delete engine/us_candidate_lanes.py's line-488
+    comment AND add `pd.read_parquet(config.data_dir()/"prophet_shadow"/...)`
+    — net occurrence count unchanged, but the added occurrence's shape
+    matches none of that file's declared forms)."""
     offenders: list[str] = []
     for root_name in _K6_SCAN_ROOTS:
         root = ROOT / root_name
@@ -553,15 +745,15 @@ def test_k6_prophet_shadow_literal_is_confined_to_its_own_module_and_tests():
                 text = path.read_text(encoding="utf-8")
             except (UnicodeDecodeError, OSError):
                 continue  # binary/unreadable files carry no source-level leak
-            hits = text.count("prophet_shadow")
-            if not hits:
+            if "prophet_shadow" not in text:
                 continue
             if rel in _K6_PREEXISTING_UNRELATED_FILES:
-                expected_count, _reason = _K6_PREEXISTING_UNRELATED_FILES[rel]
-                if hits > expected_count:
+                allowed_forms, _reason = _K6_PREEXISTING_UNRELATED_FILES[rel]
+                unclassified = _k6_unclassified_occurrences(text, allowed_forms)
+                if unclassified:
                     offenders.append(
-                        f"{rel} (audited={expected_count}, found={hits} — "
-                        "a NEW reference appeared beyond the pinned pre-existing count)"
+                        f"{rel}: unrecognised 'prophet_shadow' form(s) beyond its "
+                        f"audited forms {allowed_forms}: {unclassified}"
                     )
                 continue
             offenders.append(rel)
@@ -607,12 +799,24 @@ def _discovery_fn_factory(rows: list[dict]):
 
 def test_k8a_session_date_must_equal_current_asof(monkeypatch):
     """K8a: a Lane B row whose session_date != the current build's asof is
-    refused. MUTATION THIS KILLS: drop the `session_date != asof` check."""
+    refused. Uses session_date = asof - 1 DAY, INSIDE the settle window
+    (SETTLE_WINDOW_DAYS=3) — a wide gap (e.g. 20 days) would ALSO trip K8b's
+    wall-clock settle fence on its own, so deleting K8a's own
+    `session_date != asof` block would still pass this test for the WRONG
+    reason (M6/m1 isolation fix, review round 2: date bomb + isolation).
+    With a 1-day gap, removing K8a's block leaves K8b (1 day < 3-day window)
+    and K8c (no prior store, nothing to be behind) both silent, so a real
+    K8a removal writes the row and this test genuinely fails.
+
+    MUTATION THIS KILLS: drop the `session_date != asof` check."""
     _lane_on(monkeypatch, "CA")
-    rows = [{"session_date": "2026-08-01", "security_ref_raw": "AAA",
+    today = dt.datetime.now(dt.timezone.utc).date()
+    asof = today.isoformat()
+    mismatched_session_date = (today - dt.timedelta(days=1)).isoformat()
+    rows = [{"session_date": mismatched_session_date, "security_ref_raw": "AAA",
               "candidate_origin": "test"}]
     bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(rows))
-    result = bs.write_shadow([], market="CA", asof="2026-08-21")
+    result = bs.write_shadow([], market="CA", asof=asof)
     frame = _lane_b_frame("CA")
     assert frame is None or frame.empty
     assert result["written"] == 0
@@ -620,12 +824,17 @@ def test_k8a_session_date_must_equal_current_asof(monkeypatch):
 
 def test_k8a_positive_control_matching_asof_writes(monkeypatch):
     """Positive control for K8a: a row whose session_date DOES match asof
-    must actually write — otherwise K8a would pass vacuously."""
+    must actually write — otherwise K8a would pass vacuously. Dates derived
+    from the live wall clock (M6/m1 date-bomb fix, review round 2): a
+    hardcoded date would eventually trip K8b's wall-clock settle fence for
+    reasons unrelated to what this test checks, the moment real time moves
+    far enough past it."""
     _lane_on(monkeypatch, "CA")
-    rows = [{"session_date": "2026-08-21", "security_ref_raw": "AAA",
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    rows = [{"session_date": today, "security_ref_raw": "AAA",
               "candidate_origin": "test"}]
     bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(rows))
-    result = bs.write_shadow([], market="CA", asof="2026-08-21")
+    result = bs.write_shadow([], market="CA", asof=today)
     assert result["written"] > 0
     frame = _lane_b_frame("CA")
     assert frame is not None and len(frame) == 1
@@ -671,12 +880,29 @@ def test_k8c_behind_the_head_is_refused(monkeypatch):
 # ---------------------------------------------------------------------------
 # K9 — identity divergence (collision counting)
 # ---------------------------------------------------------------------------
+def _strip_canonicalizer(raw):
+    """A future semantic canonicalizer stand-in — folds whitespace variants
+    together. canonical_ref() itself is EXACT str() identity today (m3 review
+    correction: no .strip()), so the collision MACHINERY (ref_collision_n) is
+    dormant in production until an upgrade like this one lands; K9 exercises
+    that machinery by monkeypatching canonical_ref to this variant rather
+    than relying on today's identity rule to collide anything."""
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    return text or None
+
+
 def test_k9_ref_collision_is_counted_and_kept(monkeypatch):
     """K9 (F11): two distinct raw refs canonicalising to one security_ref in
     one session must be COUNTED (ref_collision_n) and both observations kept
-    — never silently collapsed to one row."""
+    — never silently collapsed to one row, including across a SECOND write
+    that merges against the store the first write created (M4: security_ref_raw
+    joined _LANE_B_KEY precisely so this merge cannot silently drop_duplicates
+    the two collision rows down to one)."""
     _lane_on(monkeypatch, "CA")
     today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    monkeypatch.setattr(bs, "canonical_ref", _strip_canonicalizer)
     rows = [
         {"session_date": today, "security_ref_raw": " AAA", "candidate_origin": "a"},
         {"session_date": today, "security_ref_raw": "AAA ", "candidate_origin": "b"},
@@ -690,10 +916,32 @@ def test_k9_ref_collision_is_counted_and_kept(monkeypatch):
     assert set(frame["security_ref"]) == {"AAA"}
     assert set(frame["security_ref_raw"]) == {"AAA", "AAA "} or set(frame["security_ref_raw"]) == {" AAA", "AAA "}
 
+    # M4: a SECOND write_shadow call (unrelated ticker, different session)
+    # forces the merge path (`prior is not None` in _merge_write_lane_b) that
+    # runs drop_duplicates on _LANE_B_KEY. Both day-1 collision rows must
+    # still be present afterward — the bug this fix closes destroyed them
+    # here specifically.
+    bs.CHALLENGER_REGISTRY.clear()
+    monkeypatch.setattr(bs, "canonical_ref", _strip_canonicalizer)
+    tomorrow = (dt.datetime.now(dt.timezone.utc).date() + dt.timedelta(days=1)).isoformat()
+    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(
+        [{"session_date": tomorrow, "security_ref_raw": "ZZZ", "candidate_origin": "z"}]))
+    result2 = bs.write_shadow([], market="CA", asof=tomorrow)
+    assert result2["written"] > 0
+
+    frame_after = _lane_b_frame("CA")
+    day1_rows = frame_after[frame_after["session_date"] == today]
+    assert len(day1_rows) == 2, (
+        "both day-1 collision rows must survive a later merge — "
+        f"got {len(day1_rows)} row(s): {day1_rows.to_dict('records')}"
+    )
+    assert set(day1_rows["ref_collision_n"]) == {2}
+
 
 def test_k9_non_colliding_refs_stay_separate(monkeypatch):
     """K9 mirror kill: two refs that do NOT canonicalize together must not be
-    merged (ref_collision_n == 1 for each)."""
+    merged (ref_collision_n == 1 for each). Uses the real (identity) canonical_ref
+    — "AAA" and "BBB" never collide under any canonicalizer."""
     _lane_on(monkeypatch, "CA")
     today = dt.datetime.now(dt.timezone.utc).date().isoformat()
     rows = [
@@ -705,6 +953,22 @@ def test_k9_non_colliding_refs_stay_separate(monkeypatch):
     frame = _lane_b_frame("CA")
     assert set(frame["security_ref"]) == {"AAA", "BBB"}
     assert set(frame["ref_collision_n"]) == {1}
+
+
+def test_canonical_ref_is_exact_str_identity_matching_board_ledger():
+    """m3: canonical_ref() must be EXACT identity over str(raw) — no strip,
+    no fold — matching what board_ledger stores verbatim (`str(tk)`,
+    unstripped, in append_board). A whitespace-bearing raw ref must NOT be
+    silently normalised here; that would mint a second identity truth (the
+    exact F11 concern this function exists to close).
+
+    MUTATION THIS KILLS: reintroducing `.strip()` (or any other
+    normalisation) into canonical_ref's body."""
+    assert bs.canonical_ref("AAA") == str("AAA")
+    assert bs.canonical_ref(" AAA ") == str(" AAA ")  # NOT stripped
+    assert bs.canonical_ref(" AAA ") != bs.canonical_ref("AAA")
+    assert bs.canonical_ref(700) == str(700)
+    assert bs.canonical_ref(None) is None
 
 
 # ---------------------------------------------------------------------------
@@ -823,7 +1087,13 @@ def test_k12_incumbent_rank_matches_board_pos_with_a_ticker_less_row(monkeypatch
 def test_k13_challenger_rank_is_dense_over_the_minted_population_with_nulls(monkeypatch):
     """K13 (F9): challenger ranks must be dense (1..k) over only the SCORED
     subset while unscored names stay NULL, when population_n > k — never a
-    1..population_n rank that pretends everyone was scored."""
+    1..population_n rank that pretends everyone was scored.
+
+    n4 (post-review clarification): this IS K13's operative reading — the
+    contract's parenthetical ("dense rank over the minted population with
+    NULLs is the only lawful shape"). A rank of 1..k over ONLY the scored
+    subset (no gaps for the unscored names) is the alternative reading K13
+    exists to KILL, not an equally valid interpretation."""
     _lane_on(monkeypatch, "CA")
     calls = _population()  # population_n = 4
     _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
@@ -854,10 +1124,15 @@ def test_k13_challenger_rank_is_dense_over_the_minted_population_with_nulls(monk
 def test_k14_reobservation_never_advances_first_seen_at(monkeypatch):
     """K14: re-observing a name on a LATER session must not advance
     first_seen_at — it must carry forward the EARLIEST stamped_at ever
-    recorded for that (security_ref, challenger_definition)."""
+    recorded for that (security_ref, challenger_definition). Dates derived
+    from the live wall clock (M6/m1 date-bomb fix, review round 2): fixed
+    calendar dates eventually fall outside K8b's wall-clock settle window
+    relative to the REAL current date and start failing for a reason
+    unrelated to K14."""
     _lane_on(monkeypatch, "CA")
-    day1 = "2026-08-19"
-    day2 = "2026-08-20"
+    today = dt.datetime.now(dt.timezone.utc).date()
+    day1 = (today - dt.timedelta(days=1)).isoformat()
+    day2 = today.isoformat()
 
     bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(
         [{"session_date": day1, "security_ref_raw": "AAA", "candidate_origin": "a"}]))
@@ -876,6 +1151,53 @@ def test_k14_reobservation_never_advances_first_seen_at(monkeypatch):
 
     assert first_seen_day2_row == first_seen_day1, "first_seen_at must carry the EARLIEST stamp, never advance"
     assert len(frame2) == 2, "append-only: the day1 row must still be present as its own row"
+
+
+def test_k14_first_seen_at_is_a_true_min_under_clock_skew(monkeypatch, tmp_path):
+    """n2 (review round 2 clock-skew correction): first_seen_at must be a
+    TRUE min(prior_min, stamped_at), not 'prior_min if it exists' — the
+    earlier shape silently assumed prior_min always precedes today's write
+    clock, true only in the ordinary forward-flowing case. Hand-seeds a Lane
+    B store whose existing first_seen_at is artificially in the FUTURE
+    relative to `stamped_at` (a clock-skew stand-in), then performs a real
+    write and asserts the result is the earlier of the two, not the
+    (incorrectly later) prior value.
+
+    MUTATION THIS KILLS: `prior_min if prior_min else stamped_at` (returns
+    the future prior_min unconditionally whenever one exists)."""
+    data_root = tmp_path / "data"
+    monkeypatch.setattr(config, "data_dir", lambda: data_root)
+    _lane_on(monkeypatch, "CA")
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+
+    future_first_seen = "2099-01-01T00:00:00+00:00"  # deliberately "in the future"
+    path = bs._lane_b_path("CA")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    seed = pd.DataFrame([{
+        "session_date": (dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=1)).isoformat(),
+        "market": "CA", "security_ref": "AAA", "security_ref_raw": "AAA",
+        "ref_collision_n": 1, "challenger_definition": "disc_v1",
+        "candidate_origin": "a", "first_seen_at": future_first_seen,
+        "availability_status": None, "availability_source": None,
+        "visible_to_user": False, "published_authority": False,
+        "stamped_at": future_first_seen,
+    }])
+    seed.to_parquet(path, index=False)
+
+    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(
+        [{"session_date": today, "security_ref_raw": "AAA", "candidate_origin": "a"}]))
+    result = bs.write_shadow([], market="CA", asof=today)
+    assert result["written"] > 0  # POSITIVE CONTROL
+
+    frame = _lane_b_frame("CA")
+    new_row = frame.loc[frame["session_date"] == today]
+    assert len(new_row) == 1
+    written_first_seen = new_row["first_seen_at"].iloc[0]
+    assert written_first_seen < future_first_seen, (
+        "first_seen_at must be the EARLIER of prior_min and today's stamped_at "
+        f"— got {written_first_seen!r}, which is not earlier than the seeded "
+        f"future prior_min {future_first_seen!r}"
+    )
 
 
 # ---------------------------------------------------------------------------

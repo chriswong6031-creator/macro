@@ -9658,6 +9658,7 @@ jobs:
       - "engine/baskets_region.py"
       - "engine/beneficial_ownership.py"
       - "engine/board_ledger.py"
+      - "engine/board_shadow.py"
       - "engine/bottleneck.py"
       - "engine/bottom_radar.py"
       - "engine/bottom_ruler.py"

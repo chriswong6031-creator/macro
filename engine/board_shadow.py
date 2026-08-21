@@ -101,7 +101,17 @@ _FIXED_SCHEMA_B_TAIL = (
     "visible_to_user", "published_authority",
     "stamped_at",
 )
-_LANE_B_KEY = ("session_date", "security_ref", "challenger_definition")
+#: `security_ref_raw` joins the key (review finding M4): without it, two
+#: DISTINCT raw refs that collided into one `security_ref` this session (K9)
+#: survive the FIRST write (no prior store to merge against, so
+#: `_merge_write_lane_b` skips drop_duplicates entirely) but are silently
+#: collapsed to ONE row the moment a SECOND write_shadow call merges against
+#: that prior store — `drop_duplicates` on (session_date, security_ref,
+#: challenger_definition) alone sees two rows with identical values on all
+#: three and keeps only the first. Contract §1 states the key without this
+#: column; this is a deliberate, reviewed widening, not a silent
+#: reinterpretation — see the build packet's DEVIATIONS.
+_LANE_B_KEY = ("session_date", "security_ref", "security_ref_raw", "challenger_definition")
 
 
 def _family_columns(registry: tuple[str, ...] = FAMILY_REGISTRY) -> tuple[str, ...]:
@@ -147,17 +157,40 @@ def classify_column(column: str, schema: tuple[str, ...]) -> str:
     return "unclassified"
 
 
+# IMPORT-TIME ASSERTION (review finding M3): the denylist must never silently
+# swallow a schema member via `_apply_write_seam`'s `effective_schema` filter
+# — this fails LOUD at import time the moment a future schema edit adds a
+# column that also matches a deny pattern, rather than discovering it as a
+# missing column on disk months later.
+_schema_a_denylisted = [c for c in _SCHEMA_A if _is_denylisted(c)]
+assert not _schema_a_denylisted, (
+    f"_SCHEMA_A contains denylisted column(s): {_schema_a_denylisted} — "
+    "rename the column or narrow the deny pattern before it ships"
+)
+_schema_b_denylisted = [c for c in schema_b() if _is_denylisted(c)]
+assert not _schema_b_denylisted, (
+    f"schema_b() contains denylisted column(s): {_schema_b_denylisted} — "
+    "rename the column or narrow the deny pattern before it ships"
+)
+
+
 def _apply_write_seam(frame: pd.DataFrame, schema: tuple[str, ...], lane_name: str) -> pd.DataFrame:
-    """The write seam (contract §1, K11): reindex to ``schema`` after loudly
-    dropping anything the allowlist does not bless. Denylisted columns and
-    unclassified columns are DISTINCT failure classes and get their own
-    line-start ``::warning`` (bare print, flush=True — CLAUDE.md annotation
-    law; never through a logger)."""
-    denied = sorted(c for c in frame.columns if c not in schema and _is_denylisted(c))
-    unclassified = sorted(
-        c for c in frame.columns
-        if c not in schema and c not in denied and not _is_denylisted(c)
-    )
+    """The write seam (contract §1, K11): reindex to the schema AFTER
+    stripping the denylist FROM the schema itself — the denylist outranks the
+    allowlist even for a column that is (or somehow becomes) a member of
+    ``schema`` (review finding M3: the previous shape only ever checked
+    denylist membership for columns NOT already in ``schema``, so a
+    denylisted name that was also a schema member would survive
+    ``reindex(columns=schema)`` untouched — dormant today only because no
+    current schema member happens to match a deny pattern, which is exactly
+    what :data:`_SCHEMA_A`/:func:`schema_b`'s own assert below exists to keep
+    true). Denylisted columns and unclassified columns are DISTINCT failure
+    classes and get their own line-start ``::warning`` (bare print,
+    flush=True — CLAUDE.md annotation law; never through a logger)."""
+    effective_schema = [c for c in schema if not _is_denylisted(c)]
+    present = set(frame.columns)
+    denied = sorted(c for c in present if _is_denylisted(c))
+    unclassified = sorted(c for c in present if c not in schema and c not in denied)
     if denied:
         print(
             f"::warning title=board-shadow-denylist-column::{lane_name}: dropped "
@@ -172,7 +205,7 @@ def _apply_write_seam(frame: pd.DataFrame, schema: tuple[str, ...], lane_name: s
             "or extend the schema allowlist in engine/board_shadow.py",
             flush=True,
         )
-    return frame.reindex(columns=list(schema))
+    return frame.reindex(columns=effective_schema)
 
 
 # ---------------------------------------------------------------------------
@@ -181,15 +214,22 @@ def _apply_write_seam(frame: pd.DataFrame, schema: tuple[str, ...], lane_name: s
 def canonical_ref(raw: Any) -> str | None:
     """Canonicalise a raw discovery security reference.
 
-    Today's rule is identity over board_ledger's verbatim ``str(ticker)`` plus
-    a bare ``.strip()`` — the minimal normalisation that makes ref_collision_n
-    (K9) testable without inventing a second identity truth. Every Lane B
-    writer MUST call this exact function; a future semantic canonicalizer
-    replaces only this body, never a second copy.
+    Today's rule is EXACT identity over board_ledger's verbatim ``str(ticker)``
+    — no ``.strip()``, no case-folding, no punctuation normalisation. A
+    strip-or-fold canonicalizer would mint a SECOND identity truth diverging
+    from what board_ledger actually stores (F11's own concern, m3 review
+    correction 2026-08-21: the draft version's bare ``.strip()`` was exactly
+    that second truth, however minimal). Every Lane B writer MUST call this
+    exact function; a future semantic canonicalizer replaces only this body,
+    never a second copy. Collision machinery (ref_collision_n, K9) is
+    therefore DORMANT in production until that future canonicalizer folds two
+    distinct raw forms together — correct substrate behaviour, not a gap:
+    tests exercise the collision path by monkeypatching this function to a
+    strip-variant, never by relying on today's identity rule to collide.
     """
     if raw is None:
         return None
-    text = str(raw).strip()
+    text = str(raw)
     return text or None
 
 
@@ -537,7 +577,15 @@ def _write_lane_b(market: str, asof: str, definition: str,
                 flush=True,
             )
         prior_min = existing_first_seen.get(ref)
-        first_seen_at = prior_min if prior_min else stamped_at
+        # TRUE min(), not "prior_min if it exists" (n2, review round 2
+        # clock-skew correction): ISO-8601 UTC strings from _now_iso() sort
+        # lexicographically in chronological order, so a plain string min()
+        # is correct without parsing. The earlier shape silently assumed
+        # prior_min always precedes today's stamped_at — true in the ordinary
+        # forward-flowing case, but a genuine min() is what "never advances,
+        # only carries the earliest" actually means under clock skew across
+        # machines/runners.
+        first_seen_at = min(prior_min, stamped_at) if prior_min else stamped_at
         for g in group:
             row = {
                 "session_date": str(asof), "market": market,

@@ -349,3 +349,41 @@ no winner, no performance claims, no user-visible change of any kind. The
 governed discovery-outcome evaluator (§3 third door) is a later wave. The
 surface-freshness wiring for the shadow stores activates with the first
 registered challenger, not at merge.
+
+## Post-review clarifications (2026-08-21)
+
+Recorded during the Opus adversarial post-build review, round 2. These are
+CLARIFICATIONS of the frozen text above, not design changes — nothing here
+alters what §§1-6 require; each note either resolves an ambiguity the build
+exposed or documents a deliberate, reviewed departure from the literal text.
+
+- **n1** — "`_SCHEMA_B`" in §1/§3 is realized in code as `schema_b()`, a
+  function of `FAMILY_REGISTRY` (fixed columns + registered families),
+  because the schema is only fully known once families are registered. There
+  is no separate `_SCHEMA_B` constant; `schema_b()` is the one and only
+  source of the Lane B allowlist.
+- **n2** — `first_seen_at`'s "min-carry" (§3) is implemented as a TRUE
+  `min(prior_min, stamped_at)`, not "prior_min if one already exists". The
+  distinction matters under clock skew: ISO-8601 UTC timestamps from
+  different machines/runners are not guaranteed monotonic relative to a
+  prior write's own stamp, and "never advances, only carries the earliest"
+  means exactly that — the true minimum of the two candidates, not an
+  unconditional preference for whichever value happens to already be on
+  disk.
+- **n4** — K13's operative reading is the PARENTHETICAL: "dense rank over
+  the minted population is the only lawful shape", i.e. NULL for every
+  unscored name, dense (not sparse) ranks for the scored subset. The
+  alternative reading ("ranks 1..k over only the scored subset") is the
+  MUTATION K13 exists to kill, not an equally valid interpretation — a
+  reader parsing K13's prose in isolation could plausibly read it either
+  way, and this note pins which one is contractual.
+- **F18 status note** — as built, F18 (needs_full_checkout marking) is
+  currently VACUOUSLY satisfied: every kill in tests/test_board_shadow.py
+  builds its own tmp_path fixtures and none reads real `site/`/`data/` bytes,
+  so no test carries the `needs_full_checkout` marker. This is a deliberate
+  engineering choice (SCOPE guidance: prefer tmp_path fixtures so most kills
+  run in a sparse worktree), not an oversight — but it means F18's clause is
+  presently unexercised rather than proven. K1's HK leg is UNIT-LEVEL for
+  this same reason (see the build packet's DEVIATIONS): a full end-to-end
+  render of `compute_hk_standouts` against real `site/hkstockdata/` bytes,
+  if ever added, would be the first test to actually need the marker.
