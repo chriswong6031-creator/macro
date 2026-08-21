@@ -158,14 +158,32 @@ waves:
     # null, raw source states unchanged.
   - id: GD-3
     title: Live provisional envelope + pending escalation
-    status: todo
+    status: in_progress
+    pr: 6144
     depends_on: [GD-2]
     # Sol rulings 2026-08-19 (x2): do NOT start GD-3 until Gate 8 passes on
     # the GD-2R1-REPAIRED production render. Gate 8 PASSED 2026-08-20 —
-    # GD-3 unblocked and COMMISSIONED (packet:
-    # research/grey_deer/commissions/GD-3_LIVE_PROVISIONAL_ENVELOPE_COMMISSION_2026-08-20.md;
-    # display/advisory only, same pure composer, site/live/ plane, no new
-    # quote owner/scheduler, public boundary unchanged). Build not started.
+    # GD-3 commissioned (packet + §0b Sol clarifications 2026-08-20:
+    # research/grey_deer/commissions/GD-3_LIVE_PROVISIONAL_ENVELOPE_COMMISSION_2026-08-20.md).
+    # BUILT + MERGED + DEPLOYED 2026-08-21: PR #6144 (sonnet builder; opus
+    # adversarial review DO-NOT-MERGE round found 2 blockers — empty-live-block
+    # laundered to FRESH/CALM, dwell de-escalating to calm during outage — plus
+    # future-clock half-refusal, sticky degraded chip, 2-observation dwell;
+    # all repaired + regression-tested, 111 tests green) merged 55d7ea02ce3e
+    # on concluded green. Deployed: live macro.html carries the overlay hooks
+    # (#gde-live-chip/#gde-pending-chip/#gde-live-receipt), data-bundle-id +
+    # data-settled-session, risk_envelope_live.js ?v=bbe5e528; the consumer
+    # script + live payload are tier-gated (anonymous 401 — deliberate; the
+    # public-boundary decision was NOT taken).
+    # PRODUCTION ACCEPTANCE: WAITING_FOR_PRODUCTION_EVENT (Sol fallback,
+    # 2026-08-21). The Gate-8-equivalent four-clock receipt requires an
+    # AUTHENTICATED browser witness (regwall = Supabase session cookie only;
+    # no VPS shell from the fleet host; no ops bypass — verified
+    # app/regwall.py). The operator's Chrome (claude-in-chrome) never
+    # connected during the full 2026-08-21 11:00-22:00Z live window
+    # (14 retries). The live plane ran the whole window; the event is
+    # presumed to have occurred UNWITNESSED. Wave closes only on the receipt:
+    # re-run during any live window with an authenticated browser.
   - id: GD-4A
     title: CN/HK forward-ledger liveness repair
     status: done
@@ -198,6 +216,25 @@ waves:
     # forward log. Done needs a real Asia-close production proof: exactly one
     # current CN row + one current HK row, duplicate-date idempotence, zero
     # intraday advancement.
+  - id: GD-4A1
+    title: CN/HK forward-ledger freshness in the existing liveness lane
+    status: done
+    pr: 6140
+    depends_on: [GD-4A]
+    # Sol-commissioned 2026-08-20 (parallel to GD-3); packet:
+    # research/grey_deer/commissions/GD-4A1_LEDGER_FRESHNESS_LIVENESS_COMMISSION_2026-08-20.md.
+    # Extends check_nightly_liveness.py MARKET_BOARDS with cn_ledger/hk_ledger
+    # (kind: ledger, max_sessions_behind: 1 after adversarial review — budget 0
+    # deterministically false-paged on weekend-anchored un-encoded CN holidays,
+    # late-fire tail, and measured healthy-era misses; sustained stall alarms at
+    # D+1 20:00Z = "within the next expected market session"). Review also
+    # forced: UnicodeDecodeError crash fix (one bad byte killed the whole
+    # watchdog), max(asof)-over-tail not last-line, board-path laziness
+    # restored. MERGED e4f18b53e9d0 on concluded green; LIVE-VERIFIED same
+    # hour: dispatch run 32435846087 on main SUCCESS with
+    # "cn_ledger=2026-08-20(0) hk_ledger=2026-08-20(0)"; next-day organic
+    # confirmation: ledgers advanced to asof 2026-08-21 (CN 14 / HK 13 rows,
+    # one new row each, zero dups, commit 927fb6a78046).
   - id: GD-4B
     title: China Prophet board-health observation (display only)
     status: todo
@@ -254,14 +291,18 @@ waves:
     status: todo
     depends_on: [GD-5A, GD-6A, GD-8A]
 next_action: >
-  Closeout 2026-08-20 complete: GD-2 DONE (Gate 8 passed on production),
-  GD-2R1 DONE, GD-4A DONE (real settled run + idempotent rerun proven),
-  GD-1C DONE / BLOCKED_NO_PROMOTION. Next build = GD-3 against
-  research/grey_deer/commissions/GD-3_LIVE_PROVISIONAL_ENVELOPE_COMMISSION_2026-08-20.md
-  (builder lane). GD-5A/B/C stay closed (only lawful continuation = the
-  named membership+vintage recovery under a NEW prereg, not commissioned).
-  GD-4B/4C open and uncommissioned. GD-6/7, GD-8/9, Portfolio cutover: not
-  authorized.
+  2026-08-21: GD-3 built/merged/deployed (PR #6144, 55d7ea02ce3e) but the wave
+  stays OPEN on WAITING_FOR_PRODUCTION_EVENT — the ONLY remaining step is the
+  Gate-8-equivalent four-clock production receipt, which needs an
+  AUTHENTICATED browser during a US live window (11:00-22:00Z weekday):
+  authenticated in-page fetch of live/risk_envelope.json + live/risk_state.json
+  on macro.html, first real live-source change reflected ≤2 fast fires,
+  event_time→observed_at→produced_at→browser_seen_at, overlay paint screenshot,
+  interval-scoped proof data/ + forward ledgers unchanged. Do NOT simulate or
+  manufacture the event (Sol 2026-08-21). GD-4A.1 DONE. GD-8A/8B/9A remain
+  gated on GD-3 production acceptance (Sol: do not begin until then).
+  GD-5A/B/C stay closed; GD-4B/4C open and uncommissioned; GD-6/7 and
+  Portfolio cutover not authorized.
 ---
 
 # Grey Deer Risk Intelligence & Capital Protection
