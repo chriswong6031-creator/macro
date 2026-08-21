@@ -62,7 +62,12 @@ def _repo_root() -> Path:
     return TRUTHS_PATH.parent.parent.parent
 
 
-def validate_truth(row: dict[str, Any], *, check_refs_exist: bool = True) -> None:
+def validate_truth(
+    row: dict[str, Any],
+    *,
+    check_refs_exist: bool = True,
+    check_consumer_vocabulary: bool = True,
+) -> None:
     """Raise ValueError with a clear message on any schema violation.
 
     Checks:
@@ -76,6 +81,16 @@ def validate_truth(row: dict[str, Any], *, check_refs_exist: bool = True) -> Non
     - owner_program == 'cycle-intelligence'.
     - If check_refs_exist: every path in evidence_refs exists on disk.
     - If status == 'scored': at least one gate artifact must be in evidence_refs.
+    - If check_consumer_vocabulary (CPI-H1, default True): allowed_consumers/
+      forbidden_consumers tokens must be canonical per
+      config/cycle_pattern/consumer_matrix.yml — see
+      engine/cycle_pattern/consumer_authority.py. append_truth()/
+      transition_truth() always run this check (every NEW write must be
+      canonical). Callers re-validating HISTORICAL rows already on disk
+      (append-only — never rewritten) should pass False for any row that
+      predates a heal and is not itself the row's current/latest version,
+      since a frozen historical line can never be corrected to satisfy a
+      vocabulary rule adopted after it was written.
     """
     missing = [f for f in REQUIRED_FIELDS if f not in row]
     if missing:
@@ -103,6 +118,23 @@ def validate_truth(row: dict[str, Any], *, check_refs_exist: bool = True) -> Non
 
     if not isinstance(row["falsifiers"], list) or len(row["falsifiers"]) == 0:
         raise ValueError(f"{tid}: falsifiers must be a non-empty list")
+
+    if check_consumer_vocabulary:
+        # Lazy import (Fable adjudication, MINOR-8, 2026-08-21): consumer_
+        # authority.py imports PyYAML. Importing it only inside this call
+        # path — rather than at module load — means a caller that only wants
+        # load_truths()/active_truths() (read-only consumers, e.g. a display
+        # surface with no PyYAML dependency) does not fail at import time if
+        # PyYAML is unavailable; only a validate_truth()/append_truth()/
+        # transition_truth() call (an actual write-path use) needs it.
+        from engine.cycle_pattern.consumer_authority import (
+            ConsumerAuthorityError,
+            validate_consumer_vocabulary,
+        )
+        try:
+            validate_consumer_vocabulary(row)
+        except ConsumerAuthorityError as exc:
+            raise ValueError(str(exc)) from exc
 
     if not isinstance(row["evidence_refs"], list):
         raise ValueError(f"{tid}: evidence_refs must be a list")

@@ -6,6 +6,21 @@ Re-runnable / idempotent: if truths.jsonl already contains the same
 Evidence paths are validated on disk before any write; the script aborts
 loudly if a referenced artifact is missing (do not seed hypothetical refs).
 
+CPI-H1 GENESIS-VS-HISTORY DIVERGENCE (documented, Fable adjudication MINOR-7,
+2026-08-21): the templates below emit the CANONICAL vocabulary
+(measurement_page/cycle_docs/research_factory, per config/cycle_pattern/
+consumer_matrix.yml) at v1 — a fresh, never-before-seeded store therefore
+seeds already-healed rows. The PRODUCTION store's actual historical v1 rows
+differ: they were written before the CPI-H1 heal with the then-current
+retired-alias vocabulary (measurement_surface/honesty_display/etc.) and were
+healed forward via versioned v2 appends rather than rewritten in place
+(append-only — see data/cycle_pattern/truths.jsonl history and
+research/imce/IMCE_D1C_RELEASE_RECORD.md). This is intentional, not a bug:
+idempotency here keys on (truth_id, version) tuples, so re-running this
+seeder against the real store is always a no-op (all 15 already present at
+v1) — this divergence is purely a fresh-store-genesis property, exercised
+only in tests that seed into a tmp_path, never in production.
+
 Run:
     cd /path/to/repo && python3 -m scripts.seed_cycle_truths
 """
@@ -69,7 +84,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -134,8 +149,8 @@ TRUTHS: list[dict] = [
         "era_stability": "fragile",
         "pit_class": "pit_pure",
         "allowed_consumers": [
-            "measurement_surface",
-            "honesty_display",
+            "measurement_page",
+            "cycle_docs",
             "risk_context_strip",
             "research_factory",
         ],
@@ -208,7 +223,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -272,7 +287,7 @@ TRUTHS: list[dict] = [
         "era_stability": "stable",
         "pit_class": "mixed",
         "allowed_consumers": [
-            "measurement_surface",
+            "measurement_page",
             "hazard_cone_display",
             "research_factory",
             "tripwire_context",
@@ -351,7 +366,7 @@ TRUTHS: list[dict] = [
         "era_stability": "stable",
         "pit_class": "mixed",
         "allowed_consumers": [
-            "measurement_surface",
+            "measurement_page",
             "hazard_cone_display",
             "research_factory",
             "tripwire_context",
@@ -419,7 +434,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "mixed",
-        "allowed_consumers": ["measurement_surface", "research_factory"],
+        "allowed_consumers": ["measurement_page", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -487,7 +502,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -561,7 +576,7 @@ TRUTHS: list[dict] = [
         "era_stability": "stable",
         "pit_class": "pit_pure",
         "allowed_consumers": [
-            "measurement_surface",
+            "measurement_page",
             "sync_gauge_display",
             "research_factory",
         ],
@@ -639,7 +654,7 @@ TRUTHS: list[dict] = [
         "era_stability": "unknown",
         "pit_class": "revision_optimistic",
         "allowed_consumers": [
-            "measurement_surface",
+            "measurement_page",
             "research_factory",
         ],
         "forbidden_consumers": [
@@ -713,7 +728,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -780,15 +795,16 @@ TRUTHS: list[dict] = [
         "era_stability": "stable",
         "pit_class": "pit_pure",
         "allowed_consumers": [
-            "measurement_surface",
+            "measurement_page",
             "cone_rendering",
-            "honesty_display",
+            "cycle_docs",
             "research_factory",
         ],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
             "position_sizing",
+            "sector_central_direction_score",
         ],
         "falsifiers": [
             "If after applying cone_recalibration.json multipliers the forward-only "
@@ -852,7 +868,7 @@ TRUTHS: list[dict] = [
         ),
         "era_stability": "stable",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
+        "allowed_consumers": ["measurement_page", "cycle_docs", "research_factory"],
         "forbidden_consumers": [
             "board_rank",
             "oracle_escalation",
@@ -922,8 +938,8 @@ TRUTHS: list[dict] = [
         "era_stability": "stable",
         "pit_class": "pit_pure",
         "allowed_consumers": [
-            "measurement_surface",
-            "display_descriptive",
+            "measurement_page",
+            "cycle_docs",
             "research_factory",
         ],
         "forbidden_consumers": [
@@ -996,8 +1012,8 @@ TRUTHS: list[dict] = [
         "era_stability": "unknown",
         "pit_class": "pit_pure",
         "allowed_consumers": [
-            "measurement_surface",
-            "honesty_display",
+            "measurement_page",
+            "cycle_docs",
             "research_factory",
             "monitoring",
         ],
@@ -1081,7 +1097,7 @@ TRUTHS: list[dict] = [
         "allowed_consumers": [
             "mechanism_summary",
             "hypothesis_generation",
-            "research_factory_intake",
+            "research_factory",
         ],
         "forbidden_consumers": [
             "board_rank",

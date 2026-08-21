@@ -1840,6 +1840,18 @@ on:
       - "scripts/check_cycle_pattern_authority.py"
       - "config/cycle_pattern/**"
       - "tests/test_check_cycle_pattern_authority.py"
+      # CPI-H1 consumer-authority heal (2026-08-21): the registry-vocabulary half
+      # of cycle-pattern-authority (scan_registry_vocabulary(), additive to the
+      # literal-path scan above) reads these directly. Named explicitly here for
+      # provenance; the job's own scope is auto-inferred (already correctly
+      # includes these — verified via run_ci_pack.py --changed-from) and this job
+      # deliberately stays unscoped in .github/ci/legacy-jobs.yml because its
+      # literal-path scan is a full-tree guard (see that file's own house-law
+      # comment on when NOT to declare a curated `paths:`).
+      - "data/cycle_pattern/truths.jsonl"
+      - "engine/cycle_pattern/consumer_authority.py"
+      - "engine/cycle_pattern/truths.py"
+      - "tests/test_cpi_h1_consumer_authority.py"
       # House-law registry meta-guard: any change to the registry, the meta-guard
       # script, the generated docs, or the test suite must re-prove the registry
       # is complete and consistent.
