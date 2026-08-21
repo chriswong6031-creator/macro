@@ -42,12 +42,14 @@ decisions:
   - DEC:CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG
   - DEC:CS-V2-SIX-QUESTION-ONTOLOGY
   - DEC:CS-V2-W1B-SOL-ACCEPTED-NATURAL-PROOF-GATE
+  - DEC:CS-V2-W1-IDENTITY-PUBLICATION-PROVEN-LIVE
 discoveries:
   - DSC:CS-MANIFEST-ID-HASHES-RETRIEVAL-CLOCKS
   - DSC:CS-SOURCE-MANIFEST-UNSPECIFIED-MERGE
   - DSC:CS-THROUGHPUT-HEALTHY-HORIZON-STALE
   - DSC:CS-INSTRUMENT-AND-LIFECYCLE-COMPILERS-NOT-NIGHTLY
   - DSC:CS-EVENT-EDGES-NEAR-ZERO
+  - DSC:CS-V2-W1B-NATURAL-CHAIN-PROVEN-LIVE
 do_not_redo:
   - "Reopen PR #5792 ingestion freeze (AccessDenied / zero-progress health) without new evidence"
   - "Solve concurrent collect with an et_gate mutex (DEC:COLLECT-MUTEX-CANNOT-LIVE-IN-ET-GATE)"
@@ -81,13 +83,11 @@ artifacts:
   - research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-20.md
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-20-w1b-sol-acceptance-reconciliation.md
+  - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-21.md
 next_action: >
-  W1B #6044 is Sol-accepted and merged as
-  ec388d963190fe149f1cdb4d0847136ec2eb3c38. Wait for the first NATURAL
-  scheduled collector -> Capital Structure chain containing that merge and
-  record the production receipt. Do not dispatch a second daily run merely to
-  obtain proof. W2 stays unauthorized until the natural receipt passes; after
-  that, W2 is only eligible for a separate Sol commission and does not auto-start.
+  W2 is the exact next action (LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus
+  horizon health). Do not start W2 in this closeout; return to Sol for a
+  bounded W2 commission. W1/W1A/W1B are PROVEN_LIVE.
 waves:
   - id: W0
     title: Architecture freeze, estate audit, competitor/regulatory refresh
@@ -101,7 +101,9 @@ waves:
     depends_on: [W0]
     pr: 5959
     next_action: >
-      Merged as #5959 / b7004b132509. Identity defects closed by W1A.
+      Merged as #5959 / b7004b132509. W1 identity/publication foundation is
+      PROVEN_LIVE after W1A #6012, W1B #6044, and natural chain
+      32426513915 / generation 3ba28993b741.
   - id: W1A
     title: Clock-independent event identity, no new legacy occurrence, bundle re-obs
     status: done
@@ -111,25 +113,21 @@ waves:
       Merged as #6012. Identity accepted; W1B closes closed-bundle persist.
   - id: W1B
     title: Accession-wide closed-bundle atomic persistence
-    status: in_progress
+    status: done
     depends_on: [W1A]
-    branch: claude/cs-v2-w1b-closed-bundle
     pr: 6044
     next_action: >
-      Sol PASS recorded on accepted head 3ba55c6d68778e29b6bf8b238a1cab39b5ada2f4;
-      #6044 merged as ec388d963190fe149f1cdb4d0847136ec2eb3c38.
-      Implementation/review hold is closed. Keep W1B in_progress only until the
-      first natural scheduled collector -> Capital Structure chain containing
-      the merge is proven. Do not dispatch a second daily. Do not start W2 or
-      create W1C.
+      Done. Merged as #6044 / ec388d963190. Natural collect→CS proof is
+      daily run 32426513915 (collect 96609474282, capital_structure
+      96637756516) publishing generation 3ba28993b741.
+      DSC:CS-V2-W1B-NATURAL-CHAIN-PROVEN-LIVE. Do not start W2 here.
   - id: W2
     title: LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health
     status: todo
     depends_on: [W1B]
     next_action: >
-      Start only after W1B's first natural post-merge CS chain is proven AND Sol
-      separately commissions W2. Natural proof makes W2 eligible; it does not
-      start it automatically.
+      Exact next action. W1 is PROVEN_LIVE. Do not auto-start; Sol must
+      commission LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health.
   - id: W3
     title: Capital Changes Desk and issuer Capital Twin UX on honest states
     status: todo
@@ -155,6 +153,5 @@ waves:
 Capital Structure V2 recovers the 2026-08-01 product thesis after PR #5792
 fixed ingestion. Destination is a PIT issuer capital twin. W0 research and
 this AMEND were executed by Cursor Grok 4.6; COO Fable remains the program
-owner. W1/W1A are done. W1B is accepted and merged but deliberately remains
-open until its first natural production chain is proven. No W2 implementation
-is authorized by the W1B merge or by this records reconciliation.
+owner. W1/W1A/W1B are PROVEN_LIVE. W2 is the exact next action and is not
+started by this closeout.
