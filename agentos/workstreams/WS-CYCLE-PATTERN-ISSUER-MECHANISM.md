@@ -9,7 +9,7 @@ objective: >
   statuses predetermined as underpowered. Done for the first arc = accepted
   architecture freeze (IMCE-00), then the records-only CELH autopsy, CPI truth-contract
   audit, and homebuilder census waves delivered without any runtime, score, or page.
-status: awaiting_review
+status: active
 program: market-regime-risk
 repos: [macro]
 owner: coo-fable
@@ -26,16 +26,20 @@ depends_on:
 waves:
   - id: IMCE-00
     title: Architecture adjudication + freeze (records only; ten decisions; G0-G8 evidence lanes)
-    status: awaiting_ci
+    status: done
     next_action: >
-      Freeze PR is review-ready and HELD FOR SOL — a recorded hold is a merge
-      barrier; nothing merges without Sol/Chairman release. On acceptance, waves
-      A1-A3 below are authorized; on DEFER/NO_GO the census packets and freeze
-      remain durable research.
+      Complete. The HOLD-FOR-SOL freeze PR #6127 merged 2026-08-21T03:55:28Z as
+      ec44ae7d1659 and is the tip of origin/main. Waves A1-A3 are thereby authorized.
   - id: A1
     title: IMCE-CELH-1 — CELH Cycle Autopsy (records-only; three-clock chronology + counterexamples; ONE named telemetry construction)
-    status: todo
+    status: done
     depends_on: [IMCE-00]
+    next_action: >
+      Delivered: eight records-only artifacts under research/imce/ (autopsy + 6 CSVs +
+      falsifier list + prospective-observation registration, plus a non-runtime
+      reproduction receipt). Zero outcome computation; scanned and asserted. Returned to
+      Fable for adjudication — see the executive note in §8 of the autopsy and open
+      question U7 (is the 2026 assortment reset a distinct epoch or a phase inside M5?).
   - id: A2
     title: CPI truth-contract audit (D-4) — reconcile truth_schema consumer vocabulary with consumer_matrix; annotate split registry rows
     status: todo
@@ -49,8 +53,10 @@ waves:
     status: todo
     depends_on: [A2, A3]
 next_action: >
-  Return the review-ready freeze PR to Sol/Chairman with the recommendation to accept;
-  do not merge, do not start A1-A4, until the hold is released.
+  A1 is delivered and returned to Fable. Next: A2 (CPI truth-contract audit — the
+  precondition for ANY issuer truth) and A3 (IMCE-HB-0 homebuilder census freeze), which
+  may run in parallel. A4 only after both. A1's DSC on epoch-boundary lag classes gives
+  A3 a concrete test to run on a second family.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."
@@ -61,6 +67,10 @@ landmines:
   - "Bank Call Report/UBPR public data is current-revised, not PIT — any bank history without a self-archival lane is a restatement-survivor panel."
   - "FRED clause (q): no store/cache/archive of FRED content in any database — binds display-tier too; use underlying source owners."
 do_not_redo:
+  - "Do not re-gather the CELH 2018-2026 source chronology, epoch table, wedge series, or 2W recognition tape — A1 delivered them under research/imce/celh/ with accession-level provenance; re-verify only what a moved main or a new filing invalidates."
+  - "Do not attach forward returns to research/imce/celh/celh_recognition_events.csv before the A4 criteria commit — the two-commit discipline (G8-B1) depends on that file staying outcome-free."
+  - "Do not build a CELH sell-through series across 2023->2026 as if it were one measurement — the Circana denominator changes THREE times (custom Celsius segment -> MULOC -> MULO+ w/C), once inside the destock episode."
+  - "Do not source CELH accrued promotional allowance from SEC XBRL companyfacts and do not substitute AccruedMarketingCostsCurrent for it — see DSC:ACCRUED-PROMO-ALLOWANCE-IS-INVISIBLE-TO-XBRL-COMPANYFACTS."
   - "Do not re-run the G0-G7 censuses (owner/collision, CELH sources+tape, memory, homebuilders, banks, rights, prereg power) — packets preserved in agentos/handoffs/CYCLE-PATTERN-ISSUER-MECHANISM-2026-08-20.md and the freeze doc; re-verify only what a new main moves."
   - "Do not re-litigate the 40-block floor by changing units — the honest/dishonest unit line is frozen in the V1 contract (independent shock realizations only)."
   - "Do not propose a new episode ID, graph store, mechanism-observation contract, or second as-known-at envelope — owner map frozen in the freeze doc §3."
@@ -68,6 +78,11 @@ artifacts:
   - research/IMCE_ROUND3_ARCHITECTURE_FREEZE_BY_FABLE.md
   - research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md
   - research/imce/IMCE_PREREGISTRATION_CANDIDATE_V1.yaml
+  - research/imce/CELH_CYCLE_AUTOPSY_2018_2026.md
+  - research/imce/celh/
+discoveries:
+  - DSC:ISSUER-EPOCH-BOUNDARY-LAG-SPLITS-BY-BOUNDARY-CLASS
+  - DSC:ACCRUED-PROMO-ALLOWANCE-IS-INVISIBLE-TO-XBRL-COMPANYFACTS
 ---
 
 # Context
