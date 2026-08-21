@@ -1863,6 +1863,134 @@ def test_atomic_event_append_survives_replace_failure_and_concurrency(
     }
 
 
+def test_event_append_proves_the_ledger_only_under_the_writer_lock(
+    tmp_path: Path,
+) -> None:
+    """A writer's mid-rename ledger inode must never reach the ownership guard.
+
+    os.replace() is atomic for the name only; a concurrent reader can stat the
+    target with a link count other than 1 while the rename is in flight.  The
+    guard reads that as a tampered ledger, so the proof has to happen inside the
+    lock the writer already holds.
+    """
+
+    import threading
+
+    root = tmp_path / "private"
+    ledger = cli.initialize(root)
+    first = event()
+    first_path = producer_input(root, "first.json", cohort.canonical_json_bytes(first))
+    first_evidence_path = producer_input(
+        root, "first-evidence.json", event_evidence_for_event(first)
+    )
+    cli.append_event(ledger, first_path, first_evidence_path)
+
+    second = event(
+        event_at="2026-08-12T14:01:00.000000Z",
+        available_at="2026-08-12T14:01:01.000000Z",
+        stable_signal_id="signal:ours:2",
+    )
+    second_path = producer_input(
+        root, "second.json", cohort.canonical_json_bytes(second)
+    )
+    second_evidence_path = producer_input(
+        root, "second-evidence.json", event_evidence_for_event(second)
+    )
+
+    appended: list[str] = []
+    failure: list[BaseException] = []
+    finished = threading.Event()
+
+    def append() -> None:
+        try:
+            appended.append(cli.append_event(ledger, second_path, second_evidence_path))
+        except BaseException as exc:  # noqa: BLE001 - reported to the assertions
+            failure.append(exc)
+        finally:
+            finished.set()
+
+    observed = root / ".ledger-transient.hardlink"
+    with (root / ".events.lock").open("r+b", buffering=0) as held:
+        fcntl.flock(held.fileno(), fcntl.LOCK_EX)
+        # Stand in for the rename window: the ledger inode carries a second link.
+        os.link(ledger, observed)
+        assert ledger.lstat().st_nlink == 2
+        writer = threading.Thread(target=append)
+        writer.start()
+        # The appending thread must be parked on the lock, not inspecting the
+        # ledger we are holding in its transient state.
+        assert not finished.wait(0.5)
+        os.unlink(observed)
+        fcntl.flock(held.fileno(), fcntl.LOCK_UN)
+    writer.join(10)
+
+    assert not writer.is_alive()
+    assert not failure, failure[0]
+    assert appended == [second["event_id"]]
+    rows, receipt = cohort.read_event_ledger(ledger)
+    assert receipt["row_count"] == 2
+    assert {row["event_id"] for row in rows} == {first["event_id"], second["event_id"]}
+
+
+def test_concurrent_first_append_tolerates_a_raced_private_lock_creation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Two first-time writers must not race each other out of creating the lock."""
+
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    root = tmp_path / "private"
+    ledger = cli.initialize(root)
+    lock_path = root / ".events.lock"
+    assert not lock_path.exists()
+
+    rows = []
+    for index in (1, 2):
+        row = event(
+            event_at=f"2026-08-12T14:0{index}:00.000000Z",
+            available_at=f"2026-08-12T14:0{index}:01.000000Z",
+            stable_signal_id=f"signal:ours:{index}",
+        )
+        rows.append(
+            (
+                row,
+                producer_input(
+                    root, f"row-{index}.json", cohort.canonical_json_bytes(row)
+                ),
+                producer_input(
+                    root, f"row-{index}-evidence.json", event_evidence_for_event(row)
+                ),
+            )
+        )
+
+    barrier = threading.Barrier(2, timeout=10)
+    real_open = cli.os.open
+
+    def barriered_open(path, flags, mode=0o777, **kwargs):
+        if flags & os.O_EXCL and Path(path) == lock_path:
+            barrier.wait()
+        return real_open(path, flags, mode, **kwargs)
+
+    monkeypatch.setattr(cli.os, "open", barriered_open)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [
+            pool.submit(cli.append_event, ledger, row_path, evidence_path)
+            for _row, row_path, evidence_path in rows
+        ]
+        assert {future.result() for future in futures} == {
+            row["event_id"] for row, _row_path, _evidence_path in rows
+        }
+    monkeypatch.setattr(cli.os, "open", real_open)
+
+    assert stat.S_IMODE(lock_path.lstat().st_mode) == 0o600
+    stored, receipt = cohort.read_event_ledger(ledger)
+    assert receipt["row_count"] == 2
+    assert {row["event_id"] for row in stored} == {
+        row["event_id"] for row, _row_path, _evidence_path in rows
+    }
+
+
 def test_private_store_lock_prevents_cross_writer_staging_unlink(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
