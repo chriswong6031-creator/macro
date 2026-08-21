@@ -5,6 +5,10 @@ firewall). Covers:
   - _ticker_to_sec_code: SZ/SS mapping, HK/malformed → None (not_applicable)
   - _visit_block: each reachable house failure state (masterplan §9.3):
     not_applicable, no_coverage, source_failure, stale, measured_no_event, ok
+  - _visit_block upstream_degraded handling (P1-R1, same-cycle derivation):
+    a degraded same-run china_filings refresh reads like a stale refusal when
+    no rows exist for a name (never source_failure, never a false
+    measured_no_event); rows present still render normally
   - first_seen_since_coverage_start is flagged on the EARLIEST row only, and
     a name first seen mid-coverage still reads "since coverage start", never
     "first ever"
@@ -174,6 +178,35 @@ class TestVisitBlockStates:
         # A visit_ctx missing keys entirely must degrade, never crash.
         block = hub._visit_block("000001.SZ", {})
         assert block["state"] in {"no_coverage", "source_failure"}
+
+    def test_upstream_degraded_with_no_rows_reads_stale_not_measured_no_event(self):
+        # P1-R1: a degraded same-run china_filings refresh must never look like
+        # a clean "measured_no_event" quiet tape, and must not route through
+        # source_failure either (tape history stays visible).
+        block = hub._visit_block("000001.SZ", _ctx(
+            coverage_start="2026-08-01",
+            health={"status": "upstream_degraded",
+                    "detail": "derived over a DEGRADED same-run china_filings refresh"}))
+        assert block["state"] == "stale"
+        assert block["state"] != "measured_no_event"
+        assert block["state"] != "source_failure"
+        assert block["recent"] == []
+
+    def test_upstream_degraded_with_rows_still_renders_normally(self):
+        # Positive evidence from a degraded run is still real evidence — rows
+        # must render exactly as they would under a clean "ok" health.
+        rows = [{
+            "announcement_id": "A1", "sec_code": "000001",
+            "title": "投资者关系活动记录表",
+            "source_published_at": "2026-08-19T09:00:00+08:00",
+            "visitor_raw": "not_yet_available", "visitor_class": "not_yet_available",
+            "ontology_version": "v1", "adjunct_url": "",
+        }]
+        block = hub._visit_block("000001.SZ", _ctx(
+            by_code={"000001": rows}, coverage_start="2026-08-01",
+            health={"status": "upstream_degraded", "detail": "x"}))
+        assert block["state"] == "ok"
+        assert len(block["recent"]) == 1
 
 
 # --------------------------------------------------------------------------- #
