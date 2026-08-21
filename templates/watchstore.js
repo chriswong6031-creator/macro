@@ -1082,6 +1082,12 @@
   function _isClientUnavailable() { return !!user && !sb && sbInitFailed; }
 
   function portfolioList() {
+    // LAW 1a (A1A round-3, Sol P0): every continuation below is bound to the auth
+    // epoch captured HERE, at entry — never to whatever `authEpoch` reads when the
+    // continuation actually runs. A stale-epoch resolution answers `null` (an
+    // explicit "no answer for you"), never the resolved rows: `null` is safe under
+    // the consumer guard (LAW 2) AND under any future caller that forgets one.
+    var epochAtCall = authEpoch;
     if (_isClientUnavailable()) {
       // Terminal cloud-unreachable, not a router to the anonymous local book (A1A
       // authority law, §10) — the same last-good/none split an ordinary cloud read
@@ -1116,6 +1122,11 @@
         .eq('user_id', user.id)
         .order('created_at');
     }).then(function (res) {
+      // LAW 1a: a late resolution under a DIFFERENT identity/session than the one
+      // that issued this read must never touch pfLastGoodCloud/pfReadState (would
+      // paint the wrong user's private rows under the new session's degraded
+      // fallback) and must never hand back the resolved rows.
+      if (authEpoch !== epochAtCall) return null;
       if (res.error) throw res.error;
       var rows = res.data || [];
       portfolioOk = true;
@@ -1123,6 +1134,10 @@
       pfReadState = { authority: 'cloud', state: 'ready', last_good_at: pfLastGoodCloud.at, warning: null };
       return rows;
     }).catch(function (err) {
+      // LAW 1a: same stale-epoch guard, first, before ANY write below — a stale
+      // read's FAILURE must not flip portfolioOk or warn under the new identity
+      // either.
+      if (authEpoch !== epochAtCall) return null;
       portfolioOk = false;
       warnOnce('portfolio-list', 'portfolio list failed: ' + (err && err.message || err));
       /* NEVER substitute the anonymous local Portfolio for a signed-in session's cloud
@@ -1148,6 +1163,10 @@
     return Promise.race([readPromise, readDeadline.promise])
       .catch(function (err) {
         if (!(err && err.message === 'read-timeout')) throw err; // defensive: readPromise never rejects
+        // LAW 1a: same stale-epoch guard before the pfReadState write — a timed-out
+        // call answering under a LATER identity must never claim last-good rows
+        // that may belong to the previous identity.
+        if (authEpoch !== epochAtCall) return null;
         pfReadState = {
           authority: 'cloud',
           state: pfLastGoodCloud ? 'degraded' : 'error',
@@ -1167,14 +1186,22 @@
     if (_isClientUnavailable()) return Promise.resolve(null);
     if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalUpsert(pos);
+    // LAW 1b (A1A round-3, Sol P0): capture epoch AND uid at entry — the epoch
+    // guard (below, first line of the continuation) is what stops a pending write
+    // issued under identity A from committing after A signs out and B signs in;
+    // `uidAtCall` (never `user.id` inside the continuation) is belt-and-braces on
+    // top of it.
+    var epochAtCall = authEpoch;
+    var uidAtCall = user && user.id;
     return _portfolioGuard().then(function () {
+      if (authEpoch !== epochAtCall) return null;
       function toNumOrNull(v) {
         if (v === '' || v === undefined || v === null) return null;
         var n = Number(v);
         return isNaN(n) ? null : n;
       }
       var row = {
-        user_id: user.id,
+        user_id: uidAtCall,
         ticker: pos.ticker,
         shares: toNumOrNull(pos.shares),
         entry_price: toNumOrNull(pos.entry_price),
@@ -1187,7 +1214,7 @@
         return sb.from('portfolio_positions')
           .update(row)
           .eq('id', pos.id)
-          .eq('user_id', user.id)
+          .eq('user_id', uidAtCall)
           .select()
           .single()
           .then(function (res) {
@@ -1204,6 +1231,9 @@
           return res.data;
         });
     }).catch(function (err) {
+      // LAW 1b: a stale op's failure (including its own row-build/write REJECTING)
+      // must not set portfolioOk=false or warn under the new identity.
+      if (authEpoch !== epochAtCall) return null;
       portfolioOk = false;
       warnOnce('portfolio-upsert', 'portfolio upsert failed: ' + (err && err.message || err));
       return null;
@@ -1214,11 +1244,14 @@
     if (_isClientUnavailable()) return Promise.resolve(null);
     if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalClose(id);
+    var epochAtCall = authEpoch;
+    var uidAtCall = user && user.id;
     return _portfolioGuard().then(function () {
+      if (authEpoch !== epochAtCall) return null;
       return sb.from('portfolio_positions')
         .update({ status: 'closed', updated_at: new Date().toISOString() })
         .eq('id', id)
-        .eq('user_id', user.id)
+        .eq('user_id', uidAtCall)
         .select()
         .single()
         .then(function (res) {
@@ -1226,6 +1259,7 @@
           return res.data;
         });
     }).catch(function (err) {
+      if (authEpoch !== epochAtCall) return null;
       portfolioOk = false;
       warnOnce('portfolio-close', 'portfolio close failed: ' + (err && err.message || err));
       return null;
@@ -1236,16 +1270,20 @@
     if (_isClientUnavailable()) return Promise.resolve(null);
     if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalRemove(id);
+    var epochAtCall = authEpoch;
+    var uidAtCall = user && user.id;
     return _portfolioGuard().then(function () {
+      if (authEpoch !== epochAtCall) return null;
       return sb.from('portfolio_positions')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id)
+        .eq('user_id', uidAtCall)
         .then(function (res) {
           if (res.error) throw res.error;
           return { id: id };
         });
     }).catch(function (err) {
+      if (authEpoch !== epochAtCall) return null;
       portfolioOk = false;
       warnOnce('portfolio-remove', 'portfolio remove failed: ' + (err && err.message || err));
       return null;
@@ -1358,7 +1396,6 @@
     document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
     // Resolve the shared Supabase client then kick off the initial pull
     var getClient = window.getSupabaseClient;
-    if (!getClient) { setPill('offline'); warnOnce('no-client', 'getSupabaseClient not found'); return; }
     var uidAtCall = user && user.id;
     var epochAtCall = authEpoch;
     function clientReady(c) {
@@ -1386,6 +1423,12 @@
          success would have. */
       document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
     }
+    // LAW 4 (A1A round-3): EVERY path that cannot produce a working client — no
+    // getSupabaseClient factory at all (below), a synchronous THROW from calling it
+    // (below), a REJECTED promise, or a promise that never settles (both further
+    // down) — routes through this ONE terminal function, shared rather than
+    // duplicated, so `_isClientUnavailable()` becomes reachable and 'loading' never
+    // persists for the rest of the session (the module's own stated law).
     function clientFailed(err, reason) {
       // N3 (proofI C2): the stale-timer guard — see clientReady()'s comment.
       if (authEpoch !== epochAtCall || (user && user.id) !== uidAtCall) return;
@@ -1406,7 +1449,28 @@
       sbInitFailureReason = reason;
       document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
     }
-    var clientPromise = getClient();
+    if (!getClient) {
+      // LAW 4: used to `return` here WITHOUT ever setting sbInitFailed — that left
+      // `_isCloudLoading()` (not `_isClientUnavailable()`) true for the rest of the
+      // session, so portfolioList()/Upsert/Close/Remove answered 'loading' forever.
+      // Route through the SAME terminal path clientFailed() uses for a rejected/
+      // timed-out client.
+      clientFailed(new Error('getSupabaseClient not found'), 'client-unavailable');
+      return;
+    }
+    var clientPromise;
+    try {
+      // LAW 4: getClient() can THROW synchronously (a factory that blows up rather
+      // than rejecting) — that used to escape onAuthUser entirely, past the
+      // Promise.race .catch below (which can only see a REJECTED promise, never a
+      // synchronous throw), and land uncaught in the caller
+      // (window.MDXAuth.onChange's callback has no try/catch). Promise.resolve()
+      // also defends a non-promise return from getClient().
+      clientPromise = Promise.resolve(getClient());
+    } catch (e) {
+      clientFailed(e, 'client-unavailable');
+      return;
+    }
     // F6: bound the client gate with a deadline — `clientPromise` itself may never
     // settle (a stalled connection fires neither onload nor onerror), which used to
     // leave `_isCloudLoading()` true for the rest of the session. Race it against a
