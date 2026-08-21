@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-21T07:24:46.224237+00:00",
+  "generated_utc": "2026-08-21T09:13:08.659140+00:00",
   "as_of": "2026-08-21",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -11757,14 +11757,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "LPSN",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "LLM",
         "category": "Acquisitions",
         "confidence": "high",
@@ -13179,14 +13171,6 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
-      },
-      {
-        "ticker": "ROOT",
-        "category": "Strategic Reviews",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Strategic Reviews"
       },
       {
         "ticker": "NEOE3",
@@ -17605,6 +17589,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "OPTT",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "CTHH",
         "category": "Delistings",
         "confidence": "high",
@@ -18029,6 +18021,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "WBS-PG",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "TOON",
         "category": "Divestitures",
         "confidence": "high",
@@ -18323,14 +18323,6 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
-      },
-      {
-        "ticker": "AIIR",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "MWC",
@@ -18878,6 +18870,14 @@
       },
       {
         "ticker": "BRAG",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "TECH",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -19534,11 +19534,11 @@
       },
       {
         "ticker": "DFNSW",
-        "category": "Deal Terminations",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Deal Terminations"
+        "detail": "Delistings"
       },
       {
         "ticker": "TTD",
@@ -19766,11 +19766,11 @@
       },
       {
         "ticker": "TMRC",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "ZVSA",
@@ -19910,11 +19910,11 @@
       },
       {
         "ticker": "LBRDP",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "LGVN",
@@ -20451,6 +20451,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "RDACU",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       },
       {
         "ticker": "SOPAQ",
@@ -23957,14 +23965,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "ICE",
-        "category": "Strategic Reviews",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Strategic Reviews"
-      },
-      {
         "ticker": "LFT-PA",
         "category": "Delistings",
         "confidence": "high",
@@ -24245,14 +24245,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "ORBS",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "NEON",
         "category": "Delistings",
         "confidence": "high",
@@ -24483,14 +24475,6 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
-      },
-      {
-        "ticker": "BETRW",
-        "category": "Activist Campaigns",
-        "confidence": "high",
-        "activist": true,
-        "filer": "Garg Group",
-        "detail": "Activist Campaigns"
       },
       {
         "ticker": "DWAY",

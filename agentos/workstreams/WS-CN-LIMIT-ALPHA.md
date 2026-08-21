@@ -181,46 +181,44 @@ waves:
     status: todo
     depends_on: [R6-0]
     next_action: >-
-      BLOCKED_RIGHTS_AND_AUTHORITY (state re-censused 2026-08-21 under Sol's
-      R6 continuation; every technical prerequisite is prepared — the blocker
-      is operator/external authority only). Fail-closed spine intact as
-      designed: CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256 =
+      WAITING_FOR_WRITTEN_VENDOR_GRANT (authority decision TAKEN 2026-08-21:
+      DEC:CNLI-EXACT-PLANE-REQUIRES-WRITTEN-COMMERCIAL-GRANT, ceo-sol — the
+      written vendor/institutional grant + cryptographically pinned receipt
+      path is binding for the full-A authority-grade exact plane; the
+      ruling-3 plain-provenance alternative is REJECTED because current
+      Tushare terms grant personal/non-commercial service and the 2026-08-09
+      wiring ruling is an access instruction, not a vendor commercial
+      grant). The DEC alone does NOT satisfy the runtime authorization gate:
+      the gate reads bytes, and both fail-closed constants remain exactly as
+      designed — CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256 =
       frozenset() and BULK_HISTORICAL_BACKFILL_READY = False
-      (collectors/china_tushare_spine.py ~100-127; receipt schema
-      cn_tushare_written_authorization.v1 fully specified in
-      load_authorization_grant). No live exact-schema canary has ever run
-      (licensed_live_canary_complete=false; state string
-      foundation_only_range_shards_synthetic_no_live_canary); no sanitized
-      completeness manifest exists (the private store has never been built);
-      the dispatch-only campaign lane .github/workflows/
-      tushare-spine-backfill.yml is ready (plan/execute modes, TUSHARE_TOKEN
-      Actions secret alive). No written vendor/institutional grant exists in
-      the repo (DSC:TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT — the
-      click-through agreement is personal/non-commercial/view-only); the
-      entitlement rights matrix prices closure at ¥0 cash + ONE vendor
-      letter answering 5 questions (account class; local retention of
-      tier rows; commercial dashboard display of derived signals;
-      redistribution prohibition; institutional terms if commercial). The
-      operator-level authority decision remains UNTAKEN (no DEC as of
-      2026-08-21; question restated in
-      agentos/handoffs/CN-LIMIT-ALPHA-2026-08-19.md): spine written-grant
-      receipt gate vs ruling-3 plain-provenance operator order
-      (research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md — the mechanism the
-      shipped addon/minutes lanes use). SMALLEST OPERATOR ACTION: take that
-      decision as a DEC record; if the receipt-gate path is chosen, obtain
-      the 5-question vendor letter and land the authorization receipt +
-      trust-allowlist with its SHA-256 added to the frozenset in a reviewed
-      code change; if ruling-3 is chosen, the DEC itself authorizes a
-      reviewed gate alignment. Only then, in order: licensed live canary
-      (mode=plan, then bounded execute) -> reviewed
-      BULK_HISTORICAL_BACKFILL_READY flip on canary/throughput evidence ->
-      range-shard campaign -> sanitized completeness manifest closing every
-      contract gate. The identity half of the later eligibility substrate
-      now exists (984 CN + 147 HK canonical, see DEP-CAI); the PIT
+      (collectors/china_tushare_spine.py; receipt schema
+      cn_tushare_written_authorization.v1 in load_authorization_grant). No
+      live canary has ever run; no completeness manifest exists; the
+      dispatch-only campaign lane .github/workflows/
+      tushare-spine-backfill.yml stays ready but unauthorized. SINGLE
+      BLOCKING ARTIFACT: the vendor's written reply to the five-question
+      letter in
+      research/cn_limit/TUSHARE_VENDOR_LETTER_PACKET_2026-08-21.md (¥0
+      cash; questions map 1:1 onto the receipt's required scope booleans:
+      api_access, bulk_local_retention, quantitative_strategy_research,
+      commercial_use, private_internal_derivatives). EXACT OPERATOR ACTION:
+      send that packet's §1 Chinese letter from the account-holder
+      identity. Post-grant procedure is PRE-STAGED, NOT ACTIVATED (packet
+      §3, each step gated on the previous artifact + its own review):
+      private written grant -> authorization receipt -> independent
+      allowlist -> reviewed trust-root pin -> licensed canary (plan ->
+      bounded execute) -> canary review -> separately reviewed READY flip
+      -> range campaign -> sanitized completeness manifest (the artifact
+      that flips this row done and, with DEP-CAI already done, opens
+      DEP-ID-ELIG). The identity half of the eligibility substrate exists
+      (984 CN + 147 HK canonical, see DEP-CAI); the PIT
       membership/suspension/ST-history substrate remains NOT_BUILT and is
       DEP-ID-ELIG's remainder. Standing prohibitions unchanged: no
       self-authored authorization; no session-side gate-constant edits; a
-      red execute run on the campaign lane is the gate working.
+      vendor "no" returns to the operator (institutional contract or stop),
+      never to a coding workaround; a red execute run on the campaign lane
+      is the gate working. DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT untouched.
   - id: DEP-ID-ELIG
     title: Canonical China identity, PIT membership, eligibility overlay
     status: todo

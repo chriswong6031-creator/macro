@@ -28,6 +28,9 @@ state_before: >
 changed:
   - {path: agentos/workstreams/WS-CN-LIMIT-ALPHA.md, what: "DEP-CAI status todo->done with the reconciled three-gate accounting (PR-0B PROVEN_LIVE run 32348780228; RIGHTS-0 #6046; D2B2-CN-HK #6116 proven on natural nightly run 32426513915, owner-adjudicated in #6165, independently re-measured here); DEP-EXACT next_action refreshed with the 2026-08-21 authority census, the untaken operator decision, and the smallest-operator-action ladder"}
   - {path: agentos/handoffs/CN-LIMIT-ALPHA-2026-08-21.md, what: "this file"}
+  - {path: agentos/decisions/DEC-CNLI-EXACT-PLANE-REQUIRES-WRITTEN-COMMERCIAL-GRANT.md, what: "second slice (post-#6171, Sol authority ruling landed): written-grant receipt path BINDING for the exact plane, ruling-3 rejected; DEC alone does not satisfy the runtime gate"}
+  - {path: research/cn_limit/TUSHARE_VENDOR_LETTER_PACKET_2026-08-21.md, what: "operator-executable 5-question vendor letter (ZH operative + EN mirror) mapped 1:1 to the receipt scope booleans, plus the pre-staged NOT-activated 9-step post-grant procedure"}
+  - {path: agentos/workstreams/WS-CN-LIMIT-ALPHA.md, what: "second slice: DEP-EXACT next_action BLOCKED_RIGHTS_AND_AUTHORITY -> WAITING_FOR_WRITTEN_VENDOR_GRANT citing the DEC and the packet; status stays todo"}
 verified:
   - {claim: "run 32426513915 is a natural (schedule) run whose head contains the D2B2 merge", command: "gh run view 32426513915 --json event,headSha; git merge-base --is-ancestor ed28d0d992a1 50577f18c5fb", result: "event=schedule; ancestor=true"}
   - {claim: "canonical security master survived the in-run nightly refresh byte-stable with CN/HK present", command: "git rev-parse {5ba8447ca827,5ba8447ca827^,ed28d0d992a1}:data/reference/security_master.parquet; pandas on extracted blob", result: "blob d774ea76ab59 identical at all three; 1,836 rows = XSHG 502 + XSHE 482 (984 CN) + XHKG 147 + XNYS 433 + XNAS 264 + XASE 8 (705 US)"}
@@ -44,11 +47,11 @@ unverified:
   - {claim: "the self-hosted runner holds no private china_tushare_spine store or completeness manifest", what_would_verify: "inspect ~/.local/share/macro-dashboard/china_tushare_spine on the Mac Studio runner host; only this session's local machine (absent) and repo state (absent, gitignored) were checked"}
   - {claim: "the local .env Tushare token is still dead", what_would_verify: "a fresh probe; the claim rests on the 2026-08-09 takeover doc and was not re-tested (no token use permitted this session)"}
 unresolved:
-  - "DEP-EXACT stays BLOCKED_RIGHTS_AND_AUTHORITY: the operator/Sol authority decision (spine written-grant receipt gate vs ruling-3 plain-provenance order, research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md) has no DEC record. Smallest operator action: take the decision as a DEC; on the receipt-gate path additionally obtain the 5-question vendor letter (account class / local retention / commercial display of derivatives / redistribution prohibition / institutional terms) and land receipt + trust-allowlist with its SHA-256 added to the frozenset in a reviewed change. Everything technical is already prepared: spine, receipt schema, dispatch-only campaign lane, live Actions secret."
+  - "DEP-EXACT is now WAITING_FOR_WRITTEN_VENDOR_GRANT (second slice, 2026-08-21): the authority decision IS taken — DEC:CNLI-EXACT-PLANE-REQUIRES-WRITTEN-COMMERCIAL-GRANT (ceo-sol) binds the written-grant receipt path and rejects ruling-3 for the exact plane. The single blocking artifact is the vendor's written reply to research/cn_limit/TUSHARE_VENDOR_LETTER_PACKET_2026-08-21.md §1; the DEC alone does not satisfy the runtime gate (both fail-closed constants unchanged). Post-grant 9-step procedure is pre-staged in packet §3, not activated."
   - "DEP-ID-ELIG remains closed: DEP-CAI is now done but DEP-EXACT still gates it. The PIT membership/suspension/ST-history substrate is NOT_BUILT; only the identity half (984 CN + 147 HK canonical) exists."
 next_actions:
-  - "Merge this records PR under normal governance; verify the DEP-CAI/DEP-EXACT rows discoverable on origin/main."
-  - "Operator/Sol: take the exact-plane authority DEC (the DEP-EXACT row names the two options and the ladder that follows: licensed canary plan->execute, reviewed BULK_HISTORICAL_BACKFILL_READY flip, range campaign, sanitized completeness manifest)."
+  - "Operator: send the Chinese letter in research/cn_limit/TUSHARE_VENDOR_LETTER_PACKET_2026-08-21.md §1 from the account-holder identity — that is the whole remaining action for DEP-EXACT."
+  - "When a written vendor reply exists: archive the grant bytes privately (never this public repo), then run packet §3 steps 2-4 (receipt, independent allowlist, reviewed trust-root pin) under normal review; canary and later steps stay gated behind those artifacts."
   - "No further CN-Limit build work is authorized from this session: I1A-T1 and DEP-ID-ELIG open only per the R6 wave graph once DEP-EXACT closes."
 do_not_redo:
   - "Do not re-verify or re-adjudicate the D2B2-CN-HK natural proof — run 32426513915 is measured, owner-adjudicated (#6165), and corroborated here; a second flip PR would only churn the records."
@@ -59,8 +62,8 @@ danger_areas:
   - "daily.yml's cron pair: the 23:30 DST sibling concludes SUCCESS having built nothing (only et_gate runs), while the real 22:30 run can conclude CANCELLED from a single irrelevant job (standout_audit_us here) after every identity-path job succeeded. Neither run-level conclusion is usable as a proof verdict — always read job-level conclusions and the produced commits."
   - "The identity_resolution sidecar is append-per-computation: raw state counts are multiples of the node population (984 CN resolved rows per batch, several batches). Always restrict to one computed_at batch (or distinct node_ids) before quoting rates."
   - "master_generated_at in the sidecar comes from data/reference/_receipt.json (re-stamped by the run's collect commit), not from the master parquet bytes — a byte-stable master with a fresh receipt stamp is the designed no-op refresh, not a contradiction."
-prs: [6171]
-decisions: []
+prs: [6171, 6177]
+decisions: ["DEC:CNLI-EXACT-PLANE-REQUIRES-WRITTEN-COMMERCIAL-GRANT"]
 discoveries: []
 ---
 

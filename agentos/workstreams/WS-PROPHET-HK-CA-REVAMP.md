@@ -92,23 +92,63 @@ waves:
       ARE the served files) plus the public canada_stocks.html direct fetch.
   - id: ledger-era
     title: Era-clean HK/CA scorecard semantics
-    status: in_progress
+    status: done
     depends_on: [ca-truth]
     pr: 6072
+    settlement_receipt: >
+      PASSED 2026-08-21 (all four legs; verifier = Fable session, continuation
+      of fable-handoff-hk-canada-prophet). Producing lanes: HK = asia-close
+      13:05Z 08-20 (post-merge), artifact commit baf4cf7c9291; CA = daily.yml
+      run 32426513915 (head 50577f18c5fb, merge-descendant) — its engine job
+      96640561705 wrote artifact commit 5ba8447ca827; the run's 'cancelled'
+      conclusion is attributable solely to job standout_audit_us (06:33Z,
+      after publish succeeded 05:00Z) and the 23:49Z sibling run 32430224218
+      is the DST-gated twin that builds nothing — settlement judged on
+      produced bytes, not run color. All artifact commits + the VPS checkout
+      e34f091309a verified merge-descendants of 273883182d9b. LEG 1 PASS:
+      ca_track_ledger.json primary = 18 rows, all d=2026-08-19
+      bd=ca_prophet_branch_b_v1, zero era mixing; summary n_calls=18
+      n_matured=0 win_pct=None state=accruing; prior_record = 400 rows
+      newest-first (08-18→06-30) all null-definition, meta.n_total=400
+      truncated=0, own summary n_matured=163 win_pct=27.6 (Wilson 21.3–34.9)
+      with bilingual never-pool notes. LEG 2 PASS on substance with a LOCUS
+      CORRECTION: canada_standouts.json has NEVER carried board_track in any
+      era (pre-merge 13750ecd1789 and post-merge 5ba8447 both verified
+      absent) — build_canada_library.main() serializes the artifact ONCE
+      (build_canada_library.py:800) and _canada_board_ledger attaches
+      board_track to the returned in-memory dict afterwards
+      (build_canada.py:766), so the scorecard's real production consumers are
+      the rendered canada.html track chip/dialog and ca_track_ledger.json (by
+      CA-TRUTH single-write design). Substance verified by running
+      scorecard('CA') against the production parquet bytes:
+      metrics_scope=current_definition; historical_context legacy_rows=400
+      (==raw legacy count exactly), counts_source=raw_ledger, note
+      "historical context only; not current-model track record"; current-era
+      by_horizon honestly all-zero. LEG 3 PASS (HK, settled 08-20):
+      hk_track_ledger.json 117 era rows 08-04→08-19 zero mixing; prior_record
+      n_total=359 == raw parquet legacy pool; pooled 37.8% confined to the
+      prior era's own summary; prior_record's existence proves
+      build_hk_library board_definition propagation active in the produced
+      artifact. LEG 4 PASS: HK half silent-with-positive-evidence (75 v2 rows
+      spine-filled at 5d in the committed parquet; no era-empty annotation on
+      the asia engine check run); CA half fired TRUTHFULLY on production
+      (annotation "board-ledger-era-empty :: CA board_definition names an era
+      with zero graded rows" on job 96640561705) — raw parquet proves the era
+      is genuinely all-unmatured (36 current rows, zero non-null fwd_mfe at
+      every horizon), and HK proves the same code path goes silent once era
+      rows mature. POPULATION RECONCILIATION (no shape-only claims): raw 436
+      = 400 legacy + 36 current; legacy 400 = 346 graded + 54 suspended
+      (vanished names, survivorship note published); current 36 = 18 (08-19,
+      next-bar-filled, unmatured → exactly the ledger's 18 primary rows) + 18
+      (08-20, no next bar yet, outside the graded frame until the 08-21 bar);
+      prior_record n_matured 163 == raw legacy fwd_mfe_21 non-null count.
+      Every denominator difference accounted; no era pooling anywhere.
     next_action: >
-      MERGED 273883182d9b 2026-08-20 (bytes verified on origin/main; covering
-      render pending at the merge SHA). Owed-session receipt after the first
-      nightly on/after the merge — verify on production: (1)
-      factordata/ca_track_ledger.json carries prior_record (legacy pool,
-      newest-first rows, own summary with win_pct/n_matured) and era-scoped
-      rows/summary; (2) scorecard block in canada_standouts.json board_track
-      has metrics_scope=current_definition + historical_context with
-      counts_source=raw_ledger, legacy_rows==raw ledger legacy count; (3)
-      hk_track_ledger.json fenced the same way (build_hk_library now passes
-      board_definition into its synthetic scorecard dict); (4) the
-      board-ledger-era-empty ::warning, if it fired, self-cleared once the
-      first stamped CA session graded. Then mark this wave done and open
-      shadow-contract.
+      DIARIZED FOLLOW-UP (sentinel persistence test): on/after ≈2026-08-26
+      (5d maturation of the 08-19 CA rows) verify the board-ledger-era-empty
+      warning stopped firing on the CA engine job. If it persists once
+      legitimately gradable current-era observations exist, that IS the
+      defect it exists to catch — investigate; never silence or weaken it.
     scope_delta: >
       Wave scope extended during adversarial review (packet §7.3 "scorecard
       consumers only if needed"): engine/track_ledger.from_board_ledger_grade
@@ -125,8 +165,21 @@ waves:
       canada.html.j2 + hk.html.j2.
   - id: shadow-contract
     title: Rank/discovery shadow substrate
-    status: todo
+    status: in_progress
     depends_on: [ledger-era]
+    next_action: >
+      OPENED 2026-08-21 immediately on the ledger-era pass (CEO Sol directive
+      08-20: no extra permission cycle). Contract frozen as
+      research/PROPHET_SHADOW_CONTRACT_V1.md after an Opus adversarial
+      pre-implementation review of the K1–K10 mutation-kill suite; one Sonnet
+      builder wave implements engine/board_shadow.py + stores
+      data/prophet_shadow/{hk,ca}_{rank_pairs,discovery}.parquet with
+      executed mutation kills. Non-negotiables: zero authority (nothing in
+      production reads the stores), board_ledger stays keep-FIRST
+      (date,ticker), challenger registry EMPTY at merge, prospective-only
+      accrual, outcomes only by join to the governed board_ledger grading
+      clock. HK-DISCOVERY / HK-INTEL / CA-INTEL / races stay CLOSED until
+      this wave is merged + verified.
   - id: hk-discovery
     title: HK candidate-recall shadow
     status: todo
@@ -156,11 +209,13 @@ waves:
     status: todo
     depends_on: [hk-race, ca-race]
 next_action: >
-  Execute the LEDGER-ERA owed-session receipt (spec in the ledger-era wave
-  entry) after the first nightly on/after merge 273883182d9b; on a clean
-  receipt mark ledger-era done and open shadow-contract (packet §9). CA-TRUTH
-  settled 2026-08-20 (receipt in the ca-truth wave entry). No HK discovery /
-  CA intel / challenger work before shadow-contract exists.
+  LEDGER-ERA settled 2026-08-21 (full receipt in the ledger-era wave entry;
+  sentinel persistence follow-up diarized there for ≈2026-08-26).
+  Shadow-contract wave OPEN: frozen contract
+  research/PROPHET_SHADOW_CONTRACT_V1.md, one builder wave, executed K1–K10
+  mutation kills, zero-authority proven by mutation before merge. No HK
+  discovery / CA intel / challenger experiments before shadow-contract is
+  merged + verified.
 ---
 
 # HK + Canada Prophet revamp
