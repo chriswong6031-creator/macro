@@ -11107,7 +11107,7 @@ jobs:
         # manifest's narrow-diff ceiling reds a 181st job): same publication-
         # boundary family, and its daily.yml/text pins are exactly the subject
         # the rescue watchdog polices (DEC:B1-PROPHET-PUBLIC-SPLIT).
-        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py -q
+        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py tests/test_live_snapshot_host_guard.py tests/test_no_pages_publish.py -q
 
   # ── THE HK BOARD PAIR — BORN DARK EIGHT DAYS AFTER THE CENSUS (2026-08-05) ──
   # tests/test_hk_board_rank.py (163 tests) + tests/test_hk_board_ui.py landed

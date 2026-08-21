@@ -39,8 +39,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   # Daily stays off the shared "pipeline" lane (a 2-3h backfill once starved it).
@@ -5428,8 +5426,8 @@ jobs:
           # A lost runner-only commit must turn the run red. Every remaining engine
           # delivery step and every downstream job that needs engine uses always(),
           # so Pages/R2/off-render delivery still runs after this failure.
-          echo "::error title=nightly engine outputs NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — the nightly's data/ forward ledgers + rendered site/ exist only on this runner and are lost at the next checkout (the site still deploys via artifact, the LEDGER DAY does not). See scripts/rebase_autoresolve_hashed_css.sh."
-          echo "### ❌ nightly engine outputs NOT pushed after $PUSH_ATTEMPT attempts ($PUSH_STOP) — forward-ledger day at risk (site still deploys via artifact)" >> "$GITHUB_STEP_SUMMARY"
+          echo "::error title=nightly engine outputs NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — the nightly's data/ forward ledgers + rendered site/ exist only on this runner and are lost at the next checkout (the LEDGER DAY does not advance and the VPS/origin deploy does not get this render; the Pages-artifact fallback was retired pre-private-cutover). See scripts/rebase_autoresolve_hashed_css.sh."
+          echo "### ❌ nightly engine outputs NOT pushed after $PUSH_ATTEMPT attempts ($PUSH_STOP) — forward-ledger day at risk (no Pages-artifact fallback anymore)" >> "$GITHUB_STEP_SUMMARY"
           exit 1
       - name: assemble machine-consumable feeds (site/feeds -> R2)
         if: always()
@@ -5490,15 +5488,6 @@ jobs:
       - name: timings ledger + 85% budget tripwire (W2)
         if: always()   # DELIBERATELY AHEAD of the two delivery steps below — this is the ONLY job where the finish step is not last, and the exception is load-bearing. `if: always()` steps DO run after a timeout-cancel, but only inside the runner's ~5-minute force-termination grace, and this job's tail is the most expensive always() tail in the workflow. Evidence, run 31067383446 (2026-08-06): engine started 10:05:45Z, completed 13:30:46Z = 205.0m = the 200m cap + exactly 5m of grace; steps 117-121 (commit engine outputs → feeds → R2 publish → verify → strip) all ran post-cancel, step 122 "upload pages artifact" burned what was left and ended `failure`, and step 123 — this one — WAS NEVER SCHEDULED AT ALL (the GH jobs API step list jumps straight from 122 to the Post steps). Result: data/ops/nightly_timings/engine.jsonl carried ONE row, source `backfill-gh-api`, while all 15 sibling jobs had native rows — the 85% tripwire was structurally dark for the ONE job whose creep caused the Jul31-Aug6 outage, and dark on exactly the nights it existed to pre-announce. Ordering it here costs a healthy night nothing (both steps still run to completion) and on a cancel night trades an artifact upload that is already failing for the telemetry that explains WHY the night died. The row + the ::warning land in this step's first second; only its bounded commit/push can be cut short. Pinned by tests/test_nightly_timings.py::test_finish_step_is_not_stranded_behind_the_pages_artifact_upload — do not move it back below the upload.
         run: bash scripts/ci/nightly_timings_finish.sh 300
-      - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
-        if: always()
-        run: |
-          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday site/feeds site/oddsmatrix 2>/dev/null || true
-      - name: upload pages artifact
-        if: always()   # deploy must not hinge on the commit-push above succeeding
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/
 
   # The factor-portfolio RETURN SERIES (factors-page chart) is a ~22-min month-end
   # walk (compute_factors x ~38 month-ends x 2 universes) — it was the real engine
@@ -7068,27 +7057,20 @@ jobs:
         if: always()
         run: bash scripts/ci/nightly_timings_finish.sh 10
 
-  publish:
-    # GitHub Pages can't serve a /site folder from a branch — deploy the
-    # artifact instead (repo Settings -> Pages -> Source: GitHub Actions)
-    needs: [et_gate, engine]
-    if: always() && needs.et_gate.outputs.run != 'false'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+  # The `publish` GitHub Pages deploy job (needs: [et_gate, engine], deploy-pages@v4)
+  # was RETIRED pre-private-cutover (DEC:B1-MACRO-PRIVATE-CUTOVER) — the Pages mirror
+  # served the premium book/premiumdata anonymously and must not keep re-publishing
+  # once the repo goes private. The VPS/origin deploy (the site's real serving path)
+  # is untouched; only the Pages producer went away.
 
-  # CSP-W6: forward-ledger heartbeat — runs AFTER publish so we know whether
+  # CSP-W6: forward-ledger heartbeat — runs after the engine job so we know whether
   # the site committed fresh pages for today (render_happened detection).
   # if: always() so this detection step runs even on partial nights — it is a
   # pure detector, never a gate (CSP-R1 forbids fail-dark).
   # daily.yml also touched by other open lanes today (merge-order conflicts
   # expected — keep this diff minimal and rebased on fresh main).
   ledger_heartbeat:
-    needs: [et_gate, engine, publish]
+    needs: [et_gate, engine]
     if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 5
@@ -7108,9 +7090,11 @@ jobs:
       - run: pip install -r requirements.txt
       - name: check forward-ledger advance (CSP-W6 heartbeat)
         # Detection only — never gates or fails the deploy (CSP-R1).
-        # --render-happened: the engine job committed and the publish job ran
-        # (both needed: engine always() = may have committed even on partial
-        # night; publish always() = deployed whatever the engine left).
+        # --render-happened: the engine job may have committed even on a partial
+        # night (its commit step runs if: always()). The Pages `publish` deploy job
+        # this comment used to also wait on was retired pre-private-cutover
+        # (DEC:B1-MACRO-PRIVATE-CUTOVER); the VPS/origin deploy is the site's real
+        # serving path and is untouched.
         # The flag is always passed unconditionally here — run_check() is itself
         # trading-day-aware (skips weekends/holidays) and idempotent per date.
         run: |

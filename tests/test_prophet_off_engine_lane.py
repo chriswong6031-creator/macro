@@ -323,11 +323,12 @@ class TestFailureIsolation:
 
 class TestNoCascade:
 
-    def test_publish_does_not_wait_on_this_job(self, daily):
-        needs = daily["jobs"]["publish"]["needs"]
-        needs = [needs] if isinstance(needs, str) else list(needs)
-        assert JOB not in needs, (
-            "a Prophet-module failure must never delay or red the dashboard deploy")
+    # daily.yml's `publish` GitHub Pages deploy job was RETIRED pre-private-cutover
+    # (DEC:B1-MACRO-PRIVATE-CUTOVER; see tests/test_no_pages_publish.py for the
+    # standing retirement guard) — there is no more deploy job for JOB to cascade
+    # into. test_nothing_at_all_depends_on_this_job below is the general form of
+    # this isolation claim and already covers every remaining job, `publish`
+    # included were it to ever come back.
 
     def test_nothing_at_all_depends_on_this_job(self, daily):
         dependents = []
