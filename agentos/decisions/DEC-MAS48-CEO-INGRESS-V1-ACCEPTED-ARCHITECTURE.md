@@ -72,7 +72,7 @@ evidence:
   - "Mastermind #100 exact-head CI run 32468367040 SUCCESS — discovered=274 excluded=0 running=274; compile and shell validation PASS"
   - "Mastermind #100 CodeQL run 32468363790 SUCCESS; final head and merge share tree 450bfba9f9058f47c9565d50d0aca919d29c06b0"
   - "Mastermind PR #103 merged 974b809f6861dab064bb24224df2ba6f8dfa3c91 — records-only R0 hot-state authorization; exact-head CI run 32469401632 SUCCESS"
-  - "Linear MAS-75 Done / BUILT_NOT_PROVEN; MAS-107 Done / SPEC_ONLY; MAS-110 Done / PROVEN_LIVE; MAS-106 In Progress; MAS-108 In Progress / NOT_BUILT with no builder claim"
+  - "Linear MAS-75 Done / BUILT_NOT_PROVEN; MAS-107 Done / SPEC_ONLY; MAS-110 Done / PROVEN_LIVE; MAS-106 In Progress; MAS-108 Todo / NOT_BUILT / Awaiting Runtime Claim with no builder claim"
   - "Slack private S0 channel C0BRUL9F2V7 exists for Chris + ChatGPT1/2/3; disposable fixture app remains the setup gate"
   - "B1 commission transported through #agent-dispatch with explicit no-execution semantics; no ACK, branch or PR exists at reconciliation"
   - "Linear MAS-109 hard prerequisites require B1 but not S0; stale S0 blocking relation was removed. MAS-102 remains blocked by C1 + S0."
