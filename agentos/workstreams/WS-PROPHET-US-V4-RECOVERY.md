@@ -439,8 +439,9 @@ waves:
       rail snapshot cannot re-derive — resolved, never refusals). Sidecar
       rebake: us RESOLVED 702 → 1,210, NOT_IN_MASTER 533 → 25 (strict set
       equality with receipt refusals); cn/hk/ca/intl unchanged; GMI node
-      ids/memberships untouched. PR #6190 (immutable squash SHA recorded here
-      once merged; handoff
+      ids/memberships untouched. PR #6190, squash-merged 2026-08-21T13:13:16Z
+      as 71b4813266c1f52611dc0105ff62e1670ab68f66 (immutable merge SHA;
+      post-merge fences proof SUCCESS incl. contract-delta; handoff
       agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-D2B2-US.md). DONE
       requires the next natural production nightly showing source → master →
       fresh GMI projection with measured before/after U.S. counts. D2B2-Canada
