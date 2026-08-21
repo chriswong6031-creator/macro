@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-21T12:22:16.896435+00:00",
-  "count": 1545,
+  "generated_at": "2026-08-21T13:36:42.639626+00:00",
+  "count": 1549,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -83,6 +83,47 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-l4pv4nrqo9i-0bf02a",
+      "title": "GS markets macro",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T12:59:09Z",
+      "summary_points": [
+        "**UST Buyback Catalyst & S&P Momentum**: Wednesday’s UST buyback triggered macro volatility; S&P 500 consolidating near 7700 (echoing prior 7500 chop), signaling momentum shift after three weeks of calm.",
+        "**TMT Momentum Volatility & Sector Risk**: Tech sector volatility surged (TMT momentum: +5.7% → -9.1% → -8.9% → unchanged), amid bond market stress and energy price spikes, heightening risk in momentum strategies.",
+        "**Flow-of-Funds Tailwind & Credit Evolution**: GS PB shows 3 straight weeks of US global equity demand (largest since March 2020); hyperscalers like GOOG diversifying via AUD \"Kangaroo\" bonds, signaling credit market shift beyond US IG.",
+        "**Debt Sustainability Threat**: Persistent global debt levels and fiscal fragility pose critical long-term risk to duration strategies, outweighing short-term yield breakout optimism (e.g., JGB 30Y breakout)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gfwmi8zasks-13d85c",
+      "title": "JPM US Market Intelligence | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T12:54:16Z",
+      "summary_points": [
+        "**Fed Minutes & Rate Expectations**: AUG 19 FOMC Minutes pivotal for policy direction (bull: dovish tone >54.5, bear: hawkish <52.5); aligns with critical PCE data (AUG 26) for rate trajectory.",
+        "**Middle East Conflict Impact on PMIs**: Manufacturing PMI expected to drop to 53.5 (from 53.9) due to supply chain disruptions; services PMI moderates to 53.5 (from 54.6) amid unwinding event-driven demand, sustaining inflationary pressures.",
+        "**Midterm Election SPX Performance**: 100% positive returns at 6m/9m/12m tenors post-midterms since 1990; 3m hit rate 78% (89% since 1950), driving sector allocation (Healthcare top performer) and positioning ahead of NOV 3 US Midterms.",
+        "**Jackson Hole & Policy Catalysts**: AUG 27-29 Jackson Hole meeting defines monetary policy trajectory (bull: tool updates, bear: status quo); complements Fed Decision (SEP 16) and PCE data for narrative shifts.",
+        "**CRM Revenue Acceleration Catalyst**: 2H FY27 sub revenue reacceleration (e.g., +11.5% Y/Y FWN guidance) is sole short-term stock rationale; requires multiple quarters to validate against bearish sentiment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-3vykm2ozlnv-5209a9",
       "title": "JPM Europe Equity Research | Today’s Morning Meeting",
@@ -1028,6 +1069,48 @@
         "macro shocks), with underweight duration positioning signaling potential near-term decline despite current elevated levels.",
         "**UST Yield Valuation**: Long-end UST yields not misvalued against macro fundamentals (Exhibit 5), indicating no significant undervaluation risk amid current conditions.",
         "**Positioning Bias**: Market remains positioned for higher yields (Exhibit 6), with elevated sensitivity to curve shifts (TY 3m 25d risk reversal) and active FX/IR trade targets defining critical risk thresholds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6wmjtunc09z-97d351",
+      "title": "Europe Multi Industry What Global Capacity Utilization and Leasing Data tell us about Multi Industry",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:22Z",
+      "summary_points": [
+        "**EU Industrial Underutilization**: All 12 tracked EU manufacturing sectors below median (Q3-26), signaling widespread demand weakness and fundamental risk for cyclical equities and commodities.",
+        "**China Manufacturing Demand Slowdown**: Sequential declines in Coal Mining (61.2% vs 66.4%), Chemical Products (69.4% vs 73.8%), and Manufacturing (73.5% vs 73.9%) with rising inventories, indicating weakening demand.",
+        "**US Sector Divergence**: 7/16 sectors above long-term median (e.g., Trucks at 98.3% utilization, Aerospace at 73.8%), while Chemicals, Mining, and Paper show deceleration, critical for sector rotation.",
+        "**EU Petroleum Sector Crisis**: Refined Petroleum capacity utilization fell 4.0pp to 80.7% (Q3-26), steepest decline among sectors, signaling potential demand shock for energy portfolios.",
+        "**China Tech Manufacturing Surge**: Computers & Communication Equipment utilization rose 3.3% (78.7% vs 75.4%), contrasting with declines in Electric Machinery (-1.3%) and Power/Gas/Water (-1.5%), driving sector-specific allocation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 34,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kgmyyooutup-f9a175",
+      "title": "Asics Corp. (7936)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:21Z",
+      "summary_points": [
+        "**Revised Sales Target**: FY12/26 sales target >¥1tn (3 years ahead of schedule), new medium-term plan with 18-20% operating margin, HQ-led supply chain reforms (100mn pairs production, reduced downtime).",
+        "**SPS Growth Engine**: SPS sales ¥123.2bn (60% of total), driven by mainland China/US expansion and retailer channels; supply controls (50-60% YoY production growth) mitigate discount competition volatility.",
+        "**EU Policy Impact on PRUN**: PRUN sales +8% YoY (currency-neutral), management prioritizes brand value over discounts amid EU environmental regulations (product disposal restrictions) reinforcing margin focus.",
+        "**Critical Risk Factors**: Key risks include slowdown in PRUN category, lower-than-expected athleisure shoe sales (SPS/OT), and relaxed cost structure efforts impacting margin expansion.",
+        "**Price Target & Upside**: $6,000 12-month target (22.9% upside) based on FY27 EV/NOPAT multiple, reflecting disciplined growth strategy and supply chain benefits."
       ],
       "tags": [],
       "tickers": [],
