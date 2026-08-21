@@ -48,9 +48,9 @@ decisions:
   - DEC:FIF-1-V1-FROZEN
 next_action: >
   FIF-1 is DONE / FROZEN. FIF-2A is ACCEPTED / FIXTURE_PROVEN / ON_MAIN
-  (PR #5983). FIF-2 remains IN_PROGRESS. FIF-2B is BUILT_NOT_ACCEPTED.
-  FIF-2C is NOT_STARTED. Do not reopen A–D. Do not claim production issuer
-  revision coverage.
+  (PR #5983). FIF-2 remains IN_PROGRESS. FIF-2B is BUILT_NOT_ACCEPTED
+  pending Sol (PR #6157, Sol-review corrections). FIF-2C is NOT_STARTED.
+  Do not reopen A–D. Do not claim production issuer revision coverage.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets

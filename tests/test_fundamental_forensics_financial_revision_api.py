@@ -6,12 +6,16 @@ import json
 import time
 from pathlib import Path
 
+from dataclasses import replace
+from datetime import datetime, timezone
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 import app.forensics as forensics_api
 from engine.fundamental_forensics.financial_intelligence_packet import (
+    EntityInput,
     PacketQueryRequest,
     assemble_financial_intelligence_packet,
     canonical_json,
@@ -24,6 +28,10 @@ from engine.fundamental_forensics.query_service import (
 from engine.fundamental_forensics.revision_service import (
     FinancialPacketDataset,
     fip1_packet_dataset,
+    packet_dataset_from_fixture,
+)
+from engine.fundamental_forensics.synthetic_filing_package import (
+    build_multihop_revenue_fixture,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,6 +42,9 @@ T2_SOURCE = "2025-12-31T23:59:59Z"
 T2_RECORDED = "2026-08-03T12:00:00Z"
 T3_SOURCE = "2025-12-31T23:59:59Z"
 T3_RECORDED = "2026-08-05T12:00:02Z"
+HOP_C_SOURCE = "2026-08-05T12:00:02Z"
+HOP_B_SYSTEM_READY = "2026-08-04T17:59:59Z"
+DELAYED_MAPPING_AFTER = "2026-08-07T00:00:00Z"
 
 _EXPECTED_PRIVATE_HEADERS = {
     "cache-control": "private, no-store",
@@ -297,6 +308,39 @@ def test_source_misbound_dataset_returns_503(paid_client, monkeypatch) -> None:
     assert response.status_code != 200
 
 
+def test_same_source_wrong_canonical_entity_returns_503(paid_client, monkeypatch) -> None:
+    fip1 = fip1_packet_dataset(ROOT)
+    misbound = FinancialPacketDataset(
+        binding=fip1.binding,
+        entity=EntityInput(
+            entity_id="mmx.issuer.other",
+            cik="0000999999",
+            ticker="FIP1",
+            name=fip1.entity.name,
+            identity_basis=fip1.entity.identity_basis,
+            source_entity_id="0000999999",
+        ),
+        ledger=fip1.ledger,
+        filing_metadata=fip1.filing_metadata,
+        registry=fip1.registry,
+        context=fip1.context,
+        input_digests=fip1.input_digests,
+    )
+
+    class _WrongCanonical:
+        def resolve(self, entity_id: str) -> FinancialPacketDataset:
+            return misbound
+
+    monkeypatch.setattr(forensics_api, "_financial_revision_provider", lambda: _WrongCanonical())
+    response = paid_client.post(
+        _REVISIONS_PATH,
+        content=_make_request(),
+        headers={"content-type": "application/json"},
+    )
+    _assert_error(response, 503, "financial revisions temporarily unavailable")
+    assert response.status_code != 200
+
+
 def test_unsupported_metric_returns_400(fip1_paid_client) -> None:
     response = fip1_paid_client.post(
         _REVISIONS_PATH,
@@ -385,6 +429,202 @@ def test_non_json_content_type_returns_400_without_opening_provider(
     )
     _assert_error(response, 400, "malformed request")
     assert created == []
+
+
+def test_duplicate_period_label_returns_400_provider_not_opened(
+    paid_client, monkeypatch
+) -> None:
+    created: list[str] = []
+    resolve_calls: list = []
+
+    def _factory():
+        created.append("opened")
+        return _fip1_provider(resolve_calls)
+
+    monkeypatch.setattr(forensics_api, "_financial_revision_provider", _factory)
+    response = paid_client.post(
+        _REVISIONS_PATH,
+        content=_make_request(
+            periods=[
+                {"kind": "duration", "start": "2023-01-01", "end": "2023-12-31", "label": "FY2023"},
+                {"kind": "duration", "start": "2024-01-01", "end": "2024-12-31", "label": "FY2023"},
+            ]
+        ),
+        headers={"content-type": "application/json"},
+    )
+    _assert_error(response, 400, "request contract violation")
+    assert created == []
+    assert resolve_calls == []
+
+
+def test_multihop_intermediate_http_shows_b_hides_c(paid_client, monkeypatch) -> None:
+    dataset = packet_dataset_from_fixture(ROOT, build_multihop_revenue_fixture())
+    packet_before = assemble_financial_intelligence_packet(
+        entity=dataset.entity,
+        ledger=dataset.ledger,
+        filing_metadata=dataset.filing_metadata,
+        query_request=PacketQueryRequest(
+            policy=QueryPolicy(
+                source_snapshot_at=HOP_C_SOURCE,
+                recorded_at=HOP_B_SYSTEM_READY,
+                selection="latest_known_as_of",
+            ),
+            metrics=("revenue",),
+            periods=(PeriodRequest.duration("2023-01-01", "2023-12-31", label="FY2023"),),
+        ),
+        metric_registry=dataset.registry,
+        context=dataset.context,
+        input_digests=dataset.input_digests,
+    )
+    packet_after = assemble_financial_intelligence_packet(
+        entity=dataset.entity,
+        ledger=dataset.ledger,
+        filing_metadata=dataset.filing_metadata,
+        query_request=PacketQueryRequest(
+            policy=QueryPolicy(
+                source_snapshot_at=HOP_C_SOURCE,
+                recorded_at=T3_RECORDED,
+                selection="latest_known_as_of",
+            ),
+            metrics=("revenue",),
+            periods=(PeriodRequest.duration("2023-01-01", "2023-12-31", label="FY2023"),),
+        ),
+        metric_registry=dataset.registry,
+        context=dataset.context,
+        input_digests=dataset.input_digests,
+    )
+
+    class _Provider:
+        def resolve(self, entity_id: str) -> FinancialPacketDataset:
+            return dataset
+
+    monkeypatch.setattr(forensics_api, "_financial_revision_provider", lambda: _Provider())
+    mid = paid_client.post(
+        _REVISIONS_PATH,
+        content=_make_request(
+            policy={
+                "selection": "latest_known_as_of",
+                "source_snapshot_at": HOP_C_SOURCE,
+                "recorded_at": HOP_B_SYSTEM_READY,
+            }
+        ),
+        headers={"content-type": "application/json"},
+    )
+    assert mid.status_code == 200
+    assert mid.json()["revisions"] == packet_before["revisions"]
+    hops = {
+        row["revision_hop"]: row
+        for row in mid.json()["revisions"]
+        if row["metric_id"] == "revenue"
+    }
+    assert 1 in hops and 2 not in hops
+    assert b"1060" in mid.content
+    assert b"1070" not in mid.content
+
+    later = paid_client.post(
+        _REVISIONS_PATH,
+        content=_make_request(
+            policy={
+                "selection": "latest_known_as_of",
+                "source_snapshot_at": HOP_C_SOURCE,
+                "recorded_at": T3_RECORDED,
+            }
+        ),
+        headers={"content-type": "application/json"},
+    )
+    assert later.status_code == 200
+    assert later.json()["revisions"] == packet_after["revisions"]
+    later_hops = {
+        row["revision_hop"]: row
+        for row in later.json()["revisions"]
+        if row["metric_id"] == "revenue"
+    }
+    assert later_hops[2]["revised_value"] == "1070"
+
+
+def test_delayed_mapping_http_before_and_after(paid_client, monkeypatch) -> None:
+    from tests.test_fundamental_forensics_financial_intelligence_packet_r3 import (
+        FUTURE_CONCEPT_QNAME,
+        _mini_revision_fixture,
+        _register_future_concept,
+        _registry_with_future_revenue_mapping,
+    )
+
+    _register_future_concept(monkeypatch)
+    fixture = _mini_revision_fixture(
+        child_recorded="2026-08-04T12:00:00Z",
+        parent_recorded="2024-02-15T16:05:00Z",
+        concept=FUTURE_CONCEPT_QNAME,
+    )
+    dataset = replace(
+        packet_dataset_from_fixture(ROOT, fixture),
+        registry=_registry_with_future_revenue_mapping(datetime(2026, 8, 6, tzinfo=timezone.utc)),
+    )
+
+    class _Provider:
+        def resolve(self, entity_id: str) -> FinancialPacketDataset:
+            return dataset
+
+    monkeypatch.setattr(forensics_api, "_financial_revision_provider", lambda: _Provider())
+    before = paid_client.post(
+        _REVISIONS_PATH,
+        content=_make_request(),
+        headers={"content-type": "application/json"},
+    )
+    before_packet = assemble_financial_intelligence_packet(
+        entity=dataset.entity,
+        ledger=dataset.ledger,
+        filing_metadata=dataset.filing_metadata,
+        query_request=PacketQueryRequest(
+            policy=QueryPolicy(
+                source_snapshot_at=T3_SOURCE,
+                recorded_at=T3_RECORDED,
+                selection="latest_known_as_of",
+            ),
+            metrics=("revenue",),
+            periods=(PeriodRequest.duration("2023-01-01", "2023-12-31", label="FY2023"),),
+        ),
+        metric_registry=dataset.registry,
+        context=dataset.context,
+        input_digests=dataset.input_digests,
+    )
+    assert before.status_code == 200
+    assert before.json()["revisions"] == before_packet["revisions"] == []
+
+    after = paid_client.post(
+        _REVISIONS_PATH,
+        content=_make_request(
+            policy={
+                "selection": "latest_known_as_of",
+                "source_snapshot_at": T3_SOURCE,
+                "recorded_at": DELAYED_MAPPING_AFTER,
+            }
+        ),
+        headers={"content-type": "application/json"},
+    )
+    after_packet = assemble_financial_intelligence_packet(
+        entity=dataset.entity,
+        ledger=dataset.ledger,
+        filing_metadata=dataset.filing_metadata,
+        query_request=PacketQueryRequest(
+            policy=QueryPolicy(
+                source_snapshot_at=T3_SOURCE,
+                recorded_at=DELAYED_MAPPING_AFTER,
+                selection="latest_known_as_of",
+            ),
+            metrics=("revenue",),
+            periods=(PeriodRequest.duration("2023-01-01", "2023-12-31", label="FY2023"),),
+        ),
+        metric_registry=dataset.registry,
+        context=dataset.context,
+        input_digests=dataset.input_digests,
+    )
+    assert after.status_code == 200
+    assert after.json()["revisions"] == after_packet["revisions"]
+    rows = [row for row in after.json()["revisions"] if row["metric_id"] == "revenue"]
+    assert len(rows) == 1
+    assert rows[0]["root_value"] == "1050"
+    assert rows[0]["revised_value"] == "1060"
 
 
 def test_get_is_private_405(fip1_paid_client) -> None:

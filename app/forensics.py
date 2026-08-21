@@ -873,10 +873,12 @@ async def financial_revisions(
     )
 
     body = await _admit_json_post_body(request)
-    provider = _financial_revision_provider()
 
     try:
-        result = execute_financial_revisions(body=body, provider=provider)
+        result = execute_financial_revisions(
+            body=body,
+            provider_factory=_financial_revision_provider,
+        )
     except FinancialQueryAdmissionError as exc:
         raise _private_error(exc.status_code, exc.detail) from None
     except FinancialQueryUnavailableError:

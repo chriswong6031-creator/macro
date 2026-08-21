@@ -6,10 +6,16 @@ from pathlib import Path
 
 import pytest
 
+from dataclasses import replace
+from datetime import datetime, timezone
+
 from engine.fundamental_forensics.financial_intelligence_packet import (
+    EntityInput,
+    PacketEvidenceDigests,
     PacketQueryRequest,
     assemble_financial_intelligence_packet,
     canonical_json,
+    sha256_file,
 )
 from engine.fundamental_forensics.query import PeriodRequest, QueryPolicy
 from engine.fundamental_forensics.query_service import (
@@ -42,6 +48,9 @@ T2_SOURCE = "2025-12-31T23:59:59Z"
 T2_RECORDED = "2026-08-03T12:00:00Z"
 T3_SOURCE = "2025-12-31T23:59:59Z"
 T3_RECORDED = "2026-08-05T12:00:02Z"
+HOP_C_SOURCE = "2026-08-05T12:00:02Z"
+HOP_B_SYSTEM_READY = "2026-08-04T17:59:59Z"
+DELAYED_MAPPING_AFTER = "2026-08-07T00:00:00Z"
 
 FY2023 = {"kind": "duration", "start": "2023-01-01", "end": "2023-12-31", "label": "FY2023"}
 AR_INSTANT = {"kind": "instant", "start": None, "end": "2023-12-31", "label": "2023-12-31"}
@@ -233,11 +242,10 @@ def test_multihop_preserves_root_prior_revised() -> None:
                 raise FinancialQueryAdmissionError(400, "unknown entity")
             return dataset
 
-    hop_c_source = "2026-08-05T12:00:02Z"
     body = _make_request(
         policy={
             "selection": "latest_known_as_of",
-            "source_snapshot_at": hop_c_source,
+            "source_snapshot_at": HOP_C_SOURCE,
             "recorded_at": T3_RECORDED,
         }
     )
@@ -245,7 +253,7 @@ def test_multihop_preserves_root_prior_revised() -> None:
     packet = _direct_packet(
         metric_ids=("revenue",),
         periods=(FY2023_PERIOD,),
-        source_snapshot_at=hop_c_source,
+        source_snapshot_at=HOP_C_SOURCE,
         recorded_at=T3_RECORDED,
         dataset=dataset,
     )
@@ -292,6 +300,137 @@ def test_multihop_hides_hop_c_before_lineage_readiness() -> None:
     result = execute_financial_revisions(body=body, provider=_Provider())
     assert result.envelope["revisions"] == []
     assert "1070" not in result.body.decode("utf-8")
+
+
+def test_multihop_intermediate_shows_b_hides_c_until_system_ready() -> None:
+    fixture = build_multihop_revenue_fixture()
+    dataset = packet_dataset_from_fixture(ROOT, fixture)
+
+    class _Provider:
+        def resolve(self, entity_id: str) -> FinancialPacketDataset:
+            return dataset
+
+    intermediate = _make_request(
+        policy={
+            "selection": "latest_known_as_of",
+            "source_snapshot_at": HOP_C_SOURCE,
+            "recorded_at": HOP_B_SYSTEM_READY,
+        }
+    )
+    mid = execute_financial_revisions(body=intermediate, provider=_Provider())
+    mid_packet = _direct_packet(
+        metric_ids=("revenue",),
+        periods=(FY2023_PERIOD,),
+        source_snapshot_at=HOP_C_SOURCE,
+        recorded_at=HOP_B_SYSTEM_READY,
+        dataset=dataset,
+    )
+    assert mid.envelope["revisions"] == mid_packet["revisions"]
+    hops = {
+        row["revision_hop"]: row
+        for row in mid.envelope["revisions"]
+        if row["metric_id"] == "revenue"
+    }
+    assert 1 in hops
+    assert 2 not in hops
+    assert hops[1]["revised_value"] == "1060"
+    blob = mid.body.decode("utf-8")
+    assert "1060" in blob
+    assert "1070" not in blob
+
+    later = _make_request(
+        policy={
+            "selection": "latest_known_as_of",
+            "source_snapshot_at": HOP_C_SOURCE,
+            "recorded_at": T3_RECORDED,
+        }
+    )
+    after = execute_financial_revisions(body=later, provider=_Provider())
+    after_packet = _direct_packet(
+        metric_ids=("revenue",),
+        periods=(FY2023_PERIOD,),
+        source_snapshot_at=HOP_C_SOURCE,
+        recorded_at=T3_RECORDED,
+        dataset=dataset,
+    )
+    assert after.envelope["revisions"] == after_packet["revisions"]
+    later_hops = {
+        row["revision_hop"]: row
+        for row in after.envelope["revisions"]
+        if row["metric_id"] == "revenue"
+    }
+    assert 2 in later_hops
+    assert later_hops[2]["prior_value"] == "1060"
+    assert later_hops[2]["revised_value"] == "1070"
+
+
+def test_delayed_mapping_hides_revision_until_mapping_available(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from tests.test_fundamental_forensics_financial_intelligence_packet_r3 import (
+        FUTURE_CONCEPT_QNAME,
+        _mini_revision_fixture,
+        _register_future_concept,
+        _registry_with_future_revenue_mapping,
+    )
+
+    _register_future_concept(monkeypatch)
+    fixture = _mini_revision_fixture(
+        child_recorded="2026-08-04T12:00:00Z",
+        parent_recorded="2024-02-15T16:05:00Z",
+        concept=FUTURE_CONCEPT_QNAME,
+    )
+    delayed_registry = _registry_with_future_revenue_mapping(
+        datetime(2026, 8, 6, tzinfo=timezone.utc)
+    )
+    dataset = replace(
+        packet_dataset_from_fixture(ROOT, fixture),
+        registry=delayed_registry,
+    )
+
+    class _Provider:
+        def resolve(self, entity_id: str) -> FinancialPacketDataset:
+            return dataset
+
+    before_body = _make_request(
+        policy={
+            "selection": "latest_known_as_of",
+            "source_snapshot_at": T3_SOURCE,
+            "recorded_at": T3_RECORDED,
+        }
+    )
+    before = execute_financial_revisions(body=before_body, provider=_Provider())
+    before_packet = _direct_packet(
+        metric_ids=("revenue",),
+        periods=(FY2023_PERIOD,),
+        source_snapshot_at=T3_SOURCE,
+        recorded_at=T3_RECORDED,
+        dataset=dataset,
+    )
+    assert before.envelope["revisions"] == before_packet["revisions"] == []
+    assert [row for row in before.envelope["revisions"] if row["metric_id"] == "revenue"] == []
+
+    after_body = _make_request(
+        policy={
+            "selection": "latest_known_as_of",
+            "source_snapshot_at": T3_SOURCE,
+            "recorded_at": DELAYED_MAPPING_AFTER,
+        }
+    )
+    after = execute_financial_revisions(body=after_body, provider=_Provider())
+    after_packet = _direct_packet(
+        metric_ids=("revenue",),
+        periods=(FY2023_PERIOD,),
+        source_snapshot_at=T3_SOURCE,
+        recorded_at=DELAYED_MAPPING_AFTER,
+        dataset=dataset,
+    )
+    assert after.envelope["revisions"] == after_packet["revisions"]
+    rows = [row for row in after.envelope["revisions"] if row["metric_id"] == "revenue"]
+    assert len(rows) == 1
+    assert rows[0]["root_value"] == "1050"
+    assert rows[0]["prior_value"] == "1050"
+    assert rows[0]["revised_value"] == "1060"
 
 
 def test_future_metric_contract_does_not_change_historical_unsupported_semantics(
@@ -404,6 +543,33 @@ def test_source_misbound_dataset_is_unavailable() -> None:
         execute_financial_revisions(body=_t3_latest(), provider=_SourceMisbound())
 
 
+def test_same_source_wrong_canonical_entity_is_unavailable() -> None:
+    fip1 = fip1_packet_dataset(ROOT)
+    misbound = FinancialPacketDataset(
+        binding=fip1.binding,
+        entity=EntityInput(
+            entity_id="mmx.issuer.other",
+            cik="0000999999",
+            ticker="FIP1",
+            name=fip1.entity.name,
+            identity_basis=fip1.entity.identity_basis,
+            source_entity_id="0000999999",
+        ),
+        ledger=fip1.ledger,
+        filing_metadata=fip1.filing_metadata,
+        registry=fip1.registry,
+        context=fip1.context,
+        input_digests=fip1.input_digests,
+    )
+
+    class _WrongCanonical:
+        def resolve(self, entity_id: str) -> FinancialPacketDataset:
+            return misbound
+
+    with pytest.raises(FinancialQueryUnavailableError):
+        execute_financial_revisions(body=_t3_latest(), provider=_WrongCanonical())
+
+
 def test_unavailable_provider_raises_unavailable_error() -> None:
     with pytest.raises(FinancialQueryUnavailableError):
         execute_financial_revisions(
@@ -422,6 +588,33 @@ def test_provider_not_called_before_admission() -> None:
 
     with pytest.raises(FinancialQueryAdmissionError):
         execute_financial_revisions(body=b"x" * 65537, provider=_TrackingProvider())
+    assert calls == []
+
+
+def test_duplicate_period_label_is_400_before_provider_resolve() -> None:
+    calls: list[str] = []
+    factory_calls: list[str] = []
+
+    class _TrackingProvider:
+        def resolve(self, entity_id: str) -> FinancialPacketDataset:
+            calls.append(entity_id)
+            return fip1_packet_dataset(ROOT)
+
+    def _factory():
+        factory_calls.append("opened")
+        return _TrackingProvider()
+
+    body = _t3_latest(
+        periods=[
+            {"kind": "duration", "start": "2023-01-01", "end": "2023-12-31", "label": "FY2023"},
+            {"kind": "duration", "start": "2024-01-01", "end": "2024-12-31", "label": "FY2023"},
+        ]
+    )
+    with pytest.raises(FinancialQueryAdmissionError) as exc_info:
+        execute_financial_revisions(body=body, provider_factory=_factory)
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail == "request contract violation"
+    assert factory_calls == []
     assert calls == []
 
 
@@ -496,6 +689,49 @@ def test_envelope_entity_is_canonical_mastermind_binding() -> None:
     assert entity["source_entity_id"] == "0000999999"
     assert result.envelope["schema"] == "fundamental_forensics.financial_revision_response/v1"
     assert result.envelope["authority"] == {"class": "context_only", "display_only": True}
+
+
+def test_fip1_canonical_entity_does_not_rewrite_raw_identity() -> None:
+    dataset = fip1_packet_dataset(ROOT)
+    assert dataset.entity.entity_id == "mmx.issuer.fip1"
+    assert dataset.entity.cik == "0000999999"
+    assert dataset.entity.source_entity_id == "0000999999"
+    assert dataset.entity.ticker == "FIP1"
+    event = dataset.ledger.events[0]
+    assert event.source.entity_id == "0000999999"
+    assert event.context.entity_identifier == "0000999999"
+    result = execute_financial_revisions(body=_t3_latest(), provider=_fip1_provider())
+    packet = _direct_packet(
+        metric_ids=("revenue",),
+        periods=(FY2023_PERIOD,),
+        source_snapshot_at=T3_SOURCE,
+        recorded_at=T3_RECORDED,
+    )
+    assert packet["entity"]["entity_id"] == "mmx.issuer.fip1"
+    assert packet["entity"]["cik"] == "0000999999"
+    assert result.envelope["packet_ref"]["packet_id"] == packet["packet_id"]
+
+
+def test_arbitrary_fixture_does_not_claim_committed_fip1_digest() -> None:
+    committed = fip1_packet_dataset(ROOT)
+    committed_digest = sha256_file(
+        ROOT / "tests" / "fixtures" / "fundamental_forensics" / "filing_package_raw_ledger_v1.json"
+    )
+    assert committed.input_digests.filing_package_fixture_sha256 == committed_digest
+    fixture = build_multihop_revenue_fixture()
+    arbitrary = packet_dataset_from_fixture(ROOT, fixture)
+    assert arbitrary.input_digests == PacketEvidenceDigests()
+    assert arbitrary.input_digests.filing_package_fixture_sha256 is None
+    assert arbitrary.input_digests.filing_package_fixture_sha256 != committed_digest
+    later = _direct_packet(
+        metric_ids=("revenue",),
+        periods=(FY2023_PERIOD,),
+        source_snapshot_at=HOP_C_SOURCE,
+        recorded_at=T3_RECORDED,
+        dataset=arbitrary,
+    )
+    assert later["receipts"]["filing_package_fixture_sha256"] is None
+    assert later["receipts"]["filing_package_fixture_sha256"] != committed_digest
 
 
 # ---------------------------------------------------------------------------
