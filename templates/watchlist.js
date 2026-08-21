@@ -713,6 +713,15 @@
   // ===========================================================================
   var MODE_KEY = 'mdash.ws.mode.v1';
   var mode = 'portfolio';
+  // LAW 3 (A1A round-3, Sol P0 — risk provenance): the SINGLE generation counter a
+  // risk publication is stamped against at MINT time (factor_exposure.js) and
+  // checked against at CONSUMPTION time (setRisk() below, portfolio.js's
+  // setBookRisk). Bumped on (a) every setMode() that actually changes mode, and
+  // (b) every wl-auth identity change (the existing RISK-reset listener below) —
+  // the same two boundaries that already invalidate RISK synchronously; this
+  // generation is what lets a DEFERRED publication crossing either boundary be
+  // recognized as stale by a consumer, not just by the synchronous resets.
+  var wsGen = 0;
   var PURPOSE = {
     portfolio:  ['What you hold, what changed, what it adds up to.', '你持有什么、有什么变化、加起来是什么。'],
     watchlists: ['The names you are watching, and what moved.', '你在盯的票，以及哪些发生了变化。']
@@ -720,7 +729,9 @@
 
   function setMode(next, remember) {
     var enteringPortfolio = (next !== 'watchlists') && mode !== 'portfolio';
+    var prevMode = mode;
     mode = (next === 'watchlists') ? 'watchlists' : 'portfolio';
+    if (mode !== prevMode) wsGen++;
     document.documentElement.setAttribute('data-ws-mode', mode);
     var modes = el('ws_modes');
     if (modes) {
@@ -1683,9 +1694,20 @@
      the signature from drifting between two renderers. */
   var RISK = { shares: null, concHTML: '', rcTabs: null, labHTML: '',
                seamItems: null, coverage: null, headline: null };
+  /* LAW 3 (A1A round-3, Sol P0): fail-closed consumer rejection. A publication is
+     accepted ONLY when it carries provenance that matches the CURRENT scope+
+     generation exactly — a stale gen (a deferred republish that fired after a mode
+     switch or auth flip) or a wrong scope (a watchlist-derived read arriving while
+     the reader is on Portfolio, or vice versa) is silently ignored: no RISK write,
+     no repaint. Missing `prov` is rejected the same way — symbol overlap alone is
+     never provenance (Sol, verbatim). The synchronous RISK resets at setMode() and
+     the wl-auth identity listener below stay as defense in depth; this is the belt
+     on top of that suspenders. */
   function setRisk(payload) {
-    RISK = payload || { shares: null, concHTML: '', rcTabs: null, labHTML: '',
-                        seamItems: null, coverage: null, headline: null };
+    if (!payload || !payload.prov) return;
+    var scope = mode === 'portfolio' ? 'portfolio' : 'watchlist';
+    if (payload.prov.scope !== scope || payload.prov.gen !== wsGen) return;
+    RISK = payload;
     if (mode === 'portfolio') renderRiskCenter();
   }
 
@@ -2103,6 +2125,9 @@
     setRisk: setRisk,
     setChip: setChip,
     mode: function () { return mode; },
+    // LAW 3 (A1A round-3): the read-only provenance stamp producers mint against
+    // and consumers verify against — { scope: 'portfolio'|'watchlist', gen }.
+    prov: function () { return { scope: mode === 'portfolio' ? 'portfolio' : 'watchlist', gen: wsGen }; },
     // A1A test seam (§10, §13): the canonical Portfolio count — never Watchlist-
     // derived, never the temporary basket. tests/test_portfolio_truth_a1a_js.py pins it.
     pfCount: pfCount,
@@ -2295,6 +2320,11 @@
     document.addEventListener('wl-auth', function (e) {
       var uid = (e && e.detail && e.detail.user && e.detail.user.id) || null;
       if (uid !== lastAuthIdentity) {
+        // LAW 3: an identity change is a provenance boundary too — bump the
+        // generation so any publication minted before this flip (already in
+        // flight, or a deferred republishTabs) is recognized as stale by setRisk()
+        // even if it somehow arrives after this reset runs.
+        wsGen++;
         RISK = { shares: null, concHTML: '', rcTabs: null, labHTML: '',
                  seamItems: null, coverage: null, headline: null };
         // N1 (Sol post-review, MAJOR): the SAME reset, on the SAME boundary, for

@@ -188,6 +188,17 @@
   // facts. Refreshed by refreshSnapshot(); null whenever window.PS has not deployed
   // yet (B2 split-deploy window) or rows is genuinely unknown.
   var snapshot = null;
+  // LAW 2 (A1A round-3, consumer request-generation guard): every list() CALL bumps
+  // this counter; a resolution (.then OR .catch) whose captured `gen` no longer
+  // matches the CURRENT `loadGen` is stale and mutates NOTHING — not rows, not
+  // readState, not the chip dispatch, not DOM, not count, not the FX push chain.
+  // This is the CONSUMER-side half of LAW 1's auth-epoch binding: even a
+  // watchstore.js resolution that legitimately resolves rows (e.g. a plain slow
+  // network read under the SAME identity, no auth transition at all) must still be
+  // discarded here if a NEWER list() call has since superseded it — reload()'s
+  // visibility refetch and onAuth()'s auth-flip trigger can both fire while an
+  // older call is still in flight.
+  var loadGen = 0;
 
   // ---- portfolio_state.js seam ----------------------------------------------
   function PS() { return window.PS || null; }
@@ -1466,7 +1477,16 @@
   /* The risk publisher's landing pad (watchlist_risk.js computes, this file composes).
      Everything here is DISPLAY of a number the model produced — nothing is derived,
      re-scaled or re-ranked on the way in. */
+  /* LAW 3 (A1A round-3, Sol P0 — risk provenance): fail-closed provenance check,
+     run BEFORE payloadIsConsistentWithBook()'s empty-payload early-accept — a
+     stale or wrong-scope EMPTY {} payload must still be rejected, never waved
+     through as "nothing to weight". Symbol overlap alone is not provenance (Sol,
+     verbatim): payloadIsConsistentWithBook() STAYS as an ADDITIONAL layer on top
+     of this (do_not_redo: never remove it), not a replacement for it. */
   function setBookRisk(payload) {
+    var curGen = (window.WS && window.WS.prov) ? window.WS.prov().gen : null;
+    if (!payload || !payload.prov || payload.prov.scope !== 'portfolio' ||
+        curGen === null || payload.prov.gen !== curGen) return;
     if (!payloadIsConsistentWithBook(payload)) return;
     BOOK = payload || null;
     RISK_SHARES = (payload && payload.shares) || {};
@@ -1694,7 +1714,11 @@
   function reload(afterWrite) {
     if (!window.WatchStore || !window.WatchStore.portfolio) return;
     hydrated = false;
+    // LAW 2: this call's own generation — a later reload()/onAuth() call bumping
+    // loadGen before THIS one resolves makes both handlers below no-ops.
+    var gen = ++loadGen;
     window.WatchStore.portfolio.list().then(function (newRows) {
+      if (gen !== loadGen) return;
       var rs = window.WatchStore.portfolio.readState ? window.WatchStore.portfolio.readState() : null;
       readState = rs || { authority: 'local', state: 'ready', last_good_at: null, warning: null };
       dispatchPfSave(pfChipStateFor(readState, afterWrite));
@@ -1708,6 +1732,7 @@
       rows = newRows;
       ensureIndex().then(render);
     }).catch(function () {
+      if (gen !== loadGen) return;
       readState = { authority: readState.authority, state: 'error',
                     last_good_at: readState.last_good_at, warning: 'read-failed' };
       /* A1A blocker 3: this catch fires for a READ failure. When it follows a
@@ -1846,7 +1871,14 @@
       ? { authority: 'cloud', state: 'loading', last_good_at: null, warning: null }
       : { authority: 'local', state: 'loading', last_good_at: null, warning: null };
     render();
+    // LAW 2 (A1A round-3): this call's own generation. onAuth() fires on EVERY
+    // 'wl-auth' — including the S6 double-fire (user set, then the shared client
+    // resolving) and a genuine identity flip mid-flight — so an OLDER call's
+    // resolution must never land after a NEWER one has already started (or
+    // finished) painting the new identity's answer.
+    var gen = ++loadGen;
     window.WatchStore.portfolio.list().then(function (newRows) {
+      if (gen !== loadGen) return;
       var rs = window.WatchStore.portfolio.readState ? window.WatchStore.portfolio.readState() : null;
       readState = rs || { authority: 'local', state: 'ready', last_good_at: null, warning: null };
       dispatchPfSave(pfChipStateFor(readState));
@@ -1856,6 +1888,7 @@
       rows = newRows;
       ensureIndex().then(render);
     }).catch(function () {
+      if (gen !== loadGen) return;
       readState = { authority: readState.authority, state: 'error',
                     last_good_at: readState.last_good_at, warning: 'read-failed' };
       // A1A blocker 3/F3: no write is ever involved in onAuth()'s plain read —

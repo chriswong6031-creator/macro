@@ -243,7 +243,7 @@
         var res = document.getElementById('fx_results');
         if (a.ok && res) res.innerHTML = resultsInner(a, DATA);  // editor untouched → focus kept
         // manual weight edit only fires in non-auto mode; keep the WRI layer in sync
-        CUR = { universe: LAST.slice(), wmap: w, mode: 'manual' };
+        CUR = { universe: LAST.slice(), wmap: w, mode: 'manual', prov: curProv(pfMode() ? 'portfolio' : 'watchlist') };
         announceWeights();
       });
     });
@@ -256,7 +256,24 @@
   // never fork. { universe, wmap, mode }; mode 'auto' = portfolio dollar values,
   // 'manual' = the local weight editor / equal-weight fallback.
   var CUR = { universe: [], wmap: {}, mode: 'manual' };
-  function currentWeights() { return { universe: CUR.universe.slice(), wmap: CUR.wmap, mode: CUR.mode }; }
+  /* LAW 3 (A1A round-3, Sol P0 — risk provenance): stamp EVERY CUR assignment with
+     the scope+generation active at the exact moment the universe is resolved —
+     never re-derived later. `pfMode()` is already this file's own answer to "which
+     book is on screen" (the comment above it: "only the workspace's own statement
+     of which book the reader is looking at… owns the universe"), so it is also the
+     right scope for the provenance stamp. `window.WS.prov().gen` is the single
+     generation counter watchlist.js bumps on every actual mode change and every
+     wl-auth identity change; a pre-boundary CUR announced post-boundary therefore
+     carries a gen the consumer can recognize as stale. If window.WS has not loaded
+     (a host page without the workspace shell), mint gen:-1 — consumers fail closed
+     on it rather than accept an unstampable read. */
+  function curProv(scope) {
+    var g = (window.WS && window.WS.prov) ? window.WS.prov().gen : -1;
+    return { scope: scope, gen: g };
+  }
+  function currentWeights() {
+    return { universe: CUR.universe.slice(), wmap: CUR.wmap, mode: CUR.mode, prov: CUR.prov };
+  }
   function announceWeights() {
     try { document.dispatchEvent(new CustomEvent('fx-weights', { detail: currentWeights() })); }
     catch (e) { /* older browsers: watchlist_risk.js falls back to polling on render */ }
@@ -301,7 +318,8 @@
     var wmap = autoMode ? AUTO_W : (pfEmpty ? {} : loadW());
     // publish the resolved weighting for the WRI layer (before the ok/thin gate so
     // it also learns about a thin/empty book and can collapse its hero in step).
-    CUR = { universe: universe.slice(), wmap: wmap, mode: autoMode ? 'auto' : 'manual' };
+    CUR = { universe: universe.slice(), wmap: wmap, mode: autoMode ? 'auto' : 'manual',
+            prov: curProv(pfMode() ? 'portfolio' : 'watchlist') };
     announceWeights();
     var a = aggregate(universe, data, wmap);
     if (!a.ok) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
