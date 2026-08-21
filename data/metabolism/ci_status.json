@@ -1,7 +1,13 @@
 {
-  "ts": "2026-08-21T03:31:30+00:00",
-  "main_sha": "7ebddd10d50443863f69405654b3d02d572ed3d2",
+  "ts": "2026-08-21T05:08:49+00:00",
+  "main_sha": "0d5bc41d3d67076d49b8e686315661e4a006e346",
   "red_required": [
+    {
+      "name": "sweep",
+      "conclusion": "cancelled",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32449121479/job/96674112840"
+    },
     {
       "name": "tier-gate",
       "conclusion": "failure",
@@ -28,9 +34,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 10,
+  "consecutive_failures": 11,
   "sensed_shas": [
-    "7ebddd10d50443863f69405654b3d02d572ed3d2",
+    "0d5bc41d3d67076d49b8e686315661e4a006e346",
     "9d9c830ecd614b064dc4530ad9b9db9bbe123054"
   ],
   "heartbeat_degraded": false
