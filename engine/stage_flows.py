@@ -376,9 +376,17 @@ def _prev_states_from_artifact(dr: Path) -> dict:
 
 
 def build(stage_frame=None, root: Path | None = None,
-          asof: str | None = None) -> dict:
+          asof: str | None = None,
+          target_stage_week: str | None = None) -> dict:
     """Compute flows for all regions, write the display-tier artifact, return
     the contract.  Fail-open throughout.
+
+    Args:
+        target_stage_week: the resolved completed Stage week (Wave 8 §1.2),
+            threaded into `stage_industry.coverage_snapshot` as
+            `expected_stage_week` so freshness is judged on the Stage-week
+            plane (§6.1) rather than downgraded merely because the wall
+            clock rolled forward.
 
     Writes: data/stage_analysis/industry_flows.json
     """
@@ -415,6 +423,7 @@ def build(stage_frame=None, root: Path | None = None,
 
     coverage = stage_industry.coverage_snapshot(
         source_frame, expected_asof=asof, output_rows=len(res["industry"]),
+        expected_stage_week=target_stage_week,
     )
 
     contract = {

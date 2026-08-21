@@ -5,6 +5,10 @@
 
 
 
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -328,8 +332,12 @@
       <p class="sub"><span class="l-en">Every stock sorted into one of four seasons — building a base, advancing, topping, or declining. Trend quality, earnings tone, and where the money is rotating, in plain words.</span><span class="l-zh">把每只股票归入四个阶段之一 —— 筑底、上升、见顶、下行。趋势质量、财报语气、资金轮动去向，全用大白话说清。</span></p>
     </div>
     <div class="asof">
-      <span class="l-en">Priced <b>2026-08-21</b></span><span class="l-zh">数据截至 <b>2026-08-21</b></span>
+      
+      
+        <span class="l-en">Build <b>2026-08-21</b></span><span class="l-zh">构建于 <b>2026-08-21</b></span>
+      
       <div style="margin-top:3px"><span class="l-en">Weekly stage read</span><span class="l-zh">周线阶段判定</span></div>
+      
     </div>
   </div>
 
@@ -349,6 +357,7 @@
           <h2 class="arc-state"><span class="l-en">Most stocks are <span class="accent">advancing</span></span><span class="l-zh">多数股票<span class="accent">正在上升</span></span></h2>
           <p class="arc-stance"><span class="l-en">Good weather for fresh breakouts — but the advance is broad and mature, so <span class="em">be picky, not greedy</span>.</span><span class="l-zh">适合新突破的好天气 —— 但涨势已广且成熟，<span class="em">要挑，别贪</span>。</span></p>
           <span class="stancepill act"><span class="dot"></span><span class="l-en">Watch — pick spots</span><span class="l-zh">观察 —— 挑准位置</span></span>
+        
         
 
         <div class="stations">
@@ -1014,12 +1023,19 @@
   }
   function renderBoardProv(){
     var p=qs('#board-prov');if(!p)return;
-    var d=BOARD[boardCadence];var asof=d&&d.asof?d.asof:'';
+    var d=BOARD[boardCadence];
     /* honesty: daily currently mirrors the weekly stage read. */
     var honesty=boardCadence==='daily'
       ? TT('Daily view: the stage read is still the weekly classification — a daily-specific read lands once intraday history is wired.','日线视图：阶段判定目前仍沿用周线分类 —— 待接入日内历史后才有专属的日线判定。')
       : TT('Weekly stage read — the primary Weinstein classification.','周线阶段判定 —— 主要的温斯坦分类。');
-    p.innerHTML=honesty+(asof?' '+TT('Priced '+asof+'.','数据截至 '+asof+'。'):'')+' '+TT('Context only — a stage classification, never a buy signal.','仅供参考 —— 这是阶段分类，绝非买入信号。');
+    /* Wave 8 observation-truth clock (replaces the retired build-date-only
+       label): the completed Stage week the board is anchored to, plus the
+       daily source tape behind it — never the build date alone. */
+    var stageWeek=d&&d.target_stage_week?d.target_stage_week:'';
+    var srcSession=d&&d.population&&d.population.data_session?d.population.data_session:'';
+    var clockEn=stageWeek?('Stage week ended '+stageWeek+(srcSession?' · source tape through '+srcSession:'')+'.'):'';
+    var clockZh=stageWeek?('阶段周截至 '+stageWeek+(srcSession?' · 数据行情至 '+srcSession:'')+'。'):'';
+    p.innerHTML=honesty+(clockEn?' '+TT(clockEn,clockZh):'')+' '+TT('Context only — a stage classification, never a buy signal.','仅供参考 —— 这是阶段分类，绝非买入信号。');
   }
   function selectCadence(c){
     if(c!=='daily')c='weekly';boardCadence=c;
@@ -1871,6 +1887,5 @@
 </script>
 <script src="live_config.js?v=52943e92" defer></script>
 <script src="live.js?v=cfb8c072" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
 </body>
 </html>

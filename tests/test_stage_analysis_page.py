@@ -23,7 +23,7 @@ FIXTURE = REPO / "tests" / "fixtures" / "stage_page_demo.json"
 
 sys.path.insert(0, str(REPO))
 
-from scripts.build_stage_analysis_page import render  # noqa: E402
+from scripts.build_stage_analysis_page import _copy_stagedata, render  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -317,3 +317,225 @@ def test_warmup_with_no_artifact_still_says_warming_up():
     html = _render_warmup()
     assert "The first stage read runs tonight" in html
     assert "Stage read unavailable" not in html
+
+
+# ---------------------------------------------------------------------------
+# Wave 8 §8 — publication integrity: `_copy_stagedata` revocation behavior.
+# ---------------------------------------------------------------------------
+def _mk_dirs(tmp_path: Path) -> tuple[Path, Path]:
+    data_dir = tmp_path / "data"
+    site_dir = tmp_path / "site"
+    (data_dir / "stage_analysis").mkdir(parents=True, exist_ok=True)
+    return data_dir, site_dir
+
+
+def test_missing_source_with_existing_public_copy_is_revoked(tmp_path: Path):
+    """§8 acceptance gate: a stale destination whose source vanished must not
+    survive as though it were current — the destination is removed and the
+    revocation disclosed."""
+    data_dir, site_dir = _mk_dirs(tmp_path)
+    out_dir = site_dir / "stagedata"
+    out_dir.mkdir(parents=True)
+    # yesterday's public copy, no matching source under data/stage_analysis
+    (out_dir / "screener.json").write_text(
+        json.dumps({"schema": "stage_screener.v1", "status": "ready"}))
+    copied, revoked, stale = _copy_stagedata(data_dir, site_dir)
+    assert revoked == 1
+    assert copied == 0
+    assert not (out_dir / "screener.json").exists()
+
+
+def test_missing_source_with_no_existing_public_copy_is_a_noop(tmp_path: Path):
+    data_dir, site_dir = _mk_dirs(tmp_path)
+    copied, revoked, stale = _copy_stagedata(data_dir, site_dir)
+    assert copied == 0
+    assert revoked == 0
+    assert stale == 0
+
+
+def test_current_valid_source_copies_normally(tmp_path: Path):
+    data_dir, site_dir = _mk_dirs(tmp_path)
+    src = data_dir / "stage_analysis" / "screener.json"
+    src.write_text(json.dumps({"schema": "stage_screener.v1", "status": "ready"}))
+    copied, revoked, stale = _copy_stagedata(data_dir, site_dir)
+    assert copied == 1
+    assert revoked == 0
+    assert stale == 0
+    out = site_dir / "stagedata" / "screener.json"
+    assert out.exists()
+    assert json.loads(out.read_text())["status"] == "ready"
+
+
+def test_explicitly_stale_source_still_copies_and_is_counted_stale(tmp_path: Path):
+    """Valid last-known data is retained ONLY when the artifact itself
+    discloses that it is stale — it still copies, so the client can render
+    the stale state, but the report counts it honestly."""
+    data_dir, site_dir = _mk_dirs(tmp_path)
+    src = data_dir / "stage_analysis" / "industry_ranks.json"
+    src.write_text(json.dumps({"schema": "stage_industry_ranks.v1",
+                               "status": "stale"}))
+    copied, revoked, stale = _copy_stagedata(data_dir, site_dir)
+    assert copied == 1
+    assert stale == 1
+    assert revoked == 0
+    out = site_dir / "stagedata" / "industry_ranks.json"
+    assert out.exists()
+
+
+def test_stage_current_false_counts_as_stale(tmp_path: Path):
+    data_dir, site_dir = _mk_dirs(tmp_path)
+    src = data_dir / "stage_analysis" / "industry_flows.json"
+    src.write_text(json.dumps({"schema": "stage_industry_flows.v1",
+                               "stage_current": False}))
+    copied, revoked, stale = _copy_stagedata(data_dir, site_dir)
+    assert copied == 1
+    assert stale == 1
+
+
+def test_no_target_week_population_counts_as_stale(tmp_path: Path):
+    data_dir, site_dir = _mk_dirs(tmp_path)
+    src = data_dir / "stage_analysis" / "screener.json"
+    src.write_text(json.dumps({
+        "schema": "stage_screener.v1",
+        "population": {"status": "no_target_week"},
+    }))
+    copied, revoked, stale = _copy_stagedata(data_dir, site_dir)
+    assert copied == 1
+    assert stale == 1
+
+
+def test_invalid_json_source_is_skipped_not_copied(tmp_path: Path):
+    data_dir, site_dir = _mk_dirs(tmp_path)
+    src = data_dir / "stage_analysis" / "screener.json"
+    src.write_text("{not valid json")
+    copied, revoked, stale = _copy_stagedata(data_dir, site_dir)
+    assert copied == 0
+    assert not (site_dir / "stagedata" / "screener.json").exists()
+
+
+def test_source_without_a_schema_key_still_publishes(tmp_path: Path):
+    """A missing `schema` key must NOT block publication.
+
+    This assertion is deliberately inverted from an earlier draft that required
+    `"schema" in payload`. Five live surfaces (`ec_industry`,
+    `ec_industry_heatmap`, `earnings_table`, `earnings_season`,
+    `earnings_compare`) are stamped `surface` by `engine/earnings_qual.py`, so
+    that rule silently froze all five. The validator's job is to reject
+    unusable bytes, not to enforce a key convention this estate does not have.
+    """
+    data_dir, site_dir = _mk_dirs(tmp_path)
+    src = data_dir / "stage_analysis" / "screener.json"
+    src.write_text(json.dumps({"surface": "A", "status": "ready"}))  # no "schema"
+    copied, revoked, stale = _copy_stagedata(data_dir, site_dir)
+    assert copied == 1
+    assert (site_dir / "stagedata" / "screener.json").exists()
+
+
+def test_stale_destination_replaced_by_a_fresh_source_on_a_later_build(tmp_path: Path):
+    """A previously-revoked/stale destination is not sticky: once a genuinely
+    current source reappears, the normal current copy wins."""
+    data_dir, site_dir = _mk_dirs(tmp_path)
+    out_dir = site_dir / "stagedata"
+    out_dir.mkdir(parents=True)
+    (out_dir / "screener.json").write_text(
+        json.dumps({"schema": "stage_screener.v1", "status": "stale"}))
+    src = data_dir / "stage_analysis" / "screener.json"
+    src.write_text(json.dumps({"schema": "stage_screener.v1", "status": "ready"}))
+    copied, revoked, stale = _copy_stagedata(data_dir, site_dir)
+    assert copied == 1
+    assert stale == 0
+    assert revoked == 0
+    assert json.loads((out_dir / "screener.json").read_text())["status"] == "ready"
+
+
+def test_every_real_stagedata_artifact_publishes(tmp_path):
+    """REGRESSION PIN (Wave 8 §8): the publication validator must not silently
+    freeze healthy surfaces.
+
+    An earlier draft required a `schema` key, which skipped the five earnings /
+    ec_industry artifacts whose producer (`engine/earnings_qual.py`) stamps
+    `surface` instead — five live surfaces would have stopped refreshing with
+    nothing louder than a log line. This walks the REAL artifact names and gives
+    each a producer-realistic payload (half `schema`-stamped, half
+    `surface`-stamped) and asserts every one of them lands in site/stagedata/.
+    """
+    from scripts.build_stage_analysis_page import _STAGEDATA_FILES, _copy_stagedata
+
+    data_dir = tmp_path / "data"
+    src = data_dir / "stage_analysis"
+    src.mkdir(parents=True)
+    site_dir = tmp_path / "site"
+
+    for i, name in enumerate(_STAGEDATA_FILES):
+        key = "schema" if i % 2 == 0 else "surface"
+        (src / name).write_text(json.dumps({key: name.replace(".json", ".v1"),
+                                            "rows": []}))
+
+    copied, revoked, stale = _copy_stagedata(data_dir, site_dir)
+
+    assert copied == len(_STAGEDATA_FILES), (
+        f"only {copied} of {len(_STAGEDATA_FILES)} artifacts published — the "
+        "validator is freezing healthy surfaces")
+    assert revoked == 0
+    for name in _STAGEDATA_FILES:
+        assert (site_dir / "stagedata" / name).exists(), f"{name} did not publish"
+
+
+def test_corrupt_or_empty_stagedata_is_not_published(tmp_path):
+    """The validator still has to do its actual job: truncated/corrupt bytes and
+    an empty object must not reach the public path."""
+    from scripts.build_stage_analysis_page import _copy_stagedata
+
+    data_dir = tmp_path / "data"
+    src = data_dir / "stage_analysis"
+    src.mkdir(parents=True)
+    site_dir = tmp_path / "site"
+
+    (src / "screener.json").write_text('{"schema": "stage_screener.v1", "rows": [')  # truncated
+    (src / "industry_ranks.json").write_text("{}")                                   # empty object
+    (src / "stage_board_daily.json").write_text(json.dumps({"schema": "ok", "n": 1}))
+
+    copied, _revoked, _stale = _copy_stagedata(data_dir, site_dir)
+
+    assert not (site_dir / "stagedata" / "screener.json").exists()
+    assert not (site_dir / "stagedata" / "industry_ranks.json").exists()
+    assert (site_dir / "stagedata" / "stage_board_daily.json").exists()
+    assert copied == 1
+
+
+# ---------------------------------------------------------------------------
+# Wave 8 §3 — stale-row treatment + the mobile clock overflow fix
+# ---------------------------------------------------------------------------
+def test_stale_rows_get_a_visible_stale_chip_in_the_client():
+    """A stale row must SAY it is stale, not merely lack a rank.
+
+    Browser-verified: SILA renders `stale 2026-06-26` with a rank of `—`. The
+    fields shipped in screener.json from day one, but nothing rendered them —
+    this pins the client wiring so the provenance cannot go dark again.
+    """
+    html = _render_with_fixture()
+    assert "staleChip" in html, "the stale-chip renderer is missing"
+    assert ".staletag{" in html, "the stale-chip style is missing"
+    # Gated on observation currentness, NOT on `source` — those are different
+    # facts and conflating them is the defect this wave exists to fix.
+    assert "row.stage_current!==false" in html
+    assert "Last Stage read" in html
+    assert "最近阶段判定" in html
+    # It must be wired into BOTH row renderers (screener table + stage board).
+    assert html.count("staleChip(r)") >= 2, (
+        "staleChip must be wired into the screener AND the board renderer")
+
+
+def test_hero_clock_can_wrap_on_narrow_viewports():
+    """The Wave 8 clock is far longer than the retired "Priced <date>" label.
+
+    Measured at 375px before the fix: `.asof` scrollWidth 374px inside a 347px
+    `.pghead`, clipping the second date, "Weekly stage read" and "unknown". The
+    nowrap must be lifted on narrow viewports while each clause stays intact.
+    """
+    html = _render_with_fixture()
+    assert "@media (max-width:760px)" in html
+    assert ".pghead .asof{white-space:normal" in html
+    assert ".asof .clk{display:inline-block}" in html
+    # Dates themselves must never break mid-token.
+    assert ".asof b{" in html and "white-space:nowrap}" in html

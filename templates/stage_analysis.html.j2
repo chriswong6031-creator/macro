@@ -111,8 +111,19 @@ a{color:var(--ink-link, var(--link));text-decoration:none}
 .pghead h1{margin:0;font-size:23px;font-weight:800;letter-spacing:-.02em;color:var(--text);
   font-family:var(--font-display)}
 .pghead .sub{margin:5px 0 0;font-size:13px;color:var(--muted-strong);max-width:52ch;line-height:1.55}
-.asof{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap}
-.asof b{color:var(--text);font-weight:700}
+/* `white-space:nowrap` was safe for the old one-word "Priced <date>" label, but
+   the Wave 8 clock ("Stage week ended <date> · source tape through <date>") plus
+   the coverage receipt are far longer and overflowed the viewport at 375px —
+   measured .asof scrollWidth 374px inside a 347px .pghead, clipping the second
+   date, "Weekly stage read" and "unknown". Wrap on narrow viewports; keep each
+   clause and its date together so a line never breaks mid-phrase. */
+.asof{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap;
+  max-width:100%;min-width:0}
+.asof b{color:var(--text);font-weight:700;white-space:nowrap}
+.asof .clk{display:inline-block}
+@media (max-width:760px){
+  .pghead .asof{white-space:normal;text-align:left;width:100%}
+}
 
 /* =====================================================================
    HERO — the stage arc (signature). An idealised Weinstein cycle with the
@@ -287,6 +298,15 @@ tr.open .exp-btn{transform:rotate(90deg);color:var(--ink-info, var(--info))}
   color:color-mix(in srgb,var(--s3) 78%,var(--text));
   background:color-mix(in srgb,var(--s3) 10%,transparent)}
 html[data-theme="light"] .seedtag{color:color-mix(in srgb,var(--s3) 55%,var(--text))}
+/* Wave 8 §3 — a stale row stays browseable but must SAY it is stale. Same chip
+   idiom as .seedtag, warmer hue so "old reading" reads differently from
+   "seed universe". The row also carries no rating (rank is withheld upstream). */
+.staletag{display:inline-block;margin-left:5px;font-size:9.5px;font-weight:700;letter-spacing:.04em;
+  padding:1px 6px;border-radius:5px;vertical-align:middle;cursor:help;
+  border:1px solid color-mix(in srgb,var(--s4) 34%,var(--line));
+  color:color-mix(in srgb,var(--s4) 78%,var(--text));
+  background:color-mix(in srgb,var(--s4) 10%,transparent)}
+html[data-theme="light"] .staletag{color:color-mix(in srgb,var(--s4) 55%,var(--text))}
 .addbtn{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:7px;
   width:24px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0}
 .addbtn:hover{color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 45%,var(--line))}
@@ -663,8 +683,10 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
          retired "Priced <asof>" label. `asof` (build date) may still appear
          as technical provenance elsewhere, but never labelled "Priced". #}
       {% if target_stage_week %}
-        <span class="l-en">Stage week ended <b>{{ target_stage_week }}</b>{% if data_session %} · source tape through <b>{{ data_session }}</b>{% endif %}</span>
-        <span class="l-zh">阶段周截至 <b>{{ target_stage_week }}</b>{% if data_session %} · 数据行情至 <b>{{ data_session }}</b>{% endif %}</span>
+        {# Each clause is its own inline-block so a narrow viewport wraps BETWEEN
+           the two clocks rather than mid-phrase (the 375px overflow fix). #}
+        <span class="l-en"><span class="clk">Stage week ended <b>{{ target_stage_week }}</b></span>{% if data_session %} <span class="clk">· source tape through <b>{{ data_session }}</b></span>{% endif %}</span>
+        <span class="l-zh"><span class="clk">阶段周截至 <b>{{ target_stage_week }}</b></span>{% if data_session %} <span class="clk">· 数据行情至 <b>{{ data_session }}</b></span>{% endif %}</span>
       {% elif asof %}
         <span class="l-en">Build <b>{{ asof }}</b></span><span class="l-zh">构建于 <b>{{ asof }}</b></span>
       {% endif %}
@@ -1094,6 +1116,19 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
     if(row.source!=='seed')return '';
     return ' <span class="seedtag" data-tip-en="Seed data from the EquityDesk backfill — non-US names have no live price feed yet, so this stage read is historical, not fresh." data-tip-zh="来自 EquityDesk 回填的种子数据 —— 非美股暂无实时行情，此阶段判定为历史数据，非最新。">'+TT('seed','种子')+'</span>';
   }
+  /* Wave 8 §3 — observation currentness, which is a DIFFERENT fact from
+     `source`. `source==='live'` means our own classifier rather than the seed;
+     it says nothing about whether the reading is current. A stale row keeps its
+     lifecycle fields (a name can legitimately be `fresh` — early in Stage 2 —
+     while its last reading is weeks old) but carries no current rank, so the
+     chip states the actual Stage week it was last read at. */
+  function staleChip(row){
+    if(row.stage_current!==false)return '';
+    var wk=row.stage_week_end||row.stage_source_asof;
+    var en='Last Stage read '+(wk||'unknown')+' · stale';
+    var zh='最近阶段判定 '+(wk||'未知')+' · 已过时';
+    return ' <span class="staletag" data-tip-en="'+esc(en)+' — this name stopped updating, so it is shown as last-known context and is excluded from today\'s counts, ranks and market weather." data-tip-zh="'+esc(zh)+' —— 该股已停止更新，仅作最近已知情况展示，不计入当日统计、排名与市场天气。">'+TT('stale '+(wk||''),'过时 '+(wk||''))+'</span>';
+  }
   function passFilters(row){
     if(regionOf(row)!==region)return false;
     if(search){var s=search.toLowerCase();if((row.ticker||'').toLowerCase().indexOf(s)<0&&(row.name||'').toLowerCase().indexOf(s)<0)return false;}
@@ -1165,7 +1200,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
       return '<tr data-tk="'+esc(r.ticker)+'">'+
         '<td class="sticky-l"><button class="exp-btn" aria-label="Expand '+esc(r.ticker)+'" aria-expanded="false">▶</button></td>'+
         '<td class="sticky-l"><span class="tk">'+esc(r.ticker)+'</span></td>'+
-        '<td><span class="nm">'+nm+'</span>'+seedChip(r)+'</td>'+
+        '<td><span class="nm">'+nm+'</span>'+seedChip(r)+staleChip(r)+'</td>'+
         '<td><span class="ind">'+ind+'</span></td>'+
         '<td class="num">'+pctileChip(r.industry_percentile)+'</td>'+
         '<td class="num">'+sataChip(r.sata_score)+'</td>'+
@@ -1384,7 +1419,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
       var ev=r.event?'<span class="evchip">'+eventLabel(r.event)+'</span>':'';
       return '<tr>'+
         '<td class="sticky-l"><span class="tk" data-tip-en="'+esc(tdEn)+'" data-tip-zh="'+esc(tdZh)+'">'+esc(r.ticker)+'</span></td>'+
-        '<td><span class="nm">'+displayName(r)+'</span>'+seedChip(r)+' '+ev+bl+'</td>'+
+        '<td><span class="nm">'+displayName(r)+'</span>'+seedChip(r)+staleChip(r)+' '+ev+bl+'</td>'+
         '<td>'+stageChip(r)+'</td>'+
         '<td class="num">'+(r.weeks_in_stage==null?'—':r.weeks_in_stage)+'</td>'+
         '<td><span class="rschip '+pv[2]+'">'+LT(pv[0],pv[1])+'</span></td>'+
@@ -1512,7 +1547,26 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
     return {head:head,body:body,legend:legend};
   }
 
+  function indHeatHistoryNote(){
+    /* Wave 8 §7.4 — the heatmap now accrues from house-native weekly history
+       (industry_rank_history.jsonl) rather than the absent EquityDesk seed.
+       Render the accrual/unavailable state honestly: never a blank panel
+       that reads as healthy, and never a fabricated 26 weeks. */
+    var h=IND.heat&&IND.heat.history;
+    if(!h)return null;
+    if(h.status==='unavailable'){
+      return '<div class="empty soon"><div class="ico">📈</div><h3>'+TT('Rank history unavailable','排名历史暂不可用')+'</h3><p>'+TT('No house-native weekly rank history has accrued yet. Check back after the next completed Stage week.','尚未累积任何自建的每周排名历史。请在下一个已完成的阶段周后再来查看。')+'</p></div>';
+    }
+    if(h.status==='accruing'){
+      var n=h.weeks_available||0,tgt=h.weeks_target||26,fw=esc(h.first_week||'—');
+      return '<p class="subcap accruing-note">'+TT('Rank history accruing from '+fw+' — '+n+' of '+tgt+' weeks','排名历史自'+fw+'起累积 —— '+tgt+'周中的第'+n+'周')+'</p>';
+    }
+    return null;
+  }
   function indHeatmap(){
+    var hstatus=indHeatHistoryNote();
+    var h=IND.heat&&IND.heat.history;
+    if(h&&h.status==='unavailable')return hstatus;
     var map=IND.heat&&IND.heat.regions;if(!map)return indEmpty();
     var g=heatGrid(map,function(row){
       return (row.ranks||[]).map(function(rk){
@@ -1522,7 +1576,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
       }).join('');
     },false,74);
     if(g.head===undefined)return indEmpty();
-    return '<p class="subcap"><b>'+LT('Where each industry ranked, week by week.','每个行业逐周的排名。')+'</b> '+LT('Each cell is that industry’s rank that Friday (1 = strongest). Most-recent week on the left.','每格是该行业当周五的排名（1＝最强）。最新一周在左。')+'</p>'+
+    return (hstatus||'')+'<p class="subcap"><b>'+LT('Where each industry ranked, week by week.','每个行业逐周的排名。')+'</b> '+LT('Each cell is that industry’s rank that Friday (1 = strongest). Most-recent week on the left.','每格是该行业当周五的排名（1＝最强）。最新一周在左。')+'</p>'+
       '<div class="heatscroll"><table class="heat"><thead>'+g.head+'</thead><tbody>'+g.body+'</tbody></table></div>'+
       '<div class="heatlegend"><span>'+LT('rank 1 (best)','排名1（最佳）')+'</span><span class="grad"></span><span>'+LT('rank 74 (worst)','排名74（最差）')+'</span></div>';
   }
