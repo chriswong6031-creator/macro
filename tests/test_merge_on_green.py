@@ -1295,21 +1295,67 @@ def test_standing_holds_are_never_squash_merged(monkeypatch):
     assert not [call for call in calls if call[1].endswith("/merge")]
 
 
-# --- recorded-hold guard (2026-08-20, PR #6109) ----------------------------------
+# --- recorded-hold guard (2026-08-20, PR #6109; adversarial fix set 2026-08-21) --
 #
 # #6109 carried an explicit HOLD-FOR-SOL comment from its author and was squash-
 # merged anyway by the shared account, with no release comment. Fleet law already
 # says a recorded hold binds every merge path (`DEC:SOL-HOLD-IS-A-MERGE-BARRIER`);
 # these tests pin the automation that now enforces it.
+#
+# PR #6149's first cut matched a hold marker ANYWHERE in the text (`re.search`),
+# which a live-corpus adversarial review (scratchpad/rev6149) falsified: ordinary
+# PROSE ABOUT a hold — a records/handoff PR narrating the #6109 incident, or this
+# very guard's own PR body explaining what it does — matched exactly as hard as a
+# genuine declared hold. The fix set below (line-start marker contract, release
+# precedence, quote-reply/bot-forgery closes, body-release asymmetry, cap-vs-error
+# distinction, blocked_names isolation, and steady-state zero-label-churn) is
+# tested here; several tests below are literal ports of the reviewer's own
+# adversarial cases (scratchpad/rev6149/test_attack_6149.py), inverted where the
+# fix changes the correct answer and left as regression coverage where it does not
+# (documented per case).
 
 
 def test_recorded_hold_pure_function_matches_and_releases():
     """`MOG.recorded_hold` in isolation: no network, every marker/timestamp case."""
-    # A body-carried hold, several marker spellings.
+    # A body-carried hold, several marker spellings, ALL at the start of their line.
     assert MOG.recorded_hold("HOLD-FOR-SOL: pending review", []) == "HOLD-FOR-SOL"
     assert MOG.recorded_hold("hold-for-ops until Monday", []) == "hold-for-ops"
-    assert MOG.recorded_hold("please do NOT   merge  this", []) == "do NOT   merge"
+    assert MOG.recorded_hold("do NOT   merge  this repo", []) == "do NOT   merge"
+    assert MOG.recorded_hold("HELD FOR SOL — draft, unarmed", []) == "HELD FOR SOL"
+    assert MOG.recorded_hold("HOLD — merge-on-green disarmed", []) == "HOLD —"
     assert MOG.recorded_hold("nothing to see here", []) is None
+    # ...but NOT mid-sentence (item B1 — the defect the corpus review found).
+    assert MOG.recorded_hold("please do NOT merge this today", []) is None
+    assert (
+        MOG.recorded_hold("a ratified `HOLD-FOR-SOL` PR must remain draft", [])
+        is None
+    )
+
+    # A **bold** span is a second valid marker position (item B1) — this corpus's
+    # own convention for an inline status label, verbatim from PR #6080's body:
+    # `**Program:** X · **HELD FOR SOL — draft, unarmed, do NOT merge** (...)`.
+    assert (
+        MOG.recorded_hold(
+            "**Program:** `WS:ADVANCED-DATA-OPTIONS` · **HELD FOR SOL — draft, "
+            "unarmed, do NOT merge** (release condition: Sol PASS).",
+            [],
+        )
+        == "HELD FOR SOL"
+    )
+    # A backtick IS one of the stripped leading-decoration characters (item B1's
+    # literal list: '#', '*', '-', whitespace, backticks), so a marker wrapped in
+    # backticks AT THE START of its own line still matches after the strip...
+    assert (
+        MOG.recorded_hold("`HOLD-FOR-SOL` is the marker, line-start", [])
+        == "HOLD-FOR-SOL"
+    )
+    # ...but a backtick span used MID-SENTENCE (not at line start, and not a
+    # **bold** span either) is not a marker position — matches #6146's real
+    # `` `HOLD-FOR-SOL` `` mid-sentence usage above, which stays a false positive.
+    assert (
+        MOG.recorded_hold("this is just an inline code mention: `HOLD-FOR-SOL`", [])
+        is None
+    )
 
     # A comment-carried hold, no release.
     assert (
@@ -1344,8 +1390,28 @@ def test_recorded_hold_pure_function_matches_and_releases():
         == "HOLD-FOR-SOL"
     )
 
+    # RELEASE OUTRANKS HOLD WITHIN ONE COMMENT (item M1(a)): "HOLD-RELEASED" itself
+    # satisfies the generic `HOLD\s*[—:-]` hold sub-pattern, and a release comment
+    # that also NAMES the hold ("...the HOLD-FOR-SOL is lifted") must not register
+    # as its own hold at its own timestamp — that made a release un-out-race-able
+    # against itself, the exact defect the live corpus's natural release sentence
+    # exposed (reviewer case F1b).
+    assert (
+        MOG.recorded_hold(
+            "no hold in the body",
+            [
+                {"body": "HOLD-FOR-SOL", "created_at": "2026-08-20T10:00:00Z"},
+                {
+                    "body": "HOLD-RELEASED — the HOLD-FOR-SOL is lifted.",
+                    "created_at": "2026-08-20T12:00:00Z",
+                },
+            ],
+        )
+        is None
+    )
+
     # A body-only hold is released by ANY release comment — there is no comment
-    # timestamp on the body side to out-race.
+    # timestamp on the body side to out-race (item M1(c); the vacuous case).
     assert (
         MOG.recorded_hold(
             "HOLD-FOR-SOL in the body only",
@@ -1360,9 +1426,89 @@ def test_recorded_hold_pure_function_matches_and_releases():
         )
         is None
     )
+    # ...but a comment posted AFTER that release re-arms the body hold — the
+    # release must be the NEWEST non-excluded comment, not merely a past one
+    # (item M1(c), the accepted-trade-off half; also closes reviewer case F1:
+    # a quote-reply "release" whose only unquoted content is chatter, not an
+    # actual HOLD-RELEASED line, must not count).
+    assert (
+        MOG.recorded_hold(
+            "HOLD-FOR-SOL in the body only",
+            [
+                {"body": "HOLD-RELEASED", "created_at": "2026-08-19T00:00:00Z"},
+                {"body": "unrelated later chatter", "created_at": "2026-08-19T01:00:00Z"},
+            ],
+        )
+        == "HOLD-FOR-SOL"
+    )
 
-    # The guard's own comment (quoting the marker back at the reader) must never
-    # register as a fresh hold — without this exclusion the block could never clear.
+    # '>'-QUOTED LINES NEVER HOLD OR RELEASE (item M1(b)) — GitHub's "Quote reply"
+    # prefixes every quoted line with '> ', so a good-faith quote-reply of the
+    # guard's own explanation (which necessarily contains the matched marker in a
+    # backtick span, not even a bold one) can never register as a fresh hold, and
+    # a quote-reply of a HOLD-RELEASED comment can never register as a release.
+    assert (
+        MOG.recorded_hold(
+            "",
+            [
+                {"body": "HOLD-FOR-SOL", "created_at": "2026-08-20T10:00:00Z"},
+                {
+                    "body": "> HOLD-FOR-SOL\n> matched marker: `HOLD-FOR-SOL`\n\n"
+                    "HOLD-RELEASED — audit done.",
+                    "created_at": "2026-08-20T12:00:00Z",
+                },
+            ],
+        )
+        is None
+    )
+    assert (
+        MOG.recorded_hold(
+            "",
+            [
+                {"body": "HOLD-RELEASED", "created_at": "2026-08-20T10:00:00Z"},
+                {
+                    "body": "> HOLD-RELEASED\n\nHOLD-FOR-SOL — quoting doesn't count.",
+                    "created_at": "2026-08-20T12:00:00Z",
+                },
+            ],
+        )
+        == "HOLD-FOR-SOL"
+    )
+
+    # UNDATED holds/releases (item m5): an undated hold is cleared by ANY dated
+    # release; an undated release clears nothing (it cannot be proven "later").
+    assert (
+        MOG.recorded_hold(
+            "",
+            [{"body": "HOLD-FOR-SOL", "created_at": None}],
+        )
+        == "HOLD-FOR-SOL"
+    )
+    assert (
+        MOG.recorded_hold(
+            "",
+            [
+                {"body": "HOLD-FOR-SOL", "created_at": None},
+                {"body": "HOLD-RELEASED", "created_at": "2026-08-20T10:00:00Z"},
+            ],
+        )
+        is None
+    )
+    assert (
+        MOG.recorded_hold(
+            "",
+            [
+                {"body": "HOLD-FOR-SOL", "created_at": "2026-08-20T10:00:00Z"},
+                {"body": "HOLD-RELEASED", "created_at": None},
+            ],
+        )
+        == "HOLD-FOR-SOL"
+    )
+
+    # THE GUARD'S OWN COMMENT (item m6): only a BOT-authored sentinel comment is
+    # excluded from every match. A human-authored (forged) sentinel comment is
+    # scanned NORMALLY — it neither suppresses a real hold's visibility nor hides
+    # a hold marker smuggled inside it (reviewer cases F5, F5b).
     assert (
         MOG.recorded_hold(
             "no hold in the body",
@@ -1370,11 +1516,97 @@ def test_recorded_hold_pure_function_matches_and_releases():
                 {
                     "body": f"{MOG.HOLD_GUARD_SENTINEL} matched marker: `HOLD-FOR-SOL`",
                     "created_at": "2026-08-20T10:00:00Z",
+                    "user": {"type": "Bot"},
                 }
             ],
         )
         is None
-    )
+    ), "a BOT-authored sentinel comment is the guard's own and is excluded"
+    assert (
+        MOG.recorded_hold(
+            "no hold in the body",
+            [
+                {
+                    "body": MOG.HOLD_GUARD_SENTINEL + "\nHOLD-FOR-SOL",
+                    "created_at": "2026-08-20T10:00:00Z",
+                }
+            ],
+        )
+        == "HOLD-FOR-SOL"
+    ), "a non-bot (forged) sentinel comment is scanned normally — smuggling fails"
+
+
+def test_corpus_false_positives_never_match(monkeypatch):
+    """Verbatim excerpts from real open PR bodies (scratchpad/rev6149/open_prs.json,
+    fetched 2026-08-20) that MENTION a hold in prose but do not DECLARE one. Every
+    one of these is a live PR — #6149 is this guard's own — so a false positive
+    here would have self-held the guard's own PR, or blocked three unrelated
+    records/handoff PRs, on the day this fix shipped."""
+    # #6149 (this PR's own original body — the self-referential defect, item B1).
+    assert MOG.recorded_hold(
+        "On 2026-08-20 PR #6109 carried an explicit HOLD-FOR-SOL comment from its "
+        "author, and was squash-merged anyway by the shared account.",
+        [],
+    ) is None
+    assert MOG.recorded_hold(
+        "- New pure function `recorded_hold(body, comments) -> str | None`. "
+        "Matches `\\bHOLD-FOR-[A-Z0-9_-]+` or `\\bDO\\s+NOT\\s+MERGE\\b` "
+        "(case-insensitive) in the PR body or any issue comment.",
+        [],
+    ) is None
+    # #6143 (records PR narrating the incident in its handoff note).
+    assert MOG.recorded_hold(
+        "Process note carried in the handoff: #6109 was merged over a recorded "
+        "HOLD-FOR-SOL by the shared account with no release comment.",
+        [],
+    ) is None
+    # #6146 (fix PR quoting the DEC and describing the hold PROTOCOL, not holding).
+    assert MOG.recorded_hold(
+        "`DEC:SOL-HOLD-IS-A-MERGE-BARRIER` requires a ratified `HOLD-FOR-SOL` PR "
+        "to remain draft, disarmed, and unmerged until Sol releases it.",
+        [],
+    ) is None
+    assert MOG.recorded_hold("1. title starts `HOLD-FOR-SOL`;", []) is None
+    assert MOG.recorded_hold("6. hold record explicitly says do not merge;", []) is None
+    # #6151 (records PR mentioning another PR's gate in passing).
+    assert MOG.recorded_hold(
+        "Mastermind #100 currently implements PR-A under HOLD-FOR-SOL; Sol "
+        "requested one bounded shared-normalizer repair.",
+        [],
+    ) is None
+
+
+def test_corpus_true_positives_match(monkeypatch):
+    """Verbatim/close excerpts of REAL declared holds from the same corpus."""
+    # #6109's actual hold comment body (pr6109_comments.json) — a plain sentence
+    # beginning with the marker, no decoration needed.
+    assert MOG.recorded_hold(
+        "",
+        [{
+            "body": (
+                "HOLD-FOR-SOL — do not merge. Sol verdict 2026-08-20: A1A is NOT "
+                "accepted; merge-on-green disarmed on Sol's explicit directive."
+            ),
+            "created_at": "2026-08-20T18:52:45Z",
+            "user": {"login": "chriswong6031-creator", "type": "User"},
+        }],
+    ) == "HOLD-FOR-SOL"
+    # #6080's body — the marker is inside a **bold** span, not at physical
+    # line-start (see the pure-function test above for the isolated case).
+    assert MOG.recorded_hold(
+        "**Program:** `WS:ADVANCED-DATA-OPTIONS` · **HELD FOR SOL — draft, "
+        "unarmed, do NOT merge** (release condition: Sol PASS on this PR; "
+        "authority: Sol AD-1C0.1 handoff §4; per `DEC:SOL-HOLD-IS-A-MERGE-BARRIER`).",
+        [],
+    ) == "HELD FOR SOL"
+    # A #6143-style hold comment using the bare `HOLD —` vocabulary.
+    assert MOG.recorded_hold(
+        "",
+        [{
+            "body": "HOLD — merge-on-green disarmed pending Sol review of the FX latch.",
+            "created_at": "2026-08-20T12:00:00Z",
+        }],
+    ) == "HOLD —"
 
 
 def test_a_hold_in_the_body_blocks_the_merge_and_comments_exactly_once(
@@ -1454,7 +1686,7 @@ def test_a_release_older_than_a_later_hold_does_not_unblock(monkeypatch):
     assert not [call for call in calls if call[1].endswith("/merge")]
 
 
-def test_a_prior_hold_guard_comment_is_not_duplicated(monkeypatch):
+def test_a_prior_bot_hold_guard_comment_is_not_duplicated(monkeypatch):
     calls = _fake_api(
         monkeypatch,
         check_pages={
@@ -1466,6 +1698,7 @@ def test_a_prior_hold_guard_comment_is_not_duplicated(monkeypatch):
                 "body": f"{MOG.HOLD_GUARD_SENTINEL} **not merging.** matched marker: "
                 "`HOLD-FOR-SOL`",
                 "created_at": "2026-08-20T22:05:00Z",
+                "user": {"type": "Bot"},
             }
         ],
     )
@@ -1474,7 +1707,34 @@ def test_a_prior_hold_guard_comment_is_not_duplicated(monkeypatch):
     comments = [
         call for call in calls if call[0] == "POST" and call[1].endswith("/comments")
     ]
-    assert not comments, "a prior hold-guard comment must suppress a duplicate"
+    assert not comments, "a prior BOT-authored hold-guard comment must suppress a duplicate"
+
+
+def test_a_forged_non_bot_sentinel_comment_does_not_suppress_the_explanation(
+    monkeypatch,
+):
+    """item m6 — the reviewer's forgery case (F5): a comment merely STARTING WITH
+    the sentinel text, posted by a human (no `user.type == "Bot"`), is not the
+    guard's own — it must not silence a genuine explanation."""
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        pull_payload={"body": "HOLD-FOR-SOL"},
+        hold_comments=[
+            {
+                "body": MOG.HOLD_GUARD_SENTINEL + " nothing to see here",
+                "created_at": "2026-08-20T09:00:00Z",
+            }
+        ],
+    )
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "recorded-hold"
+    comments = [
+        call for call in calls if call[0] == "POST" and call[1].endswith("/comments")
+    ]
+    assert len(comments) == 1, "a forged (non-bot) sentinel must not suppress the explanation"
 
 
 def test_no_recorded_hold_leaves_the_merge_path_unchanged(monkeypatch):
@@ -1509,6 +1769,54 @@ def test_a_red_check_never_spends_the_hold_guards_comments_read(monkeypatch):
     )
 
 
+def test_an_empty_diff_never_spends_the_hold_guards_comments_read(monkeypatch):
+    """item B1-amplifier/F7 — the clobbered-head invariant exits before the
+    probe, so a clobbered/empty-diff head must never spend a comments read."""
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        compare_files=(),
+        pr_files=(),
+    )
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "empty-diff"
+    assert not [c for c in calls if c[0] == "GET" and "/comments?" in c[1]]
+
+
+def test_a_stale_proof_never_spends_the_hold_guards_comments_read(monkeypatch):
+    """item F7 — a head whose exact-proof freshness is stale re-proves (or
+    reproves) before ever reaching the merge step; the probe must not fire."""
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        main_commits=((BEFORE_THE_PROOF, ["engine/signal_quality.py"]),),
+    )
+    freshness = _freshness(
+        commits=((BEFORE_THE_PROOF, ["engine/signal_quality.py"]),)
+    )
+    MOG.sweep_pull("acme/widgets", _pull(), "read", "write", freshness)
+    assert not [c for c in calls if c[0] == "GET" and "/comments?" in c[1]]
+
+
+def test_a_pending_check_never_spends_the_hold_guards_comments_read(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", status="in_progress", conclusion=None)],
+            }
+        },
+    )
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "pending"
+    assert not [c for c in calls if c[0] == "GET" and "/comments?" in c[1]]
+
+
 def test_a_comments_fetch_failure_defers_without_merging(monkeypatch, capsys):
     calls = _fake_api(
         monkeypatch,
@@ -1520,8 +1828,217 @@ def test_a_comments_fetch_failure_defers_without_merging(monkeypatch, capsys):
     verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
     assert verdict == "error"
     assert not [call for call in calls if call[1].endswith("/merge")]
+    assert not [call for call in calls if call[0] in {"POST", "DELETE"}], (
+        "a plain read failure must post no marker at all — see the cap-exceeded "
+        "case below for the DIFFERENT, marker-posting behavior (item m4)"
+    )
     out = capsys.readouterr().out
     assert "unreadable hold state is not permission to merge" in out
+    assert "too many" not in out.lower(), (
+        "a plain read failure must not use the cap-exceeded wording (item m4)"
+    )
+
+
+def test_fetch_issue_comments_distinguishes_cap_exceeded_from_read_error(monkeypatch):
+    """item m4 (reviewer case F6) — every page can read CLEANLY and the function
+    still must not silently pretend nothing is wrong: one comment short of the
+    cap returns the full list; exactly at the cap it RAISES (not `None`), because
+    a plain `None` is indistinguishable from an ordinary HTTP failure and the two
+    need different sweep_pull behavior (item m4)."""
+
+    def pages(n_pages_full: int):
+        def fake_request(method, url, *_a, **_k):
+            page = int(url.rsplit("page=", 1)[1].split("&")[0])
+            if page <= n_pages_full:
+                return 200, [
+                    {"body": "chatter", "created_at": "2026-08-20T10:00:00Z"}
+                ] * 100
+            return 200, []
+
+        return fake_request
+
+    cap = MOG.HOLD_COMMENT_PAGE_CAP
+    monkeypatch.setattr(MOG, "_request", pages(cap - 1))
+    ok = MOG.fetch_issue_comments("acme/widgets", 1, "t")
+    assert ok is not None and len(ok) == (cap - 1) * 100
+
+    monkeypatch.setattr(MOG, "_request", pages(cap))
+    with pytest.raises(MOG.CommentCapExceeded) as excinfo:
+        MOG.fetch_issue_comments("acme/widgets", 1, "t")
+    assert len(excinfo.value.comments) == cap * 100
+
+
+def test_a_cap_exceeded_comment_history_blocks_with_distinct_wording(
+    monkeypatch, capsys
+):
+    """item m4 — unlike the plain read-failure case, a cap-exceeded PR gets
+    BLOCKED (merge-blocked + a one-shot comment naming the count), not silently
+    deferred, and the wording says so distinctly."""
+    cap = MOG.HOLD_COMMENT_PAGE_CAP
+
+    def fake_request(method, url, token, payload=None):
+        if "/check-runs" in url:
+            return 200, {
+                "total_count": 13,
+                "check_runs": _required_proof_runs(),
+            }
+        if "/compare/" in url:
+            return 200, {
+                "base_commit": {"sha": DEFAULT_MAIN_SHA},
+                "files": [{"filename": "engine/signal_quality.py"}],
+            }
+        if "/commits?" in url:
+            return 200, []
+        if method == "GET" and "/git/ref/heads/main" in url:
+            return 200, {"object": {"sha": DEFAULT_MAIN_SHA}}
+        if method == "GET" and "/issues/" in url and "/comments?" in url:
+            page = int(url.rsplit("page=", 1)[1].split("&")[0])
+            if page <= cap:
+                return 200, [
+                    {"body": "chatter", "created_at": "2026-08-20T10:00:00Z"}
+                ] * 100
+            return 200, []
+        if method == "GET" and url.endswith("/pulls/4242"):
+            live = _pull()
+            live.update({"state": "open", "draft": False, "merged": False})
+            return 200, live
+        return 200, {}
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    calls: list = []
+    real_request = MOG._request
+
+    def logging_request(method, url, *a, **k):
+        calls.append((method, url, a[1] if len(a) > 1 else k.get("payload")))
+        return real_request(method, url, *a, **k)
+
+    monkeypatch.setattr(MOG, "_request", logging_request)
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "recorded-hold-unverifiable"
+    assert not [c for c in calls if c[1].endswith("/merge")]
+    labels = [c for c in calls if c[0] == "POST" and c[1].endswith("/labels")]
+    comments = [c for c in calls if c[0] == "POST" and c[1].endswith("/comments")]
+    assert len(labels) == 1
+    assert len(comments) == 1
+    assert str(cap * 100) in comments[0][2]["body"]
+    out = capsys.readouterr().out
+    assert "exceeds HOLD_COMMENT_PAGE_CAP" in out
+
+
+def test_a_held_pr_never_pollutes_blocked_names_or_dispatches_a_baseline(
+    monkeypatch,
+):
+    """item M2 (reviewer cases F2/F2b) — `blocked_names` is the evidence
+    `ensure_main_baseline` uses to decide whether a stale main proof COST
+    anything. A recorded hold is never a check failure, so a held-but-green pull
+    request must never make an idle sweep dispatch a 12-job ci.yml run on main it
+    can never use."""
+    names: set[str] = set()
+    _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        pull_payload={"body": "HOLD-FOR-SOL"},
+    )
+    verdict = MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", _freshness(), blocked_names=names
+    )
+    assert verdict == "recorded-hold"
+    assert names == set(), "a recorded hold must never be written into blocked_names"
+
+    stale = MOG.MainProof(
+        frozenset(),
+        dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=9),
+        "",
+        "old",
+    )
+    dispatch_calls: list = []
+
+    def fake_request(method, url, *_a, **_k):
+        dispatch_calls.append((method, url))
+        if method == "GET" and "/actions/workflows/" in url and "/runs?" in url:
+            return 200, {"workflow_runs": []}
+        if method == "POST" and url.endswith("/dispatches"):
+            return 204, {}
+        raise AssertionError(f"unexpected {method} {url}")
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    got = MOG.ensure_main_baseline("acme/widgets", stale, names, "t")
+    assert got == "not needed (no pull request was blocked on a check)", got
+    assert not dispatch_calls, "an empty blocked_names must order zero API calls"
+
+
+def test_a_steady_state_held_pr_performs_zero_label_writes_per_sweep(monkeypatch):
+    """item m3 (reviewer case F3) — the frozen-payload `_fake_api` fake cannot
+    show label churn (it always answers a fresh live GET with the SAME static
+    payload), so this test MODELS label mutation directly: a DELETE removes the
+    named label from a shared mutable state, a POST /labels appends to it, and
+    every other call delegates to the underlying `_fake_api` fake. A held pull
+    request that already carries `merge-blocked` (from an earlier sweep) plus its
+    BOT-authored explanatory comment must perform NO label writes on a later
+    sweep — the cheap body-only pre-check (`_body_appears_held`) must skip the
+    stale-label cleanup so it never deletes a label the guard is about to
+    re-affirm."""
+    state = {
+        "labels": [{"name": MOG.MERGE_ON_GREEN_LABEL}, {"name": MOG.MERGE_BLOCKED_LABEL}],
+    }
+    _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        pull_payload={"body": "HOLD-FOR-SOL", "labels": state["labels"]},
+        hold_comments=[
+            {
+                "body": MOG.HOLD_GUARD_SENTINEL + " prior explanation",
+                "created_at": "2026-08-20T10:00:00Z",
+                "user": {"type": "Bot"},
+            }
+        ],
+    )
+    inner = MOG._request
+
+    def stateful(method, url, *a, **k):
+        if method == "DELETE" and "/labels/" in url:
+            name = MOG.urllib.parse.unquote(url.rsplit("/", 1)[1])
+            state["labels"] = [l for l in state["labels"] if l["name"] != name]
+        if method == "POST" and url.endswith("/labels"):
+            body = a[1] if len(a) > 1 else k.get("payload") or {}
+            state["labels"] = state["labels"] + [
+                {"name": n} for n in (body.get("labels") or [])
+            ]
+        return inner(method, url, *a, **k)
+
+    monkeypatch.setattr(MOG, "_request", stateful)
+    calls: list = []
+    logged = MOG._request
+
+    def logging(method, url, *a, **k):
+        calls.append((method, url))
+        return logged(method, url, *a, **k)
+
+    monkeypatch.setattr(MOG, "_request", logging)
+    held_pull = _pull(labels=("merge-on-green", "merge-blocked"))
+    held_pull["body"] = "HOLD-FOR-SOL"
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        held_pull,
+        "read",
+        "write",
+        _freshness(),
+    )
+    assert verdict == "recorded-hold", verdict
+    dels = [c for c in calls if c[0] == "DELETE" and "labels" in c[1]]
+    adds = [c for c in calls if c[0] == "POST" and c[1].endswith("/labels")]
+    comments = [c for c in calls if c[0] == "POST" and c[1].endswith("/comments")]
+    assert dels == [], dels
+    assert adds == [], adds
+    assert comments == [], comments
+    assert {l["name"] for l in state["labels"]} == {
+        MOG.MERGE_ON_GREEN_LABEL,
+        MOG.MERGE_BLOCKED_LABEL,
+    }, "net label state must be unchanged, bought with ZERO writes"
 
 
 def test_scoped_unscheduled_packs_are_not_incomplete_on_the_merge_path(
