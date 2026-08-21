@@ -6604,6 +6604,8 @@ jobs:
       - "tests/test_biocatalyst_hydration.py"
       - "tests/biocatalyst_hydration_harness.js"
       - "tests/test_biocatalyst_page.py"
+      - "tests/test_biocatalyst_catalyst_radar.py"
+      - "tests/test_biocatalyst_catalyst_radar_api.py"
       - "tests/test_biocatalyst_peer_api_contract.py"
       - "tests/test_biocatalyst_worker.py"
       - "templates/biocatalyst.js"
@@ -6629,6 +6631,8 @@ jobs:
           tests/test_biocatalyst_peer_api_contract.py
           tests/test_biocatalyst_deploy.py
           tests/test_biocatalyst_page.py
+          tests/test_biocatalyst_catalyst_radar.py
+          tests/test_biocatalyst_catalyst_radar_api.py
           tests/test_biocatalyst_d0b_ui.py
           tests/test_biocatalyst_hydration.py -q
 

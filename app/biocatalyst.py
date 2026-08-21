@@ -162,6 +162,9 @@ _CHANGE_TAPE_AUTHORITY = {
 _PUBLIC_ROOT = Path(
     os.environ.get("BIOCATALYST_PUBLIC_ROOT", "/var/lib/macro-biocatalyst/public")
 )
+# Repo root for the committed sponsor ticker map read (Catalyst Radar, P1-1).
+# app/biocatalyst.py lives at <repo>/app/biocatalyst.py, so one parent up.
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 _PRIVATE_HEADERS = {
     "Cache-Control": "private, no-store",
     "Vary": "Authorization",
@@ -257,6 +260,19 @@ def _verify_serving_runtime() -> None:
     """Fail startup loudly once the operator-provisioned lane exists."""
 
     _publication_runtime()
+
+
+def _catalyst_radar_runtime() -> tuple[dict[str, int | None], tuple[str, ...], Any, Any]:
+    """Load the pure radar projection and the sponsor map loader for this route only."""
+
+    from engine.biocatalyst.catalyst_events import (  # noqa: PLC0415
+        RADAR_EVENT_KINDS,
+        RADAR_HORIZONS,
+        project_trial_milestones,
+    )
+    from engine.biocatalyst.sponsor_identity import load_sponsor_ticker_map  # noqa: PLC0415
+
+    return RADAR_HORIZONS, RADAR_EVENT_KINDS, project_trial_milestones, load_sponsor_ticker_map
 
 
 # The unprovisioned product is intentionally dark and must not force every
@@ -2694,6 +2710,312 @@ def trial_milestones(
                 ),
             },
             "milestones": page,
+        }
+    )
+    return _response(payload)
+
+
+_CATALYST_RADAR_MILESTONE_KINDS = frozenset(("all", "primary_completion", "completion"))
+_CATALYST_RADAR_CURSOR_VERSION = "cr1"
+_CATALYST_RADAR_CURSOR_DOMAIN = b"macro-biocatalyst:catalyst-radar:cursor-key:v1"
+_CATALYST_RADAR_CURSOR_PROCESS_KEY = os.urandom(32)
+
+
+def _catalyst_radar_query_binding(
+    *,
+    horizon: str,
+    milestone_kind: str,
+    q: str | None,
+    phase: str | None,
+    status: str | None,
+    condition: str | None,
+    limit: int,
+) -> dict[str, Any]:
+    """Return only normalized selection inputs for an endpoint-local cursor."""
+
+    return {
+        "horizon": horizon,
+        "milestone_kind": milestone_kind,
+        "q": q.casefold() if q else None,
+        "phase": phase.casefold() if phase else None,
+        "status": status.casefold() if status else None,
+        "condition": condition.casefold() if condition else None,
+        "limit": limit,
+    }
+
+
+def _catalyst_radar_cursor_key() -> bytes:
+    """Return a private cursor key without imposing a deployment secret.
+
+    Mirrors ``_milestone_cursor_key`` with its own domain separation string so
+    a radar cursor and a milestones cursor can never be swapped for each
+    other.
+    """
+
+    configured = os.environ.get("BIOCATALYST_CURSOR_SECRET")
+    if configured is None:
+        return _CATALYST_RADAR_CURSOR_PROCESS_KEY
+    try:
+        raw = configured.encode("utf-8")
+    except UnicodeEncodeError:
+        raise _unavailable() from None
+    if len(raw) < 32:
+        raise _unavailable()
+    return hmac.new(raw, _CATALYST_RADAR_CURSOR_DOMAIN, sha256).digest()
+
+
+def _catalyst_radar_cursor_payload(
+    offset: int,
+    *,
+    generation_digest: str,
+    query_digest: str,
+) -> bytes:
+    return ":".join(
+        (
+            _CATALYST_RADAR_CURSOR_VERSION,
+            str(offset),
+            generation_digest,
+            query_digest,
+        )
+    ).encode("ascii")
+
+
+def _encode_catalyst_radar_cursor(
+    offset: int,
+    *,
+    generation_id: str,
+    query_binding: Mapping[str, Any],
+    cursor_key: bytes | None = None,
+) -> str:
+    """Encode a signed endpoint-only cursor without raw query or generation data."""
+
+    if not isinstance(offset, int) or isinstance(offset, bool) or offset < 0:
+        raise ValueError("offset must be a non-negative integer")
+    payload = _catalyst_radar_cursor_payload(
+        offset,
+        generation_digest=_opaque_digest({"generation_id": generation_id}),
+        query_digest=_opaque_digest(dict(query_binding)),
+    )
+    key = cursor_key if cursor_key is not None else _catalyst_radar_cursor_key()
+    signature = hmac.new(key, payload, sha256).hexdigest()
+    raw = payload + b":" + signature.encode("ascii")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def _decode_catalyst_radar_cursor(
+    cursor: str | None,
+    *,
+    cursor_key: bytes | None = None,
+) -> tuple[int, str | None, str | None]:
+    """Authenticate syntax before the public read; bindings are checked separately."""
+
+    if not cursor:
+        return 0, None, None
+    if len(cursor) > 384 or not re.fullmatch(r"[A-Za-z0-9_-]+", cursor):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    try:
+        raw = base64.urlsafe_b64decode((cursor + "=" * (-len(cursor) % 4)).encode("ascii"))
+        version, offset_text, generation_digest, query_digest, signature = raw.decode(
+            "ascii"
+        ).split(":")
+        offset = int(offset_text)
+    except (ValueError, UnicodeError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS) from exc
+    if (
+        version != _CATALYST_RADAR_CURSOR_VERSION
+        or not re.fullmatch(r"[0-9]+", offset_text)
+        or offset < 0
+        or not re.fullmatch(r"[0-9a-f]{64}", generation_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", query_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", signature)
+    ):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    payload = _catalyst_radar_cursor_payload(
+        offset,
+        generation_digest=generation_digest,
+        query_digest=query_digest,
+    )
+    key = cursor_key if cursor_key is not None else _catalyst_radar_cursor_key()
+    expected_signature = hmac.new(key, payload, sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected_signature):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    return offset, generation_digest, query_digest
+
+
+@router.get("/api/biocatalyst/v1/catalyst-radar")
+def catalyst_radar(
+    horizon: str = "next_365d",
+    milestone_kind: str = "all",
+    q: str | None = None,
+    phase: str | None = None,
+    status: str | None = None,
+    condition: str | None = None,
+    cursor: str | None = None,
+    limit: str = "50",
+    _user: dict = Depends(require_site_full_user),
+) -> JSONResponse:
+    """List Trial Milestone Radar events projected from the committed trial cut.
+
+    Every row is a registry SCHEDULE FACT -- a source-recorded primary
+    completion or completion date, honestly precision-bounded and never a
+    market, approval, or catalyst-timing inference.  Projection is delegated
+    entirely to ``engine.biocatalyst.catalyst_events`` (pure, deterministic,
+    frozen contract); this route only authenticates, validates query
+    parameters, reads the committed public cut, and paginates.
+    """
+
+    q = _query_text(q, name="query", maximum=100)
+    phase = _query_text(phase, name="phase", maximum=40)
+    status = _query_text(status, name="status", maximum=40)
+    condition = _query_text(condition, name="condition", maximum=100)
+    radar_horizons, radar_event_kinds, project_trial_milestones, load_sponsor_ticker_map = (
+        _catalyst_radar_runtime()
+    )
+    if horizon not in radar_horizons:
+        raise HTTPException(status_code=400, detail="invalid horizon", headers=_PRIVATE_HEADERS)
+    if milestone_kind not in _CATALYST_RADAR_MILESTONE_KINDS:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid milestone_kind",
+            headers=_PRIVATE_HEADERS,
+        )
+    page_limit = _query_limit(limit)
+
+    query = q.casefold() if q else None
+    phase_value = phase.casefold() if phase else None
+    status_value = status.casefold() if status else None
+    condition_value = condition.casefold() if condition else None
+    query_binding = _catalyst_radar_query_binding(
+        horizon=horizon,
+        milestone_kind=milestone_kind,
+        q=query,
+        phase=phase_value,
+        status=status_value,
+        condition=condition_value,
+        limit=page_limit,
+    )
+    cursor_key = _catalyst_radar_cursor_key()
+    offset, cursor_generation_digest, cursor_query_digest = _decode_catalyst_radar_cursor(
+        cursor,
+        cursor_key=cursor_key,
+    )
+    expected_query_digest = _opaque_digest(query_binding)
+    if cursor_query_digest is not None and not hmac.compare_digest(
+        cursor_query_digest,
+        expected_query_digest,
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="cursor query mismatch",
+            headers=_PRIVATE_HEADERS,
+        )
+
+    projection, operational = _read_bundle()
+    generation_id = getattr(projection.generation, "generation_id", None)
+    if not isinstance(generation_id, str) or not generation_id:
+        raise _unavailable()
+    if cursor_generation_digest is not None and not hmac.compare_digest(
+        cursor_generation_digest,
+        _opaque_digest({"generation_id": generation_id}),
+    ):
+        # Do not expose which generation changed; callers can restart from the
+        # current pointer-bound cut using the same normalized selection.
+        raise HTTPException(
+            status_code=409,
+            detail="trial data changed; restart pagination",
+            headers=_PRIVATE_HEADERS,
+        )
+
+    anchor_date = _generation_as_of_date(projection)
+    horizon_days = radar_horizons[horizon]
+    kinds = radar_event_kinds if milestone_kind == "all" else (milestone_kind,)
+
+    # Sponsor map: loaded AT MOST ONCE per request, and never allowed to turn
+    # this route into a 503.  A deployment without `data/` (or any other
+    # loader failure) degrades every row to the typed sponsor_map_unavailable
+    # issuer state instead of failing the request.
+    try:
+        sponsor_document: Mapping[str, Any] | None = load_sponsor_ticker_map(_REPO_ROOT)
+    except Exception as exc:  # noqa: BLE001 - a pure display degrade, never a 503
+        log.warning(
+            "BioCatalyst sponsor map unavailable for catalyst radar (%s)",
+            type(exc).__name__,
+        )
+        sponsor_document = None
+
+    trials: list[Mapping[str, Any]] = []
+    evidence_by_nct: dict[str, dict[str, Any]] = {}
+    for snapshot in projection.trials:
+        trial = _public_trial(snapshot, detail=False)
+        if not _matches_trial_filters(
+            trial,
+            query=query,
+            phase=phase_value,
+            status=status_value,
+            condition=condition_value,
+        ):
+            continue
+        trials.append(trial)
+        nct_id = trial.get("nct_id")
+        if isinstance(nct_id, str) and nct_id:
+            evidence = _public_milestone_evidence(snapshot)
+            evidence_by_nct[nct_id] = {
+                "url": evidence.get("url"),
+                "coverage": evidence.get("coverage"),
+            }
+
+    projected = project_trial_milestones(
+        trials=trials,
+        anchor_date=anchor_date,
+        horizon_days=horizon_days,
+        kinds=kinds,
+        # No public, in-process read of per-NCT revision rows exists on this
+        # serving path without adding a new I/O path (out of scope for this
+        # slice) -- every row correctly reports history_not_collected.
+        revisions_by_nct={},
+        sponsor_document=sponsor_document,
+        sponsor_as_of=anchor_date.isoformat(),
+        evidence_by_nct=evidence_by_nct,
+    )
+    events = projected.events
+    total = len(events)
+    page = events[offset : offset + page_limit]
+    next_offset = offset + len(page)
+
+    payload = _meta(projection, operational)
+    coverage = dict(payload.get("coverage") or {})
+    coverage["radar"] = dict(projected.coverage)
+    payload.update(
+        {
+            "query": {
+                "horizon": horizon,
+                "milestone_kind": milestone_kind,
+                "q": q,
+                "phase": phase,
+                "status": status,
+                "condition": condition,
+            },
+            "effective_horizon": {
+                "horizon": horizon,
+                "horizon_days": horizon_days,
+                "anchor_date": anchor_date.isoformat(),
+            },
+            "coverage": coverage,
+            "pagination": {
+                "limit": page_limit,
+                "total": total,
+                "next_cursor": (
+                    _encode_catalyst_radar_cursor(
+                        next_offset,
+                        generation_id=generation_id,
+                        query_binding=query_binding,
+                        cursor_key=cursor_key,
+                    )
+                    if next_offset < total
+                    else None
+                ),
+            },
+            "catalyst_radar": [event.as_dict() for event in page],
         }
     )
     return _response(payload)
