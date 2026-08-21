@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import importlib.util
+import tempfile
 from pathlib import Path
 
+import pytest
 import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "fences.yml"
 CANARY_CONTRACT_PATH = ROOT / "tests" / "test_ci_canary_workflows.py"
+HOLD_SUITE_PATH = ROOT / "tests" / "test_ship_loop_hold_wrapper.py"
 
 
 def _document() -> dict:
@@ -21,14 +24,20 @@ def _named_step(job: dict, name: str) -> dict:
     return matches[0]
 
 
-def _load_canary_contract_module():
-    spec = importlib.util.spec_from_file_location(
-        "fence_owned_ci_canary_contract", CANARY_CONTRACT_PATH
-    )
+def _load_module(path: Path, name: str):
+    spec = importlib.util.spec_from_file_location(name, path)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _load_canary_contract_module():
+    return _load_module(CANARY_CONTRACT_PATH, "fence_owned_ci_canary_contract")
+
+
+def _load_hold_suite_module():
+    return _load_module(HOLD_SUITE_PATH, "fence_owned_ship_loop_hold_contract")
 
 
 def test_same_repo_fence_checkout_is_bounded_sparse_and_blob_filtered() -> None:
@@ -96,7 +105,43 @@ def test_hosted_merge_control_canary_contract_executes_in_fast_fence() -> None:
     already-required ``fence-pack`` without copying the assertions or adding a
     parallel CI workflow.
     """
-
     contract = _load_canary_contract_module()
     contract.test_canaries_are_dispatch_only_and_not_merge_authority()
     contract.test_merge_control_hosted_canary_is_read_only_main_pinned_and_non_acting()
+
+
+def test_hold_wrapper_regressions_execute_inside_the_fast_fence() -> None:
+    """Execute the canonical HOLD terminal-state regressions in required fences.
+
+    ``audit_unrun_tests.py`` understands direct legacy-manifest ownership only, so
+    the separate waiver records this intentional transitive fast-fence ownership.
+    This is the executable half: every canonical regression is invoked here rather
+    than copied into a second assertion set.
+    """
+    hold = _load_hold_suite_module()
+    hold.test_exact_sol_hold_protocol_is_recognized()
+    for mutation in (
+        {"draft": False},
+        {"labels": [{"name": "merge-on-green"}]},
+        {"auto_merge": {"merge_method": "SQUASH"}},
+        {"title": "please hold this for later"},
+        {"body": "HOLD-FOR-SOL. Do not merge. Authority: session. Release condition: session."},
+        {"body": "HOLD-FOR-SOL. Do not merge. Authority: Sol. Release condition: CI green."},
+    ):
+        hold.test_incomplete_or_unsafe_hold_fails_closed(mutation)
+    hold.test_markdown_protocol_fields_are_not_required_to_be_plain_text()
+
+    with tempfile.TemporaryDirectory() as raw:
+        tmp_path = Path(raw)
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_lawful_concluded_green_hold_becomes_parked(monkeypatch, tmp_path)
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_red_or_pending_hold_does_not_park(monkeypatch, tmp_path)
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_dirty_or_not_exactly_pushed_hold_does_not_park(monkeypatch, tmp_path)
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_hold_probe_spends_no_github_quota_before_guard_has_reached_unmerged(
+                monkeypatch, tmp_path
+            )
+
+    hold.test_stop_hook_routes_through_wrapper_but_keeps_original_guard_as_delegate()
