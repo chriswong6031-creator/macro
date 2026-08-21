@@ -429,6 +429,16 @@ html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
 .r3-row:hover{ background:color-mix(in srgb, var(--panel2) 62%, transparent); }
 .r3-name{ min-width:0; font-size:var(--fs-md); font-weight:700; letter-spacing:-.008em;
   line-height:1.3; overflow-wrap:anywhere; }
+/* transition mark — a source>destination row draws its arrow, it does not TYPE it.
+   No Unicode arrow, star or glyph is used as a mark anywhere in this system
+   (commission §18); chevrons and arrows are CSS borders. */
+.r3-arrow{ display:inline-block; position:relative; width:19px; height:.62em;
+  margin:0 7px; vertical-align:baseline; color:var(--muted); }
+.r3-arrow::before{ content:""; position:absolute; left:0; top:50%; width:100%;
+  border-top:1.5px solid currentColor; }
+.r3-arrow::after{ content:""; position:absolute; right:0; top:50%; width:6px; height:6px;
+  margin-top:-3px; border-right:1.5px solid currentColor; border-top:1.5px solid currentColor;
+  transform:rotate(45deg); }
 .r3-sub{ display:block; margin-top:2px; font-size:var(--fs-micro); font-weight:600;
   letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
 .r3-fig{ text-align:right; font-size:var(--fs-md); font-weight:700;
@@ -829,13 +839,13 @@ html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
       </div>
       <div class="r3-list">
         <div class="r3-row">
-          <span class="r3-name" data-specimen>Industrials → Health Care<span class="r3-sub"><span class="l-en">Sector</span><span class="l-zh">行业</span></span></span>
+          <span class="r3-name" data-specimen>Industrials<span class="r3-arrow" role="img" aria-label="moved to"></span>Health Care</span>
           <span class="r3-fig tnum" data-specimen>2d</span>
           <span class="r3-why"><span class="l-en">Handoff held for two sessions.</span><span class="l-zh">交棒已持续两个交易日。</span></span>
           <span class="r3-chev" aria-hidden="true"></span>
         </div>
         <div class="r3-row">
-          <span class="r3-name" data-specimen>Energy → Utilities<span class="r3-sub"><span class="l-en">Sector</span><span class="l-zh">行业</span></span></span>
+          <span class="r3-name" data-specimen>Energy<span class="r3-arrow" role="img" aria-label="moved to"></span>Utilities</span>
           <span class="r3-fig tnum" data-specimen>5d</span>
           <span class="r3-why"><span class="l-en">Narrower than the last handoff.</span><span class="l-zh">较上一次交棒更为集中。</span></span>
           <span class="r3-chev" aria-hidden="true"></span>
