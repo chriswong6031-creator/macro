@@ -14,12 +14,14 @@ from engine.fundamental_forensics.broad_sec_store import (
     PREFIX,
     BroadSecError,
     index_latest_key,
+    index_snapshot_key,
     issuer_latest_key,
     latest_complete_key,
     latest_observation_key,
     object_key,
     parse_master_index_archive,
     previous_quarter_reconciliation_due,
+    quarter_id,
 )
 from engine.research_vault.r2_store import LocalStore
 from tests.test_fundamental_forensics_broad_sec import (
@@ -416,6 +418,7 @@ def test_recovery_mode_is_not_commissioned_before_sec_or_r2(tmp_path: Path) -> N
     assert store.list_prefix(PREFIX) == keys_before
     assert store.get_bytes_strict(latest_complete_key()) is None
     assert store.get_bytes_strict(latest_observation_key()) is None
+    # SPEC item 1: index_latest_key is never written.
     assert store.get_bytes_strict(index_latest_key("2026-Q3")) is None
 
 
@@ -436,7 +439,7 @@ def test_pit_cutoff_index_event_is_not_consumed_and_retries(tmp_path: Path) -> N
     fake.set_index([])
     baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
     assert baseline.exit_code == 0
-    baseline_index = _load_json(store, index_latest_key("2026-Q3"))
+    # SPEC item 1: use latest-complete as processed authority (no index_latest_key reads).
     baseline_complete = _load_json(store, latest_complete_key())
     fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-16", accession)])
     fake.submissions[AAPL[1]] = _submissions_bytes(
@@ -460,7 +463,7 @@ def test_pit_cutoff_index_event_is_not_consumed_and_retries(tmp_path: Path) -> N
         item["reason_code"] == "edgar_index_event_not_causally_admitted"
         for item in run1.receipt["failures"]
     )
-    assert _load_json(store, index_latest_key("2026-Q3"))["snapshot_id"] == baseline_index["snapshot_id"]
+    # SPEC item 1: latest-complete must not advance after a failed PIT run.
     assert _load_json(store, latest_complete_key())["run_id"] == baseline_complete["run_id"]
     latest = store.get_bytes_strict(issuer_latest_key(AAPL[1]))
     if latest is not None:
@@ -478,7 +481,7 @@ def test_pit_cutoff_index_event_is_not_consumed_and_retries(tmp_path: Path) -> N
     accessions = [item["accession_number"] for item in manifest["relevant_filings"]]
     assert accessions.count(accession) == 1
     assert accession in manifest["cumulative_relevant_accessions"]
-    assert _load_json(store, index_latest_key("2026-Q3"))["snapshot_id"] != baseline_index["snapshot_id"]
+    # SPEC item 1: latest-complete must advance to run2 (index_latest is never written).
     assert _load_json(store, latest_complete_key())["run_id"] == run2.receipt["run_id"]
 
 
@@ -489,7 +492,7 @@ def test_unevaluable_acceptance_does_not_consume_index_event(tmp_path: Path) -> 
     fake.set_index([])
     baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
     assert baseline.exit_code == 0
-    baseline_index = _load_json(store, index_latest_key("2026-Q3"))
+    baseline_complete = _load_json(store, latest_complete_key())
     fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-12", accession)])
     fake.submissions[AAPL[1]] = _submissions_bytes(
         AAPL[1],
@@ -506,9 +509,9 @@ def test_unevaluable_acceptance_does_not_consume_index_event(tmp_path: Path) -> 
         item["reason_code"] == "edgar_index_event_not_causally_admitted"
         for item in result.receipt["failures"]
     )
-    assert _load_json(store, index_latest_key("2026-Q3"))["snapshot_id"] == baseline_index["snapshot_id"]
+    # SPEC item 1: latest-complete must not advance after a failed unevaluable run.
     assert store.get_bytes_strict(latest_complete_key()) is not None
-    assert _load_json(store, latest_complete_key())["run_id"] == baseline.receipt["run_id"]
+    assert _load_json(store, latest_complete_key())["run_id"] == baseline_complete["run_id"]
 
 
 def test_baseline_removed_index_accession_stays_in_cumulative_lineage(tmp_path: Path) -> None:
@@ -527,8 +530,12 @@ def test_baseline_removed_index_accession_stays_in_cumulative_lineage(tmp_path: 
     assert first.receipt["index"]["baseline"] is True
     assert fake.submissions_fetches == []
     assert store.get_bytes_strict(issuer_latest_key(AAPL[1])) is None
-    prior_index = _load_json(store, index_latest_key("2026-Q3"))
-    snapshot_bytes = store.get_bytes_strict(prior_index["snapshot_key"])
+    # SPEC item 1: resolve the prior snapshot from the run receipt (not from index_latest_key).
+    idx_year = first.receipt["index"]["year"]
+    idx_quarter = first.receipt["index"]["quarter"]
+    idx_snap_sha = first.receipt["index"]["snapshot_sha256"]
+    prior_snap_key = index_snapshot_key(quarter_id(idx_year, idx_quarter), idx_snap_sha)
+    snapshot_bytes = store.get_bytes_strict(prior_snap_key)
     assert snapshot_bytes is not None
     fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-12", later["accession"])])
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [later])
@@ -544,26 +551,46 @@ def test_baseline_removed_index_accession_stays_in_cumulative_lineage(tmp_path: 
     manifest = _load_json(store, _load_json(store, issuer_latest_key(AAPL[1]))["manifest_key"])
     assert original["accession"] in manifest["cumulative_relevant_accessions"]
     assert later["accession"] in manifest["cumulative_relevant_accessions"]
-    assert store.get_bytes_strict(prior_index["snapshot_key"]) == snapshot_bytes
+    assert store.get_bytes_strict(prior_snap_key) == snapshot_bytes
 
 
 def test_quarter_rollover_does_not_treat_prior_quarter_rows_as_mass_corrections(tmp_path: Path) -> None:
+    # SPEC item 3: after Q3 complete head, first Q4 poll with one new 10-Q is NOT bootstrap;
+    # that 10-Q is a NEW event and the issuer is fetched; Q3 rows are not treated as removed.
+    # Q4_POLL="2026-10-02T03:15:00Z": Eastern 2026-10-01T23:15 EDT → October = Q4.
     repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193), (MSFT[0], 789019)])
     fake = FakeSec()
-    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-07-31", "0000320193-26-000020")])
+    aapl_q3 = _filing("0000320193-26-000020", "10-Q", accepted=ACCEPT_Q, filed="2026-07-31")
+    # Q3 baseline: index has one Q3 row; no issuer fetches (baseline=True).
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-07-31", aapl_q3["accession"])])
     q3 = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
     assert q3.receipt["index"]["baseline"] is True
-    fake.set_index([], year=2026, quarter=4)
-    fake.submissions_fetches.clear()
-    q4 = _poll(store, universe, fake, _clocks(Q4_POLL), repo_root=repo)
-    assert q4.exit_code == 0
-    assert q4.receipt["index"]["baseline"] is True
-    assert q4.receipt["index"]["quarter"] == 4
-    assert q4.receipt["index"]["correction_events"] == 0
+    assert q3.receipt["index"]["quarter"] == 3
+    assert q3.exit_code == 0
     assert fake.submissions_fetches == []
+
+    # Q4 poll: prior-complete exists (Q3); one new Q4 10-Q for AAPL in Q4 index.
+    aapl_q4 = _filing("0000320193-26-000021", "10-Q", accepted=ACCEPT_NEW, filed="2026-10-01")
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [aapl_q3, aapl_q4])
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "q4")
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-10-01", aapl_q4["accession"])], year=2026, quarter=4)
+    fake.submissions_fetches.clear()
+    fake.facts_fetches.clear()
+    fake.index_fetches.clear()
+    q4 = _poll(store, universe, fake, _clocks(Q4_POLL), repo_root=repo)
+
+    # SPEC item 3: NOT baseline (prior-complete with index state exists).
+    assert q4.receipt["index"]["baseline"] is False
+    assert q4.receipt["index"]["quarter"] == 4
+    # The Q4 10-Q is a NEW event (prior_rows for Q4 are empty; Q3 rows not removed).
+    assert q4.receipt["index"]["new_events"] == 1
+    assert q4.receipt["index"]["correction_events"] == 0
+    # AAPL is fetched because its Q4 10-Q is a new event.
+    assert AAPL[1] in fake.submissions_fetches
+    assert AAPL[1] in fake.facts_fetches
     assert fake.index_fetches[-1] == (2026, 4)
-    assert store.get_bytes_strict(f"{PREFIX}/indexes/quarters/2026-Q3/latest.json") is not None
-    assert store.get_bytes_strict(f"{PREFIX}/indexes/quarters/2026-Q4/latest.json") is not None
+    # SPEC item 1: index_latest_key is never written (no second mutable pointer).
+    assert store.get_bytes_strict(f"{PREFIX}/indexes/quarters/2026-Q4/latest.json") is None
 
 
 def test_partial_timed_out_issuer_state_is_not_purged_by_index_baseline(tmp_path: Path) -> None:

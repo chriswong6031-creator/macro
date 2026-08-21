@@ -21,15 +21,19 @@ from engine.fundamental_forensics.broad_sec_store import (
     UNIVERSE_RELATIVE_PATH,
     BroadSecError,
     PollClocks,
+    calendar_quarter,
     count_source_objects,
     index_latest_key,
+    index_snapshot_key,
     issuer_latest_key,
     latest_complete_key,
     latest_observation_key,
     load_universe,
     object_key,
+    quarter_id,
     recovery_continuation_pointer_key,
     run_broad_sec_poll,
+    run_key,
     PREFIX,
 )
 from engine.research_vault.r2_store import LocalStore
@@ -642,7 +646,9 @@ def test_queue_overflow_never_truncates_silently(tmp_path: Path) -> None:
     )
     assert result.exit_code == 1
     assert any(item["reason_code"] == "queue_overflow" for item in result.receipt["failures"])
-    assert fake.facts_fetches == []
+    # SPEC item 6: incremental overflow selects first max_affected_issuers (1) sorted by
+    # (ticker, cik); AAPL < MSFT so AAPL's CF is fetched; MSFT is non-committable this run.
+    assert fake.facts_fetches == [AAPL[1]]
     assert result.receipt["status"] != "complete"
     assert store.get_bytes_strict(latest_complete_key()) is not None
 
@@ -968,7 +974,6 @@ def test_companyfacts_byte_budget_stops_further_network_retrieval(tmp_path: Path
     baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
     assert baseline.exit_code == 0
     complete_before = store.get_bytes_strict(latest_complete_key())
-    index_before = _load_json(store, index_latest_key("2026-Q3"))
     fake.set_index(index_rows)
     first_body = fake.facts[AAPL[1]]
     result = _poll(
@@ -984,8 +989,9 @@ def test_companyfacts_byte_budget_stops_further_network_retrieval(tmp_path: Path
     assert len(fake.facts_fetches) == 2
     assert result.receipt["coverage"]["companyfacts_fetched"] == 1
     assert result.receipt["coverage"]["recovery_backlog"] >= 1
+    # SPEC item 1: latest-complete must not advance when CF budget is exceeded.
     assert store.get_bytes_strict(latest_complete_key()) == complete_before
-    assert _load_json(store, index_latest_key("2026-Q3"))["snapshot_id"] == index_before["snapshot_id"]
+    # SPEC item 1: index_latest_key is never written (no second mutable pointer).
 
 
 def test_run_level_observation_receipt_covers_every_expected_issuer(tmp_path: Path) -> None:
@@ -1225,3 +1231,362 @@ def test_incremental_does_not_silently_enter_recovery_on_backlog(tmp_path: Path)
 
 def test_incremental_never_enters_recovery(tmp_path: Path) -> None:
     test_incremental_does_not_silently_enter_recovery_on_backlog(tmp_path)
+
+
+# ── SPEC item 4: calendar_quarter mandatory timestamps ──────────────────────
+
+def test_calendar_quarter_mandatory_timestamps() -> None:
+    """SPEC item 4 mandated examples plus Eastern-midnight rollover."""
+    # Mandatory cases from SPEC:
+    # 2026-10-01T03:15:00Z → Eastern 2026-09-30T23:15 EDT → Q3
+    assert calendar_quarter("2026-10-01T03:15:00Z") == (2026, 3)
+    # 2027-01-01T03:15:00Z → Eastern 2026-12-31T22:15 EST → Q4
+    assert calendar_quarter("2027-01-01T03:15:00Z") == (2026, 4)
+    # 2027-04-01T03:15:00Z → Eastern 2027-03-31T23:15 EDT → Q1
+    assert calendar_quarter("2027-04-01T03:15:00Z") == (2027, 1)
+    # 2027-07-01T03:15:00Z → Eastern 2027-06-30T20:15 EDT → Q2
+    assert calendar_quarter("2027-07-01T03:15:00Z") == (2027, 2)
+    # Eastern-midnight rollover: just-before midnight stays in old quarter
+    # 2027-01-01T04:59:59Z → Eastern 2026-12-31T23:59:59 EST → Q4
+    assert calendar_quarter("2027-01-01T04:59:59Z") == (2026, 4)
+    # Just past midnight crosses into new quarter
+    # 2027-01-01T05:00:01Z → Eastern 2027-01-01T00:00:01 EST → Q1
+    assert calendar_quarter("2027-01-01T05:00:01Z") == (2027, 1)
+
+
+# ── SPEC item 5: three-run source clock ──────────────────────────────────────
+
+def test_three_run_source_clock_bootstrap_then_advance_then_stable(tmp_path: Path) -> None:
+    """Bootstrap clock is null; new 10-Q sets clock to A; quiet rerun keeps clock A."""
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    # Run 1: bootstrap (no prior), empty index → complete, clock null.
+    fake.set_index([])
+    r1 = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert r1.exit_code == 0
+    assert r1.receipt["latest_relevant_sec_accepted_at"] is None
+
+    # Run 2: one new 10-Q → submissions+CF fetched → clock = ACCEPT_NEW.
+    aapl_q = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [aapl_q])
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-12", aapl_q["accession"])])
+    r2 = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    assert r2.exit_code == 0
+    assert r2.receipt["latest_relevant_sec_accepted_at"] == ACCEPT_NEW
+
+    # Run 3: unchanged index → zero changed-issuer fetches → clock stays ACCEPT_NEW.
+    fake.submissions_fetches.clear()
+    fake.facts_fetches.clear()
+    r3 = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo)
+    assert r3.exit_code == 0
+    assert r3.receipt["latest_relevant_sec_accepted_at"] == ACCEPT_NEW
+    assert fake.submissions_fetches == []
+    assert fake.facts_fetches == []
+
+
+# ── SPEC item 6: capacity two-run (3 issuers, cap 2) ────────────────────────
+
+def test_capacity_overflow_commits_first_n_defers_rest_then_retries(tmp_path: Path) -> None:
+    """cap=2 with 3 issuers needing CF: run1 commits 2, 3rd uncommitted;
+    run2 fetches no CF for the 2 already committed; 3rd succeeds and complete advances."""
+    ibm = ("IBM", "0000051143")
+    rows = [(AAPL[0], 320193), (ibm[0], 51143), (MSFT[0], 789019)]
+    repo, universe, store = _layout(tmp_path, rows)
+    fake = FakeSec()
+    # Baseline run: empty index, all issuers observed with no change.
+    fake.set_index([])
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    complete_after_baseline = store.get_bytes_strict(latest_complete_key())
+
+    # Build index with 3 issuers each having one new 10-Q.
+    index_rows = []
+    for ticker, cik_int in rows:
+        cik = f"{cik_int:010d}"
+        acc = f"{cik}-26-000001"
+        fake.submissions[cik] = _submissions_bytes(cik, [_filing(acc, "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")])
+        fake.facts[cik] = _facts_bytes(cik, ticker)
+        index_rows.append(_idx_row(cik, "10-Q", "2026-08-12", acc))
+    fake.set_index(index_rows)
+
+    # Run 1: cap=2, sorted (AAPL, IBM, MSFT) → AAPL+IBM selected, MSFT deferred.
+    fake.facts_fetches.clear()
+    r1 = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo, max_affected_issuers=2)
+    assert r1.exit_code == 1
+    assert any(f["reason_code"] == "queue_overflow" for f in r1.receipt["failures"])
+    # AAPL and IBM committed (first 2 sorted by ticker); MSFT deferred.
+    assert AAPL[1] in fake.facts_fetches
+    assert ibm[1] in fake.facts_fetches
+    assert MSFT[1] not in fake.facts_fetches
+    assert store.get_bytes_strict(issuer_latest_key(AAPL[1])) is not None
+    assert store.get_bytes_strict(issuer_latest_key(ibm[1])) is not None
+    assert store.get_bytes_strict(issuer_latest_key(MSFT[1])) is None  # not committed
+    # latest-complete must not advance while deferred (MSFT uncommitted).
+    assert store.get_bytes_strict(latest_complete_key()) == complete_after_baseline
+
+    # Run 2: cap=2; MSFT still new vs prior snapshot (latest-complete unchanged);
+    # AAPL+IBM already committed → no re-fetch; MSFT fetched → all committed → complete advances.
+    fake.facts_fetches.clear()
+    fake.submissions_fetches.clear()
+    r2 = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo, max_affected_issuers=2)
+    assert r2.exit_code == 0
+    # Only MSFT needs CF this run (AAPL+IBM already in issuer_latest).
+    assert MSFT[1] in fake.facts_fetches
+    assert AAPL[1] not in fake.facts_fetches
+    assert ibm[1] not in fake.facts_fetches
+    assert store.get_bytes_strict(issuer_latest_key(MSFT[1])) is not None
+    # All 3 now committed; complete should advance.
+    assert store.get_bytes_strict(latest_complete_key()) != complete_after_baseline
+
+
+def test_capacity_overflow_65_issuers_cap_64(tmp_path: Path) -> None:
+    """65 issuers needing CF with max_affected_issuers=64: run1 defers 1, run2 succeeds."""
+    all_rows = [(f"T{i:04d}", 4_000_000 + i) for i in range(65)]
+    repo, universe, store = _layout(tmp_path, all_rows)
+    fake = FakeSec()
+    fake.set_index([])
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    complete_after_baseline = store.get_bytes_strict(latest_complete_key())
+
+    index_rows = []
+    for ticker, cik_int in all_rows:
+        cik = f"{cik_int:010d}"
+        acc = f"{cik}-26-000001"
+        fake.submissions[cik] = _submissions_bytes(cik, [_filing(acc, "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")])
+        fake.facts[cik] = _facts_bytes(cik, ticker)
+        index_rows.append(_idx_row(cik, "10-Q", "2026-08-12", acc))
+    fake.set_index(index_rows)
+
+    r1 = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo, max_affected_issuers=64)
+    assert r1.exit_code == 1
+    assert r1.receipt["coverage"]["companyfacts_fetched"] == 64
+    # 65th issuer deferred; latest-complete not advanced.
+    assert store.get_bytes_strict(latest_complete_key()) == complete_after_baseline
+
+    fake.facts_fetches.clear()
+    fake.submissions_fetches.clear()
+    r2 = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo, max_affected_issuers=64)
+    assert r2.exit_code == 0
+    # Only the 65th issuer's CF fetched (the 64 already committed).
+    assert r2.receipt["coverage"]["companyfacts_fetched"] == 1
+    assert store.get_bytes_strict(latest_complete_key()) != complete_after_baseline
+
+
+# ── SPEC item 6: CF byte-budget two-run ──────────────────────────────────────
+
+def test_cf_byte_budget_deferred_absent_from_issuer_ledger(tmp_path: Path) -> None:
+    """Byte-budget deferred issuer's new accession is absent from issuer_latest/cumulative
+    until facts_satisfied on a later run."""
+    rows = [(AAPL[0], 320193), (MSFT[0], 789019)]
+    repo, universe, store = _layout(tmp_path, rows)
+    fake = FakeSec()
+    # Baseline.
+    fake.set_index([])
+    _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+
+    aapl_q = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")
+    msft_q = _filing("0000789019-26-000010", "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [aapl_q])
+    fake.submissions[MSFT[1]] = _submissions_bytes(MSFT[1], [msft_q])
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+    fake.facts[MSFT[1]] = _facts_bytes(MSFT[1])
+    fake.set_index([
+        _idx_row(AAPL[1], "10-Q", "2026-08-12", aapl_q["accession"]),
+        _idx_row(MSFT[1], "10-Q", "2026-08-12", msft_q["accession"]),
+    ])
+    # Run 1: AAPL CF fits; MSFT CF budget-exhausted → MSFT deferred.
+    first_body = fake.facts[AAPL[1]]
+    r1 = _poll(
+        store, universe, fake, _clocks(POLL_2), repo_root=repo,
+        max_companyfacts_bytes_per_run=len(first_body) + 10,
+    )
+    assert r1.exit_code == 1
+    # MSFT not committed: no issuer_latest, new accession not in cumulative.
+    assert store.get_bytes_strict(issuer_latest_key(MSFT[1])) is None
+    # AAPL committed normally.
+    aapl_latest_ptr = _load_json(store, issuer_latest_key(AAPL[1]))
+    aapl_manifest = _load_json(store, aapl_latest_ptr["manifest_key"])
+    assert aapl_q["accession"] in aapl_manifest["cumulative_relevant_accessions"]
+
+    # Run 2: full budget → MSFT CF fetched and committed.
+    fake.facts_fetches.clear()
+    r2 = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo)
+    assert r2.exit_code == 0
+    assert MSFT[1] in fake.facts_fetches
+    msft_latest_ptr = _load_json(store, issuer_latest_key(MSFT[1]))
+    msft_manifest = _load_json(store, msft_latest_ptr["manifest_key"])
+    assert msft_q["accession"] in msft_manifest["cumulative_relevant_accessions"]
+
+
+# ── SPEC item 7: CIK validation ──────────────────────────────────────────────
+
+def test_malformed_cik_rejects_in_parse_master_index_archive() -> None:
+    """ASCII digit-only check: 32O193, CIK320193, 320193x, +320193 must all be rejected."""
+    from engine.fundamental_forensics.broad_sec_store import parse_master_index_archive
+
+    canonical = {"0000320193"}
+
+    def _zip_with_cik(cik_str: str) -> bytes:
+        header = (
+            "CIK|Company Name|Form Type|Date Filed|Filename\n"
+            "--------------------------------------------------------------------------------\n"
+        )
+        acc = "0000320193-26-000001"
+        filename = f"edgar/data/320193/{acc}.txt"
+        body = f"{cik_str}|AAPL|10-Q|2026-06-15|{filename}\n"
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as h:
+            h.writestr("master.idx", header + body)
+        return buf.getvalue()
+
+    bad_ciks = ["32O193", "CIK320193", "320193x", "+320193"]
+    for bad in bad_ciks:
+        with pytest.raises(BroadSecError, match="not ASCII digits-only"):
+            parse_master_index_archive(_zip_with_cik(bad), canonical_ciks=canonical)
+
+
+def test_accession_cik_prefix_mismatch_is_rejected() -> None:
+    """Accession prefix (first 10 chars) must match the canonical row CIK."""
+    from engine.fundamental_forensics.broad_sec_store import parse_master_index_archive
+
+    canonical = {"0000320193"}
+    # Row CIK = 0000320193 but accession starts with 0000789019 (MSFT's CIK).
+    header = (
+        "CIK|Company Name|Form Type|Date Filed|Filename\n"
+        "--------------------------------------------------------------------------------\n"
+    )
+    acc = "0000789019-26-000123"
+    filename = f"edgar/data/320193/{acc}.txt"
+    body = f"320193|AAPL|10-Q|2026-06-15|{filename}\n"
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as h:
+        h.writestr("master.idx", header + body)
+    raw = buf.getvalue()
+    with pytest.raises(BroadSecError) as exc_info:
+        parse_master_index_archive(raw, canonical_ciks=canonical)
+    assert exc_info.value.reason_code == "edgar_index_cik_mismatch"
+
+
+# ── SPEC item 8: index write/readback failure ─────────────────────────────────
+
+def test_index_snapshot_write_failure_cannot_complete_or_publish_latest_complete(
+    tmp_path: Path,
+) -> None:
+    """If index snapshot write fails, census_complete=False and latest-complete is not written."""
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    fake.set_index([])
+
+    # Wrap store to fail writes to the snapshot key prefix.
+    class SnapFailStore:
+        def __init__(self, wrapped) -> None:
+            self.wrapped = wrapped
+
+        def put_bytes_strict_conditional(self, key, data, *, expected_version, content_type="application/octet-stream"):
+            if "/indexes/quarters/" in key and "snapshot" in key:
+                raise BroadSecError("store_write_failure", "simulated snapshot write failure")
+            return self.wrapped.put_bytes_strict_conditional(key, data, expected_version=expected_version, content_type=content_type)
+
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
+
+    failing_store = SnapFailStore(store)
+    result = _poll(failing_store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert result.exit_code == 1
+    assert store.get_bytes_strict(latest_complete_key()) is None
+
+
+# ── SPEC item 10: CAS failure contracts ──────────────────────────────────────
+
+def test_latest_observation_cas_failure_cannot_move_latest_complete(tmp_path: Path) -> None:
+    """If latest-observation CAS fails, latest-complete must not advance."""
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    aapl_q = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [aapl_q])
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+    fake.set_index([])
+    # Baseline run succeeds: latest_complete written.
+    _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    complete_before = store.get_bytes_strict(latest_complete_key())
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-12", aapl_q["accession"])])
+
+    class ObsFailStore:
+        def __init__(self, wrapped) -> None:
+            self.wrapped = wrapped
+            self._fail_next_obs = False
+
+        def put_bytes_strict_conditional(self, key, data, *, expected_version, content_type="application/octet-stream"):
+            # Fail the latest_observation_key write.
+            from engine.fundamental_forensics.broad_sec_store import latest_observation_key as lok
+            if key == lok():
+                raise BroadSecError("store_write_failure", "simulated obs CAS failure")
+            return self.wrapped.put_bytes_strict_conditional(key, data, expected_version=expected_version, content_type=content_type)
+
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
+
+    failing_store = ObsFailStore(store)
+    result = _poll(failing_store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    assert result.exit_code == 1
+    # latest-complete must not have advanced.
+    assert store.get_bytes_strict(latest_complete_key()) == complete_before
+
+
+def test_latest_complete_cas_failure_leaves_prior_complete_valid(tmp_path: Path) -> None:
+    """If latest-complete CAS fails, the prior complete pointer survives intact."""
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    aapl_q = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [aapl_q])
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+    fake.set_index([])
+    _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    complete_before = store.get_bytes_strict(latest_complete_key())
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-12", aapl_q["accession"])])
+
+    class CompleteFailStore:
+        def __init__(self, wrapped) -> None:
+            self.wrapped = wrapped
+
+        def put_bytes_strict_conditional(self, key, data, *, expected_version, content_type="application/octet-stream"):
+            from engine.fundamental_forensics.broad_sec_store import latest_complete_key as lck
+            if key == lck():
+                raise BroadSecError("store_write_failure", "simulated complete CAS failure")
+            return self.wrapped.put_bytes_strict_conditional(key, data, expected_version=expected_version, content_type=content_type)
+
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
+
+    failing_store = CompleteFailStore(store)
+    result = _poll(failing_store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    assert result.exit_code == 1
+    # Prior complete pointer survives (unchanged bytes).
+    assert store.get_bytes_strict(latest_complete_key()) == complete_before
+
+
+def test_compact_head_run_receipt_sha256_matches_stored_bytes(tmp_path: Path) -> None:
+    """SPEC item 10: head.run_receipt_sha256 must equal sha256(exact bytes at run_key)."""
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    aapl_q = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [aapl_q])
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+    fake.set_index([])
+    _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-12", aapl_q["accession"])])
+    result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    assert result.exit_code == 0
+
+    # Verify both latest_observation and latest_complete heads have correct sha.
+    for pointer_key in (latest_observation_key(), latest_complete_key()):
+        head = _load_json(store, pointer_key)
+        stored_receipt_bytes = store.get_bytes_strict(head["run_key"])
+        assert stored_receipt_bytes is not None, f"Receipt missing at {head['run_key']}"
+        actual_sha = sha256(stored_receipt_bytes).hexdigest()
+        assert head["run_receipt_sha256"] == actual_sha, (
+            f"head.run_receipt_sha256 mismatch for {pointer_key}: "
+            f"expected {actual_sha}, got {head['run_receipt_sha256']}"
+        )

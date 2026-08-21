@@ -274,10 +274,13 @@ def index_latest_key(quarter_id: str) -> str:
 
 
 def calendar_quarter(iso_z: str) -> tuple[int, int]:
+    """Route iso_z to (year, quarter) in America/New_York time, per SPEC item 4."""
+    from zoneinfo import ZoneInfo
     stamp = _require_iso_z(iso_z, field="quarter_clock")
-    parsed = datetime.fromisoformat(stamp.replace("Z", "+00:00")).astimezone(timezone.utc)
-    quarter = (parsed.month - 1) // 3 + 1
-    return parsed.year, quarter
+    parsed = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    eastern = parsed.astimezone(ZoneInfo("America/New_York"))
+    quarter = (eastern.month - 1) // 3 + 1
+    return eastern.year, quarter
 
 
 def quarter_id(year: int, quarter: int) -> str:
@@ -791,10 +794,13 @@ def parse_master_index_archive(
         if len(parts) != 5:
             raise BroadSecError("edgar_index_invalid", "malformed master.idx line")
         cik_raw, _name, form, filed, filename = [part.strip() for part in parts]
-        digits = "".join(ch for ch in cik_raw if ch.isdigit())
-        if not digits:
-            raise BroadSecError("edgar_index_invalid", "master.idx CIK is missing")
-        cik = f"{int(digits):010d}"
+        # SPEC item 7: ASCII digits only before canonicalization. Reject, do not repair.
+        if not cik_raw or not cik_raw.isascii() or not cik_raw.isdigit():
+            raise BroadSecError(
+                "edgar_index_invalid",
+                f"master.idx CIK {cik_raw!r} is not ASCII digits-only",
+            )
+        cik = f"{int(cik_raw):010d}"
         if not _DATE_RE.fullmatch(filed):
             raise BroadSecError("edgar_index_invalid", f"invalid filing date {filed!r}")
         try:
@@ -815,6 +821,12 @@ def parse_master_index_archive(
             raise BroadSecError(
                 "edgar_index_cik_mismatch",
                 f"path CIK {path_cik} does not match row CIK {cik}",
+            )
+        # SPEC item 7: accession[:10] (10-digit prefix) must equal canonical row CIK.
+        if accession[:10] != cik:
+            raise BroadSecError(
+                "edgar_index_cik_mismatch",
+                f"accession prefix {accession[:10]!r} does not match row CIK {cik!r}",
             )
         row = {
             "cik": cik,
@@ -897,37 +909,111 @@ def _index_identity_body(
     }
 
 
-def _load_index_snapshot(store: BroadSecStore, year: int, quarter: int) -> dict[str, Any] | None:
-    pointer = _read_json(store, index_latest_key(quarter_id(year, quarter)), maximum_bytes=POINTER_MAX_BYTES)
-    if pointer is None:
-        return None
-    snapshot_key = pointer.get("snapshot_key")
-    snapshot_id = pointer.get("snapshot_id")
-    if not isinstance(snapshot_key, str) or not isinstance(snapshot_id, str):
-        raise BroadSecError("issuer_manifest_invalid", "index latest pointer is missing snapshot_key")
-    snapshot = _read_json(store, snapshot_key, maximum_bytes=MAX_MASTER_INDEX_MEMBER_BYTES)
-    if snapshot is None:
-        raise BroadSecError("issuer_manifest_invalid", "index snapshot missing")
-    identity = {key: snapshot.get(key) for key in (
-        "schema",
-        "year",
-        "quarter",
-        "quarter_id",
-        "universe_sha256",
-        "member_sha256",
-        "member_bytes",
-        "archive_sha256",
-        "relevant_set",
-        "relevant_set_sha256",
-        "latest_filing_date",
-        "parsed_row_count",
-        "canonical_row_count",
-        "relevant_row_count",
-    )}
+_SNAPSHOT_IDENTITY_KEYS = (
+    "schema", "year", "quarter", "quarter_id", "universe_sha256",
+    "member_sha256", "member_bytes", "archive_sha256",
+    "relevant_set", "relevant_set_sha256", "latest_filing_date",
+    "parsed_row_count", "canonical_row_count", "relevant_row_count",
+)
+
+
+def _verify_snapshot_identity(snapshot: Mapping[str, Any], *, expected_sha: str) -> None:
+    """Verify that a loaded index snapshot matches its expected content hash."""
+    identity = {key: snapshot.get(key) for key in _SNAPSHOT_IDENTITY_KEYS}
     computed = sha256(canonical_json(identity).encode("utf-8")).hexdigest()
-    if computed != snapshot_id or snapshot.get("snapshot_id") != snapshot_id:
+    if computed != expected_sha or snapshot.get("snapshot_id") != expected_sha:
         raise BroadSecError("store_readback_failure", "index snapshot identity mismatch")
-    return snapshot
+
+
+@dataclass
+class PriorContext:
+    """Result of loading the prior-complete processed state."""
+    clock: str | None          # latest_relevant_sec_accepted_at from prior receipt
+    rows: list[dict[str, str]] # relevant_set for same quarter, or [] for different quarter
+    is_bootstrap: bool         # True when no prior-complete with index-discovery state exists
+    prev_snapshot_sha: str | None = None  # snapshot_sha256 from prior receipt (for lineage)
+
+
+def _load_prior_context(
+    store: BroadSecStore,
+    *,
+    current_year: int,
+    current_quarter: int,
+) -> PriorContext:
+    """Strict prior-complete reader per SPEC item 2.
+
+    Reads latest-complete.json, verifies compact head shape, verifies receipt
+    sha256, verifies index snapshot identity, and returns the prior clock and
+    relevant rows for the current quarter.  Fails closed on any mismatch.
+    If latest-complete is absent, returns bootstrap (None clock, empty rows).
+    """
+    raw_head = store.get_bytes_strict_bounded(latest_complete_key(), POINTER_MAX_BYTES)
+    if raw_head is None:
+        return PriorContext(clock=None, rows=[], is_bootstrap=True)
+
+    try:
+        head = json.loads(raw_head)
+    except json.JSONDecodeError as exc:
+        raise BroadSecError("store_readback_failure", "latest-complete head is not JSON") from exc
+    if not isinstance(head, dict):
+        raise BroadSecError("store_readback_failure", "latest-complete head is not an object")
+
+    for field in ("run_id", "run_key", "run_receipt_sha256", "status"):
+        if not isinstance(head.get(field), str):
+            raise BroadSecError("issuer_manifest_invalid", f"latest-complete head missing field: {field}")
+
+    receipt_bytes = store.get_bytes_strict(head["run_key"])
+    if receipt_bytes is None:
+        raise BroadSecError("store_readback_failure", "prior complete run receipt missing")
+    if sha256(receipt_bytes).hexdigest() != head["run_receipt_sha256"]:
+        raise BroadSecError("store_readback_failure", "prior complete run receipt sha256 mismatch")
+
+    try:
+        receipt = json.loads(receipt_bytes)
+    except json.JSONDecodeError as exc:
+        raise BroadSecError("store_readback_failure", "prior complete run receipt is not JSON") from exc
+    if not isinstance(receipt, dict):
+        raise BroadSecError("store_readback_failure", "prior complete run receipt is not an object")
+    if receipt.get("schema") != RUN_SCHEMA:
+        raise BroadSecError("issuer_manifest_invalid", "prior complete receipt has unexpected schema")
+    if receipt.get("status") != "complete":
+        raise BroadSecError("issuer_manifest_invalid", "prior complete receipt has non-complete status")
+
+    prior_clock = receipt.get("latest_relevant_sec_accepted_at")
+    if prior_clock is not None:
+        if not isinstance(prior_clock, str) or not _ISO_Z_RE.fullmatch(prior_clock):
+            raise BroadSecError("store_readback_failure", "prior complete receipt has invalid clock format")
+
+    index_info = receipt.get("index")
+    if not isinstance(index_info, dict):
+        return PriorContext(clock=prior_clock, rows=[], is_bootstrap=True)
+
+    snap_sha = index_info.get("snapshot_sha256")
+    prior_year = index_info.get("year")
+    prior_q = index_info.get("quarter")
+
+    if not isinstance(snap_sha, str) or not isinstance(prior_year, int) or not isinstance(prior_q, int):
+        return PriorContext(clock=prior_clock, rows=[], is_bootstrap=True)
+
+    snap_key = index_snapshot_key(quarter_id(prior_year, prior_q), snap_sha)
+    snap_raw = store.get_bytes_strict(snap_key)
+    if snap_raw is None:
+        raise BroadSecError("store_readback_failure", f"prior index snapshot missing: {snap_key}")
+    try:
+        snapshot = json.loads(snap_raw)
+    except json.JSONDecodeError as exc:
+        raise BroadSecError("store_readback_failure", "prior index snapshot is not JSON") from exc
+    if not isinstance(snapshot, dict):
+        raise BroadSecError("store_readback_failure", "prior index snapshot is not an object")
+    _verify_snapshot_identity(snapshot, expected_sha=snap_sha)
+
+    if prior_year != current_year or prior_q != current_quarter:
+        # Different quarter: prior rows for current quarter are empty, but NOT bootstrap.
+        # SPEC item 3: clock still loads from prior-complete; prev_snapshot_sha for lineage.
+        return PriorContext(clock=prior_clock, rows=[], is_bootstrap=False, prev_snapshot_sha=snap_sha)
+
+    prior_rows = [dict(row) for row in (snapshot.get("relevant_set") or [])]
+    return PriorContext(clock=prior_clock, rows=prior_rows, is_bootstrap=False, prev_snapshot_sha=snap_sha)
 
 
 def count_source_objects(store: BroadSecStore) -> int:
@@ -1011,12 +1097,17 @@ def _compact_head(
     *,
     observation_key: str,
     observation_sha256: str | None,
+    receipt_sha256: str | None = None,
 ) -> dict[str, Any]:
+    # SPEC item 10: head.run_receipt_sha256 must equal sha256(exact bytes at run_key).
+    # Pass receipt_sha256 explicitly (precomputed from encoded_receipt) so that
+    # post-mutation calls still produce the correct SHA.
+    sha = receipt_sha256 if receipt_sha256 is not None else sha256(canonical_json(receipt).encode("utf-8")).hexdigest()
     return {
         "schema": HEAD_SCHEMA,
         "run_id": receipt["run_id"],
         "run_key": receipt["storage"]["run_key"],
-        "run_receipt_sha256": sha256(canonical_json(receipt).encode("utf-8")).hexdigest(),
+        "run_receipt_sha256": sha,
         "status": receipt["status"],
         "poll_completed_at": receipt["poll_completed_at"],
         "universe_sha256": receipt["universe"].get("content_sha256"),
@@ -1238,7 +1329,8 @@ def run_broad_sec_poll(
         universe_sha=universe.content_sha256,
     )
     coverage["expected_issuers"] = universe.issuer_count
-    year, quarter = calendar_quarter(clocks.selection_cutoff_at)
+    # SPEC item 4: route with poll_started_at (Eastern time), not selection_cutoff_at.
+    year, quarter = calendar_quarter(clocks.poll_started_at)
     canonical_ciks = {issuer.cik for issuer in universe.issuers}
 
     def _fail_index(exc: BroadSecError) -> PollResult:
@@ -1313,12 +1405,16 @@ def run_broad_sec_poll(
     )
     snapshot_id = sha256(canonical_json(identity).encode("utf-8")).hexdigest()
 
+    # SPEC items 1, 2, 3: use prior-complete as sole processed authority.
     try:
-        prior_snapshot = _load_index_snapshot(store, year, quarter)
+        prior_context = _load_prior_context(store, current_year=year, current_quarter=quarter)
     except BroadSecError as exc:
         return _fail_index(exc)
-    baseline = prior_snapshot is None and mode == "incremental"
-    prior_rows = list(prior_snapshot.get("relevant_set") or []) if prior_snapshot else []
+    prior_clock = prior_context.clock
+    prior_rows = prior_context.rows
+    # SPEC item 3: bootstrap only when prior-complete with index-discovery state is absent.
+    # A new quarter is NOT bootstrap; prior_rows are empty but prior_clock is preserved.
+    baseline = prior_context.is_bootstrap and mode == "incremental"
     if baseline:
         diff = {"new": [], "removed": [], "unchanged": list(parsed["relevant_rows"])}
     else:
@@ -1556,25 +1652,13 @@ def run_broad_sec_poll(
         coverage["failed_issuers"] += 1
 
     facts_candidates = [item for item in prepared if item["needs_facts"]]
+    # SPEC item 6: sort by (ticker, cik); satisfy first max_affected_issuers this run.
     facts_candidates.sort(key=lambda item: (item["issuer"].ticker, item["issuer"].cik))
     change_summary["affected_issuers"] = len(facts_candidates)
     overflow = False
     selected: list[dict[str, Any]] = []
     deferred: list[dict[str, Any]] = []
-    if mode == "incremental" and len(facts_candidates) > max_affected_issuers:
-        overflow = True
-        deferred = list(facts_candidates)
-        failures.append(
-            IssuerFailure(
-                "",
-                "",
-                "queue_overflow",
-                (
-                    f"incremental cap is {max_affected_issuers}"
-                ),
-            )
-        )
-    elif len(facts_candidates) > max_affected_issuers:
+    if len(facts_candidates) > max_affected_issuers:
         overflow = True
         selected = facts_candidates[:max_affected_issuers]
         deferred = facts_candidates[max_affected_issuers:]
@@ -1770,7 +1854,8 @@ def run_broad_sec_poll(
 
     clocks.recorded_at = clocks.recorded_at or now()
     _progress(on_progress, "publish", prepared=len(prepared), observed=coverage["observed_issuers"])
-    index_pointer = None
+    # SPEC item 8: durably admit index object + snapshot; if that fails, census_complete=False.
+    index_admitted = False
     try:
         _put_immutable(
             store,
@@ -1781,24 +1866,15 @@ def run_broad_sec_poll(
         stored_snapshot = {
             **identity,
             "snapshot_id": snapshot_id,
-            "previous_snapshot_id": prior_snapshot.get("snapshot_id") if prior_snapshot else None,
         }
         _put_immutable(
             store,
             index_snapshot_key(identity["quarter_id"], snapshot_id),
             canonical_json(stored_snapshot).encode("utf-8"),
         )
-        index_pointer = {
-            "schema": "fundamental_forensics.broad_sec.index_latest.v1",
-            "quarter_id": identity["quarter_id"],
-            "snapshot_id": snapshot_id,
-            "snapshot_key": index_snapshot_key(identity["quarter_id"], snapshot_id),
-            "member_sha256": parsed["member_sha256"],
-            "relevant_set_sha256": parsed["relevant_set_sha256"],
-        }
+        index_admitted = True
     except BroadSecError as exc:
         failures.append(IssuerFailure("", "", exc.reason_code, exc.detail))
-        index_pointer = None
 
     for item in prepared:
         if item.get("failed") or "manifest" not in item:
@@ -1806,6 +1882,17 @@ def run_broad_sec_poll(
         issuer = item["issuer"]
         observation = item["observation"]
         manifest = item["manifest"]
+        # SPEC item 6: committable = (not facts_required) or facts_satisfied.
+        facts_satisfied = bool(observation.get("companyfacts_fetched"))
+        committable = (not item["needs_facts"]) or facts_satisfied
+        if not committable:
+            # Non-committable: do NOT write issuer_latest; do NOT add to source_accepts.
+            # Observation is recorded; latest-complete must not advance.
+            # Next run retries because latest-complete still names the prior snapshot.
+            observation["outcome"] = "observed"
+            observations.append(observation)
+            coverage["observed_issuers"] += 1
+            continue
         manifest["recorded_at"] = clocks.recorded_at
         if "as_of" in manifest:
             raise BroadSecError("source_binding_failure", "issuer manifest must not carry as_of")
@@ -1831,6 +1918,7 @@ def run_broad_sec_poll(
             observation["outcome"] = "observed"
             observations.append(observation)
             coverage["observed_issuers"] += 1
+            # SPEC item 5: clock advances from committable manifests only.
             source_accepts.append(manifest.get("sec_accepted_at"))
         except BroadSecError as exc:
             observation["outcome"] = "failed"
@@ -1880,7 +1968,9 @@ def run_broad_sec_poll(
             overflow = True
 
     clocks.poll_completed_at = clocks.poll_completed_at or now()
-    latest_source = _max_iso(source_accepts)
+    # SPEC item 5: clock = max(prior_clock, committable accepts learned this run).
+    # Quiet run keeps prior_clock; quarter rollover does not reset it; bootstrap may be null.
+    latest_source = _max_iso([prior_clock] + source_accepts)
     backlog_remaining = coverage["recovery_backlog"] > 0
     complete = (
         coverage["failed_issuers"] == 0
@@ -1888,6 +1978,7 @@ def run_broad_sec_poll(
         and not backlog_remaining
         and coverage["observed_issuers"] == universe.issuer_count
         and universe.canonical
+        and index_admitted  # SPEC item 8: index must be durably admitted for census_complete
     )
     poll_complete = (
         coverage["failed_issuers"] == 0
@@ -1968,9 +2059,15 @@ def run_broad_sec_poll(
         observation_row_count=len(observations),
         index=index_receipt,
     )
+    # SPEC item 10: compute sha before writing so we never re-derive from a mutated dict.
     encoded_receipt = canonical_json(receipt).encode("utf-8")
+    receipt_sha256 = sha256(encoded_receipt).hexdigest()
     census_complete = status == "complete" and universe.canonical and exit_code == 0
     _progress(on_progress, "finalize", status=status, complete=int(census_complete))
+    # SPEC item 9: publication order — index evidence (already written above), then committable
+    # issuer manifests/pointers (already written above), then issuer-observation immutable,
+    # then immutable run receipt, then latest-observation, then latest-complete LAST.
+    # SPEC item 1: Never write index_latest.
     try:
         _put_immutable(
             store,
@@ -1980,33 +2077,42 @@ def run_broad_sec_poll(
         )
         _put_immutable(store, run_key(run_id), encoded_receipt)
         _put_pointer(store, latest_observation_key(), _compact_head(
-            receipt, observation_key=observation_key, observation_sha256=observation_sha
+            receipt,
+            observation_key=observation_key,
+            observation_sha256=observation_sha,
+            receipt_sha256=receipt_sha256,
         ))
         if census_complete:
+            # SPEC item 9: latest-complete only after latest-observation succeeds.
+            # SPEC item 10: If latest-observation CAS fails, this branch is not reached.
             _put_pointer(store, latest_complete_key(), _compact_head(
-                receipt, observation_key=observation_key, observation_sha256=observation_sha
+                receipt,
+                observation_key=observation_key,
+                observation_sha256=observation_sha,
+                receipt_sha256=receipt_sha256,
             ))
-        if index_pointer is not None and census_complete:
-            existing_index = _read_json(
-                store, index_latest_key(identity["quarter_id"]), maximum_bytes=POINTER_MAX_BYTES
-            )
-            if existing_index is None or existing_index.get("snapshot_id") != snapshot_id:
-                _put_pointer(store, index_latest_key(identity["quarter_id"]), index_pointer)
     except BroadSecError as exc:
-        receipt["status"] = "failed"
-        receipt["reason_code"] = exc.reason_code
-        receipt["failures"] = list(receipt["failures"]) + [
-            {"ticker": "", "cik": "", "reason_code": exc.reason_code, "detail": exc.detail}
-        ]
+        # SPEC item 10: do not mutate stored receipt dict after run_key is written.
+        # Build failed head from precomputed sha so run_receipt_sha256 stays correct.
         try:
             failed_head = _compact_head(
-                receipt, observation_key=observation_key, observation_sha256=observation_sha
+                receipt,
+                observation_key=observation_key,
+                observation_sha256=observation_sha,
+                receipt_sha256=receipt_sha256,
             )
             failed_head["status"] = "failed"
             _put_pointer(store, latest_observation_key(), failed_head)
         except BroadSecError:
             pass
-        return PollResult(receipt=receipt, exit_code=1)
+        # Return a non-mutated receipt view; stored bytes at run_key are unchanged.
+        failed_receipt = dict(receipt)
+        failed_receipt["status"] = "failed"
+        failed_receipt["reason_code"] = exc.reason_code
+        failed_receipt["failures"] = list(receipt["failures"]) + [
+            {"ticker": "", "cik": "", "reason_code": exc.reason_code, "detail": exc.detail}
+        ]
+        return PollResult(receipt=failed_receipt, exit_code=1)
     return PollResult(receipt=receipt, exit_code=exit_code)
 
 
