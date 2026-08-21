@@ -100,7 +100,7 @@ waves:
   - id: D4
     title: Company financial truth bridge
     status: done
-    pr: [6123]
+    pr: [6123, 6173]
     depends_on: [D3]
     next_action: >
       Done — shipped and live 2026-08-20 (merge b5548ece927d) under Sol's
@@ -115,9 +115,28 @@ waves:
       MERGE-BINDING gate:code job govrev-company-bridge. Opus review found
       the suite would have shipped dark (gate:data holding pen) and a
       wrong-receipt link — repaired pre-merge, probes pinned as tests.
-      Page fence unchanged (baked 296,693 <= 303,104). Awaiting Sol
-      acceptance; D5 unauthorized. Residual: one entitled production
-      eyeball (operator-side; all inputs individually live-proven).
+      Page fence unchanged (baked 296,693 <= 303,104). Sol re-review
+      2026-08-21: implementation substantially passes, FINAL ACCEPTANCE
+      WITHHELD on two gates. Gate 1 (D4.1 provenance hardening) CLOSED
+      2026-08-21: receiptUrl() fail-open `|| rows[0]` fallback removed —
+      exact content_sha256 match or NO source link (PR #6173, merge
+      8f10699e118b, live in prod checkout 6590e678c60, fail-closed bytes
+      verified at the serving checkout); pinned by hostile tests R14a-R14d
+      in the merge-binding gate:code suite plus a captured red/green
+      mutation run; bake 296,729 <= 303,104, fence NOT ratcheted. Gate 2
+      (D4P entitled happy-path production proof) BLOCKED: no entitled
+      browser mechanism was available (Chrome extension: zero connected
+      instances, checked repeatedly 2026-08-21; credential entry is
+      prohibited to agents; government-revenue-data/workspace.json is
+      auth-locked so there is no anonymous receipt-sha shortcut). Honest
+      state per Sol's own protocol: D4.1 merged; D4 = BUILT_NOT_PROVEN;
+      BLOCKED_ON_ENTITLED_PRODUCTION_PROOF. No fixture substitute was
+      performed. Live owner packet at block time: schema
+      company_intelligence_context.v1, available true, generated_at
+      2026-08-21T06:53:16Z, latest_event cie_77ff210df9c064c3b2fe4aa1,
+      FY2026 Q1 / call 2026-04-23, claim_citations_pending true. Anonymous
+      negative controls re-proven post-D4.1 (module 401, workspace locked,
+      page 200, bridge host hidden markup only). D5 unauthorized.
   - id: D5
     title: Program, mission, capability, and product graph
     status: todo
@@ -163,14 +182,20 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  Sol D4 acceptance review. D0R/D1/D1.1/D2/D3 done and accepted; D4 shipped
-  and live 2026-08-20 (#6123, merge b5548ece927d) — GovRev P00032 beside
-  the canonical owner's live IRDM context packet, comparison closed
-  (not_comparable, null ratio) with no lawful denominator asserted. D5 is
-  unauthorized. #5424 is closed/superseded by defense21-v1. Do not
-  re-baseline. Publisher-vintage alarm remains a reliability follow-up;
-  new candidate follow-up: fixture-freeze the D2/D3 law suites out of the
-  unrun-government-revenue holding pen (advisory-only today).
+  D4P entitled production proof, then Sol final D4 acceptance. D4.1
+  provenance hardening is CLOSED (#6173, merge 8f10699e118b, live);
+  D4 = BUILT_NOT_PROVEN / BLOCKED_ON_ENTITLED_PRODUCTION_PROOF — the
+  remaining gate is a real entitled site_full browser session rendering
+  government_revenue.html?mode=companies&item=company:IRDM with the
+  SUCCESS company-packet state beside P00032 (receipt sha equivalence,
+  1280/768/375, LMT negative, anon control) per Sol's 2026-08-21 D4
+  closeout directive. Unblocks when an authorized entitled browser
+  mechanism exists (e.g. operator connects the Claude Chrome extension in
+  a signed-in Chrome); never via agent credential entry, never via a
+  fixture substitute. D5 is unauthorized. #5424 is closed/superseded by
+  defense21-v1. Publisher-vintage alarm and fixture-freezing the D2/D3
+  law suites out of the unrun-government-revenue holding pen remain
+  separate follow-ups — do not fold them into the D4 closeout.
 ---
 
 ## Context
