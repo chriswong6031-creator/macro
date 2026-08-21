@@ -393,6 +393,9 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
    a printed institutional note, not a floating web card. */
 html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
   border-color:color-mix(in srgb, var(--text) 9%, var(--line)); }
+/* `border-color` is a FOUR-SIDE shorthand: the rule above silently repainted the
+   board's 3px state rail as a hairline in light only.  Restore it by name. */
+html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
 .r3-board-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4);
   padding:10px 16px; border-top:1px solid var(--line);
   background:color-mix(in srgb,var(--panel2) 45%,transparent);
@@ -495,7 +498,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
 
 /* segmented control (filters): role=group + aria-pressed, never faked tabs */
 .r3-seg{ display:inline-flex; flex-wrap:wrap; gap:6px; }
-.r3-seg button{ min-height:36px; padding:0 13px; border-radius:var(--r-ctl);
+.r3-seg button{ min-height:40px; padding:0 14px; border-radius:var(--r-ctl);
   border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
   font-size:var(--fs-sm); font-weight:600; cursor:pointer; }
 .r3-seg button[aria-pressed="true"]{ color:var(--text); background:var(--panel2);
@@ -579,7 +582,14 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
   .r3-ledge-cell[aria-selected="true"]{ box-shadow:inset 3px 0 0 var(--c); }
   .r3-band{ margin-top:var(--sp-6); }
   .r3-view--context .r3-band{ margin-top:var(--sp-7); }
-  .r3-pagehead{ padding:var(--sp-4) var(--sp-4) var(--sp-3); }
+  /* the page title is CHROME: on a phone it gives its vertical budget back to
+     the answer.  One line, left-aligned, stamp directly under it. */
+  .r3-pagehead{ padding:var(--sp-3) var(--sp-4) 10px; gap:2px var(--sp-3); }
+  .r3-pagehead h1{ font-size:var(--fs-body); }
+  .r3-pagehead .r3-asof{ margin-left:0; flex-basis:100%; }
+  .r3-specnote{ margin-top:10px; padding:8px 12px; }
+  /* every repeated touch target clears 44 CSS px on a phone */
+  .r3-seg button{ min-height:44px; }
 }
 @media (max-width:359px){
   /* 320px and 200% zoom: two columns of three, and the ledge stacks one-up.
@@ -612,7 +622,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
 
 <header class="r3-pagehead">
   <h1><span class="l-en">Sector Central <span class="r3-h1-mkt">· United States</span></span><span class="l-zh">行业中枢 <span class="r3-h1-mkt">· 美国</span></span></h1>
-  <span class="r3-asof" data-specimen>as of 2026-08-20 · 16:00 ET</span>
+  <span class="r3-asof" data-specimen><span class="l-en">as of 2026-08-20 · 16:00 ET</span><span class="l-zh">截至 2026-08-20 · 美东 16:00</span></span>
 </header>
 
 <div class="si-shell">
@@ -643,7 +653,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
          data-from-zh="工业" data-to-zh="医疗保健"></p>
       <p class="r3-answer-line"><span class="l-en">Tonight&#39;s read is being updated. The graded lanes below are today&#39;s board.</span><span class="l-zh">今晚的研判正在更新。下方分级清单即为今日看板。</span></p>
       <div class="r3-answer-meta">
-        <span class="r3-asof" data-specimen>board as of 2026-08-20</span>
+        <span class="r3-asof" data-specimen><span class="l-en">board as of 2026-08-20</span><span class="l-zh">看板截至 2026-08-20</span></span>
         <span><span class="l-en">Graded call · this view only</span><span class="l-zh">分级判断 · 仅此视图</span>
           <span class="r3-q" role="img" aria-label="Where this reading comes from">?</span></span>
       </div>
@@ -678,7 +688,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
       <p class="r3-board-foot">
         <span class="l-en">Entry confirmed today</span><span class="l-zh">今日已确认入场</span>
         <span class="r3-q" role="img" aria-label="How lanes are graded">?</span>
-        <span class="r3-asof" data-specimen>3 of 3 shown</span>
+        <span class="r3-asof" data-specimen><span class="l-en">3 of 3 shown</span><span class="l-zh">已显示 3 / 3</span></span>
       </p>
       <div role="tabpanel" aria-label="Buy now rows">
         <div class="r3-cols" aria-hidden="true">
@@ -736,7 +746,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
       <p class="si-view-read" id="si-read-map" hidden></p>
       <p class="r3-answer-line"><span class="l-en">This view shows where every group sits right now. It makes no call.</span><span class="l-zh">此视图展示各板块当前所处位置，不作任何买卖判断。</span></p>
       <div class="r3-answer-meta">
-        <span class="r3-asof" data-specimen>as of 2026-08-20</span>
+        <span class="r3-asof" data-specimen><span class="l-en">as of 2026-08-20</span><span class="l-zh">截至 2026-08-20</span></span>
         <span><span class="l-en">Context — where each group sits</span><span class="l-zh">背景视角 — 各板块所处位置</span></span>
       </div>
     </div>
@@ -807,7 +817,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
       <p class="si-view-read" id="si-read-moving" hidden></p>
       <p class="r3-answer-line"><span class="l-en">This view shows what changed in the last few sessions. It makes no call.</span><span class="l-zh">此视图展示近几个交易日的变化，不作任何买卖判断。</span></p>
       <div class="r3-answer-meta">
-        <span class="r3-asof" data-specimen>week to 2026-08-20</span>
+        <span class="r3-asof" data-specimen><span class="l-en">week to 2026-08-20</span><span class="l-zh">截至 2026-08-20 当周</span></span>
         <span><span class="l-en">Context — what changed recently</span><span class="l-zh">背景视角 — 近期变化</span></span>
       </div>
     </div>
@@ -815,7 +825,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
     <div class="r3-band" id="si-movement">
       <div class="r3-sec">
         <h2><span class="l-en">Where leadership moved</span><span class="l-zh">领先位置的转移</span></h2>
-        <span class="r3-asof" data-specimen>4 changes</span>
+        <span class="r3-asof" data-specimen><span class="l-en">4 changes</span><span class="l-zh">4 项变化</span></span>
       </div>
       <div class="r3-list">
         <div class="r3-row">
@@ -852,7 +862,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
       <p class="si-view-read" id="si-read-money" hidden data-regime="broad"></p>
       <p class="r3-answer-line"><span class="l-en">This view shows where money is going and how many names are joining in.</span><span class="l-zh">此视图展示资金流向，以及有多少标的参与其中。</span></p>
       <div class="r3-answer-meta">
-        <span class="r3-asof" data-specimen>as of 2026-08-20</span>
+        <span class="r3-asof" data-specimen><span class="l-en">as of 2026-08-20</span><span class="l-zh">截至 2026-08-20</span></span>
         <span><span class="l-en">Context — flow and participation</span><span class="l-zh">背景视角 — 资金与参与度</span></span>
       </div>
     </div>
@@ -860,7 +870,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
     <div class="r3-band" id="si-money">
       <div class="r3-sec">
         <h2><span class="l-en">Three reads</span><span class="l-zh">三项读数</span></h2>
-        <span class="r3-asof r3-stale" style="color:var(--c)" data-specimen>one read is behind · 2026-08-19</span>
+        <span class="r3-asof r3-stale" style="color:var(--c)" data-specimen><span class="l-en">one read is behind · 2026-08-19</span><span class="l-zh">一项读数滞后 · 2026-08-19</span></span>
       </div>
       <div class="r3-quads">
         <div class="r3-quad"><span class="r3-eyebrow"><span class="l-en">Breadth</span><span class="l-zh">广度</span></span><strong data-specimen>Broad</strong><span><span class="l-en">Most groups are participating.</span><span class="l-zh">多数板块参与其中。</span></span></div>
@@ -895,7 +905,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
       <p class="si-view-read" id="si-read-explore" hidden></p>
       <p class="r3-answer-line"><span class="l-en">Every group and basket the desk tracks, with its members and its record.</span><span class="l-zh">本工作台跟踪的全部板块与篮子，含成分与历史记录。</span></p>
       <div class="r3-answer-meta">
-        <span class="r3-asof" data-specimen>as of 2026-08-20</span>
+        <span class="r3-asof" data-specimen><span class="l-en">as of 2026-08-20</span><span class="l-zh">截至 2026-08-20</span></span>
         <span><span class="l-en">Research — look under the hood</span><span class="l-zh">研究 — 深入了解细节</span></span>
       </div>
     </div>
@@ -957,7 +967,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
       <h2 class="r3-answer-view"><span class="l-en">Confluence</span><span class="l-zh">子行业汇聚</span></h2>
       <p class="r3-answer-line"><span class="l-en">Six subsectors have timing support right now, inside the S&amp;P set.</span><span class="l-zh">标普范围内，当前六个子行业获得时机支持。</span></p>
       <div class="r3-answer-meta">
-        <span class="r3-asof" data-specimen>as of 2026-08-20</span>
+        <span class="r3-asof" data-specimen><span class="l-en">as of 2026-08-20</span><span class="l-zh">截至 2026-08-20</span></span>
         <span><span class="l-en">Graded call · this view only</span><span class="l-zh">分级判断 · 仅此视图</span></span>
       </div>
     </div>
@@ -995,7 +1005,7 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
       <p class="r3-board-foot">
         <span class="l-en">Counts and rows both come from the S&amp;P set</span><span class="l-zh">计数与行均来自标普范围</span>
         <span class="r3-q" role="img" aria-label="How timing support is graded">?</span>
-        <span class="r3-asof" data-specimen>6 subsectors</span>
+        <span class="r3-asof" data-specimen><span class="l-en">6 subsectors</span><span class="l-zh">6 个子行业</span></span>
       </p>
       <div role="tabpanel" aria-label="Entry now rows">
         <div class="r3-cols" aria-hidden="true">
@@ -1019,6 +1029,10 @@ html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
     </div>
 
     <div class="r3-band">
+      <div class="r3-sec">
+        <h2><span class="l-en">Late</span><span class="l-zh">偏晚</span></h2>
+        <span class="r3-sec-sub"><span class="l-en">Nothing in this lane today</span><span class="l-zh">今日此清单为空</span></span>
+      </div>
       <div class="r3-empty r3-panel">
         <p class="r3-empty-line"><span class="l-en">No subsectors are late in this set today</span><span class="l-zh">今日此范围内没有偏晚的子行业</span></p>
         <p class="r3-empty-why"><span class="l-en">Nothing has run far enough for the late reading to apply — an empty lane, not a missing one.</span><span class="l-zh">尚无标的运行至可判定「偏晚」的程度 — 此为空清单，而非数据缺失。</span></p>
@@ -1125,8 +1139,16 @@ document.addEventListener('langchange',function(){
 });
 route();
 
-/* specimen-only chrome: theme / language toggles (the reference frame, not product) */
+/* specimen-only chrome: theme / language toggles (the reference frame, not product).
+   ?theme=light|dark & ?lang=en|zh bootstrap the state so every evidence capture is
+   reproducible from a URL — the four acceptance quadrants without a click. */
 var H=document.documentElement;
+try{
+  var Q=new URLSearchParams(location.search);
+  if(Q.get('theme')==='light'||Q.get('theme')==='dark') H.setAttribute('data-theme',Q.get('theme'));
+  if(Q.get('lang')==='zh'||Q.get('lang')==='en'){ H.setAttribute('data-lang',Q.get('lang'));
+    document.dispatchEvent(new CustomEvent('langchange')); }
+}catch(e){}
 function syncBtns(){
   document.getElementById('t-theme').textContent=H.getAttribute('data-theme')==='light'?'Dark':'Light';
   document.getElementById('t-lang').textContent=H.getAttribute('data-lang')==='zh'?'EN':'中文';

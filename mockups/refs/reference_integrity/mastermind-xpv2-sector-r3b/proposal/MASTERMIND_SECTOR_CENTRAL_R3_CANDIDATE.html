@@ -393,10 +393,20 @@
         '<span class="l-en">Data failed to load — please refresh.</span>' +
         '<span class="l-zh">数据加载失败 — 请刷新。</span></div>';
     }
-    fetch('basketdata/baskets.json')
-      .then(function(r){ if(!r.ok) throw new Error('not ok'); return r.json(); })
-      .then(showBaskets)
-      .catch(showFetchFailure);
+    function runFetchDemo(){
+      fetch('basketdata/baskets.json')
+        .then(function(r){ if(!r.ok) throw new Error('not ok'); return r.json(); })
+        .then(showBaskets)
+        .catch(showFetchFailure);
+    }
+    runFetchDemo();
+    /* Re-run on every Explore activation (si_workspace.js:302 dispatches this on
+       EVERY activate() call, not just the first mount) so toggling "Simulate
+       fetch fail" in the drawer and then revisiting #explore demonstrates the
+       genuine catch-branch text without requiring a full page reload. */
+    document.addEventListener('si:view', function(e){
+      if(e && e.detail === 'explore') runFetchDemo();
+    });
   });
   </script>
 </section>

@@ -141,8 +141,8 @@
   ],
   "output": {
     "path": "proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
-    "sha256": "3632a9bc4359f74bfda64acd5fdd2231c5724cfbac7d33114df1cd08b40a5fd7",
-    "size_bytes": 5011388
+    "sha256": "39812728c022569ed63ab981233415b18f180d8bd8a4bc80b5a0ea5f6b4bc0d7",
+    "size_bytes": 5011880
   },
   "runtime_shim_js": {
     "sha256": "18387654f25feaa1d5b61fc39d2ec4f770ff8eb62edac42c9df6fbe905142f57",
