@@ -348,7 +348,15 @@ def find_anonymous_macro_dependencies(text: str, path: str) -> list[Finding]:
 def _is_excluded(rel_posix: str) -> bool:
     if rel_posix.endswith(".md"):
         return True
-    if any(part == "worktrees" for part in rel_posix.split("/")):
+    # Session worktree roots belong to OTHER sessions: their contents are a
+    # different revision of this repo, so scanning them makes this guard fail on
+    # code the current tree does not contain. `part == "worktrees"` alone is not
+    # enough — the documented fleet roots are `.claude/worktrees/`,
+    # `.claire/worktrees/`, `.codex/worktrees/` AND `.codex-worktrees/`, and that
+    # last one is a SINGLE component that no equality test catches. Match any
+    # component containing "worktrees" so every current and future spelling is
+    # covered (CLAUDE.md "Worktree GC"; `tests/test_agent_worktree_roots.py`).
+    if any("worktrees" in part for part in rel_posix.split("/")):
         return True
     return any(rel_posix.startswith(prefix) for prefix in EXCLUDE_ROOT_PREFIXES)
 

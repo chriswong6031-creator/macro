@@ -303,6 +303,14 @@ def test_scope_excludes_tests_and_md_and_worktrees(tmp_path: Path) -> None:
         "docs/NOTES.md",
         "research/SOMETHING.md",
         ".claude/worktrees/sess/scripts/x.py",
+        # All four documented fleet session-worktree roots (CLAUDE.md "Worktree
+        # GC"). `.codex-worktrees/` is the one that a `part == "worktrees"`
+        # equality test silently MISSES — it is a single path component — so a
+        # sibling session's checkout would be scanned and this guard would fail
+        # on code the current tree does not contain.
+        ".claire/worktrees/sess/scripts/x.py",
+        ".codex/worktrees/sess/scripts/x.py",
+        ".codex-worktrees/sess/scripts/x.py",
     ):
         p = root / rel
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -312,6 +320,19 @@ def test_scope_excludes_tests_and_md_and_worktrees(tmp_path: Path) -> None:
         )
     findings = _walk(root, {})
     assert findings == [], f"scope exclusion failed: {findings}"
+
+
+def test_scope_exclusion_is_not_vacuous(tmp_path: Path) -> None:
+    """The exclusion test above only means something if an ORDINARY path with the
+    same content IS flagged — otherwise it would pass with a detector that finds
+    nothing at all."""
+    p = tmp_path / "scripts" / "x.py"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        f'URL = "https://raw.githubusercontent.com/{OWNER}/macro/main/x.json"\n',
+        encoding="utf-8",
+    )
+    assert _walk(tmp_path, {}), "detector found nothing on a non-excluded path"
 
 
 # ---------------------------------------------------------------------------
