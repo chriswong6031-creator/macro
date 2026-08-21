@@ -1331,31 +1331,96 @@ def test_recorded_hold_pure_function_matches_and_releases():
         is None
     )
 
-    # A **bold** span is a second valid marker position (item B1) — this corpus's
-    # own convention for an inline status label, verbatim from PR #6080's body:
-    # `**Program:** X · **HELD FOR SOL — draft, unarmed, do NOT merge** (...)`.
+    # A **bold** span is a marker position ONLY when it is the FIRST
+    # non-decoration content of its line (item N3, round-3 — narrowed from
+    # round-2, which collected EVERY bold span on a line and re-opened
+    # mid-sentence prose matching: "This sweeper now refuses **HOLD-FOR-SOL**
+    # pull requests automatically." used to hold). A line whose bold span
+    # opens the line — a field label, e.g. "**Program:** X · **STATUS**" —
+    # has only its FIRST span (here, "Program:") checked; a SECOND, later
+    # bold span on the same physical line (PR #6080's own
+    # `**Program:** X · **HELD FOR SOL...**`) is no longer independently a
+    # candidate — #6080 is still caught, but via its TITLE (item N1(a),
+    # see `test_corpus_true_positives_match`), not this body mechanism.
     assert (
         MOG.recorded_hold(
             "**Program:** `WS:ADVANCED-DATA-OPTIONS` · **HELD FOR SOL — draft, "
             "unarmed, do NOT merge** (release condition: Sol PASS).",
             [],
         )
-        == "HELD FOR SOL"
+        is None
     )
-    # A backtick IS one of the stripped leading-decoration characters (item B1's
-    # literal list: '#', '*', '-', whitespace, backticks), so a marker wrapped in
-    # backticks AT THE START of its own line still matches after the strip...
-    assert (
-        MOG.recorded_hold("`HOLD-FOR-SOL` is the marker, line-start", [])
+    assert MOG.recorded_hold("**HOLD-FOR-SOL** is the whole line's bold span", []) \
         == "HOLD-FOR-SOL"
+    assert (
+        MOG.recorded_hold(
+            "This sweeper now refuses **HOLD-FOR-SOL** pull requests automatically.",
+            [],
+        )
+        is None
     )
-    # ...but a backtick span used MID-SENTENCE (not at line start, and not a
-    # **bold** span either) is not a marker position — matches #6146's real
-    # `` `HOLD-FOR-SOL` `` mid-sentence usage above, which stays a false positive.
+    # A backtick is NO LONGER decoration to strip (item N3, round-3 — reverses
+    # round-2): an inline-code marker is a MENTION, not a declaration, whether
+    # it opens the line or sits mid-sentence.
+    assert MOG.recorded_hold("`HOLD-FOR-SOL` is the marker this guard looks for.", []) \
+        is None
     assert (
         MOG.recorded_hold("this is just an inline code mention: `HOLD-FOR-SOL`", [])
         is None
     )
+    # A FENCED CODE BLOCK is never scanned (item N3, round-3): example/quoted
+    # code containing the marker text is not a declaration.
+    assert MOG.recorded_hold(
+        "Example body:\n\n```\nHOLD-FOR-SOL until Sol reviews\n```\n", []
+    ) is None
+    # CHECKLIST and ORDERED-LIST leaders are decoration too (item N4, round-3).
+    assert (
+        MOG.recorded_hold("- [ ] HOLD-FOR-SOL until the audit lands", [])
+        == "HOLD-FOR-SOL"
+    )
+    assert (
+        MOG.recorded_hold("1. HOLD-FOR-SOL until the audit lands", [])
+        == "HOLD-FOR-SOL"
+    )
+    # A HEADING line's separator segment is a marker position (item N1(b),
+    # round-3) — PR #6051's real defect: the marker follows the heading's own
+    # descriptive title, never opens the physical line.
+    assert (
+        MOG.recorded_hold("## Scratch research harness — DO NOT MERGE", [])
+        == "DO NOT MERGE"
+    )
+    assert MOG.recorded_hold("## Release checklist: HOLD-FOR-SOL", []) == "HOLD-FOR-SOL"
+    # ...but an ordinary (non-heading) line's dash/colon does NOT open a new
+    # candidate — only a HEADING's separator does.
+    assert (
+        MOG.recorded_hold("Scratch research harness — DO NOT MERGE", []) is None
+    )
+    # A HOLD marker binds via the TITLE too (item N1(a), round-3): titles are
+    # short and declarative (near-zero false-positive surface), matched with a
+    # plain anywhere-search rather than the line-start machinery.
+    assert (
+        MOG.recorded_hold(
+            "",
+            [],
+            title="scratch(exk): Turn-3 exact repository-price replay — DO NOT MERGE",
+        )
+        == "DO NOT MERGE"
+    )
+    assert (
+        MOG.recorded_hold(
+            "",
+            [],
+            title="feat(polygon-gex): AD-1C0.1 — lease (HELD FOR SOL)",
+        )
+        == "HELD FOR SOL"
+    )
+    # RELEASE-OUTRANKS-HOLD applies to the BODY too, not only comments (item
+    # N2, round-3): a body line stating the release is never a hold via the
+    # generic `HOLD\s*[—:-]` sub-pattern.
+    assert MOG.recorded_hold("HOLD-RELEASED by Sol 2026-08-21", []) is None
+    # CRLF line endings still split correctly (item N9, round-3 regression
+    # check — `str.splitlines()` already handles them; no code change needed).
+    assert MOG.recorded_hold("intro\r\nHOLD-FOR-SOL\r\nmore", []) == "HOLD-FOR-SOL"
 
     # A comment-carried hold, no release.
     assert (
@@ -1535,6 +1600,45 @@ def test_recorded_hold_pure_function_matches_and_releases():
         == "HOLD-FOR-SOL"
     ), "a non-bot (forged) sentinel comment is scanned normally — smuggling fails"
 
+    # ONLY HUMAN comments participate in the "newest comment" ranking that
+    # decides whether a body hold's release still stands (item N7, round-3 —
+    # broadens item m6's bot exclusion from "the guard's own sentinel comment
+    # only" to "every Bot comment"): a Bot's chatter posted AFTER a genuine
+    # human release — including this sweeper's OWN red-check refusal comment,
+    # a Bot identity — must never re-arm it.
+    body = "HOLD-FOR-SOL until the audit lands"
+    released = [{"body": "HOLD-RELEASED — cleared.", "created_at": "2026-08-20T12:00:00Z"}]
+    assert MOG.recorded_hold(body, released) is None
+    rearmed = released + [
+        {
+            "body": "`merge-on-green` sweeper: **not merging.** red checks",
+            "created_at": "2026-08-20T12:30:00Z",
+            "user": {"type": "Bot"},
+        }
+    ]
+    assert MOG.recorded_hold(body, rearmed) is None, (
+        "a later BOT comment must never re-arm an already-released body hold"
+    )
+    # ...but a later HUMAN comment still re-arms it (the accepted trade-off,
+    # item M1(c), unaffected by the N7 narrowing to bots).
+    rearmed_by_human = released + [
+        {"body": "unrelated later chatter", "created_at": "2026-08-20T12:30:00Z"}
+    ]
+    assert MOG.recorded_hold(body, rearmed_by_human) == "HOLD-FOR-SOL"
+
+    # Bot comments are excluded from HOLD/RELEASE classification too, not only
+    # the ranking (item N7's broader `_is_bot_comment` supersedes m6's
+    # `_is_guard_own_comment` inside `recorded_hold`'s scanning loop): holding
+    # and releasing are human acts.
+    assert (
+        MOG.recorded_hold(
+            "no hold in the body",
+            [{"body": "HOLD-FOR-SOL", "created_at": "2026-08-20T10:00:00Z",
+              "user": {"type": "Bot"}}],
+        )
+        is None
+    ), "a bot-authored comment must never itself establish a hold"
+
 
 def test_corpus_false_positives_never_match(monkeypatch):
     """Verbatim excerpts from real open PR bodies (scratchpad/rev6149/open_prs.json,
@@ -1591,14 +1695,40 @@ def test_corpus_true_positives_match(monkeypatch):
             "user": {"login": "chriswong6031-creator", "type": "User"},
         }],
     ) == "HOLD-FOR-SOL"
-    # #6080's body — the marker is inside a **bold** span, not at physical
-    # line-start (see the pure-function test above for the isolated case).
+    # #6080's body ALONE no longer matches (item N3, round-3 — its marker
+    # sits in a SECOND bold span, not the first non-decoration content of the
+    # line; see the pure-function test above for the isolated case) — but its
+    # real TITLE (item N1(a)) still catches it, exactly as `sweep_pull` would
+    # see both together in production.
     assert MOG.recorded_hold(
         "**Program:** `WS:ADVANCED-DATA-OPTIONS` · **HELD FOR SOL — draft, "
         "unarmed, do NOT merge** (release condition: Sol PASS on this PR; "
         "authority: Sol AD-1C0.1 handoff §4; per `DEC:SOL-HOLD-IS-A-MERGE-BARRIER`).",
         [],
+    ) is None
+    assert MOG.recorded_hold(
+        "**Program:** `WS:ADVANCED-DATA-OPTIONS` · **HELD FOR SOL — draft, "
+        "unarmed, do NOT merge** (release condition: Sol PASS on this PR; "
+        "authority: Sol AD-1C0.1 handoff §4; per `DEC:SOL-HOLD-IS-A-MERGE-BARRIER`).",
+        [],
+        title="feat(polygon-gex): AD-1C0.1 — bounded lawful capture lease for "
+        "partial replacement (HELD FOR SOL)",
     ) == "HELD FOR SOL"
+    # #6051's real body (a HEADING with the marker after its separator, item
+    # N1(b)) AND its real title (item N1(a)) both independently catch it —
+    # the live true positive the round-2 fix set missed entirely.
+    assert MOG.recorded_hold(
+        "## Scratch research harness — DO NOT MERGE\n\n"
+        "This draft PR exists only to let GitHub Actions read the "
+        "repository's committed binary Yahoo parquets...",
+        [],
+    ) == "DO NOT MERGE"
+    assert MOG.recorded_hold(
+        "This draft PR exists only to let GitHub Actions read the "
+        "repository's committed binary Yahoo parquets...",
+        [],
+        title="scratch(exk): Turn-3 exact repository-price replay — DO NOT MERGE",
+    ) == "DO NOT MERGE"
     # A #6143-style hold comment using the bare `HOLD —` vocabulary.
     assert MOG.recorded_hold(
         "",
@@ -1970,16 +2100,19 @@ def test_a_held_pr_never_pollutes_blocked_names_or_dispatches_a_baseline(
 
 
 def test_a_steady_state_held_pr_performs_zero_label_writes_per_sweep(monkeypatch):
-    """item m3 (reviewer case F3) — the frozen-payload `_fake_api` fake cannot
-    show label churn (it always answers a fresh live GET with the SAME static
-    payload), so this test MODELS label mutation directly: a DELETE removes the
-    named label from a shared mutable state, a POST /labels appends to it, and
-    every other call delegates to the underlying `_fake_api` fake. A held pull
-    request that already carries `merge-blocked` (from an earlier sweep) plus its
-    BOT-authored explanatory comment must perform NO label writes on a later
-    sweep — the cheap body-only pre-check (`_body_appears_held`) must skip the
-    stale-label cleanup so it never deletes a label the guard is about to
-    re-affirm."""
+    """item m3, BODY-hold case (reviewer case F3) — the frozen-payload
+    `_fake_api` fake cannot show label churn (it always answers a fresh live
+    GET with the SAME static payload), so this test MODELS label mutation
+    directly: a DELETE removes the named label from a shared mutable state, a
+    POST /labels appends to it, and every other call delegates to the
+    underlying `_fake_api` fake. A held pull request that already carries
+    `merge-blocked` (from an earlier sweep) plus its BOT-authored explanatory
+    comment must perform NO label writes on a later sweep — the AUTHORITATIVE
+    post-probe cleanup (item N5, round-3 — replaces round-2's pre-probe
+    body-only precheck, `_body_appears_held`, now removed) must never delete
+    a label the guard is about to re-affirm. See the sibling test below for
+    the COMMENT-only hold shape (the #6109 exemplar), which the round-2
+    body-only precheck could not see at all."""
     state = {
         "labels": [{"name": MOG.MERGE_ON_GREEN_LABEL}, {"name": MOG.MERGE_BLOCKED_LABEL}],
     }
@@ -2039,6 +2172,142 @@ def test_a_steady_state_held_pr_performs_zero_label_writes_per_sweep(monkeypatch
         MOG.MERGE_ON_GREEN_LABEL,
         MOG.MERGE_BLOCKED_LABEL,
     }, "net label state must be unchanged, bought with ZERO writes"
+
+
+def test_a_comment_only_held_pr_performs_zero_label_writes_per_sweep(monkeypatch):
+    """item N5, round-3 (reviewer case B_N5) — the #6109 SHAPE itself: a hold
+    that lives ONLY in a comment, with a clean body. Round-2's m3 fix keyed
+    the stale-label-cleanup skip on a BODY-only precheck, so THIS shape still
+    churned `merge-blocked` every sweep (DELETE then re-ADD) even though its
+    net state never changed. The round-3 fix (moving the cleanup to run only
+    AFTER the real, comments-inclusive verdict) covers both shapes with one
+    mechanism — see the sibling test above for the BODY-hold shape."""
+    state = {
+        "labels": [{"name": MOG.MERGE_ON_GREEN_LABEL}, {"name": MOG.MERGE_BLOCKED_LABEL}],
+    }
+    _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}
+        },
+        pull_payload={"body": "no hold in the body", "labels": state["labels"]},
+        hold_comments=[
+            {"body": "HOLD-FOR-SOL pending audit", "created_at": "2026-08-20T10:00:00Z"},
+            {
+                "body": MOG.HOLD_GUARD_SENTINEL + " prior explanation",
+                "created_at": "2026-08-20T10:05:00Z",
+                "user": {"type": "Bot"},
+            },
+        ],
+    )
+    inner = MOG._request
+
+    def stateful(method, url, *a, **k):
+        if method == "DELETE" and "/labels/" in url:
+            name = MOG.urllib.parse.unquote(url.rsplit("/", 1)[1])
+            state["labels"] = [l for l in state["labels"] if l["name"] != name]
+        if method == "POST" and url.endswith("/labels"):
+            body = a[1] if len(a) > 1 else k.get("payload") or {}
+            state["labels"] = state["labels"] + [
+                {"name": n} for n in (body.get("labels") or [])
+            ]
+        return inner(method, url, *a, **k)
+
+    monkeypatch.setattr(MOG, "_request", stateful)
+    calls: list = []
+    logged = MOG._request
+
+    def logging(method, url, *a, **k):
+        calls.append((method, url))
+        return logged(method, url, *a, **k)
+
+    monkeypatch.setattr(MOG, "_request", logging)
+    held_pull = _pull(labels=("merge-on-green", "merge-blocked"))
+    held_pull["body"] = "no hold in the body"
+    verdict = MOG.sweep_pull("acme/widgets", held_pull, "read", "write", _freshness())
+    assert verdict == "recorded-hold", verdict
+    dels = [c for c in calls if c[0] == "DELETE" and "labels" in c[1]]
+    adds = [c for c in calls if c[0] == "POST" and c[1].endswith("/labels")]
+    comments = [c for c in calls if c[0] == "POST" and c[1].endswith("/comments")]
+    assert dels == [], dels
+    assert adds == [], adds
+    assert comments == [], comments
+    assert {l["name"] for l in state["labels"]} == {
+        MOG.MERGE_ON_GREEN_LABEL,
+        MOG.MERGE_BLOCKED_LABEL,
+    }, "net label state must be unchanged, bought with ZERO writes"
+
+
+def test_cap_exceeded_dedup_probes_the_newest_page_not_the_partial(
+    monkeypatch, capsys
+):
+    """item N6, round-3 (reviewer case B_N8) — the guard's own prior
+    cap-exceeded explanation, if it exists, is one of the NEWEST comments on
+    an overflowing thread (it was posted BY the guard after seeing everything
+    that came before it), so it is never inside the OLDEST-first partial
+    inventory `CommentCapExceeded` carries. Deduping against that partial
+    alone would re-post the explanation every sweep, forever, each one
+    worsening the very overflow it complains about. `newest_issue_comments_page`
+    is a single targeted probe (`sort=created&direction=desc`) that finds it."""
+    cap = MOG.HOLD_COMMENT_PAGE_CAP
+    guard_already_posted = [
+        {
+            "body": MOG.HOLD_GUARD_SENTINEL + " prior cap-exceeded explanation",
+            "created_at": "2026-08-20T23:00:00Z",
+            "user": {"type": "Bot"},
+        }
+    ]
+
+    def fake_request(method, url, token, payload=None):
+        if "/check-runs" in url:
+            return 200, {"total_count": 13, "check_runs": _required_proof_runs()}
+        if "/compare/" in url:
+            return 200, {
+                "base_commit": {"sha": DEFAULT_MAIN_SHA},
+                "files": [{"filename": "engine/signal_quality.py"}],
+            }
+        if "/commits?" in url:
+            return 200, []
+        if method == "GET" and "/git/ref/heads/main" in url:
+            return 200, {"object": {"sha": DEFAULT_MAIN_SHA}}
+        if method == "GET" and "/issues/" in url and "/comments?" in url:
+            if "sort=created" in url and "direction=desc" in url:
+                # The N6 targeted probe: the newest page DOES carry the
+                # guard's prior comment, unlike the oldest-first walk below.
+                return 200, guard_already_posted
+            page = int(url.split("&page=", 1)[1].split("&")[0])
+            if page <= cap:
+                return 200, [
+                    {"body": "chatter", "created_at": "2026-08-20T10:00:00Z"}
+                ] * 100
+            return 200, []
+        if method == "GET" and url.endswith("/pulls/4242"):
+            live = _pull()
+            live.update({"state": "open", "draft": False, "merged": False})
+            return 200, live
+        return 200, {}
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    calls: list = []
+    real_request = MOG._request
+
+    def logging_request(method, url, *a, **k):
+        calls.append((method, url))
+        return real_request(method, url, *a, **k)
+
+    monkeypatch.setattr(MOG, "_request", logging_request)
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "recorded-hold-unverifiable"
+    comments = [c for c in calls if c[0] == "POST" and c[1].endswith("/comments")]
+    assert not comments, (
+        "the newest-page probe must find the prior guard comment and suppress "
+        "a duplicate post"
+    )
+    probes = [
+        c for c in calls if c[0] == "GET" and "sort=created" in c[1]
+        and "direction=desc" in c[1]
+    ]
+    assert len(probes) == 1, "exactly one targeted newest-page probe"
 
 
 def test_scoped_unscheduled_packs_are_not_incomplete_on_the_merge_path(

@@ -5139,44 +5139,99 @@ HOLD_MARKER_RE = re.compile(
 )
 HOLD_RELEASE_RE = re.compile(r"\bHOLD-RELEASED\b", re.IGNORECASE)
 _QUOTE_LINE_RE = re.compile(r"^\s*>")
+_FENCE_LINE_RE = re.compile(r"^\s*```")
 _BOLD_SPAN_RE = re.compile(r"\*\*(.+?)\*\*")
-# The characters a markdown heading/bullet/bold/code-span PREFIX is built from.
-# `str.lstrip` removes any leading run of these, in any order, which is exactly
-# "strip leading markdown decoration" for '#', '*', '-', whitespace, backticks.
-_LEADING_DECORATION_CHARS = " \t#*-`"
+_HEADING_LINE_RE = re.compile(r"^\s*#+\s+(.+)$")
+# 2026-08-21 round-3 item N1(b): the separator a heading commonly uses between
+# its descriptive title and a trailing status clause — "Title — STATUS",
+# "Title: STATUS" (colon conventionally touches the preceding word, no space
+# before it), "Title - STATUS". Whitespace before the separator is OPTIONAL
+# (covers the colon convention); whitespace after is REQUIRED, so a bare
+# hyphenated word ("Turn-3", "co-located") never fires — there is no space on
+# either side of THAT hyphen for either half of this pattern to match.
+_HEADING_SEPARATOR_RE = re.compile(r"\s*[—:-]\s+")
+# The characters/tokens a markdown heading/bullet/checklist/ordered-list PREFIX
+# is built from: whitespace, a run of '#' (heading), a run of '-' (bullet),
+# a checklist marker ('[ ]'/'[x]'/'[X]', item N4), or an ordered-list leader
+# ('1.'/'1)', item N4) — repeated in any combination/order from the very start.
+#
+# '*' is DELIBERATELY EXCLUDED (round-3 item N3): a leading bold span is its
+# own candidate, handled by `_leading_bold_span` below, not folded in here —
+# folding it in here would strip "**" off "**Program:** ..." before the bold
+# check ever saw it. Backtick is ALSO deliberately excluded (item N3): a
+# marker wrapped in inline code (`` `HOLD-FOR-SOL` ``) is a MENTION of the
+# marker, not a declaration of it, so it must not bind merely by opening a
+# line — round-2 treated backtick as decoration to strip, which is exactly
+# what let `` `HOLD-FOR-SOL` is the marker this guard looks for. `` bind.
+_LEADING_DECORATION_RE = re.compile(r"^(?:[ \t]+|#+|-+|\[[ xX]\]|\d+[.)])+")
 
 
 def _strip_leading_decoration(text: str) -> str:
-    return text.lstrip(_LEADING_DECORATION_CHARS)
+    return _LEADING_DECORATION_RE.sub("", text, count=1)
+
+
+def _leading_bold_span(line: str) -> str | None:
+    """This line's bold span content, ONLY when '**' opens the line (item N3).
+
+    Round-2 collected EVERY `**bold**` span anywhere on a line as a candidate,
+    which re-opened mid-sentence prose matching: "This sweeper now refuses
+    **HOLD-FOR-SOL** pull requests automatically." held, because the bolded
+    MENTION was treated as a marker position regardless of what preceded it.
+    Only a bold span that is the FIRST non-decoration content of its line — a
+    field label, e.g. ``**Program:** X · **STATUS**`` — is a candidate, and
+    only ITS content is; a second, later bold span on the same physical line
+    (the STATUS span in that example) is no longer independently checked.
+    """
+    content = _strip_leading_decoration(line)
+    if not content.startswith("**"):
+        return None
+    match = _BOLD_SPAN_RE.match(content)
+    return match.group(1) if match else None
 
 
 def _candidate_marker_lines(text: str) -> list[str]:
     """Every position a hold/release marker is allowed to BEGIN (item B1).
 
-    Two sources, because the live corpus writes status markers both ways: the
-    start of a physical line (after stripping leading markdown decoration), and
-    the start of the inner content of any **bold** span on that line — a bolded
-    phrase is used site-wide as an inline status label, e.g.
-    ``**Program:** X · **HELD FOR SOL — draft, unarmed, do NOT merge**`` (PR
-    #6080), where the marker is never the first character of the PHYSICAL line,
-    only of its own bold span. Without the second source this guard would have
-    missed every hold written that way.
+    Three sources, because the live corpus writes status markers three ways:
+
+    1. The start of a physical line, after stripping leading markdown/list
+       decoration (see `_strip_leading_decoration`).
+    2. The start of a **bold** span that itself opens the line — see
+       `_leading_bold_span` — e.g. PR #6080's
+       ``**Program:** X · **HELD FOR SOL — draft, unarmed, do NOT merge**``.
+    3. The segment following a HEADING line's ``—``/``:``/``-`` separator
+       (item N1(b)) — e.g. PR #6051's
+       ``## Scratch research harness — DO NOT MERGE``, where the marker
+       follows the heading's own descriptive title, never opens the line.
 
     A line beginning with '>' (a markdown blockquote — a quote-reply) is
-    dropped ENTIRELY before either source is derived from it, so quoting the
+    dropped ENTIRELY before any source is derived from it, so quoting the
     guard's own text back at it can neither hold nor release (item
-    B1-amplifier/M1(b)) — GitHub's own "Quote reply" button prefixes every
-    quoted line with '> ', and without this exclusion a good-faith quote-reply
-    of the guard's explanation (which necessarily contains the matched marker)
-    would register as a brand-new hold at the reply's own timestamp.
+    B1-amplifier/M1(b)). A fenced code block (delimited by a line starting
+    with three backticks) is ALSO dropped entirely — every line strictly
+    between an opening and closing fence, plus the fence delimiters
+    themselves — because example/quoted CODE is not a declaration (item N3);
+    without this, a body pasting a sample commit message or comment
+    containing the marker text inside a ``` block would bind.
     """
     candidates: list[str] = []
+    in_fence = False
     for line in (text or "").splitlines():
+        if _FENCE_LINE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         if _QUOTE_LINE_RE.match(line):
             continue
         candidates.append(_strip_leading_decoration(line))
-        for span in _BOLD_SPAN_RE.findall(line):
-            candidates.append(_strip_leading_decoration(span))
+        bold = _leading_bold_span(line)
+        if bold is not None:
+            candidates.append(_strip_leading_decoration(bold))
+        heading = _HEADING_LINE_RE.match(line)
+        if heading is not None:
+            for segment in _HEADING_SEPARATOR_RE.split(heading.group(1))[1:]:
+                candidates.append(_strip_leading_decoration(segment))
     return candidates
 
 
@@ -5227,7 +5282,32 @@ def _is_guard_own_comment(comment: dict[str, Any]) -> bool:
     return author_type == HOLD_GUARD_AUTHOR_TYPE
 
 
-def recorded_hold(body: str, comments: list[dict[str, Any]]) -> str | None:
+def _is_bot_comment(comment: dict[str, Any]) -> bool:
+    """`user.type == "Bot"` — ANY bot, not only the guard's own (item N7).
+
+    A stricter exclusion than `_is_guard_own_comment` (sentinel + bot): every
+    bot-authored comment is excluded from `recorded_hold`'s scanning entirely
+    — hold, release, and the "newest comment" ranking alike — because holding
+    and releasing are human acts. Without this, the sweeper's OWN red-check
+    refusal comment (`red_check_comment`, posted by the same Bot identity) —
+    or any other CI bot's chatter — posted after a genuine human release
+    would become "the newest comment", read as non-release, and silently
+    RE-ARM an already-released body hold. `_is_guard_own_comment` stays
+    separate and narrower: it is used only by `apply_recorded_hold_block`'s
+    POSTING dedup, which must ask "has THE GUARD already explained this",
+    not "has any bot ever commented" — collapsing the two would let an
+    unrelated bot comment (e.g. a red-check refusal) silently suppress the
+    guard's own explanation.
+    """
+    return (
+        str(((comment or {}).get("user") or {}).get("type") or "")
+        == HOLD_GUARD_AUTHOR_TYPE
+    )
+
+
+def recorded_hold(
+    body: str, comments: list[dict[str, Any]], title: str = ""
+) -> str | None:
     """Is this pull request currently under a recorded hold? Pure, no network.
 
     A HOLD marker (`HOLD-FOR-<...>`, `HELD FOR <...>`, bare `HOLD:`/`HOLD—`, or
@@ -5236,6 +5316,25 @@ def recorded_hold(body: str, comments: list[dict[str, Any]]) -> str | None:
     COMMENT. A RELEASE is a comment whose own candidate line begins with
     `HOLD-RELEASED`.
 
+    `title` (item N1(a), round-3) is `pull["title"]`, matched with a plain
+    ANYWHERE `.search()` — not the line-start-anchored candidate machinery
+    the body and comments go through. Titles are short, single-line, and
+    declarative by GitHub convention (this repo's own titles read
+    ``fix(x): ... — DO NOT MERGE`` or ``HOLD-FOR-SOL · sol(...): ...``), so
+    the false-positive surface a `.search()` opens is near-zero — verified
+    against the corpus: none of #6149/#6143/#6146/#6151's titles contain any
+    marker substring. A body-only false negative on a live true positive
+    (PR #6051's ``## Scratch research harness — DO NOT MERGE`` heading, whose
+    body ALSO catches it via item N1(b) below — the title is a second,
+    independent source, not the only fix) is what this closes.
+
+    Body-carried and comment-carried holds are classified THE SAME WAY (item
+    N2, round-3): both go through `_classify_comment`, so a body LINE that
+    states a RELEASE (``HOLD-RELEASED by Sol 2026-08-21``) is never
+    mis-registered as a hold via the generic `HOLD\\s*[—:-]` sub-pattern —
+    round-2 scanned the body with `HOLD_MARKER_RE` directly, skipping the
+    release-outranks-hold precedence entirely for body text.
+
     Comment-carried hold: cleared only by a release comment strictly LATER than
     the newest DATED hold-carrying comment. An UNDATED hold comment (no
     parseable `created_at`) is tracked separately and is cleared by ANY dated
@@ -5243,25 +5342,31 @@ def recorded_hold(body: str, comments: list[dict[str, Any]]) -> str | None:
     against anything (item m5) — an undated release, symmetrically, can never
     clear anything, since it cannot be proven "strictly later".
 
-    Body-only hold (no comment carries the marker): released only by a release
-    comment that is BOTH strictly later than every dated hold-carrying comment
-    AND the newest non-excluded comment on the whole pull request (item
-    M1(c)). ACCEPTED TRADE-OFF, intentional: this makes body-hold release
-    asymmetric in both directions. An old, otherwise-unchallenged release still
-    clears a body hold added long after it, because there is no per-edit body
-    timestamp to compare against (an old release with zero later comments IS,
-    by definition, still "the newest comment"). And ANY comment posted after a
-    release — even unrelated chatter — re-arms a still-present body hold,
-    because the release is no longer the newest comment. The honest,
-    unambiguous escape for an authority is always to edit the marker out of the
-    body directly; this function re-reads current text on every call, never a
-    cached copy.
+    Body/title hold (no comment carries the marker): released only by a
+    release comment that is BOTH strictly later than every dated
+    hold-carrying comment AND the newest non-excluded, non-BOT comment on the
+    whole pull request (item M1(c), narrowed by item N7 round-3). ACCEPTED
+    TRADE-OFF, intentional: this makes body-hold release asymmetric in both
+    directions. An old, otherwise-unchallenged release still clears a body
+    hold added long after it, because there is no per-edit body timestamp to
+    compare against (an old release with zero later HUMAN comments IS, by
+    definition, still "the newest comment"). And ANY HUMAN comment posted
+    after a release — even unrelated chatter — re-arms a still-present body
+    hold, because the release is no longer the newest human comment. Only
+    HUMAN comments participate in this "newest comment" contest (item N7):
+    holding and releasing are human acts, so a Bot's chatter posted after a
+    release — including this sweeper's OWN red-check refusal comment — must
+    never re-arm it. The honest, unambiguous escape for an authority is
+    always to edit the marker out of the body directly; this function
+    re-reads current text on every call, never a cached copy.
 
     A comment is excluded from EVERY match here — hold, release, and the
-    "newest comment" ranking — when `_is_guard_own_comment` says it is the
-    guard's own prior explanation (item m6): without that exclusion the
-    guard's own comment (which necessarily quotes the matched hold text) would
-    register as a fresh hold and the block could never clear.
+    "newest comment" ranking — whenever `_is_bot_comment` says it was posted
+    by a Bot identity (item N7, round-3; strictly broader than round-2's
+    `_is_guard_own_comment`-only exclusion, which this function no longer
+    uses directly — every guard comment is itself Bot-authored, so the
+    broader check still excludes it, while ALSO excluding every other bot's
+    chatter from re-arming a release).
 
     Returns the matched marker text (for the explanation), or None when the
     pull request is not currently held.
@@ -5274,7 +5379,7 @@ def recorded_hold(body: str, comments: list[dict[str, Any]]) -> str | None:
     newest_comment_is_release = False
 
     for comment in comments or ():
-        if _is_guard_own_comment(comment):
+        if _is_bot_comment(comment):
             continue
         text = str((comment or {}).get("body") or "")
         created_at = _parse_dt((comment or {}).get("created_at"))
@@ -5312,9 +5417,22 @@ def recorded_hold(body: str, comments: list[dict[str, Any]]) -> str | None:
         if not dated_release_ats:
             return undated_hold_text
         # Any DATED release clears an undated hold (item m5) — fall through to
-        # the body check below.
+        # the body/title check below.
 
-    body_match = _marker_at_line_start(body or "", HOLD_MARKER_RE)
+    # Body classified through the SAME release-outranks-hold logic as a
+    # comment (item N2): a body candidate line matching the release pattern
+    # is never allowed to fall through to the hold pattern.
+    body_classification = _classify_comment(body or "")
+    body_match = (
+        body_classification[1]
+        if body_classification is not None and body_classification[0] == "hold"
+        else None
+    )
+    if body_match is None:
+        # Title fallback (item N1(a)): plain anywhere-search, not line-start.
+        title_match = HOLD_MARKER_RE.search(title or "")
+        if title_match:
+            body_match = title_match.group(0)
     if body_match is None:
         return None
     body_released = (
@@ -5383,6 +5501,40 @@ def fetch_issue_comments(
     raise CommentCapExceeded(comments)
 
 
+def newest_issue_comments_page(
+    repo: str, number: Any, token: str, *, per_page: int = 20
+) -> list[dict[str, Any]] | None:
+    """The NEWEST page of comments — the cap-overflow dedup probe (item N6).
+
+    `fetch_issue_comments`'s cap-exceeded partial inventory is OLDEST-first
+    (page 1 first) and stops at the cap; the guard's own prior explanatory
+    comment is, by construction, one of the NEWEST comments on a thread — it
+    was posted BY this guard AFTER seeing everything that came before it. On
+    a >cap-comment pull request that partial inventory therefore never
+    contains the guard's own comment, so a naive dedup check against it would
+    re-post the cap-exceeded explanation every single sweep, forever, each
+    one WORSENING the very overflow that triggered it.
+
+    One targeted call, sorted newest-first, answers "has the guard already
+    explained this" without re-reading the full history. `None` on any read
+    failure — the caller falls back to the (correct, if incomplete) OLDEST
+    partial inventory rather than losing the dedup signal entirely.
+    """
+    if number is None:
+        return None
+    query = urllib.parse.urlencode(
+        {"per_page": str(per_page), "sort": "created", "direction": "desc"}
+    )
+    status, payload = _request(
+        "GET",
+        f"{GITHUB_API}/repos/{repo}/issues/{number}/comments?{query}",
+        token,
+    )
+    if status >= 400 or not isinstance(payload, list):
+        return None
+    return [item for item in payload if isinstance(item, dict)]
+
+
 def hold_guard_comment(marker: str) -> str:
     """The one-shot explanation posted when a recorded hold blocks the merge."""
     return (
@@ -5433,11 +5585,12 @@ def apply_recorded_hold_block(
     Deduplicates on the presence of a prior guard comment — see
     `_is_guard_own_comment` — in the ALREADY-FETCHED `comments` list, not on the
     `merge-blocked` label transition `mark_blocked` uses for red checks: the
-    label can already be armed for an unrelated red-check reason (or a stale
-    one `sweep_pull` deliberately did not clear this pass — see the
-    steady-state note at the guard's call site), and keying dedup off the label
-    would silently swallow the hold explanation on a pull request that happens
-    to already be labeled for something else.
+    label can already be armed for an unrelated red-check reason, and keying
+    dedup off the label would silently swallow the hold explanation on a pull
+    request that happens to already be labeled for something else. The caller
+    is responsible for handing this the RIGHT comments to dedup against — the
+    normal path's full `recorded_hold` inventory, or `newest_issue_comments_page`
+    for the cap-exceeded path (item N6), never the oldest-first partial alone.
     """
     number = pull.get("number")
     if MERGE_BLOCKED_LABEL not in label_names(pull):
@@ -5470,19 +5623,6 @@ def apply_recorded_hold_block(
             f"PR #{number}: could not post the recorded-hold explanation "
             f"(HTTP {comment_status}).",
         )
-
-
-def _body_appears_held(body: str) -> bool:
-    """Cheap, network-free pre-check: does the BODY alone carry a hold marker?
-
-    Used only to decide whether the stale-`merge-blocked`-label cleanup below
-    should run this sweep (item m3) — never as a merge verdict; the
-    authoritative check is `recorded_hold` at the guard's real call site, with
-    real comments. `recorded_hold(body, [])` degrades correctly to a body-only
-    scan with an empty comment list, so this is exactly that scan, named for
-    what it is at the call site.
-    """
-    return recorded_hold(body, []) is not None
 
 
 def red_check_comment(names: list[str]) -> str:
@@ -6515,41 +6655,21 @@ def sweep_pull(
             return "lease-rotation-deferred"
         return reprove(repo, pull, reason, read_token, merge_token, budget)
     print(f"PR #{number}: proof still current — {reason}.", flush=True)
-    if MERGE_BLOCKED_LABEL in label_names(pull) and not _body_appears_held(
-        str(pull.get("body") or "")
-    ):
-        # A prior wake stamped merge-blocked (packing-leak inherited red, a
-        # skip-ci-only behind, a since-healed base). Current concluded checks
-        # have no genuine own-red and the proof is still current, so the label
-        # is stale: drop it in this same wake before the squash.
-        #
-        # SKIPPED when the body itself still carries a hold marker (item m3,
-        # 2026-08-21 adjudication). The recorded-hold guard's real,
-        # comments-inclusive check runs much later in this function — kept
-        # there deliberately (see its call site) so an earlier exit (a red
-        # check, an empty diff, a stale proof) never spends that comments read
-        # — but that means a steady-state HELD pull request would otherwise
-        # get its `merge-blocked` label DELETED here and then RE-ADDED a few
-        # lines later by the guard, every ~10-minute sweep, forever: two
-        # writes and two timeline events for a label whose net state never
-        # changes. This cheap, network-free pre-check (body only, no
-        # comments — `recorded_hold` degrades correctly to that with an empty
-        # comment list) is necessarily coarser than the real check: a hold
-        # that lives ONLY in a comment is invisible here, and a body hold
-        # already released by a comment still trips this skip. Both are safe
-        # in the direction that matters — this only ever WITHHOLDS the
-        # cleanup for one extra sweep, never merges or blocks anything, and
-        # the post-merge cleanup below still clears a truly-stale label once
-        # the real check confirms it.
-        clear_blocked(repo, pull, merge_token)
-        pull = {
-            **pull,
-            "labels": [
-                label
-                for label in (pull.get("labels") or [])
-                if str((label or {}).get("name") or "") != MERGE_BLOCKED_LABEL
-            ],
-        }
+    # NOTE (item N5, round-3 adjudication, 2026-08-21): a stale-`merge-blocked`
+    # cleanup used to run HERE, unconditionally. Round-2 (item m3) narrowed it
+    # to skip when a cheap, network-free BODY-only pre-check thought the pull
+    # request might be held — closing the churn for a BODY hold, but not for
+    # the #6109 SHAPE itself: a hold that lives ONLY in a comment, which that
+    # pre-check cannot see, still got its label deleted here and RE-ADDED a
+    # few lines later by the guard, every sweep, forever. Round-3 removes the
+    # pre-check entirely and moves the cleanup to AFTER the recorded-hold
+    # guard's real, comments-inclusive verdict (see "not held" branch below) —
+    # the guard already KNOWS, authoritatively, whether the label is genuinely
+    # stale by the time it returns, so clearing it there needs no guessing and
+    # covers a comment-only hold exactly like a body-only one. The guard
+    # itself stays at its ORIGINAL, late position (after the clobbered-head
+    # invariant, freshness, and live re-authorization) so an early exit still
+    # never spends the comments read.
 
     # THE CLOBBERED-HEAD INVARIANT (the 2026-08-09 phantom merges: #5055 #5061
     # #5078 #5091 — module docstring; #5074 in the same drain was not one).
@@ -6695,22 +6815,27 @@ def sweep_pull(
     # earned it, matching this module's API-budget doctrine for the merge step —
     # and confirmed by `test_F7_no_early_exit_path_spends_a_comments_read`-style
     # regression coverage that an empty-diff, a stale-freshness, or a pending head
-    # never reaches this line. (The stale-`merge-blocked`-label cleanup a few lines
-    # above this uses a separate, CHEAP body-only pre-check — `_body_appears_held`
-    # — instead of being moved after this probe, specifically so that ordering is
-    # preserved; see that cleanup's own comment.)
+    # never reaches this line.
     try:
         hold_comments = fetch_issue_comments(repo, number, read_token)
     except CommentCapExceeded as exc:
         # Every page read cleanly; there is simply more comment history than the
         # cap can see. Unlike a plain read failure, block (not merely defer) —
-        # using the partial inventory read so dedup still works — and say so
-        # distinctly (item m4, 2026-08-21 adjudication).
+        # and say so distinctly (item m4, 2026-08-21 adjudication). Dedup against
+        # a fresh NEWEST-first probe, not the partial OLDEST-first inventory the
+        # cap exception carries: the guard's own prior comment, if it exists, is
+        # itself one of the newest comments on the thread and is therefore never
+        # inside that partial read — dedupping against it alone would re-post the
+        # cap-exceeded explanation every sweep, forever, each one worsening the
+        # very overflow that triggered it (item N6, round-3 adjudication).
+        dedup_comments = (
+            newest_issue_comments_page(repo, number, read_token) or exc.comments
+        )
         apply_recorded_hold_block(
             repo,
             pull,
             hold_guard_cap_exceeded_comment(len(exc.comments)),
-            exc.comments,
+            dedup_comments,
             merge_token,
         )
         _annotate(
@@ -6730,8 +6855,33 @@ def sweep_pull(
             "armed for the next sweep.",
         )
         return "error"
-    hold_marker = recorded_hold(str(pull.get("body") or ""), hold_comments)
-    if hold_marker is not None:
+    hold_marker = recorded_hold(
+        str(pull.get("body") or ""),
+        hold_comments,
+        title=str(pull.get("title") or ""),
+    )
+    if hold_marker is None:
+        # AUTHORITATIVE stale-label cleanup (item N5, round-3 adjudication,
+        # replaces round-2's pre-probe body-only precheck at this function's
+        # freshness-gate print above): the guard has now DEFINITIVELY confirmed
+        # no hold exists anywhere it can see — body, title, or comments — so any
+        # `merge-blocked` label still present is genuinely stale, whether the
+        # earlier hold lived in the body (item m3's original case) or ONLY in a
+        # comment (the #6109 SHAPE itself, which the round-2 body-only precheck
+        # could not see and therefore still churned every sweep). One clear,
+        # informed by the full picture, instead of a guess that might delete a
+        # label the guard is about to re-affirm two lines later.
+        if MERGE_BLOCKED_LABEL in label_names(pull):
+            clear_blocked(repo, pull, merge_token)
+            pull = {
+                **pull,
+                "labels": [
+                    label
+                    for label in (pull.get("labels") or [])
+                    if str((label or {}).get("name") or "") != MERGE_BLOCKED_LABEL
+                ],
+            }
+    else:
         # Deliberately NOT written into `blocked_names` (item M2, 2026-08-21
         # adjudication): that set is the evidence `ensure_main_baseline` uses to
         # decide whether the sweep's own staleness cost anything CHECK-related —
