@@ -257,7 +257,11 @@ def test_accrue_writes_raw_and_summary(tmp_path, monkeypatch):
     # datetime would be an accrual INSTANT and would resolve to the session it describes;
     # midnight UTC 06-15 is 20:00 ET Sunday 06-14, i.e. session 06-12. That path has its
     # own tests in tests/test_polygon_gex_session_stamps.py.
-    res = bpg.accrue(ASOF.date())
+    # AD-1C0.1 amendment 1 (Sol review 4989933857): the capture lease now
+    # governs first writes too, so an explicit `_now` inside the lease for
+    # this session is required — the real wall clock (this suite's default)
+    # is nowhere near 2026-06-15 and would otherwise be refused outright.
+    res = bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
     assert res["status"] == "ok"
     assert res["underlyings"] == 2
     assert res["session"] == "2026-06-15"
@@ -309,7 +313,9 @@ def test_accrue_synthesizes_a_census_for_a_legacy_bare_dataframe_snapshot(tmp_pa
     _mock_baskets(monkeypatch)
     monkeypatch.setattr(bpg, "PolygonOptions",
                         lambda: _LegacyFakeClient(_raw(("SPY", "QQQ"))))
-    res = bpg.accrue(ASOF.date())
+    # AD-1C0.1 amendment 1: first writes are now lease-gated too — see the
+    # note in test_accrue_writes_raw_and_summary.
+    res = bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
     assert res["status"] == "ok"
     assert res["census"]["successful_underlyings"] == 2
     assert res["census"]["aborted_early"] is False
@@ -332,8 +338,11 @@ def test_accrue_raises_on_a_snapshot_return_shape_it_does_not_recognize(tmp_path
             return "not a dataframe or a tuple"
 
     monkeypatch.setattr(bpg, "PolygonOptions", lambda: _WeirdClient())
+    # AD-1C0.1 amendment 1: first writes are now lease-gated too — an
+    # in-lease `_now` is required to reach the fetch (and thus the malformed
+    # return) at all; see the note in test_accrue_writes_raw_and_summary.
     with pytest.raises(TypeError):
-        bpg.accrue(ASOF.date())
+        bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
 
 
 # ═══════════════ reason-code classification (_classify_exception) ═══════════════
@@ -841,7 +850,10 @@ def test_census_denominator_is_dynamic_not_hardcoded(tmp_path, monkeypatch):
     raw2 = _raw(("SPY",))
     monkeypatch.setattr(bpg, "PolygonOptions",
                         lambda: _FakeClient(raw2, census=_census(raw2, ["SPY", "QQQ"])))
-    res1 = bpg.accrue(date(2026, 6, 15))
+    # AD-1C0.1 amendment 1: first writes are now lease-gated too — an
+    # in-lease `_now` per session is required; see the note in
+    # test_accrue_writes_raw_and_summary.
+    res1 = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
     assert res1["census"]["requested_underlyings"] == 2
     assert res1["census"]["coverage_pct"] == 0.5
 
@@ -850,7 +862,8 @@ def test_census_denominator_is_dynamic_not_hardcoded(tmp_path, monkeypatch):
     all20 = [f"S{i}" for i in range(20)]
     monkeypatch.setattr(bpg, "PolygonOptions",
                         lambda: _FakeClient(raw20, census=_census(raw20, all20)))
-    res2 = bpg.accrue(date(2026, 6, 16))
+    res2 = bpg.accrue(date(2026, 6, 16),
+                      _now=datetime(2026, 6, 16, 19, 0, tzinfo=nyse_calendar.ET))
     assert res2["census"]["requested_underlyings"] == 20
     assert res2["census"]["coverage_pct"] == 0.75
 
@@ -867,7 +880,9 @@ def test_accrue_zero_capture_reports_empty_status_with_health_and_census(tmp_pat
     }
     monkeypatch.setattr(bpg, "PolygonOptions",
                         lambda: _FakeClient(pd.DataFrame(), census=census))
-    res = bpg.accrue(ASOF.date())
+    # AD-1C0.1 amendment 1: first writes are now lease-gated too; see the
+    # note in test_accrue_writes_raw_and_summary.
+    res = bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
     assert res["status"] == "empty"
     assert res["health"] == "failed"
     assert res["census"]["failure_reasons"] == {"auth_or_entitlement_failure": 5}
@@ -1422,10 +1437,16 @@ class TestAD1C01CaptureLease:
         monkeypatch.setattr(bpg, "PolygonOptions",
                             lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
         res = bpg.accrue(LEASE_SESSION, _now=instant)
-        assert res["status"] == "already_present", label
+        # AD-1C0.1 amendment 1+2 (Sol review 4989933857): the lease is now
+        # enforced PRE-FETCH, before client.snapshot() is ever called — the
+        # refusal short-circuits with its own "outside_lease" status rather
+        # than falling through to the post-fetch "already_present" shape.
+        assert res["status"] == "outside_lease", label
         receipt = json.loads(
             (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
         assert receipt["attempts"][-1]["decision"] == "skipped_outside_lease", label
+        assert receipt["attempts"][-1]["lease"]["valid"] is False, label
+        assert receipt["attempts"][-1]["lease"]["write_kind"] == "replacement", label
         back = pd.read_parquet(
             tmp_path / "polygon_gex" / "chains" / f"{LEASE_SESSION.isoformat()}.parquet")
         assert set(back["underlying"]) == set(STORED), "the original stored file must be untouched"
@@ -1459,7 +1480,9 @@ class TestAD1C01CaptureLease:
                             lambda: _FakeClient(new_raw2, census=_census(new_raw2, universe2)))
         instant_0330 = datetime(2026, 8, 29, 3, 30, tzinfo=nyse_calendar.ET)
         res_fail = bpg.accrue(session2, _now=instant_0330)
-        assert res_fail["status"] == "already_present"
+        # AD-1C0.1 amendment 1+2: pre-fetch refusal now returns its own
+        # "outside_lease" status; see test_6_7_8's note.
+        assert res_fail["status"] == "outside_lease"
         receipt2 = json.loads(
             (tmp_path / "polygon_gex_health" / f"{session2.isoformat()}.json").read_text())
         assert receipt2["attempts"][-1]["decision"] == "skipped_outside_lease"
@@ -1498,7 +1521,9 @@ class TestAD1C01CaptureLease:
         monkeypatch.setattr(bpg, "PolygonOptions",
                             lambda: _FakeClient(new_raw2, census=_census(new_raw2, universe2)))
         res_fail = bpg.accrue(session, _now=HOLIDAY_FRI_0800)
-        assert res_fail["status"] == "already_present"
+        # AD-1C0.1 amendment 1+2: pre-fetch refusal now returns its own
+        # "outside_lease" status; see test_6_7_8's note.
+        assert res_fail["status"] == "outside_lease"
         receipt2 = json.loads(
             (tmp_path / "polygon_gex_health" / f"{session.isoformat()}.json").read_text())
         assert receipt2["attempts"][-1]["decision"] == "skipped_outside_lease"
@@ -1731,7 +1756,8 @@ class TestAD1C01BoundaryReviewRepairs:
 
         candidate = _raw(("SPY",))
         candidate["oi"] = big_oi      # the vendor reports the SAME real OI, exactly
-        agrees, overlap, floor = bpg._same_book_overlap(stored, candidate)
+        agrees, overlap, floor, mismatches = bpg._same_book_overlap(stored, candidate)
+        assert mismatches == 0
         assert agrees is True, (
             "the SAME real-world OI, rounded IDENTICALLY on both sides via "
             "the symmetric float32 cast, must agree -- an asymmetric "
@@ -1757,10 +1783,13 @@ class TestAD1C01BoundaryReviewRepairs:
         standard_first = pd.concat([dup, dup2], ignore_index=True)
         adjusted_first = pd.concat([dup2, dup], ignore_index=True)
 
-        agrees_a, overlap_a, floor_a = bpg._same_book_overlap(standard_first, adjusted_first)
-        agrees_b, overlap_b, floor_b = bpg._same_book_overlap(adjusted_first, standard_first)
+        agrees_a, overlap_a, floor_a, mismatches_a = bpg._same_book_overlap(
+            standard_first, adjusted_first)
+        agrees_b, overlap_b, floor_b, mismatches_b = bpg._same_book_overlap(
+            adjusted_first, standard_first)
         assert agrees_a is True, (agrees_a, overlap_a, floor_a)
         assert agrees_b is True, (agrees_b, overlap_b, floor_b)
+        assert mismatches_a == mismatches_b == 0
         assert overlap_a == overlap_b == 2, "both distinctly-ticketed contracts must survive"
 
     def test_f3_empty_stored_frame_is_unverifiable_not_vacuously_agreed(self):
@@ -1770,9 +1799,10 @@ class TestAD1C01BoundaryReviewRepairs:
         prove anything against."""
         import scripts.build_polygon_gex as bpg
         candidate = _raw(("SPY",))
-        agrees, overlap, floor = bpg._same_book_overlap(candidate.iloc[0:0], candidate)
+        agrees, overlap, floor, mismatches = bpg._same_book_overlap(candidate.iloc[0:0], candidate)
         assert agrees is False
         assert overlap == 0
+        assert mismatches == 0
 
     def test_f4_monday_intraday_capture_fails_lease_prong_a_even_though_prong_b_passes(
             self, tmp_path, monkeypatch):
@@ -1801,7 +1831,9 @@ class TestAD1C01BoundaryReviewRepairs:
         monkeypatch.setattr(bpg, "PolygonOptions",
                             lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
         res = bpg.accrue(monday, _now=monday_intraday)
-        assert res["status"] == "already_present"
+        # AD-1C0.1 amendment 1+2: pre-fetch refusal now returns its own
+        # "outside_lease" status; see test_6_7_8's note.
+        assert res["status"] == "outside_lease"
         receipt = json.loads(
             (tmp_path / "polygon_gex_health" / f"{monday.isoformat()}.json").read_text())
         assert receipt["attempts"][-1]["decision"] == "skipped_outside_lease"
@@ -1833,6 +1865,413 @@ class TestAD1C01BoundaryReviewRepairs:
         receipt = json.loads(
             (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
         assert receipt["attempts"][-1]["decision"] == "skipped_unverifiable_vintage"
+
+
+def _synthetic_book(n, symbol="SYN", oi=1000.0, spot=100.0, key_offset=0):
+    """`n` distinct synthetic contracts for `symbol`. Contract identity rides
+    entirely on a unique per-row vendor `strike_ticker` keyed off
+    `key_offset + j` (j in [0, n)) -- two calls with the SAME key_offset
+    produce the SAME identities (a controlled overlap); a key_offset range
+    that never intersects another call's range produces entirely DISJOINT
+    identities. Needed because the default _raw() 42-contracts/symbol grid
+    can't hit an EXACT target contract count -- the overlap-floor regression
+    tests need a precise stored/candidate contract count, not just 'a lot of
+    contracts'."""
+    rows = []
+    for j in range(n):
+        i = key_offset + j
+        rows.append(dict(underlying=symbol, strike_ticker=f"O:{symbol}{i}C",
+                         expiry=ASOF + pd.Timedelta(days=30), K=round(50.0 + i * 0.01, 2),
+                         T=30 / 365, is_call=True, oi=float(oi), iv=0.25,
+                         gamma=0.01, delta=0.5, volume=10.0, spot=spot, asof=ASOF))
+    return pd.DataFrame(rows)
+
+
+def _write_failed_receipt(tmp_path, session_iso, requested=100):
+    """A session whose first capture attempt FAILED outright -- a receipt
+    exists (recording the failed attempt) but NO chain parquet was ever
+    written (a zero-capture run never reaches the parquet write; see the
+    `raw.empty` branch in accrue()). Matches Sol's matrix case #1: 'failed
+    Friday first capture (no parquet, failed receipt)'."""
+    _write_receipt_file(tmp_path, session_iso,
+                        [_entry("nothing_captured", "failed", 0, 0.0, requested=requested)])
+
+
+# ═══ AD-1C0.1 amendments (Sol review 4989933857, 2026-08-21) ══════════════
+#
+# Sol accepted the Option-B lease architecture but found four load-bearing
+# defects: (1) first writes bypassed the lease entirely; (2) the lease was
+# tested only AFTER the full vendor fetch; (3) the overlap floor was a
+# MAXIMUM of 20, not a minimum; (4) receipts didn't persist the gate
+# evidence. The classes below are the commissioning packet's matrix + audit
+# coverage for all four.
+
+class TestAD1C01FirstWriteLease:
+    """Amendments 1+2: the capture lease now governs FIRST writes exactly as
+    it already governed replacements, checked PRE-FETCH. Each test below is
+    numbered to match the commissioning packet's Sol-mandated matrix."""
+
+    @pytest.mark.parametrize("label,instant", [
+        ("saturday_0400", datetime(2026, 8, 22, 4, 0, tzinfo=nyse_calendar.ET)),
+        ("sunday", LEASE_SUN_1200),
+        ("monday_preopen", LEASE_MON_0800),
+    ])
+    def test_1_2_3_failed_friday_capture_then_weekend_preopen_rescue_finds_no_parquet(
+            self, tmp_path, monkeypatch, label, instant):
+        """#1/#2/#3: Friday's first capture FAILED outright (no parquet at
+        all landed, just a "nothing_captured"/"failed" receipt entry) -- a
+        Saturday 04:00 ET, Sunday, or Monday 08:00 ET pre-open rescue run
+        must ALL be refused by the lease, so no parquet EVER lands for that
+        session from any of them -- never filing the CURRENT vendor snapshot
+        under the OLD Friday session label (the exact PIT violation the
+        pre-amendment code allowed)."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        session_iso = LEASE_SESSION.isoformat()
+        _write_failed_receipt(tmp_path, session_iso, requested=1)
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+
+        res = bpg.accrue(LEASE_SESSION, _now=instant)
+
+        assert res["status"] == "outside_lease", label
+        assert not (tmp_path / "polygon_gex" / "chains" / f"{session_iso}.parquet").exists(), label
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{session_iso}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_outside_lease", label
+        assert receipt["attempts"][-1]["lease"]["write_kind"] == "first_write", label
+
+    def test_4_explicit_old_session_date_without_force_is_refused(self, tmp_path, monkeypatch):
+        """#4: an explicit --date naming an OLD session (accrue(as_of=<old
+        date>)), with no --force, is refused by the lease's own prong (a) --
+        expected_last_session(now) never equals a session that closed out
+        long ago, so no NEW session-resolution logic was needed to catch
+        this: _within_capture_lease already refuses it on its own."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        old_session = date(2026, 1, 5)     # long closed out relative to `now` below
+        now = SAME_DAY_NOW                  # resolves to session 2026-06-15
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+
+        res = bpg.accrue(old_session, _now=now)
+
+        assert res["status"] == "outside_lease"
+        assert not (tmp_path / "polygon_gex" / "chains"
+                   / f"{old_session.isoformat()}.parquet").exists()
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{old_session.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_outside_lease"
+        assert receipt["attempts"][-1]["lease"]["write_kind"] == "first_write"
+        assert receipt["attempts"][-1]["health"] == "absent"
+
+    def test_5_valid_same_evening_first_capture_writes(self, tmp_path, monkeypatch):
+        """#5: a normal evening first-write capture instant is well inside
+        the lease -- unaffected by amendment 1, still writes."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_FRI_EVENING)
+
+        assert res["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "wrote"
+        assert receipt["attempts"][-1]["lease"]["valid"] is True
+        assert receipt["attempts"][-1]["lease"]["write_kind"] == "first_write"
+
+    def test_6_valid_post_midnight_first_capture_resolving_to_the_target_session_writes(
+            self, tmp_path, monkeypatch):
+        """#6: a post-midnight 00:30 ET first capture that still resolves to
+        the TARGET session (prong (a) holds) and sits inside the overnight
+        lease (prong (b) holds) writes -- the lease's whole point is to NOT
+        refuse this lawful case."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+        post_midnight = datetime(2026, 8, 22, 0, 30, tzinfo=nyse_calendar.ET)
+
+        res = bpg.accrue(LEASE_SESSION, _now=post_midnight)
+
+        assert res["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "wrote"
+        assert receipt["attempts"][-1]["lease"]["valid"] is True
+
+    def test_7_force_outside_the_lease_still_writes_but_lease_valid_is_false(
+            self, tmp_path, monkeypatch):
+        """#7: --force bypasses the pre-fetch gate exactly as it bypasses
+        everything else, but the receipt still records the TRUTH -- the
+        capture instant really was outside the lease -- via lease.valid ==
+        False alongside decision "forced". This IS the explicit forced-
+        bypass diagnostic the receipt exists to preserve."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+
+        res = bpg.accrue(LEASE_SESSION, force=True, _now=LEASE_MON_0800)
+
+        assert res["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "forced"
+        assert receipt["attempts"][-1]["lease"]["valid"] is False
+        assert receipt["attempts"][-1]["lease"]["write_kind"] == "first_write"
+
+
+class TestAD1C01NoFetchOutsideLease:
+    """Amendment 2: the pre-fetch gate must refuse BEFORE ever calling
+    client.snapshot() -- proven by wiring a client that raises loudly if
+    snapshot() is called at all, for both a stored REPLACEABLE partial and a
+    missing-file first write."""
+
+    @pytest.mark.parametrize("label,instant", [
+        ("saturday", LEASE_SAT_1000),
+        ("sunday", LEASE_SUN_1200),
+        ("monday_preopen", LEASE_MON_0800),
+    ])
+    def test_replacement_candidate_spends_no_api_quota_outside_the_lease(
+            self, tmp_path, monkeypatch, label, instant):
+        import scripts.build_polygon_gex as bpg
+        _setup_stored_partial(tmp_path, monkeypatch,
+                              session_iso=LEASE_SESSION.isoformat(),
+                              stored_symbols=STORED)
+        monkeypatch.setattr(bpg, "PolygonOptions", lambda: _NoFetchClient())
+
+        res = bpg.accrue(LEASE_SESSION, _now=instant)
+
+        assert res["status"] == "outside_lease", label
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_outside_lease", label
+
+    @pytest.mark.parametrize("label,instant", [
+        ("saturday", LEASE_SAT_1000),
+        ("sunday", LEASE_SUN_1200),
+        ("monday_preopen", LEASE_MON_0800),
+    ])
+    def test_first_write_candidate_spends_no_api_quota_outside_the_lease(
+            self, tmp_path, monkeypatch, label, instant):
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        monkeypatch.setattr(bpg, "PolygonOptions", lambda: _NoFetchClient())
+
+        res = bpg.accrue(LEASE_SESSION, _now=instant)
+
+        assert res["status"] == "outside_lease", label
+        assert not (tmp_path / "polygon_gex" / "chains"
+                   / f"{LEASE_SESSION.isoformat()}.parquet").exists(), label
+
+
+class TestAD1C01OverlapFloorIsAMinimum:
+    """Amendment 3: the same-book proof's required overlap is now
+    max(OI_OVERLAP_FLOOR_ABS, ceil(OI_OVERLAP_FLOOR_FRACTION * stored)),
+    bounded above by min(len(stored), ...) -- a real floor, never the
+    pre-amendment min()-based ceiling capped at 20."""
+
+    def test_small_stored_book_caps_the_floor_at_its_own_size(self):
+        """A 4-contract stored partial can only ever demand all 4 shared
+        contracts -- the outer min(len(stored), ...) bound, not the 20-
+        contract absolute floor."""
+        import scripts.build_polygon_gex as bpg
+        stored = _synthetic_book(4, symbol="TINY")
+        candidate = _synthetic_book(4, symbol="TINY")     # identical -- full overlap
+        agrees, overlap, floor, mismatches = bpg._same_book_overlap(stored, candidate)
+        assert floor == 4
+        assert overlap == 4
+        assert mismatches == 0
+        assert agrees is True
+
+    def test_a_1000_contract_book_requires_250_shared_contracts_not_20(
+            self, tmp_path, monkeypatch):
+        """A 1,000-contract book must NOT pass the proof on just 20 shared
+        contracts (the pre-amendment MAXIMUM evidence requirement). Stored:
+        1,000 contracts on symbol BIG. Candidate: strictly better on quality
+        (adds symbol EXTRA, reaching 2/2 requested = healthy) but shares
+        EXACTLY 20 identical contracts with BIG's stored book -- the other
+        980 BIG contracts and the 1 EXTRA contract are entirely disjoint.
+        required_overlap must be 250 (25% of 1,000, the real floor),
+        overlap_contracts must be 20, and the replacement must be REFUSED."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        universe = ["BIG", "EXTRA"]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe)
+
+        stored_big = _synthetic_book(1000, symbol="BIG", key_offset=0)
+        chains_dir = tmp_path / "polygon_gex" / "chains"
+        chains_dir.mkdir(parents=True)
+        stored_big.to_parquet(chains_dir / f"{ASOF.date().isoformat()}.parquet")
+        _write_receipt_file(tmp_path, ASOF.date().isoformat(),
+                            [_entry("wrote", "partial", 1, 0.5, requested=2)])
+
+        shared = _synthetic_book(20, symbol="BIG", key_offset=0)             # SAME 20 identities
+        disjoint_big = _synthetic_book(980, symbol="BIG", key_offset=2000)   # never in stored
+        extra = _synthetic_book(1, symbol="EXTRA", key_offset=0)
+        candidate = pd.concat([shared, disjoint_big, extra], ignore_index=True)
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(candidate, census=_census(candidate, universe)))
+
+        res = bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
+
+        assert res["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{ASOF.date().isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "skipped_unverifiable_vintage"
+        vp = entry["vintage_proof"]
+        assert vp["required_overlap"] == 250
+        assert vp["overlap_contracts"] == 20
+        assert vp["stored_contracts"] == 1000
+        assert vp["candidate_contracts"] == 1001
+        assert vp["oi_mismatch_count"] == 0     # A4: computed even below the floor
+
+
+class TestAD1C01ReceiptAudit:
+    """Amendment 4: every gate decision persists deterministic lease/overlap
+    evidence on the health receipt, so a refusal or authorization can be
+    audited after vendor state is gone."""
+
+    def test_a_thin_overlap_refusal_still_reports_its_mismatch_count(self, tmp_path, monkeypatch):
+        """(a): a 19-of-20-required refusal must still show the genuine
+        oi_mismatch_count computed over its (too-thin) intersection -- never
+        gated on overlap >= floor."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        universe = ["THIN", "EXTRA"]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe)
+
+        stored_thin = _synthetic_book(76, symbol="THIN", key_offset=0)   # floor = max(20, 19) = 20
+        chains_dir = tmp_path / "polygon_gex" / "chains"
+        chains_dir.mkdir(parents=True)
+        stored_thin.to_parquet(chains_dir / f"{ASOF.date().isoformat()}.parquet")
+        _write_receipt_file(tmp_path, ASOF.date().isoformat(),
+                            [_entry("wrote", "partial", 1, 0.5, requested=2)])
+
+        shared = _synthetic_book(19, symbol="THIN", key_offset=0)
+        shared.loc[shared.index[:2], "oi"] = 4242.0     # 2 of the 19 shared disagree
+        disjoint_thin = _synthetic_book(57, symbol="THIN", key_offset=1000)
+        extra = _synthetic_book(1, symbol="EXTRA", key_offset=0)
+        candidate = pd.concat([shared, disjoint_thin, extra], ignore_index=True)
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(candidate, census=_census(candidate, universe)))
+
+        res = bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
+
+        assert res["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{ASOF.date().isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "skipped_unverifiable_vintage"
+        vp = entry["vintage_proof"]
+        assert vp["overlap_contracts"] == 19
+        assert vp["required_overlap"] == 20
+        assert vp["overlap_contracts"] < vp["required_overlap"]
+        assert vp["oi_mismatch_count"] == 2
+
+    def test_b_big_overlap_one_mismatch_reports_oi_mismatch_count_of_one(
+            self, tmp_path, monkeypatch):
+        """(b): a real single-contract OI drift on an overlap that clears
+        the floor reports oi_mismatch_count == 1 with decision
+        skipped_vintage_mismatch."""
+        import scripts.build_polygon_gex as bpg
+        universe = _setup_stored_partial(tmp_path, monkeypatch,
+                                         session_iso=LEASE_SESSION.isoformat(),
+                                         stored_symbols=STORED)
+        new_raw = _raw_with_oi_override(
+            tuple(f"U{i}" for i in range(70)), {("U5", 100.0, True): 4242.0})
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_SAT_0040)
+
+        assert res["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "skipped_vintage_mismatch"
+        vp = entry["vintage_proof"]
+        assert vp["overlap_contracts"] >= vp["required_overlap"]
+        assert vp["oi_mismatch_count"] == 1
+
+    def test_c_replaced_partial_carries_the_full_vintage_proof(self, tmp_path, monkeypatch):
+        """(c): a successful replacement's receipt entry carries the
+        complete vintage_proof (store_readable + all four counts), not just
+        a bare pass/fail, plus a lease dict with valid=True."""
+        import scripts.build_polygon_gex as bpg
+        universe = _setup_stored_partial(tmp_path, monkeypatch,
+                                         session_iso=LEASE_SESSION.isoformat(),
+                                         stored_symbols=STORED)
+        new_raw = _raw(tuple(f"U{i}" for i in range(70)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_SAT_0040)
+
+        assert res["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "replaced_partial"
+        vp = entry["vintage_proof"]
+        assert vp["store_readable"] is True
+        assert vp["overlap_contracts"] >= vp["required_overlap"]
+        assert vp["oi_mismatch_count"] == 0
+        assert vp["stored_contracts"] > 0
+        assert vp["candidate_contracts"] > 0
+        lease = entry["lease"]
+        assert lease["valid"] is True
+        assert lease["write_kind"] == "replacement"
+
+    def test_d_first_write_refusal_carries_lease_and_absent_health_no_vintage_proof(
+            self, tmp_path, monkeypatch):
+        """(d): a first-write lease refusal carries the lease dict and
+        health == "absent" -- and, because no same-book proof ever ran
+        (there was nothing stored to prove against), NO vintage_proof key at
+        all."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_MON_0800)
+
+        assert res["status"] == "outside_lease"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "skipped_outside_lease"
+        assert entry["health"] == "absent"
+        assert "lease" in entry
+        assert entry["lease"]["write_kind"] == "first_write"
+        assert entry["lease"]["valid"] is False
+        assert "vintage_proof" not in entry
 
 
 class TestM8OrphanSummaryRows:
