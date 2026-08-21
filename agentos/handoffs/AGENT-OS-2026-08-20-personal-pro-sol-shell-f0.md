@@ -1,7 +1,7 @@
 ---
 workstream: WS:AGENT-OS
 session: sol/personal-pro-sol-shell-f0
-model: gpt-5.6-sol
+model: local
 ended_because: complete
 mission: >
   Reconcile the accepted Personal-Pro Sol Executive Shell / Relay F0 architecture into
