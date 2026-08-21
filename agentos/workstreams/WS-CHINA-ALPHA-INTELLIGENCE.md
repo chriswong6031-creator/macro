@@ -163,10 +163,12 @@ waves:
       (100%), GMI RESOLVED 1833 = 702 US + 984 CN + 147 HK — exactly the
       frozen D2B2 population, US byte-identical. pr0d AND owner D2B2 both
       flip done on this receipt; no D2B2 repair authorized or required.
-      Later-wave gate now open: R1/R2 may proceed on pr0d=done; no P1B
-      until P1 and L0 satisfy dependencies; L0 has NO bounded builder
-      commission in research/china_alpha_intelligence/commissions/ —
-      return to Sol for that commission rather than improvising.
+      Later-wave gate REMAINS CLOSED (Sol 2026-08-21): do not start P1B, L0,
+      R1/R2, P2, or another China family — the P1 natural asia-close
+      receipt is the only remaining execution gate from this tranche; L0
+      still has no bounded builder commission in
+      research/china_alpha_intelligence/commissions/ — return to Sol for
+      that commission rather than improvising.
   - id: l0
     title: L0 full-pool canonical outcomes (extract china_standout_track primitives for the candidate plane)
     status: todo
