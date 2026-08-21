@@ -62,6 +62,12 @@
   .ws-chip.is-local i { background:transparent; border:1px solid currentColor; }
   .ws-chip.is-offline { color:var(--ink-warn); border-color:color-mix(in srgb,var(--warn) 34%,var(--line)); }
   .ws-chip.is-offline i { background:transparent; border:1px solid currentColor; }
+  /* A1A Part A: `failed` is a Portfolio write that did not land — the danger/down
+     token, same family as a real error. `unavailable` is a paused-editing read state,
+     not a failure of anything the visitor did — the muted/warn tone `offline` uses. */
+  .ws-chip.is-failed { color:var(--ink-down); border-color:color-mix(in srgb,var(--down) 34%,var(--line)); }
+  .ws-chip.is-unavailable { color:var(--ink-warn); border-color:color-mix(in srgb,var(--warn) 34%,var(--line)); }
+  .ws-chip.is-unavailable i { background:transparent; border:1px solid currentColor; }
   @keyframes ws-chippulse { 0%,100%{ opacity:1 } 50%{ opacity:.35 } }
   @media (prefers-reduced-motion:reduce){ .ws-chip.is-saving i { animation:none; } }
 
