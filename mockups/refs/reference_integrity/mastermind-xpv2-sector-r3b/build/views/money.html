@@ -766,7 +766,10 @@ function paintHeat(){
     if(hd){
       var agg=sectorAgg(HM,s.tiles,HM_TF);
       var nm=(isZh()&&lab.zh)?lab.zh:lab.en;
-      var showAgg = w > (nm.length*6.6 + 62);
+      /* heatmap.js:1750-1757 — a CJK glyph is ~1em wide against ~0.65em for latin, so the
+         same character count needs a wider budget in ZH than in EN. */
+      var perCh = /[\u3400-\u9fff]/.test(nm) ? 11.2 : 6.6;
+      var showAgg = w > (nm.length*perCh + 66);
       out.push('<div class="hm-sechd">'+L(esc(lab.en),esc(lab.zh||lab.en))
         +(showAgg?'<span class="agg">'+fmtPc(agg)+'</span>':'')+'</div>');
     }
