@@ -586,12 +586,13 @@ def _lease_audit(session: date, capture_instant: datetime, write_kind: str) -> d
 
 
 def _same_book_overlap(stored: pd.DataFrame,
-                       candidate: pd.DataFrame) -> tuple[bool, int, int, int]:
+                       candidate: pd.DataFrame) -> tuple[bool, int, int, int, int, int]:
     """FROZEN SPEC same-book proof (AD-1C0.1; Sol review 4989933857 amendment
-    3 fixes the floor direction, amendment 4 adds `mismatches`): does
-    `candidate` describe the SAME settled book as `stored`, evaluated only
-    over the contracts they both hold. Pure (no I/O) — the caller reads both
-    frames. Returns (agrees, overlap, floor, mismatches):
+    3 fixes the floor direction, amendment 4 adds `mismatches`; post-review
+    repair R4 adds `stored_ids`/`candidate_ids`): does `candidate` describe
+    the SAME settled book as `stored`, evaluated only over the contracts they
+    both hold. Pure (no I/O) — the caller reads both frames. Returns
+    (agrees, overlap, floor, mismatches, stored_ids, candidate_ids):
       * overlap -- the number of shared contracts.
       * floor -- the required overlap: min(len(stored), max(
         OI_OVERLAP_FLOOR_ABS, ceil(OI_OVERLAP_FLOOR_FRACTION * stored's own
@@ -609,15 +610,28 @@ def _same_book_overlap(stored: pd.DataFrame,
         (amendment 4, Sol review 4989933857) — a 19/20 refusal must still
         show its mismatch count in the receipt, so this is never gated on
         `overlap >= floor`.
+      * stored_ids / candidate_ids (R4, post-Sol-review repair, 2026-08-21)
+        -- the DEDUPED per-contract identity count this function itself
+        computed `floor` and `overlap` from (``len(s)``/``len(c)`` after the
+        ticker-or-composite dedup above) — NOT the raw row count of the
+        input frame. A parquet/frame can carry more ROWS than distinct
+        contract identities (e.g. a vendor resend), so the caller's own
+        `len(stored)`/`len(candidate)` is a different, non-reproducible
+        number: an auditor recomputing `floor` from a receipt that recorded
+        raw row counts would get a different answer than `floor` actually
+        was computed from. Callers that persist a "contract count" onto the
+        receipt (see accrue()'s vintage_proof) must use THESE, not
+        `len(stored)`/`len(candidate)`, so the receipt stays
+        self-reproducible after vendor state is gone.
       * agrees -- True only when overlap >= floor AND mismatches == 0.
         Below the floor, `agrees` is False regardless of what the
         (too-thin) intersection shows — an underpowered check must never
         read as a pass.
 
     F3 (boundary review, 2026-08-20): `stored` with ZERO rows returns
-    (False, 0, 0, 0) immediately — an empty frame vacuously "agrees" with
-    anything under a naive all()-over-nothing check, which is exactly the
-    false-positive this proof exists to prevent. (In practice a
+    (False, 0, 0, 0, 0, 0) immediately — an empty frame vacuously "agrees"
+    with anything under a naive all()-over-nothing check, which is exactly
+    the false-positive this proof exists to prevent. (In practice a
     REPLACEABLE stored capture always has >0 rows — see _health_verdict —
     so this is a defense-in-depth guard, not a reachable production path.)
 
@@ -645,7 +659,7 @@ def _same_book_overlap(stored: pd.DataFrame,
     bare positional "keep first" made an order swap alone flip the verdict.
     """
     if len(stored) == 0:
-        return False, 0, 0, 0
+        return False, 0, 0, 0, 0, 0
 
     cols = list(_CONTRACT_KEY_COLS)
 
@@ -679,8 +693,9 @@ def _same_book_overlap(stored: pd.DataFrame,
     # intersection regardless of overlap vs floor, so a thin (sub-floor)
     # refusal still carries its mismatch count for the receipt.
     mismatches = int((merged["oi_stored"] != merged["oi_candidate"]).sum())
+    stored_ids, candidate_ids = len(s), len(c)
     if overlap < floor:
-        return False, overlap, floor, mismatches
+        return False, overlap, floor, mismatches, stored_ids, candidate_ids
     # F6 (boundary review, ACCEPTED design — no behavior change): a single
     # differing contract on the intersection refuses the whole replacement,
     # exact-match, no tolerance band. This fails CLOSED by design — real OI
@@ -691,7 +706,7 @@ def _same_book_overlap(stored: pd.DataFrame,
     # captures to answer, not this proof; loosening it is a separate,
     # deliberate ruling, not a bug fix.
     agrees = mismatches == 0
-    return agrees, overlap, floor, mismatches
+    return agrees, overlap, floor, mismatches, stored_ids, candidate_ids
 
 
 def _drop_orphan_summary_rows(session: date, symbols: set[str]) -> None:
@@ -827,8 +842,25 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
     `_now` is a private testing hook (the accrual INSTANT used for the health
     receipt's capture_instant and AD-1C0.1's capture-lease check) — defaults to
     the real clock; production callers never pass it.
+
+    R1 (post-Sol-review repair, 2026-08-21): ONE CLOCK. A datetime `as_of` IS
+    the accrual instant by this module's own contract (see _resolve_session's
+    docstring) — the lease check, the receipt's capture_instant, and the
+    session resolution below must all read that SAME instant, never a
+    separately-sampled wall clock. Consulting `datetime.now(timezone.utc)`
+    here whenever `_now` was omitted — even when the caller passed a
+    datetime `as_of` — used to refuse the documented `accrue(<instant>)`
+    calling convention outright (the lease's prong (a) compares the WALL
+    clock's resolved session against `asof`, not `as_of`'s own) and opened a
+    settle-boundary race: an `as_of` sampled at 16:59:59.99 ET resolves the
+    prior session while a wall clock read milliseconds later can already have
+    rolled onto today. `_now` remains the private test override; the wall
+    clock is consulted only when the caller supplied neither `_now` nor a
+    datetime `as_of`.
     """
-    now = _now or datetime.now(timezone.utc)
+    now = _now or (as_of if isinstance(as_of, datetime) else datetime.now(timezone.utc))
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
     cfg = config.load().get("polygon")
     if not cfg:
         log.info("polygon: no config section — skip")
@@ -937,18 +969,36 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
     # below; a forced write's OWN lease validity is still recorded (via
     # _lease_audit, in the decision block) rather than skipped over.
     if not force and not _within_capture_lease(asof, now):
-        write_kind = "replacement" if stored_health is not None else "first_write"
+        # R3: write_kind is derived from `existed_before` (whether a stored
+        # file was on disk at gate time), never from `stored_health` — see
+        # the R3 comment on the write_kind assignment further below for why
+        # stored_health cannot be trusted for this on a forced run. At this
+        # point in the function `force` is always False (this whole branch
+        # is `not force and ...`), so stored_health is exactly
+        # `path.exists() and not force` here — i.e. existed_before — and
+        # this derivation is behaviorally identical to the old one for this
+        # branch; it is just no longer a SEPARATE source of truth from the
+        # one used at the write_kind assignment below.
+        write_kind = "replacement" if existed_before else "first_write"
         print(f"::notice title=polygon-outside-lease::session {asof}: capture instant "
               f"{now.isoformat()} ({write_kind}) is outside the AD-1C0.1 capture lease "
               f"- store left unadvanced", flush=True)
         log.info("polygon: session %s capture instant %s is outside the capture lease "
                  "(%s) — refusing to fetch, store left unadvanced",
                  asof, now.isoformat(), write_kind)
-        # census: honest "no fetch happened" for a first write (carrying
-        # forward is wrong when there is nothing stored to carry from); a
-        # replacement may carry the stored capture's own census forward, same
-        # as the other skip branches in this function.
-        skip_census = _carry_forward(stored_last) if write_kind == "replacement" else None
+        # census: honest "no fetch happened" for a first write. A replacement
+        # may carry the stored capture's own census forward, same as the
+        # other skip branches in this function. A first write has no stored
+        # capture to carry forward from, but the universe IS already known
+        # (gex_symbols() resolved fetch-free, before this gate) — R2 (Sol
+        # review 4989933857 follow-up): recording requested_underlyings here
+        # keeps _store_shrink_reference's receipt-side signal alive across a
+        # run that never fetched, instead of minting an all-None receipt
+        # that blinds it to a later session's real collapse (an all-None
+        # entry is invisible to the reference scan, which only looks at
+        # entries carrying an int requested_underlyings).
+        skip_census = (_carry_forward(stored_last) if write_kind == "replacement"
+                       else {"requested_underlyings": len(symbols)})
         _append_health_attempt(
             asof, decision="skipped_outside_lease",
             health=stored_health if stored_health is not None else "absent",
@@ -1090,10 +1140,20 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
     health = _health_verdict(census["coverage_pct"], len(raw))
     # A4 (Sol review 4989933857): every decision reached PAST the pre-fetch
     # lease gate already knows which kind of write it is — "replacement" iff
-    # a stored REPLACEABLE capture was in play (stored_health is not None;
-    # the immutable-skip branch above already returned otherwise), "first_
-    # write" when no stored file existed at all.
-    write_kind = "replacement" if stored_health is not None else "first_write"
+    # a stored file was already on disk at gate time, "first_write" when
+    # none existed.
+    #
+    # R3 (post-Sol-review repair, 2026-08-21): derived from `existed_before`
+    # (path.exists() at gate time), NOT `stored_health` — `stored_health`
+    # stays None on EVERY forced run, since the whole `stored_health`-
+    # computing block above is guarded by `if path.exists() and not force:`.
+    # Deriving write_kind from stored_health therefore mislabeled a --force
+    # overwrite of an EXISTING, healthy capture as a "first_write" (the
+    # stored file plainly existed; "first_write" is not just wrong-sounding,
+    # it also lied about the AD-1C0.1 lease/audit trail for the run).
+    # `existed_before` is set once, before the `not force` gating, so it
+    # reports the true on-disk fact regardless of --force.
+    write_kind = "replacement" if existed_before else "first_write"
     # decision_extra carries this decision's "lease"/"vintage_proof" audit
     # dicts (A4) through to BOTH possible _append_health_attempt call sites
     # below (the early skip-return, and the final write-path entry) — set
@@ -1147,15 +1207,26 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
                 decision_extra = {"lease": _lease_audit(asof, now, write_kind),
                                   "vintage_proof": {"store_readable": False}}
             else:
-                agrees, overlap, floor, mismatches = _same_book_overlap(stored_chain_df, raw)
+                (agrees, overlap, floor, mismatches, stored_ids,
+                 candidate_ids) = _same_book_overlap(stored_chain_df, raw)
                 # A4: persisted regardless of overlap vs floor — a 19/20
                 # refusal must still show its mismatch count on the receipt.
+                # R4 (post-Sol-review repair, 2026-08-21): stored_contracts/
+                # candidate_contracts record the DEDUPED contract-identity
+                # counts _same_book_overlap itself computed `floor` from
+                # (stored_ids/candidate_ids) — not len(stored_chain_df)/
+                # len(raw), which are raw parquet/frame ROW counts and can
+                # exceed the identity count (e.g. a vendor resend). Recording
+                # the raw row counts here made an auditor's own
+                # min(stored_contracts, max(20, ceil(0.25*stored_contracts)))
+                # recomputation from the receipt disagree with the
+                # required_overlap the receipt itself already reports.
                 vintage_proof = {
                     "store_readable": True,
                     "overlap_contracts": overlap,
                     "required_overlap": floor,
-                    "stored_contracts": len(stored_chain_df),
-                    "candidate_contracts": len(raw),
+                    "stored_contracts": stored_ids,
+                    "candidate_contracts": candidate_ids,
                     "oi_mismatch_count": mismatches,
                 }
                 decision_extra = {"lease": _lease_audit(asof, now, write_kind),
