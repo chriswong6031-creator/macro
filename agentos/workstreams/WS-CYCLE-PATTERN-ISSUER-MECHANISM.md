@@ -19,6 +19,7 @@ ambiguity: scoped
 owns_paths:
   - research/IMCE_ROUND3_ARCHITECTURE_FREEZE_BY_FABLE.md
   - research/imce/
+  - research/imce/hb0/
 decisions:
   - DEC:CPI-ISSUER-MECHANISM-RESEARCH-EXTENSION-NOT-NEW-ENGINE
 depends_on:
@@ -46,17 +47,31 @@ waves:
     depends_on: [IMCE-00]
   - id: A3
     title: IMCE-HB-0 — homebuilder source/definition census freeze (roster, denominator crosswalk, calendar re-key, frozen block list)
-    status: todo
+    status: done
     depends_on: [IMCE-00]
+    next_action: >
+      Delivered: nine adjudication artifacts + seven verbatim evidence packets under
+      research/imce/hb0/. Both debts the freeze assigned to A3 are discharged (named
+      survivorship census; per-source vintage audit). Block count hardened to B=5;
+      cancellation cells restricted to the stated-denominator era; six mutually
+      incompatible cancellation regimes recorded. THREE CORRECTIONS ARE PROPOSED, NOT
+      APPLIED, and need Fable/Sol adjudication as amendment-log entries: C1 restate the
+      LEN exclusion's reason (LEN discloses 14% in its 10-K MD&A; the robust ground is
+      that it states no formula), C2 resolve the block list's overlap and open-block
+      defects, C3 extend the [A18] missing-indicator ban to every era-correlated metric.
+      A4 must then make the six elections in IMCE_HB0_A4_CELL_BUDGET_INPUTS.md §8.
   - id: A4
     title: IMCE-03 — preregistration finalization (declared_budget trial-ledger rows; criteria commit before any outcome access)
     status: todo
     depends_on: [A2, A3]
 next_action: >
-  A1 is delivered and returned to Fable. Next: A2 (CPI truth-contract audit — the
-  precondition for ANY issuer truth) and A3 (IMCE-HB-0 homebuilder census freeze), which
-  may run in parallel. A4 only after both. A1's DSC on epoch-boundary lag classes gives
-  A3 a concrete test to run on a second family.
+  A1 and A3 are both delivered and returned to Fable (they ran in parallel, as the freeze
+  §13 permits). Next: A2 (CPI truth-contract audit — the precondition for ANY issuer
+  truth), the last wave gating A4. Before A4, Fable/Sol must adjudicate A3's three
+  proposed corrections (C1 LEN exclusion reason, C2 block-list defects -> B=5, C3 [A18]
+  scope) as amendment-log entries, and A4 must make the six elections in
+  research/imce/hb0/IMCE_HB0_A4_CELL_BUDGET_INPUTS.md §8. A1's DSC on epoch-boundary lag
+  classes remains a concrete test A3's homebuilder family can be run against.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."
