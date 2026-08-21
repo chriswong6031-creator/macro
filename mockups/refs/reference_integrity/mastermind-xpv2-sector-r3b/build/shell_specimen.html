@@ -277,17 +277,34 @@ html[data-lang="zh"] :is(.r3-eyebrow,.r3-answer-view,.r3-ledge-name,.r3-kicker,.
 
 /* 7.1 view answer — the ANSWER THREAD.  A 3px --link left rail is reserved for
    exactly two elements on this product: the active rail item, and the view
-   answer.  Nothing else may draw one. */
+   answer.  Nothing else may draw one.
+
+   ONE ANSWER PER VIEW, ONE VOICE.  The nightly composed read (.si-view-read,
+   written by si_workspace.js) IS the answer line — it is not a second sentence
+   stacked beneath one.  A static fallback line sits behind it and appears only
+   when the composer returns null, so absence is never dressed as a reading and
+   the view is never answerless.  Production hides its own read on Overview
+   (sector_central.html.j2:1620) precisely because a hero duplicated it; merging
+   the two slots retires that duplication instead of re-creating it. */
 .r3-answer{ border-left:3px solid var(--link); padding:2px 0 2px var(--sp-4);
   margin:0 0 var(--sp-6); }
 .r3-answer-view{ font-size:var(--fs-label); font-weight:700; letter-spacing:.09em;
-  text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
-.r3-answer-line{ font-size:var(--fs-num-lg); font-weight:500; line-height:1.36;
+  text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+.r3-answer-line, .r3-answer .si-view-read{
+  font-size:var(--fs-num-lg); font-weight:500; line-height:1.36;
   letter-spacing:-.01em; color:var(--text); max-width:62ch; }
-html[data-lang="zh"] .r3-answer-line{ letter-spacing:0; line-height:1.5; max-width:34em; }
+html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
+  letter-spacing:0; line-height:1.55; max-width:34em; }
 .r3-answer-line b{ font-weight:700; }
+/* the read slot, worn as the answer: no panel, no border, no second box */
+.r3-answer .si-view-read{ display:flex; align-items:flex-start; gap:11px;
+  margin:0; padding:0; background:none; border:0; border-radius:0; }
+.r3-answer .si-vr-g{ width:20px; height:20px; margin-top:5px; }
+.r3-answer .si-vr-q{ margin-top:6px; }
+/* pure-CSS fallback: hide the static line whenever a composed read is present */
+.r3-answer .si-view-read:not([hidden]) ~ .r3-answer-line{ display:none; }
 .r3-answer-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
-  margin-top:11px; font-size:var(--fs-sm); color:var(--muted); }
+  margin-top:12px; font-size:var(--fs-sm); color:var(--muted); }
 .r3-q{ display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
   border:1px solid var(--line); border-radius:50%; font-size:9.5px; font-weight:700;
   color:var(--muted); cursor:help; }
@@ -340,8 +357,10 @@ html[data-lang="zh"] .r3-answer-line{ letter-spacing:0; line-height:1.5; max-wid
   text-transform:uppercase; line-height:1.3; color:var(--muted); }
 .r3-ledge-count{ display:block; margin-top:7px; font-size:var(--fs-num-lg); font-weight:800;
   letter-spacing:-.02em; color:var(--text); font-variant-numeric:tabular-nums; }
-.r3-ledge-cell[aria-selected="true"]{ background:var(--panel2); box-shadow:inset 0 -3px 0 var(--c); }
+.r3-ledge-cell[aria-selected="true"]{ background:color-mix(in srgb, var(--c) 9%, var(--panel2));
+  box-shadow:inset 0 -3px 0 var(--c); }
 .r3-ledge-cell[aria-selected="true"] .r3-ledge-name{ color:var(--c); }
+.r3-ledge-cell[aria-selected="true"] .r3-ledge-count{ font-weight:800; }
 .r3-ledge-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4);
   padding:9px 14px; border-top:1px solid var(--line); background:color-mix(in srgb,var(--panel2) 45%,transparent);
   font-size:var(--fs-sm); color:var(--muted); }
