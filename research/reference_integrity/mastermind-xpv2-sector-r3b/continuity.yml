@@ -1,0 +1,489 @@
+# Revision continuity closure (RIG V1.1 S13 / rule L10) -- mastermind-xpv2-sector-r3b.
+#
+# Predecessor mastermind-xpv2-turn3-r2 issued NO verdict.yml: all four independent critics
+# (Product Regression, Visual/Taste, Mobile/Accessibility, Data/Authority) returned BLOCK, and
+# the bundle explicitly stopped before a design-authority verdict (README.md: "The review bundle
+# intentionally stops before verdict.yml and approval.yml because every critic returned BLOCK
+# overall"). scripts/check_reference_integrity.py's automated closure-set derivation
+# (--mandate, rule_l10's coverage/rename checks) is sourced EXCLUSIVELY from a predecessor's
+# verdict.yml (blocking_findings + conditions) -- with none on disk, that machinery resolves
+# ZERO open items, even though 39 real, unresolved review-critic findings exist in r2's six
+# review records (reviews/product_regression.yml, reviews/visual_taste.yml,
+# reviews/mobile_accessibility.md, reviews/data_authority.md).
+#
+# This file closes that gap BY HAND rather than relying on a derivation the predecessor's own
+# record cannot support: every one of the 39 findings across all four critics is enumerated
+# below, one row each, transcribed from the review records (RIG S13.1's "no missing state and no
+# implicit state" applied to raw critic findings, not only to verdict-promoted ones). Because
+# none of these ids were ever minted by a verdict.yml, every row below carries `predecessor_ref`
+# pointing at itself -- documenting explicitly that its anchor is the REVIEW record id, not a
+# verdict-level id, per RIG S13.3's "renamed item must carry predecessor_ref naming the id it
+# closes" convention (the checker's own `known` predecessor-id registry is empty here for the
+# reason above, so every row would otherwise mechanically read as an undocumented rename).
+#
+# Per the COMMISSION.md (Sol-issued XPV2-SC-R3B commission) S27 "Required continuation" and S2
+# binding order: only PRC-003 and DAC-005's tab-order sub-claim are already adjudicated, in
+# research/reference_integrity/mastermind-xpv2-sector-r3/ADJUDICATIONS.md SA7 and SA4
+# respectively (both cross-checked against current production by the R3A archaeology lanes).
+# Every other finding is CARRIED_BLOCK, disposition: pending orchestrator adjudication against
+# the frozen R3 candidate -- honest and legal (RIG S13.1), and it correctly BLOCKS approval
+# until the design lanes' candidate and the fresh post-R3B critic wave (COMMISSION.md S27)
+# resolve each one by id.
+schema: mastermind.rig_continuity.v1
+reference_id: mastermind-xpv2-sector-r3b
+
+predecessors:
+  - reference_id: mastermind-xpv2-turn3-r2
+    verdict: "BLOCK (no design-authority verdict issued -- all four independent critics returned BLOCK; review intentionally halted before verdict.yml per reviews/README.md)"
+    source: on_disk
+    source_ref: >
+      research/reference_integrity/mastermind-xpv2-turn3-r2/ is present in this checkout
+      (manifest.yml + README.md + reviews/{product_regression,visual_taste}.yml +
+      reviews/{mobile_accessibility,data_authority}.md); no snapshot/PR-head form is needed.
+      The 39 findings below are transcribed directly from those six files, not from a
+      verdict.yml (none exists -- see the file header note above).
+    closure:
+      # ================= PRC-001..013 (source: reviews/product_regression.yml) =================
+      - id: PRC-001
+        predecessor_ref: PRC-001
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: blocker; source: reviews/product_regression.yml] Operational rows use dead
+          href targets and a LENS link to a nonexistent method anchor, while production preserves
+          real row, trace, group, stock, and method destinations. Pending orchestrator
+          adjudication against the frozen R3 candidate.
+      - id: PRC-002
+        predecessor_ref: PRC-002
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: blocker; source: reviews/product_regression.yml] The candidate has no exact
+          preview/full-count disclosure, premium hydration, or access-failure contract and
+          therefore does not preserve the current tier gate. Pending orchestrator adjudication
+          against the frozen R3 candidate.
+      - id: PRC-003
+        predecessor_ref: PRC-003
+        kind: blocker
+        disposition: OVERRIDDEN
+        authority: "R3A archaeology/adjudication lane (WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2 XPV2-SC-R3A, PR #6122)"
+        rationale: >
+          [severity: blocker; source: reviews/product_regression.yml] r2's claim ("candidate
+          router covers only a subset of current inbound hashes and loses read-trace and
+          theme-hash behavior") is REFUTED against actual production by the R3A capability
+          census: research/reference_integrity/mastermind-xpv2-sector-r3/ADJUDICATIONS.md SA7
+          and capability_disposition_ledger.md row 81 both record that all four named legacy
+          hashes are present and mapped in production's 21-entry LEGACY_ANCHORS table
+          (routing_contract.md). The finding is overridden as factually incorrect about current
+          production, not resolved by a candidate change -- R3B's proposal.yml (SC-081) still
+          RETAINs the full 21-entry table and additionally demonstrates correct scroll-offset
+          behavior per COMMISSION.md S14.
+        finding: PRC-003
+      - id: PRC-004
+        predecessor_ref: PRC-004
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: blocker; source: reviews/product_regression.yml] Snapshot clocks, counts,
+          rows, and universes are hardcoded without a carried producer/correction contract, so
+          dynamic product preservation is unproven. Pending orchestrator adjudication against the
+          frozen R3 candidate -- the R3B candidate must bind these fields to the fixture, not
+          hardcode them, per COMMISSION.md S0/S19.
+      - id: PRC-005
+        predecessor_ref: PRC-005
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: blocker; source: reviews/product_regression.yml] Explore, performance, Time
+          Machine, narratives, and track record collapse to a seven-row sample and dead links
+          rather than reachable current capabilities. Pending orchestrator adjudication against
+          the frozen R3 candidate -- binds SC-054/055/057/058/059/060/061.
+      - id: PRC-006
+        predecessor_ref: PRC-006
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: blocker; source: reviews/product_regression.yml] Confluence tabs only toggle
+          visual state; they do not switch producer universes, recompute coverage/distribution,
+          or preserve group/member detail behavior. Pending orchestrator adjudication against the
+          frozen R3 candidate -- binds SC-063/070/074.
+      - id: PRC-007
+        predecessor_ref: PRC-007
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: blocker; source: reviews/product_regression.yml] Loading, stale, partial,
+          unavailable, access-error, independent-clock, and honest empty states are specified in
+          prose but absent from the candidate surface. CONFIRMED as an accurate critique per
+          ADJUDICATIONS.md (not among the refuted items). Pending orchestrator adjudication
+          against the frozen R3 candidate -- binds COMMISSION.md S16 "Render only states backed
+          by current contracts" and every SC-02x/03x state-matrix row.
+      - id: PRC-008
+        predecessor_ref: PRC-008
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: blocker, downgraded to major in second pass; source:
+          reviews/product_regression.yml] LENS copy is mostly authority-correct but its visible
+          methodology link has no target (second pass: "the packet provides the lawful
+          hide-or-implement remedy"). Out of R3B's own scope (LENS/intelligence_hub.html is a
+          separate surface from sector_central.html) but still an unresolved r2 item under this
+          predecessor's combined artifact set -- carried forward rather than silently dropped.
+          Pending orchestrator adjudication (ownership: a future LENS/intelligence_hub RIG cycle,
+          not R3B).
+      - id: PRC-009
+        predecessor_ref: PRC-009
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: major; source: reviews/product_regression.yml] Leadership handoff and What
+          changed are not proven payload-resident. Pending orchestrator adjudication against the
+          frozen R3 candidate -- binds SC-024.
+      - id: PRC-010
+        predecessor_ref: PRC-010
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: major; source: reviews/product_regression.yml] Early-turn compression loses
+          current receipts and destinations (second pass: "the ledger says improve, not
+          sample-only"). Pending orchestrator adjudication against the frozen R3 candidate --
+          binds SC-021/022/023.
+      - id: PRC-011
+        predecessor_ref: PRC-011
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: major; source: reviews/product_regression.yml] Map, Moving, and Money/
+          Breadth are visually present but capability completeness is unproven. Pending
+          orchestrator adjudication against the frozen R3 candidate -- binds all Map/Moving/Money
+          capability rows (SC-036..053).
+      - id: PRC-012
+        predecessor_ref: PRC-012
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: major; source: reviews/product_regression.yml] The candidate changes the
+          current ZH Stand aside label from 观望 to 暂时回避. Pending orchestrator adjudication
+          against the frozen R3 candidate -- binds SC-002 exact-label-parity, and is the same
+          defect class DAC-006 raises independently below.
+      - id: PRC-013
+        predecessor_ref: PRC-013
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: major; source: reviews/product_regression.yml] Copying the standalone shell
+          literally would create a duplicate local component system. Pending orchestrator
+          adjudication against the frozen R3 candidate -- binds COMMISSION.md S6 "Do not redesign
+          global Mastermind navigation here" / "Do not reproduce R2's hand-built topbar as design
+          law".
+
+      # ================= VTC-001..010 (source: reviews/visual_taste.yml) =================
+      - id: VTC-001
+        predecessor_ref: VTC-001
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: blocker; source: reviews/visual_taste.yml] Sticky chrome and automatic hash
+          scrolling visibly occlude the page answer at desktop and mobile widths (second pass:
+          "shareable hashes and immediate answers do not authorize occlusion"). Pending
+          orchestrator adjudication against the frozen R3 candidate -- COMMISSION.md S14 makes
+          the correct scroll-offset behavior a REQUIRED reference behavior this wave, so this
+          item should be directly closeable at candidate freeze rather than merely carried.
+      - id: VTC-002
+        predecessor_ref: VTC-002
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: blocker, downgraded to major in second pass; source:
+          reviews/visual_taste.yml] The 660px five-lane strip clips labels and hides two action
+          states without a visible continuation affordance (second pass: "local scroll is
+          allowed, but clipping and invisible continuation remain unacceptable"). Pending
+          orchestrator adjudication against the frozen R3 candidate -- COMMISSION.md S8 Sol
+          amendment directly targets this: all five mobile action states must be discoverable
+          without hidden offscreen states.
+      - id: VTC-003
+        predecessor_ref: VTC-003
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: blocker; source: reviews/visual_taste.yml] Proportional columns clip
+          Buy-ready and hide later Confluence states in the default viewport. Pending
+          orchestrator adjudication against the frozen R3 candidate -- COMMISSION.md S13 Sol
+          amendment directly targets this: fixed readable state/count cells, never
+          population-scaled labels.
+      - id: VTC-004
+        predecessor_ref: VTC-004
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: major; source: reviews/visual_taste.yml] The mobile Map is a shrunken dense
+          desktop SVG in a tall frame rather than a readable mobile instrument. Pending
+          orchestrator adjudication against the frozen R3 candidate -- binds COMMISSION.md S9
+          "Mobile -- required redesign".
+      - id: VTC-005
+        predecessor_ref: VTC-005
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: major; source: reviews/visual_taste.yml] Dynamic Sector rows and supporting
+          LENS labels remain English in ZH mode. Pending orchestrator adjudication against the
+          frozen R3 candidate -- same defect class as MAC-002 below.
+      - id: VTC-006
+        predecessor_ref: VTC-006
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: major; source: reviews/visual_taste.yml] Multiple similarly weighted modules
+          make the mobile Overview read as a compressed dashboard stack (second pass: "module
+          order is accepted; rendered weighting and mobile composition are not"). Pending
+          orchestrator adjudication against the frozen R3 candidate -- binds the Overview
+          "Quiet Conviction" north star, COMMISSION.md S5/S8.
+      - id: VTC-007
+        predecessor_ref: VTC-007
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: major; source: reviews/visual_taste.yml] The reference hand-builds a third
+          topbar idiom and omits real product affordances (second pass condition: "production
+          must treat the mock topbar as non-binding and keep canonical chrome"). Pending
+          orchestrator adjudication against the frozen R3 candidate -- COMMISSION.md S6 directly
+          forbids reproducing R2's hand-built topbar as design law.
+      - id: VTC-008
+        predecessor_ref: VTC-008
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: major; source: reviews/visual_taste.yml] Unicode and emoji-like glyphs read
+          as mockup shorthand rather than restrained instrumentation. Pending orchestrator
+          adjudication against the frozen R3 candidate -- COMMISSION.md S18 directly forbids
+          decorative Unicode stars/emoji/glyphs/lightning badges.
+      - id: VTC-009
+        predecessor_ref: VTC-009
+        kind: minor
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: major, downgraded to a condition in second pass; source:
+          reviews/visual_taste.yml] LENS is mostly empty canvas when judged as a page rather than
+          an interaction/component specimen (second pass condition: "lawful only when explicitly
+          scoped as a component specimen"). Out of R3B's own scope (LENS/intelligence_hub.html is
+          a separate surface) but carried forward rather than silently dropped, same reasoning as
+          PRC-008. Pending orchestrator adjudication (ownership: a future LENS/intelligence_hub
+          RIG cycle, not R3B).
+      - id: VTC-010
+        predecessor_ref: VTC-010
+        kind: minor
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: minor, downgraded further in second pass; source: reviews/visual_taste.yml]
+          Mobile sheet title focus is accessible but visually browser-default and unpolished
+          (second pass: "the focus destination is correct; only its visual treatment needs
+          repair"). Out of R3B's own scope (LENS is a separate surface) but carried forward.
+          Pending orchestrator adjudication (ownership: a future LENS/intelligence_hub RIG
+          cycle, not R3B).
+
+      # ================= MAC-001..008 (source: reviews/mobile_accessibility.md) =================
+      - id: MAC-001
+        predecessor_ref: MAC-001
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: BLOCK; source: reviews/mobile_accessibility.md] 200% text zoom breaks core
+          layouts: document-level horizontal overflow and clipped primary names/state labels
+          measured across LENS and every Sector Central view at 320-820px (e.g. Sector Overview
+          320px overflow 87px with all five action labels clipped; Sector Explore 768px overflow
+          401px). Pending orchestrator adjudication against the frozen R3 candidate --
+          COMMISSION.md S17 "200% text zoom -- strengthened requirement" directly targets this.
+      - id: MAC-002
+        predecessor_ref: MAC-002
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: BLOCK for Sector, major for LENS; source: reviews/mobile_accessibility.md]
+          Sector Central ZH is not a bilingual accessible page: #search keeps its English
+          placeholder/aria-label, the Explore empty state stays English, generated product rows
+          and controls leak English text and accessible labels in ZH mode. Pending orchestrator
+          adjudication against the frozen R3 candidate -- COMMISSION.md S17 "Language" ZH-parity
+          requirement, same defect class as VTC-005.
+      - id: MAC-003
+        predecessor_ref: MAC-003
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: BLOCK; source: reviews/mobile_accessibility.md] Focusable links include
+          broken or placeholder destinations: LENS #method has no target element; Sector Overview
+          (7), Map (1), Moving (3), Explore (3), and Confluence (10) all carry visible/focusable
+          href="#" placeholder links. Pending orchestrator adjudication against the frozen R3
+          candidate -- COMMISSION.md S19 "Never use href=\"#\"" directly targets this; binds
+          SC-086.
+      - id: MAC-004
+        predecessor_ref: MAC-004
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: BLOCK; source: reviews/mobile_accessibility.md] Charts and dense data views
+          lack accessible equivalents: the Map SVG has zero title/desc/focusable points and no
+          data table/list; the Moving cross-table has no caption/aria-label; the Confluence
+          sparkline has an aria-label but no role/title/desc/textual summary. Pending
+          orchestrator adjudication against the frozen R3 candidate -- COMMISSION.md S17 "Chart
+          accessibility" and the Map/Money "Accessible equivalent -- mandatory" clauses directly
+          target this; binds SC-037/039/045/052.
+      - id: MAC-005
+        predecessor_ref: MAC-005
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: MAJOR; source: reviews/mobile_accessibility.md] Invalid ARIA patterns on
+          secondary controls: .panel.distribution and .universe-tabs declare role="tablist" over
+          plain buttons with no role="tab"/aria-selected/aria-pressed; #theme and #lang are
+          stateful controls lacking aria-pressed. Pending orchestrator adjudication against the
+          frozen R3 candidate -- COMMISSION.md S17 "ARIA" ("proper tab semantics for tabs,
+          group/toolbar/pressed semantics for filters/segments") directly targets this.
+      - id: MAC-006
+        predecessor_ref: MAC-006
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: MAJOR, rising to BLOCK if required mobile/tablet journeys; source:
+          reviews/mobile_accessibility.md] Normal-size responsive states still clip/overflow
+          important Sector content without text zoom, e.g. the "IN FAVOUR -- DON'T CHASE" state
+          name clips at 320-430px, Sector Overview 768px overflows 33px, Sector Money overflows
+          138px/68px at 320/390px. Pending orchestrator adjudication against the frozen R3
+          candidate -- COMMISSION.md S17 automated width sweep requirement targets this directly.
+      - id: MAC-007
+        predecessor_ref: MAC-007
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: MAJOR / production-proof required; source: reviews/mobile_accessibility.md]
+          Actual touch path and focus trap are not production-proven: CDP touch dispatch was
+          unsupported in the review harness and Tab traversal/focus-trap cycling was unreliable
+          and marked NOT_EVALUABLE, though the LENS mobile sheet showed several correct modal
+          signs. Pending orchestrator adjudication against the frozen R3 candidate --
+          COMMISSION.md S17 requires real keyboard semantics; this item needs real-browser proof
+          the R3B evidence lane must supply, not merely a repeat of the same NOT_EVALUABLE state.
+      - id: MAC-008
+        predecessor_ref: MAC-008
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: MAJOR; source: reviews/mobile_accessibility.md] Touch targets are below 44px
+          on repeated primary controls: LENS #themeBtn/#langBtn/#help and 9-10 undersized Sector
+          controls at small widths, including the Confluence "Open group ->" link at 40px high
+          under 200% zoom. Pending orchestrator adjudication against the frozen R3 candidate --
+          COMMISSION.md S17 "Touch targets" (>=44 CSS px) directly targets this.
+
+      # ================= DAC-001..008 (source: reviews/data_authority.md) =================
+      - id: DAC-001
+        predecessor_ref: DAC-001
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: BLOCK; source: reviews/data_authority.md] Sector Central Explore assigns
+          wrong action states, scores, and performance for Memory/HBM/Storage, Health Care,
+          Semicap Equipment, and Data-Center Power & Cooling versus the current
+          action_board.json/sector_central.json producers. CONFIRMED as an accurate critique per
+          ADJUDICATIONS.md (row 7 of capability_disposition_ledger.md independently confirms
+          sector rows must carry the real qualitative stat chip, never an invented blended
+          score). Pending orchestrator adjudication against the frozen R3 candidate -- binds
+          SC-006/007/008.
+      - id: DAC-002
+        predecessor_ref: DAC-002
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: BLOCK; source: reviews/data_authority.md] Health Care context leadership is
+          converted into action authority ("Buy now") when the current XLV payload is conviction
+          23/Reduce/down and the action-board row is on_the_run, not Buy now. CONFIRMED as an
+          accurate critique per ADJUDICATIONS.md (the structural-separation invariant this
+          violates is exactly capability_disposition_ledger.md row 26 / SC-026). Pending
+          orchestrator adjudication against the frozen R3 candidate -- binds SC-024/026.
+      - id: DAC-003
+        predecessor_ref: DAC-003
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: BLOCK; source: reviews/data_authority.md] Display-only Bottoming Watch is
+          retitled "Early turns" with "Watch until the entry state upgrades" copy, while
+          baskets.json marks it tier: display / may_rank/gate/size/escalate: false and the action
+          board simultaneously places the same three names on the avoid side. CONFIRMED as an
+          accurate critique per ADJUDICATIONS.md. Pending orchestrator adjudication against the
+          frozen R3 candidate -- binds SC-021/022/023 and COMMISSION.md S8 "Bottoming Watch" naming
+          prohibition (must not become Early Entry / Early Turn Pipeline / Upgrade Watch).
+      - id: DAC-004
+        predecessor_ref: DAC-004
+        kind: blocker
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: BLOCK; source: reviews/data_authority.md] Confluence mixes theme rows
+          (Medical Devices, Big Pharma, Gold Miners, Non-AI Software) into the selected S&P 500
+          subsector universe tab, against subsector_confluence.json's actual S&P
+          tailwind/late-headwind rows. Pending orchestrator adjudication against the frozen R3
+          candidate -- COMMISSION.md S13 "Active-universe law -- Never mix rows from another
+          universe" directly targets this; binds SC-063/070.
+      - id: DAC-005
+        predecessor_ref: DAC-005
+        kind: major
+        disposition: OVERRIDDEN
+        authority: "R3A archaeology/adjudication lane (WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2 XPV2-SC-R3A, PR #6122)"
+        rationale: >
+          [severity: MAJOR; source: reviews/data_authority.md] DAC-005 bundles three claims:
+          (a) canonical state labels replaced with "Buy-ready"; (b) Confluence tab order drifts
+          from canonical dataset order; (c) coverage wording drifts ("65 of 113 ... 48 remain
+          thin" vs the canonical "listed in the table, not timed" honesty clause). ONLY the
+          tab-order sub-claim (b) is overridden here: ADJUDICATIONS.md SA4 and
+          capability_disposition_ledger.md row 64 (SC-064) establish that r2's critic conflated
+          the `DS` JS declaration order with the actual rendered DOM tab order, and production's
+          real tab order (S&P -> Nasdaq -> Russell -> Baskets) is confirmed intact and unchanged.
+          Sub-claims (a) and (c) are NOT overridden by this row and are not silently dropped: they
+          remain live, tracked as known-defect RETAIN capabilities in THIS cycle's own baseline.yml
+          /proposal.yml (SC-065 "S&P thin-but-listed wording ... semantically inaccurate ...
+          recorded, not repaired this wave" and SC-077 coverage-wording template), so the R3B
+          candidate must restore canonical state-label vocabulary and coverage honesty per
+          COMMISSION.md S13 "Use canonical producer vocabulary ... Do not replace it with R2
+          synonyms" even though this continuity row itself closes only the tab-order half.
+        finding: DAC-005
+      - id: DAC-006
+        predecessor_ref: DAC-006
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: MAJOR; source: reviews/data_authority.md] Action-board counts and lane order
+          are correct (4/5/5/3/27) but exact subcopy is abbreviated and the ZH Stand aside label
+          reads 暂时回避 instead of canonical 观望. CONFIRMED as an accurate critique per
+          ADJUDICATIONS.md. Pending orchestrator adjudication against the frozen R3 candidate --
+          binds SC-002; same defect class as PRC-012 above.
+      - id: DAC-007
+        predecessor_ref: DAC-007
+        kind: major
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: MAJOR; source: reviews/data_authority.md] Moving/handoff copy contradicts
+          the current si_handoff.json producer payload (candidate says money moves from Semicap
+          Equipment into Memory/Non-AI hardware; canonical migration is Software/Materials-
+          Mining/Consumer-Defensive absorbing from Semiconductors/Energy, with Memory/HBM/Storage
+          itself the broken trailing leader, not a destination). Pending orchestrator
+          adjudication against the frozen R3 candidate -- binds SC-047.
+      - id: DAC-008
+        predecessor_ref: DAC-008
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          [severity: CONDITION; source: reviews/data_authority.md] Intelligence Hub copy is
+          correct, but production still retains a stale policy-vote tooltip
+          (templates/intelligence_hub.html.j2 "Five desks vote on each name") that the r2
+          candidate's wording correctly fixes. Out of R3B's own scope entirely --
+          intelligence_hub.html is a different route/surface from sector_central.html, and this
+          item was only carried in r2's artifact set because r2 combined both surfaces under one
+          reference_id. Carried forward rather than silently dropped, per RIG S13.1; ownership
+          for closing this item rests with a future intelligence_hub RIG cycle, not R3B. Pending
+          orchestrator adjudication (scope reassignment, not a candidate fix).
+
+# -- What this file demonstrates ------------------------------------------------------------
+# 37 of 39 predecessor findings are CARRIED_BLOCK (2 of those, PRC-008 and VTC-009/VTC-010 --
+# three ids across two entries -- and DAC-008, are out of R3B's own route scope and are flagged
+# for future-cycle ownership rather than silently dropped). 2 of 39 (PRC-003 fully, DAC-005's
+# tab-order sub-claim only) are OVERRIDDEN on R3A archaeology evidence that already exists on
+# main. Every id closure obligation is satisfied by an explicit row -- none evaporate between
+# cycles. A CARRIED_BLOCK is not a failure of this artifact; it is the honest state, legally
+# recorded, and it correctly blocks approval (rule_l10: continuity-carried-block-approved) until
+# the R3B candidate and its fresh post-freeze critic wave (COMMISSION.md S27) resolve each one.

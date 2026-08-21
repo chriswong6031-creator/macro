@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en" data-lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Sector Central — R3 reference (quarantine placeholder shell)</title>
+<!-- Google Fonts slot: the R3B build harness loads no external fonts or network
+     requests of any kind (frozen spec). The Principal Design Lead's shell may add
+     a <link rel="stylesheet" href="https://fonts.googleapis.com/..."> here in a
+     later wave — left as a comment slot on purpose, not wired by this harness. -->
+<style>
+  /* ── THROWAWAY PLACEHOLDER SHELL ──────────────────────────────────────────
+     Owned by the R3B build harness (mockups/refs/.../build/shell.html), NOT the
+     design lane. Deliberately minimal/ugly — proves the assembly pipeline, the
+     six-view router, and the data registry work end to end. A Principal Design
+     Lead's shell drops into the SAME slot markers this file carries
+     (REF:NAV / REF:VIEWS / REF:DATA / REF:RUNTIME / REF:ROUTER HTML comments,
+     spelled out literally further down this file)
+     without touching build/build_reference.py, build/runtime_shim.js, or any
+     view partial's data-reading script. */
+  :root{
+    --ref-sticky-offset: 56px; /* static fallback; runtime_shim.js overwrites this
+                                   with the MEASURED header height at boot */
+    --bg:#0b0d10; --fg:#e6e6e6; --muted:#9aa4af; --line:#2a2f36; --accent:#2b6cb0;
+  }
+  html[data-theme="light"]{ --bg:#ffffff; --fg:#12151a; --muted:#5b6470; --line:#dde1e6; --accent:#2b6cb0; }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:auto; } /* production's activate() scrolls with block:'start', no smooth behavior — see routing_contract.md §6 */
+  [id]{ scroll-margin-top: var(--ref-sticky-offset); }
+  body{ margin:0; font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+        background:var(--bg); color:var(--fg); }
+  html[data-lang="en"] .l-zh{ display:none; }
+  html[data-lang="zh"] .l-en{ display:none; }
+  header.si-topbar{ position:sticky; top:0; z-index:50; display:flex; gap:16px; align-items:center;
+        flex-wrap:wrap; padding:10px 16px; background:var(--bg); border-bottom:1px solid var(--line); }
+  header.si-topbar .si-brand{ font-weight:700; white-space:nowrap; }
+  nav.si-nav{ display:flex; gap:6px; flex-wrap:wrap; }
+  .si-view-btn{ padding:6px 10px; border:1px solid var(--line); border-radius:6px; color:inherit;
+        text-decoration:none; font-size:13px; background:transparent; }
+  .si-view-btn.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  main.si-main{ max-width:1100px; margin:0 auto; padding:16px; }
+  .si-view{ display:none; }
+  .si-view.on{ display:block; }
+  .si-view h2{ margin:4px 0 12px; }
+  .ref-proof{ background:color-mix(in srgb, var(--accent) 12%, transparent); border:1px dashed var(--accent);
+        border-radius:6px; padding:8px 10px; margin:8px 0 16px; font-size:13px; }
+  .ab-lane{ border:1px solid var(--line); border-radius:6px; padding:8px 10px; margin:0 0 10px; }
+  .ab-lane h4{ margin:0 0 6px; display:flex; gap:8px; align-items:baseline; font-size:13px; }
+  .ab-count{ color:var(--muted); font-weight:400; }
+  .actbody{ display:flex; flex-direction:column; gap:2px; }
+  .actitem{ color:inherit; text-decoration:none; padding:2px 0; font-size:13px; }
+  .actitem:hover{ text-decoration:underline; }
+  .pg-more{ color:var(--muted); font-size:12px; margin-top:4px; }
+  table.ref-tbl{ border-collapse:collapse; font-size:12px; }
+  table.ref-tbl td, table.ref-tbl th{ border:1px solid var(--line); padding:3px 6px; }
+  .si-view-read{ font-size:13px; color:var(--muted); }
+</style>
+</head>
+<body>
+<header class="si-topbar">
+  <span class="si-brand">Sector Central <span style="color:var(--muted);font-weight:400">· R3 reference</span></span>
+  <nav class="si-nav" aria-label="Sector Central views">
+<!--REF:NAV-->
+  </nav>
+</header>
+<main class="si-main">
+<!--REF:VIEWS-->
+</main>
+<!--REF:DATA-->
+<!--REF:RUNTIME-->
+<!--REF:ROUTER-->
+</body>
+</html>

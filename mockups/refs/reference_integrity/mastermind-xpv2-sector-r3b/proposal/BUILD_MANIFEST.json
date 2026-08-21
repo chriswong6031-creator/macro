@@ -1,0 +1,166 @@
+{
+  "assembler_self": {
+    "sha256": "3285059db5069fcb5b6be2d69f96725974ee9444f113a7a7d967cd07ef062234",
+    "size_bytes": 14481,
+    "source": "build/build_reference.py"
+  },
+  "fixture_capture_commit": "4c55fe433490adfd75fd901ef25f5793db2202db",
+  "inputs": [
+    {
+      "path": "basketdata/action_board.json",
+      "sha256": "b042b118acc3382ebde4fcd11abb1e2f2b27f09a87d74677a137a2e4199912c9",
+      "size_bytes": 233242,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "basketdata/baskets.json",
+      "sha256": "ebbf0ca911c8fcf0d6bd52d4a3cef9fabe9ddca6652d1733986cd3bb46c8f270",
+      "size_bytes": 1205339,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "basketdata/etf_pulse.json",
+      "sha256": "2d5cbc89df108177d0c5d4e315fdb25ca936e1e4f349199e26c4f579a3cb4479",
+      "size_bytes": 4201,
+      "source": "R3B supplement"
+    },
+    {
+      "path": "basketdata/narrative_emergence.json",
+      "sha256": "235a1b1a90bea5797139badcf62b45f91f9b918765cba922ed0fd5bef2c927d1",
+      "size_bytes": 11689,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "basketdata/oracle_tape_onset.json",
+      "sha256": "7a631519087bec3c13e96234caaeaaa4d919a8be5cd2910bff20162e992420ac",
+      "size_bytes": 3290,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "basketdata/oracle_turn_desk.json",
+      "sha256": "b168a4fea843ef6fbf4994565f21d2853512cba194ec20d75113e83757269827",
+      "size_bytes": 2198,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "basketdata/si_handoff.json",
+      "sha256": "19307833dbcd42e037528954311217bba5705b7f48bea02ff6a492ea948f7e84",
+      "size_bytes": 19095,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "basketdata/vol_sentiment.json",
+      "sha256": "845c68eec1c271d55422cc00bf5556bf2a8bca1af22a52e81426b67021f8c647",
+      "size_bytes": 819,
+      "source": "R3B supplement"
+    },
+    {
+      "path": "fragments/sc_flows.html",
+      "sha256": "a0a3805fb339f9659dac6d1ec81883481246f8b13d8f9f153c060aa0e17cafd3",
+      "size_bytes": 8860,
+      "source": "R3B supplement"
+    },
+    {
+      "path": "marketdata/basket_confluence.json",
+      "sha256": "b55f0df235b5ec13852ca4924d6156b2129863675a2d32b255e023f96047212d",
+      "size_bytes": 597785,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "marketdata/index_leadership.json",
+      "sha256": "d95fe2e7b28fda138f9834e424b358d590e514d2484cde9da90bf4260b20b50b",
+      "size_bytes": 19759,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "marketdata/rotation_events.json",
+      "sha256": "48e492e4b3cbd169cdbf67614dfb1a3416c3f63caa17294338352c701a38a30d",
+      "size_bytes": 10591,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "marketdata/sector_fragmentation.json",
+      "sha256": "bab96494bf7abcdb5789e06e54311293b846ee9d16818ce057e47f7481572f32",
+      "size_bytes": 6647,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "marketdata/sp500_heatmap.json",
+      "sha256": "14309d888dafc5076bf68236365414e743cd53f9a9e703b312e189068c3b5d35",
+      "size_bytes": 117950,
+      "source": "R3B supplement"
+    },
+    {
+      "path": "marketdata/subsector_confluence.json",
+      "sha256": "39364ef00b0d1ed0df46306c859b5ce2abf917ad595832e0655a5644bbf5fa2d",
+      "size_bytes": 172380,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "marketdata/subsector_confluence_nasdaq.json",
+      "sha256": "6ca1a273265bbc400b0310dcc947b001e7d3d202d1354c5bed5d35aa1877f257",
+      "size_bytes": 63705,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "marketdata/subsector_confluence_russell.json",
+      "sha256": "f55ba2939d52e86d63a3f7808aa78394ffe1b0445e628fef7639e75a3f3b1758",
+      "size_bytes": 879858,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "marketdata/subsector_rotation.json",
+      "sha256": "4d21e97f4286f9122f35eecb81ad771790efd2365fef205a150404dab141e2d6",
+      "size_bytes": 756971,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "oracledata/tm_manifest.json",
+      "sha256": "580c277ff00d365650ce7ebbc56a680c5c51589f98c117bf4b1f2898f84fe319",
+      "size_bytes": 60357,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "premiumdata/sector_central.json",
+      "sha256": "9dd962efb193a00f7dc67676ce38f729cbd9099d5cd2eb5d7a3f5314a0a9331b",
+      "size_bytes": 124612,
+      "source": "R3A fixture"
+    },
+    {
+      "path": "sector_cycles_data.js",
+      "sha256": "aa15f230421acda47659c20bff69dd17b6f2e350a389643b7a9c6f258fcae22a",
+      "size_bytes": 318577,
+      "source": "R3B supplement"
+    },
+    {
+      "path": "sectordata/sector_central.json",
+      "sha256": "dd02a2c6eb1218f521da0a2d375d171b5620ccd1316ef06e255df0b230dc5d49",
+      "size_bytes": 166227,
+      "source": "R3A fixture"
+    }
+  ],
+  "output": {
+    "path": "proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+    "sha256": "3632a9bc4359f74bfda64acd5fdd2231c5724cfbac7d33114df1cd08b40a5fd7",
+    "size_bytes": 5011388
+  },
+  "runtime_shim_js": {
+    "sha256": "18387654f25feaa1d5b61fc39d2ec4f770ff8eb62edac42c9df6fbe905142f57",
+    "size_bytes": 15807,
+    "source": "build/runtime_shim.js"
+  },
+  "si_workspace_js": {
+    "sha256": "dfab9118d2b2184bdbc780699678f1fc9ce73ff80688deb673fbb8622eacca88",
+    "size_bytes": 18452,
+    "source": "templates/si_workspace.js"
+  },
+  "supplement_capture_commit": "4c55fe433490adfd75fd901ef25f5793db2202db",
+  "views": [
+    "overview.html",
+    "map.html",
+    "moving.html",
+    "money.html",
+    "explore.html",
+    "confluence.html"
+  ]
+}

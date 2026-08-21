@@ -158,7 +158,13 @@ button{ font:inherit; color:inherit; }
 h1,h2,h3{ margin:0; }
 p{ margin:0; }
 .tnum{ font-variant-numeric:tabular-nums; }
-.l-zh{ display:none; }
+/* BILINGUAL SWITCH — specificity is load-bearing.  A bare `.l-zh{display:none}`
+   is (0,1,0) and loses to any layout rule of the shape `.block span{display:block}`
+   (0,1,1), which silently prints the ZH twin next to the EN one on that component
+   only.  Measured here on the watch strip before the fix.  Two defences, both
+   applied: bind the switch at (0,2,1), and scope layout rules to direct children
+   so they cannot reach a language span at all. */
+html[data-lang] .l-zh{ display:none; }
 html[data-lang="zh"] .l-en{ display:none; }
 html[data-lang="zh"] .l-zh{ display:inline; }
 /* zh typography law: CJK stack leads, tracking reset, no uppercase mangling.
@@ -182,15 +188,25 @@ html[data-lang="zh"] :is(.r3-eyebrow,.r3-answer-view,.r3-ledge-name,.r3-kicker,.
    NOT a design proposal for global Mastermind navigation, and it carries the
    specimen's own theme / language / width controls.
    ════════════════════════════════════════════════════════════════════════════ */
-:root{ --r3-chrome-h:40px; --r3-mnav-h:0px; }
+:root{ --r3-chrome-h:40px; --r3-mnav-h:0px;
+  /* the ANSWER THREAD ink — one name, two consumers (active rail item, view
+     answer).  Dark carries it at full accent; light softens it toward --line
+     because light earns depth with STRUCTURE, not saturation — a 3px #285fff
+     rail is the loudest mark on a paper canvas and reads as a web app, not as
+     an institutional note. */
+  --r3-thread:var(--link); }
+html[data-theme="light"]{ --r3-thread:color-mix(in srgb, var(--link) 74%, var(--line)); }
 .r3-frame{ position:sticky; top:0; z-index:60; height:var(--r3-chrome-h);
   display:flex; align-items:center; gap:var(--sp-3); padding:0 var(--sp-4);
   background:var(--glass-bg); -webkit-backdrop-filter:var(--glass-blur);
   backdrop-filter:var(--glass-blur);
   border-bottom:1px dashed color-mix(in srgb, var(--muted) 55%, transparent); }
 .r3-mark{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.11em;
-  text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+  text-transform:uppercase; color:var(--muted); min-width:0; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; }
 .r3-mark b{ color:var(--ink-warn); font-weight:700; }
+.r3-mark-long{ display:inline; }
+@media (max-width:767px){ .r3-mark-long{ display:none; } }
 .r3-frame-sp{ flex:1 1 auto; }
 .r3-fbtn{ min-height:28px; padding:0 10px; border-radius:var(--r-ctl);
   border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
@@ -240,7 +256,12 @@ html[data-lang="zh"] :is(.r3-eyebrow,.r3-answer-view,.r3-ledge-name,.r3-kicker,.
 .si-view-btn:hover{ color:var(--text); background:color-mix(in srgb, var(--link) 6%, transparent); }
 .si-view-btn:hover .si-vb-g{ color:var(--ink-link,var(--link)); }
 .si-view-btn.on{ color:var(--text); background:color-mix(in srgb, var(--link) 11%, var(--panel));
-  border-left-color:var(--link); font-weight:700; }
+  border-left-color:var(--r3-thread); font-weight:700; }
+/* light art direction: the rail is the tinted PAPER surface and the content
+   panels are the white ones.  A white rail on a #f7f8fa canvas is the flatness
+   bug the doctrine names (panel ≈ bg) — dark gets its separation from luminance,
+   light has to get it from surface + hairline. */
+html[data-theme="light"] .si-side{ background:color-mix(in srgb, var(--panel2) 62%, var(--panel)); }
 .si-view-btn.on .si-vb-g{ color:var(--ink-link,var(--link)); }
 .si-vb-l{ min-width:0; }
 /* rail footer — provenance travels with the navigation (production §1b) */
@@ -286,7 +307,7 @@ html[data-lang="zh"] :is(.r3-eyebrow,.r3-answer-view,.r3-ledge-name,.r3-kicker,.
    the view is never answerless.  Production hides its own read on Overview
    (sector_central.html.j2:1620) precisely because a hero duplicated it; merging
    the two slots retires that duplication instead of re-creating it. */
-.r3-answer{ border-left:3px solid var(--link); padding:2px 0 2px var(--sp-4);
+.r3-answer{ border-left:3px solid var(--r3-thread); padding:2px 0 2px var(--sp-4);
   margin:0 0 var(--sp-6); }
 .r3-answer-view{ font-size:var(--fs-label); font-weight:700; letter-spacing:.09em;
   text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
@@ -300,7 +321,8 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
 .r3-answer .si-view-read{ display:flex; align-items:flex-start; gap:11px;
   margin:0; padding:0; background:none; border:0; border-radius:0; }
 .r3-answer .si-vr-g{ width:20px; height:20px; margin-top:5px; }
-.r3-answer .si-vr-q{ margin-top:6px; }
+.r3-answer .si-vr-t{ flex:0 1 auto; }
+.r3-answer .si-vr-q{ margin-top:7px; }
 /* pure-CSS fallback: hide the static line whenever a composed read is present */
 .r3-answer .si-view-read:not([hidden]) ~ .r3-answer-line{ display:none; }
 .r3-answer-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
@@ -315,8 +337,11 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
 .r3-sec h2{ font-size:var(--fs-h2); font-weight:700; letter-spacing:-.01em; }
 .r3-sec .r3-sec-sub{ font-size:var(--fs-sm); color:var(--muted); }
 .r3-sec .r3-asof{ margin-left:auto; }
+/* DENSITY BUDGET BY TIER.  Action views hold 5 L1 sections at 32px apart; context
+   views hold 4 at 44px apart — calm is bought with AIR, not with fewer words. */
 .r3-band{ margin-top:var(--sp-7); }
-.r3-view--context .r3-band{ margin-top:var(--sp-8); }   /* context views breathe wider */
+.r3-view--context .r3-band{ margin-top:var(--sp-8); }
+.r3-view--context .r3-answer{ margin-bottom:var(--sp-7); }
 
 .r3-panel{ background:var(--panel); border:1px solid var(--line);
   border-radius:var(--r-panel); box-shadow:var(--card-shadow); }
@@ -344,7 +369,10 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
    Sol amendment: fixed readable cells — labels and counts are NEVER scaled by
    population, and never clipped or hidden offscreen.
    ════════════════════════════════════════════════════════════════════════════ */
-.r3-ledge{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel);
+/* .r3-board = ledge + its selected list, ONE object with one border and one
+   radius.  A separate "Buy now" section header under a "Buy now" ledge cell is
+   the same answer printed twice; the ledge IS the header. */
+.r3-board{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel);
   overflow:hidden; box-shadow:var(--card-shadow);
   border-top:3px solid var(--c,var(--line)); }
 .r3-ledge-grid{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); }
@@ -357,13 +385,29 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
   text-transform:uppercase; line-height:1.3; color:var(--muted); }
 .r3-ledge-count{ display:block; margin-top:7px; font-size:var(--fs-num-lg); font-weight:800;
   letter-spacing:-.02em; color:var(--text); font-variant-numeric:tabular-nums; }
-.r3-ledge-cell[aria-selected="true"]{ background:color-mix(in srgb, var(--c) 9%, var(--panel2));
+.r3-ledge-cell[aria-selected="true"]{ background:color-mix(in srgb, var(--c) 8%, var(--panel2));
   box-shadow:inset 0 -3px 0 var(--c); }
 .r3-ledge-cell[aria-selected="true"] .r3-ledge-name{ color:var(--c); }
 .r3-ledge-cell[aria-selected="true"] .r3-ledge-count{ font-weight:800; }
-.r3-ledge-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4);
-  padding:9px 14px; border-top:1px solid var(--line); background:color-mix(in srgb,var(--panel2) 45%,transparent);
-  font-size:var(--fs-sm); color:var(--muted); }
+/* light: the dominant object earns a firmer edge instead of a heavier shadow —
+   a printed institutional note, not a floating web card. */
+html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
+  border-color:color-mix(in srgb, var(--text) 9%, var(--line)); }
+.r3-board-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4);
+  padding:10px 16px; border-top:1px solid var(--line);
+  background:color-mix(in srgb,var(--panel2) 45%,transparent);
+  font-size:var(--fs-sm); font-weight:600; color:var(--text); }
+.r3-board-foot .r3-asof{ margin-left:auto; font-weight:400; }
+.r3-board .r3-row{ padding-left:16px; padding-right:16px; }
+.r3-board .r3-row:first-of-type{ border-top:0; }
+/* column legend — a figure column may never be unlabelled (doctrine Law 3).
+   Same grid as .r3-row so the label sits over its own column. */
+.r3-cols{ display:grid; grid-template-columns:minmax(0,1.6fr) 74px minmax(0,1.25fr) 16px;
+  gap:var(--sp-4); padding:7px 16px; border-bottom:1px solid var(--line);
+  font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); }
+.r3-cols > span:nth-child(2){ text-align:right; }
+@media (max-width:640px){ .r3-cols{ display:none; } }
 /* the five graded-call inks — RESERVED.  Nothing outside .r3-ledge / an Action
    view's row stance may bind these. */
 .st-buy{ --c:var(--ink-up); } .st-soon{ --c:var(--ink-info); } .st-run{ --c:var(--ink-link); }
@@ -399,6 +443,10 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
 /* ══════════════════════════════════════════════════════════════════════════════
    10 · TABLES · CHIPS · DISCLOSURE · STATES
    ════════════════════════════════════════════════════════════════════════════ */
+/* visually-hidden: the bilingual home for an accessible name.  Never `title=`
+   (CI-guarded), and never a single-language aria-label on a bilingual surface. */
+.r3-vh{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
 .r3-tblbox{ overflow-x:auto; }
 .r3-tbl{ width:100%; min-width:420px; border-collapse:collapse; font-size:var(--fs-sm); }
 .r3-tbl th{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
@@ -468,13 +516,24 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
 .r3-rail-item{ padding:11px 0; border-bottom:1px solid var(--line); }
 .r3-rail-item:last-child{ border-bottom:0; padding-bottom:0; }
 .r3-rail-item strong{ font-size:var(--fs-body); font-weight:700; }
-.r3-rail-item p{ margin-top:4px; font-size:var(--fs-sm); color:var(--muted); line-height:1.45; }
+.r3-rail-item > p{ margin-top:4px; font-size:var(--fs-sm); color:var(--muted); line-height:1.45; }
 .r3-quads{ display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line);
   border-radius:var(--r-card); overflow:hidden; }
 .r3-quad{ background:var(--panel); padding:13px 14px; min-height:88px; }
 .r3-quad .r3-eyebrow{ color:var(--c,var(--muted)); }
 .r3-quad strong{ display:block; margin-top:5px; font-size:var(--fs-body); font-weight:700; line-height:1.3; }
-.r3-quad span{ display:block; margin-top:3px; font-size:var(--fs-sm); color:var(--muted); }
+.r3-quad > span:last-child{ display:block; margin-top:3px; font-size:var(--fs-sm); color:var(--muted); }
+
+/* Bottoming watch — a full-width WATCH strip under the lanes, never a sixth lane.
+   No state ink, no count cell, no filled control, no entry vocabulary. */
+.r3-watch{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1px; background:var(--line); }
+.r3-watch-cell{ background:var(--panel); padding:15px 18px; }
+.r3-watch-cell strong{ display:block; font-size:var(--fs-md); font-weight:700;
+  letter-spacing:-.008em; line-height:1.3; overflow-wrap:anywhere; }
+.r3-watch-cell > span{ display:block; margin-top:4px; font-size:var(--fs-sm); color:var(--muted); }
+.r3-watch-foot{ padding:11px 18px; border-top:1px solid var(--line);
+  font-size:var(--fs-sm); color:var(--muted); }
+@media (max-width:767px){ .r3-watch{ grid-template-columns:1fr; } }
 
 /* ══════════════════════════════════════════════════════════════════════════════
    11 · RESPONSIVE — the phone RECOMPOSES.  It never scales the desk down.
@@ -540,17 +599,15 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
 
 <!-- ═══ quarantined reference frame — NOT a product topbar proposal ═══ -->
 <div class="r3-frame">
-  <span class="r3-mark"><b>Reference</b> · XPV2-SC-R3B shell specimen · not product chrome</span>
+  <span class="r3-mark"><b>Reference</b> · XPV2-SC-R3B<span class="r3-mark-long"> shell specimen · not product chrome</span></span>
   <span class="r3-frame-sp"></span>
   <button class="r3-fbtn" id="t-theme" type="button">Light</button>
   <button class="r3-fbtn" id="t-lang" type="button">中文</button>
 </div>
 
 <p class="r3-specnote">
-  Design specimen. Tokens, geometry, components, navigation and every EN/ZH chrome string are
-  binding law (see <b>DESIGN_SYSTEM_SPEC.md</b>). Every business value below — names, counts,
-  figures, dates — is a <b>placeholder</b>; the R3 reference binds each one to the frozen
-  fixture. Nothing on this page is a business fact or a market claim.
+  Design specimen — chrome, tokens and components are binding law (<b>DESIGN_SYSTEM_SPEC.md</b>);
+  every name, count, figure and date below is a <b>placeholder</b>, not a market claim.
 </p>
 
 <header class="r3-pagehead">
@@ -587,15 +644,15 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
       <p class="r3-answer-line"><span class="l-en">Tonight&#39;s read is being updated. The graded lanes below are today&#39;s board.</span><span class="l-zh">今晚的研判正在更新。下方分级清单即为今日看板。</span></p>
       <div class="r3-answer-meta">
         <span class="r3-asof" data-specimen>board as of 2026-08-20</span>
-        <span><span class="l-en">Graded call · this view only</span><span class="l-zh">分级判断 · 仅此视图</span></span>
-        <span class="r3-q" role="img" aria-label="Where this reading comes from">?</span>
+        <span><span class="l-en">Graded call · this view only</span><span class="l-zh">分级判断 · 仅此视图</span>
+          <span class="r3-q" role="img" aria-label="Where this reading comes from">?</span></span>
       </div>
     </div>
 
     <!-- THE STATE LEDGE — Action tier device.  Five fixed cells, five keys folded
          from six (hold + avoid share Stand aside).  Labels are producer vocabulary,
          verbatim EN/ZH.  Never proportional, never clipped. -->
-    <div class="r3-ledge st-buy" id="actnow-section">
+    <div class="r3-board st-buy" id="actnow-section">
       <div class="r3-ledge-grid" role="tablist" aria-label="Action lanes">
         <button class="r3-ledge-cell st-buy" role="tab" aria-selected="true" type="button">
           <span class="r3-ledge-name"><span class="l-en">Buy now</span><span class="l-zh">立即买入</span></span>
@@ -618,19 +675,17 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
           <span class="r3-ledge-count tnum" data-specimen>28</span>
         </button>
       </div>
-      <p class="r3-ledge-foot">
-        <span class="l-en">Entry confirmed today — the rows below are the whole lane.</span><span class="l-zh">今日已确认入场 — 下方即为该清单全部内容。</span>
+      <p class="r3-board-foot">
+        <span class="l-en">Entry confirmed today</span><span class="l-zh">今日已确认入场</span>
         <span class="r3-q" role="img" aria-label="How lanes are graded">?</span>
-      </p>
-    </div>
-
-    <div class="r3-band">
-      <div class="r3-sec">
-        <h2><span class="l-en">Buy now</span><span class="l-zh">立即买入</span></h2>
-        <span class="r3-sec-sub"><span class="l-en">Entry confirmed today</span><span class="l-zh">今日已确认入场</span></span>
         <span class="r3-asof" data-specimen>3 of 3 shown</span>
-      </div>
-      <div class="r3-list" role="tabpanel" aria-label="Buy now rows">
+      </p>
+      <div role="tabpanel" aria-label="Buy now rows">
+        <div class="r3-cols" aria-hidden="true">
+          <span><span class="l-en">Group</span><span class="l-zh">板块</span></span>
+          <span><span class="l-en">Conviction</span><span class="l-zh">信心分</span></span>
+          <span><span class="l-en">Why it is here</span><span class="l-zh">入选原因</span></span><span></span>
+        </div>
         <a class="r3-row" href="#read-specimen-a">
           <span class="r3-name">Semiconductors &amp; Semiconductor Equipment</span>
           <span class="r3-fig tnum" data-specimen>82</span>
@@ -659,13 +714,13 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
       </div>
       <!-- watch-only, display-only, NOT a sixth lane: full-width strip UNDER the
            ledge, no state ink, no count cell, no filled control. -->
-      <div class="r3-panel r3-panel--pad">
-        <p class="r3-callout" style="--c:var(--muted)"><span class="l-en">This strip watches names that are still bottoming. It is not an entry list, and nothing here becomes a call until the lanes above say so.</span><span class="l-zh">此栏跟踪仍在筑底的标的。它不是入场清单；在上方清单给出判断之前，此处不构成任何买卖判断。</span></p>
-        <div style="margin-top:var(--sp-4);display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-5)">
-          <span class="r3-name" style="font-size:var(--fs-body)" data-specimen>Metals &amp; Mining</span>
-          <span class="r3-name" style="font-size:var(--fs-body)" data-specimen>Household Durables</span>
-          <span class="r3-name" style="font-size:var(--fs-body)" data-specimen>Communications Equipment</span>
+      <div class="r3-panel">
+        <div class="r3-watch">
+          <div class="r3-watch-cell"><strong data-specimen>Metals &amp; Mining</strong><span><span class="l-en">Low forming, four weeks in</span><span class="l-zh">底部形成中，已历四周</span></span></div>
+          <div class="r3-watch-cell"><strong data-specimen>Household Durables</strong><span><span class="l-en">Low forming, two weeks in</span><span class="l-zh">底部形成中，已历两周</span></span></div>
+          <div class="r3-watch-cell"><strong data-specimen>Communications Equipment</strong><span><span class="l-en">Low forming, first week</span><span class="l-zh">底部形成中，第一周</span></span></div>
         </div>
+        <p class="r3-watch-foot"><span class="l-en">Watch list, not an entry list. Nothing here becomes a call until the lanes above say so.</span><span class="l-zh">此为观察清单，非入场清单。在上方清单给出判断前，此处不构成任何买卖判断。</span></p>
       </div>
     </div>
 
@@ -724,7 +779,7 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
       </div>
       <div class="r3-panel r3-tblbox">
         <table class="r3-tbl">
-          <caption class="r3-eyebrow" style="text-align:left;padding:12px 12px 0"><span class="l-en">Text equivalent of the cycle chart</span><span class="l-zh">周期图的文字等价表</span></caption>
+          <caption class="r3-vh"><span class="l-en">Text equivalent of the sector cycle chart — every group, where it sits, and its rank</span><span class="l-zh">行业周期图的文字等价表 — 每个板块的位置与排名</span></caption>
           <thead><tr>
             <th><span class="l-en">Group</span><span class="l-zh">板块</span></th>
             <th><span class="l-en">Where it sits</span><span class="l-zh">所处位置</span></th>
@@ -914,7 +969,7 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
       <button type="button" role="tab" aria-selected="false"><span class="l-en">Baskets</span><span class="l-zh">篮子</span></button>
     </div>
 
-    <div class="r3-ledge st-buy" id="sc-app">
+    <div class="r3-board st-buy" id="sc-app">
       <div class="r3-ledge-grid" role="tablist" aria-label="Timing states">
         <button class="r3-ledge-cell st-buy" role="tab" aria-selected="true" type="button">
           <span class="r3-ledge-name"><span class="l-en">Entry now</span><span class="l-zh">当前入场</span></span>
@@ -937,17 +992,17 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
           <span class="r3-ledge-count tnum" data-specimen>21</span>
         </button>
       </div>
-      <p class="r3-ledge-foot">
-        <span class="l-en">Counts and rows both come from the S&amp;P set — switching the tab switches both.</span><span class="l-zh">计数与行均来自标普范围 — 切换标签会同时切换两者。</span>
-      </p>
-    </div>
-
-    <div class="r3-band">
-      <div class="r3-sec">
-        <h2><span class="l-en">Entry now</span><span class="l-zh">当前入场</span></h2>
+      <p class="r3-board-foot">
+        <span class="l-en">Counts and rows both come from the S&amp;P set</span><span class="l-zh">计数与行均来自标普范围</span>
+        <span class="r3-q" role="img" aria-label="How timing support is graded">?</span>
         <span class="r3-asof" data-specimen>6 subsectors</span>
-      </div>
-      <div class="r3-list">
+      </p>
+      <div role="tabpanel" aria-label="Entry now rows">
+        <div class="r3-cols" aria-hidden="true">
+          <span><span class="l-en">Subsector</span><span class="l-zh">子行业</span></span>
+          <span><span class="l-en">Tier</span><span class="l-zh">层级</span></span>
+          <span><span class="l-en">Why it is here</span><span class="l-zh">入选原因</span></span><span></span>
+        </div>
         <a class="r3-row" href="#sc-app">
           <span class="r3-name">Semiconductor Materials &amp; Equipment<span class="r3-sub" data-specimen>S&amp;P · 12 members</span></span>
           <span class="r3-fig tnum" data-specimen>T1</span>
@@ -1022,7 +1077,7 @@ function paint(view){                                                           
   var pair=READS[view]; if(!pair){ el.hidden=true; el.innerHTML=''; return; }
   el.innerHTML='<span class="si-vr-g '+GLYPH[view]+'" aria-hidden="true"></span>'
     +'<span class="si-vr-t">'+L(pair[0],pair[1])+'</span>'
-    +'<span class="si-vr-q" data-tip-t-en="'+RECEIPT[0]+'" data-tip-t-zh="'+RECEIPT[1]+'" title="">?</span>';
+    +'<span class="si-vr-q" data-tip-t-en="'+RECEIPT[0]+'" data-tip-t-zh="'+RECEIPT[1]+'">?</span>';
   el.hidden=false;
 }
 function paintFoot(){                                                              /* :229-245 */

@@ -1,0 +1,37 @@
+<section class="si-view" data-view="money">
+  <h2><span class="l-en">Money &amp; Breadth</span><span class="l-zh">资金与广度</span></h2>
+  <p class="si-view-read" id="si-read-money" hidden></p>
+  <div id="money-proof" class="ref-proof">Loading proof-of-data…</div>
+
+  <div id="si-money">
+    <h3 id="internals-section">Market internals (placeholder)</h3>
+    <div id="scc-leadership" style="color:var(--muted)">Sector-ETF flow board mount — the extracted
+      <code>#sc-flows</code> fragment (fixture_supplement/fragments/sc_flows.html) is embedded verbatim
+      and inserted here by the script below, exactly as the server bakes it in production (never
+      re-rendered from the raw flow numbers).</div>
+    <div id="sc-flows-mount"></div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    try{
+      var d = REF.parseJSON(REF.registry['marketdata/sp500_heatmap.json']);
+      document.getElementById('money-proof').textContent =
+        'Heatmap generated_utc: ' + (d.generated_utc || '—') + ' (marketdata/sp500_heatmap.json.generated_utc, ' +
+        (d.n_tiles != null ? d.n_tiles + ' tiles) ' : '') + '.';
+    }catch(e){
+      document.getElementById('money-proof').textContent = 'proof-of-data read failed: ' + e;
+    }
+    try{
+      var h = REF.parseJSON(REF.registry['basketdata/si_handoff.json']);
+      var regime = h.flow && h.flow.cluster && h.flow.cluster.regime;
+      var el = document.getElementById('si-read-money');
+      if(el && regime) el.setAttribute('data-regime', regime);
+    }catch(e){}
+    try{
+      var frag = REF.fragments['fragments/sc_flows.html'];
+      if(frag) document.getElementById('sc-flows-mount').innerHTML = frag;
+    }catch(e){}
+  });
+  </script>
+</section>

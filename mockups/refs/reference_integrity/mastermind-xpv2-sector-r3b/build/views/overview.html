@@ -1,0 +1,162 @@
+<section class="si-view on" data-view="overview">
+  <h2><span class="l-en">Overview</span><span class="l-zh">总览</span></h2>
+  <p class="si-view-read" id="si-read-overview" hidden></p>
+  <div id="ov-proof" class="ref-proof">Loading proof-of-data…</div>
+
+  <h3 id="actnow-section" style="margin-bottom:4px">Act-Now board</h3>
+  <p class="ref-proof" style="margin-top:0">Access state controls the row lists below (drawer: "Access state").
+    Lane header counts are ALWAYS the full <code>action_board.&lt;lane&gt;.length</code> —
+    production never gates the counts, only the row bodies
+    (<code>access_hydration_contract.md</code> §2).</p>
+  <div id="actnow">
+    <div class="ab-lane" data-lane="buy_now">
+      <h4><span class="l-en">Buy Now</span><span class="l-zh">立即买入</span> <span class="ab-count" id="cnt-buy_now">—</span></h4>
+      <div class="actbody" id="ab-buy-fold"></div>
+      <div class="pg-more" id="more-buy_now"></div>
+    </div>
+    <div class="ab-lane" data-lane="buy_soon">
+      <h4><span class="l-en">Buy Soon</span><span class="l-zh">即将买入</span> <span class="ab-count" id="cnt-buy_soon">—</span></h4>
+      <div class="actbody" id="ab-soon-fold"></div>
+      <div class="pg-more" id="more-buy_soon"></div>
+    </div>
+    <div class="ab-lane" data-lane="on_the_run">
+      <h4><span class="l-en">On The Run</span><span class="l-zh">持续上涨</span> <span class="ab-count" id="cnt-on_the_run">—</span></h4>
+      <div class="actbody" id="ab-run-fold"></div>
+      <div class="pg-more" id="more-on_the_run"></div>
+    </div>
+    <div class="ab-lane" data-lane="take_profits">
+      <h4><span class="l-en">Take Profits</span><span class="l-zh">止盈</span> <span class="ab-count" id="cnt-take_profits">—</span></h4>
+      <div class="actbody" id="ab-trim-fold"></div>
+      <div class="pg-more" id="more-take_profits"></div>
+    </div>
+    <div class="ab-lane" data-lane="stand_aside">
+      <h4><span class="l-en">Stand Aside</span><span class="l-zh">观望</span> <span class="ab-count" id="cnt-stand_aside">—</span> <span style="color:var(--muted);font-weight:400">(hold + avoid, TS-R5 combined lane)</span></h4>
+      <div class="actbody" id="dash-hold-fold"></div>
+      <div class="pg-more" id="more-stand_aside"></div>
+    </div>
+  </div>
+
+  <p id="regime" class="si-view-read" style="margin-top:16px">Placeholder anchor target for the legacy
+    <code>#regime</code> / <code>#grader</code> hashes (routing_contract.md §2) — the design lane's real
+    regime/grader panels land here.</p>
+  <p id="grader"></p>
+
+  <script>
+  (function(){
+    /* ── proof-of-data: five action lanes, counts read directly from the
+       embedded FULL action_board.json (.length over the full list — the same
+       mirror production's own template performs, never a re-rank). ── */
+    function renderCounts(){
+      try{
+        var ab = REF.parseJSON(REF.registry['basketdata/action_board.json']).action_board;
+        var LANES = [['buy_now','cnt-buy_now','Buy Now'], ['buy_soon','cnt-buy_soon','Buy Soon'],
+                     ['on_the_run','cnt-on_the_run','On The Run'], ['take_profits','cnt-take_profits','Take Profits']];
+        var parts = [];
+        LANES.forEach(function(L){
+          var n = (ab[L[0]] || []).length;
+          var el = document.getElementById(L[1]); if(el) el.textContent = '(' + n + ')';
+          parts.push(L[2] + ' ' + n);
+        });
+        var holdN = (ab.hold || []).length, avoidN = (ab.avoid || []).length;
+        var sa = document.getElementById('cnt-stand_aside'); if(sa) sa.textContent = '(' + (holdN + avoidN) + ')';
+        parts.push('Stand Aside ' + (holdN + avoidN));
+        document.getElementById('ov-proof').textContent =
+          'Five action lanes (basketdata/action_board.json, .length over the full list): ' + parts.join(' · ');
+      }catch(e){
+        document.getElementById('ov-proof').textContent = 'proof-of-data read failed: ' + e;
+      }
+    }
+
+    /* ── access-state rendering: gated (default, preview slice + disclosure) /
+       hydrated (apply premiumdata actnow_html by data-ab-lane) / ungated (full
+       lists). Registered on window.REF so the drawer's access-state selector
+       (runtime_shim.js) can call it. ── */
+    var FOLD = {buy_now:'ab-buy-fold', buy_soon:'ab-soon-fold', on_the_run:'ab-run-fold', take_profits:'ab-trim-fold'};
+    var MORE = {buy_now:'more-buy_now', buy_soon:'more-buy_soon', on_the_run:'more-on_the_run', take_profits:'more-take_profits'};
+
+    function laneRow(r){
+      var a = document.createElement('a');
+      a.className = 'actitem'; a.setAttribute('data-ref-nav', '');
+      a.href = r.href || '#';
+      var label = (r.ticker ? r.ticker + ' — ' : '') + (r.name || '');
+      a.textContent = label || '(row)';
+      return a;
+    }
+    function clearBoard(){
+      ['ab-buy-fold','ab-soon-fold','ab-run-fold','ab-trim-fold','dash-hold-fold'].forEach(function(id){
+        var el = document.getElementById(id); if(el) el.innerHTML = '';
+      });
+      ['more-buy_now','more-buy_soon','more-on_the_run','more-take_profits','more-stand_aside'].forEach(function(id){
+        var el = document.getElementById(id); if(el) el.textContent = '';
+      });
+    }
+    function disclosure(id, left){
+      var el = document.getElementById(id);
+      if(el) el.textContent = left > 0
+        ? left + ' more — sign in to see the full lane'
+        : '';
+    }
+    function renderPreview(ab, preview){
+      clearBoard();
+      Object.keys(FOLD).forEach(function(k){
+        var rows = ab[k] || [], shown = rows.slice(0, preview);
+        var fold = document.getElementById(FOLD[k]);
+        shown.forEach(function(r){ fold.appendChild(laneRow(r)); });
+        disclosure(MORE[k], rows.length - shown.length);
+      });
+      /* Stand-aside: hold spends the budget first, avoid gets the remainder —
+         mirrors scripts/build_sector_central.py::split_actnow() exactly
+         (same rule, same order, not a new construction). */
+      var hold = ab.hold || [], avoid = ab.avoid || [];
+      var holdShown = hold.slice(0, preview);
+      var avoidBudget = Math.max(0, preview - holdShown.length);
+      var avoidShown = avoid.slice(0, avoidBudget);
+      var fold = document.getElementById('dash-hold-fold');
+      holdShown.concat(avoidShown).forEach(function(r){ fold.appendChild(laneRow(r)); });
+      disclosure('more-stand_aside', (hold.length - holdShown.length) + (avoid.length - avoidShown.length));
+    }
+    function renderFull(ab){
+      clearBoard();
+      Object.keys(FOLD).forEach(function(k){
+        var fold = document.getElementById(FOLD[k]);
+        (ab[k] || []).forEach(function(r){ fold.appendChild(laneRow(r)); });
+      });
+      var fold = document.getElementById('dash-hold-fold');
+      (ab.hold || []).concat(ab.avoid || []).forEach(function(r){ fold.appendChild(laneRow(r)); });
+    }
+    function applyHydration(){
+      try{
+        var pg = REF.parseJSON(REF.registry['premiumdata/sector_central.json']);
+        var html = pg.actnow_html || '';
+        var tmp = document.createElement('div'); tmp.innerHTML = html;
+        var blocks = tmp.querySelectorAll('.ab-locked[data-ab-lane]');
+        blocks.forEach(function(b){
+          var laneId = b.getAttribute('data-ab-lane');
+          var fold = document.getElementById(laneId);
+          if(fold) fold.insertAdjacentHTML('beforeend', b.innerHTML);
+        });
+        /* restoreFold()-equivalent, simplified for the placeholder: the "N
+           more" disclosure lines are removed once the withheld rows are
+           actually in the DOM — access_hydration_contract.md §3 step 6. */
+        document.querySelectorAll('#actnow .pg-more').forEach(function(el){ el.textContent = ''; });
+      }catch(e){ /* fail-soft, matches production's silent hydration catch (§4) */ }
+    }
+    window.REF = window.REF || {};
+    REF.renderActNow = function(state){
+      var ab;
+      try{ ab = REF.parseJSON(REF.registry['basketdata/action_board.json']).action_board; }catch(e){ return; }
+      if(state === 'ungated'){ renderFull(ab); return; }
+      var preview = 3, pg = null;
+      try{ pg = REF.parseJSON(REF.registry['premiumdata/sector_central.json']); }catch(e){}
+      if(pg && pg.panels && pg.panels.actnow && pg.panels.actnow.preview != null) preview = pg.panels.actnow.preview;
+      renderPreview(ab, preview);
+      if(state === 'hydrated') applyHydration();
+    };
+
+    document.addEventListener('DOMContentLoaded', function(){
+      renderCounts();
+      REF.renderActNow(REF.accessState || 'gated');
+    });
+  })();
+  </script>
+</section>

@@ -1,0 +1,72 @@
+<section class="si-view" data-view="explore">
+  <h2><span class="l-en">Explore</span><span class="l-zh">深入探索</span></h2>
+  <p class="si-view-read" id="si-read-explore" hidden></p>
+  <div id="explore-proof" class="ref-proof">Loading proof-of-data…</div>
+
+  <div id="explore-section">
+    <h3 id="table-section">Basket table (placeholder)</h3>
+    <h3 id="chart-section">Basket overlay chart (placeholder)</h3>
+    <div id="forming-narratives" style="color:var(--muted)">Forming-narratives panel mount (placeholder) —
+      driven by <code>basketdata/narrative_emergence.json</code> when present.</div>
+    <div id="tm-mount" style="color:var(--muted)">
+      <h3>Time Machine (placeholder — manifest-driven)</h3>
+      <p>Per the orchestrator's Time Machine ruling: this mount renders from the in-fixture
+        <code>oracledata/tm_manifest.json</code> only. Any per-year episode/chunk fetch it would
+        normally issue is <strong>recorded-not-executed</strong> — the shim's fetch interception has
+        no registry entry for those paths on purpose, so the request genuinely rejects and is logged,
+        never faked as a success. See build/README_BUILD.md §"Time Machine".</p>
+      <div id="tm-proof" class="ref-proof">Loading…</div>
+    </div>
+  </div>
+
+  <p id="explore-fetch-status" class="ref-proof"></p>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    /* proof-of-data: baskets count, read directly from the embedded registry —
+       exactly mirrors readExplore() in templates/si_workspace.js:201-205. */
+    try{
+      var b = REF.parseJSON(REF.registry['basketdata/baskets.json']);
+      var n = (b.baskets || []).length;
+      document.getElementById('explore-proof').textContent =
+        n + ' baskets — every member, every record. (basketdata/baskets.json.baskets.length)';
+    }catch(e){
+      document.getElementById('explore-proof').textContent = 'proof-of-data read failed: ' + e;
+    }
+
+    try{
+      var tm = REF.parseJSON(REF.registry['oracledata/tm_manifest.json']);
+      var tiers = tm.tiers ? Object.keys(tm.tiers).length : 0;
+      var reg = tm.registry ? (Array.isArray(tm.registry) ? tm.registry.length : Object.keys(tm.registry).length) : 0;
+      document.getElementById('tm-proof').textContent =
+        'Time Machine manifest: schema ' + tm.schema_version + ', ' + tiers + ' tier(s), ' + reg +
+        ' registry entr(y/ies) (oracledata/tm_manifest.json). Episode/chunk fetches recorded-not-executed.';
+    }catch(e){
+      document.getElementById('tm-proof').textContent = 'proof-of-data read failed: ' + e;
+    }
+
+    /* Genuine fetch-fail demo: reimplements production's __siBoot() fetch of
+       basketdata/baskets.json (templates/sector_central.html.j2, inline script
+       near EOF) — including its VERBATIM catch-branch error text. This is the
+       one code path in this artifact that issues a real window.fetch() through
+       the shim's interception, so toggling "Simulate fetch fail" in the drawer
+       makes production's OWN error string render for real, not a fake. */
+    function showBaskets(p){
+      var n = ((p && p.baskets) || []).length;
+      document.getElementById('explore-fetch-status').innerHTML =
+        '<span class="l-en">' + n + ' baskets — every member, every record.</span>' +
+        '<span class="l-zh">' + n + ' 个篮子 — 全部成分，全部记录。</span>';
+    }
+    function showFetchFailure(){
+      document.getElementById('explore-fetch-status').innerHTML =
+        '<div class="rvx-lane-desc">' +
+        '<span class="l-en">Data failed to load — please refresh.</span>' +
+        '<span class="l-zh">数据加载失败 — 请刷新。</span></div>';
+    }
+    fetch('basketdata/baskets.json')
+      .then(function(r){ if(!r.ok) throw new Error('not ok'); return r.json(); })
+      .then(showBaskets)
+      .catch(showFetchFailure);
+  });
+  </script>
+</section>

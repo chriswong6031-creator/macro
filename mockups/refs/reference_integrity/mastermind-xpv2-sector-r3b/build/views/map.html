@@ -1,0 +1,30 @@
+<section class="si-view" data-view="map">
+  <h2><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></h2>
+  <p class="si-view-read" id="si-read-map" hidden></p>
+  <div id="map-proof" class="ref-proof">Loading proof-of-data…</div>
+
+  <div id="si-map">
+    <h3 id="sc-cyclemap">Cycle map (placeholder)</h3>
+    <p style="color:var(--muted)">The design lane's real cycle-clock chart mounts here, driven by the
+      embedded <code>window.SECTOR_CYCLES</code> (verbatim <code>sector_cycles_data.js</code> bytes) —
+      see build/README_BUILD.md §"Two new accessible-equivalent surfaces".</p>
+    <h3 id="rotmap-section">Rotation map (placeholder)</h3>
+    <div id="board" style="color:var(--muted)">Rotation-board rows mount here, each a real
+      <code>basket/&lt;id&gt;.html</code> destination (routing_contract.md §7) intercepted by the
+      recorder via <code>data-ref-nav</code>.</div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    try{
+      var n = window.SECTOR_CYCLES && window.SECTOR_CYCLES.meta && window.SECTOR_CYCLES.meta.n_sectors;
+      var nb = window.SECTOR_CYCLES && window.SECTOR_CYCLES.meta && window.SECTOR_CYCLES.meta.n_baskets;
+      document.getElementById('map-proof').textContent =
+        (n == null ? '—' : n) + ' sectors / ' + (nb == null ? '—' : nb) +
+        ' baskets tracked by the cycle map (window.SECTOR_CYCLES.meta, embedded verbatim from sector_cycles_data.js).';
+    }catch(e){
+      document.getElementById('map-proof').textContent = 'proof-of-data read failed: ' + e;
+    }
+  });
+  </script>
+</section>

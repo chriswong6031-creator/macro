@@ -1,0 +1,29 @@
+<section class="si-view" data-view="moving">
+  <h2><span class="l-en">What's Moving</span><span class="l-zh">正在轮动</span></h2>
+  <p class="si-view-read" id="si-read-moving" hidden></p>
+  <div id="moving-proof" class="ref-proof">Loading proof-of-data…</div>
+
+  <div id="si-movement">
+    <div id="rc-events-mount" style="color:var(--muted)">Rotation-events mount (placeholder) —
+      driven by the embedded <code>marketdata/rotation_events.json</code>.</div>
+    <div id="rotation-app" style="color:var(--muted)">Subsector rotation app mount (placeholder) —
+      the design lane's real <code>subsector_rotation.js</code>/<code>desk_watch.js</code> organs are
+      NOT re-implemented by this harness (routing_contract.md GAP #2 — 0 verified literal hrefs in the
+      template itself for this view); this placeholder proves only the routing target exists.</div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    try{
+      var d = REF.parseJSON(REF.registry['marketdata/rotation_events.json']);
+      var active = (d.active || []).length;
+      var closedRecent = (d.closed_recent || []).length;
+      document.getElementById('moving-proof').textContent =
+        active + ' active rotation event(s), ' + closedRecent + ' closed recently ' +
+        '(marketdata/rotation_events.json .active/.closed_recent .length).';
+    }catch(e){
+      document.getElementById('moving-proof').textContent = 'proof-of-data read failed: ' + e;
+    }
+  });
+  </script>
+</section>

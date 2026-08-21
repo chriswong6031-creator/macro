@@ -1,0 +1,45 @@
+<section class="si-view" data-view="confluence" id="si-confluence">
+  <!-- Confluence has NO .si-view-read slot — its own hero is its read
+       (routing_contract.md §1: "Confluence has NO .si-view-read slot — its own
+       hero (.sc-top/.sc-lede) is its read"). This placeholder's proof element
+       stands in for that hero until the design lane builds the real one.
+       NOTE: id="sc-top" is deliberately NOT reproduced here — routing_contract.md
+       §2 records that sc-top does not exist as a literal DOM id in production
+       either (only an unrelated <div class="sc-top">); the legacy hash still
+       routes to this VIEW correctly (target-not-found is a silent no-op per
+       si_workspace.js activate()), only the intra-view scroll no-ops. This is
+       recorded seam (c) — carried forward, not repaired, per the commission's
+       OUT-OF-SCOPE instruction. -->
+  <div class="sc-top">
+    <h2><span class="l-en">Confluence</span><span class="l-zh">子行业汇聚</span></h2>
+  </div>
+  <div id="confluence-proof" class="ref-proof">Loading proof-of-data…</div>
+
+  <div id="sc-app">
+    <p style="color:var(--muted)">Four universe tabs mount here (placeholder) — the design lane's real
+      confluence table/board reads the same four embedded artifacts named below.</p>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var FILES = [
+      ['marketdata/subsector_confluence.json', 'subsectors'],
+      ['marketdata/subsector_confluence_nasdaq.json', 'subsectors'],
+      ['marketdata/subsector_confluence_russell.json', 'subsectors'],
+      ['marketdata/basket_confluence.json', 'baskets']
+    ];
+    var out = [];
+    FILES.forEach(function(F){
+      try{
+        var d = REF.parseJSON(REF.registry[F[0]]);
+        var rows = (d[F[1]] || []).length;
+        out.push((d.universe || F[0]) + ': ' + rows + ' row(s)');
+      }catch(e){
+        out.push(F[0] + ': read failed');
+      }
+    });
+    document.getElementById('confluence-proof').textContent =
+      'Four universe tabs (row counts from the embedded confluence artifacts): ' + out.join(' · ');
+  });
+  </script>
+</section>
