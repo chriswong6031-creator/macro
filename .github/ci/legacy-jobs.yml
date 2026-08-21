@@ -1669,6 +1669,13 @@ jobs:
       - "scripts/validate_options_ivspread.py"
       - "scripts/validate_options_skew.py"
       - "scripts/workflow_run_source.py"
+      # engine/htf_durability.py reads site/basketdata/fear_greed.json, pulled
+      # into this job's closure via tests/test_live_flow.py and
+      # tests/test_options_issue_desk_api.py. site/flowleaders/** and
+      # site/leaderradar/** below already cover the sibling pick_lab reads;
+      # this one glob was the only gap the import-closure contract
+      # (test_curated_exclusive_scopes_cover_their_own_import_closure) found.
+      - "site/basketdata/fear_greed.json"
       - "site/canadabasketdata/**"
       - "site/chinabasketdata/**"
       - "site/coming-soon.html"
@@ -5694,6 +5701,20 @@ jobs:
     # Deps are `pytest` alone on purpose: app/observability.py is pure stdlib
     # and the suite stubs sentry_sdk, so this job must stay green on a runner
     # where the real SDK is not installed at all.
+    #
+    # `scope: exclusive` declared here (2026-08-20, main-red-repair): shipped
+    # with no scope at all, this job's own subject (_release()'s
+    # `subprocess.run(["git", ...])` for the deployed SHA) is an opaque
+    # subprocess call scope inference cannot see through, so it fell back to
+    # SUBPROCESS_ROOTS — including site/** and templates/** — and matched
+    # every ordinary templates/index.html PR (128 vs the 127 ceiling in
+    # tests/test_ci_pack.py::test_exclusive_curation_narrows_ordinary_code_prs).
+    # That is smear, so it is curated away at the source rather than paid for
+    # there. Its true subject is exactly the two files below.
+    scope: exclusive
+    paths:
+      - "app/observability.py"
+      - "tests/test_observability_sentry.py"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -6769,12 +6790,24 @@ jobs:
       - "engine/sector_intelligence/**"
       - "lib/*"
       - "research/DO_NOT_REBUILD.md"
+      # engine/htf_durability.py reads site/basketdata/fear_greed.json, and
+      # engine/pick_lab/candidates.py reads site/flowleaders/leaders.json and
+      # site/leaderradar/radar.json — both already-declared engine files
+      # (`engine/htf_durability.py`, `engine/pick_lab/**` below), pulled into
+      # this job's closure via tests/test_biocatalyst_change_tape_values.py.
+      # The import-closure contract
+      # (test_curated_exclusive_scopes_cover_their_own_import_closure)
+      # requires the declared scope to cover these site reads too, or the job
+      # silently stops running for edits to them.
+      - "site/basketdata/fear_greed.json"
       - "site/canadabasketdata/**"
       - "site/chinabasketdata/**"
       - "site/coming-soon.html"
       - "site/data/**"
       - "site/factordata/**"
+      - "site/flowleaders/leaders.json"
       - "site/hkbasketdata/**"
+      - "site/leaderradar/radar.json"
       - "site/master_brief.json"
       - "site/prophet/**"
       - "site/vol/**"
@@ -8558,6 +8591,21 @@ jobs:
     # or data/government_revenue/) plus templates/government-revenue-dossiers.js
     # and templates/government_revenue.html.j2 as plain text: pytest and node
     # (preinstalled on ubuntu-latest) are the only runtime dependencies.
+    #
+    # `scope: exclusive` declared here (2026-08-20, main-red-repair): shipped
+    # with no scope at all, the suite's own `node` subprocess invocation
+    # (tests/test_government_revenue_company_bridge.py:197) is an opaque
+    # subprocess call scope inference cannot see through — it resolves to
+    # `subprocess roots=templates,tests`, which widens to templates/** and
+    # matched every ordinary templates/index.html PR. Curated at the source:
+    # its true subject is exactly the four files below, per this job's own
+    # header comment above.
+    scope: exclusive
+    paths:
+      - "templates/government-revenue-dossiers.js"
+      - "templates/government_revenue.html.j2"
+      - "tests/fixtures/govrev_company_bridge/p00032_event.json"
+      - "tests/test_government_revenue_company_bridge.py"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -11433,13 +11481,24 @@ jobs:
       - "scripts/__init__.py"
       - "scripts/build_government_revenue.py"
       - "scripts/build_government_revenue_candidates.py"
+      # engine/htf_durability.py reads site/basketdata/fear_greed.json and
+      # engine/pick_lab/candidates.py reads site/flowleaders/leaders.json and
+      # site/leaderradar/radar.json — both already-declared engine files
+      # (`engine/htf_durability.py`, `engine/pick_lab/**` above), pulled into
+      # this job's closure via tests/test_government_revenue_candidate_api.py.
+      # The import-closure contract
+      # (test_curated_exclusive_scopes_cover_their_own_import_closure)
+      # requires the declared scope to cover these site reads too.
+      - "site/basketdata/fear_greed.json"
       - "site/canadabasketdata/**"
       - "site/chinabasketdata/**"
       - "site/coming-soon.html"
       - "site/data/**"
       - "site/factordata/**"
+      - "site/flowleaders/leaders.json"
       - "site/government-revenue-data/**"
       - "site/hkbasketdata/**"
+      - "site/leaderradar/radar.json"
       - "site/master_brief.json"
       - "site/prophet/**"
       - "site/vol/**"
