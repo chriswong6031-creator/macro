@@ -4288,16 +4288,32 @@ document.addEventListener('DOMContentLoaded', function(){
   var frag=(window.REF&&REF.fragments)?REF.fragments['fragments/sc_flows.html']:null;
   if(band){ if(frag) band.innerHTML=frag; else band.remove(); }
 
-  /* the heat map: parse now, paint when the view is really on screen (§8.1) */
-  HM=reg('marketdata/sp500_heatmap.json');
-  if(HM&&HM.tiles&&HM.tiles.length){ renderHeatText(); }
-  else {
+  /* The heat map is Money's own lazily-mounted artifact, and production FETCHES it
+     (heatmap.js:1941+, mounted by si_workspace.js:79 `money:['heatmap.js']`). It is
+     requested here through window.fetch for the same reason: the harness recorder then
+     logs the exact production-relative path a live poll would re-request, and the drawer's
+     "Simulate fetch fail" switch exercises the genuine absent-artifact branch below.
+     (The board's other two inputs — baskets.json and si_handoff.json — are read straight
+     from the registry instead: production gets those once at page boot, not per view.) */
+  function heatFailed(){
     var hb=$('heatmap-scorecard');
-    if(hb) hb.innerHTML='<b>'+L('No heat map tonight','今晚无热力图')+'</b>'
-      +'<span>'+L('The market-heat artifact did not build. Every other reading on this view is unaffected.',
-                  '市场热度数据未生成。本视图其他读数不受影响。')+'</span>';
+    if(hb){ hb.classList.add('is-empty'); hb.style.height='';
+      hb.innerHTML='<b>'+L('No heat map tonight','今晚无热力图')+'</b>'
+      +'<span>'+L('The market-heat artifact did not arrive. Every other reading on this view is unaffected.',
+                  '市场热度数据未送达。本视图其他读数不受影响。')+'</span>'; }
     var alt=$('hm-alt'); if(alt) alt.remove();
+    var tk=$('hm-takeaway'); if(tk) tk.innerHTML='';
+    var sc=$('hm-scale'); if(sc) sc.innerHTML='';
+    var mt=$('hm-meta'); if(mt) mt.innerHTML='';
   }
+  fetch('marketdata/sp500_heatmap.json',{cache:'no-cache'})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){
+      if(!d||!d.tiles||!d.tiles.length) throw 0;
+      HM=d; renderHeatText();
+      if(V&&V.classList.contains('on')) paintHeat();
+    })
+    .catch(heatFailed);
 
   renderLeadership();
 });
@@ -4519,7 +4535,7 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
   border-right:1.6px solid var(--muted); border-bottom:1.6px solid var(--muted);
   transform:translateY(-2px) rotate(45deg); transition:transform var(--t-fast) var(--ease-std); }
 .si-view[data-view="explore"] .exp-catwrap[open] > summary::after{ transform:translateY(1px) rotate(-135deg); }
-.si-view[data-view="explore"] .exp-catwrap > .r3-seg{ margin:6px 0 4px 100px; }
+.si-view[data-view="explore"] .exp-catwrap > .r3-seg{ margin:0 0 4px 100px; }
 
 /* ── the comparison table ─────────────────────────────────────────────────────── */
 .si-view[data-view="explore"] #btable{ min-width:760px; }
