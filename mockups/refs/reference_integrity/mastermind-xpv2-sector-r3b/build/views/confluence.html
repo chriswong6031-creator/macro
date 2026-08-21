@@ -391,6 +391,7 @@ function signed(x, d){
   var v = Number(x);
   return '<span class="tnum ' + (v >= 0 ? 'pos' : 'neg') + '">' + (v >= 0 ? '+' : '') + v.toFixed(d == null ? 1 : d) + '</span>';
 }
+function num(x, d){ return (x == null || isNaN(x)) ? '–' : Number(x).toFixed(d == null ? 0 : d); }
 function freshTxt(e){
   if(!e) return '';
   if(e.tier === 'T3' || e.tier === 'T4') return L('about to fire', '即将触发');
@@ -404,19 +405,40 @@ function freshTxt(e){
    subsectors.js:39-44; the tab labels are verbatim from
    sector_central.html.j2:2499-2502. TAB ORDER is the hard-coded DOM order
    S&P → Nasdaq → Russell → Baskets (ADJUDICATIONS A4). */
+   `rollup` and `rollupDesc` are the sector-backdrop organ's own per-universe
+   heading and standfirst, verbatim from the same DS table (subsectors.js:40-43).
+   Baskets carries `rollup:null` there and the organ omits itself — the same
+   absence-as-absence the coverage foot performs (ledger #66). */
 var DS = {
   subsectors:{url:'marketdata/subsector_confluence.json', dir:'subsector/', prefix:'',
-              groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['S&amp;P 500','标普500']},
+              groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['S&amp;P 500','标普500'],
+              rollup:['Sector backdrop','板块背景'],
+              rollupDesc:['Each sector as one equal-weight basket — the backdrop the subsectors live inside.',
+                          '每个板块作为一个等权篮子——子行业所处的大背景。']},
   nasdaq:{url:'marketdata/subsector_confluence_nasdaq.json', dir:'subsector_nasdaq/', prefix:'',
-          groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['Nasdaq-100','纳斯达克100']},
+          groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['Nasdaq-100','纳斯达克100'],
+          rollup:['Amalgamated complexes','汇聚综合体'],
+          rollupDesc:['Higher-level complexes (semis, software, internet, the ex-tech bucket) — watch whether leadership rotates among them or bleeds out of tech. RS is vs QQQ (within-index).',
+                      '高层级综合体（半导体、软件、互联网、非科技桶）——观察领导地位是在它们之间轮动还是流出科技。相对强弱基准为 QQQ（指数内）。']},
   russell:{url:'marketdata/subsector_confluence_russell.json', dir:'subsector_russell/', prefix:'',
-           groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['Russell-2000','罗素2000']},
+           groupsKey:'subsectors', noun:['subsectors','子行业'], tab:['Russell-2000','罗素2000'],
+           rollup:['Sector amalgamations','板块汇聚'],
+           rollupDesc:['The 11 sectors as equal-weight baskets — the natural small-cap rotation buckets. RS is vs IWM (within-index).',
+                       '11 个板块作为等权篮子——小盘股自然的轮动桶。相对强弱基准为 IWM（指数内）。']},
   baskets:{url:'marketdata/basket_confluence.json', dir:'subsector/', prefix:'b-',
-           groupsKey:'baskets', noun:['baskets','篮子'], tab:['Thematic Baskets','主题篮子']}
+           groupsKey:'baskets', noun:['baskets','篮子'], tab:['Thematic Baskets','主题篮子'],
+           rollup:null}
 };
 var TABS = ['subsectors', 'nasdaq', 'russell', 'baskets'];
 var DATA = {}, TAB = 'subsectors';
 var SORT = {}, FILTER = {}, OPEN = {};
+/* the two artifacts the supporting organs read, exactly as production loads them
+   (subsectors.js:568 and :575-577). Both are universe-agnostic FILES that carry
+   per-universe payloads; nothing joins them across universes. */
+var LEAD = null, NIDATA = null;
+/* which disclosures the reader has opened, so a tab flip or a language flip does
+   not close what they opened. */
+var DISC = {};
 
 /* ── class buckets — VERBATIM producer vocabulary (subsectors.js:81-88) ────────
    `forming` has no bucket of its own and folds into Neutral, exactly as
