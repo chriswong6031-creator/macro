@@ -3481,3 +3481,10 @@
 {"id":"ob-2026-08-21-edeb6d268f","from":"approved","to":"quarantined","at":"2026-08-21T14:19:46Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
 {"id":"ob-2026-08-21-f695d960a9","from":"approved","to":"posting","at":"2026-08-21T14:19:52Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-21-f695d960a9","from":"posting","to":"posted","at":"2026-08-21T14:19:53Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a885e89dc319146a27de791","external_url":null,"at":"2026-08-21T14:19:35Z","booked_at":"2026-08-21T14:19:35Z"}}
+{"id":"ob-2026-08-21-218dd8b1fe","from":"queued","to":"approved","at":"2026-08-21T14:28:19Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-21-bbcb5111a5","from":"queued","to":"approved","at":"2026-08-21T14:28:19Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-21-c2d25bd956","from":"queued","to":"approved","at":"2026-08-21T14:28:19Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-21-218dd8b1fe","from":"approved","to":"quarantined","at":"2026-08-21T14:28:27Z","actor":"publisher","note":"unknown cashtag(s): BRK","receipt":null}
+{"id":"ob-2026-08-21-bbcb5111a5","from":"approved","to":"posting","at":"2026-08-21T14:28:33Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-08-21-bbcb5111a5","from":"posting","to":"posted","at":"2026-08-21T14:28:34Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a8860925b4a6e681b2b4ca5","external_url":null,"at":"2026-08-21T14:28:18Z","booked_at":"2026-08-21T14:28:18Z"}}
+{"id":"ob-2026-08-21-c2d25bd956","from":"approved","to":"quarantined","at":"2026-08-21T14:28:35Z","actor":"publisher","note":"frame repeat (skeleton jaccard=1.00) of ob-2026-08-21-89e2e061cc posted today; same template, different ticker","receipt":null}
