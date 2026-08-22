@@ -133,6 +133,7 @@
     "3d9ad4738d5e686dcfb1875f943eedc0abc3c240": "2026-08-22T02:56:31.529355+00:00",
     "3ecd75719f8a4771dbd79eba71edc74c1bb9bd44": "2026-08-21T16:57:01.922644+00:00",
     "3f0f539715959101160afc4ff7461172d4c03fc2": "2026-08-21T17:59:49.214453+00:00",
+    "3f261a2b2f3231bc3233395d0bb8e67a4f7ad9b2": "2026-08-22T13:58:56.030301+00:00",
     "3f4b4f99e3d3ea6e5fdf8d2ddfdec3240086d86f": "2026-08-21T22:35:42.567701+00:00",
     "3f78c4f7c3401a609d9537e7fceb180d917dbc08": "2026-08-22T01:57:12.375935+00:00",
     "4047eddbd07c681d83ee4c51ac4ae6510fccc5b1": "2026-08-21T17:31:53.400537+00:00",
@@ -983,6 +984,12 @@
       "first_ts": "2026-08-22T13:41:04.877384+00:00",
       "sources": [
         "host:zerohedge.com"
+      ]
+    },
+    "head:cta equity positioning back to preiran levels bofa": {
+      "first_ts": "2026-08-22T13:58:56.030301+00:00",
+      "sources": [
+        "host:investing.com"
       ]
     },
     "head:how a physician with a 1 am bedtime optimizes his health i try to tick all the l": {
@@ -2222,7 +2229,7 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-22T13:41:04.877384+00:00",
+      "last_poll": "2026-08-22T13:58:56.030301+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
       "since": "2026-08-22T13:01:16+00:00"
     },
@@ -2234,7 +2241,7 @@
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1787406067.3162336
+      "last_poll_ts": 1787407138.2329433
     },
     "twitterapiio": {
       "cursors": {
@@ -2303,65 +2310,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-22T13:41:04Z",
+  "updated_at": "2026-08-22T13:58:56Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1787406066.1654668
+      "last_poll_ts": 1787407137.249134
     },
     "bls_news": {
       "etag": "\"07aaf967531dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 14:01:40 GMT",
-      "last_poll_ts": 1787406066.0603404
+      "last_poll_ts": 1787407137.0856805
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1787406066.4780135
+      "last_poll_ts": 1787407137.3701966
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1787406067.122898
+      "last_poll_ts": 1787407138.042155
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Sat, 22 Aug 2026 13:37:45 GMT",
-      "last_poll_ts": 1787406067.2660298
+      "last_modified": "Sat, 22 Aug 2026 13:56:30 GMT",
+      "last_poll_ts": 1787407138.1503022
     },
     "fed_press": {
       "etag": "W/\"53636b83de30dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 20 Aug 2026 20:00:13 GMT",
-      "last_poll_ts": 1787406066.0039475
+      "last_poll_ts": 1787407137.0195062
     },
     "forexlive_news": {
-      "etag": "W/\"N_a6mdIydu4Jri3cpqQefy6VOX0\"",
+      "etag": "W/\"r3M6zcv9hM7gguSj5xENflHlZJY\"",
       "fail_count": 0,
-      "last_poll_ts": 1787406066.9133239
+      "last_poll_ts": 1787407137.8176253
     },
     "investing_news": {
-      "etag": "W/\"1298-659a2d2280553\"",
+      "etag": "W/\"125f-659a3195f79de\"",
       "fail_count": 0,
-      "last_modified": "Sat, 22 Aug 2026 13:35:05 GMT",
-      "last_poll_ts": 1787406067.0107594
+      "last_modified": "Sat, 22 Aug 2026 13:55:00 GMT",
+      "last_poll_ts": 1787407137.9582012
     },
     "marketwatch_top": {
-      "etag": "W/\"20b6-eHK+ASv+5dacRMNRx+jrFp1BazY\"",
+      "etag": "W/\"20b6-mBjpcj6yckgv/j+1WmCipR4QUhk\"",
       "fail_count": 0,
-      "last_poll_ts": 1787406066.5650768
+      "last_poll_ts": 1787407137.515325
     },
     "whitehouse_actions": {
       "etag": "\"393774828a07a184ce685a347792bc6c\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 21:35:04 GMT",
-      "last_poll_ts": 1787406066.435013
+      "last_poll_ts": 1787407137.3199248
     },
     "zerohedge_feed": {
       "fail_count": 0,
       "last_modified": "Sat, 22 Aug 2026 13:06:36 GMT",
-      "last_poll_ts": 1787406066.590785
+      "last_poll_ts": 1787407137.5602975
     }
   },
   "wire_day_counts": {
