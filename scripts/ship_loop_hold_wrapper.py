@@ -9,12 +9,14 @@ merge is unsatisfiable and used to make Claude repeat ``SHIP LOOP BLOCKED`` unti
 generic ten-block escape ladder fired.
 
 This front-end is intentionally narrow and quota-conscious. It only probes for a
-lawful hold after the existing guard has already reached ``unmerged`` once. It then
-requires the exact pushed head, a clean worktree, a draft PR whose title starts
-``HOLD-FOR-SOL``, no ``merge-on-green`` label, no native auto-merge, recorded Sol
-authority and Sol release condition, and concluded-green binding checks. Only that
-state becomes ``SHIP LOOP PARKED``. Every other state delegates byte-for-byte to the
-existing guard, preserving all of its ordinary merge/CI/render/live enforcement.
+lawful hold after the existing guard has already reached one terminal-candidate
+blocker: ordinary ``unmerged`` on a sanctioned ``claude/*`` branch, or
+``unsafe_branch`` on an authority-owned ``sol/*`` branch. It then requires the exact
+pushed head, a clean worktree, a draft PR whose title starts ``HOLD-FOR-SOL``, no
+``merge-on-green`` label, no native auto-merge, recorded Sol authority and Sol release
+condition, and concluded-green binding checks. Only that state becomes
+``SHIP LOOP PARKED``. Every other state delegates byte-for-byte to the existing guard,
+preserving all of its ordinary branch/merge/CI/render/live enforcement.
 """
 
 from __future__ import annotations
@@ -154,18 +156,32 @@ def _parked_hold(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] |
     root = Path(root)
     state = guard._load(guard._state_path(root, payload))
     # Do not spend shared GitHub quota on every Stop. The ordinary guard must first
-    # prove all earlier gates and reach its normal unmerged verdict once.
-    if not isinstance(state, dict) or state.get("last_blocker") != "unmerged":
+    # reach a state that can lawfully terminate as PARKED. ``unmerged`` is the
+    # sanctioned claude/* path; ``unsafe_branch`` is accepted only for Sol's own
+    # sol/* authority namespace. Any other blocker still belongs to the delegate.
+    if not isinstance(state, dict):
+        return None
+    last_blocker = str(state.get("last_blocker") or "")
+    if last_blocker not in {"unmerged", "unsafe_branch"}:
         return None
 
     branch = _git(root, "branch", "--show-current")
-    if not branch.startswith("claude/"):
+    if last_blocker == "unmerged":
+        if not branch.startswith("claude/"):
+            return None
+    elif not branch.startswith("sol/"):
+        # Preserve the branch-law incident repair: codex/*, claire/*, bare names,
+        # and every other unsafe delivery namespace remain unsafe even when a PR
+        # happens to contain hold-shaped prose. This exception is only for a
+        # ratified Sol authority branch that cannot be renamed without mutating
+        # the held PR's identity/state.
         return None
+
     head = _git(root, "rev-parse", "HEAD")
     upstream = _git(root, "rev-parse", "--abbrev-ref", "@{upstream}")
     if int(_git(root, "rev-list", "--count", f"{upstream}..HEAD") or "0") != 0:
         return None
-    # The prior unmerged verdict proved the tree clean at that Stop. Recheck now so
+    # The prior guard verdict proved the tree clean at that Stop. Recheck now so
     # edits made after the block can never be laundered by the hold terminal state.
     if _git(root, "status", "--porcelain=v1", "--untracked-files=all"):
         return None
