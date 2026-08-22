@@ -48,7 +48,6 @@ discoveries:
 artifacts:
   - agentos/decisions/DEC-CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-22-sol-architecture.md
-  - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-22-p0a-partial-release.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-22-h0-release.md
 landmines:
   - "Surface bindings are local navigation addresses only; they are not runtime, role, workstream, completion, liveness or authority records."
