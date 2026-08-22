@@ -1,0 +1,63 @@
+[markers] overview dark/en 1440: ['01', '02', '03', '04', '05a', '05b', '05c', '06', '07', '09', '10', '11', '12', '13']
+[shot] overview-1440-dark-en.png
+[markers] overview light/zh 1440: ['01', '02', '03', '04', '05a', '05b', '05c', '06', '07', '09', '10', '11', '12', '13']
+[shot] overview-1440-light-zh.png
+[shot] map-1440-dark-en.png
+[shot] moving-1440-dark-en.png
+[shot] money-1440-dark-en.png
+[shot] explore-1440-dark-en.png
+[shot] confluence-1440-dark-en.png
+[shot] overview-390-dark-en.png
+[shot] map-390-dark-en.png
+[shot] moving-390-dark-en.png
+[shot] money-390-dark-en.png
+[shot] explore-390-dark-en.png
+[shot] confluence-390-dark-en.png
+[shot] overview-390-dark-zh.png
+[shot] map-390-dark-zh.png
+[shot] moving-390-dark-zh.png
+[shot] money-390-dark-zh.png
+[shot] explore-390-dark-zh.png
+[shot] confluence-390-dark-zh.png
+[moving-help] named control aria-expanded after click (1440 en) = true
+[shot] moving-help-open-1440-dark-en.png
+[moving-help] named control aria-expanded after click (1440 zh) = true
+[shot] moving-help-open-1440-dark-zh.png
+[moving-help] named control aria-expanded after click (390 en) = true
+[shot] moving-help-open-390-dark-en.png
+[shot] contrast-action-labels-overview-1440-dark-zh.png
+[shot] contrast-action-labels-confluence-1440-dark-zh.png
+[shot] contrast-action-labels-money-1440-dark-zh.png
+[contrast] moving light en contains 'Still measuring': True
+[shot] contrast-still-measuring-moving-1440-light-en.png
+[contrast] moving light zh contains '测量中': True
+[shot] contrast-still-measuring-moving-1440-light-zh.png
+[contrast] overview light en contains '20d vs market': True
+[shot] contrast-20d-vs-market-overview-1440-light-en.png
+[confluence-picks] EN header='Stock picks'
+[confluence-picks] EN figures snippet='STOCK\nCONVICTION\nWHY IT IS HERE\nCOIN\nCAPITAL MARKETS\nConviction\n0.60\nIts tier T2 · vs sub 20d -1.6\nNSC\nRAILROADS\nConviction\n0.54\nIts tier T1 · vs sub 20d +2.2'
+[shot] confluence-picks-1440-dark-en.png
+[confluence-picks] ZH header='Stock picks'
+[confluence-picks] ZH figures snippet='个股\n综合把握\n入选原因\nCOIN\nCAPITAL MARKETS\n综合把握\n0.60\n个股层级 T2 · 相对子行业20日 -1.6\nNSC\nRAILROADS\n综合把握\n0.54\n个股层级 T1 · 相对子行业20日 +2.2'
+[shot] confluence-picks-1440-dark-zh.png
+[confluence-universe] clicked #cf-uni-subsectors, aria-selected now = subsectors
+[confluence-universe] active=subsectors tab-strip={'subsectors': 'S&P 500\n65', 'nasdaq': 'Nasdaq-100\n12', 'russell': 'Russell-2000\n93', 'baskets': 'Thematic Baskets\n49'}
+[shot] confluence-universe-sp.png
+[confluence-universe] clicked #cf-uni-nasdaq, aria-selected now = nasdaq
+[confluence-universe] active=nasdaq tab-strip={'subsectors': 'S&P 500\n65', 'nasdaq': 'Nasdaq-100\n12', 'russell': 'Russell-2000\n93', 'baskets': 'Thematic Baskets\n49'}
+[shot] confluence-universe-nasdaq.png
+[confluence-universe] clicked #cf-uni-russell, aria-selected now = russell
+[confluence-universe] active=russell tab-strip={'subsectors': 'S&P 500\n65', 'nasdaq': 'Nasdaq-100\n12', 'russell': 'Russell-2000\n93', 'baskets': 'Thematic Baskets\n49'}
+[shot] confluence-universe-russell.png
+[confluence-universe] clicked #cf-uni-baskets, aria-selected now = baskets
+[confluence-universe] active=baskets tab-strip={'subsectors': 'S&P 500\n65', 'nasdaq': 'Nasdaq-100\n12', 'russell': 'Russell-2000\n93', 'baskets': 'Thematic Baskets\n49'}
+[shot] confluence-universe-baskets.png
+[hash-smoke] wrote 27 lines (6 canonical + 21 legacy)
+[shot] overview-access-gated.png
+[shot] overview-access-hydrated.png
+[shot] overview-access-reffail.png
+[access] gated={'preview_rows': 15, 'hydrated_inserted_rows': 0, 'disclosures': 4} hydrated={'preview_rows': 15, 'hydrated_inserted_rows': 29, 'disclosures': 0} reffail_armed=True reffail_board_text='Data failed to load — please refresh.' reffail_ov_panel_present=False fail_log_count=8
+[money-zoom] verdict text @ 320phys/200%: 'MARKET BREADTH\nBroad\nBroad participation — a risk-on tide.\nMONEY FLOW\nSpread across many\nRISK-ON\nVOLATILITY: CALM'
+[money-zoom] document overflow: False
+[shot] money-verdict-320phys-zoom200-en.png
+[shot] money-320phys-zoom200-en-full.png

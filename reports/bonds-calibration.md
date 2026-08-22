@@ -11,33 +11,33 @@ Verdicts: **CONFIRMED** = stress→worse outcome, positive sign in full + both h
 
 | Signal | Verdict | IC dd (full/pre/post) | IC recession | hi-tercile P(dd10) vs base | span | n |
 |---|---|---|--:|---|---|--:|
-| recession (Recession-risk composite (0-100)) | **DIRECTIONAL** | 0.149/0.18/0.04 | 0.507 | 0.22 vs 0.122 (+9.8pp) | 1967-06-01..2026-05-12 | 15379 |
-| drawdown (Drawdown-risk gauge (0-100, already MEASURED)) | **CONFIRMED** | 0.225/0.261/0.106 | 0.539 | 0.243 vs 0.125 (+11.8pp) | 1969-07-31..2026-05-12 | 14814 |
-| credit (HY-OAS credit stress (0-100)) | **DIRECTIONAL** | 0.18/0.287/-0.071 | 0.285 | 0.287 vs 0.157 (+13.0pp) | 1996-12-31..2026-05-12 | 7661 |
-| rates_vol (MOVE rates-vol stress (0-100)) | **CONFIRMED** | 0.168/0.244/0.079 | 0.182 | 0.204 vs 0.132 (+7.2pp) | 2002-11-12..2026-05-12 | 6131 |
-| plumbing (SOFR-IORB funding stress (0-100)) | **CONTEXT** | -0.068/nan/-0.068 | None | 0.147 vs 0.143 (+0.4pp) | 2021-07-29..2026-05-12 | 1249 |
-| composite (Bond-stress composite = 100 - health score (the headline)) | **CONFIRMED** | 0.208/0.242/0.076 | 0.546 | 0.24 vs 0.122 (+11.8pp) | 1967-06-01..2026-05-12 | 15379 |
+| recession (Recession-risk composite (0-100)) | **DIRECTIONAL** | 0.149/0.18/0.04 | 0.506 | 0.22 vs 0.122 (+9.8pp) | 1967-06-01..2026-05-26 | 15389 |
+| drawdown (Drawdown-risk gauge (0-100, already MEASURED)) | **CONFIRMED** | 0.224/0.26/0.102 | 0.537 | 0.242 vs 0.125 (+11.7pp) | 1969-07-31..2026-05-26 | 14824 |
+| credit (HY-OAS credit stress (0-100)) | **DIRECTIONAL** | 0.18/0.287/-0.07 | 0.286 | 0.287 vs 0.157 (+13.0pp) | 1996-12-31..2026-05-26 | 7671 |
+| rates_vol (MOVE rates-vol stress (0-100)) | **CONFIRMED** | 0.168/0.244/0.079 | 0.182 | 0.204 vs 0.132 (+7.2pp) | 2002-11-12..2026-05-26 | 6141 |
+| plumbing (SOFR-IORB funding stress (0-100)) | **CONTEXT** | -0.067/nan/-0.067 | None | 0.145 vs 0.141 (+0.4pp) | 2021-07-29..2026-05-26 | 1259 |
+| composite (Bond-stress composite = 100 - health score (the headline)) | **CONFIRMED** | 0.207/0.241/0.073 | 0.545 | 0.24 vs 0.122 (+11.8pp) | 1967-06-01..2026-05-26 | 15389 |
 
 ## Diagnostic curve signals
 
 | Signal | Verdict | IC dd (full/pre/post) | IC recession | hi-tercile P(dd10) vs base | span | n |
 |---|---|---|--:|---|---|--:|
-| ny_fed_prob (NY-Fed 3m10y recession probit) | **CONTEXT** | -0.023/-0.005/-0.02 | 0.219 | 0.13 vs 0.119 (+1.1pp) | 1981-09-01..2026-05-12 | 11661 |
-| neg_ntfs (Near-term forward spread (sign-flipped: low = stress)) | **CONTEXT** | -0.042/0.054/-0.188 | 0.169 | 0.103 vs 0.119 (-1.6pp) | 1981-09-01..2026-05-12 | 11661 |
-| hy_oas (High-yield OAS level (%)) | **DIRECTIONAL** | 0.18/0.288/-0.071 | 0.285 | 0.287 vs 0.157 (+13.0pp) | 1996-12-31..2026-05-12 | 7661 |
+| ny_fed_prob (NY-Fed 3m10y recession probit) | **CONTEXT** | -0.023/-0.005/-0.019 | 0.218 | 0.13 vs 0.119 (+1.1pp) | 1981-09-01..2026-05-26 | 11671 |
+| neg_ntfs (Near-term forward spread (sign-flipped: low = stress)) | **CONTEXT** | -0.042/0.054/-0.187 | 0.168 | 0.103 vs 0.119 (-1.6pp) | 1981-09-01..2026-05-26 | 11671 |
+| hy_oas (High-yield OAS level (%)) | **DIRECTIONAL** | 0.18/0.288/-0.07 | 0.286 | 0.287 vs 0.157 (+13.0pp) | 1996-12-31..2026-05-26 | 7671 |
 
 ## Does the blend beat the best single leg?
 
-Composite IC **0.208** vs best leg `drawdown` **0.225** (Δ -0.017). **best single leg (drawdown) BEATS the composite.**
+Composite IC **0.207** vs best leg `drawdown` **0.224** (Δ -0.017). **best single leg (drawdown) BEATS the composite.**
 
 ## NY-Fed recession-probit reliability
 
-Brier **0.1576** vs base-rate climatology 0.1502 (skill score -0.049; base recession rate 0.184). Reliability curve (predicted vs observed):
+Brier **0.1576** vs base-rate climatology 0.1501 (skill score -0.05; base recession rate 0.184). Reliability curve (predicted vs observed):
 
 | prob bin | n | predicted | observed |
 |---|--:|--:|--:|
 | 0.0-0.2 | 8999 | 0.052 | 0.138 |
-| 0.2-0.4 | 1798 | 0.278 | 0.407 |
+| 0.2-0.4 | 1808 | 0.278 | 0.404 |
 | 0.4-0.6 | 395 | 0.495 | 0.337 |
 | 0.6-0.8 | 280 | 0.662 | 0.011 |
 

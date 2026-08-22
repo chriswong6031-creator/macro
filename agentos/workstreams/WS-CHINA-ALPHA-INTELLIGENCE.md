@@ -217,6 +217,78 @@ waves:
       fixtures until a real malformed announcementId is naturally observed.
       STANDING GATE UNCHANGED: P1B, L0, R1/R2, P2 and all other China Alpha
       Intelligence families stay CLOSED — this wave does not reopen them.
+      SUPERSEDED IN PART by wave p1r3 (Sol 2026-08-22): the implementation is
+      RETAINED with no rollback, but this wave's exclusion-health semantics
+      (per-run, plane-global) and its lack of durable excluded-observation
+      memory are replaced — see p1r3 below and
+      DEC:CHINA-COVERAGE-EXCEPTION-LEDGER.
+  - id: p1r3
+    title: P1-R3 durable scoped key-exclusion recovery — a malformed
+      institutional-visit observation becomes a durable coverage exception
+      remembered until deterministically reconciled, with negative-authority
+      suppression scoped to the affected company whenever scope is knowable
+      (commissioned by Sol 2026-08-22 after accepting #6229 with no rollback)
+    status: in_progress
+    depends_on: [p1r2]
+    next_action: >
+      WHY THIS WAVE EXISTS: P1-R2 fixed the silent-drop MECHANISM but left the
+      exclusion's LIFETIME and SCOPE at their inherited defaults (per-run,
+      plane-global), which fail in opposite directions depending only on where
+      the malformed row sits — and those two places are jointly exhaustive, so
+      the semantics could not be right for any malformed visit row at all.
+      Both reproduced against the merged bytes of c11b16500c15
+      (DSC:CHINA-VISITS-KEY-EXCLUSION-LATCH-AND-AGING-FORGETFULNESS): (LATCH)
+      one pre-existing unkeyed institutional_visit row in filings.parquet is
+      re-read as a candidate every night, so five consecutive simulated nights
+      all returned upstream_degraded with coverage_start=None and
+      last_success_utc=None — the whole visit plane never starts and every
+      A-share name reads no_coverage permanently; (FORGETFULNESS) a newly
+      malformed row is stopped at the china_filings boundary and remembered
+      only in that run's process-local outcome, so once it ages out of the
+      3-day CNInfo re-pull window nights 2-5 read status ok with
+      candidate_accounting {eligible:1, represented_downstream:1,
+      typed_exclusions:0} — perfectly balanced and blind to the excluded
+      company, which then renders a FALSE clean measured_no_event.
+      WHAT SHIPS: one owner-native coverage-exception ledger,
+      data/china_visits/coverage_exceptions.parquet, keyed on a versioned
+      observation fingerprint (obsfp1) over exact immutable source metadata
+      EXCLUDING announcementId and collection-time noise; harvested from both
+      boundaries with zero new network calls and filtered to P1 relevance so a
+      malformed NON-visit filing never poisons P1; upserted so repeated
+      re-pulls give ONE durable row, never N; reconciled DETERMINISTICALLY ONLY
+      (exactly one exact fingerprint match resolves and records the real
+      announcementId; zero or 2+ stay open; never fuzzy-match; a resolved row
+      is kept forever, never rewritten away). Suppression is SCOPED: a known
+      sec_code blocks clean negative authority for that company only, an
+      unresolvable identity or an unreadable ledger degrades the plane
+      globally, and unaffected companies keep normal measured_no_event.
+      Positive evidence stays visible; a company with both visit rows and an
+      open exception renders its rows AND declines to assert completeness. The
+      product state is a structured coverage_exception projection behind the
+      EXISTING house taxonomy (not_yet_available) — no new top-level enum.
+      RETAINED FROM #6229, EXPLICITLY RE-AFFIRMED: key_anomaly() as the single
+      natural-key predicate; no synthetic/composite canonical announcementId;
+      no keyless row in canonical filings.parquet; the strict unreadable-store
+      ABORT; the mechanical candidate accounting; P1-R1 same-cycle ordering;
+      CNInfo host concurrency. DELIBERATELY REVERSED: P1-R2's rule that
+      malformed-key conditions must not advance clean last_success_utc — with
+      the ledger carrying suppression per company, a globally-clean run now
+      MAY advance last_success_utc and stamp coverage_start, and must, because
+      freezing them IS the latch. Sol lifted P1-R2's prohibition on editing
+      engine/china_intel_hub.py for exactly this ("the prohibition does not
+      survive when it itself prevents correct per-company semantics").
+      Rare-branch repair, unchanged basis: 54,078 accrued rows, 0 malformed
+      keys ever — proven by hostile fixtures and mutation tests (including a
+      canonical-identity firewall that kills any mutation making the
+      observation fingerprint become announcement_id), not by a natural
+      malformed row. PROOF STILL OWED: the first natural Asia-close containing
+      this wave must establish that the checkout contains the merge, the
+      china_filings -> china_visits same-cycle order still holds, normal
+      well-keyed collection succeeds, candidate accounting balances, the
+      persistent coverage-exception plane reads successfully, there is no
+      normal-path regression, and the dossier still renders the normal P1
+      product correctly. Do NOT manufacture malformed production input.
+      STANDING GATE UNCHANGED: L0, P1B, P2, R1 and R2 stay CLOSED.
   - id: l0
     title: L0 full-pool canonical outcomes (extract china_standout_track primitives for the candidate plane)
     status: todo

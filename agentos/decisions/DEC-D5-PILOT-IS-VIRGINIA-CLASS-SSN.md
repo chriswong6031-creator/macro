@@ -12,8 +12,10 @@ answer: >
   (shared_scope true; entity per the attachment rule — whichever BWXT
   entity the re-fetched document names as performing the work) → milestones
   rail (forward-only: AUKUS Pillar-1 early-2030s window is the candidate;
-  the realized 2026-07-29 Block VI award is the GovRev/D3 "what changed"
-  event, never a D5 milestone; not_reviewed/reviewed_none is a valid
+  the realized 2026-07-29 Block VI award belongs to the GovRev/D3
+  changed-event plane, never a D5 milestone (no tape event row exists yet
+  on main per the D5R.2 census — the program-event link stays honestly
+  not_reviewed until one exists and survives review); not_reviewed/reviewed_none is a valid
   outcome). Role labels bind to what the re-fetched documents support;
   these are the evidence-based expectations.
   Negative control: IRDM / P00032 stays program-null
@@ -31,8 +33,9 @@ rationale: >
   Virginia/Columbia/Ford in one sentence, exercising shared_scope honesty),
   BWXT issuer identity already reviewed in defense21-v1 (chain executable
   end-to-end in the current estate), a citable official changed-event
-  (the Block VI award, 2026-07-29, $42.1B, SSN 814-822 — GovRev/D3 truth,
-  never a D5 milestone) with the AUKUS Pillar-1 window as the
+  document (the Block VI award, 2026-07-29, $42.1B, SSN 814-822 —
+  changed-event-plane truth, never a D5 milestone; not yet a tape event
+  row per the D5R.2 census) with the AUKUS Pillar-1 window as the
   forward-milestone candidate, public-domain rights
   throughout, and bounded complexity. The comparison candidate decomposed
   under census into TWO programs with TWO primes (PAC-3 MSE→Lockheed,

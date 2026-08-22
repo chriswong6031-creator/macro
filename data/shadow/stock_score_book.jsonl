@@ -3855,3 +3855,5 @@
 {"date": "2026-08-21", "ticker": "DFH", "score": 60.0, "percentile": 60.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-21", "ticker": "GSHD", "score": 44.0, "percentile": 44.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-21", "ticker": "PRGO", "score": 5.0, "percentile": 5.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-21", "ticker": "WDC", "score": 44.0, "percentile": 44.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-21", "ticker": "WEN", "score": 34.0, "percentile": 34.0, "regime": "mixed", "horizons": [21, 63, 126]}

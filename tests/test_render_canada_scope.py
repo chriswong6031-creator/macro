@@ -37,16 +37,17 @@ BUILD_VECTOR = (ROOT / "scripts" / "build_vector.py").read_text()
 BUILD_CANADA = (ROOT / "scripts" / "build_canada.py").read_text()
 
 
-def test_automatic_render_uses_reserved_heavy_runner() -> None:
-    assert "default: render-heavy" in RENDER
-    assert "github.event.inputs.runner || 'render-heavy'" in RENDER
+def test_automatic_render_uses_render_linux_fleet() -> None:
+    assert "default: render-linux" in RENDER
+    assert "github.event.inputs.runner || 'render-linux'" in RENDER
     assert "      - self-hosted\n" in RENDER
 
 
-def test_shared_mac_and_render_linux_remain_explicit_fallbacks() -> None:
+def test_reserved_and_shared_mac_remain_explicit_fallbacks() -> None:
     assert "options: [render-heavy, render-linux, macstudio]" in RENDER
-    assert "shared Mac pool and" in RENDER
-    assert "render-linux as explicit operator fallbacks" in RENDER
+    assert "render-heavy as the reserved M2 rollback" in RENDER
+    assert "macstudio" in RENDER and "explicit shared-Mac fallback" in RENDER
+    assert "render-linux as explicit operator fallbacks" not in RENDER
 
 
 def _region_of_fn() -> str:

@@ -1,0 +1,5452 @@
+{
+  "candidate": "/Users/chriswong/Documents/Cluade/macro-main/.grok/worktrees/xpv2-sc-r3b-prc/mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "url": "http://127.0.0.1:50300/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "started_at": "2026-08-22T13:41:03Z",
+  "canonical": [
+    {
+      "hash": "#overview",
+      "onView": "overview",
+      "views": [
+        {
+          "view": "overview",
+          "on": true,
+          "display": "block",
+          "visibility": "visible",
+          "w": 1184,
+          "h": 1285,
+          "top": 123
+        },
+        {
+          "view": "map",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "moving",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "money",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "explore",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "confluence",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        }
+      ],
+      "stickyOffset": "40px",
+      "topbarH": 40,
+      "visible_head": "OVERVIEW Memory, HBM & Storage is handing leadership to Big Pharma. 4 names sit in the Buy lane. ? board as of 2026-08-19 This board's clock is more than 12 hours old. Graded call \u00b7 this view only Leadership context Display only \u2014 it does not set a lane below. as of 2026-08-19 LOSING THE LEAD Memory, HBM & Storage WAS #1 TAKING THE LEAD Big Pharma \u00b7 Health Care MONEY IS ROTATING Rotation under way \u2014 favour the fresh leaders, not the old one. 2 days in Aug: seasonally friendly for hot stocks (rose in 8/10) \u00b7 context only Where this seasonal note comes from What to act on now BUY NOW 4 ALMOST READY 5 IN FAVOUR \u2014 DON'T CHASE 5 TAKE PROFITS 3 STAND ASIDE 27 Entry confirmed today How lanes are graded 3 of 4 shown SECTOR OR THEME SCORE 20d vs market WHY IT IS HERE Gold Miners THEME \u00b7 AEM \u00b7 EQX \u00b7",
+      "access": "gated"
+    },
+    {
+      "hash": "#map",
+      "onView": "map",
+      "views": [
+        {
+          "view": "overview",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "map",
+          "on": true,
+          "display": "block",
+          "visibility": "visible",
+          "w": 1184,
+          "h": 3587,
+          "top": 123
+        },
+        {
+          "view": "moving",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "money",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "explore",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "confluence",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        }
+      ],
+      "stickyOffset": "40px",
+      "topbarH": 40,
+      "visible_head": "THE MAP 14 groups sit top-right \u2014 strong and still rising. Big Pharma is furthest along. ? as of 2026-08-19 Context \u2014 where each group sits Where everything stands Right = strong vs the S&P. Up = gaining speed this week. Themes 38 Sectors 11 HOW THE FIELD SPLITS TONIGHT LEADING 14 Big Pharma \u00b7 Gold Miners WEAKENING 13 AI Agents & Applications \u00b7 Non-AI Software IMPROVING 2 Memory, HBM & Storage \u00b7 AI Neoclouds & HPC Hosting LAGGING 9 Travel & Experiences \u00b7 Industrial Distribution & Capital Goods SELECTED GROUP Big Pharma HEALTHCARE Where it sits Leading Rank 1 Strength score 77 20 days vs S&P +11.5% Rank move this week +9 Leading \u2014 strong & rising. Open Big Pharma Text equivalent of the rotation map \u2014 every group, where it sits, its strength score, its 20-day move against the S&P and its ran",
+      "access": "gated"
+    },
+    {
+      "hash": "#moving",
+      "onView": "moving",
+      "views": [
+        {
+          "view": "overview",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "map",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "moving",
+          "on": true,
+          "display": "block",
+          "visibility": "visible",
+          "w": 1184,
+          "h": 3078,
+          "top": 123
+        },
+        {
+          "view": "money",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "explore",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "confluence",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        }
+      ],
+      "stickyOffset": "40px",
+      "topbarH": 40,
+      "visible_head": "WHAT'S MOVING 23 groups moved up the ranking this week, 24 slipped. ? as of 2026-08-19 Context \u2014 what changed recently Where money moved Out of one leg, turning up in another 2 active Semicap equipmentMemory & storage TECHNOLOGY Day 1 Semicap equipment sits 13% below its peak. Memory & storage is 21.7% up off its low. The two have moved 6.0% apart over the last ten sessions. Semicap equipmentNon-AI tech & hardware TECHNOLOGY Day 1 Semicap equipment sits 13% below its peak. Non-AI tech & hardware is 5.9% up off its low. The two have moved 0.6% apart over the last ten sessions. CHANGED THIS WEEK 5 sessions vs SPY Technology \u22122.3% Health Care +4.7% Financials \u22120.3% Consumer Staples +2.2% Utilities +0.9% Communication Services +1.4% Energy +4.6% Semiconductors \u22123.6% Software +0.2% Mag-7 basket",
+      "access": "gated"
+    },
+    {
+      "hash": "#money",
+      "onView": "money",
+      "views": [
+        {
+          "view": "overview",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "map",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "moving",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "money",
+          "on": true,
+          "display": "block",
+          "visibility": "visible",
+          "w": 1184,
+          "h": 2902,
+          "top": 123
+        },
+        {
+          "view": "explore",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "confluence",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        }
+      ],
+      "stickyOffset": "40px",
+      "topbarH": 40,
+      "visible_head": "MONEY & BREADTH Money is spread across many groups \u2014 a broad tide, not a narrow few. ? as of 2026-08-19 Context only \u2014 this view carries no call ? Where this reading comes from Under the hood \u2014 is the whole market participating? Breadth tells you whether the rotation is a broad tide or a narrow few. Be selective when it is narrow. MARKET BREADTH Broad Broad participation \u2014 a risk-on tide. MONEY FLOW Spread across many RISK-ON VOLATILITY: CALM ADVANCERS / DECLINERS 284 / 217 A/D 1.31 tick = an even tape (A/D 1.00) 52-WK HIGHS / LOWS 22 / 0 more highs than lows tick = highs and lows level ABOVE 200-DAY 75% healthy majority ticks = 40% weak \u00b7 60% healthy majority HOW STYLE AND RISK ETFS HAVE BEEN TRADING \u00b7 20 DAYS Small vs Large large leading \u22120.19% over 20 days Equal vs Cap-weight breadth br",
+      "access": "gated"
+    },
+    {
+      "hash": "#explore",
+      "onView": "explore",
+      "views": [
+        {
+          "view": "overview",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "map",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "moving",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "money",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "explore",
+          "on": true,
+          "display": "block",
+          "visibility": "visible",
+          "w": 1184,
+          "h": 3426,
+          "top": 123
+        },
+        {
+          "view": "confluence",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        }
+      ],
+      "stickyOffset": "40px",
+      "topbarH": 40,
+      "visible_head": "EXPLORE 49 baskets \u2014 every member, every record. ? as of 2026-08-19 Context only \u2014 descriptive, never a buy list ? Where this reading comes from Explore all Every basket, sortable. Switch between plain return, return against S&P 500, and how unusual the move is for that basket. Click one to see what is in it. MEASURE Raw vs S&P \u03c3 Return measure CATEGORY All All Software Materials & Mining Artificial Intelligence Industrials & Defense AI & Technology Healthcare US Sectors (EW) Industrials Energy & Power Financials Consumer Cyclical Consumer Defensive Crypto & Digital Assets Semiconductors Semiconductors & Hardware Basket category Showing the top 8 and bottom 8 of 49 baskets BASKET 60D TREND 1D 5D 20D 60D MTD YTD Non-AI Software +3.1% +6.5% +29.6% +32.5% +12.8% \u221216.0% Gold Miners +8.5% +8.2%",
+      "access": "gated"
+    },
+    {
+      "hash": "#confluence",
+      "onView": "confluence",
+      "views": [
+        {
+          "view": "overview",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "map",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "moving",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "money",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "explore",
+          "on": false,
+          "display": "none",
+          "visibility": "visible",
+          "w": 0,
+          "h": 0,
+          "top": 0
+        },
+        {
+          "view": "confluence",
+          "on": true,
+          "display": "block",
+          "visibility": "visible",
+          "w": 1184,
+          "h": 1422,
+          "top": 123
+        }
+      ],
+      "stickyOffset": "40px",
+      "topbarH": 40,
+      "visible_head": "CONFLUENCE 1 group just turned buyable and 16 more carry a tailwind. Entries have the wind at their back \u2014 confirm the group before chasing. as of 2026-08-19 Graded call \u00b7 this view only S&P 500 65 Nasdaq-100 12 Russell-2000 93 Thematic Baskets 49 ENTRY NOW 1 TAILWIND 16 NEUTRAL 21 LATE 18 HEADWIND 9 65 of 113 subsectors have enough live data to time \u00b7 48 thin (listed in the table, not timed) How timing support is graded 1 of 1 shown SUBSECTOR ENTRY TIER WHY IT IS HERE Auto Manufacturers Thin data \u2014 read with caution EXTENDED \u00b7 CONSUMER CYCLICAL \u00b7 3 NAMES T1 Fresh T1 entry \u2014 just crossed Stock picks Stocks with an active or forming T1\u2013T4 entry read inside a subsector that is also working. Strongest combined reads come first. COIN CAPITAL MARKETS 0.60 Its tier T2 \u00b7 vs sub 20d -1.6 NSC RAILR",
+      "access": "gated"
+    }
+  ],
+  "legacy": [
+    {
+      "hash": "#actnow-section",
+      "expected": "overview",
+      "onView": "overview",
+      "ok_view": true,
+      "target": {
+        "id": "actnow-section",
+        "present": true,
+        "top": 57,
+        "height": 443,
+        "scrollY": 426,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#regime",
+      "expected": "overview",
+      "onView": "overview",
+      "ok_view": true,
+      "target": {
+        "id": "regime",
+        "present": true,
+        "top": 56,
+        "height": 176,
+        "scrollY": 218,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#grader",
+      "expected": "overview",
+      "onView": "overview",
+      "ok_view": true,
+      "target": {
+        "id": "grader",
+        "present": true,
+        "top": 637,
+        "height": 219,
+        "scrollY": 552,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#si-map",
+      "expected": "map",
+      "onView": "map",
+      "ok_view": true,
+      "target": {
+        "id": "si-map",
+        "present": true,
+        "top": 57,
+        "height": 1356,
+        "scrollY": 252,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#rotmap-section",
+      "expected": "map",
+      "onView": "map",
+      "ok_view": true,
+      "target": {
+        "id": "rotmap-section",
+        "present": true,
+        "top": 57,
+        "height": 1408,
+        "scrollY": 200,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#sc-cyclemap",
+      "expected": "map",
+      "onView": "map",
+      "ok_view": true,
+      "target": {
+        "id": "sc-cyclemap",
+        "present": true,
+        "top": 56,
+        "height": 1059,
+        "scrollY": 1652,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#board",
+      "expected": "map",
+      "onView": "map",
+      "ok_view": true,
+      "target": {
+        "id": "board",
+        "present": true,
+        "top": 56,
+        "height": 811,
+        "scrollY": 2755,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#si-movement",
+      "expected": "moving",
+      "onView": "moving",
+      "ok_view": true,
+      "target": {
+        "id": "si-movement",
+        "present": true,
+        "top": 57,
+        "height": 445,
+        "scrollY": 200,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#rc-events-mount",
+      "expected": "moving",
+      "onView": "moving",
+      "ok_view": true,
+      "target": {
+        "id": "rc-events-mount",
+        "present": true,
+        "top": 57,
+        "height": 407,
+        "scrollY": 238,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#rotation-app",
+      "expected": "moving",
+      "onView": "moving",
+      "ok_view": true,
+      "target": {
+        "id": "rotation-app",
+        "present": true,
+        "top": 57,
+        "height": 1124,
+        "scrollY": 1492,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#si-money",
+      "expected": "money",
+      "onView": "money",
+      "ok_view": true,
+      "target": {
+        "id": "si-money",
+        "present": true,
+        "top": 57,
+        "height": 0,
+        "scrollY": 188,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#internals-section",
+      "expected": "money",
+      "onView": "money",
+      "ok_view": true,
+      "target": {
+        "id": "internals-section",
+        "present": true,
+        "top": 57,
+        "height": 579,
+        "scrollY": 188,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#scc-leadership",
+      "expected": "money",
+      "onView": "money",
+      "ok_view": true,
+      "target": {
+        "id": "scc-leadership",
+        "present": true,
+        "top": 120,
+        "height": 672,
+        "scrollY": 2169,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#explore-section",
+      "expected": "explore",
+      "onView": "explore",
+      "ok_view": true,
+      "target": {
+        "id": "explore-section",
+        "present": true,
+        "top": 57,
+        "height": 0,
+        "scrollY": 188,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#table-section",
+      "expected": "explore",
+      "onView": "explore",
+      "ok_view": true,
+      "target": {
+        "id": "table-section",
+        "present": true,
+        "top": 57,
+        "height": 1394,
+        "scrollY": 188,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#chart-section",
+      "expected": "explore",
+      "onView": "explore",
+      "ok_view": true,
+      "target": {
+        "id": "chart-section",
+        "present": true,
+        "top": 56,
+        "height": 844,
+        "scrollY": 1614,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#forming-narratives",
+      "expected": "explore",
+      "onView": "explore",
+      "ok_view": true,
+      "target": {
+        "id": "forming-narratives",
+        "present": true,
+        "top": 56,
+        "height": 861,
+        "scrollY": 2490,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#tm-mount",
+      "expected": "explore",
+      "onView": "explore",
+      "ok_view": true,
+      "target": {
+        "id": "tm-mount",
+        "present": true,
+        "top": 746,
+        "height": 46,
+        "scrollY": 2693,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": true
+      }
+    },
+    {
+      "hash": "#confluence",
+      "expected": "confluence",
+      "onView": "confluence",
+      "ok_view": true,
+      "target": {
+        "id": "confluence",
+        "present": false
+      }
+    },
+    {
+      "hash": "#sc-app",
+      "expected": "confluence",
+      "onView": "confluence",
+      "ok_view": true,
+      "target": {
+        "id": "sc-app",
+        "present": true,
+        "top": -3,
+        "height": 220,
+        "scrollY": 330,
+        "stickyH": 900,
+        "occluded": true,
+        "scrollMarginTop": "56px",
+        "inView": false
+      }
+    },
+    {
+      "hash": "#sc-top",
+      "expected": "confluence",
+      "onView": "confluence",
+      "ok_view": true,
+      "target": {
+        "id": "sc-top",
+        "present": false
+      }
+    }
+  ],
+  "special": {
+    "empty": {
+      "hash": "#overview",
+      "onView": "overview"
+    },
+    "unknown": {
+      "hash": "#not-a-real-view",
+      "onView": "overview"
+    },
+    "theme_id": "big_pharma",
+    "theme": {
+      "hash": "#theme-big_pharma",
+      "onView": "overview",
+      "log": [
+        {
+          "seq": 1,
+          "type": "fetch",
+          "path": "basketdata/baskets.json",
+          "result": "hit"
+        },
+        {
+          "seq": 2,
+          "type": "fetch",
+          "path": "basketdata/etf_pulse.json",
+          "result": "hit"
+        },
+        {
+          "seq": 3,
+          "type": "fetch",
+          "path": "basketdata/vol_sentiment.json",
+          "result": "hit"
+        },
+        {
+          "seq": 4,
+          "type": "fetch",
+          "path": "marketdata/sp500_heatmap.json",
+          "result": "hit"
+        },
+        {
+          "seq": 5,
+          "type": "fetch",
+          "path": "marketdata/index_leadership.json",
+          "result": "hit"
+        },
+        {
+          "seq": 6,
+          "type": "fetch",
+          "path": "basketdata/baskets.json",
+          "result": "hit"
+        },
+        {
+          "seq": 7,
+          "type": "fetch",
+          "path": "basketdata/narrative_emergence.json",
+          "result": "hit"
+        },
+        {
+          "seq": 8,
+          "type": "fetch",
+          "path": "marketdata/nasdaq_internals.json",
+          "result": "hit"
+        },
+        {
+          "seq": 9,
+          "type": "fetch",
+          "path": "basketdata/pulse.json",
+          "result": "recorded-not-executed"
+        },
+        {
+          "seq": 10,
+          "type": "fetch",
+          "path": "marketdata/rotation_events.json",
+          "result": "hit"
+        },
+        {
+          "seq": 11,
+          "type": "fetch",
+          "path": "marketdata/sector_fragmentation.json",
+          "result": "hit"
+        },
+        {
+          "seq": 12,
+          "type": "fetch",
+          "path": "marketdata/subsector_rotation.json",
+          "result": "hit"
+        },
+        {
+          "seq": 13,
+          "type": "fetch",
+          "path": "basketdata/oracle_turn_desk.json",
+          "result": "hit"
+        },
+        {
+          "seq": 14,
+          "type": "fetch",
+          "path": "basketdata/oracle_tape_onset.json",
+          "result": "hit"
+        }
+      ]
+    },
+    "theme_unknown": {
+      "hash": "#theme-not-a-real-theme",
+      "onView": "overview",
+      "log": [
+        {
+          "seq": 7,
+          "type": "fetch",
+          "path": "basketdata/narrative_emergence.json",
+          "result": "hit"
+        },
+        {
+          "seq": 8,
+          "type": "fetch",
+          "path": "marketdata/nasdaq_internals.json",
+          "result": "hit"
+        },
+        {
+          "seq": 9,
+          "type": "fetch",
+          "path": "basketdata/pulse.json",
+          "result": "recorded-not-executed"
+        },
+        {
+          "seq": 10,
+          "type": "fetch",
+          "path": "marketdata/rotation_events.json",
+          "result": "hit"
+        },
+        {
+          "seq": 11,
+          "type": "fetch",
+          "path": "marketdata/sector_fragmentation.json",
+          "result": "hit"
+        },
+        {
+          "seq": 12,
+          "type": "fetch",
+          "path": "marketdata/subsector_rotation.json",
+          "result": "hit"
+        },
+        {
+          "seq": 13,
+          "type": "fetch",
+          "path": "basketdata/oracle_turn_desk.json",
+          "result": "hit"
+        },
+        {
+          "seq": 14,
+          "type": "fetch",
+          "path": "basketdata/oracle_tape_onset.json",
+          "result": "hit"
+        }
+      ]
+    },
+    "read_id_guess": null,
+    "mobile_actnow": {
+      "target": {
+        "id": "actnow-section",
+        "present": true,
+        "top": 160,
+        "height": 553,
+        "scrollY": 302,
+        "stickyH": 149,
+        "occluded": false,
+        "scrollMarginTop": "160px",
+        "inView": true
+      },
+      "onView": "overview"
+    },
+    "mobile_grader": {
+      "id": "grader",
+      "present": true,
+      "top": 289,
+      "height": 511,
+      "scrollY": 1645,
+      "stickyH": 149,
+      "occluded": false,
+      "scrollMarginTop": "160px",
+      "inView": true
+    }
+  },
+  "access": {
+    "gated": {
+      "label": "gated",
+      "access": "gated",
+      "more": [
+        {
+          "text": "1 more here \u2014 sign in to see the full lane",
+          "href": null
+        },
+        {
+          "text": "sign in to see the full lane",
+          "href": "plans.html"
+        },
+        {
+          "text": "\u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4",
+          "href": "plans.html"
+        },
+        {
+          "text": "2 more here \u2014 sign in to see the full lane\u6b64\u5904\u8fd8\u6709 2 \u4e2a \u2014 \u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4",
+          "href": null
+        },
+        {
+          "text": "sign in to see the full lane",
+          "href": "plans.html"
+        },
+        {
+          "text": "\u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4",
+          "href": "plans.html"
+        },
+        {
+          "text": "2 more here \u2014 sign in to see the full lane\u6b64\u5904\u8fd8\u6709 2 \u4e2a \u2014 \u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4",
+          "href": null
+        },
+        {
+          "text": "sign in to see the full lane",
+          "href": "plans.html"
+        },
+        {
+          "text": "\u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4",
+          "href": "plans.html"
+        },
+        {
+          "text": "24 more here \u2014 sign in to see the full lane\u6b64\u5904\u8fd8\u6709 24 \u4e2a \u2014 \u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4",
+          "href": null
+        },
+        {
+          "text": "sign in to see the full lane",
+          "href": "plans.html"
+        },
+        {
+          "text": "\u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4",
+          "href": "plans.html"
+        }
+      ],
+      "rowCount": 24,
+      "rows": [
+        {
+          "text": "Gold Miners THEME \u00b7 AEM \u00b7 EQX \u00b7 AU 76 +27.2% Leading and still broad \u2014 room to a",
+          "href": "basket/gold_miners.html"
+        },
+        {
+          "text": "AI Agents & Applications THEME \u00b7 PATH \u00b7 PLTR \u00b7 NOW 71 +20.3% Leading and still b",
+          "href": "basket/ai_agents.html"
+        },
+        {
+          "text": "Non-AI Software THEME \u00b7 TEAM \u00b7 PCOR \u00b7 WDAY 70 +30.4% Leading and still broad \u2014 r",
+          "href": "basket/non_ai_software.html"
+        },
+        {
+          "text": "sign in to see the full lane",
+          "href": "plans.html"
+        },
+        {
+          "text": "\u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4",
+          "href": "plans.html"
+        },
+        {
+          "text": "Cons Staples\u5fc5\u9700\u6d88\u8d39sector fund\u677f\u5757\u57fa\u91d1trigger ~5d\u89e6\u53d1\u7ea65\u65e5",
+          "href": "basket/us_sector_staples.html"
+        },
+        {
+          "text": "Materials\u539f\u6750\u6599sector fund\u677f\u5757\u57fa\u91d1unconfirmed \u2014 wait\u672a\u786e\u8ba4 \u2014 \u7b49\u5f85",
+          "href": "basket/us_sector_materials.html"
+        },
+        {
+          "text": "Communications\u901a\u8baf\u670d\u52a1sector fund\u677f\u5757\u57fa\u91d1extended \u2014 wait\u5df2\u8fc7\u70ed \u2014 \u7b49\u5f85",
+          "href": "basket/us_sector_comm.html"
+        },
+        {
+          "text": "sign in to see the full lane",
+          "href": "plans.html"
+        },
+        {
+          "text": "\u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4",
+          "href": "plans.html"
+        },
+        {
+          "text": "Big Pharma\u5927\u578b\u836f\u4f01theme\u4e3b\u9898 \u00b7 REGN \u00b7 MRK \u00b7 VRTX77+11.5%Leading and still broad \u2014 room ",
+          "href": "basket/big_pharma.html"
+        },
+        {
+          "text": "Silver Miners\u767d\u94f6\u77ff\u4e1atheme\u4e3b\u9898 \u00b7 FSM \u00b7 CDE \u00b7 EXK76+24.1%Leading and still broad \u2014 room",
+          "href": "basket/silver_miners.html"
+        },
+        {
+          "text": "AI Software & PlatformsAI \u8f6f\u4ef6\u4e0e\u5e73\u53f0theme\u4e3b\u9898 \u00b7 WDAY \u00b7 PLTR \u00b7 NOW65+12.0%Leading and st",
+          "href": "basket/ai_software.html"
+        },
+        {
+          "text": "sign in to see the full lane",
+          "href": "plans.html"
+        },
+        {
+          "text": "\u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4",
+          "href": "plans.html"
+        },
+        {
+          "text": "Cybersecurity\u7f51\u7edc\u5b89\u5168theme\u4e3b\u9898 \u00b7 RBRK \u00b7 QLYS \u00b7 ZS62+11.6%Was strong, now rolling over ",
+          "href": "basket/cybersecurity.html"
+        },
+        {
+          "text": "Robotics & Automation\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316theme\u4e3b\u9898 \u00b7 ZBRA \u00b7 PTC \u00b7 TRMB64+7.8%Was strong, now ro",
+          "href": "basket/robotics_automation.html"
+        },
+        {
+          "text": "Real Estate\u623f\u5730\u4ea7sector fund\u677f\u5757\u57fa\u91d1late cycle \u00b7 today\u5468\u671f\u665a\u671f \u00b7 \u4eca\u65e5",
+          "href": "basket/us_sector_realestate.html"
+        },
+        {
+          "text": "PGM Miners\u94c2\u65cf\u91d1\u5c5e\u77ff\u4e1atheme\u4e3b\u9898 \u00b7 SBSW \u00b7 ANGPY \u00b7 IMPUY70+22.0%In play but no fresh edge ",
+          "href": "basket/pgm_miners.html"
+        },
+        {
+          "text": "US Energy Complex\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408theme\u4e3b\u9898 \u00b7 PSX \u00b7 BKR \u00b7 MPC69+3.6%In play but no fresh edge",
+          "href": "basket/energy_complex.html"
+        }
+      ],
+      "counts": [
+        "4",
+        "5",
+        "5",
+        "3",
+        "27",
+        "1",
+        "16",
+        "21",
+        "18",
+        "9"
+      ],
+      "gatedElse": [
+        {
+          "view": "map",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "moving",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "money",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "explore",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "confluence",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        }
+      ],
+      "actnowText": "BUY NOW 4 ALMOST READY 5 IN FAVOUR \u2014 DON'T CHASE 5 TAKE PROFITS 3 STAND ASIDE 27 Entry confirmed today How lanes are graded 3 of 4 shown SECTOR OR THEME SCORE 20d vs market WHY IT IS HERE Gold Miners THEME \u00b7 AEM \u00b7 EQX \u00b7 AU 76 +27.2% Leading and still broad \u2014 room to add on the trend. AI Agents & Applications THEME \u00b7 PATH \u00b7 PLTR \u00b7 NOW 71 +20.3% Leading and still broad \u2014 room to add on the trend. Non-AI Software THEME \u00b7 TEAM \u00b7 PCOR \u00b7 WDAY 70 +30.4% Leading and still broad \u2014 room to add on the trend. 1 more here \u2014 sign in to see the full lane"
+    },
+    "hydrated": {
+      "label": "hydrated",
+      "access": "hydrated",
+      "more": [],
+      "rowCount": 45,
+      "rows": [
+        {
+          "text": "Gold Miners THEME \u00b7 AEM \u00b7 EQX \u00b7 AU 76 +27.2% Leading and still broad \u2014 room to a",
+          "href": "basket/gold_miners.html"
+        },
+        {
+          "text": "AI Agents & Applications THEME \u00b7 PATH \u00b7 PLTR \u00b7 NOW 71 +20.3% Leading and still b",
+          "href": "basket/ai_agents.html"
+        },
+        {
+          "text": "Non-AI Software THEME \u00b7 TEAM \u00b7 PCOR \u00b7 WDAY 70 +30.4% Leading and still broad \u2014 r",
+          "href": "basket/non_ai_software.html"
+        },
+        {
+          "text": "Cons Disc\u53ef\u9009\u6d88\u8d39 HALF SIZE\u534a\u4ed3clean entry \u00b7 3d ago\u5165\u573a\u5e72\u51c0 \u00b7 3\u5929\u524d Sector pulse \u00b7 XLY\u677f\u5757\u8109\u640f \u00b7",
+          "href": "basket/us_sector_discretionary.html"
+        },
+        {
+          "text": "Cons Staples\u5fc5\u9700\u6d88\u8d39sector fund\u677f\u5757\u57fa\u91d1trigger ~5d\u89e6\u53d1\u7ea65\u65e5",
+          "href": "basket/us_sector_staples.html"
+        },
+        {
+          "text": "Materials\u539f\u6750\u6599sector fund\u677f\u5757\u57fa\u91d1unconfirmed \u2014 wait\u672a\u786e\u8ba4 \u2014 \u7b49\u5f85",
+          "href": "basket/us_sector_materials.html"
+        },
+        {
+          "text": "Communications\u901a\u8baf\u670d\u52a1sector fund\u677f\u5757\u57fa\u91d1extended \u2014 wait\u5df2\u8fc7\u70ed \u2014 \u7b49\u5f85",
+          "href": "basket/us_sector_comm.html"
+        },
+        {
+          "text": "Financials\u91d1\u878d WAIT\u7b49\u5f85unconfirmed \u2014 wait\u672a\u786e\u8ba4 \u2014 \u7b49\u5f85 Sector pulse \u00b7 XLF\u677f\u5757\u8109\u640f \u00b7 XLF Finan",
+          "href": "basket/us_sector_financials.html"
+        },
+        {
+          "text": "Industrials\u5de5\u4e1a WAIT\u7b49\u5f85unconfirmed \u2014 wait\u672a\u786e\u8ba4 \u2014 \u7b49\u5f85 Sector pulse \u00b7 XLI\u677f\u5757\u8109\u640f \u00b7 XLI Indu",
+          "href": "basket/us_sector_industrials.html"
+        },
+        {
+          "text": "Big Pharma\u5927\u578b\u836f\u4f01theme\u4e3b\u9898 \u00b7 REGN \u00b7 MRK \u00b7 VRTX77+11.5%Leading and still broad \u2014 room ",
+          "href": "basket/big_pharma.html"
+        },
+        {
+          "text": "Silver Miners\u767d\u94f6\u77ff\u4e1atheme\u4e3b\u9898 \u00b7 FSM \u00b7 CDE \u00b7 EXK76+24.1%Leading and still broad \u2014 room",
+          "href": "basket/silver_miners.html"
+        },
+        {
+          "text": "AI Software & PlatformsAI \u8f6f\u4ef6\u4e0e\u5e73\u53f0theme\u4e3b\u9898 \u00b7 WDAY \u00b7 PLTR \u00b7 NOW65+12.0%Leading and st",
+          "href": "basket/ai_software.html"
+        },
+        {
+          "text": "Payments & Fintech\u652f\u4ed8\u4e0e\u91d1\u878d\u79d1\u6280\u2248\u21bb62 sector says Reduce\u677f\u5757\u8bc4\u7ea7\u4e3a\u51cf\u914d +2.9% 20d vs market20\u65e5\u5bf9\u6bd4",
+          "href": "basket/payments_fintech.html"
+        },
+        {
+          "text": "Health Care\u533b\u7597\u4fdd\u5065 extended \u00b7 wait for pullback\u5df2\u5ef6\u4f38 \u00b7 \u7b49\u56de\u8c03 Sector pulse \u00b7 XLV\u677f\u5757\u8109\u640f \u00b7 X",
+          "href": "basket/us_sector_health.html"
+        },
+        {
+          "text": "Cybersecurity\u7f51\u7edc\u5b89\u5168theme\u4e3b\u9898 \u00b7 RBRK \u00b7 QLYS \u00b7 ZS62+11.6%Was strong, now rolling over ",
+          "href": "basket/cybersecurity.html"
+        },
+        {
+          "text": "Robotics & Automation\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316theme\u4e3b\u9898 \u00b7 ZBRA \u00b7 PTC \u00b7 TRMB64+7.8%Was strong, now ro",
+          "href": "basket/robotics_automation.html"
+        },
+        {
+          "text": "Real Estate\u623f\u5730\u4ea7sector fund\u677f\u5757\u57fa\u91d1late cycle \u00b7 today\u5468\u671f\u665a\u671f \u00b7 \u4eca\u65e5",
+          "href": "basket/us_sector_realestate.html"
+        },
+        {
+          "text": "PGM Miners\u94c2\u65cf\u91d1\u5c5e\u77ff\u4e1atheme\u4e3b\u9898 \u00b7 SBSW \u00b7 ANGPY \u00b7 IMPUY70+22.0%In play but no fresh edge ",
+          "href": "basket/pgm_miners.html"
+        },
+        {
+          "text": "US Energy Complex\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408theme\u4e3b\u9898 \u00b7 PSX \u00b7 BKR \u00b7 MPC69+3.6%In play but no fresh edge",
+          "href": "basket/energy_complex.html"
+        },
+        {
+          "text": "GLP-1 & ObesityGLP-1 \u4e0e\u51cf\u80a5\u836ftheme\u4e3b\u9898 \u00b7 DXCM \u00b7 AMGN \u00b7 SRRK66+3.4%In play but no fresh",
+          "href": "basket/obesity_glp1.html"
+        }
+      ],
+      "counts": [
+        "4",
+        "5",
+        "5",
+        "3",
+        "27",
+        "1",
+        "16",
+        "21",
+        "18",
+        "9"
+      ],
+      "gatedElse": [
+        {
+          "view": "map",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "moving",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "money",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "explore",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "confluence",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        }
+      ],
+      "actnowText": "BUY NOW 4 ALMOST READY 5 IN FAVOUR \u2014 DON'T CHASE 5 TAKE PROFITS 3 STAND ASIDE 27 Entry confirmed today How lanes are graded 3 of 4 shown SECTOR OR THEME SCORE 20d vs market WHY IT IS HERE Gold Miners THEME \u00b7 AEM \u00b7 EQX \u00b7 AU 76 +27.2% Leading and still broad \u2014 room to add on the trend. AI Agents & Applications THEME \u00b7 PATH \u00b7 PLTR \u00b7 NOW 71 +20.3% Leading and still broad \u2014 room to add on the trend. Non-AI Software THEME \u00b7 TEAM \u00b7 PCOR \u00b7 WDAY 70 +30.4% Leading and still broad \u2014 room to add on the trend. Show more (1)"
+    },
+    "ungated": {
+      "label": "ungated",
+      "access": "ungated",
+      "more": [],
+      "rowCount": 45,
+      "rows": [
+        {
+          "text": "Gold Miners THEME \u00b7 AEM \u00b7 EQX \u00b7 AU 76 +27.2% Leading and still broad \u2014 room to a",
+          "href": "basket/gold_miners.html"
+        },
+        {
+          "text": "AI Agents & Applications THEME \u00b7 PATH \u00b7 PLTR \u00b7 NOW 71 +20.3% Leading and still b",
+          "href": "basket/ai_agents.html"
+        },
+        {
+          "text": "Non-AI Software THEME \u00b7 TEAM \u00b7 PCOR \u00b7 WDAY 70 +30.4% Leading and still broad \u2014 r",
+          "href": "basket/non_ai_software.html"
+        },
+        {
+          "text": "Cons Disc\u53ef\u9009\u6d88\u8d39sector fund\u677f\u5757\u57fa\u91d1clean entry \u00b7 3d ago\u5165\u573a\u5e72\u51c0 \u00b7 3\u5929\u524d",
+          "href": "basket/us_sector_discretionary.html"
+        },
+        {
+          "text": "Cons Staples\u5fc5\u9700\u6d88\u8d39sector fund\u677f\u5757\u57fa\u91d1trigger ~5d\u89e6\u53d1\u7ea65\u65e5",
+          "href": "basket/us_sector_staples.html"
+        },
+        {
+          "text": "Materials\u539f\u6750\u6599sector fund\u677f\u5757\u57fa\u91d1unconfirmed \u2014 wait\u672a\u786e\u8ba4 \u2014 \u7b49\u5f85",
+          "href": "basket/us_sector_materials.html"
+        },
+        {
+          "text": "Communications\u901a\u8baf\u670d\u52a1sector fund\u677f\u5757\u57fa\u91d1extended \u2014 wait\u5df2\u8fc7\u70ed \u2014 \u7b49\u5f85",
+          "href": "basket/us_sector_comm.html"
+        },
+        {
+          "text": "Financials\u91d1\u878dsector fund\u677f\u5757\u57fa\u91d1unconfirmed \u2014 wait\u672a\u786e\u8ba4 \u2014 \u7b49\u5f85",
+          "href": "basket/us_sector_financials.html"
+        },
+        {
+          "text": "Industrials\u5de5\u4e1asector fund\u677f\u5757\u57fa\u91d1unconfirmed \u2014 wait\u672a\u786e\u8ba4 \u2014 \u7b49\u5f85",
+          "href": "basket/us_sector_industrials.html"
+        },
+        {
+          "text": "Big Pharma\u5927\u578b\u836f\u4f01theme\u4e3b\u9898 \u00b7 REGN \u00b7 MRK \u00b7 VRTX77+11.5%Leading and still broad \u2014 room ",
+          "href": "basket/big_pharma.html"
+        },
+        {
+          "text": "Silver Miners\u767d\u94f6\u77ff\u4e1atheme\u4e3b\u9898 \u00b7 FSM \u00b7 CDE \u00b7 EXK76+24.1%Leading and still broad \u2014 room",
+          "href": "basket/silver_miners.html"
+        },
+        {
+          "text": "AI Software & PlatformsAI \u8f6f\u4ef6\u4e0e\u5e73\u53f0theme\u4e3b\u9898 \u00b7 WDAY \u00b7 PLTR \u00b7 NOW65+12.0%Leading and st",
+          "href": "basket/ai_software.html"
+        },
+        {
+          "text": "Payments & Fintech\u652f\u4ed8\u4e0e\u91d1\u878d\u79d1\u6280theme\u4e3b\u9898 \u00b7 TOST \u00b7 CRCL \u00b7 GPN62+2.9%Leading and still bro",
+          "href": "basket/payments_fintech.html"
+        },
+        {
+          "text": "Health Care\u533b\u7597\u4fdd\u5065sector fund\u677f\u5757\u57fa\u91d1extended \u00b7 wait for pullback\u5df2\u5ef6\u4f38 \u00b7 \u7b49\u56de\u8c03",
+          "href": "basket/us_sector_health.html"
+        },
+        {
+          "text": "Cybersecurity\u7f51\u7edc\u5b89\u5168theme\u4e3b\u9898 \u00b7 RBRK \u00b7 QLYS \u00b7 ZS62+11.6%Was strong, now rolling over ",
+          "href": "basket/cybersecurity.html"
+        },
+        {
+          "text": "Robotics & Automation\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316theme\u4e3b\u9898 \u00b7 ZBRA \u00b7 PTC \u00b7 TRMB64+7.8%Was strong, now ro",
+          "href": "basket/robotics_automation.html"
+        },
+        {
+          "text": "Real Estate\u623f\u5730\u4ea7sector fund\u677f\u5757\u57fa\u91d1late cycle \u00b7 today\u5468\u671f\u665a\u671f \u00b7 \u4eca\u65e5",
+          "href": "basket/us_sector_realestate.html"
+        },
+        {
+          "text": "PGM Miners\u94c2\u65cf\u91d1\u5c5e\u77ff\u4e1atheme\u4e3b\u9898 \u00b7 SBSW \u00b7 ANGPY \u00b7 IMPUY70+22.0%In play but no fresh edge ",
+          "href": "basket/pgm_miners.html"
+        },
+        {
+          "text": "US Energy Complex\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408theme\u4e3b\u9898 \u00b7 PSX \u00b7 BKR \u00b7 MPC69+3.6%In play but no fresh edge",
+          "href": "basket/energy_complex.html"
+        },
+        {
+          "text": "GLP-1 & ObesityGLP-1 \u4e0e\u51cf\u80a5\u836ftheme\u4e3b\u9898 \u00b7 DXCM \u00b7 AMGN \u00b7 SRRK66+3.4%In play but no fresh",
+          "href": "basket/obesity_glp1.html"
+        }
+      ],
+      "counts": [
+        "4",
+        "5",
+        "5",
+        "3",
+        "27",
+        "1",
+        "16",
+        "21",
+        "18",
+        "9"
+      ],
+      "gatedElse": [
+        {
+          "view": "map",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "moving",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "money",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "explore",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        },
+        {
+          "view": "confluence",
+          "hasPlans": false,
+          "hasSignIn": false,
+          "hasLock": false
+        }
+      ],
+      "actnowText": "BUY NOW 4 ALMOST READY 5 IN FAVOUR \u2014 DON'T CHASE 5 TAKE PROFITS 3 STAND ASIDE 27 Entry confirmed today How lanes are graded 3 of 4 shown SECTOR OR THEME SCORE 20d vs market WHY IT IS HERE Gold Miners THEME \u00b7 AEM \u00b7 EQX \u00b7 AU 76 +27.2% Leading and still broad \u2014 room to add on the trend. AI Agents & Applications THEME \u00b7 PATH \u00b7 PLTR \u00b7 NOW 71 +20.3% Leading and still broad \u2014 room to add on the trend. Non-AI Software THEME \u00b7 TEAM \u00b7 PCOR \u00b7 WDAY 70 +30.4% Leading and still broad \u2014 room to add on the trend. Show more (1)"
+    },
+    "reffail": {
+      "onView": "overview",
+      "visible_head": "OVERVIEW 4 names sit in the Buy lane. ? board as of 2026-08-19 This board's clock is more than 12 hours old. Graded call \u00b7 this view only Leadership context Display only \u2014 it does not set a lane below. as of 2026-08-19 LOSING THE LEAD Memory, HBM & Storage WAS #1 TAKING THE LEAD Big Pharma \u00b7 Health Care MONEY IS ROTATING Rotation under way \u2014 favour the fresh leaders, not the old one. 2 days in Aug: seasonally friendly for hot stocks (rose in 8/10) \u00b7 context only Where this seasonal note comes from What to act on now Data failed to load \u2014 please refresh. Drill to stocks Bottoming watch cycle lows forming \u2014 watch, don't chase Power & Grid Buildout 2.7 position in cycle range 4/100 Nuclear & SMR Power 2.6 position in cycle range 4/100 \u00b7 below 200-day trend \u2014 gate shut Data-Center Power & Cooling 2.3 position in cycle range 11/100 All 3 rows: cycle turn signal \u2014 watch only \u00b7 may be bottoming This is what the cycle read says tonight, shown as-is. A forming low on its own has not been shown ",
+      "log": [
+        {
+          "seq": 1,
+          "type": "fetch",
+          "path": "basketdata/baskets.json",
+          "result": "simulated-fail"
+        },
+        {
+          "seq": 2,
+          "type": "fetch",
+          "path": "basketdata/etf_pulse.json",
+          "result": "simulated-fail"
+        },
+        {
+          "seq": 3,
+          "type": "fetch",
+          "path": "basketdata/vol_sentiment.json",
+          "result": "simulated-fail"
+        },
+        {
+          "seq": 4,
+          "type": "fetch",
+          "path": "marketdata/sp500_heatmap.json",
+          "result": "simulated-fail"
+        },
+        {
+          "seq": 5,
+          "type": "fetch",
+          "path": "marketdata/index_leadership.json",
+          "result": "simulated-fail"
+        },
+        {
+          "seq": 6,
+          "type": "fetch",
+          "path": "basketdata/baskets.json",
+          "result": "simulated-fail"
+        },
+        {
+          "seq": 7,
+          "type": "fetch",
+          "path": "basketdata/narrative_emergence.json",
+          "result": "simulated-fail"
+        },
+        {
+          "seq": 8,
+          "type": "fetch",
+          "path": "marketdata/nasdaq_internals.json",
+          "result": "simulated-fail"
+        }
+      ],
+      "hasFailCopy": true
+    }
+  },
+  "tasks": {
+    "overview": {
+      "watchPresent": true,
+      "watchText": "Power & Grid Buildout 2.7 position in cycle range 4/100 Nuclear & SMR Power 2.6 position in cycle range 4/100 \u00b7 below 200-day trend \u2014 gate shut Data-Center Power & Cooling 2.3 position in cycle range 11/100",
+      "watchRendersTiming": false,
+      "graderPresent": true,
+      "graderText": "Self-grader \u2014 measured accuracy Realized directional hit-rate, cross-sectional rank-IC and excess-vs-SPY of the conviction calls, by horizon. Sparse until it accrues; never fed back into the live score. 21D \u00b7 N=187 19% hit rank-IC -0.1587 \u00b7 excess -0.5% 63D accruing (n=0) 126D accruing (n=0) Basket grading accruing from 2026-07-02 (W3.8 freeze date). Pre-freeze basket calls are not graded: the series before this date is permanently survivorship-contaminated (D4-N3). Basket return math re-anchore",
+      "lanes": [],
+      "hrefs": [
+        "basket/gold_miners.html",
+        "basket/ai_agents.html",
+        "basket/non_ai_software.html",
+        "plans.html",
+        "plans.html",
+        "basket/us_sector_staples.html",
+        "basket/us_sector_materials.html",
+        "basket/us_sector_comm.html",
+        "plans.html",
+        "plans.html",
+        "basket/big_pharma.html",
+        "basket/silver_miners.html",
+        "basket/ai_software.html",
+        "plans.html",
+        "plans.html",
+        "basket/cybersecurity.html",
+        "basket/robotics_automation.html",
+        "basket/us_sector_realestate.html",
+        "basket/pgm_miners.html",
+        "basket/energy_complex.html",
+        "basket/obesity_glp1.html",
+        "plans.html",
+        "plans.html",
+        "#actnow-section",
+        "basket/power_grid.html",
+        "basket/nuclear_power.html",
+        "basket/data_center_power.html"
+      ],
+      "drill": "Confluence"
+    },
+    "map": {
+      "svgPresent": true,
+      "boardPresent": true,
+      "boardText": "Text equivalent of the rotation map \u2014 every group, where it sits, its strength score, its 20-day move against the S&P and its rank move this week. RANK GROUP WHERE IT SITS STRENGTH 20D VS S&P RANK MOVE 5D NOTED 1 Big Pharma Leading 77 +11.5% +9 Add 3 Gold Miners Leading 76 +27.2% +4 Add 4 Silver Miners Leading 76 +24.1% +5 Add 6 AI Agents & Applications Weakening 71 +20.3% \u22123 Add 7 Non-AI Software Weakening 70 +30.4% \u22122 Add 8 PGM Miners Leading 70 +22.0% +7 Hold 9 US Energy Complex Leading 69 +3.6% +25 Hold 10 GLP-1 & Obesity Leading 66 +3.4% +13 Hold 11 AI Software & Platforms Weakening 65 +12.0% \u221210 Add 12 Robotics & Automation Weakening 64 +7.8% \u22126 Trim",
+      "tablePresent": true,
+      "reco": [],
+      "disclaimer": true,
+      "hrefs": [
+        {
+          "href": "basket/big_pharma.html",
+          "ref": true,
+          "text": "Open Big Pharma"
+        },
+        {
+          "href": "basket/big_pharma.html",
+          "ref": true,
+          "text": "Big Pharma"
+        },
+        {
+          "href": "basket/gold_miners.html",
+          "ref": true,
+          "text": "Gold Miners"
+        },
+        {
+          "href": "basket/silver_miners.html",
+          "ref": true,
+          "text": "Silver Miners"
+        },
+        {
+          "href": "basket/ai_agents.html",
+          "ref": true,
+          "text": "AI Agents & Applications"
+        },
+        {
+          "href": "basket/non_ai_software.html",
+          "ref": true,
+          "text": "Non-AI Software"
+        },
+        {
+          "href": "basket/pgm_miners.html",
+          "ref": true,
+          "text": "PGM Miners"
+        },
+        {
+          "href": "basket/energy_complex.html",
+          "ref": true,
+          "text": "US Energy Complex"
+        },
+        {
+          "href": "basket/obesity_glp1.html",
+          "ref": true,
+          "text": "GLP-1 & Obesity"
+        },
+        {
+          "href": "basket/ai_software.html",
+          "ref": true,
+          "text": "AI Software & Platforms"
+        },
+        {
+          "href": "basket/robotics_automation.html",
+          "ref": true,
+          "text": "Robotics & Automation"
+        },
+        {
+          "href": "sector_cycles.html#xlc",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "sector_cycles.html#xle",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "sector_cycles.html#xly",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "sector_cycles.html#xlp",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "sector_cycles.html#xlb",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "sector_cycles.html#xli",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "sector_cycles.html#xlf",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "sector_cycles.html#xlv",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "sector_cycles.html#xlk",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "sector_cycles.html#xlu",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "sector_cycles.html#xlre",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "sector_cycles.html",
+          "ref": true,
+          "text": "Open the full cycle map \u2014 11 sectors and 49 themes on one cl"
+        }
+      ],
+      "scChart": true
+    },
+    "moving": {
+      "eventsText": "Semicap equipmentMemory & storage TECHNOLOGY Day 1 Semicap equipment sits 13% below its peak. Memory & storage is 21.7% up off its low. The two have moved 6.0% apart over the last ten sessions. Semicap equipmentNon-AI tech & hardware TECHNOLOGY Day 1 Semicap equipment sits 13% below its peak. Non-AI tech & hardware is 5.9% up off its low. The two have moved 0.6% apart over the last ten sessions. CHANGED THIS WEEK 5 sessions vs SPY Technology \u22122.3% Health Care +4.7% Financials \u22120.3% Consumer Staples +2.2% Utilities +0.9% Communication Services +1.4% Energy +4.6% Semiconductors \u22123.6% Software +0.2% Mag-7 basket +0.6% Closed recently: 7 A heads-up on shifting leadership \u2014 not a buy list. Watch ",
+      "rotationText": "The whole market, turning The broadest universe \u2014 display only as of 2026-08-19 Mag 7 Generals Whole-market rotation map \u2014 relative strength on the horizontal axis, its change of speed on the vertical axis, one dot per subsector. The groups the producer names as emerging and as fading are listed beside this chart, each linking to its own page. IMPROVING weak but turning up LEADING strong & rising LAGGING weak & falling WEAKENING strong but fading 65 leading \u00b7 91 improving \u00b7 58 weakening \u00b7 55 lagging, across 269 subsectors and the Mag-7 composite. EMERGING Next-Gen Healthcare & Biotech Medicine Nanotechnology Gold Commodities Metals Precious Commodities Metals Silver Commodities Metals Alt Pr",
+      "deskText": "ARMED WINDOWS No sectors armed right now \u2014 a quiet desk is a valid read. EARLIEST FLOW SIGNS \u00b7 2 Energy Early 5d onset rate 75.4% noise 24.6% 10d confirmed \u2014 measured 1998-12-22 \u2192 2026-08-19 \u00b7 1004 flags Unconfirmed \u2014 raw signal, not an episode. Health Care Early 5d onset rate 76.9% noise 23.1% 10d confirmed \u2014 measured 1998-12-22 \u2192 2026-08-19 \u00b7 975 flags Unconfirmed \u2014 raw signal, not an episode. Watch material, not calls \u2014 display only, and nothing here ranks, gates or sizes anything. as of 2026-08-19",
+      "hrefs": [
+        {
+          "href": "rotation/healthcarenextgen.html",
+          "ref": true,
+          "text": "Next-Gen Healthcare & Biotech"
+        },
+        {
+          "href": "rotation/nanotechmedicine.html",
+          "ref": true,
+          "text": "Medicine Nanotechnology"
+        },
+        {
+          "href": "rotation/commmetalsgold.html",
+          "ref": true,
+          "text": "Gold Commodities Metals"
+        },
+        {
+          "href": "rotation/commmetalsprecious.html",
+          "ref": true,
+          "text": "Precious Commodities Metals"
+        },
+        {
+          "href": "rotation/commmetalssilver.html",
+          "ref": true,
+          "text": "Silver Commodities Metals"
+        },
+        {
+          "href": "rotation/agriculturealtprotein.html",
+          "ref": true,
+          "text": "Alt Protein Agriculture & FoodTech"
+        },
+        {
+          "href": "rotation/energybasethermal.html",
+          "ref": true,
+          "text": "Thermal Energy Traditional"
+        },
+        {
+          "href": "rotation/telecomwireless.html",
+          "ref": true,
+          "text": "Wireless Telecommunications"
+        },
+        {
+          "href": "rotation/commagrisofts.html",
+          "ref": true,
+          "text": "Softs Commodities Agriculture"
+        },
+        {
+          "href": "rotation/softwareenterprise.html",
+          "ref": true,
+          "text": "Enterprise Software"
+        },
+        {
+          "href": "rotation/commagrilivestock.html",
+          "ref": true,
+          "text": "Livestock Commodities Agriculture"
+        },
+        {
+          "href": "rotation/softwarehsaas.html",
+          "ref": true,
+          "text": "H-SaaS Software"
+        },
+        {
+          "href": "rotation/hardwarestorage.html",
+          "ref": true,
+          "text": "Storage Hardware"
+        },
+        {
+          "href": "rotation/iotsecurity.html",
+          "ref": true,
+          "text": "Security Internet of Things"
+        },
+        {
+          "href": "rotation/hardwareservers.html",
+          "ref": true,
+          "text": "Servers Hardware"
+        },
+        {
+          "href": "rotation/cloudhardware.html",
+          "ref": true,
+          "text": "Hardware Cloud Computing"
+        },
+        {
+          "href": "rotation/cybersecuritythreatops.html",
+          "ref": true,
+          "text": "ThreatOps Cybersecurity"
+        },
+        {
+          "href": "rotation/cybersecurityappsecurity.html",
+          "ref": true,
+          "text": "App Security Cybersecurity"
+        },
+        {
+          "href": "rotation/hardwarenetworking.html",
+          "ref": true,
+          "text": "Networking Hardware"
+        },
+        {
+          "href": "rotation/cybersecurityzerotrust.html",
+          "ref": true,
+          "text": "ZeroTrust Cybersecurity"
+        },
+        {
+          "href": "rotation/cybersecuritynetwork.html",
+          "ref": true,
+          "text": "Network Cybersecurity"
+        },
+        {
+          "href": "rotation/cybersecuritysiem.html",
+          "ref": true,
+          "text": "SIEM Cybersecurity"
+        },
+        {
+          "href": "rotation/cybersecurityendpoint.html",
+          "ref": true,
+          "text": "Endpoint Cybersecurity"
+        },
+        {
+          "href": "rotation/hardwaredatacenters.html",
+          "ref": true,
+          "text": "Data Centers Hardware"
+        },
+        {
+          "href": "subsector_rotation.html",
+          "ref": true,
+          "text": "Open the whole-market rotation page"
+        }
+      ],
+      "fetches": [
+        "basketdata/baskets.json:hit",
+        "basketdata/etf_pulse.json:hit",
+        "basketdata/vol_sentiment.json:hit",
+        "marketdata/sp500_heatmap.json:hit",
+        "marketdata/index_leadership.json:hit",
+        "basketdata/baskets.json:hit",
+        "basketdata/narrative_emergence.json:hit",
+        "marketdata/nasdaq_internals.json:hit",
+        "basketdata/pulse.json:recorded-not-executed",
+        "marketdata/rotation_events.json:hit",
+        "marketdata/sector_fragmentation.json:hit",
+        "marketdata/subsector_rotation.json:hit",
+        "basketdata/oracle_turn_desk.json:hit",
+        "basketdata/oracle_tape_onset.json:hit"
+      ]
+    },
+    "money": {
+      "readText": "Money is spread across many groups \u2014 a broad tide, not a narrow few. ?",
+      "heatText": "Technology \u22120.64% NVDA \u22120.99% AAPL +2.19% MSFT +0.56% AVGO \u22124.61% MU \u22120.39% AMD \u22123.71% INTC \u22124.02% CSCO \u22120.95% PLTR +2.13% ORCL +0.71% AMAT LRCX PANW DELL KLAC TXN ANET SNDK IBM MRVL CRWD APH STX ADI WDC UBER NOW GLW Financial \u22120.58% BRK-B \u22120.66% JPM \u22121.65% V +0.35% MA \u22120.10% BAC \u22121.65% MS GS \u22121.81% WFC AXP C Communication Services +0.48% GOOGL +0.15% GOOG +0.12% META +0.43% NFLX VZ TMUS DIS Consumer Cyclical +2.32% AMZN +2.46% TSLA +4.23% HD +2.02% Healthcare +4.85% LLY +4.46% JNJ +0.85% ABBV +2.72% MRK +12.6% UNH \u22121.35% AMGN TMO ABT GILD DHR ISRG VRTX BMY Industrials \u22120.96% CAT GE RTX GEV UNP BA ETN Consumer Defensive WMT \u22120.78% COST KO PG PM PEP Energy XOM \u22120.48% CVX Utilities NEE WELL PL",
+      "heatHasSvg": false,
+      "flowsText": "Where sector-ETF money is flowing Multi-day creation/redemption flow across the 11 sector SPDRs \u2014 read the rotation, not the daily noise",
+      "leadText": "Index leadership rotation which index family is pulling ahead as of 2026-08-19 RISING STAR Nasdaq-100LAS +1.06 leadership accelerating fastest \u2014 breadth thrust \u00b7 broad participation \u00b7 return acceleration LEADER NOW Thematic Baskets highest RS level \u00b7 but weakening UNIVERSE LAS RS LEVEL RS MOM BREADTH THRUST PARTICIP. QUADRANT S&P 500 +0.04 \u22120.35 +1.07 +4.6 34% Improving Nasdaq-100 +1.06 \u22121.09 \u22120.26 +50.0 42% Lagging Russell-2000 \u22120.57 0.38 \u22120.42 \u221212.9 29% Weakening Thematic Baskets \u22120.54 1.05 \u22120",
+      "bodyHead": "MONEY & BREADTH Money is spread across many groups \u2014 a broad tide, not a narrow few. ? as of 2026-08-19 Context only \u2014 this view carries no call ? Where this reading comes from Under the hood \u2014 is the whole market participating? Breadth tells you whether the rotation is a broad tide or a narrow few. Be selective when it is narrow. MARKET BREADTH Broad Broad participation \u2014 a risk-on tide. MONEY FLOW Spread across many RISK-ON VOLATILITY: CALM ADVANCERS / DECLINERS 284 / 217 A/D 1.31 tick = an even tape (A/D 1.00) 52-WK HIGHS / LOWS 22 / 0 more highs than lows tick = highs and lows level ABOVE 200-DAY 75% healthy majority ticks = 40% weak \u00b7 60% healthy majority HOW STYLE AND RISK ETFS HAVE BEEN TRADING \u00b7 20 DAYS Small vs Large large leading \u22120.19% over 20 days Equal vs Cap-weight breadth broadening +1.47% over 20 days Growth-tilt vs Broad broad leading \u22121.34% over 20 days Growth vs Value value leading \u22122.96% over 20 days EM vs US us leading \u22121.14% over 20 days Rotation context \u2014 how style, risk and sector ETFs have been trading. Descriptive, never a buy list. Display-only context \u2014 volatility regime from the conditions engine + CBOE put/call. Never scored, no forward claim. VIX 14.9",
+      "hrefs": [
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=NVDA",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=AAPL",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=MSFT",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=AMZN",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=GOOGL",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=GOOG",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=AVGO",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=META",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=TSLA",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=LLY",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=BRK-B",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=MU",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=JPM",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=WMT",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=AMD",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=V",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=XOM",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=JNJ",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=MA",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=INTC",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=ABBV",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=BAC",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=CSCO",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=COST",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "https://app.mastermind-x.com/terminal?symbol=PLTR",
+          "ref": true,
+          "text": ""
+        }
+      ]
+    },
+    "explore_before": {
+      "tableRows": 18,
+      "tableHead": "BASKET 60D TREND 1D 5D 20D 60D MTD YTD Non-AI Software +3.1% +6.5% +29.6% +32.5% +12.8% \u221216.0% Gold Miners +8.5% +8.2% +26.4% +11.1% +31.5% +0.0% Silver Miners +11.5% +7.2% +23.4% +10.2% +33.4% +13.1% PGM Miners +8.2% +4.3% +21.4% +1.1% +21.3% \u221222.0% AI Agents & Applications +5.7% +5.0% +19.7% +13.2% +13.4% \u221223.3% Space Economy \u22123.3% \u22126.0% +17.2% \u221229.9% +21.4% +38.0% AI Software & Platforms +0.5% +0.4% +11.7% +11.6% +4.3% \u22126.5% Cybersecurity \u22123.0% \u22122.9% +11.3% +29.0% +8.6% +38.4% Non-AI Tech & Hardware \u22122.7% \u22125.5% \u22126.7% \u22125.3% \u22121.0% +36.6% Crypto & Digital Assets +7.8% +6.2% \u22126.8% \u221213.5% +1.6% +13.9% Utilities \u22120.2% +0.9% \u22127.0% \u22125.0% \u22123.6% \u22125.4% Data-Center Power & Cooling \u22122.9% \u22127.8% \u22128.2% \u221213.5% \u22121.1% +29.6% Memory, HBM & Storage \u22124.9% +4.4% \u22129.3% +2.1% +2.5% +175.9% Managed Care & Insure",
+      "showAll": "Show all (49)",
+      "tmText": "Rotation Time Machine \u2014 replay 25 years of rotation nothing loads until you open it",
+      "fnText": "Forming Narratives emerging themes our models see \u00b7 US as of 2026-08-19 Emerging clusters not yet in a basket. Use as a watchlist, not a buy list. Macro attention now: AI TECH \u00b7 31 GEOPOLITICS \u00b7 12 MARKETS \u00b7 7 ENERGY \u00b7 2 Current macro, policy and geopolitics context. High attention can mean crowded or late. Cross-sector cluster \u00b7 Consumer Discretionary + Health Care 67.1 FORMING FAST 7 names are moving together: 57% average correlation, co-movement tightening by 0.39. Basket overlap is 28%; the group is down 25% over the window. Tightening 100% Co-movement 30% Momentum 0% Novelty 100% Size 100% CLEANER ENTRIES FIRST Planet Fitness \u221229.6% Planet Fitness (PLNT), Steady entry Zoetis \u221227.3% Zoetis (ZTS), Steady entry Phibro Animal Health \u221215.8% Phibro Animal Health (PAHC), Steady entry Shake S",
+      "hasModelAnalysis": false,
+      "hasWatchingFor": false,
+      "hasKill": false,
+      "chartText": "Performance Lines are rebased to 0% at the start of the window. Toggle baskets from the list below the chart; \"All\" covers the available cache history. MEASURE vs S&P 500 Absolute Chart measure WINDOW 3M 6M YTD 1Y All Chart window Window length in trading days -50% 0% +50% +100% +150% +200% 2025-08 2025-11 2026-02 2026-05 2026-08 Basket performance since the start of the selected window, every lin",
+      "searchBox": false
+    },
+    "explore_showall": {
+      "tableRows": 50,
+      "showAll": null
+    },
+    "explore_tm_open": {
+      "tmText": "Rotation Time Machine \u2014 replay 25 years of rotation nothing loads until you open it Replay the full measured history of sector & subsector relative rotation. Each dot is a sector or subsector; horizontal axis = relative strength (right = stronger vs peers), vertical = whether that strength is heating up or cooling (up = gaining momentum). Short trails show the last 6 dates so each path stays readable. Episode annotations mark measured rotation events from the catalog. No predictive claim \u2014 this replays measured history. UNIT Sectors 1998\u20132026 Subsectors + Themes 2021\u20132026 Factors 2013\u20132026 Replay unit YEAR 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026 Replay year The manifest is real; the fra",
+      "fetches": [
+        {
+          "seq": 15,
+          "type": "fetch",
+          "path": "oracledata/tm_manifest.json",
+          "result": "hit"
+        },
+        {
+          "seq": 16,
+          "type": "fetch",
+          "path": "oracledata/tm_episodes.json",
+          "result": "recorded-not-executed"
+        }
+      ]
+    },
+    "confluence": {
+      "bodyHead": "CONFLUENCE 1 group just turned buyable and 16 more carry a tailwind. Entries have the wind at their back \u2014 confirm the group before chasing. as of 2026-08-19 Graded call \u00b7 this view only S&P 500 65 Nasdaq-100 12 Russell-2000 93 Thematic Baskets 49 ENTRY NOW 1 TAILWIND 16 NEUTRAL 21 LATE 18 HEADWIND 9 65 of 113 subsectors have enough live data to time \u00b7 48 thin (listed in the table, not timed) How timing support is graded 1 of 1 shown SUBSECTOR ENTRY TIER WHY IT IS HERE Auto Manufacturers Thin data \u2014 read with caution EXTENDED \u00b7 CONSUMER CYCLICAL \u00b7 3 NAMES T1 Fresh T1 entry \u2014 just crossed Stock picks Stocks with an active or forming T1\u2013T4 entry read inside a subsector that is also working. Strongest combined reads come first. COIN CAPITAL MARKETS 0.60 Its tier T2 \u00b7 vs sub 20d -1.6 NSC RAILROADS 0.54 Its tier T1 \u00b7 vs sub 20d +2.2 All subsectors 65 Sortable. Filter by subsector or sector name. 65 / 65 SUBSECTOR SECTOR ENTRY REGIME FRESHNESS RS60 N Auto Manufacturers Thin data \u2014 read with caution Consumer Cyclical T1 EXTENDED fired 1 bar ago -1.5 3 Oil & Gas Midstream Thin data \u2014 read with caution Energy T2 TOPPING fired 2 bars ago -2.2 4 Computer Hardware Technology \u2013 BUY fired 29 bars ago +31.9 7 Insurance - Brokers Thin data \u2014 read with caution Financial \u2013 BUY fired 18 bars ago +17.0 5 Packaged Foods Consumer Defensive \u2013 BUY fired 22 bars ago +10.5 7 Railroads Thin data \u2014 read with caution Industrials \u2013 BUY fired 12 bars ago +8.3 4 Insurance - Property & Casualty Financial \u2013 B",
+      "tabs": [
+        {
+          "text": "Look under the hood \u2014 every basket, sort",
+          "pressed": "r3-more"
+        },
+        {
+          "text": "vs S&P\u5bf9\u6807\u666e",
+          "pressed": "true"
+        },
+        {
+          "text": "vs S&P 500\u5bf9\u6807\u666e 500",
+          "pressed": "true"
+        },
+        {
+          "text": "S&P 500 65 Nasdaq-100 12 Russell-2000 93",
+          "pressed": "r3-uni sc-top"
+        },
+        {
+          "text": "S&P 500 65",
+          "pressed": "true"
+        },
+        {
+          "text": "Nasdaq-100 12",
+          "pressed": "false"
+        },
+        {
+          "text": "Russell-2000 93",
+          "pressed": "false"
+        },
+        {
+          "text": "Thematic Baskets 49",
+          "pressed": "false"
+        }
+      ],
+      "hrefs": [
+        {
+          "href": "stock.html#COIN",
+          "ref": true,
+          "text": "COIN CAPITAL MARKETS 0.60 Its tier T2 \u00b7 vs sub 20d -1.6"
+        },
+        {
+          "href": "stock.html#NSC",
+          "ref": true,
+          "text": "NSC RAILROADS 0.54 Its tier T1 \u00b7 vs sub 20d +2.2"
+        },
+        {
+          "href": "subsector/auto-manufacturers.html",
+          "ref": true,
+          "text": "Auto Manufacturers"
+        },
+        {
+          "href": "subsector/oil-gas-midstream.html",
+          "ref": true,
+          "text": "Oil & Gas Midstream"
+        },
+        {
+          "href": "subsector/computer-hardware.html",
+          "ref": true,
+          "text": "Computer Hardware"
+        },
+        {
+          "href": "subsector/insurance-brokers.html",
+          "ref": true,
+          "text": "Insurance - Brokers"
+        },
+        {
+          "href": "subsector/packaged-foods.html",
+          "ref": true,
+          "text": "Packaged Foods"
+        },
+        {
+          "href": "subsector/railroads.html",
+          "ref": true,
+          "text": "Railroads"
+        },
+        {
+          "href": "subsector/insurance-property-casualty.html",
+          "ref": true,
+          "text": "Insurance - Property & Casualty"
+        },
+        {
+          "href": "subsector/capital-markets.html",
+          "ref": true,
+          "text": "Capital Markets"
+        },
+        {
+          "href": "subsector/sec-basic-materials.html",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "subsector/sec-communication-services.html",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "subsector/sec-consumer-cyclical.html",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "subsector/sec-consumer-defensive.html",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "subsector/sec-energy.html",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "subsector/sec-financial.html",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "subsector/sec-healthcare.html",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "subsector/sec-industrials.html",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "subsector/sec-real-estate.html",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "subsector/sec-technology.html",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "subsector/sec-utilities.html",
+          "ref": true,
+          "text": ""
+        },
+        {
+          "href": "#moving",
+          "ref": false,
+          "text": "See the rotation map"
+        }
+      ],
+      "hasSearch": true,
+      "searchPlaceholder": "Filter subsector or sector\u2026",
+      "tableRows": 9
+    },
+    "confluence_universes": [
+      {
+        "label": "Nasdaq",
+        "head": "CONFLUENCE No group is firing a fresh entry right now, but 4 carry a tailwind \u2014 watch for the cross, don't force it. as of 2026-08-19 Graded call \u00b7 this view only S&P 500 65 Nasdaq-100 12 Russell-2000 93 Thematic Baskets 49 ENTRY NOW 0 TAILWIND 4 NEUTRAL 2 LATE 3 HEADWIND 3 12 of 12 subsectors have enough live data to time How timing support is graded SUBSECTOR ENTRY TIER WHY IT IS HERE No subsect",
+        "hrefSample": [
+          "subsector_nasdaq/computer-hardware.html",
+          "subsector_nasdaq/semiconductor-equipment-materials.html",
+          "subsector_nasdaq/communication-equipment.html",
+          "subsector_nasdaq/semiconductors.html",
+          "subsector_nasdaq/telecom-services.html"
+        ]
+      },
+      {
+        "label": "Russell",
+        "head": "CONFLUENCE 1 group just turned buyable and 16 more carry a tailwind. Entries have the wind at their back \u2014 confirm the group before chasing. as of 2026-08-19 Graded call \u00b7 this view only S&P 500 65 Nasdaq-100 12 Russell-2000 93 Thematic Baskets 49 ENTRY NOW 1 TAILWIND 16 NEUTRAL 43 LATE 19 HEADWIND 14 93 of 93 subsectors have enough live data to time How timing support is graded 1 of 1 shown SUBSE",
+        "hrefSample": [
+          "stock.html#NMRK",
+          "stock.html#CVCO",
+          "stock.html#LXU",
+          "stock.html#DNUT",
+          "stock.html#SMPL"
+        ]
+      },
+      {
+        "label": "Baskets",
+        "head": "CONFLUENCE No group is firing a fresh entry right now, but 11 carry a tailwind \u2014 watch for the cross, don't force it. as of 2026-08-19 Graded call \u00b7 this view only S&P 500 65 Nasdaq-100 12 Russell-2000 93 Thematic Baskets 49 ENTRY NOW 0 TAILWIND 11 NEUTRAL 16 LATE 9 HEADWIND 13 How timing support is graded BASKET ENTRY TIER WHY IT IS HERE No baskets is firing a fresh entry tier right now. When one",
+        "hrefSample": [
+          "stock.html#JNJ",
+          "stock.html#NVR",
+          "stock.html#BG",
+          "subsector/b-memory-storage.html",
+          "subsector/b-housing.html"
+        ]
+      },
+      {
+        "label": "S&P",
+        "head": "CONFLUENCE 1 group just turned buyable and 16 more carry a tailwind. Entries have the wind at their back \u2014 confirm the group before chasing. as of 2026-08-19 Graded call \u00b7 this view only S&P 500 65 Nasdaq-100 12 Russell-2000 93 Thematic Baskets 49 ENTRY NOW 1 TAILWIND 16 NEUTRAL 21 LATE 18 HEADWIND 9 65 of 113 subsectors have enough live data to time \u00b7 48 thin (listed in the table, not timed) How ",
+        "hrefSample": [
+          "stock.html#COIN",
+          "stock.html#NSC",
+          "subsector/auto-manufacturers.html",
+          "subsector/oil-gas-midstream.html",
+          "subsector/computer-hardware.html"
+        ]
+      }
+    ],
+    "confluence_zero_search": {
+      "head": "CONFLUENCE 1 group just turned buyable and 16 more carry a tailwind. Entries have the wind at their back \u2014 confirm the group before chasing. as of 2026-08-19 Graded call \u00b7 this view only S&P 500 65 Nasdaq-100 12 Russell-2000 93 Thematic Baskets 49 ENTRY NOW 1 TAILWIND 16 NEUTRAL 21 LATE 18 HEADWIND 9 65 of 113 subsectors have enough live data to time \u00b7 48 thin (listed in the table, not timed) How timing support is graded 1 of 1 shown SUBSECTOR ENTRY TIER WHY IT IS HERE Auto Manufacturers Thin da",
+      "hasNoResults": false
+    }
+  },
+  "destinations": {
+    "overview": [
+      {
+        "href": "basket/gold_miners.html",
+        "ref": true,
+        "text": "Gold Miners THEME \u00b7 AEM \u00b7 EQX \u00b7 AU 76 +27.2% Leading and still broad \u2014"
+      },
+      {
+        "href": "basket/ai_agents.html",
+        "ref": true,
+        "text": "AI Agents & Applications THEME \u00b7 PATH \u00b7 PLTR \u00b7 NOW 71 +20.3% Leading a"
+      },
+      {
+        "href": "basket/non_ai_software.html",
+        "ref": true,
+        "text": "Non-AI Software THEME \u00b7 TEAM \u00b7 PCOR \u00b7 WDAY 70 +30.4% Leading and still"
+      },
+      {
+        "href": "plans.html",
+        "ref": true,
+        "text": "sign in to see the full lane"
+      },
+      {
+        "href": "plans.html",
+        "ref": true,
+        "text": "\u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4"
+      },
+      {
+        "href": "basket/us_sector_staples.html",
+        "ref": true,
+        "text": "Cons Staples\u5fc5\u9700\u6d88\u8d39sector fund\u677f\u5757\u57fa\u91d1trigger ~5d\u89e6\u53d1\u7ea65\u65e5"
+      },
+      {
+        "href": "basket/us_sector_materials.html",
+        "ref": true,
+        "text": "Materials\u539f\u6750\u6599sector fund\u677f\u5757\u57fa\u91d1unconfirmed \u2014 wait\u672a\u786e\u8ba4 \u2014 \u7b49\u5f85"
+      },
+      {
+        "href": "basket/us_sector_comm.html",
+        "ref": true,
+        "text": "Communications\u901a\u8baf\u670d\u52a1sector fund\u677f\u5757\u57fa\u91d1extended \u2014 wait\u5df2\u8fc7\u70ed \u2014 \u7b49\u5f85"
+      },
+      {
+        "href": "plans.html",
+        "ref": true,
+        "text": "sign in to see the full lane"
+      },
+      {
+        "href": "plans.html",
+        "ref": true,
+        "text": "\u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4"
+      },
+      {
+        "href": "basket/big_pharma.html",
+        "ref": true,
+        "text": "Big Pharma\u5927\u578b\u836f\u4f01theme\u4e3b\u9898 \u00b7 REGN \u00b7 MRK \u00b7 VRTX77+11.5%Leading and still bro"
+      },
+      {
+        "href": "basket/silver_miners.html",
+        "ref": true,
+        "text": "Silver Miners\u767d\u94f6\u77ff\u4e1atheme\u4e3b\u9898 \u00b7 FSM \u00b7 CDE \u00b7 EXK76+24.1%Leading and still br"
+      },
+      {
+        "href": "basket/ai_software.html",
+        "ref": true,
+        "text": "AI Software & PlatformsAI \u8f6f\u4ef6\u4e0e\u5e73\u53f0theme\u4e3b\u9898 \u00b7 WDAY \u00b7 PLTR \u00b7 NOW65+12.0%Lead"
+      },
+      {
+        "href": "plans.html",
+        "ref": true,
+        "text": "sign in to see the full lane"
+      },
+      {
+        "href": "plans.html",
+        "ref": true,
+        "text": "\u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4"
+      },
+      {
+        "href": "basket/cybersecurity.html",
+        "ref": true,
+        "text": "Cybersecurity\u7f51\u7edc\u5b89\u5168theme\u4e3b\u9898 \u00b7 RBRK \u00b7 QLYS \u00b7 ZS62+11.6%Was strong, now rol"
+      },
+      {
+        "href": "basket/robotics_automation.html",
+        "ref": true,
+        "text": "Robotics & Automation\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316theme\u4e3b\u9898 \u00b7 ZBRA \u00b7 PTC \u00b7 TRMB64+7.8%Was stro"
+      },
+      {
+        "href": "basket/us_sector_realestate.html",
+        "ref": true,
+        "text": "Real Estate\u623f\u5730\u4ea7sector fund\u677f\u5757\u57fa\u91d1late cycle \u00b7 today\u5468\u671f\u665a\u671f \u00b7 \u4eca\u65e5"
+      },
+      {
+        "href": "basket/pgm_miners.html",
+        "ref": true,
+        "text": "PGM Miners\u94c2\u65cf\u91d1\u5c5e\u77ff\u4e1atheme\u4e3b\u9898 \u00b7 SBSW \u00b7 ANGPY \u00b7 IMPUY70+22.0%In play but no f"
+      },
+      {
+        "href": "basket/energy_complex.html",
+        "ref": true,
+        "text": "US Energy Complex\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408theme\u4e3b\u9898 \u00b7 PSX \u00b7 BKR \u00b7 MPC69+3.6%In play but no "
+      },
+      {
+        "href": "basket/obesity_glp1.html",
+        "ref": true,
+        "text": "GLP-1 & ObesityGLP-1 \u4e0e\u51cf\u80a5\u836ftheme\u4e3b\u9898 \u00b7 DXCM \u00b7 AMGN \u00b7 SRRK66+3.4%In play bu"
+      },
+      {
+        "href": "plans.html",
+        "ref": true,
+        "text": "sign in to see the full lane"
+      },
+      {
+        "href": "plans.html",
+        "ref": true,
+        "text": "\u767b\u5f55\u540e\u67e5\u770b\u5b8c\u6574\u5206\u7ec4"
+      },
+      {
+        "href": "#actnow-section",
+        "ref": false,
+        "text": "+5 more \u2014 full list on Sector Intelligence\u8fd8\u6709 5 \u4e2a \u2014 \u5b8c\u6574\u5217\u8868\u89c1\u884c\u4e1a\u60c5\u62a5\u9875"
+      },
+      {
+        "href": "#confluence",
+        "ref": false,
+        "text": "Drill to stocks"
+      },
+      {
+        "href": "basket/power_grid.html",
+        "ref": true,
+        "text": "Power & Grid Buildout 2.7 position in cycle range 4/100"
+      },
+      {
+        "href": "basket/nuclear_power.html",
+        "ref": true,
+        "text": "Nuclear & SMR Power 2.6 position in cycle range 4/100 \u00b7 below 200-day "
+      },
+      {
+        "href": "basket/data_center_power.html",
+        "ref": true,
+        "text": "Data-Center Power & Cooling 2.3 position in cycle range 11/100"
+      }
+    ],
+    "map": [
+      {
+        "href": "basket/big_pharma.html",
+        "ref": true,
+        "text": "Open Big Pharma"
+      },
+      {
+        "href": "basket/big_pharma.html",
+        "ref": true,
+        "text": "Big Pharma"
+      },
+      {
+        "href": "basket/gold_miners.html",
+        "ref": true,
+        "text": "Gold Miners"
+      },
+      {
+        "href": "basket/silver_miners.html",
+        "ref": true,
+        "text": "Silver Miners"
+      },
+      {
+        "href": "basket/ai_agents.html",
+        "ref": true,
+        "text": "AI Agents & Applications"
+      },
+      {
+        "href": "basket/non_ai_software.html",
+        "ref": true,
+        "text": "Non-AI Software"
+      },
+      {
+        "href": "basket/pgm_miners.html",
+        "ref": true,
+        "text": "PGM Miners"
+      },
+      {
+        "href": "basket/energy_complex.html",
+        "ref": true,
+        "text": "US Energy Complex"
+      },
+      {
+        "href": "basket/obesity_glp1.html",
+        "ref": true,
+        "text": "GLP-1 & Obesity"
+      },
+      {
+        "href": "basket/ai_software.html",
+        "ref": true,
+        "text": "AI Software & Platforms"
+      },
+      {
+        "href": "basket/robotics_automation.html",
+        "ref": true,
+        "text": "Robotics & Automation"
+      },
+      {
+        "href": "sector_cycles.html#xlc",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "sector_cycles.html#xle",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "sector_cycles.html#xly",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "sector_cycles.html#xlp",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "sector_cycles.html#xlb",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "sector_cycles.html#xli",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "sector_cycles.html#xlf",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "sector_cycles.html#xlv",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "sector_cycles.html#xlk",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "sector_cycles.html#xlu",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "sector_cycles.html#xlre",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "sector_cycles.html",
+        "ref": true,
+        "text": "Open the full cycle map \u2014 11 sectors and 49 themes on one clock"
+      }
+    ],
+    "moving": [
+      {
+        "href": "rotation/healthcarenextgen.html",
+        "ref": true,
+        "text": "Next-Gen Healthcare & Biotech"
+      },
+      {
+        "href": "rotation/nanotechmedicine.html",
+        "ref": true,
+        "text": "Medicine Nanotechnology"
+      },
+      {
+        "href": "rotation/commmetalsgold.html",
+        "ref": true,
+        "text": "Gold Commodities Metals"
+      },
+      {
+        "href": "rotation/commmetalsprecious.html",
+        "ref": true,
+        "text": "Precious Commodities Metals"
+      },
+      {
+        "href": "rotation/commmetalssilver.html",
+        "ref": true,
+        "text": "Silver Commodities Metals"
+      },
+      {
+        "href": "rotation/agriculturealtprotein.html",
+        "ref": true,
+        "text": "Alt Protein Agriculture & FoodTech"
+      },
+      {
+        "href": "rotation/energybasethermal.html",
+        "ref": true,
+        "text": "Thermal Energy Traditional"
+      },
+      {
+        "href": "rotation/telecomwireless.html",
+        "ref": true,
+        "text": "Wireless Telecommunications"
+      },
+      {
+        "href": "rotation/commagrisofts.html",
+        "ref": true,
+        "text": "Softs Commodities Agriculture"
+      },
+      {
+        "href": "rotation/softwareenterprise.html",
+        "ref": true,
+        "text": "Enterprise Software"
+      },
+      {
+        "href": "rotation/commagrilivestock.html",
+        "ref": true,
+        "text": "Livestock Commodities Agriculture"
+      },
+      {
+        "href": "rotation/softwarehsaas.html",
+        "ref": true,
+        "text": "H-SaaS Software"
+      },
+      {
+        "href": "rotation/hardwarestorage.html",
+        "ref": true,
+        "text": "Storage Hardware"
+      },
+      {
+        "href": "rotation/iotsecurity.html",
+        "ref": true,
+        "text": "Security Internet of Things"
+      },
+      {
+        "href": "rotation/hardwareservers.html",
+        "ref": true,
+        "text": "Servers Hardware"
+      },
+      {
+        "href": "rotation/cloudhardware.html",
+        "ref": true,
+        "text": "Hardware Cloud Computing"
+      },
+      {
+        "href": "rotation/cybersecuritythreatops.html",
+        "ref": true,
+        "text": "ThreatOps Cybersecurity"
+      },
+      {
+        "href": "rotation/cybersecurityappsecurity.html",
+        "ref": true,
+        "text": "App Security Cybersecurity"
+      },
+      {
+        "href": "rotation/hardwarenetworking.html",
+        "ref": true,
+        "text": "Networking Hardware"
+      },
+      {
+        "href": "rotation/cybersecurityzerotrust.html",
+        "ref": true,
+        "text": "ZeroTrust Cybersecurity"
+      },
+      {
+        "href": "rotation/cybersecuritynetwork.html",
+        "ref": true,
+        "text": "Network Cybersecurity"
+      },
+      {
+        "href": "rotation/cybersecuritysiem.html",
+        "ref": true,
+        "text": "SIEM Cybersecurity"
+      },
+      {
+        "href": "rotation/cybersecurityendpoint.html",
+        "ref": true,
+        "text": "Endpoint Cybersecurity"
+      },
+      {
+        "href": "rotation/hardwaredatacenters.html",
+        "ref": true,
+        "text": "Data Centers Hardware"
+      },
+      {
+        "href": "subsector_rotation.html",
+        "ref": true,
+        "text": "Open the whole-market rotation page"
+      }
+    ],
+    "money": [
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NVDA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AAPL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MSFT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AMZN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GOOGL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GOOG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AVGO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=META",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TSLA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LLY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BRK-B",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MU",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=JPM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WMT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AMD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=V",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=XOM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=JNJ",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=INTC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ABBV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BAC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CSCO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=COST",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PLTR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ORCL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CVX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AMAT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LRCX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MRK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CAT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=UNH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NFLX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=RTX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PANW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DELL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GEV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WFC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KLAC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TXN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AMGN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ANET",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SNDK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AXP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TMO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=IBM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=C",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LIN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MRVL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CRWD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VZ",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ABT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TMUS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PEP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=APH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SCHW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MCD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=STX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DIS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GILD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ADI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BLK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=UNP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NEE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=T",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=QCOM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WELL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CRM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WDC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ETN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PFE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BKNG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TJX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=UBER",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=COP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DHR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ISRG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VRTX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BMY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LMT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=COF",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PLD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NEM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NOW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GLW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SYK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PGR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SPGI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LOW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MDT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CVS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SBUX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MMC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HWM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FTNT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ACN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ABNB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ADP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BNY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ADBE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EQIX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=APP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PWR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MPC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VRT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VLO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MCK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KKR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=INTU",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PNC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=USB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CEG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FCX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PSX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DUK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CME",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DASH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CMCSA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CSX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MAR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MMM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MNST",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WMB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ICE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HCA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EMR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=JCI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=UPS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CDNS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=REGN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ELV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HOOD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MCO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SHW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DDOG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CMI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NOC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MDLZ",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AMT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CTAS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ITW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=RCL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ECL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MSI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SLB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=APO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EOG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FDX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NSC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CVNA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SNPS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TRV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BSX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HLT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ROST",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LITE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AON",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ORLY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TGT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SPG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WBD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KMI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DLR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HPE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HON",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MRNA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=URI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AEP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=RSG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TDG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=APD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PCAR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AJG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ALL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BKR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MPWR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TRGP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CRH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TFC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GWW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NKE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PSA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=OKE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=COR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MET",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=OXY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=D",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FIX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=O",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TER",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FAST",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TEL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AFL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FANG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=F",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GRMN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NXPI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CIEN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NUE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=COHR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SRE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AME",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DAL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CAH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KEYS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HONA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NDAQ",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ADSK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DVN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AXON",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CTVA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PYPL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LHX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BDX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=STT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CARR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ETR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AZO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FITB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=XEL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AMP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WAB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WDAY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=XYZ",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ROK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VST",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VTR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FERG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EXC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EBAY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HUM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CBRE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TTWO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=IDXX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=A",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CMG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PAYX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LYV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ODFL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DHI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KDP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=COIN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PRU",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MCHP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FLEX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MSCI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=IQV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=IBKR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WAT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VEEV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ROP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ED",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=YUM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AIG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SYY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EXPE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ADM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PCG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NTAP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HSY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HIG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=UAL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PEG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KVUE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CCL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KMB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=IRM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VMC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WEC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EME",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MTB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HBAN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=RJF",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NTRS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DXCM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=JBL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GEHC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ACGL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EQT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=RMD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=STLD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BIIB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ARES",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MLM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CNC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CCI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ZTS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=IR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CPRT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EXR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WTW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CASY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KHC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AEE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LVS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TDY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ON",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CFG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CBOE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=RDDT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HAL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VICI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DTE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ATO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MTD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WSM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EIX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AWK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CTSH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=OTIS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HPQ",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DOV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=XYL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ES",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CPAY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PPL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DGX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CNP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=Q",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TPR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=RF",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=INCY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SYF",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CINF",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WRB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TPL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ECHO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=JBHT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NRG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DLTR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PPG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DRI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HUBB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FICO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PHM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WST",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VRSN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VLTO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GPN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VRSK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EXPD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VMRK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=OMC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TROW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BRO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PFG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FSLR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KEY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SMCI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CHD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=STE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DOW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=STZ",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=L",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ULTA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EFX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PKG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=RL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EXE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CMS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FOXA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AMCR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=IP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FFIV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GIS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LYB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=IFF",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LEN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FIS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FDXF",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TSN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SNA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LUV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NI",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SBAC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EVRG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ZBH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BBY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=VTRS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GPC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ESS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TSCO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LDOS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LNT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CHTR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CF",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=INVH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FTV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ROL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=IEX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NDSN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BEN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=J",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CDW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NVR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CHRW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ZBRA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BALL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PTC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GEN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=KIM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AKAM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HST",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ALB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MAA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=APA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MKC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SWK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=COO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SOLV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TXT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MAS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TKO",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LII",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DOC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=IVZ",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TYL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=REG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ERIE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=EG",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AVY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CRL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ALLE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TRMB",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BAX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AIZ",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CSGP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=LULU",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HRL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=RVTY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GL",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HAS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SJM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CLX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BF-B",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DECK",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GNRC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HII",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=GDDY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=IT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PNW",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=UDR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FOX",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PSKY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=JKHY",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ALGN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DVA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TECH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=DPZ",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NWSA",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=CPT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MGM",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BXP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FDS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PODD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AES",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=PNR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=WYNN",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=SWKS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=FRT",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=APTV",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=UHS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=HSIC",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=ARE",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=AOS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NCLH",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TAP",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=BLDR",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=MOS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=TTD",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "https://app.mastermind-x.com/terminal?symbol=NWS",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "#explore",
+        "ref": false,
+        "text": "Look under the hood \u2014 every basket, sortable"
+      }
+    ],
+    "explore": [
+      {
+        "href": "basket/non_ai_software.html",
+        "ref": true,
+        "text": "Non-AI Software"
+      },
+      {
+        "href": "basket/gold_miners.html",
+        "ref": true,
+        "text": "Gold Miners"
+      },
+      {
+        "href": "basket/silver_miners.html",
+        "ref": true,
+        "text": "Silver Miners"
+      },
+      {
+        "href": "basket/pgm_miners.html",
+        "ref": true,
+        "text": "PGM Miners"
+      },
+      {
+        "href": "basket/ai_agents.html",
+        "ref": true,
+        "text": "AI Agents & Applications"
+      },
+      {
+        "href": "basket/space_economy.html",
+        "ref": true,
+        "text": "Space Economy"
+      },
+      {
+        "href": "basket/ai_software.html",
+        "ref": true,
+        "text": "AI Software & Platforms"
+      },
+      {
+        "href": "basket/cybersecurity.html",
+        "ref": true,
+        "text": "Cybersecurity"
+      },
+      {
+        "href": "basket/big_pharma.html",
+        "ref": true,
+        "text": "Big Pharma"
+      },
+      {
+        "href": "basket/us_sector_health.html",
+        "ref": true,
+        "text": "Health Care"
+      },
+      {
+        "href": "basket/critical_minerals.html",
+        "ref": true,
+        "text": "Critical Minerals & Rare Earths"
+      },
+      {
+        "href": "basket/quantum_computing.html",
+        "ref": true,
+        "text": "Quantum Computing"
+      },
+      {
+        "href": "basket/uranium_miners.html",
+        "ref": true,
+        "text": "Uranium & Nuclear Fuel"
+      },
+      {
+        "href": "basket/robotics_automation.html",
+        "ref": true,
+        "text": "Robotics & Automation"
+      },
+      {
+        "href": "basket/defense.html",
+        "ref": true,
+        "text": "Defense & Aerospace"
+      },
+      {
+        "href": "basket/us_sector_comm.html",
+        "ref": true,
+        "text": "Communication Services"
+      },
+      {
+        "href": "basket/energy_complex.html",
+        "ref": true,
+        "text": "US Energy Complex"
+      },
+      {
+        "href": "basket/us_sector_energy.html",
+        "ref": true,
+        "text": "Energy"
+      },
+      {
+        "href": "basket/us_sector_tech.html",
+        "ref": true,
+        "text": "Technology"
+      },
+      {
+        "href": "basket/obesity_glp1.html",
+        "ref": true,
+        "text": "GLP-1 & Obesity"
+      },
+      {
+        "href": "basket/payments_fintech.html",
+        "ref": true,
+        "text": "Payments & Fintech"
+      },
+      {
+        "href": "basket/us_sector_discretionary.html",
+        "ref": true,
+        "text": "Consumer Discretionary"
+      },
+      {
+        "href": "basket/retail.html",
+        "ref": true,
+        "text": "Retail"
+      },
+      {
+        "href": "basket/us_sector_materials.html",
+        "ref": true,
+        "text": "Materials"
+      },
+      {
+        "href": "basket/defensives.html",
+        "ref": true,
+        "text": "Defensives"
+      },
+      {
+        "href": "basket/us_sector_financials.html",
+        "ref": true,
+        "text": "Financials"
+      },
+      {
+        "href": "basket/crypto_rails.html",
+        "ref": true,
+        "text": "Crypto & Digital Rails"
+      },
+      {
+        "href": "basket/us_sector_industrials.html",
+        "ref": true,
+        "text": "Industrials"
+      },
+      {
+        "href": "basket/housing.html",
+        "ref": true,
+        "text": "Housing Chain"
+      },
+      {
+        "href": "basket/insurance.html",
+        "ref": true,
+        "text": "Insurance & Brokers"
+      },
+      {
+        "href": "basket/mag7.html",
+        "ref": true,
+        "text": "Magnificent Seven"
+      },
+      {
+        "href": "basket/reshoring.html",
+        "ref": true,
+        "text": "Reshoring & Industrial Capex"
+      },
+      {
+        "href": "basket/us_sector_staples.html",
+        "ref": true,
+        "text": "Consumer Staples"
+      },
+      {
+        "href": "basket/industrial_distribution.html",
+        "ref": true,
+        "text": "Industrial Distribution & Capital Goods"
+      },
+      {
+        "href": "basket/travel.html",
+        "ref": true,
+        "text": "Travel & Experiences"
+      },
+      {
+        "href": "basket/us_sector_realestate.html",
+        "ref": true,
+        "text": "Real Estate"
+      },
+      {
+        "href": "basket/ai_semiconductors.html",
+        "ref": true,
+        "text": "AI Semiconductors"
+      },
+      {
+        "href": "basket/ai_infra.html",
+        "ref": true,
+        "text": "AI Infrastructure"
+      },
+      {
+        "href": "basket/regional_banks.html",
+        "ref": true,
+        "text": "Regional Banks"
+      },
+      {
+        "href": "basket/power_grid.html",
+        "ref": true,
+        "text": "Power & Grid Buildout"
+      },
+      {
+        "href": "basket/nuclear_power.html",
+        "ref": true,
+        "text": "Nuclear & SMR Power"
+      },
+      {
+        "href": "basket/non_ai_tech.html",
+        "ref": true,
+        "text": "Non-AI Tech & Hardware"
+      },
+      {
+        "href": "basket/crypto.html",
+        "ref": true,
+        "text": "Crypto & Digital Assets"
+      },
+      {
+        "href": "basket/us_sector_utilities.html",
+        "ref": true,
+        "text": "Utilities"
+      },
+      {
+        "href": "basket/data_center_power.html",
+        "ref": true,
+        "text": "Data-Center Power & Cooling"
+      },
+      {
+        "href": "basket/memory_storage.html",
+        "ref": true,
+        "text": "Memory, HBM & Storage"
+      },
+      {
+        "href": "basket/managed_care.html",
+        "ref": true,
+        "text": "Managed Care & Insurers"
+      },
+      {
+        "href": "basket/semicap_equipment.html",
+        "ref": true,
+        "text": "Semiconductor Equipment (WFE)"
+      },
+      {
+        "href": "basket/ai_neoclouds.html",
+        "ref": true,
+        "text": "AI Neoclouds & HPC Hosting"
+      },
+      {
+        "href": "#grader",
+        "ref": false,
+        "text": "See the forward track record"
+      }
+    ],
+    "confluence": [
+      {
+        "href": "stock.html#COIN",
+        "ref": true,
+        "text": "COIN CAPITAL MARKETS 0.60 Its tier T2 \u00b7 vs sub 20d -1.6"
+      },
+      {
+        "href": "stock.html#NSC",
+        "ref": true,
+        "text": "NSC RAILROADS 0.54 Its tier T1 \u00b7 vs sub 20d +2.2"
+      },
+      {
+        "href": "subsector/sec-basic-materials.html",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "subsector/sec-communication-services.html",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "subsector/sec-consumer-cyclical.html",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "subsector/sec-consumer-defensive.html",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "subsector/sec-energy.html",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "subsector/sec-financial.html",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "subsector/sec-healthcare.html",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "subsector/sec-industrials.html",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "subsector/sec-real-estate.html",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "subsector/sec-technology.html",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "subsector/sec-utilities.html",
+        "ref": true,
+        "text": ""
+      },
+      {
+        "href": "#moving",
+        "ref": false,
+        "text": "See the rotation map"
+      }
+    ]
+  },
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    }
+  ],
+  "pageerrors": [],
+  "finished_at": "2026-08-22T13:41:43Z"
+}

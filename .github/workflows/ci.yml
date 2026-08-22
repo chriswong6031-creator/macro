@@ -874,6 +874,7 @@ on:
       - "app/deploy/macro-market-memory-technicals.timer"
       - "app/deploy/macro-market-memory-experience.service"
       - "app/deploy/macro-market-memory-experience.timer"
+      - "app/deploy/market-memory-spy-rest-prereqs.sh"
       - "app/deploy/market-memory-options-prereqs.sh"
       - "app/deploy/market-memory-options-unit-boundary.sh"
       - "app/deploy/market-memory-options-runtime-fence.sh"

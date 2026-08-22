@@ -1602,6 +1602,507 @@ def test_n7_accrue_v2_outside_window_with_explicit_session_writes_nothing(tmp_pa
     )
 
 
+# ===========================================================================
+# P1–P10: spy-rest-prereqs hostile tests
+# ===========================================================================
+
+PREREQS_SH = ROOT / "app" / "deploy" / "market-memory-spy-rest-prereqs.sh"
+_THROWAWAY_KEY = "testkey_m0d_prereqs_16ch"
+
+
+def _read_prereqs() -> str:
+    return PREREQS_SH.read_text(encoding="utf-8")
+
+
+def test_p1_prereqs_contains_credential_root() -> None:
+    """P1: prereqs script declares CREDENTIAL_ROOT=/etc/macro-market-memory-spy-rest."""
+    content = _read_prereqs()
+    assert "CREDENTIAL_ROOT=/etc/macro-market-memory-spy-rest" in content
+
+
+def test_p1_prereqs_contains_both_filenames() -> None:
+    """P1: prereqs script references both MASSIVE_API_KEY and POLYGON_API_KEY as final filenames."""
+    content = _read_prereqs()
+    assert "MASSIVE_API_KEY" in content
+    assert "POLYGON_API_KEY" in content
+    assert "CRED_FILE_A=$CREDENTIAL_ROOT/MASSIVE_API_KEY" in content or \
+           "$CREDENTIAL_ROOT/MASSIVE_API_KEY" in content
+    assert "CRED_FILE_B=$CREDENTIAL_ROOT/POLYGON_API_KEY" in content or \
+           "$CREDENTIAL_ROOT/POLYGON_API_KEY" in content
+
+
+def test_p2_no_export_eval_set_x_source() -> None:
+    """P2: prereqs script must not leak $candidate to a sink."""
+    import re as _re
+
+    content = _read_prereqs()
+    lines = content.splitlines()
+    for lineno, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            continue
+        assert not stripped.startswith("export "), (
+            f"line {lineno}: must not export: {line!r}"
+        )
+        assert not stripped.startswith("eval "), (
+            f"line {lineno}: must not use eval: {line!r}"
+        )
+        assert "set -x" not in stripped, (
+            f"line {lineno}: must not use set -x: {line!r}"
+        )
+        assert "xtrace" not in stripped, (
+            f"line {lineno}: must not enable xtrace: {line!r}"
+        )
+        assert not stripped.startswith("source "), (
+            f"line {lineno}: must not use source: {line!r}"
+        )
+        assert not _re.search(r"\blogger\b", stripped), (
+            f"line {lineno}: must not logger: {line!r}"
+        )
+        # $candidate may only be assigned, tested, compared, passed to write, or printf'd into the temp file.
+        if "$candidate" in stripped or "${candidate" in stripped:
+            allowed = (
+                "candidate=$(" in stripped
+                or stripped.startswith("candidate=")
+                or '[ -z "$candidate" ]' in stripped
+                or '[ -n "$candidate" ]' in stripped
+                or '[ "$candidate" = "$final_candidate" ]' in stripped
+                or "write_credential_file" in stripped
+                or "printf '%s" in stripped
+                or stripped.startswith("unset candidate")
+                or 'case "$candidate"' in stripped
+                or "candidate=${candidate#" in stripped
+                or "${#candidate}" in stripped
+            )
+            assert allowed, (
+                f"line {lineno}: $candidate reaches a disallowed sink: {line!r}"
+            )
+
+
+def test_p2_absent_key_does_not_delete_existing_files() -> None:
+    """Absent extract must not rm already-provisioned LoadCredential files."""
+    content = _read_prereqs()
+    assert "cannot remove stale derived credential" not in content
+    assert 'rm -f "$CRED_FILE_A"' not in content
+    assert 'rm -f "$CRED_FILE_B"' not in content
+    assert 'rm -f "$dest"' not in content or content.count('rm -f "$dest"') == 0
+    # Temps may still be removed; dest/credential finals must not.
+    assert "no extractable key in operator env files" in content
+
+
+def test_p3_three_env_extract_sources() -> None:
+    """P3: prereqs extracts from all three env source paths."""
+    content = _read_prereqs()
+    assert "/opt/macro/.env" in content
+    assert "/etc/macro-api.env" in content
+    assert "/etc/macro-live.env" in content
+
+
+def test_p4_update_sh_calls_prereqs_before_attested_zero() -> None:
+    """P4: update.sh calls market-memory-spy-rest-prereqs.sh before MARKET_MEMORY_EXPERIENCE_ATTESTED=0."""
+    update_sh = ROOT / "app" / "deploy" / "update.sh"
+    lines = update_sh.read_text().splitlines()
+
+    prereqs_lineno = None
+    attested_lineno = None
+
+    for i, line in enumerate(lines, start=1):
+        if "market-memory-spy-rest-prereqs.sh" in line and prereqs_lineno is None:
+            prereqs_lineno = i
+        if "MARKET_MEMORY_EXPERIENCE_ATTESTED=0" in line and attested_lineno is None:
+            attested_lineno = i
+
+    assert prereqs_lineno is not None, (
+        "update.sh must call market-memory-spy-rest-prereqs.sh"
+    )
+    assert attested_lineno is not None, (
+        "MARKET_MEMORY_EXPERIENCE_ATTESTED=0 must exist in update.sh"
+    )
+    assert prereqs_lineno < attested_lineno, (
+        f"market-memory-spy-rest-prereqs.sh call (line {prereqs_lineno}) must appear BEFORE "
+        f"MARKET_MEMORY_EXPERIENCE_ATTESTED=0 (line {attested_lineno})"
+    )
+
+
+def test_p5_call_site_does_not_exit_or_start_spy_rest() -> None:
+    """P5: The spy-rest prereqs call site in update.sh must not exit and must not systemctl start spy-rest."""
+    import re
+    update_sh = ROOT / "app" / "deploy" / "update.sh"
+    content = update_sh.read_text()
+
+    # Find the block containing the prereqs call
+    idx = content.find("market-memory-spy-rest-prereqs.sh")
+    assert idx != -1, "spy-rest prereqs call not found in update.sh"
+
+    # Extract ~30 lines of context around the call
+    lines = content.splitlines()
+    call_lines = []
+    in_block = False
+    for line in lines:
+        if "market-memory-spy-rest-prereqs.sh" in line:
+            in_block = True
+        if in_block:
+            call_lines.append(line)
+        # Stop at the next blank line that signals end of the block
+        if in_block and line.strip() == "" and len(call_lines) > 3:
+            break
+
+    block_text = "\n".join(call_lines)
+
+    # Must not contain standalone exit 1 (exit is only for service-critical paths)
+    assert not re.search(r'\bexit\s+1\b', block_text), (
+        "spy-rest prereqs call site must not exit 1"
+    )
+    # Must not systemctl start spy-rest from this block
+    assert "systemctl start macro-market-memory-source-spy-rest" not in block_text, (
+        "spy-rest prereqs call site must not systemctl start spy-rest"
+    )
+    assert "systemctl start macro-market-memory-spy-rest" not in block_text, (
+        "spy-rest prereqs call site must not systemctl start spy-rest"
+    )
+    # Status must be captured from the script, not from a `|| echo` pipeline.
+    assert "|| SPY_REST_PREREQ_STATUS=$?" in block_text, (
+        "provision status must be captured via || SPY_REST_PREREQ_STATUS=$?; "
+        "a `|| echo` pipeline would clobber a status-2 absent-key result"
+    )
+    assert "--check-ready >/dev/null 2>&1" in block_text, (
+        "check-ready must be quiet; do not leak credential-path diagnostics"
+    )
+
+
+def test_p6_options_runtime_closure_regex_matches_v1_not_prereqs() -> None:
+    """P6: OPTIONS_RUNTIME_CLOSURE_REGEX still matches v1 units but not v2 paths or new prereqs."""
+    import re as _re
+    update_sh = ROOT / "app" / "deploy" / "update.sh"
+    content = update_sh.read_text()
+
+    m = _re.search(r"OPTIONS_RUNTIME_CLOSURE_REGEX='([^']+)'", content)
+    assert m, "OPTIONS_RUNTIME_CLOSURE_REGEX not found in update.sh"
+    regex_val = m.group(1)
+
+    # Must still match v1 paths
+    for path in (
+        "app/deploy/macro-market-memory-options.service",
+        "app/deploy/macro-market-memory-source.service",
+        "app/deploy/market-memory-options-prereqs.sh",
+    ):
+        assert _re.match(regex_val, path), (
+            f"OPTIONS_RUNTIME_CLOSURE_REGEX must still match v1 path {path!r}"
+        )
+
+    # Must NOT match the new prereqs or v2 units
+    for path in (
+        "app/deploy/market-memory-spy-rest-prereqs.sh",
+        "app/deploy/macro-market-memory-source-spy-rest.service",
+        "app/deploy/macro-market-memory-technicals-v2.service",
+    ):
+        assert not _re.match(regex_val, path), (
+            f"OPTIONS_RUNTIME_CLOSURE_REGEX must NOT match {path!r}"
+        )
+
+
+def test_p6_options_reciprocal_closure_regex_matches_new_prereqs() -> None:
+    """P6: OPTIONS_RECIPROCAL_CLOSURE_REGEX matches the new spy-rest-prereqs script."""
+    import re as _re
+    update_sh = ROOT / "app" / "deploy" / "update.sh"
+    content = update_sh.read_text()
+
+    m = _re.search(r"OPTIONS_RECIPROCAL_CLOSURE_REGEX='([^']+)'", content)
+    assert m, "OPTIONS_RECIPROCAL_CLOSURE_REGEX not found in update.sh"
+    regex_val = m.group(1)
+
+    assert _re.match(regex_val, "app/deploy/market-memory-spy-rest-prereqs.sh"), (
+        "OPTIONS_RECIPROCAL_CLOSURE_REGEX must match app/deploy/market-memory-spy-rest-prereqs.sh"
+    )
+
+
+def test_p7_v1_registration_sha256_unchanged_prereqs_guard() -> None:
+    """P7: v1 registration content_sha256 remains e00ffc1d34..."""
+    reg_path = ROOT / "config" / "market_memory_spy_experience_registration.v1.json"
+    data = json.loads(reg_path.read_bytes())
+    assert data["content_sha256"] == "e00ffc1d34b57ce3b011955a8662dae8f7e069b7f5f07417c428a5815c6dd6e3"
+
+
+def test_p8_load_credential_paths_match_prereqs_files() -> None:
+    """P8: LoadCredential paths in source-spy-rest.service match the prereqs output filenames."""
+    unit_path = ROOT / "app" / "deploy" / "macro-market-memory-source-spy-rest.service"
+    content = unit_path.read_text()
+    assert "LoadCredential=MASSIVE_API_KEY:/etc/macro-market-memory-spy-rest/MASSIVE_API_KEY" in content, (
+        "service must LoadCredential MASSIVE_API_KEY from /etc/macro-market-memory-spy-rest/MASSIVE_API_KEY"
+    )
+    assert "LoadCredential=POLYGON_API_KEY:/etc/macro-market-memory-spy-rest/POLYGON_API_KEY" in content, (
+        "service must LoadCredential POLYGON_API_KEY from /etc/macro-market-memory-spy-rest/POLYGON_API_KEY"
+    )
+
+
+def test_p9_tmpdir_harness_provisions_both_files_identical(tmp_path: Path) -> None:
+    """P9: tmpdir harness sed-replaces CREDENTIAL_ROOT and source paths,
+    then runs the script as current user (skips root check via sed) and proves
+    both MASSIVE_API_KEY and POLYGON_API_KEY appear mode 0400 with identical bytes
+    using throwaway key testkey_m0d_prereqs_16ch.
+    """
+    import shutil
+    import stat
+    import subprocess
+
+    script_src = PREREQS_SH.read_text(encoding="utf-8")
+
+    cred_root = tmp_path / "cred"
+    cred_root.mkdir(mode=0o700)
+
+    env_file = tmp_path / "macro-api.env"
+    env_file.write_text(f"MASSIVE_API_KEY={_THROWAWAY_KEY}\n", encoding="utf-8")
+    env_file.chmod(0o600)
+
+    modified = script_src
+    # Replace CREDENTIAL_ROOT path
+    modified = modified.replace(
+        "CREDENTIAL_ROOT=/etc/macro-market-memory-spy-rest",
+        f"CREDENTIAL_ROOT={cred_root}",
+    )
+    # Replace source paths
+    modified = modified.replace("/opt/macro/.env", str(tmp_path / "missing1.env"))
+    modified = modified.replace("/etc/macro-api.env", str(env_file))
+    modified = modified.replace("/etc/macro-live.env", str(tmp_path / "missing2.env"))
+    # macOS stat uses -f instead of -c; add a compat shim at the top of the script
+    import platform as _platform
+    if _platform.system() == "Darwin":
+        compat_shim = (
+            "# macOS stat compat shim (injected by test harness)\n"
+            "_stat_c() {\n"
+            "  local fmt=$1 f=$2\n"
+            "  case \"$fmt\" in\n"
+            "    '%U') command stat -f '%Su' \"$f\" ;;\n"
+            "    '%a') command stat -f '%OLp' \"$f\" | sed 's/^0*//' ;;\n"
+            "    '%s') command stat -f '%z' \"$f\" ;;\n"
+            "    '%U:%G:%a')\n"
+            "      local u g m\n"
+            "      u=$(command stat -f '%Su' \"$f\")\n"
+            "      g=$(command stat -f '%Sg' \"$f\")\n"
+            "      m=$(command stat -f '%OLp' \"$f\" | sed 's/^0*//')\n"
+            "      printf '%s:%s:%s' \"$u\" \"$g\" \"$m\" ;;\n"
+            "    *) command stat -c \"$fmt\" \"$f\" ;;\n"
+            "  esac\n"
+            "}\n"
+            "stat() { if [ \"${1:-}\" = '-c' ]; then _stat_c \"$2\" \"$3\"; else command stat \"$@\"; fi; }\n\n"
+        )
+        modified = compat_shim + modified
+    # Skip the root check so we can run as non-root in CI
+    modified = modified.replace(
+        '[ "$(id -u)" -eq 0 ] || die "must run as root"',
+        "true  # root check bypassed in harness",
+    )
+    # install -d with -o root/-g root fails as non-root on macOS; replace with mkdir -p
+    modified = modified.replace(
+        "install -d -o root -g root -m 0700 \"$CREDENTIAL_ROOT\" || \\\n\t\tdie \"cannot provision credential root\"",
+        "mkdir -p \"$CREDENTIAL_ROOT\"  # install bypassed in harness",
+    )
+    # stat -c '%U' does not return 'root' when running as non-root; bypass owner checks
+    modified = modified.replace(
+        '[ "$owner" = root ] || return 2',
+        "true  # owner check bypassed in harness",
+    )
+    # Similarly for write_credential_file: skip root-only chown/chmod assertions
+    modified = modified.replace(
+        'chown root:root "$tmp" || die "cannot set temporary credential owner"',
+        'true  # chown bypassed in harness',
+    )
+    modified = modified.replace(
+        'chown root:root "$dest" || die "cannot set credential owner: ${dest##*/}"',
+        'true  # chown bypassed in harness',
+    )
+    # Bypass all root:root ownership/mode checks (owner is the test user, not root)
+    modified = modified.replace(
+        "[ \"$file_metadata\" = 'root:root:400' ] || \\\n\t\tdie \"credential must be root:root mode 0400: ${dest##*/}\"",
+        "true  # owner+mode check bypassed in harness",
+    )
+    # provision_credential root check (uses root_metadata variable)
+    modified = modified.replace(
+        "[ \"$root_metadata\" = 'root:root:700' ] || \\\n\t\tdie \"credential root must be root:root mode 0700\"",
+        "true  # root dir mode check bypassed in harness",
+    )
+    # check_ready root check
+    modified = modified.replace(
+        "[ \"$root_metadata\" = 'root:root:700' ] || return 2",
+        "true  # root dir mode check bypassed in harness",
+    )
+
+    script_path = tmp_path / "prereqs-test.sh"
+    script_path.write_text(modified, encoding="utf-8")
+    script_path.chmod(0o755)
+
+    result = subprocess.run(
+        ["bash", str(script_path)],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, (
+        f"prereqs script failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+    file_a = cred_root / "MASSIVE_API_KEY"
+    file_b = cred_root / "POLYGON_API_KEY"
+    assert file_a.exists(), "MASSIVE_API_KEY must be created"
+    assert file_b.exists(), "POLYGON_API_KEY must be created"
+
+    # Mode 0400 after script sets it (the harness only bypasses chown, not chmod)
+    mode_a = stat.S_IMODE(file_a.stat().st_mode)
+    mode_b = stat.S_IMODE(file_b.stat().st_mode)
+    assert mode_a == 0o400, f"MASSIVE_API_KEY must be mode 0400; got {oct(mode_a)}"
+    assert mode_b == 0o400, f"POLYGON_API_KEY must be mode 0400; got {oct(mode_b)}"
+
+    content_a = file_a.read_text(encoding="utf-8").strip()
+    content_b = file_b.read_text(encoding="utf-8").strip()
+    assert content_a == _THROWAWAY_KEY, f"MASSIVE_API_KEY content mismatch: {content_a!r}"
+    assert content_b == _THROWAWAY_KEY, f"POLYGON_API_KEY content mismatch: {content_b!r}"
+    assert content_a == content_b, "Both credential files must have identical bytes"
+
+
+def _write_harness_prereqs(tmp_path: Path, *, key: str | None):
+    """Return (script_path, cred_root, env_file) for executed prereqs tests."""
+    import platform as _platform
+
+    cred_root = tmp_path / "cred"
+    cred_root.mkdir(mode=0o700, exist_ok=True)
+    env_file = tmp_path / "macro-api.env"
+    if key is None:
+        env_file.write_text("# empty\n", encoding="utf-8")
+    else:
+        env_file.write_text(f"MASSIVE_API_KEY={key}\n", encoding="utf-8")
+    env_file.chmod(0o600)
+
+    modified = PREREQS_SH.read_text(encoding="utf-8")
+    modified = modified.replace(
+        "CREDENTIAL_ROOT=/etc/macro-market-memory-spy-rest",
+        f"CREDENTIAL_ROOT={cred_root}",
+    )
+    modified = modified.replace("/opt/macro/.env", str(tmp_path / "missing1.env"))
+    modified = modified.replace("/etc/macro-api.env", str(env_file))
+    modified = modified.replace("/etc/macro-live.env", str(tmp_path / "missing2.env"))
+    if _platform.system() == "Darwin":
+        compat_shim = (
+            "_stat_c() {\n"
+            "  local fmt=$1 f=$2\n"
+            "  case \"$fmt\" in\n"
+            "    '%U') command stat -f '%Su' \"$f\" ;;\n"
+            "    '%a') command stat -f '%OLp' \"$f\" | sed 's/^0*//' ;;\n"
+            "    '%s') command stat -f '%z' \"$f\" ;;\n"
+            "    '%U:%G:%a')\n"
+            "      local u g m\n"
+            "      u=$(command stat -f '%Su' \"$f\")\n"
+            "      g=$(command stat -f '%Sg' \"$f\")\n"
+            "      m=$(command stat -f '%OLp' \"$f\" | sed 's/^0*//' )\n"
+            "      printf '%s:%s:%s' \"$u\" \"$g\" \"$m\" ;;\n"
+            "    *) command stat -c \"$fmt\" \"$f\" ;;\n"
+            "  esac\n"
+            "}\n"
+            "stat() { if [ \"${1:-}\" = '-c' ]; then _stat_c \"$2\" \"$3\"; else command stat \"$@\"; fi; }\n\n"
+        )
+        modified = compat_shim + modified
+    modified = modified.replace(
+        '[ "$(id -u)" -eq 0 ] || die "must run as root"',
+        "true  # root check bypassed in harness",
+    )
+    modified = modified.replace(
+        "install -d -o root -g root -m 0700 \"$CREDENTIAL_ROOT\" || \\\n\t\tdie \"cannot provision credential root\"",
+        "mkdir -p \"$CREDENTIAL_ROOT\"  # install bypassed in harness",
+    )
+    modified = modified.replace(
+        '[ "$owner" = root ] || return 2',
+        "true  # owner check bypassed in harness",
+    )
+    modified = modified.replace(
+        'chown root:root "$tmp" || die "cannot set temporary credential owner"',
+        'true  # chown bypassed in harness',
+    )
+    modified = modified.replace(
+        'chown root:root "$dest" || die "cannot set credential owner: ${dest##*/}"',
+        'true  # chown bypassed in harness',
+    )
+    modified = modified.replace(
+        "[ \"$file_metadata\" = 'root:root:400' ] || \\\n\t\tdie \"credential must be root:root mode 0400: ${dest##*/}\"",
+        "true  # owner+mode check bypassed in harness",
+    )
+    modified = modified.replace(
+        "[ \"$file_metadata\" = 'root:root:400' ] || return 2",
+        "true  # check_ready owner+mode bypassed in harness",
+    )
+    modified = modified.replace(
+        "[ \"$root_metadata\" = 'root:root:700' ] || \\\n\t\tdie \"credential root must be root:root mode 0700\"",
+        "true  # root dir mode check bypassed in harness",
+    )
+    modified = modified.replace(
+        "[ \"$root_metadata\" = 'root:root:700' ] || return 2",
+        "true  # root dir mode check bypassed in harness",
+    )
+    script_path = tmp_path / "prereqs-test.sh"
+    script_path.write_text(modified, encoding="utf-8")
+    script_path.chmod(0o755)
+    return script_path, cred_root, env_file
+
+
+def test_p9b_check_ready_accepts_matching_files(tmp_path: Path) -> None:
+    """--check-ready is the path update.sh runs every tick; it must execute, not just grep."""
+    import subprocess
+
+    script_path, cred_root, _env = _write_harness_prereqs(tmp_path, key=_THROWAWAY_KEY)
+    provisioned = subprocess.run(["bash", str(script_path)], capture_output=True, text=True)
+    assert provisioned.returncode == 0, provisioned.stderr
+    ready = subprocess.run(
+        ["bash", str(script_path), "--check-ready"],
+        capture_output=True,
+        text=True,
+    )
+    assert ready.returncode == 0, (
+        f"--check-ready must pass on a just-provisioned tree: {ready.stderr}"
+    )
+    assert (cred_root / "MASSIVE_API_KEY").exists()
+    assert (cred_root / "POLYGON_API_KEY").exists()
+
+
+def test_p9c_check_ready_refuses_mismatched_bytes(tmp_path: Path) -> None:
+    """Property (h): differing file bytes vs extracted key → --check-ready returns 2."""
+    import subprocess
+
+    script_path, cred_root, _env = _write_harness_prereqs(tmp_path, key=_THROWAWAY_KEY)
+    assert subprocess.run(["bash", str(script_path)], capture_output=True, text=True).returncode == 0
+    poly = cred_root / "POLYGON_API_KEY"
+    poly.chmod(0o600)
+    poly.write_text("totally_different_key_9999\n", encoding="utf-8")
+    ready = subprocess.run(
+        ["bash", str(script_path), "--check-ready"],
+        capture_output=True,
+        text=True,
+    )
+    assert ready.returncode == 2, (
+        f"--check-ready must return 2 on byte mismatch; got {ready.returncode} stderr={ready.stderr!r}"
+    )
+
+
+def test_p9d_absent_key_leaves_existing_files(tmp_path: Path) -> None:
+    """A later extract miss must not wipe a working credential pair."""
+    import subprocess
+
+    script_path, cred_root, env_file = _write_harness_prereqs(tmp_path, key=_THROWAWAY_KEY)
+    assert subprocess.run(["bash", str(script_path)], capture_output=True, text=True).returncode == 0
+    env_file.write_text("# no key\n", encoding="utf-8")
+    env_file.chmod(0o600)
+    absent = subprocess.run(["bash", str(script_path)], capture_output=True, text=True)
+    assert absent.returncode == 2, (
+        f"absent key must return 2; got {absent.returncode} stderr={absent.stderr!r}"
+    )
+    assert (cred_root / "MASSIVE_API_KEY").read_text(encoding="utf-8").strip() == _THROWAWAY_KEY
+    assert (cred_root / "POLYGON_API_KEY").read_text(encoding="utf-8").strip() == _THROWAWAY_KEY
+
+
+def test_p10_prereqs_wired_into_contract_lane_path_filters() -> None:
+    """P10: ci.yml path filters include market-memory-spy-rest-prereqs.sh."""
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    assert '      - "app/deploy/market-memory-spy-rest-prereqs.sh"' in workflow, (
+        "ci.yml must include market-memory-spy-rest-prereqs.sh in path filters"
+    )
+
+
 def test_m0d_suite_is_wired_into_market_memory_contract_lane() -> None:
     """contract-delta reds a new pytest suite named by no run: step."""
     workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
@@ -1619,5 +2120,6 @@ def test_m0d_suite_is_wired_into_market_memory_contract_lane() -> None:
         "app/deploy/macro-market-memory-technicals-v2.service",
         "app/deploy/macro-market-memory-experience-v2.service",
         "config/market_memory_spy_experience_registration.v2.json",
+        "app/deploy/market-memory-spy-rest-prereqs.sh",
     ):
         assert f'      - "{path}"' in workflow

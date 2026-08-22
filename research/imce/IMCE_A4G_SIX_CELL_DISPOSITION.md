@@ -12,11 +12,11 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 
 | Trial family | Cells | Cell definition |
 |---|---|---|
-| `rf.cycle_pattern.imce_phase_v0` | 3 | 3 state targets × pooled homebuilder stratum × contrast [M vs family/age prior] |
-| `rf.cycle_pattern.imce_sync_v0` | 2 | targets {`next_local_state_1rp`, `forward_63d_drawdown_tail`} × contrast [M+R vs M] |
-| `rf.cycle_pattern.imce_risk_v0` | 1 | `forward_63d_drawdown_tail` × [M vs family/stratum prior] |
+| `rf.cycle_pattern.imce_phase_v0` | 3 | 3 state targets × historical v0 population `named_subset_basis: [PHM, KBH]` (prospective v0 eligible pooled cohort `[DHI, PHM, KBH, TOL]`, label truth table — **[A4P.1 R2]**, was "pooled homebuilder stratum") × contrast [M vs family/age prior] |
+| `rf.cycle_pattern.imce_sync_v0` | 2 | targets {`next_local_state_1rp`, `forward_63_trading_day_drawdown_tail`} × contrast [M+R vs M] **[A4P.1 R3]**, was `forward_63d_drawdown_tail` |
+| `rf.cycle_pattern.imce_risk_v0` | 1 | `forward_63_trading_day_drawdown_tail` × [M vs family/stratum prior] |
 
-**Six cell IDs — minted and frozen [AP8, M2, A4P binding; presented to Sol for ratification], the canonical
+**Six cell IDs — minted and frozen [AP8, M2, A4P binding; ratified + naming normalized by Sol's fourth gate, A4P.1 R3], the canonical
 source is contract §11 and YAML `six_cell_ids_union`; this table uses them, it does not itself define them:**
 
 | Cell | ID |
@@ -25,7 +25,7 @@ source is contract §11 and YAML `six_cell_ids_union`; this table uses them, it 
 | 2 | `imce_phase_v0.next_order_softness_3rp` |
 | 3 | `imce_phase_v0.order_softness_false_repair_3rp` |
 | 4 | `imce_sync_v0.next_order_softness_1rp` |
-| 5 | `imce_sync_v0.forward_63d_drawdown_tail` |
+| 5 | `imce_sync_v0.forward_63_trading_day_drawdown_tail` |
 | 6 | `imce_risk_v0.forward_63_trading_day_drawdown_tail` |
 
 ---
@@ -116,16 +116,16 @@ what "thin historical read" concretely means for these cells.
 | State-vector observability (AG14/AP1) | **SETTLED [AP1].** `next_local_state_1rp` tracks the same `order_softness` next-period cohort state as Cell 1 — not an independently-defined state. |
 | Six elections touched | E2 (fully settled via AP1) |
 
-### Cell 5 — `imce_sync_v0.forward_63d_drawdown_tail` — `rf.cycle_pattern.imce_sync_v0`, target: `forward_63d_drawdown_tail` (M+R vs M)
+### Cell 5 — `imce_sync_v0.forward_63_trading_day_drawdown_tail` — `rf.cycle_pattern.imce_sync_v0`, target: `forward_63_trading_day_drawdown_tail` (M+R vs M) [**A4P.1 R3**, cell ID and target normalized from `forward_63d_drawdown_tail`]
 
 | Field | Value |
 |---|---|
-| Target | `forward_63d_drawdown_tail`, contrast [M+R vs M] |
+| Target | `forward_63_trading_day_drawdown_tail`, contrast [M+R vs M] |
 | Block basis | **SETTLED — B ≤ 3, cell-level [AP2, A4P binding — was conditional at A4G, resolved here].** This is a market/risk target, not itself a `next_local_state`/D5 target — but its `M_t` feature composition now includes `order_softness` (AP2: "all six v0 inferential historical cells use the same order-softness mechanism basis"), and `order_softness` names cancellation-rate disclosure. Per the cell-level ruling (MAJ-1), that makes this cell B≤3-entire, same composition and grind-block partial-coverage caveat as Cells 1–4 — **not** the B≤5 general basis; that branch is retired for this cell. |
 | LEN membership | **EXCLUDED — cell-level [AP2]**, same as Cells 1–4 (was conditional at A4G, now settled). |
 | NVR stratum handling | Separate stratum, never pooled |
 | Predetermined status | `underpowered_accruing` |
-| State-vector observability (AG14/AP1) | The cell's *target* (`forward_63d_drawdown_tail`) is a market drawdown outcome, not itself a D5-state target — AG14/AP1's target-to-state mapping governs the phase family and sync Cell 4 only. This cell's `M_t` **input basis** draws `order_softness` (AP2), which is why its block cap is now B≤3 rather than B≤5. |
+| State-vector observability (AG14/AP1) | The cell's *target* (`forward_63_trading_day_drawdown_tail`) is a market drawdown outcome, not itself a D5-state target — AG14/AP1's target-to-state mapping governs the phase family and sync Cell 4 only. This cell's `M_t` **input basis** draws `order_softness` (AP2), which is why its block cap is now B≤3 rather than B≤5. |
 | Six elections touched | E2 bears on feature construction (now settled — `order_softness` is the basis, AP2) |
 
 ### Cell 6 — `imce_risk_v0.forward_63_trading_day_drawdown_tail` — `rf.cycle_pattern.imce_risk_v0`, target: `forward_63_trading_day_drawdown_tail` (M vs family/stratum prior)

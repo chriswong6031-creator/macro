@@ -15,6 +15,18 @@ firewall). Covers:
   - _load_visits_context degrades safely against a real (empty) store
   - build() integration: the visits block appears on command rows and never
     moves opportunity_score/edge_remaining/stage (score neutrality)
+  - P1-R3 (durable scoped key-exclusion recovery) hub-level hostile items:
+    a company-scoped OPEN exception blocks measured_no_event for JUST that
+    company (item 1) while an uninvolved company in the SAME ctx still reads
+    measured_no_event (item 2, proves scoping is real, not a global block
+    wearing a per-company label); an UNSCOPED exception (no usable sec_code)
+    blocks EVERY name (item 4); positive rows + an open exception for the
+    SAME company render normally AND carry coverage_exception (item 9); an
+    unreadable ledger (exceptions_readable=False) fails closed globally
+    exactly like an unscoped exception (item 10). A separate
+    `_ctx_with_exceptions()` helper is used for all of these — the
+    pre-existing `_ctx()` helper and every test built on it are UNCHANGED,
+    so absent P1-R3 keys keep degrading to "no scoping" as before.
 """
 from __future__ import annotations
 
@@ -22,6 +34,7 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -331,3 +344,229 @@ class TestBuildIntegration:
         assert d0["lean"] == d1["lean"]
         # the visits block itself DID change, proving the fixture took effect
         assert d0["visits"]["state"] != d1["visits"]["state"]
+
+
+# --------------------------------------------------------------------------- #
+# P1-R3 (durable scoped key-exclusion recovery) — hub-level hostile items
+# --------------------------------------------------------------------------- #
+
+def _ctx_with_exceptions(by_code=None, coverage_start="2026-08-01", health=None,
+                          exception_codes=None, unscoped_exceptions=0,
+                          exceptions_readable=True):
+    """A SEPARATE helper from _ctx() above — _ctx() itself is NEVER edited,
+    so every pre-existing test built on it keeps degrading to "no scoping"
+    when the P1-R3 keys are absent entirely, exactly as before P1-R3."""
+    return {
+        "by_code": by_code or {}, "coverage_start": coverage_start,
+        "health": health or {"status": "ok",
+                              "last_success_utc": datetime.now(timezone.utc).isoformat()},
+        "exception_codes": exception_codes if exception_codes is not None else set(),
+        "unscoped_exceptions": unscoped_exceptions,
+        "exceptions_readable": exceptions_readable,
+    }
+
+
+class TestVisitBlockScopedExceptionHubLevel:
+    """Frozen spec §12 hostile items 1, 2, 4, 9, 10 — proven directly
+    against _visit_block() with a hand-built visit_ctx (no collector I/O)."""
+
+    def test_item1_company_scoped_exception_blocks_only_that_company(self):
+        ctx = _ctx_with_exceptions(exception_codes={"000001"})
+        block = hub._visit_block("000001.SZ", ctx)
+        assert block["state"] == "not_yet_available"
+        assert block["state"] != "measured_no_event"
+        assert block["coverage_exception"] == {"scope": "company", "open": 1}
+
+    def test_precedence_scoped_exception_wins_over_upstream_degraded(self):
+        """FIX (correction, 2026-08-22): a ctx that is BOTH
+        status=='upstream_degraded' AND carries a scoped OPEN exception must
+        return 'not_yet_available' (scope 'company'), never the generic
+        'stale' — the more specific sentence wins. Pins the no-rows branch
+        precedence: stale -> scoped/unscoped -> upstream_degraded ->
+        measured_no_event."""
+        ctx = _ctx_with_exceptions(
+            exception_codes={"000001"},
+            health={"status": "upstream_degraded",
+                    "detail": "derived over a DEGRADED same-run china_filings refresh",
+                    "last_success_utc": datetime.now(timezone.utc).isoformat()},
+        )
+        block = hub._visit_block("000001.SZ", ctx)
+        assert block["state"] == "not_yet_available"
+        assert block["state"] != "stale"
+        assert block["coverage_exception"] == {"scope": "company", "open": 1}
+
+    def test_precedence_transport_degraded_alone_still_reads_stale(self):
+        """The swap must NOT change the pre-existing P1-R1 path: a
+        transport-degraded run with NO open exception still reads 'stale',
+        exactly as before."""
+        ctx = _ctx_with_exceptions(
+            exception_codes=set(), unscoped_exceptions=0,
+            health={"status": "upstream_degraded",
+                    "detail": "derived over a DEGRADED same-run china_filings refresh",
+                    "last_success_utc": datetime.now(timezone.utc).isoformat()},
+        )
+        block = hub._visit_block("000001.SZ", ctx)
+        assert block["state"] == "stale"
+        assert block["state"] != "not_yet_available"
+
+    def test_item2_uninvolved_company_in_the_same_ctx_still_measured_no_event(self):
+        """Proves scoping is REAL, not a global block wearing a per-company
+        label: the SAME ctx that blocks 000001 must NOT block 000002."""
+        ctx = _ctx_with_exceptions(exception_codes={"000001"})
+        block_a = hub._visit_block("000001.SZ", ctx)
+        block_b = hub._visit_block("000002.SZ", ctx)
+        assert block_a["state"] == "not_yet_available"
+        assert block_b["state"] == "measured_no_event"
+        assert "coverage_exception" not in block_b
+
+    def test_item4_unscoped_exception_blocks_every_name(self):
+        ctx = _ctx_with_exceptions(exception_codes=set(), unscoped_exceptions=1)
+        for ticker in ("000001.SZ", "600519.SS", "000099.SZ"):
+            block = hub._visit_block(ticker, ctx)
+            assert block["state"] == "not_yet_available"
+            assert block["state"] != "measured_no_event"
+            assert block["coverage_exception"] == {"scope": "plane", "open": 1}
+
+    def test_item9_positive_rows_plus_open_exception_same_company(self):
+        """Rows render normally AND coverage_exception is present —
+        completeness is never asserted alongside positive evidence."""
+        rows = [{
+            "announcement_id": "A1", "sec_code": "000001",
+            "title": "投资者关系活动记录表",
+            "source_published_at": "2026-08-19T09:00:00+08:00",
+            "visitor_raw": "not_yet_available", "visitor_class": "not_yet_available",
+            "ontology_version": "v1", "adjunct_url": "",
+            "kind_en": "IR activity record", "kind_zh": "投资者关系活动记录表",
+        }]
+        ctx = _ctx_with_exceptions(by_code={"000001": rows}, exception_codes={"000001"})
+        block = hub._visit_block("000001.SZ", ctx)
+        assert block["state"] == "ok"
+        assert len(block["recent"]) == 1
+        assert block["coverage_exception"] == {"scope": "company", "open": 1}
+
+    def test_item10_unreadable_ledger_blocks_every_name_globally(self):
+        """exceptions_readable=False fails closed exactly like an unscoped
+        exception — an otherwise clean name still cannot confirm absence,
+        while positive rows still render for a name that has them."""
+        ctx = _ctx_with_exceptions(exception_codes=set(), unscoped_exceptions=0,
+                                    exceptions_readable=False)
+        block = hub._visit_block("000001.SZ", ctx)
+        assert block["state"] == "not_yet_available"
+        assert block["state"] != "measured_no_event"
+        assert block["coverage_exception"]["scope"] == "plane"
+
+        rows = [{
+            "announcement_id": "A1", "sec_code": "600519",
+            "title": "投资者关系活动记录表",
+            "source_published_at": "2026-08-19T09:00:00+08:00",
+            "visitor_raw": "not_yet_available", "visitor_class": "not_yet_available",
+            "ontology_version": "v1", "adjunct_url": "",
+        }]
+        ctx_rows = _ctx_with_exceptions(by_code={"600519": rows}, exceptions_readable=False)
+        block_rows = hub._visit_block("600519.SS", ctx_rows)
+        assert block_rows["state"] == "ok"   # positive evidence still renders
+        assert block_rows["coverage_exception"]["scope"] == "plane"
+
+
+class TestBackwardCompatibilityOfExistingCtxHelper:
+    """Checkpoint requirement (a): _ctx() (the pre-existing helper, left
+    UNEDITED) must keep degrading absent P1-R3 keys to "no scoping" — never
+    a false global block."""
+
+    def test_ctx_without_p1r3_keys_never_blocks_measured_no_event(self):
+        fresh = datetime.now(timezone.utc).isoformat()
+        ctx = _ctx(coverage_start="2026-08-01",
+                    health={"status": "ok", "last_success_utc": fresh})
+        block = hub._visit_block("000001.SZ", ctx)
+        assert block["state"] == "measured_no_event"
+        assert "coverage_exception" not in block
+
+
+class TestNaNSecCodeScopingHubLevel:
+    """Checkpoint requirement (b): a ledger row whose sec_code is NaN-like
+    must increment unscoped_exceptions and must NEVER appear in
+    exception_codes — proven here at the _load_visits_context() level
+    against a REAL coverage_exceptions.parquet (not just the pure
+    is_unscoped_sec_code() unit in tests/test_china_visits_collector.py).
+    A real refresh()-produced ledger can no longer contain a raw NaN sec_code
+    (write_visits' upstream _exception_fields() already normalizes with
+    _fp_norm()) — this simulates a historical/legacy or hand-corrupted
+    ledger row, exactly the defense-in-depth is_unscoped_sec_code() exists
+    to cover."""
+
+    def _write_ledger(self, tmp_path, monkeypatch, sec_code):
+        import collectors.china_visits as cv
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        row = {col: "" for col in cv._EXCEPTION_COLUMNS}
+        row.update({
+            "observation_fingerprint": "obsfp1:" + "a" * 64,
+            "fingerprint_version": "obsfp1", "sec_code": sec_code,
+            "status": "open", "observed_count": 1,
+            "first_seen_utc": "t0", "last_seen_utc": "t0",
+        })
+        df = pd.DataFrame([row]).reindex(columns=list(cv._EXCEPTION_COLUMNS))
+        cv._atomic_write(df, cv._exceptions_path())
+
+    def test_nan_sec_code_is_unscoped_never_a_literal_company(self, tmp_path, monkeypatch):
+        self._write_ledger(tmp_path, monkeypatch, float("nan"))
+        ctx = hub._load_visits_context()
+        assert ctx["unscoped_exceptions"] == 1
+        assert ctx["exception_codes"] == set()
+        assert "nan" not in ctx["exception_codes"]
+
+    def test_nat_sec_code_is_unscoped(self, tmp_path, monkeypatch):
+        self._write_ledger(tmp_path, monkeypatch, pd.NaT)
+        ctx = hub._load_visits_context()
+        assert ctx["unscoped_exceptions"] == 1
+        assert ctx["exception_codes"] == set()
+
+    def test_pd_na_sec_code_is_unscoped_never_raises(self, tmp_path, monkeypatch):
+        self._write_ledger(tmp_path, monkeypatch, pd.NA)
+        ctx = hub._load_visits_context()   # must not raise
+        assert ctx["unscoped_exceptions"] == 1
+        assert ctx["exception_codes"] == set()
+
+
+class TestUnreadableVisitsStoreFailsClosedHubLevel:
+    """FIX (correction, 2026-08-22): an unreadable visits.parquet must NOT
+    render as measured_no_event for every company. load_visits() swallows a
+    read error and answers empty (by design, for its OTHER callers) — the
+    hub must use the strict reader and take the EXISTING source_failure
+    branch for every name instead."""
+
+    def test_unreadable_visits_parquet_reads_source_failure_never_measured_no_event(
+        self, tmp_path, monkeypatch
+    ):
+        import collectors.china_filings as cf
+        import collectors.china_visits as cv
+
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+
+        # A genuine prior successful run — coverage_start stamped,
+        # health.json says "ok" — so the ONLY thing distinguishing this
+        # from a normal healthy read is the tape itself being unreadable
+        # RIGHT NOW (health.json and visits.parquet are two different files).
+        cf.write_filings([{
+            "announcementId": "A1", "sec_code": "000001", "sec_name": "n",
+            "org_id": "o", "title": "投资者关系活动记录表",
+            "publish_ts": "2026-08-19T09:00:00+08:00", "exchange": "szse",
+            "category": "institutional_visit", "kind": None,
+            "announcement_type_raw": "", "adjunct_url": "/x.pdf",
+            "adjunct_type": "PDF", "_collected_at": "2026-08-19T09:00:00+08:00",
+        }])
+        s = cv.refresh()
+        assert s["status"] == "ok"
+        assert cv.read_health()["status"] == "ok"
+
+        # Corrupt the tape AFTER the successful run.
+        cv._visits_path().write_bytes(b"not a parquet file")
+
+        ctx = hub._load_visits_context()
+        assert ctx["health"]["status"] == "source_failure"
+        # A ticker that would otherwise be genuinely clean (no rows, real
+        # coverage_start, health.json says "ok") must read source_failure,
+        # NEVER a false clean measured_no_event.
+        block = hub._visit_block("000001.SZ", ctx)
+        assert block["state"] == "source_failure"
+        assert block["state"] != "measured_no_event"
+        assert block["recent"] == []
