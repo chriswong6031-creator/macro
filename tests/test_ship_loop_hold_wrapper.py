@@ -121,14 +121,14 @@ def _fake_guard(tmp_path: Path, *, state=None, split=None, pull=None):
     return guard, calls
 
 
-def _stub_clean_pushed_git(monkeypatch):
+def _stub_clean_pushed_git(monkeypatch, branch="claude/biocatalyst-p1-0r-authority-closure"):
     def fake_git(_root, *args, **_kwargs):
         if args == ("branch", "--show-current"):
-            return "claude/biocatalyst-p1-0r-authority-closure"
+            return branch
         if args == ("rev-parse", "HEAD"):
             return HEAD
         if args == ("rev-parse", "--abbrev-ref", "@{upstream}"):
-            return "origin/claude/biocatalyst-p1-0r-authority-closure"
+            return f"origin/{branch}"
         if args[:2] == ("rev-list", "--count"):
             return "0"
         if args == ("status", "--porcelain=v1", "--untracked-files=all"):
@@ -151,6 +151,32 @@ def test_lawful_concluded_green_hold_becomes_parked(monkeypatch, tmp_path):
         "passed": ["ci-gate", "fences"],
     }
     assert calls == {"open_pull": 1, "checks": 1}
+
+
+def test_lawful_sol_authority_branch_parks_after_unsafe_branch(monkeypatch, tmp_path):
+    """PR #6207 class: a ratified Sol hold must not loop forever on branch law."""
+    branch = "sol/chairman-tushare-compliance-override-2026-08-21"
+    _stub_clean_pushed_git(monkeypatch, branch=branch)
+    guard, calls = _fake_guard(tmp_path, state={"last_blocker": "unsafe_branch"})
+
+    parked = WRAPPER._parked_hold(guard, {"hook_event_name": "Stop"})
+
+    assert parked == {
+        "number": 6138,
+        "branch": branch,
+        "head": HEAD,
+        "passed": ["ci-gate", "fences"],
+    }
+    assert calls == {"open_pull": 1, "checks": 1}
+
+
+def test_unsafe_branch_hold_exception_is_sol_namespace_only(monkeypatch, tmp_path):
+    """The PARKED exception must not undo the codex/* branch-law incident repair."""
+    _stub_clean_pushed_git(monkeypatch, branch="codex/forbidden-delivery")
+    guard, calls = _fake_guard(tmp_path, state={"last_blocker": "unsafe_branch"})
+
+    assert WRAPPER._parked_hold(guard, {"hook_event_name": "Stop"}) is None
+    assert calls == {"open_pull": 0, "checks": 0}
 
 
 def test_red_or_pending_hold_does_not_park(monkeypatch, tmp_path):
@@ -182,12 +208,12 @@ def test_dirty_or_not_exactly_pushed_hold_does_not_park(monkeypatch, tmp_path):
     assert WRAPPER._parked_hold(guard, {"hook_event_name": "Stop"}) is None
 
 
-def test_hold_probe_spends_no_github_quota_before_guard_has_reached_unmerged(monkeypatch, tmp_path):
+def test_hold_probe_spends_no_github_quota_before_terminal_candidate_blocker(monkeypatch, tmp_path):
     guard, calls = _fake_guard(tmp_path, state={"last_blocker": "render_pending"})
     monkeypatch.setattr(
         WRAPPER,
         "_git",
-        lambda *_a, **_k: pytest.fail("pre-unmerged Stop must not even inspect the branch"),
+        lambda *_a, **_k: pytest.fail("non-terminal blocker must not even inspect the branch"),
     )
 
     assert WRAPPER._parked_hold(guard, {"hook_event_name": "Stop"}) is None
