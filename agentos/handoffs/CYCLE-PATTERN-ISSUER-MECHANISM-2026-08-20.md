@@ -356,3 +356,48 @@ is the explicit law now; do not execute A4's state transition from anywhere but 
 §4a — every flip is byte-exact and verbatim-or-abort; do not re-derive the three `config_hash`
 values by hand without importing `engine/trial_ledger.py`'s actual functions — the formula is a
 pure function of `(family, n, reason)` and any hand-approximation risks a silent mismatch.
+
+# A4 registration closure addendum (Sol's conditional authorization executed, 2026-08-22)
+
+**What happened:** the full fourth-gate chain closed in one session. A4P.1 landed (PR #6237,
+merged `782b6e570350` 16:35:48Z, server-verified identical to main) after one Opus red-team
+round — MAJ-1 (the §4a transition table missed the packet's own title/§0/Wave/Purpose lines;
+executing it verbatim would have produced exactly the "registered bit inside a candidate
+document" state Sol forbade) plus 7 minors and 2 nits, all fixed and byte-verified by the
+commissioning Fable session on head `5cd07a460eda`; MAJ-2 (two quotes absent from the reviewer's
+supplied standard) adjudicated VERBATIM-CONFIRMED against Sol's actual message by the
+commissioning session, which holds it. That landing activated Sol's explicit conditional
+authorization, and **A4 proper executed the same day**: PR #6244, merged `256b5695ab6a`
+17:31:02Z, server-verified identical to main.
+
+**Registered state (the cold stranger starts here):** the three `rf.cycle_pattern.imce_*`
+trial families are REGISTERED. `data/trial_ledger.jsonl` carries three `declared_budget` rows
+(phase n=3 `a3b8ac5c0d0205cb`, sync n=2 `1d69c1fa6b897b6a`, risk n=1 `309d76c3a8dfbb5c`),
+appended via `engine/trial_ledger.py log_declared_budget` (all returned True; ledger previously
+held 1,667 rows, zero imce rows). Contract V1.2.1 is stamped `registered` with
+`repository_pin_observed: 782b6e5703505af04ba21943b7d0a332853e286d` (origin/main at A4 pickup,
+recorded before any edit) and `registration.config_hash: 05b43f9119fd1fd357d3994bd652abbc3cdff3d8`
+(git blob SHA-1 of the as-stamped-registered contract MD; the mandatory §4a.1 post-commit
+verification passed three ways — working tree == committed blob == YAML record).
+`requires_fable_adjudication: false`; three families `declared`; the packet reads
+EXECUTED — REGISTERED at A4 (IMCE-03), 2026-08-22. Registration commit `0ae5c413471a` carries
+the Act-4 no-outcome-access attestation in its message.
+
+**verified:** merge `gh api repos/.../compare/256b5695ab6a...main` → `status: identical`;
+ledger rows `python3` re-read of the tail three rows against the frozen hashes; YAML
+`yaml.safe_load` parse + field assertions; post-commit `git hash-object` triple-equality.
+
+**What is NOT done, by design:** no runner, no historical returns, no Brier/p-values, no CPI
+issuer truth, no Radar/Prophet/sizing, no prospective collector, no FDR-partition writer, no
+boundary receipts (honestly open per R6 — outcome evaluation stays FENCED until a boundary
+evidence wave receipts the frozen v0 boundaries from first-party sources or marks blocks
+`NOT_RECONSTRUCTABLE_FOR_V0_OUTCOME_PARTITION`). Next program priority per Sol: PROSPECTIVE
+OBSERVATION ACTIVATION — first-availability capture must not wait on boundary receipting or
+DHI/TOL archaeology.
+
+**do_not_redo (additions):** do not re-append or re-stamp the registration — the three ledger
+rows and the registered YAML/MD/packet state are live on main; a second `log_declared_budget`
+call for these families returns False by design (dedup on `(family, n, reason)` hash) and any
+re-stamp is a new decision, not an execution. Do not compute ANY outcome statistic on the six
+registered cells until the boundary-receipt fence lifts — the registered `criteria-commit
+strictly precedes outcome access` attestation binds every future session.
