@@ -262,9 +262,18 @@ def _availability(ticker: str, evidence: Mapping[str, Any]) -> tuple[str, str]:
     instead of a silent pass-through. Per-name absence WITHIN an available
     map (the ordinary case — a name simply is not knife-risk / not extended)
     stays a genuine ``False`` and is unaffected; only the WHOLE-map-absent
-    case (mirrors ``plc_available``'s own shape) is caught here. Both flags
-    default to available (``True``) when the caller's evidence bundle omits
-    them at all, matching every fixture/test that never set them."""
+    case (mirrors ``plc_available``'s own shape) is caught here.
+
+    Sol pre-settlement repair (2026-08-22): no required whole-read
+    availability flag may default to available. ``ENTRY_OPEN`` is reachable
+    only when ``plc_available``, ``knife_available`` and
+    ``extension_available`` are all EXPLICITLY present and affirmatively
+    True. Omitted / ``None`` fails closed to ``UNAVAILABLE_DATA`` with a
+    ``…_unavailable(unstated)`` source naming the missing read; explicit
+    False keeps the existing bare ``…_unavailable`` source. The per-name
+    conservative blockers above this gate (RIGHTS_BLOCKED / WAIT_PULLBACK /
+    RAN_DONT_CHASE / WAIT_CONFLUENCE) are deliberately NOT weakened by an
+    absent flag — a known blocker outranks an unknown read."""
     sig_verdict = evidence.get("sig_verdict") or {}
     verdict = sig_verdict.get(ticker)
     if verdict is None:
@@ -286,17 +295,18 @@ def _availability(ticker: str, evidence: Mapping[str, Any]) -> tuple[str, str]:
     if not eligible:
         return WAIT_CONFLUENCE, "hk_signal_gate"
 
-    plc_available = bool(evidence.get("plc_available", True))
-    if not plc_available:
-        return UNAVAILABLE_DATA, "placement_gate_unavailable"
-
-    knife_available = bool(evidence.get("knife_available", True))
-    if not knife_available:
-        return UNAVAILABLE_DATA, "knife_read_unavailable"
-
-    extension_available = bool(evidence.get("extension_available", True))
-    if not extension_available:
-        return UNAVAILABLE_DATA, "extension_read_unavailable"
+    for flag_key, unavailable_source in (
+        ("plc_available", "placement_gate_unavailable"),
+        ("knife_available", "knife_read_unavailable"),
+        ("extension_available", "extension_read_unavailable"),
+    ):
+        flag = evidence.get(flag_key)
+        if flag is None:
+            # Omitted or explicit None: the read's availability is UNKNOWN,
+            # which must never default to pass (Sol repair 2026-08-22).
+            return UNAVAILABLE_DATA, f"{unavailable_source}(unstated)"
+        if not bool(flag):
+            return UNAVAILABLE_DATA, unavailable_source
 
     return ENTRY_OPEN, "hk_signal_gate"
 
