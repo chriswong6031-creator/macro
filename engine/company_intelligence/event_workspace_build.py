@@ -35,24 +35,7 @@ from .event_workspace import (
 )
 from .events import CompanyEvent, FiscalPeriod
 from .identity import IssuerRegistry
-
-
-_GLANCE_SPANS: tuple[tuple[str, int, str, str, str], ...] = (
-    ("claim_revenue_lede", 2, "$109.4 billion in revenue, up 16%", "numeric", "revenue"),
-    ("claim_iphone_yoy", 5, "up 22% from a year ago", "numeric", "iphone_revenue_yoy_pct"),
-    ("claim_mac_yoy", 6, "growing an impressive 29%", "numeric", "mac_revenue_yoy_pct"),
-    ("claim_services_revenue", 11, "$30.7 billion", "numeric", "services_revenue"),
-    ("claim_install_base", 17, "over two and a half billion", "numeric", "active_devices"),
-    ("claim_demand_vs_supply", 55, "remarkably better than we thought", "quote", "demand_vs_supply"),
-    ("claim_memory_flood", 65, "100-year flood", "quote", "memory"),
-    (
-        "claim_fx_headwind",
-        26,
-        "two and a half percentage points to the year-over-year total company growth rate",
-        "numeric",
-        "fx_yoy_headwind",
-    ),
-)
+from .issuer_profiles import IssuerProfile, apple_profile
 
 
 def _span_payload_from_release_figure(
@@ -130,18 +113,27 @@ def build_event_workspace(
     fiscal_period: FiscalPeriod,
     exhibit_body: str,
     filing: Mapping[str, Any],
-    transcript: Mapping[str, Any],
-    transcript_sha256: str,
+    transcript: Mapping[str, Any] | None,
+    transcript_sha256: str | None = None,
     observed_at: object,
     source_available_at: object,
     collector_rows: Sequence[Mapping[str, Any]] | None = None,
     wire_record_found: bool = False,
     prior_source_sha256: str | None = None,
+    profile: IssuerProfile | None = None,
 ) -> dict[str, Any]:
-    """Bind one issuer event from identity + 8-K exhibit + transcript.
+    """Bind one issuer event from identity + 8-K exhibit + (if held) transcript.
 
     ``prior_source_sha256`` is the previously published exhibit hash.  A new
     hash on the same canonical event walks the lifecycle to ``corrected``.
+
+    ``profile`` supplies the issuer-specific extraction seam (additional
+    ``event_fact.v1`` entries from the release body, and transcript claims);
+    it defaults to :func:`issuer_profiles.apple_profile` so every pre-A5A
+    caller keeps its exact behavior.  ``transcript`` is ``None`` for an issuer
+    whose call is not held (e.g. a homebuilder absent from the Terminal tx
+    index) — the workspace still publishes, with the transcript recorded as a
+    typed absence rather than treated as a refusal.
     """
     resolved = registry.resolve_ticker(ticker, asof=asof)
     if resolved is None:
@@ -201,7 +193,9 @@ def build_event_workspace(
 
     release_doc_id = bound.revision.document_id
     tx_doc_id = f"tx:{aliases.earnings_narrative_keys[0]}"
-    segments = list(transcript.get("segments") or [])
+    has_transcript = transcript is not None
+    segments = list((transcript or {}).get("segments") or [])
+    active_profile = profile or apple_profile()
 
     facts: list[dict[str, Any]] = []
     claims: list[dict[str, Any]] = []
@@ -235,63 +229,49 @@ def build_event_workspace(
             ),
         })
 
-    for fact_id, index, literal, kind, metric in _GLANCE_SPANS:
-        if index >= len(segments):
-            payload = None
-            segment: Mapping[str, Any] = {}
-        else:
-            segment = segments[index]
-            payload = _span_payload_from_transcript(
-                document_id=tx_doc_id,
-                body_sha256=transcript_sha256,
-                segment_index=index,
-                segment=segment,
-                literal=literal,
-            )
-        if payload is None:
-            claims.append({
-                "schema": "event_claim.v1",
-                "claim_id": fact_id,
-                "text": literal,
-                "kind": kind,
-                "metric": metric,
-                "typed_absence": _absence(
-                    reason="no_span_addressable_evidence",
-                    subject=metric,
-                    detail=f"literal {literal!r} is not uniquely addressable in the transcript",
-                    event_id=event_id,
-                    document_id=tx_doc_id,
-                ),
-            })
-            continue
-        claims.append({
-            "schema": "event_claim.v1",
-            "claim_id": fact_id,
-            "text": literal,
-            "kind": kind,
-            "metric": metric,
-            "speaker": segment.get("speaker"),
-            "role": segment.get("role") or None,
-            "evidence_spans": [payload],
-            "source_span": payload,
-        })
+    facts.extend(
+        active_profile.extract_release_facts(
+            bound=bound, document_id=release_doc_id, event_id=event_id, fiscal_period=fiscal_period,
+        )
+    )
 
-    facts.append({
-        "schema": "event_fact.v1",
-        "fact_id": "fact_questions_count",
-        "event_id": event_id,
-        "metric": "questions_count",
-        "typed_absence": _absence(
-            reason="no_span_addressable_evidence",
-            subject="questions_count",
-            detail=(
-                "analyst role is empty on the held transcript; 14 is overlay "
-                "history, not a structured Q&A count"
+    claims.extend(
+        active_profile.extract_transcript_claims(
+            segments=segments, document_id=tx_doc_id, body_sha256=transcript_sha256 or "", event_id=event_id,
+        )
+    )
+
+    if has_transcript:
+        facts.append({
+            "schema": "event_fact.v1",
+            "fact_id": "fact_questions_count",
+            "event_id": event_id,
+            "metric": "questions_count",
+            "typed_absence": _absence(
+                reason="no_span_addressable_evidence",
+                subject="questions_count",
+                detail=(
+                    "analyst role is empty on the held transcript; 14 is overlay "
+                    "history, not a structured Q&A count"
+                ),
+                event_id=event_id,
+                document_id=tx_doc_id,
             ),
-            event_id=event_id,
-            document_id=tx_doc_id,
-        ),
-    })
+        })
+    else:
+        facts.append({
+            "schema": "event_fact.v1",
+            "fact_id": "fact_questions_count",
+            "event_id": event_id,
+            "metric": "questions_count",
+            "typed_absence": _absence(
+                reason="no_transcript",
+                subject="questions_count",
+                detail="no transcript is held for this event",
+                event_id=event_id,
+                document_id=tx_doc_id,
+            ),
+        })
 
     join_status, join_absence, join_warning = _collector_join_status(
         collector_rows, cik=cik, accession=accession, event_id=event_id
@@ -326,11 +306,11 @@ def build_event_workspace(
     }]
 
     guidance: list[dict[str, Any]] = []
-    if len(segments) > 26:
+    if has_transcript and len(segments) > 26:
         guide_literal = "grow between 9%-11% year-over-year"
         guide_span = _span_payload_from_transcript(
             document_id=tx_doc_id,
-            body_sha256=transcript_sha256,
+            body_sha256=transcript_sha256 or "",
             segment_index=26,
             segment=segments[26],
             literal=guide_literal,
@@ -370,6 +350,17 @@ def build_event_workspace(
             "document_id": tx_doc_id,
             "source_sha256": transcript_sha256,
             "receipt_state": "byte_replayed",
+        } if has_transcript else {
+            "kind": "transcript",
+            "document_id": tx_doc_id,
+            "receipt_state": "typed_absence",
+            "typed_absence": _absence(
+                reason="no_transcript",
+                subject="transcript",
+                detail="no transcript is held for this event",
+                event_id=event_id,
+                document_id=tx_doc_id,
+            ),
         },
         {
             "kind": "public_wire",
@@ -405,7 +396,20 @@ def build_event_workspace(
                 "accession": bound.revision.filing_key.accession,
             },
         },
-        "transcript": {"status": "present", "document_id": tx_doc_id},
+        "transcript": (
+            {"status": "present", "document_id": tx_doc_id}
+            if has_transcript
+            else {
+                "status": "absent",
+                "typed_absence": _absence(
+                    reason="no_transcript",
+                    subject="transcript",
+                    detail="no transcript is held for this event",
+                    event_id=event_id,
+                    document_id=tx_doc_id,
+                ),
+            }
+        ),
         "slides": {
             "status": "absent",
             "typed_absence": _absence(

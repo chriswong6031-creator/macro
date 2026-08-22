@@ -286,6 +286,53 @@ waves:
       registered true, requires_fable_adjudication false, three families
       declared. Zero outcome computation; no runner; boundary receipts stay
       honestly open per R6.
+  - id: A5A
+    title: IMCE-A5A — event-workspace publication generalization (DHI/PHM/KBH/TOL results events through the existing event_workspace.v1 path; source truth only)
+    status: built_not_merged
+    depends_on: [A4]
+    next_action: >
+      BUILT — DRAFT PR open, pending the commissioning session's review and
+      merge (this record will not say "done" until that PR lands on
+      origin/main; update the status/commit hash then). Ran the registered
+      homebuilder v0 experiment's SOURCE PLANE — nothing else —
+      through the existing Company Intelligence event_workspace.v1 publication
+      lane: no new source/event/document store, no new scheduler, no copied
+      refresh_imce_* script. Files: engine/company_intelligence/issuer_profiles.py
+      (NEW — DHI/PHM/KBH/TOL IssuerIdentity constructors, CIKs sourced from
+      data/edgar/ticker_cik_ledger.json @ origin/main 0e57b06d8e23 verified
+      against the frozen spec's own DHI 882184/PHM 822416/KBH 795266/TOL 794170,
+      MIC+fiscal_year_end_month verified against each issuer's own SEC
+      submissions JSON; the IssuerProfile generic/issuer seam; four homebuilder
+      release-fact extractors using engine.earnings_release.receipts'
+      byte-replayable receipt_for_literal, scoped per disclosure block/table
+      cell); engine/company_intelligence/event_workspace.py (registry
+      constructor production_registry() only — apple_registry()/apple_issuer()
+      byte-identical); engine/company_intelligence/event_workspace_build.py
+      (generic profile seam: build_event_workspace gained an optional
+      `profile` param defaulting to apple_profile(), and transcript became
+      optional — a homebuilder with no held call publishes with a typed
+      "no_transcript" absence rather than a refusal; zero AAPL output change,
+      proven by the full pre-A5A test suite passing unmodified);
+      scripts/refresh_event_workspaces.py (acquire_results_filing generalizes
+      acquire_flagship_filing into frozen-accession + discovery-mode legs;
+      acquire_transcript_for generalizes the transcript fetch with a
+      required=False leg; refresh() now builds a multi-event generation —
+      AAPL flagship hard-fail, each of the four homebuilders fail-soft,
+      one issuer's acquisition/extraction error never blocks its siblings).
+      No workflow changes needed — company-intelligence.yml's sparse-checkout
+      already covers the whole engine/company_intelligence/ directory and the
+      unchanged script entrypoint. New tests (tests/test_issuer_profiles_a5a.py)
+      cover registry identity, discovery-mode filing selection, DHI/PHM/KBH/TOL
+      fact extraction against REAL committed historical EX-99.1 fixtures
+      (span receipts verified via verify_span), a genuine real-filing
+      cancellation-rate typed absence (PulteGroup's FY2026 Q2 release
+      discloses none), correction semantics (same event_id, new revision),
+      multi-event generation with AAPL regression, and per-issuer fail-soft.
+      A5A stops at source truth: zero data/cycle_pattern/ writes, zero IMCE
+      observation/M_t/YoY computation, zero prospective labeling anywhere in
+      the diff — every new fixture/test is labelled historical/reconstruction.
+      LEN/NVR are NOT added this wave (Sol: LEN outside v0; NVR separate
+      stratum). Next gate: A5B (not yet scoped by this wave).
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's
