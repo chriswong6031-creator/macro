@@ -69,7 +69,6 @@ ROOT = Path(__file__).resolve().parent.parent
 
 sys.path.insert(0, str(ROOT))
 from engine.cycle_pattern.consumer_authority import (  # noqa: E402
-    advisory_class_subset_violations as _advisory_class_subset_violations,
     validate_registry as _validate_consumer_registry,
 )
 from engine.cycle_pattern.truths import load_truths  # noqa: E402
@@ -287,30 +286,6 @@ def scan_registry_vocabulary(
     return _validate_consumer_registry(list(latest.values()))
 
 
-def scan_registry_vocabulary_advisories(root: Path, path: Path | None = None) -> list[str]:
-    """WARN-tier (non-fatal) class-subset advisories for every latest-version row.
-
-    Never affects exit code — see
-    engine.cycle_pattern.consumer_authority.advisory_class_subset_violations
-    for the full rationale (Fable adjudication, MAJOR-2). Returns [] on a
-    missing/empty registry rather than refusing — this report is advisory,
-    so there is nothing to warn about when there is nothing to scan.
-    """
-    truths_path = path if path is not None else (root / "data" / "cycle_pattern" / "truths.jsonl")
-    rows = load_truths(truths_path)
-    if not rows:
-        return []
-
-    latest: dict[str, dict] = {}
-    for row in rows:
-        tid = row.get("truth_id", "")
-        prev = latest.get(tid)
-        if prev is None or row.get("version", 0) > prev.get("version", 0):
-            latest[tid] = row
-
-    return _advisory_class_subset_violations(list(latest.values()))
-
-
 # ---------------------------------------------------------------------------
 # Selftest
 # ---------------------------------------------------------------------------
@@ -500,19 +475,13 @@ def main() -> int:
             file=sys.stderr,
         )
 
-    # ── CPI-H1: WARN-tier (non-fatal) least-privilege class-subset advisory
-    # (Fable adjudication, MAJOR-2) — never affects exit code ─────────────
-    advisories = scan_registry_vocabulary_advisories(root)
-    if advisories:
-        for note in advisories:
-            print(f"  [WARN-ADVISORY] consumer-vocabulary class-subset: {note}")
-        print(
-            f"::notice::check_cycle_pattern_authority: {len(advisories)} truth "
-            f"registry row(s) grant an allowed_consumers token outside their "
-            f"status class's matrix allowed_consumers — least-privilege (CPI-H1 "
-            f"ruling 8) is a normative convention, ADVISORY only, not enforced. "
-            f"See research/imce/IMCE_D1C_RELEASE_RECORD.md."
-        )
+    # CPI-H1.1 (Sol adjudication, 2026-08-21/22): the least-privilege
+    # class-subset invariant (CPI-H1 ruling 8) is now HARD, folded into
+    # scan_registry_vocabulary() above via validate_consumer_vocabulary() —
+    # the former WARN-tier scan_registry_vocabulary_advisories() reporting
+    # path is retired rather than left standing as a second, shadowing check
+    # for the same invariant (see engine/cycle_pattern/consumer_authority.py
+    # module docstring).
 
     if hard or vocab_errors:
         return 1

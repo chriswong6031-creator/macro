@@ -277,8 +277,14 @@ class TestUnknownStatusRaises:
     def test_every_real_status_resolves_without_raising_on_class_lookup(self, status):
         """Sanity: every truths.py VALID_STATUSES value DOES map to a matrix
         class (including the candidate/candidates bridge) — the raise is for
-        genuine typos/unregistered statuses only, not real ones."""
-        row = _base_row(status=status, allowed_consumers=["measurement_page"])
+        genuine typos/unregistered statuses only, not real ones.
+
+        Uses cycle_docs, the one token every class's matrix allowed_consumers
+        carries (CPI-H1.1 confirmed this stays true after the display/
+        promoted_null envelope amendment) — this test is about status/class
+        RESOLUTION, not the class-subset invariant, so it must not
+        accidentally trip the HARD subset check tested separately below."""
+        row = _base_row(status=status, allowed_consumers=["cycle_docs"])
         validate_consumer_vocabulary(row)  # must not raise
 
 
@@ -323,6 +329,123 @@ class TestTypeValidation:
             forbidden_consumers=sorted(UNIVERSAL_MONEY_PATH_FORBIDS),
         )
         validate_consumer_vocabulary(row)  # must not raise
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CPI-H1.1 (Sol adjudication, 2026-08-21/22): the least-privilege class-
+# subset invariant (CPI-H1 ruling 8) is promoted from WARN-tier advisory to
+# HARD. Five Sol-mandated discriminating mutations for this heal:
+#   (a) a future display-class row granting a registered-but-non-class
+#       surface -> HARD fail
+#   (b) a promoted_null row granting neuralweb_context -> HARD fail (also
+#       covered structurally by TestPromotedNullNeuralwebContextFails above,
+#       which now exercises the SAME general subset check, not a separate
+#       neuralweb-only code path)
+#   (c) CPI-008 granting sync_gauge_display -> pass
+#   (d) all seven existing adjudicated rows validate -> pass (real registry)
+#   (e) a money-path token on the allow side -> remains HARD fail (also
+#       covered structurally by TestAllowSideMoneyPathLeakFails above)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestClassSubsetInvariantIsHard:
+    def test_a_future_display_row_granting_registered_non_class_surface_fails(self):
+        """(a) A registered (canonical) token that is NOT in the display
+        class's matrix allowed_consumers — e.g. lead_lag_interaction_layer,
+        a narrow_forbidden-group surface never added to display's envelope
+        — must HARD fail even though the token itself is a real, known
+        surface (not an orphan)."""
+        row = _base_row(
+            status="display",
+            allowed_consumers=["measurement_page", "lead_lag_interaction_layer"],
+        )
+        with pytest.raises(ConsumerAuthorityError, match="lead_lag_interaction_layer"):
+            validate_consumer_vocabulary(row)
+
+    def test_b_promoted_null_granting_neuralweb_context_fails(self):
+        """(b) Explicit CPI-H1.1 restatement: a promoted_null row granting
+        neuralweb_context fails under the general class-subset check (the
+        matrix's promoted_null class allowed_consumers does not list
+        neuralweb_context, amended or not)."""
+        row = _base_row(
+            status="promoted_null",
+            allowed_consumers=["cycle_docs", "neuralweb_context"],
+        )
+        with pytest.raises(ConsumerAuthorityError, match="neuralweb_context"):
+            validate_consumer_vocabulary(row)
+
+    def test_c_promoted_null_granting_sync_gauge_display_passes(self):
+        """(c) CPI-H1.1 envelope closure: promoted_null's amended matrix
+        allowed_consumers now includes sync_gauge_display (CPI-008's real
+        grant) — a synthetic row exercising exactly that grant must pass."""
+        row = _base_row(
+            status="promoted_null",
+            allowed_consumers=["measurement_page", "sync_gauge_display"],
+        )
+        validate_consumer_vocabulary(row)  # must not raise
+
+    @pytest.mark.needs_full_checkout("data")
+    def test_c_real_cpi008_row_passes(self):
+        """(c) End-to-end against the real registry: CPI-008's actual latest
+        row (status=promoted_null, allowed_consumers includes
+        sync_gauge_display) must validate clean."""
+        rows = load_truths(TRUTHS_PATH)
+        latest: dict[str, dict] = {}
+        for row in rows:
+            tid = row["truth_id"]
+            if tid not in latest or row["version"] > latest[tid]["version"]:
+                latest[tid] = row
+        assert "CPI-008" in latest
+        row = latest["CPI-008"]
+        assert row["status"] == "promoted_null"
+        assert "sync_gauge_display" in row["allowed_consumers"]
+        validate_consumer_vocabulary(row)  # must not raise
+
+    @pytest.mark.needs_full_checkout("data")
+    def test_d_all_seven_adjudicated_rows_validate_clean(self):
+        """(d) All seven CPI-H1-escalated rows (CPI-002/004/005/008/011/
+        014/015, research/imce/IMCE_D1C_RELEASE_RECORD.md) validate clean
+        against the amended class envelopes — the real registry rows, not
+        synthetic reconstructions."""
+        rows = load_truths(TRUTHS_PATH)
+        latest: dict[str, dict] = {}
+        for row in rows:
+            tid = row["truth_id"]
+            if tid not in latest or row["version"] > latest[tid]["version"]:
+                latest[tid] = row
+        seven_ids = {
+            "CPI-002", "CPI-004", "CPI-005", "CPI-008",
+            "CPI-011", "CPI-014", "CPI-015",
+        }
+        assert seven_ids <= set(latest), f"missing from registry: {seven_ids - set(latest)}"
+        for tid in sorted(seven_ids):
+            row = latest[tid]
+            validate_consumer_vocabulary(row)  # must not raise, per-row
+
+        errors = validate_registry([latest[tid] for tid in seven_ids])
+        assert not errors, "\n".join(errors)
+
+    def test_e_money_path_token_on_allow_side_still_hard_fails(self):
+        """(e) Explicit CPI-H1.1 restatement: the allow-side money-path leak
+        check (MAJOR-1) still fires ahead of / independently from the new
+        class-subset check — a money-path token in allowed_consumers is
+        never legal, on any status, class-subset amendments notwithstanding."""
+        row = _base_row(
+            status="display",
+            allowed_consumers=["measurement_page", "board_rank"],
+            forbidden_consumers=sorted(UNIVERSAL_MONEY_PATH_FORBIDS),
+        )
+        with pytest.raises(ConsumerAuthorityError, match="money-path"):
+            validate_consumer_vocabulary(row)
+
+    def test_class_subset_error_names_status_and_extra_tokens(self):
+        """Sanity: the promoted HARD error message is legible — names the
+        status and the offending token(s), not a generic failure."""
+        row = _base_row(
+            status="superseded",
+            allowed_consumers=["cycle_docs", "measurement_page"],
+        )
+        with pytest.raises(ConsumerAuthorityError, match=r"superseded.*measurement_page"):
+            validate_consumer_vocabulary(row)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -559,34 +682,36 @@ class TestCIWiredRegistryScan:
         finally:
             sys.path.pop(0)
 
-    @pytest.mark.needs_full_checkout("data")
-    def test_scan_registry_vocabulary_advisories_names_exactly_seven_known_rows(self):
-        """WARN-tier report (MAJOR-2, Fable adjudication): must name exactly
-        the 7 known class-subset violations documented in
-        research/imce/IMCE_D1C_RELEASE_RECORD.md as escalated to Sol — never
-        more (no unrelated row swept in), never fewer (no accidental
-        widening/shrinking silently absorbing one), and never fatal
-        (non-empty here does not signal a failure)."""
+    def test_advisory_class_subset_function_retired(self):
+        """CPI-H1.1: the WARN-tier advisory_class_subset_violations() /
+        scan_registry_vocabulary_advisories() reporting path is retired —
+        its check was promoted into validate_consumer_vocabulary() /
+        scan_registry_vocabulary() rather than left standing as a second,
+        shadowing WARN path for the same invariant."""
+        import engine.cycle_pattern.consumer_authority as ca
+        assert not hasattr(ca, "advisory_class_subset_violations")
+
         sys.path.insert(0, str(_REPO / "scripts"))
         try:
             import check_cycle_pattern_authority as guard
-            advisories = guard.scan_registry_vocabulary_advisories(_REPO)
+            assert not hasattr(guard, "scan_registry_vocabulary_advisories")
         finally:
             sys.path.pop(0)
-        expected_ids = {
-            "CPI-002", "CPI-004", "CPI-005", "CPI-008",
-            "CPI-011", "CPI-014", "CPI-015",
-        }
-        found_ids = set()
-        for note in advisories:
-            for tid in expected_ids:
-                if note.startswith(f"{tid} ("):
-                    found_ids.add(tid)
-        assert found_ids == expected_ids, (
-            f"expected exactly {sorted(expected_ids)}, got {sorted(found_ids)} "
-            f"(full advisories: {advisories})"
-        )
-        assert len(advisories) == 7
+
+    @pytest.mark.needs_full_checkout("data")
+    def test_scan_registry_vocabulary_hard_check_covers_the_seven_adjudicated_rows(self):
+        """CPI-H1.1: the 7 rows escalated at the CPI-H1 heal
+        (research/imce/IMCE_D1C_RELEASE_RECORD.md) — CPI-002/004/005/008/
+        011/014/015 — now validate clean under the HARD class-subset check
+        via the CI-wired scan_registry_vocabulary(), the same function that
+        used to also carry a WARN-tier advisory for exactly these rows."""
+        sys.path.insert(0, str(_REPO / "scripts"))
+        try:
+            import check_cycle_pattern_authority as guard
+            errors = guard.scan_registry_vocabulary(_REPO)
+        finally:
+            sys.path.pop(0)
+        assert not errors, "\n".join(errors)
 
     def test_scan_registry_vocabulary_catches_planted_orphan(self, tmp_path):
         import json
