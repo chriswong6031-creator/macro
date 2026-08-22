@@ -732,6 +732,7 @@
     "eefa8d8a427dab7d1d75f5c79d8a3182f3bbd54a": "2026-08-21T21:21:28.681956+00:00",
     "ef19d00ae12fced3627d2f501da39320055b712d": "2026-08-21T16:57:01.922644+00:00",
     "ef487085ae5cb2f3e9aaf8787d3ed997c3e4d588": "2026-08-22T13:05:33.659628+00:00",
+    "f001877dcdf2ea3135436cd831cb70ea0286ce48": "2026-08-22T16:15:23.335751+00:00",
     "f0974bab85a733712f42dbbf93cbf37e8cb92e76": "2026-08-21T21:21:28.681956+00:00",
     "f10b74c45ce5230c184d43400f08b93dc5d2f62a": "2026-08-21T16:21:03.098572+00:00",
     "f2bdfcd1a188cfd17d35abdc885d793ea96e8331": "2026-08-21T23:49:42.094390+00:00",
@@ -756,22 +757,10 @@
     "fecf771f598e0d4d0f30ad3439ece2b7a41527c0": "2026-08-21T21:21:28.681956+00:00"
   },
   "corroboration": {
-    "claim:company_news:sec:financials": {
-      "first_ts": "2026-08-22T15:34:38.911619+00:00",
+    "claim:none:sec:technology": {
+      "first_ts": "2026-08-22T16:15:23.335751+00:00",
       "sources": [
-        "host:coindesk.com"
-      ]
-    },
-    "claim:none:sec:consumer": {
-      "first_ts": "2026-08-22T15:34:38.911619+00:00",
-      "sources": [
-        "host:cnbc.com"
-      ]
-    },
-    "head:38yearold runs a mobile pizzeria out of his smart car in new york city its like ": {
-      "first_ts": "2026-08-22T15:34:38.911619+00:00",
-      "sources": [
-        "host:cnbc.com"
+        "host:investing.com"
       ]
     },
     "truth:117108127758253239": {
@@ -1987,7 +1976,7 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-22T15:53:32.253119+00:00",
+      "last_poll": "2026-08-22T16:15:23.335751+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
       "since": "2026-08-22T15:00:51+00:00"
     },
@@ -1999,7 +1988,7 @@
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1787414016.294563
+      "last_poll_ts": 1787415326.3410583
     },
     "twitterapiio": {
       "cursors": {
@@ -2068,65 +2057,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-22T15:53:32Z",
+  "updated_at": "2026-08-22T16:15:23Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1787414014.0401697
+      "last_poll_ts": 1787415324.4675972
     },
     "bls_news": {
       "etag": "\"07aaf967531dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 14:01:40 GMT",
-      "last_poll_ts": 1787414013.6628673
+      "last_poll_ts": 1787415324.294976
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1787414014.4916584
+      "last_poll_ts": 1787415324.7392302
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1787414015.8644383
+      "last_poll_ts": 1787415325.9427638
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Sat, 22 Aug 2026 15:52:27 GMT",
-      "last_poll_ts": 1787414016.043677
+      "last_modified": "Sat, 22 Aug 2026 16:13:45 GMT",
+      "last_poll_ts": 1787415326.18893
     },
     "fed_press": {
       "etag": "W/\"53636b83de30dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 20 Aug 2026 20:00:13 GMT",
-      "last_poll_ts": 1787414013.4221127
+      "last_poll_ts": 1787415324.1657116
     },
     "forexlive_news": {
-      "etag": "W/\"C7scx0UMuvqK6IixxjUXdbfeA5s\"",
+      "etag": "W/\"4s2tZIb8QRrEgvvTQ40IPabDl1k\"",
       "fail_count": 0,
-      "last_poll_ts": 1787414015.305597
+      "last_poll_ts": 1787415325.4771416
     },
     "investing_news": {
-      "etag": "W/\"1260-659a4b26f79e5\"",
+      "etag": "W/\"1262-659a4fff4a27d\"",
       "fail_count": 0,
-      "last_modified": "Sat, 22 Aug 2026 15:49:23 GMT",
-      "last_poll_ts": 1787414015.5859885
+      "last_modified": "Sat, 22 Aug 2026 16:11:03 GMT",
+      "last_poll_ts": 1787415325.7172205
     },
     "marketwatch_top": {
-      "etag": "W/\"20b6-gHM13BamxStckXSgW//+whMMd3I\"",
+      "etag": "W/\"20a2-pS5s9s8H6xzkr/rvCXf4NBW8GV0\"",
       "fail_count": 0,
-      "last_poll_ts": 1787414014.7606077
+      "last_poll_ts": 1787415324.9786253
     },
     "whitehouse_actions": {
       "etag": "\"393774828a07a184ce685a347792bc6c\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 21:35:04 GMT",
-      "last_poll_ts": 1787414014.2826595
+      "last_poll_ts": 1787415324.6561644
     },
     "zerohedge_feed": {
       "fail_count": 0,
       "last_modified": "Sat, 22 Aug 2026 14:18:42 GMT",
-      "last_poll_ts": 1787414014.9112566
+      "last_poll_ts": 1787415325.1073992
     }
   },
   "wire_day_counts": {
