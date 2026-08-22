@@ -27,6 +27,33 @@ the verdict simply equals the nightly baseline. risk_state.json always emits.
 
 risk_state.json is GITIGNORED, so the 3-min macro-update `git reset --hard` never
 clobbers it (same contract as live/overlay.json).
+
+CLOCK ROLES (GD-3R1) — this module is the producer of TWO of the four-clock
+production receipt (source event clock; upstream artifact clock; observation
+clock; production clock) a downstream consumer (scripts/build_live_risk_envelope.py)
+assembles:
+  - SOURCE EVENT CLOCK: the real source-market quote clock (each spliced live
+    quote's own ``quote_ts``, ISO8601, from engine.live_quotes.fetch_quotes()).
+    Published here as ``live.source_event_time`` (the newest/max contributing
+    quote_ts) and ``live.source_quote_clocks`` (the per-store detail). This is
+    NEVER this module's own wall clock.
+  - UPSTREAM ARTIFACT CLOCK: this module's own wall-clock stamp at write time —
+    published as the top-level ``built`` field. A downstream reader's "upstream
+    artifact clock" is exactly this field; it must never be confused with the
+    source event clock above.
+The other two roles (observation clock, production clock) belong to the
+DOWNSTREAM consumer that reads this artifact, not to this producer.
+
+CANNOT-BE-ESTABLISHED -> NULL (Sol's binding law, amendments to GD-3R1):
+a clock this module cannot honestly attribute to a real market event never
+substitutes a wall clock in its place — it is null. Three guards enforce
+this on the source event clock specifically: (F3) engine.live_quotes flags
+``quote_ts_synthetic`` on any quote whose ``quote_ts`` fell back to a
+snapshot-refresh or builder wall clock; ``_spliced_frames`` records ``None``
+for that store rather than the synthetic value. (F5) a naive (tz-less)
+``quote_ts`` is dropped, never assumed UTC. (F6) a quote clock more than
+120s ahead of `now` is excluded from ``_source_event_time``'s max — a single
+glitched/clock-skewed leg must never poison the receipt.
 """
 from __future__ import annotations
 
@@ -83,22 +110,61 @@ def _usable(quote, base_close, max_chg, stale_after, now, session_open) -> float
 def _spliced_frames(quotes, max_chg, stale_after, now, session_open):
     """Read nightly closes (BEFORE any store patch), splice a fresh live price onto today's
     bar. Returns (spliced_dfs{store_name: df[close]}, live_close{store_name: price},
-    nightly_close{store_name: price}). Symbols without a usable quote are omitted -> they
-    read nightly through the un-patched store."""
-    spliced, live_close, nightly_close = {}, {}, {}
+    nightly_close{store_name: price}, quote_clocks{store_name: quote_ts_iso_or_None}).
+    Symbols without a usable quote are omitted -> they read nightly through the
+    un-patched store. ``quote_clocks`` is bounded to exactly the SPLICE members that
+    were actually spliced (the source event clock — GD-3R1) — captured from the same
+    quote that won ``_usable()``, never a builder wall clock. GD-3R1 amendment F3:
+    a quote flagged ``quote_ts_synthetic`` (engine.live_quotes — its own ``quote_ts``
+    did NOT come from a real market timestamp, e.g. a day/prev-close basis or a
+    fallback to the snapshot's refresh clock) still SPLICES normally (pricing/
+    staleness unaffected) but its clock is recorded as ``None`` here — Sol's
+    cannot-be-established -> null law — so a synthetic (builder/snapshot) wall
+    clock can never enter the event-time receipt."""
+    spliced, live_close, nightly_close, quote_clocks = {}, {}, {}, {}
     for name, sym in SPLICE.items():
         close = live_overlay.read_close(name)
         if close is None or close.empty:
             continue
         nightly_close[name] = float(close.iloc[-1])
         cap = _VOL_MAX_CHG if name in _VOL_NAMES else max_chg
-        price = _usable(quotes.get(sym), nightly_close[name], cap, stale_after, now, session_open)
+        quote = quotes.get(sym)
+        price = _usable(quote, nightly_close[name], cap, stale_after, now, session_open)
         if price is None:
             continue
         s = live_overlay.splice(close, price, now)
         spliced[name] = pd.DataFrame({"close": s})
         live_close[name] = price
-    return spliced, live_close, nightly_close
+        quote_clocks[name] = (None if (quote or {}).get("quote_ts_synthetic")
+                               else (quote or {}).get("quote_ts"))
+    return spliced, live_close, nightly_close, quote_clocks
+
+
+_EVENT_FUTURE_TOLERANCE_S = 120.0
+
+
+def _source_event_time(quote_clocks: dict, now: datetime) -> str | None:
+    """The NEWEST (max) parseable, tz-aware, past-or-near-present quote_ts among the
+    spliced quotes' own clocks — the source event clock (GD-3R1). Excluded from the
+    max (never coerced, never fatal): unparseable entries; None entries (unclocked or
+    synthetic — F3); naive/tz-less entries (F5 — never assumed UTC, always dropped);
+    and any clock more than 120s ahead of `now` (F6 — a single glitched/clock-skewed
+    leg must not poison the max). Returns None when no spliced quote carries a usable
+    clock (including the nothing-spliced case)."""
+    parsed = []
+    for ts_iso in (quote_clocks or {}).values():
+        if not ts_iso:
+            continue
+        try:
+            dt = datetime.fromisoformat(str(ts_iso))
+        except (ValueError, TypeError):
+            continue
+        if dt.tzinfo is None:
+            continue  # F5: naive clock -> never assumed UTC, dropped
+        if (dt - now).total_seconds() > _EVENT_FUTURE_TOLERANCE_S:
+            continue  # F6: glitched/future leg excluded from the max
+        parsed.append(dt)
+    return max(parsed).isoformat() if parsed else None
 
 
 def _live_frame(spliced, indices=("SPY", "QQQ", "IWM")):
@@ -206,7 +272,7 @@ def build(offline: bool = False) -> dict:
     # live quotes for the fast symbols (graceful no-op offline / market closed)
     diag: dict = {}
     quotes = live_quotes.fetch_quotes(sorted(set(SPLICE.values())), offline=offline, diag=diag)
-    spliced, live_close, nightly_close = _spliced_frames(
+    spliced, live_close, nightly_close, quote_clocks = _spliced_frames(
         quotes, max_chg, stale_after, now, session["open"])
     live_active = bool(spliced)
 
@@ -237,6 +303,11 @@ def build(offline: bool = False) -> dict:
         store_mod.read = _orig_read
 
     live_blk = _verdict_block(live_ms)
+    # GD-3R1: the source event clock — the real source-market quote clock(s) behind
+    # this tick's splice, never this builder's own wall clock. Bounded to exactly
+    # the SPLICE members actually spliced; empty/None when nothing spliced.
+    live_blk["source_event_time"] = _source_event_time(quote_clocks, now)
+    live_blk["source_quote_clocks"] = dict(quote_clocks) if quote_clocks else {}
     # surface the radar's live gating detail (state_ungated + the SPY-200dma context gate) — this is
     # what flips the loud banner intraday the moment the broad tape breaks (the slow build couldn't).
     if live_radar and live_blk.get("radar") is not None:
