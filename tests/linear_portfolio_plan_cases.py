@@ -17,6 +17,7 @@ def _record(
     next_action: str = "Do the next bounded thing.",
     waves=None,
     needs_ceo=None,
+    blocked_by=None,
 ) -> str:
     rows = waves if waves is not None else [
         {"id": "W0", "title": "First wave", "status": "todo"}
@@ -37,6 +38,8 @@ def _record(
     }
     if needs_ceo is not None:
         doc["needs_ceo"] = needs_ceo
+    if blocked_by is not None:
+        doc["blocked_by"] = blocked_by
     import yaml
 
     return "---\n" + yaml.safe_dump(doc, sort_keys=False) + "---\nBody.\n"
@@ -66,7 +69,7 @@ def test_selection_law_and_wave_observation(tmp_path):
         tmp_path,
         [
             ("ACTIVE", "active", {}),
-            ("BLOCKED", "blocked", {}),
+            ("BLOCKED", "blocked", {"blocked_by": ["named cause"]}),
             ("CI", "awaiting_ci", {}),
             ("REVIEW", "awaiting_review", {}),
             ("PROPOSED", "proposed", {}),
@@ -173,13 +176,40 @@ def test_unmerged_sibling_fixture_is_not_canonical(tmp_path):
     ]
 
 
-def test_malformed_record_refuses_plan(tmp_path):
+def test_malformed_record_refuses_plan_with_frozen_failure_code(tmp_path):
     root = tmp_path / "agentos"
     (root / "workstreams").mkdir(parents=True)
     (root / "workstreams" / "WS-BAD.md").write_text("not frontmatter")
     with pytest.raises(lpp.PlanError) as exc:
         _compile(root)
-    assert exc.value.failures[0]["rule"] == "unparseable"
+    failure = exc.value.failures[0]
+    assert failure["code"] == "malformed_workstream_record"
+    assert failure["source_rule"] == "unparseable"
+
+
+def test_duplicate_workstream_key_uses_frozen_failure_code(tmp_path):
+    root = tmp_path / "agentos"
+    (root / "workstreams").mkdir(parents=True)
+    (root / "workstreams" / "WS-ALPHA.md").write_text(
+        _record("ALPHA", "active"), encoding="utf-8"
+    )
+    (root / "workstreams" / "WS-BETA.md").write_text(
+        _record("ALPHA", "active"), encoding="utf-8"
+    )
+    with pytest.raises(lpp.PlanError) as exc:
+        _compile(root)
+    assert "duplicate_workstream_key" in {
+        failure["code"] for failure in exc.value.failures
+    }
+
+
+def test_unknown_status_uses_frozen_failure_code(tmp_path):
+    root = _store(tmp_path, [("ALPHA", "mystery", {})])
+    with pytest.raises(lpp.PlanError) as exc:
+        _compile(root)
+    assert "unknown_canonical_status" in {
+        failure["code"] for failure in exc.value.failures
+    }
 
 
 def test_socket_disabled_runtime_still_compiles(tmp_path, monkeypatch):
@@ -193,11 +223,21 @@ def test_socket_disabled_runtime_still_compiles(tmp_path, monkeypatch):
     assert plan["summary"]["active_projects"] == 1
 
 
-def test_typed_gate_is_observed_not_inferred(tmp_path):
+def test_typed_gate_is_observed_not_inferred_and_missing_source_is_named(tmp_path):
     root = _store(
         tmp_path,
         [
             ("PLAIN", "active", {}),
+            (
+                "BLOCKED",
+                "blocked",
+                {"blocked_by": ["explicit source"]},
+            ),
+            (
+                "REVIEW",
+                "awaiting_review",
+                {},
+            ),
             (
                 "CEO",
                 "active",
@@ -216,8 +256,15 @@ def test_typed_gate_is_observed_not_inferred(tmp_path):
         "typed_source": None,
         "projection": "not_inferred",
     }
+    assert rows["WS:BLOCKED"]["gate_observation"]["typed_source"] == "blocked_by"
     assert rows["WS:CEO"]["gate_observation"]["typed_source"] == "needs_ceo"
     assert rows["WS:CEO"]["gate_observation"]["projection"] == "observation_only"
+    typed_missing = {
+        warning["workstream_key"]
+        for warning in plan["warnings"]
+        if warning["code"] == "typed_gate_source_missing"
+    }
+    assert typed_missing == {"WS:REVIEW"}
 
 
 def test_exact_linear_snapshot_reports_missing_ambiguous_drift_and_extra(tmp_path):
@@ -240,3 +287,60 @@ def test_exact_linear_snapshot_reports_missing_ambiguous_drift_and_extra(tmp_pat
     assert "existing_project_binding_ambiguous" in codes
     assert "existing_project_binding_missing" in codes
     assert "would_deactivate_or_archive" in codes
+
+
+def test_linear_snapshot_status_class_distinguishes_healthy_history_from_stale_live(tmp_path):
+    root = _store(
+        tmp_path,
+        [
+            ("ACTIVE", "active", {}),
+            ("DONE", "done", {}),
+            ("STALE", "done", {}),
+        ],
+    )
+    snapshot = tmp_path / "linear.json"
+    snapshot.write_text(
+        json.dumps(
+            {
+                "schema": "linear_portfolio_snapshot.v1",
+                "projects": [
+                    {
+                        "workstream_key": "WS:ACTIVE",
+                        "name": "WS:ACTIVE — Active",
+                        "status_class": "started",
+                    },
+                    {
+                        "workstream_key": "WS:DONE",
+                        "name": "WS:DONE — Done",
+                        "status_class": "completed",
+                    },
+                    {
+                        "workstream_key": "WS:STALE",
+                        "name": "WS:STALE — Stale",
+                        "status_class": "started",
+                    },
+                ],
+            }
+        )
+    )
+    plan = lpp.compile_plan(root, programs=None, linear_snapshot_path=snapshot)[0]
+    lifecycle = [
+        warning
+        for warning in plan["warnings"]
+        if warning["code"] == "project_lifecycle_drift"
+    ]
+    assert lifecycle == [
+        {
+            "code": "project_lifecycle_drift",
+            "workstream_key": "WS:STALE",
+            "current": "started",
+            "desired": "completed",
+            "canonical_status": "done",
+        }
+    ]
+    assert not any(
+        warning["workstream_key"] == "WS:DONE"
+        for warning in plan["warnings"]
+        if "workstream_key" in warning
+        and warning["code"] in {"would_deactivate_or_archive", "project_lifecycle_drift"}
+    )
