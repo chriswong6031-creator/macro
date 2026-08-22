@@ -106,6 +106,35 @@ CANONICAL-IDENTITY FIREWALL (`is_observation_fingerprint()`) keeps a
 fingerprint from EVER becoming `announcement_id`, a DataOS/GMI alias, or a
 scoring input — enforced in `write_visits()`, which REFUSES the whole
 append if any row's announcement_id is a fingerprint.
+
+P1-R3A crash consistency at the source boundary (2026-08-22, Sol review of
+PR #6242 — the COMPLETION of the same durability contract, not a new one).
+P1-R3 made the exception durable, but only AFTER china_filings had already
+committed a filtered canonical store that omitted the observation: the sole
+bridge between the two was the PROCESS-LOCAL
+`china_filings.LAST_KEY_INTEGRITY["excluded_rows"]` handoff, harvested later
+by refresh(). A hard kill in that window — and the asia lane runs under one
+— lost the observation from EVERY durable store at once: excluded from
+filings.parquet by design, never written to coverage_exceptions.parquet, and
+aged out of china_filings' 3-day re-pull within days. That is D2 again, one
+layer down.
+
+The frozen ordering invariant is now
+
+    durable coverage exception  ->  canonical filtered filing-store commit
+
+and never the reverse. `persist_boundary_exceptions()` below is the single
+entry point china_filings calls BEFORE its commit (the fingerprint/upsert
+law stays owned HERE and is reused, never duplicated there); if it cannot
+make the observation durable, china_filings REFUSES to commit and leaves
+filings.parquet byte-identical. There is still exactly ONE ledger, no retry
+database and no transaction framework. refresh() therefore no longer
+harvests `excluded_rows` at all — the boundary already did — and skips any
+`visits_candidate` observation whose fingerprint the boundary made durable
+in the same invocation, so one source occurrence yields one observation,
+never two. A refused fence is a GLOBAL `upstream_degraded` cause: a run
+whose canonical write never committed derived from a stale tape and may not
+assert a measured absence over it.
 """
 from __future__ import annotations
 
@@ -771,6 +800,132 @@ def reconcile_exceptions(
     return result, n_resolved
 
 
+def persist_boundary_exceptions(
+    malformed_rows: "list[dict] | None", key_anomaly_fn, now_utc: str | None = None,
+) -> dict:
+    """P1-R3A CRASH-CONSISTENCY FENCE. Durably upsert/reaffirm the P1-relevant
+    malformed observations of ONE collectors.china_filings.write_filings()
+    call, BEFORE that call commits its filtered canonical bytes.
+
+    THE INVARIANT THIS EXISTS FOR:
+
+        durable coverage exception  ->  canonical filtered filing-store commit
+
+    and NEVER the reverse. Before P1-R3A the only bridge from the
+    china_filings write boundary to this plane was the PROCESS-LOCAL
+    china_filings.LAST_KEY_INTEGRITY["excluded_rows"] handoff, harvested
+    later by refresh(). A hard kill between the filtered filings.parquet
+    write and refresh()'s ledger write therefore lost the observation from
+    EVERY durable store at once: it was already absent from filings.parquet
+    (excluded by key integrity, by design), it had never reached
+    coverage_exceptions.parquet, and china_filings' 3-day re-pull window
+    (_NIGHTLY_LOOKBACK_DAYS) ages the source row out within days. The asia
+    lane runs under a hard job kill, so that window is real, not theoretical.
+
+    This function is the ONLY thing china_filings needs to call to satisfy
+    that invariant. It deliberately does NOT duplicate the fingerprint /
+    upsert law in china_filings (commission: "Factor/reuse the existing
+    fingerprint/upsert law. Do not duplicate it in china_filings"): the
+    ledger, its schema, its fingerprint version, its P1-relevance filter and
+    its dedup semantics all stay owned HERE, in the plane the ledger belongs
+    to. There is exactly ONE ledger — data/china_visits/coverage_exceptions
+    .parquet — and no retry database, no journal, no second quarantine store.
+
+    INERT ON THE COMMON PATH. `malformed_rows` is empty on every normal night
+    (measured 2026-08-22: 0 of 54,078 accrued keys are malformed), and this
+    returns immediately on that input WITHOUT reading or writing anything —
+    so a zero-exception night never creates the ledger file, and "ledger
+    absent" keeps meaning "normal empty state". The fence only becomes
+    load-bearing on the rare night it was built for.
+
+    FAILS CLOSED, AND THE CALLER MUST REFUSE ITS COMMIT WHEN IT DOES.
+    `ok=False` means this function could NOT make the observation durable —
+    an unreadable ledger, a failed write, or any unexpected exception. The
+    caller must then leave the canonical store byte-identical: committing a
+    filtered store that omits an observation we could not remember is
+    exactly the silent forgetting this whole wave exists to close. The
+    blast radius of that refusal is bounded by the inertness above: it can
+    only ever fire on a night that already contains a malformed row.
+
+    Returns a receipt, and NEVER raises (a raise here would sink the C0
+    asia-close lane through china_filings):
+      {"ok": bool,              — was every relevant observation made durable
+       "n_relevant": int,       — P1-relevant malformed rows seen
+       "n_new": int,            — newly inserted ledger rows
+       "n_reaffirmed": int,     — existing fingerprints reaffirmed
+       "fingerprints": [str],   — DURABLY handled this call (empty unless ok)
+       "detail": str}           — human/log reason, "" when nothing happened
+
+    `fingerprints` is the same-invocation double-count guard: refresh() skips
+    any observation whose fingerprint this call already made durable, so one
+    source occurrence produces ONE observation/reaffirmation per invocation,
+    never two (commission discriminating test 4).
+    """
+    receipt = {"ok": True, "n_relevant": 0, "n_new": 0, "n_reaffirmed": 0,
+               "fingerprints": [], "detail": ""}
+    if not malformed_rows:
+        return receipt
+    try:
+        relevant = [row for row in malformed_rows if _is_p1_relevant_exclusion(row)]
+        receipt["n_relevant"] = len(relevant)
+        if not relevant:
+            # A malformed row outside institutional_visit (with a real title)
+            # is china_filings' own instrument only and must never touch P1 —
+            # scope law, commission discriminating test 6. No read, no write,
+            # no ledger file created.
+            receipt["detail"] = "no P1-relevant malformed rows this call"
+            return receipt
+
+        stamp = now_utc or datetime.now(timezone.utc).isoformat()
+        existing = read_coverage_exceptions_strict()
+        if existing is None:
+            receipt["ok"] = False
+            receipt["detail"] = (
+                "coverage_exceptions.parquet is present but UNREADABLE — refusing to "
+                "overwrite it, and the caller must refuse its canonical commit"
+            )
+            log.error("china_visits: boundary fence — %s", receipt["detail"])
+            return receipt
+
+        observations = [
+            _exception_fields(row, "filings_boundary", key_anomaly_fn)
+            for row in relevant
+        ]
+        updated, n_new, n_reaffirmed = upsert_exceptions(existing, observations, stamp)
+        _atomic_write(updated, _exceptions_path())
+
+        # Only AFTER the durable write succeeds are these fingerprints
+        # reported as handled — an unwritten exception must never suppress
+        # refresh()'s own harvest of the same observation.
+        receipt["n_new"] = n_new
+        receipt["n_reaffirmed"] = n_reaffirmed
+        receipt["fingerprints"] = sorted(
+            {obs["observation_fingerprint"] for obs in observations}
+        )
+        receipt["detail"] = (
+            f"{len(relevant)} P1-relevant malformed observation(s) made durable "
+            f"before the canonical commit ({n_new} new, {n_reaffirmed} reaffirmed)"
+        )
+        log.error("china_visits: boundary fence — %s", receipt["detail"])
+        # Bare print, NOT log.* — this repo's loggers prefix the line, which
+        # makes GitHub silently drop the annotation (it only parses "::" at
+        # column 0). See tests/test_gh_annotation_line_start.py.
+        print(
+            f"::warning title=china-visits-coverage-exception-fence::"
+            f"{len(relevant)} P1-relevant malformed observation(s) persisted to the "
+            f"coverage-exception ledger before the canonical filings commit "
+            f"({n_new} new, {n_reaffirmed} reaffirmed)",
+            flush=True,
+        )
+        return receipt
+    except Exception as e:  # noqa: BLE001 — NEVER raise into the C0 asia lane
+        receipt["ok"] = False
+        receipt["fingerprints"] = []
+        receipt["detail"] = f"coverage-exception persistence failed unexpectedly: {e}"
+        log.error("china_visits: boundary fence — %s", receipt["detail"])
+        return receipt
+
+
 # ------------------------------------------------------------------ health --
 
 # The house ten-state taxonomy (masterplan §9.3). Only a subset is
@@ -1051,6 +1206,28 @@ def refresh() -> dict:
             return _zero_progress("source_failure")
         same_run_outcome = _cf.LAST_RUN_OUTCOME
 
+        # P1-R3A: what the china_filings write boundary ALREADY made durable
+        # in this same invocation. `boundary_fingerprints` is the double-count
+        # guard (one observation/reaffirmation per source occurrence, never
+        # two); `boundary_persist_ok` is False only when the fence REFUSED —
+        # in which case china_filings left its canonical store byte-identical
+        # and the tape this plane just read is STALE, a GLOBAL cause below.
+        # Both default to the permissive reading when the keys are absent
+        # (a `--only china_visits` run, or a china_filings from before
+        # P1-R3A), because their absence means the fence never spoke, not
+        # that it failed.
+        boundary_fingerprints: set[str] = set()
+        boundary_persist_ok = True
+        if same_run_outcome is not None:
+            _ki = same_run_outcome.get("key_integrity") or {}
+            boundary_persist_ok = bool(_ki.get("boundary_persist_ok", True))
+            try:
+                boundary_fingerprints = {
+                    str(fp) for fp in (_ki.get("boundary_fingerprints") or [])
+                }
+            except (TypeError, ValueError):  # non-iterable / unhashable shape
+                boundary_fingerprints = set()
+
         if filings is None or filings.empty or "category" not in filings.columns:
             candidates: list[dict] = []
         else:
@@ -1117,28 +1294,35 @@ def refresh() -> dict:
 
         if exceptions_readable:
             # Harvest (§5): origin="filings_boundary" from THIS run's
-            # china_filings write (P1-relevance-filtered — a malformed row
-            # outside institutional_visit with a real title must not
-            # globally poison P1); origin="visits_candidate" from THIS
-            # run's own account_candidates() scan (already scoped to
-            # category=="institutional_visit" by `candidates` itself, so no
-            # further filtering is needed).
-            filings_boundary_rows: list[dict] = []
-            if same_run_outcome is not None:
-                ki = same_run_outcome.get("key_integrity") or {}
-                filings_boundary_rows = ki.get("excluded_rows") or []
+            # china_filings write. P1-R3A MOVED that harvest to the source
+            # boundary itself — persist_boundary_exceptions() above, called
+            # by china_filings.write_filings() BEFORE it commits — so this
+            # step no longer reads LAST_KEY_INTEGRITY["excluded_rows"] at
+            # all. Re-adding that loop here would double-count every
+            # boundary observation (the fence already made it durable AND
+            # reported its fingerprint), which is what
+            # TestP1R3ACrashConsistencyFence::
+            # test_item4_full_invocation_counts_one_observation_per_occurrence
+            # kills.
+            #
+            # What REMAINS this plane's own job is the historical scan:
+            # origin="visits_candidate" from THIS run's account_candidates()
+            # over the ACCRUED store (pre-existing unkeyed rows that were
+            # written before the typed-exclusion boundary existed, and which
+            # no future china_filings write will ever re-present). Already
+            # scoped to category=="institutional_visit" by `candidates`
+            # itself, so no further P1-relevance filtering is needed.
             visits_candidate_rows = accounting.get("excluded_rows") or []
 
             new_observations: list[dict] = []
-            for row in filings_boundary_rows:
-                if _is_p1_relevant_exclusion(row):
-                    new_observations.append(
-                        _exception_fields(row, "filings_boundary", _cf.key_anomaly)
-                    )
             for row in visits_candidate_rows:
-                new_observations.append(
-                    _exception_fields(row, "visits_candidate", _cf.key_anomaly)
-                )
+                fields = _exception_fields(row, "visits_candidate", _cf.key_anomaly)
+                if fields["observation_fingerprint"] in boundary_fingerprints:
+                    # Same source occurrence, already made durable by the
+                    # fence in THIS invocation — reaffirming it here would
+                    # inflate observed_count to 2 for one occurrence.
+                    continue
+                new_observations.append(fields)
 
             exceptions_df, n_new_exc, n_reaffirmed_exc = upsert_exceptions(
                 exceptions_before, new_observations, system_recorded_at
@@ -1188,6 +1372,9 @@ def refresh() -> dict:
                 "open_unscoped": open_unscoped, "new_this_run": n_new_exc,
                 "reaffirmed_this_run": n_reaffirmed_exc,
                 "resolved_this_run": n_resolved_exc, "readable": exceptions_readable,
+                # P1-R3A: did the china_filings write boundary manage to make
+                # its own malformed observations durable before committing?
+                "boundary_persist_ok": boundary_persist_ok,
             },
         }
 
@@ -1228,6 +1415,16 @@ def refresh() -> dict:
             causes.append(
                 "the coverage-exception ledger is present but unreadable — the ledger "
                 "write was ABORTED and the accrued ledger left untouched for manual recovery"
+            )
+        if not boundary_persist_ok:
+            # P1-R3A: the fence refused, so china_filings left filings.parquet
+            # byte-identical and this run derived from a STALE tape. Loud and
+            # globally degraded for absence authority — the plane cannot claim
+            # a measured absence over a store that never took tonight's rows.
+            causes.append(
+                "the china_filings coverage-exception fence REFUSED this run — the "
+                "filtered canonical filings write was NOT committed, so the tape this "
+                "plane derived from is STALE"
             )
 
         if causes:

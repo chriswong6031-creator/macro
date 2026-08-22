@@ -994,6 +994,7 @@ class TestRefreshKeyIntegrity:
                 "open": 0, "open_scoped": 0, "open_unscoped": 0,
                 "new_this_run": 0, "reaffirmed_this_run": 0,
                 "resolved_this_run": 0, "readable": True,
+                "boundary_persist_ok": True,
             },
         }
 
@@ -1013,6 +1014,7 @@ class TestRefreshKeyIntegrity:
                 "open": 1, "open_scoped": 1, "open_unscoped": 0,
                 "new_this_run": 1, "reaffirmed_this_run": 0,
                 "resolved_this_run": 0, "readable": True,
+                "boundary_persist_ok": True,
             },
         }
 
@@ -1920,3 +1922,446 @@ class TestWriteVisitsRefusalDegradesHealthEndToEnd:
         s = cv.refresh()
         assert s["status"] == "upstream_degraded"
         assert cv.read_health()["last_success_utc"] == prior_last_success   # frozen
+
+
+# --------------------------------------------------------------------------- #
+# P1-R3A — crash consistency at the source boundary
+#
+# Sol's review of #6242 accepted the durable scoped ledger but blocked on the
+# handoff: a newly malformed P1-relevant observation was removed from the
+# canonical filings store BEFORE its coverage exception became durable, with
+# only the process-local china_filings.LAST_KEY_INTEGRITY["excluded_rows"]
+# bridging the gap. A hard kill in that window (the asia lane runs under one)
+# lost the observation from EVERY durable store: already excluded from
+# filings.parquet by design, never written to coverage_exceptions.parquet, and
+# aged out of the source's 3-day re-pull within days.
+#
+# FROZEN ORDERING INVARIANT:
+#     durable coverage exception  ->  canonical filtered filing-store commit
+# NEVER:
+#     filtered commit -> process-local handoff -> durable exception later
+#
+# The ten tests below are Sol's ten discriminating tests, in order.
+# --------------------------------------------------------------------------- #
+
+_R3A_TITLE = "顺网科技：投资者关系活动记录表"
+_R3A_TS = "2026-08-20T09:00:00+08:00"
+
+
+def _r3a_malformed(announcement_id="", sec_code="000777", title=_R3A_TITLE,
+                    ts=_R3A_TS, category="institutional_visit") -> dict:
+    """One china_filings-shaped row whose announcementId is malformed."""
+    return _filing_row(announcement_id, sec_code, title, ts, category=category)
+
+
+def _r3a_good(announcement_id="V-OK", sec_code="000778") -> dict:
+    return _filing_row(announcement_id, sec_code, "某公司：投资者关系活动记录表",
+                        "2026-08-20T09:05:00+08:00")
+
+
+class TestP1R3ACrashConsistencyFence:
+    """The fence must make a P1-relevant malformed observation durable BEFORE
+    the filtered canonical store commits, and must refuse that commit when it
+    cannot. One ledger, one fingerprint law, no retry database."""
+
+    # ---------------------------------------------------------------- item 1 --
+    def test_item1_only_china_filings_already_makes_the_exception_durable(
+        self, monkeypatch
+    ):
+        """`--only china_filings` + a malformed institutional-visit observation
+        -> the coverage exception is ALREADY durable even though china_visits
+        never runs in this invocation."""
+        _STUB_ROWS["sse"] = [
+            _raw_announcement("", "000777", "name-000777", _R3A_TITLE,
+                               _ts_ms(_R3A_TS)),
+            _raw_announcement("V-OK", "000778", "name-000778",
+                               "某公司：投资者关系活动记录表",
+                               _ts_ms("2026-08-20T09:05:00+08:00")),
+        ]
+        rc = _run_collect_main(monkeypatch, {"china_filings": _StubChinaFilingsAdapter},
+                                ["--only", "china_filings", "--skip-quality"])
+        assert rc == 0
+
+        # china_visits genuinely never ran — no tape, no coverage stamp.
+        assert not cv._visits_path().exists()
+        assert not cv._coverage_path().exists()
+
+        # ...and yet the observation is already remembered, durably, on disk.
+        exc = cv.read_coverage_exceptions_strict()
+        assert exc is not None and len(exc) == 1
+        rec = exc.iloc[0]
+        assert rec["status"] == "open"
+        assert rec["origin"] == "filings_boundary"
+        assert rec["sec_code"] == "000777"          # SCOPED to the real company
+        assert rec["key_anomaly"] == "empty"
+        assert rec["observed_count"] == 1
+        assert str(rec["observation_fingerprint"]).startswith("obsfp1:")
+        assert rec["resolved_announcement_id"] == ""
+
+        # The well-keyed sibling still committed — fail-soft, never all-or-nothing.
+        assert set(cf.load_filings()["announcementId"]) == {"V-OK"}
+
+    # ---------------------------------------------------------------- item 2 --
+    def test_item2_hard_stop_after_filings_before_visits_survives(self):
+        """Simulated hard stop immediately after china_filings completes and
+        before china_visits runs: the exception survives in the canonical
+        ledger, and a LATER process (`--only china_visits`, no in-process
+        china_filings outcome at all) still reads it."""
+        cf.write_filings([_r3a_malformed(), _r3a_good()])
+
+        # ---- the process "dies" here: refresh() is never reached ----
+        assert not cv._visits_path().exists()
+        exc = cv.read_coverage_exceptions_strict()
+        assert exc is not None and len(exc) == 1
+        surviving_fp = exc.iloc[0]["observation_fingerprint"]
+        assert exc.iloc[0]["status"] == "open"
+
+        # ---- a LATER, SEPARATE process: no same-run outcome to inherit ----
+        cf.LAST_RUN_OUTCOME = None
+        cf.LAST_KEY_INTEGRITY = None
+
+        s = cv.refresh()
+        assert s["status"] == "ok"      # a scoped exception never freezes the plane
+
+        after = cv.load_coverage_exceptions()
+        assert len(after) == 1
+        assert after.iloc[0]["observation_fingerprint"] == surviving_fp
+        assert after.iloc[0]["status"] == "open"
+        # Still ONE observation of ONE source occurrence — the later run must
+        # not re-count what it did not newly observe.
+        assert after.iloc[0]["observed_count"] == 1
+
+    # ---------------------------------------------------------------- item 3 --
+    def test_item3_ledger_write_failure_leaves_filings_byte_identical(
+        self, monkeypatch, capsys
+    ):
+        """Exception-ledger write failure -> the canonical filings.parquet
+        remains BYTE-IDENTICAL. A malformed observation can never disappear
+        into a filtered commit."""
+        # An established store from a prior clean night.
+        cf.write_filings([_filing_row("PRIOR1", "000001", "关于回购股份的公告",
+                                       "2026-08-18T09:00:00+08:00", category="buyback")])
+        path = cf._store_path()
+        before_bytes = path.read_bytes()
+        before_mtime = path.stat().st_mtime_ns
+
+        def _boom(df, p):
+            raise IOError("simulated ledger write failure")
+
+        monkeypatch.setattr(cv, "_atomic_write", _boom)
+
+        n = cf.write_filings([_r3a_malformed(), _r3a_good()])
+
+        assert n == 0                                   # nothing was written
+        assert path.read_bytes() == before_bytes        # BYTE-IDENTICAL
+        assert path.stat().st_mtime_ns == before_mtime  # not even rewritten
+        assert not cv._exceptions_path().exists()       # the ledger failed too
+
+        # The refusal is typed, loud, and visible to absence authority.
+        ki = cf.LAST_KEY_INTEGRITY
+        assert ki["boundary_persist_ok"] is False
+        assert ki["boundary_fingerprints"] == []
+        assert ki["excluded_total"] == 1
+        lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::")]
+        assert any("china-filings-coverage-exception-fence-refused" in ln for ln in lines), lines
+
+    def test_item3b_a_refused_fence_degrades_the_plane_end_to_end(self, monkeypatch):
+        """The refusal must reach the health instrument: a run that did not
+        commit its filings write may not assert a measured absence over the
+        stale tape it derived from."""
+        cf.write_filings([_filing_row("PRIOR1", "000001", "关于回购股份的公告",
+                                       "2026-08-18T09:00:00+08:00", category="buyback")])
+        cv._write_health("ok", "prior baseline run", success=True)
+        prior_last_success = cv.read_health()["last_success_utc"]
+
+        # A ONE-SHOT failure. NEVER monkeypatch.undo() here: pytest injects one
+        # shared monkeypatch object per test function, so undo() also reverts
+        # this file's autouse config.data_dir redirect — measured 2026-08-22,
+        # that let a later refresh() write health.json into the REAL data/ of a
+        # sparse worktree (a truncating unredirected write, house law).
+        boomed: list[str] = []
+
+        def _boom_once(df, path):
+            if path == cv._exceptions_path() and not boomed:
+                boomed.append("x")
+                raise IOError("simulated one-shot ledger write failure")
+            return _real_atomic(df, path)
+
+        _real_atomic = cv._atomic_write
+        monkeypatch.setattr(cv, "_atomic_write", _boom_once)
+        cf.write_filings([_r3a_malformed()])
+        assert boomed, "the one-shot ledger failure never fired"
+
+        # Same process, same cycle — china_visits reads the typed boundary flag.
+        cf.LAST_RUN_OUTCOME = {"ok": False, "errors": [], "per_exchange": {},
+                                "at": "2026-08-20T00:00:00+00:00",
+                                "key_integrity": cf.LAST_KEY_INTEGRITY,
+                                "transport_ok": True, "key_integrity_known": True}
+        s = cv.refresh()
+        assert s["status"] == "upstream_degraded"
+        h = cv.read_health()
+        assert "fence REFUSED" in h["detail"]
+        assert h["last_success_utc"] == prior_last_success       # frozen
+        assert h["candidate_accounting"]["coverage_exceptions"]["boundary_persist_ok"] is False
+
+    # ---------------------------------------------------------------- item 4 --
+    def test_item4_full_invocation_counts_one_observation_per_occurrence(self):
+        """A full china_filings -> china_visits invocation records ONE
+        observation/reaffirmation per source occurrence, not two — even when
+        the SAME observation is both freshly excluded at the boundary AND
+        already sitting in the accrued store as a pre-existing unkeyed row
+        (the only shape in which both harvest paths can see one occurrence)."""
+        row = _r3a_malformed()
+
+        # A pre-existing unkeyed row on the accrued tape, written directly so
+        # it bypasses the boundary entirely (as historical rows did).
+        cf._store_path().parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame([row]).reindex(columns=list(cf._COLUMNS)).to_parquet(
+            cf._store_path(), index=False)
+
+        # Tonight the wire re-presents the identical observation, still malformed.
+        cf.write_filings([row, _r3a_good()])
+        cf.LAST_RUN_OUTCOME = {"ok": False, "errors": [], "per_exchange": {},
+                                "at": "2026-08-20T00:00:00+00:00",
+                                "key_integrity": cf.LAST_KEY_INTEGRITY,
+                                "transport_ok": True, "key_integrity_known": True}
+        assert cf.LAST_KEY_INTEGRITY["boundary_persist_ok"] is True
+        assert len(cf.LAST_KEY_INTEGRITY["boundary_fingerprints"]) == 1
+
+        cv.refresh()
+
+        exc = cv.load_coverage_exceptions()
+        assert len(exc) == 1, exc.to_dict("records")
+        # ONE occurrence -> observed_count 1. Without the same-invocation
+        # guard, refresh()'s visits_candidate scan reaffirms what the fence
+        # already made durable and this reads 2.
+        assert exc.iloc[0]["observed_count"] == 1
+        assert exc.iloc[0]["origin"] == "filings_boundary"
+
+    # ---------------------------------------------------------------- item 5 --
+    def test_item5_repeated_occurrence_is_one_row_with_a_growing_count(self):
+        """Repeated malformed source occurrence (the 3-day re-pull re-presents
+        it every night) -> ONE durable fingerprint row, observed_count
+        advancing deterministically. Never N rows."""
+        for expected in (1, 2, 3):
+            cf.write_filings([_r3a_malformed(), _r3a_good()])
+            exc = cv.load_coverage_exceptions()
+            assert len(exc) == 1, f"night {expected}: {exc.to_dict('records')}"
+            assert exc.iloc[0]["observed_count"] == expected
+            assert exc.iloc[0]["status"] == "open"
+        # first_seen_utc is never rewritten; last_seen_utc tracks the newest.
+        rec = cv.load_coverage_exceptions().iloc[0]
+        assert rec["first_seen_utc"] <= rec["last_seen_utc"]
+
+    # ---------------------------------------------------------------- item 6 --
+    def test_item6_malformed_non_visit_filing_stays_outside_p1(self):
+        """A malformed row outside institutional_visit (with a real title) is
+        china_filings' own instrument only: no ledger row, no ledger FILE, and
+        the canonical commit proceeds normally."""
+        n = cf.write_filings([
+            _r3a_malformed(title="关于回购股份的公告", category="buyback"),
+            _r3a_good(),
+        ])
+        assert n == 1                                   # the good row committed
+        assert not cv._exceptions_path().exists()       # ledger never created
+        assert cf.LAST_KEY_INTEGRITY["excluded_total"] == 1     # still typed+counted
+        assert cf.LAST_KEY_INTEGRITY["boundary_persist_ok"] is True
+        assert cf.LAST_KEY_INTEGRITY["boundary_fingerprints"] == []
+
+    def test_item6b_a_malformed_row_with_no_title_is_harvested_fail_closed(self):
+        """...but a malformed row whose title is BLANK has an UNKNOWABLE
+        category — we cannot rule out that it was a visit filing, so it is
+        still harvested (fail closed)."""
+        cf.write_filings([_r3a_malformed(title="", category="other"), _r3a_good()])
+        exc = cv.load_coverage_exceptions()
+        assert len(exc) == 1
+        assert exc.iloc[0]["origin"] == "filings_boundary"
+
+    # ---------------------------------------------------------------- item 7 --
+    def test_item7_a_later_well_keyed_filing_resolves_to_its_real_id(self):
+        """Exact-only recovery still works across the fence: the same
+        observation arriving later WITH its real announcementId resolves the
+        exception to that real id — never a synthetic one, never a fuzzy match."""
+        cf.write_filings([_r3a_malformed(), _r3a_good()])
+        exc = cv.load_coverage_exceptions()
+        assert exc.iloc[0]["status"] == "open"
+        fp = exc.iloc[0]["observation_fingerprint"]
+
+        # A later night: CNInfo republishes the identical observation, keyed.
+        cf.write_filings([_r3a_malformed(announcement_id="REAL777")])
+        cf.LAST_RUN_OUTCOME = None      # a later process
+        cf.LAST_KEY_INTEGRITY = None
+        cv.refresh()
+
+        after = cv.load_coverage_exceptions()
+        assert len(after) == 1
+        rec = after.iloc[0]
+        assert rec["observation_fingerprint"] == fp   # same evidence identity
+        assert rec["status"] == "resolved"
+        assert rec["resolved_announcement_id"] == "REAL777"
+        assert rec["resolved_utc"] != ""
+        # The historical exclusion is NEVER rewritten away.
+        assert rec["first_seen_utc"] != ""
+        assert rec["key_anomaly"] == "empty"
+
+    # ---------------------------------------------------------------- item 8 --
+    def test_item8_a_fingerprint_never_becomes_a_canonical_identity(self):
+        """The fence writes evidence identity into the LEDGER only. No
+        fingerprint may appear as a canonical announcementId in
+        filings.parquet, nor as an announcement_id in visits.parquet."""
+        cf.write_filings([_r3a_malformed(), _r3a_good()])
+        cf.LAST_RUN_OUTCOME = None
+        cf.LAST_KEY_INTEGRITY = None
+        cv.refresh()
+
+        fp = cv.load_coverage_exceptions().iloc[0]["observation_fingerprint"]
+        assert cv.is_observation_fingerprint(fp)
+
+        filings_ids = set(cf.load_filings()["announcementId"].dropna())
+        assert fp not in filings_ids
+        assert not any(cv.is_observation_fingerprint(v) for v in filings_ids)
+
+        visit_ids = set(cv.load_visits()["announcement_id"].dropna())
+        assert fp not in visit_ids
+        assert not any(cv.is_observation_fingerprint(v) for v in visit_ids)
+
+        # And the write_visits firewall is still armed behind all of it.
+        poisoned = cv._derive_row(_r3a_good(), "2026-08-20T00:00:00+00:00")
+        poisoned["announcement_id"] = fp
+        assert cv.write_visits([poisoned]) == -1
+
+    # ---------------------------------------------------------------- item 9 --
+    def test_item9_p1r1_ordering_and_cninfo_concurrency_survive(self, monkeypatch):
+        """P1-R1 same-cycle ordering and the shared cninfo host group are
+        untouched by the fence — proven end to end through a real
+        collect.main() over BOTH adapters with a malformed row present."""
+        import scripts.collect as collect_mod
+        assert collect_mod._CONCURRENT_HOSTS["china_filings"] == "cninfo"
+        assert collect_mod._CONCURRENT_HOSTS["china_visits"] == "cninfo"
+
+        _STUB_ROWS["sse"] = [
+            _raw_announcement("", "000777", "name-000777", _R3A_TITLE,
+                               _ts_ms(_R3A_TS)),
+            _raw_announcement("V-OK", "000778", "name-000778",
+                               "某公司：投资者关系活动记录表",
+                               _ts_ms("2026-08-20T09:05:00+08:00")),
+        ]
+        registry = {"china_filings": _StubChinaFilingsAdapter,
+                    "china_visits": cv.ChinaVisitsAdapter}
+        rc = _run_collect_main(monkeypatch, registry,
+                                ["--only", "china_filings,china_visits", "--skip-quality"])
+        assert rc == 0
+
+        # china_visits consumed THIS run's freshly-written store (P1-R1).
+        assert "V-OK" in set(cv.load_visits()["announcement_id"])
+        # A company-scoped exception never freezes the plane (P1-R3, retained).
+        assert cv.read_health()["status"] == "ok"
+        assert cv.read_coverage_start() is not None
+        # ...and the malformed observation is durable exactly once.
+        exc = cv.load_coverage_exceptions()
+        assert len(exc) == 1
+        assert exc.iloc[0]["observed_count"] == 1
+        assert exc.iloc[0]["sec_code"] == "000777"
+
+    # --------------------------------------------------------------- item 10 --
+    def test_item10_mutation_committing_before_the_exception_is_killed(self, monkeypatch):
+        """MUTATION GUARD for the frozen ordering invariant. Records the real
+        call order of the durable-exception write and the canonical commit; a
+        mutation restoring `canonical filtered store first, exception second`
+        flips this list and fails."""
+        order: list[str] = []
+        real_atomic = cv._atomic_write
+        real_commit = cf._commit_filings
+
+        def spy_atomic(df, path):
+            if path == cv._exceptions_path():
+                order.append("exception-durable")
+            return real_atomic(df, path)
+
+        def spy_commit(df, path):
+            order.append("canonical-commit")
+            return real_commit(df, path)
+
+        monkeypatch.setattr(cv, "_atomic_write", spy_atomic)
+        monkeypatch.setattr(cf, "_commit_filings", spy_commit)
+
+        cf.write_filings([_r3a_malformed(), _r3a_good()])
+
+        assert order == ["exception-durable", "canonical-commit"], order
+
+    def test_item10b_the_common_path_never_pays_for_the_fence(self, monkeypatch):
+        """The fence is INERT when nothing was excluded: no ledger read, no
+        ledger write, no ledger file — the render-budget-law common path (and
+        the meaning of "ledger absent = normal empty state") is preserved."""
+        calls: list[str] = []
+        monkeypatch.setattr(cv, "read_coverage_exceptions_strict",
+                             lambda: calls.append("read") or pd.DataFrame(
+                                 columns=list(cv._EXCEPTION_COLUMNS)))
+        monkeypatch.setattr(cv, "_atomic_write",
+                             lambda df, p: calls.append("write"))
+
+        n = cf.write_filings([_r3a_good()])
+
+        assert n == 1
+        assert calls == []
+        assert not cv._exceptions_path().exists()
+        assert cf.LAST_KEY_INTEGRITY["boundary_persist_ok"] is True
+
+
+class TestPersistBoundaryExceptionsUnit:
+    """persist_boundary_exceptions() is the single reused entry point — the
+    fingerprint/upsert law is NOT duplicated in china_filings. These pin its
+    contract directly."""
+
+    def test_empty_input_is_a_free_no_op(self):
+        r = cv.persist_boundary_exceptions([], cf.key_anomaly)
+        assert r == {"ok": True, "n_relevant": 0, "n_new": 0, "n_reaffirmed": 0,
+                     "fingerprints": [], "detail": ""}
+        assert not cv._exceptions_path().exists()
+
+    def test_unreadable_ledger_refuses_rather_than_overwriting(self):
+        cv._exceptions_path().write_bytes(b"not a parquet file")
+        before = cv._exceptions_path().read_bytes()
+
+        r = cv.persist_boundary_exceptions([_r3a_malformed()], cf.key_anomaly)
+
+        assert r["ok"] is False
+        assert r["fingerprints"] == []
+        assert "UNREADABLE" in r["detail"]
+        assert cv._exceptions_path().read_bytes() == before   # never replaced
+
+    def test_a_raising_key_anomaly_fn_fails_closed_and_never_raises(self):
+        def _boom(_value):
+            raise RuntimeError("hostile predicate")
+
+        r = cv.persist_boundary_exceptions([_r3a_malformed()], _boom)
+        assert r["ok"] is False
+        assert r["fingerprints"] == []
+
+    def test_fingerprints_are_reported_only_after_a_durable_write(self, monkeypatch):
+        monkeypatch.setattr(cv, "_atomic_write",
+                             lambda df, p: (_ for _ in ()).throw(IOError("boom")))
+        r = cv.persist_boundary_exceptions([_r3a_malformed()], cf.key_anomaly)
+        assert r["ok"] is False
+        # An UNWRITTEN exception must never suppress refresh()'s own harvest.
+        assert r["fingerprints"] == []
+
+    def test_import_failure_at_the_fence_refuses_the_commit(self, monkeypatch):
+        """china_filings cannot reach the ledger's owner -> it must not commit
+        a store that forgets the observation."""
+        import collectors as _pkg
+
+        # Poison BOTH lookup paths `from collectors import china_visits` uses:
+        # the already-bound package attribute, then the sys.modules entry the
+        # submodule import falls back to. monkeypatch restores both at
+        # teardown — and unlike a builtins.__import__ hook it cannot disturb
+        # pytest's own imports mid-assert. (No monkeypatch.undo(): it would
+        # also revert this file's autouse config.data_dir redirect.)
+        monkeypatch.delattr(_pkg, "china_visits", raising=False)
+        monkeypatch.setitem(sys.modules, "collectors.china_visits", None)
+
+        r = cf._fence_coverage_exceptions([_r3a_malformed()])
+
+        assert r["ok"] is False
+        assert "import failed" in r["detail"]
+        assert r["fingerprints"] == []
