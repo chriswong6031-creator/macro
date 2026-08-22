@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-08-21",
+  "as_of": "2026-08-22",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -28,7 +28,7 @@
       "family": "crypto",
       "driver": "crypto_liquidity",
       "pathway_role": "primary",
-      "as_of": "2026-08-21",
+      "as_of": "2026-08-22",
       "direction_en": "crypto liquidity surging — BTC/ETH lead up",
       "direction_zh": "加密流动性涌入 — BTC/ETH领涨",
       "confidence_ceiling": "context_only",
@@ -38,7 +38,7 @@
       "nodes": [
         {
           "node_id": "driver_crypto_liquidity",
-          "as_of": "2026-08-21",
+          "as_of": "2026-08-22",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "crypto_liquidity",
@@ -47,8 +47,8 @@
             "zh": "加密流动性涌入 — BTC/ETH领涨"
           },
           "direction": 1,
-          "value": 2.42,
-          "z_or_percentile": 1.58,
+          "value": 3.75,
+          "z_or_percentile": 3.62,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "trigger",
@@ -58,17 +58,17 @@
         },
         {
           "node_id": "leg_crypto_liquidity_0",
-          "as_of": "2026-08-21",
+          "as_of": "2026-08-22",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "bitcoin",
           "observation": {
-            "en": "bitcoin (+2.8σ)",
-            "zh": "比特币 (+2.8σ)"
+            "en": "bitcoin (+4.3σ)",
+            "zh": "比特币 (+4.3σ)"
           },
           "direction": "positive",
-          "value": 2.8,
-          "z_or_percentile": 2.8,
+          "value": 4.3,
+          "z_or_percentile": 4.3,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -78,17 +78,17 @@
         },
         {
           "node_id": "leg_crypto_liquidity_1",
-          "as_of": "2026-08-21",
+          "as_of": "2026-08-22",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ether",
           "observation": {
-            "en": "ether (+3.0σ)",
-            "zh": "以太坊 (+3.0σ)"
+            "en": "ether (+4.3σ)",
+            "zh": "以太坊 (+4.3σ)"
           },
           "direction": "positive",
-          "value": 3.0,
-          "z_or_percentile": 3.0,
+          "value": 4.3,
+          "z_or_percentile": 4.3,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -98,17 +98,17 @@
         },
         {
           "node_id": "leg_crypto_liquidity_2",
-          "as_of": "2026-08-21",
+          "as_of": "2026-08-22",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "high-beta vs low-vol",
           "observation": {
-            "en": "high-beta vs low-vol (-0.9σ)",
-            "zh": "高贝塔对低波动 (-0.9σ)"
+            "en": "high-beta vs low-vol (-0.4σ)",
+            "zh": "高贝塔对低波动 (-0.4σ)"
           },
           "direction": "negative",
-          "value": -0.9,
-          "z_or_percentile": -0.9,
+          "value": -0.4,
+          "z_or_percentile": -0.4,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -160,7 +160,7 @@
       "family": "inflation",
       "driver": "oil_shock",
       "pathway_role": "alternate",
-      "as_of": "2026-08-21",
+      "as_of": "2026-08-22",
       "direction_en": "oil spiking — energy leads, breakevens up",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -170,7 +170,7 @@
       "nodes": [
         {
           "node_id": "driver_oil_shock",
-          "as_of": "2026-08-21",
+          "as_of": "2026-08-22",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "oil_shock",
@@ -179,7 +179,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 1.53,
+          "value": 1.04,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -190,7 +190,7 @@
         },
         {
           "node_id": "transmission_sticky_inflation_order1",
-          "as_of": "2026-08-21",
+          "as_of": "2026-08-22",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -210,7 +210,7 @@
         },
         {
           "node_id": "transmission_sticky_inflation_order2",
-          "as_of": "2026-08-21",
+          "as_of": "2026-08-22",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -230,7 +230,7 @@
         },
         {
           "node_id": "transmission_sticky_inflation_order3",
-          "as_of": "2026-08-21",
+          "as_of": "2026-08-22",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -293,7 +293,7 @@
       "family": "equity-leadership",
       "driver": "ai_semis",
       "pathway_role": "alternate",
-      "as_of": "2026-08-21",
+      "as_of": "2026-08-22",
       "direction_en": "AI/semis unwind — tech-led de-rating",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -303,7 +303,7 @@
       "nodes": [
         {
           "node_id": "driver_ai_semis",
-          "as_of": "2026-08-21",
+          "as_of": "2026-08-22",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ai_semis",
@@ -312,7 +312,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 0.95,
+          "value": 0.85,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

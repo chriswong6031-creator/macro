@@ -1,8 +1,8 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-08-20",
-  "n_events_logged": 382,
+  "asof": "2026-08-21",
+  "n_events_logged": 388,
   "n_events_graded": 254,
   "classes": [
     {
@@ -12,8 +12,8 @@
       "n_graded": 3,
       "hit_5d": 0.6666666666666666,
       "hit_21d": 1.0,
-      "avg_rel_5d": -0.019266309523809522,
-      "avg_rel_21d": -0.035104750000000004,
+      "avg_rel_5d": -0.018849791666666667,
+      "avg_rel_21d": -0.033204833333333336,
       "wilson_low_5d": 0.207655,
       "wilson_high_5d": 0.93851,
       "verdict": "insufficient"
@@ -78,7 +78,7 @@
       "hit_5d": 0.0,
       "hit_21d": 0.0,
       "avg_rel_5d": 0.008999755144032921,
-      "avg_rel_21d": 3.718000000000032e-05,
+      "avg_rel_21d": -0.0015360892857142858,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "context_only"
@@ -104,7 +104,7 @@
       "hit_5d": 0.25,
       "hit_21d": 0.0,
       "avg_rel_5d": 0.009642000000000001,
-      "avg_rel_21d": 0.05661325,
+      "avg_rel_21d": 0.0452906,
       "wilson_low_5d": 0.071478,
       "wilson_high_5d": 0.59073,
       "verdict": "insufficient"
@@ -115,9 +115,9 @@
       "n": 25,
       "n_graded": 9,
       "hit_5d": 0.8888888888888888,
-      "hit_21d": 0.3333333333333333,
+      "hit_21d": 0.5,
       "avg_rel_5d": 0.026263333333333333,
-      "avg_rel_21d": -0.017483333333333333,
+      "avg_rel_21d": -0.014664500000000002,
       "wilson_low_5d": 0.564994,
       "wilson_high_5d": 0.98011,
       "verdict": "insufficient"
@@ -128,9 +128,9 @@
       "n": 121,
       "n_graded": 115,
       "hit_5d": 0.46956521739130436,
-      "hit_21d": 0.3493975903614458,
-      "avg_rel_5d": 0.004633049275362319,
-      "avg_rel_21d": 0.02551526907630522,
+      "hit_21d": 0.37349397590361444,
+      "avg_rel_5d": 0.003635978260869565,
+      "avg_rel_21d": 0.022867815261044176,
       "wilson_low_5d": 0.380814,
       "wilson_high_5d": 0.560284,
       "verdict": "context_only"
@@ -151,7 +151,7 @@
     {
       "event_type": "management_change",
       "direction": "mixed",
-      "n": 11,
+      "n": 12,
       "n_graded": 9,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -190,12 +190,12 @@
     {
       "event_type": "policy_trade_control",
       "direction": "mixed",
-      "n": 32,
+      "n": 36,
       "n_graded": 13,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
-      "avg_rel_5d": -0.014367423076923078,
-      "avg_rel_21d": 0.06422880555555556,
+      "avg_rel_5d": -0.013918352564102563,
+      "avg_rel_21d": 0.056203333333333334,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
@@ -216,7 +216,7 @@
     {
       "event_type": "product_delay",
       "direction": "bearish",
-      "n": 3,
+      "n": 4,
       "n_graded": 2,
       "hit_5d": 0.5,
       "hit_21d": 0.5,
@@ -234,7 +234,7 @@
       "hit_5d": 0.0,
       "hit_21d": 0.0,
       "avg_rel_5d": -0.0438305,
-      "avg_rel_21d": -0.09577200000000001,
+      "avg_rel_21d": -0.09494525,
       "wilson_low_5d": 0.0,
       "wilson_high_5d": 0.4899,
       "verdict": "insufficient"
@@ -267,7 +267,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 774,
+    "n_sampled": 789,
     "n_graded": 0,
     "classes": []
   }

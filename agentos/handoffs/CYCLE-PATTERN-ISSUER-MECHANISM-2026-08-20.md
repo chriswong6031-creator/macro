@@ -214,3 +214,55 @@ reproduced twice against engine/trial_ledger.py); do not re-run the CPI-H1 row h
 append further registry versions before Sol's disposition of the escalated rows; do not
 treat the D1(c) release as authorization to append an issuer truth — vocabulary release
 ≠ content authorization, and every issuer truth still needs its own lawful basis.
+
+# CPI-H1.1 + A4P closure addendum (Sol's third gate, 2026-08-21)
+
+Sol accepted the second gate (CPI-H1 + A4G + #6203), kept A4 registration HELD, and
+authorized two bounded predecessor waves in parallel. Both are now MERGED and verified
+(server-side compare = identical to origin/main tip at merge time):
+
+- **CPI-H1.1** (PR #6211, merge `5f9fbe23a300`): the seven escalated class-subset rows
+  are RESOLVED — Sol adjudicated them legitimate specialized display consumers and the
+  status-class envelopes incomplete. display gained exactly seven tokens, promoted_null
+  gained sync_gauge_display, nothing else widened, zero registry changes; every added
+  token proven required by ≥1 real row. The row⊆class subset invariant is now HARD law
+  in the single canonical validator, binding validate_truth() and the CI scan (job
+  confirmed gate:code / merge-gate-binding). Opus red-team ACCEPT on mutation-tested
+  evidence; four hygiene fixes applied pre-merge.
+- **A4P** (PR #6213, merge `18858570deea`): contract V1.2. Two red-team REVISE rounds
+  dispositioned — round 1 caught a fabricated composite AG17 quotation (the A4G MAJ-2
+  defect class recurring) and the order_softness construction readmitting GFC blocks;
+  round 2 caught the promotion clock unpropagated to YAML/log and the AG14
+  cohort-label contradiction. Final: order_softness-only targets; deterministic
+  construction frozen (IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md, ≥2 floor,
+  contract-governed admissibility, fail-closed era gate); B≤3 uniform, LEN excluded
+  cell-level; historical arm = named_subset_basis [PHM, KBH], grind block usable
+  FY2016–2019 only; share = 1.0 numeric; bootstrap 800/seed-7 on the registered
+  block-cluster unit; six cell IDs minted identically in contract/YAML/disposition/
+  packet; promotion clock ~2160 (ZERO historical credit) propagated everywhere with
+  old figures demoted to labelled diagnostics; AP8 amendment entry consolidates both
+  rounds; ruling 6 recorded PARTIALLY EXECUTED / OPEN with an honest disposition;
+  Treasury availability upgraded to a first-party V-grade receipt (commissioning
+  session, direct browser 2026-08-21, incl. the 2021-12-06 HS→MC series-break);
+  packet leaves A4 proper exactly four mechanical acts, verbatim-or-abort. All three
+  config_hash values stable and reproduced across both rounds.
+
+**verified:** both merges via `gh pr view --json state,mergeCommit` + server-side
+`gh api repos/{owner}/{repo}/compare/<merge>...main` → `status: identical` at merge
+time (local fetch was intermittently timing out; the compare API is the proof).
+
+**A4 gate:** opens only on Sol's acceptance of BOTH returns; A4 proper = the four
+packet acts only, then STOP; next priority after = prospective observation activation.
+FIVE escalations ride with the returns: (1) AG14 — may a ≥2-contributor read ever bear
+the cohort label (named-subset labelling governs meanwhile); (2) ruling 6 OPEN — 0/8
+month-level boundary receipts, dedicated housing-sector boundary-dating wave needed
+(lane-1 gap 11); (3) DHI/TOL pre-FY2025 era receipting; (4) ratification of the six
+minted cell IDs; (5) Treasury storage/reuse basis before persistent ingestion.
+
+**do_not_redo (additions):** do not re-verify the eight envelope tokens' necessity
+(proven by registry set-difference, one per adjudicated row); do not restore the
+retired WARN-tier advisory functions (their absence is test-pinned); do not cite ~2149
+or ~2153 as a promotion timeline (non-promotion diagnostics only — the promotion clock
+is ~2160 at zero historical credit); do not present historical order_softness reads as
+cohort claims (named_subset_basis [PHM, KBH] until DHI/TOL era receipts exist); do not
+ingest Treasury CMT before the storage/reuse basis is settled.

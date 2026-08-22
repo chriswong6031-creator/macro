@@ -73,7 +73,8 @@ waves:
       entitlement, the next lawful scheduled run may replace this failed vintage.
   - id: AD-1C0.1
     title: Source-clock integrity + security closure + production commissioning
-    status: in_progress
+    status: done
+    pr: 6080
     depends_on: [AD-1C0]
     next_action: >
       Sol handoff 2026-08-20, three jobs. (A) Source-clock adjudication: census
@@ -88,6 +89,39 @@ waves:
       still 403, logs still served, no POLYGON/MASSIVE key in Actions secrets).
       (C) Production commissioning BLOCKED_EXTERNAL until (B) closes; then two
       consecutive healthy scheduled captures (S, D) and AD-1 end-to-end acceptance.
+      Job A RESOLVED 2026-08-20: clock law ruled per
+      DEC:AD1C01-CAPTURE-LEASE-REPLACES-SAME-DAY (Option B — lease to 03:00 ET
+      next day + OI same-book proof); PR #6080 open as a HELD DRAFT for Sol
+      (no arming, per DEC:SOL-HOLD-IS-A-MERGE-BARRIER). Jobs B/C remain
+      BLOCKED_EXTERNAL (probe 08:09Z: chain 403; logs undeleted; no Actions
+      secret registered). Sol review 4989933857 (2026-08-21) = AMEND-THEN-PASS:
+      four amendments implemented (lease gates every non-forced write incl.
+      first writes; refusal pre-fetch with zero vendor calls; overlap floor
+      min(stored, max(20, ceil(0.25*stored))); receipts carry lease +
+      vintage_proof audit dicts) and one boundary-focused adversarial round
+      found F1 two-clock blocker / F2 shrink-tripwire blinding / F3 forced
+      write_kind mislabel / F4 non-reproducible floor — all repaired and
+      flip-verified (196 passed combined). Revised head returned to Sol.
+      Job A MERGED / source-clock hardened: Sol substantive PASS (review
+      4991922630) on head 1addc2b05879 released the hold; #6080 squash-merged as
+      12467e2d5e9d333c13340a4fa216eb3924cd45fd (2026-08-22T05:32:55Z) on
+      concluded-green exact-head CI (ci-gate + 12 packs, fence-pack,
+      ci-authority; only red = codex/merge-queue-pilot, red-by-design). AD-1
+      stays BUILT_NOT_PROVEN; AD-2 NOT STARTED. ALL program code work is
+      STOPPED while Jobs B/C remain BLOCKED_EXTERNAL — no builder probes or
+      workarounds for the 403. After the operator confirms all four closures
+      (key rotated, logs deleted, Actions secret registered, Options Snapshot
+      entitlement restored; commercial right-to-use retained), run exactly one
+      bounded ROUTE:census probe (AAPL/SPY chain HTTP 200, nonempty contracts
+      with OI/IV/Greeks, adapter small-universe dry-run; if still 403 return
+      BLOCKED_EXTERNAL), then two consecutive normal scheduled healthy
+      captures (S, then D = next NYSE session; no --force, no bypass, dynamic
+      coverage >= 0.90, health=healthy, lawful lease, readable single-vintage
+      chain, coherent receipts), then the end-to-end production proof packet
+      (chain[S]+chain[D] -> AD-1 producer -> site/options_intel_brief.json ->
+      canonical Options Workspace -> served page; desktop/mobile, EN/ZH,
+      receipt/input closure, correct S/D dates, fresh not STALE_SOURCE,
+      UI/machine parity) returned to Sol.
   - id: AD-2
     title: Evidence Receipts, Nulls, Lifecycle, Corrections
     status: todo

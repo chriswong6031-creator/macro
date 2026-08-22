@@ -1,0 +1,13 @@
+[Unit]
+Description=Seal SPY REST daily bar at D+1 04:00:00 UTC
+
+[Timer]
+# Fires at 04:00:00 UTC so the unit owns the full [04:00Z, 04:05Z) seal window.
+OnCalendar=*-*-* 04:00:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=false
+Unit=macro-market-memory-source-spy-rest.service
+
+[Install]
+WantedBy=timers.target
