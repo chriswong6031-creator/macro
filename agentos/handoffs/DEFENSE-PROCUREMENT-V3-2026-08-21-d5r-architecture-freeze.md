@@ -3,7 +3,7 @@ workstream: WS:DEFENSE-PROCUREMENT-V3
 session: claude/d5r-program-graph-architecture-freeze
 model: fable
 ended_because: complete
-prs: []
+prs: [6209]
 decisions:
   - DEC:D5-OWNER-IS-GOVREV-ONTOLOGY-PLUS-COMPOSED-DOSSIER
   - DEC:D5-PILOT-IS-VIRGINIA-CLASS-SSN
@@ -104,12 +104,7 @@ unverified:
       Parse the PDF-portfolio format (D6 tooling dependency) or obtain the
       exhibit table from the comptroller print set.
 
-unresolved:
-  - >
-    PR number for this D5R docs change — session hit a host-level iCloud
-    dataless-pack stall on the Documents/Cluade clone (git object reads
-    kernel-blocked); ship chain proceeds once the store heals or via the
-    documented recovery path; record the PR here at merge.
+unresolved: []
 
 next_actions:
   - Return to Sol for D5R acceptance review.

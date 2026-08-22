@@ -32,14 +32,16 @@
 .state{padding:7px 0;border-bottom:1px solid var(--line)}
 .state:last-of-type{border-bottom:0}
 .state .chip{white-space:normal}
+.state .chip .tok{white-space:nowrap}
 .state p{margin:4px 0 0;font-size:12.5px}
 
 .act{display:none}
 .insp{margin-top:28px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
-.ins-grid{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,.95fr) minmax(0,1.5fr);gap:0 20px}
-.kv{display:grid;grid-template-columns:112px minmax(0,1fr);gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.ins-grid{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,.9fr) minmax(0,1.45fr);gap:0 20px}
+.kv{display:grid;grid-template-columns:104px minmax(0,1fr);gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.5}
 .kv:last-child{border-bottom:0}
-.kv span:first-child{color:var(--muted)}
+.kv>span:first-child{color:var(--muted)}
+.kv>div>.tok{margin-left:4px}
 .kv code,.insp code{overflow-wrap:anywhere}
 
 @media (max-width:1100px){
@@ -161,22 +163,22 @@
   <p class="kicker">Inspector · technical identity</p>
   <div class="ins-grid">
     <div>
-      <div class="kv"><span>Program</span><code>acq-program:virginia-class-ssn</code></div>
-      <div class="kv"><span>Capability</span><code>capability:undersea-warfare</code></div>
-      <div class="kv"><span>Platform</span><code>platform:virginia-class-block-vi</code></div>
-      <div class="kv"><span>Read model</span><code>government_program_dossier.v1</code></div>
+      <div class="kv"><span>Program</span><div><code>acq-program:virginia-class-ssn</code></div></div>
+      <div class="kv"><span>Capability</span><div><code>capability:undersea-warfare</code></div></div>
+      <div class="kv"><span>Platform</span><div><code>platform:virginia-class-block-vi</code></div></div>
+      <div class="kv"><span>Read model</span><div><code>government_program_dossier.v1</code></div></div>
     </div>
     <div>
-      <div class="kv"><span>Role · prime</span><code>prog-role:9f2c41ab7e05</code></div>
-      <div class="kv"><span>Role · teammate</span><code>prog-role:3d7be015c8a4</code></div>
-      <div class="kv"><span>Role · supplier</span><code>prog-role:c14a8f60d92b</code> <span class="tok">shared_scope true</span></div>
-      <div class="kv"><span>Milestone</span><code>prog-milestone:70e5c2b1a48f</code> <span class="tok">contract_event 2026-07-29</span></div>
+      <div class="kv"><span>Role · prime</span><div><code>prog-role:9f2c41ab7e05</code></div></div>
+      <div class="kv"><span>Role · teammate</span><div><code>prog-role:3d7be015c8a4</code></div></div>
+      <div class="kv"><span>Role · supplier</span><div><code>prog-role:c14a8f60d92b</code> <span class="tok">shared_scope true</span></div></div>
+      <div class="kv"><span>Milestone</span><div><code>prog-milestone:70e5c2b1a48f</code> <span class="tok">contract_event 2026-07-29</span></div></div>
     </div>
     <div>
-      <div class="kv"><span>Source identity</span><code>p1_line_item</code> · Appropriation 1611N, Shipbuilding &amp; Conversion Navy, BA-02, line "Virginia Class Submarine" + Advance Procurement sibling line</div>
-      <div class="kv"><span>Source identity</span><code>sar_msar</code> · "SSN 774 Virginia Class Submarine"</div>
-      <div class="kv"><span>Issuers</span><code>central:GD</code> <code>central:HII</code> <code>central:BWXT</code> <span class="tok">via defense21 → identity atlas</span></div>
-      <div class="kv"><span>Receipts</span><code>sha256 4a91c0e2…</code> <code>sha256 b7d3159f…</code> <code>sha256 e05c8a74…</code></div>
+      <div class="kv"><span>Source identity</span><div><code>p1_line_item</code> · Appropriation 1611N, Shipbuilding &amp; Conversion Navy, BA-02, line "Virginia Class Submarine" + Advance Procurement sibling line</div></div>
+      <div class="kv"><span>Source identity</span><div><code>sar_msar</code> · "SSN 774 Virginia Class Submarine"</div></div>
+      <div class="kv"><span>Issuers</span><div><code>central:GD</code> · <code>central:HII</code> · <code>central:BWXT</code> <span class="tok">via defense21 → identity atlas</span></div></div>
+      <div class="kv"><span>Receipts</span><div><code>sha256 4a91c0e2…</code> · <code>sha256 b7d3159f…</code> · <code>sha256 e05c8a74…</code></div></div>
     </div>
   </div>
   <p class="muted" style="margin:10px 0 0;font-size:12.5px">Receipt ids and sha256 values above are placeholders in this composition. Admission of any role assertion or milestone requires the fetched document with its sha256, URL and retrieved_at; search synthesis is not admissible evidence. Budget rail state <code>projection_missing</code>; economic-relationship rail <code>not_asserted</code> (GMI reserved-null). The award rail composes on the award plane and is not exercised here. Display tier: this surface cannot rank, size, gate, or originate a signal. Production build ships EN/ZH parity; this reference is EN only.</p>
