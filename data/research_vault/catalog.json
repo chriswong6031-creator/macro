@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T04:43:48.578296+00:00",
-  "count": 1593,
+  "generated_at": "2026-08-22T05:16:34.572028+00:00",
+  "count": 1595,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -106,6 +106,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-iwro6dzcwj5-73db6c",
+      "title": "Mortgage & Structured Products Trader Rate sensitivity in focus",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T03:18:51Z",
+      "summary_points": [
+        "**Agency MBS Rate Sensitivity**: Yields >4.8-5% trigger extension concerns, prompting neutral stance on lower coupons (FN 2.0s-2.5s); belly/lower coupons outperform during rate rallies (FN 5.5s/6.0s likely winners if yields cap).",
+        "**RMBS Extension Risk**: Elevated mortgage rates (6.7% vs 6.0% Feb) amplify extension risk for non-QM M1, CES A2, and subordinate tranches; 2023 vintage low risk, A1 tranches tight due to yield focus.",
+        "**Japanese Demand Shift**: Pension funds remain consistent net buyers of agency MBS (mirroring US asset managers), while insurers reversed to net sellers (diminished yield attractiveness vs domestic alternatives).",
+        "**GWAC Pricing Disparity**: New-issue GWACs (non-QM M1s, CES A2s) trade lower than seasoned deals, indicating pricing pressure and higher extension risk for recent issues (WAL ~8 years vs new issues).",
+        "**Mortgage Rate Surge**: RMB mortgage rates hit 6.7% (Freddie survey), directly amplifying extension risk in RMBS sector and signaling reduced refinance activity (refinance share down to 33%)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 25,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-kzbiu0oxnqf-233d14",
       "title": "Global Markets Daily Jackson Hole Roadmap 2026",
       "institution": "Goldman Sachs",
@@ -122,6 +143,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-j7hesirialr-eae64b",
+      "title": "Americas Construction Building Products Non Residential Construction Data Centers and Institutional Projects Support Growt...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T03:18:44Z",
+      "summary_points": [
+        "**ABI Deterioration & Leading Indicator**: ABI fell to 46.6 (35+ month negative streak), driven by rates, inflation, and labor constraints; serves as 9-12m leading indicator for non-residential construction spending, signaling sustained downturn despite sector-specific momentum.",
+        "**Data Center Surge in DMI**: Dodge Momentum Index (DMI) rose 7% MoM (July) fueled by 59 data center projects >$100mn (incl.",
+        "$500mn), with institutional planning up 13.1% vs June; highlights structural shift toward tech/energy efficiency sectors (e.g., CSL re-roof cycle).",
+        "**Regional Backlog Divergence**: Midwest backlogs down 16% seq (largest decline), South at 10.1 months (highest); heavy industrial backlog up 80% YOY (9.2 months), exposing sector-specific risks and regional vulnerability for portfolio allocation.",
+        "**Office Utilization Lag**: Office utilization at 54% (up 140bps YoY but 250bps below 2020 peak), with NYC (+3%) outperforming DC (-1%); structural mismatch between employment (4% above 2019) and utilization, signaling persistent risk for office REITs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
