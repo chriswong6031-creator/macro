@@ -106,7 +106,26 @@ Read:
 
 Do not spend half the session repeating generic research into segment exposure, thematic NLP, supply-chain propagation, expectations, novelty or factor residualization. Use the benchmark as the shared starting point, then investigate the cell's genuinely open Mastermind-specific question.
 
-## Step 7 — Concrete product/intelligence states
+## Step 7 — Data/source/rights/freshness requirements
+
+Read:
+
+`research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_DATA_SOURCE_AND_MOAT_LEDGER_2026-08-22.md`
+
+This maps the desired evidence families to authoritative/current owner sources, first-party/public possibilities, likely licensed gaps, point-in-time requirements, freshness classes and build-vs-license decision law.
+
+Key examples:
+
+- SEC filing/iXBRL segment truth is an extraction/governance problem before it is a vendor problem;
+- detailed point-in-time broker/KPI consensus is a plausible licensed gap, not assumed available;
+- SEC 13F and FINRA short interest are slow positioning states with publication lag, not live flow;
+- ClinicalTrials.gov/USAspending remain specialist-owner official sources;
+- ThetaData remains the canonical options source under its owner;
+- public URLs do not automatically grant scraping/redistribution rights.
+
+A cell may not design around a data field without an honest source/history/rights story.
+
+## Step 8 — Concrete product/intelligence states
 
 Read:
 
@@ -114,7 +133,7 @@ Read:
 
 If your proposed architecture cannot represent the negative/missing/conflicted/correction cases in that file, it is probably flattening the system incorrectly.
 
-## Step 8 — Executive decision hygiene
+## Step 9 — Executive decision hygiene
 
 Read:
 
@@ -122,19 +141,19 @@ Read:
 
 Do not re-litigate settled architecture or escalate questions that are not yet executive decisions.
 
-## Step 9 — Universal execution law
+## Step 10 — Universal execution law
 
 Read:
 
 `research/prophet_v4/flagship_cells/RESEARCH_CELL_EXECUTION_CONSTITUTION_2026-08-22.md`
 
-## Step 10 — Inter-cell ownership
+## Step 11 — Inter-cell ownership
 
 Read:
 
 `research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_CELL_HARDENING_INDEX_2026-08-22.md`
 
-## Step 11 — Your dedicated cell handoff
+## Step 12 — Your dedicated cell handoff
 
 - A / MAS-117 → `CELL_A_THEME_INTELLIGENCE_HANDOFF_2026-08-22.md`
 - B / MAS-118 → `CELL_B_EVIDENCE_PRICE_GAP_HANDOFF_2026-08-22.md`
@@ -145,7 +164,7 @@ Read:
 - G / MAS-123 → `CELL_G_VALUE_OF_INFORMATION_MEASUREMENT_HANDOFF_2026-08-22.md`
 - H / MAS-124 → `CELL_H_FLAGSHIP_PRODUCT_EXPERIENCE_HANDOFF_2026-08-22.md`
 
-## Step 12 — Standard return shape
+## Step 13 — Standard return shape
 
 Read before doing the work, not only at closeout:
 
@@ -197,6 +216,16 @@ A stale `next_action` does not transfer ownership.
 
 A desired product capability is last in this ordering, not first.
 
+## 2.5 “Can we source this field honestly?”
+
+1. current canonical source owner / actual production source;
+2. source rights and first-party/official documentation;
+3. data/source/moat ledger;
+4. external benchmark/vendor methodology;
+5. desired product field.
+
+If the desired field has no lawful PIT source story, it remains unavailable.
+
 ---
 
 # 3. What is frozen versus open
@@ -216,6 +245,7 @@ A desired product capability is last in this ordering, not first.
 - Strong thesis + bad entry is valid.
 - Empty/no-action days are valid.
 - A1-A12 anti-circularity/leakage controls for relevant research.
+- A desired source/data field requires an explicit owner/clock/history/rights story.
 
 ## Open
 
@@ -224,6 +254,7 @@ A desired product capability is last in this ordering, not first.
 - which transmission mechanisms are estimable;
 - whether an incorporation-gap state adds value after fold-frozen/PIT controls;
 - which domains support expectation/materiality well;
+- whether licensed detailed consensus/relationship data is worth buying;
 - whether species routing adds value;
 - whether analogues calibrate outcomes;
 - whether fragility/crowding help rank vs only path/explanation;
@@ -259,7 +290,7 @@ Your cell should **not** own the entire chain.
 
 ---
 
-# 5. The fastest misconstruction / leakage test
+# 5. The fastest misconstruction / leakage / source test
 
 Before writing a conclusion, ask:
 
@@ -282,7 +313,9 @@ Before writing a conclusion, ask:
 17. Can a graph path cycle back into the target and leak its own response?
 18. Did I confuse different source roots with economically independent information?
 19. Could coverage itself be the feature my model is learning?
-20. Does my return say what should be killed if the hypothesis fails?
+20. Does the field I want have a lawful PIT source, known-at clock, correction story and rights tier?
+21. Am I using a slow source (13F/short interest/etc.) as if it were live flow?
+22. Does my return say what should be killed if the hypothesis fails?
 
 Any `yes` is a reason to HOLD and repair the research design.
 
@@ -298,6 +331,7 @@ current main: <sha>
 canonical owner(s): <...>
 masterplan read: yes
 adversarial amendments read: yes
+source ledger read: yes
 material status disagreements: <...>
 open hypothesis IDs owned by this cell: <...>
 mutation authority: RESEARCH ONLY
@@ -317,6 +351,7 @@ A complete research return must:
 - reconcile to current main at closeout;
 - classify capabilities honestly;
 - show compliance with all applicable adversarial amendments;
+- state source owner / PIT history / freshness / rights for every proposed intelligence field;
 - update the hypothesis/kill outcomes for the questions it actually tested;
 - name external benchmark methods used and where Mastermind differs;
 - produce `ADOPT / EXTEND / DEFER / REJECT` rulings;
