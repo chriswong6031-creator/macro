@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T17:10:48.960312+00:00",
-  "count": 1630,
+  "generated_at": "2026-08-22T18:12:59.569634+00:00",
+  "count": 1633,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -573,6 +573,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 21,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-htxxpmh2sxx-c6d796",
+      "title": "UBS Equity Preference List Taiwan 2026 08 21",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:36Z",
+      "summary_points": [
+        "**TSMC Concentration Risk**: 58.0% portfolio weight creates extreme single-stock exposure; vulnerable to geopolitical tensions (US-China trade policies) and supply chain disruptions despite AI-driven growth catalysts.",
+        "**Sector Overexposure**: Semiconductors dominate 79.0% of portfolio (TSMC 58.0%), amplifying regulatory volatility and sector rotation risks amid AI infrastructure demand.",
+        "**Earnings Growth & Valuation**: 42% (2026) and 35% (2027) earnings growth forecasts supported by AI infrastructure demand; PEG ratio 0.6-0.7x indicates attractive risk-adjusted returns.",
+        "**Strategic Portfolio Shifts**: Removed ASMedia (lack of near-term catalysts); added Global Unichip/Jentech Precision (+2.0 ppt each) to align with AI hardware demand and sector rotation.",
+        "**AI Infrastructure Catalysts**: TSMC’s capex plan, Alphabet’s hardware spending, and hyperscaler 800G migration (Accton) drive $1.3T global infrastructure spend (25% CAGR 2025-2030)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
@@ -1681,6 +1702,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qnxzf4ancle-87a6d0",
+      "title": "Americas Utilities California Wildfire Reform Term Sheet Balanced Framework, Constructive for PCG",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:27:38Z",
+      "summary_points": [
+        "**Wildfire Reform Term Sheet**: $6bn cap on fund-covered claims (solvency ↑ to 98% from 53%) and 20% T&D rate base liability; balanced framework drives PGC Buy amid legislative urgency and steep valuation discount.",
+        "**Liability Reduction Catalyst**: Proposals eliminate subrogation/punitive damages, cutting wildfire settlement costs 35%-40% (CEA report), directly reducing utility liabilities.",
+        "**PGC Valuation & Catalyst**: 12.5x P/E on Q5-Q8 estimates, $24 target (vs.",
+        "$17.85 current), with 37% discount narrowing if policy aligns; highest sensitivity to wildfire policy among California utilities.",
+        "**Institutional Support**: 50% Buy consensus (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-l4pv4nrqo9i-0bf02a",
       "title": "GS markets macro",
       "institution": "S&T",
@@ -1718,6 +1760,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u60iwlfhn8w-452805",
+      "title": "JPM Alibaba Group 1",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T12:52:04Z",
+      "summary_points": [
+        "**AI Infrastructure Returns Validated**: First auditable framework shows 22% after-tax IRR on AI capex vs.",
+        "10% cost of capital, shifting from cash burn to positive NPV (Rmb36 NPV per Rmb100 capex).",
+        "**Cloud Growth & Margin Acceleration**: External cloud revenue +45% YoY, AI products 35% of revenue (target 50% by FY27), cloud EBITDA margin at 12% with expanding margins from legacy/AI vintages.",
+        "**Capex Plateau Critical for Cash Flow**: Timing of capex plateau (FY26/27) drives cash flow inflection around FY29; delayed plateau risks delayed FCF breakeven (Yr 3).",
+        "**Structural Pricing Risk**: Compute-price deflation as supply tightness eases poses largest margin uncertainty; incremental EBITDA margin (45%) reflects legacy/AI mix."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
