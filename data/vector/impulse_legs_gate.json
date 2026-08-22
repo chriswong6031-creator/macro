@@ -12,11 +12,11 @@
       "label": "Vol-of-vol jolt (DVOL range)",
       "floor": 1.5,
       "min_holdout_n": 30,
-      "lift_full": 1.078,
-      "lift_holdout": 1.85,
-      "perm_p": 0.4378,
-      "n_fires_full": 120,
-      "n_fires_holdout": 59
+      "lift_full": 1.07,
+      "lift_holdout": 1.819,
+      "perm_p": 0.4463,
+      "n_fires_full": 121,
+      "n_fires_holdout": 60
     },
     "d3": {
       "status": "demoted",

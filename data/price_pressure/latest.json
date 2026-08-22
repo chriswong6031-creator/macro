@@ -2,7 +2,7 @@
   "schema": "price_pressure.v1",
   "engine_version": "price_pressure.v1",
   "asof": "2026-08-18",
-  "generated_utc": "2026-08-21T04:42:04+00:00",
+  "generated_utc": "2026-08-22T05:39:54+00:00",
   "display_only": true,
   "authority": {
     "can_rank": false,
@@ -54,7 +54,7 @@
     "character": {
       "verdict": "clear",
       "primary_label": "Crypto liquidity",
-      "asof": "2026-08-20",
+      "asof": "2026-08-21",
       "source": "data/regime/latest.json#market_drivers"
     },
     "banner": "Today's pressure is name-by-name, not market-wide.",

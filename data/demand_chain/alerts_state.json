@@ -26,7 +26,7 @@
   "QCOM": "ahead_of_consensus",
   "ROK": "consensus_at_risk",
   "SHW": "consensus_at_risk",
-  "SO": "ahead_of_consensus",
+  "SRE": "ahead_of_consensus",
   "TLN": "ahead_of_consensus",
   "TMDX": "ahead_of_consensus",
   "V": "ahead_of_consensus",
