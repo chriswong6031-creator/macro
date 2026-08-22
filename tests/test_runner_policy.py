@@ -38,6 +38,7 @@ def fixture_tree(tmp_path: Path) -> tuple[Path, Path, Path]:
     for name in (
         "ci.yml",
         "fences.yml",
+        "merge-on-green.yml",
         "selfhosted-ci-canary.yml",
         "m1-runner-canary.yml",
         "ci-authority.yml",
@@ -57,6 +58,15 @@ def mutate_registry(path: Path, callback) -> None:
 def test_live_tree_satisfies_transitional_policy() -> None:
     result = run_guard(ROOT, REGISTRY, WORKFLOWS)
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_merge_control_registration_stays_live_as_w1b_rollback_capacity() -> None:
+    registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
+    merge_control = registry["label_registry"]["merge-control"]
+    assert merge_control["status"] == "live"
+    assert merge_control["carried_by"] == ["mac-builder-4"]
+    assert "rollback-only" in merge_control["note"].lower()
+    assert "w5" in merge_control["note"].lower()
 
 
 def test_fork_scenario_cannot_mutate_to_selfhosted(tmp_path: Path) -> None:
@@ -90,6 +100,26 @@ def test_ordinary_ci_and_fences_cannot_move_off_hosted(tmp_path: Path) -> None:
     result = run_guard(root, registry, workflows)
     assert result.returncode == 1
     assert "R4" in result.stdout
+
+
+def test_merge_control_cannot_move_off_hosted(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    merge_control = yaml.safe_load(
+        (workflows / "merge-on-green.yml").read_text(encoding="utf-8")
+    )
+    merge_control["jobs"]["sweep"]["runs-on"] = [
+        "self-hosted",
+        "macOS",
+        "ARM64",
+        "merge-control",
+    ]
+    (workflows / "merge-on-green.yml").write_text(
+        yaml.safe_dump(merge_control, sort_keys=False), encoding="utf-8"
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R4" in result.stdout
+    assert "merge-on-green.yml:sweep" in result.stdout
 
 
 def test_ci_and_render_slot_labels_cannot_recombine(tmp_path: Path) -> None:
