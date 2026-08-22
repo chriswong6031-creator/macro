@@ -1,30 +1,30 @@
 {
  "schema": "dead_name_price_coverage.v3",
- "generated_utc": "2026-08-08T14:42:46.908137+00:00",
- "n_dead_universe": 1083,
- "n_cik_resolved": 159,
- "n_with_prices": 424,
- "price_coverage_frac": 0.3915,
+ "generated_utc": "2026-08-22T14:34:19.073387+00:00",
+ "n_dead_universe": 1081,
+ "n_cik_resolved": 211,
+ "n_with_prices": 422,
+ "price_coverage_frac": 0.3904,
  "by_source": {
-  "polygon": 372,
-  "yfinance": 52
+  "polygon": 353,
+  "yfinance": 71
  },
  "delisting_reason": {
-  "bankruptcy": 14,
-  "acquisition": 103,
-  "unknown": 42,
-  "n_classified": 159
+  "bankruptcy": 15,
+  "acquisition": 136,
+  "unknown": 60,
+  "n_classified": 211
  },
  "n_imputed_bankruptcies": 3,
  "residual_bias": "Acquisition skew is now PARTLY corrected: 3 bankruptcy delistings (8-K Item 1.03) carry an imputed \u2212100% terminal close (source=imputed_bankruptcy), so the price\u21920 tail is no longer a silent survivorship gap. RESIDUAL: bankruptcy names with no recovered price anchor can't be imputed (no from-price), and the recovered set still skews to ACQUISITIONS for names not yet reason-classified.",
  "universe_basis": {
   "basis": "sp1500_pit_membership.end_date NOT NULL (INDEX EXIT, not death)",
   "measured": true,
-  "n_universe": 1083,
-  "n_still_trading": 172,
-  "still_trading_frac": 0.1588,
-  "n_still_trading_with_prices": 134,
-  "caveat": "172 of 1083 names in this 'dead' universe (15.9%) still have a live advancing price store: they were REMOVED FROM THE INDEX, not delisted. Their recovered rows are their own genuine prices (bounded by the fetch window, not by a death), so they must NOT be trimmed to a 'death date' \u2014 but neither do they correct survivorship. Any study calling this panel de-biased should partition index-exit-alive from truly-delisted before claiming a survivorship fix."
+  "n_universe": 1081,
+  "n_still_trading": 171,
+  "still_trading_frac": 0.1582,
+  "n_still_trading_with_prices": 133,
+  "caveat": "171 of 1081 names in this 'dead' universe (15.8%) still have a live advancing price store: they were REMOVED FROM THE INDEX, not delisted. Their recovered rows are their own genuine prices (bounded by the fetch window, not by a death), so they must NOT be trimmed to a 'death date' \u2014 but neither do they correct survivorship. Any study calling this panel de-biased should partition index-exit-alive from truly-delisted before claiming a survivorship fix."
  },
  "identity_splice_quarantine": {
   "applied": true,
