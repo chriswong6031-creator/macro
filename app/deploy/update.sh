@@ -31,7 +31,7 @@ OPTIONS_TIMER_DISARMED=0
 OPTIONS_API_FENCE_MARKER=/run/macro-api-market-memory-options-deny.ready
 OPTIONS_RECIPROCAL_FENCE_MARKER=/run/macro-market-memory-options-reciprocal-deny.ready
 OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|context|identity|breadth|technicals|experience|production-records)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
-OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|source-spy-rest|context|identity|breadth|technicals|technicals-v2|experience|experience-v2|production-records)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience|accrue_market_memory_spy_experience_v2|capture_market_memory_options_episodes|capture_market_memory_technicals_v2|ingest_market_memory_sources_spy)\.py|engine/(__init__|options_signal_episode)\.py|engine/neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual|_production_records|_source_kernel|_sources(_spy)?)?)\.py|contracts/market_memory/(spy_experience_(registration|opportunity|outcome_revision|population_receipt)|options_signal_episode_production_record)\.v1\.schema\.json|contracts/options/options\.signal_episode\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|config/market_memory_spy_experience_registration\.v2\.json|lib/(__init__|nyse_calendar)\.py|data/options_signal_episode/episodes\.jsonl|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-spy-rest-prereqs|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|source-spy-rest|context|identity|breadth|technicals|technicals-v2|experience|experience-v2|production-records)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience|accrue_market_memory_spy_experience_v2|capture_market_memory_options_episodes|capture_market_memory_technicals_v2|ingest_market_memory_sources_spy)\.py|engine/(__init__|options_signal_episode)\.py|engine/neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual|_production_records|_source_kernel|_sources(_spy)?)?)\.py|contracts/market_memory/(spy_experience_(registration|opportunity|outcome_revision|population_receipt)|options_signal_episode_production_record)\.v1\.schema\.json|contracts/options/options\.signal_episode\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|config/market_memory_spy_experience_registration\.v2\.json|lib/(__init__|nyse_calendar)\.py|data/options_signal_episode/episodes\.jsonl|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_RUNTIME_REGEX='^(app/requirements\.txt|scripts/(__init__|accrue_market_memory_spy_experience)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual)?)\.py)|contracts/market_memory/spy_experience_(registration|opportunity|outcome_revision|population_receipt)\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_ROOT=/var/lib/macro-market-memory/state/experience-v1
 MARKET_MEMORY_EXPERIENCE_INSTALLATION="$MARKET_MEMORY_EXPERIENCE_ROOT/registration_installation.json"
@@ -657,6 +657,19 @@ fi
 if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
 	systemctl enable --now macro-market-memory-source-spy-rest.timer >/dev/null 2>&1 || \
 		echo "macro-update: macro-market-memory-source-spy-rest.timer could not be enabled" >&2
+fi
+if bash "$APP_DIR/app/deploy/market-memory-spy-rest-prereqs.sh" --check-ready >/dev/null 2>&1; then
+	:
+else
+	SPY_REST_PREREQ_STATUS=0
+	bash "$APP_DIR/app/deploy/market-memory-spy-rest-prereqs.sh" || SPY_REST_PREREQ_STATUS=$?
+	if [ "$SPY_REST_PREREQ_STATUS" -eq 0 ]; then
+		echo "macro-update: spy-rest credentials provisioned"
+	elif [ "$SPY_REST_PREREQ_STATUS" -eq 2 ]; then
+		echo "macro-update: spy-rest credential absent; source unit will fail closed until provisioned" >&2
+	else
+		echo "macro-update: WARNING: spy-rest credential provisioning failed (status $SPY_REST_PREREQ_STATUS)" >&2
+	fi
 fi
 
 # W1B.1 trusted context publisher: network-dark and credential-free. It writes

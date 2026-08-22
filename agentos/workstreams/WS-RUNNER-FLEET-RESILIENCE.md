@@ -34,30 +34,30 @@ waves:
       proof before any merge-control route change.
   - id: W1
     title: Hosted merge-control environment canary and bounded cutover
+    status: done
+    depends_on: [M0]
+    next_action: >
+      W1-B merged in PR #6222 as 578b66eb2c469859ab2a6a05cf63d5f235bd01fd.
+      Production proof used hosted sweep run 32561159112 / job 97002775355 to merge
+      real armed PR #6226 while M2 render job 97001136397 remained active; hosted
+      pickup was 2 seconds and decisive-green-to-merge was 28 seconds.
+  - id: W2
+    title: Guarded M1 three-listener diagnostic restoration
     status: in_progress
     depends_on: [M0]
     next_action: >
-      Land W1-A's read-only hosted canary, then dispatch it three times from main,
-      including one congested-window run. Every accepted attempt must retain a unique
-      run_id + run_attempt receipt and the observed first hosted-step timestamp. The
-      <60s pickup gate is adjudicated from GitHub Actions run/job created_at and
-      started_at metadata together with that artifact; accepted:true alone is never
-      pickup proof. Only after all three meet the frozen pickup, checkout, dependency,
-      and test gates may W1-B change merge-on-green's runner route.
-  - id: W2
-    title: Guarded M1 three-listener diagnostic restoration
-    status: todo
-    depends_on: [M0]
-    next_action: >
-      Restore the M1 using the existing ops/runner-host/m1 guarded service contract
-      and pass m1-runner-canary with zero production labels.
+      Three guarded diagnostic listeners, the no-op canary and one-listener crash
+      recovery are healthy. Obtain the terminal 12-hour soak receipt before closing
+      W2; full_work_allowed remains false below the 200 GiB free-space floor, so W4
+      production admission remains blocked.
   - id: W3
     title: PC render recovery and default full-render cutover
-    status: todo
+    status: in_progress
     depends_on: [M0]
     next_action: >
-      Re-prove at least two render-linux listeners, a real engine-render, and one
-      scope=all render on the PC before changing render.yml's default route.
+      Merge the route-only render.yml default cutover on exact-head proof, then accept
+      W3 only after one natural push-triggered render lands on pc-render-* and completes
+      checkout, bootstrap, caches, render, guards, R2 publication and site commit/push.
   - id: W4
     title: Bounded M1 production-capacity return
     status: todo
@@ -108,6 +108,10 @@ landmines:
   - >
     `render-linux` being declared in runner-policy does not prove it is online; the
     registry is static operator-maintained state. Re-prove current PC liveness.
+  - >
+    The static runner-policy PC slot/status/carrier census is known stale against the
+    accepted four-listener job receipts. W5 owns coherent live-registry reconciliation;
+    do not widen W3's route-only cutover into those liveness fields.
 do_not_redo:
   - >
     Do not buy hardware before restoring and measuring the existing M1/PC fleet; the
@@ -131,8 +135,9 @@ do_not_redo:
     is a two-source receipt: GitHub Actions run/job timing metadata plus the uniquely
     named run_id + run_attempt artifact containing job_started_at_observed.
 next_action: >
-  Land W1-A and obtain three main-ref hosted canary receipts. W1-B remains blocked until
-  those receipts pass, including one during the congested nightly/render window.
+  Land W3's route-only render.yml default cutover, then require one natural push-triggered
+  production render on pc-render-* with successful publication before marking W3 done.
+  W2's terminal 12-hour soak receipt remains independently outstanding; W4 stays blocked.
 ---
 
 ## Current incident

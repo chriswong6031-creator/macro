@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T14:10:25.375475+00:00",
-  "count": 1621,
+  "generated_at": "2026-08-22T15:09:54.143192+00:00",
+  "count": 1623,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1008,6 +1008,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-uabmtw1zeqe-f0acc1",
+      "title": "Array Technologies Inc. (ARRY) Investor event highlighting APA Solar and diversification strategy",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:02:45Z",
+      "summary_points": [
+        "**APA Solar Growth & Revenue Targets**: APA revenue at ~$130mn (2025), 17% YoY H1 2026 growth; targets double-digit CAGR via engineered foundations (50% revenue mix) and international sales (15%), with high-20%/low-30% margins.",
+        "**TAM Expansion & Acquisition Catalyst**: Combined TAM reaches ~$6.4bn (core $4.3bn + APA $1.7bn + pending AWM acquisition $400m), supported by >50GW legacy retrofit opportunity for recurring high-margin revenue.",
+        "**Target Price Decline & Bearish Sentiment**: Price target dropped from $31.00 (08-Nov-23) to $11.00 (06-Aug-26), with closing prices consistently below targets, signaling strong bearish sentiment and underperformance risk.",
+        "**Hold Rating & Negative Outlook**: Goldman Sachs maintains Hold rating with $11.00 price target (below current price), reflecting neutral stance but negative fundamentals and unreflected AWM acquisition impact."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-3ydponbutxc-dd9437",
       "title": "MS Power Struggle Data Center Pushback Update & Expert Call Takeaways",
       "institution": "Morgan Stanley",
@@ -1149,6 +1169,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 67,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jrl19e40x7g-51514c",
+      "title": "Follow The Flow Reaching for higher yields",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T15:24:48Z",
+      "summary_points": [
+        "**Govt Bond Flow Dominance**: Govt bond funds saw 6% AUM inflows vs 1.9% for IG funds (3x stronger), with Syr Bund yields near 3% (low since 2008, volatility mid-60s).",
+        "**Cross-Asset Outflow Spike**: Sharp negative flow spikes across High Yield ($0.4bn 4w avg), Equity ($0.2bn), and Fixed Income ($4.7bn) around Aug-25 signaling broad risk aversion.",
+        "**Equity ETF Leadership**: Equity ETFs drove highest 4w inflows ($1.1bn) vs IG ($0.6bn) and HY ($0.1bn), reflecting strong ETF preference for equity exposure.",
+        "**European HY Flow Preference**: European domiciled HY flows dominated ($148m vs $90m Global, $74m US), indicating preference for global over US-specific high-yield exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },

@@ -1,0 +1,98 @@
+{
+  "theme": {
+    "hash": "#theme-big_pharma",
+    "onView": "overview",
+    "navs": [
+      {
+        "seq": 2,
+        "type": "nav",
+        "path": "basket/big_pharma.html",
+        "result": "recorded (would navigate to basket/big_pharma.html)"
+      }
+    ],
+    "logHead": [
+      "boot:basketdata/baskets.json:hit (sync boot parse)",
+      "nav:basket/big_pharma.html:recorded (would navigate to basket/big_pharma.html)",
+      "fetch:basketdata/baskets.json:hit",
+      "fetch:basketdata/etf_pulse.json:hit",
+      "fetch:basketdata/vol_sentiment.json:hit",
+      "fetch:marketdata/sp500_heatmap.json:hit",
+      "fetch:marketdata/index_leadership.json:hit",
+      "fetch:basketdata/baskets.json:hit",
+      "fetch:basketdata/narrative_emergence.json:hit",
+      "fetch:marketdata/nasdaq_internals.json:hit",
+      "fetch:basketdata/pulse.json:recorded-not-executed"
+    ]
+  },
+  "bid": {
+    "href": "basket/gold_miners.html",
+    "id": "gold_miners",
+    "bids": [
+      "gold_miners",
+      "ai_agents",
+      "non_ai_software",
+      "us_sector_staples",
+      "us_sector_materials",
+      "us_sector_comm",
+      "big_pharma",
+      "silver_miners",
+      "ai_software",
+      "cybersecurity",
+      "robotics_automation",
+      "us_sector_realestate",
+      "pgm_miners",
+      "energy_complex",
+      "obesity_glp1"
+    ]
+  },
+  "read": {
+    "hash": "#read-gold_miners",
+    "onView": "overview",
+    "rowPresent": true,
+    "actnowText": "BUY NOW 4 ALMOST READY 5 IN FAVOUR \u2014 DON'T CHASE 5 TAKE PROFITS 3 STAND ASIDE 27 Entry confirmed today How lanes are graded 3 of 4 shown SECTOR OR THEME SCORE 20d vs market WHY IT IS HERE Gold Miners THEME \u00b7 AEM \u00b7 EQX \u00b7 AU 76 +27.2% Leading and still broad \u2014 room to add on the trend. Gold Miners GDX \u00b7 MATERIALS & MINING CYCLE Prime entry CONVICTION 75 Accumulate CONFLUENCE 3/3 CYCLE POSITION 22/100 members AI Agents & Applications THEME \u00b7 PATH \u00b7 PLTR \u00b7 NOW 71 +20.3% Leading and still broad \u2014 roo",
+    "highlighted": "r3-row rvx-trow true"
+  },
+  "tm": {
+    "text": "Rotation Time Machine \u2014 replay 25 years of rotation nothing loads until you open it Replay the full measured history of sector & subsector relative rotation. Each dot is a sector or subsector; horizontal axis = relative strength (right = stronger vs peers), vertical = whether that strength is heating up or cooling (up = gaining momentum). Short trails show the last 6 dates so each path stays readable. Episode annotations mark measured rotation events from the catalog. No predictive claim \u2014 this replays measured history. UNIT Sectors 1998\u20132026 Subsectors + Themes 2021\u20132026 Factors 2013\u20132026 Replay unit YEAR 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026 Replay year The manifest is real; the frames are not carried here. Full replay reads the episode feed and one file per period. This reference carries the manifest only, so those requests are recorded rather than served \u2014 open the harness recorder to see the exact paths a replay asks for. 1998-12-22 \u2013 2026-08-19 \u00b7 11 nodes \u00b7 112 periods \u00b7 11 named in the registry",
+    "fetches": [
+      {
+        "seq": 12,
+        "type": "fetch",
+        "path": "oracledata/tm_manifest.json",
+        "result": "hit"
+      },
+      {
+        "seq": 13,
+        "type": "fetch",
+        "path": "oracledata/tm_episodes.json",
+        "result": "recorded-not-executed"
+      }
+    ]
+  },
+  "misses": [
+    {
+      "seq": 1,
+      "type": "boot",
+      "path": "basketdata/baskets.json",
+      "result": "hit (sync boot parse)"
+    },
+    {
+      "seq": 2,
+      "type": "nav",
+      "path": "basket/big_pharma.html",
+      "result": "recorded (would navigate to basket/big_pharma.html)"
+    },
+    {
+      "seq": 11,
+      "type": "fetch",
+      "path": "basketdata/pulse.json",
+      "result": "recorded-not-executed"
+    },
+    {
+      "seq": 13,
+      "type": "fetch",
+      "path": "oracledata/tm_episodes.json",
+      "result": "recorded-not-executed"
+    }
+  ]
+}
