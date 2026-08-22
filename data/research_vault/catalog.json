@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T22:10:38.027893+00:00",
-  "count": 1635,
+  "generated_at": "2026-08-22T23:09:49.623780+00:00",
+  "count": 1638,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -23,6 +23,7 @@
     "Cantor",
     "Citadel",
     "Citi",
+    "CommBank",
     "Curvature",
     "Danske",
     "Deutsche Bank",
@@ -634,6 +635,67 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-49qcqev5a8t-9873fb",
+      "title": "Daily Europe",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:39Z",
+      "summary_points": [
+        "**Treasury Intervention Temporary**: Treasury buybacks failed to curb 30-yr yield (up 5bps) and S&P 500 (down 0.9%); Fed minutes confirm inflation remains primary focus, data-dependent stance overrides intervention.",
+        "**UK Inflation & BoE Policy**: UK CPI rose to 2.9% YoY (July), BoE projects peak at 3.2% later 2023; Bank Rate held at 3.75% through 2026 despite oil price risks.",
+        "**ECB Rate Cuts & Eurozone Bond Preference**: ECB rate cuts expected (3.50% March 2027, 3.25% June), prompting preference for quality short/medium-term Eurozone bonds and value in longer-maturity bonds.",
+        "**Global Flow Shifts**: Eurozone bond outperformance (Germany 10-yr Bund YTD +40%) contrasts with rising US yields (US 10-yr Treasury YTD +54%), driving capital flows toward Eurozone assets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pwj5a7xohck-ed0149",
+      "title": "Daily Asia",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:31Z",
+      "summary_points": [
+        "**Treasury Intervention**: Doubling 10-30yr buybacks targets 5.34% 30-yr yield peak, easing near-term volatility but ignoring fiscal deficits and borrowing needs, limiting long-term yield impact.",
+        "**UK Inflation Data**: CPI rose to 2.9% YoY (four-month high) post-13% energy cap, BoE forecasts inflation peaking at 3.2% later 2024, countering energy cost fears.",
+        "**Fed Policy Focus**: July minutes prioritize inflation over intervention; rate hikes expected if inflation persists, with Treasury move timed ahead of 20-yr auction.",
+        "**BoE Rate Path**: Hold rates at 3.75% until end-2026, then cut to 3.50% (Mar 2027) and 3.25% (June), with markets overpricing Eurozone tightening."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wjwghytqqrb-246f65",
+      "title": "HSI Household Spending Insights 21 08 2026",
+      "institution": "CommBank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:14:55Z",
+      "summary_points": [
+        "**July 2026 Spending Growth & Inflation Pressure**: Monthly household spending rose 0.6% (vs.",
+        "3% June), but annual growth slowed to 5.6% (from 5.3% May), signaling persistent RBA inflation pressure from housing wealth effect and economic slowdown risks.",
+        "**Food & Beverage Acceleration**: Annual spending growth surged to 5.3% (vs.",
+        "2% June), driven by convenience stores, bakeries, and supermarkets, with contractions in weight loss services highlighting value-conscious shifts.",
+        "**Housing-Linked Spending Stabilization**: Pause in slowdown across all ownership segments (Owner with Mortgage: 3.9% annual, Owner Outright: 2.5%, Renter: 3.0%), indicating stabilization in housing-linked consumer spending."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
