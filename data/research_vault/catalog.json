@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T00:33:31.827071+00:00",
-  "count": 1581,
+  "generated_at": "2026-08-22T02:07:51.148072+00:00",
+  "count": 1586,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -203,6 +203,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-5irk0trokur-7d4df5",
+      "title": "Follow The Flow Reaching for higher yields Aug 21",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:03:09Z",
+      "summary_points": [
+        "**Cross-Asset Outflow Spike**: Fixed income saw $4.7bn weekly outflows (4w avg), with HY ($0.4bn) and equity ($0.2bn) showing sharp negative spikes around Aug-25, signaling broad risk aversion and portfolio rebalancing pressure.",
+        "**ETF Equity Dominance**: Equity ETFs drove $1.1bn 4w avg inflows (vs.",
+        "IG $0.6bn, HY $0.1bn), reflecting strong investor preference for equity exposure via ETFs and accelerating ETF adoption in credit AUM share.",
+        "**EM Debt Leadership**: Global EM Debt led with 0.4% weekly inflows (vs.",
+        "3% for govies), indicating robust capital allocation to emerging markets debt amid strong cross-asset flow dispersion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-r83vp6rpdrp-0e1aaa",
       "title": "Global Rates Trader Macro Problems, Micro Solutions",
       "institution": "Goldman Sachs",
@@ -389,6 +410,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bpywpgrjhbp-3697f1",
+      "title": "Prime Insights and Analytics Chart Pack Asia Aug 2026 Marquee",
+      "institution": "Prime",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T15:28:48Z",
+      "summary_points": [
+        "**Asia Fundamental LS Underperformance**: Down 1.0% MTD vs.",
+        "MXAP +0.4%, YTD 21.3% with elevated dispersion; China-focused down 1.8% MTD (YTD 25.2%) driven by AI theme unwinding.",
+        "**Asia Leverage Contraction**: Asia Fundamental L/S gross leverage fell 14.5 pts MTD to 181.0% (lowest >1yr, 43rd percentile 5-yr), signaling reduced risk appetite amid volatility.",
+        "**China Allocation Extremes**: Net allocation at 6.9% (5th percentile 5-yr, extreme underweight) vs.",
+        "gross allocation at 6.9% (80th percentile, overweight), reflecting persistent underweight stance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 33,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-wo7l8b171me-ba2862",
       "title": "High Yield and Loan Strategy Q2 earnings AI Winners Extend Their Lead",
       "institution": "Bank of America",
@@ -405,6 +447,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 36,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mmcgu6f0crw-f2f9c7",
+      "title": "European Equity Strategy AI fragilities continue to linger",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T15:25:06Z",
+      "summary_points": [
+        "**Stoxx 600 Downside Target**: BofA forecasts 10% decline to 580 by Q2 2025 driven by AI monetization doubts, US labor/consumer weakness, and Texas data center opposition.",
+        "**AI Capex Sustainability Risks**: Record 25% global earnings growth expectations (vs 15% avg) clash with rising credit spreads (120bps), electricity bottlenecks, and Chinese model price competition (50% token expenditure drop).",
+        "**Geopolitical Energy Flow Disruption**: Strait of Hormuz tanker transits near zero post-MOU; US SPR at 1983 low (269mb) and China oil imports down to 7mb/d signal supply volatility.",
+        "**Hyperscaler Financial Stress**: US hyperscalers underperformed market by ~20% since Sept 2023; Oracle CDS spread exceeds 2008 levels amid debt-financed AI capex surge ($940bn by 2025).",
+        "**AI Model Competition Shift**: Chinese open-weight models now exceed US in usage (Open Router) at lower costs, driving 50% token expenditure decline and threatening US hyperscaler pricing power."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 67,
       "language": "en",
       "needs_metadata": false
     },
@@ -690,6 +753,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-fsbufviqafv-a8092a",
+      "title": "India Weekly Kickstart NIFTY closed flat w w despite rising bond yields and oil prices",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:27:42Z",
+      "summary_points": [
+        "**RBI Policy & Foreign Flows**: Hawkish MPC minutes signal 50bp cumulative rate hikes (25bp each Dec 26, Feb 27); FCNR(B) deadline moved to Aug 31 with net inflows ~$40bn; $6bn FII inflows into equities since mid-June reversing $29bn 1H outflows.",
+        "**Monsoon Deficit**: 13% below normal rainfall (Jun-Aug), North-East at -26%, 40% of country in deficit; threatens agricultural output, food inflation, and water security.",
+        "**NIFTY Growth Catalyst**: Goldman Sachs forecasts NIFTY 26,500 by June 2027 driven by 7.2% GDP (CY24), declining CPI (5.0%→4.7% CY27E), and 12-32% consensus EPS growth (CY25E-CY27E).",
+        "**Sector Rotation**: FII inflows dominate Consumer Discretionary and Financials (29% allocation), signaling tactical shift from underweighted sectors; Banks and Consumer Discretionary lead inflows.",
+        "**Valuation Risk**: MSCI India 12M forward P/E at 20.3x (above LT avg 18-19x, 87% premium vs MXAPJ), with Cyclicals (Industrials, Consumer Discretionary) at elevated P/E (35.0x, 32.4x)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gjjqorcby3e-25b291",
       "title": "Americas Business & Information Services What's Powering Your Services Recap 8 21 26",
       "institution": "Goldman Sachs",
@@ -769,6 +853,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 31,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dqxxnikji6n-b1e92b",
+      "title": "JPM Trend Tapestry. APAC AI 1",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T12:51:34Z",
+      "summary_points": [
+        "**APAC AI Investment Surge**: $520bn incremental investment implied (5.8% vs.",
+        "5% of expenses + capex), with Chinese firms leading at 7.2% (38% above peers) but facing supply-side constraints (GPUs/cloud).",
+        "**Growth-Driven ROI**: AI investment prioritizes productivity (80%+ firms), customer outcomes, and revenue (not cost-cutting), with near-term gains reinvested rather than margin-impacting (Labor Productivity: +5.8%).",
+        "**Regional Sentiment & Adoption Gap**: South Korea most optimistic (12ppt optimism gap), ASEAN/India most concerned; Greater China leads spend (5.4% vs.",
+        "8% for Aus/NZ), but low-spending regions accelerating rapidly."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
