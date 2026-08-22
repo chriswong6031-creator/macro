@@ -52,12 +52,13 @@ waves:
       production admission remains blocked.
   - id: W3
     title: PC render recovery and default full-render cutover
-    status: in_progress
+    status: done
     depends_on: [M0]
     next_action: >
-      Merge the route-only render.yml default cutover on exact-head proof, then accept
-      W3 only after one natural push-triggered render lands on pc-render-* and completes
-      checkout, bootstrap, caches, render, guards, R2 publication and site commit/push.
+      W3 was Sol-accepted on 2026-08-22 after natural production run 32592219809 /
+      job 97079244558 completed on pc-render-1 through scope=all render, strict guards,
+      R2 publication and generated site commit/push. Preserve the render-linux default
+      and the M2 as rollback-only; do not reopen W3 absent new production evidence.
   - id: W4
     title: Bounded M1 production-capacity return
     status: todo
@@ -135,9 +136,10 @@ do_not_redo:
     is a two-source receipt: GitHub Actions run/job timing metadata plus the uniquely
     named run_id + run_attempt artifact containing job_started_at_observed.
 next_action: >
-  Land W3's route-only render.yml default cutover, then require one natural push-triggered
-  production render on pc-render-* with successful publication before marking W3 done.
-  W2's terminal 12-hour soak receipt remains independently outstanding; W4 stays blocked.
+  W3 is Sol-accepted and closed. Keep the overall workstream active: W2's terminal
+  12-hour soak receipt remains independently outstanding and W4 stays blocked on W2.
+  W4/W5 remain unstarted; do not enter either wave without fresh Chairman intent and
+  a current authority load.
 ---
 
 ## Current incident
@@ -154,3 +156,49 @@ render routing. It does **not** own merge semantics. Any edit to
 `.github/workflows/merge-on-green.yml` or `scripts/merge_on_green.py` is commissioned
 through `WS:CI-MERGE-CONTROL-PLANE`; W1-A supplies environment/capacity proof only and
 W1-B is the separately reviewed route cutover.
+
+## W3 Sol acceptance — 2026-08-22
+
+Acceptance operation: `sol:runner-fleet:w3-acceptance:2026-08-22:32592219809`.
+
+W3 is **DONE**. The first natural post-cutover production attempt, run `32585314359` /
+job `97060684686`, correctly remained preserved as a failed receipt: the PC render itself
+completed, but the strict dead-reference guard found scanner-visible `src = 'candidates'`
+in inline JavaScript emitted into `site/us_stocks.html`, so R2 publication and site push
+were blocked. Natural successor `32586474354` reproduced the same deterministic defect
+before the repair reached its persisted runtime checkout. The six ticker-universe gaps
+reported by both runs were warning-only churn and were not the fatal condition.
+
+The owner-emitter repair stayed bounded to PR #6249: `templates/dashboard.html.j2` renamed
+the local JavaScript identifier `src` to `mode`, and
+`tests/test_p0_prophet_candidate_board.py` added rendered-output regression coverage using
+the production guard matcher. The dead-reference guard, allowlists, runner routing,
+workflow defaults and publication semantics were not changed or softened. Exact repair
+head `f71675b4ebe8e4475ddbe5ac8a2b52331530e349` passed authoritative CI run
+`32590964800` (15/15), fence run `32590964724`, and top-level authority run
+`32590962835`; PR #6249 squash-merged as
+`87e65fcdb7616335b4380803e180967f73370d39`.
+
+The required natural production proof is render run `32592219809` / job
+`97079244558`, triggered by the repair merge on `main`. GitHub admitted the job to
+`[self-hosted, render-linux]`; runner `pc-render-1` on machine `winpc` reported
+`profile=pc-render`. Automatic scope selection chose `all`. Render, ticker dossier and
+stock-dossier integrity completed; the inline-JS guard and both strict dead-reference
+guards completed cleanly apart from the same six explicitly nonfatal ticker-universe
+warnings; market-state coherence completed successfully.
+
+R2 publication completed on attempt 1 with 2,890 uploaded, 58 unchanged and 0 failed.
+The generated-site push preserved a real non-fast-forward failure on attempt 1, performed
+the existing guarded rebase and post-rebase reference/coherence/sync checks, and pushed
+successfully on attempt 2 through generated commit
+`380e9e32ce74a713e9455802ea04157cfdc2b980`. The acceptance packet's live production
+verification measured the pushed Git object and cache-busted public
+`https://mastermind-x.com/us_stocks.html` at the identical SHA-256
+`c8df9856f702e3a7ac03168cbde2eb029ce9c74d0a5e44866cc7aa7eaa3a9a25`.
+
+Sol independently re-read the raw production job log and current GitHub authority before
+acceptance. Post-proof `main` drift through
+`af7f4af9a86c67885e13dd2bcf80b9932e3c399a` did not alter W3's render route, repaired
+emitter, dead-reference guard, regression surface, or R2/site publication semantics.
+Therefore the production receipt remains current enough to close W3. This ruling does
+not close the overall runner-fleet workstream and does not authorize W4 or W5.
