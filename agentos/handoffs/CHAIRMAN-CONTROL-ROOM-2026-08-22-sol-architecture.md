@@ -74,8 +74,9 @@ verified:
 unverified:
   - claim: The Chairman Control Room P0 implementation exists.
     what_would_verify: >
-      One FABLE-00 implementation PR supplies the compositor, exact local binding
-      contract, provider open adapters, loopback UI and all deterministic tests.
+      One consolidated FABLE-00 implementation packet supplies the Mastermind
+      compositor/bindings/adapters/UI and, only if required, the smallest separate
+      Macro no-write active-build seam PR, with exact tests and cross-repo ordering.
   - claim: ChatGPT1/2/3 exact profile-plus-chat-URL opening is stable on the real Mac.
     what_would_verify: >
       Live P0 proof across approved named browser profiles, closed/reopened tabs and
@@ -97,8 +98,8 @@ unresolved:
 next_actions:
   - "Start exactly one fresh dedicated Fable principal-builder session and point it to merged Mastermind PR #108 plus WS:CHAIRMAN-CONTROL-ROOM. Fable owns the complete P0 and any bounded subordinate workers."
   - "Fable re-reads current protected Mastermind master, current Macro main, the current Sol Skillpack/Fable-mode procedure, open PR collisions and installed provider versions before writing."
-  - "Fable implements one useful P0 vertical and returns one HOLD-FOR-SOL implementation PR with exact head, diff, CI, redacted real-Mac proof, unresolved provider limitations and no downstream P1 start."
-  - "Sol adversarially reviews the returned PR against the accepted Chairman outcome and 28-row proof law; only a PASS may merge or release later automation design."
+  - "Fable implements one useful P0 vertical and returns one HOLD-FOR-SOL implementation packet: one primary Mastermind PR plus only the minimum separate Macro seam PR if the existing active-build compiler lacks a safe machine read path. The packet carries exact heads, dependency order, CI, redacted real-Mac proof, unresolved provider limitations and no downstream P1 start."
+  - "Sol adversarially reviews the consolidated packet against the accepted Chairman outcome and 28-row proof law; only a PASS may merge or release later automation design."
 do_not_redo:
   - "Do not create another task, session, lifecycle, attention, identity, queue, retry, liveness or memory database."
   - "Do not replace or duplicate Executive Inbox, CEO boot packet, Agent OS or project_active_builds.v1."
