@@ -1600,3 +1600,24 @@ def test_n7_accrue_v2_outside_window_with_explicit_session_writes_nothing(tmp_pa
     assert not record_path.exists(), (
         "records/2026-08-19.json must NOT be created when outside admission window"
     )
+
+
+def test_m0d_suite_is_wired_into_market_memory_contract_lane() -> None:
+    """contract-delta reds a new pytest suite named by no run: step."""
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    jobs = (ROOT / ".github/ci/legacy-jobs.yml").read_text(encoding="utf-8")
+    lane = jobs.split("  market-memory-contract:", 1)[1].split("\n  group-pulse:", 1)[0]
+    assert '      - "tests/test_market_memory_m0d_v2.py"' in workflow
+    assert "tests/test_market_memory_m0d_v2.py" in lane
+    for path in (
+        "engine/neuralweb/market_memory_source_kernel.py",
+        "engine/neuralweb/market_memory_sources_spy.py",
+        "scripts/ingest_market_memory_sources_spy.py",
+        "scripts/capture_market_memory_technicals_v2.py",
+        "scripts/accrue_market_memory_spy_experience_v2.py",
+        "app/deploy/macro-market-memory-source-spy-rest.service",
+        "app/deploy/macro-market-memory-technicals-v2.service",
+        "app/deploy/macro-market-memory-experience-v2.service",
+        "config/market_memory_spy_experience_registration.v2.json",
+    ):
+        assert f'      - "{path}"' in workflow
