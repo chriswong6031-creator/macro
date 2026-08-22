@@ -3,7 +3,7 @@ workstream: WS:DEFENSE-PROCUREMENT-V3
 session: claude/d5r2-contract-representability
 model: fable
 ended_because: complete
-prs: []
+prs: [6247]
 decisions: []
 discoveries: []
 
