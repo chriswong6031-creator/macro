@@ -5387,6 +5387,14 @@
   // match here would swallow those taps on touch. Rich-tier triggers opt in via the
   // .lens-q / .lens-term classes only.
   var SEL = '[data-tip-en], .lens-q, .lens-term';
+  // A focusable control NESTED INSIDE a tip container owns its own taps. The click
+  // handler has always honoured that; `nestedCtrl` is that same test, hoisted so the
+  // focusin handler below cannot drift from it.
+  var CTRL_SEL = 'button, a, input, select, textarea, label, [role="button"]';
+  function nestedCtrl(target, t) {
+    var ctrl = target && target.closest && target.closest(CTRL_SEL);
+    return !!(ctrl && ctrl !== t && t.contains(ctrl));
+  }
   var pop = null, scrim = null, cur = null, openTimer = 0, closeTimer = 0, scrollRaf = 0;
 
   var CSS =
@@ -5680,7 +5688,17 @@
   }, true);
   document.addEventListener('focusin', function (e) {
     var t = e.target && e.target.closest && e.target.closest(SEL);
-    if (t) show(t);
+    if (!t) return;
+    // Tapping a nested control FOCUSES it, and focusin bubbles up to the wrapper. In
+    // SHEET mode show() mounts a full-viewport .lens-scrim — mid-tap. mousedown has
+    // already landed on the control but mouseup then lands on the scrim, so the
+    // browser retargets the click to <body> and the control's own handler NEVER runs.
+    // The click carve-out below cannot save it, because no click survives to reach it.
+    // Gated on isSheet() because that is exactly when show() mounts the scrim: the
+    // floating card steals nothing, so keyboard focus still discloses the tip on every
+    // viewport that can safely show one. Keep this gate in step with show().
+    if (isSheet() && nestedCtrl(e.target, t)) return;
+    show(t);
   }, true);
   document.addEventListener('focusout', function (e) {
     var t = e.target && e.target.closest && e.target.closest(SEL);
@@ -5700,8 +5718,7 @@
     // of hijacking the tap (the old singleton's load-bearing contract). A nested
     // .lens-q can never reach here as ctrl !== t: closest(SEL) resolves the .lens-q
     // itself as the trigger from inside it.
-    var ctrl = e.target.closest('button, a, input, select, textarea, label, [role="button"]');
-    if (ctrl && ctrl !== t && t.contains(ctrl)) {
+    if (nestedCtrl(e.target, t)) {
       if (isOpen()) hide();
       return;
     }

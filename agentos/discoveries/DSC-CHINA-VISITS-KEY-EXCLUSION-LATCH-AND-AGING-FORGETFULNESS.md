@@ -111,3 +111,36 @@ unreachable in practice, which is also why nothing in CI or in the accepted
 
 Related: [[DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP]] — the originating
 finding, whose specific mechanism #6229 genuinely did repair.
+
+## P1-R3A — a THIRD mode of the same defect, found by Sol reviewing the repair
+
+The two modes above are exhaustive over WHERE a malformed visit row can sit.
+They are not exhaustive over WHEN it is remembered. Sol's adversarial review of
+the repair (PR #6242) found the remaining window, and it is the forgetfulness
+mode again, one layer down:
+
+**(CRASH WINDOW)** P1-R3 made the coverage exception durable, but only inside
+`china_visits.refresh()` — AFTER `china_filings.write_filings()` had already
+committed a filtered canonical store that omitted the observation. The only
+bridge between the two was the PROCESS-LOCAL
+`china_filings.LAST_KEY_INTEGRITY["excluded_rows"]` handoff. A hard kill between
+the filtered `filings.parquet` write and the ledger write therefore erased the
+observation from EVERY durable store at once: absent from `filings.parquet` by
+construction (key integrity excluded it), never written to
+`coverage_exceptions.parquet`, and aged out of CNInfo's 3-day re-pull
+(`_NIGHTLY_LOOKBACK_DAYS == 3`) within days. The asia lane runs under a hard job
+kill, so the window is operational, not theoretical.
+
+The general shape worth carrying forward: **a durable repair for a forgetting
+bug is not durable until the write that CAUSES the forgetting is ordered behind
+it.** Making the memory durable and making it durable *first* are different
+properties, and only the second one survives a crash. Repaired in P1-R3A by
+inverting the order — `durable coverage exception -> canonical filtered commit`
+— and by refusing the canonical commit outright when the exception cannot be
+persisted; see [[DEC:CHINA-COVERAGE-EXCEPTION-LEDGER]] §"Amended by P1-R3A".
+
+Falsifier for this third mode: call `china_filings.write_filings()` with one
+malformed `institutional_visit` row, then never call `china_visits.refresh()` at
+all (the crash). If `data/china_visits/coverage_exceptions.parquet` does not
+already hold the observation, the window is open. Pinned live by
+`tests/test_china_visits_collector.py::TestP1R3ACrashConsistencyFence`.

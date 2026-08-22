@@ -29,6 +29,22 @@ letting them silently collapse or appending them keyless. collectors/
 china_visits.py imports key_anomaly() from here rather than growing its own
 opinion, so china_filings' write boundary and china_visits' candidate filter
 can never silently diverge on what counts as malformed.
+
+P1-R3A crash consistency at the source boundary (2026-08-22, Sol review of
+PR #6242). Excluding a malformed row from the canonical store is only half
+the contract — the observation still has to be REMEMBERED. Until P1-R3A the
+only record of it between this module's write and china_visits' next run was
+the process-local LAST_KEY_INTEGRITY handoff, so a hard kill in that window
+(the asia lane runs under one) erased the observation from every durable
+store at once. write_filings() now makes the exception DURABLE FIRST, via
+china_visits.persist_boundary_exceptions() (_fence_coverage_exceptions()
+below), and REFUSES its own canonical commit when that fails:
+
+    durable coverage exception  ->  canonical filtered filing-store commit
+
+The fence is INERT on the common path — it returns at its first line when
+nothing was excluded, so a normal night neither imports china_visits nor
+touches the ledger.
 """
 from __future__ import annotations
 
@@ -89,13 +105,26 @@ def _zero_key_integrity(at: str = "") -> dict:
     batch size), so collectors/china_visits.py can harvest them into a
     durable coverage-exception ledger instead of relying on this process-
     local global surviving into the same run china_visits happens to read
-    it in. See write_filings()'s docstring for how it is populated.
+    it in. See write_filings()'s docstring for how it is populated. P1-R3A
+    narrowed that: china_visits no longer HARVESTS `excluded_rows` (the
+    source-boundary fence already persisted them), so it is now a verbatim
+    diagnostic receipt rather than a handoff channel.
+
+    P1-R3A (crash consistency): `boundary_persist_ok` records whether the
+    coverage-exception fence made THIS call's P1-relevant malformed rows
+    durable BEFORE the canonical commit, and `boundary_fingerprints` names
+    the observations it made durable (china_visits.refresh()'s same-
+    invocation double-count guard). The zero shape says True/[] because a
+    call with nothing to exclude has nothing to persist — "unknown" is
+    carried by LAST_RUN_OUTCOME["key_integrity_known"], not by this field.
     """
     return {
         "excluded_total": 0,
         "excluded_by_type": {},
         "preexisting_unkeyed": 0,
         "excluded_rows": [],
+        "boundary_persist_ok": True,
+        "boundary_fingerprints": [],
         "at": at,
     }
 
@@ -308,6 +337,62 @@ def partition_by_key_integrity(
     return well_keyed, malformed, counts
 
 
+def _commit_filings(df: pd.DataFrame, path: Path) -> None:
+    """THE canonical filtered-store commit. Extracted as a named seam so the
+    P1-R3A ordering invariant
+
+        durable coverage exception  ->  canonical filtered filing-store commit
+
+    is directly OBSERVABLE by a test (tests/test_china_filings_collector.py's
+    mutation guard records the call order of this function against
+    china_visits._atomic_write and fails if a mutation ever puts the
+    canonical commit first). Inline `final.to_parquet(path)` had no seam to
+    observe, so the ordering could only be argued, never pinned."""
+    df.to_parquet(path, index=False)
+
+
+def _fence_coverage_exceptions(malformed: list[dict]) -> dict:
+    """P1-R3A crash-consistency fence — the china_filings half.
+
+    Makes THIS call's P1-relevant malformed observations durable in
+    china_visits' coverage-exception ledger BEFORE write_filings() commits a
+    filtered canonical store that omits them. Thin by design: every rule
+    about the ledger (its path, its schema, the fingerprint law, the
+    P1-relevance filter, the upsert/dedup semantics) lives in
+    collectors/china_visits.py and is CALLED here, never re-implemented —
+    two copies of that law would be free to diverge, and this module's whole
+    P1-R2 contribution was making one predicate serve both boundaries.
+
+    Never raises. Returns china_visits.persist_boundary_exceptions()'s
+    receipt shape, or a synthesized `ok: False` receipt when the import or
+    the call itself fails.
+
+    An import failure is deliberately `ok: False` (not a permissive skip):
+    if this process cannot reach the ledger's owner, it cannot make the
+    observation durable, and the caller must therefore not commit a store
+    that forgets it. That refusal can only ever fire on a night that already
+    contains a malformed P1-relevant row — the common path returns at the
+    first line without importing anything.
+    """
+    if not malformed:
+        return {"ok": True, "n_relevant": 0, "n_new": 0, "n_reaffirmed": 0,
+                "fingerprints": [], "detail": ""}
+    try:
+        from collectors import china_visits as _cv  # noqa: PLC0415 — lazy: import cycle
+    except Exception as e:  # noqa: BLE001
+        detail = f"collectors.china_visits import failed: {e}"
+        log.error("china_filings: coverage-exception fence — %s", detail)
+        return {"ok": False, "n_relevant": len(malformed), "n_new": 0,
+                "n_reaffirmed": 0, "fingerprints": [], "detail": detail}
+    try:
+        return _cv.persist_boundary_exceptions(malformed, key_anomaly)
+    except Exception as e:  # noqa: BLE001 — persist_* is contracted never to raise
+        detail = f"persist_boundary_exceptions raised unexpectedly: {e}"
+        log.error("china_filings: coverage-exception fence — %s", detail)
+        return {"ok": False, "n_relevant": len(malformed), "n_new": 0,
+                "n_reaffirmed": 0, "fingerprints": [], "detail": detail}
+
+
 def write_filings(new_rows: list[dict]) -> int:
     """Append rows to filings.parquet, keep-FIRST on announcementId.
 
@@ -400,9 +485,63 @@ def write_filings(new_rows: list[dict]) -> int:
         final = final.sort_values(
             ["publish_ts", "announcementId"], na_position="last"
         ).reset_index(drop=True)
-        final.to_parquet(path, index=False)
 
         excluded_total = len(malformed)
+
+        # ---------------- P1-R3A CRASH-CONSISTENCY FENCE ---------------- #
+        # ORDERING INVARIANT, and the reason this block sits HERE and not one
+        # line lower:
+        #
+        #     durable coverage exception  ->  canonical filtered commit
+        #
+        # `final` above is the filtered canonical store — it OMITS every
+        # malformed row by design. Committing it while the only record of
+        # those observations is the process-local LAST_KEY_INTEGRITY handoff
+        # below means a hard kill (the asia lane runs under one) erases the
+        # observation from every durable store at once: absent from
+        # filings.parquet by construction, never written to
+        # coverage_exceptions.parquet, and aged out of the source's 3-day
+        # re-pull window within days. So the exception is made DURABLE first,
+        # and the commit is REFUSED outright if that fails — a filtered store
+        # that forgets what it filtered is the failure this whole wave exists
+        # to close. Nothing between this fence and _commit_filings() may
+        # touch the store.
+        boundary = _fence_coverage_exceptions(malformed)
+        if not boundary["ok"]:
+            LAST_KEY_INTEGRITY = {
+                "excluded_total": excluded_total,
+                "excluded_by_type": dict(new_counts),
+                "preexisting_unkeyed": preexisting_unkeyed,
+                "excluded_rows": list(malformed),
+                "boundary_persist_ok": False,
+                "boundary_fingerprints": [],
+                "at": datetime.now(timezone.utc).isoformat(),
+            }
+            # n_relevant, not excluded_total: the fence only ever owns the
+            # P1-RELEVANT subset, and on an import failure it could not even
+            # measure that subset (it reports len(malformed) then, which is
+            # the honest upper bound rather than a false precise count).
+            n_rel = boundary.get("n_relevant", excluded_total)
+            log.error(
+                "china_filings: ABORTING the filings.parquet write — %d of %d "
+                "malformed row(s) are P1-relevant and could not be made durable in "
+                "the coverage-exception ledger (%s); the accrued store is left "
+                "BYTE-IDENTICAL rather than committing a filtered store that "
+                "forgets them",
+                n_rel, excluded_total, boundary["detail"],
+            )
+            # Bare print, NOT log.* — see the malformed-key annotation below.
+            print(
+                f"::warning title=china-filings-coverage-exception-fence-refused::"
+                f"the filings.parquet write was ABORTED: {n_rel} of {excluded_total} "
+                f"malformed row(s) could not be made durable in the coverage-exception "
+                f"ledger ({boundary['detail']}) — the store was left untouched",
+                flush=True,
+            )
+            return 0
+
+        _commit_filings(final, path)
+
         LAST_KEY_INTEGRITY = {
             "excluded_total": excluded_total,
             "excluded_by_type": dict(new_counts),
@@ -414,7 +553,17 @@ def write_filings(new_rows: list[dict]) -> int:
             # harvests these as origin="filings_boundary" coverage
             # exceptions. Uncapped — bounded by batch size, not a fixed cap
             # like excluded_identities elsewhere.
+            #
+            # P1-R3A: china_visits.refresh() no longer HARVESTS this list —
+            # the fence above already made every P1-relevant row durable, and
+            # re-harvesting would double-count it. It stays as this call's
+            # verbatim diagnostic receipt of what it excluded.
             "excluded_rows": list(malformed),
+            # P1-R3A: the fence succeeded (we would have returned above
+            # otherwise), and these are the observations it made durable —
+            # china_visits.refresh()'s same-invocation double-count guard.
+            "boundary_persist_ok": True,
+            "boundary_fingerprints": list(boundary["fingerprints"]),
             "at": datetime.now(timezone.utc).isoformat(),
         }
         if excluded_total or preexisting_unkeyed:
@@ -819,6 +968,19 @@ class ChinaFilingsAdapter(Adapter):
                 "whether malformed rows were excluded"
             )
         key_integrity = LAST_KEY_INTEGRITY or _zero_key_integrity(collected_at)
+        if not key_integrity.get("boundary_persist_ok", True):
+            # P1-R3A: the coverage-exception fence refused, so write_filings()
+            # left filings.parquet BYTE-IDENTICAL — tonight's rows were never
+            # stored. FAIL-SOFT (a typed errors[] entry degrading `ok`, never
+            # a raise, exactly like the malformed-key entry below), but loud
+            # enough that china_visits refuses to assert absence over the
+            # stale tape. transport_ok was measured ABOVE this point and is
+            # deliberately untouched — the transport was fine.
+            errors.append(
+                "key_integrity: coverage-exception fence REFUSED — malformed "
+                "P1-relevant row(s) could not be made durable, so the filtered "
+                "canonical filings write was NOT committed and the store is stale"
+            )
         if key_integrity["excluded_total"] or key_integrity["preexisting_unkeyed"]:
             errors.append(
                 f"key_integrity: {key_integrity['excluded_total']} malformed "

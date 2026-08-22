@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T20:10:08.718710+00:00",
-  "count": 1633,
+  "generated_at": "2026-08-22T22:10:38.027893+00:00",
+  "count": 1635,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -594,6 +594,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nrqxsf0pkcj-103e1b",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:27Z",
+      "summary_points": [
+        "**Treasury yield dynamics & structural drivers**: Structural forces (fiscal deficits, AI capital demand, energy prices) outweigh policy efforts, pushing 30Y yields to 5.25% despite intervention; long-end volatility necessitates short/medium-duration bond prioritization.",
+        "**Eurozone PMI accelerates recovery**: Business activity at 4-year high (PMI 52.1), manufacturing at 4-year peak, easing inflation may delay ECB tightening—key data for European asset allocation.",
+        "**Gold to $5,400/oz**: Driven by debt sustainability concerns, currency weakness, and rising government debt—critical safe-haven flow amid elevated rate expectations.",
+        "**Rate Hike & Sector Shift**: One more 25bp hike expected before pause; European industrials, banks, consumer discretionary, and IT favored for structural growth and improving activity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h5tkii37jkc-b0afb5",
+      "title": "Go sustainable",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:19Z",
+      "summary_points": [
+        "**IEA Clean Energy Mandate & Grid Tech**: $4.5T annual clean energy investment required by 2030 drives grid infrastructure demand (cables, transformers), with regulatory tailwinds and public funding accelerating decarbonization fundamentals.",
+        "**Sustainable Equity Strategy**: Core focus on issuers with verified operational climate transition performance and progressive metrics, prioritizing diversified portfolios for risk-adjusted returns in sustainability solutions.",
+        "**Sustainable Fixed Income Strategies**: Green/social bonds, sustainability-linked bonds, and climate/social thematic financing offer growth; require rigorous ESG integration assessment for impact investments in decarbonization.",
+        "**Private Market Risks**: Leverage, defaults, concentration, and illiquidity in private assets necessitate stringent risk evaluation due to limited disclosure and heightened volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },

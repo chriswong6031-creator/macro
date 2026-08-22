@@ -31,7 +31,7 @@ OPTIONS_TIMER_DISARMED=0
 OPTIONS_API_FENCE_MARKER=/run/macro-api-market-memory-options-deny.ready
 OPTIONS_RECIPROCAL_FENCE_MARKER=/run/macro-market-memory-options-reciprocal-deny.ready
 OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|context|identity|breadth|technicals|experience|production-records)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
-OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-spy-rest-prereqs|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|source-spy-rest|context|identity|breadth|technicals|technicals-v2|experience|experience-v2|production-records)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience|accrue_market_memory_spy_experience_v2|capture_market_memory_options_episodes|capture_market_memory_technicals_v2|ingest_market_memory_sources_spy)\.py|engine/(__init__|options_signal_episode)\.py|engine/neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual|_production_records|_source_kernel|_sources(_spy)?)?)\.py|contracts/market_memory/(spy_experience_(registration|opportunity|outcome_revision|population_receipt)|options_signal_episode_production_record)\.v1\.schema\.json|contracts/options/options\.signal_episode\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|config/market_memory_spy_experience_registration\.v2\.json|lib/(__init__|nyse_calendar)\.py|data/options_signal_episode/episodes\.jsonl|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-spy-rest-prereqs|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|source-spy-rest|context|identity|breadth|technicals|technicals-v2|experience|experience-v2|production-records|options-context-audit)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience|accrue_market_memory_spy_experience_v2|audit_options_market_memory_context|capture_market_memory_options_episodes|capture_market_memory_technicals_v2|ingest_market_memory_sources_spy)\.py|engine/(__init__|options_signal_episode|options_market_memory_context|options_market_memory_receipt_store)\.py|engine/neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual|_production_records|_source_kernel|_sources(_spy)?)?)\.py|contracts/market_memory/(spy_experience_(registration|opportunity|outcome_revision|population_receipt)|options_signal_episode_production_record)\.v1\.schema\.json|contracts/options/options\.signal_episode\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|config/market_memory_spy_experience_registration\.v2\.json|lib/(__init__|nyse_calendar)\.py|data/options_signal_episode/episodes\.jsonl|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_RUNTIME_REGEX='^(app/requirements\.txt|scripts/(__init__|accrue_market_memory_spy_experience)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual)?)\.py)|contracts/market_memory/spy_experience_(registration|opportunity|outcome_revision|population_receipt)\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_ROOT=/var/lib/macro-market-memory/state/experience-v1
 MARKET_MEMORY_EXPERIENCE_INSTALLATION="$MARKET_MEMORY_EXPERIENCE_ROOT/registration_installation.json"
@@ -80,7 +80,7 @@ stop_unit_and_verify_inactive() {
 stop_reciprocal_market_memory_writers() {
 	local profile service timer
 	rm -f "$OPTIONS_RECIPROCAL_FENCE_MARKER"
-	for profile in source source-spy-rest context identity breadth technicals technicals-v2 experience experience-v2 production-records; do
+	for profile in source source-spy-rest context identity breadth technicals technicals-v2 experience experience-v2 production-records options-context-audit; do
 		service="macro-market-memory-$profile.service"
 		timer="macro-market-memory-$profile.timer"
 		if ! stop_unit_and_verify_inactive \
@@ -399,6 +399,7 @@ install -d -m 0700 /var/lib/macro-market-memory/public/trusted-v1
 install -d -m 0700 /var/lib/macro-market-memory/state
 install -d -m 0700 /var/lib/macro-market-memory/state/sources
 install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
+install -d -m 0700 /var/lib/macro-market-memory/state/context-projection/options-context-receipts
 install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/technicals-v1
@@ -727,6 +728,63 @@ if [ "$MARKET_MEMORY_CONTEXT_RUN_NEEDED" -eq 1 ]; then
 		echo "macro-update: deferring Market Memory context projection — shared runtime dependencies are not current" >&2
 	elif ! systemctl start macro-market-memory-context.service; then
 		echo "macro-update: Market Memory context projection failed closed; hourly timer will retry" >&2
+	fi
+fi
+
+# Options Context Audit publisher: a distinct preregistered evidence owner.
+# W2C owner replay waits on trusted context, not this receipt. Its failure
+# stays loud and must not relabel a successful trusted projection as failure.
+MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_UPDATED=0
+MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-options-context-audit.service"
+	"$APP_DIR/app/deploy/macro-market-memory-options-context-audit.timer"
+)
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-options-context-audit.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-options-context-audit.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe options-context-audit unit repair input" >&2
+		exit 1
+	}
+	if systemd-analyze verify "${MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					exit 1
+				}
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+				systemctl restart macro-market-memory-options-context-audit.timer 2>/dev/null || true
+			fi
+			RECONCILED=1
+			echo "macro-update: Market Memory options-context-audit units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory options-context-audit unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+	systemctl enable --now macro-market-memory-options-context-audit.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-options-context-audit.timer could not be enabled" >&2
+fi
+
+MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_RUN_NEEDED=0
+if [ "$MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/audit_options_market_memory_context\.py|engine/options_market_memory_(context|receipt_store)\.py)$'; then
+	MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_RUN_NEEDED=1
+fi
+if [ "$MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_RUN_NEEDED" -eq 1 ]; then
+	if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ]; then
+		echo "macro-update: deferring Options Context Audit until reciprocal boundary attestation" >&2
+	elif [ "$API_DEPS_OK" -ne 1 ]; then
+		echo "macro-update: deferring Options Context Audit — shared runtime dependencies are not current" >&2
+	elif ! systemctl start macro-market-memory-options-context-audit.service; then
+		echo "macro-update: Options Context Audit failed closed; hourly timer will retry" >&2
 	fi
 fi
 
@@ -1558,9 +1616,9 @@ if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ] && \
 		exit 1
 	fi
 	# END W2C_DEFERRED_REPLAY
-	for RECIPROCAL_PROFILE in source source-spy-rest context identity breadth technicals technicals-v2 experience-v2 production-records; do
+	for RECIPROCAL_PROFILE in source source-spy-rest context identity breadth technicals technicals-v2 experience-v2 production-records options-context-audit; do
 		if [ -e "/etc/systemd/system/macro-market-memory-$RECIPROCAL_PROFILE.timer" ]; then
-			if [ "$RECIPROCAL_PROFILE" = production-records ]; then
+			if [ "$RECIPROCAL_PROFILE" = production-records ] || [ "$RECIPROCAL_PROFILE" = options-context-audit ]; then
 				systemctl enable --now "macro-market-memory-$RECIPROCAL_PROFILE.timer" || true
 			else
 				systemctl start "macro-market-memory-$RECIPROCAL_PROFILE.timer" || true
