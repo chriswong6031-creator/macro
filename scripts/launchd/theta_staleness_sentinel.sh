@@ -20,12 +20,17 @@
 #      special-cased — a holiday can inflate the count by 1, which the WARN
 #      tier absorbs; the ALERT tier only false-fires if a holiday AND a real
 #      miss stack, which is exactly when a human look is cheap.)
-#   3. (AD-1T1 F8) Daily-refresh anchor — `_manifest.json`'s `daily_refresh.D`
-#      is the incremental daily lane's own liveness record. ALERT when it is
-#      not today's NYSE session date (`lib.nyse_calendar.session_date()`)
-#      after 22:00 ET on a session day: launchd calendar fires do not wake a
-#      sleeping Mac and COALESCE on wake, so a sleeping/missed host is
-#      otherwise indistinguishable from a healthy one.
+#   3. (AD-1T1 F8, threshold fixed RF1/R3) Daily-refresh anchor —
+#      `_manifest.json`'s `daily_refresh.D` is the incremental daily lane's
+#      own liveness record. ALERT when it is not today's NYSE session date
+#      (`lib.nyse_calendar.session_date()`) after 20:00 ET on a session day:
+#      launchd calendar fires do not wake a sleeping Mac and COALESCE on
+#      wake, so a sleeping/missed host is otherwise indistinguishable from a
+#      healthy one. This sentinel's OWN two fire points are 06:15/18:30 PT =
+#      09:15/21:30 ET — the original 22:00 ET threshold made the check DEAD
+#      (neither fire ever lands after 22:00 ET, so anchor_due was always
+#      False); 20:00 ET sits strictly before the 21:30 ET evening fire so
+#      that fire is the one that actually evaluates the anchor.
 #
 # Outputs (all append/atomic-write, never touches the parquet store):
 #   /tmp/theta_staleness.json  — machine-readable latest verdict
@@ -43,10 +48,13 @@ PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 # the anchor check below. Computed relative to this script's own location so
 # it resolves correctly wherever the ops-tree copy lives (see runbook).
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-STORE="/Users/chriswong/theta-ops-wt/data/thetadata_eod"
+# STORE/HEALTH_URL/SENTINEL_NOW_UTC are all env-overridable (`:-` defaults) —
+# purely a test seam for a computed (not grep-only) anchor test; production
+# invocation via launchd never sets them and gets the real values below.
+STORE="${STORE:-/Users/chriswong/theta-ops-wt/data/thetadata_eod}"
 OUT_JSON="/tmp/theta_staleness.json"
 LOG="/tmp/theta_staleness.log"
-HEALTH_URL="http://127.0.0.1:25503/v3/option/list/symbols"
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:25503/v3/option/list/symbols}"
 
 # due-today: today's session counts as missing only after the post-close pull
 # window (16:10 ET / 13:10 PT). launchd can't vary args per StartCalendarInterval
@@ -67,7 +75,7 @@ rm -f "${term_body}"
 
 DUE_TODAY="${DUE_TODAY}" TERM_CODE="${term_code}" TERM_BYTES="${term_bytes}" \
 SYMBOLS_MIN_BYTES="${SYMBOLS_MIN_BYTES}" STORE="${STORE}" OUT_JSON="${OUT_JSON}" LOG="${LOG}" \
-REPO_ROOT="${REPO_ROOT}" \
+REPO_ROOT="${REPO_ROOT}" SENTINEL_NOW_UTC="${SENTINEL_NOW_UTC:-}" \
 "${PYTHON}" - <<'PY'
 import datetime as dt
 import json, os, subprocess, sys
@@ -156,11 +164,22 @@ try:
     sys.path.insert(0, os.environ.get("REPO_ROOT", ""))
     from lib import nyse_calendar
 
-    now_utc = dt.datetime.now(dt.timezone.utc)
+    # SENTINEL_NOW_UTC (ISO8601, test seam only — see header) overrides the
+    # wall clock so the anchor logic can be evaluated at an exact instant
+    # instead of only whenever this happens to run.
+    now_override = os.environ.get("SENTINEL_NOW_UTC", "").strip()
+    if now_override:
+        now_utc = dt.datetime.fromisoformat(now_override)
+        if now_utc.tzinfo is None:
+            now_utc = now_utc.replace(tzinfo=dt.timezone.utc)
+    else:
+        now_utc = dt.datetime.now(dt.timezone.utc)
     now_et = now_utc.astimezone(nyse_calendar.ET)
     expected_session = str(nyse_calendar.session_date(now_utc))
+    # (RF1, R3) 20:00 ET — see header: this sentinel's own 21:30 ET evening
+    # fire must land AFTER the threshold or the check is dead code.
     anchor_due = (nyse_calendar.is_session(now_et.date())
-                 and now_et.time() >= dt.time(22, 0))
+                 and now_et.time() >= dt.time(20, 0))
 except Exception as e:
     anchor_err = anchor_err or f"nyse_calendar import/eval failed: {type(e).__name__}: {e}"
 
@@ -172,7 +191,7 @@ if anchor_due:
         level = "ALERT"
         reasons.append(
             f"daily_refresh.D stale: manifest={daily_refresh_d!r} "
-            f"expected={expected_session!r} (AD-1T1 F8 anchor, after 22:00 ET)")
+            f"expected={expected_session!r} (AD-1T1 F8 anchor, after 20:00 ET)")
 
 verdict = {
     "checked_at": now,
