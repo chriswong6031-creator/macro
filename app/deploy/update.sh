@@ -30,7 +30,7 @@ fi
 OPTIONS_TIMER_DISARMED=0
 OPTIONS_API_FENCE_MARKER=/run/macro-api-market-memory-options-deny.ready
 OPTIONS_RECIPROCAL_FENCE_MARKER=/run/macro-market-memory-options-reciprocal-deny.ready
-OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|context|identity|breadth|technicals|experience|production-records)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|source-spy-rest|context|identity|breadth|technicals|technicals-v2|experience|experience-v2|production-records)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi|capture_market_memory_technicals_v2|ingest_market_memory_sources_spy|accrue_market_memory_spy_experience_v2)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit|source_kernel|sources_spy))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_(option_oi_source\.v1|spy_experience_registration\.v2)\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|context|identity|breadth|technicals|experience|production-records)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience|capture_market_memory_options_episodes)\.py|engine/(__init__|options_signal_episode)\.py|engine/neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual|_production_records)?)\.py|contracts/market_memory/(spy_experience_(registration|opportunity|outcome_revision|population_receipt)|options_signal_episode_production_record)\.v1\.schema\.json|contracts/options/options\.signal_episode\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|data/options_signal_episode/episodes\.jsonl|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_RUNTIME_REGEX='^(app/requirements\.txt|scripts/(__init__|accrue_market_memory_spy_experience)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual)?)\.py)|contracts/market_memory/spy_experience_(registration|opportunity|outcome_revision|population_receipt)\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_ROOT=/var/lib/macro-market-memory/state/experience-v1
@@ -404,6 +404,9 @@ install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/technicals-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/experience-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/production-record-options-episode-v1
+install -d -m 0700 /var/lib/macro-market-memory/state/sources-spy-rest-v1
+install -d -m 0700 /var/lib/macro-market-memory/state/technicals-v2
+install -d -m 0700 /var/lib/macro-market-memory/state/experience-v2
 # Unit verification needs the static account and empty deny anchors.  The
 # service-writable profile and credential file are provisioned only after
 # macro-api proves a new deny namespace.
@@ -614,6 +617,48 @@ if [ "$MARKET_MEMORY_SOURCE_RUN_NEEDED" -eq 1 ]; then
 	fi
 fi
 
+# W2C M0D v2 — SPY REST sealed daily-bar source unit.
+# Credentialed, network-allowed, fires at 04:00Z.
+MARKET_MEMORY_SOURCE_SPY_REST_UNIT_UPDATED=0
+MARKET_MEMORY_SOURCE_SPY_REST_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-source-spy-rest.service"
+	"$APP_DIR/app/deploy/macro-market-memory-source-spy-rest.timer"
+)
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_SOURCE_SPY_REST_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-source-spy-rest.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_SOURCE_SPY_REST_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-source-spy-rest.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_SOURCE_SPY_REST_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe source-spy-rest unit repair input" >&2
+		exit 1
+	}
+	if systemd-analyze verify "${MARKET_MEMORY_SOURCE_SPY_REST_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_SOURCE_SPY_REST_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					exit 1
+				}
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_SOURCE_SPY_REST_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_SOURCE_SPY_REST_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+				systemctl restart macro-market-memory-source-spy-rest.timer 2>/dev/null || true
+			fi
+			RECONCILED=1
+			echo "macro-update: Market Memory SPY REST source units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory source-spy-rest unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+	systemctl enable --now macro-market-memory-source-spy-rest.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-source-spy-rest.timer could not be enabled" >&2
+fi
+
 # W1B.1 trusted context publisher: network-dark and credential-free. It writes
 # exact raw evidence only below the API-inaccessible state tree and advances the
 # separate public trusted-v1 HEAD only after that evidence and the typed feature
@@ -789,7 +834,46 @@ if [ "$MARKET_MEMORY_TECHNICALS_RUN_NEEDED" -eq 1 ]; then
 	fi
 fi
 
-# W1B.3A private breadth actual-output publisher: network-dark,
+# W2C M0D v2 — Keyless technicals-v2 projector (reads sealed REST source only).
+MARKET_MEMORY_TECHNICALS_V2_UNIT_UPDATED=0
+MARKET_MEMORY_TECHNICALS_V2_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-technicals-v2.service"
+	"$APP_DIR/app/deploy/macro-market-memory-technicals-v2.timer"
+)
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_TECHNICALS_V2_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-technicals-v2.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_TECHNICALS_V2_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-technicals-v2.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_TECHNICALS_V2_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe technicals-v2 unit repair input" >&2
+		exit 1
+	}
+	if systemd-analyze verify "${MARKET_MEMORY_TECHNICALS_V2_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_TECHNICALS_V2_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					exit 1
+				}
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_TECHNICALS_V2_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_TECHNICALS_V2_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+				systemctl restart macro-market-memory-technicals-v2.timer 2>/dev/null || true
+			fi
+			RECONCILED=1
+			echo "macro-update: Market Memory technicals-v2 units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory technicals-v2 unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+	systemctl enable --now macro-market-memory-technicals-v2.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-technicals-v2.timer could not be enabled" >&2
+fi
 # credential-free, and deliberately disconnected from both trusted-v1 and the
 # API. It captures only the exact current Git-owned tip after frozen calendar,
 # identity, constituent, and freshness checks; historical rows are never
@@ -1434,6 +1518,48 @@ fi
 OPTIONS_RECONCILIATION_COMPLETE=1
 trap - EXIT
 # END W1B5_TIMER_FINALIZATION
+
+# W2C M0D v2 — Experience-v2 accrual (04:32Z, separate from v1 04:30Z).
+# v1 timer has NO Requires= on this unit; independent execution.
+MARKET_MEMORY_EXPERIENCE_V2_UNIT_UPDATED=0
+MARKET_MEMORY_EXPERIENCE_V2_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-experience-v2.service"
+	"$APP_DIR/app/deploy/macro-market-memory-experience-v2.timer"
+)
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_EXPERIENCE_V2_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-experience-v2.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_EXPERIENCE_V2_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-experience-v2.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_EXPERIENCE_V2_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe experience-v2 unit repair input" >&2
+		# Non-fatal: v1 units must continue; v2 is a new parallel arm
+		true
+	}
+	if systemd-analyze verify "${MARKET_MEMORY_EXPERIENCE_V2_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_EXPERIENCE_V2_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					continue
+				}
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_EXPERIENCE_V2_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_EXPERIENCE_V2_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+				systemctl restart macro-market-memory-experience-v2.timer 2>/dev/null || true
+			fi
+			echo "macro-update: Market Memory experience-v2 units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory experience-v2 unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+	systemctl enable --now macro-market-memory-experience-v2.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-experience-v2.timer could not be enabled" >&2
+fi
 
 # Live-plane systemd definitions are installed by live-setup.sh. Once that setup
 # has happened, keep unit/resource/timer changes tracking main automatically.

@@ -1,0 +1,13 @@
+[Unit]
+Description=Retry private Market Memory SPY technicals-v2 capture after seal window
+
+[Timer]
+# Projected around 04:07Z — 2 minutes after the seal window closes.
+OnCalendar=*-*-* 04:07:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=true
+Unit=macro-market-memory-technicals-v2.service
+
+[Install]
+WantedBy=timers.target
