@@ -9,6 +9,11 @@ Pure/offline surface only — no live network. Covers:
   - keep-FIRST dedup on announcementId
   - Empty-day handling (write_filings with zero rows)
   - Summary frame carries a DatetimeIndex (required by base.validate contract)
+  - P1-R2 (2026-08-22, DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP):
+    key_anomaly/normalize_announcement_id/partition_by_key_integrity unit
+    coverage, write_filings' typed exclusion + pre-existing-unkeyed
+    preservation + LAST_KEY_INTEGRITY/LAST_RUN_OUTCOME folding, and a
+    mutation guard proving the exclusion depends on the real partition.
 
 Storage is redirected to tmp_path so no tracked parquet is ever dirtied.
 """
@@ -19,7 +24,9 @@ import sys
 from datetime import timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -334,7 +341,10 @@ class TestParseAnnouncement:
     def test_missing_fields_graceful(self):
         # Minimal announcement dict — no crash
         row = cf._parse_announcement({}, "szse", "2024-01-15T09:00:00+00:00")
-        assert row["announcementId"] == ""
+        # P1-R2: a truly ABSENT announcementId key stays None ("missing" per
+        # key_anomaly()), never flattened to "" ("empty") — see
+        # _parse_announcement's docstring and TestKeyAnomaly below.
+        assert row["announcementId"] is None
         assert row["category"] == "other"
         assert row["kind"] is None
         assert row["publish_ts"] == ""
@@ -690,3 +700,393 @@ class TestDateRange:
         start = date.fromisoformat(parts[0])
         end = date.fromisoformat(parts[1])
         assert (end - start).days == cf._INITIAL_LOOKBACK_DAYS
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 — key_anomaly / normalize_announcement_id (unit table)
+# --------------------------------------------------------------------------- #
+
+class TestKeyAnomaly:
+    """key_anomaly() classifies a raw announcementId's malformation. Covers
+    every FROZEN typed anomaly plus well-formed cases, and proves the helper
+    never raises — even on weird non-scalar input."""
+
+    def test_none_is_missing(self):
+        assert cf.key_anomaly(None) == "missing"
+
+    def test_empty_string_is_empty(self):
+        assert cf.key_anomaly("") == "empty"
+
+    def test_space_is_whitespace(self):
+        assert cf.key_anomaly(" ") == "whitespace"
+
+    def test_tab_is_whitespace(self):
+        assert cf.key_anomaly("\t") == "whitespace"
+
+    def test_newline_is_whitespace(self):
+        assert cf.key_anomaly("\n") == "whitespace"
+
+    def test_ideographic_space_is_whitespace(self):
+        assert cf.key_anomaly("　") == "whitespace"
+
+    def test_mixed_whitespace_is_whitespace(self):
+        assert cf.key_anomaly(" \t\n　 ") == "whitespace"
+
+    def test_float_nan_is_nan(self):
+        assert cf.key_anomaly(float("nan")) == "nan"
+
+    def test_pd_na_is_nan(self):
+        assert cf.key_anomaly(pd.NA) == "nan"
+
+    def test_pd_nat_is_nan(self):
+        assert cf.key_anomaly(pd.NaT) == "nan"
+
+    def test_np_nan_is_nan(self):
+        assert cf.key_anomaly(np.nan) == "nan"
+
+    def test_nan_checked_before_str_coercion(self):
+        # str(float('nan')) == 'nan' — a non-empty string that would misread
+        # as well-formed if the string branch ran before the NaN check.
+        assert cf.key_anomaly(float("nan")) == "nan"
+        assert str(float("nan")) == "nan"  # documents WHY ordering matters
+
+    # ---- well-formed cases ----
+
+    def test_normal_id_is_well_formed(self):
+        assert cf.key_anomaly("1234567") is None
+
+    def test_int_id_is_well_formed(self):
+        assert cf.key_anomaly(1234567) is None
+
+    def test_id_with_surrounding_whitespace_that_strips_to_real_value(self):
+        # Non-empty AND strips to a non-empty value — NOT the "whitespace"
+        # anomaly (that anomaly is only for strings that strip to "").
+        assert cf.key_anomaly(" 1234567 ") is None
+
+    # ---- never raises ----
+
+    def test_never_raises_on_a_list(self):
+        # pd.isna() returns an ARRAY (not a scalar bool) for list input —
+        # truth-testing that array raises ValueError inside pandas itself.
+        # The helper must swallow that, never propagate it.
+        assert cf.key_anomaly([1, 2, 3]) is None
+
+    def test_never_raises_on_empty_list(self):
+        assert cf.key_anomaly([]) is None
+
+    def test_never_raises_on_a_dict(self):
+        assert cf.key_anomaly({"a": 1}) is None
+
+    def test_never_raises_on_a_tuple(self):
+        assert cf.key_anomaly(("x", "y")) is None
+
+
+class TestNormalizeAnnouncementId:
+    def test_malformed_forms_normalize_to_empty_string(self):
+        for bad in (None, "", " ", "\t", "　", float("nan"), pd.NA, pd.NaT):
+            assert cf.normalize_announcement_id(bad) == ""
+
+    def test_well_formed_id_is_stripped(self):
+        assert cf.normalize_announcement_id(" 1234567 ") == "1234567"
+
+    def test_well_formed_id_without_whitespace_unchanged(self):
+        assert cf.normalize_announcement_id("1234567") == "1234567"
+
+    def test_int_id_normalizes_to_its_string_form(self):
+        assert cf.normalize_announcement_id(1234567) == "1234567"
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 — partition_by_key_integrity
+# --------------------------------------------------------------------------- #
+
+class TestPartitionByKeyIntegrity:
+    def test_valid_and_missing_split_correctly(self):
+        rows = [_make_row("V001"), {**_make_row("V001"), "announcementId": None}]
+        well, malformed, counts = cf.partition_by_key_integrity(rows)
+        assert len(well) == 1 and well[0]["announcementId"] == "V001"
+        assert len(malformed) == 1
+        assert counts == {"missing": 1}
+
+    def test_multiple_malformed_rows_counted_individually_not_collapsed(self):
+        """The test that dies if the guard is removed: drop_duplicates would
+        collapse 3 rows sharing announcementId="" into ONE. This partition
+        must report 3, never 1."""
+        rows = [
+            {**_make_row("X1"), "announcementId": ""},
+            {**_make_row("X2"), "announcementId": ""},
+            {**_make_row("X3"), "announcementId": ""},
+        ]
+        well, malformed, counts = cf.partition_by_key_integrity(rows)
+        assert well == []
+        assert len(malformed) == 3
+        assert counts == {"empty": 3}
+
+    def test_absent_anomaly_names_are_omitted_not_zero_valued(self):
+        rows = [{**_make_row("Y1"), "announcementId": ""}]
+        _, _, counts = cf.partition_by_key_integrity(rows)
+        assert "empty" in counts
+        assert "missing" not in counts and "nan" not in counts and "whitespace" not in counts
+
+    def test_preserves_input_order_within_each_list(self):
+        rows = [
+            _make_row("A"), {**_make_row("_"), "announcementId": None},
+            _make_row("B"), {**_make_row("_"), "announcementId": ""},
+            _make_row("C"),
+        ]
+        well, malformed, _ = cf.partition_by_key_integrity(rows)
+        assert [r["announcementId"] for r in well] == ["A", "B", "C"]
+
+    def test_pure_no_io(self, tmp_path, monkeypatch):
+        # No _store_path monkeypatch needed — proves this touches no disk.
+        rows = [_make_row("Z1")]
+        cf.partition_by_key_integrity(rows)  # must not raise / not need a store
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 — write_filings typed exclusion + accrued-store protection
+# --------------------------------------------------------------------------- #
+
+class TestWriteFilingsKeyIntegrity:
+    def test_valid_plus_missing_id_row(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        rows = [_make_row("H001"), {**_make_row("H002"), "announcementId": None}]
+        net = cf.write_filings(rows)
+        assert net == 1
+        stored = cf.load_filings()
+        assert list(stored["announcementId"]) == ["H001"]
+        assert cf.LAST_KEY_INTEGRITY["excluded_total"] == 1
+        assert cf.LAST_KEY_INTEGRITY["excluded_by_type"] == {"missing": 1}
+
+    def test_multiple_missing_ids_prove_no_silent_collapse(self, tmp_path, monkeypatch):
+        """At least 3 malformed rows in one batch — the counter must report
+        3, never 1 (the drop_duplicates collapse this repair prevents)."""
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        rows = [
+            {**_make_row("_"), "announcementId": ""},
+            {**_make_row("_"), "announcementId": ""},
+            {**_make_row("_"), "announcementId": ""},
+        ]
+        cf.write_filings(rows)
+        assert cf.LAST_KEY_INTEGRITY["excluded_total"] == 3
+        assert cf.LAST_KEY_INTEGRITY["excluded_by_type"] == {"empty": 3}
+        # Zero well-keyed rows entered the store — none silently survived as "one".
+        assert cf.load_filings().empty
+
+    def test_none_id_excluded(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        cf.write_filings([{**_make_row("_"), "announcementId": None}])
+        assert cf.load_filings().empty
+        assert cf.LAST_KEY_INTEGRITY["excluded_by_type"] == {"missing": 1}
+
+    def test_empty_string_id_excluded(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        cf.write_filings([{**_make_row("_"), "announcementId": ""}])
+        assert cf.load_filings().empty
+        assert cf.LAST_KEY_INTEGRITY["excluded_by_type"] == {"empty": 1}
+
+    def test_whitespace_ids_excluded(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        rows = [
+            {**_make_row("_"), "announcementId": " "},
+            {**_make_row("_"), "announcementId": "\t"},
+            {**_make_row("_"), "announcementId": "　"},
+        ]
+        cf.write_filings(rows)
+        assert cf.load_filings().empty
+        assert cf.LAST_KEY_INTEGRITY["excluded_by_type"] == {"whitespace": 3}
+
+    def test_nan_ids_excluded(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        rows = [
+            {**_make_row("_"), "announcementId": float("nan")},
+            {**_make_row("_"), "announcementId": pd.NA},
+            {**_make_row("_"), "announcementId": pd.NaT},
+        ]
+        cf.write_filings(rows)
+        assert cf.load_filings().empty
+        assert cf.LAST_KEY_INTEGRITY["excluded_by_type"] == {"nan": 3}
+
+    def test_valid_rows_preserved_beside_malformed_ones(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        rows = [
+            _make_row("K001"),
+            {**_make_row("_"), "announcementId": ""},
+            _make_row("K002"),
+        ]
+        net = cf.write_filings(rows)
+        assert net == 2
+        stored = cf.load_filings()
+        assert set(stored["announcementId"]) == {"K001", "K002"}
+
+    def test_preexisting_unkeyed_rows_preserved_across_new_batch_write(
+        self, tmp_path, monkeypatch
+    ):
+        """A store already holding 2 unkeyed rows plus a new batch must
+        still hold both unkeyed rows afterwards — they are protected
+        VERBATIM from the keyed dedup, never silently collapsed."""
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        bad1 = {**_make_row("_", "旧脏数据1"), "announcementId": None}
+        bad2 = {**_make_row("_", "旧脏数据2"), "announcementId": "   "}
+        seed = pd.DataFrame([bad1, bad2]).reindex(columns=list(cf._COLUMNS))
+        seed.to_parquet(tmp_path / "filings.parquet", index=False)
+
+        cf.write_filings([_make_row("Z001", "新公告")])
+        stored = cf.load_filings()
+        assert len(stored) == 3
+        titles = set(stored["title"])
+        assert {"旧脏数据1", "旧脏数据2", "新公告"} == titles
+        assert cf.LAST_KEY_INTEGRITY["preexisting_unkeyed"] == 2
+
+    def test_net_new_arithmetic_unaffected_by_malformed_rows(self, tmp_path, monkeypatch):
+        """A malformed row must never inflate or deflate net_new — it is
+        computed off the KEYED frames only."""
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        net1 = cf.write_filings([_make_row("N001")])
+        assert net1 == 1
+        # Second call: one genuinely new keyed row plus 2 malformed rows.
+        net2 = cf.write_filings([
+            _make_row("N002"),
+            {**_make_row("_"), "announcementId": ""},
+            {**_make_row("_"), "announcementId": None},
+        ])
+        assert net2 == 1   # only N002 is net-new; malformed rows don't count
+        assert cf.LAST_KEY_INTEGRITY["excluded_total"] == 2
+
+    def test_clean_write_reports_zeros(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        cf.write_filings([_make_row("C001"), _make_row("C002")])
+        assert cf.LAST_KEY_INTEGRITY["excluded_total"] == 0
+        assert cf.LAST_KEY_INTEGRITY["excluded_by_type"] == {}
+        assert cf.LAST_KEY_INTEGRITY["preexisting_unkeyed"] == 0
+
+    def test_loud_on_exclusion_log_and_annotation(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        cf.write_filings([{**_make_row("_"), "announcementId": ""}])
+        out = capsys.readouterr().out
+        lines = [ln for ln in out.splitlines() if ln.startswith("::")]
+        assert lines, f"no line-start GitHub annotation found in stdout: {out!r}"
+        assert "china-filings-malformed-announcement-id" in lines[0]
+
+    def test_no_annotation_on_clean_write(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        cf.write_filings([_make_row("Q001")])
+        out = capsys.readouterr().out
+        assert not any(ln.startswith("::") for ln in out.splitlines())
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 — LAST_RUN_OUTCOME.key_integrity folding (adapter.fetch())
+# --------------------------------------------------------------------------- #
+
+class TestFetchKeyIntegrityFolding:
+    def test_key_integrity_present_and_zero_on_clean_fetch(self, tmp_path, monkeypatch):
+        from unittest.mock import MagicMock, patch
+
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        adapter = cf.ChinaFilingsAdapter()
+
+        def fake_fetch_exchange(exchange, date_range, session, collected_at):
+            return [_make_row("FI001", exchange=exchange)]
+
+        import requests as _requests
+        with patch.object(adapter, "_fetch_exchange", side_effect=fake_fetch_exchange):
+            with patch.object(_requests, "Session", return_value=MagicMock()):
+                adapter.fetch()
+
+        ki = cf.LAST_RUN_OUTCOME["key_integrity"]
+        assert ki["excluded_total"] == 0
+        assert ki["preexisting_unkeyed"] == 0
+        assert cf.LAST_RUN_OUTCOME["ok"] is True
+
+    def test_malformed_key_degrades_ok_via_typed_errors_entry(self, tmp_path, monkeypatch):
+        """FAIL-SOFT preserved: malformed keys degrade `ok` to False via a
+        typed errors[] entry — fetch() must NOT raise for this reason."""
+        from unittest.mock import MagicMock, patch
+
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        adapter = cf.ChinaFilingsAdapter()
+
+        def fake_fetch_exchange(exchange, date_range, session, collected_at):
+            if exchange == "sse":
+                return [{**_make_row("_", exchange=exchange), "announcementId": ""}]
+            return [_make_row("FI002", exchange=exchange)]
+
+        import requests as _requests
+        with patch.object(adapter, "_fetch_exchange", side_effect=fake_fetch_exchange):
+            with patch.object(_requests, "Session", return_value=MagicMock()):
+                result = adapter.fetch()   # must not raise
+
+        assert "china_filings_summary" in result   # completed normally
+        assert cf.LAST_RUN_OUTCOME["ok"] is False
+        assert any("key_integrity" in e for e in cf.LAST_RUN_OUTCOME["errors"])
+        assert cf.LAST_RUN_OUTCOME["key_integrity"]["excluded_total"] == 1
+        # the sibling valid row was still fetched, stored, and returned
+        assert "FI002" in set(cf.load_filings()["announcementId"])
+
+    def test_key_integrity_reset_fail_closed_at_fetch_entry(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        cf.LAST_KEY_INTEGRITY = {
+            "excluded_total": 99, "excluded_by_type": {}, "preexisting_unkeyed": 0,
+            "at": "stale",
+        }
+        seen: list = []
+
+        def _fetch_exchange(self, exchange, date_range, session, collected_at):
+            # Captured before write_filings ever runs — LAST_KEY_INTEGRITY
+            # must already be None (fail-closed) by the time exchange fetch
+            # logic starts, mirroring LAST_RUN_OUTCOME's own fail-closed proof.
+            seen.append(cf.LAST_KEY_INTEGRITY)
+            raise IOError("simulated CNInfo outage")
+        monkeypatch.setattr(cf.ChinaFilingsAdapter, "_fetch_exchange", _fetch_exchange)
+        adapter = cf.ChinaFilingsAdapter()
+        with pytest.raises(RuntimeError):
+            adapter.fetch()   # both exchanges fail -> "all exchanges failed" branch
+        assert seen[0] is None
+
+    def test_all_exchanges_failed_still_carries_zero_key_integrity(self, monkeypatch):
+        def _fetch_exchange(self, exchange, date_range, session, collected_at):
+            raise IOError("simulated outage")
+        monkeypatch.setattr(cf.ChinaFilingsAdapter, "_fetch_exchange", _fetch_exchange)
+        adapter = cf.ChinaFilingsAdapter()
+        with pytest.raises(RuntimeError):
+            adapter.fetch()
+        assert cf.LAST_RUN_OUTCOME["key_integrity"]["excluded_total"] == 0
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 — mutation guard: write_filings' exclusion depends on the REAL guard
+# --------------------------------------------------------------------------- #
+
+class TestKeyIntegrityMutationGuard:
+    def test_stub_partition_reporting_all_wellkeyed_lets_malformed_rows_survive(
+        self, tmp_path, monkeypatch
+    ):
+        """MUTATION GUARD: if write_filings' malformed-row exclusion were
+        removed — e.g. partition_by_key_integrity stubbed to report every
+        row as well-keyed, the pre-repair shape — 3 rows sharing
+        announcementId="" would collapse to ONE via drop_duplicates instead
+        of being typed-excluded to zero stored rows. The assertion below
+        proves the exclusion depends on the REAL partition, not on this
+        test's own logic: under the real guard it holds; wrap it in
+        pytest.raises to show the stub breaks it.
+        """
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        monkeypatch.setattr(
+            cf, "partition_by_key_integrity",
+            lambda rows: (list(rows), [], {}),   # reports every row well-keyed
+        )
+        rows = [
+            {**_make_row("_", "标题1"), "announcementId": ""},
+            {**_make_row("_", "标题2"), "announcementId": ""},
+            {**_make_row("_", "标题3"), "announcementId": ""},
+        ]
+        cf.write_filings(rows)
+        stored = cf.load_filings()
+        with pytest.raises(AssertionError):
+            # Under the REAL guard all 3 are excluded -> 0 stored rows.
+            assert len(stored) == 0
+        # Under the stub, drop_duplicates instead collapsed all 3 into 1 —
+        # exactly the silent-collapse bug DSC:CHINA-VISITS-UNTYPED-
+        # ANNOUNCEMENT-ID-DROP describes.
+        assert len(stored) == 1

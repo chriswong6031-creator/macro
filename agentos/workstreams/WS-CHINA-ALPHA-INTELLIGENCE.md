@@ -169,6 +169,54 @@ waves:
       still has no bounded builder commission in
       research/china_alpha_intelligence/commissions/ — return to Sol for
       that commission rather than improvising.
+  - id: p1r2
+    title: P1-R2 announcement-id integrity — typed-exclusion repair for the
+      malformed-announcementId silent-drop hole named in the P1 closeout
+      (DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP), commissioned by Sol
+      2026-08-22, bounded to collectors/china_filings.py +
+      collectors/china_visits.py (engine/china_intel_hub.py read, NOT edited)
+    status: in_progress
+    depends_on: [p1]
+    next_action: >
+      BUILT_NOT_PROVEN (worker packet delivered 2026-08-22, not yet merged):
+      collectors/china_filings.py gained key_anomaly()/
+      normalize_announcement_id()/partition_by_key_integrity() (pure, owns
+      the natural-key predicate) and write_filings() now partitions
+      new_rows on that predicate BEFORE drop_duplicates — malformed rows are
+      a typed, counted exclusion (LAST_KEY_INTEGRITY, folded into
+      LAST_RUN_OUTCOME.key_integrity), never silently collapsed, and a
+      pre-existing malformed row already in the accrued store is preserved
+      verbatim rather than risk being swept into the keyed dedup.
+      collectors/china_visits.py's bare comprehension is replaced by
+      account_candidates() (imports key_anomaly from china_filings rather
+      than re-deriving it) and refresh() now mechanically verifies
+      `represented + typed_exclusions == eligible` as an explicit branch
+      (never a bare assert) before trusting its own derivation; a mismatch
+      refuses to write and degrades to source_failure. Any run with typed
+      exclusions reuses the EXISTING `upstream_degraded` health state (no
+      fifth _HEALTH_STATES value — engine/china_intel_hub.py's
+      _visit_block() keys off that literal string and was read, never
+      edited, per the commission). The collectors.china_filings import that
+      supplies the predicate is now itself fail-closed. Full rationale and
+      alternatives rejected: DEC:CHINA-KEY-INTEGRITY-TYPED-EXCLUSION.
+      Rare-branch repair: measured 2026-08-22 on
+      origin/main:data/china_filings/filings.parquet, 54,078 rows, 0
+      NaN/None, 0 empty-or-whitespace, 54,078 distinct keys — the path has
+      fired ZERO times in production, so this repair is proven by hostile
+      fixtures (tests/test_china_filings_collector.py,
+      tests/test_china_visits_collector.py — including mutation guards
+      TestKeyIntegrityMutationGuard / TestAccountingMutationGuard proving
+      the exclusion depends on the real predicate/accounting, not on the
+      test's own logic), not by a naturally occurring malformed row.
+      Sol's dictated post-merge state (verbatim): "PARTIAL / normal-path
+      PROVEN_LIVE, malformed-key repair BUILT_NOT_PROVEN" — the P1 normal
+      (well-keyed) path remains the 2026-08-21 PROVEN_LIVE receipt
+      unchanged; this repair's own malformed-key branch has never fired in
+      production and therefore cannot be proven live by a natural run the
+      way P1's normal path was — it is proven only by the hostile test
+      fixtures until a real malformed announcementId is naturally observed.
+      STANDING GATE UNCHANGED: P1B, L0, R1/R2, P2 and all other China Alpha
+      Intelligence families stay CLOSED — this wave does not reopen them.
   - id: l0
     title: L0 full-pool canonical outcomes (extract china_standout_track primitives for the candidate plane)
     status: todo
