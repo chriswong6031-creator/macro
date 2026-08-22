@@ -1,6 +1,6 @@
 {
   "organ": "index_momentum.v1",
-  "as_of": "2026-08-21",
+  "as_of": "2026-08-22",
   "data_as_of": "2026-08-21",
   "authority": {
     "rank": false,
@@ -880,15 +880,15 @@
       "region": "HK",
       "grids": {
         "1D": {
-          "macd": 1.346,
-          "signal": 2.233,
-          "hist": -0.887,
-          "hist_vel3": 0.028,
-          "k": 14.359,
-          "d": 15.635,
-          "depth_pctile": 59.355,
-          "pctile_window_bars": 1395,
-          "pctile_window_days": 1953,
+          "macd": 0.877,
+          "signal": 1.694,
+          "hist": -0.817,
+          "hist_vel3": 0.147,
+          "k": 10.773,
+          "d": 10.984,
+          "depth_pctile": 56.089,
+          "pctile_window_bars": 1396,
+          "pctile_window_days": 1954,
           "fast_reclaim": false,
           "as_of": "2026-08-21",
           "recent_events": [
@@ -931,17 +931,17 @@
           ]
         },
         "2B": {
-          "macd": 3.389,
-          "signal": 3.499,
-          "hist": -0.11,
-          "hist_vel3": -0.658,
-          "k": 29.481,
-          "d": 42.003,
-          "depth_pctile": 79.123,
+          "macd": 3.126,
+          "signal": 3.412,
+          "hist": -0.286,
+          "hist_vel3": -0.834,
+          "k": 20.579,
+          "d": 39.036,
+          "depth_pctile": 78.669,
           "pctile_window_bars": 661,
           "pctile_window_days": 925,
           "fast_reclaim": false,
-          "as_of": "2026-08-21",
+          "as_of": "2026-08-20",
           "recent_events": [
             {
               "index": "3033.HK",
@@ -1133,18 +1133,30 @@
       "region": "CN",
       "grids": {
         "1D": {
-          "macd": -1.072,
-          "signal": -1.078,
-          "hist": 0.005,
-          "hist_vel3": -0.925,
-          "k": 48.35,
-          "d": 69.488,
-          "depth_pctile": 43.214,
+          "macd": -1.448,
+          "signal": -1.25,
+          "hist": -0.198,
+          "hist_vel3": -1.157,
+          "k": 19.59,
+          "d": 44.264,
+          "depth_pctile": 40.476,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
           "as_of": "2026-08-21",
           "recent_events": [
+            {
+              "index": "510300.SS",
+              "grid": "1D",
+              "date": "2026-08-20",
+              "direction": "bear",
+              "depth_at_cross": -1.292,
+              "depth_pctile": 41.7,
+              "hist_vel3": -1.072,
+              "quality_tag": "ordinary",
+              "us_confirm": false,
+              "global_washout_turn": false
+            },
             {
               "index": "510300.SS",
               "grid": "1D",
@@ -1184,17 +1196,17 @@
           ]
         },
         "2B": {
-          "macd": -4.928,
-          "signal": -5.265,
-          "hist": 0.336,
-          "hist_vel3": 0.142,
-          "k": 73.438,
-          "d": 80.009,
-          "depth_pctile": 18.588,
-          "pctile_window_bars": 1657,
-          "pctile_window_days": 2320,
+          "macd": -4.908,
+          "signal": -5.146,
+          "hist": 0.238,
+          "hist_vel3": -0.091,
+          "k": 60.627,
+          "d": 73.369,
+          "depth_pctile": 18.697,
+          "pctile_window_bars": 1658,
+          "pctile_window_days": 2321,
           "fast_reclaim": false,
-          "as_of": "2026-08-19",
+          "as_of": "2026-08-21",
           "recent_events": [
             {
               "index": "510300.SS",
@@ -1211,17 +1223,17 @@
           ]
         },
         "3B": {
-          "macd": -5.942,
-          "signal": -5.803,
-          "hist": -0.139,
-          "hist_vel3": 1.137,
-          "k": 42.021,
-          "d": 34.869,
-          "depth_pctile": 15.185,
-          "pctile_window_bars": 1080,
-          "pctile_window_days": 1512,
+          "macd": -6.233,
+          "signal": -5.947,
+          "hist": -0.287,
+          "hist_vel3": 0.491,
+          "k": 37.08,
+          "d": 37.917,
+          "depth_pctile": 13.691,
+          "pctile_window_bars": 1081,
+          "pctile_window_days": 1513,
           "fast_reclaim": false,
-          "as_of": "2026-08-18",
+          "as_of": "2026-08-21",
           "recent_events": []
         },
         "W-FRI": {
@@ -1584,9 +1596,8 @@
     }
   },
   "turn_breadth": {
-    "hist_positive_count": 4,
+    "hist_positive_count": 3,
     "hist_positive_ids": [
-      "510300.SS",
       "399001.SZ",
       "^KS11",
       "^TWII"
@@ -1594,5 +1605,5 @@
     "fresh_crossers": []
   },
   "n_roster": 13,
-  "_timing_s": 2.62
+  "_timing_s": 2.14
 }

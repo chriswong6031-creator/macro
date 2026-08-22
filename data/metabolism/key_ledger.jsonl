@@ -545,3 +545,4 @@
 {"schema":"metabolism.key_ledger.v1","ts":"2026-08-22T05:18:04+00:00","key_id":"codex_account","cycle_id":"","stage":"narrative_brain","est_tokens":12961,"outcome":"ok"}
 {"schema":"metabolism.key_ledger.v1","ts":"2026-08-22T05:18:35+00:00","key_id":"codex_account","cycle_id":"","stage":"risk_brain","est_tokens":13632,"outcome":"ok"}
 {"schema":"metabolism.key_ledger.v1","ts":"2026-08-22T05:28:12+00:00","key_id":"codex_account","cycle_id":"","stage":"altdata_brain","est_tokens":21578,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-22T15:08:27+00:00","key_id":"codex_account","cycle_id":"","stage":"altdata_brain","est_tokens":13852,"outcome":"ok"}
