@@ -240,7 +240,7 @@
       return { kind: 'fresh', en: 'Observed filing coverage is current', zh: '已观察披露覆盖范围为最新' };
     }
     if (freshness === 'stale' || horizon === 'lagging' || horizon.indexOf('degraded_') === 0) {
-      return { kind: 'degraded', en: 'Observed filing coverage is behind latest SEC filings', zh: '已观察披露覆盖范围落后于最新 SEC 申报' };
+      return { kind: 'degraded', en: 'Observed filing coverage is behind latest SEC filings', zh: '已观察披露覆盖范围落后于最新 SEC 披露' };
     }
     if (freshness === 'unknown' || horizon === 'unavailable') {
       return { kind: 'degraded', en: 'Observed filing freshness is unavailable', zh: '已观察披露新鲜度暂不可用' };
