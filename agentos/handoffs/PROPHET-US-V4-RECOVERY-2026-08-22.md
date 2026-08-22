@@ -4,275 +4,233 @@ session: "Sol CEO — integrated Prophet flagship intelligence masterplan harden
 model: sol
 ended_because: complete
 mission: >
-  Convert the Chairman's broad Prophet flagship-intelligence fan-out into a durable,
-  nearly pre-integrated research masterplan that fresh Sol sessions can execute without
-  reconstructing the originating chat or independently redesigning the company. Preserve
-  the existing Prophet V4 execution graph and every canonical owner; harden product intent,
-  cross-cell semantics, external-method baselines, open hypotheses and kill conditions,
-  reference product states, executive decision hygiene, claim/return protocols and exact
-  owner/V4 landing seams. This wave is research/architecture only and creates zero runtime,
-  rank, gate, sizing, execution, deployment or trade authority.
+  Convert the Chairman's Prophet flagship-intelligence fan-out into a durable,
+  nearly pre-integrated research masterplan so fresh Sol sessions can spend their
+  context proving, narrowing or killing Mastermind-specific intelligence hypotheses
+  rather than reconstructing the product/system architecture. Preserve the existing
+  V4 wave graph and canonical owners; create no runtime/rank/gate/trade authority.
 state_before: >
-  MAS-116 and MAS-117..MAS-124 already existed as a research fan-out. The first hardening
-  pass added a universal execution constitution, dedicated 500-670 line cell handoffs,
-  inter-cell ownership law, a standard return template, Linear precedence warnings and
-  draft PR #6264. That materially reduced cell-level ambiguity but still left future Sol
-  sessions responsible for reconstructing the integrated flagship system from eight briefs.
-  Meanwhile current main continued advancing: D2B2-US is PROVEN_LIVE, D2B3 implementation
-  is merged/BUILT_NOT_PROVEN pending its own natural GMI survival proof, and several older
-  workstream next_action fields are operationally stale relative to newer accepted handoffs/
-  PRs. The previous #6264 CI red also exposed a moving-base discrepancy: its merge base did
-  not yet allow Agent OS model=sol, while current main's handoff schema explicitly does.
+  The original MAS-116..MAS-124 fan-out and first hardening pass already supplied
+  eight bounded research cells, an execution constitution, ownership index and
+  standard return template. The remaining risk was system-level reconstruction:
+  later sessions could still disagree about the final Prophet thesis, integration
+  seams, external baselines, data/source assumptions, empirical hypotheses or the
+  meaning of a research failure. Main also continued moving while the branch was
+  being authored, so dated status required fresh reconciliation rather than reuse.
 changed:
-  - path: research/prophet_v4/flagship_cells/RESEARCH_CELL_EXECUTION_CONSTITUTION_2026-08-22.md
-    what: >
-      Universal research claim/authority/precedence law, capability vocabulary, required
-      research method, no-rebuild ownership, identity/time/null/correction/model law,
-      failure states, misconstruction tests and future implementation-wave handoff standard.
-  - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_CELL_HARDENING_INDEX_2026-08-22.md
-    what: >
-      Inter-cell semantic ownership contract: A theme/exposure/transmission, C event/
-      expectation/surprise/materiality, B incorporation, D species/analogues, E fragility/
-      crowding, F translation, existing Fusion ranking, G evaluation, H follower product.
-  - path: research/prophet_v4/flagship_cells/RESEARCH_CELL_DELIVERABLE_TEMPLATE_2026-08-22.md
-    what: >
-      Mandatory standardized return shape: current-SHA disagreement ledger, Chairman intent,
-      capability and producer-consumer ledgers, owner/reuse matrix, external research,
-      contracts/clocks/nulls/corrections, method/buildability/estimability, reference states,
-      falsifiers, sibling interfaces, bounded owner-routed waves, executive docket,
-      misconstruction self-test and cold-stranger continuation.
-  - path: research/prophet_v4/flagship_cells/CELL_A_THEME_INTELLIGENCE_HANDOFF_2026-08-22.md
-    what: >
-      Hardened MAS-117 with GMI ownership, multi-axis exposure, segment/product truth edge
-      cases, typed transmission ontology, causal/common-factor falsifiers, emergent-theme
-      proposal/probation, rights/PIT law and future owner-routed slices.
-  - path: research/prophet_v4/flagship_cells/CELL_B_EVIDENCE_PRICE_GAP_HANDOFF_2026-08-22.md
-    what: >
-      Hardened MAS-118 as downstream incorporation research with strict Dislocation P0
-      blindness, multiple estimands/baselines, materiality dependencies, tradable clocks,
-      underreaction-vs-correct-ignore logic and explicit pass/mixed/fail branches.
-  - path: research/prophet_v4/flagship_cells/CELL_C_CATALYST_SURPRISE_MATERIALITY_HANDOFF_2026-08-22.md
-    what: >
-      Hardened MAS-119 as a federated fact→expectation→surprise→issuer-materiality interface
-      that preserves Earnings/Bio/Defense methods and rejects a universal Catalyst Score.
-  - path: research/prophet_v4/flagship_cells/CELL_D_STOCK_SPECIES_ANALOGUES_REGIME_HANDOFF_2026-08-22.md
-    what: >
-      Hardened MAS-120 around Stock Identity/Market Memory, anti-outcome-audition, discrete
-      vs continuous/hierarchical representations, PIT counterexample-first analogue
-      retrieval, effective-N abstention and only mechanism-specific regime hypotheses.
-  - path: research/prophet_v4/flagship_cells/CELL_E_FRAGILITY_POSITIONING_CROWDING_HANDOFF_2026-08-22.md
-    what: >
-      Hardened MAS-121 with separate structural fragility, path fragility and crowding,
-      source-maturity/coverage law and explicit no-risk-score/no-Availability-override law.
-  - path: research/prophet_v4/flagship_cells/CELL_F_EVIDENCE_TRANSLATION_TRAJECTORY_HANDOFF_2026-08-22.md
-    what: >
-      Hardened MAS-122 so D5 is missing-aware evidence grammar, not a second ranker: Context
-      Vector reuse/supersession, evidence ancestry, trajectory semantics, episode joins,
-      authority metadata and Conditional Fusion boundary.
-  - path: research/prophet_v4/flagship_cells/CELL_G_VALUE_OF_INFORMATION_MEASUREMENT_HANDOFF_2026-08-22.md
-    what: >
-      Hardened MAS-123 with Early Actionable Winner Capture, lead-time preservation,
-      same-tape LOFO/placebos, coverage/effective-N/multiple-testing law and promotion/
-      demotion routed through Eval OS/Fusion rather than a new scoreboard.
-  - path: research/prophet_v4/flagship_cells/CELL_H_FLAGSHIP_PRODUCT_EXPERIENCE_HANDOFF_2026-08-22.md
-    what: >
-      Hardened MAS-124 as a follower inside the accepted V4/MP-1 six-view shell with
-      five-second hierarchy, evidence independence, incorporation/risk/analogue UX,
-      degraded/correction/rights/auth/mobile/EN-ZH states and no semantic invention.
   - path: research/prophet_v4/PROPHET_FLAGSHIP_INTELLIGENCE_EXPANSION_MASTERPLAN_2026-08-22.md
     what: >
-      NEW integrated flagship overlay. Freezes Opportunity Inference Engine outcome,
-      current-state precedence, dated capability ledger, one-owner topology, the central
-      truth→evidence→identity→exposure/relationship→expectation/materiality→expected-response
-      pressure→residual observed-response→incorporation→fragility/crowding/priors→timing→
-      Availability→priority→prospective-learning chain, D5 heads, deterministic E1-before-
-      model ladder, EAWC/VOI, product/dossier/failure/time/null/correction/rights/model laws,
-      and research-to-build transition standard. Open empirical claims remain explicitly
-      hypotheses rather than frozen product facts.
+      Integrated system-level overlay: Prophet as Opportunity Inference Engine;
+      current-state precedence; dated capability ledger; one-owner topology; the
+      truth→evidence→identity→exposure/relationship→expectation/surprise/materiality→
+      expected-response→residual-price-response→incorporation→fragility/crowding/
+      priors→technical-state→deterministic-Availability→priority→prospective-learning
+      chain; multi-axis exposure, ThemeState/transmission, D5 evidence grammar,
+      deterministic E1-before-model ladder, EAWC/VOI and product/time/null/correction/
+      rights/model laws. Desired capabilities and empirical hypotheses are separated.
+  - path: research/prophet_v4/flagship_cells/RESEARCH_CELL_EXECUTION_CONSTITUTION_2026-08-22.md
+    what: Universal research claim, authority, archaeology, ownership, clock/null/correction, failure and misconstruction law.
+  - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_CELL_HARDENING_INDEX_2026-08-22.md
+    what: Inter-cell semantic ownership contract preventing A-H from becoming duplicate systems.
+  - path: research/prophet_v4/flagship_cells/RESEARCH_CELL_DELIVERABLE_TEMPLATE_2026-08-22.md
+    what: Mandatory standardized research return shape and cold-stranger continuation contract.
+  - path: research/prophet_v4/flagship_cells/CELL_A_THEME_INTELLIGENCE_HANDOFF_2026-08-22.md
+    what: GMI-owned exposure/segment/ThemeState/transmission/emergent-theme research commission.
+  - path: research/prophet_v4/flagship_cells/CELL_B_EVIDENCE_PRICE_GAP_HANDOFF_2026-08-22.md
+    what: Downstream incorporation/dislocation research commission with current P0 blindness preserved.
+  - path: research/prophet_v4/flagship_cells/CELL_C_CATALYST_SURPRISE_MATERIALITY_HANDOFF_2026-08-22.md
+    what: Federated event→expectation→surprise→issuer-materiality research contract preserving domain owners.
+  - path: research/prophet_v4/flagship_cells/CELL_D_STOCK_SPECIES_ANALOGUES_REGIME_HANDOFF_2026-08-22.md
+    what: Stock Identity/Market Memory species, analogue and selective-regime research with anti-outcome-audition.
+  - path: research/prophet_v4/flagship_cells/CELL_E_FRAGILITY_POSITIONING_CROWDING_HANDOFF_2026-08-22.md
+    what: Structural/path fragility and crowding semantics with missing-coverage and no-Availability-override law.
+  - path: research/prophet_v4/flagship_cells/CELL_F_EVIDENCE_TRANSLATION_TRAJECTORY_HANDOFF_2026-08-22.md
+    what: D5 missing-aware evidence grammar, Context Vector ruling, trajectory/lineage and Fusion boundary.
+  - path: research/prophet_v4/flagship_cells/CELL_G_VALUE_OF_INFORMATION_MEASUREMENT_HANDOFF_2026-08-22.md
+    what: EAWC, lead-time, same-tape LOFO/placebos, effective-N/multiple-testing and Eval/Fusion promotion research.
+  - path: research/prophet_v4/flagship_cells/CELL_H_FLAGSHIP_PRODUCT_EXPERIENCE_HANDOFF_2026-08-22.md
+    what: Follower product-experience research inside accepted V4/MP-1 semantics.
   - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_EXTERNAL_METHODS_BENCHMARK_2026-08-22.md
     what: >
-      NEW shared institutional/academic benchmark covering FactSet RBICS/revenue exposure,
-      MSCI segment-to-theme exposure, S&P Kensho emergent commercial involvement, FactSet
-      2026 diversified-company exposure-weighted synthetic returns, point-in-time economic
-      relationships, Visible Alpha expectations/KPIs/revisions, RavenPack event novelty/
-      relevance, factor residualization, customer-supplier/horizontal-link diffusion and
-      PEAD/analyst-responsiveness literature. Records learn/do-not-copy/owner-route/rights
-      implications so cells do not repeat generic benchmarking.
+      Shared institutional/academic methods baseline: FactSet revenue exposure and
+      diversified-company synthetic response, MSCI segment-theme mapping, Kensho
+      emergent commercial involvement, PIT economic relationships, Visible Alpha
+      expectations/KPIs, RavenPack novelty/relevance, factor residualization and
+      linked-firm/PEAD literature; every method records learn/do-not-copy/owner route.
   - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_ARCHITECTURE_FREEZE_AND_INTEGRATION_GRAPH_2026-08-22.md
     what: >
-      NEW routing freeze overlay, not a second roadmap. Freezes one episode plane, one
-      Availability, one GMI graph, one Fusion ranker, one Eval plane, one Market Memory,
-      specialist truth owners and one exact identity spine; maps A-H returns into existing
-      V4 D2-D7/E1-E6 and source-owner waves; specifies shared semantic/clock/missingness/
-      evidence-root APIs, implementation entrance checklist, concurrency and failure modes.
+      Overlay—not a second roadmap—freezing one episode/Availability/GMI/Fusion/Eval/
+      Market-Memory/exact-identity plane and mapping accepted A-H returns into existing
+      V4 D2-D7/E1-E6 and specialist-owner waves.
   - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_OPEN_HYPOTHESES_AND_KILL_MATRIX_2026-08-22.md
     what: >
-      NEW preregistration aid with PASS/MIXED/FAIL paths, baselines/falsifiers/authority
-      ceilings for exposure, transmission, incorporation, catalysts, species, analogues,
-      fragility/crowding, trajectory/missingness, EAWC/VOI and listwise/router/temporal-
-      graph challenger hypotheses; includes N/effective-N, multiple-testing and leakage law.
+      PASS/MIXED/FAIL matrix for exposure, transmission, incorporation, catalysts,
+      species, analogues, fragility/crowding, trajectory, EAWC/VOI and listwise/router/
+      temporal-graph challengers; research may legitimately kill attractive ideas.
   - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_REFERENCE_CASEBOOK_2026-08-22.md
     what: >
-      NEW 20-case synthetic casebook proving intended behavior across strong-open-entry,
-      strong-thesis-bad-entry, weak-context emergence, high fragility/crowding, low
-      materiality headline, missing coverage, second-order transmission, justified
-      impairment, identity correction, baseline conflict, emergent-theme probation,
-      insufficient analogue N, rights blocking, evidence corrections/conflicts and healthy
-      no-action days. Cases distinguish deterministic/statistical/model/experimental law.
+      Twenty synthetic positive/negative/ambiguous/missing/correction/no-action cases,
+      including justified impairment rather than dislocation and conflicting baselines.
   - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_EXECUTIVE_DECISION_DOCKET_2026-08-22.md
+    what: Settled architecture vs owner/Sol/Chairman/not-yet decision classification and escalation quality bar.
+  - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_ADVERSARIAL_REVIEW_AND_AMENDMENTS_2026-08-22.md
     what: >
-      NEW decision hygiene: settled architecture vs canonical-owner decisions vs Sol-after-
-      research vs genuine Chairman decisions vs not-yet-decisions, with decision-request
-      quality bar and re-open law.
+      Binding A1-A12 amendments after red-team review: leave-target-economic-issuer-out
+      baselines; fold-frozen priors; pre-event price sensitivities; ex-target-price
+      materiality; family-first calibration; B-compute/F-transport/Fusion-influence seam;
+      no hidden fragility veto; authority-matched product copy; graph cycle guards;
+      source-root vs economic dependence; sparse-coverage selection audit; contemporaneous-
+      belief vs final-corrected historical views. Verdict PASS WITH AMENDMENTS.
+  - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_DATA_SOURCE_AND_MOAT_LEDGER_2026-08-22.md
+    what: >
+      Build-vs-license/PIT/rights/freshness map. SEC filing/iXBRL segment truth is an
+      extraction/governance problem before a vendor problem; detailed broker/KPI consensus
+      is a plausible licensed gap; 13F, insider filings, FINRA short interest, official
+      trials/procurement and ThetaData options have distinct clocks/owners; strongest moat
+      is correction-safe evidence/decision history, not indiscriminate data buying.
   - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_READ_FIRST_2026-08-22.md
     what: >
-      NEW one-front-door cold-start map. Gives exact required read order, question-specific
-      precedence, frozen-vs-open summary, semantic chain, misconstruction test, claim and
-      completion protocols so a fresh cell session cannot miss the integrated masterplan.
+      Single cold-start front door. Mandatory order: current Chairman/Skillpack/main/
+      owners → integrated masterplan → integration freeze → A1-A12 review → hypothesis
+      matrix → external methods → source/moat ledger → casebook → executive docket →
+      constitution/index → dedicated cell handoff → standard return template.
   - path: Linear MAS-116 and MAS-117..MAS-124
     what: >
-      MAS-116 now links READ FIRST, integrated masterplan, architecture freeze, hypothesis
-      matrix, external benchmark, reference casebook, executive docket, constitution/index,
-      return template and #6264. A new masterplan precedence comment makes this stack
-      mandatory. Every child carries a superseding read-order comment pointing back to the
-      integrated parent before its dedicated handoff. Children remain Backlog/unassigned.
+      MAS-116 description rewritten around the integrated masterplan and READ FIRST;
+      parent links every system-level artifact and records A1-A12/return-law precedence.
+      Each child carries a superseding read-order comment requiring the parent masterplan
+      stack plus current owner truth before its dedicated handoff. All remain Backlog/unassigned.
 verified:
-  - claim: "Current Sol procedure was loaded from one protected Skillpack commit."
-    command: "GitHub protected branch/file reads"
+  - claim: "Sol procedure came from one current protected Skillpack commit."
+    command: "Read Mastermind protected master INDEX + COLD_START + RECONCILE_STATE + COMMISSION_WAVE + CLOSEOUT"
+    result: "SHA 90db9baf5bcc5f2221e3c9870c2aa09a95293c99; schema mastermind.sol_skillpack.v1; version 1.0.0; bootstrap major compatible."
+  - claim: "Current V4/owner archaeology was refreshed rather than inherited from chat."
+    command: "Current-main GitHub workstream, handoff, wave-graph and PR reads"
     result: >
-      mastermindx-market-intelligence/Mastermind protected master SHA
-      90db9baf5bcc5f2221e3c9870c2aa09a95293c99; INDEX schema
-      mastermind.sol_skillpack.v1, version 1.0.0, minimum bootstrap major 1; COLD_START,
-      RECONCILE_STATE, COMMISSION_WAVE and CLOSEOUT loaded from that same SHA.
-  - claim: "Current-state archaeology was refreshed rather than inherited from the prior chat."
-    command: "GitHub current-main workstream/PR/handoff reads"
+      D2B2-US is PROVEN_LIVE; D2B3 implementation is merged/BUILT_NOT_PROVEN at the
+      latest examined D2B3 handoff pending natural GMI survival; later D2/D3/D5 gates
+      remain separate. Conditional Fusion C1 remains canonical current US ranker; Stock
+      Identity/Market Memory retain their own estimability/prospective gates. Some owner
+      workstream next_action text is older than newer accepted evidence, so READ FIRST
+      separates ownership authority from live status precedence.
+  - claim: "Previous #6264 model=sol validation failure is fixed on current main, not by falsifying provenance."
+    command: "Read old CI failure and current main handoff schema / newest main history"
     result: >
-      Re-read current V4 workstream/wave graph, D2B3 implementation handoff/PR, GMI,
-      Conditional Fusion, Eval OS, Stock Identity, Market Memory and moving main. D2B2-US
-      is now PROVEN_LIVE; D2B3 implementation remains BUILT_NOT_PROVEN at the examined
-      handoff pending natural-nightly survival; D2C/D2D/D2E/D3/D5 remain separately gated.
-  - claim: "Current owner projection can lag accepted handoff/PR truth."
-    command: "Compare current WS:GMI-THEME-GRAPH / WS:EVAL-OS-MEASUREMENT-LAW text with newer accepted program evidence"
+      Old branch base rejected model=sol. Current main explicitly allows model enum
+      [fable, opus, sonnet, haiku, codex, local, sol] and identifies sol as the AI CEO;
+      main commit 0bcfef045517bcaae23271b1218f37c59bcaa864 includes the durable schema heal.
+  - claim: "Final pre-handoff branch scope remains research-only."
+    command: "compare main...sol/prophet-flagship-fanout-hardening-20260822"
     result: >
-      Workstream ownership remains canonical, but examples of old operational next_action
-      text persist; the integrated masterplan therefore freezes source-precedence/status-
-      reconciliation law instead of copying workstream next_action blindly.
-  - claim: "The previous PR CI Agent OS error was a moving-base schema discrepancy, not current illegal handoff syntax."
-    command: "Read previous #6264 CI failure and current main agentos/schema/handoff.schema.yml"
+      Against main 0bcfef045517bcaae23271b1218f37c59bcaa864 before this final handoff
+      edit: branch 25 commits ahead / 18 behind; 21 changed paths; every path is additive
+      research architecture or this single Agent OS handoff; zero deletions and no runtime/
+      product/data mutation paths.
+  - claim: "External/source research is grounded in public/official methods and preserves rights boundaries."
+    command: "Web/primary-source research + durable benchmark/source ledger"
     result: >
-      Earlier merge-base validator rejected model=sol; current main schema explicitly allows
-      enum [fable, opus, sonnet, haiku, codex, local, sol] and defines sol as AI CEO.
-      A separate git-fetch infrastructure error also appeared in that old run. Fresh exact-
-      head CI remains required after these new commits.
-  - claim: "External-method research is grounded in public/primary sources and separated from proprietary copying."
-    command: "Current web research + durable benchmark write"
+      FactSet/MSCI/S&P/Visible Alpha/RavenPack methods and peer-reviewed literature are
+      treated as jobs/baselines, not proprietary data rights. Official SEC/FINRA/
+      ClinicalTrials/USAspending clocks are separated; vendor/public URLs do not grant
+      scraping/training/display rights by implication.
+  - claim: "The adversarial pass found and closed a material circularity class."
+    command: "Independent Sol red-team over integrated masterplan, then A1-A12 artifact"
     result: >
-      Benchmarked public FactSet, MSCI, S&P/Visible Alpha, RavenPack and peer-reviewed
-      academic methods; every section records observed capability, generalizable lesson,
-      do-not-copy boundary, Mastermind differentiation and owner route.
-  - claim: "Linear has one front door to the full masterplan."
-    command: "Linear MAS-116 attachments/comments + MAS-117..124 superseding comments"
+      Target/self-basket leakage, future-fold priors, overlapping price-derived exposure,
+      price-defined materiality, graph cycles, dependence inflation and coverage selection
+      are now explicit HOLD conditions. Architecture verdict: PASS WITH BINDING AMENDMENTS.
+  - claim: "Linear is now a valid dispatch front door rather than a stale short summary."
+    command: "MAS-116 rewrite + parent attachments/comments + MAS-117..124 superseding comments"
     result: >
-      MAS-116 carries all system-level artifacts and READ FIRST precedence; each child
-      explicitly inherits the parent masterplan stack before its dedicated handoff.
+      MAS-116 points to READ FIRST and the full suite; every child inherits current-owner +
+      integrated-masterplan precedence and remains research-only/unclaimed.
 unverified:
   - >
-    The current branch has continued to advance with these system-level documents and has
-    not yet been rebased onto the latest moving main. Reconcile exact current main before
-    landing; amend any changed owner-law assumptions rather than merging stale prose.
+    This final handoff edit creates a new exact branch head. Fresh exact-head GitHub
+    fences/CI/Agent OS validation are still required; no prior head receipt may be reused.
   - >
-    Fresh exact-head GitHub CI/fences after the final closeout commit remain required. Do
-    not reuse an older green fence receipt as proof of the final head.
+    The branch is intentionally not rebased during this research turn. Main is moving and
+    the current schema heal exists on main, while the branch merge base predates it; final
+    landing must reconcile/rebase so CI evaluates current law without duplicating the
+    already-merged schema change.
   - >
-    No A-H research cell has been claimed or completed. The masterplan/benchmark/freeze/
-    hypothesis/casebook documents are research architecture, not empirical results or
-    implemented product capabilities.
+    No A-H research cell has been claimed/completed. All masterplan/case/hypothesis/source
+    artifacts are architecture and research contracts, not empirical alpha evidence or
+    implemented product capability.
 unresolved:
   - >
-    Existing V4/specialist gates continue independently, including D2B3 natural production
-    proof and later owner authorizations. This research hardening does not adjudicate them.
+    Existing V4/specialist production gates continue independently, including D2B3 natural
+    production proof and later owner authorizations. This hardening does not adjudicate them.
   - >
-    #6264 still needs adversarial review specifically for architecture drift, idealized-but-
-    unestimable constructs, contradictory ownership/precedence, leakage paths, missing
-    negative states and whether the masterplan suite is sufficient for a cold-start cell.
+    Draft PR #6264 still needs final exact-head validation after current-main reconciliation/
+    rebase and an adversarial human/agent review of the 21-file masterplan suite.
 next_actions:
   - >
-    Reconcile final branch against current main; update #6264 body to list the integrated
-    masterplan suite and exact validation state; run/follow final-head Agent OS/schema/CI/
-    fences. Keep draft until attributable review/proof is earned.
+    Reconcile/rebase #6264 onto then-current main before landing; do not duplicate the
+    model=sol schema fix already merged on main. Run exact-head Agent OS/schema/fences/CI
+    after rebase and update the PR proof block with attributable receipts only.
   - >
     After #6264 lands, first parallel research claims remain MAS-117 (A Theme), MAS-122
-    (F Translation), MAS-123 (G VOI) and MAS-118 (B Incorporation). Each starts from
-    PROPHET_FLAGSHIP_READ_FIRST_2026-08-22.md and must identify the hypothesis IDs it owns.
+    (F Translation), MAS-123 (G VOI) and MAS-118 (B Incorporation). Start each from
+    READ FIRST; record current main/owners, applicable hypothesis IDs, A1-A12 controls and
+    source-ledger constraints; return through the standard template.
   - >
-    Route every completed cell back through a dedicated Sol integration adjudication before
-    adding implementation waves. Successful research extends existing owners/V4; it never
-    auto-mints a new production system.
+    Perform one Sol integration adjudication after the first R1 returns before commissioning
+    any new implementation vertical. Successful research extends existing owners/V4 and
+    begins prospective evidence clocks; it never auto-mints a production subsystem.
   - >
-    Independently continue current Prophet V4 and specialist program gates; research cells
-    are not a reason to pause already-authorized production work unless a real dependency
-    exists.
+    Continue current V4/specialist authorized work independently; research fan-out is not a
+    reason to pause production unless a real dependency is named.
 do_not_redo:
-  - "Do not make future Sol sessions reconstruct the integrated product from the eight original Linear summaries. Start from READ FIRST + integrated masterplan."
-  - "Do not replace the masterplan suite with a shorter all-in-one Linear description; Linear remains dispatch/projection."
-  - "Do not treat any desired capability or synthetic reference case as proof that an alpha hypothesis works. Use the kill matrix."
-  - "Do not preserve a hypothesis merely because the product vision would benefit if it were true; a FAIL is a successful research result."
-  - "Do not create a second graph, exact identity master, analogue memory, cross-family ranker, evaluation store, evidence warehouse, catalyst engine or risk score."
-  - "Do not let intelligence change deterministic Availability or let strong thesis overwrite a bad entry."
-  - "Do not count same-source derivatives as independent confirmations."
+  - "Do not make a fresh Sol reconstruct the flagship system from old Linear summaries; start at READ FIRST."
+  - "Do not shorten the GitHub masterplan suite into Linear and then treat Linear as architecture truth."
+  - "Do not treat desired capability, institutional precedent or synthetic reference cases as evidence the Mastermind hypothesis works."
+  - "Do not rescue a failed hypothesis with same-outcome retuning; use the kill matrix and register a genuinely new hypothesis separately."
+  - "Do not violate A1-A12: target-issuer self-baselines, future-fold priors, overlapping price exposure, price-defined materiality, uncalibrated universal pressure scores, ownership blur, hidden fragility veto, copy overclaim, graph cycles, dependence inflation, sparse-coverage bias or corrected-truth leakage are HOLD/BLOCKER classes."
+  - "Do not create a second graph, exact identity master, analogue memory, cross-family ranker, Eval store, evidence warehouse, catalyst engine, risk score or availability state."
   - "Do not let Cell B contaminate current blinded Dislocation P0 or claim intrinsic fair value."
-  - "Do not let Cell C absorb domain-owner implementations or equate event size with issuer materiality."
-  - "Do not let Cell D perform outcome audition or create a parallel vector/analogue store."
-  - "Do not let Cell E treat missing coverage as low risk/crowding or silently veto ENTRY_OPEN."
-  - "Do not let Cell F become a ranker; Conditional Fusion remains cross-family authority."
-  - "Do not let Cell G create a second scoreboard or retrospectively mint evidence clocks."
-  - "Do not let Cell H invent upstream semantics because a design composition needs them."
-  - "Do not make GNN/temporal graph implementation a strategic milestone independent of incremental evidence."
-  - "Do not create another suffixed Prophet V4 handoff for 2026-08-22; update this bare-dated compiler-visible record in place."
+  - "Do not let Cell C absorb domain truth or equate headline size with issuer materiality."
+  - "Do not let Cell D outcome-audition names or create a parallel analogue/vector store."
+  - "Do not let Cell E map missing coverage to low risk/crowding or remove an ENTRY_OPEN candidate from the complete lane."
+  - "Do not let Cell F compute cross-family rank; D5 transports owner evidence and Conditional Fusion governs influence."
+  - "Do not let Cell G create a second outcome scoreboard or backdate feature evidence clocks."
+  - "Do not let Cell H promote experimental evidence through confident copy or invent upstream fields for design convenience."
+  - "Do not make a GNN/temporal graph a strategic milestone absent incremental evidence."
+  - "Do not create another suffixed 2026-08-22 Prophet V4 handoff; update this bare-dated record in place."
 danger_areas:
   - >
-    Main moves quickly and several workstream records contain useful ownership law plus stale
-    operational projections. Fresh sessions must separate owner authority from status truth
-    using the READ FIRST precedence map.
+    Main moves rapidly. Owner records may preserve correct ownership while carrying stale
+    operational next_action text; current status must come from latest accepted evidence.
   - >
-    The largest likely failure is semantic duplication: a good cell designs its own owner
-    because the canonical owner is inconvenient or behind. The integration freeze is
-    load-bearing precisely against that temptation.
+    The most likely research failure is circularity that looks economically sophisticated.
+    A1-A12 are load-bearing, especially leave-target-issuer-out, fold-frozen priors and
+    contemporaneous-belief reconstruction.
   - >
-    The second likely failure is “masterplan truth inflation”: desired capabilities become
-    pseudo-facts. The open-hypothesis/kill matrix and synthetic casebook are load-bearing;
-    later sessions must mark validated vs unvalidated explicitly.
+    The most likely organizational failure is semantic duplication: a cell creates a new
+    owner because the canonical system is inconvenient or not yet implemented.
   - >
-    External institutional methods validate jobs and baselines, not Mastermind alpha. Vendor
-    data/taxonomies/models remain proprietary; public methodology research grants no data
-    rights and no permission to copy.
+    The most likely data failure is pretending a slow/current/licensed source has a PIT,
+    fresh or publishable history it does not actually possess.
 ---
 
-# Prophet V4 flagship integrated research-masterplan closeout
+# Prophet flagship integrated research-masterplan closeout
 
-The first fan-out solved context limits. The first hardening pass solved **cell-level
-interpretation and return-format drift**. This continuation solves the remaining
-**system-level reconstruction burden**.
+The original fan-out solved context limits. The first hardening pass solved cell-level
+interpretation and return-format drift. This continuation solves the remaining **system
+reconstruction, empirical-claim inflation, circularity and source-strategy** risks.
 
-A cold-start Sol now has one front door (`PROPHET_FLAGSHIP_READ_FIRST_2026-08-22.md`) into:
+A cold-start Sol now has one front door (`PROPHET_FLAGSHIP_READ_FIRST_2026-08-22.md`)
+into current owner truth, the integrated masterplan, owner/V4 integration freeze,
+A1-A12 adversarial amendments, open hypotheses and kill paths, institutional methods,
+data/source/rights/freshness law, concrete negative and positive product cases, executive
+decision hygiene, one bounded cell commission and one standardized return contract.
 
-1. current canonical owner/main truth;
-2. the integrated flagship masterplan;
-3. owner/V4 architecture freeze;
-4. open hypotheses and kill paths;
-5. shared external benchmark;
-6. concrete reference states including failures/refusals;
-7. settled-vs-open executive decisions;
-8. universal execution/ownership laws;
-9. one dedicated cell handoff;
-10. one standardized return contract.
+The package is deliberately **almost pre-designed but not pre-proven**. Future sessions
+should spend scarce context on Mastermind-specific estimability, lawful primary data,
+falsification, contract detail and owner-routed verticals—not on reconstructing why the
+program exists or inventing a different architecture.
 
-The system is deliberately **almost pre-designed but not pre-proven**. Future cells should
-spend their scarce context on Mastermind-specific estimability, primary data, falsification,
-contract detail and owner-routed verticals—not on reconstructing why the program exists or
-inventing a different architecture.
-
-The fixed ambition remains: early, explainable, evidence-rich opportunity inference with
-truth, economic intelligence, price incorporation, deterministic actionability and
-prospective learning kept distinct. The empirical mechanisms are allowed to fail. The
-architecture is not allowed to drift silently.
+The fixed ambition remains maximal: early, explainable, evidence-rich opportunity inference
+with truth, economic intelligence, price incorporation, deterministic actionability and
+prospective learning kept distinct. The empirical mechanisms are allowed to fail. Silent
+architecture drift is not.
