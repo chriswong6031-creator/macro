@@ -445,8 +445,31 @@ waves:
       agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-D2B2-US.md). DONE
       requires the next natural production nightly showing source → master →
       fresh GMI projection with measured before/after U.S. counts. D2B2-Canada
-      (167 ca nodes) and D2B3+ remain NOT authorized — Sol reviews after this
-      child returns."
+      (167 ca nodes) remains NOT authorized — Sol reviews after this
+      child returns.
+      D2B3 CONTRACT-FROZEN 2026-08-21 (Sol commission; archaeology + freeze
+      ONLY — the commission's precondition gates implementation on D2B2-US
+      PROVEN_LIVE, and at freeze the Aug-22 Data OS generation existed
+      (receipt 2026-08-22T01:07:17, us_gmi_admission 1236/1210/0 natural
+      steady state) but no natural GMI generation had consumed it yet).
+      Frozen contract research/prophet_v4/d2/D2B3_FROZEN_CONTRACT_2026-08-21.md:
+      GOLD reuse corrected by retiring the epoch-1 fossil node (retire_date =
+      ratified break_date 2025-12-02 verbatim) + truncating its stale
+      gold_miners edge via the EXISTING (edge_id, belief_time) lineage; IBIT
+      corrected by retiring the company-kind node + ANNULLING its crypto_rails
+      company edge (empty interval) + a deterministic bake-side etf-conflict
+      mint refusal with typed receipt; retirement expressed in a NEW
+      node_lifecycle.parquet sibling table (KEY=(node_id,computed_at), same
+      append-only/latest pattern as capability) because nodes are write-once
+      keep-first with NO existing retirement path — nodes.parquet rows stay
+      bit-identical forever; ABX = generality control on the prior-node-ABSENT
+      shape (no co:us:ABX exists; nothing is minted); D2A sidecar states and
+      counts FROZEN UNCHANGED (DEFERRED B/GOLD + CONFLICT IBIT are the lawful
+      preserved history; D2B2 proof numbers undisturbed); #2 nodes NEVER
+      pre-minted (live epoch law routes future evidence). Handoff
+      agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-D2B3-FREEZE.md.
+      Implementation NOT started per the commission's precondition + STOP:
+      no D2C/D2D/D2E/D3/D5/Canada. Returned to Sol."
     status: in_progress
   - id: d3
     depends_on: [d2]
