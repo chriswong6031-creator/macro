@@ -578,19 +578,29 @@ function paintFoot(){
   var p = payload() || {}, cov = p.coverage || {}, noun = ds().noun;
   var honest = '';
   if(cov.n_gateable != null){
+    /* R3B1-07 — the thin clause states what the payload actually contains.
+       `n_thin` is the GATE-DROPPED count: those groups never enter `subsectors[]`
+       at all (113 listed − 65 gateable = 48 absent), so production's own wording
+       — "thin (listed in the table, not timed)", subsectors.js:221-222 — tells a
+       reader to look for 48 rows that are not there. The count, the total and the
+       gateable figure are the producer's; only the sentence that describes them
+       is corrected, and it is corrected in the direction of what the data says.
+       Recorded as a production-repair delta for R3C (DAC-105). */
     honest = L('<span class="tnum">' + cov.n_gateable + '</span> of <span class="tnum">' + cov.n_subsectors
-        + '</span> ' + noun[0] + ' have enough live data to time'
-        + (cov.n_thin ? ' · <span class="tnum">' + cov.n_thin + '</span> thin (listed in the table, not timed)' : ''),
-      '<span class="tnum">' + cov.n_gateable + '</span>/<span class="tnum">' + cov.n_subsectors
-        + '</span> 个' + noun[1] + '有足够实时数据可计时'
-        + (cov.n_thin ? ' · <span class="tnum">' + cov.n_thin + '</span> 个数据稀疏（列于表内，不计时）' : ''));
+        + '</span> ' + noun[0] + ' have enough live data to time.'
+        + (cov.n_thin ? ' <span class="tnum">' + cov.n_thin
+            + '</span> are too thin to time and are omitted from the timed table.' : ''),
+      '<span class="tnum">' + cov.n_subsectors + '</span> 个' + noun[1] + '中，<span class="tnum">'
+        + cov.n_gateable + '</span> 个实时数据足够，可用于计时。'
+        + (cov.n_thin ? '另有 <span class="tnum">' + cov.n_thin
+            + '</span> 个数据过于稀疏，无法计时，未列入下方计时表。' : ''));
   }
   var n = rowsOf(SEL).length;
   var shown = Math.min(n, LANE_CAP);
   /* When the active universe emits no coverage fields this slot renders NOTHING.
      There is no fallback sentence: an absent producer field is absence, and a
      stand-in here would be the invented Baskets disclosure #66 forbids. */
-  el('cf-foot').innerHTML = (honest ? '<span>' + honest + '</span>' : '')
+  el('cf-foot').innerHTML = (honest ? '<span data-r3b1="07">' + honest + '</span>' : '')
     + '<button class="r3-rcpt" type="button" aria-expanded="false" data-tip-en="' + esc(FOOT_TIP_EN)
     + '" data-tip-zh="' + esc(FOOT_TIP_ZH) + '"><span class="r3-vh">'
     + L('How timing support is graded', '时机支持的评分方式') + '</span></button>'
@@ -724,11 +734,29 @@ function paintPicks(){
           '暂时没有股票在走强的子行业中出现及时的入场判断。') + '</p></div>';
     return;
   }
-  el('cf-picks').innerHTML = buys.slice(0, PICKS_CAP).map(function(r){
+  /* ── R3B1-13 · the figure column gets its name back ─────────────────────────
+     The bare 0.60 was the heaviest mark on the row and the only unexplained one
+     (VTC-006). It is `double_gated.double_buy[].combined_score`, produced at
+     engine/subsector_confluence.py:347 as `stock cascade weight × subsector
+     buyability factor` (contract stated at :322-324), and production labels that
+     exact field **Conviction / 综合把握** in its own picks table header
+     (templates/subsectors.js:330). That production label is used verbatim — the
+     reference does not get to rename a producer's column, and "Score",
+     "Probability", "Confidence" and "Strength" are all claims the contract does
+     not make. Doctrine Law 3 (a figure column may never be unlabelled) is
+     answered the way this build already answers it everywhere else: the shared
+     `.r3-cols` legend over the list, plus a visually-hidden name inside each row
+     so the figure is never a naked number to a screen reader either. */
+  el('cf-picks').innerHTML = '<div class="r3-cols" aria-hidden="true" data-r3b1="13">'
+    + '<span>' + L('Stock', '个股') + '</span>'
+    + '<span style="text-align:right">' + L('Conviction', '综合把握') + '</span>'
+    + '<span>' + L('Why it is here', '入选原因') + '</span><span></span></div>'
+    + buys.slice(0, PICKS_CAP).map(function(r){
     return '<a class="r3-row" data-ref-nav href="' + esc(stockHref(r.ticker)) + '">'
       + '<span class="r3-name"><span class="r3-mem-tk">' + esc(r.ticker) + '</span>'
       + '<span class="r3-sub">' + L(esc(r.subsector || ''), esc(r.subsector || '')) + '</span></span>'
-      + '<span class="r3-fig tnum">' + (r.combined_score == null ? '' : r.combined_score.toFixed(2)) + '</span>'
+      + '<span class="r3-fig tnum"><span class="r3-vh">' + L('Conviction', '综合把握') + ' </span>'
+      + (r.combined_score == null ? '' : r.combined_score.toFixed(2)) + '</span>'
       + '<span class="r3-why">' + L('Its tier', '个股层级') + ' ' + esc(r.stock_tier || '–')
       + '<span aria-hidden="true"> · </span>' + L('vs sub 20d', '相对子行业20日') + ' ' + signed(r.vs_subsector_20d)
       + '</span><span class="r3-chev" aria-hidden="true"></span></a>';

@@ -729,6 +729,14 @@ html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
 [data-view="overview"] .r3-ov-hmeta{ display:block; margin-top:2px; font-size:var(--fs-micro);
   letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
 html[data-lang="zh"] [data-view="overview"] .r3-ov-hmeta{ letter-spacing:0; text-transform:none; }
+/* R3B1-05 — the handoff's producer enrichment. TERTIARY BY CONSTRUCTION: it
+   rides the existing 10px caps meta line, stays achromatic, and never gains a
+   weight or a hue that could pull the eye off the State Ledge below. The
+   figures drop the caps transform (a lowercased window token, "20d", is the
+   producer's own unit and must not read as "20D") and take tabular numerals so
+   the two columns' percentages align across the arrow. */
+[data-view="overview"] .r3-ov-mfig{ text-transform:none; letter-spacing:0;
+  font-variant-numeric:tabular-nums; color:var(--text); }
 [data-view="overview"] .r3-ov-state{ display:block; font-size:var(--fs-label); font-weight:700;
   letter-spacing:.055em; text-transform:uppercase; color:var(--muted); }
 html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text-transform:none; }
@@ -740,6 +748,70 @@ html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text
 [data-view="overview"] .r3-ov-season{ grid-column:1 / -1; margin-top:2px; padding-top:11px;
   border-top:1px solid color-mix(in srgb, var(--line) 60%, transparent);
   font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
+
+/* ── R3B1-03 · the migration note ────────────────────────────────────────────
+   `theme_context.migration.note_en/zh` is the producer's own statement of WHERE
+   the rotation is going — the one concrete fact behind the state word. It is
+   therefore not a footnote: it sits directly under the stance at body size in
+   full --text, reading as the specific under the general. (Production carries it
+   in the hero sub-line, sector_central.html.j2:2130.) */
+[data-view="overview"] .r3-ov-mig{ margin-top:6px; font-size:var(--fs-body); line-height:1.5; }
+
+/* ── R3B1-05 · inventory scope, in the band head ─────────────────────────────
+   Production files the theme/category counts in the hero eyebrow beside the
+   as-of stamp (:2120, :2926). Same slot here: provenance-tier, mono, 10px, and
+   it never enters the reading itself. */
+[data-view="overview"] .r3-ov-count{ font-family:var(--font-mono); font-size:var(--fs-micro);
+  letter-spacing:.05em; color:var(--muted); font-variant-numeric:tabular-nums; }
+
+/* ── R3B1-02 · the NAMED receipt ─────────────────────────────────────────────
+   The bare `?` is right for a footnote whose subject is already on the line.
+   A methodology caveat is not that: a reader has to be able to SEE that the
+   leadership claim carries a disclosure before deciding to open it, so this
+   variant of the same control wears its production label ("How this works /
+   原理说明", :2155) in front of the same ring. Same button, same popover, same
+   44px target — a modifier, not a second explain idiom. */
+/* the doubled class is load-bearing: `.r3-view--action .r3-rcpt` is declared in
+   BOTH Action view partials and confluence.html is concatenated after this file,
+   so a same-specificity modifier here loses the width on source order alone. */
+[data-view="overview"] .r3-rcpt.r3-rcpt--named{ width:auto; min-width:44px; gap:7px;
+  margin:-14px -2px; padding:0 2px; justify-content:flex-start;
+  flex-direction:row-reverse; font-size:var(--fs-sm); font-weight:600;
+  color:var(--muted); letter-spacing:0; text-transform:none; white-space:nowrap; }
+[data-view="overview"] .r3-rcpt.r3-rcpt--named:hover,
+[data-view="overview"] .r3-rcpt.r3-rcpt--named[aria-expanded="true"]{ color:var(--text); }
+[data-view="overview"] .r3-ov-hcell{ min-width:0; }
+[data-view="overview"] .r3-ov-caveat{ margin-top:14px; }
+
+/* ── R3B1-01 + R3B1-04 · the standing-constraint row ─────────────────────────
+   The band above is a READING. This row is what the reading obliges — a live
+   risk constraint and the door to the place it becomes a book. It is separated
+   by a DASHED hairline: production's own perforation idiom for the receipt tier
+   (sector_central.html.j2:2911-2913), and the only dashed rule in the system, so
+   the change of register is legible before a word is read.
+
+   AUTHORITY: this is deliberately NOT a graded lane. Production styles the pill
+   with a --warn border and a 3px --warn left rail (:316); both are forbidden
+   here — state ink and solid state fills are reserved to the Action lanes, and
+   the 3px rail belongs to the Answer Thread alone (§0.4). The directive earns
+   its weight achromatically instead: 15px/700 text, the same rung a primary name
+   takes, plus a gauge that shows the scalar rather than colouring it. */
+[data-view="overview"] .r3-ov-do{ grid-column:1 / -1; display:flex; align-items:center;
+  flex-wrap:wrap; gap:var(--sp-3) var(--sp-5); margin-top:2px; padding-top:12px;
+  border-top:1px dashed color-mix(in srgb, var(--line) 85%, transparent); }
+[data-view="overview"] .r3-ov-size{ display:flex; align-items:center; gap:10px; min-width:0; }
+[data-view="overview"] .r3-ov-sizetxt{ font-size:var(--fs-md); font-weight:700;
+  letter-spacing:-.01em; line-height:1.3; }
+[data-view="overview"] .r3-ov-sizetxt .tnum{ font-variant-numeric:tabular-nums; }
+/* the gauge: a 100%-of-normal track carrying the producer's own gross_scalar as
+   a filled proportion. Achromatic on purpose — the same lawful magnitude
+   encoding Money's tick rails use; it ranks nothing and grades nothing. */
+[data-view="overview"] .r3-gauge{ flex:none; box-sizing:border-box; width:56px; height:10px;
+  padding:1px; border:1px solid color-mix(in srgb, var(--muted) 62%, transparent);
+  border-radius:2px; }
+[data-view="overview"] .r3-gauge i{ display:block; height:100%;
+  background:color-mix(in srgb, var(--text) 66%, transparent); }
+[data-view="overview"] .r3-ov-do .r3-more{ margin-left:auto; }
 
 /* ── 3 · THE BOARD ──────────────────────────────────────────────────────────
    The ledge cells, foot and rows are the shell's. What this lane owns is the
@@ -858,7 +930,11 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
   padding:11px 13px; background:var(--glass-bg); border:1px solid var(--glass-brd);
   -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
   border-radius:var(--r-card); box-shadow:var(--popover-shadow);
-  font-size:var(--fs-sm); line-height:1.5; color:var(--text); }
+  font-size:var(--fs-sm); line-height:1.5; color:var(--text);
+  /* a receipt may carry more than one clause: a newline separates them so the
+     disclosure reads as two short statements rather than one run-on paragraph
+     (R3B1-02). Existing single-clause tips carry no newline and are unchanged. */
+  white-space:pre-line; }
 .r3-tipbox[hidden]{ display:none; }
 
 /* ── responsive: the phone RECOMPOSES ───────────────────────────────────────*/
@@ -879,6 +955,11 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
   [data-view="overview"] > #grader{ order:5; }
   [data-view="overview"] .r3-ov-hand{ grid-template-columns:minmax(0,1fr); gap:var(--sp-2); }
   [data-view="overview"] .r3-ov-hand .r3-arrow{ transform:rotate(90deg); margin:2px 0 2px 4px; }
+  /* the constraint and its door stop competing for one line: the directive
+     keeps the top of the row, the playbook takes its own full-width line and
+     its 44px target with it. */
+  [data-view="overview"] .r3-ov-do{ gap:var(--sp-2) var(--sp-4); }
+  [data-view="overview"] .r3-ov-do .r3-more{ margin-left:0; width:100%; }
   [data-view="overview"] .r3-gr{ grid-template-columns:minmax(0,1fr); }
   [data-view="overview"] .r3-delta{ display:inline; margin-left:7px; }
 }
@@ -911,6 +992,10 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
       <h2 id="ov-ctx-h"><span class="l-en">Leadership context</span><span class="l-zh">领涨格局背景</span></h2>
       <span class="r3-sec-sub"><span class="l-en">Display only — it does not set a lane below.</span><span class="l-zh">仅供展示 — 不决定下方分组归属。</span></span>
       <span class="r3-asof" id="ov-ctx-asof"></span>
+      <!-- R3B1-05: inventory scope. Production files it in the hero eyebrow beside
+           the as-of stamp (:2120, :2926); here it closes the same provenance
+           cluster — when the read was taken, and over how much. -->
+      <span class="r3-ov-count" id="ov-ctx-count" data-r3b1="05c"></span>
     </div>
     <div class="r3-ov-grid" id="ov-ctx-body"></div>
   </section>
@@ -1041,6 +1126,11 @@ function dispshort(name){
    REF:VIEWS slot, which precedes both REF:DATA and REF:RUNTIME, so REF.registry
    does not exist yet while this <script> is being parsed. */
 var AB = null, PG = null, HND = null, SCD = null, BOT = null, MORE = {};
+/* BK = basketdata/baskets.json, TI = its theme_intel block. The context band's
+   restored producer facts (R3B1-01 sizing, R3B1-05 counts + handoff perf) live
+   there, not in si_handoff.json — the same two globals production reads
+   (BASKETS / THEME, sector_central.html.j2:2877, :2887, :2925-2926). */
+var BK = null, TI = null;
 var ZH_TICKER = {}, ZH_HREF = {};
 function loadArtifacts(){
   var ABJ = reg('basketdata/action_board.json');
@@ -1053,6 +1143,8 @@ function loadArtifacts(){
      bytes the build embedded, so it degrades INDEPENDENTLY of the client fetch
      below (capability ledger #30). */
   var b = reg('basketdata/baskets.json');
+  BK = b || null;
+  TI = (b && b.theme_intel) || null;
   var an = b && b.theme_intel && b.theme_intel.act_now;
   BOT = an ? {rows: an.bottoming_watch || [], dual: an.dual_read_ids || [],
               recovering: an.recovering_ids || [], auth: an.bottoming_authority || {},
@@ -1527,7 +1619,8 @@ function paintContext(){
       + '<p class="r3-ov-stanceline">'
       + L('Equal-weight US theme baskets measured against the S&amp;P 500. Use them to see which themes are leading or fading.',
           '等权重美国主题篮子，对标标普 500。用于观察哪些主题在走强或走弱。')
-      + '</p></div>';
+      + '</p></div>' + doRow(false);
+    paintCounts();
     return;
   }
   var l = tc.leadership, tl = l.trailing_leader || {}, st = l.state;
@@ -1538,14 +1631,80 @@ function paintContext(){
   var takeEn = takers.map(function(x){ return esc(x.name); }).join(' · ');
   var takeZh = takers.map(function(x){ return esc(x.name_zh || x.name); }).join(' · ');
 
+  /* ── R3B1-05 · handoff enrichment ──────────────────────────────────────────
+     Production's renderVerdictHero() quantifies the succession claim with the
+     two themes' own relative performance (:2928-2933): the outgoing leader's
+     20d — and its 5d ONLY when that 5d is negative — and the incoming leader's
+     20d plus a "climbing fast" flag when pulse_rank_delta_5d is positive. Both
+     guards are reproduced exactly; on this fixture the outgoing 5d is +0.0433,
+     so the 5d clause is correctly inert and renders nothing. */
+  function relPct(t, win){
+    var p = t && t.perf && t.perf[win];
+    return (p && p.rel != null) ? p.rel : null;
+  }
+  /* UNIT NOTE (deviation, deliberate): `perf.<win>.rel` is a FRACTION in the
+     producer bytes (-0.0959 = -9.6% vs market). Production's hero prints it
+     through fmtPct(), which appends '%' to the raw fraction and renders
+     "-0.10%" — the identical field the board on this very page renders as
+     "-9.6%" (rowHTML above, `r.perf_20d_rel * 100`, action_board.json carrying
+     the same -0.0959). Carrying two different magnitudes for one number onto one
+     screen would be the reference teaching a unit defect as law, so the hero
+     follows the board's convention. No value is invented: the producer byte is
+     unchanged, only its scale is stated once, consistently. */
+  function relTxt(v){ var p = v * 100; return (p >= 0 ? '+' : '') + p.toFixed(1) + '%'; }
+  function metaFor(id, side){
+    var t = id ? REF.themeById(id) : null;
+    if(!t) return null;
+    var r20 = relPct(t, '20d'), en = [], zh = [];
+    if(r20 != null){
+      en.push('<span class="r3-ov-mfig">' + relTxt(r20) + ' 20d</span>');
+      zh.push('<span class="r3-ov-mfig">' + relTxt(r20) + '</span> 20日');
+    }
+    if(side === 'out'){
+      var r5 = relPct(t, '5d');
+      if(r5 != null && r5 < 0){                       /* production's own guard, :2930 */
+        en.push('<span class="r3-ov-mfig">' + relTxt(r5) + ' 5d</span>');
+        zh.push('<span class="r3-ov-mfig">' + relTxt(r5) + '</span> 5日');
+      }
+    }else{
+      var v = t.pulse_rank_delta_5d;
+      if(v != null && v > 0){ en.push('climbing fast'); zh.push('快速上行'); }  /* :2933 */
+    }
+    return en.length ? {en: en.join(' · '), zh: zh.join(' · ')} : null;
+  }
+  var outX = metaFor(tl.id, 'out');
+  var outMeta = '<span class="r3-ov-hmeta" data-r3b1="05a">'
+    + L('was #1' + (outX ? ' · ' + outX.en : ''), '原第一' + (outX ? ' · ' + outX.zh : ''))
+    + '</span>';
+  var inX = metaFor((takers[0] || {}).id, 'in');
+  var inMeta = inX ? '<span class="r3-ov-hmeta" data-r3b1="05b">' + L(inX.en, inX.zh) + '</span>' : '';
+
   var hand = '<div class="r3-ov-hand">'
     + '<div class="r3-ov-hcol"><span class="r3-eyebrow">' + L('Losing the lead', '失去领先') + '</span>'
     + '<strong class="r3-ov-hname">' + L(esc(tl.name || ''), esc(tl.name_zh || tl.name || '')) + '</strong>'
-    + '<span class="r3-ov-hmeta">' + L('was #1', '原第一') + '</span></div>'
+    + outMeta + '</div>'
     + '<span class="r3-arrow" aria-hidden="true"></span>'
     + '<div class="r3-ov-hcol"><span class="r3-eyebrow">' + L('Taking the lead', '接过领先') + '</span>'
-    + '<strong class="r3-ov-hname">' + (takeEn ? L(takeEn, takeZh || takeEn) : '') + '</strong></div>'
+    + '<strong class="r3-ov-hname">' + (takeEn ? L(takeEn, takeZh || takeEn) : '') + '</strong>'
+    + inMeta + '</div>'
     + '</div>';
+
+  /* ── R3B1-02 · the methodology caveat the leadership claim is governed by ───
+     Production pairs the succession assertion with a receipt carrying two
+     clauses (:2155): the construction lag, and the non-forecast caveat. Both are
+     restored verbatim, with the caveat FIRST — it is the clause that governs how
+     the whole band may be read, and a reader who opens one line reads that one.
+     A newline, not a full stop, separates them: the popover renders two short
+     statements rather than a paragraph of prose. */
+  var cvEn = 'Shape read only — not a forecast.\n'
+    + 'Trailing-momentum rank names ' + (tl.name || '') + ' first; skips the most recent '
+    + '~3 weeks by construction; suggested weights unchanged.';
+  var cvZh = '仅为形态读数，非预测。\n'
+    + '趋势动量排名以' + (tl.name_zh || tl.name || '') + '居首；设计上跳过最近约3周数据；建议权重不变。';
+  var caveat = '<p class="r3-ov-caveat" data-r3b1="02">'
+    + '<button class="r3-rcpt r3-rcpt--named" type="button" aria-expanded="false"'
+    + ' data-tip-en="' + esc(cvEn) + '" data-tip-zh="' + esc(cvZh) + '">'
+    + L('How this works', '原理说明') + '</button></p>';
 
   var days = (l.days_in_state != null && l.days_in_state)
     ? '<p class="r3-ov-days">' + L(l.days_in_state + ' days in', l.days_in_state + ' 天') + '</p>' : '';
@@ -1560,13 +1719,95 @@ function paintContext(){
     ? '<p class="r3-ov-days">' + L(esc(tc.alignment.note_en), esc(tc.alignment.note_zh || tc.alignment.note_en)) + '</p>'
     : '';
 
-  host.innerHTML = hand
+  /* ── R3B1-03 · the migration note ──────────────────────────────────────────
+     `theme_context.migration.note_en/note_zh`, the producer's own statement of
+     WHERE the money is going — the directional fact behind the state word this
+     band already prints. Production renders it in the hero sub-line (:2130).
+     Absent field renders as absence; nothing stands in for it. */
+  var mg = tc.migration || {};
+  var migration = mg.note_en
+    ? '<p class="r3-ov-mig" data-r3b1="03">'
+      + L(esc(mg.note_en), esc(mg.note_zh || mg.note_en)) + '</p>'
+    : '';
+
+  /* the caveat is bound to the handoff it governs, inside the same grid cell —
+     a 20px grid gap between a claim and its disclosure reads as two unrelated
+     notes. */
+  host.innerHTML = '<div class="r3-ov-hcell">' + hand + caveat + '</div>'
     + '<div><span class="r3-ov-state">' + stateWord + '</span>'
     + '<p class="r3-ov-stanceline">' + L(esc(l.stance_en || ''), esc(l.stance_zh || l.stance_en || '')) + '</p>'
-    + days + align + '</div>'
-    + season;
+    + migration + days + align + '</div>'
+    + season
+    + doRow(true);
 
   if(tc.as_of) el('ov-ctx-asof').innerHTML = L('as of ' + esc(tc.as_of), '截至 ' + esc(tc.as_of));
+  paintCounts();
+}
+
+/* ── R3B1-05c · inventory scope ─────────────────────────────────────────────
+   `.length` over two FULL producer lists — the same mirror production performs
+   at :2926, and the same arithmetic this view is already permitted for the lane
+   counts. Nothing is ranked, filtered or re-derived. */
+function paintCounts(){
+  var host = el('ov-ctx-count'); if(!host) return;
+  if(!BK || !BK.baskets || !BK.categories){ host.innerHTML = ''; return; }
+  var n = BK.baskets.length, nc = BK.categories.length;
+  host.innerHTML = L('· ' + n + ' themes · ' + nc + ' categories',
+                     '· ' + n + ' 个主题 · ' + nc + ' 个分类');
+}
+
+/* ── R3B1-01 + R3B1-04 · what the reading obliges ──────────────────────────── */
+/* The sizing directive is a LIVE RISK CONSTRAINT, not a graded call, and this
+   row is where the band stops describing and starts binding. Production's guard
+   is reproduced byte-for-byte in intent: sector_central.html.j2:2888
+     `if(!rs||!rs.active||(rs.gross_scalar||1)>=1.0) return '';   // inert when calm`
+   so a calm regime renders NOTHING here — no empty slot, no "sizing normal"
+   stand-in. The label and the receipt body are production's own (:2889-2919);
+   no sizing arithmetic exists in this file beyond the percent rounding
+   production itself performs. */
+function sizingHTML(){
+  var rs = TI && TI.regime_sizing;
+  if(!rs || !rs.active || (rs.gross_scalar || 1) >= 1.0) return '';   /* inert when calm */
+  var pct = Math.round((rs.gross_scalar || 1) * 100);
+  var mech = Math.round((rs.mech_scalar || 1) * 100);
+  var reg2 = Math.round((rs.regime_caution || 1) * 100);
+  var sc = Math.round((rs.scored_cut || 1) * 100);
+  var demoted = (TI.themes || []).filter(function(t){ return t && t.regime_demoted; }).length;
+  var fEn = ['volatility target ' + mech + '%'], fZh = ['波动率目标 ' + mech + '%'];
+  if(reg2 < 100){ fEn.push('risk regime ' + reg2 + '%'); fZh.push('风险状态 ' + reg2 + '%'); }
+  if(sc < 100){ fEn.push('signal mix ' + sc + '%'); fZh.push('信号组合 ' + sc + '%'); }
+  var tipEn = "How it's set: " + fEn.join(' · ') + ' → ' + pct + '%'
+    + (demoted ? ' · ' + demoted + ' theme(s) eased to hold-only' : '') + '\n'
+    + 'Read from US volatility, applied on every market page. Volatile markets get '
+    + 'smaller position sizes. This does not change the basket ranking.';
+  var tipZh = '计算方式：' + fZh.join(' · ') + ' → ' + pct + '%'
+    + (demoted ? ' · ' + demoted + '个主题降为仅持有' : '') + '\n'
+    + '依据美国波动率读数，各市场页面同用此读数。波动加大时降低仓位；不改变篮子排序。';
+  return '<span class="r3-ov-size" data-r3b1="01">'
+    + '<span class="r3-gauge" aria-hidden="true"><i style="width:' + pct + '%"></i></span>'
+    + '<span class="r3-ov-sizetxt">'
+    + L('positions sized to <span class="tnum">' + pct + '%</span>',
+        '仓位缩至 <span class="tnum">' + pct + '%</span>')
+    + '</span>'
+    + '<button class="r3-rcpt" type="button" aria-expanded="false"'
+    + ' data-tip-en="' + esc(tipEn) + '" data-tip-zh="' + esc(tipZh) + '"><span class="r3-vh">'
+    + L('How position sizing is set', '仓位如何设定') + '</span></button></span>';
+}
+/* R3B1-04 — the hero's one working destination (production :2163, capability
+   ledger #86). A real allocation.html href routed through the recorder, exactly
+   like every other off-page destination on this board; never a bare-hash
+   placeholder (frozen spec, verify_reference.py check c2). */
+function doRow(withPlaybook){
+  var size = sizingHTML();
+  /* production's fallback hero (:2169-2174) carries the sizing slot but NOT the
+     playbook chip — the destination belongs to the theme_context branch alone
+     (:2163). Absence there is reproduced, not smoothed over. */
+  var play = withPlaybook
+    ? '<a class="r3-more" data-ref-nav href="allocation.html" data-r3b1="04">'
+      + L('Open the playbook', '打开操盘手册') + '</a>'
+    : '';
+  if(!size && !play) return '';
+  return '<div class="r3-ov-do">' + size + play + '</div>';
 }
 
 /* ── 4 · bottoming watch ────────────────────────────────────────────────────── */
@@ -1838,7 +2079,13 @@ document.addEventListener('DOMContentLoaded', function(){
               <th class="num"><span class="l-en">Rank</span><span class="l-zh">排名</span></th>
               <th><span class="l-en">Group</span><span class="l-zh">板块</span></th>
               <th><span class="l-en">Where it sits</span><span class="l-zh">所处位置</span></th>
-              <th class="num"><span class="l-en">Strength</span><span class="l-zh">强度</span></th>
+              <!-- R3B1-06: `theme_intel.themes[].score` carries ONE name on every
+                   context surface of this build — Strength / 强度 (here, in the
+                   scatter tooltip and in the selected-object list, which uses
+                   production's own "Strength score / 强度评分", :2991). The graded
+                   action-board figure on Overview is a separate producer field
+                   (action_board.json) and is deliberately not renamed. -->
+              <th class="num" data-r3b1="06"><span class="l-en">Strength</span><span class="l-zh">强度</span></th>
               <th class="num"><span class="l-en">20d vs S&amp;P</span><span class="l-zh">20日相对</span></th>
               <th class="num"><span class="l-en">Rank move 5d</span><span class="l-zh">5日排名变化</span></th>
               <th><span class="l-en">Noted</span><span class="l-zh">备注</span></th>
@@ -6253,19 +6500,29 @@ function paintFoot(){
   var p = payload() || {}, cov = p.coverage || {}, noun = ds().noun;
   var honest = '';
   if(cov.n_gateable != null){
+    /* R3B1-07 — the thin clause states what the payload actually contains.
+       `n_thin` is the GATE-DROPPED count: those groups never enter `subsectors[]`
+       at all (113 listed − 65 gateable = 48 absent), so production's own wording
+       — "thin (listed in the table, not timed)", subsectors.js:221-222 — tells a
+       reader to look for 48 rows that are not there. The count, the total and the
+       gateable figure are the producer's; only the sentence that describes them
+       is corrected, and it is corrected in the direction of what the data says.
+       Recorded as a production-repair delta for R3C (DAC-105). */
     honest = L('<span class="tnum">' + cov.n_gateable + '</span> of <span class="tnum">' + cov.n_subsectors
-        + '</span> ' + noun[0] + ' have enough live data to time'
-        + (cov.n_thin ? ' · <span class="tnum">' + cov.n_thin + '</span> thin (listed in the table, not timed)' : ''),
-      '<span class="tnum">' + cov.n_gateable + '</span>/<span class="tnum">' + cov.n_subsectors
-        + '</span> 个' + noun[1] + '有足够实时数据可计时'
-        + (cov.n_thin ? ' · <span class="tnum">' + cov.n_thin + '</span> 个数据稀疏（列于表内，不计时）' : ''));
+        + '</span> ' + noun[0] + ' have enough live data to time.'
+        + (cov.n_thin ? ' <span class="tnum">' + cov.n_thin
+            + '</span> are too thin to time and are omitted from the timed table.' : ''),
+      '<span class="tnum">' + cov.n_subsectors + '</span> 个' + noun[1] + '中，<span class="tnum">'
+        + cov.n_gateable + '</span> 个实时数据足够，可用于计时。'
+        + (cov.n_thin ? '另有 <span class="tnum">' + cov.n_thin
+            + '</span> 个数据过于稀疏，无法计时，未列入下方计时表。' : ''));
   }
   var n = rowsOf(SEL).length;
   var shown = Math.min(n, LANE_CAP);
   /* When the active universe emits no coverage fields this slot renders NOTHING.
      There is no fallback sentence: an absent producer field is absence, and a
      stand-in here would be the invented Baskets disclosure #66 forbids. */
-  el('cf-foot').innerHTML = (honest ? '<span>' + honest + '</span>' : '')
+  el('cf-foot').innerHTML = (honest ? '<span data-r3b1="07">' + honest + '</span>' : '')
     + '<button class="r3-rcpt" type="button" aria-expanded="false" data-tip-en="' + esc(FOOT_TIP_EN)
     + '" data-tip-zh="' + esc(FOOT_TIP_ZH) + '"><span class="r3-vh">'
     + L('How timing support is graded', '时机支持的评分方式') + '</span></button>'
@@ -6399,11 +6656,29 @@ function paintPicks(){
           '暂时没有股票在走强的子行业中出现及时的入场判断。') + '</p></div>';
     return;
   }
-  el('cf-picks').innerHTML = buys.slice(0, PICKS_CAP).map(function(r){
+  /* ── R3B1-13 · the figure column gets its name back ─────────────────────────
+     The bare 0.60 was the heaviest mark on the row and the only unexplained one
+     (VTC-006). It is `double_gated.double_buy[].combined_score`, produced at
+     engine/subsector_confluence.py:347 as `stock cascade weight × subsector
+     buyability factor` (contract stated at :322-324), and production labels that
+     exact field **Conviction / 综合把握** in its own picks table header
+     (templates/subsectors.js:330). That production label is used verbatim — the
+     reference does not get to rename a producer's column, and "Score",
+     "Probability", "Confidence" and "Strength" are all claims the contract does
+     not make. Doctrine Law 3 (a figure column may never be unlabelled) is
+     answered the way this build already answers it everywhere else: the shared
+     `.r3-cols` legend over the list, plus a visually-hidden name inside each row
+     so the figure is never a naked number to a screen reader either. */
+  el('cf-picks').innerHTML = '<div class="r3-cols" aria-hidden="true" data-r3b1="13">'
+    + '<span>' + L('Stock', '个股') + '</span>'
+    + '<span style="text-align:right">' + L('Conviction', '综合把握') + '</span>'
+    + '<span>' + L('Why it is here', '入选原因') + '</span><span></span></div>'
+    + buys.slice(0, PICKS_CAP).map(function(r){
     return '<a class="r3-row" data-ref-nav href="' + esc(stockHref(r.ticker)) + '">'
       + '<span class="r3-name"><span class="r3-mem-tk">' + esc(r.ticker) + '</span>'
       + '<span class="r3-sub">' + L(esc(r.subsector || ''), esc(r.subsector || '')) + '</span></span>'
-      + '<span class="r3-fig tnum">' + (r.combined_score == null ? '' : r.combined_score.toFixed(2)) + '</span>'
+      + '<span class="r3-fig tnum"><span class="r3-vh">' + L('Conviction', '综合把握') + ' </span>'
+      + (r.combined_score == null ? '' : r.combined_score.toFixed(2)) + '</span>'
       + '<span class="r3-why">' + L('Its tier', '个股层级') + ' ' + esc(r.stock_tier || '–')
       + '<span aria-hidden="true"> · </span>' + L('vs sub 20d', '相对子行业20日') + ' ' + signed(r.vs_subsector_20d)
       + '</span><span class="r3-chev" aria-hidden="true"></span></a>';

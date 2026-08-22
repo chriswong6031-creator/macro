@@ -75,7 +75,13 @@
               <th class="num"><span class="l-en">Rank</span><span class="l-zh">排名</span></th>
               <th><span class="l-en">Group</span><span class="l-zh">板块</span></th>
               <th><span class="l-en">Where it sits</span><span class="l-zh">所处位置</span></th>
-              <th class="num"><span class="l-en">Strength</span><span class="l-zh">强度</span></th>
+              <!-- R3B1-06: `theme_intel.themes[].score` carries ONE name on every
+                   context surface of this build — Strength / 强度 (here, in the
+                   scatter tooltip and in the selected-object list, which uses
+                   production's own "Strength score / 强度评分", :2991). The graded
+                   action-board figure on Overview is a separate producer field
+                   (action_board.json) and is deliberately not renamed. -->
+              <th class="num" data-r3b1="06"><span class="l-en">Strength</span><span class="l-zh">强度</span></th>
               <th class="num"><span class="l-en">20d vs S&amp;P</span><span class="l-zh">20日相对</span></th>
               <th class="num"><span class="l-en">Rank move 5d</span><span class="l-zh">5日排名变化</span></th>
               <th><span class="l-en">Noted</span><span class="l-zh">备注</span></th>
