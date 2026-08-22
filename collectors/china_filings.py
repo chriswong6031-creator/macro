@@ -80,13 +80,22 @@ def _zero_key_integrity(at: str = "") -> dict:
     """Fresh canonical-shape LAST_KEY_INTEGRITY dict, all zeros/empty.
 
     A function (not a shared module-level constant) so every caller gets its
-    own `excluded_by_type` dict — a shared mutable default would let one
-    caller's count leak into another's "zero" reading.
+    own `excluded_by_type` dict / `excluded_rows` list — a shared mutable
+    default would let one caller's count (or list mutation) leak into
+    another's "zero" reading.
+
+    P1-R3 (durable scoped key-exclusion recovery): `excluded_rows` carries
+    THIS call's malformed row dicts verbatim (uncapped — bounded only by
+    batch size), so collectors/china_visits.py can harvest them into a
+    durable coverage-exception ledger instead of relying on this process-
+    local global surviving into the same run china_visits happens to read
+    it in. See write_filings()'s docstring for how it is populated.
     """
     return {
         "excluded_total": 0,
         "excluded_by_type": {},
         "preexisting_unkeyed": 0,
+        "excluded_rows": [],
         "at": at,
     }
 
@@ -398,6 +407,14 @@ def write_filings(new_rows: list[dict]) -> int:
             "excluded_total": excluded_total,
             "excluded_by_type": dict(new_counts),
             "preexisting_unkeyed": preexisting_unkeyed,
+            # P1-R3: the malformed row dicts VERBATIM from THIS call's
+            # new_rows batch (never the accrued preexisting_unkeyed rows —
+            # those are harvested by china_visits' own whole-tape candidate
+            # scan instead, origin="visits_candidate"). china_visits.refresh()
+            # harvests these as origin="filings_boundary" coverage
+            # exceptions. Uncapped — bounded by batch size, not a fixed cap
+            # like excluded_identities elsewhere.
+            "excluded_rows": list(malformed),
             "at": datetime.now(timezone.utc).isoformat(),
         }
         if excluded_total or preexisting_unkeyed:
@@ -714,6 +731,12 @@ class ChinaFilingsAdapter(Adapter):
             "per_exchange": {},
             "at": collected_at,
             "key_integrity": _zero_key_integrity(collected_at),
+            # P1-R3: fail-closed at entry, same rationale as every other field
+            # here — an escape before either is ever recomputed below must
+            # read as "transport unproven" / "integrity unknown", never as a
+            # false clean.
+            "transport_ok": False,
+            "key_integrity_known": False,
         }
 
         session = requests.Session()
@@ -743,10 +766,20 @@ class ChinaFilingsAdapter(Adapter):
                 "per_exchange": per_exchange,
                 "at": collected_at,
                 "key_integrity": _zero_key_integrity(collected_at),
+                # Both exchanges raised -> transport is definitively NOT ok;
+                # write_filings() is never reached on this path, so the
+                # key-integrity partition is definitively unknown too.
+                "transport_ok": False,
+                "key_integrity_known": False,
             }
             raise RuntimeError(
                 "china_filings: all exchanges failed — " + " | ".join(errors)
             )
+
+        # P1-R3 §9: "no exchange raised" is measured HERE, before any
+        # key-integrity errors are appended below — those are a distinct
+        # typed cause and must never be folded into transport_ok.
+        transport_ok = not errors
 
         net_new = write_filings(all_rows)
         log.info(
@@ -773,6 +806,12 @@ class ChinaFilingsAdapter(Adapter):
         # exists to prevent. Fail closed: name the unknown in errors[] so `ok`
         # degrades, and keep the zero-shape only so consumers still read one
         # stable shape.
+        # P1-R3 §9: captured HERE, before the `or _zero_key_integrity(...)`
+        # fallback below launders a None into the zero-shape — this is the
+        # one moment that distinguishes "write_filings() told us nothing"
+        # from "write_filings() told us it was clean". china_visits reads
+        # this typed boolean instead of string-sniffing errors[].
+        key_integrity_known = LAST_KEY_INTEGRITY is not None
         if LAST_KEY_INTEGRITY is None:
             errors.append(
                 "key_integrity: UNKNOWN — write_filings() did not complete its "
@@ -794,6 +833,11 @@ class ChinaFilingsAdapter(Adapter):
             "per_exchange": per_exchange,
             "at": collected_at,
             "key_integrity": key_integrity,
+            # P1-R3 §9: typed booleans so china_visits can separate "transport
+            # degraded" from "key integrity unknown" without string-sniffing
+            # errors[]. `ok` semantics are UNCHANGED for every other consumer.
+            "transport_ok": transport_ok,
+            "key_integrity_known": key_integrity_known,
         }
 
         # Summary frame — DatetimeIndex is required by base.validate() /
