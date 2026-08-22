@@ -111,7 +111,7 @@ def test_hosted_merge_control_canary_contract_executes_in_fast_fence() -> None:
 
 
 def test_hold_wrapper_regressions_execute_inside_the_fast_fence() -> None:
-    """Execute the canonical HOLD terminal-state regressions in required fences.
+    """Execute the canonical HOLD state regressions in required fences.
 
     ``audit_unrun_tests.py`` understands direct legacy-manifest ownership only, so
     the separate waiver records this intentional transitive fast-fence ownership.
@@ -144,11 +144,19 @@ def test_hold_wrapper_regressions_execute_inside_the_fast_fence() -> None:
                 monkeypatch, tmp_path
             )
         with pytest.MonkeyPatch.context() as monkeypatch:
-            hold.test_red_or_pending_hold_does_not_park(monkeypatch, tmp_path)
+            hold.test_red_or_pending_claude_hold_does_not_park(monkeypatch, tmp_path)
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_pending_sol_hold_waits_without_unsafe_branch_remediation(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_red_sol_hold_repairs_check_without_branch_remediation(
+                monkeypatch, tmp_path
+            )
         with pytest.MonkeyPatch.context() as monkeypatch:
             hold.test_dirty_or_not_exactly_pushed_hold_does_not_park(monkeypatch, tmp_path)
         with pytest.MonkeyPatch.context() as monkeypatch:
-            hold.test_hold_probe_spends_no_github_quota_before_terminal_candidate_blocker(
+            hold.test_hold_probe_spends_no_github_quota_before_hold_candidate_blocker(
                 monkeypatch, tmp_path
             )
 
