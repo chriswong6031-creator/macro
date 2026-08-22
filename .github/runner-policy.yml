@@ -24,6 +24,8 @@ protected_hosted_routes:
     jobs: [ci-plan, ci-pack, ci-gate]
   - workflow: .github/workflows/fences.yml
     jobs: [fence-pack, fork-self-mod-fence, fork-capability-broker, fork-grader-manifest]
+  - workflow: .github/workflows/merge-on-green.yml
+    jobs: [sweep]
 
 custom_routes:
   - workflow: .github/workflows/selfhosted-ci-canary.yml
@@ -138,7 +140,9 @@ label_registry:
   merge-control:
     status: live
     carried_by: [mac-builder-4]
-    note: The merge-on-green sweeper's own host, off the render pools.
+    note: >
+      Rollback-only merge-on-green capacity on the M2 through W5. W1-B routes the
+      production sweep to GitHub-hosted capacity; do not retire this live registration.
   render-heavy:
     status: live
     carried_by: [mac-builder-light]
