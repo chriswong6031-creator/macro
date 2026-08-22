@@ -57,12 +57,19 @@ Two rights columns are independent of status:
 - **Raw redistribution** — republish vendor rows, PDF bodies, Q&A text, report abstracts.
 - **Derived model/display** — store locally, score internally, show an aggregate / stance on a commercial dashboard.
 
-A token, a working probe, or an operator "license topic is closed" ruling is **not** a
-vendor commercial grant. The spine contract still says this in so many words
-(`research/CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md`: "a token or boolean is
-not permission"). The 2026-08-09 wiring takeover closed *license machinery* inside
-collectors (`research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md` ruling 3). It did not
-create a written institutional contract.
+**[NULL / SUPERSEDED per §0.0 — historical 2026-08-19 census reasoning.]** This
+paragraph FORMERLY argued that no token, probe, or operator ruling could settle
+the commercial question, and quoted a spine-contract sentence that has since been
+removed. That argument is dead: TuShare compliance is `CHAIRMAN_VERIFIED_PRIVATE /
+SATISFIED` and is not re-openable from inside this repository.
+
+What survives is the engineering half, and it is unchanged: **endpoint ACCESS is
+never inferred from a successful probe.** A 200 response says the call worked on
+that day at that tier; it does not tell you the tier, the row cap, or the field
+set. Those stay `ACCESS_TIER_UNVERIFIED` until the privilege page or an observed
+response schema says otherwise. The 2026-08-09 wiring takeover
+(`research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md` ruling 3) REMOVED license
+machinery from collectors; it never added any.
 
 ---
 
@@ -164,7 +171,9 @@ Minutes doc 234 adds a second, endpoint-specific ban: "数据只供策略研究�
 Prices below are **official personal / official institutional (10×)**. They are
 list prices, not quotes. "Do not buy" is the standing non-goal of this session
 and the recommended action. (Per §0.0 the former "vendor letter" precondition is
-NULL; rows retaining that phrasing are historical.)
+NULL; rows retaining that phrasing are historical.) Every "recommended action"
+below is now a **procurement or engineering** step. None of them is a compliance
+step, and none of them may be rewritten into one.
 
 ### 2.1 Institutional visits / research
 
@@ -179,7 +188,7 @@ NULL; rows retaining that phrasing are historical.)
 | Personal / institutional price | Included in 5000 (¥500) or 10000 (¥1000) 积分 SKU / 10× if the account is re-issued as institutional. **No extra SKU on table 2.** |
 | Raw redistribution | PROHIBITED_BY_HOUSE_POLICY. The house never redistributes raw vendor rows; `content` is interview text and stays input-only. |
 | Derived model/display | CHAIRMAN_VERIFIED_PRIVATE / SATISFIED — compliance is settled privately (§0.0); what remains is engineering: no collector exists for visitor lists/themes (NOT_BUILT). |
-| **Recommended action** | **Do not buy.** Confirm on the privilege page that 积分 ≥ 5000. Ask vendor in writing: (1) may we retain `stk_surv` locally, (2) may a commercial product display *derived* visit intensity / named-institution counts, (3) is `content` in-scope or a separate restriction. Native 巨潮调研 is not collected today. |
+| **Recommended action** | **Do not buy.** Confirm on the privilege page that 积分 ≥ 5000. The three items this row once treated as open are now engineering, not compliance: (1) local retention of `stk_surv` is NOT_BUILT — no collector, no store path; (2) a derived visit-intensity / named-institution surface is NOT_BUILT; (3) whether `content` is returned at this account's tier is ACCESS_TIER_UNVERIFIED, a privilege-page and response-schema observation. Native 巨潮调研 is not collected today. [NULL per §0.0: the former written-enquiry precondition on those three items is removed and must not be reopened.] |
 
 ### 2.2 Fund portfolio
 
@@ -226,7 +235,7 @@ NULL; rows retaining that phrasing are historical.)
 | Raw redistribution | PROHIBITED_BY_HOUSE_POLICY. These interfaces return full Q&A **text**; house collectors stamp the plane input-only, never a display surface. |
 | Derived model/display | CHAIRMAN_VERIFIED_PRIVATE / SATISFIED — compliance is settled privately (§0.0); what remains is engineering: NOT_BUILT. |
 | Existing native | `collectors/china_irm.py` (SZ, `irm.cninfo.com.cn`, keyless) and `collectors/china_einteraction.py` (SH, `sns.sseinfo.com`, keyless). Append-only + `first_seen`. Shard ≤40 names/night. Forward-only, not a 25-year backfill. |
-| **Recommended action** | **Do not buy.** Native keyless sources are the house path (CNH-R2). Revisit only if a 25-year SZ / 2-year SH backfill is chartered **and** the vendor confirms commercial derived use of Q&A text (counts/tone, never republished answers). |
+| **Recommended action** | **Do not buy.** Native keyless sources are the house path (CNH-R2). Revisit only if a 25-year SZ / 2-year SH backfill is chartered — that charter is the whole remaining gate, and it is an engineering one. Derived use of Q&A text (counts/tone) is compliance-settled per §0.0; republishing raw answers stays PROHIBITED_BY_HOUSE_POLICY, which never depended on the licensing question. [NULL per §0.0: the former vendor-confirmation precondition on derived Q&A use no longer applies.] |
 
 ### 2.5 Broker reports
 
@@ -286,7 +295,7 @@ Split: unnamed LHB tape vs named 游资 roster.
 | History | Roster: current, <500 rows. Detail: from 2022-08. Cap 2000 rows/call. |
 | Publication / known-at | `trade_date` only. Names/orgs are Tushare's classification, not an exchange field. |
 | Rate limits | Regular 积分 pool; `hm_detail` requires 10000. |
-| Personal / institutional price | No extra SKU if 积分 ≥ 10000 actually unlocks `hm_detail`. If the privilege page shows `hm_detail` locked, that is a **MISSING** convert — still do not buy until the vendor confirms named-actor commercial use. |
+| Personal / institutional price | No extra SKU if 积分 ≥ 10000 actually unlocks `hm_detail`. If the privilege page shows `hm_detail` locked, that is a **MISSING** convert and the access state is ACCESS_TIER_UNVERIFIED. Still do not buy: no named-actor surface is chartered (NOT_BUILT), and named vendor editorial labels stay out of the product under PROHIBITED_BY_HOUSE_POLICY. [NULL per §0.0: the former vendor-confirmation precondition on named-actor commercial use no longer applies.] |
 | Raw redistribution | PROHIBITED_BY_HOUSE_POLICY. Named 游资 labels + seat maps are vendor editorial content and are never redistributed raw. |
 | Derived model/display | CHAIRMAN_VERIFIED_PRIVATE / SATISFIED — compliance is settled privately (§0.0); what remains is engineering: a named-actor chip is NOT_BUILT, and named vendor editorial content stays out of the product by house policy. |
 | **Recommended action** | **Do not buy a new SKU yet.** Privilege-page check: is `hm_detail` already lit at current 积分? [NULL per §0.0: the former "vendor letter before any named-actor display" precondition no longer applies.] Eastmoney LHB stays the unnamed tape. |
@@ -329,18 +338,24 @@ and **out of this P0 list**; minutes carry an extra "research/study only" senten
 
 ## 3. One-page scoreboard
 
-| P0 family | Status | Buy? | Personal ¥/yr if bought | Inst. ¥/yr | Vendor must confirm before product use |
+| P0 family | Status | Buy? | Personal ¥/yr if bought | Inst. ¥/yr | Open engineering / build state |
 |---|---|---|---|---|---|
-| Institutional visits `stk_surv` | COVERAGE_UNKNOWN | No | 0 extra (积分) | 0 extra if already inst. | Local retention; derived visit intensity; `content` text |
-| Fund portfolio `fund_portfolio` | COVERAGE_UNKNOWN | No | 0 extra | 0 extra | Named-fund holdings vs derived crowding only |
-| Announcements `anns_d` | NOT_NEEDED | No | 1000 if someone insists | 10000 | Would also violate house "no PDF bodies" |
-| e互动 / 互动易 `irm_qa_*` | NOT_NEEDED | No | 500 | 5000 | Q&A text in a commercial product (native path exists) |
-| Broker reports `report_rc` | OWNED | No | 0 extra | 0 extra | Customer-facing revision widget |
-| Broker reports `research_report` | MISSING | No | 500 | 5000 | Abstracts / PDF URLs — default answer is do not buy |
-| Unnamed LHB | NOT_NEEDED | No | 0 extra | 0 extra | — |
-| Named 游资 `hm_list` / `hm_detail` | COVERAGE_UNKNOWN | No | 0 extra **if** 10000 unlocks it | 0 extra | Named-actor labels on a commercial surface |
-| Top holders / 户数 / 增减持 | COVERAGE_UNKNOWN | No | 0 extra | 0 extra | Named holders / 高管 trades commercially |
-| forecast / chips / 金股 | OWNED | No | 0 extra (already on 特色) | 10× if account is re-cut as institutional | Any customer-facing chip / 金股 / guidance widget |
+| Institutional visits `stk_surv` | COVERAGE_UNKNOWN | No | 0 extra (积分) | 0 extra if already inst. | NOT_BUILT (no collector, no store path); `content` field coverage ACCESS_TIER_UNVERIFIED |
+| Fund portfolio `fund_portfolio` | COVERAGE_UNKNOWN | No | 0 extra | 0 extra | NOT_BUILT (derived crowding / overlap scores) |
+| Announcements `anns_d` | NOT_NEEDED | No | 1000 if someone insists | 10000 | Native CNInfo path already live; PDF bodies PROHIBITED_BY_HOUSE_POLICY |
+| e互动 / 互动易 `irm_qa_*` | NOT_NEEDED | No | 500 | 5000 | Native keyless path already live; raw Q&A text PROHIBITED_BY_HOUSE_POLICY |
+| Broker reports `report_rc` | OWNED | No | 0 extra | 0 extra | NOT_BUILT (customer-facing revision widget) |
+| Broker reports `research_report` | MISSING | No | 500 | 5000 | NOT_BUILT; abstracts / PDF bodies PROHIBITED_BY_HOUSE_POLICY |
+| Unnamed LHB | NOT_NEEDED | No | 0 extra | 0 extra | — (Eastmoney tape already live) |
+| Named 游资 `hm_list` / `hm_detail` | COVERAGE_UNKNOWN | No | 0 extra **if** 10000 unlocks it | 0 extra | NOT_BUILT; `hm_detail` tier ACCESS_TIER_UNVERIFIED; named vendor labels PROHIBITED_BY_HOUSE_POLICY |
+| Top holders / 户数 / 增减持 | COVERAGE_UNKNOWN | No | 0 extra | 0 extra | NOT_BUILT (named top-10 / 高管 IN-DE chip) |
+| forecast / chips / 金股 | OWNED | No | 0 extra (already on 特色) | 10× if account is re-cut as institutional | NOT_BUILT (customer-facing chip / 金股 / guidance widget) |
+
+The last column FORMERLY read "Vendor must confirm before product use" and carried
+product-use questions beneath it. That heading and its contents are **NULL /
+SUPERSEDED** per §0.0 and have been replaced by build state: `NOT_BUILT`,
+`ACCESS_TIER_UNVERIFIED`, `PROHIBITED_BY_HOUSE_POLICY`. Nothing in this table is a
+compliance precondition.
 
 **Cash outlay implied by this census: ¥0.** The only SKUs that would cost new money
 are table-2 items this census marks NOT_NEEDED or "do not buy."
@@ -374,6 +389,11 @@ and compliance is settled privately.
 - Did not open a collector.
 
 Falsifier for the whole matrix: a privilege-page screenshot (redact token) showing a
-different 积分 tier or a lit/unlit table-2 SKU, or a written vendor/institutional
-grant whose scopes contradict a rights cell. Either artifact updates the row;
-neither is in this repository today.
+different 积分 tier or a lit/unlit table-2 SKU, or an observed response schema whose
+field set contradicts a coverage cell. Either artifact updates the row; neither is
+in this repository today.
+
+[NULL per §0.0: the former third falsifier — a written vendor/institutional grant
+document whose scopes contradict a rights cell — is REMOVED. No such document may
+be requested, uploaded, inspected, hashed, quoted, or used as evidence anywhere in
+this repository.]

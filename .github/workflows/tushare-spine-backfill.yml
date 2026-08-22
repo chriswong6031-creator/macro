@@ -36,9 +36,12 @@ on:
         default: plan
         required: true
       max_requests:
-        description: "bounded calls this run (safety ceiling 100; canary mode caps at 12)"
+        # CANARY-SAFE DEFAULT. The collector hard-caps a canary at 12 requests, so a
+        # larger default made `mode=canary` with untouched inputs fail on the first
+        # line -- a trap, not a gate. 12 is legal in all three modes.
+        description: "bounded calls this run (canary hard-caps at 12; plan/backfill may raise it up to the 100 safety ceiling)"
         required: false
-        default: "50"
+        default: "12"
       start:
         description: "first requested session, YYYY-MM-DD"
         required: false
@@ -79,6 +82,21 @@ jobs:
           END: ${{ github.event.inputs.end }}
         run: |
           set -euo pipefail
+          # Read the canary ceiling FROM the collector so the lane can never drift
+          # above it: the constant has exactly one home.
+          CANARY_MAX_REQUESTS="$(python -c 'import collectors.china_tushare_spine as s; print(s.CANARY_MAX_REQUESTS)')"
+          case "$MAX_REQUESTS" in
+            ''|*[!0-9]*) echo "::error title=tushare-spine-mode::max_requests must be a positive integer, got '$MAX_REQUESTS'"; exit 2 ;;
+          esac
+          # Mode-aware normalisation, one direction only: an operator who typed a larger
+          # budget and then chose `canary` gets it CLAMPED to the documented ceiling,
+          # never raised. This is convenience on top of the real control -- collect()
+          # still refuses anything over CANARY_MAX_REQUESTS before any store or network
+          # use, and this clamp can never widen that.
+          if [ "$MODE" = "canary" ] && [ "$MAX_REQUESTS" -gt "$CANARY_MAX_REQUESTS" ]; then
+            echo "::notice title=tushare-spine-canary::clamping max_requests $MAX_REQUESTS -> $CANARY_MAX_REQUESTS (canary ceiling)"
+            MAX_REQUESTS="$CANARY_MAX_REQUESTS"
+          fi
           ARGS=(--start "$START" --max-requests "$MAX_REQUESTS")
           # A bare `[ -n "$END" ] && ARGS+=(...)` would return 1 on an empty END and
           # `set -e` would kill the step; use a full if.

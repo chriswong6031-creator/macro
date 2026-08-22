@@ -270,7 +270,7 @@ Absent that document, do not reopen. A sales deck, a seat trial, or “we have �
 | https://choice.eastmoney.com/dataservice/industrychain | Choice 产业链 product URL |
 | https://quantapi.eastmoney.com/Cmd/ShowPromotionpage?from=web | Choice API is terminal-bound |
 | https://quantapi.51ifind.com/gwstatic/static/ds_web/quantapi-web/download.html | iFinD SDK / HTTP API |
-| https://tushare.pro/document/2?doc_id=405 | TuShare personal / non-commercial licence |
+| https://tushare.pro/document/2?doc_id=405 | TuShare public click-through page as read 2026-08-19 — HISTORICAL citation of what a public page said, never a verdict. TuShare compliance is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED (see the NULL / SUPERSEDED banner above); a public-terms reading may not reopen it. |
 | https://data.csmar.com/ | CSMAR host |
 | https://lib.tsinghua.edu.cn/finance/info/1198/1952.htm | CSMAR 供应链 trial description |
 | https://library.bnuzh.edu.cn/zy/zydt/b43a2582f3dc43aa9490d8cd5b43c2bb.htm | same, 2025 |

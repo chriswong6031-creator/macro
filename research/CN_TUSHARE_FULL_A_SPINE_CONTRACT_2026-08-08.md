@@ -329,7 +329,7 @@ bytes are scanned before hashing.
 retains a stable identity. Request observations and collection-state changes remain
 part of content identity. Artifacts are private and must not be committed.
 
-## Remaining licensing/data gaps
+## Remaining technical/data gaps
 
 - No token, endpoint entitlement, throughput, or live sample was exercised in this
   wave. This is intentionally `NO LIVE`.

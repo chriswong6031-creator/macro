@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
 from collectors import china_tushare_spine as spine
@@ -1398,6 +1399,33 @@ def test_backfill_workflow_offers_plan_canary_and_gated_backfill():
     # smuggles a bulk budget into the collector (a prose mention is fine).
     assert "BULK_HISTORICAL_BACKFILL_READY = True" not in text
     assert "ARGS+=(--allow-bulk)" not in text
+
+
+def test_backfill_lane_defaults_are_canary_safe():
+    """`mode=canary` with untouched inputs must not fail on its own default.
+
+    The lane shipped `max_requests: "50"` against a 12-request canary ceiling, so
+    the documented operator path -- pick `canary`, press Run -- died before the
+    first request. That is a trap, not a gate: the gate is `collect()` refusing a
+    real over-ask, and it still does.
+    """
+    lane = Path(spine.__file__).resolve().parents[1] / ".github" / "workflows" / "tushare-spine-backfill.yml"
+    text = lane.read_text(encoding="utf-8")
+    parsed = yaml.safe_load(text)
+    inputs = parsed[True]["workflow_dispatch"]["inputs"]
+    default = int(inputs["max_requests"]["default"])
+    assert 0 < default <= spine.CANARY_MAX_REQUESTS, (
+        f"lane default {default} exceeds the canary ceiling "
+        f"{spine.CANARY_MAX_REQUESTS}"
+    )
+    # The ceiling has one home: the lane reads it from the collector rather than
+    # carrying a second copy that can drift upward.
+    assert "s.CANARY_MAX_REQUESTS" in text
+    # The clamp only ever shrinks, and only in canary mode.
+    assert '[ "$MODE" = "canary" ] && [ "$MAX_REQUESTS" -gt "$CANARY_MAX_REQUESTS" ]' in text
+    assert 'MAX_REQUESTS="$CANARY_MAX_REQUESTS"' in text
+    # Nothing in the lane raises the ceiling.
+    assert "CANARY_MAX_REQUESTS=" not in text.replace('CANARY_MAX_REQUESTS="$(python', "")
 
 
 def test_private_store_path_cannot_escape_into_stageable_repo_locations(tmp_path):
