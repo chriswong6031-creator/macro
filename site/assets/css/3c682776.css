@@ -1877,6 +1877,12 @@
   #us-stocktable-wrap { display:none; }
   #us-standouts.st-table-mode #us-stocktable-wrap { display:block; }
   #us-standouts.st-table-mode .nb-grid-section { display:none; }
+  /* P0 #6185 — source view: exactly one population is on screen at a time. */
+  #us-standouts[data-prophet-src="plans"] #us-candidates { display:none; }
+  #us-standouts[data-prophet-src="candidates"] #us-plan-block { display:none; }
+  /* the Grid/Table view toggle switches the CANDIDATE table; there is no plan
+     table yet (P-MP1-DENSE), so it must never appear under a Plans label. */
+  #us-standouts[data-prophet-src="plans"] #us-st-view-toggle { display:none; }
   /* count chips row (id matches stocktable.js hard-coded lookup) */
   #st-count-chips { display:inline-flex; gap:5px; flex-wrap:wrap; align-items:center; margin:8px 0; }
   .st-chip { display:inline-block; font-size:10px; font-weight:700; padding:2px 9px;

@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-22",
-  "generated_utc": "2026-08-22T14:43:20.747454+00:00",
+  "generated_utc": "2026-08-22T19:10:15.714035+00:00",
   "n_tickers": 2584,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
@@ -719,14 +719,16 @@
     "V": {
       "ticker": "V",
       "channels": [
+        "analyst_upgrade_cluster",
         "lobbying",
         "special_situation"
       ],
-      "weighted_score": 0.5,
+      "weighted_score": 0.85,
       "lobbying_usd": 2360000.0,
       "wsb_mentions": 43,
+      "analyst_bull_ratio": 0.88,
       "congress_position_usd": 192400000.0,
-      "convergence_score": 2,
+      "convergence_score": 3,
       "trump_linked": false,
       "affiliated": false
     },
@@ -1907,17 +1909,15 @@
       "ticker": "GOOGL",
       "channels": [
         "affiliation",
-        "analyst_upgrade_cluster",
         "app_demand"
       ],
-      "weighted_score": 1.25,
+      "weighted_score": 0.9,
       "app_rating": 4.71,
       "app_reviews": 26221784,
       "hf_downloads_30d": 264288836.0,
-      "analyst_bull_ratio": 0.73,
       "github_stars": 197210,
       "congress_position_usd": 264400000.0,
-      "convergence_score": 3,
+      "convergence_score": 2,
       "trump_linked": false,
       "affiliated": true
     },

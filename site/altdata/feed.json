@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-22T14:43:10.203763+00:00",
+  "generated_utc": "2026-08-22T19:10:04.957917+00:00",
   "as_of": "2026-08-22",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -24821,6 +24821,17 @@
         "hot": true
       },
       {
+        "ticker": "V",
+        "net_up_30d": 24,
+        "breadth": 0.75,
+        "est_chg_30d": 0.73,
+        "n_analysts": 32,
+        "bull_ratio": 0.88,
+        "rising": true,
+        "revision_delta": 24,
+        "hot": true
+      },
+      {
         "ticker": "TXN",
         "net_up_30d": 23,
         "breadth": 1.0,
@@ -24948,17 +24959,6 @@
         "est_chg_30d": 0.5,
         "n_analysts": 23,
         "bull_ratio": 0.96,
-        "rising": true,
-        "revision_delta": 21,
-        "hot": true
-      },
-      {
-        "ticker": "GOOGL",
-        "net_up_30d": 21,
-        "breadth": 0.47,
-        "est_chg_30d": 0.61,
-        "n_analysts": 45,
-        "bull_ratio": 0.73,
         "rising": true,
         "revision_delta": 21,
         "hot": true
