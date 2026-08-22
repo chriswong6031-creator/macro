@@ -93,25 +93,69 @@ waves:
       tokens) BIND pre-A4; the full A3-pair reconciliation (roster/denominator
       deltas + the six elections in hb0/IMCE_HB0_A4_CELL_BUDGET_INPUTS.md §8) is
       REQUIRED-BEFORE-A4.
+  - id: CPI-H1
+    title: CPI truth-consumer authority heal (Sol wave, 2026-08-21) — canonical matrix, versioned row heals, single validator, D1(c) release
+    status: done
+    depends_on: [A2]
+    next_action: >
+      DONE — PR #6193, merge f74d680ce23c 2026-08-21T16:11:07Z, verified on
+      origin/main. All 13 Sol rulings implemented: consumer_matrix.yml is the
+      single canonical vocabulary authority; 24 append-only versioned row heals
+      (registry 29→53 lines, zero rewrites); four canonicalizations; CPI-016 +
+      CPI-011 + the five F6 promoted_null rows + the candidate-class
+      cn_downturn lineage healed; retired/superseded classes added; ONE
+      canonical validator (engine/cycle_pattern/consumer_authority.py) wired
+      into validate_truth() AND the CI authority script, with the allow-side
+      money-path leak closed (a row may forbid, never grant, a money-path
+      surface) and the literal-path scan byte-untouched; writers healed incl.
+      run_har1_eval.py (now via append_truth); five discriminating tests
+      verified fail-then-pass by mutation; two Opus red-team REVISE rounds
+      fully dispositioned. **FREEZE D1(c) IS RELEASED** —
+      research/imce/IMCE_D1C_RELEASE_RECORD.md, effective on this verified
+      merge. ESCALATED TO SOL: seven rows whose allowed_consumers exceed their
+      status-class allowlist (sharpest: CPI-008 promoted_null granting
+      sync_gauge_display) — reported at WARN tier by the validator, nothing
+      widened or shrunk pending Sol's disposition. Late-wave fix: the
+      truth_schema.md rewrite broke two verbatim source-quote pins in
+      config/ruling_graph.yml (CPI-U12/U22, which still encoded the pre-Sol
+      literal seven-token reading) — updated to the ruling-5 law and build
+      products regenerated via scripts/build_ruling_graph.py.
+  - id: A4G
+    title: IMCE-A4G — final preregistration amendment gate (Sol wave, 2026-08-21; records only)
+    status: done
+    depends_on: [A3]
+    next_action: >
+      DONE — PR #6189, merge de3a8ecdb845 2026-08-21T13:20:37Z, verified on
+      origin/main. All 18 Sol rulings (AG1–AG18) encoded in the amended
+      contract V1.1 + YAML with a full amendment log: DEFF formula STRUCK as
+      n_effective_blocks (survives only as the renamed
+      n_issuer_precision_diagnostic); N capped at raw closed blocks (≤5
+      general, ≤3 cancellation, cell-level); come-back date republished on the
+      B=5 basis (~2153, no basis election); 2013/2018 subepisodes zero N;
+      2024–26 OPEN_ACCRUING; block-cluster/LOBO inference; C1+C3 amendment
+      entries; TOL denominator election; NVR stratum; AG14 observability
+      scoping now a BINDING stop condition; pit_class enum closed at
+      {pit_pure, revision_optimistic, mixed}; PMMS HELD; Treasury CMT honestly
+      S-pending after owner-direct fetch timeouts. Deliverables:
+      IMCE_A4G_{AMENDMENT_LOG, SIX_CELL_DISPOSITION, SOURCE_BOUNDARY_TABLE,
+      PROPOSED_A4_REGISTRATION_PACKET}.md — the packet is byte-ready
+      (config_hash values independently reproduced) and PROPOSED, NOT
+      REGISTERED. Opus red-team REVISE (3 blockers) fully dispositioned.
   - id: A4
     title: IMCE-03 — preregistration finalization (declared_budget trial-ledger rows; criteria commit before any outcome access)
     status: todo
-    depends_on: [A2, A3]
+    depends_on: [CPI-H1, A4G]
 next_action: >
-  A1/A2/A3 are all MERGED and reconciled (each wave delivered by both the
-  commissioned lane and, for A1/A3, an operator lane — dispositions in the wave
-  entries above); per Sol's release directive every wave returned independently
-  and A4 is NOT authorized. A4 opens only on the Sol/Fable gate adjudication of:
-  minimum prospective share; ρ (DEFF correlation) and the statistical-unit/power
-  questions; the A3-pair reconciliation — C2 block-list election (B=5 proposal vs
-  the frozen 7-list), C3 [A18] scope, the C1 amendment-log entry (LEN exclusion
-  reason restated), and the six elections in
-  research/imce/hb0/IMCE_HB0_A4_CELL_BUDGET_INPUTS.md §8; pit_class candidate
-  vocabulary; macro-series evidence at block boundaries; the "2013 taper"
-  boundary dates; G6 UNDERLYING_MACRO_OWNERS leg-list confirmation. Separately,
-  the CPI-owned heal wave (A2 §8) is the release condition for freeze D1(c) — no
-  issuer truth before it lands. A1's DSC on epoch-boundary lag classes remains a
-  concrete test for the homebuilder family. No auto-roll anywhere.
+  CPI-H1 and A4G are both MERGED and verified live (2026-08-21); freeze D1(c)
+  is RELEASED. Per Sol's gate: A4 proper (criteria commit + declared_budget
+  rows, strictly before any outcome access) opens ONLY after Sol accepts both
+  returns; the stated next priority after A4 is prospective observation
+  activation. Awaiting Sol: acceptance of both waves; disposition of the seven
+  escalated class-subset rows (CPI-002/004/005/008/011/014/015); the
+  boundary-date receipts (all not_yet_receipted); Treasury CMT owner-direct
+  verification (rate leg unresolved while PMMS is HELD); the phase-target→D5
+  state mapping (now a binding registration stop condition). No auto-roll
+  anywhere; no issuer truth appended yet despite the D1(c) release.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."

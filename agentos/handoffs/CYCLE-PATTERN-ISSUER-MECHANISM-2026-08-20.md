@@ -182,3 +182,35 @@ already converged byte-identically); do not re-open the A2 token census (re-deri
 byte-exact by adversarial review); do not mint pit_class or consumer-vocabulary tokens
 outside the A2 §8c / A3 gap-10 decision processes; do not treat #6153's registration YAML
 as activated.
+
+# CPI-H1 + A4G closure addendum (same session, Sol's second gate, 2026-08-21Z)
+
+Sol reviewed the A-waves (PASS), kept A4 registration on HOLD, and authorized two bounded
+waves in parallel. Both are now MERGED and verified live:
+
+- **CPI-H1** (PR #6193, merge `f74d680ce23c` 16:11:07Z): the CPI truth-consumer contract
+  is canonical and machine-enforced — see the WS CPI-H1 wave entry for the full
+  disposition. **FREEZE D1(c) IS RELEASED** (`research/imce/IMCE_D1C_RELEASE_RECORD.md`,
+  effective on the verified merge). Two Opus red-team rounds; the late `ruling-graph`
+  pack red was this PR's own truth_schema rewrite breaking two verbatim source-quote
+  pins (CPI-U12/U22) — healed to the ruling-5 law with build products regenerated.
+  ESCALATED TO SOL: seven class-subset advisory rows (CPI-002/004/005/008/011/014/015).
+- **A4G** (PR #6189, merge `de3a8ecdb845` 13:20:37Z): contract V1.1 + YAML encode all 18
+  AG rulings; DEFF struck; N ≤ raw closed blocks; A4 packet byte-ready and PROPOSED,
+  NOT REGISTERED. Treasury CMT honestly S-pending (owner-direct fetches timed out).
+
+**verified:** both merges via `gh pr view --json state,mergedAt,mergeCommit` +
+`git merge-base --is-ancestor <merge> origin/main`; registry at 53 lines on origin/main
+(29 + 24 append-only); validator module + release record present at origin/main.
+
+**A4 gate (unchanged):** A4 proper opens only on Sol's acceptance of BOTH returns; then
+criteria commit + declared_budget rows strictly before outcome access; next priority
+after that is prospective observation activation. Open for Sol: the seven escalated
+rows; boundary-date receipts; CMT verification; the phase-target→D5 mapping (binding
+stop condition).
+
+**do_not_redo (additions):** do not re-derive the A4G config_hash values (independently
+reproduced twice against engine/trial_ledger.py); do not re-run the CPI-H1 row heals or
+append further registry versions before Sol's disposition of the escalated rows; do not
+treat the D1(c) release as authorization to append an issuer truth — vocabulary release
+≠ content authorization, and every issuer truth still needs its own lawful basis.
