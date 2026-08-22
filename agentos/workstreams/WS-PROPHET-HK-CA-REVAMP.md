@@ -185,6 +185,24 @@ waves:
       by registering a challenger with zero schema migration. Design DEC:
       DEC:PROPHET-HKCA-SHADOW-IS-A-SEPARATELY-KEYED-LANE. do_not_redo +
       danger_areas in agentos/handoffs/PROPHET-HK-CA-REVAMP-2026-08-21.md.
+      POST-MERGE SOL CORRECTION (2026-08-22, this wave's FINAL closure —
+      supersedes PR #6187's closure for the registration surface): Sol's
+      post-merge review found CHALLENGER_REGISTRY was keyed by definition
+      ALONE and write_shadow iterated every registration regardless of
+      market — the first real registrant would have executed in BOTH lanes.
+      Repaired in the market-scope PR (this record's amending PR): registry
+      re-keyed (market, definition); register_challenger(market, ...) with
+      fail-loud ValueError; _registrations_for(market) selection seam;
+      four-state POST-GATE registry_state ladder (+no_challenger_for_market;
+      reentrant_refused pre-gate); per-registration failure isolation with
+      truthful written counts; market-scoped write-surface fence; kills
+      K15-K20 + reentrancy/malformed-key/overwrite/cross-market-collision
+      tests (52 total), incl. TWO executed mutation arms (market-blind seam;
+      error-state collapse) proven to kill. Contract §4 rewritten
+      trust-bounded ("structurally incapable" was falsified by a
+      reentrant-challenger probe; registered challengers are trusted
+      reviewed code, not a security boundary). Adversarial round: Opus
+      reviewer MERGE-BLOCKED with D1-D10, all repaired and re-killed.
   - id: hk-discovery
     title: HK candidate-recall shadow
     status: todo

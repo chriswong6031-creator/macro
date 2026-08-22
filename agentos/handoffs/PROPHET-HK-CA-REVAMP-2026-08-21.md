@@ -157,3 +157,44 @@ review MERGE-BLOCKED it (a live CI closure red plus five kills that did not
 kill) → fixes → every previously-escaping mutation re-executed to a FAIL. The
 wave's lesson, twice paid: a kill is only as real as the mutation someone
 actually ran.
+
+## Addendum 2026-08-22 — post-merge Sol correction: market-scoped registration
+
+Sol's post-merge review falsified the merged substrate's registration seam:
+CHALLENGER_REGISTRY was keyed by challenger_definition ALONE and write_shadow
+iterated every registration regardless of market, so the first real registrant
+would have executed and written in BOTH the HK and CA lanes. Zero production
+registrants existed, so the unscoped API owed no compatibility.
+
+Repair (same three files: engine/board_shadow.py, tests/test_board_shadow.py,
+research/PROPHET_SHADOW_CONTRACT_V1.md): registry re-keyed
+(market, challenger_definition); register_challenger(market, definition, ...)
+fail-loud on unknown market; _registrations_for(market) is the sole scoping
+seam (returns (definition, spec) pairs so K19's mutation is observable rather
+than surfacing as a safe KeyError); four POST-GATE registry_state values
+(no_challenger_registered / no_challenger_for_market / wrote_n_rows n=n /
+error, each with a registry_state= log token) behind unchanged pre-gates plus
+a new reentrant_refused refusal; per-registration failure isolation
+(challenger_failed definition=d, siblings still run, written counts stay
+truthful); malformed registry keys skipped-not-fatal; overwrite warns;
+market-scoped write-surface fence. Kills K15-K20 plus reentrancy /
+malformed-key / overwrite / cross-market-collision tests — 52 total — with
+TWO executed mutation arms (market-blind seam flips exactly the six new kills;
+error-state collapse now fails K20). The Opus adversarial round MERGE-BLOCKED
+the first repair build with findings D1-D10 (K20's error rung was asserted by
+literal injection; the contract's absolute "structurally incapable" claim was
+falsified by a reentrant-challenger reproduction; the m2 write fence was
+market-blind); all ten were repaired and re-killed before ship.
+
+Contract truth: §4's isolation claim is now TRUST-BOUNDED — the substrate
+never mis-lanes a registration, reentrant calls are refused fail-soft, and a
+registered challenger is trusted reviewed in-repo code, not hostile input the
+registry defends against.
+
+do_not_redo additions:
+- Do not re-run the D1/D4 executed mutation arms — recorded in this addendum's
+  PR; the in-suite K19 arm remains the standing automated kill.
+- Do not "simplify" _registrations_for to return bare definition names — the
+  pair return is load-bearing for K19's observability (recorded deviation).
+- Do not treat a wrote_n_rows pass containing challenger_failed warnings as an
+  error state — that is the D7 semantics, frozen in contract §4.
