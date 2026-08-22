@@ -64,6 +64,11 @@ changed:
       Adds focused mutation-resistant gates for source law, deterministic selection,
       canonical receipt ownership, evidence spans, typed null/refusal behavior, model
       independence, disagreement resolution, episode linkage, and the no-market firewall.
+  - path: ".github/ci/legacy-jobs.yml and .github/workflows/ci.yml"
+    what: >
+      Extends the existing Dislocation P0-A1 research job to own all seven A1R suites
+      and the canonical SEC/source-spine import closure; no new workflow or CI control
+      plane was created.
 verified:
   - claim: "Pickup and governing merged architecture were pinned before implementation."
     command: >
@@ -145,7 +150,23 @@ verified:
       python3 scripts/agentos.py validate
     result: >
       45 passed with 3 unrelated pytest temporary-directory cleanup warnings;
-      Agent OS validated 531 records with 0 errors and 27 unrelated sparse/staleness warnings.
+      Agent OS validated 532 records with 0 errors and 27 unrelated sparse/staleness warnings.
+  - claim: "The complete existing Dislocation CI job owns and runs the A1R repair tests."
+    command: >
+      python3 -m pytest tests/test_dislocation_p0_a1_blind_harvest.py
+      tests/test_dislocation_p0_a1r_evidence_catalog.py
+      tests/test_dislocation_p0_a1r_owner_run.py
+      tests/test_dislocation_p0_a1r_selection.py
+      tests/test_dislocation_p0_a1r_semantic_contract.py
+      tests/test_dislocation_p0_a1r_semantic_run.py
+      tests/test_dislocation_p0_source_adapter.py
+      tests/test_dislocation_p0_source_materializer.py -q;
+      python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml
+      --pack-index 1 --pack-count 12 --validate-only;
+      python3 scripts/check_contract_delta.py --base ed84a0f549a5950cae681fa3f0a6acb4b48afa40
+    result: >
+      56 passed with the same 3 unrelated pytest temporary-directory cleanup warnings;
+      all 200 legacy jobs validated; contract-delta reported 0 introduced and 0 inherited.
 unverified:
   - claim: "Sol accepts the audited P0-S0/S1 K-packet and releases the hold."
     what_would_verify: >
