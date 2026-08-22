@@ -20,7 +20,7 @@ waves:
   - id: W-TRANSPORT
     title: Bounded changed-files transport across CI and self-mod fences
     status: awaiting_ci
-    pr: 5608
+    pr: [5608, 6223]
     note: >
       PR 5608 landed the cross-job contract: the changed-file list rides the
       ci-changed-files artifact, its sha256 joins plan_hash_payload so
@@ -30,8 +30,8 @@ waves:
       fork self-mod live checks rebuilt the changed paths and complete commit
       messages as shell variables and expanded them into checker argv, so the
       process could die with E2BIG before policy evaluation. The bounded repair
-      on claude/ci-fence-e2big-closure keeps the exact ancestry/range proof and
-      moves both populations to files, with only their paths crossing argv.
+      in PR 6223 keeps the exact ancestry/range proof and moves both populations
+      to files, with only their paths crossing argv.
       Evidence: DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING and
       DSC:CI-SELF-MOD-FENCE-ARGV-BYPASSES-BOUNDED-TRANSPORT. This wave remains
       awaiting exact-head proof that the checker process launches and emits
