@@ -166,11 +166,11 @@ def test_successful_run_then_immediate_reinvocation_is_cheap_noop(tmp_path, monk
     monkeypatch.setattr(real_td, "bulk_greeks", fake.bulk_greeks)
 
     now_fn = lambda: _dt(2026, 8, 19, 16, 30, tzinfo=topup.nyse_calendar.ET)
-    rc1 = topup._daily_main(workers=1, deadline_min=100, forced=False, now_fn=now_fn)
+    rc1 = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False, now_fn=now_fn)
     assert rc1 == 0
     n_calls_first = len(fake.calls)
     assert n_calls_first > 0
 
-    rc2 = topup._daily_main(workers=1, deadline_min=100, forced=False, now_fn=now_fn)
+    rc2 = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False, now_fn=now_fn)
     assert rc2 == 0
     assert len(fake.calls) == n_calls_first   # zero NEW vendor calls

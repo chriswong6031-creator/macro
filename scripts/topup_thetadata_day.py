@@ -97,7 +97,10 @@ TIERS = ("eod", "oi", "greeks")
 _DAILY_WORKERS_DEFAULT = 2
 
 _MAX_WORKERS = 6                 # hard vendor-safety cap (§A1) — Terminal ceiling is 8
-_DEFAULT_DEADLINE_MIN = 100      # §F2
+# (RF7, R3) 65 min — the plist's four fire points are >=70 min apart (§E), so
+# a run holding the lock for the full deadline still releases it before the
+# NEXT fire; 100 min would let one held lock swallow a whole retry-ladder rung.
+_DEFAULT_DEADLINE_MIN = 65       # §F2
 _GATE_TIME_ET = _time_of_day(16, 10)
 _REPROBE_FETCH_FAILED_FRACTION = 0.25   # F5
 _S_SUSPECT_VENDOR_EMPTY_FRACTION = 0.50  # F12
@@ -213,13 +216,16 @@ def _emit_writer_locked(mode: str) -> None:
 
 
 def _sweep_stale_tmp(store: Path) -> int:
-    """(F9) Sweep stale tmp files under the flock at daily-mode startup.
+    """(F9, extended RF9/R3) Sweep stale tmp files under the flock at
+    daily-mode startup.
 
     Sweeps BOTH the new `{YYYY}.parquet.tmp` shape this build writes and the
     legacy `{YYYY}.tmp.parquet` shape the pre-F9 writer used (a SIGKILL under
     the old naming could still be on disk from before this deploy — and the
     old shape is the one that actually corrupts reads, since it matches the
-    store readers' `*.parquet` glob)."""
+    store readers' `*.parquet` glob). (RF9) Also sweeps STORE-ROOT `*.tmp`
+    files — a SIGKILL mid `_write_daily_receipt`/`_write_manifest` leaves
+    `_manifest.json.tmp` sitting at the store root, not under a tier dir."""
     count = 0
     if not store.exists():
         return 0
@@ -234,6 +240,12 @@ def _sweep_stale_tmp(store: Path) -> int:
                     count += 1
                 except OSError:
                     pass
+    for p in store.glob("*.tmp"):
+        try:
+            p.unlink()
+            count += 1
+        except OSError:
+            pass
     return count
 
 
@@ -519,8 +531,17 @@ def _run_daily_pool(store: Path, t1_universe: list[str], td, *,
     finally:
         if in_flight:
             if terminal_lost_mid_run:
+                # (RF12, R3) A future may have already finished in the gap
+                # between the reprobe decision and this loop — gather ANY
+                # already-completed result before cancelling the rest.
+                # `cancel()` on an already-running/finished future is a
+                # harmless no-op; discarding a landed result would make
+                # completed work vanish from the receipt's counts.
                 for f in list(in_flight):
-                    f.cancel()
+                    if f.done():
+                        _record(f, in_flight[f])
+                    else:
+                        f.cancel()
             else:
                 for f in as_completed(list(in_flight)):
                     _record(f, in_flight[f])
@@ -576,7 +597,17 @@ def _aggregate_daily(results: dict[str, RootResult], t1_universe: list[str],
             if len(failure_examples) < 10:
                 failure_examples.append({"root": root, "reason": reason})
 
-    eod_s_attempted = len(results)
+    # (RF8, R3) Denominator = roots with an ACTUAL EOD[S] vendor attempt this
+    # run — "already_present" roots never touched the vendor and must not
+    # dilute the ratio (a steady-state ladder re-fire where most roots are
+    # already_present would otherwise make a real closure invisible: e.g. 2
+    # already_present + 2 fresh vendor_empty used to read as 2/4=50% — not
+    # over the >50% bar — instead of the true 2/2=100% among roots actually
+    # asked). A cell that never even reached "eod_S" (root failed earlier)
+    # is likewise not an attempt. Zero attempts => flag False (never divide
+    # by zero, never guess).
+    eod_s_attempted = sum(1 for r in results.values()
+                         if r.cells.get("eod_S") not in (None, "already_present"))
     eod_s_vendor_empty = sum(1 for r in results.values()
                              if r.cells.get("eod_S") == "vendor_empty")
     s_suspect_non_session = (eod_s_attempted > 0
@@ -641,7 +672,20 @@ def _daily_main(*, workers: int, deadline_min: float, forced: bool,
         log.error("topup daily: no thetadata store: %s", e)
         return 1
 
-    with _writer_lock(store) as acquired:
+    # (HARDENING, R3) A `with` statement would let an OSError from opening
+    # the lock file (read-only store, ENOSPC) propagate as a bare traceback.
+    # Acquire manually so that failure mode is a clean logged `failed`
+    # outcome instead — the flock-refused (acquired=False) path is untouched.
+    lock_cm = _writer_lock(store)
+    try:
+        acquired = lock_cm.__enter__()
+    except OSError as e:
+        log.error("topup daily: cannot open writer lock at %s (%s: %s) — "
+                 "store may be read-only or full — aborting as failed, no receipt",
+                 store / WRITER_LOCK_NAME, type(e).__name__, e)
+        return 1
+
+    try:
         if not acquired:
             _emit_writer_locked("daily")
             log.warning("topup daily: writer lock held by another process — "
@@ -692,6 +736,16 @@ def _daily_main(*, workers: int, deadline_min: float, forced: bool,
 
         stale_tmp_swept = _sweep_stale_tmp(store)
 
+        # (F7/RF5) pgrep breadcrumb — ADVISORY ONLY in --daily. The flock is
+        # the sole refusal authority here; this never blocks, it only leaves
+        # an operator-visible trail (an orphaned backfill child, or a
+        # concurrent manual run, can leave a false-positive pgrep hit for as
+        # long as the orphan lives — a refusal on that basis would be wrong).
+        if _backfill_running():
+            log.warning("topup daily: backfill_thetadata_eod appears to be "
+                       "running (pgrep advisory only in --daily — continuing; "
+                       "the flock already granted exclusive access)")
+
         from collectors import thetadata as td
         if not td.reachable():
             _finish("failed", terminal_health="unreachable",
@@ -726,7 +780,11 @@ def _daily_main(*, workers: int, deadline_min: float, forced: bool,
 
         gate = _source_coverage_gate()
         healthy = agg["ad_coverage_pct"] >= gate
-        status = "healthy" if healthy else "partial"
+        # (RF2, R3) deadline_exceeded FORCES partial — a run that ran out of
+        # wall-clock time is by definition unfinished, no matter how much
+        # coverage the roots it DID reach happened to hit. Never let a
+        # high-coverage partial pool read as `healthy`.
+        status = "partial" if deadline_exceeded else ("healthy" if healthy else "partial")
         _finish(status, terminal_health="reachable",
                stale_tmp_swept=stale_tmp_swept,
                deadline_exceeded=deadline_exceeded, **agg)
@@ -734,6 +792,8 @@ def _daily_main(*, workers: int, deadline_min: float, forced: bool,
                 "deadline_exceeded=%s", ctx.S, ctx.D,
                 agg["ad_coverage_pct"] * 100, status, deadline_exceeded)
         return 0 if status == "healthy" else 1
+    finally:
+        lock_cm.__exit__(None, None, None)
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────
@@ -798,12 +858,19 @@ def main(argv: list[str] | None = None) -> int:
                     "entirely (never race the year-overwrite writer)")
         return 1
 
-    with _writer_lock(store) as acquired:
-        if not acquired:
-            _emit_writer_locked("legacy")
-            log.warning("topup: writer lock held by another process — refusing")
-            return 1
-        return _run_bounded(store, roots, day)
+    try:
+        with _writer_lock(store) as acquired:
+            if not acquired:
+                _emit_writer_locked("legacy")
+                log.warning("topup: writer lock held by another process — refusing")
+                return 1
+            return _run_bounded(store, roots, day)
+    except OSError as e:
+        # (HARDENING, R3) — read-only store / ENOSPC opening the lock file:
+        # a clean logged failure, never a bare traceback.
+        log.error("topup: cannot open writer lock at %s (%s: %s) — store may be "
+                 "read-only or full", store / WRITER_LOCK_NAME, type(e).__name__, e)
+        return 1
 
 
 if __name__ == "__main__":

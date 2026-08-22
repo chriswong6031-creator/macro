@@ -12,7 +12,9 @@ exercise the full `_daily_main` entry point.
 from __future__ import annotations
 
 import json
+import subprocess
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -21,6 +23,8 @@ import scripts.topup_thetadata_day as topup
 from lib import nyse_calendar as nc
 
 ET = nc.ET
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SENTINEL_SH = REPO_ROOT / "scripts" / "launchd" / "theta_staleness_sentinel.sh"
 
 # A known midweek session day with a resolvable prior session.
 D_MID = date(2026, 8, 19)          # Wednesday
@@ -199,7 +203,7 @@ def test_run_context_freeze_now_fn_called_exactly_once(store, monkeypatch):
         calls["n"] += 1
         return _et(2026, 8, 19, 16, 30)
 
-    rc = topup._daily_main(workers=1, deadline_min=100, forced=False, now_fn=now_fn)
+    rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False, now_fn=now_fn)
     assert rc == 0
     assert calls["n"] == 1
 
@@ -211,7 +215,7 @@ def test_same_session_rerun_is_zero_vendor_calls(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
     fake = FakeTd()
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=1, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     assert rc == 0
     assert fake.calls == []
@@ -224,7 +228,7 @@ def test_f12_s_suspect_non_session_flag(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY", "QQQ", "AAPL"], ad=["SPY", "QQQ", "AAPL"])
     fake = FakeTd(plan=plan)
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=2, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["s_suspect_non_session"] is True
@@ -235,10 +239,65 @@ def test_f12_not_suspect_when_under_half_vendor_empty(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY", "QQQ", "AAPL"], ad=["SPY", "QQQ", "AAPL"])
     fake = FakeTd(plan=plan)
     _install_fake_td(monkeypatch, fake)
-    topup._daily_main(workers=2, deadline_min=100, forced=False,
+    topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                       now_fn=lambda: _et(2026, 8, 19, 16, 30))
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["s_suspect_non_session"] is False
+
+
+# ── RF8 (R3): denominator = roots with an ACTUAL EOD[S] vendor attempt ─────
+def test_rf8_aggregate_denominator_excludes_already_present():
+    """Direct flip test: the OLD denominator (all processed roots) would
+    have read 2/4=50% here — NOT over the >50% bar, so a real closure signal
+    would have been invisible. The FIXED denominator (only the 2 ROOTS
+    actually asked this run) reads 2/2=100%."""
+    results = {
+        "SPY": topup.RootResult(root="SPY", state="already_present", cells={
+            "eod_S": "already_present", "oi_S": "already_present",
+            "oi_D": "already_present", "greeks_S": "already_present"}),
+        "QQQ": topup.RootResult(root="QQQ", state="already_present", cells={
+            "eod_S": "already_present", "oi_S": "already_present",
+            "oi_D": "already_present", "greeks_S": "already_present"}),
+        "AAPL": topup.RootResult(root="AAPL", state="vendor_empty", cells={
+            "eod_S": "vendor_empty", "oi_S": "vendor_empty",
+            "oi_D": "vendor_empty", "greeks_S": "vendor_empty"}),
+        "MSFT": topup.RootResult(root="MSFT", state="vendor_empty", cells={
+            "eod_S": "vendor_empty", "oi_S": "vendor_empty",
+            "oi_D": "vendor_empty", "greeks_S": "vendor_empty"}),
+    }
+    agg = topup._aggregate_daily(results, list(results), list(results))
+    old_denominator_ratio = 2 / len(results)   # what the pre-RF8 code computed
+    assert not (old_denominator_ratio > topup._S_SUSPECT_VENDOR_EMPTY_FRACTION)
+    assert agg["s_suspect_non_session"] is True
+
+
+def test_rf8_ladder_refire_fixture_end_to_end(store, monkeypatch):
+    """Same shape as above but through the real `_daily_main` pipeline: 2
+    roots already fully present (a prior ladder rung already fetched them
+    today) + 2 freshly-attempted roots that come back EOD[S] vendor-empty
+    (an unlisted market closure)."""
+    already_present_roots = ["SPY", "QQQ"]
+    attempted_roots = ["AAPL", "MSFT"]
+    for root in already_present_roots:
+        for tier, day in (("eod", S_MID), ("oi", S_MID), ("oi", D_MID), ("greeks", S_MID)):
+            topup._merge_day(store, tier, root, day, _df(day))
+    plan = {("eod", r, S_MID): _empty_df() for r in attempted_roots}
+    all_roots = already_present_roots + attempted_roots
+    _wire_daily(monkeypatch, store, t1=all_roots, ad=all_roots)
+    fake = FakeTd(plan=plan)
+    _install_fake_td(monkeypatch, fake)
+    topup._daily_main(workers=4, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
+                      now_fn=lambda: _et(2026, 8, 19, 16, 30))
+    receipt = _manifest(store)["daily_refresh"]
+    assert receipt["s_suspect_non_session"] is True
+
+
+def test_rf8_zero_attempts_is_false_never_divides_by_zero(store):
+    results = {"SPY": topup.RootResult(root="SPY", state="already_present", cells={
+        "eod_S": "already_present", "oi_S": "already_present",
+        "oi_D": "already_present", "greeks_S": "already_present"})}
+    agg = topup._aggregate_daily(results, list(results), list(results))
+    assert agg["s_suspect_non_session"] is False
 
 
 # ═════════════════════════ PAIR (§A4/F1/F6) ═════════════════════════════════
@@ -281,7 +340,7 @@ def test_oi_d_absent_does_not_degrade_healthy(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY", "QQQ"], ad=["SPY", "QQQ"])
     fake = FakeTd(plan=plan)
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=2, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["status"] == "healthy"
@@ -319,6 +378,21 @@ def test_stale_july_fresh_august_store_no_writes_outside_s_d_cells(store):
 
 
 # ═════════════════════════ WRITER (§B/F9/F14) ═══════════════════════════════
+def _hash_tree(store) -> dict:
+    """(RF6, R3) CONTENT hashes keyed by relpath — a path-list compare (the
+    original shape of this test) passes on an in-place overwrite that keeps
+    the same set of filenames but changes their bytes; a content hash does
+    not."""
+    import hashlib
+    out = {}
+    if not store.exists():
+        return out
+    for p in sorted(store.rglob("*")):
+        if p.is_file():
+            out[str(p.relative_to(store))] = hashlib.sha256(p.read_bytes()).hexdigest()
+    return out
+
+
 def test_two_concurrent_daily_invocations_second_refused(store, monkeypatch, capsys):
     _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
     fake = FakeTd()
@@ -329,26 +403,67 @@ def test_two_concurrent_daily_invocations_second_refused(store, monkeypatch, cap
         # Snapshot AFTER the outer (simulated first-writer) lock file itself
         # exists — that file's creation is the first writer's own legitimate
         # side effect, not something the REFUSED second writer may cause.
-        before = sorted(store.rglob("*"))
-        rc = topup._daily_main(workers=1, deadline_min=100, forced=False,
+        before = _hash_tree(store)
+        rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                                now_fn=lambda: _et(2026, 8, 19, 16, 30))
-        after = sorted(store.rglob("*"))
+        after = _hash_tree(store)
     assert rc == 0   # F14 — daily refusal exits 0
     assert fake.calls == []
-    assert before == after   # byte-compare: zero mutations
+    assert before == after   # CONTENT hash compare: zero mutations, not just zero new paths
     out = capsys.readouterr().out
     assert json.loads(out.strip().splitlines()[-1]) == {"event": "writer_locked", "mode": "daily"}
 
 
 def test_daily_then_historical_backfill_either_order_both_locked(store, monkeypatch):
-    """Daily holds the lock -> backfill's own flock acquisition must refuse."""
+    """(RF4, R3) A REAL cross-writer lock test exercising `backfill.main()`'s
+    own lock site (not a fake double `_writer_lock()` nesting) in BOTH
+    orders against a topup lock holder. Pull internals are monkeypatched to
+    no-ops so no real vendor/network access is needed."""
+    import sys as _sys
+    import threading
+
     import scripts.backfill_thetadata_eod as bf
+    import collectors.thetadata as real_td
+
     store.mkdir(parents=True)
     monkeypatch.setattr(bf, "_store_dir", lambda: store)
+    monkeypatch.setattr(bf, "resolve_thetadata_store", lambda **kw: str(store))  # RF3 agreement
+    monkeypatch.setattr(bf, "_resolve_universe", lambda extra_roots=None: ["SPY"])
+    monkeypatch.setattr(bf, "_pull_root_year", lambda *a, **kw: True)
+    monkeypatch.setattr(bf.time, "sleep", lambda s: None)
+    monkeypatch.setattr(real_td, "reachable", lambda: True)
+    monkeypatch.setattr(_sys, "argv", ["backfill_thetadata_eod.py"])
+
+    # Order 1: topup holds first -> bf.main() refuses at ITS OWN lock site.
     with topup._writer_lock(store) as acquired:
         assert acquired is True
-        with topup._writer_lock(store) as second:
-            assert second is False
+        rc = bf.main()
+    assert rc == 1
+    assert not (store / "_backfill_state.json").exists()   # refusal mutates nothing
+
+    # Order 2: backfill holds (via a REAL, blocking bf.main() run) -> topup refuses.
+    hold_gate = threading.Event()
+    release_gate = threading.Event()
+
+    def _blocking_pull(*a, **kw):
+        hold_gate.set()
+        release_gate.wait(timeout=10)
+        return True
+
+    monkeypatch.setattr(bf, "_pull_root_year", _blocking_pull)
+    outcome: dict = {}
+
+    def _run_backfill():
+        outcome["rc"] = bf.main()
+
+    t = threading.Thread(target=_run_backfill)
+    t.start()
+    assert hold_gate.wait(timeout=10), "backfill never reached its lock-holding pull"
+    with topup._writer_lock(store) as acquired2:
+        assert acquired2 is False   # topup refused while backfill's REAL lock site holds
+    release_gate.set()
+    t.join(timeout=10)
+    assert outcome["rc"] == 0
 
 
 def test_sigkill_then_next_invocation_acquires_cleanly(store):
@@ -364,6 +479,32 @@ def test_sigkill_then_next_invocation_acquires_cleanly(store):
         assert acquired is True
 
 
+# ── RF5 (R3): pgrep breadcrumb is ADVISORY ONLY in --daily (F7) ────────────
+def test_rf5_backfill_running_advisory_warns_but_never_refuses(store, monkeypatch, caplog):
+    _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
+    fake = FakeTd()
+    _install_fake_td(monkeypatch, fake)
+    monkeypatch.setattr(topup, "_backfill_running", lambda: True)
+    with caplog.at_level("WARNING"):
+        rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
+                               now_fn=lambda: _et(2026, 8, 19, 16, 30))
+    assert rc == 0   # never refuses on pgrep alone
+    receipt = _manifest(store)["daily_refresh"]
+    assert receipt["status"] == "healthy"   # the run actually completed
+    assert any("advisory" in rec.message for rec in caplog.records)
+
+
+def test_rf5_backfill_not_running_no_advisory_warning(store, monkeypatch, caplog):
+    _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
+    fake = FakeTd()
+    _install_fake_td(monkeypatch, fake)
+    monkeypatch.setattr(topup, "_backfill_running", lambda: False)
+    with caplog.at_level("WARNING"):
+        topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
+                          now_fn=lambda: _et(2026, 8, 19, 16, 30))
+    assert not any("advisory" in rec.message for rec in caplog.records)
+
+
 def test_f9_stale_tmp_sweep_counts_and_removes(store):
     (store / "eod" / "SPY").mkdir(parents=True)
     (store / "eod" / "SPY" / "2026.tmp.parquet").write_bytes(b"stale-old-shape")
@@ -373,6 +514,35 @@ def test_f9_stale_tmp_sweep_counts_and_removes(store):
     assert n == 2
     assert not (store / "eod" / "SPY" / "2026.tmp.parquet").exists()
     assert not (store / "oi" / "AAPL" / "2026.parquet.tmp").exists()
+
+
+def test_rf9_sweep_also_covers_store_root_tmp_receipt_files(store):
+    """(RF9, R3) A SIGKILL mid `_manifest.json.tmp` write leaves a tmp file
+    at the STORE ROOT, not under a tier dir — the sweep must reach it too."""
+    store.mkdir(parents=True)
+    (store / "_manifest.json.tmp").write_bytes(b"partial receipt write")
+    (store / "_manifest.json").write_text('{"daily_refresh": {}}')
+    n = topup._sweep_stale_tmp(store)
+    assert n == 1
+    assert not (store / "_manifest.json.tmp").exists()
+    assert (store / "_manifest.json").exists()   # the real manifest is untouched
+
+
+def test_rf9_publish_r2_excludes_any_tmp_suffixed_file(tmp_path):
+    from scripts.publish_r2 import _uploadable
+    base = tmp_path
+    (base / "_manifest.json").write_text("{}")
+    (base / "_manifest.json.tmp").write_text("partial")
+    (base / "eod").mkdir()
+    (base / "eod" / "keep.parquet").write_text("x")
+    (base / "eod" / "2026.parquet.tmp").write_text("partial-parquet")
+    files = [base / "_manifest.json", base / "_manifest.json.tmp",
+            base / "eod" / "keep.parquet", base / "eod" / "2026.parquet.tmp"]
+    kept = _uploadable("thetadata_eod", base, files)
+    assert base / "eod" / "keep.parquet" in kept
+    assert base / "_manifest.json.tmp" not in kept
+    assert base / "eod" / "2026.parquet.tmp" not in kept
+    assert base / "_manifest.json" not in kept   # pre-existing exclusion, unaffected
 
 
 def test_f9_sweep_glob_test_no_reader_glob_matches_tmp_shape(tmp_path):
@@ -498,14 +668,14 @@ def test_symbol_added_to_resolver_changes_denominator(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
     fake = FakeTd()
     _install_fake_td(monkeypatch, fake)
-    topup._daily_main(workers=1, deadline_min=100, forced=False,
+    topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                       now_fn=lambda: _et(2026, 8, 19, 16, 30))
     r1 = _manifest(store)["daily_refresh"]
     assert r1["t1_universe_count"] == 1
     assert r1["ad_universe_count"] == 1
 
     _wire_daily(monkeypatch, store, t1=["SPY", "QQQ"], ad=["SPY", "QQQ"])
-    topup._daily_main(workers=1, deadline_min=100, forced=False,
+    topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                       now_fn=lambda: _et(2026, 8, 19, 16, 30))
     r2 = _manifest(store)["daily_refresh"]
     assert r2["t1_universe_count"] == 2
@@ -523,7 +693,7 @@ def test_root_with_no_options_vendor_empty_run_continues(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["ZZZZ", "SPY"], ad=["SPY"])
     fake = FakeTd(plan=plan)
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=2, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["status"] == "healthy"   # SPY alone clears the AD gate
@@ -545,7 +715,7 @@ def test_f5_fetch_failed_over_25pct_triggers_reprobe_and_aborts(store, monkeypat
     fake = FakeTd(plan=plan, reachable_sequence=[True, False])
     _wire_daily(monkeypatch, store, t1=["A", "B", "C", "D"], ad=["A", "B", "C", "D"])
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=1, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     assert rc == 1
     receipt = _manifest(store)["daily_refresh"]
@@ -553,12 +723,76 @@ def test_f5_fetch_failed_over_25pct_triggers_reprobe_and_aborts(store, monkeypat
     assert receipt["terminal_health"] == "lost_mid_run"
 
 
+def test_rf12_terminal_lost_gathers_already_completed_futures_unit():
+    """(RF12, R3) Unit-level pin of the finally-branch shape: a future that
+    is ALREADY done() at the moment terminal_lost_mid_run fires must have
+    its result recorded, never silently discarded by a blind cancel()."""
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        fut_done = ex.submit(lambda: topup.RootResult(root="DONE", state="complete"))
+        fut_done.result()   # block until actually finished: fut_done.done() is True
+        fut_pending = ex.submit(lambda: __import__("time").sleep(5))
+        in_flight = {fut_done: "DONE", fut_pending: "PENDING"}
+        results: dict = {}
+
+        def _record(fut, root):
+            results[root] = fut.result()
+
+        # Mirrors _run_daily_pool's terminal_lost_mid_run finally-branch.
+        for f in list(in_flight):
+            if f.done():
+                _record(f, in_flight[f])
+            else:
+                f.cancel()
+        assert "DONE" in results
+        assert results["DONE"].state == "complete"
+        assert "PENDING" not in results
+        fut_pending.cancel()
+
+
+def test_rf12_terminal_lost_mid_run_gathers_already_completed_work(store, monkeypatch):
+    """(RF12, R3) Integration-level pin: SLOW completes DURING the gap
+    between the reprobe decision and the cancel sweep (the re-probe is
+    deliberately slower than SLOW) — its result must survive into the
+    receipt's counts, not vanish because the run aborted."""
+    import time as _time
+
+    def _slow_ok(_day):
+        _time.sleep(0.05)
+        return _df(S_MID)
+
+    plan = {
+        ("eod", "A", S_MID): None, ("eod", "B", S_MID): None, ("eod", "C", S_MID): None,
+        ("eod", "SLOW", S_MID): _slow_ok,
+    }
+    fake = FakeTd(plan=plan, reachable_sequence=[True])
+    _orig_reachable = fake.reachable
+
+    def _reachable_delayed_false():
+        if fake._reachable_seq:
+            return _orig_reachable()
+        _time.sleep(0.3)   # >> SLOW's 0.05s — guarantees SLOW finishes first
+        return False
+
+    fake.reachable = _reachable_delayed_false
+    _wire_daily(monkeypatch, store, t1=["A", "B", "C", "SLOW"], ad=["SLOW"])
+    _install_fake_td(monkeypatch, fake)
+    rc = topup._daily_main(workers=4, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
+                           now_fn=lambda: _et(2026, 8, 19, 16, 30))
+    assert rc == 1
+    receipt = _manifest(store)["daily_refresh"]
+    assert receipt["status"] == "failed"
+    assert receipt["terminal_health"] == "lost_mid_run"
+    # SLOW's completed EOD[S] cell must be counted, not vanished.
+    assert receipt["eod_S_roots"] >= 1
+
+
 def test_f5_fetch_failed_over_25pct_but_reachable_continues(store, monkeypatch):
     plan = {("eod", r, S_MID): None for r in ["A"]}
     fake = FakeTd(plan=plan, reachable_sequence=[True, True])
     _wire_daily(monkeypatch, store, t1=["A", "B"], ad=["A", "B"])
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=1, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["status"] != "failed"
@@ -627,6 +861,44 @@ def test_deadline_writes_partial_receipt_with_flag(store, monkeypatch):
     assert rc == 1
 
 
+# ── RF7 (R3): default deadline fits inside the plist's fire spacing ────────
+def test_rf7_default_deadline_is_65_minutes():
+    assert topup._DEFAULT_DEADLINE_MIN == 65
+
+
+def test_rf7_default_deadline_fits_under_minimum_fire_spacing():
+    """The plist's four fire points are >=70 min apart (§E: 13:20/14:30/16:00/
+    18:00 PT — the tightest gap is 70 min). A held lock must release before
+    the NEXT fire or that rung of the retry ladder is silently swallowed."""
+    fire_points_minutes = [13 * 60 + 20, 14 * 60 + 30, 16 * 60 + 0, 18 * 60 + 0]
+    gaps = [b - a for a, b in zip(fire_points_minutes, fire_points_minutes[1:])]
+    assert min(gaps) == 70
+    assert topup._DEFAULT_DEADLINE_MIN < min(gaps)
+
+
+# ── RF2 (R3): deadline_exceeded FORCES partial, even at high coverage ──────
+def test_rf2_deadline_exceeded_forces_partial_even_at_full_coverage(store, monkeypatch):
+    """Falsified by the reviewer: 95%+ coverage + a tripped deadline used to
+    stamp `healthy`/rc=0. Construct a fixture where ALL roots complete (100%
+    AD coverage) inside the SAME pool call that also trips deadline_exceeded
+    (workers == root count, so every root is primed before the deadline is
+    even checked; deadline_min is already-expired so the very first
+    completion check trips it) — status must be exactly "partial", never
+    "healthy", and rc must be 1."""
+    roots = ["SPY", "QQQ"]
+    _wire_daily(monkeypatch, store, t1=roots, ad=roots)
+    fake = FakeTd()   # instant, all-complete responses
+    _install_fake_td(monkeypatch, fake)
+    rc = topup._daily_main(workers=len(roots), deadline_min=0.00001, forced=False,
+                           now_fn=lambda: _et(2026, 8, 19, 16, 30))
+    receipt = _manifest(store)["daily_refresh"]
+    assert receipt["ad_coverage_pct"] == 1.0
+    assert receipt["deadline_exceeded"] is True
+    assert receipt["status"] == "partial"
+    assert receipt["status"] != "healthy"
+    assert rc == 1
+
+
 # ═════════════════════════ COMPATIBILITY ════════════════════════════════════
 def test_legacy_characterization_suite_is_unmodified_by_daily_mode(store, monkeypatch):
     """--daily and legacy --roots don't share mutable module state."""
@@ -663,7 +935,7 @@ def test_receipt_healthy_when_coverage_meets_gate(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY", "QQQ"], ad=["SPY", "QQQ"])
     fake = FakeTd()
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=2, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["status"] == "healthy"
@@ -675,7 +947,7 @@ def test_receipt_partial_when_s_panel_short(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY", "QQQ"], ad=["SPY", "QQQ"])
     fake = FakeTd(plan=plan)
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=2, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["status"] == "partial"
@@ -690,7 +962,7 @@ def test_receipt_threshold_imported_from_engine_flip(store, monkeypatch):
 
     from engine.options_intel_brief import CONFIG
     monkeypatch.setitem(CONFIG, "SOURCE_COVERAGE_GATE", 0.40)
-    rc = topup._daily_main(workers=2, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["status"] == "healthy"   # 0.50 >= lowered 0.40 gate
@@ -700,7 +972,7 @@ def test_forced_stamps_forced_true(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
     fake = FakeTd()
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=1, deadline_min=100, forced=True,
+    rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=True,
                            now_fn=lambda: _et(2026, 8, 22, 12, 0))   # Saturday
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["forced"] is True
@@ -737,20 +1009,20 @@ def test_daily_exit_code_quadruple_pinned(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
     fake = FakeTd()
     _install_fake_td(monkeypatch, fake)
-    rc_healthy = topup._daily_main(workers=1, deadline_min=100, forced=False,
+    rc_healthy = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                                    now_fn=lambda: _et(2026, 8, 19, 16, 30))
     assert rc_healthy == 0
     assert _manifest(store)["daily_refresh"]["status"] == "healthy"
 
     # gate no-op -> 0 (Saturday, not forced)
-    rc_noop = topup._daily_main(workers=1, deadline_min=100, forced=False,
+    rc_noop = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                                 now_fn=lambda: _et(2026, 8, 22, 12, 0))
     assert rc_noop == 0
 
     # lock refusal -> 0
     store.mkdir(parents=True, exist_ok=True)
     with topup._writer_lock(store):
-        rc_locked = topup._daily_main(workers=1, deadline_min=100, forced=False,
+        rc_locked = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                                       now_fn=lambda: _et(2026, 8, 20, 16, 30))
     assert rc_locked == 0
 
@@ -759,7 +1031,7 @@ def test_daily_exit_code_quadruple_pinned(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY", "QQQ"], ad=["SPY", "QQQ"])
     fake_partial = FakeTd(plan=plan_partial)
     _install_fake_td(monkeypatch, fake_partial)
-    rc_partial = topup._daily_main(workers=2, deadline_min=100, forced=False,
+    rc_partial = topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                                    now_fn=lambda: _et(2026, 8, 24, 16, 30))  # Mon
     assert rc_partial == 1
     assert _manifest(store)["daily_refresh"]["status"] == "partial"
@@ -768,7 +1040,7 @@ def test_daily_exit_code_quadruple_pinned(store, monkeypatch):
     fake_failed = FakeTd()
     fake_failed._reachable_default = False
     _install_fake_td(monkeypatch, fake_failed)
-    rc_failed = topup._daily_main(workers=1, deadline_min=100, forced=False,
+    rc_failed = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                                   now_fn=lambda: _et(2026, 8, 25, 16, 30))  # Tue
     assert rc_failed == 1
     assert _manifest(store)["daily_refresh"]["status"] == "failed"
@@ -778,7 +1050,7 @@ def test_manifest_write_is_atomic_no_tmp_left_behind(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
     fake = FakeTd()
     _install_fake_td(monkeypatch, fake)
-    topup._daily_main(workers=1, deadline_min=100, forced=False,
+    topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                       now_fn=lambda: _et(2026, 8, 19, 16, 30))
     assert not (store / "_manifest.json.tmp").exists()
     assert (store / "_manifest.json").exists()
@@ -812,7 +1084,7 @@ def test_f16_corrupt_manifest_fail_open_daily(store, monkeypatch, caplog):
     _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
     fake = FakeTd()
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=1, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     assert rc == 0
     doc = _manifest(store)
@@ -830,12 +1102,65 @@ def test_f16_corrupt_manifest_fail_open_backfill(store):
     assert doc["n_roots"] == 0
 
 
-def test_sentinel_script_reads_daily_refresh_d():
-    text = open("/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/"
-               "worktrees/thetadata-canonical-options-source-da82b6/"
-               "scripts/launchd/theta_staleness_sentinel.sh").read()
+def test_sentinel_script_mentions_daily_refresh_and_session_date():
+    text = SENTINEL_SH.read_text()
     assert "daily_refresh" in text
     assert "session_date" in text
+
+
+def _run_sentinel(*, now_utc_iso: str, manifest_d: str, tmp_path):
+    """Invoke the REAL sentinel script (RF1, R3 — computed, not grep-only)
+    with its test seams: SENTINEL_NOW_UTC overrides the wall clock, STORE
+    points at a crafted tmp store, HEALTH_URL points at a closed port so the
+    terminal-health curl fails fast instead of a 6s timeout."""
+    store = tmp_path / "store"
+    (store / "greeks" / "SPY").mkdir(parents=True)
+    (store / "_manifest.json").write_text(json.dumps(
+        {"daily_refresh": {"D": manifest_d, "S": "2026-08-18", "status": "healthy"}}))
+    pd.DataFrame({"date": [pd.Timestamp("2026-08-19")], "x": [1]}).to_parquet(
+        store / "greeks" / "SPY" / "2026.parquet")
+    env = {
+        "STORE": str(store),
+        "HEALTH_URL": "http://127.0.0.1:1/unreachable",
+        "SENTINEL_NOW_UTC": now_utc_iso,
+        "PATH": "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin",
+        "HOME": str(tmp_path),
+    }
+    # OUT_JSON/LOG are not env-overridable in the script (production paths
+    # are the fixed /tmp files below) — read the script's real /tmp output;
+    # safe here because the assertion is on daily_refresh_anchor_due, a pure
+    # function of NOW/D that doesn't depend on any other concurrent writer.
+    result = subprocess.run(
+        ["bash", str(SENTINEL_SH), "--due-today"],
+        env=env, capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    return json.loads(Path("/tmp/theta_staleness.json").read_text())
+
+
+def test_rf1_anchor_not_due_at_morning_fire_0615_pt(tmp_path):
+    # 06:15 PT (PDT, UTC-7) on session Wed 2026-08-19 = 13:15 UTC = 09:15 ET.
+    verdict = _run_sentinel(now_utc_iso="2026-08-19T13:15:00+00:00",
+                            manifest_d="2026-08-19", tmp_path=tmp_path)
+    assert verdict["daily_refresh_anchor_due"] is False
+
+
+def test_rf1_anchor_due_at_evening_fire_1830_pt_session_day(tmp_path):
+    # 18:30 PT (PDT, UTC-7) on session Wed 2026-08-19 = 01:30 UTC next day
+    # = 21:30 ET — still the 08-19 ET calendar day, after the new 20:00 gate.
+    verdict = _run_sentinel(now_utc_iso="2026-08-20T01:30:00+00:00",
+                            manifest_d="2026-08-19", tmp_path=tmp_path)
+    assert verdict["daily_refresh_anchor_due"] is True
+    assert verdict["daily_refresh_expected"] == "2026-08-19"
+
+
+def test_rf1_anchor_due_and_stale_alerts(tmp_path):
+    """The evening fire with a STALE daily_refresh.D (a real miss) must
+    ALERT — the anchor check has teeth, not just a flag."""
+    verdict = _run_sentinel(now_utc_iso="2026-08-20T01:30:00+00:00",
+                            manifest_d="2026-08-18", tmp_path=tmp_path)
+    assert verdict["daily_refresh_anchor_due"] is True
+    assert verdict["level"] == "ALERT"
+    assert any("daily_refresh.D stale" in r for r in verdict["reasons"])
 
 
 def test_lock_refusal_writes_no_receipt(store, monkeypatch):
@@ -844,7 +1169,7 @@ def test_lock_refusal_writes_no_receipt(store, monkeypatch):
     _install_fake_td(monkeypatch, fake)
     store.mkdir(parents=True)
     with topup._writer_lock(store):
-        topup._daily_main(workers=1, deadline_min=100, forced=False,
+        topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                           now_fn=lambda: _et(2026, 8, 19, 16, 30))
     assert not (store / "_manifest.json").exists()
 
@@ -853,7 +1178,7 @@ def test_gate_no_op_writes_no_receipt(store, monkeypatch):
     _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
     fake = FakeTd()
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=1, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 22, 12, 0))   # Saturday
     assert rc == 0
     assert not (store / "_manifest.json").exists()
@@ -864,7 +1189,7 @@ def test_session_resolution_failure_aborts_as_failed(store, monkeypatch):
     fake = FakeTd()
     _install_fake_td(monkeypatch, fake)
     monkeypatch.setattr(nc, "session_n_back", lambda *a, **kw: None)
-    rc = topup._daily_main(workers=1, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     assert rc == 1
     receipt = _manifest(store)["daily_refresh"]
@@ -876,9 +1201,92 @@ def test_terminal_unreachable_at_startup_aborts_failed(store, monkeypatch):
     fake = FakeTd()
     fake._reachable_default = False
     _install_fake_td(monkeypatch, fake)
-    rc = topup._daily_main(workers=1, deadline_min=100, forced=False,
+    rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     assert rc == 1
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["status"] == "failed"
     assert receipt["terminal_health"] == "unreachable"
+
+
+# ═════════════════════════ RF3 (R3): backfill/daily store agreement ═══════
+def test_rf3_backfill_refuses_when_resolved_store_disagrees(tmp_path, monkeypatch):
+    import scripts.backfill_thetadata_eod as bf
+
+    own_store = tmp_path / "own_store"
+    other_store = tmp_path / "a_completely_different_store"
+    monkeypatch.setattr(bf, "_store_dir", lambda: own_store)
+    monkeypatch.setattr(bf, "resolve_thetadata_store", lambda **kw: str(other_store))
+    import sys as _sys
+    monkeypatch.setattr(_sys, "argv", ["backfill_thetadata_eod.py"])
+    import collectors.thetadata as real_td
+    monkeypatch.setattr(real_td, "reachable", lambda: True)
+
+    rc = bf.main()
+    assert rc == 1
+    assert not own_store.exists()   # refused before touching its own store at all
+    assert not other_store.exists()
+
+
+def test_rf3_backfill_permits_fresh_install_when_nothing_resolves(tmp_path, monkeypatch):
+    import scripts.backfill_thetadata_eod as bf
+
+    own_store = tmp_path / "own_store"
+    monkeypatch.setattr(bf, "_store_dir", lambda: own_store)
+    monkeypatch.setattr(bf, "resolve_thetadata_store", lambda **kw: None)   # nothing resolves anywhere
+    import sys as _sys
+    monkeypatch.setattr(_sys, "argv", ["backfill_thetadata_eod.py", "--dry-run"])
+    import collectors.thetadata as real_td
+    monkeypatch.setattr(real_td, "reachable", lambda: True)
+    monkeypatch.setattr(bf, "_resolve_universe", lambda extra_roots=None: ["SPY"])
+
+    rc = bf.main()
+    assert rc == 0   # dry-run proceeds normally past the agreement check
+
+
+# ═════════════════════════ HARDENING (R3): lock-open OSError ══════════════
+def test_hardening_daily_oserror_opening_lock_is_failed_not_traceback(store, monkeypatch):
+    _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
+    fake = FakeTd()
+    _install_fake_td(monkeypatch, fake)
+
+    def _boom(*a, **kw):
+        raise OSError(28, "No space left on device")   # ENOSPC
+
+    monkeypatch.setattr(topup, "open", _boom, raising=False)
+    rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
+                           now_fn=lambda: _et(2026, 8, 19, 16, 30))
+    assert rc == 1
+    assert fake.calls == []
+
+
+def test_hardening_legacy_oserror_opening_lock_is_failed_not_traceback(store, monkeypatch):
+    monkeypatch.setattr(topup, "resolve_thetadata_store", lambda **kw: str(store))
+    monkeypatch.setattr(topup, "_backfill_running", lambda: False)
+
+    def _boom(*a, **kw):
+        raise OSError(30, "Read-only file system")
+
+    monkeypatch.setattr(topup, "open", _boom, raising=False)
+    rc = topup.main(["--roots", "SPY", "--date", "2026-08-18"])
+    assert rc == 1
+
+
+def test_hardening_backfill_oserror_opening_lock_is_failed_not_traceback(tmp_path, monkeypatch):
+    import scripts.backfill_thetadata_eod as bf
+
+    own_store = tmp_path / "own_store"
+    monkeypatch.setattr(bf, "_store_dir", lambda: own_store)
+    monkeypatch.setattr(bf, "resolve_thetadata_store", lambda **kw: str(own_store))
+    import sys as _sys
+    monkeypatch.setattr(_sys, "argv", ["backfill_thetadata_eod.py"])
+    import collectors.thetadata as real_td
+    monkeypatch.setattr(real_td, "reachable", lambda: True)
+    monkeypatch.setattr(bf, "_resolve_universe", lambda extra_roots=None: ["SPY"])
+
+    def _boom(*a, **kw):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(topup, "open", _boom, raising=False)
+    rc = bf.main()
+    assert rc == 1
