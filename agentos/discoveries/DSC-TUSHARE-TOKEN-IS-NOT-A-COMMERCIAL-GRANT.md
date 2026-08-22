@@ -8,9 +8,10 @@ claim: >
   DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE records the binding state:
   compliance has already been verified internally and privately and is SATISFIED.
 falsifier: >
-  Only a later explicit Chairman/compliance-owner superseding decision. Public web terms,
-  token behavior, a coding-agent audit, or absence of license bytes in the repository do
-  not reopen the private compliance question.
+  Only a later explicit Chairman/compliance-owner decision superseding
+  agentos/decisions/DEC-CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE.md:1.
+  Public web terms, token behavior, a coding-agent audit, or absence of license bytes in
+  the repository do not reopen the private compliance question.
 so_what: >
   Do not use this historical discovery to demand a vendor letter, license upload,
   authorization receipt, grant-document hash, trust allowlist, or any other disclosure of
@@ -21,13 +22,20 @@ so_what: >
 kind: constraint
 verified_at: 2026-08-21
 verified_by: >
-  Chairman operator override; licensing/compliance verified internally and privately.
+  Chairman operator override 2026-08-21, recorded at
+  agentos/decisions/DEC-CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE.md:1
+  (#6207); licensing/compliance verified internally and privately.
 scope: [macro, mastermind]
 confidence: verified
-superseded_by: DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE
 ---
 
 ## Historical-status tombstone
+
+Schema note: this record carries no `superseded_by` because its replacement is a
+DECISION (`DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`), not a
+discovery, and `superseded_by` accepts only a `DSC:` key. The tombstone therefore
+lives in the claim itself so the record stays visible in compiled bundles while
+being unusable as active authority.
 
 The original 2026-08-19 public-terms inference remains visible in git history only. It is
 not an active compliance rule and must not be revived by Sol, Codex, Fable, research

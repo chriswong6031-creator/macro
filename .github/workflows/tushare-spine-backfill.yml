@@ -9,12 +9,15 @@ name: tushare-spine-backfill
 # WHY THIS EXISTS WHILE THE GATE IS SHUT
 # `collect()` refuses every execute run today: `BULK_HISTORICAL_BACKFILL_READY` is
 # code-reviewed `False` in collectors/china_tushare_spine.py, so an `execute`
-# dispatch raises SpineError before any store or network use (and refuses earlier
-# still without an authorization receipt + separately controlled trust allowlist).
+# dispatch raises SpineError before any store or network use. That gate is purely
+# TECHNICAL — live canary parity, throughput, and range/completeness correctness —
+# and is never a licensing gate: TuShare compliance is CHAIRMAN_VERIFIED_PRIVATE /
+# SATISFIED and is settled outside this repository
+# (DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE).
 # THAT REFUSAL IS THE CORRECT AND EXPECTED RESULT — a red `execute` run here is the
-# gate working, not a broken lane. The lane is pre-wired so the licensed live canary
-# can be dispatched the moment a SEPARATE, separately reviewed authority change opens
-# the gate. Do not "fix" an execute failure by touching the gate constants.
+# gate working, not a broken lane. The lane is pre-wired so the live canary can be
+# dispatched the moment a SEPARATE, separately reviewed change opens the gate on
+# that technical evidence. Do not "fix" an execute failure by touching the gate.
 #
 # SELF-HOSTED IS LOAD-BEARING, NOT A PREFERENCE: the store root
 # ~/.local/share/macro-dashboard/china_tushare_spine/ must PERSIST across runs for the

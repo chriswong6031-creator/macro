@@ -5,20 +5,19 @@ canonical/old-BSE aliases, an SSE=SZSE market-session clock, post-2016 exact-day
 ``bak_basic`` universe witnesses, effective-dated names, and daily quote/limit/
 suspension/ST partitions.  It does not score signals or claim alpha.
 
-No request is permitted without both ``--authorization-receipt`` and a separately
-controlled ``--authorization-trust-allowlist``.  The allowlist must pin the exact
-receipt/document hashes; an institutional grant must also bind the vendor
-entitlement and delegation documents.  A token, injected query, self-authored
-receipt, or boolean flag is not an authorization substitute.  The token itself is
-read only through ``collectors.tushare_client`` and is never accepted, persisted,
-hashed, or logged by this module.
+TuShare licensing/compliance is ``CHAIRMAN_VERIFIED_PRIVATE / SATISFIED``
+(``DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE``).  The controlling
+agreement and its supporting evidence are confidential and outside coding/agent
+scope under NDA/privacy constraints: no runtime path, CLI flag, manifest field,
+or test in this repository may request, inspect, persist, hash, quote, or gate on
+them.  What this module does enforce is technical -- the token is read only
+through ``collectors.tushare_client`` and is never accepted, persisted, hashed, or
+logged here, and every response must bind to its exact request.
 
 The default store is private and outside the repository:
 ``~/.local/share/macro-dashboard/china_tushare_spine`` (override only with
 ``CN_TUSHARE_SPINE_STORE`` or ``--store``).  Its principal layout is::
 
-    authorization_scope_receipt.json
-    authorization_trust_allowlist.json
     reference/current_generation.json
     reference/generations/<generation>/
         source_{bse_mapping,stock_basic,fund_basic}/...
@@ -44,8 +43,8 @@ an uncovered ticker-range campaign block completeness.  Capped whole-market
 responses are discarded as non-authoritative probes before deterministic
 ticker-by-date-range recovery.  Range leaves split below the endpoint cap,
 transpose back to exact-day partitions, and keep each attempt immutable.  The
-operational gate nevertheless remains false pending licensed live canary and
-throughput evidence.
+operational gate nevertheless remains false pending live canary, throughput, and
+correctness evidence.
 
 ``daily`` is unadjusted nominal price authority and retains zero-volume rows with
 ``positive_volume = volume_lots > 0``.  A traded/listing-session claim must filter
@@ -53,22 +52,19 @@ that flag.  ``stk_limit`` is exact legal-band authority.  Canonical event prices
 are integer CNY cents; OHLC must remain inside published bounds and touch/seal
 flags use integer equality.  The Decimal half-up calculator is validator-only.
 
-Usage (no implicit full-history or live authorization)::
+Usage (no implicit full-history collection)::
 
     python -m collectors.china_tushare_spine --start 20110101 --end 20260807 \
-        --authorization-receipt /private/path/tushare-authorization.json \
-        --authorization-trust-allowlist /controlled/path/tushare-grant-pins.json \
         --max-requests 50
     python -m collectors.china_tushare_spine --start 20110101 --end 20260807 \
         --dry-run
 
 The default request cap is intentionally small.  Re-running resumes incomplete
 units.  ``--allow-bulk`` is required above the safety ceiling or for unlimited
-collection.  This code wave made no live vendor call and grants no permission to
-run one.  The code-reviewed trust-root hash set is deliberately empty in this
-foundation commit; a real allowlist hash requires a separate reviewed code change.
-The operational backfill gate is also deliberately false until a separately
-reviewed authority wave proves the range implementation against licensed data.
+collection.  ``BULK_HISTORICAL_BACKFILL_READY`` is deliberately false until a
+separately reviewed wave proves the range implementation against live data with
+canary, throughput, and correctness evidence.  It is a technical readiness gate
+and must never be read, restored, or re-titled as a licensing gate.
 """
 from __future__ import annotations
 
@@ -99,15 +95,13 @@ log = logging.getLogger(__name__)
 
 MANIFEST_SCHEMA_VERSION = "cn_tushare_a_share_spine_manifest.v1"
 STATE_SCHEMA_VERSION = "cn_tushare_a_share_spine_state.v2"
-AUTHORIZATION_SCHEMA_VERSION = "cn_tushare_written_authorization.v1"
-AUTHORIZATION_TRUST_SCHEMA_VERSION = "cn_tushare_authorization_trust_allowlist.v1"
-# Deliberately empty in this foundation-only commit.  A real allowlist file can
-# become a trust root only by adding its exact SHA-256 in a reviewed code change;
-# no CLI flag or environment variable can mint a runtime pin.
-CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256: frozenset[str] = frozenset()
-# Scalable range shards are implemented and synthetic-tested, but no licensed
-# live parity/throughput canary has run.  Keep every network path fail-closed
-# until a separate reviewed authority change flips this immutable gate.
+# TECHNICAL READINESS GATE -- NOT a licensing gate.  Scalable range shards are
+# implemented and synthetic-tested, but no live parity/throughput canary has run,
+# so bulk historical collection stays fail-closed on engineering evidence alone:
+# canary parity, sustained throughput, and range/completeness correctness.  Flip
+# it only in a separate reviewed change that cites those measurements.  Licensing
+# and compliance are settled outside this repository and are never re-litigated
+# here (see the module docstring).
 BULK_HISTORICAL_BACKFILL_READY = False
 AUTHORITY = "context_only"
 SOURCE_NAME = "tushare_pro"
@@ -133,15 +127,6 @@ NAME_HISTORY_START_YEAR = 1990
 NAMECHANGE_MAX_PER_RUN = 5
 FUND_STATUSES = ("L", "D", "I")
 
-AUTHORIZATION_REQUIRED_SCOPE = (
-    "api_access",
-    "bulk_local_retention",
-    "quantitative_strategy_research",
-    "commercial_use",
-    "private_internal_derivatives",
-)
-AUTHORIZATION_RECORDED_SCOPE = (*AUTHORIZATION_REQUIRED_SCOPE, "redistribution", "public_derivatives")
-TUSHARE_SERVICE_AGREEMENT_URL = "https://tushare.pro/document/2?doc_id=405"
 TUSHARE_BAK_BASIC_DOC_URL = "https://tushare.pro/document/2?doc_id=262"
 TUSHARE_FUND_BASIC_DOC_URL = "https://tushare.pro/document/2?doc_id=19"
 SSE_SECURITY_CODE_GUIDE_URL = (
@@ -249,39 +234,6 @@ class SpineError(RuntimeError):
 
 class RequestBudgetExhausted(SpineError):
     """Internal control-flow signal for a clean resumable stop."""
-
-
-@dataclass(frozen=True)
-class AuthorizationGrant:
-    """Out-of-band-pinned written permission; only non-sensitive evidence persists."""
-
-    receipt_sha256: str
-    grant_document_sha256: str
-    trust_allowlist_sha256: str
-    trust_entry_sha256: str
-    trust_allowlist_payload_json: str
-    vendor_entitlement_document_sha256: str | None
-    vendor_delegation_document_sha256: str | None
-    issued_on: str
-    expires_on: str
-    granted_by: str
-    scope: Mapping[str, bool]
-
-    def public_receipt(self) -> dict[str, Any]:
-        return {
-            "schema_version": AUTHORIZATION_SCHEMA_VERSION,
-            "receipt_sha256": self.receipt_sha256,
-            "grant_document_sha256": self.grant_document_sha256,
-            "trust_allowlist_sha256": self.trust_allowlist_sha256,
-            "trust_entry_sha256": self.trust_entry_sha256,
-            "vendor_entitlement_document_sha256": self.vendor_entitlement_document_sha256,
-            "vendor_delegation_document_sha256": self.vendor_delegation_document_sha256,
-            "issued_on": self.issued_on,
-            "expires_on": self.expires_on,
-            "granted_by": self.granted_by,
-            "scope": dict(self.scope),
-            "required_scope_satisfied": all(self.scope[name] for name in AUTHORIZATION_REQUIRED_SCOPE),
-        }
 
 
 @dataclass(frozen=True)
@@ -607,395 +559,6 @@ def _receipt_bytes(path: Path, store: Path) -> bytes:
     raw = path.read_bytes()
     _assert_configured_token_absent(raw, artifact=path.relative_to(store).as_posix())
     return raw
-
-
-def _verified_authorization_document(
-    path_value: Any,
-    expected_hash_value: Any,
-    *,
-    label: str,
-) -> str:
-    document_path = Path(str(path_value)).expanduser()
-    if not document_path.is_absolute() or not document_path.is_file():
-        raise SpineError(f"written authorization {label} must be an existing absolute file")
-    document_raw = document_path.read_bytes()
-    _assert_configured_token_absent(document_raw, artifact=f"authorization_{label}")
-    expected_hash = str(expected_hash_value or "").lower()
-    if not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
-        raise SpineError(f"written authorization {label} hash is invalid")
-    if hashlib.sha256(document_raw).hexdigest() != expected_hash:
-        raise SpineError(f"written authorization {label} hash does not match")
-    return expected_hash
-
-
-def _authorization_claim_sha256(
-    *,
-    receipt_sha256: str,
-    grant_document_sha256: str,
-    vendor_entitlement_document_sha256: str | None,
-    vendor_delegation_document_sha256: str | None,
-    issued_on: str,
-    expires_on: str,
-    granted_by: str,
-    scope: Mapping[str, bool],
-) -> str:
-    """Bind the manifest-visible authorization claims to the pinned grant entry."""
-    if (
-        not isinstance(scope, Mapping)
-        or set(scope) != set(AUTHORIZATION_RECORDED_SCOPE)
-        or any(type(scope[name]) is not bool for name in AUTHORIZATION_RECORDED_SCOPE)
-    ):
-        raise SpineError("authorization claim has invalid scope values")
-    claim = {
-        "receipt_sha256": receipt_sha256,
-        "grant_document_sha256": grant_document_sha256,
-        "vendor_entitlement_document_sha256": vendor_entitlement_document_sha256,
-        "vendor_delegation_document_sha256": vendor_delegation_document_sha256,
-        "issued_on": issued_on,
-        "expires_on": expires_on,
-        "granted_by": granted_by,
-        "scope": {name: bool(scope[name]) for name in AUTHORIZATION_RECORDED_SCOPE},
-    }
-    return hashlib.sha256(_canonical_json_bytes(claim)).hexdigest()
-
-
-def load_authorization_grant(
-    path: Path,
-    *,
-    trust_allowlist: Path,
-    as_of: date,
-) -> AuthorizationGrant:
-    """Validate a written vendor/institution grant before any network or store write.
-
-    The JSON receipt is not an operator terms-accepted switch: it must bind to an
-    independently stored written grant whose SHA-256 matches, and its separate
-    allowlist file must itself be pinned by the immutable code-reviewed trust root.
-    Identity/path text stays outside the spine; only hashes, dates, grant class,
-    and scope booleans are copied into the manifest.
-    """
-    receipt_path = Path(path).expanduser().resolve()
-    trust_path = Path(trust_allowlist).expanduser().resolve()
-    if not receipt_path.is_file():
-        raise SpineError("written TuShare authorization receipt is absent")
-    if not trust_path.is_file() or trust_path == receipt_path:
-        raise SpineError("out-of-band TuShare authorization trust allowlist is absent")
-    raw = receipt_path.read_bytes()
-    _assert_configured_token_absent(raw, artifact="authorization_receipt")
-    trust_raw = trust_path.read_bytes()
-    _assert_configured_token_absent(trust_raw, artifact="authorization_trust_allowlist")
-    trust_allowlist_hash = hashlib.sha256(trust_raw).hexdigest()
-    if trust_allowlist_hash not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256:
-        raise SpineError(
-            "authorization trust allowlist is not pinned by the code-reviewed trust root"
-        )
-    try:
-        payload = json.loads(raw.decode("utf-8"))
-    except Exception as exc:
-        raise SpineError("written TuShare authorization receipt is invalid JSON") from exc
-    _assert_configured_token_absent_logical(payload, artifact="authorization_receipt")
-    if not isinstance(payload, dict) or payload.get("schema_version") != AUTHORIZATION_SCHEMA_VERSION:
-        raise SpineError("written TuShare authorization receipt has an unsupported schema")
-    exact_keys = {
-        "schema_version", "authorization_id", "vendor", "grantee", "grantor",
-        "granted_by", "issued_on", "expires_on", "grant_document_path",
-        "grant_document_sha256", "entitlement_chain", "scope",
-    }
-    if set(payload) != exact_keys:
-        raise SpineError("written TuShare authorization receipt fields are incomplete or unexpected")
-    for field in ("authorization_id", "vendor", "grantee", "grantor"):
-        if not isinstance(payload[field], str) or not payload[field].strip():
-            raise SpineError(f"written TuShare authorization receipt requires {field}")
-    if str(payload["vendor"]).strip().lower() not in {"tushare", "tushare pro"}:
-        raise SpineError("written authorization receipt is not for TuShare")
-    granted_by = str(payload["granted_by"]).strip().lower()
-    if granted_by not in {"vendor", "institution"}:
-        raise SpineError("written authorization must be granted by vendor or institution")
-    issued = _parse_date(payload["issued_on"])
-    expires = _parse_date(payload["expires_on"])
-    if issued > as_of or expires < as_of or expires < issued:
-        raise SpineError("written TuShare authorization is not effective on the collection date")
-    scope = payload.get("scope")
-    if not isinstance(scope, dict) or set(scope) != set(AUTHORIZATION_RECORDED_SCOPE):
-        raise SpineError("written TuShare authorization scope is incomplete")
-    if any(type(scope[name]) is not bool for name in AUTHORIZATION_RECORDED_SCOPE):
-        raise SpineError("written TuShare authorization scope values must be booleans")
-    missing_scope = [name for name in AUTHORIZATION_REQUIRED_SCOPE if not scope[name]]
-    if missing_scope:
-        raise SpineError(
-            "written TuShare authorization lacks required collection scope: "
-            + ",".join(missing_scope)
-        )
-    expected_hash = _verified_authorization_document(
-        payload["grant_document_path"], payload["grant_document_sha256"],
-        label="grant_document",
-    )
-    chain = payload.get("entitlement_chain")
-    chain_keys = {
-        "vendor_entitlement_document_path", "vendor_entitlement_document_sha256",
-        "vendor_delegation_document_path", "vendor_delegation_document_sha256",
-    }
-    if not isinstance(chain, dict) or set(chain) != chain_keys:
-        raise SpineError("written authorization entitlement chain is incomplete")
-    entitlement_hash: str | None = None
-    delegation_hash: str | None = None
-    if granted_by == "vendor":
-        if any(chain[name] is not None for name in chain_keys):
-            raise SpineError("direct vendor grant must not self-declare an institutional chain")
-    else:
-        entitlement_hash = _verified_authorization_document(
-            chain["vendor_entitlement_document_path"],
-            chain["vendor_entitlement_document_sha256"],
-            label="vendor_entitlement_document",
-        )
-        delegation_hash = _verified_authorization_document(
-            chain["vendor_delegation_document_path"],
-            chain["vendor_delegation_document_sha256"],
-            label="vendor_delegation_document",
-        )
-
-    try:
-        trust_payload = json.loads(trust_raw.decode("utf-8"))
-    except Exception as exc:
-        raise SpineError("authorization trust allowlist is invalid JSON") from exc
-    _assert_configured_token_absent_logical(
-        trust_payload, artifact="authorization_trust_allowlist",
-    )
-    if (
-        not isinstance(trust_payload, dict)
-        or set(trust_payload) != {"schema_version", "trusted_grants"}
-        or trust_payload.get("schema_version") != AUTHORIZATION_TRUST_SCHEMA_VERSION
-        or not isinstance(trust_payload.get("trusted_grants"), list)
-        or not trust_payload["trusted_grants"]
-    ):
-        raise SpineError("authorization trust allowlist has an unsupported schema")
-    receipt_hash = hashlib.sha256(raw).hexdigest()
-    expected_entry = {
-        "receipt_sha256": receipt_hash,
-        "grant_document_sha256": expected_hash,
-        "granted_by": granted_by,
-        "vendor_entitlement_document_sha256": entitlement_hash,
-        "vendor_delegation_document_sha256": delegation_hash,
-        "authorization_claim_sha256": _authorization_claim_sha256(
-            receipt_sha256=receipt_hash,
-            grant_document_sha256=expected_hash,
-            vendor_entitlement_document_sha256=entitlement_hash,
-            vendor_delegation_document_sha256=delegation_hash,
-            issued_on=issued.isoformat(),
-            expires_on=expires.isoformat(),
-            granted_by=granted_by,
-            scope=scope,
-        ),
-    }
-    entry_keys = set(expected_entry)
-    matching_entries: list[dict[str, Any]] = []
-    for candidate in trust_payload["trusted_grants"]:
-        if not isinstance(candidate, dict) or set(candidate) != entry_keys:
-            raise SpineError("authorization trust allowlist contains a malformed grant pin")
-        for name in (
-            "receipt_sha256", "grant_document_sha256", "authorization_claim_sha256",
-        ):
-            if not re.fullmatch(r"[0-9a-f]{64}", str(candidate[name] or "").lower()):
-                raise SpineError("authorization trust allowlist contains an invalid hash pin")
-        for name in (
-            "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
-        ):
-            value = candidate[name]
-            if value is not None and not re.fullmatch(r"[0-9a-f]{64}", str(value).lower()):
-                raise SpineError("authorization trust allowlist contains an invalid chain hash pin")
-        canonical_candidate = {
-            **candidate,
-            "receipt_sha256": str(candidate["receipt_sha256"]).lower(),
-            "grant_document_sha256": str(candidate["grant_document_sha256"]).lower(),
-            "vendor_entitlement_document_sha256": (
-                str(candidate["vendor_entitlement_document_sha256"]).lower()
-                if candidate["vendor_entitlement_document_sha256"] is not None else None
-            ),
-            "vendor_delegation_document_sha256": (
-                str(candidate["vendor_delegation_document_sha256"]).lower()
-                if candidate["vendor_delegation_document_sha256"] is not None else None
-            ),
-        }
-        if canonical_candidate == expected_entry:
-            matching_entries.append(canonical_candidate)
-    if len(matching_entries) != 1:
-        raise SpineError(
-            "written authorization is not uniquely pinned by the out-of-band trust allowlist"
-        )
-    trust_entry_hash = hashlib.sha256(
-        _canonical_json_bytes(matching_entries[0])
-    ).hexdigest()
-    return AuthorizationGrant(
-        receipt_sha256=receipt_hash,
-        grant_document_sha256=expected_hash,
-        trust_allowlist_sha256=trust_allowlist_hash,
-        trust_entry_sha256=trust_entry_hash,
-        trust_allowlist_payload_json=trust_raw.decode("utf-8"),
-        vendor_entitlement_document_sha256=entitlement_hash,
-        vendor_delegation_document_sha256=delegation_hash,
-        issued_on=issued.isoformat(),
-        expires_on=expires.isoformat(),
-        granted_by=granted_by,
-        scope={name: bool(scope[name]) for name in AUTHORIZATION_RECORDED_SCOPE},
-    )
-
-
-def _authorization_path(store: Path) -> Path:
-    return store / "authorization_scope_receipt.json"
-
-
-def _authorization_trust_path(store: Path) -> Path:
-    return store / "authorization_trust_allowlist.json"
-
-
-def _validate_public_authorization_trust(
-    public_receipt: Mapping[str, Any], trust_raw: bytes,
-) -> None:
-    trust_hash = hashlib.sha256(trust_raw).hexdigest()
-    if (
-        trust_hash != public_receipt.get("trust_allowlist_sha256")
-        or trust_hash not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256
-    ):
-        raise SpineError("authorization allowlist is not bound to the code-reviewed trust root")
-    try:
-        trust = json.loads(trust_raw.decode("utf-8"))
-    except Exception as exc:
-        raise SpineError("persisted authorization trust allowlist is unreadable") from exc
-    _assert_configured_token_absent_logical(trust, artifact="authorization_trust_allowlist")
-    if (
-        not isinstance(trust, dict)
-        or set(trust) != {"schema_version", "trusted_grants"}
-        or trust.get("schema_version") != AUTHORIZATION_TRUST_SCHEMA_VERSION
-        or not isinstance(trust.get("trusted_grants"), list)
-        or not trust["trusted_grants"]
-    ):
-        raise SpineError("persisted authorization trust allowlist has an unsupported schema")
-    expected = {
-        "receipt_sha256": public_receipt.get("receipt_sha256"),
-        "grant_document_sha256": public_receipt.get("grant_document_sha256"),
-        "granted_by": public_receipt.get("granted_by"),
-        "vendor_entitlement_document_sha256": public_receipt.get(
-            "vendor_entitlement_document_sha256"
-        ),
-        "vendor_delegation_document_sha256": public_receipt.get(
-            "vendor_delegation_document_sha256"
-        ),
-    }
-    expected["authorization_claim_sha256"] = _authorization_claim_sha256(
-        receipt_sha256=str(expected["receipt_sha256"] or ""),
-        grant_document_sha256=str(expected["grant_document_sha256"] or ""),
-        vendor_entitlement_document_sha256=expected[
-            "vendor_entitlement_document_sha256"
-        ],
-        vendor_delegation_document_sha256=expected[
-            "vendor_delegation_document_sha256"
-        ],
-        issued_on=str(public_receipt.get("issued_on") or ""),
-        expires_on=str(public_receipt.get("expires_on") or ""),
-        granted_by=str(expected["granted_by"] or ""),
-        scope=public_receipt.get("scope", {}),
-    )
-    expected_hash = hashlib.sha256(_canonical_json_bytes(expected)).hexdigest()
-    if expected_hash != public_receipt.get("trust_entry_sha256"):
-        raise SpineError("persisted authorization trust-entry hash is inconsistent")
-    matches = 0
-    for candidate in trust["trusted_grants"]:
-        if not isinstance(candidate, dict) or set(candidate) != set(expected):
-            raise SpineError("persisted authorization allowlist contains a malformed entry")
-        for name in (
-            "receipt_sha256", "grant_document_sha256", "authorization_claim_sha256",
-        ):
-            if not re.fullmatch(r"[0-9a-f]{64}", str(candidate.get(name) or "")):
-                raise SpineError("persisted authorization allowlist contains an invalid hash")
-        for name in (
-            "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
-        ):
-            item = candidate.get(name)
-            if item is not None and not re.fullmatch(r"[0-9a-f]{64}", str(item)):
-                raise SpineError("persisted authorization allowlist contains an invalid chain hash")
-        matches += int(candidate == expected)
-    if matches != 1:
-        raise SpineError("persisted authorization is not uniquely present in its pinned allowlist")
-
-
-def _persist_authorization_grant(store: Path, grant: AuthorizationGrant) -> None:
-    if grant.trust_allowlist_sha256 not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256:
-        raise SpineError("authorization grant is not bound to the code-reviewed trust root")
-    public = grant.public_receipt()
-    trust_raw = grant.trust_allowlist_payload_json.encode("utf-8")
-    _validate_public_authorization_trust(public, trust_raw)
-    _atomic_bytes(_authorization_trust_path(store), trust_raw)
-    _atomic_json(_authorization_path(store), public)
-
-
-def _load_persisted_authorization(store: Path) -> dict[str, Any] | None:
-    path = _authorization_path(store)
-    if not path.exists():
-        return None
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except Exception as exc:
-        raise SpineError("persisted authorization scope receipt is unreadable") from exc
-    _assert_configured_token_absent_logical(value, artifact=path.name)
-    required = {
-        "schema_version", "receipt_sha256", "grant_document_sha256", "issued_on",
-        "trust_allowlist_sha256", "trust_entry_sha256",
-        "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
-        "expires_on", "granted_by", "scope", "required_scope_satisfied",
-    }
-    if not isinstance(value, dict) or set(value) != required:
-        raise SpineError("persisted authorization scope receipt is malformed")
-    if value.get("schema_version") != AUTHORIZATION_SCHEMA_VERSION:
-        raise SpineError("persisted authorization scope receipt schema is unsupported")
-    for name in (
-        "receipt_sha256", "grant_document_sha256", "trust_allowlist_sha256",
-        "trust_entry_sha256",
-    ):
-        if not re.fullmatch(r"[0-9a-f]{64}", str(value.get(name) or "")):
-            raise SpineError("persisted authorization scope receipt contains an invalid hash")
-    for name in (
-        "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
-    ):
-        item = value.get(name)
-        if item is not None and not re.fullmatch(r"[0-9a-f]{64}", str(item)):
-            raise SpineError("persisted authorization scope receipt contains an invalid chain hash")
-    if value["trust_allowlist_sha256"] not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256:
-        raise SpineError("persisted authorization is not bound to the code-reviewed trust root")
-    scope = value.get("scope")
-    if (
-        not isinstance(scope, dict)
-        or set(scope) != set(AUTHORIZATION_RECORDED_SCOPE)
-        or any(type(scope[name]) is not bool for name in AUTHORIZATION_RECORDED_SCOPE)
-    ):
-        raise SpineError("persisted authorization scope receipt has invalid scope values")
-    derived_scope_satisfied = all(scope[name] for name in AUTHORIZATION_REQUIRED_SCOPE)
-    if type(value.get("required_scope_satisfied")) is not bool or (
-        value["required_scope_satisfied"] != derived_scope_satisfied
-    ):
-        raise SpineError("persisted authorization scope satisfaction is inconsistent")
-    if not derived_scope_satisfied:
-        raise SpineError("persisted authorization scope receipt does not satisfy required scope")
-    issued = _parse_date(value.get("issued_on"))
-    expires = _parse_date(value.get("expires_on"))
-    if expires < issued:
-        raise SpineError("persisted authorization effective dates are inconsistent")
-    granted_by = value.get("granted_by")
-    entitlement = value.get("vendor_entitlement_document_sha256")
-    delegation = value.get("vendor_delegation_document_sha256")
-    if granted_by == "vendor":
-        if entitlement is not None or delegation is not None:
-            raise SpineError("persisted direct vendor grant contains a false delegation chain")
-    elif granted_by == "institution":
-        if entitlement is None or delegation is None:
-            raise SpineError("persisted institutional grant lacks its vendor delegation chain")
-    else:
-        raise SpineError("persisted authorization grant class is invalid")
-    trust_path = _authorization_trust_path(store)
-    if not trust_path.is_file():
-        raise SpineError("persisted authorization trust allowlist is absent")
-    trust_raw = trust_path.read_bytes()
-    _assert_configured_token_absent(trust_raw, artifact=trust_path.name)
-    _validate_public_authorization_trust(value, trust_raw)
-    return value
 
 
 def _json_safe(value: Any) -> Any:
@@ -2926,15 +2489,7 @@ class TushareAShareSpineCollector:
         query: Callable[..., pd.DataFrame | None] | None = None,
         now: Callable[[], datetime] = _utc_now,
         max_requests: int = DEFAULT_MAX_REQUESTS,
-        authorization: AuthorizationGrant | None = None,
     ) -> None:
-        if authorization is None:
-            raise SpineError("collector requires a verified written authorization grant")
-        if (
-            authorization.trust_allowlist_sha256
-            not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256
-        ):
-            raise SpineError("collector authorization is not bound to the code-reviewed trust root")
         if not BULK_HISTORICAL_BACKFILL_READY:
             raise SpineError(
                 "full-A collector is foundation-only: scalable ticker-range cap fallback "
@@ -2947,7 +2502,6 @@ class TushareAShareSpineCollector:
         self.requests_made = 0
         self.failures: list[dict[str, str]] = []
         self.state = load_state(self.store)
-        self.authorization = authorization
         # Generations are immutable after atomic promotion.  Verify the pointer
         # and every generation artifact once for this collector operation, then
         # pass the pinned id through hot-path lookups instead of reopening the
@@ -4450,7 +4004,6 @@ def _collector_provenance() -> dict[str, Any]:
     query_contract = {
         "endpoint_fields": ENDPOINT_FIELDS,
         "row_caps": SOURCE_ROW_CAPS,
-        "required_authorization_scope": AUTHORIZATION_REQUIRED_SCOPE,
         "normalization_contract": "exact_schema_request_binding_lossless_scope_accounting_v2",
     }
     return {
@@ -4991,19 +4544,6 @@ def build_completeness_manifest(
     session_receipt = _file_receipt(sessions_path, store, ["trade_date"])
     name_history_partitions, name_history_rows, name_history_semantic = _name_history_receipts(store)
     state_receipt = _json_file_receipt(store / "collection_state.json", store)
-    try:
-        authorization = _load_persisted_authorization(store)
-    except SpineError:
-        # Publish an explicit incomplete receipt instead of leaving an older
-        # complete manifest as the apparent last word after auth tampering.
-        authorization = None
-    authorization_as_of = _parse_date(generated_at[:10])
-    authorization_ready = bool(
-        authorization
-        and authorization.get("required_scope_satisfied")
-        and _parse_date(authorization["issued_on"]) <= authorization_as_of
-        and _parse_date(authorization["expires_on"]) >= authorization_as_of
-    )
     request_receipts = _request_receipts_summary(store)
     provenance = _collector_provenance()
     lifecycle = _lifecycle_edge_reconciliation(store, master, start, end)
@@ -5035,15 +4575,12 @@ def build_completeness_manifest(
             else "foundation_only_range_shards_synthetic_no_live_canary"
         ),
         "bulk_historical_backfill_ready": BULK_HISTORICAL_BACKFILL_READY,
-        "authorization": authorization,
-        "authorization_ready": authorization_ready,
         "provenance": provenance,
         "request_receipts": request_receipts,
         "collection_state": state_receipt,
         "requested_range": {"start": start.isoformat(), "end": end.isoformat()},
         "complete": bool(
             BULK_HISTORICAL_BACKFILL_READY
-            and authorization_ready
             and reference_ready
             and endpoints_complete
             and pit_lifecycle["complete"]
@@ -5129,13 +4666,10 @@ def build_completeness_manifest(
                 "sse_code_contract": SSE_SECURITY_CODE_GUIDE_URL,
                 "szse_code_contract": SZSE_SECURITY_CODE_RANGE_URL,
             },
-            "authorization": {
-                "gate": (
-                    "written vendor grant or complete institution entitlement/delegation chain, "
-                    "pinned by a separately controlled out-of-band hash allowlist before first request"
-                ),
-                "service_agreement": TUSHARE_SERVICE_AGREEMENT_URL,
-                "boolean_bypass": False,
+            "compliance": {
+                "status": "CHAIRMAN_VERIFIED_PRIVATE / SATISFIED",
+                "evidence_scope": "confidential_outside_coding_scope_nda_privacy",
+                "runtime_gate": False,
             },
             "cap_fallback": {
                 "endpoints": ["daily", "daily_basic", "stk_limit"],
@@ -5159,7 +4693,7 @@ def build_completeness_manifest(
                 "request_estimate_formula": "H_e + I_e * ceil(S/(C_e-1)) + R_e",
                 "range_shard_implemented": True,
                 "synthetic_verification_complete": True,
-                "licensed_live_canary_complete": False,
+                "live_canary_complete": False,
                 "live_canary_required_for_promotion": True,
             },
             "price_basis": {
@@ -5196,7 +4730,6 @@ def build_completeness_manifest(
         "ore_ledger": {
             "constructed": [
                 "listed+delisted+paused+approved security lifecycle by exchange/status",
-                "written authorization grant-document hash/scope/expiry gate before network",
                 "atomic immutable reference generations plus fund-based out-of-scope identities",
                 "post-2016 exact-day bak_basic PIT A-share universe witness",
                 "lossless source row accounting with unknown quarantine",
@@ -5248,8 +4781,6 @@ def collect(
     allow_bulk: bool = False,
     refresh_reference: bool = False,
     dry_run: bool = False,
-    authorization_receipt: Path | None = None,
-    authorization_trust_allowlist: Path | None = None,
     query: Callable[..., pd.DataFrame | None] | None = None,
     require_token: bool = True,
     now: Callable[[], datetime] = _utc_now,
@@ -5257,8 +4788,10 @@ def collect(
     """Run one bounded/resumable collection wave and publish a manifest.
 
     A missing token is an honest no-op before any store write.  Every real or
-    injected request path still requires a hash-bound written authorization;
-    ``require_token=False`` is not an authorization bypass.
+    injected request path stays bounded by the technical gates: request budget,
+    the safety ceiling, exact request/schema binding, and
+    ``BULK_HISTORICAL_BACKFILL_READY``.  ``require_token=False`` is a test seam
+    for injected responses, not a bypass of those gates.
     """
     start_date = _parse_date(start)
     end_date = _parse_date(end)
@@ -5296,15 +4829,6 @@ def collect(
             "requests_made": 0,
             "error": "TUSHARE_TOKEN is not configured; spine collection made no writes",
         }
-    if authorization_receipt is None or authorization_trust_allowlist is None:
-        raise SpineError(
-            "--authorization-receipt and --authorization-trust-allowlist are required "
-            "before any TuShare request"
-        )
-    grant = load_authorization_grant(
-        Path(authorization_receipt), trust_allowlist=Path(authorization_trust_allowlist),
-        as_of=now().astimezone(timezone.utc).date(),
-    )
     if not BULK_HISTORICAL_BACKFILL_READY:
         raise SpineError(
             "full-A collector is foundation-only: scalable ticker-range cap fallback "
@@ -5313,10 +4837,8 @@ def collect(
 
     store_path = _validate_private_store_path(Path(store))
     with spine_store_lock(store_path):
-        _persist_authorization_grant(store_path, grant)
         collector = TushareAShareSpineCollector(
             store_path, query=query, now=now, max_requests=max_requests,
-            authorization=grant,
         )
         capped = False
         stage = "reference"
@@ -5384,21 +4906,11 @@ def _main() -> None:
                         help="refresh stock_basic and BSE aliases before resuming")
     parser.add_argument("--dry-run", action="store_true",
                         help="network-free/no-write plan summary")
-    parser.add_argument(
-        "--authorization-receipt", type=Path,
-        help="JSON receipt bound to a written vendor/institution authorization grant",
-    )
-    parser.add_argument(
-        "--authorization-trust-allowlist", type=Path,
-        help="separately controlled allowlist pinning the receipt and complete grant chain",
-    )
     args = parser.parse_args()
     result = collect(
         start=args.start, end=args.end, store=args.store, endpoints=args.endpoints,
         max_requests=args.max_requests, allow_bulk=args.allow_bulk,
         refresh_reference=args.refresh_reference, dry_run=args.dry_run,
-        authorization_receipt=args.authorization_receipt,
-        authorization_trust_allowlist=args.authorization_trust_allowlist,
     )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 

@@ -1,16 +1,16 @@
 {
   "generated": {
     "CN_LIMIT_R6_FINAL_ARCHITECTURE_FREEZE_2026-08-19.md": {
-      "bytes": 56890,
-      "sha256": "9115d1c995e1406cf09a1e8fc8b581f0ee755b0728b735168e8d3b436b1c5048"
+      "bytes": 57349,
+      "sha256": "2a6f203e0a758d189c9a12d24d39bdec5f2203b2204594ee9b8770e6e04646c9"
     },
     "CN_LIMIT_R6_FINAL_ARCHITECTURE_REGISTRY_V1_2026-08-19.json": {
-      "bytes": 105476,
-      "sha256": "dd0e2da9cd142a4a98b29126171bd66b3ebba70c651a073203a854eadfab6bfe"
+      "bytes": 105855,
+      "sha256": "cc4faa55b19719f65acc308401fb4a277e09f8065d832269993a90e835f535ae"
     },
     "CN_LIMIT_R6_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md": {
-      "bytes": 57581,
-      "sha256": "1a06753f4bc86e3ef8a10c4ac153e22dd2df574b012b3766b506e3bf9d914e40"
+      "bytes": 57966,
+      "sha256": "500cde59f691034cec9af3b489978e98a3f6babc802c65ac8358fd1e8c961577"
     },
     "CN_LIMIT_R6_GROK_BOUNDED_COMMISSIONS_2026-08-19.md": {
       "bytes": 10421,

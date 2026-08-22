@@ -10,6 +10,35 @@ Clock: official Tushare docs fetched 2026-08-19. Repo evidence is
 
 ---
 
+## 0.0 SUPERSEDED CLAUSES — TuShare compliance is settled (2026-08-21)
+
+**TuShare licensing/compliance: `CHAIRMAN_VERIFIED_PRIVATE / SATISFIED`**
+(`DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`, Chairman override
+2026-08-21). The controlling agreement and its supporting evidence are
+confidential and outside coding/agent scope under NDA/privacy constraints. No
+coding session or runtime gate may request, upload, inspect, persist, hash,
+quote, or re-verify those documents, and **no reading of public vendor terms in
+this census may be used to conclude that the private compliance question is
+open.**
+
+Consequently, every clause in this file that required a **vendor letter**, a
+written commercial/institutional grant, an authorization receipt, or a trust
+allowlist before TuShare-derived use is **NULL / SUPERSEDED** and must not be
+executed. Where a row below still says "vendor letter before ...", read it as
+historical context for the 2026-08-19 census only.
+
+**What survives and remains useful:** the endpoint/SKU inventory, official price
+rows, 积分-tier observations, collector coverage gaps, native-source overlaps,
+and the "do not buy a new SKU" recommendations. Those are procurement and
+engineering findings, not compliance adjudications. `UNKNOWN_RIGHTS` below should
+now be read as **"no collector and/or unverified endpoint coverage"**, never as
+"licensing unresolved".
+
+Unrelated vendors keep their own licensing controls unchanged; this supersession
+is TuShare-specific.
+
+---
+
 ## 0. How to read this matrix
 
 Four statuses, mutually exclusive per row:
@@ -18,7 +47,7 @@ Four statuses, mutually exclusive per row:
 |---|---|
 | **OWNED** | A documented on-account SKU (operator 2026-08-09 entitlement claim ∩ official price table) already feeds a Macro collector. This is **access ownership**, not a commercial grant. |
 | **MISSING** | Official docs list a **separate paid permission** that is **not** on the 2026-08-09 entitlement list. Buying is a new commercial act. |
-| **UNKNOWN_RIGHTS** | The 积分 bundle *probably* already covers the endpoint (so do not buy a new SKU), but there is no collector and/or no written vendor grant for commercial / redistribution / derived-display use. |
+| **UNKNOWN_RIGHTS** | The 积分 bundle *probably* already covers the endpoint (so do not buy a new SKU), but there is no collector and/or endpoint coverage is unverified. (Historical name; per §0.0 this is a COVERAGE status, never a licensing verdict.) |
 | **NOT_NEEDED** | A native keyless source already covers the P0 need under house redistribution posture. Do not buy the Tushare SKU. |
 
 Two rights columns are independent of status:
@@ -104,11 +133,15 @@ Opening a personal SKU "以营利、经营等非个人使用的目的" is an exp
 
 So:
 
-- **Raw redistribution:** UNKNOWN as a written yes; the default ToS reads as **no**.
-- **Derived commercial display / model use:** UNKNOWN as a written yes; the default
-  ToS reads as **personal view-only**. Institutional pricing exists (10×) but **no
-  institutional receipt is in this repository**. The full-A spine allowlist is
-  intentionally empty (`china_tushare_spine.py` + contract §Authorization receipt gate).
+- **Raw redistribution:** the house posture remains **no raw redistribution** — a
+  standing engineering rule, independent of licensing.
+- **Derived commercial display / model use:** governed by the private agreement,
+  which is settled (§0.0) and outside coding scope. Public-terms readings above are
+  historical census context and are not a compliance verdict. The full-A spine no
+  longer carries any license-document gate; its only pre-network gate is the
+  technical `BULK_HISTORICAL_BACKFILL_READY` readiness constant
+  (`china_tushare_spine.py` + contract §"Compliance status and the surviving
+  pre-network gates").
 
 Minutes doc 234 adds a second, endpoint-specific ban: "数据只供策略研究和学习使用，
 不允许作为商业目的."
@@ -128,7 +161,8 @@ Minutes doc 234 adds a second, endpoint-specific ban: "数据只供策略研究�
 
 Prices below are **official personal / official institutional (10×)**. They are
 list prices, not quotes. "Do not buy" is the standing non-goal of this session
-and the recommended action unless a later vendor letter changes a rights cell.
+and the recommended action. (Per §0.0 the former "vendor letter" precondition is
+NULL; rows retaining that phrasing are historical.)
 
 ### 2.1 Institutional visits / research
 
@@ -158,7 +192,7 @@ and the recommended action unless a later vendor letter changes a rights cell.
 | Personal / institutional price | Included in 5000/10000 积分 SKU / 10× institutional. No table-2 SKU. |
 | Raw redistribution | UNKNOWN. Holdings are public-fund disclosures, but Tushare's ToS is still personal. |
 | Derived model/display | UNKNOWN. Confirm commercial use of *derived* crowding / overlap scores. |
-| **Recommended action** | **Do not buy.** Privilege-page confirm 积分 ≥ 5000. Vendor letter before any product display of named-fund holdings. Existing `china_fund_issuance` is issuance, not portfolio. |
+| **Recommended action** | **Do not buy.** Privilege-page confirm 积分 ≥ 5000. [NULL per §0.0: the former "vendor letter before any product display of named-fund holdings" precondition no longer applies.] Existing `china_fund_issuance` is issuance, not portfolio. |
 
 ### 2.3 Announcements
 
@@ -174,7 +208,7 @@ and the recommended action unless a later vendor letter changes a rights cell.
 | Raw redistribution | UNKNOWN / ToS-hostile. House law already forbids PDF bodies (`collectors/china_filings.py`: "No PDF bodies are ever fetched"). |
 | Derived model/display | UNKNOWN for Tushare-sourced titles. CNInfo titles are already collected. |
 | Existing native | `collectors/china_filings.py` → CNInfo `hisAnnouncement/query`, keep-first on `announcementId`, last-7-day forward window, metadata only. Inquiry letters ride the same store (`china_inquiry.py` is deprecated). |
-| **Recommended action** | **Do not buy.** CNInfo already covers the P0 announcement plane under the house metadata-only posture. Buy `anns_d` only if a later wave needs Tushare's 10y PDF-URL backfill **and** a vendor letter allows commercial derived use of titles (never bodies). |
+| **Recommended action** | **Do not buy.** CNInfo already covers the P0 announcement plane under the house metadata-only posture. Buy `anns_d` only if a later wave needs Tushare's 10y PDF-URL backfill. [The former "and a vendor letter allows commercial derived use of titles" precondition is NULL per §0.0; the house metadata-only / never-bodies rule still applies as an engineering rule.] |
 
 ### 2.4 e互动 / 互动易
 
@@ -209,7 +243,7 @@ Split on purpose. Structured forecast tape ≠ full-report library.
 | Personal / institutional price | Included in 10000 特色 (¥1000) / 10× institutional. |
 | Raw redistribution | UNKNOWN. House posture already: machine fields only; never report bodies. |
 | Derived model/display | UNKNOWN for a *commercial* product. Internal display-tier accrual is already how the house uses it. |
-| **Recommended action** | **Do not buy.** Confirm 积分 ≥ 10000 on the privilege page so the 1/hour client throttle is optional rather than load-bearing. Vendor letter before any customer-facing revision widget. |
+| **Recommended action** | **Do not buy.** Confirm 积分 ≥ 10000 on the privilege page so the 1/hour client throttle is optional rather than load-bearing. [NULL per §0.0: the former "vendor letter before any customer-facing revision widget" precondition no longer applies.] |
 
 #### 2.5b Full broker-report library (not on the account)
 
@@ -225,7 +259,7 @@ Split on purpose. Structured forecast tape ≠ full-report library.
 | Raw redistribution | UNKNOWN / ToS-hostile. Abstracts + PDF URLs. House CNH-R6: never republish sell-side text. |
 | Derived model/display | UNKNOWN. |
 | Existing native | `collectors/china_reports.py` → Eastmoney `reportapi.eastmoney.com/report/list` (rating / target / EPS event tape; `pdfUrl` never fetched). |
-| **Recommended action** | **Do not buy.** Eastmoney already supplies the structured event tape. A Tushare PDF library would be a new commercial SKU *and* a redistribution problem. Buy only after a vendor letter that derived counts/revisions (not abstracts) may ship in a commercial product, and only if Eastmoney coverage is proven insufficient. |
+| **Recommended action** | **Do not buy.** Eastmoney already supplies the structured event tape. A Tushare PDF library would be a new commercial SKU *and* a redistribution problem. Buy only if Eastmoney coverage is proven insufficient. [The former vendor-letter precondition on derived counts/revisions is NULL per §0.0; the never-abstracts rule remains an engineering rule.] |
 
 ### 2.6 Named hot-money actors
 
@@ -253,7 +287,7 @@ Split: unnamed LHB tape vs named 游资 roster.
 | Personal / institutional price | No extra SKU if 积分 ≥ 10000 actually unlocks `hm_detail`. If the privilege page shows `hm_detail` locked, that is a **MISSING** convert — still do not buy until the vendor confirms named-actor commercial use. |
 | Raw redistribution | UNKNOWN / high-risk. Named 游资 labels + seat maps are Tushare editorial content. |
 | Derived model/display | UNKNOWN. A commercial "赵老哥 is in this name" chip needs an explicit vendor yes. |
-| **Recommended action** | **Do not buy a new SKU yet.** Privilege-page check: is `hm_detail` already lit at current 积分? Vendor letter before any named-actor display. Eastmoney LHB stays the unnamed tape. |
+| **Recommended action** | **Do not buy a new SKU yet.** Privilege-page check: is `hm_detail` already lit at current 积分? [NULL per §0.0: the former "vendor letter before any named-actor display" precondition no longer applies.] Eastmoney LHB stays the unnamed tape. |
 
 ### 2.7 Holder / top-holder / director trades
 
@@ -269,7 +303,7 @@ Split: unnamed LHB tape vs named 游资 roster.
 | Raw redistribution | UNKNOWN. Named holders and 高管 trades are public-disclosure derived; Tushare ToS still personal. |
 | Derived model/display | UNKNOWN. |
 | Existing native | `china_holder_counts.py` (Eastmoney `RPT_HOLDERNUMLATEST`, PIT class A); `cn_holder_sale_calendar.py` (Eastmoney `RPT_SHARE_HOLDER_INCREASE`, 减持 windows; **NOTICE_DATE is post-sale**, not the 15-day plan announcement). No top-10 named-holder collector. No dedicated 高管-only tape. |
-| **Recommended action** | **Do not buy.** Privilege-page confirm 积分 ≥ 2000 (trivially true if the 10000 claim holds). Do **not** replace Eastmoney 户数 / 减持. If a later wave wants named top-10 or 高管 IN/DE, that is a collector charter on an already-paid 积分 endpoint — still needs a vendor letter for commercial named-holder display. |
+| **Recommended action** | **Do not buy.** Privilege-page confirm 积分 ≥ 2000 (trivially true if the 10000 claim holds). Do **not** replace Eastmoney 户数 / 减持. If a later wave wants named top-10 or 高管 IN/DE, that is a collector charter on an already-paid 积分 endpoint. [The former "still needs a vendor letter for commercial named-holder display" precondition is NULL per §0.0.] |
 
 ### 2.8 Existing premium features (forecast / chips / golden stocks)
 
@@ -309,7 +343,10 @@ and **out of this P0 list**; minutes carry an extra "research/study only" senten
 **Cash outlay implied by this census: ¥0.** The only SKUs that would cost new money
 are table-2 items this census marks NOT_NEEDED or "do not buy."
 
-**Rights outlay implied: one vendor letter**, covering at least:
+**Rights outlay implied: NONE — SUPERSEDED (§0.0).** TuShare compliance is
+`CHAIRMAN_VERIFIED_PRIVATE / SATISFIED`; no vendor letter is required or may be
+requested. The five questions below are retained only as a record of what the
+2026-08-19 census believed was open:
 
 1. Is the current account **personal** or **institutional**?
 2. May Mastermind **retain** 积分-tier rows locally (bulk, append-only, multi-year)?
@@ -320,7 +357,8 @@ are table-2 items this census marks NOT_NEEDED or "do not buy."
 5. If the product is commercial, what is the **institutional** contract and price
    (list = 10× personal) and what written scopes does it add?
 
-Until that letter exists, every OWNED row is **access-owned, rights-unknown**.
+Historical only. Per §0.0 no such letter is required; OWNED rows are access-owned
+and compliance is settled privately.
 
 ---
 

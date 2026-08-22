@@ -1,8 +1,8 @@
 ---
 workstream: "WS:CN-LIMIT-ALPHA"
 session: sol/chairman-tushare-compliance-override-2026-08-21
-model: sol
-ended_because: chairman_override_frozen_for_build
+model: codex
+ended_because: complete
 mission: >
   Execute the Chairman's 2026-08-21 final override: remove the CEO/Codex-generated
   TuShare license-document authorization system from the full-A spine and every active
@@ -22,7 +22,7 @@ changed:
   - {path: agentos/discoveries/DSC-TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT.md, what: "replaced by superseded discovery tombstone; public-terms inference cannot reopen private compliance"}
   - {path: research/cn_limit/TUSHARE_VENDOR_LETTER_PACKET_2026-08-21.md, what: "cancelled; no vendor letter or license upload required"}
 verified:
-  - {claim: "Chairman is final authority for this override", result: "explicit operator instruction 2026-08-21"}
+  - {claim: "Chairman is final authority for this override", command: "read agentos/decisions/DEC-CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE.md", result: "explicit operator instruction 2026-08-21, recorded as the binding DEC on PR #6207"}
 unverified:
   - {claim: "runtime/masterplan cleanup complete", what_would_verify: "the bounded implementation commission below plus tests and stale-reference sweep"}
 unresolved:
@@ -35,6 +35,11 @@ do_not_redo:
   - "Do not reintroduce authorization-receipt/trust-allowlist/license-document gates under a new name."
   - "Do not weaken technical canary, completeness, PIT, source-row accounting, quota/rate or correction controls merely because the licensing gate is removed."
   - "Do not relax DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT."
+danger_areas:
+  - "The license-document gate is removed, not disabled: reintroducing an authorization receipt, trust allowlist, grant-document hash, or any renamed equivalent is blocked by anti-resurrection tests in tests/test_china_tushare_spine.py and violates DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE."
+  - "BULK_HISTORICAL_BACKFILL_READY survives ONLY as a technical readiness gate. Do not flip it because the licensing gate disappeared, and do not re-word it as a licensing gate."
+  - "Private licensing details must never enter this repository, a PR body, a test fixture, or a manifest field. The only publishable fact is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED."
+  - "This override is TuShare-specific: unrelated vendor licensing/rights controls in the same documents stay untouched."
 decisions: ["DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE"]
 ---
 

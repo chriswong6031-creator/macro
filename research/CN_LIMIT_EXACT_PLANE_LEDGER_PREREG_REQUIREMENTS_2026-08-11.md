@@ -225,16 +225,19 @@ Fillability is a **first-class recorded field**, never folded into the outcome.
 
 ## §3 Substrate contract — the reopen precondition
 
-The ledger may be built only on the authorized exact plane defined by
+The ledger may be built only on the exact plane defined by
 `research/CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md`. Required, per that contract:
 
-1. **Authorized, unadjusted TuShare `daily` prices.** Collection is gated on the contract's
-   authorization receipt gate: a private receipt (authorization ID, vendor, grantee, grantor,
-   grant origin, issued/expiry dates, hashed written grant, explicit scope booleans) pinned by
-   a separately controlled, hash-pinned trust allowlist whose own hash must appear in the
-   immutable, code-reviewed trust set. Runtime arguments and environment variables cannot add
-   a trust root, and a self-authored receipt cannot unlock collection. This charter does not
-   weaken, reinterpret, or provide an alternative to that gate.
+1. **Unadjusted TuShare `daily` prices from the technically gated collector.** TuShare
+   licensing/compliance is `CHAIRMAN_VERIFIED_PRIVATE / SATISFIED`
+   (`DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`); the controlling agreement
+   and its evidence are confidential and outside coding/agent scope under NDA/privacy
+   constraints, and no coding session or runtime gate may request or verify them. The former
+   authorization-receipt / trust-allowlist gate this section previously required is NULL and
+   removed from the runtime. Collection remains gated on `BULK_HISTORICAL_BACKFILL_READY`, a
+   TECHNICAL readiness gate (live canary parity, throughput, range/completeness correctness),
+   plus token hygiene, the bounded request budget, and exact request/schema binding. This
+   charter does not weaken, reinterpret, or provide an alternative to those technical gates.
 2. **Same-key vendor `stk_limit` upper/lower limits as the event authority.** Limits are read
    from the vendor, joined one-to-one on the same key as `daily`. Limits are never
    reconstructed from a ratio: effective-dated IPO/ST/board/no-limit state must not be guessed,
@@ -249,8 +252,8 @@ The ledger may be built only on the authorized exact plane defined by
    daily-vs-daily-basic close equality; OHLC bounded inside the exact source interval; and
    `daily_basic.limit_status` domain, direction, and one-price semantics.
 5. **PIT full-universe and effective-date completeness receipts.** The contract's
-   `completeness_manifest.json` must close on its own terms — authorization pins valid at
-   collection time; the operational-backfill code gate separately promoted; reference
+   `completeness_manifest.json` must close on its own terms — the operational-backfill code
+   gate separately promoted on canary/throughput/correctness evidence; reference
    generation, exact calendar, and every required source unit request-bound and complete;
    zero unknown and zero name-orphan counts; post-2016 `bak_basic` witnesses with lifecycle
    and PIT sets reconciling exactly; duplicate-key, dense-key, lifecycle, exact-session,

@@ -3,7 +3,7 @@ key: TUSHARE-ENTITLEMENT
 title: Tushare P0 access vs commercial-rights census
 objective: >
   Know which China P0 Tushare SKUs the account already has, which cost new
-  money, and which commercial-use questions still need a vendor letter.
+  money, and which endpoints still lack collector coverage. (TuShare licensing SUPERSEDED 2026-08-21 by DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE: compliance is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED and no vendor letter is required or may be requested.)
   Done = a single purchase/rights matrix on origin/main. No purchase, no
   collector, no secret written.
 status: done
