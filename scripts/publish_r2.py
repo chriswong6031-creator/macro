@@ -433,12 +433,18 @@ def _uploadable(d: str, base: Path, files: list[Path]) -> list[Path]:
     (AD-1T1 §B/F15) `_writer.lock` (the T1 store's crash-safe advisory flock
     file) is excluded the same way — it is local writer-coordination state,
     never store content, and uploading it would let a stale lock byte ride to
-    R2 with no reader for it."""
+    R2 with no reader for it.
+
+    (RF9, R3) ANY `.tmp`-suffixed name is excluded too — a SIGKILL mid-write
+    (parquet `{YYYY}.parquet.tmp`, or `_manifest.json.tmp`/`_writer.lock.tmp`)
+    can leave one on disk between the sweep and the next publish; a half
+    written file is never legitimate store content."""
     if d not in _DATA_DIRS:
         return files
     store_manifest = base / "_manifest.json"
     writer_lock = base / "_writer.lock"
-    return [p for p in files if p != store_manifest and p != writer_lock]
+    return [p for p in files
+           if p != store_manifest and p != writer_lock and not p.name.endswith(".tmp")]
 
 
 def _manifest_doc(d: str, base: Path, names: list[str]) -> dict:
