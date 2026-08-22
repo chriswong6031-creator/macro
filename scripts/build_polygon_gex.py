@@ -15,6 +15,23 @@ Each run snapshots the configured underlyings' option chains via Polygon and:
      diagnosable REASON census instead of a bare empty snapshot. See _health_dir()
      for why it is a SIBLING of data/polygon_gex/ rather than nested inside it.
 
+AD-1C0.1 (Sol's FROZEN SPEC, Option B, 2026-08-20) replaces the retired same-ET-
+calendar-day replacement predicate with a bounded overnight CAPTURE LEASE plus an
+OI-INTERSECTION same-book proof, so a lawful post-midnight rescue retry of the
+same evening's settled book is no longer refused purely for crossing the ET
+calendar-day boundary. See _within_capture_lease / _same_book_overlap.
+
+Sol review 4989933857 (2026-08-21, four amendments): the lease is now checked
+PRE-FETCH and governs EVERY non-forced write, first writes included, not just
+replacements — a first write made outside the lease (a Saturday/Sunday/Monday-
+preopen run after a failed Friday capture, or a bare ``--date <old-session>``)
+used to bypass the lease entirely and file the CURRENT vendor snapshot under an
+OLD session label, a point-in-time violation. The same-book proof's overlap
+floor is now a true minimum (``max(20, ceil(0.25*stored))``, never a ceiling),
+and every gate decision persists its lease/overlap evidence on the health
+receipt so a refusal or authorization can be audited after vendor state is
+gone. See _within_capture_lease / _same_book_overlap / _lease_audit.
+
 STAMP = THE SESSION THE SNAPSHOT DESCRIBES, NOT THE RUN DATE (2026-08-06 repair).
 The accrual used to stamp ``datetime.now(timezone.utc).date()``. A nightly run that
 lands at 01:24 UTC carries the PREVIOUS ET session's closing chain, so the whole store
@@ -37,10 +54,11 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import os
 import sys
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -414,7 +432,36 @@ def _append_health_attempt(session: date, *, decision: str, health: str,
     session's health history is never reasonless. NEVER mutates the chain
     parquet; this is a sidecar only. Reads through _read_receipt/
     _recover_corrupt_receipt so an append can never itself be the write that
-    silently papers over a corrupt file."""
+    silently papers over a corrupt file.
+
+    `health="absent"` (amendment 1+2, Sol review 4989933857) is a literal
+    used ONLY on a skipped_outside_lease entry for a FIRST WRITE — no stored
+    file existed at all, so there is no stored health to report and carrying
+    forward a census/health from nothing would be dishonest. Every other
+    caller passes a real health verdict (healthy/partial/failed/...).
+
+    `extra` (amendment 4, Sol review 4989933857) is how the capture lease's
+    and same-book proof's evidence survive onto the receipt for later audit,
+    once vendor state is gone. Two dict shapes, both built by the caller and
+    merged verbatim into the entry:
+      * "lease": {"valid": bool, "resolved_session": "<ISO date>",
+        "lease_end_et": "<ISO datetime>", "write_kind": "first_write" |
+        "replacement"} — see _lease_audit(). Present on every decision the
+        lease actually governs: skipped_outside_lease (both first-write and
+        replacement kinds), forced, wrote, replaced_partial,
+        skipped_unverifiable_vintage, skipped_vintage_mismatch. Absent on
+        skipped_already_healthy/skipped_not_better/nothing_captured, which
+        the lease does not gate.
+      * "vintage_proof": {"store_readable": bool, and when readable:
+        "overlap_contracts": int, "required_overlap": int,
+        "stored_contracts": int, "candidate_contracts": int,
+        "oi_mismatch_count": int} — present only on decisions where the
+        same-book proof ran or was attempted (skipped_unverifiable_vintage,
+        skipped_vintage_mismatch, replaced_partial). When the stored parquet
+        itself could not be read, vintage_proof is exactly
+        {"store_readable": False} with no other keys — there was no frame to
+        measure overlap/mismatches against.
+    """
     try:
         attempts = list(_read_receipt(session) or [])
     except _CorruptReceipt as e:
@@ -437,15 +484,229 @@ def _append_health_attempt(session: date, *, decision: str, health: str,
     _write_receipt_attempts(session, attempts)
 
 
-def _et_calendar_date(instant: datetime) -> date:
-    """The RAW ET calendar date of `instant` — deliberately NO weekend/holiday
-    rollback (unlike nyse_calendar.session_date()). M7's same-day vintage guard
-    needs the literal calendar date: a Saturday capture must NOT count as "the
-    same day" as the Friday session it resolves to, or every weekend catch-up
-    run would look like a legitimate same-day recapture window."""
-    if instant.tzinfo is None:
-        instant = instant.replace(tzinfo=timezone.utc)
-    return instant.astimezone(nyse_calendar.ET).date()
+# AD-1C0.1 (Sol's FROZEN SPEC, Option B ruling, 2026-08-20) — the capture lease
+# that REPLACES the retired same-ET-day replacement predicate (the old
+# _et_calendar_date / M7 2026-07-29 guard). The shipped same-day rule refused a
+# lawful post-midnight repair: the production collect job measurably crosses
+# midnight ET on ordinary nights (observed accrual instants 18:20 ET -> 00:42
+# ET), so a partial evening capture followed by a post-midnight rescue retry of
+# the SAME settled book was rejected purely for having crossed the ET calendar-
+# day boundary. LEASE_END_ET_HOUR bounds the window to the overnight hours
+# contiguous with the session evening, BEFORE plausible next-day book mutation
+# — overnight OI propagation, and ~04:00 ET pre-market quoting resuming — so a
+# Sat/Sun/Mon-preopen recapture of a Friday session is still excluded: the
+# lease is "still the same overnight window", not "still the same session".
+LEASE_END_ET_HOUR = 3
+
+# The same-book proof's required overlap (below): a REAL floor, not a ceiling
+# (Sol review 4989933857, amendment 3 — the pre-amendment formula used min(),
+# which made 20 contracts a MAXIMUM evidence requirement: a 10,000-contract
+# book could pass the proof on just 20 shared contracts). The required
+# overlap is now max(OI_OVERLAP_FLOOR_ABS, ceil(OI_OVERLAP_FLOOR_FRACTION *
+# stored's own contract count)) — a QUARTER of the stored capture's own
+# contract count, or 20, whichever is BIGGER — bounded ABOVE by the stored
+# book's own size via the outer min(len(stored), ...) in _same_book_overlap
+# (a 4-contract partial can only ever demand all 4; it is never asked to
+# produce more shared contracts than it has). Below the floor there is not
+# enough shared surface to trust an agreement OR a disagreement either way.
+OI_OVERLAP_FLOOR_ABS = 20
+OI_OVERLAP_FLOOR_FRACTION = 0.25
+
+# The per-contract identity the same-book proof keys on — the parquet
+# schema's own columns (collectors.polygon_options.parse_chain writes these
+# per contract regardless of vendor ticker-string format), NOT strike_ticker:
+# a composite key never depends on one vendor's naming convention.
+_CONTRACT_KEY_COLS = ("underlying", "expiry", "K", "is_call")
+
+
+def _within_capture_lease(session: date, capture_instant: datetime) -> bool:
+    """FROZEN SPEC lease (AD-1C0.1; Sol review 4989933857 amendment 1 widens
+    the scope below): whether `capture_instant` may still lawfully WRITE
+    `session` — a first write (no stored capture at all yet) exactly as much
+    as a REPLACE of a stored partial/unknown_write_interrupted capture. Both
+    prongs are required (AND, not OR):
+      (a) nyse_calendar.expected_last_session(capture_instant) == session --
+          the capture instant's own resolved session must still BE the
+          session it is attempting to write/replace. A capture instant that
+          has rolled onto a NEW session describes a different book entirely
+          (and is a first-write candidate for ITS OWN session, never a
+          write/replacement candidate for one that has already closed out) —
+          this is what refuses an explicit ``--date <old-session>`` first
+          write with no new session-resolution logic needed: prong (a) alone
+          already rejects it.
+      (b) capture_instant, read in ET, is strictly before
+          LEASE_END_ET_HOUR:00 on the CALENDAR day AFTER `session`'s date --
+          a CALENDAR-day boundary, not a next-SESSION one: a session ahead of
+          a market holiday still leases only through the very next calendar
+          day's 03:00 ET, never rolling forward past the holiday.
+    Naive `capture_instant` values are taken as UTC (pipeline convention),
+    matching every other instant handled in this module.
+
+    Amendment 1 (Sol review 4989933857, 2026-08-21): this predicate governs
+    EVERY non-forced write now, checked PRE-FETCH in accrue() — before this
+    amendment it was consulted only after a stored REPLACEABLE capture had
+    already triggered a full re-fetch, so a first write (no stored file, or
+    an old session named via an explicit ``--date`` with no ``--force``) never
+    passed through the lease at all: a Saturday/Sunday/Monday-preopen run
+    after a failed Friday capture filed the CURRENT vendor snapshot under the
+    OLD Friday session label, a point-in-time violation this predicate now
+    prevents for first writes exactly as it always did for replacements.
+    """
+    if capture_instant.tzinfo is None:
+        capture_instant = capture_instant.replace(tzinfo=timezone.utc)
+    if nyse_calendar.expected_last_session(capture_instant) != session:
+        return False
+    lease_end_et = datetime.combine(
+        session + timedelta(days=1), time(LEASE_END_ET_HOUR, 0), tzinfo=nyse_calendar.ET)
+    return capture_instant.astimezone(nyse_calendar.ET) < lease_end_et
+
+
+def _lease_audit(session: date, capture_instant: datetime, write_kind: str) -> dict:
+    """A4 (Sol review 4989933857): the deterministic 'lease' audit dict
+    persisted on every gate decision the capture lease actually governs
+    (skipped_outside_lease, forced, wrote, replaced_partial,
+    skipped_unverifiable_vintage, skipped_vintage_mismatch — see
+    _append_health_attempt's docstring). ``valid`` is the lease predicate's
+    OWN answer, independent of whether a bypass (``--force``) was used to
+    write anyway — a forced write outside the lease therefore visibly carries
+    lease.valid=False alongside decision "forced", which IS the explicit
+    forced-bypass diagnostic the receipt is for. ``write_kind`` is
+    "first_write" when no stored REPLACEABLE capture was in play for this
+    session at gate time, "replacement" otherwise; callers pass it explicitly
+    rather than re-deriving it, since which case applies is already known at
+    every call site."""
+    return {
+        "valid": _within_capture_lease(session, capture_instant),
+        "resolved_session": nyse_calendar.expected_last_session(capture_instant).isoformat(),
+        "lease_end_et": datetime.combine(
+            session + timedelta(days=1), time(LEASE_END_ET_HOUR, 0),
+            tzinfo=nyse_calendar.ET).isoformat(),
+        "write_kind": write_kind,
+    }
+
+
+def _same_book_overlap(stored: pd.DataFrame,
+                       candidate: pd.DataFrame) -> tuple[bool, int, int, int, int, int]:
+    """FROZEN SPEC same-book proof (AD-1C0.1; Sol review 4989933857 amendment
+    3 fixes the floor direction, amendment 4 adds `mismatches`; post-review
+    repair R4 adds `stored_ids`/`candidate_ids`): does `candidate` describe
+    the SAME settled book as `stored`, evaluated only over the contracts they
+    both hold. Pure (no I/O) — the caller reads both frames. Returns
+    (agrees, overlap, floor, mismatches, stored_ids, candidate_ids):
+      * overlap -- the number of shared contracts.
+      * floor -- the required overlap: min(len(stored), max(
+        OI_OVERLAP_FLOOR_ABS, ceil(OI_OVERLAP_FLOOR_FRACTION * stored's own
+        contract count))). Amendment 3 (Sol review 4989933857): the
+        pre-amendment formula used min(OI_OVERLAP_FLOOR_ABS, ceil(...)),
+        which made 20 contracts a MAXIMUM evidence requirement rather than a
+        minimum — a 10,000-contract book could pass on just 20 shared
+        contracts. max() makes the 25% doctrine a REAL floor with an
+        absolute minimum of 20; the outer min(len(stored), ...) still bounds
+        it above by the stored book's own size, so a 4-contract partial only
+        ever needs all 4 and a 1,000-contract book needs 250, not 20.
+      * mismatches -- the count of shared contracts whose open_interest
+        DIFFERS between the two captures, computed over the FULL
+        intersection regardless of whether overlap clears the floor
+        (amendment 4, Sol review 4989933857) — a 19/20 refusal must still
+        show its mismatch count in the receipt, so this is never gated on
+        `overlap >= floor`.
+      * stored_ids / candidate_ids (R4, post-Sol-review repair, 2026-08-21)
+        -- the DEDUPED per-contract identity count this function itself
+        computed `floor` and `overlap` from (``len(s)``/``len(c)`` after the
+        ticker-or-composite dedup above) — NOT the raw row count of the
+        input frame. A parquet/frame can carry more ROWS than distinct
+        contract identities (e.g. a vendor resend), so the caller's own
+        `len(stored)`/`len(candidate)` is a different, non-reproducible
+        number: an auditor recomputing `floor` from a receipt that recorded
+        raw row counts would get a different answer than `floor` actually
+        was computed from. Callers that persist a "contract count" onto the
+        receipt (see accrue()'s vintage_proof) must use THESE, not
+        `len(stored)`/`len(candidate)`, so the receipt stays
+        self-reproducible after vendor state is gone.
+      * agrees -- True only when overlap >= floor AND mismatches == 0.
+        Below the floor, `agrees` is False regardless of what the
+        (too-thin) intersection shows — an underpowered check must never
+        read as a pass.
+
+    F3 (boundary review, 2026-08-20): `stored` with ZERO rows returns
+    (False, 0, 0, 0, 0, 0) immediately — an empty frame vacuously "agrees"
+    with anything under a naive all()-over-nothing check, which is exactly
+    the false-positive this proof exists to prevent. (In practice a
+    REPLACEABLE stored capture always has >0 rows — see _health_verdict —
+    so this is a defense-in-depth guard, not a reachable production path.)
+
+    F1/F7 (dtype symmetry, boundary review): the STORED parquet has already
+    been through _compact()'s float32 downcast of K and oi; a freshly
+    fetched CANDIDATE frame has not. Joining/comparing float32 against
+    float64 directly makes odd-cent (non-dyadic) strikes fail to match on
+    the join key even for the IDENTICAL contract — float64->float32
+    rounding shifts a value like 100.05 by an amount the float64 side never
+    experiences, so the two sides silently land on different float32 grid
+    points. Both K (the join key) and oi (the comparison) are round-tripped
+    through the SAME float32 cast on BOTH sides before anything else
+    happens, so the comparison is exact by construction and never
+    precision- or side-dependent.
+
+    F2 (identity collision, boundary review): _CONTRACT_KEY_COLS
+    (underlying/expiry/K/is_call) is not always a unique contract identity
+    — an adjusted and a standard contract can share all four fields. The
+    vendor's own per-contract ticker (strike_ticker) is therefore the
+    PRIMARY join key wherever it is present and non-null on a given row;
+    rows lacking it fall back to the 4-field composite. Both frames are
+    sorted deterministically (by the 4-field key, then ticker, then oi)
+    BEFORE drop_duplicates, so which row a same-key collision keeps can
+    never depend on the two captures' incidental original row order — a
+    bare positional "keep first" made an order swap alone flip the verdict.
+    """
+    if len(stored) == 0:
+        return False, 0, 0, 0, 0, 0
+
+    cols = list(_CONTRACT_KEY_COLS)
+
+    def _prepared(df: pd.DataFrame) -> pd.DataFrame:
+        out = df[[*cols, "oi"]].copy()
+        out["K"] = out["K"].astype("float32")      # F1: symmetric strike grid
+        out["oi"] = out["oi"].astype("float32")     # F1/F7: symmetric OI grid
+        ticker = (df["strike_ticker"] if "strike_ticker" in df.columns
+                 else pd.Series([None] * len(df), index=df.index))
+        out["_ticker"] = ticker
+        has_ticker = ticker.notna()
+        composite = out[cols].astype(str).agg("|".join, axis=1)
+        # F2: ticker-first identity, composite fallback for rows without one.
+        out["_key"] = composite.mask(has_ticker.to_numpy(), "T:" + ticker.astype(str))
+        # F2: fully deterministic pre-dedup order — never dependent on the
+        # frame's incidental original row order.
+        sort_key = out[cols].astype(str).copy()
+        sort_key["_ticker"] = out["_ticker"].fillna("")
+        sort_key["oi"] = out["oi"]
+        order = sort_key.sort_values(list(sort_key.columns), kind="stable").index
+        out = out.loc[order]
+        return out.drop_duplicates(subset="_key", keep="first")
+
+    s = _prepared(stored)
+    c = _prepared(candidate)
+    merged = s.merge(c, on="_key", how="inner", suffixes=("_stored", "_candidate"))
+    overlap = len(merged)
+    floor = min(len(s), max(OI_OVERLAP_FLOOR_ABS,
+                            math.ceil(OI_OVERLAP_FLOOR_FRACTION * len(s))))
+    # Amendment 4 (Sol review 4989933857): computed over the FULL
+    # intersection regardless of overlap vs floor, so a thin (sub-floor)
+    # refusal still carries its mismatch count for the receipt.
+    mismatches = int((merged["oi_stored"] != merged["oi_candidate"]).sum())
+    stored_ids, candidate_ids = len(s), len(c)
+    if overlap < floor:
+        return False, overlap, floor, mismatches, stored_ids, candidate_ids
+    # F6 (boundary review, ACCEPTED design — no behavior change): a single
+    # differing contract on the intersection refuses the whole replacement,
+    # exact-match, no tolerance band. This fails CLOSED by design — real OI
+    # can legitimately tick between two genuine same-evening captures, so a
+    # strict proof will sometimes reject a lawful rescue rather than risk
+    # accepting an actually-different book. Whether that operational yield
+    # is acceptable in production is a question for real consecutive
+    # captures to answer, not this proof; loosening it is a separate,
+    # deliberate ruling, not a bug fix.
+    agrees = mismatches == 0
+    return agrees, overlap, floor, mismatches, stored_ids, candidate_ids
 
 
 def _drop_orphan_summary_rows(session: date, symbols: set[str]) -> None:
@@ -579,10 +840,27 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
     """Snapshot + persist one SESSION. Returns a small status dict (logging/tests).
 
     `_now` is a private testing hook (the accrual INSTANT used for the health
-    receipt's capture_instant and M7's same-day vintage check) — defaults to the
-    real clock; production callers never pass it.
+    receipt's capture_instant and AD-1C0.1's capture-lease check) — defaults to
+    the real clock; production callers never pass it.
+
+    R1 (post-Sol-review repair, 2026-08-21): ONE CLOCK. A datetime `as_of` IS
+    the accrual instant by this module's own contract (see _resolve_session's
+    docstring) — the lease check, the receipt's capture_instant, and the
+    session resolution below must all read that SAME instant, never a
+    separately-sampled wall clock. Consulting `datetime.now(timezone.utc)`
+    here whenever `_now` was omitted — even when the caller passed a
+    datetime `as_of` — used to refuse the documented `accrue(<instant>)`
+    calling convention outright (the lease's prong (a) compares the WALL
+    clock's resolved session against `asof`, not `as_of`'s own) and opened a
+    settle-boundary race: an `as_of` sampled at 16:59:59.99 ET resolves the
+    prior session while a wall clock read milliseconds later can already have
+    rolled onto today. `_now` remains the private test override; the wall
+    clock is consulted only when the caller supplied neither `_now` nor a
+    datetime `as_of`.
     """
-    now = _now or datetime.now(timezone.utc)
+    now = _now or (as_of if isinstance(as_of, datetime) else datetime.now(timezone.utc))
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
     cfg = config.load().get("polygon")
     if not cfg:
         log.info("polygon: no config section — skip")
@@ -623,13 +901,22 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
     # quota, same as before. A stored REPLACEABLE session (_REPLACEABLE_HEALTHS:
     # partial, or W1's unknown_write_interrupted — a trailing write_pending whose
     # on-disk parquet failed verification) is the one case that needs a fetch
-    # before deciding: only a STRICTLY better capture may replace it (see the
-    # decision block below), so control falls through instead of returning here. A
+    # before deciding: only a STRICTLY better capture, made inside the bounded
+    # overnight LEASE and proven to describe the SAME settled book via an OI-
+    # intersection check (AD-1C0.1 — see _within_capture_lease /
+    # _same_book_overlap), may replace it (see the decision block below), so
+    # control falls through instead of returning here. A
     # LEGACY chain file with no receipt at all is treated as healthy (immutable) —
     # it predates this sidecar and must never be retro-replaced. `--force` keeps
     # full override semantics regardless of any of the above. A CORRUPT receipt
     # (B3) is recovered — preserved aside, never destroyed — and its recovery
     # entry is itself immutable/unknown, never a silent fallback to "healthy".
+    #
+    # Sol review 4989933857 amendment 1: the capture LEASE below now governs
+    # every non-forced write reached past this point — a fresh session with NO
+    # stored file at all (`stored_health` stays None) falls straight through
+    # to the pre-fetch lease gate exactly like a stored REPLACEABLE session
+    # does, first writes included.
     path = _chains_dir() / f"{asof.isoformat()}.parquet"
     existed_before = path.exists()
     stored_attempts: list[dict] | None = None
@@ -659,6 +946,66 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
                  "an unverified interrupted write) — re-fetching to check for a "
                  "strictly-better replacement",
                  asof, stored_health.upper(), SOURCE_HEALTH_FLOOR * 100)
+
+    # UNIFIED PRE-FETCH CAPTURE-LEASE GATE (Sol review 4989933857, amendments
+    # 1+2 — supersedes the retired post-fetch `elif not _within_capture_lease`
+    # branch that used to live inside the decision block below). Checked here,
+    # BEFORE either universe gate and BEFORE client.snapshot(), so it governs
+    # BOTH first writes (stored_health is None — no file existed, or an
+    # explicit `--date <old-session>` named a session the lease's own prong
+    # (a) refuses on its own, no new session-resolution logic needed) AND
+    # replacements (stored_health is one of _REPLACEABLE_HEALTHS here — the
+    # immutable-skip branch above already returned for every case where a
+    # file existed and was NOT replaceable). Two defects this closes:
+    #   (1) a first write outside the lease used to bypass it ENTIRELY — a
+    #       Saturday/Sunday/Monday-preopen run after a failed Friday capture
+    #       filed the CURRENT vendor snapshot under the OLD Friday session
+    #       label, a point-in-time violation.
+    #   (2) even for a replacement, the lease used to be tested only AFTER
+    #       the full vendor fetch below — a categorically-forbidden weekend/
+    #       preopen re-fetch burned the whole universe's API quota before the
+    #       lease ever got a chance to refuse it.
+    # `--force` bypasses this gate exactly as it bypasses everything else
+    # below; a forced write's OWN lease validity is still recorded (via
+    # _lease_audit, in the decision block) rather than skipped over.
+    if not force and not _within_capture_lease(asof, now):
+        # R3: write_kind is derived from `existed_before` (whether a stored
+        # file was on disk at gate time), never from `stored_health` — see
+        # the R3 comment on the write_kind assignment further below for why
+        # stored_health cannot be trusted for this on a forced run. At this
+        # point in the function `force` is always False (this whole branch
+        # is `not force and ...`), so stored_health is exactly
+        # `path.exists() and not force` here — i.e. existed_before — and
+        # this derivation is behaviorally identical to the old one for this
+        # branch; it is just no longer a SEPARATE source of truth from the
+        # one used at the write_kind assignment below.
+        write_kind = "replacement" if existed_before else "first_write"
+        print(f"::notice title=polygon-outside-lease::session {asof}: capture instant "
+              f"{now.isoformat()} ({write_kind}) is outside the AD-1C0.1 capture lease "
+              f"- store left unadvanced", flush=True)
+        log.info("polygon: session %s capture instant %s is outside the capture lease "
+                 "(%s) — refusing to fetch, store left unadvanced",
+                 asof, now.isoformat(), write_kind)
+        # census: honest "no fetch happened" for a first write. A replacement
+        # may carry the stored capture's own census forward, same as the
+        # other skip branches in this function. A first write has no stored
+        # capture to carry forward from, but the universe IS already known
+        # (gex_symbols() resolved fetch-free, before this gate) — R2 (Sol
+        # review 4989933857 follow-up): recording requested_underlyings here
+        # keeps _store_shrink_reference's receipt-side signal alive across a
+        # run that never fetched, instead of minting an all-None receipt
+        # that blinds it to a later session's real collapse (an all-None
+        # entry is invisible to the reference scan, which only looks at
+        # entries carrying an int requested_underlyings).
+        skip_census = (_carry_forward(stored_last) if write_kind == "replacement"
+                       else {"requested_underlyings": len(symbols)})
+        _append_health_attempt(
+            asof, decision="skipped_outside_lease",
+            health=stored_health if stored_health is not None else "absent",
+            census=skip_census, now=now,
+            extra={"lease": _lease_audit(asof, now, write_kind)})
+        return {"status": "outside_lease", "date": asof.isoformat(),
+                "session": asof.isoformat(), "path": str(path)}
 
     # N1 ruling (AD-1C0 round 2): --force bypasses BOTH universe gates below —
     # a forced diagnostic run is the operator explicitly overriding the
@@ -791,12 +1138,38 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
                 "health": health, "census": census}
 
     health = _health_verdict(census["coverage_pct"], len(raw))
+    # A4 (Sol review 4989933857): every decision reached PAST the pre-fetch
+    # lease gate already knows which kind of write it is — "replacement" iff
+    # a stored file was already on disk at gate time, "first_write" when
+    # none existed.
+    #
+    # R3 (post-Sol-review repair, 2026-08-21): derived from `existed_before`
+    # (path.exists() at gate time), NOT `stored_health` — `stored_health`
+    # stays None on EVERY forced run, since the whole `stored_health`-
+    # computing block above is guarded by `if path.exists() and not force:`.
+    # Deriving write_kind from stored_health therefore mislabeled a --force
+    # overwrite of an EXISTING, healthy capture as a "first_write" (the
+    # stored file plainly existed; "first_write" is not just wrong-sounding,
+    # it also lied about the AD-1C0.1 lease/audit trail for the run).
+    # `existed_before` is set once, before the `not force` gating, so it
+    # reports the true on-disk fact regardless of --force.
+    write_kind = "replacement" if existed_before else "first_write"
+    # decision_extra carries this decision's "lease"/"vintage_proof" audit
+    # dicts (A4) through to BOTH possible _append_health_attempt call sites
+    # below (the early skip-return, and the final write-path entry) — set
+    # per-branch below, per the FROZEN SPEC's exact per-decision list.
+    decision_extra: dict | None = None
     if force:
         decision = "forced"
+        # A forced write's OWN lease validity is still recorded — lease.
+        # valid=False alongside decision "forced" IS the explicit forced-
+        # bypass diagnostic the receipt exists to preserve.
+        decision_extra = {"lease": _lease_audit(asof, now, write_kind)}
     elif stored_health not in _REPLACEABLE_HEALTHS:
         # No prior file existed (stored_health is None here — the branch above
         # already returned for every case where a file existed and was immutable).
         decision = "wrote"
+        decision_extra = {"lease": _lease_audit(asof, now, write_kind)}
     else:
         stored_successful = (stored_last or {}).get("successful_underlyings") or 0
         stored_coverage = (stored_last or {}).get("coverage_pct") or 0.0
@@ -805,25 +1178,74 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
                                 or census["coverage_pct"] - stored_coverage >= 0.10))
         if not strictly_better:
             decision = "skipped_not_better"
-        elif _et_calendar_date(now) != asof:
-            # M7 ruling: a partial may be replaced ONLY inside the SAME-DAY
-            # capture window — the new capture_instant's ET calendar date must
-            # equal the session it is replacing. Saturday/Sunday/Monday-preopen
-            # runs all resolve to Friday's session but are NOT Friday; without
-            # this, a stale weekend re-run could keep "improving" a session days
-            # after its real capture window closed. The attempt is still
-            # recorded (skipped_wrong_day), never silently dropped.
-            decision = "skipped_wrong_day"
         else:
-            decision = "replaced_partial"
+            # Sol review 4989933857 amendments 1+2: the lease is now enforced
+            # entirely by the UNIFIED PRE-FETCH GATE above — reaching this
+            # branch at all already proves `force` or
+            # `_within_capture_lease(asof, now)` held, so the retired
+            # post-fetch `elif not _within_capture_lease(...)` branch that
+            # used to live here (producing "skipped_outside_lease" AFTER a
+            # full vendor fetch) has been removed; that decision is now only
+            # ever produced by the pre-fetch gate, before any fetch runs.
+            # What remains here is the SAME-BOOK PROOF (the FROZEN SPEC's
+            # sufficient-evidence condition): the candidate and the
+            # currently-stored capture must agree on per-contract OI over a
+            # big-enough shared surface (see _same_book_overlap). Read the
+            # stored parquet fresh — it has not been overwritten yet at this
+            # point.
+            try:
+                stored_chain_df = pd.read_parquet(path)
+            except Exception as e:  # noqa: BLE001 — an unreadable stored
+                # chain can never be proven same-book; degrade to
+                # unverifiable rather than crash the run.
+                log.warning("polygon: could not read stored chain %s for the "
+                            "same-book proof: %s — treating as unverifiable",
+                            path.name, e)
+                stored_chain_df = None
+            if stored_chain_df is None:
+                decision = "skipped_unverifiable_vintage"
+                decision_extra = {"lease": _lease_audit(asof, now, write_kind),
+                                  "vintage_proof": {"store_readable": False}}
+            else:
+                (agrees, overlap, floor, mismatches, stored_ids,
+                 candidate_ids) = _same_book_overlap(stored_chain_df, raw)
+                # A4: persisted regardless of overlap vs floor — a 19/20
+                # refusal must still show its mismatch count on the receipt.
+                # R4 (post-Sol-review repair, 2026-08-21): stored_contracts/
+                # candidate_contracts record the DEDUPED contract-identity
+                # counts _same_book_overlap itself computed `floor` from
+                # (stored_ids/candidate_ids) — not len(stored_chain_df)/
+                # len(raw), which are raw parquet/frame ROW counts and can
+                # exceed the identity count (e.g. a vendor resend). Recording
+                # the raw row counts here made an auditor's own
+                # min(stored_contracts, max(20, ceil(0.25*stored_contracts)))
+                # recomputation from the receipt disagree with the
+                # required_overlap the receipt itself already reports.
+                vintage_proof = {
+                    "store_readable": True,
+                    "overlap_contracts": overlap,
+                    "required_overlap": floor,
+                    "stored_contracts": stored_ids,
+                    "candidate_contracts": candidate_ids,
+                    "oi_mismatch_count": mismatches,
+                }
+                decision_extra = {"lease": _lease_audit(asof, now, write_kind),
+                                  "vintage_proof": vintage_proof}
+                if overlap < floor:
+                    decision = "skipped_unverifiable_vintage"
+                elif not agrees:
+                    decision = "skipped_vintage_mismatch"
+                else:
+                    decision = "replaced_partial"
 
-    if decision in ("skipped_not_better", "skipped_wrong_day"):
+    if decision in ("skipped_not_better", "skipped_vintage_mismatch",
+                    "skipped_unverifiable_vintage"):
         log.info("polygon: session %s new capture (%d ok, %.1f%% coverage) was not "
                  "applied (%s) — keeping the existing file",
                  asof, census["successful_underlyings"], census["coverage_pct"] * 100,
                  decision)
         _append_health_attempt(asof, decision=decision, health=stored_health,
-                               census=census, now=now)
+                               census=census, now=now, extra=decision_extra)
         return {"status": "already_present", "date": asof.isoformat(), "session": asof.isoformat(),
                 "path": str(path), "health": stored_health, "census": census}
 
@@ -890,7 +1312,8 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
         except Exception as e:  # noqa: BLE001 — one symbol must not abort the rest
             log.warning("polygon summary %s failed: %s", sym, e)
 
-    _append_health_attempt(asof, decision=decision, health=health, census=census, now=now)
+    _append_health_attempt(asof, decision=decision, health=health, census=census, now=now,
+                           extra=decision_extra)
     return {"status": "ok", "rows": int(len(raw)),
             "underlyings": int(raw["underlying"].nunique()),
             "summaries": n_summ, "date": asof.isoformat(),

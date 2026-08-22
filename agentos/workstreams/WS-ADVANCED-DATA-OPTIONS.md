@@ -74,6 +74,7 @@ waves:
   - id: AD-1C0.1
     title: Source-clock integrity + security closure + production commissioning
     status: in_progress
+    pr: 6080
     depends_on: [AD-1C0]
     next_action: >
       Sol handoff 2026-08-20, three jobs. (A) Source-clock adjudication: census
@@ -88,6 +89,20 @@ waves:
       still 403, logs still served, no POLYGON/MASSIVE key in Actions secrets).
       (C) Production commissioning BLOCKED_EXTERNAL until (B) closes; then two
       consecutive healthy scheduled captures (S, D) and AD-1 end-to-end acceptance.
+      Job A RESOLVED 2026-08-20: clock law ruled per
+      DEC:AD1C01-CAPTURE-LEASE-REPLACES-SAME-DAY (Option B — lease to 03:00 ET
+      next day + OI same-book proof); PR #6080 open as a HELD DRAFT for Sol
+      (no arming, per DEC:SOL-HOLD-IS-A-MERGE-BARRIER). Jobs B/C remain
+      BLOCKED_EXTERNAL (probe 08:09Z: chain 403; logs undeleted; no Actions
+      secret registered). Sol review 4989933857 (2026-08-21) = AMEND-THEN-PASS:
+      four amendments implemented (lease gates every non-forced write incl.
+      first writes; refusal pre-fetch with zero vendor calls; overlap floor
+      min(stored, max(20, ceil(0.25*stored))); receipts carry lease +
+      vintage_proof audit dicts) and one boundary-focused adversarial round
+      found F1 two-clock blocker / F2 shrink-tripwire blinding / F3 forced
+      write_kind mislabel / F4 non-reproducible floor — all repaired and
+      flip-verified (196 passed combined). Revised head returned to Sol;
+      PR stays a HELD DRAFT.
   - id: AD-2
     title: Evidence Receipts, Nulls, Lifecycle, Corrections
     status: todo
