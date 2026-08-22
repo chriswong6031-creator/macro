@@ -1,10 +1,10 @@
 {
-  "belief_time": "2026-08-21",
+  "belief_time": "2026-08-22",
   "capability_counts": {
     "measurement_candidate": 499,
     "semantic_only": 142
   },
-  "computed_at": "2026-08-21T03:47:15Z",
+  "computed_at": "2026-08-22T04:50:47Z",
   "counts": {
     "capability": 641,
     "edges": 8292,
@@ -16,10 +16,10 @@
   "engine_version": "theme_graph.v1",
   "era": "observed",
   "identity_resolution_state_counts": {
-    "DEFERRED_IDENTITY_EXCEPTION": 2,
+    "DEFERRED_IDENTITY_EXCEPTION": 1,
     "ENTITY_TYPE_CONFLICT": 1,
-    "NOT_IN_MASTER": 229,
-    "RESOLVED": 2341,
+    "NOT_IN_MASTER": 226,
+    "RESOLVED": 2344,
     "UNSUPPORTED_MARKET": 233
   },
   "lane": "nightly",

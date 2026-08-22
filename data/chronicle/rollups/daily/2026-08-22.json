@@ -1,0 +1,246 @@
+{
+  "as_of": "2026-08-22",
+  "coverage": {
+    "end": "2026-08-21",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-11 to 2026-08-21; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-11"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-21",
+      "events": []
+    },
+    {
+      "date": "2026-08-20",
+      "events": []
+    },
+    {
+      "date": "2026-08-19",
+      "events": [
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-8d809004022b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-iufhbreqa5u-c4615f",
+          "tickers": [],
+          "title": "Goldman Sachs: GS Early Morning Research Recap Ratings and Target Price Changes August 19, 2026 as of 5 30 AM ET",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-18",
+      "events": [
+        {
+          "date": "2026-08-18",
+          "id": "cev-regime_flip-473ee143192e",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-18#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q1 Goldilocks → Q4 Growth-scare",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-18",
+          "id": "cev-research_vault-62df2f0b5d21",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-9vjczla6ost-b0629a",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence | Afternoon Briefing: Tech led Risk off;",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-18",
+          "id": "cev-research_vault-fee179a69bfa",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-4bsngk2htsd-550f52",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence Morning Briefing",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "events": [
+        {
+          "date": "2026-08-17",
+          "id": "cev-regime_flip-ad3dc732fc9d",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-17#regime_canada",
+          "tickers": [],
+          "title": "CANADA regime: Q2 Reflation → Q1 Goldilocks",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-0e79a325181d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bcfi5bg14vs-8d1ece",
+          "tickers": [],
+          "title": "S&T: MS Nick Savone Global Reflections 15 Aug 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-16",
+      "events": []
+    },
+    {
+      "date": "2026-08-14",
+      "events": []
+    },
+    {
+      "date": "2026-08-13",
+      "events": [
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-2f224a033fcb",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-i3beom5skfx-38d370",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intell | Morning Briefing Aug 13",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-7df46c597a12",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-97w8woj8a3k-626676",
+          "tickers": [],
+          "title": "Goldman Sachs: GS TMT SPEC SALES – Adyen topline good enough",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-a8943ef5539e",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bbr0h5reosm-8ac386",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence | Morning Briefing: Futs higher; APAC Tech improves; US Retail returns; CPI post mortem; Stay Bullish",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-d9c35d7bc86d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ecx3kynusdj-b16e59",
+          "tickers": [],
+          "title": "Citi: Citi The Point for Europe Thursday, 13 August 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-12",
+      "events": []
+    },
+    {
+      "date": "2026-08-11",
+      "events": [
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-2b1f0ed9a35c",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-vko7e4zekvn-09bb9d",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence Morning Briefing Aug 11",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-9bcacbdd5d30",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-nal7r2gm25q-0e6c2a",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence Afternoon Briefing Aug 10",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-de5823d063e8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-gbjaregqbxy-f1fd18",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Europe Equity Research | Today’s Morning Meeting",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-f43336e62ed6",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-l2325x4qqpf-27b563",
+          "tickers": [],
+          "title": "Safra: Weekly IMM FX Positioning",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-f4c6344fea98",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-2nidsjv3ldc-d5afbd",
+          "tickers": [],
+          "title": "Goldman Sachs: Standard Nuclear Inc. (STDN) Pureplay nuclear fuel supplier poised to capture significant share in a growing nuclear SMR TAM...",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-f815db8be4fd",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-orhpiqvctdn-48e5d8",
+          "tickers": [],
+          "title": "Societe Generale: Commodity Monthly Review July 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-faf899e46270",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-5kwxuc8wire-3cb59c",
+          "tickers": [],
+          "title": "Goldman Sachs: Global Market Views Same Macro, Different Marks",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-fcf5381d859b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-sqdih2ygcpy-f84de4",
+          "tickers": [],
+          "title": "Natixis: Is China building an alternative monetary system",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-ff28efa99f88",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-jn0ievblc0b-b24755",
+          "tickers": [],
+          "title": "Goldman Sachs: Zain Kuwait (ZAIN)",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}
