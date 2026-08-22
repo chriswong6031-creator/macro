@@ -90,7 +90,7 @@ and `engine/thetadata_store.py` are BYTE-UNCHANGED by this cutover.
 
 | # | Input | Path | Used for | Clock |
 |---|---|---|---|---|
-| 1 | EOD/OI/greeks chains | ThetaData T1 store (`engine.thetadata_store.resolve_thetadata_store()`, tiers `eod/{ROOT}/{YEAR}.parquet`, `oi/{ROOT}/{YEAR}.parquet`, `greeks/{ROOT}/{YEAR}.parquet`); the producer builds its own per-contract frames with narrow projected reads (`chain()`/`make_chain_provider()` are PROHIBITED on this path) | eligibility, V family, salience buckets, Q_skew, Q_oi (S→D pair), C family, market-implied move | S (eod+oi+greeks); D — OI tier ONLY, eod[D]/greeks[D] are NEVER opened |
+| 1 | EOD/OI/greeks chains | ThetaData T1 store (`engine.thetadata_store.resolve_thetadata_store()`, tiers `eod/{ROOT}/{YEAR}.parquet`, `oi/{ROOT}/{YEAR}.parquet`, `greeks/{ROOT}/{YEAR}.parquet`); the producer builds its own per-contract frames with narrow projected reads (`chain()`/`make_chain_provider()` are PROHIBITED on this path) | eligibility, V family, salience buckets, Q_skew, Q_oi (S→D pair), C family, market-implied move | S (eod+oi+greeks); D — OI tier ONLY. No eod[D]/greeks[D] VALUE is ever materialised into a scored frame — the barrier is a FILTERING guarantee, not a never-opened one (corrected wording, review round 2026-08-22): D-dated eod identity/date columns may legitimately be read for §3's session-presence counting, and those counts bind `receipt_id` via `session_presence` |
 | 2 | Spot / summary-spot authority | §D spot ladder: rung 1 = ThetaData greeks `underlying_price` (per-root session median); rung 2 = `engine.price_ladder.resolve_close()` (adjusted-only, exact-date match); rung 3 = absent (drops the name). `summary_spot` = per-session median greeks `underlying_price`, trailing LOOKBACK+1 committed sessions ≤ S (rung-1 raw basis only) | RV for v2, spot-extension c2, flip proximity display | rows ≤ S only |
 | 3 | gex_confirm | **HARD-DISABLED (§E, 2026-08-22).** `site/gex/{SYM}.json`/`engine.gex_confirm.assess` is never read; `gex_verdict` is permanently empty | mechanics context always `None`; `M_gex ≡ 1.0` unconditionally | n/a — never bound to any session |
 | 4 | Earnings calendar | `data/earnings/earnings.parquet` (`next_date` per ticker) | E family event window (S, S+45d] | forward-known |
@@ -117,20 +117,35 @@ actually opened** (input #1): all sessions ≤ S consumed for d1/d3/Q_oi/skew
 HISTORY across the `eod`/`oi`/`greeks` tiers, plus D's `oi` tier alone. A
 historical (< S) session contributes to every history-dependent feature and is
 hashed into the closure the same as S itself (the F1 fix, preserved verbatim
-across the cutover) — mutating one moves `receipt_id`; D's `eod`/`greeks` tiers
-are structurally never opened, so mutating them can never move anything (spec
-§B leak proof). The producer hashes exactly this consumed set (never the whole
-store) into a deterministic `source_manifest` (§5) and folds a merkle-style
-aggregate root per domain (`gex_summary`, `gex_confirm`, and `chains`) into
-`input_receipts` — see §5's `receipt_id` formula, which already hashes the full
-`input_receipts` list, so the three roots are what actually binds them.
-`gex_confirm`'s domain is permanently empty (§E hard-disable). `input_receipts`
-also carries a **`universe_resolution`** entry (F1): `sha256
+across the cutover) — mutating one moves `receipt_id`. D's `eod`/`greeks` tiers
+are never MATERIALISED into any scored frame — every VALUE load stays bounded
+≤ S — but the leak barrier is a FILTERING guarantee, not a never-opened one
+(corrected wording, review round 2026-08-22): session-presence counting for the
+§3 pair predicate necessarily reads identity/date columns across the candidate
+range in every tier, including a D-dated eod probe when such rows exist, and
+those presence counts bind into the **`session_presence`** receipt below — so a
+D-dated row-population change that could move `as_of_session` still always
+moves `receipt_id`, even though it can never move a VALUE into the board. The
+producer hashes exactly this consumed set (never the whole store) into a
+deterministic `source_manifest` (§5) and folds a merkle-style aggregate root
+per domain (`gex_summary`, `gex_confirm`, and `chains`) into `input_receipts`
+— see §5's `receipt_id` formula, which already hashes the full `input_receipts`
+list, so the three roots are what actually binds them. `gex_confirm`'s domain
+is permanently empty (§E hard-disable). `input_receipts` also carries a
+**`universe_resolution`** entry (F1): `sha256
 (canonical_json(sorted(universe_list))) + count` over the resolved universe (input
 #7) — the resolved universe now binds into `receipt_id` too, same as every other §2
-source — plus AD-1T0's **`store_resolution`** (which ThetaData store path/source
-resolved) and **`spot_authority`** (per-symbol spot rung 1/2/3 used, sha256 over
-the rung map — spot is score-affecting and must bind, spec §F).
+source — plus AD-1T0's **`store_resolution`** (the resolver SOURCE TAG —
+env/data_dir/ops-wt — never the absolute path, so a host/path migration with
+identical data does not churn `receipt_id`; the resolved absolute path and any
+corrupt/unreadable year-file count are recorded in the diagnostic `_run` block
+and the receipt's own `corrupt_files` count, never only a debug log, review
+round m5/m6), **`spot_authority`** (per-symbol spot rung 1/2/3 used, sha256 over
+the rung map, AND — for every rung-2 symbol — the consumed resolved close
+VALUE, the ladder `price_source` tag, and the series last index date, so a
+rung-2 close change moves `receipt_id`, review round BLOCKER B2), and
+**`session_presence`** (sha256 over the ordered per-candidate `(session,
+n_eod, n_oi)` counts consumed by the §3 predicate, review round M1).
 
 **F2a — universe resolution fails CLOSED (producer-only).** After resolving input
 #7, if the config says `include_baskets: true` but the resolved universe came back
