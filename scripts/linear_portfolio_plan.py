@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -24,10 +25,13 @@ PLAN_SCHEMA = "linear_portfolio_plan.v1"
 RECEIPT_SCHEMA = "linear_portfolio_plan_receipt.v1"
 LINEAR_SNAPSHOT_SCHEMA = "linear_portfolio_snapshot.v1"
 GITHUB_SNAPSHOT_SCHEMA = "github_portfolio_snapshot.v1"
+
 ACTIVE = frozenset({"active", "blocked", "awaiting_ci", "awaiting_review"})
 CANDIDATE = frozenset({"proposed"})
 EXCLUDED = frozenset({"done", "parked", "killed"})
 TERMINAL_WAVES = frozenset({"done", "dropped"})
+GATE_EXPECTING_STATUS = frozenset({"blocked", "awaiting_ci", "awaiting_review"})
+
 STATUS_CLASS = {
     "active": "started",
     "blocked": "paused",
@@ -43,12 +47,16 @@ STATUS_CLASS = {
 class PlanError(RuntimeError):
     """Deterministic, machine-readable refusal to emit a green plan."""
 
-    def __init__(self, failures: list[dict[str, str]]) -> None:
+    def __init__(self, failures: list[dict[str, Any]]) -> None:
         self.failures = tuple(failures)
         super().__init__(f"linear portfolio plan refused: {len(failures)} hard defect(s)")
 
     def as_dict(self) -> dict[str, Any]:
-        return {"schema": PLAN_SCHEMA, "status": "refused", "failures": list(self.failures)}
+        return {
+            "schema": PLAN_SCHEMA,
+            "status": "refused",
+            "failures": list(self.failures),
+        }
 
 
 def clean(value: Any) -> str:
@@ -84,7 +92,12 @@ def load_json_witness(
     code: str,
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
     if path is None or not path.exists():
-        return None, [{"code": f"{code}_unavailable", "path": path.name if path else None}]
+        return None, [
+            {
+                "code": f"{code}_unavailable",
+                "path": path.name if path else None,
+            }
+        ]
     try:
         doc = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -121,7 +134,10 @@ def generated_statuses(
         key = row["key"]
         if key in out:
             warnings.append(
-                {"code": "generated_state_duplicate_key", "workstream_key": f"WS:{key}"}
+                {
+                    "code": "generated_state_duplicate_key",
+                    "workstream_key": f"WS:{key}",
+                }
             )
             continue
         out[key] = row["status"]
@@ -156,14 +172,48 @@ def non_done_waves(rec: Mapping[str, Any]) -> list[dict[str, Any]]:
 
 
 def gate_observation(rec: Mapping[str, Any]) -> dict[str, Any]:
+    """Project only explicit typed sources; never infer a gate kind from prose."""
     needs = rec.get("needs_ceo")
-    if not isinstance(needs, dict):
-        return {"typed_source": None, "projection": "not_inferred"}
+    if isinstance(needs, dict):
+        return {
+            "typed_source": "needs_ceo",
+            "projection": "observation_only",
+            "question": clean(needs.get("question")),
+            "recommendation": clean(needs.get("recommendation")),
+        }
+
+    blocked_by = rec.get("blocked_by")
+    if isinstance(blocked_by, list) and blocked_by:
+        return {
+            "typed_source": "blocked_by",
+            "projection": "observation_only",
+            "causes": [clean(item) for item in blocked_by if clean(item)],
+        }
+
+    for wave in rec.get("waves") or []:
+        if isinstance(wave, dict) and wave.get("status") == "awaiting_ci":
+            return {
+                "typed_source": "wave_status",
+                "projection": "observation_only",
+                "wave_id": str(wave.get("id") or ""),
+                "wave_status": "awaiting_ci",
+            }
+
+    return {"typed_source": None, "projection": "not_inferred"}
+
+
+def _typed_gate_warning(
+    key: str,
+    status: str,
+    observation: Mapping[str, Any],
+) -> dict[str, Any] | None:
+    if status not in GATE_EXPECTING_STATUS or observation.get("typed_source") is not None:
+        return None
     return {
-        "typed_source": "needs_ceo",
-        "projection": "observation_only",
-        "question": clean(needs.get("question")),
-        "recommendation": clean(needs.get("recommendation")),
+        "code": "typed_gate_source_missing",
+        "workstream_key": f"WS:{key}",
+        "canonical_status": status,
+        "behavior": "not_inferred_from_prose",
     }
 
 
@@ -181,6 +231,7 @@ def project_row(
     digest = source_hash(path)
     objective = clean(rec.get("objective")) or title
     summary = objective if len(objective) <= 240 else objective[:237].rstrip() + "..."
+    gate = gate_observation(rec)
     managed = "\n".join(
         [
             "<!-- mastermind-portfolio-projector:managed:v1 -->",
@@ -208,7 +259,7 @@ def project_row(
         "source_path": source_path,
         "source_content_sha256": digest,
         "non_done_waves": non_done_waves(rec),
-        "gate_observation": gate_observation(rec),
+        "gate_observation": gate,
         "desired_project_name": f"WS:{key} — {title}",
         "desired_project_summary": summary,
         "desired_project_status_class": STATUS_CLASS[status],
@@ -216,6 +267,7 @@ def project_row(
         "projection_warnings": [],
     }
     warnings: list[dict[str, Any]] = []
+
     if generated is not None and generated != status:
         warning = {
             "code": "generated_state_disagrees_with_direct_record",
@@ -225,18 +277,63 @@ def project_row(
         }
         warnings.append(warning)
         row["projection_warnings"].append(warning["code"])
+
+    gate_warning = _typed_gate_warning(key, status, gate)
+    if gate_warning is not None:
+        warnings.append(gate_warning)
+        row["projection_warnings"].append(gate_warning["code"])
+
     return row, warnings
+
+
+def _is_workstream_path(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to((root / "workstreams").resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _hard_failure(problem: Any, root: Path) -> dict[str, Any]:
+    """Normalize Agent OS validator findings into the frozen P0 failure vocabulary."""
+    code = "agentos_validation_error"
+    if _is_workstream_path(problem.path, root):
+        if problem.rule == "duplicate-key":
+            code = "duplicate_workstream_key"
+        elif problem.rule == "bad-enum" and "'status'" in problem.message:
+            code = "unknown_canonical_status"
+        else:
+            code = "malformed_workstream_record"
+    return {
+        "code": code,
+        "path": rel(problem.path, root),
+        "source_rule": problem.rule,
+        "message": problem.message,
+    }
+
+
+def _snapshot_status_class(row: Mapping[str, Any]) -> str | None:
+    value = row.get("status_class")
+    return value if isinstance(value, str) and value else None
 
 
 def linear_drift(
     snapshot: Mapping[str, Any] | None,
     active: Sequence[Mapping[str, Any]],
+    excluded: Sequence[Mapping[str, Any]] = (),
 ) -> list[dict[str, Any]]:
+    """Compare an externally normalized read-only Linear project snapshot.
+
+    ``status_class`` is optional for backwards-compatible fixtures. When supplied it
+    lets a completed/canceled historical project agree with an excluded canonical
+    lifecycle state instead of being misreported as an extra live project.
+    """
     if snapshot is None:
         return []
     rows = snapshot.get("projects")
     if not isinstance(rows, list):
         return [{"code": "linear_snapshot_missing_projects"}]
+
     current: dict[str, list[Mapping[str, Any]]] = {}
     warnings: list[dict[str, Any]] = []
     for index, row in enumerate(rows):
@@ -244,14 +341,18 @@ def linear_drift(
             warnings.append({"code": "linear_snapshot_bad_project", "index": index})
             continue
         current.setdefault(row["workstream_key"], []).append(row)
+
     desired = {row["workstream_key"]: row for row in active}
+    excluded_by_key = {row["workstream_key"]: row for row in excluded}
+
     for key in sorted(desired):
         matches = current.get(key, [])
         if not matches:
             warnings.append(
                 {"code": "existing_project_binding_missing", "workstream_key": key}
             )
-        elif len(matches) > 1:
+            continue
+        if len(matches) > 1:
             warnings.append(
                 {
                     "code": "existing_project_binding_ambiguous",
@@ -259,17 +360,50 @@ def linear_drift(
                     "count": len(matches),
                 }
             )
-        elif matches[0].get("name") != desired[key]["desired_project_name"]:
+            continue
+
+        match = matches[0]
+        if match.get("name") != desired[key]["desired_project_name"]:
             warnings.append(
                 {
                     "code": "project_name_drift",
                     "workstream_key": key,
-                    "current": matches[0].get("name"),
+                    "current": match.get("name"),
                     "desired": desired[key]["desired_project_name"],
                 }
             )
+        current_class = _snapshot_status_class(match)
+        desired_class = desired[key]["desired_project_status_class"]
+        if current_class is not None and current_class != desired_class:
+            warnings.append(
+                {
+                    "code": "project_status_drift",
+                    "workstream_key": key,
+                    "current": current_class,
+                    "desired": desired_class,
+                }
+            )
+
     for key in sorted(set(current) - set(desired)):
+        matches = current[key]
+        excluded_row = excluded_by_key.get(key)
+        if len(matches) == 1 and excluded_row is not None:
+            current_class = _snapshot_status_class(matches[0])
+            desired_class = excluded_row["desired_project_status_class"]
+            if current_class is not None:
+                if current_class != desired_class:
+                    warnings.append(
+                        {
+                            "code": "project_lifecycle_drift",
+                            "workstream_key": key,
+                            "current": current_class,
+                            "desired": desired_class,
+                            "canonical_status": excluded_row["canonical_status"],
+                        }
+                    )
+                continue
         warnings.append({"code": "would_deactivate_or_archive", "workstream_key": key})
+
     return warnings
 
 
@@ -283,11 +417,7 @@ def compile_plan(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     store = agentos.load_store(store_root, programs)
     hard = [
-        {
-            "path": rel(problem.path, store.root),
-            "rule": problem.rule,
-            "message": problem.message,
-        }
+        _hard_failure(problem, store.root)
         for problem in sorted(
             store.problems,
             key=lambda item: (item.path.as_posix(), item.rule, item.message),
@@ -304,12 +434,14 @@ def compile_plan(
     )
     generated, generated_warnings = generated_statuses(generated_doc)
     warnings.extend(generated_warnings)
+
     linear, linear_warnings = load_json_witness(
         linear_snapshot_path,
         LINEAR_SNAPSHOT_SCHEMA,
         "linear_snapshot",
     )
     warnings.extend(linear_warnings)
+
     _github, github_warnings = load_json_witness(
         github_snapshot_path,
         GITHUB_SNAPSHOT_SCHEMA,
@@ -321,6 +453,7 @@ def compile_plan(
     candidates: list[dict[str, Any]] = []
     excluded: list[dict[str, Any]] = []
     workstreams = store.of_type("WS")
+
     for key in sorted(workstreams):
         rec = workstreams[key]
         status = rec.get("status")
@@ -328,12 +461,14 @@ def compile_plan(
             raise PlanError(
                 [
                     {
+                        "code": "unknown_canonical_status",
                         "path": rel(store.paths[f"WS/{key}"], store.root),
-                        "rule": "unknown-canonical-status",
+                        "source_rule": "projector-status-law",
                         "message": f"status {status!r} has no {PLAN_SCHEMA} ruling",
                     }
                 ]
             )
+
         row, row_warnings = project_row(
             key,
             rec,
@@ -342,6 +477,7 @@ def compile_plan(
             generated.get(key),
         )
         warnings.extend(row_warnings)
+
         if status in ACTIVE:
             active.append(row)
         elif status in CANDIDATE:
@@ -378,8 +514,10 @@ def compile_plan(
             }
             for key in sorted(direct - set(generated))
         )
-    warnings.extend(linear_drift(linear, active))
+
+    warnings.extend(linear_drift(linear, active, excluded))
     warnings = sorted(warnings, key=canonical_bytes)
+    warning_counts = dict(sorted(Counter(row["code"] for row in warnings).items()))
 
     semantic: dict[str, Any] = {
         "schema": PLAN_SCHEMA,
@@ -392,6 +530,7 @@ def compile_plan(
             "review_candidates": len(candidates),
             "excluded_projects": len(excluded),
             "warnings": len(warnings),
+            "warning_counts": warning_counts,
             "canonical_status_counts": {
                 status: sum(
                     1 for rec in workstreams.values() if rec.get("status") == status
@@ -410,6 +549,7 @@ def compile_plan(
         "validator_warning_count": sum(
             1 for problem in store.problems if not problem.hard
         ),
+        "warning_counts": warning_counts,
         "generated_state_supplied": generated_state_path is not None,
         "linear_snapshot_supplied": linear_snapshot_path is not None,
         "github_snapshot_supplied": github_snapshot_path is not None,
@@ -487,6 +627,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--report-output")
     parser.add_argument("--receipt-output")
     args = parser.parse_args(argv)
+
     try:
         plan, receipt = compile_plan(
             Path(args.root),
@@ -501,6 +642,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             + "\n"
         )
         return 2
+
     write(args.json_output, semantic_json(plan))
     if args.report_output:
         write(args.report_output, markdown_report(plan))
