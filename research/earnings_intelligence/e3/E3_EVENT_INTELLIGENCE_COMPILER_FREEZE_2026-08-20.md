@@ -1,7 +1,7 @@
 # E3 Event Intelligence Compiler Freeze
 
 **Wave:** E3-0 · **Date:** 2026-08-20 · **Runtime mutation:** none  
-**Status:** DRAFT · HOLD-FOR-SOL · do not merge until Sol accepts  
+**Status:** RATIFIED · ON_MAIN via #6161 squash-merge `22686d255eb047cf5bffc91a35984515acb3d466`  
 **Decision:** `DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER`  
 **Workstream:** `WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER`  
 **Program:** `earnings-intelligence` (existing key; no second program)  
