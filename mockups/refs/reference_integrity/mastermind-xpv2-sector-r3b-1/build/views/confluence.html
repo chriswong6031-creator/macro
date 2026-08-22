@@ -33,10 +33,11 @@
    Action view stands alone. Duplicate identical rules are inert. */
 .r3-view--action .r3-rcpt{ appearance:none; display:inline-flex; align-items:center;
   justify-content:center; width:44px; height:44px; margin:-14px -13px; padding:0;
-  background:none; border:0; cursor:help; flex:none; vertical-align:middle; }
+  background:none; border:0; cursor:help; flex:none; vertical-align:middle;
+  position:relative; }   /* R3B1-09 — see the twin rule's note in overview.html */
 .r3-view--action .r3-rcpt::before{ content:"?"; display:flex; align-items:center;
   justify-content:center; width:16px; height:16px; border:1px solid var(--line);
-  border-radius:50%; font-size:9.5px; font-weight:700; color:var(--muted);
+  border-radius:50%; font-size:var(--fs-micro); font-weight:700; color:var(--muted);   /* R3B1-11: ramp floor */
   transition:color var(--t-fast) var(--ease-std), border-color var(--t-fast) var(--ease-std); }
 .r3-view--action .r3-rcpt:hover::before,
 .r3-view--action .r3-rcpt[aria-expanded="true"]::before{

@@ -36,10 +36,16 @@
    for target size; negative margins give the visual rhythm back. */
 .r3-view--action .r3-rcpt{ appearance:none; display:inline-flex; align-items:center;
   justify-content:center; width:44px; height:44px; margin:-14px -13px; padding:0;
-  background:none; border:0; cursor:help; flex:none; vertical-align:middle; }
+  background:none; border:0; cursor:help; flex:none; vertical-align:middle;
+  /* R3B1-09: anchors this control's own `.r3-vh` accessible-name span INSIDE its
+     box. A statically-positioned parent lets that 1px absolute span resolve
+     against a distant ancestor and land at the page's right edge — the classic
+     one-pixel document overflow, the same defect money.html already documents on
+     `.mny-leg > .fig`, and measured here at the 320/200% and 390/200% axes. */
+  position:relative; }
 .r3-view--action .r3-rcpt::before{ content:"?"; display:flex; align-items:center;
   justify-content:center; width:16px; height:16px; border:1px solid var(--line);
-  border-radius:50%; font-size:9.5px; font-weight:700; color:var(--muted);
+  border-radius:50%; font-size:var(--fs-micro); font-weight:700; color:var(--muted);   /* R3B1-11: ramp floor */
   transition:color var(--t-fast) var(--ease-std), border-color var(--t-fast) var(--ease-std); }
 .r3-view--action .r3-rcpt:hover::before,
 .r3-view--action .r3-rcpt[aria-expanded="true"]::before{
@@ -135,9 +141,17 @@ html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text
 [data-view="overview"] .r3-ov-do{ grid-column:1 / -1; display:flex; align-items:center;
   flex-wrap:wrap; gap:var(--sp-3) var(--sp-5); margin-top:2px; padding-top:12px;
   border-top:1px dashed color-mix(in srgb, var(--line) 85%, transparent); }
-[data-view="overview"] .r3-ov-size{ display:flex; align-items:center; gap:10px; min-width:0; }
-[data-view="overview"] .r3-ov-sizetxt{ font-size:var(--fs-md); font-weight:700;
-  letter-spacing:-.01em; line-height:1.3; }
+/* R3B1-09: the directive is a THREE-PART row — gauge, sentence, receipt — and at
+   the 320-physical/200% axis (a 160 CSS px reflow width) all three cannot share
+   one line: the receipt's 44px target is 27% of the whole viewport, so it hung
+   25px past the document edge. It wraps to its own line instead of shrinking,
+   because the touch target is the one dimension here that may not be traded
+   away. `min-width:0` on the sentence lets it be the part that gives first, so
+   the wrap only happens once the sentence has actually run out of room. */
+[data-view="overview"] .r3-ov-size{ display:flex; align-items:center; flex-wrap:wrap;
+  gap:6px 10px; min-width:0; max-width:100%; }
+[data-view="overview"] .r3-ov-sizetxt{ min-width:0; font-size:var(--fs-md); font-weight:700;
+  letter-spacing:-.01em; line-height:1.3; overflow-wrap:anywhere; }
 [data-view="overview"] .r3-ov-sizetxt .tnum{ font-variant-numeric:tabular-nums; }
 /* the gauge: a 100%-of-normal track carrying the producer's own gross_scalar as
    a filled proportion. Achromatic on purpose — the same lawful magnitude
@@ -154,9 +168,20 @@ html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text
    figure column's two-value stack, the fold control and the trace panel. */
 [data-view="overview"] .r3-cols{ grid-template-columns:minmax(0,1.6fr) 74px minmax(0,1.25fr) 16px; }
 [data-view="overview"] .r3-colfig{ text-align:right; }
-[data-view="overview"] .r3-colfig em{ display:block; font-style:normal; font-size:9px;
-  font-weight:600; letter-spacing:.03em; text-transform:none; line-height:1.25;
-  color:color-mix(in srgb, var(--muted) 78%, transparent); }
+/* R3B1-11 · the board's unit line ("20d vs market" / "20日对比市场").
+   It carried the artifact's ONLY both-theme AA failure — 3.91:1 dark / 3.43:1 light
+   — from two compounding causes, both of them local dilutions of the system rather
+   than choices the system offers: a 9px size half a step under the declared ramp
+   floor, and a 78%-alpha thinning of --muted that no token authorises (§366: "never
+   bypass an --ink-* rung with a literal"). Both are removed. What made the line
+   read as tertiary was never the alpha — it is the size step, the 600 weight and
+   the tracking against a 22px figure directly above it, and all three survive.
+   This is a UNIT, not a footnote: it says what the number beside it means, so it
+   has to be legible to the reader who is deciding on that number.
+   Measured post-fix: 6.05:1 dark / 5.35:1 light, EN and ZH alike. */
+[data-view="overview"] .r3-colfig em{ display:block; font-style:normal;
+  font-size:var(--fs-micro); font-weight:600; letter-spacing:.03em; text-transform:none;
+  line-height:1.25; color:var(--muted); }
 [data-view="overview"] .r3-fig{ line-height:1.2; }
 [data-view="overview"] .r3-delta{ display:block; margin-top:2px; font-size:var(--fs-micro);
   font-weight:700; letter-spacing:0; }
@@ -393,43 +418,91 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
 if(!window.__r3TipInstalled){
   window.__r3TipInstalled = true;
   var box = null, owner = null;
+  /* R3B1-08 — the receipt popover now carries a STABLE ID and is minted EAGERLY.
+     It was created lazily on first open, so any control naming it in
+     aria-controls would have pointed at nothing until someone had already
+     opened it — a broken ARIA reference at exactly the moment a nonvisual
+     reader needs the relationship to be true. One node, one id, created before
+     any control can reference it; `mintBox()` is idempotent and is called both
+     at install and defensively on every open. */
+  var RCPT_ID = 'r3-receipt';
+  function mintBox(){
+    if(box && box.isConnected) return box;
+    box = document.getElementById(RCPT_ID);
+    if(!box){
+      box = document.createElement('div');
+      box.id = RCPT_ID;
+      box.className = 'r3-tipbox';
+      /* role=status keeps the disclosed text a polite live region, so the
+         explanation is ANNOUNCED on activation rather than merely reachable. */
+      box.setAttribute('role', 'status');
+      box.hidden = true;
+    }
+    if(!box.isConnected){
+      if(document.body) document.body.appendChild(box);
+      else document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(box); });
+    }
+    return box;
+  }
+  mintBox();
   function zh(){ return document.documentElement.getAttribute('data-lang') === 'zh'; }
+  /* R3B1-08 — how the disclosure was OPENED is part of its state, not a detail.
+     A tap on a touch device fires the compatibility mouse events BEFORE click
+     (mouseover → … → click), so a controller that treats "already open" as
+     "close me" turned every tap into open-then-close: the explanation flashed
+     and vanished, and no amount of tapping could pin it. Recording the cause
+     lets a hover-open be PROMOTED to a pinned open by the tap that follows it,
+     while a second deliberate tap still collapses it — the toggle a coarse
+     pointer needs, without taking hover away from a mouse. */
+  var openedBy = null;
   function close(){
     if(box) box.hidden = true;
     if(owner) owner.setAttribute('aria-expanded', 'false');
-    owner = null;
+    owner = null; openedBy = null;
   }
-  function open(el){
+  function open(el, cause){
     var txt = zh() ? (el.getAttribute('data-tip-zh') || el.getAttribute('data-tip-en'))
                    : el.getAttribute('data-tip-en');
     if(!txt) return;
-    if(!box){
-      box = document.createElement('div');
-      box.className = 'r3-tipbox'; box.setAttribute('role', 'status'); box.hidden = true;
-      document.body.appendChild(box);
-    }
+    mintBox();
     box.textContent = txt; box.hidden = false;
     var r = el.getBoundingClientRect(), bw = box.offsetWidth, bh = box.offsetHeight;
     var left = Math.min(Math.max(8, r.left + r.width / 2 - bw / 2), window.innerWidth - bw - 8);
     var top = (r.top > bh + 14) ? (r.top - bh - 8) : (r.bottom + 8);
     box.style.left = left + 'px'; box.style.top = top + 'px';
-    owner = el; el.setAttribute('aria-expanded', 'true');
+    owner = el; openedBy = cause || 'click'; el.setAttribute('aria-expanded', 'true');
   }
   document.addEventListener('click', function(e){
     var t = e.target && e.target.closest ? e.target.closest('[data-tip-en]') : null;
     if(!t){ close(); return; }
     e.preventDefault();
-    if(owner === t){ close(); return; }
-    close(); open(t);
+    /* only a PINNED disclosure toggles shut; one this same gesture just
+       hover-opened gets pinned instead (see the note above). */
+    if(owner === t && openedBy === 'click'){ close(); return; }
+    close(); open(t, 'click');
   });
+  /* Escape dismisses from anywhere without moving the pointer or focus
+     (WCAG 1.4.13); focus stays on the control that opened it, whose
+     aria-expanded returns to false, so the control is also its own collapse
+     affordance. Blur closes it for a keyboard reader who tabs onward. */
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
+  document.addEventListener('focusout', function(e){
+    if(owner && e.target === owner) close();
+  });
+  function hoverAvailable(){
+    return !(window.matchMedia && window.matchMedia('(hover: none)').matches);
+  }
   document.addEventListener('mouseover', function(e){
+    if(!hoverAvailable()) return;
     var t = e.target && e.target.closest ? e.target.closest('[data-tip-en]') : null;
-    if(t && t !== owner){ close(); open(t); }
+    if(t && t !== owner){ close(); open(t, 'hover'); }
   });
   document.addEventListener('mouseout', function(e){
+    if(!hoverAvailable()) return;
     var t = e.target && e.target.closest ? e.target.closest('[data-tip-en]') : null;
-    if(t && t === owner && !e.relatedTarget) close();
+    /* a pinned (tapped/clicked) disclosure must NOT evaporate on pointer exit —
+       only the one hover itself opened does. */
+    if(t && t === owner && openedBy === 'hover' && !e.relatedTarget) close();
   });
   window.addEventListener('scroll', close, true);
   document.addEventListener('langchange', close);
@@ -671,7 +744,7 @@ function laneOf(key){
 function paintPanel(){
   var cols = '<div class="r3-cols" aria-hidden="true">'
     + '<span>' + L('Sector or theme', '板块或主题') + '</span>'
-    + '<span class="r3-colfig">' + L('Score', '评分')
+    + '<span class="r3-colfig" data-r3b1="11">' + L('Score', '评分')
     + '<em>' + L('20d vs market', '20日对比市场') + '</em></span>'
     + '<span>' + L('Why it is here', '入选原因') + '</span><span></span></div>';
   var bodies = LANES.map(function(L1){

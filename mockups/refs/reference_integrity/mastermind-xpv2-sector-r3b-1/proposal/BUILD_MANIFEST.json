@@ -1,7 +1,7 @@
 {
   "assembler_self": {
-    "sha256": "bcbf559a4a5f42d20d474c0b6cc620bf373cd8a4fc14881e7e6af30bb1815037",
-    "size_bytes": 17438,
+    "sha256": "10f3d0d9b0b07aa7150ecb22d840c5812e3032ea0dfe2e79f1d864ffb1cd77e8",
+    "size_bytes": 18376,
     "source": "build/build_reference.py"
   },
   "fixture_capture_commit": "4c55fe433490adfd75fd901ef25f5793db2202db",
@@ -147,12 +147,12 @@
   ],
   "output": {
     "path": "proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
-    "sha256": "57fe91cf74096a6b522a149e731473c62d5ae4db6ba0830ce21e3a739cc37ae3",
-    "size_bytes": 5460464
+    "sha256": "fec05b058fbc9dbe29744ad015b7ee9cd9baa5cb85bbbde739daa8b97644cf70",
+    "size_bytes": 5479315
   },
   "runtime_shim_js": {
-    "sha256": "9e42eaea5fb9bfb24a4ca3b3e5a8ced97d462bb91a8096f1d43c9379a6b1e9b5",
-    "size_bytes": 21780,
+    "sha256": "c0d44497ae2ec64f7f55fbb3f17512925813fc3dc2a259b4b09ed29f5056692d",
+    "size_bytes": 24414,
     "source": "build/runtime_shim.js"
   },
   "si_workspace_js": {

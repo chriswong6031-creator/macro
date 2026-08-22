@@ -190,9 +190,21 @@ def verify_entry(base_dir: Path, entry: dict, *, label: str) -> str:
     return data.decode("utf-8")
 
 
-def data_script(path: str, text: str, *, script_type: str) -> str:
+def data_script(path: str, text: str, *, script_type: str, index: int) -> str:
+    """One embedded data-registry block.
+
+    R3B1-12 — every block used to be minted with the SAME `id="ref-data"`, 22
+    times in one document. Nothing read it: the registry is keyed by `data-path`
+    (runtime_shim.js resolves `script[type=…][data-path]`), so the id was pure
+    ambiguity — `getElementById`, `querySelector('#ref-data')`, devtools and any
+    ID-addressing external tool all silently resolved to whichever block came
+    first. The key stays `data-path`; the id becomes ordinal and unique, so the
+    block remains individually addressable and the document has no duplicate ID.
+    The ordinal is assigned over the already-deterministic sorted assembly order
+    below, so the same inputs mint the same ids and the build hash is stable.
+    """
     return (
-        f'<script type="{script_type}" id="ref-data" data-path="{path}">'
+        f'<script type="{script_type}" id="ref-data-{index}" data-r3b1="12" data-path="{path}">'
         f"{escape_script_close(text)}</script>"
     )
 
@@ -272,12 +284,18 @@ def main() -> int:
     # ── 4. Assemble the data registry (deterministic order: sorted paths) ──
     data_blocks: list[str] = []
     for path in sorted(fixture_texts):
-        data_blocks.append(data_script(path, fixture_texts[path], script_type="application/json"))
+        data_blocks.append(
+            data_script(path, fixture_texts[path], script_type="application/json", index=len(data_blocks))
+        )
     for path in sorted(t for t in supp_texts if t in SUPPLEMENT_JSON_PATHS):
-        data_blocks.append(data_script(path, supp_texts[path], script_type="application/json"))
+        data_blocks.append(
+            data_script(path, supp_texts[path], script_type="application/json", index=len(data_blocks))
+        )
     # the extracted HTML fragment — inert container, not auto-executed
     frag_text = supp_texts[SUPPLEMENT_FRAGMENT_PATH]
-    data_blocks.append(data_script(SUPPLEMENT_FRAGMENT_PATH, frag_text, script_type="text/x-ref-fragment"))
+    data_blocks.append(
+        data_script(SUPPLEMENT_FRAGMENT_PATH, frag_text, script_type="text/x-ref-fragment", index=len(data_blocks))
+    )
     # sector_cycles_data.js — plain EXECUTED script (it assigns window.SECTOR_CYCLES),
     # verbatim bytes, escaped only for the </script> boundary.
     cycles_text = supp_texts[SUPPLEMENT_SCRIPT_PATH]

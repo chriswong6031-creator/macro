@@ -173,3 +173,60 @@ Render site: `confluence.html`, `paintPicks()`, marker `data-r3b1="13"`.
    (Overview trace card, `sectordata/sector_central.json → conviction.score`) are
    two different measures sharing one EN word. Both labels are production's own,
    so neither is the reference's to rename. Producer-side naming item for R3C.
+
+---
+
+## 6 · Lane B (accessibility + token repair) — appended; nothing above is altered
+
+Fix packet items covered by this lane: **R3B1-08 · 09 · 10 · 11 · 12**.
+
+Lane B is a geometry, token, ARIA and plumbing repair. Four of its five items
+render **no new words at all** — R3B1-09 changes wrapping, R3B1-10 changes an
+attribute value, R3B1-11 changes token rungs and type sizes, R3B1-12 changes
+element ids. The only user-facing strings this lane added are the accessible
+names the three Moving help controls had been missing, which is the whole
+substance of R3B1-08: before this repair a nonvisual reader heard "question
+mark, button" three times and could not tell the three apart.
+
+Every pair below was read back out of the **built** artifact with headless
+Chromium on 2026-08-22 — see `build/lane_crops_b/01_moving_help_open_*.png` and
+`05_moving_help_named_open_390_dark_zh.png` for the rendered EN/ZH disclosures.
+
+### 6.1 R3B1-08 — the three Moving help controls
+
+Render site: `build/views/moving.html`, `trackRecordHtml()`, marker
+`data-r3b1="08"` on each control. The disclosure TEXT is unchanged: two controls
+carry the pre-existing reference-authored `data-tip-en/zh` sentences and the
+third carries the producer's own `track_record.disclaimer` / `disclaimer_zh`.
+Only the NAMES are new.
+
+| EN | ZH | provenance | note |
+|---|---|---|---|
+| `Rank fit — how this works` | `排序吻合 — 原理说明` | authored-new | `aria-label` on the Rank-fit column-header control. Names the concept the column already prints, then the house disclosure phrase, so a screen reader announces which of the three it has landed on. Concept half is the column header verbatim (`Rank fit` / `排序吻合`); disclosure half is production's own `sector_central.html.j2:2155` pair — the same one Lane A bound for R3B1-02. |
+| `Reliability — how this works` | `可靠度 — 原理说明` | authored-new | `aria-label` on the Reliability column-header control. Same construction. |
+| `Scorecard method — how this works` | `记分卡方法 — 原理说明` | authored-new | `aria-label` on the scorecard's method control. This one also carries a VISIBLE label (next row); the accessible name contains that visible label in full, so WCAG 2.5.3 Label in Name holds in both languages. |
+| `How this works` | `原理说明` | bound-from-production (verbatim), `templates/sector_central.html.j2:2155` | The visible label on the scorecard method control (the `--named` receipt variant). Reused, not minted: it is the identical pair Lane A bound for the leadership caveat, deliberately so, because it is the identical control doing the identical job. One explain vocabulary, one explain idiom. |
+
+The two column-header controls stay visually bare — a ring, no label — for the
+reason Lane A recorded for the same variant: a footnote whose subject is already
+on the line does not need to repeat it, and "RANK FIT ?" reads as one phrase. The
+scorecard control is the case Lane A's own rule sends the other way — a method
+disclosure with no subject on the line — so it wears the label.
+
+### 6.2 Items 09 · 10 · 11 · 12 — no new pairs
+
+- **R3B1-09** (severe-zoom reflow): geometry only. The Money verdict's vol chip
+  wraps instead of being cut, the sizing directive's row wraps at 160 CSS px, the
+  receipt control gained `position:relative`, and the treemap now measures its
+  labels before printing them. **No wording changed**, in either language.
+- **R3B1-10** (document language): the only value introduced is the language TAG
+  `zh-CN`, and it is production's, not this lane's — `templates/theme.js:600`,
+  `:614` and `templates/_public_chrome_js.html.j2:110` all write exactly that.
+  No visible copy is involved.
+- **R3B1-11** (contrast/type): token rungs and font sizes. Every string it
+  touches — `Still measuring / 测量中`, `Clears the bar / 已达标`,
+  `20d vs market / 20日对比市场`, and the action/risk state vocabulary — is
+  pre-existing and **byte-unchanged**; only the ink and the size moved.
+- **R3B1-12** (duplicate ids): `id="ref-data"` → `id="ref-data-<n>"` on the 22
+  embedded registry blocks. Not user-facing; nothing reads the id (the registry
+  is keyed by `data-path`).

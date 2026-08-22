@@ -80,6 +80,29 @@ html[data-theme="light"][data-lang="zh"]{ --up:#cf4040; --down:#1f9a55; --q1:#c1
 html[data-theme="light"]{ --ink-mix-up:62%; --ink-mix-down:84%; --ink-mix-warn:62%; --ink-mix-ok:70%;
   --ink-mix-act:88%; --ink-mix-orange:58%; --ink-mix-link:88%; --ink-mix-info:88%; }
 html[data-theme="light"][data-lang="zh"]{ --ink-mix-up:84%; --ink-mix-down:62%; }
+/* R3B1-11 — the FOURTH quadrant of the ink-rung matrix, which shipped with three.
+   The rungs above tune the two state hues per THEME, and the zh block above them
+   swaps the two values because 红涨绿跌 swaps the two hues. In dark that swap is a
+   no-op: dark was never tuned per hue at all (both rungs sit at the 100% default),
+   so the swap moved 100% onto 100% and the red channel arrived on the dark canvas
+   with no rung of its own. On plain --panel that is harmless (red measures 5.07:1);
+   on a graded lane's own 8-11% tinted cell it is not, and that is exactly where the
+   state vocabulary lives — 立即买入 / 现可入场 / 领先 / 就绪 / 风险偏好 measured
+   4.26-4.45:1 against the 4.5:1 floor DESIGN_SYSTEM_SPEC.md §366 sets, while their
+   byte-identical EN twins passed at 5.58:1 because green is the brighter hue.
+
+   The value is not a new magic number: 84% is the rung this system ALREADY gives the
+   red channel wherever it has been measured — light EN gives --ink-mix-down 84%, and
+   light ZH gives the (now red) --ink-up the same 84%. Completing the matrix with the
+   same rung makes one law legible across all four cells: RED TAKES THE 84% RUNG.
+   Mixing 16% of --text into the hue lightens it toward the dark canvas's own ink
+   without inventing a second palette, without touching a single --up/--down hex, and
+   without EN seeing any change at all. Measured post-fix: 4.78-4.98:1.
+   Dark EN's own red rung (--ink-mix-down) is deliberately NOT moved here: it renders
+   only on plain panel in this artifact and passes, so retuning it would be an
+   uncommissioned EN visual change. Recorded for R3C in
+   research/reference_integrity/mastermind-xpv2-sector-r3b-1/design_system_dependency_r3c.md. */
+html[data-theme="dark"][data-lang="zh"]{ --ink-mix-up:84%; }
 :root{
   --ink-up:color-mix(in srgb, var(--up) var(--ink-mix-up), var(--text));
   --ink-down:color-mix(in srgb, var(--down) var(--ink-mix-down), var(--text));
@@ -276,9 +299,12 @@ html[data-theme="light"] .si-side{ background:color-mix(in srgb, var(--panel2) 6
 .si-view-read[hidden]{ display:none; }
 .si-vr-g{ width:16px; height:16px; flex:none; margin-top:1px; color:var(--ink-link,var(--link)); }
 .si-vr-t{ flex:1 1 auto; min-width:0; }
+/* R3B1-11 — the receipt ring's glyph sat at 9.5px, half a step BELOW the declared
+   ramp floor (--fs-micro:10px). A sub-ramp tier the spec never declares is a tier
+   nobody audits, so it goes back onto the ramp; the 16px ring is unchanged. */
 .si-vr-q{ flex:none; display:inline-flex; align-items:center; justify-content:center;
   width:16px; height:16px; border:1px solid var(--line); border-radius:50%;
-  font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+  font-size:var(--fs-micro); font-weight:700; color:var(--muted); cursor:help; }
 
 /* ══════════════════════════════════════════════════════════════════════════════
    7 · PAGE GRAMMAR (commission §6.2)
@@ -331,8 +357,8 @@ html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
 .r3-answer-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
   margin-top:12px; font-size:var(--fs-sm); color:var(--muted); }
 .r3-q{ display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
-  border:1px solid var(--line); border-radius:50%; font-size:9.5px; font-weight:700;
-  color:var(--muted); cursor:help; }
+  border:1px solid var(--line); border-radius:50%; font-size:var(--fs-micro); font-weight:700;
+  color:var(--muted); cursor:help; }   /* R3B1-11: back onto the ramp floor */
 
 /* 7.2 section header (canonical .mx-sec anatomy, reference-scoped name) */
 .r3-sec{ display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3);

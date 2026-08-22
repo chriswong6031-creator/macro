@@ -110,12 +110,12 @@
   .r3-answer .si-vr-t{ flex:0 1 auto; min-width:0; }
   .r3-answer .si-vr-q{ flex:none; margin-top:7px; display:inline-flex; align-items:center;
     justify-content:center; width:16px; height:16px; border:1px solid var(--line); border-radius:50%;
-    font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+    font-size:var(--fs-micro); font-weight:700; color:var(--muted); cursor:help; }   /* R3B1-11: ramp floor */
   .r3-answer .si-view-read:not([hidden]) ~ .r3-answer-line{ display:none; }
   .r3-answer-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
     margin-top:12px; font-size:var(--fs-sm); color:var(--muted); }
   .r3-q{ display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
-    border:1px solid var(--line); border-radius:50%; font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+    border:1px solid var(--line); border-radius:50%; font-size:var(--fs-micro); font-weight:700; color:var(--muted); cursor:help; }   /* R3B1-11: ramp floor */
   .r3-asof{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.05em;
     color:var(--muted); font-variant-numeric:tabular-nums; }
   .r3-sec{ display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3); margin:0 0 var(--sp-3); }
@@ -351,7 +351,9 @@ html[data-lang="zh"] .si-view[data-view="explore"] .exp-lede{ max-width:46em; }
   box-shadow:var(--popover-shadow); }
 .si-view[data-view="explore"] .ne-tk.on > .ne-pop,
 .si-view[data-view="explore"] .ne-tk:focus-within > .ne-pop{ display:block; }
-.si-view[data-view="explore"] .ne-pop > .pl{ display:block; font-size:9px; font-weight:700;
+/* R3B1-11: back onto the declared ramp floor (--fs-micro); the .1em tracking that
+   made 9px survivable is kept, so the label reads as the same eyebrow tier. */
+.si-view[data-view="explore"] .ne-pop > .pl{ display:block; font-size:var(--fs-micro); font-weight:700;
   letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
 .si-view[data-view="explore"] .ne-pop > .pc{ display:block; margin-top:2px; font-size:15.5px; font-weight:700;
   font-family:var(--font-mono); color:var(--text); }

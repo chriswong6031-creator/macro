@@ -102,12 +102,12 @@
   .r3-answer .si-vr-t{ flex:0 1 auto; min-width:0; }
   .r3-answer .si-vr-q{ flex:none; margin-top:7px; display:inline-flex; align-items:center;
     justify-content:center; width:16px; height:16px; border:1px solid var(--line); border-radius:50%;
-    font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+    font-size:var(--fs-micro); font-weight:700; color:var(--muted); cursor:help; }   /* R3B1-11: ramp floor */
   .r3-answer .si-view-read:not([hidden]) ~ .r3-answer-line{ display:none; }
   .r3-answer-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
     margin-top:12px; font-size:var(--fs-sm); color:var(--muted); }
   .r3-q{ display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
-    border:1px solid var(--line); border-radius:50%; font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+    border:1px solid var(--line); border-radius:50%; font-size:var(--fs-micro); font-weight:700; color:var(--muted); cursor:help; }   /* R3B1-11: ramp floor */
   .r3-asof{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.05em;
     color:var(--muted); font-variant-numeric:tabular-nums; }
   .r3-sec{ display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3); margin:0 0 var(--sp-3); }
@@ -188,6 +188,19 @@ html[data-lang="zh"] .si-view[data-view="money"] .mny-big{ letter-spacing:0; fon
 .si-view[data-view="money"] .mny-flowline{ display:block; margin-top:6px; font-size:var(--fs-md);
   font-weight:700; letter-spacing:-.008em; line-height:1.3; color:var(--text); overflow-wrap:anywhere; }
 .si-view[data-view="money"] .mny-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+/* ── R3B1-09 · the verdict band's chips must reflow, not be cut ───────────────
+   `.mny-verdict` is a 1px-gap grid whose `overflow:hidden` exists to clip the
+   ROUNDED CORNER, not the content — but the shared `.r3-chip` carries
+   white-space:nowrap, so at the commissioned 320-physical/200% axis (a 160 CSS
+   px layout viewport) the vol chip painted to x=150.3 inside a container that
+   ends at x=147.0 and the last word of "Volatility: calm" was simply gone. A
+   status label that reads "Volatility: cal" is worse than one that is absent:
+   it is wrong without looking wrong. Same remedy the lead-foot tag already uses
+   two rules below — release nowrap on THIS instance only, so the chip wraps
+   inside its pill instead of running past the clip. The chip's wording, hue,
+   border and budget are untouched, and at every width where it fits on one
+   line nothing about it changes. */
+.si-view[data-view="money"] .mny-chips .r3-chip{ white-space:normal; min-width:0; max-width:100%; }
 
 /* the style-tilt legs: production renders one CHIP per leg (sector_central.html.j2:2829-2836),
    which is five chip-class elements in one section — over the §9.2 budget of two, and it
@@ -447,7 +460,7 @@ html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(
         <div class="mny-vcell">
           <span class="r3-eyebrow"><span class="l-en">Money flow</span><span class="l-zh">资金流向</span></span>
           <span class="mny-flowline" id="mkt-flow">—</span>
-          <span class="mny-chips"><span id="mf-etf-chips"></span><span id="mf-vol-chip"></span></span>
+          <span class="mny-chips" data-r3b1="09"><span id="mf-etf-chips"></span><span id="mf-vol-chip"></span></span>
         </div>
       </div>
 
@@ -831,6 +844,68 @@ function paintHeat(){
     out.push('</div>');
   });
   box.innerHTML=out.join('');
+  fitHeatLabels(box);
+}
+
+/* ── R3B1-09 · the treemap's labels, measured instead of estimated ────────────
+   Both label gates above are CHARACTER-COUNT ESTIMATES inherited from
+   production (`sym.length*7.4`, `nm.length*perCh + 66`). An estimate is a fine
+   way to decide whether to attempt a label; it is not a way to know whether the
+   label FIT, and at 200% zoom the difference showed: "GOOG" cleared the 7.4px
+   per-character budget and then painted 1.9px past its own tile at 12px, and
+   "Consumer Defensive" — a section name, a primary name, which this system
+   never permits an ellipsis or a cut on — ran 34px past the treemap's outer
+   edge, where `.mny-tm{overflow:hidden}` removed the last word.
+
+   Neither is visible to a document-overflow gate: both stay inside the page.
+   So the estimate stays as the cheap first pass and one real measurement
+   settles it, using the painted text runs rather than any box property:
+
+     · a ticker its tile cannot CONTAIN is dropped, not cut — production's own
+       stated rule ("a tile that cannot fit an 11px ticker drops the label"),
+       now enforced with the width the browser actually painted. The name is
+       never lost: the mandatory accessible table below lists every one.
+     · a section header that would run past the chart's own right edge is
+       SHIFTED left until it fits. That is the same trade QA2-05 already chose
+       for this element when it set `overflow:visible` — a name may sit over a
+       neighbouring tile, but it may not be truncated — extended to the one
+       edge no neighbour lies beyond. */
+function paintedWidth(el){
+  var r=document.createRange(); r.selectNodeContents(el);
+  var rects=r.getClientRects(), w=0;
+  for(var i=0;i<rects.length;i++) w=Math.max(w, rects[i].width);
+  return w;
+}
+function fitHeatLabels(box){
+  var pad=1.0;   /* subpixel tolerance; the defects this fixes measured 1.9 and 34.4 */
+  /* MEASURE EVERYTHING FIRST, THEN MUTATE. A treemap is ~500 absolutely
+     positioned tiles; removing a label between two measurements invalidates
+     layout and makes the next `getClientRects()` force a fresh one, so an
+     interleaved loop pays for up to 500 relayouts of the whole subtree. Two
+     passes cost one. */
+  var drops=[];
+  box.querySelectorAll('.hm-t').forEach(function(tile){
+    if(!tile.firstElementChild) return;
+    var cw=tile.clientWidth, ch=tile.clientHeight;
+    var sym=tile.querySelector('.sym'), pc=tile.querySelector('.pc');
+    if(sym && paintedWidth(sym) > cw+pad){ drops.push([tile,'all']); return; }
+    if(pc && (paintedWidth(pc) > cw+pad || tile.scrollHeight > ch+pad)) drops.push([tile,'pc']);
+  });
+  var edge=box.getBoundingClientRect().right - pad;
+  var shifts=[];
+  box.querySelectorAll('.hm-sechd').forEach(function(hd){
+    var far=hd.getBoundingClientRect().right;
+    for(var i=0;i<hd.children.length;i++){
+      far=Math.max(far, hd.children[i].getBoundingClientRect().right);
+    }
+    var over=far-edge;
+    if(over>0) shifts.push([hd, Math.ceil(over)]);
+  });
+  drops.forEach(function(d){
+    if(d[1]==='all') d[0].textContent='';
+    else { var pc=d[0].querySelector('.pc'); if(pc) pc.remove(); }
+  });
+  shifts.forEach(function(s){ s[0].style.transform='translateX('+(-s[1])+'px)'; });
 }
 
 function renderHeatText(){

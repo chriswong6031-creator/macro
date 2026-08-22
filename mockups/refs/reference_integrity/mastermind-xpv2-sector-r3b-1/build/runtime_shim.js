@@ -40,6 +40,53 @@ REF.simulateFetchFail = _bootFailArmed();
 REF.accessState = 'gated';  // 'gated' | 'hydrated' | 'ungated'
 var _seq = 0;
 
+/* ── 1a. DOCUMENT LANGUAGE (R3B1-10) ──────────────────────────────────────────
+   `data-lang` is this artifact's own PRESENTATION switch: the `.l-en`/`.l-zh`
+   twin spans, the 红涨绿跌 hue inversion and the CJK face stack all key off it.
+   `lang` is a different thing entirely — it is what the document DECLARES to
+   assistive technology, and it drives pronunciation, voice selection and
+   language-specific text rules for the whole page. The reference shipped with
+   the switch wired and the declaration left at `lang="en"`, so a screen reader
+   read every Chinese string on the page in an English voice.
+
+   Production's own answer is `zh-CN`, not bare `zh`, and it is written in three
+   independent places — `templates/theme.js:600` (`docEl.lang = lg === 'zh' ?
+   'zh-CN' : 'en'`), `templates/theme.js:614` (the same value applied once at
+   boot from `data-lang`) and `templates/_public_chrome_js.html.j2:110`. This
+   mirror uses exactly that value; it does not mint a language tag of its own.
+
+   The sync is an OBSERVER, not a setter tucked inside one control's handler,
+   for a reason that is specific to how this artifact is driven. `data-lang` is
+   set from at least four places — the harness drawer, `REF.setLang`, a boot
+   URL, and any external QA/critic driver that calls `setAttribute` directly —
+   and every one of them was equally entitled to. A handler on the drawer would
+   have cured the drawer alone and left every other path declaring English over
+   Chinese content; the observer makes the two attributes IMPOSSIBLE to
+   desynchronise however the switch is thrown, which is also why a view or hash
+   repaint cannot reset it: nothing repaints `data-lang`, and if anything ever
+   did, the observer would follow it. */
+var DOC_LANG = { en: 'en', zh: 'zh-CN' };
+function _syncDocLang(){
+  var el = document.documentElement;
+  var want = DOC_LANG[el.getAttribute('data-lang')] || DOC_LANG.en;
+  if(el.lang !== want) el.lang = want;
+}
+_syncDocLang();
+try{
+  new MutationObserver(_syncDocLang).observe(document.documentElement, {
+    attributes: true, attributeFilter: ['data-lang']
+  });
+}catch(e){ /* no MutationObserver: the boot sync above still applies. */ }
+/* The one call every control SHOULD use: it moves the switch and announces the
+   change, and the observer carries the declaration along with it. */
+REF.setLang = function(lang){
+  var v = (lang === 'zh') ? 'zh' : 'en';
+  document.documentElement.setAttribute('data-lang', v);
+  _syncDocLang();
+  try{ document.dispatchEvent(new CustomEvent('langchange')); }catch(err){}
+  return v;
+};
+
 /* ── 1. Build the registry from the DATA slot's embedded <script> blocks ─────── */
 Array.prototype.forEach.call(
   document.querySelectorAll('script[type="application/json"][data-path]'),
@@ -317,7 +364,7 @@ var HTML = '' +
   '</div>' +
   '<div id="ref-harness-body">' +
     '<div class="rf-row"><label for="ref-lang">Language</label>' +
-      '<select id="ref-lang"><option value="en">en</option><option value="zh">zh</option></select></div>' +
+      '<select id="ref-lang" data-r3b1="10"><option value="en">en</option><option value="zh">zh</option></select></div>' +
     '<div class="rf-row"><label for="ref-theme">Theme</label>' +
       '<select id="ref-theme"><option value="dark">dark</option><option value="light">light</option></select></div>' +
     '<div class="rf-row"><label for="ref-access">Access state</label>' +
@@ -340,8 +387,7 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('ref-harness-toggle').textContent = root.classList.contains('collapsed') ? '▲' : '▼';
   });
   document.getElementById('ref-lang').addEventListener('change', function(e){
-    document.documentElement.setAttribute('data-lang', e.target.value);
-    try{ document.dispatchEvent(new CustomEvent('langchange')); }catch(err){}
+    REF.setLang(e.target.value);   /* R3B1-10: moves data-lang AND lang together */
   });
   document.getElementById('ref-theme').addEventListener('change', function(e){
     document.documentElement.setAttribute('data-theme', e.target.value);

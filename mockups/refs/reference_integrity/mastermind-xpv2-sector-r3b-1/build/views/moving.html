@@ -149,7 +149,7 @@ html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
 .r3-tr-note{ padding:10px 16px 0; font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
 .r3-tr-body{ padding:10px 16px 4px; overflow-x:auto; }
 .r3-tr-body .r3-tbl{ min-width:520px; }
-.r3-tr-ok{ color:var(--up); }
+.r3-tr-ok{ color:var(--ink-up); }   /* R3B1-11: the graded rung, never the raw hue */
 .r3-tr-misses{ padding:2px 16px 12px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
 .r3-tr-mlab{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.05em;
   text-transform:uppercase; color:var(--muted); }
@@ -158,11 +158,49 @@ html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
 .r3-tr-miss i.up{ color:var(--ink-up); } .r3-tr-miss i.dn{ color:var(--ink-down); }
 .r3-tr-disc{ padding:10px 16px 14px; border-top:1px solid var(--line);
   font-size:var(--fs-micro); color:var(--muted); line-height:1.5; }
+/* ── R3B1-08 · the scorecard's three help controls ───────────────────────────
+   These shipped as 16x16 buttons whose entire accessible name was the character
+   "?", three times over, with the explanation living in data attributes and
+   generated visual content. A nonvisual reader heard "question mark, button"
+   three times and could not obtain the Rank fit, Reliability or method text at
+   all; a thumb had a 16px target against the system's own 44px floor.
+
+   The repair reuses the reference's ONE governed explain control rather than
+   minting a second idiom: the same button box the Action views already use
+   (44x44 target wearing a 16px ring, the ring drawn by ::before so the button's
+   own accessible name is free for a real label), the same shared receipt
+   popover, the same aria-expanded contract. Negative margins hand the visual
+   rhythm back so a 44px target does not inflate a table header line.
+
+   Specificity note, inherited from Lane A: `.r3-view--action .r3-rcpt` is
+   declared in TWO Action partials and the later one wins on source order, so a
+   modifier must out-specify it. `.r3-tr-help` is Moving's own class and Moving
+   is not an Action view, so it cannot collide there — but the --named modifier
+   is still written view-scoped, so a future partial declaring the bare class
+   after this one cannot silently take the width back. */
 .r3-tr-help{ appearance:none; display:inline-flex; align-items:center; justify-content:center;
-  width:16px; height:16px; margin-left:5px; padding:0; border:1px solid var(--line); border-radius:50%;
-  background:none; color:var(--muted); font-size:9.5px; font-weight:700; line-height:1; cursor:help;
+  width:44px; height:44px; margin:-14px -14px -14px -9px; padding:0; border:0;
+  background:none; color:var(--muted); line-height:1; cursor:help; flex:none;
   vertical-align:middle; }
-.r3-tr-help[aria-expanded="true"]{ color:var(--text); border-color:color-mix(in srgb, var(--link) 55%, var(--line)); }
+.r3-tr-help::before{ content:"?"; display:flex; align-items:center; justify-content:center;
+  width:16px; height:16px; border:1px solid var(--line); border-radius:50%;
+  font-size:var(--fs-micro); font-weight:700; line-height:1;
+  transition:color var(--t-fast) var(--ease-std), border-color var(--t-fast) var(--ease-std); }
+.r3-tr-help:hover::before,
+.r3-tr-help[aria-expanded="true"]::before{
+  color:var(--text); border-color:color-mix(in srgb, var(--link) 55%, var(--line)); }
+/* the NAMED variant, exactly as Lane A reasoned it for the leadership caveat
+   (overview.html): a bare ring is right for a footnote whose subject is already
+   on the line — "Rank fit ?" names itself — but the scorecard's own method has
+   no subject on the line, so this one wears the label the reader needs in order
+   to know a disclosure is there at all. Same button, same popover, same target.
+   The visible label is contained in the accessible name (WCAG 2.5.3). */
+.si-view[data-view="moving"] .r3-tr-help.r3-tr-help--named{ width:auto; min-width:44px;
+  gap:6px; margin:-14px -2px -14px 6px; padding:0 2px; justify-content:flex-start;
+  flex-direction:row-reverse; font-size:var(--fs-micro); font-weight:700;
+  letter-spacing:.03em; white-space:nowrap; }
+.si-view[data-view="moving"] .r3-tr-help.r3-tr-help--named:hover,
+.si-view[data-view="moving"] .r3-tr-help.r3-tr-help--named[aria-expanded="true"]{ color:var(--text); }
 .r3-mv{ font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
 .r3-mv.up{ color:var(--ink-up); } .r3-mv.dn{ color:var(--ink-down); }
 
@@ -301,6 +339,12 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
   function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
   function el(id){ return document.getElementById(id); }
+  /* R3B1-08: the id of the ONE shared receipt popover, minted and owned by the
+     shared explain controller in views/overview.html (which creates the node
+     eagerly at install so this reference always resolves). Every help control in
+     this view points aria-controls at it; nothing here mints a second popover,
+     a second controller, or a second id. */
+  var RCPT_ID='r3-receipt';
   /* QA2-11: this CSS-drawn connector glyph is decorative — the flanking
      source/destination names carry the meaning, so a screen reader should
      skip it rather than announce the content-free fragment "moved to" nine
@@ -597,8 +641,17 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
      data-tip-en/zh receipt mechanism (shared, installed once by overview.html)
      rather than production's separate title/body/receipt tip attributes, which
      this build has no wiring for. */
-  var TR_V={accruing:['Accruing','记录累积中','--muted'],measuring:['Still measuring','测量中','--warn'],
-            validated:['Clears the bar','已达标','--up']};
+  /* R3B1-11 — the verdict badge binds the INK rungs, not the raw hues.
+     `--warn` / `--up` are surface hues; `--ink-warn` / `--ink-up` are the same hues
+     already graded for text on their theme's canvas, and DESIGN_SYSTEM_SPEC.md §366
+     forbids bypassing a rung. Reaching past them put "Still measuring / 测量中" on
+     light at raw #b9791a — 3.61:1 at 10px/700 on white — while the identical badge
+     on dark passed at 7.59:1, so no dark-theme review could see it. The badge says
+     whether a horizon has enough evidence yet to be read at all: it is the most
+     load-bearing three words on the card, not a decoration.
+     Post-fix: 6.31:1 light, 7.59:1 dark (unchanged), both languages. */
+  var TR_V={accruing:['Accruing','记录累积中','--muted'],measuring:['Still measuring','测量中','--ink-warn'],
+            validated:['Clears the bar','已达标','--ink-up']};
   function trFpct(v){ return v==null?'—':(v*100).toFixed(0)+'%'; }
   function trFic(v){ return v==null?'—':(v>0?'+':'')+(+v).toFixed(3); }
   function trFt(v){ return v==null?'—':(+v).toFixed(1); }
@@ -622,7 +675,7 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     }).join('');
     return '<div class="r3-panel r3-tr">'
       +'<div class="r3-tr-hd">' + L('&#128202; Track record','&#128202; 跟踪记录')
-        +'<span class="r3-tr-q" style="color:var('+vb[2]+');border-color:var('+vb[2]+')">'+L(vb[0],vb[1])+'</span>'
+        +'<span class="r3-tr-q" data-r3b1="11" style="color:var('+vb[2]+');border-color:var('+vb[2]+')">'+L(vb[0],vb[1])+'</span>'
         +'<span class="r3-tr-meta">'+(tr.n_days||0)+' '+L('days logged','天')+' &middot; '
           +(tr.n_snapshots||0)+' '+L('calls logged','次记录')+'</span></div>'
       +'<div class="r3-tr-note">'+L(esc(tr.note||''),esc(tr.note_zh||tr.note||''))+'</div>'
@@ -630,22 +683,29 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
         +'<th>'+L('Horizon','周期')+'</th><th class="num">'+L('Matured','已到期')+'</th>'
         +'<th class="num">'+L('Emerging hit','升温命中')+'</th><th class="num">'+L('Fading hit','退潮命中')+'</th>'
         +'<th class="num">'+L('Rank fit','排序吻合')
-          +'<button type="button" class="r3-tr-help" aria-expanded="false"'
+          +'<button type="button" class="r3-tr-help" data-r3b1="08" aria-expanded="false"'
+          +' aria-controls="'+RCPT_ID+'"'
+          +' aria-label="'+(isZh()?'排序吻合 — 原理说明':'Rank fit — how this works')+'"'
           +' data-tip-en="Rank fit is how closely the ranking matched what happened next."'
-          +' data-tip-zh="排序吻合是指排序与后续实际走势的接近程度。">?</button></th>'
+          +' data-tip-zh="排序吻合是指排序与后续实际走势的接近程度。"></button></th>'
         +'<th class="num">'+L('Reliability','可靠度')
-          +'<button type="button" class="r3-tr-help" aria-expanded="false"'
+          +'<button type="button" class="r3-tr-help" data-r3b1="08" aria-expanded="false"'
+          +' aria-controls="'+RCPT_ID+'"'
+          +' aria-label="'+(isZh()?'可靠度 — 原理说明':'Reliability — how this works')+'"'
           +' data-tip-en="Reliability is how unlikely that match is to be luck &mdash; a check means it clears the bar for that horizon."'
-          +' data-tip-zh="可靠度是指这种吻合有多不可能出于偶然&mdash;&mdash;对勾表示该周期已达标。">?</button></th>'
+          +' data-tip-zh="可靠度是指这种吻合有多不可能出于偶然&mdash;&mdash;对勾表示该周期已达标。"></button></th>'
         +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
       +(misses?'<div class="r3-tr-misses"><span class="r3-tr-mlab">'+L('Recently wrong (logged)','近期误判（已记录）')
         +'</span>'+misses+'</div>':'')
       +'<div class="r3-tr-disc">'
         +L('A scorecard of this page&#39;s own calls, checked against what happened next. Until a time-window has enough history, it is still measuring &mdash; read it as &#8220;measuring&#8221;, not proof.',
            '本页自身判断的记分卡，对照后续实际走势检验。在某一周期积累足够历史前仍为「测量中」——请视为「测量」，而非定论。')
-        +'<button type="button" class="r3-tr-help" aria-expanded="false"'
+        +'<button type="button" class="r3-tr-help r3-tr-help--named" data-r3b1="08" aria-expanded="false"'
+        +' aria-controls="'+RCPT_ID+'"'
+        +' aria-label="'+(isZh()?'记分卡方法 — 原理说明':'Scorecard method — how this works')+'"'
         +' data-tip-en="' + esc(tr.disclaimer || '') + '"'
-        +' data-tip-zh="' + esc(tr.disclaimer_zh || tr.disclaimer || '') + '">?</button>'
+        +' data-tip-zh="' + esc(tr.disclaimer_zh || tr.disclaimer || '') + '">'
+        + L('How this works','原理说明') + '</button>'
         +'</div></div>';
   }
   function svgEl(t,at){ var e=document.createElementNS('http://www.w3.org/2000/svg',t);
