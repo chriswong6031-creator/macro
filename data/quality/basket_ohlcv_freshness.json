@@ -1,26 +1,145 @@
 {
   "status": "stale",
-  "checked_at": "2026-08-21T00:51:47.436596+00:00",
+  "checked_at": "2026-08-22T00:38:17.515134+00:00",
   "threshold_sessions": 3,
-  "store_max": "2026-08-20",
+  "store_max": "2026-08-21",
   "n_members": 702,
   "n_stale": 1,
-  "n_behind_within_threshold": 2,
+  "n_behind_within_threshold": 1,
   "stale": {
     "EA": {
       "last": "2026-08-10",
-      "sessions_behind": 8
+      "sessions_behind": 9
     }
   },
   "missing": [],
   "inactive": {
     "BLD": {
       "last": "2026-07-02",
-      "sessions_behind": 34,
+      "sessions_behind": 35,
       "removed": "2026-07-01",
       "rationale": "TopBuild \u2014 insulation distribution/installation scale. DELISTED: acquired by QXO, merger completed 2026-07-01, NYSE trading suspended before the open that day; renamed QXO Insulation, LLC (SEC CIK 1633931 formerNames; Form 15-12G deregistra"
     }
   },
   "absent_all_rungs": [],
-  "n_absent_all_rungs": 0
+  "n_absent_all_rungs": 0,
+  "n_store_files": 2782,
+  "n_sponsored": 2600,
+  "n_sponsored_no_file": 0,
+  "unsponsored": {
+    "SEM": {
+      "last": "2026-06-30",
+      "sessions_behind": 37
+    },
+    "SILA": {
+      "last": "2026-06-30",
+      "sessions_behind": 37
+    },
+    "STEL": {
+      "last": "2026-06-30",
+      "sessions_behind": 37
+    },
+    "BLD": {
+      "last": "2026-07-02",
+      "sessions_behind": 35
+    },
+    "OLPX": {
+      "last": "2026-07-09",
+      "sessions_behind": 31
+    },
+    "TBRG": {
+      "last": "2026-07-09",
+      "sessions_behind": 31
+    },
+    "EEX": {
+      "last": "2026-07-13",
+      "sessions_behind": 29
+    },
+    "ESPR": {
+      "last": "2026-07-13",
+      "sessions_behind": 29
+    },
+    "WSR": {
+      "last": "2026-07-13",
+      "sessions_behind": 29
+    },
+    "XOMA": {
+      "last": "2026-07-13",
+      "sessions_behind": 29
+    },
+    "CPRX": {
+      "last": "2026-07-15",
+      "sessions_behind": 27
+    },
+    "GTLS": {
+      "last": "2026-07-15",
+      "sessions_behind": 27
+    },
+    "NUVL": {
+      "last": "2026-07-15",
+      "sessions_behind": 27
+    },
+    "ATLN": {
+      "last": "2026-07-17",
+      "sessions_behind": 25
+    },
+    "CCRN": {
+      "last": "2026-07-20",
+      "sessions_behind": 24
+    },
+    "NFBK": {
+      "last": "2026-07-21",
+      "sessions_behind": 23
+    },
+    "KORE": {
+      "last": "2026-07-23",
+      "sessions_behind": 21
+    },
+    "TMHC": {
+      "last": "2026-07-23",
+      "sessions_behind": 21
+    },
+    "AVNS": {
+      "last": "2026-07-24",
+      "sessions_behind": 20
+    },
+    "GAMB": {
+      "last": "2026-07-29",
+      "sessions_behind": 17
+    },
+    "LPRO": {
+      "last": "2026-08-07",
+      "sessions_behind": 10
+    },
+    "SKYT": {
+      "last": "2026-08-07",
+      "sessions_behind": 10
+    },
+    "TOI": {
+      "last": "2026-08-11",
+      "sessions_behind": 8
+    },
+    "MDV": {
+      "last": "2026-08-12",
+      "sessions_behind": 7
+    }
+  },
+  "n_unsponsored_stale": 24,
+  "n_unsponsored_fresh": 157,
+  "retired": {
+    "AVB": {
+      "last": "2026-08-19",
+      "sessions_behind": 2,
+      "last_session": "2026-08-14",
+      "delisted_on": "2026-08-17",
+      "reason": "acquisition",
+      "successor_ticker": null
+    }
+  },
+  "n_retired": 1,
+  "maintained_finviz_filters": [
+    "idx_ndx",
+    "idx_rut"
+  ],
+  "finviz_unresolved": []
 }
