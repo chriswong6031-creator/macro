@@ -288,6 +288,7 @@ danger_areas:
       checked out. Never `git add -A` an unexpected data/ or site/ diff, and
       never run the full pytest suite here (~1,700 artifact failures). Opt in
       with `python3 scripts/worktree_sparse.py add <dir>` before touching one.
+prs: [6242]
 decisions: ["DEC:CHINA-COVERAGE-EXCEPTION-LEDGER", "DEC:CHINA-KEY-INTEGRITY-TYPED-EXCLUSION"]
 discoveries: ["DSC:CHINA-VISITS-KEY-EXCLUSION-LATCH-AND-AGING-FORGETFULNESS",
               "DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP"]
