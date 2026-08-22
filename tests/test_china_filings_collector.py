@@ -1097,7 +1097,8 @@ class TestFetchKeyIntegrityFolding:
         # Shape stability is the point: every consumer reads one shape.
         assert set(cf.LAST_RUN_OUTCOME["key_integrity"]) == {
             "excluded_total", "excluded_by_type", "preexisting_unkeyed",
-            "excluded_rows", "at"}
+            "excluded_rows", "boundary_persist_ok", "boundary_fingerprints",
+            "at"}
 
     def test_incomplete_write_folds_in_as_UNKNOWN_not_clean(self, tmp_path, monkeypatch):
         """FAIL-CLOSED: write_filings() failing internally leaves
