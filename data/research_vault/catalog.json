@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T16:10:43.968288+00:00",
-  "count": 1627,
+  "generated_at": "2026-08-22T17:10:48.960312+00:00",
+  "count": 1630,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1556,6 +1556,47 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-jbtthuwxbjy-984723",
+      "title": "UK Weekly Kickstart Data only update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:27:53Z",
+      "summary_points": [
+        "**UK Value/EM Rotation Signal**: MSCI UK Value (+13.9% YTD) and EM (+19.4% YTD) lead, but UK Financials (-2.2% 1-week) and global indices show short-term weakness, indicating potential sector rotation or geopolitical-driven flow shifts.",
+        "**FTSE 350 Valuation Overhang**: EV/Sales at 1.6 (83rd percentile) and 12m forward P/E at 12.6 (45th percentile) signal elevated valuations relative to historical norms, with FCF yield at 5.9 (52nd percentile) offering moderate income.",
+        "**Passive Flow Surge & Active Underperformance**: Sustained passive inflows into UK equities (driven by foreign investors) contrast with negative active flows, signaling structural shift toward passive strategies and requiring tactical active positioning adjustments.",
+        "**FTSE 100 Debt Risk vs.",
+        "EPS Growth**: 67% net debt/equity ratio conflicts with 22.6% 2025E EPS growth, demanding interest rate sensitivity analysis and earnings resilience monitoring amid elevated volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mg3owwaycju-8ff159",
+      "title": "Pulp & Paper Bear Cycle Takes a Pause",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:27:50Z",
+      "summary_points": [
+        "**China's Procurement Shift & Bear Cycle Pause**: Hardwood procurement rebound (+$4-11/t) from restocking after 630kt y/y decline, pausing bear cycle due to 3 new mills, APPs Oki mill proximity, and wood/paper price dynamics (wood down, paper flat at lows).",
+        "**Price Stability & Key Risks**: $550-560/t stability supported by restocking, but limited upside due to China’s 12-month procurement horizon; Indonesia’s competitive wood supply caps upside potential.",
+        "**Domestic Resale Prices Lag China Benchmark**: Domestic hardwood/softwood resale prices (black lines) consistently trail PIX China prices (blue lines) since Aug 2022, with sharper declines in late 2023 signaling supply/demand imbalances or trade policy pressures.",
+        "**Persistent Market Divergence**: 2024 domestic price recovery remains below PIX China benchmark, indicating ongoing dominance of China’s price benchmark affecting export/import dynamics and market structure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-mupz20zk5ke-4e2bde",
       "title": "Mexico Weak Jun Retail Sales and Non Financial Services (Ramos)",
       "institution": "Goldman Sachs",
@@ -1594,6 +1635,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cvpi20letn2-d4fdd7",
+      "title": "Europe Weekly Kickstart Data only update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:27:41Z",
+      "summary_points": [
+        "**Earnings Sector Divergence**: Financial Services (55.0% beat, 90.0 absolute positive) dominates positive surprises; Travel & Leisure (-10.6 avg) shows severe negative surprises, critical for allocation adjustments.",
+        "**Energy Sector Dominance**: 43.5% positive sales surprises, 16.9% sales growth forecast, GSCI Energy +97.7% YTD; driven by geopolitical tensions and supply fundamentals.",
+        "**Sector Allocation Guidance**: Overweight Banks (SXCP), Construction & Materials (SXCP), Food & Tobacco (S600FCP); Underweight Autos & Parts (SXAP), Chemicals (SXCP), Consumer P&G (S600CPP).",
+        "**Commodity Risk Factor**: Commodities drag H1 growth to 8% (vs.",
+        "15% overall), Brent Crude projected at 74.0 (12m) with -21.1% downside risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
       "language": "en",
       "needs_metadata": false
     },
