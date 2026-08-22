@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-22T04:39:30.129350+00:00",
+  "generated_utc": "2026-08-22T06:18:54.530596+00:00",
   "as_of": "2026-08-22",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -29041,14 +29041,15 @@
         "why": "13f_add: Curated Wealth Partners LLC +$2,030,517,264 \u00b7 analyst_upgrade_cluster: net upgrades +21 revision delta \u00b7 special_situation: Acquisitions"
       },
       {
-        "ticker": "CAT",
-        "score": 2,
+        "ticker": "SBUX",
+        "score": 3,
         "weighted_score": 0.95,
         "channel_list": [
-          "13f_add",
-          "insider_mspr"
+          "analyst_upgrade_cluster",
+          "app_demand",
+          "special_situation"
         ],
-        "why": "13f_add: Ascentis Wealth Management, LLC +$2,679,146,768 \u00b7 insider_mspr: MSPR 100.0"
+        "why": "analyst_upgrade_cluster: net upgrades +24 revision delta \u00b7 app_demand: 4.89\u2605 \u00d7 8,190,519 reviews \u00b7 special_situation: Strategic Reviews"
       }
     ]
   }
