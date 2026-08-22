@@ -1,0 +1,12 @@
+XPV2-SC-R3B.1 gating/hydrate smoke — Overview #actnow-section board
+candidate sha256 fec05b058fbc9dbe29744ad015b7ee9cd9baa5cb85bbbde739daa8b97644cf70
+preview_rows = baked .r3-row preview rows (all 5 lanes, DOM-wide, incl. hidden lanes)
+hydrated_inserted_rows = real production .actitem rows inserted by hydrate()
+disclosures = .pg-more "N more — sign in to see the full lane" lines
+
+gated:    preview_rows=15, hydrated_inserted_rows=0, disclosures=4
+hydrated: preview_rows=15, hydrated_inserted_rows=29, disclosures=0
+reffail (?reffail=1, REF.simulateFetchFail armed=True):
+  #actnow board falls back to a single error placeholder, text = 'Data failed to load — please refresh.'
+  #ov-panel (the normal preview skeleton) still present = False (expected False — AB fetch itself failed, board never builds its preview skeleton at all, correct fail-open UI)
+  recorded simulated-fail fetch log entries (boot-resolved payloads across all six views): 8
