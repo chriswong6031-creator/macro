@@ -144,8 +144,11 @@ round m5/m6), **`spot_authority`** (per-symbol spot rung 1/2/3 used, sha256 over
 the rung map, AND — for every rung-2 symbol — the consumed resolved close
 VALUE, the ladder `price_source` tag, and the series last index date, so a
 rung-2 close change moves `receipt_id`, review round BLOCKER B2), and
-**`session_presence`** (sha256 over the ordered per-candidate `(session,
-n_eod, n_oi)` counts consumed by the §3 predicate, review round M1).
+**`session_presence`** (sha256 over (a) the ordered per-candidate `(session,
+plaus_bool, balanced_bool)` decision tuples, plus (b) the exact `(n_eod,
+n_oi)` counts for ONLY the decision-critical sessions — the final history
+anchor, every demoted session, and the OI-only frontier candidate — narrowed
+from the original all-candidate-counts form, verify round N2, 2026-08-22).
 
 **F2a — universe resolution fails CLOSED (producer-only).** After resolving input
 #7, if the config says `include_baskets: true` but the resolved universe came back

@@ -112,6 +112,23 @@ _DIGEST_COLS = {
 
 _STRIKE_TOL = 1e-6
 
+# N3 (verify round BLOCKER, spec §A #7 as amended 2026-08-22): per-CONTRACT
+# OI-baseline coverage floor -- replaces the earlier root-PRESENCE guard, which
+# missed the per-contract-absence pathology (a root with exactly one surviving
+# oi row read as "present" and therefore fully covered). Floor basis (live
+# census): organic in-window per-root match rates min 0.825 / p5 0.939 /
+# median 0.982 over 144 root-sessions, comfortably above 0.60; the pathology
+# class (systemic missing print scored as zero baselines) sits far below it.
+_OI_COVERAGE_FLOOR = 0.60
+
+# N4 (verify round correction, spec §C as amended 2026-08-22): §C role-split
+# floors. `_OI_MEMBERSHIP_FLOOR`/`_EOD_PATHOLOGY_FLOOR` gate `plaus(s)` (HISTORY
+# membership, graded partials admitted); `_S_ROLE_BALANCE_FLOOR` gates ONLY
+# whichever session wants the S role (demotion loop) and the X admission check.
+_OI_MEMBERSHIP_FLOOR = 0.90    # plaus(s): n_oi(s) >= floor * n_eod(s)
+_EOD_PATHOLOGY_FLOOR = 0.25    # plaus(s): n_eod(s) >= floor * n_oi(s) (blocks 3-vs-400 thinness)
+_S_ROLE_BALANCE_FLOOR = 0.90   # S-role balance + X admission (unchanged 0.90 store-relative floor)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Store resolution (§G off-host self-skip).
@@ -224,15 +241,24 @@ def _strike_ticker_and_ok(root: pd.Series, expiration: pd.Series, right: pd.Seri
     width_ok = integral_ok & (rounded >= 0) & (rounded <= 99_999_999)
     strike_int = rounded.fillna(0).astype("int64")
     good_field = strike_int.astype(str).str.zfill(8)
-    # `.map(str)` (never `.astype(str)`) — pandas' modern string dtype makes
-    # `.astype(str)` PRESERVE a non-finite float as a real null instead of
-    # stringifying it (verified: pandas 3.0 turns NaN/inf into a missing value
-    # under `.astype(str)`, not the text "nan"/"inf"), which would silently
-    # smuggle an actual null into the "malformed ticker" field instead of the
-    # deliberately-malformed STRING the exclusion path depends on. `.map(str)`
-    # calls Python's own `str()` per element, always returning real text.
-    bad_field = "BAD" + raw.map(str)
-    strike_field = good_field.where(width_ok, bad_field)
+    # PERF NIT (verify round): the malformed-field build below (`raw.map(str)`)
+    # is a Python-level per-element call -- materialise it ONLY when at least
+    # one row actually needs it. The common/hot case (every strike lawful,
+    # `width_ok.all()`) short-circuits straight to `good_field`, identical
+    # exclusion behavior (nothing downstream ever reads `bad_field` when no row
+    # is masked out by `.where`).
+    if bool(width_ok.all()):
+        strike_field = good_field
+    else:
+        # `.map(str)` (never `.astype(str)`) — pandas' modern string dtype makes
+        # `.astype(str)` PRESERVE a non-finite float as a real null instead of
+        # stringifying it (verified: pandas 3.0 turns NaN/inf into a missing value
+        # under `.astype(str)`, not the text "nan"/"inf"), which would silently
+        # smuggle an actual null into the "malformed ticker" field instead of the
+        # deliberately-malformed STRING the exclusion path depends on. `.map(str)`
+        # calls Python's own `str()` per element, always returning real text.
+        bad_field = "BAD" + raw.map(str)
+        strike_field = good_field.where(width_ok, bad_field)
 
     exp_dt = pd.to_datetime(expiration, errors="coerce")
     yymmdd = exp_dt.dt.strftime("%y%m%d")
@@ -253,7 +279,26 @@ def _strike_ticker_and_ok(root: pd.Series, expiration: pd.Series, right: pd.Seri
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _latest_known_date(store: Path, universe_roots: Sequence[str]) -> str | None:
+def _warn_corrupt_file(tier: str, path: Path, exc: Exception,
+                        corrupt_counter: dict[str, int] | None) -> None:
+    """N5 (verify round, MINOR): the ONE shared corrupt/unreadable-year-file
+    warning + counter increment — both ``_latest_known_date`` and
+    ``_read_universe_tier_range`` route through this single form so a corrupt
+    file always yields a consistent ``::warning`` wording AND a counted
+    ``store_resolution.corrupt_files`` entry (pre-fix, ``_latest_known_date``'s
+    own corrupt-read encounters were silently swallowed — invisible in receipt
+    state — while ``_read_universe_tier_range``'s were counted; two different
+    message texts for the SAME condition). Bare line-start ``print`` per the
+    repo's CI-annotation law (never through a logger; ``flush=True`` since
+    stdout is block-buffered when piped in CI)."""
+    print(f"::warning title=options-intel-brief-corrupt-file::corrupt/unreadable "
+          f"{tier} file {path}: {exc}", flush=True)
+    if corrupt_counter is not None:
+        corrupt_counter[tier] = corrupt_counter.get(tier, 0) + 1
+
+
+def _latest_known_date(store: Path, universe_roots: Sequence[str],
+                        corrupt_counter: dict[str, int] | None = None) -> str | None:
     """Cheap ceiling scan: for each universe root's EOD tier, the newest calendar
     year file present, then that file's own max ``date`` value (a single-column
     projected read — a few KB regardless of the file's row count). This — NEVER
@@ -263,7 +308,12 @@ def _latest_known_date(store: Path, universe_roots: Sequence[str]) -> str | None
     EXACTLY (§C/§F — BLOCKER B3 caught this function's own newest-EOD-date
     previously double-cast as the staleness anchor too, which drifted on a Monday
     build — eod through Friday, oi through Monday — to a 77h-stale false
-    ``STALE_SOURCE`` with zero cards every Monday)."""
+    ``STALE_SOURCE`` with zero cards every Monday).
+
+    N5 (verify round): ``corrupt_counter`` (when supplied) is incremented via
+    the SAME ``_warn_corrupt_file`` helper ``_read_universe_tier_range`` uses,
+    so one corrupt file yields one consistent count everywhere, never a
+    silently-dropped encounter here alone."""
     best: str | None = None
     for root in universe_roots:
         root_dir = store / "eod" / str(root).upper()
@@ -275,8 +325,7 @@ def _latest_known_date(store: Path, universe_roots: Sequence[str]) -> str | None
             try:
                 col = pd.read_parquet(path, columns=["date"])["date"]
             except Exception as exc:  # noqa: BLE001 — fall back to an OLDER year for this root
-                print(f"::warning title=options-intel-brief-corrupt-file::corrupt/unreadable "
-                      f"eod year file {path}: {exc}", flush=True)
+                _warn_corrupt_file("eod", path, exc, corrupt_counter)
                 continue
             if col.empty:
                 continue
@@ -335,11 +384,10 @@ def _read_universe_tier_range(store: Path, tier: str, roots: Sequence[str], *,
                     # VISIBLE -- a line-start ::warning plus a receipt-bound count
                     # (store_resolution.corrupt_files) -- never only a debug log,
                     # while still degrading gracefully (this root/year's slice is
-                    # simply skipped, never a crash).
-                    print(f"::warning title=options-intel-brief-corrupt-file::"
-                          f"corrupt/unreadable {tier} file {path}: {exc}", flush=True)
-                    if corrupt_counter is not None:
-                        corrupt_counter[tier] = corrupt_counter.get(tier, 0) + 1
+                    # simply skipped, never a crash). N5 (verify round): routed
+                    # through the SAME `_warn_corrupt_file` helper `_latest_known_
+                    # date` now also uses -- one consistent message + count.
+                    _warn_corrupt_file(tier, path, exc, corrupt_counter)
                     continue
                 d = pd.to_datetime(frame["date"], errors="coerce")
                 frame = frame[(d >= start_ts) & (d <= end_ts)]
@@ -360,28 +408,75 @@ def _read_universe_tier_range(store: Path, tier: str, roots: Sequence[str], *,
 
 
 def _select_committed_sessions(candidate: list[str], n_eod: pd.Series,
-                                n_oi: pd.Series) -> tuple[list[str], list[str]]:
-    """§C predicate: ``full(s) := is_nyse_session(s) AND n_eod(s) > 0 AND n_oi(s) >=
-    0.90 * n_eod(s) AND n_eod(s) >= 0.90 * n_oi(s)`` — a SYMMETRIC floor (M1,
-    review round, 2026-08-22): a half-written tier on EITHER side disqualifies the
-    session (a 3-root eod tier next to a 400-root oi tier used to pass the
-    pre-fix asymmetric check, since ``400 >= 0.90*3`` is trivially true; the
-    reverse direction is now caught too). ``F`` = ascending full sessions; ``X`` =
-    the single admitted OI-only frontier one session past ``max(F)``. Returns
-    ``(committed_sessions, F)`` — ``committed_sessions = sorted(F ∪ {X if
-    admitted})`` feeds the frozen ``select_settled_pair``; ``F`` alone bounds what
-    actually gets materialised (§C depth bound — X is OI-only and never gets a
-    full chain frame). X's own admission floor stays the ASYMMETRIC store-relative
-    check spec §C already specifies (``n_oi(X) >= 0.90 * n_eod(max(F))``) — X is
-    OI-only by construction, so there is no ``n_eod(X)`` to be symmetric against."""
-    def full(s: str) -> bool:
+                                n_oi: pd.Series) -> tuple[list[str], list[str], dict[str, Any]]:
+    """§C role-split predicate (N4 correction, verify round 2026-08-22 — REPLACES
+    the earlier SYMMETRIC 0.90 ``full()`` floor, a regression: it converted an
+    eod-trails-oi store (>10% divergence) into a total MIXED_VINTAGE blackout
+    (present=0, cov=None) whenever the imbalance broke calendar-adjacency across
+    most of history, where graded INSUFFICIENT_COVERAGE is the honest state).
+
+    Roles are split:
+
+      plaus(s) := is_nyse_session(s) AND n_eod(s) > 0
+                  AND n_oi(s) >= 0.90 * n_eod(s)   -- OI baseline coverage vs
+                                                       s's own eod population
+                  AND n_eod(s) >= 0.25 * n_oi(s)   -- pathology floor only
+                                                       (blocks 3-vs-400 thinness)
+      F        = ascending [s : plaus(s)]           -- HISTORY membership;
+                                                       graded partials admitted
+
+    The STRICT (near-)symmetric 0.90 balance is required only of whichever
+    session wants the S role: while F is non-empty and
+    ``n_eod(max F) < 0.90 * n_oi(max F)``, that session is demoted out of F —
+    it stays D/X-eligible, never S, and can never flip ``as_of_session``. X is
+    the single NYSE session after the final (post-demotion) ``max(F)``,
+    admitted iff ``n_oi(X) >= 0.90 * n_eod(max F)`` — a demoted session is
+    naturally the X candidate when it is exactly that next session (the
+    ordinary mid-capture-partial-latest-session shape). X's own admission
+    floor stays the ASYMMETRIC store-relative check spec §C already specifies —
+    X is OI-only by construction, so there is no ``n_eod(X)`` to be symmetric
+    against.
+
+    Returns ``(committed_sessions, F, decision_info)`` — ``committed_sessions =
+    sorted(F ∪ {X if admitted})`` feeds the frozen ``select_settled_pair``; ``F``
+    alone bounds what actually gets materialised (§C depth bound — X is OI-only
+    and never gets a full chain frame). ``decision_info`` (N2, spec §F) is
+    ``{"candidate_decisions": [(s, plaus_bool, balanced_bool), ...]`` for EVERY
+    candidate in order, plus ``"counts": {session: (n_eod, n_oi)}`` for ONLY the
+    decision-critical sessions — the final ``max(F)``, every demoted session,
+    and the X candidate (admitted or not)."""
+    def plaus(s: str) -> bool:
         ne = int(n_eod.get(s, 0))
         no = int(n_oi.get(s, 0))
         return (nc.is_session(date.fromisoformat(s)) and ne > 0
-                and no >= 0.90 * ne and ne >= 0.90 * no)
+                and no >= _OI_MEMBERSHIP_FLOOR * ne
+                and ne >= _EOD_PATHOLOGY_FLOOR * no)
 
-    F = [s for s in candidate if full(s)]
+    def balanced(s: str) -> bool:
+        ne = int(n_eod.get(s, 0))
+        no = int(n_oi.get(s, 0))
+        return ne >= _S_ROLE_BALANCE_FLOOR * no
+
+    plaus_map = {s: plaus(s) for s in candidate}
+    balanced_map = {s: balanced(s) for s in candidate}
+
+    F = [s for s in candidate if plaus_map[s]]
+    demoted: list[str] = []
+    while F:
+        s_max = max(F)
+        if balanced_map[s_max]:
+            break
+        F.remove(s_max)
+        demoted.append(s_max)
+
     committed = set(F)
+    counts: dict[str, tuple[int, int]] = {}
+    if F:
+        s_max = max(F)
+        counts[s_max] = (int(n_eod.get(s_max, 0)), int(n_oi.get(s_max, 0)))
+    for s in demoted:
+        counts[s] = (int(n_eod.get(s, 0)), int(n_oi.get(s, 0)))
+
     if F:
         s_max = max(F)
         x_date = nc.session_n_forward(date.fromisoformat(s_max), 1)
@@ -389,9 +484,15 @@ def _select_committed_sessions(candidate: list[str], n_eod: pd.Series,
             x = x_date.isoformat()
             ne_base = int(n_eod.get(s_max, 0))
             no_x = int(n_oi.get(x, 0))
-            if ne_base > 0 and no_x >= 0.90 * ne_base:
+            counts[x] = (int(n_eod.get(x, 0)), no_x)
+            if ne_base > 0 and no_x >= _S_ROLE_BALANCE_FLOOR * ne_base:
                 committed.add(x)
-    return sorted(committed), F
+
+    decision_info = {
+        "candidate_decisions": [(s, bool(plaus_map[s]), bool(balanced_map[s])) for s in candidate],
+        "counts": counts,
+    }
+    return sorted(committed), F, decision_info
 
 
 def _lawful_pairs(sessions: list[str]) -> dict[str, str]:
@@ -483,18 +584,22 @@ def _find_conflicting_roots(*frames: pd.DataFrame) -> set[str]:
 def _assemble_chain_frame(eod_s: pd.DataFrame, oi_s: pd.DataFrame, greeks_s: pd.DataFrame,
                            session: str, *, record_rungs: dict[str, int],
                            record_rung2_detail: dict[str, dict[str, Any]] | None = None
-                           ) -> tuple[pd.DataFrame, dict[str, set[str]], dict[str, float]]:
+                           ) -> tuple[pd.DataFrame, dict[str, set[str]], dict[str, float], dict[str, float]]:
     """Build one session's per-contract chain frame with the engine's declared
     production schema (spec §B row 'dtypes'): ``underlying`` category, ``expiry``
     datetime64, ``K``/``T``/``iv``/``delta``/``oi``/``volume``/``spot`` float32,
     ``is_call`` bool, plus ``strike_ticker`` str (the join key ``doi_lean`` uses).
 
-    Returns ``(frame, excluded_by_reason, rung1_by_root)`` — ``excluded_by_reason``
-    is ``{reason: {root, ...}}`` with two reasons possible: ``conflicting_duplicate``
-    (§A bullet 5) and ``oi_baseline_absent`` (§A bullet 7, B1 BLOCKER below).
-    ``rung1_by_root`` is the RAW per-root median ``underlying_price`` (§D rung 1,
-    independent of whether the ladder ultimately fell through to rung 2/3 for the
-    ``spot`` column) — the same raw basis §D requires for ``summary_spot``.
+    Returns ``(frame, excluded_by_reason, rung1_by_root, oi_match_rates)`` —
+    ``excluded_by_reason`` is ``{reason: {root, ...}}`` with two reasons possible:
+    ``conflicting_duplicate`` (§A bullet 5) and ``oi_baseline_absent`` (§A bullet 7
+    as amended by verify-round N3, below). ``rung1_by_root`` is the RAW per-root
+    median ``underlying_price`` (§D rung 1, independent of whether the ladder
+    ultimately fell through to rung 2/3 for the ``spot`` column) — the same raw
+    basis §D requires for ``summary_spot``. ``oi_match_rates`` is the measured
+    per-contract match rate for every root EXCLUDED via ``oi_baseline_absent``
+    (spec §A #7's "record ... the measured rate"); empty for any other exclusion
+    reason and for roots that were not excluded at all.
     """
     eod_s, oi_s, greeks_s = _dedupe_full_row(eod_s), _dedupe_full_row(oi_s), _dedupe_full_row(greeks_s)
     excluded_by_reason: dict[str, set[str]] = {}
@@ -506,20 +611,48 @@ def _assemble_chain_frame(eod_s: pd.DataFrame, oi_s: pd.DataFrame, greeks_s: pd.
         greeks_s = greeks_s[~greeks_s["root"].astype(str).isin(conflicting_roots)] if not greeks_s.empty else greeks_s
 
     if eod_s.empty:
-        return pd.DataFrame(columns=_CHAIN_COLUMNS), excluded_by_reason, {}
+        return pd.DataFrame(columns=_CHAIN_COLUMNS), excluded_by_reason, {}, {}
 
-    # B1 (BLOCKER, spec §A #7, review round): a root with eod rows but ZERO oi
-    # rows for THIS session has an ABSENT OI baseline, not a zero one -- the
-    # frozen engine's `oi_prev.fillna(0)` (engine/options_intel_brief.py::
-    # doi_lean) would otherwise score an absent baseline as a genuine zero,
-    # which can flip Q_oi's sign (demonstrated: +0.50 -> -0.59 with board OK).
-    # Root-level check ONLY: "zero oi ROWS for the root anywhere this session",
-    # never row-level -- a root WITH oi rows keeps its ordinary NaN->0 fill for
-    # the individual strikes oi doesn't have (a genuine new listing, ~2% of
-    # rows, has a true zero baseline and is never excluded by this check).
-    eod_roots = set(eod_s["root"].astype(str).unique())
-    oi_roots = set(oi_s["root"].astype(str).unique()) if oi_s is not None and not oi_s.empty else set()
-    oi_absent_roots = eod_roots - oi_roots
+    # N3 (verify round BLOCKER, spec §A #7 as amended 2026-08-22): OI-baseline
+    # availability is a PER-CONTRACT-COVERAGE precondition, not root presence.
+    # The earlier root-PRESENCE guard ("does this root have ANY oi row this
+    # session") missed per-contract absence -- a root with exactly ONE
+    # surviving oi row (out of e.g. 168 contracts) read as "present" and
+    # therefore fully covered, which is how the reviewer's one-row reproduction
+    # flipped Q_oi +0.50 -> -0.89. For each root materialised in eod_s this
+    # session:
+    #   match_rate = |oi_keys(s,root) ∩ eod_keys(s,root)| / |eod_keys(s,root)|
+    # on the (expiration, strike, right) identity within the root (zero-oi-rows
+    # is simply the rate=0.0 case of the SAME bucket). match_rate < FLOOR
+    # excludes the ENTIRE root from this session's frame; the exclusion
+    # diagnostic records BOTH the reason and the measured rate. Row-level
+    # eod\oi gaps ABOVE the floor keep their ordinary NaN->0 fill downstream
+    # (a genuine new listing has a true zero baseline and is never excluded by
+    # this check).
+    _ident_no_root = ["expiration", "strike", "right"]
+    eod_keys_by_root: dict[str, set[tuple]] = {
+        str(root): set(map(tuple, grp[_ident_no_root].itertuples(index=False, name=None)))
+        for root, grp in eod_s.groupby(eod_s["root"].astype(str))
+    }
+    oi_keys_by_root: dict[str, set[tuple]] = {}
+    if oi_s is not None and not oi_s.empty:
+        oi_keys_by_root = {
+            str(root): set(map(tuple, grp[_ident_no_root].itertuples(index=False, name=None)))
+            for root, grp in oi_s.groupby(oi_s["root"].astype(str))
+        }
+
+    oi_absent_roots: set[str] = set()
+    oi_match_rates: dict[str, float] = {}
+    for root, ekeys in eod_keys_by_root.items():
+        n_eod_keys = len(ekeys)
+        if n_eod_keys == 0:
+            continue  # unreachable in practice (grouped from a non-empty eod_s)
+        okeys = oi_keys_by_root.get(root, set())
+        match_rate = len(ekeys & okeys) / n_eod_keys
+        if match_rate < _OI_COVERAGE_FLOOR:
+            oi_absent_roots.add(root)
+            oi_match_rates[root] = match_rate
+
     if oi_absent_roots:
         excluded_by_reason.setdefault("oi_baseline_absent", set()).update(oi_absent_roots)
         eod_s = eod_s[~eod_s["root"].astype(str).isin(oi_absent_roots)]
@@ -527,7 +660,7 @@ def _assemble_chain_frame(eod_s: pd.DataFrame, oi_s: pd.DataFrame, greeks_s: pd.
             greeks_s = greeks_s[~greeks_s["root"].astype(str).isin(oi_absent_roots)]
 
     if eod_s.empty:
-        return pd.DataFrame(columns=_CHAIN_COLUMNS), excluded_by_reason, {}
+        return pd.DataFrame(columns=_CHAIN_COLUMNS), excluded_by_reason, {}, oi_match_rates
 
     merged = eod_s
     if not oi_s.empty:
@@ -569,7 +702,7 @@ def _assemble_chain_frame(eod_s: pd.DataFrame, oi_s: pd.DataFrame, greeks_s: pd.
         "volume": pd.to_numeric(merged["volume"], errors="coerce").astype("float32"),
         "spot": merged["root"].astype(str).map(resolved_spot).astype("float32"),
     })
-    return out, excluded_by_reason, rung1_by_root
+    return out, excluded_by_reason, rung1_by_root, oi_match_rates
 
 
 def _build_chain_next(oi_d: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, set[str]]]:
@@ -897,7 +1030,7 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
         "state": "ok" if universe else "missing",
     })
 
-    anchor_str = _latest_known_date(store, universe)
+    anchor_str = _latest_known_date(store, universe, corrupt_counter=corrupt_files)
     if anchor_str is None:
         # Nothing dated in the store for this universe at all — no lawful pair is
         # even conceivable. Same MIXED_VINTAGE shape the frozen engine already uses.
@@ -927,20 +1060,25 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
 
     n_eod = eod_all.groupby("date")["root"].nunique() if not eod_all.empty else pd.Series(dtype="int64")
     n_oi = oi_all.groupby("date")["root"].nunique() if not oi_all.empty else pd.Series(dtype="int64")
-    committed_sessions, F = _select_committed_sessions(candidate, n_eod, n_oi)
+    committed_sessions, F, decision_info = _select_committed_sessions(candidate, n_eod, n_oi)
 
-    # M1+M2(b) (review round): NEW `session_presence` receipt — sha256 over the
-    # ordered per-candidate (session, n_eod, n_oi) counts consumed by the §C
-    # predicate. Binds the presence facts that drive S/D selection: a D-dated
-    # eod row-population change that could move `as_of_session` therefore always
-    # moves `receipt_id`, even though (per the corrected §B leak barrier) the
-    # VALUES themselves never reach a scored frame. Counts are re-pull-stable
-    # (contract §7's semantic no-op survives a byte rewrite that preserves them).
-    presence_rows = [(s, int(n_eod.get(s, 0)), int(n_oi.get(s, 0))) for s in candidate]
+    # N2 (verify round, narrows M1+M2(b)): `session_presence` receipt — sha256
+    # over (a) the ordered per-candidate (session, plaus_bool, balanced_bool)
+    # decision tuples, plus (b) the exact (n_eod, n_oi) counts for ONLY the
+    # decision-critical sessions (final max(F), every demoted session, and the
+    # X candidate). This still binds every presence fact that can move S/D
+    # selection (M1's property survives), while a count drift on a
+    # never-materialised candidate that flips no decision boolean no longer
+    # churns `receipt_id` (spec §F).
+    presence_payload = {
+        "decisions": decision_info["candidate_decisions"],
+        "counts": sorted(decision_info["counts"].items()),
+    }
     input_receipts.append({
         "logical_source": "session_presence", "path": "thetadata://session_presence",
-        "asof": anchor_str, "sha256": brief.sha256_of(presence_rows),
-        "member_count": len(presence_rows), "state": "ok" if presence_rows else "missing",
+        "asof": anchor_str, "sha256": brief.sha256_of(presence_payload),
+        "member_count": len(decision_info["candidate_decisions"]),
+        "state": "ok" if decision_info["candidate_decisions"] else "missing",
     })
 
     S, D, pending = brief.select_settled_pair(committed_sessions, lambda d: (
@@ -980,7 +1118,8 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
     rung1_history: dict[str, dict[str, float]] = {}
     rung2_detail_by_session: dict[str, dict[str, dict[str, Any]]] = {}
 
-    def _record_exclusions(session_key: str, by_reason: dict[str, set[str]]) -> None:
+    def _record_exclusions(session_key: str, by_reason: dict[str, set[str]],
+                            rates: dict[str, float] | None = None) -> None:
         if not by_reason:
             return
         entries = list(identity_root_exclusions.get(session_key, []))
@@ -990,7 +1129,13 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
                 key = (r, reason)
                 if key not in seen:
                     seen.add(key)
-                    entries.append({"root": r, "reason": reason})
+                    entry: dict[str, Any] = {"root": r, "reason": reason}
+                    # N3 (verify round): the ``oi_baseline_absent`` diagnostic
+                    # carries the measured per-contract match rate alongside the
+                    # reason (spec §A #7 — "record ... the measured rate").
+                    if rates is not None and r in rates:
+                        entry["rate"] = round(rates[r], 6)
+                    entries.append(entry)
         identity_root_exclusions[session_key] = sorted(entries, key=lambda e: (e["root"], e["reason"]))
 
     for s in load_sessions:
@@ -999,10 +1144,10 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
         greeks_s = greeks_all[greeks_all["date"] == s] if not greeks_all.empty else greeks_all
         rung_map_s: dict[str, int] = {}
         rung2_detail_s: dict[str, dict[str, Any]] = {}
-        frame, excluded_by_reason, rung1_by_root = _assemble_chain_frame(
+        frame, excluded_by_reason, rung1_by_root, oi_match_rates = _assemble_chain_frame(
             eod_s, oi_s, greeks_s, s, record_rungs=rung_map_s, record_rung2_detail=rung2_detail_s)
         chains_by_session[s] = frame
-        _record_exclusions(s, excluded_by_reason)
+        _record_exclusions(s, excluded_by_reason, oi_match_rates)
         rung_by_session[s] = rung_map_s
         rung1_history[s] = rung1_by_root
         rung2_detail_by_session[s] = rung2_detail_s
@@ -1047,7 +1192,7 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
             "logical_source": "identity_root_exclusions", "path": "thetadata://identity_exclusions",
             "asof": S,
             "sha256": brief.sha256_of(sorted(
-                (s, sorted((e["root"], e["reason"]) for e in v))
+                (s, sorted((e["root"], e["reason"], e.get("rate")) for e in v))
                 for s, v in identity_root_exclusions.items()
             )),
             "member_count": sum(len(v) for v in identity_root_exclusions.values()),

@@ -279,7 +279,7 @@ def test_ad1t0_1i_m4_assemble_chain_frame_dtype_pin_exact():
         "right": "C", "date": "2026-03-02", "implied_vol": 0.30, "delta": 0.5,
         "underlying_price": 100.0,
     }])
-    real, _excluded, _rung1 = producer._assemble_chain_frame(eod, oi, greeks, "2026-03-02", record_rungs={})
+    real, _excluded, _rung1, _rates = producer._assemble_chain_frame(eod, oi, greeks, "2026-03-02", record_rungs={})
     assert not real.empty, "fixture failed to produce any rows -- test is vacuous"
 
     float32_cols = ["K", "T", "iv", "delta", "oi", "volume", "spot"]
@@ -1569,13 +1569,13 @@ def test_ad1t0_1b_conflicting_duplicate_identity_excludes_whole_root_for_session
          "date": "2026-03-02", "open_interest": 50.0},
     ])
     greeks = pd.DataFrame(columns=producer._GREEKS_COLS)
-    frame, excluded, _rung1 = producer._assemble_chain_frame(eod, oi, greeks, "2026-03-02", record_rungs={})
+    frame, excluded, _rung1, _rates = producer._assemble_chain_frame(eod, oi, greeks, "2026-03-02", record_rungs={})
     assert excluded == {"conflicting_duplicate": {"AAA"}}
     assert set(frame["underlying"].astype(str)) == {"BBB"}
 
     # A byte-identical (full-row) duplicate is NOT a conflict -- ordinary dedup only.
     eod_clean_dup = pd.concat([eod.iloc[[2]], eod.iloc[[2]]], ignore_index=True)
-    frame2, excluded2, _ = producer._assemble_chain_frame(eod_clean_dup, oi, greeks, "2026-03-02", record_rungs={})
+    frame2, excluded2, _, _rates2 = producer._assemble_chain_frame(eod_clean_dup, oi, greeks, "2026-03-02", record_rungs={})
     assert excluded2 == {}
     assert len(frame2) == 1
 
@@ -1640,33 +1640,52 @@ def test_ad1t0_1c_b1_flip_demonstration_absent_baseline_vs_fabricated_zero():
     assert root not in lean_fixed, "post-fix: an absent OI baseline must never enter doi_lean at all"
 
 
-def test_ad1t0_1d_b1_oi_baseline_absent_root_excluded_from_frame_and_diagnostic():
+def test_ad1t0_1d_n3_oi_baseline_absent_root_excluded_from_frame_and_diagnostic():
     eod = pd.DataFrame([
         {"root": "AAA", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0, "right": "C",
          "date": "2026-03-02", "volume": 10.0},
         {"root": "BBB", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0, "right": "C",
          "date": "2026-03-02", "volume": 5.0},
     ])
-    oi = pd.DataFrame([   # AAA has ZERO oi rows this session; BBB has one.
+    oi = pd.DataFrame([   # AAA has ZERO oi rows this session (match_rate 0.0); BBB has one (match_rate 1.0).
         {"root": "BBB", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0, "right": "C",
          "date": "2026-03-02", "open_interest": 50.0},
     ])
     greeks = pd.DataFrame(columns=producer._GREEKS_COLS)
-    frame, excluded, _rung1 = producer._assemble_chain_frame(eod, oi, greeks, "2026-03-02", record_rungs={})
+    frame, excluded, _rung1, rates = producer._assemble_chain_frame(eod, oi, greeks, "2026-03-02", record_rungs={})
     assert excluded == {"oi_baseline_absent": {"AAA"}}
+    assert rates["AAA"] == 0.0
     assert set(frame["underlying"].astype(str)) == {"BBB"}, \
         "a root with no oi[S] slice must not appear in chain[S]"
 
-    # Row-level eod\oi NaN->0 STILL applies for a root that DOES have oi rows --
-    # a new listing with no matching (expiration, strike, right) in oi is a true
-    # zero baseline, never excluded (only ROOT-level absence excludes).
-    eod2 = pd.concat([eod.iloc[[1]], pd.DataFrame([{
+    # Row-level eod\oi NaN->0 STILL applies for a root ABOVE the N3 per-contract
+    # coverage floor -- a new listing with no matching (expiration, strike,
+    # right) in oi is a true zero baseline, never excluded (only a root whose
+    # OVERALL match_rate < 0.60 is excluded). BBB gets 4 MORE matched contracts
+    # here (5 of 6 = 83% matched) so the single new listing doesn't itself pull
+    # the root below the floor -- isolating the row-level behavior from N3's
+    # root-level floor (a 1-of-2 fixture, as this test used pre-N3, would now
+    # correctly trip the floor itself; that is exactly N3's intended tightening,
+    # covered separately by test_ad1t0_1d2/1d3).
+    more_matched = [
+        {"root": "BBB", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0 + i, "right": "C",
+         "date": "2026-03-02", "volume": 1.0}
+        for i in range(1, 5)
+    ]
+    more_matched_oi = [
+        {"root": "BBB", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0 + i, "right": "C",
+         "date": "2026-03-02", "open_interest": 10.0}
+        for i in range(1, 5)
+    ]
+    eod2 = pd.concat([eod.iloc[[1]], pd.DataFrame(more_matched), pd.DataFrame([{
         "root": "BBB", "expiration": pd.Timestamp("2026-06-19"), "strike": 200.0, "right": "P",
         "date": "2026-03-02", "volume": 1.0,
     }])], ignore_index=True)
-    frame2, excluded2, _ = producer._assemble_chain_frame(eod2, oi, greeks, "2026-03-02", record_rungs={})
-    assert excluded2 == {}
-    assert len(frame2) == 2
+    oi2 = pd.concat([oi, pd.DataFrame(more_matched_oi)], ignore_index=True)
+    frame2, excluded2, _, rates2 = producer._assemble_chain_frame(eod2, oi2, greeks, "2026-03-02", record_rungs={})
+    assert excluded2 == {}, excluded2
+    assert "BBB" not in rates2
+    assert len(frame2) == 6
     assert frame2["oi"].isna().sum() == 1   # the new listing keeps NaN (engine fills 0 downstream)
 
 
@@ -1700,6 +1719,128 @@ def test_ad1t0_1e_b1_oi_baseline_absent_at_historical_session_flows_into_receipt
     assert excl["member_count"] >= 1
     # S itself is untouched -- present_names count at S must be unaffected.
     assert payload["eligibility"]["present"] == baseline["eligibility"]["present"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# N3 (verify round BLOCKER, spec §A #7 as amended) — the root-PRESENCE guard
+# above (B1) missed PER-CONTRACT absence: a root with exactly ONE surviving oi
+# row out of many contracts was scored "present" (oi_absent_roots = eod_roots -
+# oi_roots is empty whenever at least one oi row exists), so the other contracts
+# merged with a NaN baseline the frozen engine fills to a fabricated zero --
+# demonstrated live: Q_oi flipped +0.50 -> -0.89 through a root with 1 of 168
+# contracts matched. Replaced with a per-contract match-rate floor (0.60).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_1d2_n3_per_contract_coverage_floor_excludes_one_surviving_row_root():
+    """N3 flip-verification (unit level): VICTIM has 168 distinct (expiration,
+    strike, right) contracts in eod[s] (the reviewer's exact reproduction
+    shape -- 4 expiry bands x 21 moneyness x 2 rights, the standard fixture
+    generator's own contract count) but only ONE has a matching oi[s] row --
+    match_rate = 1/168 ~= 0.006, far under the 0.60 floor -- excluded root-wide,
+    diagnostic rate recorded. HEALTHY (19 of 20 = 95% matched) stays IN with
+    ordinary row-level NaN->0 for its one unmatched contract, per the row-level
+    exclusion carve-out spec §A #7 preserves above the floor."""
+    session = "2026-03-02"
+
+    victim_rows = [
+        {"root": "VICTIM", "expiration": pd.Timestamp("2026-06-19") + pd.Timedelta(days=30 * band),
+         "strike": 100.0 + i, "right": right, "date": session, "volume": 10.0}
+        for band in range(4) for i in range(21) for right in ("C", "P")
+    ]
+    assert len(victim_rows) == 168, "test precondition: must reproduce the reviewer's exact 168-contract shape"
+    eod_victim = pd.DataFrame(victim_rows)
+    # Exactly ONE surviving oi row, matching victim_rows[0]'s identity.
+    matched = victim_rows[0]
+    oi_victim = pd.DataFrame([{
+        "root": matched["root"], "expiration": matched["expiration"], "strike": matched["strike"],
+        "right": matched["right"], "date": matched["date"], "open_interest": 500.0,
+    }])
+
+    healthy_rows = [
+        {"root": "HEALTHY", "expiration": pd.Timestamp("2026-06-19"), "strike": 100.0 + i,
+         "right": "C", "date": session, "volume": 5.0}
+        for i in range(20)
+    ]
+    eod_healthy = pd.DataFrame(healthy_rows)
+    oi_healthy = pd.DataFrame([
+        {"root": r["root"], "expiration": r["expiration"], "strike": r["strike"], "right": r["right"],
+         "date": r["date"], "open_interest": 50.0}
+        for r in healthy_rows[:19]   # 19 of 20 matched -- one genuine new listing (row-level NaN->0)
+    ])
+
+    eod = pd.concat([eod_victim, eod_healthy], ignore_index=True)
+    oi = pd.concat([oi_victim, oi_healthy], ignore_index=True)
+    greeks = pd.DataFrame(columns=producer._GREEKS_COLS)
+
+    frame, excluded, _rung1, rates = producer._assemble_chain_frame(eod, oi, greeks, session, record_rungs={})
+    assert excluded.get("oi_baseline_absent") == {"VICTIM"}, excluded
+    assert rates["VICTIM"] == pytest.approx(1 / 168, abs=1e-9)
+    assert round(rates["VICTIM"], 3) == pytest.approx(0.006, abs=0.001)
+
+    present_roots = set(frame["underlying"].astype(str))
+    assert "VICTIM" not in present_roots, "1-of-168-matched root must be excluded entirely"
+    assert "HEALTHY" in present_roots, "95%-matched root must stay in"
+    healthy_frame = frame[frame["underlying"].astype(str) == "HEALTHY"]
+    assert len(healthy_frame) == 20
+    assert healthy_frame["oi"].isna().sum() == 1, \
+        "the one unmatched HEALTHY contract keeps NaN (engine fills 0 downstream) -- row-level exclusion untouched"
+
+
+def test_ad1t0_1d3_n3_flip_demonstration_one_surviving_oi_row_fabricates_direction():
+    """N3 flip-verification (engine level, mirrors test_ad1t0_1c's B1 proof):
+    PRE-fix, the root-PRESENCE guard (``eod_roots - oi_roots``) finds VICTIM's
+    oi_roots non-empty (the one surviving row) and NEVER excludes it -- every
+    OTHER known contract merges with a NaN baseline ``doi_lean`` fills to a
+    fabricated zero. Demonstrated directly against the frozen (byte-unchanged)
+    engine: D's book lists several of VICTIM's KNOWN-but-baseline-absent
+    contracts, and the lean's sign is purely a function of which side of D's
+    raw split happens to be larger -- direction-bearing garbage, not a signal,
+    exactly like the reviewer's live +0.50 -> -0.89 flip. Post-fix, N3 excludes
+    VICTIM entirely before ``doi_lean`` ever sees it."""
+    root = "VICTIM"
+    next_session = "2026-03-03"
+
+    # 168 known contracts (84 calls C0..C83, 84 puts P0..P83); only P0 has a
+    # real (matched) baseline -- everything else is baseline-ABSENT (NaN).
+    tickers = [f"O:VICTIM260619C{i:08d}" for i in range(84)] + [f"O:VICTIM260619P{i:08d}" for i in range(84)]
+    oi_col = [np.nan] * 168
+    matched_ticker = "O:VICTIM260619P00000000"
+    oi_col[tickers.index(matched_ticker)] = 500.0   # the one surviving oi row
+    chain_settled_buggy = pd.DataFrame({
+        "underlying": pd.Categorical([root] * 168),
+        "strike_ticker": tickers,
+        "expiry": pd.to_datetime(["2026-06-19"] * 168),
+        "oi": pd.array(oi_col, dtype="float32"),
+    })
+
+    # D's book: 3 calls (baseline-absent) print D-oi=100 each, 1 put
+    # (baseline-absent, NOT the matched P0) prints D-oi=20 -- a call-skewed lean
+    # fabricated purely from D's own raw split.
+    d_tickers = ["O:VICTIM260619C00000000", "O:VICTIM260619C00000001",
+                 "O:VICTIM260619C00000002", "O:VICTIM260619P00000001"]
+    chain_next = pd.DataFrame({
+        "underlying": pd.Categorical([root] * 4),
+        "strike_ticker": d_tickers,
+        "expiry": pd.to_datetime(["2026-06-19"] * 4),
+        "is_call": [True, True, True, False],
+        "oi": pd.array([100.0, 100.0, 100.0, 20.0], dtype="float32"),
+    })
+    lean_buggy = brief.doi_lean(chain_settled_buggy, chain_next, next_session)
+    assert lean_buggy[root] > 0, "pre-fix: call-heavy D raw split, fabricated from baseline-absent contracts"
+
+    # Flip side -- reverse D's raw split; the fabricated-baseline mechanism
+    # flips sign purely as a function of D's own split, never a true baseline.
+    chain_next_flipped = chain_next.assign(oi=pd.array([10.0, 10.0, 10.0, 300.0], dtype="float32"))
+    lean_buggy_flipped = brief.doi_lean(chain_settled_buggy, chain_next_flipped, next_session)
+    assert lean_buggy_flipped[root] < 0, \
+        "fabricated-baseline sign is purely a function of D's raw OI split -- direction-bearing garbage"
+
+    # Post-fix: N3 excludes VICTIM entirely (match_rate 1/168 << 0.60 floor)
+    # before it ever reaches doi_lean.
+    chain_settled_fixed = chain_settled_buggy.iloc[0:0]
+    lean_fixed = brief.doi_lean(chain_settled_fixed, chain_next, next_session)
+    assert root not in lean_fixed, "post-fix: a per-contract-absent OI baseline must never enter doi_lean at all"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1778,7 +1919,7 @@ def test_ad1t0_2a_steady_cadence_uses_newest_consecutive_full_pair():
     n_oi = pd.Series({s: 10 for s in sessions})
     x = _session_n_forward(sessions[-1], 1)
     n_eod[x], n_oi[x] = 0, 0   # X not admitted -- no OI printed yet for it
-    committed, F = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    committed, F, _decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
     assert F == sessions and committed == sessions
     S, D, pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
     assert (S, D) == (sessions[-2], sessions[-1])
@@ -1791,7 +1932,7 @@ def test_ad1t0_2b_morning_cadence_admits_oi_only_frontier_as_D():
     x = _session_n_forward(sessions[-1], 1)
     n_eod[x] = 0            # EOD for X has not printed at all
     n_oi[x] = 9             # OI for X HAS printed, clears the 0.90 store-relative floor
-    committed, F = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    committed, F, _decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
     assert F == sessions
     assert committed == sorted(sessions + [x])
     S, D, pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
@@ -1799,7 +1940,7 @@ def test_ad1t0_2b_morning_cadence_admits_oi_only_frontier_as_D():
 
     # boundary: one OI row short of the 0.90 floor -> X is NOT admitted.
     n_oi[x] = 8
-    committed_short, F_short = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    committed_short, F_short, _decision2 = producer._select_committed_sessions(sessions, n_eod, n_oi)
     assert x not in committed_short
 
 
@@ -1808,47 +1949,221 @@ def test_ad1t0_2c_backfill_hole_excluded_from_both_roles():
     n_eod = pd.Series({s: 10 for s in sessions})
     n_oi = pd.Series({s: 10 for s in sessions})
     hole = sessions[3]
-    n_oi[hole] = 2   # < 0.90 * 10 -> an honest single-tier hole, not full(s)
-    committed, F = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    n_oi[hole] = 2   # < 0.25 * 10 pathology floor -- an honest single-tier hole, not plaus(s)
+    committed, F, _decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
     assert hole not in F and hole not in committed
     S, D, pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
     assert hole not in (S, D)
     assert (S, D) == (sessions[4], sessions[5])   # the hole never binds S or D
 
 
-def test_ad1t0_2d_m1a_symmetric_full_floor_disqualifies_lopsided_tiers():
-    """M1(a) (review round): ``full(s)`` gains a SYMMETRIC floor -- a half-written
-    tier on EITHER side disqualifies the session. Pre-fix, a 3-root eod tier next
-    to a 400-root oi tier passed (``400 >= 0.90*3`` is trivially true); the
-    reverse direction was never checked either. Both directions -- and the exact
-    90% boundary -- are asserted here."""
+def test_ad1t0_2d_n4_plaus_and_s_role_balance_boundaries():
+    """N4 correction (verify round, REPLACES the old M1(a) SYMMETRIC 0.90
+    ``full()`` floor): ``plaus(s)`` -- HISTORY (F) membership -- is deliberately
+    LOOSER than the old symmetric floor; it only blocks the 3-vs-400-style
+    thinness pathology (0.25 floor) plus requires ``n_oi(s) >= 0.90*n_eod(s)``
+    (an OI-baseline-coverage precondition, unchanged from before). The STRICT
+    (near-)symmetric balance check applies ONLY to whichever session wants the
+    S role -- via demotion (tested at ``F`` level here since a single-session
+    candidate list demotes straight to empty), never via outright plaus()
+    rejection. All four spec-numeric boundaries are asserted."""
     sessions = _real_sessions(6)
     s = sessions[0]
 
+    # 3-eod-vs-400-oi pathology: plaus() itself rejects it outright
+    # (n_eod < 0.25*n_oi) -- never even reaches the S-role demotion step.
     n_eod = pd.Series({s: 3}); n_oi = pd.Series({s: 400})
-    _committed, F = producer._select_committed_sessions([s], n_eod, n_oi)
-    assert s not in F, "a 3-root eod tier beside a 400-root oi tier must disqualify the session"
+    _committed, F, _decision = producer._select_committed_sessions([s], n_eod, n_oi)
+    assert s not in F, "a 3-root eod tier beside a 400-root oi tier must stay out of F (0.25 pathology floor)"
 
+    # Reverse (400 eod / 3 oi): plaus() ALSO rejects (n_oi < 0.90*n_eod -- no
+    # usable OI baseline at all, unchanged gate in both old and new code).
     n_eod2 = pd.Series({s: 400}); n_oi2 = pd.Series({s: 3})
-    _committed2, F2 = producer._select_committed_sessions([s], n_eod2, n_oi2)
+    _committed2, F2, _decision2 = producer._select_committed_sessions([s], n_eod2, n_oi2)
     assert s not in F2, "the reverse direction (400-root eod, 3-root oi) must ALSO disqualify"
 
-    # Exact 90% boundary -- both directions clear -> full.
+    # Exact 90% S-role balance boundary -- plaus AND balance both clear -> F
+    # retains it (it can legitimately take the S role).
     n_eod3 = pd.Series({s: 90}); n_oi3 = pd.Series({s: 100})
-    _committed3, F3 = producer._select_committed_sessions([s], n_eod3, n_oi3)
+    _committed3, F3, _decision3 = producer._select_committed_sessions([s], n_eod3, n_oi3)
     assert s in F3
 
-    # One row under the boundary on the eod side -> disqualified.
+    # One row UNDER the 90% S-role balance boundary: plaus() ADMITS it (88%
+    # eod coverage clears the loose 0.25 floor easily -- it enters F initially)
+    # but the demotion loop then removes it since it cannot take the S role
+    # unbalanced, leaving F empty for this single-candidate list. The N4-
+    # corrected MECHANISM (admit-then-demote) differs from the old direct
+    # plaus/full rejection, but the final F membership matches for a lone
+    # candidate with no older session to fall back on.
     n_eod4 = pd.Series({s: 89}); n_oi4 = pd.Series({s: 100})
-    _committed4, F4 = producer._select_committed_sessions([s], n_eod4, n_oi4)
-    assert s not in F4
+    _committed4, F4, _decision4 = producer._select_committed_sessions([s], n_eod4, n_oi4)
+    assert s not in F4, "unbalanced session must be demoted out of F, never take the S role"
 
 
-def test_ad1t0_2e_m1b_session_presence_receipt_binds_predicate_counts(tmp_path, monkeypatch):
-    """M1(b) (review round): NEW ``session_presence`` receipt -- sha256 over the
-    ordered per-candidate (session, n_eod, n_oi) counts. A byte-rewrite
-    preserving counts must not move it; a genuine D-dated eod row-population
-    change that could move S must move it (and `receipt_id`)."""
+def test_ad1t0_2d2_n4_demoted_session_stays_x_eligible_and_s_never_moves():
+    """N4 flip-verify: a mid-capture partial eod[D] (<90% of oi[D]) is demoted
+    out of F -- never S -- but remains lawfully admissible as the OI-only
+    frontier X via its OWN oi coverage ('a demoted session is naturally the X
+    candidate when consecutive', spec §C); ``as_of_session`` must not move onto
+    it. Clean history (5 balanced sessions) plus one partial latest session so
+    F does not collapse to empty."""
+    sessions = _real_sessions(6)
+    hist = sessions[:-1]
+    latest = sessions[-1]
+    n_eod = pd.Series({s: 20 for s in hist})
+    n_oi = pd.Series({s: 20 for s in hist})
+    # latest: 17/20 eod present (85%), oi fully printed (20) -- plaus() admits
+    # (n_oi=20 >= 0.90*17=15.3; n_eod=17 >= 0.25*20=5) but the S-role balance
+    # check (17 >= 0.90*20=18?) fails -- demoted.
+    n_eod[latest] = 17
+    n_oi[latest] = 20
+    committed, F, decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert latest not in F, "the partial-eod latest session must never take the S role"
+    assert F and max(F) == hist[-1]
+    assert latest in committed, "a demoted session must still be admitted as the OI-only frontier X"
+    assert latest in decision["counts"] and hist[-1] in decision["counts"], \
+        "N2: demoted session AND final max(F) must both be decision-critical counts"
+
+    S, D, pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
+    assert S == hist[-1], "as_of_session must not move onto the demoted partial session"
+    assert D == latest
+
+
+def test_ad1t0_2d3_n4_flip_eod_missing_3_of_20_produces_graded_insufficient_coverage():
+    """N4 flip-verify (reviewer's matrix, eod-missing 3-of-20 = 85%): under the
+    RETIRED symmetric ``full()`` floor, a store whose eod tier trails its oi
+    tier at EVERY session (a persistent structural divergence, not just the
+    tail) breaks calendar-ADJACENCY across the whole candidate window --
+    ``select_settled_pair`` can never find two consecutive committed sessions,
+    so the whole board goes MIXED_VINTAGE (present=0, cov=None) even though
+    17/20 = 85% coverage is a perfectly gradeable state. Fixture: 20 roots, 6
+    sessions, eod missing for 3 (fixed) roots on every session except the
+    newest (s6, fully balanced) -- a checkerboard-style adjacency break under
+    the old floor. New code: ``plaus()`` admits every session into F (0.25
+    floor), the S-role demotion loop stops IMMEDIATELY at the balanced newest
+    session (s6) -- no demotion even needed -- so F retains full adjacency and
+    ``select_settled_pair`` finds (s5, s6); s5 itself has only 17/20 = 85% of
+    the universe present in its OWN chain -> graded INSUFFICIENT_COVERAGE with
+    real present/coverage numbers, never a total blackout."""
+    sessions = _real_sessions(6)
+
+    def _old_full(s: str, n_eod: pd.Series, n_oi: pd.Series) -> bool:
+        ne, no = int(n_eod.get(s, 0)), int(n_oi.get(s, 0))
+        return ne > 0 and no >= 0.90 * ne and ne >= 0.90 * no
+
+    # Reference: the RETIRED symmetric predicate, reimplemented inline (never
+    # imported -- the module no longer has it) purely to prove the shadow
+    # comparison. Sessions s1..s5 lopsided (17/20), s6 balanced (20/20).
+    n_eod = pd.Series({s: (17 if s != sessions[-1] else 20) for s in sessions})
+    n_oi = pd.Series({s: 20 for s in sessions})
+    old_F = [s for s in sessions if _old_full(s, n_eod, n_oi)]
+    assert old_F == [sessions[-1]], "shadow check: only the balanced newest session passes the retired floor"
+    # Old X: next session after old_F's max is beyond this fixture -> never admitted.
+    old_committed = sorted(set(old_F))
+    old_S, old_D, _old_pending = brief.select_settled_pair(
+        old_committed, lambda d: _session_n_forward(d, 1))
+    assert (old_S, old_D) == (None, None), \
+        "shadow check: the retired predicate has no lawful adjacent pair at all -- MIXED_VINTAGE"
+
+    # New code (the actual module function).
+    committed, F, _decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert F == sessions, "plaus() must admit every session -- none is demoted (newest is already balanced)"
+    S, D, _pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
+    assert (S, D) == (sessions[-2], sessions[-1]), "a real lawful pair must be found, never MIXED_VINTAGE"
+
+
+def test_ad1t0_2d4_n4_flip_eod_missing_5_of_40_produces_graded_insufficient_coverage():
+    """N4 flip-verify (reviewer's matrix, eod-missing 5-of-40 = 87.5% ~= 88%) --
+    same construction as 2d3, scaled to 40 roots / 35 present, proving the flip
+    is not an artifact of the specific 20-root ratio."""
+    sessions = _real_sessions(6)
+
+    def _old_full(s: str, n_eod: pd.Series, n_oi: pd.Series) -> bool:
+        ne, no = int(n_eod.get(s, 0)), int(n_oi.get(s, 0))
+        return ne > 0 and no >= 0.90 * ne and ne >= 0.90 * no
+
+    n_eod = pd.Series({s: (35 if s != sessions[-1] else 40) for s in sessions})
+    n_oi = pd.Series({s: 40 for s in sessions})
+    old_F = [s for s in sessions if _old_full(s, n_eod, n_oi)]
+    assert old_F == [sessions[-1]]
+    old_S, old_D, _old_pending = brief.select_settled_pair(
+        sorted(set(old_F)), lambda d: _session_n_forward(d, 1))
+    assert (old_S, old_D) == (None, None)
+
+    committed, F, _decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert F == sessions
+    S, D, _pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
+    assert (S, D) == (sessions[-2], sessions[-1])
+
+
+def _session_presence_sha(decision_info: dict[str, Any]) -> str:
+    """Replicates ``build()``'s own ``session_presence`` payload/hash formula
+    exactly (N2, spec §F) -- kept as a tiny standalone helper so the property
+    below can be exercised directly against ``_select_committed_sessions``
+    without a full store round-trip (a full producer.build() round-trip
+    necessarily also re-hashes the `chains_*` receipts from the SAME
+    n_eod/n_oi-producing row content, which would confound a receipt_id-level
+    assertion with an unrelated, expected data-content change)."""
+    payload = {
+        "decisions": decision_info["candidate_decisions"],
+        "counts": sorted(decision_info["counts"].items()),
+    }
+    return brief.sha256_of(payload)
+
+
+def test_ad1t0_2e_n2_session_presence_narrows_to_decision_critical_counts_unit():
+    """N2 (verify round, narrows the earlier M1(b) receipt): ``session_presence``
+    hashes (a) the ordered per-candidate (session, plaus_bool, balanced_bool)
+    decision tuples for EVERY candidate, plus (b) exact (n_eod, n_oi) counts for
+    ONLY the decision-critical sessions (final max(F), every demoted session,
+    the X candidate). Exercised directly against ``_select_committed_sessions``
+    (see ``_session_presence_sha`` above for why): a count drift on a
+    never-materialised candidate that flips NO decision boolean leaves the hash
+    UNCHANGED (the actual N2 fix); a drift that flips a decision (F membership,
+    demotion, or X admission) moves it."""
+    sessions = _real_sessions(8)
+    # A mid-history session (index 2, far from the tail/decision-critical
+    # positions) gets a harmless count drift: 20/20 -> 19/20. plaus (20>=0.9*19,
+    # 19>=0.25*20) and balanced (19>=0.9*20=18) are BOTH unchanged True/True.
+    non_critical = sessions[2]
+    n_eod = pd.Series({s: 20 for s in sessions})
+    n_oi = pd.Series({s: 20 for s in sessions})
+    _committed1, _F1, decision1 = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    sha1 = _session_presence_sha(decision1)
+    assert non_critical not in decision1["counts"], \
+        "test precondition: the drifted session must not already be decision-critical"
+
+    n_eod_drift = n_eod.copy(); n_eod_drift[non_critical] = 19
+    _committed2, _F2, decision2 = producer._select_committed_sessions(sessions, n_eod_drift, n_oi)
+    sha2 = _session_presence_sha(decision2)
+    assert sha2 == sha1, \
+        "N2: a count drift that flips no decision boolean on a non-critical candidate must not move the hash"
+
+    # A drift that DOES flip a decision (push non_critical below the pathology
+    # floor entirely -- plaus flips True -> False) MUST move the hash.
+    n_eod_flip = n_eod.copy(); n_eod_flip[non_critical] = 2   # 2 < 0.25*20=5 -> plaus flips False
+    _committed3, _F3, decision3 = producer._select_committed_sessions(sessions, n_eod_flip, n_oi)
+    sha3 = _session_presence_sha(decision3)
+    assert sha3 != sha1, "N2: a drift that flips a decision boolean must move the hash"
+
+    # A drift AT a decision-critical session (the final max(F), here the
+    # newest/tail session) moves the hash even without flipping any boolean,
+    # since its exact counts are always bound in (M1's property, preserved).
+    tail = sessions[-1]
+    n_eod_tail = n_eod.copy(); n_eod_tail[tail] = 19   # still plaus/balanced True, but the COUNT itself moved
+    _committed4, _F4, decision4 = producer._select_committed_sessions(sessions, n_eod_tail, n_oi)
+    sha4 = _session_presence_sha(decision4)
+    assert tail in decision4["counts"], "test precondition: the tail session must be decision-critical (final max F)"
+    assert sha4 != sha1, "N2: the exact counts of a decision-critical session must still bind into the hash"
+
+
+def test_ad1t0_2e2_n2_session_presence_receipt_wired_end_to_end(tmp_path, monkeypatch):
+    """N2 wiring smoke test (store level): the ``session_presence`` receipt
+    round-trips through a real ``producer.build()`` call -- a byte rewrite that
+    preserves every row (reorder only) leaves it (and ``receipt_id``) unchanged;
+    a genuine D-dated row-population change (which also changes D's OWN
+    consumed chain content, so ``receipt_id`` moving is expected via BOTH the
+    `session_presence` AND the `chains_*` receipts) moves it."""
     sessions, S, D = _fake_repo_sessions()
     symbols = [f"SYM{chr(65+i)}" for i in range(6)]
     store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
