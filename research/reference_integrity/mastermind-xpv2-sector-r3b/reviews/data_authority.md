@@ -411,6 +411,27 @@ method, and it is the reason I could confirm the R2 invariant quickly.
 1. `DAC-101` — restore the `regime_sizing` position-sizing statement to the Overview hero.
 2. `DAC-102` — restore the methodology receipt and its "shape read, not a forecast" caveat.
 
+**Why these two cannot ride into implementation.** The commission's PASS bar is "subject only
+to conditions that can safely ride into implementation." These fail that bar for a specific
+reason, not merely because they are HIGH.
+
+Restoring them is *not* a mechanical re-add. Production carries both as chips in a hero chip
+row; this reference deliberately rations chips (`ORCHESTRATOR_ADJUDICATIONS` §6 chip-budget
+law) and demotes technicals to Tier-2 receipts. So the remedy needs a real composition
+decision — most plausibly folding the sizing statement into the hero's own line and the
+methodology text into a Tier-2 receipt beside the existing seasonal one, rather than
+reinstating two production chips the design system has already ruled against. That is a
+design judgement about an Action-tier surface, and it belongs to the seat that owns the
+design system while the reference is still open.
+
+Deferring it to R3C inverts the safeguard: the migrating session would be reading a spec whose
+hero shows no sizing constraint and no non-forecast caveat, *and* a capability crosscheck
+(rows #24/#86) that affirmatively certifies the hero band and destination inventory as
+complete. There is no note anywhere in the pack telling R3C to keep what production already
+has. A defect that the evidence pack actively certifies as absent-by-design is precisely the
+class that survives migration — which is the whole reason a reference gets frozen and
+attacked before it becomes law.
+
 **CONDITIONS (may ride into R3C if carried explicitly):**
 3. `DAC-103` restore/record `migration.note_en`.
 4. `DAC-104` restore `allocation.html` ("Open the playbook →") or obtain an explicit REMOVE ruling.
