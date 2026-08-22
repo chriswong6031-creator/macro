@@ -70,6 +70,7 @@
    "known_at": "2026-01-10T00:00:00+00:00",
    "claim_scopes": [
     "milestone",
+    "program_event_link",
     "program_identity"
    ]
   }
@@ -532,6 +533,6 @@
    }
   ],
   "conf_normalized_preimage": "program_event_link|award_event|govws-0000000000000000example|prog-event:1b5c5cc8b33d,prog-event:a09c765138c7|2026-08-22t08:00:00+00:00",
-  "assertion": "DECLARED (analysis_as_of >= known_at(conflict), < K2): the conflicts row is CURRENT, so workspace program_link for the event is conflicted and every rail whose current links cite the event (or whose link rows appear in candidate_row_ids) derives link_state conflicted. CLEARED (analysis_as_of >= K2): both overrides are visible - the conflicts row and the losing link are retired, exactly ONE current link remains (the curate invariant a conflicts-row retirement must restore), and BOTH surfaces re-derive reviewed from links + coverage; replay before K2 still shows conflicted (overrides act only from their known_at). A clearing act that would leave >= 2 current links on the subject is refused conflict_resolution_incomplete."
+  "assertion": "DECLARED (analysis_as_of >= known_at(conflict), < K2): the conflicts row is CURRENT, so workspace program_link for the event is conflicted and every rail whose current links cite the event (or whose link rows appear in candidate_row_ids) derives link_state conflicted. CLEARED (analysis_as_of >= K2): both overrides are visible - the conflicts row and the losing link are retired, exactly ONE current link remains (the curate invariant a conflicts-row retirement must restore); the workspace program_link and acq-program:virginia-class-ssn's awards rail re-derive reviewed, while acq-program:example-alpha's awards rail derives not_reviewed (its only link is retired and it has no program-subject program_event_link coverage row); replay before K2 still shows conflicted (overrides act only from their known_at). A clearing act that would leave >= 2 current links on the subject is refused conflict_resolution_incomplete."
  }
 }
