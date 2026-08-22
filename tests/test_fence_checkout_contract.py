@@ -140,13 +140,17 @@ def test_hold_wrapper_regressions_execute_inside_the_fast_fence() -> None:
                 monkeypatch, tmp_path
             )
         with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_lawful_sol_authority_branch_parks_before_first_unsafe_branch(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
             hold.test_unsafe_branch_hold_exception_is_sol_namespace_only(
                 monkeypatch, tmp_path
             )
         with pytest.MonkeyPatch.context() as monkeypatch:
             hold.test_red_or_pending_claude_hold_does_not_park(monkeypatch, tmp_path)
         with pytest.MonkeyPatch.context() as monkeypatch:
-            hold.test_pending_sol_hold_waits_without_unsafe_branch_remediation(
+            hold.test_pending_sol_hold_waits_before_first_unsafe_branch_remediation(
                 monkeypatch, tmp_path
             )
         with pytest.MonkeyPatch.context() as monkeypatch:
@@ -156,7 +160,7 @@ def test_hold_wrapper_regressions_execute_inside_the_fast_fence() -> None:
         with pytest.MonkeyPatch.context() as monkeypatch:
             hold.test_dirty_or_not_exactly_pushed_hold_does_not_park(monkeypatch, tmp_path)
         with pytest.MonkeyPatch.context() as monkeypatch:
-            hold.test_hold_probe_spends_no_github_quota_before_hold_candidate_blocker(
+            hold.test_hold_probe_spends_no_github_quota_outside_candidate_branches(
                 monkeypatch, tmp_path
             )
 
