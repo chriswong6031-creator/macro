@@ -34,6 +34,9 @@ from uuid import uuid4
 import pandas as pd
 
 from engine.neuralweb import market_memory
+from engine.neuralweb.market_memory_source_kernel import (  # noqa: F401 — re-export
+    SourceFamily as SourceFamily,
+)
 from engine.release_target_truth import normalize_full_vintage_frame
 
 SOURCE_ID = "fred_alfred:CPIAUCSL"
@@ -1644,6 +1647,7 @@ __all__ = [
     "SOURCE_SCHEMA",
     "MarketMemorySourceError",
     "SourceArtifactReader",
+    "SourceFamily",
     "SourceIntakeError",
     "SourceNotFound",
     "SourceStoreError",
