@@ -31,7 +31,11 @@ import textwrap
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import pandas as pd
 import pytest
+
+from engine import live_overlay
+from scripts import build_risk_state as brs
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -561,3 +565,112 @@ def test_us_unreadable_feed_session_fails_closed(js):
     assert not out.get("error"), out["error"]
     assert out["score"] == str(BAKED_SCORE)
     assert out["word"] == BAKED_WORD
+
+
+# ══ GD-3R1 — scripts/build_risk_state.py's own quote-clock plumbing ══════════════
+#
+# No suite unit-tests scripts/build_risk_state.py's pure Python helpers directly
+# (tests/test_risk_state.py covers the unrelated engine/risk_state.py; this file
+# is the sibling JS-behavior suite for the SAME risk_state.json artifact that
+# module's `build()` publishes — its `_us_feed`/`_cn_feed` fixtures already mirror
+# that artifact's shape). GD-3R1 adds the real source-market quote clock to that
+# artifact's `live` block (`live.source_event_time` / `live.source_quote_clocks`,
+# scripts/build_risk_state.py's `_spliced_frames` / `_source_event_time`); these
+# classes are the discriminating regression FROZEN SPEC item 5 requires: a
+# spliced quote's own `quote_ts` lands in `live.source_quote_clocks` and the max
+# of those lands in `live.source_event_time`; an unclocked quote is excluded from
+# the max; all-None -> None.
+
+def _nightly_close(price: float, n: int = 3) -> pd.Series:
+    idx = pd.date_range("2026-08-18", periods=n, freq="D")
+    return pd.Series([price] * n, index=idx)
+
+
+def _live_quote(price: float, quote_ts: str | None, prev_close: float = 100.0,
+                delay_min: float = 0.0) -> dict:
+    # Real engine.live_quotes.fetch_quotes() quotes always carry both `quote_ts`
+    # AND a precomputed `delay_min` (engine/live_quotes.py's `_delay_min`).
+    # `delay_min` is supplied explicitly so `live_overlay.staleness()` can judge
+    # freshness even in the (synthetic, defensive) case a test wants a spliceable
+    # quote whose `quote_ts` is itself None.
+    return {"price": price, "prev_close": prev_close, "quote_ts": quote_ts,
+            "delay_min": delay_min}
+
+
+class TestSourceEventTime:
+
+    def test_max_of_parseable_clocks_wins(self):
+        clocks = {
+            "SPY": "2026-08-21T09:00:00+00:00",
+            "QQQ": "2026-08-21T09:05:00+00:00",   # newest -> must win
+            "IWM": "2026-08-21T08:50:00+00:00",
+        }
+        assert brs._source_event_time(clocks) == "2026-08-21T09:05:00+00:00"
+
+    def test_unclocked_quote_is_excluded_from_the_max(self):
+        clocks = {
+            "SPY": "2026-08-21T09:00:00+00:00",
+            "QQQ": None,   # spliced but carried no quote_ts — must not participate
+        }
+        assert brs._source_event_time(clocks) == "2026-08-21T09:00:00+00:00"
+
+    def test_all_none_or_empty_is_none(self):
+        assert brs._source_event_time({"SPY": None, "QQQ": None}) is None
+        assert brs._source_event_time({}) is None
+
+    def test_unparseable_clock_is_excluded_not_fatal(self):
+        clocks = {"SPY": "not-a-timestamp", "QQQ": "2026-08-21T09:00:00+00:00"}
+        assert brs._source_event_time(clocks) == "2026-08-21T09:00:00+00:00"
+
+
+class TestSplicedFramesQuoteClocks:
+
+    def test_spliced_quotes_own_clock_is_captured_per_store(self, monkeypatch):
+        closes = {"SPY": _nightly_close(500.0), "QQQ": _nightly_close(400.0)}
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: closes.get(name))
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        quotes = {
+            "SPY": _live_quote(505.0, "2026-08-21T09:05:30+00:00", prev_close=500.0),
+            "QQQ": _live_quote(404.0, "2026-08-21T09:04:10+00:00", prev_close=400.0),
+        }
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            quotes, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert set(spliced) == {"SPY", "QQQ"}
+        # each store's OWN quote_ts lands in quote_clocks — never a builder wall clock
+        assert quote_clocks["SPY"] == "2026-08-21T09:05:30+00:00"
+        assert quote_clocks["QQQ"] == "2026-08-21T09:04:10+00:00"
+        assert quote_clocks["SPY"] != now.isoformat()
+        # and the max of those lands in source_event_time
+        assert brs._source_event_time(quote_clocks) == "2026-08-21T09:05:30+00:00"
+
+    def test_a_quote_that_fails_usable_is_never_spliced_and_never_clocked(self, monkeypatch):
+        """A rejected (limit-move-guard) quote must not appear in quote_clocks at
+        all — bounded to exactly the members actually spliced."""
+        closes = {"SPY": _nightly_close(500.0)}
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: closes.get(name))
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        quotes = {"SPY": _live_quote(5000.0, "2026-08-21T09:05:30+00:00", prev_close=500.0)}
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            quotes, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert "SPY" not in spliced
+        assert "SPY" not in quote_clocks
+
+    def test_a_quote_with_no_quote_ts_still_splices_but_carries_a_none_clock(self, monkeypatch):
+        closes = {"SPY": _nightly_close(500.0)}
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: closes.get(name))
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        quotes = {"SPY": _live_quote(505.0, None, prev_close=500.0)}
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            quotes, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert "SPY" in spliced
+        assert quote_clocks["SPY"] is None
+        assert brs._source_event_time(quote_clocks) is None
+
+    def test_nothing_spliced_yields_empty_quote_clocks(self, monkeypatch):
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: None)
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            {}, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert spliced == {}
+        assert quote_clocks == {}
+        assert brs._source_event_time(quote_clocks) is None

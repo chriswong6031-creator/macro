@@ -58,10 +58,13 @@ def _write_root(tmp_path, *, risk_state=None, leadership=None, settled=None,
 
 
 def _risk_state(built, *, live_active=True, verdict="RISK_OFF", score=40,
-                 radar_state="warning", radar_score=61.0, display_verdict="RISK_ON"):
+                 radar_state="warning", radar_score=61.0, display_verdict="RISK_ON",
+                 source_event_time=None):
     """A minimal risk_state.json — the RAW `live` block is what this file's builder
     may read; `display` deliberately disagrees so tests can prove it is never read
-    (item 11)."""
+    (item 11). `source_event_time` (GD-3R1) is the real source-market quote clock
+    scripts/build_risk_state.py stamps onto `live` — distinct from `built` above,
+    which is the upstream artifact's OWN wall clock."""
     return {
         "schema": "risk_state.v1",
         "built": built,
@@ -74,6 +77,7 @@ def _risk_state(built, *, live_active=True, verdict="RISK_OFF", score=40,
             "label_en": verdict.title(), "label_zh": "x",
             "radar": {"state": radar_state, "top_score": radar_score,
                       "label_en": "x", "label_zh": "y"},
+            "source_event_time": source_event_time,
         },
         "display": {"verdict": display_verdict, "score": 5, "label_en": "SHOULD NEVER BE READ"},
     }
@@ -680,7 +684,7 @@ class TestWrapperShape:
         env = blre.build(root=root, now=datetime(2026, 8, 20, 15, 1, tzinfo=timezone.utc))
         for key in self.REQUIRED_WRAPPER_KEYS:
             assert key in env, f"missing wrapper key {key}"
-        for clock in ("event_time", "observed_at", "produced_at"):
+        for clock in ("event_time", "upstream_built", "observed_at", "produced_at"):
             assert clock in env["clocks"]
 
     def test_event_time_is_nullable_when_risk_state_is_absent(self, tmp_path):
@@ -690,6 +694,99 @@ class TestWrapperShape:
         assert env["clocks"]["event_time"] is None
         assert env["stale_reason"] == "risk_state artifact unavailable"
         assert env["live_active"] is False
+
+
+# ══ GD-3R1 — clock truth: event_time is the SOURCE event clock, never `built` ════
+
+class TestClockTruth:
+
+    def test_event_time_is_the_live_blocks_source_event_time_not_built(self, tmp_path):
+        """The discriminating regression (GD-3R1 FROZEN SPEC item 5): a fixture
+        whose upstream `built` (X) and `live.source_event_time` (Y) DIFFER must
+        publish `clocks.event_time` as Y — the source event clock — never X, the
+        upstream artifact clock. `clocks.upstream_built` must carry X separately.
+        An implementation that substitutes `built` for `event_time` (the GD-3
+        violation this repair fixes) fails this test."""
+        X = "2026-08-21 09:00:00 UTC"                   # risk_state.json's own `built`
+        Y = "2026-08-21T08:55:12+00:00"                  # the spliced quote's own clock
+        root = _write_root(
+            tmp_path,
+            risk_state=_risk_state(X, source_event_time=Y),
+            leadership=_leadership("2026-08-20"), settled=_settled("2026-08-20"),
+        )
+        env = blre.build(root=root, now=datetime(2026, 8, 21, 9, 1, tzinfo=timezone.utc))
+        assert env["clocks"]["event_time"] == "2026-08-21T08:55:12Z"
+        assert env["clocks"]["upstream_built"] == "2026-08-21T09:00:00Z"
+        assert env["clocks"]["event_time"] != env["clocks"]["upstream_built"]
+
+    def test_missing_source_event_time_is_null_never_built(self, tmp_path):
+        root = _write_root(
+            tmp_path,
+            risk_state=_risk_state("2026-08-20 15:00:00 UTC"),   # no source_event_time
+            leadership=_leadership("2026-08-19"), settled=_settled("2026-08-19"),
+        )
+        env = blre.build(root=root, now=datetime(2026, 8, 20, 15, 1, tzinfo=timezone.utc))
+        assert env["clocks"]["event_time"] is None
+        assert env["clocks"]["upstream_built"] == "2026-08-20T15:00:00Z"
+
+    def test_unparseable_source_event_time_is_null(self, tmp_path):
+        risk_state = _risk_state("2026-08-20 15:00:00 UTC", source_event_time="not-a-timestamp")
+        root = _write_root(tmp_path, risk_state=risk_state,
+                           leadership=_leadership("2026-08-19"), settled=_settled("2026-08-19"))
+        env = blre.build(root=root, now=datetime(2026, 8, 20, 15, 1, tzinfo=timezone.utc))
+        assert env["clocks"]["event_time"] is None
+
+    def test_event_time_is_nullable_and_upstream_built_absent_when_risk_state_missing(self, tmp_path):
+        root = _write_root(tmp_path, leadership=_leadership("2026-08-19"),
+                           settled=_settled("2026-08-19"))
+        env = blre.build(root=root, now=datetime(2026, 8, 20, 15, 1, tzinfo=timezone.utc))
+        assert env["clocks"]["event_time"] is None
+        assert env["clocks"]["upstream_built"] is None
+
+    def test_observed_at_and_produced_at_are_independently_injectable(self, tmp_path):
+        root = _write_root(
+            tmp_path, risk_state=_risk_state("2026-08-20 15:00:00 UTC"),
+            leadership=_leadership("2026-08-19"), settled=_settled("2026-08-19"),
+        )
+        observed = datetime(2026, 8, 20, 15, 1, 0, tzinfo=timezone.utc)
+        produced = datetime(2026, 8, 20, 15, 1, 7, tzinfo=timezone.utc)
+        env = blre.build(root=root, now=observed, produced_now=produced)
+        assert env["clocks"]["observed_at"] == "2026-08-20T15:01:00Z"
+        assert env["clocks"]["produced_at"] == "2026-08-20T15:01:07Z"
+        assert env["clocks"]["observed_at"] != env["clocks"]["produced_at"]
+
+    def test_only_now_injected_keeps_produced_at_equal_to_observed_at(self, tmp_path):
+        """Pre-GD-3R1 call shape (only `now`, no `produced_now`) must be unaffected
+        — every existing frozen-clock caller/test keeps working unchanged."""
+        root = _write_root(
+            tmp_path, risk_state=_risk_state("2026-08-20 15:00:00 UTC"),
+            leadership=_leadership("2026-08-19"), settled=_settled("2026-08-19"),
+        )
+        env = blre.build(root=root, now=datetime(2026, 8, 20, 15, 1, tzinfo=timezone.utc))
+        assert env["clocks"]["observed_at"] == env["clocks"]["produced_at"]
+
+    def test_production_default_path_samples_two_distinct_real_clocks(self, tmp_path, monkeypatch):
+        """Neither `now` nor `produced_now` injected (the real production call
+        shape) must take TWO separate `datetime.now(timezone.utc)` samples — never
+        one instant relabeled twice (FROZEN SPEC item 4)."""
+        root = _write_root(
+            tmp_path, risk_state=_risk_state("2026-08-20 15:00:00 UTC"),
+            leadership=_leadership("2026-08-19"), settled=_settled("2026-08-19"),
+        )
+        real_dt = blre.datetime
+        calls = {"n": 0}
+
+        class _FakeDatetime(real_dt):
+            @classmethod
+            def now(cls, tz=None):
+                calls["n"] += 1
+                base = real_dt(2026, 8, 20, 15, 1, 0, tzinfo=timezone.utc)
+                return base if calls["n"] == 1 else base.replace(second=7)
+
+        monkeypatch.setattr(blre, "datetime", _FakeDatetime)
+        env = blre.build(root=root)
+        assert calls["n"] >= 2, "production path must sample datetime.now() at least twice"
+        assert env["clocks"]["observed_at"] != env["clocks"]["produced_at"]
 
 
 # ══ item 11 — "display" is never read; the envelope follows "live" ═══════════════
