@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T14:10:25.375475+00:00",
-  "count": 1621,
+  "generated_at": "2026-08-22T19:14:32.404571+00:00",
+  "count": 1633,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -577,6 +577,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-htxxpmh2sxx-c6d796",
+      "title": "UBS Equity Preference List Taiwan 2026 08 21",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:36Z",
+      "summary_points": [
+        "**TSMC Concentration Risk**: 58.0% portfolio weight creates extreme single-stock exposure; vulnerable to geopolitical tensions (US-China trade policies) and supply chain disruptions despite AI-driven growth catalysts.",
+        "**Sector Overexposure**: Semiconductors dominate 79.0% of portfolio (TSMC 58.0%), amplifying regulatory volatility and sector rotation risks amid AI infrastructure demand.",
+        "**Earnings Growth & Valuation**: 42% (2026) and 35% (2027) earnings growth forecasts supported by AI infrastructure demand; PEG ratio 0.6-0.7x indicates attractive risk-adjusted returns.",
+        "**Strategic Portfolio Shifts**: Removed ASMedia (lack of near-term catalysts); added Global Unichip/Jentech Precision (+2.0 ppt each) to align with AI hardware demand and sector rotation.",
+        "**AI Infrastructure Catalysts**: TSMC’s capex plan, Alphabet’s hardware spending, and hyperscaler 800G migration (Accton) drive $1.3T global infrastructure spend (25% CAGR 2025-2030)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-8ogzlznkejo-81ce20",
       "title": "GS Gillard Gold Macro buying w a physical kicker 21 Aug 2026",
       "institution": "S&T",
@@ -1008,6 +1029,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-uabmtw1zeqe-f0acc1",
+      "title": "Array Technologies Inc. (ARRY) Investor event highlighting APA Solar and diversification strategy",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:02:45Z",
+      "summary_points": [
+        "**APA Solar Growth & Revenue Targets**: APA revenue at ~$130mn (2025), 17% YoY H1 2026 growth; targets double-digit CAGR via engineered foundations (50% revenue mix) and international sales (15%), with high-20%/low-30% margins.",
+        "**TAM Expansion & Acquisition Catalyst**: Combined TAM reaches ~$6.4bn (core $4.3bn + APA $1.7bn + pending AWM acquisition $400m), supported by >50GW legacy retrofit opportunity for recurring high-margin revenue.",
+        "**Target Price Decline & Bearish Sentiment**: Price target dropped from $31.00 (08-Nov-23) to $11.00 (06-Aug-26), with closing prices consistently below targets, signaling strong bearish sentiment and underperformance risk.",
+        "**Hold Rating & Negative Outlook**: Goldman Sachs maintains Hold rating with $11.00 price target (below current price), reflecting neutral stance but negative fundamentals and unreflected AWM acquisition impact."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-3ydponbutxc-dd9437",
       "title": "MS Power Struggle Data Center Pushback Update & Expert Call Takeaways",
       "institution": "Morgan Stanley",
@@ -1149,6 +1190,47 @@
       "tickers": [],
       "top_pick": false,
       "pages": 67,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jrl19e40x7g-51514c",
+      "title": "Follow The Flow Reaching for higher yields",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T15:24:48Z",
+      "summary_points": [
+        "**Govt Bond Flow Dominance**: Govt bond funds saw 6% AUM inflows vs 1.9% for IG funds (3x stronger), with Syr Bund yields near 3% (low since 2008, volatility mid-60s).",
+        "**Cross-Asset Outflow Spike**: Sharp negative flow spikes across High Yield ($0.4bn 4w avg), Equity ($0.2bn), and Fixed Income ($4.7bn) around Aug-25 signaling broad risk aversion.",
+        "**Equity ETF Leadership**: Equity ETFs drove highest 4w inflows ($1.1bn) vs IG ($0.6bn) and HY ($0.1bn), reflecting strong ETF preference for equity exposure.",
+        "**European HY Flow Preference**: European domiciled HY flows dominated ($148m vs $90m Global, $74m US), indicating preference for global over US-specific high-yield exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7aq17rubsg7-44253d",
+      "title": "The Flow Show Steel Cage Match...Bessent vs ABB",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T15:24:37Z",
+      "summary_points": [
+        "**QE5 Policy Risk**: US admin’s 0-for-3 on growth/deficit/oil production + 30-yr yield >5% risk threatens dollar slump, short leverage shifts (AI/financials), and triggers policy intervention; BofA Bull & Bear at 9.5 (Sell zone) confirms bearish sentiment.",
+        "**Defensive Asset Shifts**: Gold, unloved long-duration REITs/XBI/regional banks/small cap/HK property are key defensive plays amid aggressive policy moves (doubling long bond buybacks, dollar swap lines, FX intervention).",
+        "**Critical Flows & Contrarian Signals**: $7.4bn US Treasuries inflow (6-week high), $3.3bn EM debt inflow (11-week high), and $6bn semiconductor ETF outflows (3 weeks) signal flight-to-safety and aggressive risk-off positioning.",
+        "**Oil Supply Tightness**: SPR at 400m barrels (Aug '26) + crude inventories at 50-yr lows risks price spikes, inflation, and policy-driven volatility amid US-China arms race.",
+        "**Yield Cap Intervention Risk**: 30Y Treasury yield near 5% Maginot Line triggers potential policy intervention to cap yields, impacting bond market stability and amplifying dollar slump risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
@@ -1413,6 +1495,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-jafor2r2at7-f83070",
+      "title": "South Korea Rebound in Early August Exports, Led by Accelerating Chip Demand",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:28:18Z",
+      "summary_points": [
+        "**Semiconductor-driven export surge**: Tech exports +9.5% mom sa (semiconductors +11.5% mom sa), with chip demand fueling 80% of sequential export gain; China/US exports key drivers.",
+        "**Trade surplus expansion with structural shift**: Surplus widens to $14bn (vs.",
+        "$12.3bn), driven by semiconductor import gains offsetting declines in energy/machinery imports.",
+        "**Export momentum acceleration**: Early August per-workday exports show sharp rebound vs.",
+        "full-month data, signaling sustained export strength beyond temporary fluctuations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7kmbwsnzngt-86f64b",
       "title": "Japan Focus of the Week August Tokyo CPI",
       "institution": "Goldman Sachs",
@@ -1429,6 +1532,88 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bebywzekzyo-277047",
+      "title": "Europe August Flash PMIs Stronger Activity But Mixed Price Pressures Across the Channel",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:28:09Z",
+      "summary_points": [
+        "**Eurozone PMI Strength with Sectoral Divergence**: Composite PMI at 52.1 (above consensus), driven by robust manufacturing (53.4) offsetting services weakness (51.7); Germany manufacturing surges to 56.7 (2022 high), France services contracts (-1.2pt) due to extreme heat.",
+        "**UK Resilience Amid Geopolitical Headwinds**: UK composite PMI at 52.5 (outperforming Eurozone), maintaining activity strength despite Middle East conflict impacts and manufacturing cost pressures.",
+        "**Divergent Inflation Dynamics**: Eurozone input/output prices easing (cooling inflation), while UK prices firm (inflationary resilience), signaling contrasting central bank policy paths.",
+        "**Geopolitical Risk Exposure**: UK manufacturing directly vulnerable to geopolitical tensions and cost pressures, contrasting with Germany’s manufacturing strength and France’s weather-driven services contraction."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rdasaikbhof-c3ffaa",
+      "title": "China Strong fiscal revenue and slower spending led to a narrower deficit in July",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:28:06Z",
+      "summary_points": [
+        "**Fiscal Deficit Narrowing**: Revenue growth accelerated to +11.7% yoy (vs.",
+        "+8.7% June) while spending growth slowed to +0.5% yoy (vs.",
+        "+4.0% June), signaling reduced fiscal expansionary pressure.",
+        "**Property Revenue Contraction**: Property-related revenue fell 17.8% yoy, with land sales revenue expected to decline ~20% yoy due to prolonged downturn and funding constraints.",
+        "**Policy Acceleration Signal**: MOF pledged to accelerate fund disbursement and expand domestic demand if growth slows, amid RMB7.1tn available funding capacity (RMB5.7tn unused bond quota, RMB800bn new instrument)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jbtthuwxbjy-984723",
+      "title": "UK Weekly Kickstart Data only update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:27:53Z",
+      "summary_points": [
+        "**UK Value/EM Rotation Signal**: MSCI UK Value (+13.9% YTD) and EM (+19.4% YTD) lead, but UK Financials (-2.2% 1-week) and global indices show short-term weakness, indicating potential sector rotation or geopolitical-driven flow shifts.",
+        "**FTSE 350 Valuation Overhang**: EV/Sales at 1.6 (83rd percentile) and 12m forward P/E at 12.6 (45th percentile) signal elevated valuations relative to historical norms, with FCF yield at 5.9 (52nd percentile) offering moderate income.",
+        "**Passive Flow Surge & Active Underperformance**: Sustained passive inflows into UK equities (driven by foreign investors) contrast with negative active flows, signaling structural shift toward passive strategies and requiring tactical active positioning adjustments.",
+        "**FTSE 100 Debt Risk vs.",
+        "EPS Growth**: 67% net debt/equity ratio conflicts with 22.6% 2025E EPS growth, demanding interest rate sensitivity analysis and earnings resilience monitoring amid elevated volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mg3owwaycju-8ff159",
+      "title": "Pulp & Paper Bear Cycle Takes a Pause",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:27:50Z",
+      "summary_points": [
+        "**China's Procurement Shift & Bear Cycle Pause**: Hardwood procurement rebound (+$4-11/t) from restocking after 630kt y/y decline, pausing bear cycle due to 3 new mills, APPs Oki mill proximity, and wood/paper price dynamics (wood down, paper flat at lows).",
+        "**Price Stability & Key Risks**: $550-560/t stability supported by restocking, but limited upside due to China’s 12-month procurement horizon; Indonesia’s competitive wood supply caps upside potential.",
+        "**Domestic Resale Prices Lag China Benchmark**: Domestic hardwood/softwood resale prices (black lines) consistently trail PIX China prices (blue lines) since Aug 2022, with sharper declines in late 2023 signaling supply/demand imbalances or trade policy pressures.",
+        "**Persistent Market Divergence**: 2024 domestic price recovery remains below PIX China benchmark, indicating ongoing dominance of China’s price benchmark affecting export/import dynamics and market structure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
@@ -1475,6 +1660,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-cvpi20letn2-d4fdd7",
+      "title": "Europe Weekly Kickstart Data only update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:27:41Z",
+      "summary_points": [
+        "**Earnings Sector Divergence**: Financial Services (55.0% beat, 90.0 absolute positive) dominates positive surprises; Travel & Leisure (-10.6 avg) shows severe negative surprises, critical for allocation adjustments.",
+        "**Energy Sector Dominance**: 43.5% positive sales surprises, 16.9% sales growth forecast, GSCI Energy +97.7% YTD; driven by geopolitical tensions and supply fundamentals.",
+        "**Sector Allocation Guidance**: Overweight Banks (SXCP), Construction & Materials (SXCP), Food & Tobacco (S600FCP); Underweight Autos & Parts (SXAP), Chemicals (SXCP), Consumer P&G (S600CPP).",
+        "**Commodity Risk Factor**: Commodities drag H1 growth to 8% (vs.",
+        "15% overall), Brent Crude projected at 74.0 (12m) with -21.1% downside risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gjjqorcby3e-25b291",
       "title": "Americas Business & Information Services What's Powering Your Services Recap 8 21 26",
       "institution": "Goldman Sachs",
@@ -1492,6 +1698,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qnxzf4ancle-87a6d0",
+      "title": "Americas Utilities California Wildfire Reform Term Sheet Balanced Framework, Constructive for PCG",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T13:27:38Z",
+      "summary_points": [
+        "**Wildfire Reform Term Sheet**: $6bn cap on fund-covered claims (solvency ↑ to 98% from 53%) and 20% T&D rate base liability; balanced framework drives PGC Buy amid legislative urgency and steep valuation discount.",
+        "**Liability Reduction Catalyst**: Proposals eliminate subrogation/punitive damages, cutting wildfire settlement costs 35%-40% (CEA report), directly reducing utility liabilities.",
+        "**PGC Valuation & Catalyst**: 12.5x P/E on Q5-Q8 estimates, $24 target (vs.",
+        "$17.85 current), with 37% discount narrowing if policy aligns; highest sensitivity to wildfire policy among California utilities.",
+        "**Institutional Support**: 50% Buy consensus (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -1533,6 +1760,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u60iwlfhn8w-452805",
+      "title": "JPM Alibaba Group 1",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T12:52:04Z",
+      "summary_points": [
+        "**AI Infrastructure Returns Validated**: First auditable framework shows 22% after-tax IRR on AI capex vs.",
+        "10% cost of capital, shifting from cash burn to positive NPV (Rmb36 NPV per Rmb100 capex).",
+        "**Cloud Growth & Margin Acceleration**: External cloud revenue +45% YoY, AI products 35% of revenue (target 50% by FY27), cloud EBITDA margin at 12% with expanding margins from legacy/AI vintages.",
+        "**Capex Plateau Critical for Cash Flow**: Timing of capex plateau (FY26/27) drives cash flow inflection around FY29; delayed plateau risks delayed FCF breakeven (Yr 3).",
+        "**Structural Pricing Risk**: Compute-price deflation as supply tightness eases poses largest margin uncertainty; incremental EBITDA margin (45%) reflects legacy/AI mix."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },

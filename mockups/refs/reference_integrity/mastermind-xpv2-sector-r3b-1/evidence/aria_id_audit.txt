@@ -1,0 +1,3 @@
+[aria-id] lang=en: 253 ids, 0 duplicated, 74 ARIA/label references resolved, 0 unresolved
+[aria-id] lang=zh: 253 ids, 0 duplicated, 74 ARIA/label references resolved, 0 unresolved
+[aria-id] json → ../evidence/aria_id_audit.json

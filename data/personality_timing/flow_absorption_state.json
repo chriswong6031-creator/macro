@@ -38,11 +38,11 @@
   },
   "family": "pss_af1_finra_absorption_witness_prospective",
   "finra_prefix_sha256": "4d7165ff3346c7bdaaf28e0b4064f1eda4311a1600f3df33509e8d03d183bbf6",
-  "gate_open": true,
-  "generated_utc": "2026-08-22T02:31:38.259817+00:00",
+  "gate_open": false,
+  "generated_utc": "2026-08-22T15:08:54.517181+00:00",
   "ledger": {
     "advanced_today": 0,
-    "appended_today": 1,
+    "appended_today": 0,
     "earliest_action": "2026-08-18",
     "events": 2,
     "flow_witness": 0,
@@ -61,15 +61,7 @@
   "note": "Prospective own-history FINRA short-marked activity witness inside future CR1 leaders. Not directional flow; research only.",
   "program_id": "PSS-AF1",
   "registration_ok": true,
-  "scan_census": {
-    "derived_events": 1,
-    "eligible_future_cr1_leader_sources": 1,
-    "finra_latest_session": "2026-08-21",
-    "finra_rows_through_as_of": 86915,
-    "reasons": {
-      "group_leader_flow_control": 1
-    }
-  },
+  "scan_census": {},
   "schema": "personality_flow_absorption.state/v1",
   "status": "prospective_accrual_only"
 }

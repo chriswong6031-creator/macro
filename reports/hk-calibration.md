@@ -4,8 +4,8 @@ Honest, split-half measurement before any UI is built — the same gate used for
 US, China and Bitcoin Vector dashboards. House rule: a signal is shipped with its **measured**
 forward-return record; no measured edge -> it ships as *context, not a signal*.
 
-- Confident-regime sample: **2000-04-21 -> 2026-08-07** (6738 days, confidence>0).
-- Ladder panel: **162 instruments** (curated constituents + indices + ETF proxies).
+- Confident-regime sample: **2000-04-21 -> 2026-08-21** (6742 days, confidence>0).
+- Ladder panel: **161 instruments** (curated constituents + indices + ETF proxies).
 - Caveats: the HK macro read piggybacks on China fundamentals (PMI/CPI/PPI/M2), monthly
   back to ~2006-08 (shorter + more regime-unstable than the US); HSI itself is the regional
   risk-on/off proxy, so the THREE-LEG engine here is quad (growth×inflation) + dual liquidity
@@ -17,10 +17,10 @@ forward-return record; no measured edge -> it ships as *context, not a signal*.
 
 | quad_name    |    n |   f21_mean% |   f21_hit% |   f63_mean% |   f63_hit% |
 |:-------------|-----:|------------:|-----------:|------------:|-----------:|
-| Goldilocks   | 1444 |        1.31 |       57.3 |        4.02 |       65   |
-| Growth-scare | 1158 |        0.39 |       56   |        2.45 |       57.2 |
-| Reflation    | 1663 |        0.32 |       53   |       -0.39 |       47.4 |
-| Stagflation  | 1010 |       -1.02 |       43.8 |       -2.4  |       40.9 |
+| Goldilocks   | 1471 |        1.41 |       57.5 |        4.11 |       65   |
+| Growth-scare | 1126 |        0.2  |       55.2 |        2.28 |       56.2 |
+| Reflation    | 1644 |        0.23 |       52.8 |       -0.51 |       46.9 |
+| Stagflation  | 1038 |       -0.76 |       45.5 |       -2.13 |       42.7 |
 
 **Split-half robustness** (a quad's edge is only trustworthy if it survives both halves)
 
@@ -37,18 +37,18 @@ _Post-split_
 
 | quad_name    |   n |   f21_mean% |   f21_hit% |   f63_mean% |   f63_hit% |
 |:-------------|----:|------------:|-----------:|------------:|-----------:|
-| Goldilocks   | 627 |        0.47 |       54.9 |        1.18 |       56.5 |
-| Growth-scare | 635 |        0.79 |       58.7 |        1.96 |       52.3 |
-| Reflation    | 856 |        0.58 |       52   |        0.74 |       52.3 |
-| Stagflation  | 648 |       -0.52 |       44   |       -0.01 |       41   |
+| Goldilocks   | 654 |        0.73 |       55.2 |        1.43 |       56.6 |
+| Growth-scare | 603 |        0.47 |       57.5 |        1.6  |       50.2 |
+| Reflation    | 837 |        0.4  |       51.4 |        0.48 |       51.1 |
+| Stagflation  | 676 |       -0.15 |       46.6 |        0.38 |       43.7 |
 
 ## 2. Liquidity overlay (dual: PBoC stance + Fed-via-peg + southbound flow) -> forward return
 
 | liquidity   |    n |   f21_mean% |   f21_hit% |   f63_mean% |   f63_hit% |
 |:------------|-----:|------------:|-----------:|------------:|-----------:|
-| contracting |  849 |       -0.79 |       44.8 |       -3.71 |       33.5 |
-| expanding   | 3059 |        0.77 |       57.3 |        1.64 |       56.7 |
-| neutral     | 2394 |        0.17 |       51.4 |        1.91 |       56.6 |
+| contracting |  868 |       -0.74 |       45.5 |       -3.68 |       33.4 |
+| expanding   | 3053 |        0.76 |       57.2 |        1.62 |       56.6 |
+| neutral     | 2385 |        0.17 |       51.4 |        1.91 |       56.6 |
 | unknown     |  436 |        0.86 |       60.3 |        0.84 |       56   |
 
 ## 3. Global risk overlay (risk-on/off) -> forward return
@@ -58,24 +58,24 @@ differentiate HSI forward returns?_
 
 | risk_state   |    n |   f21_mean% |   f21_hit% |   f63_mean% |   f63_hit% |
 |:-------------|-----:|------------:|-----------:|------------:|-----------:|
-| Neutral      | 2491 |       -0.12 |       49.7 |        0.36 |       50.1 |
+| Neutral      | 2487 |       -0.12 |       49.8 |        0.34 |       50   |
 | Risk-off     | 1616 |        0.42 |       54.8 |        0.8  |       53.5 |
-| Risk-on      | 2631 |        0.8  |       57.1 |        1.85 |       57.6 |
+| Risk-on      | 2639 |        0.8  |       57.1 |        1.84 |       57.6 |
 
 ## 4. Cycle ladder (deep HK panel) — endpoint return + forward drawdown
 
 |                          |     n |   hit_pct |   avg_fwd_pct |   dd_med_pct |   dd_p10_pct |   dd_bad_pct |
 |:-------------------------|------:|----------:|--------------:|-------------:|-------------:|-------------:|
-| DECLINE                  | 10298 |      53.9 |          1.44 |        -4.84 |       -18.27 |         26.9 |
-| BOTTOM WATCH             |  5210 |      47.9 |        125.13 |        -3.93 |       -15.74 |         21.3 |
-| TURN SIGNALED            | 17896 |      50.8 |          1.48 |        -4.34 |       -14.5  |         21   |
-| FRESH BUY                |  3916 |      52.9 |          1.56 |        -4.09 |       -13.98 |         19.5 |
-| RALLY ON                 |  3756 |      53.7 |          1.74 |        -3.95 |       -14.09 |         19.2 |
-| TOP WATCH                | 10399 |      52   |          1.73 |        -4.37 |       -14.85 |         21.7 |
-| ROLLING OVER             |   345 |      51.6 |          1.45 |        -4.61 |       -15.72 |         23.5 |
-| COUNTERTREND BOUNCE      | 16851 |      51   |          1.04 |        -4.54 |       -16.16 |         23.8 |
-| BOTTOM WATCH +early-bull |   193 |      45.6 |          0.96 |        -3.52 |       -12.39 |         18.1 |
-| BOTTOM WATCH no-early    |  5017 |      48   |        129.91 |        -3.94 |       -15.82 |         21.4 |
+| DECLINE                  | 10245 |      54   |          1.45 |        -4.82 |       -18.22 |         26.8 |
+| BOTTOM WATCH             |  5084 |      48.9 |        128.24 |        -4.06 |       -15.74 |         21.5 |
+| TURN SIGNALED            | 17817 |      50.8 |          1.47 |        -4.34 |       -14.47 |         21   |
+| FRESH BUY                |  3908 |      52.8 |          1.56 |        -4.07 |       -13.97 |         19.4 |
+| RALLY ON                 |  3760 |      53.8 |          1.75 |        -3.92 |       -14.11 |         19.2 |
+| TOP WATCH                | 10363 |      52.1 |          1.74 |        -4.35 |       -14.83 |         21.5 |
+| ROLLING OVER             |   346 |      51.4 |          1.48 |        -4.6  |       -15.69 |         23.4 |
+| COUNTERTREND BOUNCE      | 16885 |      51.1 |          1.07 |        -4.51 |       -16.05 |         23.6 |
+| BOTTOM WATCH +early-bull |   179 |      50.3 |          1.27 |        -3.93 |       -13.4  |         20.1 |
+| BOTTOM WATCH no-early    |  4905 |      48.8 |        132.87 |        -4.06 |       -15.78 |         21.6 |
 
 ## Reading this
 - Quad rows whose sign/ranking flips between the two halves are **regime-unstable** ->

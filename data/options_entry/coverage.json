@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-22T09:16:11.007524+00:00",
+  "generated_at": "2026-08-22T14:24:41.481249+00:00",
   "as_of": "2026-08-22",
   "absent_stores": [],
   "feature_coverage": {
@@ -520,7 +520,7 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-22T09:16:10.943793+00:00",
+      "generated_at": "2026-08-22T14:24:41.415352+00:00",
       "ok": false,
       "fail_reasons": [
         "CHAINS STALE: latest chain file is 2026-08-13 (6 NYSE session(s) behind last_session=2026-08-21); threshold=1 \u2014 OI snapshot may have been missed",
@@ -533,7 +533,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-22T09:16:11.007515+00:00",
+    "generated_at_utc": "2026-08-22T14:24:41.481240+00:00",
     "as_of": "2026-08-22",
     "absent_stores": []
   }

@@ -494,6 +494,10 @@ def test_s9_zero_state_element_and_setlife_wiring_present():
 # ─────────────────────────── N3 — stale #us-tier-wall id ──────────────────
 
 def test_n3_hydrate_teardown_targets_the_real_wall_id():
+    # P0 #6185 (D3, FROZEN SPEC): 'us-tier-wall' is no longer a stale
+    # pre-migration id — B4 restored it as the CANDIDATE wall's own real id
+    # (distinct from the plan wall's 'us-life-wall'), so hydrate() teardown
+    # must now remove BOTH walls by their own ids, never just one.
     html = _render_stocks({"us_prophet_book": _prophet_book(), "gate": _DUMMY_GATE})
-    assert "getElementById('us-tier-wall')" not in html
+    assert "getElementById('us-tier-wall')" in html
     assert "getElementById('us-life-wall')" in html

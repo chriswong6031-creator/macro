@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-08-21",
-    "built": "2026-08-22T04:41:31.166976+00:00",
+    "built": "2026-08-22T16:34:02.925678+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -713,7 +713,7 @@
     "display_only": true
   },
   "corporate_credit": {
-    "as_of": "2026-08-20",
+    "as_of": "2026-08-21",
     "authority": {
       "rank": false,
       "size": false,
@@ -759,13 +759,13 @@
       }
     },
     "breadth": {
-      "finra_advance_share": 0.6997660514686769,
-      "finra_lows_share": 0.002,
+      "finra_advance_share": 0.24878173890741215,
+      "finra_lows_share": 0.024,
       "source": "FINRA trade data"
     },
     "watch": {
-      "orcl_g_spread_bp": 160.0,
-      "orcl_premium_vs_ig_bp": 80.0
+      "orcl_g_spread_bp": 165.0,
+      "orcl_premium_vs_ig_bp": 83.0
     },
     "divergence_accruing": false,
     "display_only": true

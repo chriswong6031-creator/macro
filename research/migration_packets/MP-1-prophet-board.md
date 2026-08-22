@@ -267,3 +267,73 @@ sees no candidate-era count/entry-dot language masquerading as plan-book truth.
 
 *Record (factory §3.7): mark DONE with the PR number here when merged; deviations/dissents append below this line.*
 *Amendment 1 (above) is packet law as of 2026-08-19, not a deviation — it is bound by the same `A builder that believes this packet is wrong stops and escalates` rule as the rest of this file.*
+
+---
+
+## AMENDMENT 2 — CHAIRMAN P0 PRESENTATION RULING (2026-08-22, GitHub #6185 / Linear MAS-111)
+
+Binding on the presentation layer of this packet. Recorded as
+`DEC:P0-PROPHET-CANDIDATE-BOARD-RESTORE`. It does **not** reopen the data
+authority: `DNR:KILL-PROPHET-POP-MERGE` stands, plan generation / lifecycle
+derivation / ranking / candidate producer rules are untouched, and B1 and
+P-LAB-UI are unaffected.
+
+**What changed.** This packet's central act (§6 row 1) re-sourced the principal
+Setups grid from the candidate screener to the plan book, and the shipped result
+left live users with no way to reach tonight's candidate population at all — on
+the production page, zero candidate cards, the whole screen reachable only as
+three `.cand-row` text rows. The Chairman ruled that unacceptable as a live
+product and ordered candidate visibility restored ahead of the packet's own
+sequencing.
+
+**The principal surface is now an explicit two-source view.**
+
+> `PROPHET STOCK SIGNALS` — `Candidates | Plans`, with **Candidates the baked
+> default**. Candidates renders the existing `us_standouts.buy` population
+> through the existing `_us_board_cards.html.j2` partial into `#us-cand-grid`.
+> Plans keeps this packet's migrated `#us-life-grid` plan book and its seven-cell
+> lifecycle ladder, unchanged, inside `#us-plan-block`.
+
+This is a **source switch, not a population merge**. No candidate row may gain a
+`lifecycle_state` or a synthetic plan id; no plan row may be counted by a
+candidate control. The two grids share no id and no ancestor below
+`.nb-grid-section`, so cross-hydration is structurally impossible rather than
+merely avoided.
+
+Where this packet conflicts with the requirement that current candidates be
+visible to live users, **#6185 wins for the presentation layer** and this
+amendment is the record of it.
+
+**Answer to the question #6185 poses — "should P-MP1-DENSE build its dense Table
+for both source modes or Plans only?"**
+
+> **PLANS ONLY.**
+
+The dense table does not need building twice. The existing `USStockTable`
+already renders the CANDIDATE population from the payload's flat `rows`; the P0
+slice scopes it to Candidates mode so it can no longer appear under a Plans
+label. The half that does not exist is the plan-book table. P-MP1-DENSE
+therefore owes:
+
+1. a dense **plan-book** Table for Plans mode, satisfying §10 for the plan
+   population — lifecycle-cell selection returning identical plan identities in
+   Grid and Table, plan IDs distinguishable from ticker identities and
+   multi-episode names, and the complete active-filter population reachable in
+   Table;
+2. a **density audit, not a rebuild**, of the existing candidate Table against
+   §10 — it is already the candidate dense view, and replacing it would be
+   reconstruction where reuse is available;
+3. removal of any remaining candidate-era count or entry-dot language from
+   plan-book surfaces.
+
+The §10 40-card dense Grid clause continues to apply to the plan Grid and
+continues to be blocked on a real table-view escape hatch existing first —
+which is exactly item 1. The frozen observable mission in Amendment 1 is amended
+only in that "keeps Candidates as a separate screener population" is now
+DELIVERED by the P0 slice rather than owed by P-MP1-DENSE.
+
+**Unchanged by this amendment:** the completion boundary in Amendment 1 stands
+in full. Neither P-LAB-UI completion nor B1 closure authorizes calling the U.S.
+Prophet product redesign complete while P-MP1-DENSE remains open, and the
+continuation report must still say `P-MP1-DENSE OWED`. Do not start P-MP1-DENSE
+without Sol review.

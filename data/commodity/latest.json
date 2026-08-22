@@ -729,7 +729,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": 8.7
+      "conviction": 8.5
     },
     "silver": {
       "label": "Silver",
@@ -739,7 +739,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "SELL",
-      "conviction": -12.7
+      "conviction": -12.9
     },
     "copper": {
       "label": "Copper",
@@ -749,7 +749,7 @@
       "risk": "Calm",
       "trend": "up",
       "action": "BUY",
-      "conviction": 23.0
+      "conviction": 22.9
     },
     "oil": {
       "label": "Oil \u00b7 WTI",
@@ -759,7 +759,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": 5.0
+      "conviction": 5.1
     }
   },
   "ratios": {

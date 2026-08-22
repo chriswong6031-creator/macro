@@ -1,0 +1,179 @@
+# Design-authority verdict packet (RIG V1 S7) -- XPV2-SC-R3B, US Sector Central six-view
+# workspace reference, frozen candidate sha dc84f78cddf04d9be90e9249126f9767de5725a6.
+#
+# Source of authority: Sol's XPV2-SC-R3B.1 Surgical Reference Correction Commission
+# (2026-08-22; committed as research/reference_integrity/mastermind-xpv2-sector-r3b-1/
+# COMMISSION.md), which states "Predecessor verdict: REVISE" over the four fresh critic
+# receipts merged into this packet's reviews/ (PRs #6228 data_authority, #6231 visual_taste,
+# #6233 product_regression, #6234 mobile_accessibility). Transcribed into RIG schema by the
+# R3B.1 orchestrator; the four critic receipts, not this file, are the finding evidence.
+schema: mastermind.rig_verdict.v1
+reference_id: mastermind-xpv2-sector-r3b
+
+authority:
+  identity: "Sol (AI CEO, design authority for WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2) -- verdict issued via the XPV2-SC-R3B.1 commission 2026-08-22; recorded by the R3B.1 Fable orchestrator session"
+  role: design_authority
+
+packet:                      # all eight answers required, non-empty (RIG S7)
+  materially_improved: >
+    All four fresh seats independently confirm the R2 kill-classes are gone: zero
+    href="#", real producer destinations everywhere (basket/*, subsector/*,
+    stock.html#TICKER, plans.html), authority masquerade absent (context views carry no
+    action treatment; Bottoming Watch is watch-only with timing_state unrendered), premium
+    arithmetic reproduces split_actnow() exactly, Confluence never mixes universes, and the
+    data substrate invents nothing -- every rendered value traced to producer bytes
+    (data_authority S3 "client-recomputation audit -- clean"; product_regression strengths;
+    mobile seat: 96 audited cells with zero clipped text and zero sub-24px targets at
+    standard zoom). Word density per Act-Now card fell ~56 -> ~22 EN words with the depth
+    moved one step in, not deleted.
+  materially_worsened: >
+    The hero compressed PAST producer truth: a LIVE position-sizing directive
+    (theme_intel.regime_sizing active=true, gross_scalar=0.81) is dropped (DAC-101), the
+    leadership methodology caveat governing an assertion the hero keeps is dropped
+    (DAC-102), the migration note, allocation.html playbook destination, and hero
+    enrichment/counts are gone (DAC-103/104/106), and the S&P thin-coverage sentence
+    inverts the omitted-vs-listed semantics (DAC-105). ZH-dark action/risk state labels
+    regressed below the artifact's own 4.5:1 contrast floor (VTC-003), and the Moving help
+    controls shrank to 16x16 "?" glyphs with generated-content-only explanations (MAC-001).
+  disappeared: >
+    Sizing directive, methodology caveat, migration note, playbook destination, hero
+    enrichment (outgoing 20d/5d, incoming 20d, 49-themes/15-categories counts) -- all
+    producer-backed facts present in production Overview. Additionally the document
+    language never leaves en in ZH mode (MAC-003), and 22 duplicate id="ref-data" nodes
+    degrade the accessibility tree (MAC-006). Nothing else disappeared: the 92-row
+    capability crosscheck plus the product-regression seat's independent probe confirm the
+    remaining inventory, subject to DAC-108's finding that two crosscheck rows were
+    "VERIFIED" by candidate self-enumeration, which cannot detect an omission.
+  behavior_harder: >
+    Moving's help disclosures are unreachable by keyboard/touch semantics (MAC-001); Money
+    at the commissioned 320-physical/200% axis clips semantic verdict/flow text
+    (MAC-002); the Confluence Stock-picks row gives its heaviest visual weight to an
+    unlabeled bare decimal the reader cannot interpret (VTC-006); a ZH reader loses
+    screen-reader pronunciation and hyphenation because the document language stays en
+    (MAC-003).
+  stronger_claims: >
+    None invented -- both BLOCKED_DATA rulings are honored (no Baskets thin/gateable
+    invention, no correction/revision invention), no client recomputation of producer
+    ordering, no invented staleness thresholds. The S&P coverage sentence (DAC-105) is a
+    WEAKER-truth defect (asserts absent rows are listed) rather than a stronger claim, and
+    is ordered fixed as R3B1-07.
+  intent_vs_convenience: >
+    The compression that produced the hero omissions traces to the ~56->22 word-budget
+    intent applied by lane workers without the producer-fact inventory check that would
+    have caught a LIVE directive being cut -- convenience of the word budget over the
+    binding "no producer fact silently dropped" law. DAC-108 names the mechanism:
+    completeness was proven by the candidate enumerating itself. The a11y/contrast misses
+    trace to the QA scope choice (QA_ATTACK_REPORT S494/S628 put colour contrast out of
+    scope) -- a scoping convenience, not a design intent.
+  production_preferable_for: >
+    Today's production Overview hero remains preferable for the five restored-in-R3B.1
+    facts (sizing directive, caveat, migration note, playbook destination, enrichment);
+    production's Time Machine remains the only place the 25-year replay actually runs
+    (PRC-001, R3C-only); production's document-language handling is correct where the
+    candidate's is not (MAC-003). For everything else the four seats found the reference
+    equivalent or better on the frozen fixture.
+  strongest_argument_against: >
+    The strongest argument against approving R3B as-was: a reference that silently drops a
+    LIVE risk-management directive while its own 92-row completeness proof reports
+    "VERIFIED" is not yet trustworthy as migration law -- the proof method itself (self-
+    enumeration) certified an omission, so every other "VERIFIED" row inherits doubt until
+    the proof is bidirectional (R3B1-14). That is why the verdict is REVISE rather than
+    APPROVE_WITH_CONDITIONS.
+
+blocking_findings:           # every surviving critic finding adjudicated by id.
+  # upheld_revise rows + all conditions below become the successor's open items (RIG S13.1).
+  - finding: VTC-003
+    resolution: upheld_revise
+    note: "ZH-dark action/risk state labels 4.26-4.45:1 vs the artifact's own 4.5:1 floor; escalated by the critic to sole blocker. Fix = R3B1-11 (semantic token route only)."
+  - finding: VTC-006
+    resolution: upheld_revise
+    note: "Confluence Stock-picks unlabeled 0.xx decimal is the heaviest element on its row. Fix = R3B1-13 (producer-accurate label or return field to Sol)."
+  - finding: MAC-001
+    resolution: upheld_revise
+    note: "Moving help controls 16x16, named only '?', explanation in generated content. Fix = R3B1-08."
+  - finding: MAC-002
+    resolution: upheld_revise
+    note: "Money semantic clipping at 320-physical/200% (.mny-verdict leaf clipped). Fix = R3B1-09 with full six-view sweep."
+  - finding: MAC-003
+    resolution: upheld_revise
+    note: "Document language stays en in ZH mode. Fix = R3B1-10."
+  - finding: MAC-005
+    resolution: upheld_revise
+    note: "Light-theme 'Still measuring / 测量中' 3.61:1. Fix = R3B1-11."
+  - finding: MAC-006
+    resolution: upheld_revise
+    note: "22 duplicate id=ref-data. Fix = R3B1-12."
+  - finding: DAC-101
+    resolution: upheld_revise
+    note: "Hero drops LIVE regime_sizing directive (active=true, gross_scalar=0.81). Fix = R3B1-01 with mutation guard."
+  - finding: DAC-102
+    resolution: upheld_revise
+    note: "Hero keeps the leadership assertion but drops its governing methodology caveat. Fix = R3B1-02 with mutation guard."
+  - finding: DAC-103
+    resolution: upheld_revise
+    note: "theme_context.migration.note_en/zh producer fact dropped. Fix = R3B1-03."
+  - finding: DAC-104
+    resolution: upheld_revise
+    note: "allocation.html working destination silently deleted. Fix = R3B1-04."
+  - finding: DAC-105
+    resolution: upheld_revise
+    note: "S&P coverage sentence asserts absent rows are listed in the table. Fix = R3B1-07."
+  - finding: DAC-106
+    resolution: upheld_revise
+    note: "Hero handoff enrichment and 49-themes/15-categories counts dropped. Fix = R3B1-05."
+  - finding: DAC-107
+    resolution: upheld_revise
+    note: "One producer field (theme_intel.themes[].score) under two labels. Fix = R3B1-06 (Strength / 强度 in context surfaces)."
+  - finding: DAC-108
+    resolution: upheld_revise
+    note: "Crosscheck rows VERIFIED by candidate self-enumeration cannot detect an omission. Fix = R3B1-14 (bidirectional inventory + unique-kill mutations)."
+  - finding: VTC-001
+    resolution: overridden
+    note: "Critic's own second pass downgraded blocker->minor and withdrew the dead-token sub-claim; reserved-hue law correctly applied. Non-chromatic scatter encoding recorded as R3C input, not an R3B.1 obligation."
+  - finding: VTC-002
+    resolution: overridden
+    note: "Critic's own second pass downgraded blocker->minor: composition meets its stated above-fold budget. 1440 default-open CATEGORY lever recorded for R3C revisit."
+  - finding: MAC-004
+    resolution: overridden
+    note: "Authority conflict resolved by Sol: mobile workspace nav at <=359 is RATIFIED as 2 columns x 3 rows (R3B.1 do-not-reopen list); the frozen candidate already renders 2x3 unclipped >=53px at 320. Critic-commission text reconciled by this record; ordinary nav-link tab semantics stand."
+  - finding: PRC-001
+    resolution: overridden
+    note: "Disclosed manifest-only Time Machine is lawful for a reference artifact; live oracledata episode/chunk binding is an R3C-only condition (commission R3C list item 1), not an R3B.1 fix."
+  - finding: PRC-002
+    resolution: overridden
+    note: "Absent Group-pulse column matches production's own fail-soft path (sector_central.html.j2:2648-2652); recorded for the R3C migration packet."
+  - finding: PRC-003
+    resolution: overridden
+    note: "Heatmap reachable with real stock_url destinations; first-viewport absence is not removal. Reachability condition recorded for R3C."
+
+overrides:                   # permanent record for every overridden row above
+  - {finding: VTC-001, justification: "Second-pass critic downgrade to minor (dead-token sub-claim withdrawn as factually wrong; reserved-hue law correctly applied); Sol's R3B.1 do-not-reopen list forbids redesigning the Map reserved-hue law. Scatter encoding improvement deferred to R3C input.", authority: "Sol via XPV2-SC-R3B.1 commission"}
+  - {finding: VTC-002, justification: "Second-pass critic downgrade to minor: frozen composition satisfies DESIGN_SYSTEM_SPEC S333's own budget; taste disagreement, not defect. 1440 default-open state flagged for R3C.", authority: "Sol via XPV2-SC-R3B.1 commission"}
+  - {finding: MAC-004, justification: "Sol resolves the critic-commission vs responsive-contract conflict by ratifying 2 columns x 3 rows at <=359 (do-not-reopen list); candidate already conforms; roving-focus complaint withdrawn by the critic's own second pass.", authority: "Sol via XPV2-SC-R3B.1 commission"}
+  - {finding: PRC-001, justification: "Reference-scope ruling: a disclosed recorded-not-executed Time Machine is the correct frozen-artifact behavior; live binding is R3C-only (commission 'R3C-only conditions' item 1).", authority: "Sol via XPV2-SC-R3B.1 commission"}
+  - {finding: PRC-002, justification: "Candidate reproduces production's documented fail-soft for a missing optional producer; no reference defect.", authority: "Sol via XPV2-SC-R3B.1 commission"}
+  - {finding: PRC-003, justification: "Capability retained with producer-faithful destinations; composition ordering is the adjudicated R3A dominant-object choice for Money.", authority: "Sol via XPV2-SC-R3B.1 commission"}
+
+verdict: REVISE
+conditions:                  # the R3B.1 surgical fix packet, verbatim scope -- each testable by a stranger.
+  - {id: R3B1-01, text: "Restore active regime sizing from basketdata/baskets.json theme_intel.regime_sizing (active=true, gross_scalar=0.81 at frozen fixture): render 'positions sized to 81% / 仓位缩至 81%' with the production inert-when-calm rule, visually distinct from graded action lanes, no local sizing logic; removing sizing while active must fail a check."}
+  - {id: R3B1-02, text: "Restore the leadership methodology caveat as a compact Explain/receipt carrying both clauses (most recent ~3 weeks skipped by construction; shape read only, not a forecast), EN/ZH, keyboard/touch reachable, no paragraph tooltip; deleting either clause must fail a check."}
+  - {id: R3B1-03, text: "Bind theme_context.migration.note_en/note_zh and show it compactly in the Money-is-rotating context block."}
+  - {id: R3B1-04, text: "Restore the real allocation.html 'Open the playbook' destination with native ZH twin; no recorder-only fake href."}
+  - {id: R3B1-05, text: "Restore subordinate producer-backed hero enrichment: outgoing 20d/5d relative performance, incoming 20d / climbing-fast context where present, and the 49 themes / 15 categories counts."}
+  - {id: R3B1-06, text: "Label theme_intel.themes[].score as Strength / 强度 in Overview-context and Map; do not rename the independent action-board score."}
+  - {id: R3B1-07, text: "Correct the S&P thin-coverage sentence to payload-bound omitted-from-table semantics (65 of 113 timeable; 48 too thin and omitted), native ZH twin; do not render for Baskets."}
+  - {id: R3B1-08, text: "Moving help controls: >=44x44 effective target, unique localized accessible names, real DOM explanations with stable IDs, valid expanded/controls relationship, keyboard + coarse-pointer activation, EN/ZH, lawful dismiss for persistent disclosure; no new global tooltip controller."}
+  - {id: R3B1-09, text: "Fix Money semantic clipping at 320-physical/200%, then sweep all six views at 320/390/768/820 under the same method EN/ZH: zero document overflow, zero painted semantic clipping, zero clipped primary controls/names; not scrollWidth-only."}
+  - {id: R3B1-10, text: "Document language: initial html lang=en; Chinese mode sets the house-approved Chinese lang tag; runtime toggle updates lang and data-lang including localized ARIA; view/hash repaint must not reset it."}
+  - {id: R3B1-11, text: "Contrast/type repair closing ZH-dark action/risk labels (4.26-4.45:1), light Still-measuring (3.61:1), and 20d-vs-market label (3.91 dark / 3.43 light): >=4.5:1 at actual size, live type >=10px, semantic token route only, no page-local literal-color patch, EN stays passing, dark/light x EN/ZH measured."}
+  - {id: R3B1-12, text: "Remove the 22 duplicate id=ref-data values (data-path as registry key or unique IDs); run duplicate-ID and ARIA-reference audits clean."}
+  - {id: R3B1-13, text: "Identify the exact producer field behind the Confluence Stock-picks 0.xx figure and label it accurately with ZH twin; never Score/Probability/Confidence/Strength unless the producer contract says so; if ownership is ambiguous, stop and return the field/path to Sol."}
+  - {id: R3B1-14, text: "Replace candidate-self-enumeration completeness checks with bidirectional inventory checks (expected-production -> candidate AND candidate -> allowed-production/projection), pinning at minimum sizing directive, method caveat, migration note, allocation destination, hero enrichment, and all per-view working destinations; a mutation suite removing each independently must produce a unique red."}
+
+preserved_strengths:
+  - "Zero href='#'; all runtime destinations are real production paths; 21/21 LEGACY_ANCHORS resolve; canonical hash law holds (product_regression strengths)."
+  - "Authority discipline: no action treatment on context views, Bottoming Watch watch-only, premium wall Overview-only with exact split_actnow() arithmetic, both BLOCKED_DATA rulings honored, zero client recomputation of producer ordering (data_authority S3)."
+  - "The data substrate invents nothing -- every rendered value traces to producer bytes at the frozen fixture epoch (data_authority S1 'all PASS')."
+  - "96 independently audited responsive cells with zero clipped text and zero sub-24px targets at standard zoom; accessible browse-names path exposes all 503 heatmap names with real destinations (mobile_accessibility strengths)."
+  - "Word density ~56 -> ~22 EN words per Act-Now card with depth moved one step in -- the information-economics goal of the commission, kept subject to the hero restorations above."

@@ -1,7 +1,7 @@
 {
   "schema": "transmission_calibration.v1",
-  "asof": "2026-08-07",
-  "built": "2026-08-10 00:17 UTC",
+  "asof": "2026-08-21",
+  "built": "2026-08-22 16:34 UTC",
   "n_floor": 8,
   "regime_history_available": true,
   "chains": [
@@ -45,9 +45,9 @@
             "n": 3292
           },
           "63d": {
-            "mean_excess_pct": 0.261,
-            "median_excess_pct": 0.067,
-            "n": 3282
+            "mean_excess_pct": 0.269,
+            "median_excess_pct": 0.073,
+            "n": 3290
           }
         }
       },
@@ -91,13 +91,13 @@
             "from": "proxy: fred/DTWEXBGS 21d ret>0 (dollar strengthening)",
             "to": "series:yahoo"
           },
-          "p_confirm": 0.9227,
-          "n": 207,
+          "p_confirm": 0.9231,
+          "n": 208,
           "per_regime": {},
           "regime_split": "unavailable",
           "span": {
             "first": "2006-02-06",
-            "last": "2026-02-26"
+            "last": "2026-05-13"
           },
           "regime_split_reason": "no coarse regime scheme matched the condition prose 'EM without a domestic-policy offset (no local easing cushioning the FX drag)'; pooled only"
         }
@@ -109,14 +109,14 @@
         "note": "descriptive forward excess return of the terminal cohort proxy at terminal-node firings — NOT a forecast, NOT a signal (display-only).",
         "horizons": {
           "21d": {
-            "mean_excess_pct": -0.169,
-            "median_excess_pct": -0.545,
-            "n": 3117
+            "mean_excess_pct": -0.167,
+            "median_excess_pct": -0.542,
+            "n": 3127
           },
           "63d": {
-            "mean_excess_pct": -1.13,
-            "median_excess_pct": -1.905,
-            "n": 3075
+            "mean_excess_pct": -1.151,
+            "median_excess_pct": -1.98,
+            "n": 3085
           }
         }
       },
@@ -251,12 +251,12 @@
             "from": "series:yahoo",
             "to": "series:fred"
           },
-          "p_confirm": 0.7308,
-          "n": 104,
+          "p_confirm": 0.7333,
+          "n": 105,
           "per_regime": {
             "growth_accelerating": {
-              "p": 0.6512,
-              "n": 43
+              "p": 0.6591,
+              "n": 44
             },
             "growth_steady_or_slowing": {
               "p": 0.7869,
@@ -266,7 +266,7 @@
           "regime_split": "available",
           "span": {
             "first": "2000-12-07",
-            "last": "2026-05-28"
+            "last": "2026-06-11"
           },
           "regime_scheme": "growth_accel"
         },
@@ -311,13 +311,13 @@
             "from": "series:fred",
             "to": "series:yahoo"
           },
-          "p_confirm": 0.9627,
-          "n": 268,
+          "p_confirm": 0.9628,
+          "n": 269,
           "per_regime": {},
           "regime_split": "unavailable",
           "span": {
             "first": "2003-02-04",
-            "last": "2026-03-09"
+            "last": "2026-04-23"
           },
           "regime_split_reason": "no coarse regime scheme matched the condition prose 'no concurrent earnings deterioration in the long-duration cohort (a growth scare can swamp the discount-rate tailwind)'; pooled only"
         }
@@ -329,14 +329,14 @@
         "note": "descriptive forward excess return of the terminal cohort proxy at terminal-node firings — NOT a forecast, NOT a signal (display-only).",
         "horizons": {
           "21d": {
-            "mean_excess_pct": 0.487,
-            "median_excess_pct": 0.43,
-            "n": 4130
+            "mean_excess_pct": 0.483,
+            "median_excess_pct": 0.426,
+            "n": 4140
           },
           "63d": {
-            "mean_excess_pct": 1.211,
-            "median_excess_pct": 1.008,
-            "n": 4088
+            "mean_excess_pct": 1.201,
+            "median_excess_pct": 0.999,
+            "n": 4098
           }
         }
       },
@@ -389,12 +389,12 @@
             "from": "series:fred",
             "to": "series:yahoo"
           },
-          "p_confirm": 0.4403,
-          "n": 268,
+          "p_confirm": 0.4424,
+          "n": 269,
           "per_regime": {
             "liquidity_contracting": {
-              "p": 0.6719,
-              "n": 64
+              "p": 0.6769,
+              "n": 65
             },
             "liquidity_expanding": {
               "p": 0.5263,
@@ -408,7 +408,7 @@
           "regime_split": "available",
           "span": {
             "first": "2003-02-04",
-            "last": "2026-03-09"
+            "last": "2026-04-23"
           },
           "regime_scheme": "liquidity_dir"
         }
@@ -420,14 +420,14 @@
         "note": "descriptive forward excess return of the terminal cohort proxy at terminal-node firings — NOT a forecast, NOT a signal (display-only).",
         "horizons": {
           "21d": {
-            "mean_excess_pct": 7.719,
-            "median_excess_pct": 0.868,
-            "n": 858
+            "mean_excess_pct": 7.712,
+            "median_excess_pct": 0.873,
+            "n": 860
           },
           "63d": {
-            "mean_excess_pct": 26.065,
-            "median_excess_pct": 8.556,
-            "n": 857
+            "mean_excess_pct": 26.004,
+            "median_excess_pct": 8.544,
+            "n": 858
           }
         }
       },
@@ -570,9 +570,9 @@
         "note": "descriptive forward excess return of the terminal cohort proxy at terminal-node firings — NOT a forecast, NOT a signal (display-only).",
         "horizons": {
           "21d": {
-            "mean_excess_pct": 0.082,
+            "mean_excess_pct": 0.085,
             "median_excess_pct": -0.102,
-            "n": 1852
+            "n": 1860
           },
           "63d": {
             "mean_excess_pct": 1.03,

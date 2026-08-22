@@ -1,0 +1,220 @@
+# Fresh independent Product Regression Critic receipt — XPV2-SC-R3B
+# First-pass findings were frozen BEFORE any R3B rationale/QA/adjudication files were opened.
+schema: mastermind.rig_review.v1
+reference_id: mastermind-xpv2-sector-r3b
+role: product_regression
+artifact_sha: dc84f78cddf04d9be90e9249126f9767de5725a6
+
+reviewer:
+  identity: "grok-4.6-aionui-fresh-prc-2026-08-22"
+  model: grok-4.6
+  independent_of_author: true
+  prior_r3b_participation: false
+  notes: >
+    Fresh AionUi/Grok 4.6 seat. No participation in R3B design, build, QA, fix wave,
+    or adjudication. Quarantine honored: first-pass inputs were the frozen candidate
+    bytes, R3A substrate, current production templates/JS, baseline.yml as an index,
+    and an independent Playwright probe. R3B orchestrator adjudications, design notes,
+    FIX_VERIFICATION, capability_crosscheck, QA_ATTACK_REPORT, responsive/access/copy
+    rationale, PR #6197 prose, and R3C_HANDOFF_DRAFT were not opened until after
+    first_pass.frozen_at.
+
+candidate:
+  path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+  sha256: 19553267d3f51659503fc836da6b6bdaa06afc9cdd607aafb1bb795e46c47dca
+  verified_at_commit: dc84f78cddf04d9be90e9249126f9767de5725a6
+  matches_required_hash: true
+  matches_origin_main: true
+  build_manifest_path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/proposal/BUILD_MANIFEST.json
+  build_manifest_sha256: a7b9ae8ab3f13f106478f30c7de8b46672662832b09224fb7e182d0cb6b2d396
+  fixture_epoch: 4c55fe433490adfd75fd901ef25f5793db2202db
+  si_workspace_js_sha256: dfab9118d2b2184bdbc780699678f1fc9ce73ff80688deb673fbb8622eacca88
+  production_bytes_untouched: true
+  candidate_bytes_untouched: true
+
+semantic_drift_since_freeze:
+  result: none_in_scope
+  compared: dc84f78cddf04d9be90e9249126f9767de5725a6..origin/main
+  paths_checked:
+    - templates/si_workspace.js
+    - templates/sector_central.html.j2
+    - templates/_us_act_now_board.html.j2
+    - templates/subsectors.js
+    - templates/heatmap.js
+    - templates/time_machine.js
+    - templates/_forming_narratives.html.j2
+    - scripts/build_sector_central.py
+    - scripts/build_baskets.py
+    - engine/sector_central.py
+    - engine/us_act_now.py
+    - engine/sector_central_grader.py
+    - config/site_access.yml
+  note: >
+    Nightly heatmap/payload values were not treated as drift. Money heatmap
+    stock_url=https://app.mastermind-x.com/terminal?symbol= is current producer
+    output (scripts/build_sp500_heatmap.py), not a candidate invention. R3A
+    routing_contract.md's "stock.html#" note for heatmap rows is stale against
+    current production producer bytes.
+
+quarantine:
+  first_pass_inputs:
+    - user/business job (baseline.yml)
+    - production-before source (templates/sector_central.html.j2, si_workspace.js, related organs)
+    - proposed-after frozen candidate + BUILD_MANIFEST
+    - R3A capability ledger / routing contract / access contract / ADJUDICATIONS A1-A10
+    - independent Playwright probe
+  rationale_received_after_first_pass: true
+
+evidence:
+  dir: research/reference_integrity/mastermind-xpv2-sector-r3b/reviews/_prc_grok_2026-08-22/
+  probe_script: research/reference_integrity/mastermind-xpv2-sector-r3b/reviews/_prc_grok_2026-08-22/probe_candidate.py
+  probe_report: research/reference_integrity/mastermind-xpv2-sector-r3b/reviews/_prc_grok_2026-08-22/probe_report.json
+  probe_followup: research/reference_integrity/mastermind-xpv2-sector-r3b/reviews/_prc_grok_2026-08-22/probe_followup.json
+  shots: research/reference_integrity/mastermind-xpv2-sector-r3b/reviews/_prc_grok_2026-08-22/shots/
+
+first_pass:
+  frozen_at: "2026-08-22T13:47:12Z"
+  verdict: PASS_WITH_CONDITIONS
+  routing:
+    canonical_six: all_ok
+    legacy_21: all_ok_view
+    theme_boot: recorded_nav_to_basket/big_pharma.html
+    read_trace: "#read-gold_miners opened Gold Miners trace (cycle/conviction/confluence chips)"
+    unknown_hash: lands_overview
+    empty_hash: rewrites_to_#overview
+    sc_top_dom_id: absent_by_comment (R3A seam c, production-faithful)
+    forming_narratives_dom_id: present
+  access:
+    only_overview_actnow_gated: true
+    full_counts_free: "4 / 5 / 5 / 3 / 27"
+    preview_slice: "3 of 4 shown + sign-in disclosure -> plans.html"
+    hydrate: "REF.setAccessState('hydrated') fetches premiumdata/sector_central.json; rows 24->45; disclosures removed; fold remains 3+Show more"
+    other_views_unlocked: true
+    reffail_all_fetches: "Act-Now shows 'Data failed to load — please refresh.' (this is ALL-fetch fail, not premium-401 no-op)"
+  six_tasks:
+    overview: retained  # five lanes, honest counts, bottoming watch-only, grader, drill to stocks, stale clock
+    map: retained      # scatter + ranked table + selected detail + basket destinations + context disclaimer
+    moving: retained   # events, fragmentation, rotation/ destinations, desk watch quiet-tape
+    money: retained    # breadth/flow cards, ETF flows, heatmap tiles (503 producer stock_url links), leadership strip
+    explore: retained  # filter/sort, top8/bottom8, Show all 18->50 rows, SVG performance chart, Forming Narratives, TM chrome
+    confluence: retained  # four universes switch, distributions, members/stock.html, zero-search is count-only 0/65
+  capability_audit:
+    retained: 87
+    improved: 1   # SC-039 cycle clock SVG now has aria-labelledby text equivalent
+    lawfully_altered: 1  # SC-057 chart is inline SVG rather than lightweight-charts canvas; same rebase transform
+    broken: 0
+    lost: 0
+    unproven: 3   # SC-058 TM frames; SC-055 Group-pulse column; SC-060 ai_watch (fixture null, absence path)
+    blocked_data_honored: 2  # SC-066, SC-092 not fabricated
+  findings:
+    - id: PRC-001
+      severity: major
+      capability: SC-058
+      finding: >
+        Time Machine chrome, unit/year controls, and tm_manifest.json are present,
+        but oracledata/tm_episodes.json is recorded-not-executed and the open panel
+        states "The manifest is real; the frames are not carried here." The 25-year
+        replay a production customer actually runs cannot be completed against this
+        frozen artifact. Not a silent drop — the miss is disclosed — but a core
+        Explore workflow is unproven as migration law unless R3C binds the live
+        episode/chunk producers. Evidence: probe_followup.json tm.fetches;
+        shots/task-explore.png.
+    - id: PRC-002
+      severity: minor
+      capability: SC-055
+      finding: >
+        Explore's optional Group-pulse column never appears because basketdata/pulse.json
+        is not in the embedded registry (fetch recorded-not-executed). That matches
+        production's own fail-soft ("the column simply never appears",
+        templates/sector_central.html.j2:2648-2652). The rest of the table (name,
+        sparkline, 1d/5d/20d/60d/MTD/YTD, Show all 49) works. Condition: either embed
+        pulse.json so the optional column is demonstrable, or keep the production
+        absent-column path explicit in the migration packet.
+    - id: PRC-003
+      severity: minor
+      capability: SC-052
+      finding: >
+        Money's market-heat treemap is not in the first 1440x900 viewport; the landing
+        is breadth/flow cards, with the heat map below the ETF-flow header. 503
+        producer-faithful terminal?symbol= tile links exist, so the capability is not
+        lost, but the R3A "dominant object" for Money is flow-and-breadth and a
+        customer can miss the heatmap without scrolling. Condition: keep heatmap
+        reachable without a dead-end; do not treat first-viewport absence as removal.
+  strengths:
+    - "All six canonical hashes activate the matching .si-view.on; hidden views are display:none with 0x0 boxes (not display:none-but-painted fakes)."
+    - "All 21 LEGACY_ANCHORS resolve to the contracted view. #theme-big_pharma records nav to basket/big_pharma.html at boot. #read-gold_miners opens the Act-Now trace. Unknown hash -> Overview; empty hash rewrites to #overview."
+    - "Premium wall is Overview Act-Now only. Lane header counts are the full board (4/5/5/3/27) in the gated shell. Preview is 3 rows + 'sign in to see the full lane' -> plans.html. Hydrate inserts more rows and drops disclosures. Map/Moving/Money/Explore/Confluence show no extra lock UI."
+    - "Bottoming watch is a full-width watch strip, not a sixth lane; timing_state is not rendered; copy is watch-only."
+    - "No href='#' in the frozen HTML. Runtime destinations are real production paths (basket/*.html, subsector/*, stock.html#TICKER, rotation/*, sector_cycles.html#*, plans.html)."
+    - "Confluence switches S&P/Nasdaq/Russell/Baskets; Baskets tab does not invent gateable/thin disclosure (SC-066 BLOCKED_DATA honored); zero-search is count-only 0/65 with no fabricated 'no results' copy (SC-079); no correction badge invented (SC-092)."
+    - "Self-grader is on Overview with realized 21d numbers and 'never fed back into the live score'. Stale-clock copy fires ('This board's clock is more than 12 hours old'). Leadership context is labeled display-only and does not set a lane."
+    - "Explore Show all expands 18 table rows to 50 (49 baskets + header). Forming Narratives shows the deterministic 5-leg breakdown. Cycle clock SVG gained an accessible name (SC-039)."
+  conditions_for_r3c:
+    - "Bind Time Machine to production oracledata episode/chunk fetches; do not ship a manifest-only TM as if the replay were in the reference."
+    - "Keep Group-pulse as production fail-soft unless pulse.json is added to the fixture; do not invent a pulse column from another artifact."
+    - "Keep heatmap destination as the producer stock_url field (currently Terminal); do not hardcode a second stock surface."
+    - "Reuse templates/si_workspace.js verbatim (hash already matches freeze and origin/main)."
+
+second_pass:
+  amended_at: "2026-08-22T13:55:00Z"
+  rationale_read:
+    - research/reference_integrity/mastermind-xpv2-sector-r3b/ORCHESTRATOR_ADJUDICATIONS.md
+    - research/reference_integrity/mastermind-xpv2-sector-r3b/capability_crosscheck.md
+    - research/reference_integrity/mastermind-xpv2-sector-r3b/FIX_VERIFICATION.md
+    - research/reference_integrity/mastermind-xpv2-sector-r3b/R3C_HANDOFF_DRAFT.md
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/QA_ATTACK_REPORT.md
+  harness_audit:
+    display_none_geometry: "hidden si-views measure 0x0 display:none; not painted-but-hidden"
+    destinations: "data-ref-nav records real production hrefs; zero href='#'; not recorder-only fakes"
+    simulated_states: >
+      Access drawer still drives gated/hydrated/ungated, but hydrate() now goes
+      through REF.fetchJSON('premiumdata/sector_central.json') (fix F-3 / QA2-07).
+      whenAuthSettled / cookie gate remain unrepresented — inherent to a quarantined
+      artifact, not a silent bypass of the insert-by-lane path.
+    pre_fix_crosscheck_findings: >
+      capability_crosscheck.md F-1..F-6 describe the pre-fix-wave candidate.
+      Independent probes of THIS frozen SHA show F-1 (read-trace stays open on
+      #read-gold_miners), F-2 (Bottoming Watch rows are basket/*.html anchors),
+      F-3 (hydrate fetch path present), F-5 (trackRecordHtml / Still measuring /
+      Clears the bar are in the candidate bytes). F-6 residual (near-bottom
+      scroll ceiling) is the orchestrator-accepted page-length property, and
+      mobile #actnow-section / #grader were not under sticky chrome in this seat's
+      390px probe.
+  amendments:
+    - finding: PRC-001
+      action: downgraded
+      note: >
+        Orchestrator §2 already adjudicated Time Machine episode/chunk fetches as
+        recorded-not-executed: the manifest is fixture-real and the deferred-fetch
+        contract is the demonstrated product behavior. That is a lawful reference
+        architecture, not a silent drop of production TM. Severity major -> minor.
+        The finding remains as a riding R3C condition: production migration must
+        bind the live oracledata episode/chunk producers; this artifact is not a
+        complete TM data pack. capability_crosscheck #58 is VERIFIED-AS-ADJUDICATED (§2).
+    - finding: PRC-002
+      action: withdrawn
+      note: >
+        SC-055 names Group-pulse as optional. Production itself fail-softs a missing
+        pulse.json by never emitting the column (sector_central.html.j2:2648-2652).
+        capability_crosscheck #55 VERIFIED the table without requiring that column.
+        Not a product regression.
+    - finding: PRC-003
+      action: withdrawn
+      note: >
+        Heatmap tiles and the producer stock_url (Terminal) are present; first-viewport
+        placement is composition, not capability loss. capability_crosscheck #52 is
+        VERIFIED-AS-ADJUDICATED (§6). Hand to visual/taste if first-screen hierarchy
+        is the concern. No new product-regression defect.
+  new_findings: []
+  verdict: PASS_WITH_CONDITIONS
+  final_conditions:
+    - "R3C must bind Time Machine to production oracledata episode/chunk fetches; do not treat this artifact's manifest-only TM as the data contract."
+    - "Reuse templates/si_workspace.js verbatim (sha256 dfab9118… matches freeze and origin/main)."
+    - "Keep heatmap destinations as the producer stock_url field; keep Baskets thin/gateable and correction/revision uninvented."
+    - "whenAuthSettled / URL-level /premiumdata/ 403 remain production-server properties this artifact cannot execute; implement them from the R3A access contract, not from the harness drawer."
+
+limitations:
+  - "Live anonymous HTTP 401/403 against production /premiumdata/ was not curled from this sparse worktree; access conclusions are from the candidate's gated/hydrated/reffail states plus R3A access contract vs current templates."
+  - "Heatmap treemap geometry was inferred from 503 tile hrefs and fixture JSON, not from a scrolled visual crop of the SVG/tile layer."
+  - "Member-listing sort and some Map reco-tag visual chips were read from the accessible table ('Add'/'Hold'/'Trim'), not from a hover pass on every scatter point."
+  - "NOT_EVALUABLE: SC-015 Python/Jinja split-twice identity (build-time), SC-017 payload-file isolation, SC-018 URL-level /premiumdata/ enforcement, SC-089 nightly-sole-advancer of the parquet ledger — code/contract retained, not re-run as a nightly."

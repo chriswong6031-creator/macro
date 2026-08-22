@@ -724,7 +724,7 @@ def attested_history_private_not_found(
 
 
 # ---------------------------------------------------------------------------
-# FIF-2A / FIF-2B shared JSON admission
+# FIF-2A / FIF-2B / FIF-2C shared JSON admission
 # ---------------------------------------------------------------------------
 
 
@@ -738,6 +738,15 @@ def _financial_query_provider():
 
 
 def _financial_revision_provider():
+    """Test seam: monkeypatch this to inject a packet fixture provider in tests."""
+    from engine.fundamental_forensics.revision_service import (  # noqa: PLC0415
+        UnavailableFinancialPacketProvider,
+    )
+
+    return UnavailableFinancialPacketProvider()
+
+
+def _financial_packet_provider():
     """Test seam: monkeypatch this to inject a packet fixture provider in tests."""
     from engine.fundamental_forensics.revision_service import (  # noqa: PLC0415
         UnavailableFinancialPacketProvider,
@@ -892,6 +901,57 @@ async def financial_revisions(
         headers={
             **_PRIVATE_HEADERS,
             "X-FIF-Response-SHA256": result.sha256,
+        },
+    )
+
+
+@router.api_route(
+    "/api/forensics/v1/financial/packet",
+    methods=["GET", "PUT", "PATCH", "DELETE", "HEAD"],
+)
+def financial_packet_method_not_allowed(
+    response: Response,
+    _user: dict = Depends(require_site_full_user),
+) -> None:
+    """Auth first, then a private 405. Starlette's default 405 has no no-store policy."""
+    del response
+    raise _private_error(405, "method not allowed")
+
+
+@router.post("/api/forensics/v1/financial/packet")
+async def financial_packet(
+    request: Request,
+    _user: dict = Depends(require_site_full_user),
+) -> Response:
+    """Serve the exact canonical bytes of a validated financial_intelligence_packet.v1."""
+    from engine.fundamental_forensics.packet_service import (  # noqa: PLC0415
+        execute_financial_packet,
+    )
+    from engine.fundamental_forensics.query_service import (  # noqa: PLC0415
+        FinancialQueryAdmissionError,
+        FinancialQueryUnavailableError,
+    )
+
+    body = await _admit_json_post_body(request)
+
+    try:
+        result = execute_financial_packet(
+            body=body,
+            provider_factory=_financial_packet_provider,
+        )
+    except FinancialQueryAdmissionError as exc:
+        raise _private_error(exc.status_code, exc.detail) from None
+    except FinancialQueryUnavailableError:
+        raise _private_error(503, "financial packet temporarily unavailable") from None
+    except Exception:  # noqa: BLE001
+        raise _private_error(503, "financial packet temporarily unavailable") from None
+
+    return Response(
+        content=result.body,
+        media_type="application/json",
+        headers={
+            **_PRIVATE_HEADERS,
+            "X-FIF-Response-SHA256": result.response_sha256,
         },
     )
 

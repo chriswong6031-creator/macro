@@ -143,16 +143,20 @@ waves:
     status: in_progress
     depends_on: [D4]
     next_action: >
-      D5R core architecture merged on #6209 and PASSED Sol review; FINAL
-      ACCEPTANCE HELD pending the D5R.1 docs-consistency close (Sol
-      2026-08-22): six source-law contradictions repaired (acq-capability
-      id, economic_weight const-null, program_id-required role keys,
-      issuer-host authority split with no second registry, forward-only
-      milestones with the Block VI award reclassified as the GovRev/D3
-      changed-event, AUKUS forward-source classification). Owner
-      adjudication and Virginia pilot remain frozen — do not reopen.
-      Handoff:
-      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r1-docs-consistency.md.
+      D5R core architecture merged on #6209 and PASSED Sol review (D5R.1
+      six-repair consistency close merged on #6219). D5R.2 is the FINAL
+      CONTRACT-REPRESENTABILITY SEAL (Sol 2026-08-22): seventeen-key
+      top-level skeleton with reference JSON, program_capability_links,
+      program_event_links (exact event-identity+hash pointer; census —
+      NO Virginia Block VI v2 event exists on main 7e00f874),
+      review_coverage with the four-state derivation law, milestone
+      date/window XOR preimage, logical-id + revision law, frozen dossier
+      bundle + five-key program_link shapes, fixtures A-H with computed
+      sha12 ids, adversarial representability review to YES. FINAL D5R
+      ACCEPTANCE still held by Sol. Owner adjudication and Virginia pilot
+      remain frozen — do not reopen. Handoffs:
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r1-docs-consistency.md,
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r2-representability-seal.md.
   - id: D5
     title: Program, mission, capability, and product graph (implementation)
     status: todo

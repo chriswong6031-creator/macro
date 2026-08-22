@@ -13,6 +13,10 @@ owner: coo-fable
 class: build
 blast_radius: reversible
 ambiguity: open
+discoveries:
+  - "DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING"
+  - "DSC:GITHUB-CONCURRENCY-SUPERSEDES-PENDING"
+  - "DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY"
 waves:
   - id: W-TRANSPORT
     title: Bounded changed-files transport (E2BIG repair, PR 5578 incident)
@@ -56,6 +60,23 @@ waves:
       ProofFreshness remain the governing contract. PR 5591 remains historical
       W-REWRITE archaeology only; completing this wave does not commission or
       complete W-REWRITE or any CI-speed/scoping wave.
+  - id: W-PR-EVENT-CAUSALITY
+    title: Candidate authority and lifecycle-event causality closure
+    status: awaiting_ci
+    note: >
+      PR #6223 exposed two control-plane defects without changing its subject:
+      ci-authority treated mutable same-ref base-tip equality as candidate
+      identity, and a delayed closed event shared semantic CI's concurrency group
+      and cancelled a later reopened proof. The repair candidate keeps the event
+      base SHA plus live base observations as receipt provenance, binds authority
+      to the exact PR/head/repositories/base ref/author/actor/file inventory/admin
+      permissions, and conditionally reacquires the bounded inventory when the
+      base advances across pagination. Semantic CI remains sole authority for the
+      exact synthetic merge and tested base. ci.yml now admits only opened,
+      synchronize, and reopened proof events; closed cannot enter the proof slot.
+      Awaiting exact-head old-authority, semantic, fence, and workflow proof plus
+      merged-main containment. Evidence:
+      DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY.
   - id: W-GATE-SPLIT
     title: Merge gate tests code against fixtures; data receipts post-nightly
     status: in_progress
@@ -101,7 +122,13 @@ waves:
       the data-gated workflow-yaml job (data-health lane); owners' follow-up,
       deliberately not absorbed.
 next_action: >
-  Verify contract-delta appears and behaves on the next few ordinary PRs
+  First, prove W-PR-EVENT-CAUSALITY under the pre-existing authority system on
+  its exact candidate head: authority mutation battery, workflow lifecycle and
+  syntax checks, semantic ci-gate and contract-delta, fences, and active
+  ci-authority/main must all conclude green before normal merge; then prove
+  current main contains the repair. Do not use the candidate's proposed
+  authority semantics to justify its own landing. After that, verify
+  contract-delta appears and behaves on the next few ordinary PRs
   (inherited-immune, catches introduced closure/unwired defects); confirm
   the armed backlog fully drains post-breaker-open (21 -> 17 within an hour
   of the 19:06Z green). Then W3 at >=72h from the W2 merge (~08-22):
@@ -112,6 +139,7 @@ next_action: >
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"
+  - "scripts/ci_authority.py"
   - "scripts/run_ci_pack.py"
   - "scripts/merge_on_green.py"
 ---

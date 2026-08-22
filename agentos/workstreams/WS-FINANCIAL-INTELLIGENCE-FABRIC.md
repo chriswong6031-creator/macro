@@ -34,6 +34,9 @@ owns_paths:
   - tests/test_fundamental_forensics_financial_query_api.py
   - tests/test_fundamental_forensics_financial_revision_service.py
   - tests/test_fundamental_forensics_financial_revision_api.py
+  - engine/fundamental_forensics/packet_service.py
+  - tests/test_fundamental_forensics_financial_packet_service.py
+  - tests/test_fundamental_forensics_financial_packet_api.py
 depends_on: []
 discoveries:
   - DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY
@@ -50,8 +53,10 @@ next_action: >
   FIF-1 is DONE / FROZEN. FIF-2A is ACCEPTED / FIXTURE_PROVEN / ON_MAIN
   (PR #5983). FIF-2 remains IN_PROGRESS. FIF-2B is ACCEPTED /
   FIXTURE_PROVEN / ON_MAIN (accepted head 55663277a32c, merge
-  56d1a36caa43, PR #6157). FIF-2C is UNLOCKED / NOT_STARTED. Do not
-  reopen FIF-2A A–D or FIF-2B. Do not claim production issuer coverage.
+  56d1a36caa43, PR #6157). FIF-2C is BUILT_NOT_ACCEPTED pending Sol
+  review of POST /api/forensics/v1/financial/packet. FIF-2D is
+  NOT_STARTED. Do not reopen FIF-2A A–D or FIF-2B. Do not claim
+  production issuer coverage.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -83,8 +88,8 @@ do_not_redo:
   - Do not reopen frozen financial_intelligence_packet.v1 semantics; FIF-1 is DONE (DEC:FIF-1-V1-FROZEN).
   - FIF-2A is ACCEPTED / FIXTURE_PROVEN; do not reopen A–D or add FIF-2A hardening.
   - FIF-2B is ACCEPTED / FIXTURE_PROVEN; do not reopen revision projection, packet identity, or add FIF-2B hardening.
-  - FIF-2C is UNLOCKED / NOT_STARTED; do not implement statements/trace/packet-read/bulk in a records PR.
-  - Do not claim production issuer coverage; FIF-2A/FIF-2B are fixture-proven against FIP1. FIF-3 wires admitted issuer packages.
+  - FIF-2C is BUILT_NOT_ACCEPTED pending Sol; do not start FIF-2D or statements/trace/bulk.
+  - Do not claim production issuer coverage; FIF-2A/FIF-2B/FIF-2C are fixture-proven against FIP1. FIF-3 wires admitted issuer packages.
   - Do not manufacture a filing-authority fixture by flipping dimensions_known or injecting revision_of onto Company Facts rows.
   - Do not put filesystem, schema, or digest discovery inside assemble_financial_intelligence_packet.
   - Do not silently add unrequested metrics to the user cells array.
@@ -114,9 +119,10 @@ waves:
     next_action: >
       FIF-2A ACCEPTED / FIXTURE_PROVEN / ON_MAIN via PR #5983. FIF-2B
       ACCEPTED / FIXTURE_PROVEN / ON_MAIN via PR #6157 (accepted head
-      55663277a32c, merge 56d1a36caa43). FIF-2C is UNLOCKED / NOT_STARTED.
-      Production issuer coverage is FIF-3; default packet provider remains
-      unavailable/503.
+      55663277a32c, merge 56d1a36caa43). FIF-2C is BUILT_NOT_ACCEPTED
+      pending Sol review of POST /api/forensics/v1/financial/packet.
+      FIF-2D is NOT_STARTED. Production issuer coverage is FIF-3; default
+      packet provider remains unavailable/503.
   - id: FIF-3
     title: Golden five-issuer vertical slice
     status: todo
@@ -199,6 +205,8 @@ synthetic fixtures cannot claim committed FIP1 receipts; packet request
 validation precedes provider opening; B-visible/C-hidden and delayed-
 mapping PIT laws are proven; #5983 hashes remain unchanged. Production
 default provider remains unavailable/503. FIF-2B is ACCEPTED /
-FIXTURE_PROVEN / ON_MAIN. FIF-2C is UNLOCKED / NOT_STARTED. Do not
-create FIF-1R4. Do not reopen accepted packet or revision semantics.
-Do not claim production issuer coverage; that remains FIF-3.
+FIXTURE_PROVEN / ON_MAIN. FIF-2C is BUILT_NOT_ACCEPTED pending Sol
+review of POST /api/forensics/v1/financial/packet. FIF-2D is
+NOT_STARTED. Do not create FIF-1R4. Do not reopen accepted packet or
+revision semantics. Do not claim production issuer coverage; that
+remains FIF-3.
