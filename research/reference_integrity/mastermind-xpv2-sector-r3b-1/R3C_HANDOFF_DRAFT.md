@@ -47,6 +47,16 @@ freezes; that file remains predecessor history.
   absent-column fail-soft explicit in the migration packet (`::product_regression::PRC-002`).
 - Heatmap reachability: keep reachable without a dead-end; first-viewport absence is not
   removal (`::product_regression::PRC-003`).
+- Producer-side naming collision: two producers both label their field "Conviction" —
+  `subsector_confluence.combined_score` (综合把握, `templates/subsectors.js:330`) vs
+  `sector_central.json → conviction.score` (信心). Both labels are production's own;
+  disambiguation is an engine/template naming item, not a reference change (R3B.1 Lane A
+  GAP-4).
+- Production unit defect: `fmtPct()` applied to raw fractional `perf.<win>.rel` renders
+  "-0.10%" in the hero while the same byte renders "-9.6%" on the action board of the same
+  view. The R3B.1 reference renders one consistent board-scale value (adjudications §4.2);
+  production should fix the hero's `fmtPct` scale rather than inherit the dual-magnitude
+  rendering.
 
 ## §3 Inherited required dependencies (carried from the predecessor R3C draft)
 

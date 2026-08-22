@@ -75,4 +75,42 @@ is therefore attributable to an R3B1-* fix by construction.
 - Lane D — evidence recapture: Sonnet `builder`, after A/B/C converge.
 - Orchestrator: adjudication, scope-creep prevention, continuity closure, freeze, PR/merge.
 
-(Sections §4+ appended as lane returns are adjudicated.)
+## §4 Lane A return — adjudicated ACCEPTED (commit 3dd85a6a05d4)
+
+All of R3B1-01..07 landed producer-bound with production citations (sizing inert-guard
+reproduced from `sector_central.html.j2:2888`; caveat clauses verbatim from `:2155`;
+migration `:2130`; playbook `:2163`; enrichment guards `:2926-2933`). Evidence accepted:
+deterministic rebuild ×2 = `57fe91cf7409…`, verify 10/10, 6-view sweep clean, 44/44
+contrast cells ≥4.5:1 on restored nodes, 10 crops. **R3B1-13 RESOLVED, no Sol return
+needed:** the bare decimal is `subsector_confluence.json → double_gated.double_buy[]
+.combined_score`, contract at `engine/subsector_confluence.py:322-347`, and the label used
+is production's OWN header for that exact field — `Conviction / 综合把握`
+(`templates/subsectors.js:330`). The commission's never-Score/Probability/Confidence/
+Strength rule is satisfied by construction (the producer contract names it).
+
+Rulings on the lane's flagged items:
+
+1. **R3B1-06 residual (DAC-107 partial closure) — carve-out obeyed, residual DISCLOSED to
+   Sol.** The lane proved the Overview action-board "Score / 评分" column is byte-identical
+   to `theme_intel.themes[].score` (`scripts/build_site.py:1784` copies `th.get("score")`),
+   so the commission's "independent action-board score" carve-out protects a column that is
+   not independent on this fixture. The prohibition is explicit; the reference obeys it.
+   Consequence recorded honestly: DAC-107's one-measure-two-names exposure survives on
+   Overview's action board (context surfaces are unified to Strength / 强度 as
+   commissioned). If Sol intends R3B1-06 to close DAC-107 completely, the residual fix is a
+   one-line header change — flagged in the freeze return.
+2. **Unit-consistency deviation UPHELD.** Production renders the same producer byte
+   (`-0.0959`) at two magnitudes on one screen (`fmtPct()` on the raw fraction → "-0.10%"
+   in the hero vs "-9.6%" on the board). The reference renders it once, at the board's
+   standard percent convention. No value invented; a production unit DEFECT is not carried
+   into migration law. Recorded as copy-ledger R-4; the production `fmtPct`-on-fraction
+   defect joins the R3C production-repair candidates.
+3. **Conviction label collision across producers** (`combined_score` "Conviction / 综合把握"
+   vs `conviction.score` "Conviction / 信心") — both labels are production's own; neither is
+   the reference's to rename. Recorded as an R3C producer-side naming item.
+4. Glyph substitutions (drawn chevron/receipt mark per spec §9.3), caveat clause order
+   (governing caveat leads), `.r3-rcpt--named` modifier, and `pre-line` tipbox: accepted as
+   in-grammar design execution; the CSS source-order specificity trap is handed to Lanes
+   B/C in their commissions.
+
+(§5+ appended as further lane returns are adjudicated.)
