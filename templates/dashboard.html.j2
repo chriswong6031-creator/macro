@@ -1696,6 +1696,12 @@
   #us-stocktable-wrap { display:none; }
   #us-standouts.st-table-mode #us-stocktable-wrap { display:block; }
   #us-standouts.st-table-mode .nb-grid-section { display:none; }
+  /* P0 #6185 — source view: exactly one population is on screen at a time. */
+  #us-standouts[data-prophet-src="plans"] #us-candidates { display:none; }
+  #us-standouts[data-prophet-src="candidates"] #us-plan-block { display:none; }
+  /* the Grid/Table view toggle switches the CANDIDATE table; there is no plan
+     table yet (P-MP1-DENSE), so it must never appear under a Plans label. */
+  #us-standouts[data-prophet-src="plans"] #us-st-view-toggle { display:none; }
   /* count chips row (id matches stocktable.js hard-coded lookup) */
   #st-count-chips { display:inline-flex; gap:5px; flex-wrap:wrap; align-items:center; margin:8px 0; }
   .st-chip { display:inline-block; font-size:10px; font-weight:700; padding:2px 9px;
@@ -15886,6 +15892,7 @@ html[data-theme="light"] :is(
         receipt FOR ship as one thing or not at all (spec §7 invariants). -#}
     {% set _bs_adj = (_bs.get('note') == 'confirmed') if _bs else false %}
     <div class="panel span12 notable" id="us-standouts"
+         data-prophet-src="{{ 'candidates' if _su else 'plans' }}"
          {%- if _bs and _bs.get('rel') %} data-boardstate="{{ _bs.rel }}"{% endif %}>
       <div class="pb-hdrow" style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <h2 style="margin:0">{{ t('Prophet Stock Signals', 'Prophet 选股') }}</h2>
@@ -15905,6 +15912,22 @@ html[data-theme="light"] :is(
         <span class="pbs pbs-ahead" data-bs="ahead"{% if not (_bs and _bs.get('rel') == 'ahead') %} hidden{% endif %}>{{ t("◐ Tonight's picks", '◐ 今晚选股') }}</span>
         <span class="pbs pbs-behind" data-bs="behind"{% if not (_bs and _bs.get('rel') == 'behind') %} hidden{% endif %}>{{ t('Last confirmed', '上次确认') }} · <span class="pbs-dt"><span class="l-en">{{ (_bs.get('confirmed_label') or {}).get('en', '') }}</span><span class="l-zh">{{ (_bs.get('confirmed_label') or {}).get('zh', '') }}</span></span></span>
         {% endif %}
+        {#- P0 #6185 — source toggle: candidates (tonight's screen) vs plans
+           (the migrated plan book). Candidates is the baked default whenever
+           the candidate board loaded (data-prophet-src on #us-standouts
+           above); reuses the existing .st-view-toggle primitive, never a new
+           segmented-control component. Deliberately UNCONDITIONAL (not
+           `{% if _su %}`) — the panel itself only renders under
+           `{% if _su or action_board.notable %}`, so this can never appear
+           on a page with no Prophet board at all, but a page that opens on
+           Plans (legacy action_board fallback, `_su` falsy) still needs a
+           way to REACH the typed Candidates-unavailable state (B5) — gating
+           the toggle on `_su` would bake that state and then make it
+           permanently unreachable. -#}
+        <span class="st-view-toggle" id="us-src-toggle" role="group" data-tip-en="Switch between tonight's candidate screen and the plan book" data-tip-zh="在今晚的候选筛选与计划簿之间切换">
+          <button id="us-src-btn-cand" type="button" aria-selected="{{ 'true' if _su else 'false' }}" data-src="candidates"><span class="l-en">Candidates</span><span class="l-zh">候选</span></button>
+          <button id="us-src-btn-plan" type="button" aria-selected="{{ 'false' if _su else 'true' }}" data-src="plans"><span class="l-en">Plans</span><span class="l-zh">计划</span></button>
+        </span>
         {# W8-R6: grid/table view toggle (US market) #}
         {% if _su %}
         <span class="st-view-toggle" id="us-st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
@@ -15915,7 +15938,12 @@ html[data-theme="light"] :is(
         {# the id is W-L1d's hook, nothing more: this subtitle counts the nightly board and
            spells out its dot legend, and the provisional board has neither that count nor
            any dots to read, so the client hides it while tonight's cards are mounted. #}
-        {% if _su %}{% set _su_delayed = (_su.get('staleness') or {}).get('delayed') %}<span class="muted" id="us-board-sub" style="font-size:11.5px">{{ (gate.total if gate else _su.buy|length) }} {{ t("shown ·", "已显示 ·") }} {{ _su.eligible }} {% if _su_delayed %}{{ t("setups · dots reflect prices as of " ~ ((_su.staleness or {}).get('price_through') or '?') ~ " — verify before acting.", "个形态 · 价格点位截至 " ~ ((_su.staleness or {}).get('price_through') or '?') ~ "，操作前请确认最新价格。") }}{% else %}{{ t("setups · green dot = entry open, yellow = wait for pullback.", "个形态 · 绿点＝现在可入场，黄点＝等回调。") }}{% endif %}
+        {#- P0 #6185 (C3): the old "{{ N }} shown · {{ M }} setups · …" clause
+           mixed two different units (a gated build's shown count vs the
+           full-board eligible count — live: "60 shown · 76 setups") and
+           neither matched what was actually on screen. Deleted outright;
+           the dot legend below is the whole line now. -#}
+        {% if _su %}{% set _su_delayed = (_su.get('staleness') or {}).get('delayed') %}<span class="muted" id="us-board-sub" style="font-size:11.5px">{% if _su_delayed %}{{ t("dots reflect prices as of " ~ ((_su.staleness or {}).get('price_through') or '?') ~ " — verify before acting.", "价格点位截至 " ~ ((_su.staleness or {}).get('price_through') or '?') ~ "，操作前请确认最新价格。") }}{% else %}{{ t("green dot = entry open, yellow = wait for pullback.", "绿点＝现在可入场，黄点＝等回调。") }}{% endif %}
           <span class="help">?<span class="tip tip-wide">{% if _su_delayed %}<span class="l-en">Board is delayed — prices are as of {{ ((_su.staleness or {}).get('price_through') or '?') }}. Dots and entry signals may not reflect current prices. Use the card to judge the company, then check a live quote before acting.</span><span class="l-zh">数据延迟 — 价格截至 {{ ((_su.staleness or {}).get('price_through') or '?') }}。绿点及入场信号可能不反映最新价格。先用卡片判断公司，再查看实时报价后操作。</span>{% else %}<span class="l-en">Each card separates two questions: is the stock worth owning, and is today a good entry? A strong company can still be a wait if price has run too far. Green means the entry is open; yellow means wait.</span><span class="l-zh">每张卡片分开回答两个问题：这只股票是否值得持有，以及今天是否适合入场。好公司若股价已经跑远，仍然应该等待。绿点表示入场窗口已开；黄点表示等待。</span>{% endif %}</span></span></span>{% endif %}
         {% if not _su %}<span class="muted" style="font-size:11.5px">{{ t("Up to 10 names per sector · grouped by setup, strongest names first.", "每个板块最多 10 只 · 按形态分组，较强者优先。") }}
           {{ help("Shows up to ten holdings from each sector when their price action reaches a clear buy, turning or topping point. Cards are grouped by setup stage; stronger names within the sector appear first. A cap keeps one sector from taking over. Click any card for the full breakdown.", "当价格走势出现明确的买入、转向或见顶时，每个板块最多展示十只股票。卡片按形态阶段分组，同板块中较强者优先。数量上限可避免单一板块占满页面。点击卡片查看完整拆解。") }}</span>{% endif %}
@@ -16190,7 +16218,12 @@ html[data-theme="light"] :is(
       {%- else %}
         {%- for _n in _board -%}{%- if _n.get('stage') in _sc -%}{%- set _ = _sc.update({_n.stage: _sc[_n.stage] + 1}) -%}{%- endif -%}{%- endfor -%}
       {%- endif %}
-      {%- set _ = _sc.update({'ran': _sc['ran'] + (_ran_rows|length)}) -%}
+      {#- P0 #6185 (C2): `_sc['ran']` used to be inflated by the SEPARATE
+         `us_standouts.ran` array (its own section/tier gate, _us_ran_rows.
+         html.j2) — a mixed-unit defect, since `ran` here must stay a
+         SUBSET of the `buy` population the candidate grid renders and that
+         `_cand_total` (below) sums against. Deliberately no `+ _ran_rows`
+         addend any more. -#}
       {# ── stage filter chips (G0.6). Empty buckets render NO chip (China precedent) —
            a chip you can press into a void is worse than no chip. #}
       {#- Tier gate (docs/TIER_PREVIEW_PATTERN.md, "Controls"): the filter bar only
@@ -16232,6 +16265,10 @@ html[data-theme="light"] :is(
       {%- endif -%}
       {%- set _upb = us_prophet_book if us_prophet_book else none -%}
       {%- set _upb_err = us_prophet_book_error if us_prophet_book_error else false -%}
+      {#- P0 #6185 — the PLAN side gets a structural wrapper of its own so the
+         candidate/plan populations share no DOM ancestor below .nb-grid-section
+         and no shared id (invariant E2). Nothing inside changes. -#}
+      <div id="us-plan-block">
       {{ pv.mx_ladder(_upb, error=_upb_err) }}
       {%- if _upb and not _upb_err %}
       {%- if not _upb.get('plans') %}
@@ -16322,6 +16359,7 @@ html[data-theme="light"] :is(
         </div>
       </div>
       {% endif %}
+      </div>{# end #us-plan-block #}
       {#- ═══ P-MP1-SHELL — §3 CANDIDATES (commissioning follow-up, gap 1) ═══════════
          MP-1 §3/§6 + the R4.2 reference's own candidates() (mockups/refs/
          institutionalize/us_stocks/board.js:1082-1135, board.css:145-161,780-800):
@@ -16352,14 +16390,40 @@ html[data-theme="light"] :is(
          tonight" against a true 66. `_ran_rows` is already the FULL `ran`
          array in both gated and ungated builds (_split_us_board only slices
          the `buy` key), so it needs no such fix. -#}
-      {%- set _cand_total = (gate.total if gate else _board|length) + _ran_rows|length -%}
+      {#- P0 #6185 (C2): census reconciliation. `_cand_total` used to add
+         `_ran_rows|length` on top of the gate/board total — but `_ran_rows`
+         is the SEPARATE `us_standouts.ran` array (its own section/tier gate
+         below, not part of the `buy` population this grid renders), so that
+         addend double-counted a different population into this total. -#}
+      {%- set _cand_total = (gate.total if gate else _board|length) -%}
       <div class="mx-sec" id="us-candidates">
         <div class="mx-sec-hd">
           <h2 class="mx-sec-h2">{{ t('Candidates', '候选') }}</h2>
-          <span class="mx-sec-total">{{ t('<b>' ~ _cand_total ~ '</b> screened tonight', '本次筛出 <b>' ~ _cand_total ~ '</b> 只')|safe }}</span>
+          {#- P0 #6185 (C1): verified mechanism — `t(en, zh)` as called INSIDE
+             this file resolves to the `{% macro t(en, zh='') %}` defined at
+             the top of dashboard.html.j2 (line ~13), which SHADOWS the
+             global `t` (engine.i18n.t, engine/i18n.py:34) any other template
+             gets; a template-local macro always wins name resolution over an
+             env global of the same name (confirmed empirically — rendering
+             `{{ t(...) }}` without that macro in scope raises UndefinedError
+             even though env.globals carries no `t` either way here). The
+             macro's body does `{{ en }}`/`{{ zh }}` under this env's
+             autoescape=True, so a string already containing raw `<b>`/`</b>`
+             gets those tags escaped on the way in — exactly Markup.format's
+             escaping behavior, just via the macro's own interpolation rather
+             than engine.i18n.t itself. The trailing `|safe` then marks that
+             already-escaped output safe, which is what makes the entities
+             render as visible `<b>55</b>` text instead of bold. Either way,
+             the rule is the same: never pass HTML into t()/td(); compose the
+             bilingual twin explicitly instead, as below. -#}
+          <span class="mx-sec-total"><span class="l-en"><b>{{ _cand_total }}</b> screened tonight</span><span class="l-zh">本次筛出 <b>{{ _cand_total }}</b> 只</span></span>
           <a class="mx-sec-link" href="discovery.html">{{ t('Open the screener', '打开筛选器') }}</a>
         </div>
-        <p class="mx-sec-note">{{ t('Names tonight’s screen surfaced. A candidate is not a setup: it becomes one only when a plan is written for it, which is what the board above counts.', '本次筛选出的股票。候选不等于计划：只有为它建立计划后，才会计入上方看板。') }}</p>
+        {#- P0 #6185 (C5): "the board above"/"上方看板" described the pre-#6076
+           layout where the candidate grid sat directly under the Setups
+           board. In Candidates mode there is no board above — reword to the
+           Plans view this population feeds. -#}
+        <p class="mx-sec-note">{{ t('Names tonight’s screen surfaced. A candidate is not a setup: it becomes one only when a plan is written for it, which is what the Plans view counts.', '本次筛选出的股票。候选不等于计划：只有为它建立计划后，才会计入计划视图。') }}</p>
         {%- if gate %}
         {#- Repair round, finding B3: restores the honest-preview disclosure the
            old (retired) stage-filter bar carried as #us-gate-note — this
@@ -16372,12 +16436,53 @@ html[data-theme="light"] :is(
         </div>
         {%- endif %}
         {%- if _sg.any %}
+        {#- P0 #6185 (C2): the shelves must sum EXACTLY to _cand_total. Guard
+           the arithmetic honestly rather than trust it — a row whose stage
+           is absent/unrecognized (not in _stage_order) is not silently
+           dropped from the total, it gets its own shelf. -#}
+        {%- set _cand_other = _cand_total - (_sc['live'] + _sc['setting_up'] + _sc['ran'] + _sc['basing'] + _sc['blocked']) -%}
         <div class="cand-shelves">
           {%- for _sk in _stage_order %}{% if _sc[_sk] %}
           <span class="cand-shelf"><b class="fig">{{ _sc[_sk] }}</b><span>{{ t(_stage_en[_sk], _stage_zh[_sk]) }}</span><i>{{ t(_stage_sub_en[_sk], _stage_sub_zh[_sk]) }}</i></span>
           {% endif %}{% endfor -%}
+          {%- if _cand_other %}
+          <span class="cand-shelf" id="us-cand-shelf-other"><b class="fig">{{ _cand_other }}</b><span>{{ t('Other', '其他') }}</span><i>{{ t('no stage recorded', '未记录阶段') }}</i></span>
+          {%- endif %}
         </div>
         {%- endif %}
+        {#- P0 #6185 (B3) — the restored candidate grid: verbatim pre-#6076
+           markup (git show 31ca4971ba4a -- templates/dashboard.html.j2),
+           carrying only its own id. MUST NOT carry data-mp1-grid or
+           data-provboard — the W-L1 repaint selector (search
+           WL1-PROVCARD-CONTRACT below, tests/test_wl1_lifecycle_
+           neutralization.py) re-acquires this grid via that absence. -#}
+      <div class="nbgrid" data-showmore-rows="3" id="us-cand-grid">
+      {% with items=_render_list.items, sg_any=_sg.any, bs_adj=_bs_adj, xu_allfeat=_xu_allfeat, trg_map=_trg_map, rw_en=_rw_en, rw_zh=_rw_zh %}{% include "_us_board_cards.html.j2" %}{% endwith %}
+      </div>{# end #us-cand-grid #}
+        {#- P0 #6185 (B4) — restored CANDIDATE tier wall, keyed on `gate`
+           (not `life_gate` — that key belongs to the plan wall inside
+           #us-plan-block above). Recovered verbatim from the same pre-#6076
+           commit; the copy is about candidate rows/names, never "plan
+           rows" (that wording is the plan wall's, left untouched). -#}
+        {% if gate %}
+        <div class="us-tier-wall" id="us-tier-wall">
+          <div class="us-tw-h">
+            <span class="l-en">{{ gate.locked }} more names on tonight's board</span>
+            <span class="l-zh">今晚榜单还有 {{ gate.locked }} 只股票</span>
+          </div>
+          <div class="us-tw-p">
+            <span class="l-en">You're seeing the first {{ gate.preview }} of {{ gate.total }} names. Sign in to see the full ranked board, every entry stage, and the table view.</span>
+            <span class="l-zh">当前显示 {{ gate.total }} 只中的前 {{ gate.preview }} 只。登录后可查看完整排名榜单、全部入场阶段与表格视图。</span>
+          </div>
+          <div class="us-tw-acts">
+            <a class="us-tw-btn" href="plans.html">{{ t('See plans', '查看方案') }}</a>
+            <span class="us-tw-note">{{ t('7-day Pro trial · cancel anytime', 'Pro 7 天试用 · 随时取消') }}</span>
+          </div>
+          <div class="us-tw-signed" id="us-tw-signin" hidden>
+            <a href="#" data-act="signin">{{ t('Already a member? Sign in', '已是会员？登录') }}</a>
+          </div>
+        </div>
+        {% endif %}
         {#- Repair round, finding B4: computed SERVER-SIDE against the FULL
            (pre-slice) candidate board and the FULL plan book
            (scripts/build_site.py::_us_candidate_no_plan_sample, threaded as
@@ -16413,12 +16518,42 @@ html[data-theme="light"] :is(
           {%- endfor %}
         </div>
         {%- endif %}
+        {#- P0 #6185 (C1): same defect as the header total above (see the
+           verified-mechanism note there — a template-local `t` macro this
+           file defines, shadowing engine.i18n.t, escapes raw `<b>`/`</b>`
+           passed into it under autoescape; the trailing `|safe` then marks
+           that already-escaped output safe) — write the bilingual twin
+           explicitly. -#}
         {%- if _cand_all_no_plan %}
-        <p class="mx-sec-note" style="margin:12px 0 0">{{ t('Showing ' ~ (_cand_sample|length) ~ ' that carry no plan yet · <b>' ~ _cand_total ~ '</b> screened' ~ (' ' ~ _su.as_of if _su and _su.get('as_of') else ''), '显示其中 ' ~ (_cand_sample|length) ~ ' 只尚未建立计划的 · 本次共筛出 <b>' ~ _cand_total ~ '</b> 只' ~ (' · 筛选日 ' ~ _su.as_of if _su and _su.get('as_of') else ''))|safe }}</p>
+        <p class="mx-sec-note" style="margin:12px 0 0">
+          <span class="l-en">Showing {{ _cand_sample|length }} that carry no plan yet · <b>{{ _cand_total }}</b> screened{% if _su and _su.get('as_of') %} {{ _su.as_of }}{% endif %}</span>
+          <span class="l-zh">显示其中 {{ _cand_sample|length }} 只尚未建立计划的 · 本次共筛出 <b>{{ _cand_total }}</b> 只{% if _su and _su.get('as_of') %} · 筛选日 {{ _su.as_of }}{% endif %}</span>
+        </p>
         {%- else %}
-        <p class="mx-sec-note" style="margin:12px 0 0">{{ t('Showing ' ~ (_cand_sample|length) ~ ' recent candidates (some already carry a plan) · <b>' ~ _cand_total ~ '</b> screened' ~ (' ' ~ _su.as_of if _su and _su.get('as_of') else ''), '显示其中 ' ~ (_cand_sample|length) ~ ' 只近期候选（部分已建立计划）· 本次共筛出 <b>' ~ _cand_total ~ '</b> 只' ~ (' · 筛选日 ' ~ _su.as_of if _su and _su.get('as_of') else ''))|safe }}</p>
+        <p class="mx-sec-note" style="margin:12px 0 0">
+          <span class="l-en">Showing {{ _cand_sample|length }} recent candidates (some already carry a plan) · <b>{{ _cand_total }}</b> screened{% if _su and _su.get('as_of') %} {{ _su.as_of }}{% endif %}</span>
+          <span class="l-zh">显示其中 {{ _cand_sample|length }} 只近期候选（部分已建立计划）· 本次共筛出 <b>{{ _cand_total }}</b> 只{% if _su and _su.get('as_of') %} · 筛选日 {{ _su.as_of }}{% endif %}</span>
+        </p>
         {%- endif %}
       </div>{# end #us-candidates #}
+      {%- endif %}
+      {%- if not _su %}
+      {#- P0 #6185 (B5): a typed unavailable state so Candidates is never
+         silently absent — the outer `{% if _su %}` above omits #us-candidates
+         wholesale on the legacy action_board fallback, and without this a
+         reader on Plans mode with a stale/absent candidate artifact would see
+         nothing at all when they switch to Candidates. Never shows stale
+         candidates under a fresh label — this is a typed absence, not old
+         data left up. -#}
+      <div class="mx-sec" id="us-candidates">
+        <div class="mx-sec-hd">
+          <h2 class="mx-sec-h2">{{ t('Candidates', '候选') }}</h2>
+        </div>
+        <div class="mx-empty">
+          <div class="mx-empty-line">{{ t("Tonight's candidate screen hasn't published — the Plans view below is unaffected.", '今晚的候选筛选尚未发布——下方的计划视图不受影响。') }}</div>
+          <div class="mx-empty-why">{{ t('Candidate feed unavailable · the plan book is still current', '候选数据暂不可用 · 计划簿仍为最新') }}</div>
+        </div>
+      </div>{# end #us-candidates (unavailable) #}
       {%- endif %}
       {# ═══ PASSED ON TONIGHT (ANTICIPATION §6.9 R5) — the per-name "why not" shelf.
            BELOW the plans, never between them: the cards are what to act on, this is the
@@ -19213,6 +19348,15 @@ function _pvcPaint(html){
   _pvcSaved={ night:night, bar:bar,
               filt:document.getElementById('us-stage-filter'),
               vt:document.getElementById('us-st-view-toggle'),
+              /* P0 #6185 (D4) — same save/restore treatment extended to the
+                 Candidates|Plans source toggle: while a provisional board is
+                 mounted the toggle is meaningless (there is only one taxonomy
+                 on screen, the nightly candidate one) and forcing the
+                 attribute to "candidates" keeps the plans-mode CSS
+                 (#us-standouts[data-prophet-src="plans"] #us-candidates{display:none})
+                 from hiding the very grid _pvcPaint is about to insert. */
+              srctog:document.getElementById('us-src-toggle'),
+              psrc:_bsPanel.getAttribute('data-prophet-src'),
               sub:document.getElementById('us-board-sub'),
               fn:_bsPanel.querySelector('.pb-fn'),
               stagef:_bsPanel.getAttribute('data-stagef'),
@@ -19221,6 +19365,8 @@ function _pvcPaint(html){
   if(bar) bar.hidden=true;
   if(_pvcSaved.filt) _pvcSaved.filt.hidden=true;
   if(_pvcSaved.vt) _pvcSaved.vt.hidden=true;
+  if(_pvcSaved.srctog) _pvcSaved.srctog.hidden=true;
+  _bsPanel.setAttribute('data-prophet-src','candidates');
   /* THE TWO PROSE SLOTS GO TOO, and this is the part most likely to be "restored" by a
      later reader as over-reach, so: both of them DESCRIBE THE NIGHTLY BOARD, and while
      tonight's cards are up both descriptions are false of what is on the screen.
@@ -19269,6 +19415,8 @@ function _pvcTeardown(){
   if(sv.bar) sv.bar.hidden=false;
   if(sv.filt) sv.filt.hidden=false;
   if(sv.vt) sv.vt.hidden=false;
+  if(sv.srctog) sv.srctog.hidden=false;
+  if(sv.psrc) _bsPanel.setAttribute('data-prophet-src', sv.psrc);
   if(sv.sub) sv.sub.hidden=false;
   if(sv.fn) sv.fn.hidden=false;
   if(sv.stagef) _bsPanel.setAttribute('data-stagef', sv.stagef);
@@ -19522,6 +19670,34 @@ if (document.readyState === 'loading') {
 } else {
   initStockTableView();
 }
+})();
+</script>
+<script>
+/* P0 #6185 — Candidates | Plans source toggle. Safe no-op when the candidate
+   board never loaded (#us-standouts/#us-src-toggle absent). */
+(function(){
+  var panel = document.getElementById('us-standouts');
+  var tog = document.getElementById('us-src-toggle');
+  if (!panel || !tog) return;
+  function setSrc(src){
+    if (src !== 'candidates' && src !== 'plans') src = 'candidates';
+    /* the table renders CANDIDATE rows only, so Plans mode must leave table view */
+    if (src === 'plans' && panel.classList.contains('st-table-mode') &&
+        window.USStockTable && window.USStockTable._setView){
+      try { window.USStockTable._setView('grid'); } catch(e){}
+    }
+    panel.setAttribute('data-prophet-src', src);
+    var btns = tog.querySelectorAll('button');
+    for (var i=0;i<btns.length;i++){
+      btns[i].setAttribute('aria-selected', btns[i].getAttribute('data-src') === src ? 'true' : 'false');
+    }
+    if (window.initShowMore) { try { window.initShowMore(); } catch(e){} }
+  }
+  tog.addEventListener('click', function(ev){
+    var b = ev.target && ev.target.closest ? ev.target.closest('button[data-src]') : null;
+    if (b) setSrc(b.getAttribute('data-src'));
+  });
+  window.USProphetSource = { set: setSrc, get: function(){ return panel.getAttribute('data-prophet-src'); } };
 })();
 </script>
 {% if gate or pgate or life_gate %}
@@ -19784,6 +19960,27 @@ if (document.readyState === 'loading') {
       if (lifeOldBar && lifeOldBar.parentNode) lifeOldBar.parentNode.removeChild(lifeOldBar);
       if (window.initShowMore) window.initShowMore();
     }
+    /* P0 #6185 — the CANDIDATE grid's own locked remainder. Same fresh-element swap
+       the plan grid uses (finding S3: initShowMore is idempotent per element, so
+       appending into an initialised grid leaves its show-more bar permanently stale),
+       but merged through mergeBoardCards so a stage group that spans the wall gets ONE
+       heading, not two. Deliberately never sets data-mp1-grid — that marker is the plan
+       grid's W-L1 neutralization and must not travel to the candidate grid. */
+    var candGrid = document.getElementById('us-cand-grid');
+    if (candGrid && payload.cards_html) {
+      var candOldBar = candGrid.nextElementSibling;
+      if (!(candOldBar && candOldBar.classList && candOldBar.classList.contains('sm-bar'))) candOldBar = null;
+      var freshCand = document.createElement('div');
+      freshCand.className = candGrid.className;
+      freshCand.id = 'us-cand-grid';
+      freshCand.setAttribute('data-showmore-rows', candGrid.getAttribute('data-showmore-rows') || '3');
+      freshCand.innerHTML = candGrid.innerHTML;
+      mergeBoardCards(freshCand, payload.cards_html);
+      candGrid.parentNode.insertBefore(freshCand, candGrid);
+      candGrid.parentNode.removeChild(candGrid);
+      if (candOldBar && candOldBar.parentNode) candOldBar.parentNode.removeChild(candOldBar);
+      if (window.initShowMore) window.initShowMore();
+    }
     /* Every card just spliced in carries a `.nb-px`/`.nb-chg` pill still holding
        its baked value. live.js re-queries the document each tick, so these WOULD
        paint on their own — in up to 60 seconds, during which the three preview
@@ -19806,6 +20003,11 @@ if (document.readyState === 'loading') {
        belt-and-braces for the case GATE is true while LIFE_GATE is false). */
     var wall = document.getElementById('us-life-wall');
     if (wall) wall.remove();
+    /* P0 #6185 — the restored CANDIDATE wall is BACK on 'us-tier-wall' (B4);
+       that id is its own now, not the stale pre-migration read the comment
+       above describes for 'us-life-wall'. Removed by its own id here. */
+    var cwall = document.getElementById('us-tier-wall');
+    if (cwall) cwall.remove();
     var note = document.getElementById('us-gate-note');
     if (note) note.remove();
     var bar = document.getElementById('us-stage-filter');
