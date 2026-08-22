@@ -123,11 +123,6 @@ DISCOVERY_KIND = {
     "architecture", "data", "landmine", "dead_code", "constraint", "runtime",
 }
 REPOS = {"macro", "terminal", "mastermind"}
-# "sol" is the AI CEO seat (Mastermind AGENTS.md §"Executive contract"), not a
-# Claude/Codex model tier — a Sol-authored handoff is truthfully none of the
-# others, and forcing it into one would falsify the record's provenance. Added
-# 2026-08-22 to heal a hard-gating `agentos validate` red on main introduced by
-# 3810cbf252ba, the first Sol-authored handoff in the store.
 HANDOFF_MODEL = {"fable", "opus", "sonnet", "haiku", "codex", "local", "sol"}
 HANDOFF_ENDED = {"complete", "ci_handoff", "blocked", "context_budget", "crashed"}
 
