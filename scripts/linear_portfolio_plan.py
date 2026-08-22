@@ -61,7 +61,15 @@ class PlanError(RuntimeError):
 
 
 def clean(value: Any) -> str:
+    """Whitespace-normalized display text for labels/summaries, never source prose."""
     return "" if value is None else " ".join(str(value).split())
+
+
+def direct_text(value: Any) -> str:
+    """Parsed canonical prose with only transport line endings/outer padding normalized."""
+    if value is None:
+        return ""
+    return str(value).replace("\r\n", "\n").replace("\r", "\n").strip()
 
 
 def canonical_bytes(value: Any) -> bytes:
@@ -194,8 +202,9 @@ def non_done_waves(rec: Mapping[str, Any]) -> list[dict[str, Any]]:
             row["prs"] = sorted(
                 int(item) for item in values if str(item).strip().isdigit()
             )
-        if clean(wave.get("next_action")):
-            row["next_action"] = clean(wave.get("next_action"))
+        wave_next = direct_text(wave.get("next_action"))
+        if wave_next:
+            row["next_action"] = wave_next
         out.append(row)
     return out
 
@@ -207,8 +216,8 @@ def gate_observation(rec: Mapping[str, Any]) -> dict[str, Any]:
         return {
             "typed_source": "needs_ceo",
             "projection": "observation_only",
-            "question": clean(needs.get("question")),
-            "recommendation": clean(needs.get("recommendation")),
+            "question": direct_text(needs.get("question")),
+            "recommendation": direct_text(needs.get("recommendation")),
         }
 
     blocked_by = rec.get("blocked_by")
@@ -216,7 +225,7 @@ def gate_observation(rec: Mapping[str, Any]) -> dict[str, Any]:
         return {
             "typed_source": "blocked_by",
             "projection": "observation_only",
-            "causes": [clean(item) for item in blocked_by if clean(item)],
+            "causes": [direct_text(item) for item in blocked_by if direct_text(item)],
         }
 
     for wave in rec.get("waves") or []:
@@ -255,7 +264,7 @@ def project_row(
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     status = str(rec.get("status"))
     title = clean(rec.get("title"))
-    next_action = clean(rec.get("next_action"))
+    next_action = direct_text(rec.get("next_action"))
     source_path = rel(path, root)
     digest = source_hash(rec)
     objective = clean(rec.get("objective")) or title
