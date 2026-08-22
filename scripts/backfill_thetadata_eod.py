@@ -198,20 +198,44 @@ def _mark_completed(state: dict, root: str, year: int) -> None:
 
 # ── manifest ─────────────────────────────────────────────────────────────────
 def _write_manifest(state: dict) -> None:
-    """Write per-root summary suitable for audit_r2 and publish_r2 machinery."""
+    """Write per-root summary suitable for audit_r2 and publish_r2 machinery.
+
+    READ-MODIFY-WRITE (AD-1T1 §D): this used to full-REPLACE `_manifest.json`
+    from scratch every call, silently wiping any foreign top-level key. That
+    is now a hazard — `scripts/topup_thetadata_day.py`'s `--daily` mode keeps
+    its own `daily_refresh` health receipt in this SAME file — so a backfill
+    run landing after a daily run would erase that receipt. Every OTHER
+    top-level key (most notably `daily_refresh`) is now carried forward
+    unchanged; only this function's own four keys are regenerated. (F16) An
+    unreadable existing manifest logs ONE warning naming the file and the
+    JSON error, preserves nothing, and still writes the freshly regenerated
+    manifest — fail-open to the old behavior, never raise.
+    """
     completed = state.get("completed", {})
     per_root = {}
     for root, years in completed.items():
         per_root[root] = {"completed_years": sorted(years), "n_years": len(years)}
-    manifest = {
+
+    p = _manifest_path()
+    preserved: dict = {}
+    if p.exists():
+        try:
+            preserved = json.loads(p.read_text())
+        except Exception as e:  # noqa: BLE001 — F16 fail-open
+            log.warning("backfill: unreadable manifest %s (%s: %s) — "
+                       "regenerating fresh, preserving nothing", p,
+                       type(e).__name__, e)
+            preserved = {}
+
+    manifest = dict(preserved)
+    manifest.update({
         "store": "thetadata_eod",
         "n_roots": len(per_root),
         "per_root": per_root,
         "updated_at": pd.Timestamp.now("UTC").isoformat(),
-    }
-    p = _manifest_path()
+    })
     tmp = p.with_suffix(".tmp")
-    tmp.write_text(json.dumps(manifest, indent=2))
+    tmp.write_text(json.dumps(manifest, indent=2, default=str, sort_keys=True))
     os.replace(tmp, p)
 
 
@@ -574,23 +598,35 @@ def main() -> int:
         print(f"Pending: {len(plan)} root-year(s)")
         return 0
 
-    log.info("Backfill: %d root-year chunks pending (%d already done)",
-             len(plan), sum(len(v) for v in state.get("completed", {}).values()))
+    # AD-1T1 §B: acquire the crash-safe advisory writer lock BEFORE the first
+    # parquet mutation. A refusal mutates NOTHING (not the state file, not the
+    # manifest) — the daily incremental mode or a concurrent backfill may be
+    # holding the store right now.
+    from scripts.topup_thetadata_day import _emit_writer_locked, _writer_lock
 
-    n_ok = n_fail = 0
-    for root, yr, cs, ce in plan:
-        ok = _pull_root_year(root, yr, cs, ce)
-        if ok:
-            _mark_completed(state, root, yr)
-            _save_state(state)
-            _write_manifest(state)
-            n_ok += 1
-        else:
-            n_fail += 1
-        time.sleep(0.1)   # polite pause between root-year pulls
+    with _writer_lock(_store_dir()) as acquired:
+        if not acquired:
+            _emit_writer_locked("backfill")
+            log.warning("backfill: writer lock held by another process — refusing")
+            return 1
 
-    log.info("Backfill complete: %d succeeded, %d failed", n_ok, n_fail)
-    return 0 if n_fail == 0 else 1
+        log.info("Backfill: %d root-year chunks pending (%d already done)",
+                 len(plan), sum(len(v) for v in state.get("completed", {}).values()))
+
+        n_ok = n_fail = 0
+        for root, yr, cs, ce in plan:
+            ok = _pull_root_year(root, yr, cs, ce)
+            if ok:
+                _mark_completed(state, root, yr)
+                _save_state(state)
+                _write_manifest(state)
+                n_ok += 1
+            else:
+                n_fail += 1
+            time.sleep(0.1)   # polite pause between root-year pulls
+
+        log.info("Backfill complete: %d succeeded, %d failed", n_ok, n_fail)
+        return 0 if n_fail == 0 else 1
 
 
 if __name__ == "__main__":
