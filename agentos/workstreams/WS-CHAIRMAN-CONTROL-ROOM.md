@@ -19,7 +19,6 @@ waves:
   - id: F0
     title: Architecture freeze and FABLE-00 commission
     status: done
-    pr: 108
   - id: P0
     title: Read-only compositor, navigation adapters, local Control Room and real-Mac proof
     status: todo
@@ -30,6 +29,9 @@ waves:
       multiple independent sessions.
 decisions:
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
+artifacts:
+  - agentos/decisions/DEC-CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED.md
+  - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-22-sol-architecture.md
 landmines:
   - "Surface bindings are local navigation addresses only; they are not runtime, role, workstream, completion, liveness or authority records."
   - "A tab/window/process title may be a candidate locator but never proves work ownership or execution."
@@ -52,6 +54,10 @@ next_action: >
 `SPEC_ONLY` after F0. The architecture and builder commission are accepted, but no
 Control Room code, local binding, browser/native-app opening, production installation
 or real-Mac proof exists yet.
+
+Mastermind PR #108 / merge `fd88ad761b477a84a95bf514a02d932012f211a5`
+is the accepted cross-repository F0 receipt. The wave's structured `pr` field is
+intentionally absent because Agent OS integer PR references are repository-local.
 
 ## P0 proof boundary
 
