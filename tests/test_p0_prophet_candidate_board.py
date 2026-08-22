@@ -372,3 +372,32 @@ def test_e_no_js_assignment_impersonates_an_href_or_src_attribute():
         "comment spelling one followed by = and a quoted string, is enough to "
         "cause this."
     )
+
+
+def test_e_source_toggle_carries_no_data_tip_so_a_mobile_tap_reaches_the_button():
+    """theme.js's lens binds SEL = '[data-tip-en], .lens-q, .lens-term' and opens
+    on `focusin`. A tap on a <button> inside a tipped wrapper focuses it, focusin
+    bubbles to the wrapper, the lens sheet opens mid-tap, and its .lens-scrim
+    receives the mouseup — so the click retargets to <body> and the button's own
+    handler never runs. Measured on the deployed page at 390x844 with touch
+    emulation: with the attributes the tap did nothing; without them it toggled
+    both ways.
+
+    The lens does carve out interactive controls nested inside a tip container,
+    but only in its CLICK handler — which never fires, because no click survives
+    the scrim. So the carve-out cannot save a focusable control here.
+
+    NOTE: #us-st-view-toggle (Grid/Table, W8-R6) still carries data-tip-* and is
+    broken on mobile the same way. That is pre-existing and deliberately NOT
+    changed here — #6185 scopes this slice tightly — but it is why this test
+    asserts on #us-src-toggle by id rather than on every .st-view-toggle.
+    """
+    html, _gate, _su = _gated_render({"live": 3})
+    idx = html.find('id="us-src-toggle"')
+    assert idx != -1
+    open_tag = html[html.rfind("<span", 0, idx): html.find(">", idx) + 1]
+    assert "data-tip-en" not in open_tag and "data-tip-zh" not in open_tag, (
+        "the source toggle must not be a lens trigger: a data-tip on this wrapper "
+        "makes every tap on its buttons open the tooltip sheet instead of "
+        "switching the view, on every touch device.\n" + open_tag
+    )

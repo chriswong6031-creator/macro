@@ -15924,7 +15924,17 @@ html[data-theme="light"] :is(
            way to REACH the typed Candidates-unavailable state (B5) — gating
            the toggle on `_su` would bake that state and then make it
            permanently unreachable. -#}
-        <span class="st-view-toggle" id="us-src-toggle" role="group" data-tip-en="Switch between tonight's candidate screen and the plan book" data-tip-zh="在今晚的候选筛选与计划簿之间切换">
+        {#- NO data-tip-en/data-tip-zh on this wrapper, and that is a fix rather than
+           an omission: theme.js's lens binds SEL = '[data-tip-en], .lens-q, .lens-term'
+           and opens on `focusin`. Tapping a button inside a tipped wrapper focuses it,
+           focusin bubbles to the wrapper, the lens sheet opens mid-tap, and its
+           .lens-scrim takes the mouseup -- so the click retargets to <body> and the
+           button's own handler never runs. Measured on the deployed page at 390px with
+           touch emulation: tap did nothing with the attributes, and worked both ways
+           without them. The lens DOES carve out nested controls, but only in its click
+           handler, which never fires because no click survives. The labels are two
+           self-describing words and need no tip. -#}
+        <span class="st-view-toggle" id="us-src-toggle" role="group">
           <button id="us-src-btn-cand" type="button" aria-selected="{{ 'true' if _su else 'false' }}" data-src="candidates"><span class="l-en">Candidates</span><span class="l-zh">候选</span></button>
           <button id="us-src-btn-plan" type="button" aria-selected="{{ 'false' if _su else 'true' }}" data-src="plans"><span class="l-en">Plans</span><span class="l-zh">计划</span></button>
         </span>
