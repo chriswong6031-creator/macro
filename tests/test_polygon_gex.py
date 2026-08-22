@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -32,7 +33,7 @@ from collectors.polygon_options import (
     _classify_exception,
     parse_chain,
 )
-from lib import config
+from lib import config, nyse_calendar
 
 ASOF = pd.Timestamp("2026-06-15")
 
@@ -164,9 +165,40 @@ def _raw(symbols=("SPY",), spot=100.0):
     for sym in symbols:
         for k in range(80, 121, 2):
             for call in (True, False):
-                rows.append(dict(underlying=sym, strike_ticker=f"O:{sym}{k}",
+                # F2 (AD-1C0.1 boundary review): the ticker carries a C/P
+                # marker, matching Polygon's real per-contract ticker (which
+                # differs between a call and a put at the same strike) --
+                # without it, the same-book proof's ticker-preferring join
+                # key would collide a call and a put into one identity.
+                rows.append(dict(underlying=sym, strike_ticker=f"O:{sym}{k}{'C' if call else 'P'}",
                                  expiry=ASOF + pd.Timedelta(days=30), K=float(k),
                                  T=30 / 365, is_call=call, oi=1000.0, iv=0.25,
+                                 gamma=0.01, delta=0.5, volume=10.0, spot=spot, asof=ASOF))
+    return pd.DataFrame(rows)
+
+
+# F1 (AD-1C0.1 boundary review): non-dyadic (odd-cent) strikes -- the case
+# where a STORED chain's float64->float32 downcast (_compact()) and a fresh
+# CANDIDATE's un-downcast float64 land on different values for what is
+# actually the same contract, if the same-book proof ever compares them
+# asymmetrically.
+_ODD_STRIKES = (100.01, 100.03, 123.45, 187.67, 55.13, 77.77, 99.99, 142.86,
+                163.21, 171.43, 12.34, 23.56, 34.78, 45.91, 56.13, 67.35,
+                78.57, 89.79, 111.11, 122.22, 133.33, 144.44)
+
+
+def _raw_odd_strikes(symbols=("SPY",), oi=1000.0, spot=100.0):
+    """Same shape as _raw(), but with _ODD_STRIKES instead of the integer
+    80..120 grid -- _raw()'s dyadic strikes are exactly representable in
+    float32, which masks any float32/float64 asymmetry in the same-book
+    proof entirely regardless of whether the stored side was compacted."""
+    rows = []
+    for sym in symbols:
+        for k in _ODD_STRIKES:
+            for call in (True, False):
+                rows.append(dict(underlying=sym, strike_ticker=f"O:{sym}{k}{'C' if call else 'P'}",
+                                 expiry=ASOF + pd.Timedelta(days=30), K=float(k),
+                                 T=30 / 365, is_call=call, oi=float(oi), iv=0.25,
                                  gamma=0.01, delta=0.5, volume=10.0, spot=spot, asof=ASOF))
     return pd.DataFrame(rows)
 
@@ -226,7 +258,11 @@ def test_accrue_writes_raw_and_summary(tmp_path, monkeypatch):
     # datetime would be an accrual INSTANT and would resolve to the session it describes;
     # midnight UTC 06-15 is 20:00 ET Sunday 06-14, i.e. session 06-12. That path has its
     # own tests in tests/test_polygon_gex_session_stamps.py.
-    res = bpg.accrue(ASOF.date())
+    # AD-1C0.1 amendment 1 (Sol review 4989933857): the capture lease now
+    # governs first writes too, so an explicit `_now` inside the lease for
+    # this session is required — the real wall clock (this suite's default)
+    # is nowhere near 2026-06-15 and would otherwise be refused outright.
+    res = bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
     assert res["status"] == "ok"
     assert res["underlyings"] == 2
     assert res["session"] == "2026-06-15"
@@ -278,7 +314,9 @@ def test_accrue_synthesizes_a_census_for_a_legacy_bare_dataframe_snapshot(tmp_pa
     _mock_baskets(monkeypatch)
     monkeypatch.setattr(bpg, "PolygonOptions",
                         lambda: _LegacyFakeClient(_raw(("SPY", "QQQ"))))
-    res = bpg.accrue(ASOF.date())
+    # AD-1C0.1 amendment 1: first writes are now lease-gated too — see the
+    # note in test_accrue_writes_raw_and_summary.
+    res = bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
     assert res["status"] == "ok"
     assert res["census"]["successful_underlyings"] == 2
     assert res["census"]["aborted_early"] is False
@@ -301,8 +339,11 @@ def test_accrue_raises_on_a_snapshot_return_shape_it_does_not_recognize(tmp_path
             return "not a dataframe or a tuple"
 
     monkeypatch.setattr(bpg, "PolygonOptions", lambda: _WeirdClient())
+    # AD-1C0.1 amendment 1: first writes are now lease-gated too — an
+    # in-lease `_now` is required to reach the fetch (and thus the malformed
+    # return) at all; see the note in test_accrue_writes_raw_and_summary.
     with pytest.raises(TypeError):
-        bpg.accrue(ASOF.date())
+        bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
 
 
 # ═══════════════ reason-code classification (_classify_exception) ═══════════════
@@ -810,7 +851,10 @@ def test_census_denominator_is_dynamic_not_hardcoded(tmp_path, monkeypatch):
     raw2 = _raw(("SPY",))
     monkeypatch.setattr(bpg, "PolygonOptions",
                         lambda: _FakeClient(raw2, census=_census(raw2, ["SPY", "QQQ"])))
-    res1 = bpg.accrue(date(2026, 6, 15))
+    # AD-1C0.1 amendment 1: first writes are now lease-gated too — an
+    # in-lease `_now` per session is required; see the note in
+    # test_accrue_writes_raw_and_summary.
+    res1 = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
     assert res1["census"]["requested_underlyings"] == 2
     assert res1["census"]["coverage_pct"] == 0.5
 
@@ -819,7 +863,8 @@ def test_census_denominator_is_dynamic_not_hardcoded(tmp_path, monkeypatch):
     all20 = [f"S{i}" for i in range(20)]
     monkeypatch.setattr(bpg, "PolygonOptions",
                         lambda: _FakeClient(raw20, census=_census(raw20, all20)))
-    res2 = bpg.accrue(date(2026, 6, 16))
+    res2 = bpg.accrue(date(2026, 6, 16),
+                      _now=datetime(2026, 6, 16, 19, 0, tzinfo=nyse_calendar.ET))
     assert res2["census"]["requested_underlyings"] == 20
     assert res2["census"]["coverage_pct"] == 0.75
 
@@ -836,7 +881,9 @@ def test_accrue_zero_capture_reports_empty_status_with_health_and_census(tmp_pat
     }
     monkeypatch.setattr(bpg, "PolygonOptions",
                         lambda: _FakeClient(pd.DataFrame(), census=census))
-    res = bpg.accrue(ASOF.date())
+    # AD-1C0.1 amendment 1: first writes are now lease-gated too; see the
+    # note in test_accrue_writes_raw_and_summary.
+    res = bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
     assert res["status"] == "empty"
     assert res["health"] == "failed"
     assert res["census"]["failure_reasons"] == {"auth_or_entitlement_failure": 5}
@@ -912,15 +959,17 @@ def _entry(decision, health, successful, coverage_pct, requested=100, rows=None)
     return out
 
 
-# M7's same-day vintage guard needs an explicit `_now` — the real wall clock
-# would make every "replaced_partial" expectation below flip to
-# "skipped_wrong_day" the moment this suite runs on any date other than
-# 2026-06-15. 20:00 UTC on 2026-06-15 is 16:00 ET (EDT, UTC-4 in June) — the
-# session close, and its ET calendar date is 2026-06-15.
-SAME_DAY_NOW = datetime(2026, 6, 15, 20, 0, tzinfo=timezone.utc)
-# The NEXT calendar day (2026-06-15 is a Monday session; 06-16 is Tuesday) —
-# 06-16 12:00 UTC is 08:00 ET 06-16, a different ET calendar date entirely.
-WRONG_DAY_NOW = datetime(2026, 6, 16, 12, 0, tzinfo=timezone.utc)
+# The AD-1C0.1 capture-lease/same-book-proof tests need an explicit `_now` —
+# the real wall clock would make every "replaced_partial" expectation below
+# flip to "skipped_outside_lease" the moment this suite runs on any date
+# other than 2026-06-15. 19:00 ET on 2026-06-15 is safely past the 17:00 ET
+# close+settle buffer, so nyse_calendar.expected_last_session resolves it to
+# session 2026-06-15 ITSELF (a time inside the close-to-settle window, e.g.
+# 16:xx ET, would resolve one session EARLIER — the lease's prong (a) reads
+# that as "a different session", which is correct AD-1C0.1 behavior but
+# would wrongly fail every fixture below that predates the lease and only
+# ever cared about the ET CALENDAR date matching).
+SAME_DAY_NOW = datetime(2026, 6, 15, 19, 0, tzinfo=nyse_calendar.ET)
 
 
 class _NoFetchClient:
@@ -1032,7 +1081,13 @@ class TestFirstWriterQualityRule:
         monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
         _mock_baskets(monkeypatch)
         monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(100)])
-        _write_chain_file(tmp_path, "2026-06-15")
+        # AD-1C0.1: the stored chain's symbols must OVERLAP the replacement
+        # candidate's (same-book proof) — U0..U49 matches the receipt's "50
+        # successful" and is a subset of the new capture below, so the two
+        # naturally share contracts with identical OI (fixed at 1000.0 by
+        # _raw()), satisfying the proof without the test needing to know its
+        # internals.
+        _write_chain_file(tmp_path, "2026-06-15", symbols=tuple(f"U{i}" for i in range(50)))
         _write_receipt_file(tmp_path, "2026-06-15",
                             [_entry("wrote", "partial", 50, 0.50, requested=100)])
         new_raw = _raw(tuple(f"U{i}" for i in range(65)))     # 65 successful, still < 90%
@@ -1053,7 +1108,9 @@ class TestFirstWriterQualityRule:
         monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
         _mock_baskets(monkeypatch)
         monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(100)])
-        _write_chain_file(tmp_path, "2026-06-15")
+        # AD-1C0.1: overlap the stored symbols with the replacement candidate
+        # (same-book proof) — see the sibling test above for why.
+        _write_chain_file(tmp_path, "2026-06-15", symbols=tuple(f"U{i}" for i in range(50)))
         _write_receipt_file(tmp_path, "2026-06-15",
                             [_entry("wrote", "partial", 50, 0.50, requested=100)])
         new_raw = _raw(tuple(f"U{i}" for i in range(95)))     # 95% -> healthy
@@ -1195,58 +1252,1027 @@ class TestFirstWriterQualityRule:
         assert (tmp_path / "polygon_gex_health" / "2026-06-15.json").read_bytes() == original_bytes
 
 
-class TestM7SameDayVintageGuard:
-    """M7 ruling: a partial may be replaced ONLY when the new capture_instant's
-    ET calendar date equals the session it is replacing — Saturday/Sunday/
-    Monday-preopen re-runs all resolve to Friday's session but are not
-    Friday, and must never keep "improving" a session days after its real
-    capture window closed."""
+# ═══════════ AD-1C0.1 — the bounded capture LEASE + same-book PROOF ═════════
+#
+# Sol's FROZEN SPEC (Option B, 2026-08-20) replaces the retired M7 same-ET-day
+# predicate (_et_calendar_date / "skipped_wrong_day") with a bounded overnight
+# LEASE (_within_capture_lease) plus an OI-intersection SAME-BOOK PROOF
+# (_same_book_overlap), evaluated on TOP of the existing strictly-better
+# quality prongs. The matrix below is the Sol-mandated §4 time-boundary suite.
+#
+# All instants are constructed directly in ET (nyse_calendar.ET) for
+# readability — _within_capture_lease/expected_last_session accept any
+# tzinfo and convert internally, so this is equivalent to (and clearer than)
+# hand-converting to UTC.
 
-    def _setup_partial(self, tmp_path, monkeypatch):
+LEASE_SESSION = date(2026, 8, 21)      # a plain Friday session, no holiday nearby
+LEASE_FRI_EVENING = datetime(2026, 8, 21, 21, 0, tzinfo=nyse_calendar.ET)   # normal close evening
+LEASE_SAT_0040 = datetime(2026, 8, 22, 0, 40, tzinfo=nyse_calendar.ET)      # post-midnight, in-lease
+LEASE_SAT_0259 = datetime(2026, 8, 22, 2, 59, tzinfo=nyse_calendar.ET)      # boundary: passes
+LEASE_SAT_0330 = datetime(2026, 8, 22, 3, 30, tzinfo=nyse_calendar.ET)      # boundary: fails
+LEASE_SAT_1000 = datetime(2026, 8, 22, 10, 0, tzinfo=nyse_calendar.ET)      # Saturday mid-morning
+LEASE_SUN_1200 = datetime(2026, 8, 23, 12, 0, tzinfo=nyse_calendar.ET)      # Sunday
+LEASE_MON_0800 = datetime(2026, 8, 24, 8, 0, tzinfo=nyse_calendar.ET)       # Monday pre-open
+
+HOLIDAY_SESSION = date(2026, 11, 25)   # Wednesday ahead of the Thanksgiving holiday
+HOLIDAY_THU_0200 = datetime(2026, 11, 26, 2, 0, tzinfo=nyse_calendar.ET)    # inside the holiday, in-lease
+HOLIDAY_FRI_0800 = datetime(2026, 11, 27, 8, 0, tzinfo=nyse_calendar.ET)    # early-close Fri, out-of-lease
+HOLIDAY_FRI_1430 = datetime(2026, 11, 27, 14, 30, tzinfo=nyse_calendar.ET)  # early-close, pre-settle
+HOLIDAY_FRI_1800 = datetime(2026, 11, 27, 18, 0, tzinfo=nyse_calendar.ET)   # early-close, post-settle
+
+# STORED matches the receipt entries below ("50 successful of 100 requested")
+# AND is a subset of every "strictly better" candidate raw frame used below,
+# so the two naturally share contracts with IDENTICAL OI (_raw() fixes
+# oi=1000.0 for every contract) — the same-book proof passes without any
+# test needing to hand-construct an overlap.
+STORED = tuple(f"U{i}" for i in range(50))
+
+
+def _raw_with_oi_override(symbols, overrides, spot=100.0):
+    """_raw()'s output with specific contracts' OI overridden. `overrides`
+    maps (underlying, K, is_call) -> new oi value — the same-book PROOF
+    mismatch tests need to change exactly one shared contract's OI while
+    leaving every other contract identical to a plain _raw() capture."""
+    df = _raw(symbols, spot=spot)
+    for (sym, k, is_call), new_oi in overrides.items():
+        mask = (df["underlying"] == sym) & (df["K"] == k) & (df["is_call"] == is_call)
+        assert mask.any(), f"override target {(sym, k, is_call)} not found in _raw() output"
+        df.loc[mask, "oi"] = new_oi
+    return df
+
+
+def _setup_stored_partial(tmp_path, monkeypatch, *, session_iso, stored_symbols,
+                          universe_n=100):
+    """A stored PARTIAL capture for `session_iso`: `stored_symbols` are on
+    disk (a real parquet, via _write_chain_file) and the receipt agrees
+    (len(stored_symbols) successful of universe_n requested). Returns the
+    full universe (list of names) so the caller can build a census/raw frame
+    against the same denominator."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _mock_baskets(monkeypatch)
+    universe = [f"U{i}" for i in range(universe_n)]
+    monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe)
+    _write_chain_file(tmp_path, session_iso, symbols=stored_symbols)
+    _write_receipt_file(tmp_path, session_iso,
+                        [_entry("wrote", "partial", len(stored_symbols),
+                                round(len(stored_symbols) / universe_n, 4),
+                                requested=universe_n)])
+    return universe
+
+
+class TestAD1C01CaptureLease:
+    """Sol's FROZEN SPEC §4 time-boundary matrix (AD-1C0.1, 2026-08-20). Each
+    test below is numbered to match the commissioning packet's TESTS list."""
+
+    def test_1_normal_close_evening_first_write(self, tmp_path, monkeypatch):
+        """#1: no stored file at all -> any nonempty capture writes, at a
+        normal evening capture instant. First-write behavior is UNCHANGED by
+        AD-1C0.1 — the lease/proof machinery only ever gates a REPLACEMENT."""
         import scripts.build_polygon_gex as bpg
         monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
         _mock_baskets(monkeypatch)
-        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(100)])
-        _write_chain_file(tmp_path, "2026-06-15")
-        _write_receipt_file(tmp_path, "2026-06-15",
-                            [_entry("wrote", "partial", 50, 0.50, requested=100)])
-        new_raw = _raw(tuple(f"U{i}" for i in range(70)))     # strictly better, +20pt
-        all_syms = [f"U{i}" for i in range(100)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        raw = _raw(("SPY",))
         monkeypatch.setattr(bpg, "PolygonOptions",
-                            lambda: _FakeClient(new_raw, census=_census(new_raw, all_syms)))
-
-    def test_same_et_calendar_day_replaces(self, tmp_path, monkeypatch):
-        import scripts.build_polygon_gex as bpg
-        self._setup_partial(tmp_path, monkeypatch)
-        res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_FRI_EVENING)
         assert res["status"] == "ok"
-        receipt = json.loads((tmp_path / "polygon_gex_health" / "2026-06-15.json").read_text())
-        assert receipt["attempts"][-1]["decision"] == "replaced_partial"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "wrote"
 
-    def test_the_next_et_calendar_day_does_not_replace(self, tmp_path, monkeypatch):
-        import scripts.build_polygon_gex as bpg
-        self._setup_partial(tmp_path, monkeypatch)
-        res = bpg.accrue(date(2026, 6, 15), _now=WRONG_DAY_NOW)
-        assert res["status"] == "already_present"
-        receipt = json.loads((tmp_path / "polygon_gex_health" / "2026-06-15.json").read_text())
-        assert receipt["attempts"][-1]["decision"] == "skipped_wrong_day"
-        # the attempt is RECORDED, not silently dropped
-        assert receipt["attempts"][-1]["successful_underlyings"] == 70
-        back = pd.read_parquet(tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet")
-        assert set(back["underlying"]) == {"SPY"}, "the original stored file must be untouched"
-
-    def test_a_weekend_utc_instant_that_still_resolves_to_the_same_et_day_replaces(
+    def test_2_post_midnight_healthier_capture_with_matching_oi_replaces(
             self, tmp_path, monkeypatch):
-        """The guard is about the ET CALENDAR date, not the UTC date — an
-        instant just after midnight UTC on 06-16 that is still evening ET on
-        06-15 (Monday) must still count as the SAME day."""
+        """#2: a long nightly crossing 00:00 ET — partial at 21:00 ET, a
+        healthier capture at 00:40 ET (still inside the overnight lease)
+        whose overlapping contracts agree on OI -> replaced_partial."""
         import scripts.build_polygon_gex as bpg
-        self._setup_partial(tmp_path, monkeypatch)
-        still_monday_et = datetime(2026, 6, 16, 1, 0, tzinfo=timezone.utc)  # 21:00 ET 06-15
-        res = bpg.accrue(date(2026, 6, 15), _now=still_monday_et)
+        universe = _setup_stored_partial(tmp_path, monkeypatch,
+                                         session_iso=LEASE_SESSION.isoformat(),
+                                         stored_symbols=STORED)
+        new_raw = _raw(tuple(f"U{i}" for i in range(70)))     # +20pt, strictly better
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_SAT_0040)
         assert res["status"] == "ok"
-        receipt = json.loads((tmp_path / "polygon_gex_health" / "2026-06-15.json").read_text())
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
         assert receipt["attempts"][-1]["decision"] == "replaced_partial"
+
+    def test_3_post_midnight_worse_capture_is_rejected_by_the_quality_prong(
+            self, tmp_path, monkeypatch):
+        """#3: same overnight window, but the new capture is WORSE than the
+        stored one -> skipped_not_better. The quality prong is evaluated
+        BEFORE the lease, so a worse capture never even reaches it."""
+        import scripts.build_polygon_gex as bpg
+        universe = _setup_stored_partial(tmp_path, monkeypatch,
+                                         session_iso=LEASE_SESSION.isoformat(),
+                                         stored_symbols=STORED)
+        new_raw = _raw(tuple(f"U{i}" for i in range(30)))     # WORSE: 30 < 50 stored
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_SAT_0040)
+        assert res["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_not_better"
+
+    def test_4_post_midnight_oi_disagreement_on_a_shared_contract_is_a_vintage_mismatch(
+            self, tmp_path, monkeypatch):
+        """#4: a strictly-better, lease-valid capture whose OI DISAGREES with
+        the stored capture on one shared contract -> skipped_vintage_mismatch."""
+        import scripts.build_polygon_gex as bpg
+        universe = _setup_stored_partial(tmp_path, monkeypatch,
+                                         session_iso=LEASE_SESSION.isoformat(),
+                                         stored_symbols=STORED)
+        new_raw = _raw_with_oi_override(
+            tuple(f"U{i}" for i in range(70)), {("U5", 100.0, True): 4242.0})
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_SAT_0040)
+        assert res["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_vintage_mismatch"
+        back = pd.read_parquet(
+            tmp_path / "polygon_gex" / "chains" / f"{LEASE_SESSION.isoformat()}.parquet")
+        assert set(back["underlying"]) == set(STORED), "the original stored file must be untouched"
+
+    def test_5_disjoint_symbols_below_the_overlap_floor_is_unverifiable(
+            self, tmp_path, monkeypatch):
+        """#5: a strictly-better, lease-valid capture that shares essentially
+        NO contracts with the stored capture -> skipped_unverifiable_vintage
+        — there is not enough shared surface to prove OR disprove same-book."""
+        import scripts.build_polygon_gex as bpg
+        _setup_stored_partial(tmp_path, monkeypatch,
+                              session_iso=LEASE_SESSION.isoformat(),
+                              stored_symbols=STORED)
+        v_universe = [f"V{i}" for i in range(100)]     # entirely different names
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: v_universe)
+        new_raw = _raw(tuple(f"V{i}" for i in range(70)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, v_universe)))
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_SAT_0040)
+        assert res["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_unverifiable_vintage"
+
+    @pytest.mark.parametrize("label,instant", [
+        ("saturday_10am", LEASE_SAT_1000),
+        ("sunday_noon", LEASE_SUN_1200),
+        ("monday_preopen", LEASE_MON_0800),
+    ])
+    def test_6_7_8_outside_the_overnight_lease_is_refused(
+            self, tmp_path, monkeypatch, label, instant):
+        """#6/#7/#8: a strictly-better capture whose capture_instant has
+        rolled past the LEASE_END_ET_HOUR:00 boundary — Saturday mid-morning,
+        Sunday, or Monday pre-open — is refused as skipped_outside_lease even
+        though it is still the SAME resolved session (Friday) and would have
+        passed the same-book proof had the lease not already refused it."""
+        import scripts.build_polygon_gex as bpg
+        universe = _setup_stored_partial(tmp_path, monkeypatch,
+                                         session_iso=LEASE_SESSION.isoformat(),
+                                         stored_symbols=STORED)
+        new_raw = _raw(tuple(f"U{i}" for i in range(70)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+        res = bpg.accrue(LEASE_SESSION, _now=instant)
+        # AD-1C0.1 amendment 1+2 (Sol review 4989933857): the lease is now
+        # enforced PRE-FETCH, before client.snapshot() is ever called — the
+        # refusal short-circuits with its own "outside_lease" status rather
+        # than falling through to the post-fetch "already_present" shape.
+        assert res["status"] == "outside_lease", label
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_outside_lease", label
+        assert receipt["attempts"][-1]["lease"]["valid"] is False, label
+        assert receipt["attempts"][-1]["lease"]["write_kind"] == "replacement", label
+        back = pd.read_parquet(
+            tmp_path / "polygon_gex" / "chains" / f"{LEASE_SESSION.isoformat()}.parquet")
+        assert set(back["underlying"]) == set(STORED), "the original stored file must be untouched"
+
+    def test_9_wall_clock_boundary_0259_passes_0330_fails(self, tmp_path, monkeypatch):
+        """#9: the wall-clock boundary is EXCLUSIVE at LEASE_END_ET_HOUR:00 —
+        02:59 ET the next calendar day still leases (and, with a matching-OI
+        strictly-better capture, replaces); 03:30 ET does not."""
+        import scripts.build_polygon_gex as bpg
+        # Passing side: 02:59 ET.
+        universe = _setup_stored_partial(tmp_path, monkeypatch,
+                                         session_iso=LEASE_SESSION.isoformat(),
+                                         stored_symbols=STORED)
+        new_raw = _raw(tuple(f"U{i}" for i in range(70)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+        res_pass = bpg.accrue(LEASE_SESSION, _now=LEASE_SAT_0259)
+        assert res_pass["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "replaced_partial"
+
+        # Failing side: a fresh, isolated stored-partial fixture (a different
+        # Friday) captured at 03:30 ET the next calendar day.
+        session2 = date(2026, 8, 28)
+        universe2 = _setup_stored_partial(tmp_path, monkeypatch,
+                                          session_iso=session2.isoformat(),
+                                          stored_symbols=STORED)
+        new_raw2 = _raw(tuple(f"U{i}" for i in range(70)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw2, census=_census(new_raw2, universe2)))
+        instant_0330 = datetime(2026, 8, 29, 3, 30, tzinfo=nyse_calendar.ET)
+        res_fail = bpg.accrue(session2, _now=instant_0330)
+        # AD-1C0.1 amendment 1+2: pre-fetch refusal now returns its own
+        # "outside_lease" status; see test_6_7_8's note.
+        assert res_fail["status"] == "outside_lease"
+        receipt2 = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{session2.isoformat()}.json").read_text())
+        assert receipt2["attempts"][-1]["decision"] == "skipped_outside_lease"
+
+    def test_10_holiday_adjacent_lease_endpoint_is_the_next_calendar_day_not_the_next_session(
+            self, tmp_path, monkeypatch):
+        """#10: a Wednesday session ahead of the Thanksgiving Thursday
+        holiday leases only through Thursday (the holiday's OWN calendar
+        day) 03:00 ET — a capture inside the holiday's small hours still
+        replaces, but the early-close Friday morning capture does not, even
+        though it resolves to the SAME Wednesday session. The lease boundary
+        is a CALENDAR day, not a next-SESSION day."""
+        import scripts.build_polygon_gex as bpg
+        session = HOLIDAY_SESSION
+
+        universe = _setup_stored_partial(tmp_path, monkeypatch,
+                                         session_iso=session.isoformat(),
+                                         stored_symbols=STORED)
+        new_raw = _raw(tuple(f"U{i}" for i in range(70)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+        res_pass = bpg.accrue(session, _now=HOLIDAY_THU_0200)
+        assert res_pass["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{session.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "replaced_partial"
+
+        # Reset the fixture, then attempt again from early-close Friday
+        # morning — resolves to the SAME session (Wed 11-25) but the lease
+        # boundary (Thu 11-26 03:00 ET) has already passed; it does NOT roll
+        # forward to Friday just because Thursday was a holiday.
+        universe2 = _setup_stored_partial(tmp_path, monkeypatch,
+                                          session_iso=session.isoformat(),
+                                          stored_symbols=STORED)
+        new_raw2 = _raw(tuple(f"U{i}" for i in range(70)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw2, census=_census(new_raw2, universe2)))
+        res_fail = bpg.accrue(session, _now=HOLIDAY_FRI_0800)
+        # AD-1C0.1 amendment 1+2: pre-fetch refusal now returns its own
+        # "outside_lease" status; see test_6_7_8's note.
+        assert res_fail["status"] == "outside_lease"
+        receipt2 = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{session.isoformat()}.json").read_text())
+        assert receipt2["attempts"][-1]["decision"] == "skipped_outside_lease"
+
+    def test_11_early_close_day_resolution_is_unaffected_by_the_lease_change(
+            self, tmp_path, monkeypatch):
+        """#11: early closes are NOT modeled by nyse_calendar (the 17:00 ET
+        settle boundary is unconditional) — a 14:30 ET capture on an early-
+        close session day (the Friday after Thanksgiving) still resolves to
+        the PRIOR session, exactly as before AD-1C0.1. Then a normal evening
+        (post-settle) capture on THAT day writes normally, as a first write
+        for its own session."""
+        import scripts.build_polygon_gex as bpg
+        resolved = bpg._resolve_session(HOLIDAY_FRI_1430)
+        assert resolved == date(2026, 11, 25), (
+            "14:30 ET on an early-close day must still resolve to the PRIOR "
+            "session — the modeled settle boundary stays 17:00 ET regardless "
+            "of the exchange's real (unmodeled) 13:00 ET early close")
+
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+        res = bpg.accrue(HOLIDAY_FRI_1800, _now=HOLIDAY_FRI_1800)
+        assert res["status"] == "ok"
+        assert res["session"] == "2026-11-27"
+        receipt = json.loads((tmp_path / "polygon_gex_health" / "2026-11-27.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "wrote"
+
+    def test_12_healthy_first_capture_stays_immutable_even_at_a_lease_valid_instant(
+            self, tmp_path, monkeypatch):
+        """#12: a stored HEALTHY session is immutable regardless of whether
+        the new attempt's capture_instant would otherwise be lease-valid —
+        the healthy-immutable check fires BEFORE the lease/proof machinery
+        (and before any fetch) is ever consulted."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        _write_chain_file(tmp_path, LEASE_SESSION.isoformat(), symbols=("SPY", "QQQ"))
+        _write_receipt_file(tmp_path, LEASE_SESSION.isoformat(),
+                            [_entry("wrote", "healthy", 2, 1.0, requested=2)])
+        monkeypatch.setattr(bpg, "PolygonOptions", lambda: _NoFetchClient())
+
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_SAT_0040)   # a lease-valid instant
+        assert res["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_already_healthy"
+
+    def test_13_force_bypasses_the_lease_and_proof_entirely(self, tmp_path, monkeypatch):
+        """#13: --force overrides the lease and the same-book proof exactly
+        as it already overrode the strictly-better quality prong — a capture
+        OUTSIDE the lease, sharing NOTHING with the stored capture, still
+        writes under --force, recorded as decision "forced"."""
+        import scripts.build_polygon_gex as bpg
+        _setup_stored_partial(tmp_path, monkeypatch,
+                              session_iso=LEASE_SESSION.isoformat(),
+                              stored_symbols=STORED)
+        v_universe = [f"V{i}" for i in range(100)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: v_universe)
+        new_raw = _raw(tuple(f"V{i}" for i in range(5)))     # tiny, disjoint, outside-lease
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, v_universe)))
+        res = bpg.accrue(LEASE_SESSION, force=True, _now=LEASE_MON_0800)   # outside the lease
+        assert res["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "forced"
+        back = pd.read_parquet(
+            tmp_path / "polygon_gex" / "chains" / f"{LEASE_SESSION.isoformat()}.parquet")
+        assert set(back["underlying"]) == set(f"V{i}" for i in range(5))
+
+    def test_14_single_vintage_invariant_and_orphan_cleanup_survive_a_lease_valid_replacement(
+            self, tmp_path, monkeypatch):
+        """#14: a lease-valid, same-book-proven replacement is still a
+        single-vintage OVERWRITE (never a merge) and still triggers the M8
+        orphan-summary cleanup for symbols the new vintage drops.
+
+        Session is date(2026, 6, 15) — matching module-level ASOF, which
+        _raw() bakes into every row's "asof" column regardless of the
+        accrual session passed to accrue() — so the compute_gex summary
+        rows land at the expected index."""
+        import scripts.build_polygon_gex as bpg
+        session = ASOF.date()
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        universe = [f"U{i}" for i in range(100)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe)
+
+        raw1 = _raw(tuple(f"U{i}" for i in range(50)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw1, census=_census(raw1, universe)))
+        r1 = bpg.accrue(session, _now=SAME_DAY_NOW)
+        assert r1["status"] == "ok" and r1["health"] == "partial"
+        summ_u0_before = pd.read_parquet(tmp_path / "polygon_gex" / "summary_U0.parquet")
+        assert pd.Timestamp(session) in summ_u0_before.index
+
+        raw2 = _raw(tuple(f"U{i}" for i in range(20, 90)))    # U0..U19 dropped, same OI
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw2, census=_census(raw2, universe)))
+        post_midnight = datetime(2026, 6, 16, 0, 40, tzinfo=nyse_calendar.ET)   # in-lease
+        r2 = bpg.accrue(session, _now=post_midnight)
+        assert r2["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{session.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "replaced_partial"
+
+        back = pd.read_parquet(
+            tmp_path / "polygon_gex" / "chains" / f"{session.isoformat()}.parquet")
+        assert set(back["underlying"]) == set(f"U{i}" for i in range(20, 90)), (
+            "replacement must be a single-vintage overwrite, never a merge")
+
+        orphans = []
+        for i in range(20):
+            p = tmp_path / "polygon_gex" / f"summary_U{i}.parquet"
+            if p.exists():
+                s = pd.read_parquet(p)
+                if pd.Timestamp(session) in s.index:
+                    orphans.append(f"U{i}")
+        assert not orphans, f"orphaned summary rows from the discarded vintage: {orphans}"
+
+
+class TestAD1C01BoundaryReviewRepairs:
+    """AD-1C0.1 boundary review (2026-08-20): the lease/clock logic held
+    every attack; the same-book proof had F1 (MAJOR, dtype asymmetry) + F2
+    (identity collision) + F3 (vacuous empty-stored agreement) + F4 (no
+    test biting lease prong (a) alone) + F5 (unreadable stored parquet
+    untested). F7 (OI float32 lossiness) is covered by F1's fix and
+    asserted inline in the F1 tests. F6 (exact-OI strictness) is accepted
+    design — no test, see the code comment in _same_book_overlap."""
+
+    def test_f1_odd_cent_strikes_end_to_end_replaces_with_consistent_oi(
+            self, tmp_path, monkeypatch):
+        """F1 (MAJOR): a REAL accrue()-written stored chain has been through
+        _compact()'s float32 downcast of K/oi; the candidate returned by the
+        fetch has not. Before the symmetric-coercion fix, an all-odd-cent-
+        strike chain's overlap measured 0/44 and every lawful rescue was
+        refused as skipped_unverifiable_vintage even though nothing about
+        the book had changed. Prove the fix: an all-odd-strike, consistent-
+        OI rescue still replaces end to end."""
+        import scripts.build_polygon_gex as bpg
+        session = ASOF.date()
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        universe = [f"U{i}" for i in range(100)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe)
+
+        raw1 = _raw_odd_strikes(tuple(f"U{i}" for i in range(50)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw1, census=_census(raw1, universe)))
+        r1 = bpg.accrue(session, _now=SAME_DAY_NOW)
+        assert r1["status"] == "ok" and r1["health"] == "partial"
+
+        # Same OI (1000.0, untouched) on every odd-cent strike -- F7: this is
+        # exactly the OI-comparison-survives-the-round-trip assertion, proven
+        # by the replacement actually landing rather than a phantom mismatch.
+        raw2 = _raw_odd_strikes(tuple(f"U{i}" for i in range(70)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw2, census=_census(raw2, universe)))
+        post_midnight = datetime(2026, 6, 16, 0, 40, tzinfo=nyse_calendar.ET)   # in-lease
+        r2 = bpg.accrue(session, _now=post_midnight)
+        assert r2["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{session.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "replaced_partial"
+
+    def test_f1_odd_cent_strikes_oi_drift_is_a_vintage_mismatch(self, tmp_path, monkeypatch):
+        """F1/F7: with the symmetric float32 round-trip in place, the proof
+        now SEES odd-cent strikes well enough to catch a genuine OI drift on
+        one of them -- proving the fix didn't just stop mis-refusing an
+        unchanged book, it can still tell a REAL difference apart."""
+        import scripts.build_polygon_gex as bpg
+        session = ASOF.date()
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        universe = [f"U{i}" for i in range(100)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe)
+
+        raw1 = _raw_odd_strikes(tuple(f"U{i}" for i in range(50)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw1, census=_census(raw1, universe)))
+        r1 = bpg.accrue(session, _now=SAME_DAY_NOW)
+        assert r1["status"] == "ok"
+
+        raw2 = _raw_odd_strikes(tuple(f"U{i}" for i in range(70)))
+        drift_mask = ((raw2["underlying"] == "U5") & (raw2["K"] == _ODD_STRIKES[0])
+                     & raw2["is_call"])
+        assert drift_mask.any()
+        raw2.loc[drift_mask, "oi"] = 4242.0     # ONE odd-cent contract's OI moved
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw2, census=_census(raw2, universe)))
+        post_midnight = datetime(2026, 6, 16, 0, 40, tzinfo=nyse_calendar.ET)
+        r2 = bpg.accrue(session, _now=post_midnight)
+        assert r2["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{session.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_vintage_mismatch"
+
+    def test_f7_oi_near_the_float32_precision_boundary_survives_the_round_trip(
+            self, tmp_path):
+        """F7: OI values above float32's exact-integer range (~2^24) lose
+        precision when the STORED side round-trips through _compact()'s
+        float32 downcast at write time. Without the SAME coercion applied
+        to the freshly-fetched CANDIDATE side, a real OI of, say,
+        16,777,217 compares against the stored (silently rounded to
+        16,777,216) value and reads as a genuine disagreement even though
+        the vendor reported the identical real OI both times -- a false
+        skipped_vintage_mismatch. This is the one case in the whole file
+        where the strike/composite-key string comparison does NOT already
+        paper over the missing coercion (unlike odd-cent strikes, which
+        happen to round-trip through str() identically either way) -- so
+        this is the test that actually depends on the explicit F1/F7
+        astype("float32") calls, not just their side effects."""
+        import scripts.build_polygon_gex as bpg
+        big_oi = 16_777_217.0     # 2**24 + 1 -- not exactly representable in float32
+        stored_raw = _raw(("SPY",))
+        stored_raw["oi"] = big_oi
+        p = tmp_path / "c.parquet"
+        bpg._compact(stored_raw.copy()).to_parquet(p)
+        stored = pd.read_parquet(p)
+        # float() first: comparing a bare numpy float32 scalar directly
+        # against a Python float can itself downcast the RHS under NEP-50
+        # promotion rules and mask the very precision loss this assertion
+        # is trying to confirm actually happened.
+        assert float(stored["oi"].iloc[0]) != big_oi, (
+            "the parquet round-trip must actually have LOST precision here, "
+            "or this test isn't exercising the boundary case at all")
+
+        candidate = _raw(("SPY",))
+        candidate["oi"] = big_oi      # the vendor reports the SAME real OI, exactly
+        agrees, overlap, floor, mismatches, *_ = bpg._same_book_overlap(stored, candidate)
+        assert mismatches == 0
+        assert agrees is True, (
+            "the SAME real-world OI, rounded IDENTICALLY on both sides via "
+            "the symmetric float32 cast, must agree -- an asymmetric "
+            "comparison against the unrounded candidate would wrongly call "
+            f"this a mismatch (overlap={overlap}, floor={floor})")
+
+    def test_f2_order_swapped_duplicate_identity_still_agrees_via_ticker(self):
+        """F2: the 4-field composite key (_CONTRACT_KEY_COLS) is not always
+        unique -- an adjusted and a standard contract can share underlying/
+        expiry/strike/right. Before the fix, drop_duplicates' positional
+        "keep first" made a pure ORDER SWAP between two functionally-
+        identical captures flip the verdict (reviewer repro: 'standard
+        first' paired 1000-vs-1000, 'adjusted first' paired 1000-vs-7 --
+        same two rows, opposite answer). With the vendor ticker as the
+        PRIMARY key, the two distinctly-ticketed rows are never collapsed
+        into one, so both survive and the pairing no longer depends on
+        which one happened to come first."""
+        import scripts.build_polygon_gex as bpg
+        dup = _raw(("SPY",)).iloc[[0]].copy()               # one contract, K=80 call
+        dup2 = dup.copy()
+        dup2["strike_ticker"] = dup2["strike_ticker"] + "-ADJ"   # a distinct vendor ticker
+        dup2["oi"] = 7.0
+        standard_first = pd.concat([dup, dup2], ignore_index=True)
+        adjusted_first = pd.concat([dup2, dup], ignore_index=True)
+
+        agrees_a, overlap_a, floor_a, mismatches_a, *_ = bpg._same_book_overlap(
+            standard_first, adjusted_first)
+        agrees_b, overlap_b, floor_b, mismatches_b, *_ = bpg._same_book_overlap(
+            adjusted_first, standard_first)
+        assert agrees_a is True, (agrees_a, overlap_a, floor_a)
+        assert agrees_b is True, (agrees_b, overlap_b, floor_b)
+        assert mismatches_a == mismatches_b == 0
+        assert overlap_a == overlap_b == 2, "both distinctly-ticketed contracts must survive"
+
+    def test_f3_empty_stored_frame_is_unverifiable_not_vacuously_agreed(self):
+        """F3: a stored frame with ZERO rows must never read as "agrees" via
+        a vacuous all()-over-nothing pandas default -- that would let the
+        same-book proof pass when there is nothing on the stored side to
+        prove anything against."""
+        import scripts.build_polygon_gex as bpg
+        candidate = _raw(("SPY",))
+        agrees, overlap, floor, mismatches, *_ = bpg._same_book_overlap(candidate.iloc[0:0], candidate)
+        assert agrees is False
+        assert overlap == 0
+        assert mismatches == 0
+
+    def test_f4_monday_intraday_capture_fails_lease_prong_a_even_though_prong_b_passes(
+            self, tmp_path, monkeypatch):
+        """F4: prong (b) (capture_instant < LEASE_END_ET_HOUR:00 the next
+        calendar day) is satisfied trivially by ANY same-day INTRADAY
+        capture, so weekend/boundary scenarios alone never exercise prong
+        (a) (expected_last_session(capture_instant) == session) in
+        isolation. A Monday 10:00 ET capture attempting to replace that
+        SAME Monday's session fails prong (a) alone: at 10:00 ET the 17:00
+        ET settle buffer has not passed, so expected_last_session resolves
+        to the PRIOR completed session (Friday), not Monday -- even though
+        10:00 ET Monday is trivially "before 03:00 ET Tuesday" (prong b).
+        Deleting prong (a) must fail this test."""
+        import scripts.build_polygon_gex as bpg
+        monday = date(2026, 8, 24)
+        monday_intraday = datetime(2026, 8, 24, 10, 0, tzinfo=nyse_calendar.ET)
+        # Sanity: prong (b) alone would pass -- this instant is nowhere near
+        # the next-calendar-day 03:00 ET boundary.
+        assert monday_intraday < datetime(2026, 8, 25, 3, 0, tzinfo=nyse_calendar.ET)
+        assert bpg._within_capture_lease(monday, monday_intraday) is False
+
+        universe = _setup_stored_partial(tmp_path, monkeypatch,
+                                         session_iso=monday.isoformat(),
+                                         stored_symbols=STORED)
+        new_raw = _raw(tuple(f"U{i}" for i in range(70)))     # strictly better, matching OI
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+        res = bpg.accrue(monday, _now=monday_intraday)
+        # AD-1C0.1 amendment 1+2: pre-fetch refusal now returns its own
+        # "outside_lease" status; see test_6_7_8's note.
+        assert res["status"] == "outside_lease"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{monday.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_outside_lease"
+
+    def test_f5_unreadable_stored_parquet_is_unverifiable_vintage(self, tmp_path, monkeypatch):
+        """F5: a stored chain that EXISTS on disk but cannot be read as a
+        parquet (bytes corrupted at rest -- distinct from B3's receipt
+        corruption) must degrade the same-book proof to
+        skipped_unverifiable_vintage, never crash accrue() and never
+        silently trust an unreadable file as a pass."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        universe = [f"U{i}" for i in range(100)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe)
+
+        chains_dir = tmp_path / "polygon_gex" / "chains"
+        chains_dir.mkdir(parents=True)
+        (chains_dir / f"{LEASE_SESSION.isoformat()}.parquet").write_bytes(
+            b"not a real parquet file, just garbage bytes")
+        _write_receipt_file(tmp_path, LEASE_SESSION.isoformat(),
+                            [_entry("wrote", "partial", 50, 0.50, requested=100)])
+
+        new_raw = _raw(tuple(f"U{i}" for i in range(70)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_SAT_0040)
+        assert res["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_unverifiable_vintage"
+
+
+def _synthetic_book(n, symbol="SYN", oi=1000.0, spot=100.0, key_offset=0):
+    """`n` distinct synthetic contracts for `symbol`. Contract identity rides
+    entirely on a unique per-row vendor `strike_ticker` keyed off
+    `key_offset + j` (j in [0, n)) -- two calls with the SAME key_offset
+    produce the SAME identities (a controlled overlap); a key_offset range
+    that never intersects another call's range produces entirely DISJOINT
+    identities. Needed because the default _raw() 42-contracts/symbol grid
+    can't hit an EXACT target contract count -- the overlap-floor regression
+    tests need a precise stored/candidate contract count, not just 'a lot of
+    contracts'."""
+    rows = []
+    for j in range(n):
+        i = key_offset + j
+        rows.append(dict(underlying=symbol, strike_ticker=f"O:{symbol}{i}C",
+                         expiry=ASOF + pd.Timedelta(days=30), K=round(50.0 + i * 0.01, 2),
+                         T=30 / 365, is_call=True, oi=float(oi), iv=0.25,
+                         gamma=0.01, delta=0.5, volume=10.0, spot=spot, asof=ASOF))
+    return pd.DataFrame(rows)
+
+
+def _write_failed_receipt(tmp_path, session_iso, requested=100):
+    """A session whose first capture attempt FAILED outright -- a receipt
+    exists (recording the failed attempt) but NO chain parquet was ever
+    written (a zero-capture run never reaches the parquet write; see the
+    `raw.empty` branch in accrue()). Matches Sol's matrix case #1: 'failed
+    Friday first capture (no parquet, failed receipt)'."""
+    _write_receipt_file(tmp_path, session_iso,
+                        [_entry("nothing_captured", "failed", 0, 0.0, requested=requested)])
+
+
+# ═══ AD-1C0.1 amendments (Sol review 4989933857, 2026-08-21) ══════════════
+#
+# Sol accepted the Option-B lease architecture but found four load-bearing
+# defects: (1) first writes bypassed the lease entirely; (2) the lease was
+# tested only AFTER the full vendor fetch; (3) the overlap floor was a
+# MAXIMUM of 20, not a minimum; (4) receipts didn't persist the gate
+# evidence. The classes below are the commissioning packet's matrix + audit
+# coverage for all four.
+
+class TestAD1C01FirstWriteLease:
+    """Amendments 1+2: the capture lease now governs FIRST writes exactly as
+    it already governed replacements, checked PRE-FETCH. Each test below is
+    numbered to match the commissioning packet's Sol-mandated matrix."""
+
+    @pytest.mark.parametrize("label,instant", [
+        ("saturday_0400", datetime(2026, 8, 22, 4, 0, tzinfo=nyse_calendar.ET)),
+        ("sunday", LEASE_SUN_1200),
+        ("monday_preopen", LEASE_MON_0800),
+    ])
+    def test_1_2_3_failed_friday_capture_then_weekend_preopen_rescue_finds_no_parquet(
+            self, tmp_path, monkeypatch, label, instant):
+        """#1/#2/#3: Friday's first capture FAILED outright (no parquet at
+        all landed, just a "nothing_captured"/"failed" receipt entry) -- a
+        Saturday 04:00 ET, Sunday, or Monday 08:00 ET pre-open rescue run
+        must ALL be refused by the lease, so no parquet EVER lands for that
+        session from any of them -- never filing the CURRENT vendor snapshot
+        under the OLD Friday session label (the exact PIT violation the
+        pre-amendment code allowed)."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        session_iso = LEASE_SESSION.isoformat()
+        _write_failed_receipt(tmp_path, session_iso, requested=1)
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+
+        res = bpg.accrue(LEASE_SESSION, _now=instant)
+
+        assert res["status"] == "outside_lease", label
+        assert not (tmp_path / "polygon_gex" / "chains" / f"{session_iso}.parquet").exists(), label
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{session_iso}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_outside_lease", label
+        assert receipt["attempts"][-1]["lease"]["write_kind"] == "first_write", label
+
+    def test_4_explicit_old_session_date_without_force_is_refused(self, tmp_path, monkeypatch):
+        """#4: an explicit --date naming an OLD session (accrue(as_of=<old
+        date>)), with no --force, is refused by the lease's own prong (a) --
+        expected_last_session(now) never equals a session that closed out
+        long ago, so no NEW session-resolution logic was needed to catch
+        this: _within_capture_lease already refuses it on its own."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        old_session = date(2026, 1, 5)     # long closed out relative to `now` below
+        now = SAME_DAY_NOW                  # resolves to session 2026-06-15
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+
+        res = bpg.accrue(old_session, _now=now)
+
+        assert res["status"] == "outside_lease"
+        assert not (tmp_path / "polygon_gex" / "chains"
+                   / f"{old_session.isoformat()}.parquet").exists()
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{old_session.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_outside_lease"
+        assert receipt["attempts"][-1]["lease"]["write_kind"] == "first_write"
+        assert receipt["attempts"][-1]["health"] == "absent"
+
+    def test_5_valid_same_evening_first_capture_writes(self, tmp_path, monkeypatch):
+        """#5: a normal evening first-write capture instant is well inside
+        the lease -- unaffected by amendment 1, still writes."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_FRI_EVENING)
+
+        assert res["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "wrote"
+        assert receipt["attempts"][-1]["lease"]["valid"] is True
+        assert receipt["attempts"][-1]["lease"]["write_kind"] == "first_write"
+
+    def test_6_valid_post_midnight_first_capture_resolving_to_the_target_session_writes(
+            self, tmp_path, monkeypatch):
+        """#6: a post-midnight 00:30 ET first capture that still resolves to
+        the TARGET session (prong (a) holds) and sits inside the overnight
+        lease (prong (b) holds) writes -- the lease's whole point is to NOT
+        refuse this lawful case."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+        post_midnight = datetime(2026, 8, 22, 0, 30, tzinfo=nyse_calendar.ET)
+
+        res = bpg.accrue(LEASE_SESSION, _now=post_midnight)
+
+        assert res["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "wrote"
+        assert receipt["attempts"][-1]["lease"]["valid"] is True
+
+    def test_7_force_outside_the_lease_still_writes_but_lease_valid_is_false(
+            self, tmp_path, monkeypatch):
+        """#7: --force bypasses the pre-fetch gate exactly as it bypasses
+        everything else, but the receipt still records the TRUTH -- the
+        capture instant really was outside the lease -- via lease.valid ==
+        False alongside decision "forced". This IS the explicit forced-
+        bypass diagnostic the receipt exists to preserve."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+
+        res = bpg.accrue(LEASE_SESSION, force=True, _now=LEASE_MON_0800)
+
+        assert res["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "forced"
+        assert receipt["attempts"][-1]["lease"]["valid"] is False
+        assert receipt["attempts"][-1]["lease"]["write_kind"] == "first_write"
+
+
+class TestAD1C01NoFetchOutsideLease:
+    """Amendment 2: the pre-fetch gate must refuse BEFORE ever calling
+    client.snapshot() -- proven by wiring a client that raises loudly if
+    snapshot() is called at all, for both a stored REPLACEABLE partial and a
+    missing-file first write."""
+
+    @pytest.mark.parametrize("label,instant", [
+        ("saturday", LEASE_SAT_1000),
+        ("sunday", LEASE_SUN_1200),
+        ("monday_preopen", LEASE_MON_0800),
+    ])
+    def test_replacement_candidate_spends_no_api_quota_outside_the_lease(
+            self, tmp_path, monkeypatch, label, instant):
+        import scripts.build_polygon_gex as bpg
+        _setup_stored_partial(tmp_path, monkeypatch,
+                              session_iso=LEASE_SESSION.isoformat(),
+                              stored_symbols=STORED)
+        monkeypatch.setattr(bpg, "PolygonOptions", lambda: _NoFetchClient())
+
+        res = bpg.accrue(LEASE_SESSION, _now=instant)
+
+        assert res["status"] == "outside_lease", label
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_outside_lease", label
+
+    @pytest.mark.parametrize("label,instant", [
+        ("saturday", LEASE_SAT_1000),
+        ("sunday", LEASE_SUN_1200),
+        ("monday_preopen", LEASE_MON_0800),
+    ])
+    def test_first_write_candidate_spends_no_api_quota_outside_the_lease(
+            self, tmp_path, monkeypatch, label, instant):
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        monkeypatch.setattr(bpg, "PolygonOptions", lambda: _NoFetchClient())
+
+        res = bpg.accrue(LEASE_SESSION, _now=instant)
+
+        assert res["status"] == "outside_lease", label
+        assert not (tmp_path / "polygon_gex" / "chains"
+                   / f"{LEASE_SESSION.isoformat()}.parquet").exists(), label
+
+
+class TestAD1C01OverlapFloorIsAMinimum:
+    """Amendment 3: the same-book proof's required overlap is now
+    max(OI_OVERLAP_FLOOR_ABS, ceil(OI_OVERLAP_FLOOR_FRACTION * stored)),
+    bounded above by min(len(stored), ...) -- a real floor, never the
+    pre-amendment min()-based ceiling capped at 20."""
+
+    def test_small_stored_book_caps_the_floor_at_its_own_size(self):
+        """A 4-contract stored partial can only ever demand all 4 shared
+        contracts -- the outer min(len(stored), ...) bound, not the 20-
+        contract absolute floor."""
+        import scripts.build_polygon_gex as bpg
+        stored = _synthetic_book(4, symbol="TINY")
+        candidate = _synthetic_book(4, symbol="TINY")     # identical -- full overlap
+        agrees, overlap, floor, mismatches, *_ = bpg._same_book_overlap(stored, candidate)
+        assert floor == 4
+        assert overlap == 4
+        assert mismatches == 0
+        assert agrees is True
+
+    def test_a_1000_contract_book_requires_250_shared_contracts_not_20(
+            self, tmp_path, monkeypatch):
+        """A 1,000-contract book must NOT pass the proof on just 20 shared
+        contracts (the pre-amendment MAXIMUM evidence requirement). Stored:
+        1,000 contracts on symbol BIG. Candidate: strictly better on quality
+        (adds symbol EXTRA, reaching 2/2 requested = healthy) but shares
+        EXACTLY 20 identical contracts with BIG's stored book -- the other
+        980 BIG contracts and the 1 EXTRA contract are entirely disjoint.
+        required_overlap must be 250 (25% of 1,000, the real floor),
+        overlap_contracts must be 20, and the replacement must be REFUSED."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        universe = ["BIG", "EXTRA"]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe)
+
+        stored_big = _synthetic_book(1000, symbol="BIG", key_offset=0)
+        chains_dir = tmp_path / "polygon_gex" / "chains"
+        chains_dir.mkdir(parents=True)
+        stored_big.to_parquet(chains_dir / f"{ASOF.date().isoformat()}.parquet")
+        _write_receipt_file(tmp_path, ASOF.date().isoformat(),
+                            [_entry("wrote", "partial", 1, 0.5, requested=2)])
+
+        shared = _synthetic_book(20, symbol="BIG", key_offset=0)             # SAME 20 identities
+        disjoint_big = _synthetic_book(980, symbol="BIG", key_offset=2000)   # never in stored
+        extra = _synthetic_book(1, symbol="EXTRA", key_offset=0)
+        candidate = pd.concat([shared, disjoint_big, extra], ignore_index=True)
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(candidate, census=_census(candidate, universe)))
+
+        res = bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
+
+        assert res["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{ASOF.date().isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "skipped_unverifiable_vintage"
+        vp = entry["vintage_proof"]
+        assert vp["required_overlap"] == 250
+        assert vp["overlap_contracts"] == 20
+        assert vp["stored_contracts"] == 1000
+        assert vp["candidate_contracts"] == 1001
+        assert vp["oi_mismatch_count"] == 0     # A4: computed even below the floor
+
+
+class TestAD1C01ReceiptAudit:
+    """Amendment 4: every gate decision persists deterministic lease/overlap
+    evidence on the health receipt, so a refusal or authorization can be
+    audited after vendor state is gone."""
+
+    def test_a_thin_overlap_refusal_still_reports_its_mismatch_count(self, tmp_path, monkeypatch):
+        """(a): a 19-of-20-required refusal must still show the genuine
+        oi_mismatch_count computed over its (too-thin) intersection -- never
+        gated on overlap >= floor."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        universe = ["THIN", "EXTRA"]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe)
+
+        stored_thin = _synthetic_book(76, symbol="THIN", key_offset=0)   # floor = max(20, 19) = 20
+        chains_dir = tmp_path / "polygon_gex" / "chains"
+        chains_dir.mkdir(parents=True)
+        stored_thin.to_parquet(chains_dir / f"{ASOF.date().isoformat()}.parquet")
+        _write_receipt_file(tmp_path, ASOF.date().isoformat(),
+                            [_entry("wrote", "partial", 1, 0.5, requested=2)])
+
+        shared = _synthetic_book(19, symbol="THIN", key_offset=0)
+        shared.loc[shared.index[:2], "oi"] = 4242.0     # 2 of the 19 shared disagree
+        disjoint_thin = _synthetic_book(57, symbol="THIN", key_offset=1000)
+        extra = _synthetic_book(1, symbol="EXTRA", key_offset=0)
+        candidate = pd.concat([shared, disjoint_thin, extra], ignore_index=True)
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(candidate, census=_census(candidate, universe)))
+
+        res = bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
+
+        assert res["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{ASOF.date().isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "skipped_unverifiable_vintage"
+        vp = entry["vintage_proof"]
+        assert vp["overlap_contracts"] == 19
+        assert vp["required_overlap"] == 20
+        assert vp["overlap_contracts"] < vp["required_overlap"]
+        assert vp["oi_mismatch_count"] == 2
+
+    def test_b_big_overlap_one_mismatch_reports_oi_mismatch_count_of_one(
+            self, tmp_path, monkeypatch):
+        """(b): a real single-contract OI drift on an overlap that clears
+        the floor reports oi_mismatch_count == 1 with decision
+        skipped_vintage_mismatch."""
+        import scripts.build_polygon_gex as bpg
+        universe = _setup_stored_partial(tmp_path, monkeypatch,
+                                         session_iso=LEASE_SESSION.isoformat(),
+                                         stored_symbols=STORED)
+        new_raw = _raw_with_oi_override(
+            tuple(f"U{i}" for i in range(70)), {("U5", 100.0, True): 4242.0})
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_SAT_0040)
+
+        assert res["status"] == "already_present"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "skipped_vintage_mismatch"
+        vp = entry["vintage_proof"]
+        assert vp["overlap_contracts"] >= vp["required_overlap"]
+        assert vp["oi_mismatch_count"] == 1
+
+    def test_c_replaced_partial_carries_the_full_vintage_proof(self, tmp_path, monkeypatch):
+        """(c): a successful replacement's receipt entry carries the
+        complete vintage_proof (store_readable + all four counts), not just
+        a bare pass/fail, plus a lease dict with valid=True."""
+        import scripts.build_polygon_gex as bpg
+        universe = _setup_stored_partial(tmp_path, monkeypatch,
+                                         session_iso=LEASE_SESSION.isoformat(),
+                                         stored_symbols=STORED)
+        new_raw = _raw(tuple(f"U{i}" for i in range(70)))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, universe)))
+
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_SAT_0040)
+
+        assert res["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "replaced_partial"
+        vp = entry["vintage_proof"]
+        assert vp["store_readable"] is True
+        assert vp["overlap_contracts"] >= vp["required_overlap"]
+        assert vp["oi_mismatch_count"] == 0
+        assert vp["stored_contracts"] > 0
+        assert vp["candidate_contracts"] > 0
+        lease = entry["lease"]
+        assert lease["valid"] is True
+        assert lease["write_kind"] == "replacement"
+
+    def test_d_first_write_refusal_carries_lease_and_absent_health_no_vintage_proof(
+            self, tmp_path, monkeypatch):
+        """(d): a first-write lease refusal carries the lease dict and
+        health == "absent" -- and, because no same-book proof ever ran
+        (there was nothing stored to prove against), NO vintage_proof key at
+        all."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+
+        res = bpg.accrue(LEASE_SESSION, _now=LEASE_MON_0800)
+
+        assert res["status"] == "outside_lease"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "skipped_outside_lease"
+        assert entry["health"] == "absent"
+        assert "lease" in entry
+        assert entry["lease"]["write_kind"] == "first_write"
+        assert entry["lease"]["valid"] is False
+        assert "vintage_proof" not in entry
 
 
 class TestM8OrphanSummaryRows:
@@ -2030,3 +3056,232 @@ class TestM14UnknownReasonCoercion:
         res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
         assert res["census"]["failure_reasons"] == {
             "auth_or_entitlement_failure": 2, "other_failure": 2}
+
+
+# ═══ AD-1C0.1 review repairs (F1-F4, post-Sol-review, 2026-08-21) ══════════
+
+class TestAD1C01SingleClock:
+    """R1 (fixes F1, the two-clock blocker): accrue() must read the accrual
+    instant from ONE clock. When the caller passes a datetime `as_of` with
+    NO `_now` override, that `as_of` IS the accrual instant by this module's
+    own contract (_resolve_session's docstring) -- the session resolution,
+    the capture lease, and the receipt's capture_instant must all agree on
+    it, never fall back to a separately-sampled `datetime.now()`. Both
+    instants below are constructed far from any real wall-clock 'now' this
+    suite could run under, so these tests can only pass if accrue() actually
+    reads `as_of` as the clock -- a stray `datetime.now()` read anywhere in
+    the path would resolve a different session (or a different lease
+    verdict) and fail loudly, not coincidentally agree."""
+
+    def test_a_datetime_as_of_with_no_now_writes_its_own_resolved_session(
+            self, tmp_path, monkeypatch):
+        """(a): an in-lease datetime `as_of` (Friday 21:24 ET), passed with
+        NO `_now`, must resolve and write ITS OWN Friday session -- and the
+        receipt's capture_instant must equal `as_of` exactly, proving the
+        lease check and the session resolution read the same clock."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        friday_evening = datetime(2026, 6, 12, 21, 24, tzinfo=nyse_calendar.ET)  # in-lease
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+
+        res = bpg.accrue(friday_evening)   # NO _now override
+
+        assert res["status"] == "ok"
+        assert res["session"] == "2026-06-12"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / "2026-06-12.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "wrote"
+        assert receipt["attempts"][-1]["capture_instant"] == friday_evening.isoformat(), (
+            "the receipt's capture_instant must be the SAME instant as `as_of` "
+            "-- a wall-clock fallback would stamp a different (real, current) "
+            "instant here instead")
+
+    def test_b_datetime_as_of_with_no_now_outside_lease_writes_nothing(
+            self, tmp_path, monkeypatch):
+        """(b): an out-of-lease instant for ITS OWN resolved session -- 03:30
+        ET Saturday resolves to Friday's session (prong a) but has already
+        rolled past the 03:00 ET lease boundary (prong b) -- passed with NO
+        `_now`, must be refused using `as_of` as the clock and write
+        nothing. This is the single-clock counterpart to (a): both prongs of
+        the lease predicate must read the identical instant `as_of` supplies,
+        not a wall clock that happens to resolve a different verdict."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        saturday_early = datetime(2026, 6, 13, 3, 30, tzinfo=nyse_calendar.ET)  # outside-lease
+        assert bpg._resolve_session(saturday_early) == date(2026, 6, 12), (
+            "sanity: this instant must resolve to Friday's session (prong a) "
+            "for this test to actually exercise prong b in isolation")
+        monkeypatch.setattr(bpg, "PolygonOptions", lambda: _NoFetchClient())
+
+        res = bpg.accrue(saturday_early)   # NO _now override
+
+        assert res["status"] == "outside_lease"
+        assert not (tmp_path / "polygon_gex" / "chains" / "2026-06-12.parquet").exists()
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / "2026-06-12.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "skipped_outside_lease"
+        assert receipt["attempts"][-1]["capture_instant"] == saturday_early.isoformat()
+
+
+class TestR2FirstWriteRefusalPreservesTheShrinkReference:
+    """R2 (fixes F2, the shrink-tripwire blinding): the pre-fetch outside-
+    lease refusal used to mint an ALL-None census on a first write (nothing
+    was ever fetched to report a real one) -- but an all-None entry is
+    invisible to _store_shrink_reference's receipt scan (it only reads
+    entries carrying an int requested_underlyings), so a refused first write
+    silently DROPPED the one signal that would have kept the shrink
+    tripwire armed at the true universe size. The universe is already
+    resolved fetch-free before this gate runs (`symbols = gex_symbols(gx_cfg)`
+    happens before the fetch), so recording requested_underlyings here costs
+    no extra work and keeps the tripwire honest."""
+
+    def test_a_first_write_refusal_keeps_the_tripwire_armed_at_the_true_universe_size(
+            self, tmp_path, monkeypatch):
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+
+        # Session N: a genuine partial capture -- 20 of a 375-name universe
+        # actually landed, but the receipt still remembers what was
+        # REQUESTED that night.
+        session_n = "2026-08-14"
+        _write_chain_file(tmp_path, session_n, symbols=tuple(f"W{i}" for i in range(20)))
+        _write_receipt_file(tmp_path, session_n,
+                            [_entry("wrote", "partial", 20, round(20 / 375, 4), requested=375)])
+
+        # Session N+1 (LEASE_SESSION, the next Friday): a REAL first-write
+        # outside-lease refusal -- no stored file at all for this session,
+        # and the capture instant has rolled well past the overnight lease
+        # (Monday pre-open). The universe has NOT actually shrunk (still
+        # 375 names) -- only THIS run's own capture never happened.
+        universe375 = [f"W{i}" for i in range(375)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe375)
+        monkeypatch.setattr(bpg, "PolygonOptions", lambda: _NoFetchClient())
+        res_mid = bpg.accrue(LEASE_SESSION, _now=LEASE_MON_0800)
+        assert res_mid["status"] == "outside_lease"
+        assert not (tmp_path / "polygon_gex" / "chains"
+                   / f"{LEASE_SESSION.isoformat()}.parquet").exists()
+
+        # Session N+2: a fresh session with a genuinely small (10-name)
+        # resolved universe. Session N's 20-name STORED CHAIN alone is well
+        # under 3x10=30 -- the exact "silently passing" shape N2's own
+        # docstring warns about. Only the RECEIPT-side signal (375,
+        # recorded on N+1's refusal under this repair) still arms the
+        # tripwire.
+        session_n2 = date(2026, 8, 24)
+        universe10 = [f"W{i}" for i in range(10)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe10)
+        res = bpg.accrue(session_n2,
+                         _now=datetime(2026, 8, 24, 20, 0, tzinfo=nyse_calendar.ET))
+
+        assert res["status"] == "failed", (
+            "the 375-name reference recorded on N+1's first-write refusal "
+            "must still arm the shrink tripwire against the genuinely-small "
+            "10-name universe -- if the reference had collapsed to the "
+            "20-name STORED chain alone, 20 >= 3x10=30 is FALSE and the "
+            "tripwire would wrongly stay silent")
+        assert res["census"]["failure_reasons"] == {"universe_resolution_failed": 1}
+        assert not (tmp_path / "polygon_gex" / "chains"
+                   / f"{session_n2.isoformat()}.parquet").exists()
+
+
+class TestAD1C01ForcedWriteKind:
+    """R3 (fixes F3, the forced-overwrite mislabel): write_kind must be
+    derived from `existed_before` (whether a stored file was on disk at
+    gate time), never from `stored_health` -- `stored_health` stays None on
+    EVERY forced run (the block that computes it is guarded by
+    `if path.exists() and not force:`), so deriving write_kind from it
+    mislabeled a --force overwrite of an EXISTING, healthy capture as a
+    "first_write"."""
+
+    def test_forced_overwrite_of_an_existing_capture_is_a_replacement(
+            self, tmp_path, monkeypatch):
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        _write_chain_file(tmp_path, LEASE_SESSION.isoformat(), symbols=("SPY", "QQQ"))
+        _write_receipt_file(tmp_path, LEASE_SESSION.isoformat(),
+                            [_entry("wrote", "healthy", 2, 1.0, requested=2)])
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY", "QQQ"])
+        new_raw = _raw(("SPY", "QQQ"))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, ["SPY", "QQQ"])))
+
+        res = bpg.accrue(LEASE_SESSION, force=True, _now=LEASE_FRI_EVENING)
+
+        assert res["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{LEASE_SESSION.isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "forced"
+        assert entry["lease"]["write_kind"] == "replacement", (
+            "a forced overwrite of a capture that WAS on disk must be "
+            "labelled a replacement, never a first_write -- stored_health "
+            "alone cannot tell (it stays None on every forced run)")
+
+
+class TestAD1C01VintageProofContractCounts:
+    """R4 (fixes F4, the non-reproducible floor): vintage_proof.
+    stored_contracts/candidate_contracts must record the DEDUPED per-
+    contract identity counts _same_book_overlap actually computed
+    `required_overlap` from -- not raw parquet/frame ROW counts. A stored
+    frame with duplicate contract keys (rows > identities) makes the two
+    diverge, so an auditor recomputing required_overlap = min(
+    stored_contracts, max(20, ceil(0.25*stored_contracts))) FROM the
+    receipt's own fields must reproduce the SAME required_overlap the
+    receipt already reports."""
+
+    def test_vintage_proof_records_deduped_identity_counts_not_raw_rows(
+            self, tmp_path, monkeypatch):
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        universe = ["DUP", "EXTRA"]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe)
+
+        # 500 distinct identities, each duplicated once -> 1000 raw rows but
+        # only 500 identities -- exactly the "rows > identities" shape F4
+        # targets.
+        dup_book = _synthetic_book(500, symbol="DUP", key_offset=0)
+        stored = pd.concat([dup_book, dup_book], ignore_index=True)
+        chains_dir = tmp_path / "polygon_gex" / "chains"
+        chains_dir.mkdir(parents=True)
+        stored.to_parquet(chains_dir / f"{ASOF.date().isoformat()}.parquet")
+        _write_receipt_file(tmp_path, ASOF.date().isoformat(),
+                            [_entry("wrote", "partial", 1, 0.5, requested=2)])
+
+        # Candidate: the SAME 500 DUP identities (also row-duplicated, to
+        # exercise the candidate side of the same fix) + a new EXTRA symbol
+        # -- strictly better (2/2 requested = healthy) and OI-identical on
+        # every shared identity, so the replacement succeeds.
+        cand_dup = _synthetic_book(500, symbol="DUP", key_offset=0)
+        extra = _synthetic_book(1, symbol="EXTRA", key_offset=0)
+        candidate = pd.concat([cand_dup, cand_dup, extra], ignore_index=True)
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(candidate, census=_census(candidate, universe)))
+
+        res = bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
+
+        assert res["status"] == "ok"
+        receipt = json.loads(
+            (tmp_path / "polygon_gex_health" / f"{ASOF.date().isoformat()}.json").read_text())
+        entry = receipt["attempts"][-1]
+        assert entry["decision"] == "replaced_partial"
+        vp = entry["vintage_proof"]
+        assert vp["stored_contracts"] == 500, (
+            "must be the DEDUPED identity count (500), not the raw row "
+            "count (1000)")
+        assert vp["candidate_contracts"] == 501, (
+            "must be the DEDUPED identity count (501), not the raw row "
+            "count (1001)")
+        recomputed_floor = min(vp["stored_contracts"],
+                               max(20, math.ceil(0.25 * vp["stored_contracts"])))
+        assert recomputed_floor == vp["required_overlap"], (
+            "an auditor recomputing the floor from the receipt's OWN fields "
+            "must reproduce the SAME required_overlap the receipt reports")
