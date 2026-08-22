@@ -1,7 +1,13 @@
 {
-  "ts": "2026-08-22T09:02:34+00:00",
-  "main_sha": "8891f5412d60b509eedc9fa0d229574e6d348855",
+  "ts": "2026-08-22T10:55:30+00:00",
+  "main_sha": "b987118fa342a2548bb88e6e85935eda8be1295e",
   "red_required": [
+    {
+      "name": "enrich",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32568708527/job/97020994372"
+    },
     {
       "name": "sweep",
       "conclusion": "cancelled",
@@ -22,9 +28,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 22,
+  "consecutive_failures": 23,
   "sensed_shas": [
-    "8891f5412d60b509eedc9fa0d229574e6d348855",
+    "b987118fa342a2548bb88e6e85935eda8be1295e",
     "e9b972ffd2b624c3a226f6a1fcfed676ff248aad"
   ],
   "heartbeat_degraded": false
