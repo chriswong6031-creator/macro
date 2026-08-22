@@ -463,10 +463,18 @@ waves:
       append-only/latest pattern as capability) because nodes are write-once
       keep-first with NO existing retirement path — nodes.parquet rows stay
       bit-identical forever; ABX = generality control on the prior-node-ABSENT
-      shape (no co:us:ABX exists; nothing is minted); D2A sidecar states and
-      counts FROZEN UNCHANGED (DEFERRED B/GOLD + CONFLICT IBIT are the lawful
-      preserved history; D2B2 proof numbers undisturbed); #2 nodes NEVER
-      pre-minted (live epoch law routes future evidence). Handoff
+      shape (no co:us:ABX exists; nothing is minted); #2 nodes NEVER
+      pre-minted (live epoch law routes future evidence). Pre-implementation
+      Opus design review returned FAIL; all findings adopted as AMENDMENT §1
+      (re-frozen): belief_time is the RUN DATE so keep-first never protects a
+      correction across days — the bake must stop COMPUTING corrected rows
+      (post-pass node+edge suppression with typed receipts); derive_rows runs
+      over the COMPUTED generation, so co:us:GOLD is ALREADY absent from the
+      natural sidecar population (next natural gen: us DEFERRED 1 = B only —
+      graders must not read that as regression); the live IBIT conflict
+      counter lawfully drops to 0 post-correction while history stays
+      append-only; additive ratified_at field makes the backdating guard
+      implementable; retired-remint check receipts, never raises. Handoff
       agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-D2B3-FREEZE.md.
       Implementation NOT started per the commission's precondition + STOP:
       no D2C/D2D/D2E/D3/D5/Canada. Returned to Sol."

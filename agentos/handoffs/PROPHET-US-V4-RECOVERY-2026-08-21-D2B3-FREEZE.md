@@ -51,6 +51,20 @@ changed:
       non-interference; §9 dates law (no invented dates, no backdating);
       §10 14-item hostile test matrix; §11 owned files + per-consumer
       decision table; §12-§14 acceptance/operator model/non-goals.
+      PLUS AMENDMENT §1 (pre-implementation Opus design review, verdict FAIL,
+      all findings adopted): R-A1 belief_time is the RUN DATE so keep-first
+      protects nothing across days — corrections survive only because the
+      bake stops COMPUTING corrected rows (post-pass suppression of node AND
+      edges, two-day survival test); R-A2 derive_rows runs over the COMPUTED
+      generation (not nodes.parquet) and co:us:GOLD is ALREADY absent from
+      the natural population (next natural gen reads us DEFERRED 1, B only);
+      R-A3 the live conflict counter lawfully drops to 0 post-correction —
+      history stays append-only; R-A4 additive ratified_at field makes the
+      backdating guard implementable; R-A5 consumer-table fixes (phantom
+      materialize entry deleted; probe_theme_exposure_axes + build_theme_graph
+      counts added); R-A6 retired-remint check emits a receipt, never raises;
+      R-A7 §0 gate reads the sidecar's own newest us generation (expect
+      1210/25/1/1 = 1,237 rows pre-correction); R-A8 minors.
 verified:
   - claim: >
       Node/edge/sidecar inventory for GOLD/B/ABX/IBIT as stated in contract §1
@@ -103,16 +117,14 @@ next_actions:
     contract as merged, not this handoff, for the binding text.
 unresolved:
   - >
-    Edge belief_time stability across bakes was verified only via the store
-    test and dedup mechanics; the implementing builder must re-confirm at the
-    emit sites that nightly re-emissions carry a STABLE belief_time (else a
-    closed edge would reopen — contract matrix item 3 pins this).
+    The additive ratified_at registry field (R-A4) is frozen but lands only
+    in the implementing PR — until then matrix 7 remains unimplementable by
+    design, not by gap.
 unverified:
   - >
-    Whether the guard's edge-interval validation accepts valid_to==valid_from
-    (the IBIT annulment encoding) — contract requires the builder to make the
-    guard accept-and-pin it; if the schema fights back, the amendment path is
-    a typed annulment marker, adjudicated by the commissioning seat.
+    The §6 node_lifecycle schema validation and the §10.11/§10.14 breach
+    fixtures are design-stage artifacts — attackable only once implemented
+    (reviewer noted no finding either way).
 do_not_redo:
   - >
     Do NOT pre-mint co:us:GOLD#2 / co:us:ABX#2 (evidence-less hand-written
@@ -132,6 +144,12 @@ do_not_redo:
     _meta counts as defects to zero — they are the lawful preserved history.
   - >
     co:us:ABX absent is CORRECT (prior node never minted); do not "repair" it.
+  - >
+    Do NOT expect keep-first to protect edge corrections across days —
+    belief_time is the run date (R-A1); protection = the bake not computing
+    the row. Do NOT treat GOLD's disappearance from the natural sidecar
+    (us DEFERRED 2 → 1) as a regression — it is R-A2 population mechanics
+    (store fossils appear only in wave-driven direct rebakes).
 danger_areas:
   - >
     A `merged`/`retired` lifecycle row is only as load-bearing as its

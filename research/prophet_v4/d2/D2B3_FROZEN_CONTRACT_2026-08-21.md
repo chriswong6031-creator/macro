@@ -338,3 +338,84 @@ the B/GOLD continuity (future registered DOS amendment); pre-minting `co:us:GOLD
 re-scoping the D2A derivation population or the GMI-US admission target set to active-only nodes;
 sidecar schema/state changes; Prophet admission/rank/buyability, Radar, Fusion, Earnings,
 ThemeState, ontology, PIT membership history, rights policy; D2C/D2D/D2E/D3/D5.
+
+---
+
+# AMENDMENT §1 (2026-08-21, pre-implementation design review — Opus reviewer verdict FAIL, all findings adjudicated and adopted; re-frozen by the commissioning seat)
+
+The reviewer ran the real bake and falsified three frozen claims. Every ruling below SUPERSEDES the
+conflicting §2-§12 text.
+
+**R-A1 (supersedes R-D2B3-3's no-op claim + re-shapes R-D2B3-4(a); reviewer B1/M4).**
+`belief_time` is the RUN DATE (`materialize.build(... belief_time or utc_today())`,
+materialize.py:943, stamped :338) — a re-emission on a later day is a NEW `(edge_id, belief_time)`
+key, so write-side keep-first protects nothing across days, and `changed_edges`
+(materialize.py:1055-1069) re-appends any row differing on `MATERIAL_EDGE_FIELDS` (whose first
+member is `valid_to`). The store test cited in §1 passes only because its SOURCE document carries
+the removal. **A curated correction therefore survives only if the bake stops COMPUTING the
+corrected row.** R-D2B3-4(a) is re-frozen as a POST-PASS structural filter: after all suites and
+local planes are computed (the etf node set is only complete then — single-pass ordering is luck,
+not design), remove every company node whose symbol exists in the final same-build etf node symbol
+set AND every edge whose `src` is a removed node, emitting one typed refusal receipt per
+suppression into the bake receipt. Mandatory new tests: (i) the annulled IBIT edge stays closed
+across two simulated consecutive-day bakes (belief_time d, d+1); (ii) on the day after the
+correction, `changed_edges` proposes NO row for any corrected edge_id.
+
+**R-A2 (rewrites §7's population claim; reviewer B2).** `derive_rows` runs over THIS BUILD'S
+computed node list (materialize.py:918-923), never `nodes.parquet`. Store fossils gain sidecar
+rows only through wave-driven DIRECT rebakes that derive from the committed store table (the
+2026-08-18→08-21 GOLD generations — including the D2B2 wave's own rebakes — which resolves the
+reviewer's open attribution gap: store-derived rebakes include fossils; natural computed
+generations do not). `co:us:GOLD` is ALREADY absent from the natural computed population (measured:
+3,877 nodes), so the next natural generation reads us-scope DEFERRED_IDENTITY_EXCEPTION = 1 (B
+only) regardless of D2B3 — `{DEFERRED: 2}` was never freezable. Frozen post-correction natural
+expectation (us scope, newest generation): computed us company rows 1,236 (1,238 − GOLD already
+absent − IBIT suppressed) = RESOLVED 1,210 + NOT_IN_MASTER 25 + DEFERRED_IDENTITY_EXCEPTION 1 (B);
+ENTITY_TYPE_CONFLICT 0 with the typed refusal receipt present.
+
+**R-A3 (adjudicates the §4/§7/§10.9 contradiction; reviewer B3).** The LIVE conflict counter
+lawfully drops to 0 after the correction: the cause is corrected and the typed refusal receipt is
+its machine-visible replacement. What the commission's "do not delete historical evidence" clause
+protects is HISTORY: every prior ENTITY_TYPE_CONFLICT/DEFERRED sidecar generation remains
+append-only and queryable, and no sidecar row is ever deleted or rewritten. §10.9 is restated:
+sidecar HISTORY byte-untouched; the first post-correction generation contains no `co:us:IBIT` row
+and the refusal receipt is present. §12's "sidecar counts UNCHANGED" is struck in favor of the
+R-A2 expectation table.
+
+**R-A4 (makes matrix 7 implementable; reviewer B4).** The breaks registry gains an ADDITIVE
+`ratified_at: "2026-08-14"` field on both existing rows in the implementing PR — the value is the
+ratification date already documented in each row's `ratified_by` prose and cross-verifiable
+against the merge date of PR #5613; both loaders read named keys only and ignore unknown fields
+(identity.py:76-89; check_theme_graph_contracts.py:544-548), so this is an additive metadata
+disclosure, not a semantic edit of a ratified break. Matrix 7 is restated against `ratified_at`:
+a lifecycle row whose `computed_at` predates its cited break row's `ratified_at` is a guard
+breach. New break rows MUST carry `ratified_at`.
+
+**R-A5 (fixes the §11 consumer table; reviewer M1).** The "materialize known_ids (current=True)"
+entry is DELETED — materialize is pure (reads no store; materialize.py:955), and
+`resolve_symbol_variant`'s `known_ids` is this build's in-memory dict. Added consumers with
+recorded decisions: `scripts/probe_theme_exposure_axes.py:415-416` (direct nodes.parquet read →
+adopts the current-view overlay, excluding retired nodes from symbol maps);
+`scripts/build_theme_graph.py:156` (`counts.nodes` → stays RAW total store rows; the receipt may
+additionally disclose lifecycle-aware counts but the raw count's meaning is unchanged).
+
+**R-A6 (defuses the RAISE; reviewer M2).** R-D2B3-4(b) emits a typed refusal receipt exactly like
+(a) — it NEVER raises: a raise inside the nightly bake is an outage weapon, not a fence.
+Materialize purity is preserved: lifecycle state is read by `scripts/build_theme_graph.py` (the
+impure orchestrator) and passed into `build()` as an input.
+
+**R-A7 (fixes the §0 gate recipe; reviewer M3).** `_meta.json` and the sidecar are not
+co-advanced. Gate (b) reads `data/theme_graph/identity_resolution.parquet` directly: newest
+`computed_at` generation filtered `market_scope=='us'`, expecting the PRE-correction natural shape
+RESOLVED 1,210 / NOT_IN_MASTER 25 / DEFERRED_IDENTITY_EXCEPTION 1 / ENTITY_TYPE_CONFLICT 1
+(1,237 rows — GOLD already absent per R-A2), from a generation whose consumed master
+`master_generated_at` ≥ 2026-08-22. The D2B2-US natural-proof grader must likewise expect
+DEFERRED 1, not 2 — GOLD's disappearance from the natural sidecar is R-A2 population mechanics,
+NOT a regression.
+
+**R-A8 (minor corrections; reviewer minors).** §10.10 wording: 0 node rows added/changed; ALL
+3,878 node rows untouched. §10.13: under R-A1's suppression the post-correction `_meta` counts are
+edges 8,294 / edges_latest_belief 8,292 and STABLE (the bake computes no row for either corrected
+edge afterward). §1's derive_rows filter cite corrected to identity_resolution.py:536-537. §0's
+"last written by the D2B2 merge" refers to the last COMMIT touching the sidecar; the 08-21 03:47Z
+natural bake ran and appended zero edge rows (`_meta.json rows_appended.edges: 0`).
