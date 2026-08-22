@@ -52,14 +52,21 @@ Hard constraints, all fail-closed:
    the live store but required structurally: `right ∉ {C, P}` after upper-casing →
    exclusion path, never coerced to "P"; non-finite strike (NaN, ±inf) and
    `strike <= 0` → exclusion path, never a crash and never a lawful-looking ticker.
-7. (Review round, BLOCKER B1.) OI-baseline availability is a ROOT-LEVEL precondition:
-   a root with eod rows but ZERO oi rows for a materialised session s is excluded from
-   that session's chain frame entirely and counted in the exclusion diagnostic — the
-   frozen engine's `oi_prev.fillna(0)` must never read an ABSENT baseline as a ZERO
-   baseline (measured harm: Q_oi direction reversal on a put-heavy book). Row-level
-   eod∖oi gaps (new listings, ~2% of rows) remain NaN→0 by engine law — genuinely-new
-   contracts have a true zero baseline; the guard is against systemic slice absence,
-   which the live census measured at 0 roots over the last 5 sessions.
+7. (Review round, BLOCKER B1; narrowed per verify-round N3.) OI-baseline availability
+   is a PER-CONTRACT-COVERAGE precondition, not root presence: for each (session s,
+   root) materialised, `match_rate = |oi_keys(s,root) ∩ eod_keys(s,root)| /
+   |eod_keys(s,root)|`; when `match_rate < 0.60` the root is excluded from that
+   session's chain frame entirely and the exclusion diagnostic records the reason
+   (`oi_baseline_absent`, covering both zero-row and below-floor cases) AND the
+   measured rate. Floor basis (live census 2026-08-22): organic in-window rates —
+   144 root-sessions over the last 3 sessions — min 0.825 / p5 0.939 / median 0.982
+   (worst = sector-ETF weekly listing churn), while the N3 pathology class (systemic
+   missing print scored as zero baselines, measured Q_oi flip +0.50→−0.89) sits far
+   below 0.60. Historical sub-floor root-sessions (2013–2016 min 0.016) lie outside
+   the trailing materialisation window; when one enters it, exclusion-with-diagnostic
+   is the honest disposition (one thinner history observation, never a fabricated
+   direction). Row-level eod∖oi gaps above the floor remain NaN→0 by engine law —
+   genuinely-new contracts have a true zero baseline.
 
 `engine.thetadata_store.make_chain_provider()` is PROHIBITED on the AD-1 path (string
 `expiry`, no `strike_ticker`, and the forbidden volume-weighted-strike spot fallback).
@@ -100,13 +107,22 @@ end-of-session-s quantity consumed only for sessions ≤ S.
 
 ```
 n_eod(s), n_oi(s) = count of UNIVERSE roots with ≥1 row dated s in that tier
-full(s)  := is_nyse_session(s) AND n_eod(s) > 0
-            AND n_oi(s) >= 0.90 * n_eod(s) AND n_eod(s) >= 0.90 * n_oi(s)
-            # symmetric floor (review round): a half-written tier on EITHER side
-            # disqualifies the session; a partial eod[D] (< 90% of oi[D]) can
-            # therefore never flip D into F and move S.
-F        = ascending [s : full(s)]
-X        = next_nyse_session(max(F)), admitted iff n_oi(X) >= 0.90 * n_eod(max(F))
+
+# Verify-round N4 correction: the earlier symmetric 0.90 floor was the wrong
+# instrument — it blacked out the whole board (MIXED_VINTAGE, present=0) whenever
+# the eod tier trailed the oi tier by >10% store-wide, where the honest state is
+# graded coverage. Split the roles:
+plaus(s)   := is_nyse_session(s) AND n_eod(s) > 0
+              AND n_oi(s) >= 0.90 * n_eod(s)      # OI baseline coverage vs s's own eod population
+              AND n_eod(s) >= 0.25 * n_oi(s)      # pathology floor only (blocks 3-vs-400 thinness)
+F          = ascending [s : plaus(s)]             # history membership: graded partials admitted
+S-role     : while F and n_eod(max F) < 0.90 * n_oi(max F): demote max F from F
+             # balance is required only of the session that can take the S role —
+             # a mid-capture partial eod[D] is demoted, stays D/X-eligible, and can
+             # never flip as_of_session; no store shape blacks out the whole board.
+X          = next_nyse_session(max F) after demotion,
+             admitted iff n_oi(X) >= 0.90 * n_eod(max F)
+             (a demoted session is naturally the X candidate when consecutive)
 committed_sessions = sorted(F ∪ {X if admitted})
 ```
 
@@ -179,10 +195,14 @@ year files → receipt churn would break contract §7's semantic no-op).
   resolved close VALUE (fixed decimal repr), the ladder `price_source` tag, and the
   series last index date — a rung-2 close change MUST move `receipt_id`
   (review round, BLOCKER B2; property-tested).
-- NEW `input_receipts` entry `session_presence`: sha256 over the ordered per-candidate
-  (session, n_eod, n_oi) counts consumed by the §C predicate — binds the presence
-  facts that drive S/D selection (review round, M1). Counts are re-pull-stable, so
-  contract §7's semantic no-op survives byte rewrites.
+- NEW `input_receipts` entry `session_presence` (narrowed per verify-round N2): sha256
+  over (a) the ordered per-candidate (session, plaus_bool, balanced_bool) decision
+  tuples, plus (b) the exact (n_eod, n_oi) counts for the decision-critical sessions
+  only — final max(F), every demoted session, and the X candidate. This binds every
+  presence fact that can move S/D selection (M1's property) while a count drift on a
+  never-materialised candidate that flips no decision no longer churns `receipt_id`.
+  Booleans and counts are re-pull-stable, so contract §7's semantic no-op survives
+  byte rewrites.
 - `chains_S`/`chains_D` receipts: keep logical_source names; `path` becomes the logical
   URI; `sha256` = that session's composite digest. `store_resolution` receipt: the
   hash binds the resolver SOURCE TAG (env/data_dir/ops-wt), NOT the absolute path —
