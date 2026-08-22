@@ -17,8 +17,26 @@ Checks:
   (d) the embedded si_workspace.js bytes equal templates/si_workspace.js bytes
       (modulo only the documented </script>-boundary escape).
   (e) output size is under the ~6MB limit.
+  (f) R3B1-14 bidirectional capability inventory, both directions
+      (inventory_check.py) — expected production inventory -> candidate, and
+      candidate -> allowed production/projection inventory.
+  (g) R3B1-14 unique-kill mutation suite (mutation_suite.py) — every pinned
+      hero capability's removal produces a unique, non-empty red.
+  (h) duplicate-ID / ARIA-reference audit (aria_id_audit.py).
+  (i) EN/ZH document-language probe (lang_probe.py).
+  (j) severe-zoom clipping matrix — asserts the committed
+      lane_crops_b/zoom_sweep.json artifact exists and reports 0 failing
+      cells (from committed artifact; NOT rerun here — browser-based gate).
+  (k) contrast matrix — asserts the committed lane_crops_b/CONTRAST_TABLE.md
+      + lane_crops_b/contrast_audit.json artifacts exist and report 0 AA
+      failures (from committed artifact; NOT rerun here — browser-based gate).
 
-Exits 0 iff every check passes; prints a PASS/FAIL line per check.
+Checks (f)-(i) shell out to Playwright-based sibling scripts in this
+directory and therefore need a Playwright-enabled Python interpreter to run
+this file at all (the checks above, (a)-(e), are pure stdlib and do not).
+
+Exits 0 iff every check passes; prints a PASS/FAIL line per check, and a
+final quotable summary block.
 """
 from __future__ import annotations
 
@@ -45,6 +63,15 @@ OUT_HTML_PATH = PROPOSAL_DIR / "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html"
 OUT_MANIFEST_PATH = PROPOSAL_DIR / "BUILD_MANIFEST.json"
 
 BUILD_SCRIPT = BUILD_DIR / "build_reference.py"
+INVENTORY_CHECK_SCRIPT = BUILD_DIR / "inventory_check.py"
+MUTATION_SUITE_SCRIPT = BUILD_DIR / "mutation_suite.py"
+ARIA_ID_AUDIT_SCRIPT = BUILD_DIR / "aria_id_audit.py"
+LANG_PROBE_SCRIPT = BUILD_DIR / "lang_probe.py"
+
+LANE_CROPS_B = BUILD_DIR / "lane_crops_b"
+ZOOM_SWEEP_JSON = LANE_CROPS_B / "zoom_sweep.json"
+CONTRAST_TABLE_MD = LANE_CROPS_B / "CONTRAST_TABLE.md"
+CONTRAST_AUDIT_JSON = LANE_CROPS_B / "contrast_audit.json"
 
 SIZE_LIMIT = 6 * 1024 * 1024
 
@@ -178,14 +205,124 @@ def main() -> int:
     check("(e) output size under limit", size <= SIZE_LIMIT,
           f"{size} bytes ({size/1024/1024:.2f} MiB) vs {SIZE_LIMIT} byte limit")
 
+    # ── (f) R3B1-14 bidirectional capability inventory ──────────────────
+    run_inventory_and_mutation_checks()
+
+    # ── (h) duplicate-ID / ARIA-reference audit ──────────────────────────
+    run_sibling_script_check(
+        "(h) duplicate-ID / ARIA-reference audit (aria_id_audit.py)",
+        [sys.executable, str(ARIA_ID_AUDIT_SCRIPT)],
+    )
+
+    # ── (i) EN/ZH document-language probe ────────────────────────────────
+    run_sibling_script_check(
+        "(i) EN/ZH document-language probe (lang_probe.py)",
+        [sys.executable, str(LANG_PROBE_SCRIPT)],
+    )
+
+    # ── (j)/(k) committed browser-gate artifacts (not rerun here) ────────
+    check_committed_zoom_sweep()
+    check_committed_contrast_audit()
+
     return print_summary()
+
+
+def run_sibling_script_check(name: str, cmd: list[str]) -> None:
+    r = subprocess.run(cmd, cwd=str(BUILD_DIR), capture_output=True, text=True)
+    out = (r.stdout or "") + (r.stderr or "")
+    tail_lines = [ln for ln in out.strip().splitlines() if ln.strip()][-3:]
+    detail = " | ".join(tail_lines) if tail_lines else f"rc={r.returncode}, no output"
+    check(name, r.returncode == 0, detail)
+
+
+def run_inventory_and_mutation_checks() -> None:
+    if not INVENTORY_CHECK_SCRIPT.exists() or not MUTATION_SUITE_SCRIPT.exists():
+        check("(f) R3B1-14 bidirectional capability inventory (both directions)", False,
+              "inventory_check.py or mutation_suite.py missing")
+        check("(g) R3B1-14 unique-kill mutation suite", False, "prerequisite script missing")
+        return
+
+    r = subprocess.run(
+        [sys.executable, str(INVENTORY_CHECK_SCRIPT)],
+        cwd=str(BUILD_DIR), capture_output=True, text=True,
+    )
+    out = (r.stdout or "") + (r.stderr or "")
+    n_pass_d1 = out.count("[PASS] D1")
+    n_fail_d1 = out.count("[FAIL] D1")
+    n_pass_d2 = out.count("[PASS] D2")
+    n_fail_d2 = out.count("[FAIL] D2")
+    summary_line = next((ln for ln in reversed(out.strip().splitlines())
+                          if "inventory checks passed" in ln), out.strip().splitlines()[-1] if out.strip() else "")
+    check("(f) R3B1-14 bidirectional capability inventory (both directions)",
+          r.returncode == 0,
+          f"direction1(expected->candidate) {n_pass_d1} pass / {n_fail_d1} fail; "
+          f"direction2(candidate->allowed) {n_pass_d2} pass / {n_fail_d2} fail; {summary_line.strip()}")
+
+    r2 = subprocess.run(
+        [sys.executable, str(MUTATION_SUITE_SCRIPT)],
+        cwd=str(BUILD_DIR), capture_output=True, text=True,
+    )
+    out2 = (r2.stdout or "") + (r2.stderr or "")
+    summary_line2 = next((ln for ln in reversed(out2.strip().splitlines())
+                           if "mutation-suite checks passed" in ln), out2.strip().splitlines()[-1] if out2.strip() else "")
+    n_got_red = out2.count("produced a red")
+    check("(g) R3B1-14 unique-kill mutation suite (every capability's removal is a unique red)",
+          r2.returncode == 0,
+          f"{n_got_red} mutation lines evaluated; {summary_line2.strip()}")
+
+
+def check_committed_zoom_sweep() -> None:
+    if not ZOOM_SWEEP_JSON.exists():
+        check("(j) severe zoom matrix (from committed artifact)", False,
+              f"missing {ZOOM_SWEEP_JSON}")
+        return
+    cells = json.loads(ZOOM_SWEEP_JSON.read_text(encoding="utf-8"))
+    failing = [c for c in cells if not c.get("pass", False)]
+    check("(j) severe zoom matrix (from committed artifact)", not failing,
+          f"{len(cells)} cells swept, {len(failing)} failing "
+          f"(lane_crops_b/zoom_sweep.json, reproduce with `<playwright-python> zoom_sweep.py`)")
+
+
+def check_committed_contrast_audit() -> None:
+    if not CONTRAST_TABLE_MD.exists() or not CONTRAST_AUDIT_JSON.exists():
+        check("(k) contrast matrix (from committed artifact)", False,
+              f"missing {CONTRAST_TABLE_MD} or {CONTRAST_AUDIT_JSON}")
+        return
+    table_text = CONTRAST_TABLE_MD.read_text(encoding="utf-8")
+    m = re.search(r"\|\s*AA failures\s*\|\s*\*\*(\d+)\*\*\s*\|", table_text)
+    table_aa_failures = int(m.group(1)) if m else None
+
+    audit = json.loads(CONTRAST_AUDIT_JSON.read_text(encoding="utf-8"))
+    cells = audit.get("cells", [])
+    scored = [c for c in cells if c.get("scope") == "reference_authored"]
+    json_fails = [c for c in scored if not c.get("pass") and not c.get("suspect_parse")]
+
+    ok = (m is not None and table_aa_failures == 0 and len(json_fails) == 0
+          and table_aa_failures == len(json_fails))
+    check("(k) contrast matrix (from committed artifact)", ok,
+          f"CONTRAST_TABLE.md declares AA failures={table_aa_failures}; "
+          f"contrast_audit.json recomputes {len(json_fails)} failing of "
+          f"{len(scored)} reference-authored cells "
+          f"(reproduce with `<playwright-python> contrast_audit.py`)")
 
 
 def print_summary() -> int:
     n_pass = sum(1 for _n, ok, _d in results if ok)
     n_total = len(results)
+    all_green = n_pass == n_total
     print(f"\n{n_pass}/{n_total} checks passed.")
-    return 0 if n_pass == n_total else 1
+
+    print("\n" + "=" * 78)
+    print("R3B1-14 VERIFICATION SUMMARY — quotable")
+    print("=" * 78)
+    for i, (name, ok, _detail) in enumerate(results, 1):
+        print(f"{i:2}. [{'PASS' if ok else 'FAIL'}] {name}")
+    print("-" * 78)
+    print(f"RESULT: {'ALL GREEN' if all_green else 'RED'} — {n_pass}/{n_total} checks passed "
+          f"(candidate {OUT_HTML_PATH.name})")
+    print("=" * 78)
+
+    return 0 if all_green else 1
 
 
 if __name__ == "__main__":
