@@ -24,11 +24,11 @@
    "retrieved_at": "2026-08-22T08:00:00+00:00",
    "known_at": "2026-08-22T08:00:00+00:00",
    "claim_scopes": [
-    "program_identity",
     "capability_need",
+    "milestone",
     "program_capability_link",
-    "role",
-    "milestone"
+    "program_identity",
+    "role"
    ]
   },
   {
@@ -40,9 +40,9 @@
    "retrieved_at": "2026-08-22T08:00:00+00:00",
    "known_at": "2026-08-22T08:00:00+00:00",
    "claim_scopes": [
+    "program_event_link",
     "program_identity",
-    "role",
-    "program_event_link"
+    "role"
    ]
   },
   {
@@ -66,11 +66,11 @@
    "sha256": "50fb58872bd7e549915dd0742e25df001bb4ad99627a3a120da093edfd3fc70d",
    "source_url": "https://www.defense.gov/example-program-page/",
    "retrieved_from_url": "https://www.defense.gov/example-program-page/",
-   "retrieved_at": "2026-08-22T08:00:00+00:00",
-   "known_at": "2026-08-22T08:00:00+00:00",
+   "retrieved_at": "2026-01-10T00:00:00+00:00",
+   "known_at": "2026-01-10T00:00:00+00:00",
    "claim_scopes": [
-    "program_identity",
-    "milestone"
+    "milestone",
+    "program_identity"
    ]
   }
  ],
@@ -468,5 +468,70 @@
    "state": "reviewed_none"
   },
   "assertion": "reviewed_none is reproducible from the artifact alone: the coverage row (scope milestones, admitted_count 0) exists and zero admitted milestone rows cite the subject program; deleting the coverage row flips the derivation to not_reviewed; the coverage row records the human-review act and manufactures no source truth."
+ },
+ "I_conflict_lifecycle": {
+  "second_link": {
+   "link_id": "prog-event:a09c765138c7",
+   "revision": 1,
+   "program_id": "acq-program:example-alpha",
+   "event_contract": "government_procurement_event.v2",
+   "event_id": "govws-0000000000000000example",
+   "event_source_identity_id": "action:EXAMPLE_SYNTHETIC_0",
+   "event_source_identity_content_sha256": "a15b4df2ff5653b980308567a2ec051bf57db7793106eb64629f4197c54fd3ac",
+   "canonical_award_identity": "generated:EXAMPLE_SYNTHETIC_AWARD",
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2026-07-29T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:50fb58872bd7"
+   ]
+  },
+  "conflicts_row": {
+   "conflict_id": "conf:525146eb8895",
+   "scope": "program_event_link",
+   "subject_type": "award_event",
+   "subject_id": "govws-0000000000000000example",
+   "candidate_row_ids": [
+    "prog-event:1b5c5cc8b33d",
+    "prog-event:a09c765138c7"
+   ],
+   "reason_code": "multi_program_event_attribution",
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_from": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "evidence_refs": [
+    "ev:50fb58872bd7"
+   ]
+  },
+  "clearing_overrides": [
+   {
+    "override_id": "ovr:a9b793a06392",
+    "action": "retire_row",
+    "target_row_id": "prog-event:a09c765138c7",
+    "verification_state": "reviewed",
+    "known_at": "2026-08-23T08:00:00+00:00",
+    "valid_from": "2026-08-23T08:00:00+00:00",
+    "valid_to": null,
+    "evidence_refs": [
+     "ev:50fb58872bd7"
+    ]
+   },
+   {
+    "override_id": "ovr:43bfc6537501",
+    "action": "retire_row",
+    "target_row_id": "conf:525146eb8895",
+    "verification_state": "reviewed",
+    "known_at": "2026-08-23T08:00:00+00:00",
+    "valid_from": "2026-08-23T08:00:00+00:00",
+    "valid_to": null,
+    "evidence_refs": [
+     "ev:50fb58872bd7"
+    ]
+   }
+  ],
+  "conf_normalized_preimage": "program_event_link|award_event|govws-0000000000000000example|prog-event:1b5c5cc8b33d,prog-event:a09c765138c7|2026-08-22t08:00:00+00:00",
+  "assertion": "DECLARED (analysis_as_of >= known_at(conflict), < K2): the conflicts row is CURRENT, so workspace program_link for the event is conflicted and every rail whose current links cite the event (or whose link rows appear in candidate_row_ids) derives link_state conflicted. CLEARED (analysis_as_of >= K2): both overrides are visible - the conflicts row and the losing link are retired, exactly ONE current link remains (the curate invariant a conflicts-row retirement must restore), and BOTH surfaces re-derive reviewed from links + coverage; replay before K2 still shows conflicted (overrides act only from their known_at). A clearing act that would leave >= 2 current links on the subject is refused conflict_resolution_incomplete."
  }
 }
