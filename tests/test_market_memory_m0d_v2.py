@@ -1288,3 +1288,244 @@ def test_h13_digest_change_in_seal_not_eligible() -> None:
     )
     assert state.opportunity_eligible is False
     assert "differing" in state.reason
+
+
+# ============================================================================
+# N1–N4 / B3 HOSTILE TESTS (third repair, 2026-08-21)
+# ============================================================================
+
+
+def test_n1_ready_loop_v1_only() -> None:
+    """N1: reciprocal_market_memory_units_ready must NOT list v2 units.
+
+    v2 units are not on disk on first deploy, so including them would deadlock
+    the v1 W2C attestation gate.
+    """
+    import re
+    update_sh = ROOT / "app" / "deploy" / "update.sh"
+    content = update_sh.read_text()
+
+    # Extract the function body of reciprocal_market_memory_units_ready
+    m = re.search(
+        r"reciprocal_market_memory_units_ready\(\)\s*\{(.*?)\n\}",
+        content,
+        re.DOTALL,
+    )
+    assert m, "reciprocal_market_memory_units_ready function not found"
+    fn_body = m.group(1)
+
+    for v2_profile in ("source-spy-rest", "technicals-v2", "experience-v2"):
+        assert v2_profile not in fn_body, (
+            f"reciprocal_market_memory_units_ready must NOT contain '{v2_profile}'; "
+            "v2 units may not be on disk on first deploy and would deadlock the v1 gate"
+        )
+
+    # v1 units must still be present
+    for v1_profile in ("source", "context", "identity", "breadth", "technicals", "experience", "production-records"):
+        assert v1_profile in fn_body, (
+            f"reciprocal_market_memory_units_ready must still contain v1 profile '{v1_profile}'"
+        )
+
+
+def test_n1_stop_loop_has_v2_profiles() -> None:
+    """N1: stop_reciprocal_market_memory_writers must still include v2 profiles."""
+    import re
+    update_sh = ROOT / "app" / "deploy" / "update.sh"
+    content = update_sh.read_text()
+
+    m = re.search(
+        r"stop_reciprocal_market_memory_writers\(\)\s*\{(.*?)\n\}",
+        content,
+        re.DOTALL,
+    )
+    assert m, "stop_reciprocal_market_memory_writers function not found"
+    fn_body = m.group(1)
+
+    for profile in ("source-spy-rest", "technicals-v2", "experience-v2"):
+        assert profile in fn_body, (
+            f"stop_reciprocal_market_memory_writers must contain '{profile}'"
+        )
+
+
+def test_n4_rearm_loop_has_v2_profiles() -> None:
+    """N4: The re-arm loop (for RECIPROCAL_PROFILE in ...) must include v2 profiles."""
+    update_sh = ROOT / "app" / "deploy" / "update.sh"
+    content = update_sh.read_text()
+
+    import re
+    m = re.search(r"for RECIPROCAL_PROFILE in ([^\n;]+)", content)
+    assert m, "for RECIPROCAL_PROFILE in ... not found in update.sh"
+    loop_line = m.group(1)
+
+    for profile in ("source-spy-rest", "technicals-v2", "experience-v2"):
+        assert profile in loop_line, (
+            f"re-arm loop must include '{profile}'; got: {loop_line!r}"
+        )
+
+
+def test_n2_b3_marker_uses_macro_api_venv_and_not_env_python() -> None:
+    """N2/B3: install marker must use /opt/macro-api/.venv/bin/python, not APP_DIR/env/bin/python3."""
+    update_sh = ROOT / "app" / "deploy" / "update.sh"
+    content = update_sh.read_text()
+
+    # The correct interpreter must be present near --write-install-marker
+    import re
+    # Find lines containing --write-install-marker
+    marker_region = []
+    lines = content.splitlines()
+    for i, line in enumerate(lines):
+        if "--write-install-marker" in line:
+            # grab ±5 lines for context
+            start = max(0, i - 5)
+            end = min(len(lines), i + 5)
+            marker_region.extend(lines[start:end])
+
+    assert marker_region, "--write-install-marker not found in update.sh"
+    region_text = "\n".join(marker_region)
+
+    assert "/opt/macro-api/.venv/bin/python" in region_text, (
+        "update.sh must use /opt/macro-api/.venv/bin/python near --write-install-marker; "
+        "found: " + region_text
+    )
+    assert "env/bin/python3" not in region_text, (
+        "update.sh must NOT use APP_DIR/env/bin/python3 near --write-install-marker"
+    )
+
+
+def test_n2_b3_marker_write_outside_unit_updated_block() -> None:
+    """N2/B3: Marker write must not be exclusively inside MARKET_MEMORY_EXPERIENCE_V2_UNIT_UPDATED -eq 1."""
+    update_sh = ROOT / "app" / "deploy" / "update.sh"
+    content = update_sh.read_text()
+
+    import re
+    # Find the V2_INSTALL_MARKER block
+    m = re.search(
+        r'V2_INSTALL_MARKER=.*?(?:done|fi)',
+        content,
+        re.DOTALL,
+    )
+    assert m, "V2_INSTALL_MARKER block not found in update.sh"
+    marker_block = m.group(0)
+
+    # The marker check must be keyed on the marker file being absent,
+    # not exclusively on UNIT_UPDATED. We check by asserting that
+    # V2_INSTALL_MARKER appears outside an "if UNIT_UPDATED -eq 1" context.
+    # Simple heuristic: the line before V2_INSTALL_MARKER should NOT be
+    # "if [ \"$MARKET_MEMORY_EXPERIENCE_V2_UNIT_UPDATED\" -eq 1 ]"
+    idx = content.find("V2_INSTALL_MARKER=")
+    assert idx != -1
+    preceding = content[max(0, idx - 400):idx]
+    # In the fixed version, V2_INSTALL_MARKER comes after the install block closes (fi)
+    # and is NOT wrapped in UNIT_UPDATED check.
+    assert 'MARKET_MEMORY_EXPERIENCE_V2_UNIT_UPDATED" -eq 1' not in preceding[-200:], (
+        "Marker write must not be exclusively gated on MARKET_MEMORY_EXPERIENCE_V2_UNIT_UPDATED -eq 1; "
+        "it must also run when units were already current (to handle first-ship)"
+    )
+
+
+def test_n3_runtime_regex_matches_v1_service_paths() -> None:
+    """N3: OPTIONS_RUNTIME_CLOSURE_REGEX must match v1 service/timer paths."""
+    import re as _re
+    update_sh = ROOT / "app" / "deploy" / "update.sh"
+    content = update_sh.read_text()
+
+    m = _re.search(r"OPTIONS_RUNTIME_CLOSURE_REGEX='([^']+)'", content)
+    assert m, "OPTIONS_RUNTIME_CLOSURE_REGEX not found"
+    regex_val = m.group(1)
+
+    should_match = [
+        "app/deploy/macro-market-memory-source.service",
+        "app/deploy/macro-market-memory-source.timer",
+        "app/deploy/macro-market-memory-experience.timer",
+        "app/deploy/macro-market-memory-technicals.service",
+        "app/deploy/macro-market-memory-breadth.timer",
+        "app/deploy/macro-market-memory-production-records.service",
+        "app/deploy/macro-market-memory-options.service",
+    ]
+    should_not_match = [
+        "app/deploy/macro-market-memory-source-spy-rest.service",
+        "app/deploy/macro-market-memory-technicals-v2.service",
+        "app/deploy/macro-market-memory-experience-v2.timer",
+    ]
+
+    for path in should_match:
+        assert _re.match(regex_val, path), (
+            f"OPTIONS_RUNTIME_CLOSURE_REGEX must match {path!r} (v1 unit) but did not"
+        )
+    for path in should_not_match:
+        assert not _re.match(regex_val, path), (
+            f"OPTIONS_RUNTIME_CLOSURE_REGEX must NOT match {path!r} (v2 unit)"
+        )
+
+
+def test_n5_ingest_main_no_creds_returns_1(tmp_path: Path) -> None:
+    """N5: ingest_market_memory_sources_spy._main returns 1 when no credentials available."""
+    from scripts.ingest_market_memory_sources_spy import _main as ingest_main
+
+    store_dir = tmp_path / "state" / "sources-spy-rest-v1"
+    store_dir.mkdir(parents=True)
+
+    env_backup = {}
+    for key in ("CREDENTIALS_DIRECTORY", "MASSIVE_API_KEY", "POLYGON_API_KEY"):
+        env_backup[key] = os.environ.pop(key, None)
+    try:
+        # Pass session so ingest can proceed to the credential check
+        rc = ingest_main([
+            "--store-root", str(store_dir),
+            "--session", "2026-08-21",
+        ])
+        assert rc == 1, (
+            f"_main must return 1 when no credentials are available; got {rc}"
+        )
+    finally:
+        for key, val in env_backup.items():
+            if val is not None:
+                os.environ[key] = val
+
+
+def test_n6_technicals_main_no_session_returns_0() -> None:
+    """N6: capture_market_memory_technicals_v2._main returns 0 on no_session (weekend clock)."""
+    from scripts.capture_market_memory_technicals_v2 import _main as tech_main
+
+    # 2026-08-17 is Monday; T-1 = 2026-08-16 (Sunday) → not an XNYS session → no_session
+    monday_clock = lambda: datetime(2026, 8, 17, 4, 7, 0, tzinfo=timezone.utc)
+    rc = tech_main([], clock=monday_clock)
+    assert rc == 0, (
+        f"_main must return 0 (not 1) when derive_morning_session is None; got {rc}"
+    )
+
+
+def test_n7_accrue_v2_outside_window_with_explicit_session_writes_nothing(tmp_path: Path) -> None:
+    """N7: accrue_spy_experience_v2 with explicit past session + out-of-window clock writes no record."""
+    from scripts.accrue_market_memory_spy_experience_v2 import accrue_spy_experience_v2
+
+    exp_root = tmp_path / "state" / "experience-v2"
+    exp_root.mkdir(parents=True)
+
+    # Plant install marker so activation check passes
+    marker = exp_root / ".v2_install_verified"
+    marker.write_text("2026-08-19T04:32:00Z\n")
+
+    records_dir = exp_root / "records"
+    records_dir.mkdir(parents=True)
+
+    # clock = 2026-08-21 12:00Z (far outside [04:30Z, 04:45Z))
+    out_of_window_clock = lambda: datetime(2026, 8, 21, 12, 0, 0, tzinfo=timezone.utc)
+
+    result = accrue_spy_experience_v2(
+        repository_root=ROOT,
+        experience_root=exp_root,
+        source_root=tmp_path / "state" / "sources-spy-rest-v1",
+        technicals_v2_root=tmp_path / "state" / "technicals-v2",
+        session=date(2026, 8, 19),
+        clock=out_of_window_clock,
+    )
+
+    assert result.get("status") == "outside_admission_window", (
+        f"Expected outside_admission_window but got: {result}"
+    )
+
+    record_path = records_dir / "2026-08-19.json"
+    assert not record_path.exists(), (
+        "records/2026-08-19.json must NOT be created when outside admission window"
+    )

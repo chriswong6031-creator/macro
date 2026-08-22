@@ -426,11 +426,9 @@ def accrue_spy_experience_v2(
             }
         session = derived
 
-    # M2: Enforce admission window [04:30:00Z, 04:45:00Z) when not in test mode
-    # (session passed explicitly bypasses the window so tests can still run).
-    # Only enforce when now is available and session was derived (not explicit).
-    # Actually: always enforce the window check on 'now', even if session is explicit,
-    # but allow tests to pass a clock that returns an in-window time.
+    # M2: Enforce admission window [04:30:00Z, 04:45:00Z) on now, always —
+    # even when session is passed explicitly. Outside the window means no accrual;
+    # create-once semantics would poison the record slot if we ran early.
     utc_now = now.astimezone(timezone.utc)
     today = utc_now.date()
     admission_open = datetime.combine(
@@ -443,23 +441,16 @@ def accrue_spy_experience_v2(
         time(_ADMISSION_WINDOW_CLOSE_HOUR, _ADMISSION_WINDOW_CLOSE_MINUTE),
         tzinfo=timezone.utc,
     )
-    # Only enforce the window for the "today" accrual path.
-    # If session was explicitly passed (not None), allow out-of-window (test/recovery mode).
-    # We distinguish by checking if 'now' would derive the same session.
-    from engine.neuralweb.market_memory_sources_spy import derive_morning_session as _derive  # noqa: PLC0415
-    _derived_session = _derive(now)
-    if _derived_session is not None and _derived_session == session:
-        # Live path: enforce admission window
-        if not (admission_open <= utc_now < admission_close):
-            return {
-                "status": "outside_admission_window",
-                "session": session.isoformat(),
-                "message": (
-                    f"experience-v2 accrual outside admission window "
-                    f"[{admission_open.isoformat()}Z, {admission_close.isoformat()}Z): "
-                    f"now={utc_now.isoformat()}"
-                ),
-            }
+    if not (admission_open <= utc_now < admission_close):
+        return {
+            "status": "outside_admission_window",
+            "session": session.isoformat(),
+            "message": (
+                f"experience-v2 accrual outside admission window "
+                f"[{admission_open.isoformat()}Z, {admission_close.isoformat()}Z): "
+                f"now={utc_now.isoformat()}"
+            ),
+        }
 
     source_path = Path(source_root)
     tech_path = Path(technicals_v2_root)

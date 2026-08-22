@@ -736,17 +736,32 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def _main(argv: list[str] | None = None) -> int:
+def _main(argv: list[str] | None = None, *, clock: Any = None) -> int:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
     args = _parse_args(argv)
+    clock_fn = clock or _utc_now
+
+    # Handle no_session gracefully: if no session can be derived (weekend/holiday),
+    # return 0 so systemd does not record a failure. Experience-v2 uses the same pattern.
+    if args.session is None:
+        from engine.neuralweb.market_memory_sources_spy import derive_morning_session  # noqa: PLC0415
+        derived = derive_morning_session(clock_fn())
+        if derived is None:
+            print(json.dumps({"status": "no_session"}))
+            return 0
+        session_arg: date | None = derived
+    else:
+        session_arg = args.session
+
     try:
         result = capture_technicals_v2(
             source_root=args.source_root,
             store_root=args.store_root,
-            session=args.session,
+            session=session_arg,
+            clock=clock_fn,
         )
         receipt = {
             "schema": "market_memory.technicals_v2_capture_run.v1",
