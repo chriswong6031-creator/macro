@@ -29,7 +29,6 @@ from .event_workspace import (
     _absence,
     _iso,
     _lifecycle_payload,
-    _span_payload_from_transcript,
     _utc,
     validate_event_workspace,
 )
@@ -158,6 +157,7 @@ def build_event_workspace(
     )
     aliases = aliases_for(issuer.company_id, fiscal_period, issuer.tickers_at(asof))
     event_id = aliases.canonical_event_id
+    has_transcript = transcript is not None
 
     security_ids = issuer.security_ids_at(asof)
     event = CompanyEvent.create(
@@ -171,7 +171,13 @@ def build_event_workspace(
         observed_at=clock,
         source_available_at=available,
         effective_at=available,
-        reason="issuer 8-K Item 2.02 and transcript observed",
+        # F8: the reason names only the sources this event actually has —
+        # claiming a transcript was observed on an event with none is a false
+        # receipt in the lifecycle record itself.
+        reason=(
+            "issuer 8-K Item 2.02 and transcript observed" if has_transcript
+            else "issuer 8-K Item 2.02 observed; no transcript held"
+        ),
         document_ids=(bound.revision.document_id,),
     )
     event = event.apply_transition(
@@ -179,7 +185,10 @@ def build_event_workspace(
         observed_at=clock,
         source_available_at=available,
         effective_at=available,
-        reason="primary exhibit and transcript revisions available",
+        reason=(
+            "primary exhibit and transcript revisions available" if has_transcript
+            else "primary exhibit revision available; no transcript held"
+        ),
     )
     if prior_source_sha256 and prior_source_sha256 != bound.revision.source_sha256:
         event = event.apply_transition(
@@ -193,7 +202,6 @@ def build_event_workspace(
 
     release_doc_id = bound.revision.document_id
     tx_doc_id = f"tx:{aliases.earnings_narrative_keys[0]}"
-    has_transcript = transcript is not None
     segments = list((transcript or {}).get("segments") or [])
     active_profile = profile or apple_profile()
 
@@ -305,37 +313,29 @@ def build_event_workspace(
         "basis_match": False,
     }]
 
-    guidance: list[dict[str, Any]] = []
-    if has_transcript and len(segments) > 26:
-        guide_literal = "grow between 9%-11% year-over-year"
-        guide_span = _span_payload_from_transcript(
-            document_id=tx_doc_id,
-            body_sha256=transcript_sha256 or "",
-            segment_index=26,
-            segment=segments[26],
-            literal=guide_literal,
+    # F6: guidance extraction moves behind the IssuerProfile seam — the
+    # segment index, literal, and 9.0/11.0 bounds below were Apple-only
+    # constructions sitting in generic code.  apple_profile() reproduces this
+    # exact block unchanged; a homebuilder profile returns [].
+    guidance: list[dict[str, Any]] = list(
+        active_profile.extract_guidance(
+            segments=segments, document_id=tx_doc_id, body_sha256=transcript_sha256 or "", event_id=event_id,
         )
-        if guide_span is not None:
-            guidance.append({
-                "schema": "guidance_item.v1",
-                "metric": "revenue_yoy_pct",
-                "low": 9.0,
-                "high": 11.0,
-                "unit": "percent",
-                "horizon": "FY2026 Q4",
-                "status": "introduced",
-                "source_span": guide_span,
-            })
+    )
 
+    # F7: "unstructured Q&A" only makes sense as a warning about a transcript
+    # this event actually holds — an event with no transcript at all already
+    # says so via fact_questions_count's own typed absence.
     warnings = sorted({
         "slides_absent",
         "consensus_unlicensed",
         "reaction_not_joined",
-        "questions_count_unstructured",
+        *(["questions_count_unstructured"] if has_transcript else []),
         *(["wire_record_not_found"] if not wire_record_found else []),
         *([join_warning] if join_warning else []),
     } & WORKSPACE_WARNINGS)
 
+    public_wire_slug = aliases.public_slugs[0] if aliases.public_slugs else LIVE_PUBLIC_SLUG
     sources = [
         {
             "kind": "issuer_release",
@@ -364,12 +364,20 @@ def build_event_workspace(
         },
         {
             "kind": "public_wire",
-            "slug": aliases.public_slugs[0] if aliases.public_slugs else LIVE_PUBLIC_SLUG,
+            "slug": public_wire_slug,
             "receipt_state": "typed_absence" if not wire_record_found else "address_only",
             "typed_absence": None if wire_record_found else _absence(
                 reason="no_source_document",
                 subject="public_wire",
-                detail=f"{LIVE_PUBLIC_SLUG} was 404 on 2026-08-16",
+                # F6: the receipted 404 date/slug is a genuine historical
+                # fact about ONLY the flagship's own slug — reusing it for
+                # every other event would be a false receipt (a DHI
+                # workspace citing "aapl-2026q3-call-record was 404").  Any
+                # other event's own slug has simply never been checked yet.
+                detail=(
+                    f"{LIVE_PUBLIC_SLUG} was 404 on 2026-08-16" if public_wire_slug == LIVE_PUBLIC_SLUG
+                    else f"{public_wire_slug} has not been checked against the public wire"
+                ),
                 event_id=event_id,
             ),
         },

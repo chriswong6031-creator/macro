@@ -145,11 +145,16 @@ _HOMEBUILDER_ISSUER_FACTORIES: dict[str, Callable[[], IssuerIdentity]] = {
 
 ReleaseFactExtractor = Callable[..., list[dict[str, Any]]]
 TranscriptClaimExtractor = Callable[..., list[dict[str, Any]]]
+GuidanceExtractor = Callable[..., list[dict[str, Any]]]
+
+
+def _no_guidance(**_kwargs: Any) -> list[dict[str, Any]]:
+    return []
 
 
 @dataclass(frozen=True)
 class IssuerProfile:
-    """Two callables; nothing here inspects ``ticker`` to change behavior.
+    """Three callables; nothing here inspects ``ticker`` to change behavior.
 
     ``extract_release_facts(*, bound, document_id, event_id)`` returns
     additional ``event_fact.v1`` entries.
@@ -158,11 +163,18 @@ class IssuerProfile:
     event_id)`` returns ``event_claim.v1`` entries (``[]`` when the issuer's
     profile does not read the transcript, e.g. a homebuilder with no held
     call).
+
+    ``extract_guidance(*, segments, document_id, body_sha256, event_id)``
+    returns ``guidance_item.v1`` entries (F6 — this used to be a hardcoded
+    Apple-only block sitting in generic ``build_event_workspace`` code:
+    fixed segment index, fixed literal, fixed 9.0/11.0 bounds).  Defaults to
+    ``[]`` so every homebuilder profile gets it for free.
     """
 
     ticker: str
     extract_release_facts: ReleaseFactExtractor
     extract_transcript_claims: TranscriptClaimExtractor
+    extract_guidance: GuidanceExtractor = _no_guidance
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -243,11 +255,45 @@ def _apple_extract_transcript_claims(
     return claims
 
 
+def _apple_extract_guidance(
+    *,
+    segments: Sequence[Mapping[str, Any]],
+    document_id: str,
+    body_sha256: str,
+    event_id: str,
+    **_kwargs: Any,
+) -> list[dict[str, Any]]:
+    """The pre-A5A hardcoded guidance block, moved here unchanged (F6)."""
+    if len(segments) <= 26:
+        return []
+    guide_literal = "grow between 9%-11% year-over-year"
+    guide_span = _span_payload_from_transcript(
+        document_id=document_id,
+        body_sha256=body_sha256,
+        segment_index=26,
+        segment=segments[26],
+        literal=guide_literal,
+    )
+    if guide_span is None:
+        return []
+    return [{
+        "schema": "guidance_item.v1",
+        "metric": "revenue_yoy_pct",
+        "low": 9.0,
+        "high": 11.0,
+        "unit": "percent",
+        "horizon": "FY2026 Q4",
+        "status": "introduced",
+        "source_span": guide_span,
+    }]
+
+
 def apple_profile() -> IssuerProfile:
     return IssuerProfile(
         ticker="AAPL",
         extract_release_facts=_apple_extract_release_facts,
         extract_transcript_claims=_apple_extract_transcript_claims,
+        extract_guidance=_apple_extract_guidance,
     )
 
 
@@ -343,10 +389,23 @@ def _find_table_after_heading(blocks: Sequence[DisclosureBlock], heading: str) -
     return None
 
 
-def _find_row_by_label(blocks: Sequence[DisclosureBlock], label: str):
+def _find_row_by_label(blocks: Sequence[DisclosureBlock], label: str, *, block_contains: str | None = None):
+    """The row whose first cell equals *label*, optionally scoped to a block
+    whose own text also contains *block_contains* (case-insensitive).
+
+    The scope is what tells TOL's quarterly "Net Signed Contracts" row apart
+    from the identically-labelled row in its nine-month table (F12): each
+    lives in its own table block, and only the quarterly one's own caption
+    says "three months" (see ``_dhi_extract_release_facts`` neighbors below
+    for the analogous header-row check used where two periods share ONE
+    table).
+    """
     lower = label.strip().lower()
+    required = block_contains.lower() if block_contains else None
     for block in blocks:
         if block.kind is BlockKind.TABLE and block.table is not None:
+            if required is not None and required not in block.text.lower():
+                continue
             for row in block.table.rows:
                 if row and row[0].text.strip().lower() == lower:
                     return row
@@ -362,19 +421,64 @@ def _period_label(fiscal_period: Any) -> str | None:
     return calendar_end.isoformat() if calendar_end else None
 
 
+def _quarterly_precedes_ytd(table_block: DisclosureBlock, *, quarterly_marker: str, ytd_marker: str) -> bool:
+    """F12 binding check: refuse to trust a table's column POSITIONS unless
+    its own header row states *quarterly_marker* in a cell that comes before
+    a DIFFERENT cell stating *ytd_marker*.
+
+    A caption line that happens to mention both phrases in ONE cell (e.g.
+    KBH's "For the Three Months and Six Months Ended...") does not count --
+    only a row where the two markers sit in separate cells binds the
+    positions the caller is about to read.  Returning ``False`` here means a
+    reshaped or reordered table mints a typed absence instead of a wrong
+    value under a still-valid byte receipt.
+    """
+    q_lower, y_lower = quarterly_marker.lower(), ytd_marker.lower()
+    for row in table_block.table.rows:
+        q_idx = next((i for i, cell in enumerate(row) if q_lower in cell.text.lower()), None)
+        y_idx = next((i for i, cell in enumerate(row) if y_lower in cell.text.lower()), None)
+        if q_idx is not None and y_idx is not None and q_idx != y_idx:
+            return q_idx < y_idx
+    return False
+
+
+def _split_disjoint_clauses(full_text: str, marker: str) -> tuple[str, str] | None:
+    """Split *full_text* into two DISJOINT literal windows at *marker* (F3).
+
+    Two different byte ranges even when the current and prior VALUES are
+    numerically equal: the receipt that proves one can never collide with
+    the receipt that proves the other, because *marker* occurs once in the
+    matched clause (verified by the caller's own regex construction).
+    """
+    idx = full_text.find(marker)
+    if idx < 0:
+        return None
+    return full_text[:idx].rstrip(), full_text[idx:].rstrip()
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # DHI — cancellation rate = cancelled sales orders / gross sales orders.
 # Verified against DHI's real FY2026 Q3 8-K, accession 0000882184-26-000092
 # (filed 2026-07-21), Exhibit 99.1 — see tests/fixtures/company_intelligence.
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Two real net-orders verb phrasings observed across DHI quarters: a bare
+# "totaled"/"of" (flat quarter) and an "increased/decreased NN% to" (F2 —
+# DHI FY2026 Q2's real "increased 11% to 24,992 homes" was previously missed).
 _DHI_NET_ORDERS_RE = re.compile(
-    r"Net sales orders (?:totaled|of) ([\d,]+) homes with an order value of \$[\d.,]+ (?:billion|million)"
+    r"Net sales orders (?:totaled|of|(?:increased|decreased) \d+% to) ([\d,]+) homes with an order value of "
+    r"\$[\d.,]+ (?:billion|million)"
 )
-_DHI_CANCELLATION_RE = re.compile(
-    r"cancellation rate \(([^)]+)\) for the quarter was (\d+(?:\.\d+)?)% compared to (\d+(?:\.\d+)?)% "
+# Two real cancellation phrasings: distinct values ("X% compared to Y%") and
+# equal values ("X%, consistent with the prior year quarter" — DHI FY2026 Q2).
+_DHI_CANCELLATION_COMPARED_RE = re.compile(
+    r"cancellation rate \(([^)]+)\) for the quarter was \d+(?:\.\d+)?% compared to \d+(?:\.\d+)?% "
     r"in the prior year quarter"
 )
+_DHI_CANCELLATION_CONSISTENT_RE = re.compile(
+    r"cancellation rate \(([^)]+)\) for the quarter was \d+(?:\.\d+)?%, consistent with the prior year quarter"
+)
+_PCT_RE = re.compile(r"\d+(?:\.\d+)?%")
 
 
 def _dhi_extract_release_facts(*, bound: BoundRelease, document_id: str, event_id: str, **kwargs: Any) -> list[dict[str, Any]]:
@@ -406,10 +510,15 @@ def _dhi_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
     ))
 
     # (ii) net_orders same-basis prior-year comparator — the NET SALES ORDERS
-    # table's unlabeled total row, homes column, prior-year quarter.
+    # table's unlabeled total row, homes column, prior-year quarter.  F12:
+    # only trust the column positions if the table's own header confirms
+    # "Three Months Ended" precedes "Nine Months Ended".
     prior_fact: dict[str, Any] | None = None
     table_block = _find_table_after_heading(blocks, "NET SALES ORDERS")
-    if table_block is not None and table_block.table.rows:
+    bound_columns = table_block is not None and table_block.table.rows and _quarterly_precedes_ytd(
+        table_block, quarterly_marker="Three Months Ended", ytd_marker="Nine Months Ended"
+    )
+    if bound_columns:
         total_row = table_block.table.rows[-1]
         cells = _nonblank_cells(total_row)
         if len(cells) >= 3:
@@ -432,33 +541,59 @@ def _dhi_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
                     )
     facts.append(prior_fact or _fact_absent(
         fact_id="fact_net_orders_prior_year", event_id=event_id, metric="net_orders",
-        detail="prior-year same-quarter net sales orders total is not uniquely addressable in Exhibit 99.1",
+        detail=(
+            "prior-year same-quarter net sales orders total is not uniquely addressable in Exhibit "
+            "99.1, or the table's column layout could not be bound to the quarterly period"
+        ),
         document_id=document_id,
     ))
 
     # (iii)/(iv)/(v) cancellation rate current, prior-year comparator, and the
     # stated denominator convention — all three cite the same disclosure
-    # sentence.
+    # sentence.  F3: receipts are minted over DISJOINT clauses (never a bare
+    # "NN%"), so a current==prior quarter never collides and never drops a
+    # fact.
     cancel_para = _find_paragraph_containing(blocks, "cancellation rate")
-    match = _DHI_CANCELLATION_RE.search(cancel_para.text) if cancel_para is not None else None
-    if cancel_para is not None and match is not None:
-        denom_text, current_pct, prior_pct = match.group(1), match.group(2), match.group(3)
-        current_lit, prior_lit = f"{current_pct}%", f"{prior_pct}%"
-        current_receipt = _literal_receipt(
-            bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
-            literal=current_lit,
-        )
-        prior_receipt = _literal_receipt(
-            bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
-            literal=prior_lit,
-        )
-        denom_receipt = _literal_receipt(
-            bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
-            literal=denom_text,
-        )
-    else:
-        current_receipt = prior_receipt = denom_receipt = None
-        current_pct = prior_pct = denom_text = None
+    current_receipt = prior_receipt = denom_receipt = None
+    current_pct = prior_pct = denom_text = None
+    if cancel_para is not None:
+        compared = _DHI_CANCELLATION_COMPARED_RE.search(cancel_para.text)
+        consistent = None if compared is not None else _DHI_CANCELLATION_CONSISTENT_RE.search(cancel_para.text)
+        if compared is not None:
+            full = compared.group(0)
+            denom_text = compared.group(1)
+            pcts = _PCT_RE.findall(full)
+            current_pct, prior_pct = pcts[0][:-1], pcts[1][:-1]
+            split = _split_disjoint_clauses(full, "compared to")
+        elif consistent is not None:
+            full = consistent.group(0)
+            denom_text = consistent.group(1)
+            pcts = _PCT_RE.findall(full)
+            current_pct = pcts[0][:-1]
+            # The document states equality explicitly (span-stated, not
+            # inferred): the prior-year fact carries the SAME value, but its
+            # own receipt points at the equality clause itself, never at the
+            # current fact's digits.
+            prior_pct = current_pct
+            raw_split = _split_disjoint_clauses(full, ", consistent with the prior year quarter")
+            split = (raw_split[0], raw_split[1].lstrip(", ")) if raw_split is not None else None
+        else:
+            split = None
+        if split is not None:
+            current_clause, prior_clause = split
+            current_receipt = _literal_receipt(
+                bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                literal=current_clause,
+            )
+            prior_receipt = _literal_receipt(
+                bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                literal=prior_clause,
+            )
+        if denom_text is not None:
+            denom_receipt = _literal_receipt(
+                bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                literal=denom_text,
+            )
 
     basis_text = "cancelled sales orders divided by gross sales orders (DHI convention)"
     facts.append(
@@ -515,10 +650,15 @@ def dhi_profile() -> IssuerProfile:
 # PHM — net new orders by region table; PulteGroup's EX-99.1 press release
 # does not always disclose a cancellation rate (verified: its FY2026 Q2 8-K,
 # accession 0000822416-26-000034, carries none — a genuine typed absence, not
-# a missed pattern).
+# a missed pattern).  The optional denominator-clause group covers a quarter
+# where PulteGroup DOES spell out the convention (e.g. "as a percentage of
+# gross orders"); real fixtures only exercise the no-denominator branch,
+# synthetic text exercises the denominator-present branch (F10).
 # ─────────────────────────────────────────────────────────────────────────────
 
-_PHM_CANCELLATION_RE = re.compile(r"cancellation rate[^.]*was (\d+(?:\.\d+)?)%,? compared to (\d+(?:\.\d+)?)%")
+_PHM_CANCELLATION_RE = re.compile(
+    r"cancellation rate(?:,? as a percent(?:age)? of ([a-z][a-z ]*?),?)? was \d+(?:\.\d+)?%,? compared to \d+(?:\.\d+)?%"
+)
 
 
 def _phm_section_total_row(table_block: DisclosureBlock, section_label: str):
@@ -543,7 +683,10 @@ def _phm_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
 
     table_block = _find_paragraph_table(blocks, "Net new orders - units")
     current_fact = prior_fact = None
-    if table_block is not None:
+    bound_columns = table_block is not None and _quarterly_precedes_ytd(
+        table_block, quarterly_marker="Three Months Ended", ytd_marker="Six Months Ended"
+    )
+    if bound_columns:
         total_row = _phm_section_total_row(table_block, "Net new orders - units")
         if total_row is not None:
             cells = _nonblank_cells(total_row)
@@ -573,37 +716,61 @@ def _phm_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
                         prior_fact = fact
     facts.append(current_fact or _fact_absent(
         fact_id="fact_net_orders_current", event_id=event_id, metric="net_orders",
-        detail="net new orders is not uniquely addressable in Exhibit 99.1", document_id=document_id,
+        detail=(
+            "net new orders is not uniquely addressable in Exhibit 99.1, or the table's column "
+            "layout could not be bound to the quarterly period"
+        ),
+        document_id=document_id,
     ))
     facts.append(prior_fact or _fact_absent(
         fact_id="fact_net_orders_prior_year", event_id=event_id, metric="net_orders",
-        detail="prior-year same-quarter net new orders total is not uniquely addressable in Exhibit 99.1",
+        detail=(
+            "prior-year same-quarter net new orders total is not uniquely addressable in Exhibit "
+            "99.1, or the table's column layout could not be bound to the quarterly period"
+        ),
         document_id=document_id,
     ))
 
+    # F3: receipts over DISJOINT clauses either side of "compared to", never a
+    # bare "NN%" — a current==prior quarter never collides.  F10: the
+    # denominator fact has a genuine present path when the sentence states
+    # one (synthetic-text tested; real fixtures exercise the absence path).
     cancel_para = _find_paragraph_containing(blocks, "cancellation rate")
-    match = _PHM_CANCELLATION_RE.search(cancel_para.text) if cancel_para is not None else None
+    current_receipt = prior_receipt = denom_receipt = None
+    current_pct = prior_pct = denom_text = None
     basis_text = "PulteGroup cancellation rate convention, as stated in Exhibit 99.1"
-    if cancel_para is not None and match is not None:
-        current_receipt = _literal_receipt(
-            bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
-            literal=f"{match.group(1)}%",
-        )
-        prior_receipt = _literal_receipt(
-            bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
-            literal=f"{match.group(2)}%",
-        )
-    else:
-        current_receipt = prior_receipt = None
+    if cancel_para is not None:
+        match = _PHM_CANCELLATION_RE.search(cancel_para.text)
+        if match is not None:
+            full = match.group(0)
+            denom_text = match.group(1)
+            pcts = _PCT_RE.findall(full)
+            current_pct, prior_pct = pcts[0][:-1], pcts[1][:-1]
+            split = _split_disjoint_clauses(full, "compared to")
+            if split is not None:
+                current_clause, prior_clause = split
+                current_receipt = _literal_receipt(
+                    bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                    literal=current_clause,
+                )
+                prior_receipt = _literal_receipt(
+                    bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                    literal=prior_clause,
+                )
+            if denom_text is not None:
+                denom_receipt = _literal_receipt(
+                    bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                    literal=denom_text,
+                )
     for fact_id, receipt, value, period_label, detail in (
         (
             "fact_cancellation_rate_current", current_receipt,
-            float(match.group(1)) if match else None, period,
+            float(current_pct) if current_pct else None, period,
             "cancellation rate is not disclosed in this Exhibit 99.1 (PulteGroup does not always state one)",
         ),
         (
             "fact_cancellation_rate_prior_year", prior_receipt,
-            float(match.group(2)) if match else None, "prior_year_same_quarter",
+            float(prior_pct) if prior_pct else None, "prior_year_same_quarter",
             "prior-year cancellation rate is not disclosed in this Exhibit 99.1",
         ),
     ):
@@ -615,15 +782,22 @@ def _phm_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
             if receipt is not None
             else _fact_absent(fact_id=fact_id, event_id=event_id, metric="cancellation_rate", detail=detail, document_id=document_id)
         )
-    facts.append(_fact_absent(
-        fact_id="fact_cancellation_rate_denominator", event_id=event_id, metric="cancellation_rate_basis",
-        detail="the stated cancellation denominator convention is not disclosed in this Exhibit 99.1",
-        document_id=document_id,
-    ) if current_receipt is None else _fact_absent(
-        fact_id="fact_cancellation_rate_denominator", event_id=event_id, metric="cancellation_rate_basis",
-        detail="PulteGroup's cancellation rate sentence does not state an explicit denominator convention in this Exhibit 99.1",
-        document_id=document_id,
-    ))
+    facts.append(
+        _fact_present(
+            fact_id="fact_cancellation_rate_denominator", event_id=event_id, metric="cancellation_rate_basis",
+            value=denom_text, unit=None, period=None, basis=basis_text,
+            document_id=document_id, bound=bound, receipt=denom_receipt,
+        )
+        if denom_receipt is not None
+        else _fact_absent(
+            fact_id="fact_cancellation_rate_denominator", event_id=event_id, metric="cancellation_rate_basis",
+            detail=(
+                "PulteGroup's cancellation rate sentence does not state an explicit denominator "
+                "convention in this Exhibit 99.1 (or none is disclosed at all)"
+            ),
+            document_id=document_id,
+        )
+    )
     return facts
 
 
@@ -651,11 +825,13 @@ def phm_profile() -> IssuerProfile:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _KBH_CANCELLATION_RE = re.compile(
-    r"cancellation rate as a percentage of gross orders was (\d+(?:\.\d+)?)%,? compared to (\d+(?:\.\d+)?)%"
+    r"cancellation rate as a percentage of gross orders was \d+(?:\.\d+)?%,? compared to \d+(?:\.\d+)?%"
 )
 
 
 def _kbh_total_row_after_label(blocks: Sequence[DisclosureBlock], section_label: str):
+    """The "Total" row following *section_label*, plus its containing table
+    block (needed by the caller for the F12 column-binding check)."""
     lower = section_label.strip().lower()
     for block in blocks:
         if block.kind is not BlockKind.TABLE or block.table is None:
@@ -668,9 +844,9 @@ def _kbh_total_row_after_label(blocks: Sequence[DisclosureBlock], section_label:
                     in_section = True
                 continue
             if first.strip().lower() == "total":
-                return row
+                return row, block
         # keep scanning subsequent table blocks if this one had no section
-    return None
+    return None, None
 
 
 def _kbh_extract_release_facts(*, bound: BoundRelease, document_id: str, event_id: str, **kwargs: Any) -> list[dict[str, Any]]:
@@ -679,9 +855,14 @@ def _kbh_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
     blocks = bound.document.blocks
     facts: list[dict[str, Any]] = []
 
-    total_row = _kbh_total_row_after_label(blocks, "Net orders:")
+    total_row, kbh_table = _kbh_total_row_after_label(blocks, "Net orders:")
     current_fact = prior_fact = None
-    if total_row is not None:
+    bound_columns = (
+        total_row is not None
+        and kbh_table is not None
+        and _quarterly_precedes_ytd(kbh_table, quarterly_marker="Three Months Ended", ytd_marker="Six Months Ended")
+    )
+    if bound_columns:
         cells = [cell for cell in total_row[1:] if cell.text.strip() not in ("", "$")]
         if len(cells) >= 2:
             for idx, fact_id, basis_label, period_label in (
@@ -709,44 +890,61 @@ def _kbh_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
                     prior_fact = fact
     facts.append(current_fact or _fact_absent(
         fact_id="fact_net_orders_current", event_id=event_id, metric="net_orders",
-        detail="net orders is not uniquely addressable in Exhibit 99.1", document_id=document_id,
+        detail=(
+            "net orders is not uniquely addressable in Exhibit 99.1, or the table's column layout "
+            "could not be bound to the quarterly period"
+        ),
+        document_id=document_id,
     ))
     facts.append(prior_fact or _fact_absent(
         fact_id="fact_net_orders_prior_year", event_id=event_id, metric="net_orders",
-        detail="prior-year same-quarter net orders total is not uniquely addressable in Exhibit 99.1",
+        detail=(
+            "prior-year same-quarter net orders total is not uniquely addressable in Exhibit 99.1, "
+            "or the table's column layout could not be bound to the quarterly period"
+        ),
         document_id=document_id,
     ))
 
+    # F3: receipts over DISJOINT clauses either side of "compared to" — never
+    # a bare "NN%" that could collide when current == prior.
     cancel_para = _find_paragraph_containing(blocks, "cancellation rate as a percentage of gross orders")
-    match = _KBH_CANCELLATION_RE.search(cancel_para.text) if cancel_para is not None else None
+    current_receipt = prior_receipt = denom_receipt = None
+    current_pct = prior_pct = None
+    if cancel_para is not None:
+        match = _KBH_CANCELLATION_RE.search(cancel_para.text)
+        if match is not None:
+            full = match.group(0)
+            pcts = _PCT_RE.findall(full)
+            current_pct, prior_pct = pcts[0][:-1], pcts[1][:-1]
+            split = _split_disjoint_clauses(full, "compared to")
+            if split is not None:
+                current_clause, prior_clause = split
+                current_receipt = _literal_receipt(
+                    bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                    literal=current_clause,
+                )
+                prior_receipt = _literal_receipt(
+                    bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                    literal=prior_clause,
+                )
+            denom_receipt = _literal_receipt(
+                bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                literal="as a percentage of gross orders",
+            )
     basis_text = "cancellation rate as a percentage of gross orders (KB Home convention)"
-    if cancel_para is not None and match is not None:
-        current_receipt = _literal_receipt(
-            bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
-            literal=f"{match.group(1)}%",
-        )
-        prior_receipt = _literal_receipt(
-            bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
-            literal=f"{match.group(2)}%",
-        )
-        denom_receipt = _literal_receipt(
-            bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
-            literal="as a percentage of gross orders",
-        )
-    else:
-        current_receipt = prior_receipt = denom_receipt = None
     for fact_id, receipt, value, period_label, metric, detail in (
         (
-            "fact_cancellation_rate_current", current_receipt, float(match.group(1)) if match else None, period,
+            "fact_cancellation_rate_current", current_receipt, float(current_pct) if current_pct else None, period,
             "cancellation_rate", "cancellation rate is not present or not uniquely addressable in Exhibit 99.1",
         ),
         (
-            "fact_cancellation_rate_prior_year", prior_receipt, float(match.group(2)) if match else None,
+            "fact_cancellation_rate_prior_year", prior_receipt, float(prior_pct) if prior_pct else None,
             "prior_year_same_quarter", "cancellation_rate",
             "prior-year cancellation rate is not present or not uniquely addressable in Exhibit 99.1",
         ),
         (
-            "fact_cancellation_rate_denominator", denom_receipt, "as a percentage of gross orders" if match else None,
+            "fact_cancellation_rate_denominator", denom_receipt,
+            "as a percentage of gross orders" if denom_receipt is not None else None,
             None, "cancellation_rate_basis",
             "the stated cancellation denominator convention is not present in Exhibit 99.1",
         ),
@@ -786,7 +984,11 @@ def _tol_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
     blocks = bound.document.blocks
     facts: list[dict[str, Any]] = []
 
-    row = _find_row_by_label(blocks, "Net Signed Contracts")
+    # F12: scope every lookup to the block whose OWN caption says "three
+    # months" — TOL carries an identically-labelled nine-month table too, in
+    # a SEPARATE block, and a document-order match on label alone would
+    # silently pick either one.
+    row = _find_row_by_label(blocks, "Net Signed Contracts", block_contains="three months")
     current_fact = prior_fact = None
     if row is not None:
         cells = [cell for cell in row[1:] if cell.text.strip() != ""]
@@ -826,7 +1028,9 @@ def _tol_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
     ))
 
     basis_text = "quarterly cancellations as a percentage of signed contracts in the quarter (Toll Brothers primary convention)"
-    cancel_row = _find_row_by_label(blocks, "Quarterly Cancellations as a Percentage of Signed Contracts in Quarter")
+    cancel_row = _find_row_by_label(
+        blocks, "Quarterly Cancellations as a Percentage of Signed Contracts in Quarter", block_contains="three months",
+    )
     current_receipt = prior_receipt = None
     if cancel_row is not None:
         cells = [cell for cell in cancel_row[1:] if cell.text.strip() not in ("", "%")]
@@ -858,21 +1062,45 @@ def _tol_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
             if receipt is not None
             else _fact_absent(fact_id=fact_id, event_id=event_id, metric="cancellation_rate", detail=detail, document_id=document_id)
         )
-    facts.append(_fact_present(
-        fact_id="fact_cancellation_rate_denominator", event_id=event_id, metric="cancellation_rate_basis",
-        value="signed contracts in quarter", unit=None, period=None, basis=basis_text,
-        document_id=document_id, bound=bound, receipt=current_receipt,
-    ) if current_receipt is not None else _fact_absent(
-        fact_id="fact_cancellation_rate_denominator", event_id=event_id, metric="cancellation_rate_basis",
-        detail="the stated cancellation denominator convention is not present in Exhibit 99.1", document_id=document_id,
-    ))
+
+    # F4: the convention fact's VALUE must be the row's own verbatim LABEL
+    # text, receipted over that label cell — never a code-authored paraphrase
+    # ("signed contracts in quarter") receipted against a numeric "5.4" cell,
+    # which is a false receipt (the cited bytes don't say what the value
+    # claims).
+    denom_receipt = None
+    denom_value = None
+    if cancel_row is not None:
+        label_cell = cancel_row[0]
+        denom_receipt = _literal_receipt(
+            bound, search_start=label_cell.source_span.char_start, search_end=label_cell.source_span.char_end,
+            literal=label_cell.text,
+        )
+        denom_value = label_cell.text if denom_receipt is not None else None
+    facts.append(
+        _fact_present(
+            fact_id="fact_cancellation_rate_denominator", event_id=event_id, metric="cancellation_rate_basis",
+            value=denom_value, unit=None, period=None, basis=basis_text,
+            document_id=document_id, bound=bound, receipt=denom_receipt,
+        )
+        if denom_receipt is not None
+        else _fact_absent(
+            fact_id="fact_cancellation_rate_denominator", event_id=event_id, metric="cancellation_rate_basis",
+            detail="the stated cancellation denominator convention is not present in Exhibit 99.1", document_id=document_id,
+        )
+    )
 
     # (vi) TOL only: beginning-quarter-backlog cancellation sensitivity fact.
-    backlog_row = _find_row_by_label(blocks, "Quarterly Cancellations as a Percentage of Beginning-Quarter Backlog")
+    # F4: the basis text is the row's own verbatim label (not a paraphrase)
+    # when the row is found.
+    backlog_row = _find_row_by_label(
+        blocks, "Quarterly Cancellations as a Percentage of Beginning-Quarter Backlog", block_contains="three months",
+    )
     backlog_basis = "quarterly cancellations as a percentage of beginning-quarter backlog (Toll Brothers sensitivity convention)"
     backlog_receipt = None
     backlog_value = None
     if backlog_row is not None:
+        backlog_basis = backlog_row[0].text
         cells = [cell for cell in backlog_row[1:] if cell.text.strip() not in ("", "%")]
         if cells:
             backlog_receipt = _literal_receipt(

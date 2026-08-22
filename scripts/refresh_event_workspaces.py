@@ -21,6 +21,7 @@ writes to ``data/cycle_pattern/`` or computes an IMCE observation.
 from __future__ import annotations
 
 import argparse
+import calendar
 from datetime import date, datetime, timezone
 from html import unescape as html_unescape
 import json
@@ -184,15 +185,23 @@ def _parallel_row(block: Mapping[str, Any], accession: str, *, cik: str) -> dict
 
 
 def _select_newest_results_rows(rows: list[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    """Every 8-K row whose declared items include Item 2.02, newest first.
+    """Every 8-K or 8-K/A row whose declared items include Item 2.02, newest first.
 
-    Newest is by acceptance timestamp (falling back to filing date for a row
-    that somehow lacks one) — the source's own clock, not feed order.
+    Admitting ``"8-K/A"`` (F5) matters: an amendment is a different FILING of
+    the SAME event (``engine.earnings_release.binding`` module docstring),
+    and ``form == "8-K"`` alone made the correction path unreachable in
+    discovery mode — an amendment would never even be considered as a
+    candidate, let alone matched to the original by ``report_date`` grouping
+    downstream.  The check is an exact membership test, not a prefix match,
+    so an unrelated "8-K12B"/"8-K12G3"/"8-K15D5" special-filing variant is
+    never admitted.  Newest is by acceptance timestamp (falling back to
+    filing date for a row that somehow lacks one) — the source's own clock,
+    not feed order.
     """
     candidates = [
         dict(row)
         for row in rows
-        if str(row.get("form") or "").strip().upper() == "8-K" and "2.02" in str(row.get("items") or "")
+        if str(row.get("form") or "").strip().upper() in {"8-K", "8-K/A"} and "2.02" in str(row.get("items") or "")
     ]
     candidates.sort(
         key=lambda row: (str(row.get("acceptanceDateTime") or ""), str(row.get("filingDate") or "")),
@@ -441,21 +450,86 @@ def load_prior_flagship_workspace() -> dict[str, Any] | None:
     return load_prior_workspace(FLAGSHIP_EVENT_ID)
 
 
-def fiscal_period_for_report_date(report_date: str, fiscal_year_end_month: int) -> FiscalPeriod:
-    """Derive ``(fiscal_year, fiscal_quarter)`` from a calendar report_date.
+_STATED_PERIOD_END_RE = re.compile(
+    r"(?:Three\s+Months\s+Ended|[Qq]uarter\s+ended)\s+([A-Za-z]+\s+\d{1,2},?\s*\d{4})"
+)
 
+
+def _fiscal_quarter_end_before(anchor: date, fiscal_year_end_month: int) -> date:
+    """The most recent completed fiscal-quarter END strictly before *anchor*.
+
+    F1: an earnings release is published WEEKS after the quarter it reports
+    on closes.  EDGAR's own ``reportDate`` on an Item 2.02 8-K is the SAME as
+    ``filingDate`` — the press-release date, never the period end (verified:
+    DHI accession 0000882184-26-000092 carries ``reportDate == filingDate ==
+    "2026-07-21"``, live SEC receipt, for a quarter that actually ended
+    2026-06-30).  This walks backward from ``anchor`` to the nearest fiscal
+    quarter-end date that precedes it, using the issuer's own
+    ``fiscal_year_end_month``; the caller then cross-checks that computed
+    date against the exhibit's own stated period before minting an event.
+    """
+    quarter_end_months = sorted({(fiscal_year_end_month - 3 * i - 1) % 12 + 1 for i in range(4)})
+    candidates: list[date] = []
+    for year in (anchor.year - 1, anchor.year, anchor.year + 1):
+        for month in quarter_end_months:
+            last_day = calendar.monthrange(year, month)[1]
+            candidates.append(date(year, month, last_day))
+    before = [candidate for candidate in candidates if candidate < anchor]
+    if not before:
+        raise RefreshError(f"no fiscal quarter end precedes anchor date {anchor.isoformat()}")
+    return max(before)
+
+
+def fiscal_period_for_report_date(report_date: str, fiscal_year_end_month: int) -> FiscalPeriod:
+    """Derive the fiscal period from the quarter END nearest before *report_date*.
+
+    ``report_date`` here is EDGAR's own value (== the press-release/filing
+    date on every real Item-2.02 8-K observed — F1), used only as an ANCHOR
+    to find "which quarter just closed", never as the period end itself.
     Standard US-GAAP fiscal-quarter convention: the fiscal year starts the
     calendar month after ``fiscal_year_end_month`` and runs 4 quarters of 3
     months each; the fiscal year label is the calendar year in which the
-    fiscal year END falls.  Verified by hand against DHI (FYE Sept), PHM (FYE
-    Dec), KBH (FYE Nov), and TOL (FYE Oct) real filings — see the PR body.
+    fiscal year END falls.  Verified by hand against DHI (FYE Sept, real
+    reportDate 2026-07-21 -> FY2026 Q3, period end 2026-06-30), PHM (FYE Dec,
+    real reportDate 2026-07-22 -> FY2026 Q2, period end 2026-06-30), KBH (FYE
+    Nov, real reportDate 2026-06-23 -> FY2026 Q2, period end 2026-05-31), and
+    TOL (FYE Oct, real reportDate 2026-08-18 -> FY2026 Q3, period end
+    2026-07-31) — see the PR body.  The caller cross-checks this against the
+    exhibit's own stated period (:func:`_stated_period_end`) before trusting
+    it; a mismatch refuses rather than minting a guessed identity.
     """
-    parsed = date.fromisoformat(str(report_date))
+    anchor = date.fromisoformat(str(report_date))
+    quarter_end = _fiscal_quarter_end_before(anchor, fiscal_year_end_month)
     fy_start_month = (fiscal_year_end_month % 12) + 1
-    months_elapsed = (parsed.month - fy_start_month) % 12
+    months_elapsed = (quarter_end.month - fy_start_month) % 12
     quarter = months_elapsed // 3 + 1
-    fiscal_year = parsed.year if parsed.month <= fiscal_year_end_month else parsed.year + 1
-    return FiscalPeriod(year=fiscal_year, quarter=quarter, calendar_end=parsed)
+    fiscal_year = quarter_end.year if quarter_end.month <= fiscal_year_end_month else quarter_end.year + 1
+    return FiscalPeriod(year=fiscal_year, quarter=quarter, calendar_end=quarter_end)
+
+
+def _stated_period_end(exhibit_body: str) -> date | None:
+    """The exhibit's own stated quarterly period end, or ``None`` if it
+    cannot be located.
+
+    Tries "Three Months Ended <date>" (DHI/KBH/PHM's table-header phrasing)
+    then "quarter ended <date>" (PHM/TOL's narrative phrasing); first match
+    wins.  This is the cross-check F1 requires: the discovery-derived
+    quarter end (:func:`fiscal_period_for_report_date`) must agree with what
+    the release itself says it covers, or the issuer is skipped rather than
+    published under a guessed fiscal identity.
+    """
+    visible = html_unescape(re.sub(r"<[^>]+>", " ", exhibit_body))
+    visible = re.sub(r"\s+", " ", visible)
+    match = _STATED_PERIOD_END_RE.search(visible)
+    if match is None:
+        return None
+    raw = match.group(1).replace(",", "")
+    for fmt in ("%B %d %Y", "%b %d %Y"):
+        try:
+            return datetime.strptime(raw, fmt).date()
+        except ValueError:
+            continue
+    return None
 
 
 def acquire_and_build_homebuilder_workspace(
@@ -479,6 +553,17 @@ def acquire_and_build_homebuilder_workspace(
         raise RefreshError(f"{ticker} has no registered A5A homebuilder identity/profile")
     filing = acquire_results_filing(cik=issuer.cik, http_get=http_get)
     fiscal_period = fiscal_period_for_report_date(filing["report_date"], issuer.fiscal_year_end_month)
+    # F1 cross-check: never mint an event on the discovery-derived quarter
+    # end alone.  The exhibit must state that SAME period itself, or this
+    # issuer is skipped for the run (typed/logged absence) rather than
+    # published under a guessed fiscal identity.
+    stated_end = _stated_period_end(str(filing["exhibit_body"]))
+    if stated_end != fiscal_period.calendar_end:
+        raise RefreshError(
+            f"{ticker}: computed fiscal quarter end {fiscal_period.calendar_end} does not match "
+            f"the exhibit's own stated period end ({stated_end!r}); refusing to mint a guessed "
+            "fiscal identity"
+        )
     asof = date.fromisoformat(str(filing["filing_date"]))
     event_id = canonical_event_id(issuer.company_id, fiscal_period)
     pair = f"{ticker}/{fiscal_period.year}Q{fiscal_period.quarter}"
