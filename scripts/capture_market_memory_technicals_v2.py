@@ -454,7 +454,8 @@ def _build_capture_receipt_v2(
             "session": session.isoformat(),
             "profile": STORE_PROFILE_V2,
             "ticker": "SPY",
-            "regular_session_close_authenticated": True,
+            "regular_session_close_authenticated": False,
+            "price_basis": "unadjusted_daily_aggregate_sealed_rest_bar",
             "state": {
                 "open": o,
                 "high": h,
@@ -504,10 +505,18 @@ def capture_technicals_v2(
     validated_source = validate_spy_rest_source_root(source_root)
     validated_store = validate_technicals_v2_store_root(store_root)
 
-    # Determine session
+    # Determine session (B2): timers fire at 04:07Z on D+1; use derive_morning_session.
     if session is None:
         now = clock_fn()
-        session = now.date()
+        from engine.neuralweb.market_memory_sources_spy import derive_morning_session  # noqa: PLC0415
+        derived = derive_morning_session(now)
+        if derived is None:
+            raise TechnicalsV2SourceError(
+                f"cannot derive session from current time {now.isoformat()} "
+                "(before 04:05Z or T-1 is not an XNYS session); "
+                "pass session= explicitly"
+            )
+        session = derived
 
     session_str = session.isoformat()
 

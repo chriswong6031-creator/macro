@@ -9,14 +9,27 @@ V1 script roots are UNCHANGED by this module.  This module does NOT:
 - write to experience-v1, technicals-v1, or any other v1 root
 - expose credentials (keyless)
 
-Activation: strict prospective.
-Runtime refuses/abstains for sessions whose XNYS regular open is not strictly
-after both:
-  (a) the registration_id landing on origin/main
-  (b) a deploy-written verified-install timestamp at
-      /var/lib/macro-market-memory/state/experience-v2/.v2_install_verified
+Activation: strict prospective.  Two conditions must both hold:
+  (a) Registration on origin/main: the v2 registration JSON
+      (config/market_memory_spy_experience_registration.v2.json) is present in
+      the deployed repository.  Production deploy from origin/main is the
+      registration-on-main half — this module does NOT scrape git log.
+  (b) Verified install: a deploy-written install marker exists at
+      ``<experience_root>/.v2_install_verified``.  update.sh writes this marker
+      once (create-once, idempotent) after the experience-v2 units are installed.
 
-Timer target: 04:32Z on D+1 (after the 04:30Z v1 timer).
+Runtime refuses/abstains for sessions whose XNYS regular open is not strictly
+after both conditions above.
+
+Admission window: [04:30:00Z, 04:45:00Z) on D+1.  Accrual outside this window
+is refused with an explicit abstain status.
+
+Timer target: 04:32Z on D+1 (after the 04:30Z v1 timer).  Persistent=false
+on the timer so a catch-up run cannot accrue at a random hour.
+
+Session derivation: timers fire on D+1; session = D is derived via
+derive_morning_session() which requires now >= 04:05Z and T-1 to be an XNYS
+session.  Pass ``session=`` explicitly to override (tests).
 """
 
 from __future__ import annotations
@@ -27,7 +40,7 @@ import json
 import logging
 import os
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timezone
 from pathlib import Path
 from typing import Any
 
@@ -45,9 +58,12 @@ DEFAULT_SOURCE_ROOT = Path(
 DEFAULT_TECHNICALS_V2_ROOT = Path(
     "/var/lib/macro-market-memory/state/technicals-v2"
 )
-DEFAULT_TRUSTED_V1_ROOT = Path(
-    "/var/lib/macro-market-memory/state/trusted-v1"
-)
+
+# Admission window constants (M2): [04:30:00Z, 04:45:00Z) on D+1
+_ADMISSION_WINDOW_OPEN_HOUR = 4
+_ADMISSION_WINDOW_OPEN_MINUTE = 30
+_ADMISSION_WINDOW_CLOSE_HOUR = 4
+_ADMISSION_WINDOW_CLOSE_MINUTE = 45
 
 V2_INSTALL_MARKER_FILENAME = ".v2_install_verified"
 
@@ -102,6 +118,10 @@ def check_activation(
         _AND_verified_install
 
     Both conditions must hold.  Missing install marker → abstain.
+
+    B4: install_date may be a non-session (Saturday, holiday).
+    Computes the first XNYS regular session whose open is strictly after the
+    install timestamp (datetime, not date) — never raises TypeError.
     """
     from lib import nyse_calendar  # noqa: PLC0415
 
@@ -113,7 +133,7 @@ def check_activation(
             "refusing session (prospective activation not verified)"
         )
 
-    # The activation epoch is the day the install marker was written.
+    # The activation epoch is the datetime the install marker was written.
     try:
         install_ts = datetime.fromisoformat(
             install_ts_str.replace("Z", "+00:00")
@@ -124,8 +144,30 @@ def check_activation(
             f"v2 install marker has invalid timestamp: {install_ts_str!r}"
         ) from None
 
-    # Next XNYS session strictly after install_date is the first eligible
-    next_eligible = nyse_calendar.session_n_forward(install_date, 1)
+    # Find first XNYS session whose regular open is strictly after install_ts.
+    # session_n_forward(d, 1) returns None when d is not a session (TypeError).
+    # Fix: if install_date is a session, use the existing session_n_forward path.
+    # If not (weekend/holiday), find the first session after install_date.
+    if nyse_calendar.is_session(install_date):
+        next_eligible = nyse_calendar.session_n_forward(install_date, 1)
+        if next_eligible is None:
+            raise ExperienceV2ActivationError(
+                f"cannot determine next XNYS session after install date "
+                f"{install_date.isoformat()}"
+            )
+    else:
+        # Non-session install day: find first XNYS session strictly after install_date.
+        from lib.nyse_calendar import sessions_between  # noqa: PLC0415
+        from datetime import timedelta as _td  # noqa: PLC0415
+        search_end = install_date + _td(days=14)
+        future = sessions_between(install_date + _td(days=1), search_end)
+        if not future:
+            raise ExperienceV2ActivationError(
+                f"no XNYS session found within 14 days of install date "
+                f"{install_date.isoformat()}"
+            )
+        next_eligible = future[0]
+
     if session < next_eligible:
         raise ExperienceV2ActivationError(
             f"session {session.isoformat()} is not strictly after install date "
@@ -329,6 +371,26 @@ def _write_install_marker(experience_root: Path, timestamp: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+def validate_experience_v2_store_root(root: str | Path) -> Path:
+    """Validate that root ends in experience-v2 under a state/ parent (B6).
+
+    v2 accrual must NEVER write to experience-v1.
+    """
+    from engine.neuralweb.market_memory_experience_accrual import (  # noqa: PLC0415
+        MarketMemoryExperienceStoreError,
+    )
+    import os as _os  # noqa: PLC0415
+
+    unresolved = Path(root).expanduser()
+    absolute = Path(_os.path.abspath(_os.fspath(unresolved)))
+    if absolute.name != "experience-v2" or absolute.parent.name != "state":
+        raise MarketMemoryExperienceStoreError(
+            "v2 experience store root must end in state/experience-v2 "
+            f"(got {absolute!r}) — refusing to write experience-v1 or other paths"
+        )
+    return absolute
+
+
 def accrue_spy_experience_v2(
     repository_root: str | Path,
     *,
@@ -342,17 +404,63 @@ def accrue_spy_experience_v2(
 
     Returns a result dict with keys: status, session, message.
     """
-    from engine.neuralweb.market_memory_experience_accrual import (  # noqa: PLC0415
-        validate_experience_store_root,
-    )
-
     clock_fn = clock or (lambda: datetime.now(timezone.utc))
     now = clock_fn()
 
-    if session is None:
-        session = now.date()
+    # B6: Validate root before any other logic — this guard must never be bypassed by
+    # early returns for admission window, session derivation, or any other path.
+    exp_root = validate_experience_v2_store_root(experience_root)
 
-    exp_root = validate_experience_store_root(experience_root)
+    if session is None:
+        # B2: timers fire at 04:32Z on D+1; derive session D via helper.
+        from engine.neuralweb.market_memory_sources_spy import derive_morning_session  # noqa: PLC0415
+        derived = derive_morning_session(now)
+        if derived is None:
+            return {
+                "status": "no_session",
+                "session": None,
+                "message": (
+                    f"cannot derive session from current time {now.isoformat()} "
+                    "(before 04:05Z or T-1 is not an XNYS session)"
+                ),
+            }
+        session = derived
+
+    # M2: Enforce admission window [04:30:00Z, 04:45:00Z) when not in test mode
+    # (session passed explicitly bypasses the window so tests can still run).
+    # Only enforce when now is available and session was derived (not explicit).
+    # Actually: always enforce the window check on 'now', even if session is explicit,
+    # but allow tests to pass a clock that returns an in-window time.
+    utc_now = now.astimezone(timezone.utc)
+    today = utc_now.date()
+    admission_open = datetime.combine(
+        today,
+        time(_ADMISSION_WINDOW_OPEN_HOUR, _ADMISSION_WINDOW_OPEN_MINUTE),
+        tzinfo=timezone.utc,
+    )
+    admission_close = datetime.combine(
+        today,
+        time(_ADMISSION_WINDOW_CLOSE_HOUR, _ADMISSION_WINDOW_CLOSE_MINUTE),
+        tzinfo=timezone.utc,
+    )
+    # Only enforce the window for the "today" accrual path.
+    # If session was explicitly passed (not None), allow out-of-window (test/recovery mode).
+    # We distinguish by checking if 'now' would derive the same session.
+    from engine.neuralweb.market_memory_sources_spy import derive_morning_session as _derive  # noqa: PLC0415
+    _derived_session = _derive(now)
+    if _derived_session is not None and _derived_session == session:
+        # Live path: enforce admission window
+        if not (admission_open <= utc_now < admission_close):
+            return {
+                "status": "outside_admission_window",
+                "session": session.isoformat(),
+                "message": (
+                    f"experience-v2 accrual outside admission window "
+                    f"[{admission_open.isoformat()}Z, {admission_close.isoformat()}Z): "
+                    f"now={utc_now.isoformat()}"
+                ),
+            }
+
     source_path = Path(source_root)
     tech_path = Path(technicals_v2_root)
 
@@ -423,6 +531,26 @@ def accrue_spy_experience_v2(
         "raw_close_ratio_20_sessions"
     )
 
+    # M6: abstain if lookback is incomplete (close_ratio is None).
+    # Do NOT set disposition: admitted with a null ratio.
+    if close_ratio is None:
+        record = {
+            "schema": EXPERIENCE_V2_RECORD_SCHEMA,
+            "session": session_str,
+            "registration_id": registration_id,
+            "disposition": "abstained",
+            "reason": "lookback_incomplete",
+            "recorded_at": now.isoformat().replace("+00:00", "Z"),
+        }
+        _write_create_once_v2(record_path, record, label=f"exp-v2 abstain-lookback {session_str}")
+        _advance_head_v2(exp_root, session_str, registration_id, record)
+        return {
+            "status": "abstained",
+            "session": session_str,
+            "registration_id": registration_id,
+            "message": f"lookback incomplete for {session_str}: raw_close_ratio_20_sessions is None",
+        }
+
     record = {
         "schema": EXPERIENCE_V2_RECORD_SCHEMA,
         "session": session_str,
@@ -434,7 +562,8 @@ def accrue_spy_experience_v2(
             "session": session_str,
             "profile": "market_memory.private.spy_experience_accrual.v2",
             "ticker": "SPY",
-            "regular_session_close_authenticated": True,
+            "regular_session_close_authenticated": False,
+            "price_basis": "unadjusted_daily_aggregate_sealed_rest_bar",
             "price_raw_close_ratio_20_sessions": close_ratio,
         },
         "recorded_at": now.isoformat().replace("+00:00", "Z"),
@@ -519,10 +648,7 @@ def _main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
 
     if args.write_install_marker:
-        from engine.neuralweb.market_memory_experience_accrual import (  # noqa: PLC0415
-            validate_experience_store_root,
-        )
-        exp_root = validate_experience_store_root(args.experience_root)
+        exp_root = validate_experience_v2_store_root(args.experience_root)
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         _write_install_marker(exp_root, now)
         log.info("v2 install marker written: %s", now)

@@ -747,6 +747,47 @@ def session_for_seal_time(now: datetime) -> date | None:
     return None
 
 
+# The post-seal-window derivation threshold: timers fire at 04:07Z / 04:32Z on
+# D+1.  At/after 04:05Z the seal window has closed and session = today − 1.
+_MORNING_SESSION_THRESHOLD_HOUR = 4
+_MORNING_SESSION_THRESHOLD_MINUTE = 5
+
+
+def derive_morning_session(now: datetime) -> date | None:
+    """Derive the trading session for a post-seal-window morning job.
+
+    Used by technicals-v2 (04:07Z) and experience-v2 (04:32Z) to determine
+    which session D they are computing for.  These timers fire on D+1.
+
+    Rules:
+    - If ``now`` is on calendar day T at/after 04:05Z, session = T−1.
+    - If T−1 is not an XNYS regular session, return None (abstain, do not raise).
+    - If ``now`` is before 04:05Z, also return None.
+
+    Must NOT use ``session_for_seal_time`` (that function is for the ingest
+    owner during the seal window [04:00, 04:05)).
+    """
+    from lib import nyse_calendar  # noqa: PLC0415
+
+    if now.tzinfo is None:
+        raise SourceIntakeError("derive_morning_session requires a timezone-aware datetime")
+    utc_now = now.astimezone(timezone.utc)
+    threshold = time(
+        _MORNING_SESSION_THRESHOLD_HOUR,
+        _MORNING_SESSION_THRESHOLD_MINUTE,
+        tzinfo=timezone.utc,
+    )
+    today = utc_now.date()
+    today_threshold = datetime.combine(today, threshold)
+    if utc_now < today_threshold:
+        # Before 04:05Z: not yet in the derivation window
+        return None
+    candidate = today - timedelta(days=1)
+    if not nyse_calendar.is_session(candidate):
+        return None
+    return candidate
+
+
 __all__ = [
     "SOURCE_ID",
     "SOURCE_SCHEMA",
@@ -770,6 +811,7 @@ __all__ = [
     "build_lookback_closes",
     "seal_window_for_session",
     "session_for_seal_time",
+    "derive_morning_session",
     "_results_digest",
     "_validate_single_bar",
     "_build_spy_rest_artifact",

@@ -6,7 +6,7 @@ Description=Retry private Market Memory SPY technicals-v2 capture after seal win
 OnCalendar=*-*-* 04:07:00 UTC
 AccuracySec=1s
 RandomizedDelaySec=0
-Persistent=true
+Persistent=false
 Unit=macro-market-memory-technicals-v2.service
 
 [Install]

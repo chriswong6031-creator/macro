@@ -30,8 +30,8 @@ fi
 OPTIONS_TIMER_DISARMED=0
 OPTIONS_API_FENCE_MARKER=/run/macro-api-market-memory-options-deny.ready
 OPTIONS_RECIPROCAL_FENCE_MARKER=/run/macro-market-memory-options-reciprocal-deny.ready
-OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|source-spy-rest|context|identity|breadth|technicals|technicals-v2|experience|experience-v2|production-records)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi|capture_market_memory_technicals_v2|ingest_market_memory_sources_spy|accrue_market_memory_spy_experience_v2)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit|source_kernel|sources_spy))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_(option_oi_source\.v1|spy_experience_registration\.v2)\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
-OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|context|identity|breadth|technicals|experience|production-records)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience|capture_market_memory_options_episodes)\.py|engine/(__init__|options_signal_episode)\.py|engine/neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual|_production_records)?)\.py|contracts/market_memory/(spy_experience_(registration|opportunity|outcome_revision|population_receipt)|options_signal_episode_production_record)\.v1\.schema\.json|contracts/options/options\.signal_episode\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|data/options_signal_episode/episodes\.jsonl|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-options\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|source-spy-rest|context|identity|breadth|technicals|technicals-v2|experience|experience-v2|production-records)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience|accrue_market_memory_spy_experience_v2|capture_market_memory_options_episodes|capture_market_memory_technicals_v2|ingest_market_memory_sources_spy)\.py|engine/(__init__|options_signal_episode)\.py|engine/neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual|_production_records|_source_kernel|_sources_spy)?)\.py|contracts/market_memory/(spy_experience_(registration|opportunity|outcome_revision|population_receipt)|options_signal_episode_production_record)\.v1\.schema\.json|contracts/options/options\.signal_episode\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|config/market_memory_spy_experience_registration\.v2\.json|lib/(__init__|nyse_calendar)\.py|data/options_signal_episode/episodes\.jsonl|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_RUNTIME_REGEX='^(app/requirements\.txt|scripts/(__init__|accrue_market_memory_spy_experience)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual)?)\.py)|contracts/market_memory/spy_experience_(registration|opportunity|outcome_revision|population_receipt)\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_ROOT=/var/lib/macro-market-memory/state/experience-v1
 MARKET_MEMORY_EXPERIENCE_INSTALLATION="$MARKET_MEMORY_EXPERIENCE_ROOT/registration_installation.json"
@@ -80,7 +80,7 @@ stop_unit_and_verify_inactive() {
 stop_reciprocal_market_memory_writers() {
 	local profile service timer
 	rm -f "$OPTIONS_RECIPROCAL_FENCE_MARKER"
-	for profile in source context identity breadth technicals experience production-records; do
+	for profile in source source-spy-rest context identity breadth technicals technicals-v2 experience experience-v2 production-records; do
 		service="macro-market-memory-$profile.service"
 		timer="macro-market-memory-$profile.timer"
 		if ! stop_unit_and_verify_inactive \
@@ -100,7 +100,7 @@ stop_reciprocal_market_memory_writers() {
 
 reciprocal_market_memory_units_ready() {
 	local profile
-	for profile in source context identity breadth technicals experience production-records; do
+	for profile in source source-spy-rest context identity breadth technicals technicals-v2 experience experience-v2 production-records; do
 		mm_loaded_unit_ready \
 			"$APP_DIR/app/deploy/macro-market-memory-$profile.service" \
 			"/etc/systemd/system/macro-market-memory-$profile.service" \
@@ -1551,6 +1551,17 @@ if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_EXPERIENCE_V2_UNIT_SOURCES[0]}
 				systemctl restart macro-market-memory-experience-v2.timer 2>/dev/null || true
 			fi
 			echo "macro-update: Market Memory experience-v2 units updated"
+			# B3: Write the v2 install marker once if absent.
+			# Idempotent create-once: rewriting on every deploy would postpone activation.
+			V2_INSTALL_MARKER="/var/lib/macro-market-memory/state/experience-v2/.v2_install_verified"
+			if [ ! -e "$V2_INSTALL_MARKER" ] && [ ! -L "$V2_INSTALL_MARKER" ]; then
+				VENV_PYTHON="$APP_DIR/env/bin/python3"
+				"$VENV_PYTHON" "$APP_DIR/scripts/accrue_market_memory_spy_experience_v2.py" \
+					--write-install-marker \
+					--experience-root /var/lib/macro-market-memory/state/experience-v2 || \
+					echo "macro-update: WARNING: failed to write experience-v2 install marker" >&2
+				echo "macro-update: experience-v2 install marker written"
+			fi
 		fi
 	else
 		echo "macro-update: refusing Market Memory experience-v2 unit update — systemd-analyze verify failed" >&2

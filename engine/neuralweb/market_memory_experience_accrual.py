@@ -1137,12 +1137,17 @@ def _decision_state_projection(
 
 
 def validate_experience_store_root(root: str | Path) -> Path:
-    """Require the disjoint private ``state/experience-v1`` or ``state/experience-v2`` owner root."""
+    """Require the disjoint private ``state/experience-v1`` owner root.
+
+    B6: v1 only.  v2 accrual uses validate_experience_v2_store_root() in
+    scripts/accrue_market_memory_spy_experience_v2.py — that validator requires
+    the leaf to be experience-v2 and refuses experience-v1 paths.
+    """
 
     unresolved = Path(root).expanduser()
     absolute = Path(os.path.abspath(os.fspath(unresolved)))
-    if absolute.name not in ("experience-v1", "experience-v2") or absolute.parent.name != "state":
-        _fail("W2C store root must end in state/experience-v1 or state/experience-v2")
+    if absolute.name != "experience-v1" or absolute.parent.name != "state":
+        _fail("W2C store root must end in state/experience-v1")
     cursor = absolute
     while True:
         try:
