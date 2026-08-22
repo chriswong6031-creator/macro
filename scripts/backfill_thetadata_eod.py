@@ -94,6 +94,8 @@ import pandas as pd
 # Ensure repo root on path when run as a script
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine.thetadata_store import resolve_thetadata_store  # noqa: E402
+
 log = logging.getLogger("backfill_thetadata_eod")
 
 # ── ETF anchors and index roots ──────────────────────────────────────────────
@@ -548,6 +550,27 @@ def main() -> int:
         _run_probe()
         return 0
 
+    # AD-1T1 §D/RF3 (R3): this process must lock-and-write the SAME store the
+    # daily incremental lane resolves — the hub-ops-wt hazard is a backfill
+    # accidentally minting a SECOND store the daily lane never sees. Resolve
+    # via the canonical resolver and refuse on disagreement; a fresh install
+    # where NOTHING resolves anywhere is the one exception (permits this
+    # process's own _store_dir() to be the first content).
+    own_store = _store_dir()
+    try:
+        resolved = resolve_thetadata_store(
+            required=False, purpose="backfill_thetadata_eod store agreement check")
+    except Exception as e:  # noqa: BLE001 — resolution itself must not crash the check
+        log.warning("backfill: store-agreement resolver raised %s: %s — "
+                   "proceeding with own store %s", type(e).__name__, e, own_store)
+        resolved = None
+    if resolved is not None and Path(resolved).resolve() != Path(own_store).resolve():
+        log.error("backfill: resolve_thetadata_store() resolved %s, which "
+                 "DISAGREES with this process's own store %s — refusing to "
+                 "mint a second T1 store. Fix THETADATA_STORE / lib.config."
+                 "data_dir() so both agree before re-running.", resolved, own_store)
+        return 1
+
     from collectors import thetadata as td
 
     if not args.dry_run and not td.reachable():
@@ -604,7 +627,18 @@ def main() -> int:
     # holding the store right now.
     from scripts.topup_thetadata_day import _emit_writer_locked, _writer_lock
 
-    with _writer_lock(_store_dir()) as acquired:
+    try:
+        lock_acquired = _writer_lock(own_store)
+        acquired = lock_acquired.__enter__()
+    except OSError as e:
+        # (HARDENING, R3) read-only store / ENOSPC opening the lock file —
+        # a clean logged failure, never a bare traceback.
+        log.error("backfill: cannot open writer lock at %s (%s: %s) — store "
+                 "may be read-only or full", own_store / "_writer.lock",
+                 type(e).__name__, e)
+        return 1
+
+    try:
         if not acquired:
             _emit_writer_locked("backfill")
             log.warning("backfill: writer lock held by another process — refusing")
@@ -627,6 +661,8 @@ def main() -> int:
 
         log.info("Backfill complete: %d succeeded, %d failed", n_ok, n_fail)
         return 0 if n_fail == 0 else 1
+    finally:
+        lock_acquired.__exit__(None, None, None)
 
 
 if __name__ == "__main__":
