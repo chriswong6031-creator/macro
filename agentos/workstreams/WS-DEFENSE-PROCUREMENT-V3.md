@@ -143,14 +143,16 @@ waves:
     status: in_progress
     depends_on: [D4]
     next_action: >
-      Sol authorized D5R as research/architecture only. Freeze the owner
-      architecture, positive pilot, negative control (IRDM P00032 stays
-      program-null), temporal/correction semantics, experience composition,
-      and the exact D5 implementation handoff. No production schema/code.
-      Deliverables:
-      research/defense_intelligence/DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md
-      + DEFENSE_D5_PROGRAM_GRAPH_IMPLEMENTATION_HANDOFF.md + evidence
-      composition.
+      D5R core architecture merged on #6209 and PASSED Sol review; FINAL
+      ACCEPTANCE HELD pending the D5R.1 docs-consistency close (Sol
+      2026-08-22): six source-law contradictions repaired (acq-capability
+      id, economic_weight const-null, program_id-required role keys,
+      issuer-host authority split with no second registry, forward-only
+      milestones with the Block VI award reclassified as the GovRev/D3
+      changed-event, AUKUS forward-source classification). Owner
+      adjudication and Virginia pilot remain frozen — do not reopen.
+      Handoff:
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r1-docs-consistency.md.
   - id: D5
     title: Program, mission, capability, and product graph (implementation)
     status: todo
