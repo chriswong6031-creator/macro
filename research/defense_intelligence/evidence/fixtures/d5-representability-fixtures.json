@@ -41,7 +41,8 @@
    "known_at": "2026-08-22T08:00:00+00:00",
    "claim_scopes": [
     "program_identity",
-    "role"
+    "role",
+    "program_event_link"
    ]
   },
   {
@@ -73,6 +74,18 @@
    ]
   }
  ],
+ "placeholder_preimages": {
+  "ev:7e57bb71753d": "d5r2-reference-placeholder:navy-fy2011-p1-exhibit",
+  "ev:4f8d159388a7": "d5r2-reference-placeholder:crs-rl32418",
+  "ev:2f718fd13f51": "d5r2-reference-placeholder:contracts-2026-07-29",
+  "ev:31e47b3a83dd": "d5r2-reference-placeholder:bwxt-ir-2025-02-19",
+  "ev:50fb58872bd7": "d5r2-reference-placeholder:example-doc"
+ },
+ "worksheet_placeholder_preimages": {
+  "virginia": "d5r2-reference-placeholder:virginia-worksheet",
+  "irdm": "d5r2-reference-placeholder:irdm-worksheet",
+  "example_milestones": "d5r2-reference-placeholder:example-milestones-worksheet"
+ },
  "A_program_capability_relation": {
   "program": {
    "id": "acq-program:virginia-class-ssn",
@@ -223,7 +236,7 @@
    ]
   },
   "synthetic_link_normalized_preimage": "acq-program:virginia-class-ssn|government_procurement_event.v2|govws-0000000000000000example|2026-07-29t00:00:00+00:00|1",
-  "synthetic_note": "shape example only - event_id/source identity are synthetic; a production row must pass the loader's event-store verification (event exists; event_source_identity_id and event_source_identity_content_sha256 equal the live event's award_change.source_identity.id/.content_sha256; canonical_award_identity matches)."
+  "synthetic_note": "shape example only - event_id/source identity are synthetic; a production row must pass the SS3.1b verification: CURATE checks the event exists in the workspace store and that event_source_identity_id / event_source_identity_content_sha256 / canonical_award_identity agree with the live event; the LOADER re-verifies hash agreement only for events present in the current workspace window (absence at load is not a refusal)."
  },
  "D_irdm_reviewed_none": {
   "real_event_identity": {
