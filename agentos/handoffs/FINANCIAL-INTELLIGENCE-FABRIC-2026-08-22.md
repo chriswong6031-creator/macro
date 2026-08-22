@@ -3,6 +3,7 @@ workstream: "WS:FINANCIAL-INTELLIGENCE-FABRIC"
 session: claude/fif-3a1
 model: local
 ended_because: complete
+prs: [6268]
 mission: >
   FIF-3A1 AAPL real as-reported statement vertical: Data OS identity,
   bounded 10-K package, filing-native statement trees, authenticated
