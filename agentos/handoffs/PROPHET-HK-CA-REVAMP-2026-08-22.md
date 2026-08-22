@@ -28,6 +28,15 @@ changed:
       (placement/knife/extension whole-read unavailable => never ENTRY_OPEN);
       no market parameter, no env read, no published-artifact read, no board
       rank/featured/membership input (source-fenced + permutation-tested).
+      SOL PRE-SETTLEMENT REPAIR (2026-08-22, second PR): the #6226 code
+      defaulted OMITTED plc/knife/extension availability flags to available
+      via .get(..., True), and two tests asserted that default — a latent
+      contract defect (production supplies all three flags, so no evidence
+      contamination). Repaired: ENTRY_OPEN reachable only when all three
+      flags are explicitly present and True; omitted/None fails closed to
+      UNAVAILABLE_DATA with `…_unavailable(unstated)`; the default-true
+      tests were deleted and replaced with six discriminating regressions;
+      known per-name blockers are NOT weakened by an absent flag.
   - path: scripts/build_hk_library.py
     what: >
       Registration block between the hk_standouts.json persist and the
@@ -81,8 +90,10 @@ verified:
       tests/test_gh_annotation_line_start.py -q (run independently by the
       commissioning session)
     result: 120 passed; plus tests/test_hk_board_rank.py 187 passed / 16 pre-existing skips
-  - claim: five executed mutation arms kill (producer cap; availability
-      default-to-pass; freshness error/zero collapse; blocked_signal
+  - claim: six executed mutation arms kill (producer cap; availability
+      explicit-False default-to-pass; OMITTED-flag default-to-available
+      [Sol pre-settlement repair — restoring .get(..., True) fails four
+      named tests]; freshness error/zero collapse; blocked_signal
       staleness bound removal; plus round-1 arms re-executed post-repair)
     command: mutation applied -> named test FAILED -> reverted -> suites green; transcripts in the two builder RETURN packets
     result: every arm fails its NAMED test; no mutation markers left (grep clean)
@@ -124,6 +135,7 @@ do_not_redo:
   - Do not register the receipt in check_surface_freshness._ARTIFACTS (ops paging spine — DEC:PROPHET-SHADOW-FRESHNESS-RECEIPT-NOT-A-SURFACE).
   - Do not derive blocked_signal from build_vetoed_rows' capped display rows, and do not drop its VETOED_MAX_SESSIONS staleness bound (F2: an ancient veto re-mints a fresh observation every session forever).
   - Do not read knife/extension per-name absence as unavailable — whole-read availability is the threaded flag; per-name absence within an available read is a genuine False (R4 semantics).
+  - Do not restore an available default for an omitted/None whole-read availability flag (.get(..., True)) — Sol ruled unknown required availability must never default to pass; four named tests pin the fail-closed shape.
   - Do not add an A-twin lead/read-through origin without first building the evidence producer — censused NOT PRESENT in current code (scout census 2026-08-22).
   - Do not re-run the recorded K1-K20 or D1/D4 mutation campaigns; the five K-D/R arms recorded here are likewise executed-and-recorded.
 danger_areas:

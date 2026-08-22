@@ -218,7 +218,12 @@ waves:
       A-twin lead honestly ABSENT (censused not-present; no new alpha
       machinery). First real availability read: 6-state fail-closed ladder,
       read-availability explicit (placement/knife/extension whole-read
-      unavailable => never ENTRY_OPEN). Freshness via per-market receipt
+      unavailable => never ENTRY_OPEN). Sol pre-settlement repair 2026-08-22:
+      the merged #6226 code defaulted OMITTED availability flags to available
+      (tests asserted the default) — repaired so ENTRY_OPEN requires all
+      three flags explicitly True; omitted/None fails closed to
+      UNAVAILABLE_DATA `…_unavailable(unstated)`; executed omission-mutation
+      arm kills four named tests. Freshness via per-market receipt
       data/prophet_shadow/<mkt>_discovery_receipt.json written by write_shadow
       only for markets with >=1 registration (lawful-zero distinguishable from
       stale/error/absent); sole reader check_hk_discovery_freshness on the HK

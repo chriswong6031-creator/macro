@@ -155,21 +155,42 @@ def test_k_d4_no_gate_verdict_is_never_entry_open():
     assert aaa["availability_source"] == "missing_inputs(gate_verdict)"
 
 
-def test_k_d4_placement_gate_unavailable_demotes_would_be_entry_open():
-    base_evidence = {
+# All three whole-read availability flags EXPLICITLY True — the ONLY shape
+# from which ENTRY_OPEN is reachable (Sol pre-settlement repair 2026-08-22:
+# an omitted flag must never default to available).
+_ALL_READS_AVAILABLE = {
+    "plc_available": True,
+    "knife_available": True,
+    "extension_available": True,
+}
+
+
+def _entry_open_base_evidence():
+    return {
         "washout_2w": {"AAA": True},
         "sig_verdict": {"AAA": _verdict(eligible=True)},
+        **_ALL_READS_AVAILABLE,
     }
-    rows_available = hkdc.build_candidates(
-        {**base_evidence, "plc_available": True}, "2026-08-21")
-    aaa_available = next(r for r in rows_available if r["security_ref_raw"] == "AAA")
-    assert aaa_available["availability_status"] == hkdc.ENTRY_OPEN  # POSITIVE CONTROL
 
-    rows_unavailable = hkdc.build_candidates(
-        {**base_evidence, "plc_available": False}, "2026-08-21")
-    aaa_unavailable = next(r for r in rows_unavailable if r["security_ref_raw"] == "AAA")
-    assert aaa_unavailable["availability_status"] == hkdc.UNAVAILABLE_DATA
-    assert aaa_unavailable["availability_source"] == "placement_gate_unavailable"
+
+def _aaa_row(evidence):
+    rows = hkdc.build_candidates(evidence, "2026-08-21")
+    return next(r for r in rows if r["security_ref_raw"] == "AAA")
+
+
+def test_k_d4_all_reads_explicitly_available_is_entry_open():
+    """POSITIVE CONTROL (Sol regression 4): with every required whole-read
+    availability flag explicitly True, an eligible unblocked name reaches
+    ENTRY_OPEN exactly as before."""
+    aaa = _aaa_row(_entry_open_base_evidence())
+    assert aaa["availability_status"] == hkdc.ENTRY_OPEN
+    assert aaa["availability_source"] == "hk_signal_gate"
+
+
+def test_k_d4_placement_gate_unavailable_demotes_would_be_entry_open():
+    aaa = _aaa_row({**_entry_open_base_evidence(), "plc_available": False})
+    assert aaa["availability_status"] == hkdc.UNAVAILABLE_DATA
+    assert aaa["availability_source"] == "placement_gate_unavailable"
 
 
 def test_k_d4_knife_read_unavailable_demotes_would_be_entry_open():
@@ -177,32 +198,63 @@ def test_k_d4_knife_read_unavailable_demotes_would_be_entry_open():
     (knife_available=False), a name that would otherwise reach ENTRY_OPEN
     gets UNAVAILABLE_DATA/knife_read_unavailable instead — never a silent
     ENTRY_OPEN pass-through just because knife_risk happened to be empty."""
-    base_evidence = {
-        "washout_2w": {"AAA": True},
-        "sig_verdict": {"AAA": _verdict(eligible=True)},
-    }
-    rows_available = hkdc.build_candidates(
-        {**base_evidence, "knife_available": True}, "2026-08-21")
-    aaa_available = next(r for r in rows_available if r["security_ref_raw"] == "AAA")
-    assert aaa_available["availability_status"] == hkdc.ENTRY_OPEN  # POSITIVE CONTROL
-
-    rows_unavailable = hkdc.build_candidates(
-        {**base_evidence, "knife_available": False}, "2026-08-21")
-    aaa_unavailable = next(r for r in rows_unavailable if r["security_ref_raw"] == "AAA")
-    assert aaa_unavailable["availability_status"] == hkdc.UNAVAILABLE_DATA
-    assert aaa_unavailable["availability_source"] == "knife_read_unavailable"
+    aaa = _aaa_row({**_entry_open_base_evidence(), "knife_available": False})
+    assert aaa["availability_status"] == hkdc.UNAVAILABLE_DATA
+    assert aaa["availability_source"] == "knife_read_unavailable"
 
 
-def test_k_d4_knife_available_defaults_true_when_omitted():
-    """Backward-compat: an evidence bundle that never sets knife_available at
-    all (every pre-R4 fixture) must behave exactly as before — available."""
-    evidence = {
-        "washout_2w": {"AAA": True},
-        "sig_verdict": {"AAA": _verdict(eligible=True)},
-    }
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
-    aaa = next(r for r in rows if r["security_ref_raw"] == "AAA")
-    assert aaa["availability_status"] == hkdc.ENTRY_OPEN
+def test_k_d4_omitted_plc_available_is_never_entry_open():
+    """Sol regression 1: an evidence bundle that OMITS plc_available must
+    fail closed — unknown required availability never defaults to pass."""
+    evidence = _entry_open_base_evidence()
+    del evidence["plc_available"]
+    aaa = _aaa_row(evidence)
+    assert aaa["availability_status"] == hkdc.UNAVAILABLE_DATA
+    assert aaa["availability_source"] == "placement_gate_unavailable(unstated)"
+
+
+def test_k_d4_omitted_knife_available_is_never_entry_open():
+    """Sol regression 2: omitting knife_available (the pre-repair
+    default-true hole) must fail closed to UNAVAILABLE_DATA."""
+    evidence = _entry_open_base_evidence()
+    del evidence["knife_available"]
+    aaa = _aaa_row(evidence)
+    assert aaa["availability_status"] == hkdc.UNAVAILABLE_DATA
+    assert aaa["availability_source"] == "knife_read_unavailable(unstated)"
+
+
+def test_k_d4_omitted_extension_available_is_never_entry_open():
+    """Sol regression 3: omitting extension_available must fail closed."""
+    evidence = _entry_open_base_evidence()
+    del evidence["extension_available"]
+    aaa = _aaa_row(evidence)
+    assert aaa["availability_status"] == hkdc.UNAVAILABLE_DATA
+    assert aaa["availability_source"] == "extension_read_unavailable(unstated)"
+
+
+def test_k_d4_explicit_none_availability_flag_is_never_entry_open():
+    """Explicit None is as unknown as omitted — fail closed for each flag."""
+    for key, source in (
+        ("plc_available", "placement_gate_unavailable(unstated)"),
+        ("knife_available", "knife_read_unavailable(unstated)"),
+        ("extension_available", "extension_read_unavailable(unstated)"),
+    ):
+        aaa = _aaa_row({**_entry_open_base_evidence(), key: None})
+        assert aaa["availability_status"] == hkdc.UNAVAILABLE_DATA, key
+        assert aaa["availability_source"] == source
+
+
+def test_k_d4_absent_flag_does_not_weaken_per_name_blockers():
+    """Sol repair scope guard: a known conservative per-name blocker
+    (RIGHTS_BLOCKED / WAIT_PULLBACK / RAN_DONT_CHASE) still wins even when a
+    DIFFERENT read's availability flag is absent — an unknown read demotes
+    only the would-be ENTRY_OPEN pass, never a known blocker."""
+    evidence = _entry_open_base_evidence()
+    del evidence["extension_available"]
+    evidence["knife_risk"] = {"AAA": True}
+    aaa = _aaa_row(evidence)
+    assert aaa["availability_status"] == hkdc.WAIT_PULLBACK
+    assert aaa["availability_source"] == "knife_read"
 
 
 def test_k_d4_knife_read_true_still_wins_over_availability():
@@ -227,32 +279,9 @@ def test_k_d4_extension_read_unavailable_demotes_would_be_entry_open():
     — extension_signals() returns an empty map by construction whenever
     `closes` is absent, and per-name absence within that empty map must not
     be read as 'not extended' when the whole read never ran."""
-    base_evidence = {
-        "washout_2w": {"AAA": True},
-        "sig_verdict": {"AAA": _verdict(eligible=True)},
-    }
-    rows_available = hkdc.build_candidates(
-        {**base_evidence, "extension_available": True}, "2026-08-21")
-    aaa_available = next(r for r in rows_available if r["security_ref_raw"] == "AAA")
-    assert aaa_available["availability_status"] == hkdc.ENTRY_OPEN  # POSITIVE CONTROL
-
-    rows_unavailable = hkdc.build_candidates(
-        {**base_evidence, "extension_available": False}, "2026-08-21")
-    aaa_unavailable = next(r for r in rows_unavailable if r["security_ref_raw"] == "AAA")
-    assert aaa_unavailable["availability_status"] == hkdc.UNAVAILABLE_DATA
-    assert aaa_unavailable["availability_source"] == "extension_read_unavailable"
-
-
-def test_k_d4_extension_available_defaults_true_when_omitted():
-    """Backward-compat: an evidence bundle that never sets
-    extension_available at all must behave exactly as before — available."""
-    evidence = {
-        "washout_2w": {"AAA": True},
-        "sig_verdict": {"AAA": _verdict(eligible=True)},
-    }
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
-    aaa = next(r for r in rows if r["security_ref_raw"] == "AAA")
-    assert aaa["availability_status"] == hkdc.ENTRY_OPEN
+    aaa = _aaa_row({**_entry_open_base_evidence(), "extension_available": False})
+    assert aaa["availability_status"] == hkdc.UNAVAILABLE_DATA
+    assert aaa["availability_source"] == "extension_read_unavailable"
 
 
 def test_k_d4_extension_read_true_still_wins_over_availability():
