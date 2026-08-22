@@ -1,15 +1,16 @@
-# W1B.1 trusted context publisher. It has no network or credentials. Exact raw
-# regime bytes and identity/calendar evidence remain in the private state tree;
-# only the label-free macro snapshot and context packet reach the API-readable
-# trusted store. The publisher advances public HEAD only after private evidence.
+# Options Context Audit publisher. Distinct from the W1B.1 trusted-context
+# owner W2C consumes. It reads the complete owner corpus and the public W1A
+# plus trusted stores, then writes only private options-context receipts.
+# Failure is loud and independent: it must not relabel trusted-context success.
 [Unit]
-Description=Publish the trusted SPY macro-regime Market Memory canary
+Description=Publish the Options Context Audit over the complete owner corpus
 After=local-fs.target
+After=macro-market-memory-context.service
 
 [Service]
 Type=oneshot
 WorkingDirectory=/opt/macro
-ExecStart=/opt/macro-api/.venv/bin/python -m scripts.project_market_memory_context --repository-root /opt/macro --public-store-root /var/lib/macro-market-memory/public/trusted-v1 --private-evidence-root /var/lib/macro-market-memory/state/context-projection
+ExecStart=/opt/macro-api/.venv/bin/python -m scripts.audit_options_market_memory_context --repository-root /opt/macro --w1a-store-root /var/lib/macro-market-memory/public --trusted-store-root /var/lib/macro-market-memory/public/trusted-v1 --publish-root /var/lib/macro-market-memory/state/context-projection/options-context-receipts
 TimeoutStartSec=180
 Nice=10
 CPUWeight=20
@@ -41,13 +42,18 @@ LockPersonality=true
 SystemCallArchitectures=native
 RestrictAddressFamilies=AF_UNIX
 ReadOnlyPaths=/opt/macro
-ReadWritePaths=/var/lib/macro-market-memory/public/trusted-v1
-ReadWritePaths=/var/lib/macro-market-memory/state/context-projection
-InaccessiblePaths=-/var/lib/macro-market-memory/state/context-projection/options-context-receipts
+ReadOnlyPaths=/var/lib/macro-market-memory/public
+ReadWritePaths=/var/lib/macro-market-memory/state/context-projection/options-context-receipts
 InaccessiblePaths=/var/lib/macro-market-memory-options
 InaccessiblePaths=/etc/macro-market-memory-options
 InaccessiblePaths=/var/lib/macro-market-memory/state/sources
+InaccessiblePaths=/var/lib/macro-market-memory/state/sources-spy-rest-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/identity-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/breadth-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/technicals-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/technicals-v2
 InaccessiblePaths=/var/lib/macro-market-memory/state/experience-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/experience-v2
 InaccessiblePaths=/var/lib/macro-market-memory/state/production-record-options-episode-v1
 InaccessiblePaths=-/var/lib/macro-api
 InaccessiblePaths=-/var/lib/macro-biocatalyst
