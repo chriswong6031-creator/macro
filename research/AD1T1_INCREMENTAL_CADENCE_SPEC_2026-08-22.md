@@ -7,11 +7,32 @@
 `research/AD1T0_THETADATA_CUTOVER_SPEC_2026-08-22.md`.
 **Ruled by:** Fable (COO), 2026-08-22. Builders execute this spec; they do not redesign it.
 **Merge authority:** NONE — the AD-1T1 PR returns to Sol unmerged (DRAFT + HOLD-FOR-SOL, PR #6267).
-**Revision:** R2 — amended for all 17 findings of the opus analyst attack
-(F1–F17, adjudicated by Fable 2026-08-22 ~22:00Z). Two amendments are
-ensure-law-adjacent and are RETURNED TO SOL EXPLICITLY in the §18 packet
-rather than absorbed silently: the F1 S-panel healthy split and the F5
-`fetch_failed` taxonomy superset.
+**Revision:** R3 — R2 amended for all 17 findings of the opus analyst attack
+(F1–F17, adjudicated by Fable 2026-08-22 ~22:00Z; two ensure-law-adjacent
+amendments — the F1 S-panel healthy split and the F5 `fetch_failed`
+superset — are RETURNED TO SOL EXPLICITLY in the §18 packet), then amended
+again for all 12 findings of the opus post-build adversarial review
+(RF1–RF12 + one GAPS hardening, adjudicated ~23:15Z): RF1 staleness anchor
+threshold 22:00→**20:00 ET** with a computed (not grep) test at both
+sentinel fire points; RF2 `deadline_exceeded` FORCES `status=partial`; RF3
+the historical backfill must lock-and-write the SAME resolved store as the
+daily lane — `resolve_thetadata_store()` agreement asserted at startup,
+refusing on mismatch (first-install exception: when NO store resolves
+anywhere, `_store_dir()` creation is permitted); RF4 a real cross-writer
+lock test exercising `backfill.main()`'s lock site in both orders; RF5 the
+daily mode gains the advisory (warn-only) pgrep breadcrumb; RF6 the refusal
+test compares CONTENT hashes, not path names; RF7 deadline default
+100→**65 min** (must fit inside the 70-min minimum fire spacing so ladder
+rungs are never swallowed); RF8 `s_suspect_non_session` denominator counts
+only roots with actual EOD[S] vendor attempts this run (zero attempts →
+flag false); RF9 the stale-tmp sweep also covers store-root `*.tmp`
+(receipt tmp) and `publish_r2._uploadable` excludes `.tmp`-suffixed files;
+RF10 `ops/LIVE_FLOW_RUNBOOK.md` lane rows updated (the r2sync plist's
+stale prose + the ~3× nightly R2 delta estimate are REPORTED TO SOL, not
+repaired here); RF11 the ops runbook marks `com.macro.thetadata-daily`
+NOT_INSTALLED pending Sol; RF12 terminal-loss abort records completed
+futures before stamping; GAPS-hardening: an OSError opening the lock file
+is a `failed` outcome (log + exit 1), never a traceback.
 
 Status: FROZEN except §F (`PENDING-BENCHMARK` — filled by Fable from the
 quiet-window ladder before the PR leaves draft review).
