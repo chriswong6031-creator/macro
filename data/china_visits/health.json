@@ -1,6 +1,6 @@
 {
- "status": "ok",
- "detail": "145 candidate row(s) this run",
- "last_attempt_utc": "2026-08-21T09:29:55.187926+00:00",
+ "status": "upstream_degraded",
+ "detail": "derived over a DEGRADED same-run china_filings refresh (sse: HTTP 504 from CNInfo exchange=sse) \u2014 this run contributes no absence evidence",
+ "last_attempt_utc": "2026-08-22T09:10:07.504992+00:00",
  "last_success_utc": "2026-08-21T09:29:55.187926+00:00"
 }
