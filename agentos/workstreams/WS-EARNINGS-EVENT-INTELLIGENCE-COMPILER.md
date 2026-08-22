@@ -68,9 +68,22 @@ waves:
       (Sol review 5000425939). Do not reopen architecture.
   - id: E3-A
     title: AAPL shadow extraction gold + leakage-free Qwen eval
-    status: todo
+    status: in_progress
     depends_on: [E3-0]
-    next_action: Freeze gold, taxonomy, scoring method, and any usefulness bar before the first model call.
+    artifacts:
+      - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json
+      - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_eval_receipt.json
+      - engine/company_intelligence/e3_shadow_compiler.py
+      - tests/test_company_intelligence_event_compiler_e3a.py
+    next_action: >
+      Return to Sol. Gold frozen (7 exchanges, taxonomy=qa_topic.v1,
+      hash=a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e).
+      Usefulness bar: written refusal (N=7 too small for numeric threshold).
+      Both model rungs unavailable in this environment (Qwen: Ollama not
+      running; comparator Anthropic claude-haiku-4-5: no API key configured).
+      Hard safety gates trivially pass (0 accepted candidates). Eval
+      receipt at research/earnings_intelligence/e3/gold/aapl_fy2026_q3_eval_receipt.json.
+      E3-B remains locked pending Sol grant.
   - id: E3-B
     title: AAPL live Q&A into event_workspace.v1
     status: todo
@@ -89,3 +102,5 @@ waves:
 ---
 
 E3-0 landed on main at `22686d255eb047cf5bffc91a35984515acb3d466` (#6161; Sol review 5000425939). E0–E2 stay closed on `WS:EARNINGS-INTELLIGENCE-OS`. Canonical freeze: `research/earnings_intelligence/e3/E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md`. Owner is `coo-fable` (execution). Architecture authority is `DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER` `decided_by: sol`. Next wave is E3-A only.
+
+E3-A executed 2026-08-22. Gold frozen at `research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json` (SHA256 `6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761`). Taxonomy `qa_topic.v1` (hash `a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e`) finalized from gold adjudication before any model inference. Usefulness bar: written refusal — N=7 too small for a numeric threshold. Both model rungs (local Qwen, Anthropic claude-haiku-4-5 comparator) were unavailable in this environment; both attempts ledgered at `lane=earnings_event_compiler`. Hard safety gates trivially pass. **Return to Sol**: E3-B is locked pending Sol grant per freeze §10.1 step 8.

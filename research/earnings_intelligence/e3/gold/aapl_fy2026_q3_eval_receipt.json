@@ -1,0 +1,136 @@
+{
+  "schema": "e3a_eval_receipt.v1",
+  "run_id": "c8813cb20270fde3",
+  "lane": "earnings_event_compiler",
+  "event_id": "evt_cik0000320193_2026q3_results",
+  "gold_path": "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json",
+  "steps": {
+    "sha_verification": {
+      "exhibit_sha": "070abd6a9cdb7070e546d24ffcbc41c65450d939c6f88f189cb18ec711cf5fdb",
+      "transcript_sha": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+      "check": "pass",
+      "frozen_exhibit_sha": "070abd6a9cdb7070e546d24ffcbc41c65450d939c6f88f189cb18ec711cf5fdb",
+      "frozen_transcript_sha": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f"
+    },
+    "segmenter": {
+      "segment_count": 108,
+      "id_method": "sha256[:16]_index04d",
+      "truncation": "none",
+      "sample_ids": [
+        "seg_a8ff5d03e875fef5_0000",
+        "seg_a8ff5d03e875fef5_0001",
+        "seg_a8ff5d03e875fef5_0002"
+      ]
+    },
+    "gold_loaded": {
+      "gold_path": "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json",
+      "gold_sha256": "6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761",
+      "taxonomy_version": "qa_topic.v1",
+      "taxonomy_hash": "a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e",
+      "exchange_count": 7,
+      "usefulness_bar_decision": "refusal",
+      "gold_labels_withheld_during_inference": true
+    },
+    "prompt_built": {
+      "prompt_version": "e3a-qa-extraction-v1",
+      "segment_count": 108,
+      "uses_bounded_transcript_text": false,
+      "gold_labels_in_prompt": false
+    }
+  },
+  "model_attempts": {
+    "qwen": {
+      "provider": "openai_compat",
+      "model": "qwen3.5:9b",
+      "status": "provider_unavailable",
+      "degraded_reason": "openai_compat_error",
+      "n_candidates": 0,
+      "latency_ms": 118.6,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "est_cost_usd": 0.0,
+      "gold_labels_seen": false
+    },
+    "comparator": {
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5",
+      "is_comparator": true,
+      "non_authoritative": true,
+      "comparator_note": "Independent comparator \u2014 evaluation only, no production authority. Runs on same held source bytes as Qwen. Gold labels withheld. Named: Anthropic claude-haiku-4-5 via llm_auth waterfall.",
+      "status": "provider_unavailable",
+      "degraded_reason": "anthropic_not_configured_or_no_key",
+      "n_candidates": 0,
+      "latency_ms": 20.5,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "est_cost_usd": 0.0,
+      "gold_labels_seen": false
+    }
+  },
+  "scores": {
+    "qwen": {
+      "n_gold_exchanges": 7,
+      "n_model_candidates": 0,
+      "exchange_boundary_quality": {
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "note": "model_produced_no_candidates"
+      },
+      "source_span_replay_success_pct": 100.0,
+      "unsupported_candidate_rate": 0.0,
+      "cross_event_contamination_accepted": 0,
+      "topic_label_agreement_mean_jaccard": null,
+      "identity_role_availability": null,
+      "invalid_schema_rate": 0.0,
+      "accepted_count": 0,
+      "hard_gates": {
+        "accepted_unsupported": 0,
+        "cross_event": 0,
+        "span_replay_of_accepted": "100% (0 accepted)",
+        "invalid_schema_accepted": 0,
+        "all_pass": true
+      },
+      "status": "no_candidates"
+    },
+    "comparator": {
+      "n_gold_exchanges": 7,
+      "n_model_candidates": 0,
+      "exchange_boundary_quality": {
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "note": "model_produced_no_candidates"
+      },
+      "source_span_replay_success_pct": 100.0,
+      "unsupported_candidate_rate": 0.0,
+      "cross_event_contamination_accepted": 0,
+      "topic_label_agreement_mean_jaccard": null,
+      "identity_role_availability": null,
+      "invalid_schema_rate": 0.0,
+      "accepted_count": 0,
+      "hard_gates": {
+        "accepted_unsupported": 0,
+        "cross_event": 0,
+        "span_replay_of_accepted": "100% (0 accepted)",
+        "invalid_schema_accepted": 0,
+        "all_pass": true
+      },
+      "status": "no_candidates"
+    }
+  },
+  "summary": {
+    "sha_check": "pass",
+    "gold_frozen_before_inference": true,
+    "neither_model_saw_gold_labels": true,
+    "qwen_status": "provider_unavailable",
+    "comparator_status": "provider_unavailable",
+    "hard_gates_all_pass": true,
+    "usefulness_bar_decision": "refusal_n7_too_small",
+    "return_to_sol": true,
+    "e3b_auto_unlocked": false,
+    "event_workspace_v1_advanced": false,
+    "r2_written": false,
+    "note": "Both model rungs were unavailable in this environment (Qwen: Ollama not running; comparator: no Anthropic API key configured). Hard safety gates trivially pass (0 accepted candidates). Usefulness bar: written refusal (N=7 too small). Returning to Sol per freeze \u00a710.1 step 8."
+  }
+}
