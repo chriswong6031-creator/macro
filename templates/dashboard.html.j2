@@ -19679,17 +19679,30 @@ if (document.readyState === 'loading') {
   var panel = document.getElementById('us-standouts');
   var tog = document.getElementById('us-src-toggle');
   if (!panel || !tog) return;
-  function setSrc(src){
-    if (src !== 'candidates' && src !== 'plans') src = 'candidates';
+  /* The parameter is `mode`, NOT the three letters s-r-c, and that is
+     load-bearing rather than stylistic. scripts/check_site_asset_refs.py scans
+     every shipped page for href/src attribute values, and its pattern matches
+     the bare attribute name followed by an equals sign and a quoted value --
+     with a lookbehind that rejects a preceding word character or hyphen (so
+     `data-` prefixed attributes are correctly ignored). A JavaScript
+     assignment to a variable of that name, preceded by a space, is NOT
+     rejected: it reads to the guard as an HTML attribute pointing at a file
+     that does not exist, and fails the render's dead-reference guard. Render
+     run 32585314359 died exactly that way and the site never published.
+     Do not rename this parameter back, and do not spell that attribute name
+     followed by an equals sign and a quoted string anywhere in this script --
+     including in a comment, which ships in the page like any other bytes. */
+  function setSrc(mode){
+    if (mode !== 'candidates' && mode !== 'plans') mode = 'candidates';
     /* the table renders CANDIDATE rows only, so Plans mode must leave table view */
-    if (src === 'plans' && panel.classList.contains('st-table-mode') &&
+    if (mode === 'plans' && panel.classList.contains('st-table-mode') &&
         window.USStockTable && window.USStockTable._setView){
       try { window.USStockTable._setView('grid'); } catch(e){}
     }
-    panel.setAttribute('data-prophet-src', src);
+    panel.setAttribute('data-prophet-src', mode);
     var btns = tog.querySelectorAll('button');
     for (var i=0;i<btns.length;i++){
-      btns[i].setAttribute('aria-selected', btns[i].getAttribute('data-src') === src ? 'true' : 'false');
+      btns[i].setAttribute('aria-selected', btns[i].getAttribute('data-src') === mode ? 'true' : 'false');
     }
     if (window.initShowMore) { try { window.initShowMore(); } catch(e){} }
   }
