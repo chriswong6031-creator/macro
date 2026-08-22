@@ -219,6 +219,10 @@ def _base_decision(target: Mapping[str, object]) -> dict[str, object]:
         "schema": SCHEMA,
         "event": "pull_request_target",
         **target,
+        "current_base_sha": None,
+        "post_files_base_sha": None,
+        "inventory_base_sha": None,
+        "changed_files_snapshot_attempts": 0,
         "changed_file_count": None,
         "authority_hit_count": 0,
         "authority_hits": [],
@@ -304,10 +308,17 @@ def _changed_paths(file_entries: object, expected_count: int) -> tuple[str, ...]
     return tuple(dict.fromkeys(paths))
 
 
-def _identity_still_matches(
+def _candidate_identity_still_matches(
     current: Mapping[str, Any],
     target: Mapping[str, object],
 ) -> bool:
+    """Bind candidate authority identity without binding integration composition.
+
+    ``target["base_sha"]`` is immutable event provenance, but the live tip of the
+    same trusted base ref may advance independently while an unchanged candidate is
+    being evaluated.  Semantic CI binds the exact synthetic merge and its parent-1
+    base; this controller instead binds the candidate, repositories, and target ref.
+    """
     head = _mapping(current.get("head"))
     head_repo = None if head is None else _mapping(head.get("repo"))
     base = _mapping(current.get("base"))
@@ -321,7 +332,6 @@ def _identity_still_matches(
         and user is not None
         and head.get("sha") == target["head_sha"]
         and head_repo.get("full_name") == target["head_repository"]
-        and base.get("sha") == target["base_sha"]
         and base.get("ref") == target["base_ref"]
         and base_repo.get("full_name") == target["base_repository"]
         and user.get("login") == target["author"]
@@ -409,12 +419,17 @@ def evaluate_pull_request_target(
     if identity is None:
         return _reject(decision, "current_pull_identity_rejected")
     current, changed_count = identity
-    if not _identity_still_matches(current, target):
+    current_base = _mapping(current.get("base"))
+    decision["current_base_sha"] = (
+        None if current_base is None else _sha(current_base.get("sha"))
+    )
+    if not _candidate_identity_still_matches(current, target):
         return _reject(decision, "event_head_base_or_author_drift")
 
     try:
         entries = api.list_pull_files(repository, number, changed_count)
         paths = _changed_paths(entries, changed_count)
+        decision["changed_files_snapshot_attempts"] = 1
     except (AuthorityContractError, AuthorityPathError):
         return _reject(decision, "changed_files_rejected")
     except Exception as exc:
@@ -431,12 +446,58 @@ def evaluate_pull_request_target(
         _log_api_failure("post_files_pull", exc)
         return _reject(decision, _api_failure_reason("post_files_pull", exc))
     after_identity = _current_pull_identity(after_response, target)
+    if after_identity is not None:
+        post_files_base = _mapping(after_identity[0].get("base"))
+        decision["post_files_base_sha"] = (
+            None if post_files_base is None else _sha(post_files_base.get("sha"))
+        )
     if (
         after_identity is None
         or after_identity[1] != changed_count
-        or not _identity_still_matches(after_identity[0], target)
+        or not _candidate_identity_still_matches(after_identity[0], target)
     ):
         return _reject(decision, "event_head_base_or_files_drift")
+
+    # The base SHA is integration composition, not candidate identity. If it
+    # advanced while the paginated inventory was being read, discard the crossed
+    # inventory and make one bounded attempt to acquire a snapshot bracketed by
+    # the same live base SHA. This keeps normal same-ref movement lawful while
+    # refusing to classify a mixed old/new page population.
+    if decision["post_files_base_sha"] != decision["current_base_sha"]:
+        snapshot_base_sha = decision["post_files_base_sha"]
+        try:
+            recheck_entries = api.list_pull_files(repository, number, changed_count)
+            recheck_paths = _changed_paths(recheck_entries, changed_count)
+            decision["changed_files_snapshot_attempts"] = 2
+        except (AuthorityContractError, AuthorityPathError):
+            return _reject(decision, "changed_files_recheck_rejected")
+        except Exception as exc:
+            _log_api_failure("changed_files_recheck", exc)
+            return _reject(
+                decision, _api_failure_reason("changed_files_recheck", exc)
+            )
+        try:
+            final_response = api.get_pull(repository, number)
+        except Exception as exc:
+            _log_api_failure("post_recheck_pull", exc)
+            return _reject(decision, _api_failure_reason("post_recheck_pull", exc))
+        final_identity = _current_pull_identity(final_response, target)
+        if final_identity is not None:
+            final_base = _mapping(final_identity[0].get("base"))
+            decision["post_files_base_sha"] = (
+                None if final_base is None else _sha(final_base.get("sha"))
+            )
+        if (
+            final_identity is None
+            or final_identity[1] != changed_count
+            or not _candidate_identity_still_matches(final_identity[0], target)
+        ):
+            return _reject(decision, "event_head_base_or_files_drift")
+        if decision["post_files_base_sha"] != snapshot_base_sha:
+            return _reject(decision, "changed_files_snapshot_unstable")
+        paths = recheck_paths
+
+    decision["inventory_base_sha"] = decision["post_files_base_sha"]
 
     authority_hits = sorted(path for path in paths if is_ci_authority_path(path))
     decision["changed_file_count"] = changed_count
