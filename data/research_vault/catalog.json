@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T11:10:17.874242+00:00",
-  "count": 1612,
+  "generated_at": "2026-08-22T12:15:35.849424+00:00",
+  "count": 1615,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -101,6 +101,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dqi89k4myll-527592",
+      "title": "GS Weekly Commodity Thoughts Oil, Gold, Base, Gas, Gas & Ags",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T10:52:52Z",
+      "summary_points": [
+        "**Crude Oil Fundamentals & Liquidity**: Physical flows show North Sea differentials weakening, US stocks at 5-yr avg, yet systematic buying + low liquidity drive flat price surge (Brent +6% from Aug lows); no near-term supply shortage creates divergence for downside protection.",
+        "**CTA Positioning Risk**: Models indicate CTAs nearing max long positions, implying easing buying flow; combined with price/vol divergence, heightens risk of downside move and supports digital put attractiveness.",
+        "**Gold Central Bank Dynamics**: Steady buying from China/western macros + Central Bank re-engagement (57 tonnes June, 50 tonnes/month 2026) drives 2nd highest ETF inflows; $4,900/toz price forecast by end-2026.",
+        "**Geopolitical Refining Impact**: Unprecedented Middle East/Russia strikes (60% capacity loss) + China export quotas drive record refining margins despite 7mb/d lower global runs, with gasoil as key geopolitical hedge (up 30% since late July)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
       "language": "en",
       "needs_metadata": false
     },
@@ -632,6 +652,48 @@
       "tickers": [],
       "top_pick": false,
       "pages": 36,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-apafdgerusd-7e0eb1",
+      "title": "China Matters From Weak to Weaker",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:03:19Z",
+      "summary_points": [
+        "**Demand-Driven Growth Weakness**: July GDP at ~4% yoy (below target), retail sales +0.6% yoy, FAI -6.7% yoy; services sales growth dropped to 3.2% yoy, signaling persistent household consumption risks.",
+        "**Policy Mismatch Risk**: Supply-side measures (e.g., \"Six Networks,\" bond issuance) insufficient without demand stimulus; cyclical weakness risks structural hysteresis and impaired growth potential.",
+        "**Steel Sector as Demand Barometer**: Initial price spikes from \"anti-involvement\" campaign reversed to pre-campaign levels due to weak demand and labor instability, confirming demand-driven economic drag.",
+        "**Bond Yield Divergence**: 10-yr CGB yield fell below 1.70% (vs.",
+        "10bp global peers), indicating market expects cautious policy easing despite weak data, with limited aggressive stimulus."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6mvsyegfccs-e6ac8e",
+      "title": "Aug 20 2026 GoldmanSachs IndiaFinancialsCorePPoPrecoverytodrivestockreturnsinitiatingcoverageof14stocks",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:03:17Z",
+      "summary_points": [
+        "**Core-PPoP Growth Acceleration**: 17% CAGR (FY26-FY29E) driven by healthy loan growth (retail/MSME), NIM recovery, and lower cost-ratios; key driver for sector profitability.",
+        "**Top Stock Picks & Upside**: ICICI (19% upside, Target 1,335) and Kotak (19% upside, Target 1,477) rated Buy; superior NIMs, Core PPOP growth (11.3pp/13.0pp), and asset quality vs peers.",
+        "**Valuation Discount Narrowing**: Private banks at 15-yr lows (below pre-COVID) with 12m Fwd P/B discount narrowing, reflecting improving relative attractiveness.",
+        "**Key Risks**: Competitive intensity, slower credit recovery, MSME asset quality deterioration, and geopolitical tensions (West Asia conflict impacting inflation/growth).",
+        "**Macro Catalyst**: GS India Banks Leading Indicator (60-70% correlation to banking index) shows sustained upward trend via nominal GDP growth, benign asset quality, and RBI liquidity measures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 164,
       "language": "en",
       "needs_metadata": false
     },
