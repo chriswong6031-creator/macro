@@ -42,20 +42,22 @@
 #     both HARD-enforced by the same module (Fable adjudication, 2026-08-21).
 #   - Row allowlists are LEAST-PRIVILEGE subsets of their status class — a
 #     row is never mechanically widened just because its class could permit
-#     a surface (CPI-H1 ruling 8). This is a NORMATIVE CONVENTION with
-#     ADVISORY tooling only (Fable adjudication, 2026-08-21): per-status
-#     `allowed_consumers` below were never widened to include every narrow
-#     display token some pre-existing rows legitimately use (e.g. CPI-008's
-#     `sync_gauge_display` on a `promoted_null` row), so
-#     engine/cycle_pattern/consumer_authority.py reports class-subset
-#     mismatches as a non-fatal WARN
-#     (`advisory_class_subset_violations()`), never a hard fail — hard-failing
-#     would either wrongly reject pre-existing rows or force an unreviewed
-#     vocabulary-governance call this module has no authority to make. The 7
-#     known violations as of the CPI-H1 heal are escalated to Sol in
-#     research/imce/IMCE_D1C_RELEASE_RECORD.md, not resolved here.
+#     a surface (CPI-H1 ruling 8). This is now a HARD-enforced invariant
+#     (CPI-H1.1, Sol adjudication 2026-08-21/22):
+#     `set(row.allowed_consumers) subset-of set(status_class.allowed_consumers)`
+#     is checked by engine/cycle_pattern/consumer_authority.py's
+#     `validate_consumer_vocabulary()` and raises on violation — the prior
+#     WARN-tier `advisory_class_subset_violations()` was promoted into that
+#     same function rather than left as a second, shadowing check. The 7
+#     rows escalated at the CPI-H1 heal
+#     (research/imce/IMCE_D1C_RELEASE_RECORD.md) were adjudicated by Sol as
+#     legitimate specialized display consumers, not leaks: the `display` and
+#     `promoted_null` class envelopes below were the incomplete half, and are
+#     amended here (CPI-H1.1) to cover exactly those rows' existing grants —
+#     no row's own `allowed_consumers` was widened in this heal.
 #
-# Schema version: v0  (2026-07-06; CPI-H1 heal 2026-08-21)
+# Schema version: v0  (2026-07-06; CPI-H1 heal 2026-08-21; CPI-H1.1 class-
+# envelope closure 2026-08-22)
 # Owner: cycle-intelligence
 
 schema_version: "v0"
@@ -159,6 +161,10 @@ artifact_classes:
       - measurement_page      # measurement.html Null Library section
       - cycle_docs            # cycle documentation surfaces (honest display)
       - research_factory      # factory lifecycle / candidate dedup context
+      - sync_gauge_display    # CPI-H1.1: specialized honest-null gauge
+                               # display (CPI-008); Sol adjudication
+                               # 2026-08-21/22 — envelope closure, not a new
+                               # grant
     forbidden_consumers:
       - board_rank
       - oracle_escalation
@@ -181,6 +187,18 @@ artifact_classes:
       - cycle_docs
       - research_factory
       - neuralweb_context     # cycle-pattern lobe (context only, not scored)
+      - risk_context_strip    # CPI-H1.1: risk-only honest display (CPI-002)
+      - hazard_cone_display   # CPI-H1.1: hazard-cone display (CPI-004/005)
+      - tripwire_context      # CPI-H1.1: tripwire context display (CPI-004/005)
+      - cone_rendering        # CPI-H1.1: cone-rendering display (CPI-011)
+      - monitoring            # CPI-H1.1: monitoring display (CPI-014)
+      - mechanism_summary     # CPI-H1.1: mechanism-summary display (CPI-015)
+      - hypothesis_generation # CPI-H1.1: hypothesis-generation display
+                               # (CPI-015). All seven CPI-H1.1: Sol
+                               # adjudication 2026-08-21/22 — envelope
+                               # closure for legitimate specialized display
+                               # consumers, not new grants (see
+                               # research/imce/IMCE_D1C_RELEASE_RECORD.md).
     forbidden_consumers:
       - board_rank
       - oracle_escalation

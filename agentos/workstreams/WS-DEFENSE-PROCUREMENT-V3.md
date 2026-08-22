@@ -103,7 +103,7 @@ waves:
     pr: [6123, 6173, 6192]
     depends_on: [D3]
     next_action: >
-      Done / SOL ACCEPTANCE PENDING — shipped under Sol's IRDM-only charter
+      Done — Sol accepted 2026-08-21. Shipped under Sol's IRDM-only charter
       in #6123 and provenance-hardened in #6173. D4P entitled production
       proof CLOSED 2026-08-21 on the real signed-in route
       government_revenue.html?mode=companies&item=company:IRDM. Production
@@ -138,10 +138,26 @@ waves:
       and workspace JSON each 401 authentication_required/locked; page 200
       exposes one hidden empty bridge host only. Return to Sol for final D4
       acceptance. D5 remains unauthorized and unstarted.
-  - id: D5
-    title: Program, mission, capability, and product graph
-    status: todo
+  - id: D5R
+    title: Program/mission/capability/product graph architecture freeze (research only)
+    status: in_progress
     depends_on: [D4]
+    next_action: >
+      Sol authorized D5R as research/architecture only. Freeze the owner
+      architecture, positive pilot, negative control (IRDM P00032 stays
+      program-null), temporal/correction semantics, experience composition,
+      and the exact D5 implementation handoff. No production schema/code.
+      Deliverables:
+      research/defense_intelligence/DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md
+      + DEFENSE_D5_PROGRAM_GRAPH_IMPLEMENTATION_HANDOFF.md + evidence
+      composition.
+  - id: D5
+    title: Program, mission, capability, and product graph (implementation)
+    status: todo
+    depends_on: [D5R]
+    next_action: >
+      UNAUTHORIZED. D5 implementation may not start until Sol accepts D5R and
+      explicitly authorizes D5. D6+ likewise unauthorized.
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
@@ -167,6 +183,8 @@ do_not_redo:
   - "Do not hand-advance the candidate ledger. Do not change recipient mappings to make counts nicer."
   - "Do not re-baseline. Do not revive an et_gate mutex."
 decisions:
+  - DEC:D5-OWNER-IS-GOVREV-ONTOLOGY-PLUS-COMPOSED-DOSSIER
+  - DEC:D5-PILOT-IS-VIRGINIA-CLASS-SSN
   - DEC:D0R-RED-TEAM-ADJUDICATION-2026-08-17
   - DEC:D11-AGENCY-CANONICALIZE-AND-SNAPSHOT-INHERIT
   - DEC:D11F-PIT-SAFE-AGENCY-FALLBACK
@@ -183,13 +201,14 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  Sol final D4 acceptance. D4P entitled production proof is CLOSED on the
-  real signed-in IRDM route after #6192 removed the live-discovered
-  score_overlay rendering defect; D4 is done / SOL ACCEPTANCE PENDING.
-  D5 is unauthorized and unstarted. #5424 is closed/superseded by
-  defense21-v1. Publisher-vintage alarm and fixture-freezing the D2/D3 law
-  suites out of the unrun-government-revenue holding pen remain separate
-  follow-ups — do not fold them into the D4 closeout.
+  D4 is done and Sol accepted (2026-08-21). D5R (research/architecture
+  freeze only) is in progress under Sol authorization — owner architecture,
+  pilot, negative control, temporal semantics, experience composition, and
+  the D5 implementation handoff. D5 implementation and D6+ remain
+  unauthorized. #5424 is closed/superseded by defense21-v1.
+  Publisher-vintage alarm and fixture-freezing the D2/D3 law suites out of
+  the unrun-government-revenue holding pen remain separate follow-ups — do
+  not fold them into the D5R close.
 ---
 
 ## Context
@@ -216,4 +235,3 @@ manifest) / 62 queued / 0 unaccounted. P00032 stays DoD / DISA, obligation
 18416666.66, effective 2026-05-12, known_at 2026-08-12, late discovery, IRDM.
 Proof record:
 `agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-20-d2p-production-close.md`.
-D3 stays unauthorized pending Sol review.

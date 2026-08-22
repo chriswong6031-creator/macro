@@ -1,7 +1,7 @@
 {
   "schema": "discovery_confluence.v1",
-  "as_of": "2026-08-20",
-  "generated_at": "2026-08-21T02:15:41.458261+00:00",
+  "as_of": "2026-08-21",
+  "generated_at": "2026-08-22T01:19:23.957496+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -48,8 +48,8 @@
         }
       ],
       "basket_z_scores": {
-        "ai_semiconductors": 1.898,
-        "ai_infra": 1.898
+        "ai_semiconductors": 1.467,
+        "ai_infra": 1.467
       },
       "confidence": "both_legs"
     }
@@ -71,20 +71,20 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "supply constrained",
-          "recent_count": 28,
-          "prior_count": 3,
-          "recent_filers": 28,
-          "prior_filers": 3,
-          "velocity_z": 5.0,
-          "is_affinity_phrase": false
-        },
-        {
           "phrase": "record backlog",
           "recent_count": 31,
           "prior_count": 3,
           "recent_filers": 30,
           "prior_filers": 3,
+          "velocity_z": 5.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "unable to meet demand",
+          "recent_count": 22,
+          "prior_count": 2,
+          "recent_filers": 22,
+          "prior_filers": 2,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         }
@@ -131,20 +131,20 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "supply constrained",
-          "recent_count": 28,
-          "prior_count": 3,
-          "recent_filers": 28,
-          "prior_filers": 3,
-          "velocity_z": 5.0,
-          "is_affinity_phrase": true
-        },
-        {
           "phrase": "record backlog",
           "recent_count": 31,
           "prior_count": 3,
           "recent_filers": 30,
           "prior_filers": 3,
+          "velocity_z": 5.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "unable to meet demand",
+          "recent_count": 22,
+          "prior_count": 2,
+          "recent_filers": 22,
+          "prior_filers": 2,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         }
@@ -168,20 +168,20 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "supply constrained",
-          "recent_count": 28,
-          "prior_count": 3,
-          "recent_filers": 28,
-          "prior_filers": 3,
-          "velocity_z": 5.0,
-          "is_affinity_phrase": false
-        },
-        {
           "phrase": "record backlog",
           "recent_count": 31,
           "prior_count": 3,
           "recent_filers": 30,
           "prior_filers": 3,
+          "velocity_z": 5.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "unable to meet demand",
+          "recent_count": 22,
+          "prior_count": 2,
+          "recent_filers": 22,
+          "prior_filers": 2,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         }
@@ -232,7 +232,7 @@
       "adoption_positive": true,
       "top_phrases": [],
       "basket_z_scores": {
-        "cybersecurity": 3.294
+        "cybersecurity": 2.874
       },
       "confidence": "adoption_only"
     }
@@ -269,16 +269,6 @@
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
     {
-      "phrase": "supply constrained",
-      "recent_count": 24,
-      "prior_count": 3,
-      "recent_filers": 24,
-      "prior_filers": 3,
-      "velocity_z": 5.0,
-      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
-      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
-    },
-    {
       "phrase": "longer lead times",
       "recent_count": 25,
       "prior_count": 1,
@@ -290,10 +280,10 @@
     },
     {
       "phrase": "constrained capacity",
-      "recent_count": 7,
-      "prior_count": 0,
-      "recent_filers": 6,
-      "prior_filers": 0,
+      "recent_count": 6,
+      "prior_count": 1,
+      "recent_filers": 5,
+      "prior_filers": 1,
       "velocity_z": 5.0,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
@@ -309,12 +299,12 @@
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
     {
-      "phrase": "capacity constrained",
-      "recent_count": 9,
-      "prior_count": 2,
-      "recent_filers": 9,
-      "prior_filers": 2,
-      "velocity_z": 3.5,
+      "phrase": "supply constrained",
+      "recent_count": 22,
+      "prior_count": 5,
+      "recent_filers": 22,
+      "prior_filers": 5,
+      "velocity_z": 3.4,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
@@ -335,6 +325,16 @@
       "recent_filers": 13,
       "prior_filers": 3,
       "velocity_z": 2.25,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    },
+    {
+      "phrase": "demand exceeds supply",
+      "recent_count": 2,
+      "prior_count": 0,
+      "recent_filers": 2,
+      "prior_filers": 0,
+      "velocity_z": 2.0,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     }

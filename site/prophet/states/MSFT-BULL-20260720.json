@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "MSFT-BULL-20260720",
-  "asof": "2026-08-20",
+  "asof": "2026-08-21",
   "phase": "at_t1",
   "detection_phase": "at_t1",
   "management_confidence": 73.8,
-  "raw_confidence": 73.0,
+  "raw_confidence": 73.9,
   "delta_vs_base": 13.8,
   "recommended_action": "hold",
   "human_state": "T1 Hit \u2014 Holding",
   "components": {
     "validity": 100.0,
-    "progress": 61.9,
+    "progress": 62.5,
     "pace": 70.5,
-    "retention": 76.0,
-    "overlay": 61.0
+    "retention": 78.0,
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 2.313,
-    "dist_to_t1_r": 0.187,
-    "dist_to_t2_r": 1.687,
-    "horizon_pct_used": 68.9,
-    "p1": 0.8754,
-    "p2": 0.4377,
+    "dist_to_stop_r": 2.348,
+    "dist_to_t1_r": 0.152,
+    "dist_to_t2_r": 1.652,
+    "horizon_pct_used": 71.1,
+    "p1": 0.8986,
+    "p2": 0.4493,
     "p3": null,
-    "move_r": 1.313,
+    "move_r": 1.348,
     "mfe_r": 1.728,
     "mae_r": -0.343
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-30",
   "_first_t1_ts": "2026-08-08",
   "_first_t2_ts": null,
-  "days_elapsed": 31,
-  "tau": 0.6889
+  "days_elapsed": 32,
+  "tau": 0.7111
 }
