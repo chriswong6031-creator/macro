@@ -136,11 +136,19 @@ def test_hold_wrapper_regressions_execute_inside_the_fast_fence() -> None:
         with pytest.MonkeyPatch.context() as monkeypatch:
             hold.test_lawful_concluded_green_hold_becomes_parked(monkeypatch, tmp_path)
         with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_lawful_sol_authority_branch_parks_after_unsafe_branch(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_unsafe_branch_hold_exception_is_sol_namespace_only(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
             hold.test_red_or_pending_hold_does_not_park(monkeypatch, tmp_path)
         with pytest.MonkeyPatch.context() as monkeypatch:
             hold.test_dirty_or_not_exactly_pushed_hold_does_not_park(monkeypatch, tmp_path)
         with pytest.MonkeyPatch.context() as monkeypatch:
-            hold.test_hold_probe_spends_no_github_quota_before_guard_has_reached_unmerged(
+            hold.test_hold_probe_spends_no_github_quota_before_terminal_candidate_blocker(
                 monkeypatch, tmp_path
             )
 
