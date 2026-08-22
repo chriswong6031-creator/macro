@@ -9,6 +9,7 @@ import pandas as pd
 
 import collectors.sec_capital_structure as sec
 from engine.capital_structure.ingestion_health import (
+    calculate_horizon,
     census_attempts,
     evaluate_health,
     health_exit_code,
@@ -248,3 +249,432 @@ def test_source_high_watermark_is_independent_of_compiler_generation_time():
     assert watermark["latest_retrieved_at"] == "2026-08-02T00:32:54Z"
     assert watermark["latest_filing_date"] == "2026-07-31"
     assert watermark["source_manifest_count"] == 1
+
+
+def _horizon_manifest(filing_date: str) -> dict:
+    return {
+        "filing": {
+            "accession": "0000000001-26-000001",
+            "filing_date": filing_date,
+            "file_number": "333-123",
+            "file_number_provenance": {
+                "state": "observed",
+                "value": "333-123",
+                "candidate_values": ["333-123"],
+                "sources": ["sec_header_file_number"],
+            },
+        },
+        "document": {"document_role": "complete_submission"},
+        "parser": {"eligibility": "eligible", "corruption_state": "clean"},
+        "retrieval": {"retrieved_at": f"{filing_date}T23:00:00Z"},
+    }
+
+
+def _horizon_receipt(
+    *, arrivals: int = 100, capacity: int = 160,
+    pending: int = 100, selected: int = 100,
+) -> dict:
+    unserved = pending - selected
+    return {
+        "policy_version": "fixture-policy/1",
+        "latest_discovered_in_policy_filing_date": "2026-08-20",
+        "latest_discovered_in_policy_observed_at": "2026-08-20T22:00:00Z",
+        "live_tail_arrivals_current_run": arrivals,
+        "live_tail_effective_capacity": capacity,
+        "live_tail_arrival_overflow": max(0, arrivals - capacity),
+        "live_tail_pending_before_selection": pending,
+        "live_tail_selected": selected,
+        "live_tail_unserved_after_selection": unserved,
+        "work_classes": [{
+            "work_class": "LIVE_TAIL",
+            "reserved_slots": 160,
+            "spill_in_slots": max(0, capacity - 160),
+            "current_run_arrivals": arrivals,
+            "pending_count": pending,
+            "selected_count": selected,
+        }],
+    }
+
+
+def _calculate_horizon(
+    *, discovered: str = "2026-08-20", retained: str = "2026-08-20",
+    compiled: str = "2026-08-20", latest_status: str = "complete",
+    receipt: dict | None = None,
+) -> dict:
+    completed = [
+        stamp.date().isoformat()
+        for stamp in pd.bdate_range("2026-08-03", "2026-08-20")
+    ]
+    coverage = [
+        {
+            "index_date": index_date,
+            "status": "complete",
+            "policy_version": "fixture-policy/1",
+        }
+        for index_date in completed
+    ]
+    if latest_status != "complete":
+        coverage.append({
+            "index_date": "2026-08-21",
+            "status": latest_status,
+            "policy_version": "fixture-policy/1",
+        })
+    return calculate_horizon(
+        discovery=[{
+            "accession": "0000000001-26-000001",
+            "filing_date": discovered,
+            "_first_seen": f"{discovered}T22:00:00Z",
+        }],
+        index_coverage=coverage,
+        manifests=[_horizon_manifest(retained)],
+        events=[{"filing_date": compiled}],
+        telemetry={
+            "generation_id": "generation:cs:" + "c" * 24,
+            "as_of": "2026-08-21T01:00:00Z",
+        },
+        queue_receipt=receipt or _horizon_receipt(),
+        calculated_at="2026-08-21T01:01:00Z",
+    )
+
+
+def test_horizon_current_requires_discovery_retention_and_compile_parity():
+    horizon = _calculate_horizon()
+    assert horizon["state"] == "current"
+    assert horizon["reason_codes"] == []
+    assert set(horizon["watermarks"].values()) >= {"2026-08-20"}
+    assert horizon["live_tail"] == {
+        "live_tail_arrivals_current_run": 100,
+        "live_tail_effective_capacity": 160,
+        "live_tail_arrival_overflow": 0,
+        "live_tail_pending_before_selection": 100,
+        "live_tail_selected": 100,
+        "live_tail_unserved_after_selection": 0,
+    }
+
+
+def test_horizon_counts_verified_legacy_root_as_retained_before_provenance_backfill():
+    manifest = _horizon_manifest("2026-08-20")
+    del manifest["filing"]["file_number_provenance"]
+    horizon = calculate_horizon(
+        discovery=[{
+            "accession": "0000000001-26-000001",
+            "filing_date": "2026-08-20",
+            "_first_seen": "2026-08-20T22:00:00Z",
+        }],
+        index_coverage=[{
+            "index_date": "2026-08-20", "status": "complete",
+            "policy_version": "fixture-policy/1",
+        }],
+        manifests=[manifest],
+        events=[{"filing_date": "2026-08-20"}],
+        telemetry={
+            "generation_id": "generation:cs:" + "c" * 24,
+            "as_of": "2026-08-21T01:00:00Z",
+        },
+        queue_receipt=_horizon_receipt(),
+        calculated_at="2026-08-21T01:01:00Z",
+    )
+    assert horizon["state"] == "current"
+    assert horizon["watermarks"]["latest_eligible_retained_filing_date"] == "2026-08-20"
+
+
+def test_retained_watermark_clock_belongs_to_the_newest_filing_date():
+    newest = _horizon_manifest("2026-08-20")
+    newest["retrieval"]["retrieved_at"] = "2026-08-20T23:00:00Z"
+    older_later = _horizon_manifest("2026-07-31")
+    older_later["retrieval"]["retrieved_at"] = "2026-08-21T23:00:00Z"
+    horizon = calculate_horizon(
+        discovery=[],
+        index_coverage=[{
+            "index_date": "2026-08-20", "status": "complete",
+            "policy_version": "fixture-policy/1",
+        }],
+        manifests=[newest, older_later],
+        events=[{"filing_date": "2026-08-20"}],
+        telemetry={
+            "generation_id": "generation:cs:" + "c" * 24,
+            "as_of": "2026-08-21T01:00:00Z",
+        },
+        queue_receipt=_horizon_receipt(),
+        calculated_at="2026-08-21T01:01:00Z",
+    )
+    assert horizon["state"] == "current"
+    assert horizon["watermarks"]["latest_eligible_retained_filing_date"] == "2026-08-20"
+    assert horizon["watermarks"]["latest_eligible_retained_retrieved_at"] == "2026-08-20T23:00:00Z"
+
+
+def test_retained_watermark_clock_uses_utc_instant_not_lexicographic_offset():
+    earlier = _horizon_manifest("2026-08-20")
+    earlier["retrieval"]["retrieved_at"] = "2026-08-21T01:00:00+10:00"
+    later = _horizon_manifest("2026-08-20")
+    later["retrieval"]["retrieved_at"] = "2026-08-20T23:00:00Z"
+    horizon = calculate_horizon(
+        discovery=[],
+        index_coverage=[{
+            "index_date": "2026-08-20", "status": "complete",
+            "policy_version": "fixture-policy/1",
+        }],
+        manifests=[earlier, later], events=[{"filing_date": "2026-08-20"}],
+        telemetry={
+            "generation_id": "generation:cs:" + "c" * 24,
+            "as_of": "2026-08-21T01:00:00Z",
+        },
+        queue_receipt=_horizon_receipt(),
+        calculated_at="2026-08-21T01:01:00Z",
+    )
+    assert horizon["state"] == "current"
+    assert horizon["watermarks"]["latest_eligible_retained_retrieved_at"] == "2026-08-20T23:00:00Z"
+
+
+def test_horizon_invalid_or_missing_bound_clocks_are_unavailable():
+    invalid_sibling = _horizon_manifest("2026-08-20")
+    invalid_sibling["retrieval"]["retrieved_at"] = "0000"
+    valid_sibling = _horizon_manifest("2026-08-20")
+    valid_sibling["retrieval"]["retrieved_at"] = "2026-08-20T23:00:00Z"
+    receipt = _horizon_receipt()
+    receipt["latest_discovered_in_policy_observed_at"] = None
+    horizon = calculate_horizon(
+        discovery=[],
+        index_coverage=[{
+            "index_date": "2026-08-20", "status": "complete",
+            "policy_version": "fixture-policy/1",
+        }],
+        manifests=[invalid_sibling, valid_sibling],
+        events=[{"filing_date": "2026-08-20"}],
+        telemetry={
+            "generation_id": "generation:cs:" + "c" * 24,
+            "as_of": "2026-08-21T01:00:00Z",
+        },
+        queue_receipt=receipt,
+        calculated_at="2026-08-21T01:01:00Z",
+    )
+    assert horizon["state"] == "unavailable"
+    assert "discovered_observed_at_missing" in horizon["reason_codes"]
+    assert "retained_observed_at_invalid" in horizon["reason_codes"]
+
+
+def test_horizon_missing_retained_clock_is_unavailable():
+    manifest = _horizon_manifest("2026-08-20")
+    manifest["retrieval"]["retrieved_at"] = None
+    horizon = calculate_horizon(
+        discovery=[],
+        index_coverage=[{
+            "index_date": "2026-08-20", "status": "complete",
+            "policy_version": "fixture-policy/1",
+        }],
+        manifests=[manifest], events=[{"filing_date": "2026-08-20"}],
+        telemetry={
+            "generation_id": "generation:cs:" + "c" * 24,
+            "as_of": "2026-08-21T01:00:00Z",
+        },
+        queue_receipt=_horizon_receipt(),
+        calculated_at="2026-08-21T01:01:00Z",
+    )
+    assert horizon["state"] == "unavailable"
+    assert "retained_observed_at_missing" in horizon["reason_codes"]
+
+
+def test_horizon_lag_reports_fourteen_completed_sec_sessions_not_calendar_days():
+    horizon = _calculate_horizon(retained="2026-07-31", compiled="2026-07-31")
+    assert horizon["state"] == "lagging"
+    assert "retained_behind_discovery" in horizon["reason_codes"]
+    assert "compiled_behind_retained_or_discovery" in horizon["reason_codes"]
+    assert horizon["gaps"]["discovery_to_retained_completed_sessions"] == 14
+    assert horizon["gaps"]["retained_to_compiled_completed_sessions"] == 0
+
+
+def test_horizon_capacity_degradation_uses_explicit_arrival_and_unserved_metrics():
+    horizon = _calculate_horizon(
+        receipt=_horizon_receipt(
+            arrivals=199, capacity=180, pending=1320, selected=180,
+        )
+    )
+    assert horizon["state"] == "degraded_capacity"
+    assert horizon["live_tail"]["live_tail_arrival_overflow"] == 19
+    assert horizon["live_tail"]["live_tail_unserved_after_selection"] == 1140
+    assert "live_tail_arrival_overflow" in horizon["reason_codes"]
+    assert "live_tail_unserved_after_selection" in horizon["reason_codes"]
+
+
+def test_horizon_exposes_run_scoped_work_class_retrieval_progress():
+    receipt = _horizon_receipt()
+    receipt["work_classes"].extend([
+        {
+            "work_class": "RECOVERY", "pending_count": 20,
+            "selected_count": 20, "deferred_count": 0,
+        },
+        {
+            "work_class": "HISTORICAL_BACKFILL", "pending_count": 1000,
+            "selected_count": 20, "deferred_count": 980,
+        },
+    ])
+    horizon = calculate_horizon(
+        discovery=[],
+        index_coverage=[{
+            "index_date": "2026-08-20", "status": "complete",
+            "policy_version": "fixture-policy/1",
+        }],
+        manifests=[_horizon_manifest("2026-08-20")],
+        events=[{"filing_date": "2026-08-20"}],
+        telemetry={
+            "generation_id": "generation:cs:" + "c" * 24,
+            "as_of": "2026-08-21T01:00:00Z",
+        },
+        queue_receipt=receipt,
+        ingestion_run={"work_classes": [
+            {
+                "work_class": "LIVE_TAIL", "retrieved_count": 99,
+                "parser_deferred_count": 0, "storage_deferred_count": 0,
+                "transient_error_count": 1,
+            },
+            {
+                "work_class": "RECOVERY", "retrieved_count": 18,
+                "parser_deferred_count": 1, "storage_deferred_count": 1,
+                "transient_error_count": 0,
+            },
+            {
+                "work_class": "HISTORICAL_BACKFILL", "retrieved_count": 20,
+                "parser_deferred_count": 0, "storage_deferred_count": 0,
+                "transient_error_count": 0,
+            },
+        ]},
+        calculated_at="2026-08-21T01:01:00Z",
+    )
+    classes = {row["work_class"]: row for row in horizon["work_classes"]}
+    assert classes["LIVE_TAIL"]["retrieved_count"] == 99
+    assert classes["RECOVERY"]["storage_deferred_count"] == 1
+    assert classes["HISTORICAL_BACKFILL"] == {
+        "work_class": "HISTORICAL_BACKFILL", "pending_count": 1000,
+        "selected_count": 20, "deferred_count": 980,
+        "retrieved_count": 20, "parser_deferred_count": 0,
+        "storage_deferred_count": 0, "transient_error_count": 0,
+    }
+
+
+def test_horizon_discovery_retry_outranks_capacity_and_lagging_states():
+    horizon = _calculate_horizon(
+        retained="2026-07-31",
+        compiled="2026-07-31",
+        latest_status="retry",
+        receipt=_horizon_receipt(
+            arrivals=199, capacity=180, pending=1320, selected=180,
+        ),
+    )
+    assert horizon["state"] == "degraded_discovery"
+    assert horizon["watermarks"]["latest_expected_sec_index_date"] == "2026-08-21"
+    assert horizon["watermarks"]["latest_expected_sec_index_status"] == "retry"
+    assert "latest_expected_index_not_complete" in horizon["reason_codes"]
+
+
+def test_horizon_observed_sec_closed_day_is_not_a_discovery_failure():
+    receipt = _horizon_receipt()
+    completed = [
+        {
+            "index_date": "2026-08-20", "status": "complete",
+            "policy_version": "fixture-policy/1",
+        },
+        {
+            "index_date": "2026-08-21", "status": "not_published",
+            "last_error": "SEC calendar closure: observed US federal holiday",
+            "policy_version": "fixture-policy/1",
+        },
+    ]
+    horizon = calculate_horizon(
+        discovery=[], index_coverage=completed,
+        manifests=[_horizon_manifest("2026-08-20")],
+        events=[{"filing_date": "2026-08-20"}],
+        telemetry={
+            "generation_id": "generation:cs:" + "c" * 24,
+            "as_of": "2026-08-21T01:00:00Z",
+        },
+        queue_receipt=receipt, calculated_at="2026-08-21T01:01:00Z",
+    )
+    assert horizon["state"] == "current"
+    assert horizon["watermarks"]["latest_expected_sec_index_date"] == "2026-08-21"
+    assert horizon["watermarks"]["latest_expected_sec_index_status"] == "not_published"
+    assert "latest_expected_index_not_complete" not in horizon["reason_codes"]
+
+
+def test_horizon_terminal_weekday_404_is_degraded_not_a_proven_closure():
+    completed = [
+        {
+            "index_date": "2026-08-20", "status": "complete",
+            "policy_version": "fixture-policy/1",
+        },
+        {
+            "index_date": "2026-08-21", "status": "not_published",
+            "last_error": "IndexNotPublished: SEC daily index HTTP 404: 2026-08-21",
+            "policy_version": "fixture-policy/1",
+        },
+    ]
+    horizon = calculate_horizon(
+        discovery=[], index_coverage=completed,
+        manifests=[_horizon_manifest("2026-08-20")],
+        events=[{"filing_date": "2026-08-20"}],
+        telemetry={
+            "generation_id": "generation:cs:" + "c" * 24,
+            "as_of": "2026-08-21T01:00:00Z",
+        },
+        queue_receipt=_horizon_receipt(),
+        calculated_at="2026-08-21T01:01:00Z",
+    )
+    assert horizon["state"] == "degraded_discovery"
+    assert "latest_expected_index_not_observed" in horizon["reason_codes"]
+
+
+def test_horizon_invalid_coverage_date_is_unavailable_not_false_current():
+    horizon = calculate_horizon(
+        discovery=[],
+        index_coverage=[{
+            "index_date": "not-a-date", "status": "complete",
+            "policy_version": "fixture-policy/1",
+        }],
+        manifests=[_horizon_manifest("2026-08-20")],
+        events=[{"filing_date": "2026-08-20"}],
+        telemetry={
+            "generation_id": "generation:cs:" + "c" * 24,
+            "as_of": "2026-08-21T01:00:00Z",
+        },
+        queue_receipt=_horizon_receipt(),
+        calculated_at="2026-08-21T01:01:00Z",
+    )
+    assert horizon["state"] == "unavailable"
+    assert "discovery_coverage_date_invalid" in horizon["reason_codes"]
+    assert horizon["watermarks"]["latest_expected_sec_index_date"] is None
+
+
+def test_horizon_invalid_retained_or_compiled_filing_date_is_unavailable():
+    bad_manifest = _horizon_manifest("2026-08-20")
+    bad_manifest["filing"]["filing_date"] = "2026-99-99"
+    horizon = calculate_horizon(
+        discovery=[],
+        index_coverage=[{
+            "index_date": "2026-08-20", "status": "complete",
+            "policy_version": "fixture-policy/1",
+        }],
+        manifests=[bad_manifest],
+        events=[{"filing_date": "not-a-date"}],
+        telemetry={
+            "generation_id": "generation:cs:" + "c" * 24,
+            "as_of": "2026-08-21T01:00:00Z",
+        },
+        queue_receipt=_horizon_receipt(),
+        calculated_at="2026-08-21T01:01:00Z",
+    )
+    assert horizon["state"] == "unavailable"
+    assert "retained_watermark_invalid" in horizon["reason_codes"]
+    assert "compiled_watermark_invalid" in horizon["reason_codes"]
+
+
+def test_missing_helpers_normalize_pandas_na_without_ambiguous_truth_value():
+    from engine.capital_structure.ingestion_health import _opt_int, _opt_str
+
+    assert _opt_str(pd.NA) is None
+    assert _opt_int(pd.NA) is None
+
+
+def test_horizon_missing_legacy_work_class_receipt_is_unavailable_not_fresh():
+    horizon = _calculate_horizon(receipt={"policy_version": "fixture-policy/1"})
+    assert horizon["state"] == "unavailable"
+    assert "live_tail_metrics_unavailable" in horizon["reason_codes"]
+    assert all(value is None for value in horizon["live_tail"].values())

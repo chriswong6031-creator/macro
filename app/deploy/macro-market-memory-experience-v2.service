@@ -1,0 +1,83 @@
+# W2C M0D v2 — Experience-v2 accrual.
+# Reads from technicals-v2 and sources-spy-rest-v1 (sealed evidence).
+# Keyless, PrivateNetwork=true.
+# SEPARATE from macro-market-memory-experience.service (v1).
+# v1 timer has NO hard Requires= on this unit.
+[Unit]
+Description=Accrue M0D v2 SPY experience from sealed REST source evidence
+After=local-fs.target macro-market-memory-technicals-v2.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+ExecStart=/opt/macro-api/.venv/bin/python -m scripts.accrue_market_memory_spy_experience_v2 \
+  --repository-root /opt/macro \
+  --experience-root /var/lib/macro-market-memory/state/experience-v2 \
+  --source-root /var/lib/macro-market-memory/state/sources-spy-rest-v1 \
+  --technicals-v2-root /var/lib/macro-market-memory/state/technicals-v2
+TimeoutStartSec=600
+Nice=10
+CPUWeight=20
+CPUQuota=50%
+MemoryHigh=512M
+MemoryMax=1G
+IOWeight=20
+UMask=0077
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+PrivateTmp=true
+PrivateDevices=true
+PrivateNetwork=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX
+TemporaryFileSystem=/var/lib/macro-market-memory:ro
+BindReadOnlyPaths=/var/lib/macro-market-memory/state/sources-spy-rest-v1
+BindReadOnlyPaths=/var/lib/macro-market-memory/state/technicals-v2
+BindPaths=/var/lib/macro-market-memory/state/experience-v2
+ReadOnlyPaths=/opt/macro
+ReadOnlyPaths=/var/lib/macro-market-memory/state/sources-spy-rest-v1
+ReadOnlyPaths=/var/lib/macro-market-memory/state/technicals-v2
+ReadWritePaths=/var/lib/macro-market-memory/state/experience-v2
+# Credential dir, v1 stores, and CPI sources are inaccessible
+InaccessiblePaths=/etc/macro-market-memory-spy-rest
+InaccessiblePaths=/var/lib/macro-market-memory/state/sources
+InaccessiblePaths=/var/lib/macro-market-memory/state/technicals-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/experience-v1
+InaccessiblePaths=/var/lib/macro-market-memory-options
+InaccessiblePaths=/etc/macro-market-memory-options
+InaccessiblePaths=-/etc/macro-api.env
+InaccessiblePaths=-/var/lib/macro-api
+InaccessiblePaths=-/var/lib/macro-biocatalyst
+InaccessiblePaths=-/var/lib/macro-codex
+InaccessiblePaths=-/var/lib/macro-codex-2
+InaccessiblePaths=-/var/lib/macro-codex-3
+InaccessiblePaths=-/var/lib/macro-live
+InaccessiblePaths=-/etc/macro-admin.env
+InaccessiblePaths=-/etc/macro-biocatalyst.env
+InaccessiblePaths=-/etc/macro-biocatalyst-control.env
+InaccessiblePaths=-/etc/macro-biocatalyst-fixed-cohort.env
+InaccessiblePaths=-/etc/macro-biocatalyst-fixed-cohort
+InaccessiblePaths=-/etc/macro-live.env
+InaccessiblePaths=-/etc/macro-market-memory.env
+InaccessiblePaths=-/etc/macro-ollama.env
+InaccessiblePaths=-/etc/macro-sentinel.env
+InaccessiblePaths=-/etc/macro-user-backup.env
+InaccessiblePaths=-/etc/ssl/cf-origin.key
+
+[Install]
+WantedBy=multi-user.target

@@ -146,6 +146,12 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests
       - name: HK+CA Prophet shadow substrate — K1-K14 + standing clauses
         run: python -m pytest tests/test_board_shadow.py -q
+      # hk-discovery wave (WS:PROPHET-HK-CA-REVAMP): the FIRST real Lane-B
+      # registration against this substrate (K-D1..K-D9) — same tmp_path
+      # fixture discipline as the K1-K20 suite above, same venv (pandas/
+      # pyarrow only; no render deps needed for this module's own kills).
+      - name: HK discovery challenger — K-D1-K-D9 (hk_discovery_v1)
+        run: python -m pytest tests/test_hk_discovery_challenger.py -q
 
   board-contradictions:
     if: ${{ false }}
@@ -11847,6 +11853,7 @@ jobs:
           tests/test_market_memory_pit.py
           tests/test_market_memory_sources.py
           tests/test_market_memory_source_deploy.py
+          tests/test_market_memory_m0d_v2.py
           tests/test_market_memory_identity.py
           tests/test_market_memory_identity_observation.py
           tests/test_market_memory_identity_store.py

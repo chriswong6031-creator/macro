@@ -1,0 +1,14 @@
+[Unit]
+Description=Accrue M0D v2 SPY experience at 04:32Z (after v1 04:30Z)
+
+[Timer]
+# 04:32Z — 2 minutes after v1 experience timer, both independent oneshots.
+# v1 timer (04:30:00 UTC) has NO Requires= dependency on this unit.
+OnCalendar=*-*-* 04:32:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=false
+Unit=macro-market-memory-experience-v2.service
+
+[Install]
+WantedBy=timers.target

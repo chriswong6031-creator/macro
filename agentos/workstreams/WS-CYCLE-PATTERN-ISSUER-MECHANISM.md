@@ -141,21 +141,94 @@ waves:
       PROPOSED_A4_REGISTRATION_PACKET}.md — the packet is byte-ready
       (config_hash values independently reproduced) and PROPOSED, NOT
       REGISTERED. Opus red-team REVISE (3 blockers) fully dispositioned.
+  - id: CPI-H1-1
+    title: CPI-H1.1 — class-envelope closure (Sol third-gate wave, 2026-08-21; build)
+    status: done
+    depends_on: [CPI-H1]
+    next_action: >
+      DONE — PR #6211, merge 5f9fbe23a300 2026-08-21, verified identical to
+      origin/main tip. Sol adjudicated the seven escalated class-subset rows
+      (CPI-002/004/005/008/011/014/015) as legitimate specialized display
+      consumers — the status-class envelopes were incomplete, not the rows
+      leaky. consumer_matrix.yml display envelope gained exactly
+      risk_context_strip, hazard_cone_display, tripwire_context,
+      cone_rendering, monitoring, mechanism_summary, hypothesis_generation;
+      promoted_null gained sync_gauge_display; nothing else widened, zero new
+      truth rows (registry blob byte-identical), promoted_null still forbids
+      neuralweb_context, all four money-path forbids intact on every class.
+      The row⊆class subset invariant was upgraded WARN→HARD inside the ONE
+      canonical validator (consumer_authority.py), binding both
+      validate_truth() and the CI registry scan; the WARN-tier advisory
+      functions were retired with their absence pinned by test. Five
+      discriminating test mutations added; every added envelope token proven
+      load-bearing (each required by ≥1 adjudicated row, zero redundant, by
+      registry set-difference). Opus red-team ACCEPT with mutation-tested
+      evidence; four hygiene findings (stale validator docstring, money-path
+      envelope pin generalized to all 8 classes, two test renames, one guard
+      comment) applied pre-merge. cycle-pattern-authority CI job confirmed
+      gate:code (merge-gate-binding, unscoped).
+  - id: A4P
+    title: IMCE-A4P — pre-registration criteria closure (Sol third-gate wave, 2026-08-21; records only)
+    status: done
+    depends_on: [A4G]
+    next_action: >
+      DONE — PR #6213, merge 18858570deea 2026-08-21, verified identical to
+      origin/main tip. Contract V1.1→V1.2 implementing Sol's seven A4P
+      rulings; two Opus red-team REVISE rounds fully dispositioned (round-1
+      blockers: a fabricated composite AG17 quotation — same defect class as
+      A4G's MAJ-2 — and the order_softness construction silently readmitting
+      GFC blocks; round-2: promotion-clock figure not propagated to YAML/log,
+      missing AP8 entry, AG14 cohort-label contradiction). Final state: D5
+      inferential target = order_softness ONLY (three phase cells +1rp/+3rp/
+      false-repair≤3rp; sync Cell 4 same target); deterministic outcome-blind
+      order_softness construction frozen in
+      IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md (sign-only lookup,
+      ≥2-contributor floor, contract-governed block admissibility,
+      fail-closed era gate); B≤3 uniform for all six v0 historical cells, LEN
+      excluded cell-level, historical arm honestly labelled
+      named_subset_basis [PHM, KBH] (DHI/TOL era receipts absent — fail
+      closed), grind block usable FY2016–2019 only;
+      minimum_prospective_share_for_promotion = 1.0 numeric in YAML;
+      bootstrap frozen 800 draws/seed 7 on the registered block-cluster unit;
+      six cell IDs minted and frozen identically in contract §11 + YAML +
+      disposition + packet (presented for Sol ratification); promotion clock
+      republished ~2160 with ZERO historical credit (AP3+AG1), old figures
+      demoted to labelled non-promotion diagnostics everywhere incl. YAML;
+      FDR imce_hist_v0 q=0.10 six-cell union with runner obligations as
+      registration stop conditions, no new writer/store; ruling 6 recorded
+      PARTIALLY EXECUTED / OPEN (0/8 month-level boundary receipts; NBER/Fed
+      bracketing receipts obtained; Treasury availability now V-grade — the
+      commissioning session loaded the first-party Daily Treasury Par Yield
+      Curve Rates page directly by browser 2026-08-21, incl. the 2021-12-06
+      HS→MC series-break receipt — storage/reuse basis still unsettled, no
+      ingestion); packet leaves A4 proper exactly Sol's four mechanical acts,
+      verbatim-or-abort. All three family config_hash values stable and
+      independently reproduced across both revision rounds.
   - id: A4
     title: IMCE-03 — preregistration finalization (declared_budget trial-ledger rows; criteria commit before any outcome access)
     status: todo
-    depends_on: [CPI-H1, A4G]
+    depends_on: [CPI-H1-1, A4P]
 next_action: >
-  CPI-H1 and A4G are both MERGED and verified live (2026-08-21); freeze D1(c)
-  is RELEASED. Per Sol's gate: A4 proper (criteria commit + declared_budget
-  rows, strictly before any outcome access) opens ONLY after Sol accepts both
-  returns; the stated next priority after A4 is prospective observation
-  activation. Awaiting Sol: acceptance of both waves; disposition of the seven
-  escalated class-subset rows (CPI-002/004/005/008/011/014/015); the
-  boundary-date receipts (all not_yet_receipted); Treasury CMT owner-direct
-  verification (rate leg unresolved while PMMS is HELD); the phase-target→D5
-  state mapping (now a binding registration stop condition). No auto-roll
-  anywhere; no issuer truth appended yet despite the D1(c) release.
+  Sol's THIRD GATE is executed: CPI-H1.1 (#6211, 5f9fbe23) and IMCE-A4P
+  (#6213, 18858570) are both MERGED and verified on origin/main (2026-08-21).
+  Three of the prior gate's open items are now RESOLVED: the seven
+  class-subset rows (Sol adjudicated legitimate; envelopes amended; subset
+  invariant now HARD law), the phase-target→D5 mapping (order_softness only,
+  AP1), and Treasury CMT availability (first-party V-grade receipt by direct
+  browser). A4 proper (the mechanical registration PR: observe repo pin,
+  write the three declared_budget rows, stamp the registered contract hash,
+  verify criteria-commit-predates-outcomes — nothing else, verbatim-or-abort)
+  opens ONLY after Sol accepts both returns. FIVE escalations await Sol with
+  the returns: (1) whether a ≥2-contributor order_softness read may ever bear
+  the cohort label (named-subset labelling governs meanwhile, AG14); (2)
+  ruling 6 remains OPEN — 0/8 month-level boundary receipts, lane-1 gap 11
+  needs a dedicated housing-sector boundary-dating wave; (3) DHI/TOL
+  pre-FY2025 order-disclosure era receipting (drives the {PHM, KBH} historical
+  arm and the FY2016+ grind-block limit); (4) ratification of the six minted
+  cell IDs; (5) Treasury storage/reuse basis before any persistent CMT
+  ingestion. Stated next priority after A4: prospective observation
+  activation. No auto-roll anywhere; no issuer truth appended; no outcome
+  access.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."

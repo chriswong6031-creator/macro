@@ -54,7 +54,7 @@
     "label": "neutral",
     "name": "Baijiu / Liquor",
     "name_zh": "\u767d\u9152",
-    "rank": 17,
+    "rank": 18,
     "reco": "hold",
     "score": 38
   },
@@ -78,7 +78,7 @@
     "label": "deteriorating",
     "name": "Brokers & Securities",
     "name_zh": "\u5238\u5546",
-    "rank": 19,
+    "rank": 20,
     "reco": "avoid",
     "score": 37
   },
@@ -99,18 +99,18 @@
     "score": 52
   },
   "cn_defense": {
-    "label": "deteriorating",
+    "label": "neutral",
     "name": "Defense & Aerospace",
     "name_zh": "\u519b\u5de5\u822a\u5929",
-    "rank": 20,
-    "reco": "avoid",
-    "score": 33
+    "rank": 17,
+    "reco": "hold",
+    "score": 38
   },
   "cn_food_bev": {
     "label": "deteriorating",
     "name": "Food & Beverage",
     "name_zh": "\u98df\u54c1\u996e\u6599",
-    "rank": 18,
+    "rank": 19,
     "reco": "avoid",
     "score": 37
   },
@@ -120,7 +120,7 @@
     "name_zh": "\u9ec4\u91d1",
     "rank": 1,
     "reco": "accumulate",
-    "score": 77
+    "score": 76
   },
   "cn_insurers": {
     "label": "deteriorating",

@@ -1202,21 +1202,23 @@ jobs:
           R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
           R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
         run: python -m scripts.compile_capital_structure_document_terms
-      - name: build capital-structure projection (offline, context-only)
-        id: cs_projection
-        # Reads only the verified telemetry-last event generation. It publishes an
-        # observed-filing-state artifact and byte-identical public twin; terms,
-        # capacity, runway, scores, probabilities, and Prophet authority stay absent.
-        run: python -m scripts.build_capital_structure_projection
       - name: gate capital-structure ingestion health (fail closed)
         id: cs_health
-        # After compilers so telemetry.as_of (compiler generation time) is
-        # distinguishable from latest_source_retrieved_at. A selected queue
-        # with zero durable verified evidence must red THIS job — collect stays
-        # green so the market plane is not frozen. No continue-on-error, no
-        # `|| echo`: that is how 2026-08-08→08-14 PutObject AccessDenied nights
-        # stayed green while source_manifest froze at 1,258.
+        # After both compilers and before projection so the public artifact can
+        # consume one generation-bound discovery→retained→compiled horizon
+        # verdict. A selected queue with zero durable verified evidence must red
+        # THIS job — collect stays green so the market plane is not frozen. No
+        # continue-on-error, no `|| echo`: that is how 2026-08-08→08-14 PutObject
+        # AccessDenied nights stayed green while source_manifest froze at 1,258.
         run: python -m scripts.check_capital_structure_health
+      - name: build capital-structure projection (offline, context-only)
+        id: cs_projection
+        # Reads the verified telemetry-last event generation and the exactly
+        # generation-bound health horizon produced immediately above. It publishes
+        # one observed-filing-state payload to a canonical artifact and byte-identical
+        # public twin; terms, capacity, runway, scores, probabilities, and Prophet
+        # authority stay absent.
+        run: python -m scripts.build_capital_structure_projection
       # Diagnostics only — changes NO behavior. When the compiler above fails, the
       # ledger it rejected is the one artifact that identifies WHY, and today it is
       # unrecoverable: the failure skips every later step, so the post-collect tree

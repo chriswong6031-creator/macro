@@ -410,6 +410,18 @@ def test_compile_steps_stay_fatal_for_their_own_checkpoint(steps, module):
     )
 
 
+def test_health_precedes_projection_and_binds_public_freshness(steps):
+    """W2A projection freshness must consume this generation's health horizon."""
+    terms = _index_of_run(steps, "scripts.compile_capital_structure_document_terms")
+    health = _index_of_run(steps, "scripts.check_capital_structure_health")
+    projection = _index_of_run(steps, "scripts.build_capital_structure_projection")
+    assert terms < health < projection, (
+        "capital-structure order must be event compiler → document terms → "
+        "health → projection so public freshness cannot use an older horizon; "
+        f"got terms={terms}, health={health}, projection={projection}"
+    )
+
+
 def test_the_checkpoint_stages_only_its_own_generation(steps):
     """Narrow staging: exactly the generation and its byte-identical twin.
 

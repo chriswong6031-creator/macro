@@ -119,17 +119,17 @@ def test_the_workflow_is_event_driven_with_a_ten_minute_recovery_schedule():
     assert workflow_run.get("types") == ["completed"]
 
 
-def test_the_sweep_never_queues_behind_the_workload_it_arbitrates():
-    """Keep the control plane on the one runner reserved for the arbiter.
+def test_the_sweep_is_hosted_outside_the_m2_failure_domain():
+    """Keep portable shipping control off every production/render host.
 
-    On 2026-08-11 the hosted pool was pinned at 180/180 with 91 jobs queued while
-    mac-builder-4 sat online and idle. Its unique label is the isolation boundary;
-    shared workload labels would merely move the priority inversion.
+    W1-A proved current hosted pickup and environment capacity three times, including
+    genuine M2 render overlap. The M2 merge-control registration is rollback-only.
     """
     job = _workflow()["jobs"]["sweep"]
     labels = json.dumps(job["runs-on"])
-    assert job["runs-on"] == ["self-hosted", "macOS", "ARM64", "merge-control"]
-    assert "merge-control" in labels
+    assert job["runs-on"] == "ubuntu-latest"
+    assert "self-hosted" not in labels
+    assert "merge-control" not in labels
     assert "render-linux" not in labels
     assert "render-heavy" not in labels
     assert "macstudio" not in labels
@@ -137,8 +137,8 @@ def test_the_sweep_never_queues_behind_the_workload_it_arbitrates():
     assert int(job["timeout-minutes"]) == 15
 
 
-def test_the_dedicated_sweep_keeps_a_minimal_runner_contract():
-    """The dedicated route needs only the runner's Python and network.
+def test_the_hosted_sweep_keeps_a_minimal_runner_contract():
+    """The hosted route needs only the runner's Python and network.
 
     The integration-baseline job has its own routing/setup-python contract; adding a
     setup step to this lightweight sweep must fail here rather than silently making the
@@ -151,11 +151,12 @@ def test_the_dedicated_sweep_keeps_a_minimal_runner_contract():
     )
 
 
-def test_no_bare_self_hosted_job_can_steal_the_merge_control_runner():
-    """No literal self-hosted route may also match mac-builder-4's full label set."""
+def test_no_production_workflow_routes_to_rollback_only_merge_control():
+    """No literal self-hosted route may match mac-builder-4 after W1-B."""
     parsed = yaml.safe_load(DEPLOY_SECRETS_WORKFLOW.read_text(encoding="utf-8"))
     assert parsed["jobs"]["deploy"]["runs-on"] == ["self-hosted", "macstudio-light"]
     controller_labels = {"self-hosted", "macOS", "ARM64", "parked", "merge-control"}
+    matching_routes = []
     for path in (ROOT / ".github" / "workflows").glob("*.yml"):
         payload = yaml.safe_load(path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
@@ -167,9 +168,10 @@ def test_no_bare_self_hosted_job_can_steal_the_merge_control_runner():
             labels = {route} if isinstance(route, str) else set(route or [])
             if "self-hosted" not in labels or not labels <= controller_labels:
                 continue
-            assert (path.name, name) == ("merge-on-green.yml", "sweep"), (
-                f"{path.name}:{name} route {route!r} can steal merge-control"
-            )
+            matching_routes.append((path.name, name, route))
+    assert matching_routes == [], (
+        f"production workflows still route to rollback-only merge-control: {matching_routes}"
+    )
 
 
 def test_the_workflow_can_actually_merge_and_label():
@@ -198,7 +200,7 @@ def test_concurrency_coalesces_full_sweeps_without_swallowing_red_markers():
     A workflow-wide constant group serialized a 25-107 minute hosted queue wait,
     so triggers arriving every ~50 seconds replaced the only pending run: 98
     cancelled and 0 successful. The group is safe only at job scope on the
-    dedicated runner, and failure wakeups must be keyed by head SHA because each
+    now-proven hosted route, and failure wakeups must be keyed by head SHA because each
     bounded pass marks exactly one failed head.
 
     Full sweeps are level-triggered and therefore share `sweep`; duplicates for
@@ -218,7 +220,7 @@ def test_concurrency_coalesces_full_sweeps_without_swallowing_red_markers():
     assert "workflow_run.head_branch == 'main'" in group
     source = WORKFLOW.read_text(encoding="utf-8")
     assert "livelock" in source.lower(), "the postmortem must stay in the file"
-    assert "25-107 minutes" in source and "dedicated runner" in source
+    assert "25-107 minutes" in source and "GitHub-hosted" in source
     assert "pending" in source.lower() and "skip-ci-ignored" in source
 
 
