@@ -727,12 +727,13 @@ def test_matrix_9_identity_resolution_history_is_append_only_untouched():
 
 @needs_real_store
 def test_matrix_10_blast_radius_node_lifecycle_and_edge_history_deltas():
-    """Matrix 10 / FIX-1 — exact blast radius, proven WITHOUT git: node_lifecycle.
-    parquet carries exactly 2 rows (GOLD, IBIT — not ABX), and the edge history carries
-    EXACTLY 2 more rows than there are distinct edge_ids — i.e. only the two corrected
-    edges have ever received a second belief row. A wider blast radius (a third edge
-    with 2+ belief rows, or a nodes.parquet row count that moved) would break this
-    delta even without a git baseline to diff against."""
+    """Matrix 10 / FIX-1 — blast radius, proven WITHOUT git: node_lifecycle.parquet
+    carries exactly 2 rows (GOLD, IBIT — not ABX), and both corrected edges carry a
+    second belief row. The GLOBAL history-minus-current delta is deliberately NOT
+    pinned: every natural nightly may lawfully append later-belief rows for edges
+    whose material fields moved (changed_edges), so "only two edges ever diverge"
+    is true only until the first post-correction bake. The lifecycle table has no
+    nightly writer, so its exact-2 pin is append-only-lawful."""
     lifecycle = store.read_node_lifecycle(latest=True)
     if lifecycle.empty:
         pytest.skip("correction not yet applied in this checkout")
@@ -742,12 +743,13 @@ def test_matrix_10_blast_radius_node_lifecycle_and_edge_history_deltas():
 
     history = store.read_edges(latest_belief=False)
     current = store.read_edges(latest_belief=True)
-    assert len(history) - len(current) == 2, (
-        f"expected exactly 2 more historical rows than distinct edge_ids "
-        f"({len(history)} vs {len(current)}) — only GOLD's and IBIT's edges may carry "
-        f"a second belief row")
+    assert len(history) > len(current), (
+        f"edge history ({len(history)}) must exceed distinct edge_ids "
+        f"({len(current)}) once the correction lineage is in use")
     multi_belief = history.groupby("edge_id").size()
-    assert set(multi_belief[multi_belief > 1].index) == {GOLD_EDGE_ID, IBIT_EDGE_ID}
+    assert {GOLD_EDGE_ID, IBIT_EDGE_ID} <= set(multi_belief[multi_belief > 1].index), (
+        "both corrected edges must carry a second (correction) belief row — later "
+        "nightlies may lawfully add more multi-belief edges, never remove these two")
 
 
 # ===========================================================================
