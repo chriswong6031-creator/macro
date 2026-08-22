@@ -9,6 +9,7 @@ Linear, creates issues, or decides whether work may run.
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import hashlib
 import json
 import sys
@@ -74,9 +75,37 @@ def semantic_json(value: Mapping[str, Any]) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
 
 
-def source_hash(path: Path) -> str:
-    text = path.read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+def _jsonable(value: Any) -> Any:
+    """Canonical JSON-safe form of already-validated Agent OS parsed values."""
+    if isinstance(value, (_dt.datetime, _dt.date)):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {str(key): _jsonable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(item) for item in value]
+    return value
+
+
+def normalized_record_bytes(rec: Mapping[str, Any]) -> bytes:
+    """Semantic direct-record bytes, stable across YAML mapping-order/format churn.
+
+    Agent OS already owns parsing semantics. Re-serializing the parsed mapping through
+    canonical JSON avoids making harmless frontmatter key order or quoting differences
+    look like a portfolio change, while preserving ordered lists and the exact normalized
+    Markdown body as semantic record content.
+    """
+    normalized = {
+        str(key): _jsonable(value)
+        for key, value in rec.items()
+        if key != "_body"
+    }
+    body = str(rec.get("_body") or "").replace("\r\n", "\n").replace("\r", "\n")
+    normalized["_body"] = body
+    return canonical_bytes(normalized)
+
+
+def source_hash(rec: Mapping[str, Any]) -> str:
+    return hashlib.sha256(normalized_record_bytes(rec)).hexdigest()
 
 
 def rel(path: Path, root: Path) -> str:
@@ -228,7 +257,7 @@ def project_row(
     title = clean(rec.get("title"))
     next_action = clean(rec.get("next_action"))
     source_path = rel(path, root)
-    digest = source_hash(path)
+    digest = source_hash(rec)
     objective = clean(rec.get("objective")) or title
     summary = objective if len(objective) <= 240 else objective[:237].rstrip() + "..."
     gate = gate_observation(rec)
