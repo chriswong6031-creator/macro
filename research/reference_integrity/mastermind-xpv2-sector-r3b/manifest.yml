@@ -15,7 +15,10 @@
 schema: mastermind.rig_manifest.v1
 reference_id: mastermind-xpv2-sector-r3b
 scope: full
-status: in_review
+status: revise
+# status: revise set 2026-08-22 by the R3B.1 orchestrator per Sol's XPV2-SC-R3B.1 commission
+# ("Predecessor verdict: REVISE"); the four fresh critic receipts live in reviews/ and the
+# verdict packet in verdict.yml. Successor cycle: mastermind-xpv2-sector-r3b-1.
 
 surface:
   route: sector_central.html
