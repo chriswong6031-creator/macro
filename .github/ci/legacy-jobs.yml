@@ -1463,11 +1463,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: install source-owner test deps
-        # The bounded A1R adapters import the canonical raw SEC owner, whose
-        # module boundary declares pandas/requests/PyYAML even though these
-        # focused tests never perform a network call.
-        run: pip install pytest pandas requests pyyaml
+      - name: install minimal deps
+        run: pip install pytest
       - name: cycles payload split contract tests (lossless recombine, no-mutate, family rules)
         run: python -m pytest tests/test_cycles_payload_split.py -q
 
@@ -12731,8 +12728,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: install minimal deps
-        run: pip install pytest
+      - name: install source-owner test deps
+        # The bounded A1R adapters import the canonical raw SEC owner, whose
+        # module boundary declares pandas/requests/PyYAML even though these
+        # focused tests never perform a network call.
+        run: pip install pytest pandas requests pyyaml
       - name: Dislocation P0-A1 price-blind source-integrity primitives
         run: >-
           python -m pytest
