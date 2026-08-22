@@ -111,7 +111,7 @@ def test_hosted_merge_control_canary_contract_executes_in_fast_fence() -> None:
 
 
 def test_hold_wrapper_regressions_execute_inside_the_fast_fence() -> None:
-    """Execute the canonical HOLD terminal-state regressions in required fences.
+    """Execute the canonical HOLD state regressions in required fences.
 
     ``audit_unrun_tests.py`` understands direct legacy-manifest ownership only, so
     the separate waiver records this intentional transitive fast-fence ownership.
@@ -136,11 +136,31 @@ def test_hold_wrapper_regressions_execute_inside_the_fast_fence() -> None:
         with pytest.MonkeyPatch.context() as monkeypatch:
             hold.test_lawful_concluded_green_hold_becomes_parked(monkeypatch, tmp_path)
         with pytest.MonkeyPatch.context() as monkeypatch:
-            hold.test_red_or_pending_hold_does_not_park(monkeypatch, tmp_path)
+            hold.test_lawful_sol_authority_branch_parks_after_unsafe_branch(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_lawful_sol_authority_branch_parks_before_first_unsafe_branch(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_unsafe_branch_hold_exception_is_sol_namespace_only(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_red_or_pending_claude_hold_does_not_park(monkeypatch, tmp_path)
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_pending_sol_hold_waits_before_first_unsafe_branch_remediation(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_red_sol_hold_repairs_check_without_branch_remediation(
+                monkeypatch, tmp_path
+            )
         with pytest.MonkeyPatch.context() as monkeypatch:
             hold.test_dirty_or_not_exactly_pushed_hold_does_not_park(monkeypatch, tmp_path)
         with pytest.MonkeyPatch.context() as monkeypatch:
-            hold.test_hold_probe_spends_no_github_quota_before_guard_has_reached_unmerged(
+            hold.test_hold_probe_spends_no_github_quota_outside_candidate_branches(
                 monkeypatch, tmp_path
             )
 
