@@ -17,18 +17,31 @@ discoveries:
   - "DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING"
   - "DSC:GITHUB-CONCURRENCY-SUPERSEDES-PENDING"
   - "DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY"
+  - "DSC:CI-SELF-MOD-FENCE-ARGV-BYPASSES-BOUNDED-TRANSPORT"
 waves:
   - id: W-TRANSPORT
-    title: Bounded changed-files transport (E2BIG repair, PR 5578 incident)
+    title: Bounded changed-files transport across CI and self-mod fences
     status: awaiting_ci
+    pr: [5608, 6223]
     note: >
-      Landed directly on main's architecture after both rewrite lineages
-      churned: the list rides the ci-changed-files artifact, its sha256 joins
-      plan_hash_payload so --expect-plan-sha pins it, children read
-      CI_CHANGED_FILES_FILE, and the CI_CHANGED_FILES_JSON env/output hops are
-      deleted. Evidence: DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING;
-      E2BIG execve mutation regression in tests/test_ci_pack.py; wiring pins
-      in tests/test_ci_plan_workflow.py.
+      PR 5608 landed the cross-job contract: the changed-file list rides the
+      ci-changed-files artifact, its sha256 joins plan_hash_payload so
+      --expect-plan-sha pins it, children read CI_CHANGED_FILES_FILE, and the
+      CI_CHANGED_FILES_JSON env/output hops are deleted. FF PR 5898 fence run
+      32546500471 then exposed a second terminal copy: both same-repository and
+      fork self-mod live checks rebuilt the changed paths and complete commit
+      messages as shell variables and expanded them into checker argv, so the
+      process could die with E2BIG before policy evaluation. The bounded repair
+      in PR 6223 keeps the exact ancestry/range proof and moves both populations
+      to files, with only their paths crossing argv.
+      Evidence: DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING and
+      DSC:CI-SELF-MOD-FENCE-ARGV-BYPASSES-BOUNDED-TRANSPORT. This wave remains
+      awaiting exact-head proof that the checker process launches and emits
+      the intended policy verdict, then merged/current-main proof.
+    next_action: >
+      Sol/Fable reviews the bounded self-mod transport PR; after merge, rerun
+      fences on unchanged FF PR 5898 head 47d3b4b49e7191e72576ebc6e7495748ab1c8164
+      and confirm the required self-mod-fence reaches policy evaluation.
   - id: W-REWRITE
     title: Structural rewrite of planner/merge control plane
     status: in_progress
@@ -139,9 +152,11 @@ next_action: >
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"
+  - ".github/workflows/fences.yml"
   - "scripts/ci_authority.py"
   - "scripts/run_ci_pack.py"
   - "scripts/merge_on_green.py"
+  - "scripts/check_self_mod_fence.py"
 ---
 
 The E2BIG incident model and receipts live in
