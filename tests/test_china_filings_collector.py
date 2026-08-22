@@ -33,6 +33,31 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import collectors.china_filings as cf  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def _reset_module_globals():
+    """collectors.china_filings.LAST_RUN_OUTCOME and LAST_KEY_INTEGRITY are
+    process-local module globals (the P1-R1 same-cycle contract and the P1-R2
+    key-integrity contract). Any test here that drives fetch() writes them, and
+    `monkeypatch` restores patched ATTRIBUTES but never a global a function
+    assigned to — so without this fixture a fetch()-driving test LEAKS its
+    outcome into every later test in the same process.
+
+    That is not hypothetical: collectors/china_visits.py reads
+    LAST_RUN_OUTCOME, so a leaked "both exchanges failed" verdict made
+    tests/test_china_intel_hub_visits.py::TestLoadVisitsContext::
+    test_after_a_real_refresh_ctx_reflects_it assert status "ok" against a run
+    typed "upstream_degraded" — a test that passed alone and failed under the
+    default alphabetical collection order, where this file is collected first.
+    Caught by an adversarial review 2026-08-22 before it could redden CI.
+    tests/test_china_visits_collector.py has carried the same guard since P1-R1.
+    """
+    cf.LAST_RUN_OUTCOME = None
+    cf.LAST_KEY_INTEGRITY = None
+    yield
+    cf.LAST_RUN_OUTCOME = None
+    cf.LAST_KEY_INTEGRITY = None
+
+
 # --------------------------------------------------------------------------- #
 # category normalizer
 # --------------------------------------------------------------------------- #
@@ -795,6 +820,23 @@ class TestNormalizeAnnouncementId:
     def test_int_id_normalizes_to_its_string_form(self):
         assert cf.normalize_announcement_id(1234567) == "1234567"
 
+    def test_never_raises_on_an_unstringable_value(self):
+        """Both halves of this predicate pair run one import away from the C0
+        market-critical Asia lane, where a raise is a lane failure. key_anomaly()
+        answers None (well-formed) for any non-string object it cannot call
+        NaN-like — including one whose __str__ raises — so the str() coercion
+        here is the single throwing path in the pair unless it is guarded. An
+        un-stringable key is an absent key, so it normalizes to "".
+
+        MUTATION GUARD: drop the try/except in normalize_announcement_id() and
+        this test raises RuntimeError instead of asserting.
+        """
+        class _Unstringable:
+            def __str__(self):
+                raise RuntimeError("boom")
+
+        assert cf.normalize_announcement_id(_Unstringable()) == ""
+
 
 # --------------------------------------------------------------------------- #
 # P1-R2 — partition_by_key_integrity
@@ -1052,6 +1094,120 @@ class TestFetchKeyIntegrityFolding:
         with pytest.raises(RuntimeError):
             adapter.fetch()
         assert cf.LAST_RUN_OUTCOME["key_integrity"]["excluded_total"] == 0
+        # Shape stability is the point: every consumer reads one shape.
+        assert set(cf.LAST_RUN_OUTCOME["key_integrity"]) == {
+            "excluded_total", "excluded_by_type", "preexisting_unkeyed", "at"}
+
+    def test_incomplete_write_folds_in_as_UNKNOWN_not_clean(self, tmp_path, monkeypatch):
+        """FAIL-CLOSED: write_filings() failing internally leaves
+        LAST_KEY_INTEGRITY None, and `None or zeros` would launder that into a
+        CLEAN reading — ok stays True, china_visits stamps coverage and
+        advances last_success_utc over a store that was never written, and the
+        dossier renders measured_no_event for names whose filings are missing.
+        Caught by an adversarial review 2026-08-22.
+
+        MUTATION GUARD: drop the `if LAST_KEY_INTEGRITY is None` branch in
+        fetch() and `ok` comes back True here.
+        """
+        from unittest.mock import MagicMock, patch
+
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        monkeypatch.setattr(cf, "write_filings", lambda rows: 0)  # never sets the global
+        adapter = cf.ChinaFilingsAdapter()
+
+        def fake_fetch_exchange(exchange, date_range, session, collected_at):
+            return [_make_row(f"U-{exchange}", exchange=exchange)]
+
+        import requests as _requests
+        with patch.object(adapter, "_fetch_exchange", side_effect=fake_fetch_exchange):
+            with patch.object(_requests, "Session", return_value=MagicMock()):
+                adapter.fetch()   # must not raise — fail-SOFT, just not clean
+
+        assert cf.LAST_RUN_OUTCOME["ok"] is False
+        assert any("UNKNOWN" in e for e in cf.LAST_RUN_OUTCOME["errors"])
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 — an UNREADABLE accrued store must never be silently replaced
+# --------------------------------------------------------------------------- #
+
+class TestUnreadableStoreAborts:
+    def test_corrupt_store_aborts_the_write_instead_of_truncating_the_tape(
+        self, tmp_path, monkeypatch
+    ):
+        """write_filings() rewrites the ENTIRE accrued tape every night. It
+        used to source that rewrite from load_filings(), which swallows a read
+        error and answers EMPTY — so a corrupt store read as "no existing
+        rows" and the next write REPLACED the whole tape with tonight's batch.
+        Measured 2026-08-22 by an adversarial review: a 500-row store became 1
+        row, net_new reported 1, and every key-integrity instrument read clean.
+
+        MUTATION GUARD: swap _read_filings_strict() back to load_filings() in
+        write_filings() and this test stores 1 row instead of aborting.
+        """
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        cf.write_filings([_make_row(f"S{i:03d}") for i in range(50)])
+        assert len(cf.load_filings()) == 50
+
+        (tmp_path / "filings.parquet").write_bytes(b"not a parquet file")
+        assert cf._read_filings_strict() is None          # present but unreadable
+
+        assert cf.write_filings([_make_row("NEW001")]) == 0   # ABORT, never raises
+        # The corrupt file is left untouched for manual recovery — NOT replaced
+        # by a 1-row store.
+        assert (tmp_path / "filings.parquet").read_bytes() == b"not a parquet file"
+
+    def test_absent_store_is_not_treated_as_unreadable(self, tmp_path, monkeypatch):
+        """The strict reader must distinguish "no store yet" (normal first
+        run — write proceeds) from "present but corrupt" (abort)."""
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        assert cf._read_filings_strict() is not None
+        assert cf.write_filings([_make_row("F001")]) == 1
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 — the natural key is canonicalized at the write boundary
+# --------------------------------------------------------------------------- #
+
+class TestKeyNormalizationAtWriteBoundary:
+    def test_padded_and_bare_forms_of_one_id_are_the_same_row(
+        self, tmp_path, monkeypatch
+    ):
+        """Padding that strips to a real value is NOT malformed, so the
+        key-integrity partition passes it through — but " 1234567 " and
+        "1234567" are two distinct keys to drop_duplicates, so the same filing
+        published once with incidental padding would store TWICE and appear
+        twice in the dossier's recent-visit list. Caught by an adversarial
+        review 2026-08-22.
+
+        MUTATION GUARD: remove the normalize_announcement_id() map in
+        write_filings() and this stores 2 rows.
+        """
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        cf.write_filings([{**_make_row("_"), "announcementId": " 1234567 "}])
+        cf.write_filings([{**_make_row("_"), "announcementId": "1234567"}])
+        stored = cf.load_filings()
+        assert len(stored) == 1
+        assert list(stored["announcementId"]) == ["1234567"]
+
+    def test_unhashable_key_cannot_silently_lose_the_whole_batch(
+        self, tmp_path, monkeypatch
+    ):
+        """key_anomaly() answers None for a non-scalar (a list is not missing,
+        NaN, empty or whitespace — the four frozen anomalies), so such a value
+        reaches drop_duplicates(subset=["announcementId"]), which raises
+        TypeError on an unhashable cell. That raise is caught by
+        write_filings' own outer except, which returns 0 — losing the WHOLE
+        batch, including every valid sibling row. Normalizing to the string
+        form at the write boundary keeps the column hashable.
+        """
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        net = cf.write_filings([
+            {**_make_row("_"), "announcementId": [1, 2]},
+            _make_row("GOOD001"),
+        ])
+        assert net == 2
+        assert "GOOD001" in set(cf.load_filings()["announcementId"])
 
 
 # --------------------------------------------------------------------------- #
@@ -1062,31 +1218,37 @@ class TestKeyIntegrityMutationGuard:
     def test_stub_partition_reporting_all_wellkeyed_lets_malformed_rows_survive(
         self, tmp_path, monkeypatch
     ):
-        """MUTATION GUARD: if write_filings' malformed-row exclusion were
-        removed — e.g. partition_by_key_integrity stubbed to report every
-        row as well-keyed, the pre-repair shape — 3 rows sharing
-        announcementId="" would collapse to ONE via drop_duplicates instead
-        of being typed-excluded to zero stored rows. The assertion below
-        proves the exclusion depends on the REAL partition, not on this
-        test's own logic: under the real guard it holds; wrap it in
-        pytest.raises to show the stub breaks it.
+        """MUTATION GUARD: runs the SAME input through the real guard and
+        through the pre-repair shape, in one test, and asserts they differ.
+
+        Both halves are required. Asserting only that the stub collapses 3
+        rows into 1 is a tautology about the stub — delete
+        partition_by_key_integrity from write_filings entirely and that
+        assertion still holds, because the stubbed path is the only one the
+        test ever exercises. So the real guard is exercised FIRST (3 rows
+        sharing announcementId="" -> 0 stored, typed-excluded and counted as
+        3), then the guard is mutated away and the same 3 rows are shown to
+        collapse into ONE via drop_duplicates — exactly the silent-collapse
+        bug DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP describes.
+        Weakness caught by an adversarial review 2026-08-22.
         """
         monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
-        monkeypatch.setattr(
-            cf, "partition_by_key_integrity",
-            lambda rows: (list(rows), [], {}),   # reports every row well-keyed
-        )
         rows = [
             {**_make_row("_", "标题1"), "announcementId": ""},
             {**_make_row("_", "标题2"), "announcementId": ""},
             {**_make_row("_", "标题3"), "announcementId": ""},
         ]
-        cf.write_filings(rows)
-        stored = cf.load_filings()
-        with pytest.raises(AssertionError):
-            # Under the REAL guard all 3 are excluded -> 0 stored rows.
-            assert len(stored) == 0
-        # Under the stub, drop_duplicates instead collapsed all 3 into 1 —
-        # exactly the silent-collapse bug DSC:CHINA-VISITS-UNTYPED-
-        # ANNOUNCEMENT-ID-DROP describes.
-        assert len(stored) == 1
+
+        # --- the REAL guard: all 3 typed-excluded, counted individually ---
+        assert cf.write_filings(list(rows)) == 0
+        assert len(cf.load_filings()) == 0
+        assert cf.LAST_KEY_INTEGRITY["excluded_total"] == 3
+        assert cf.LAST_KEY_INTEGRITY["excluded_by_type"] == {"empty": 3}
+
+        # --- the MUTATION: guard removed, pandas collapses 3 into 1 ---
+        monkeypatch.setattr(
+            cf, "partition_by_key_integrity",
+            lambda rows: (list(rows), [], {}),   # reports every row well-keyed
+        )
+        cf.write_filings(list(rows))
+        assert len(cf.load_filings()) == 1

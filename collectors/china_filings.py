@@ -146,7 +146,12 @@ def _store_path() -> Path:
 
 
 def load_filings() -> pd.DataFrame:
-    """Read existing parquet, or return an empty frame with the canonical schema."""
+    """Read existing parquet, or return an empty frame with the canonical schema.
+
+    A present-but-unreadable store also reads EMPTY here, because a reader must
+    not crash. Callers that go on to REWRITE the store must not use this — see
+    _read_filings_strict() and write_filings().
+    """
     path = _store_path()
     if path.exists():
         try:
@@ -154,6 +159,33 @@ def load_filings() -> pd.DataFrame:
         except Exception as e:  # noqa: BLE001
             log.warning("china_filings: could not read existing parquet: %s", e)
     return pd.DataFrame(columns=list(_COLUMNS))
+
+
+def _read_filings_strict() -> pd.DataFrame | None:
+    """Like load_filings() but returns None (not empty) for a present-but-
+    UNREADABLE store, so write_filings() can ABORT instead of overwriting it.
+
+    Why this exists (P1-R2, adversarial review 2026-08-22): write_filings()
+    rewrites the entire accrued tape every night, and it used to source that
+    rewrite from load_filings(), which swallows a read error and answers
+    EMPTY. A corrupt store therefore read as "no existing rows" and the next
+    write REPLACED the whole tape with tonight's batch — measured, a 500-row
+    store became 1 row, with net_new reported as 1 and every key-integrity
+    instrument reading clean. That is the same class of lie this repair
+    exists to close (missing data silently becoming clean authority), just
+    with a far larger blast radius than a malformed key. collectors/
+    china_visits.py has carried exactly this strict-read + ABORT pattern
+    since P1 (_read_store_strict / write_visits); china_filings simply never
+    grew one.
+    """
+    path = _store_path()
+    if not path.exists():
+        return pd.DataFrame(columns=list(_COLUMNS))
+    try:
+        return pd.read_parquet(path).reindex(columns=list(_COLUMNS))
+    except Exception as e:  # noqa: BLE001
+        log.error("china_filings: filings.parquet is present but UNREADABLE (%s)", e)
+        return None
 
 
 # ------------------------------------------------------------------ key integrity (P1-R2) --
@@ -220,10 +252,26 @@ def key_anomaly(value) -> str | None:
 
 def normalize_announcement_id(value) -> str:
     """"" for every malformed form key_anomaly() names; otherwise
-    str(value).strip(). Pure."""
+    str(value).strip(). Pure, and — like key_anomaly() — NEVER raises.
+
+    The str() coercion is guarded rather than trusted: key_anomaly() answers
+    None (well-formed) for any non-string object it cannot call NaN-like,
+    including one whose own __str__ raises, so an unguarded str() here would
+    be the one path in this pair that can throw. Measured 2026-08-22 by
+    probing both helpers over a hostile input table: key_anomaly() survived
+    every case, this function raised RuntimeError on an object with a raising
+    __str__. No production caller exists today (this helper is the canonical
+    normalizer for future callers), but it sits one import away from the C0
+    market-critical Asia lane, where a raise is a lane failure — so an
+    un-stringable value is treated as exactly what it is, a key we cannot
+    read, and normalizes to "".
+    """
     if key_anomaly(value) is not None:
         return ""
-    return str(value).strip()
+    try:
+        return str(value).strip()
+    except Exception:  # noqa: BLE001 — an un-stringable key is an absent key
+        return ""
 
 
 def partition_by_key_integrity(
@@ -283,8 +331,34 @@ def write_filings(new_rows: list[dict]) -> int:
         path = _store_path()
         well_keyed, malformed, new_counts = partition_by_key_integrity(new_rows)
         new_df = pd.DataFrame(well_keyed).reindex(columns=list(_COLUMNS))
+        if not new_df.empty:
+            # Canonicalize the key of every row that IS well-keyed. Without
+            # this, " 1223456789 " and "1223456789" are two distinct keys, so
+            # the same filing published once with incidental padding stores
+            # TWICE and shows twice in the dossier's recent-visit list — a
+            # duplicate-identity bug the malformed-key partition does not
+            # catch, because padding that strips to a real value is not
+            # malformed. It also coerces any non-string key to its string
+            # form, which keeps drop_duplicates() hashable: an unhashable
+            # value (a list, a Series) would otherwise raise inside the
+            # try/except below and lose the WHOLE batch silently. Measured
+            # 2026-08-22: 0 of the 54,078 accrued keys are padded, so this is
+            # a no-op on today's tape and pure protection going forward.
+            new_df["announcementId"] = new_df["announcementId"].map(
+                normalize_announcement_id
+            )
 
-        existing = load_filings()
+        existing = _read_filings_strict()
+        if existing is None:
+            log.error("china_filings: ABORTING the filings.parquet write — the accrued "
+                      "store is unreadable and is left untouched for manual recovery")
+            print(
+                "::warning title=china-filings-store-unreadable::"
+                "filings.parquet is present but unreadable — the nightly write was "
+                "ABORTED and the accrued store left untouched for manual recovery",
+                flush=True,
+            )
+            return 0
         # Split the ACCRUED store with a vectorized mask over the SAME
         # predicate, not partition_by_key_integrity(existing.to_dict("records")).
         # The two are semantically identical, but the dict spelling materializes
@@ -687,6 +761,24 @@ class ChinaFilingsAdapter(Adapter):
         # raising; the only raise in this method stays the all-exchanges-
         # failed branch above. Valid sibling rows are still fetched, stored,
         # and returned even when this branch fires.
+        # LAST_KEY_INTEGRITY is None ONLY when write_filings() did not reach its
+        # own assignment — i.e. its internal try/except fired (a store write or
+        # read blew up) and it returned 0 without telling us what it had
+        # partitioned. That is UNKNOWN, and `or _zero_key_integrity(...)` alone
+        # would silently launder it into "clean": measured 2026-08-22, a batch
+        # of 4 rows with 3 malformed and a failing to_parquet folded in
+        # excluded_total=0, left ok=True, and china_visits then stamped
+        # coverage and advanced last_success_utc over a store that was never
+        # written — a false clean absence, the exact failure this repair
+        # exists to prevent. Fail closed: name the unknown in errors[] so `ok`
+        # degrades, and keep the zero-shape only so consumers still read one
+        # stable shape.
+        if LAST_KEY_INTEGRITY is None:
+            errors.append(
+                "key_integrity: UNKNOWN — write_filings() did not complete its "
+                "key-integrity partition, so this run proves nothing about "
+                "whether malformed rows were excluded"
+            )
         key_integrity = LAST_KEY_INTEGRITY or _zero_key_integrity(collected_at)
         if key_integrity["excluded_total"] or key_integrity["preexisting_unkeyed"]:
             errors.append(

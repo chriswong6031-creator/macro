@@ -841,13 +841,20 @@ class TestRefreshKeyIntegrity:
         assert s["status"] == "upstream_degraded"   # typed exclusion this run
         assert s["n_represented"] == 1
         assert s["n_excluded"] == 1
-        # A parquet round-trip normalizes a raw None sharing an object-dtype
-        # column with real strings into float NaN (empirically verified —
-        # pyarrow's null sentinel, not Python's) — so the anomaly this plane
-        # OBSERVES from the committed store is "nan", never "missing"; a
-        # genuinely absent key never reaches the accrued store in the first
-        # place because write_filings() already excludes it (this is the
-        # SAME exclusion, independently proven at THIS boundary instead).
+        # The anomaly this plane OBSERVES from the committed store is "nan",
+        # never "missing". The conversion happens at pd.DataFrame CONSTRUCTION,
+        # NOT at the parquet round-trip: the key column is a pandas string
+        # dtype whose NA sentinel is nan, so a raw None is already nan before
+        # anything is written, and the round-trip is a no-op (pre-write and
+        # post-read values are identical — independently verified 2026-08-22
+        # after an earlier version of this comment blamed pyarrow). Consequence
+        # worth keeping in view: "missing" is unreachable at every
+        # frame-mediated boundary and can only fire on the raw-dict new_rows
+        # path, which is exactly what makes _parse_announcement's None default
+        # load-bearing there and nowhere else. A genuinely absent key never
+        # reaches the accrued store anyway, because write_filings() already
+        # excludes it — this is the SAME exclusion, independently proven at
+        # THIS boundary instead.
         assert s["exclusions"] == {"nan": 1}
         assert "H1" in set(cv.load_visits()["announcement_id"])
         assert "H2" not in set(cv.load_visits()["announcement_id"])

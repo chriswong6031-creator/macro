@@ -67,6 +67,23 @@ changed:
       field, written on the clean path as well as the degraded one. refresh()'s
       return dict keeps status/n_candidates/n_new and adds n_represented/
       n_excluded/exclusions.
+  - path: collectors/china_filings.py (adversarial-review repairs)
+    what: >
+      Four further repairs, all found by an opus reviewer attacking the diff before
+      merge. (1) fetch() no longer laundered an UNKNOWN key-integrity reading into a
+      clean one: LAST_KEY_INTEGRITY stays None when write_filings() fails
+      internally, and `None or zeros` was silently folding in excluded_total=0 with
+      ok=True, so a batch whose store write blew up certified itself clean and
+      china_visits stamped coverage over it. (2) _read_filings_strict() now
+      distinguishes an ABSENT store from a present-but-UNREADABLE one, and
+      write_filings() ABORTS on the latter instead of replacing the entire accrued
+      tape with tonight's batch — measured, a 500-row store became 1 row while every
+      instrument read clean. This mirrors the strict-read + ABORT pattern
+      collectors/china_visits.py has carried since P1. (3) The natural key is
+      canonicalized through normalize_announcement_id() at the write boundary, so
+      " 1234567 " and "1234567" are one row rather than two, and a non-scalar key
+      can no longer raise inside drop_duplicates and lose the whole batch silently.
+      (4) normalize_announcement_id() no longer raises on an un-stringable value.
   - path: tests/test_china_filings_collector.py
     what: >
       Added TestKeyAnomaly (18 cases), TestNormalizeAnnouncementId,
@@ -110,9 +127,46 @@ verified:
     result: >
       54,078 rows; 0 NaN/None; 0 empty-or-whitespace; 54,078 distinct keys, i.e.
       one distinct key per row.
-  - claim: The two owning test files are fully green after the repair.
-    command: python3 -m pytest tests/test_china_visits_collector.py tests/test_china_filings_collector.py -q
-    result: 183 passed, 3 warnings in 34.96s
+  - claim: The owning suites are green TOGETHER IN ONE PROCESS, which is the check
+      that matters — running them in separate commands hid a module-global leak that
+      would have reddened CI.
+    command: python3 -m pytest tests/test_china_visits_collector.py tests/test_china_filings_collector.py tests/test_china_intel_hub_visits.py -q
+    result: >
+      210 passed, 3 warnings in 37.80s. Before the fix this same command produced
+      "1 failed, 203 passed" — tests/test_china_intel_hub_visits.py::
+      TestLoadVisitsContext::test_after_a_real_refresh_ctx_reflects_it, which passes
+      in isolation and fails under the default alphabetical collection order.
+  - claim: key_anomaly() never raises and never misclassifies, across the full
+      hostile input surface — the property that matters because it runs on every row
+      inside the C0 market-critical Asia lane.
+    command: >
+      scratchpad probe_key_anomaly.py — imports the helper and drives it over 38
+      inputs: None, float/np/pd NaN forms, empty, space/tab/newline/U+3000/mixed
+      whitespace, normal/int/padded/unicode/np.int64 ids, the literal string "nan",
+      bools, 0, and non-scalars (list, dict, tuple, set, 1-d/0-d ndarray, Series,
+      DataFrame, Timestamp, bytes, a function, an object whose __str__ raises, an
+      object whose __eq__ raises)
+    result: >
+      FAILURES: 0. Every malformed form classified, every well-formed value passed,
+      nothing raised. The literal string "nan" correctly reads well-formed, which is
+      the observable proof that the NaN check runs BEFORE any str() coercion.
+      The first run of this probe DID find one defect — normalize_announcement_id()
+      raised RuntimeError on an object with a raising __str__ — now guarded and
+      pinned by a mutation-guard test.
+  - claim: The vectorized accrued-store split preserves history across repeated
+      nightly writes and cannot truncate or duplicate the tape.
+    command: >
+      scratchpad probe_mask.py — seeds a store already holding 2 unkeyed rows,
+      performs 3 consecutive nightly writes re-pulling the same keyed rows, then an
+      all-malformed batch, then a write against a deliberately non-contiguous index
+    result: >
+      Unkeyed rows stay 2 across all 3 nights (preserved, not duplicated, not
+      collapsed); keyed history intact with no duplicates; columns identical to the
+      schema; an all-malformed batch leaves the store at 7 rows with net_new 0; the
+      non-contiguous-index write adds exactly 1 row, so mask alignment is correct.
+      The same run also demonstrated the permanent-latch property recorded under
+      `unresolved` — integrity read 0 excluded / 2 pre-existing on every one of the
+      three otherwise-clean nights.
   - claim: The surfaces that guard or consume the touched code did not regress.
     command: python3 -m pytest tests/test_china_intel_hub_visits.py tests/test_nightly_timings.py tests/test_gh_annotation_line_start.py -q
     result: 66 passed, 3 warnings
@@ -180,14 +234,32 @@ unresolved:
       degrading only on the former — was NOT built, because Sol's requirement 6
       names malformed-key CONDITIONS without that split and self-excusing a
       standing condition is exactly the shape this repair exists to prevent.
+      Two properties an adversarial review added on 2026-08-22, both confirmed by
+      running three consecutive refresh() calls over a store holding one NaN-keyed
+      visit row. FIRST: if the malformed row lands BEFORE the plane's first success,
+      coverage_start is never stamped, so _visit_block() answers no_coverage for
+      every A-share name in the universe and the plane never starts at all — a
+      worse state than the frozen-authority one, and equally unexitable. SECOND: the
+      coupling is over-broad in the same direction — a malformed announcementId on
+      an inquiry_letter row (an unrelated category) degrades LAST_RUN_OUTCOME.ok and
+      therefore blacks out the institutional_visit absence plane for that night,
+      because requirement 3 routes the anomaly through the shared run outcome. There
+      is no in-code exit from either state; today's only remedy is a human editing
+      the parquet. Sol should rule on whether requirement 6 was meant to reach this
+      far, and if not, the minimal shape is to compute the health verdict's
+      typed_exclusions only over candidates inside the current re-pull window while
+      still excluding every malformed row from the derived rows.
   - >
-      collectors/china_filings.py's write_filings() still calls load_filings(),
-      which SWALLOWS a read error and returns an empty frame — so an unreadable
-      accrued store causes the next write to REPLACE the whole tape with just
-      tonight's batch. This is pre-existing behavior, unchanged by P1-R2, and out of
-      this commission's scope. collectors/china_visits.py already solved the same
-      problem with _read_store_strict() + an explicit ABORT; china_filings has no
-      equivalent. It needs its own commission.
+      Whether the adversarial review's four extra repairs should have been taken
+      inside this commission at all. An opus reviewer attacked the diff before it
+      merged and returned FAIL with one blocker and three substantive findings; all
+      were fixed here rather than deferred, because each was a case of the same lie
+      the commission exists to close (missing data silently reading as clean
+      authority) and each sat inside an already-owned file. The judgment call worth
+      Sol's attention is the unreadable-store ABORT: it is a real behavior change on
+      a path Sol did not name, and it is the one fix that could be argued out of
+      scope. It is trivially revertible — delete _read_filings_strict() and restore
+      the load_filings() call in write_filings().
 next_actions:
   - >
       Report the merged P1-R2 exact head to Sol for review, with the reconciliation
