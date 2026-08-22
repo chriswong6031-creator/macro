@@ -52,9 +52,10 @@ python -m scripts.topup_thetadata_day --daily [--workers N] [--force-run]
 
 Reuse the existing T1 universe resolver used by `backfill_thetadata_eod.py`
 (options/GEX universe ∪ ETF anchors ∪ index roots) — import it, do not fork a
-list. `PENDING-CENSUS: exact function name(s) + module.` The AD denominator
-stays `gex_symbols()` (the canonical AD universe owner) and is resolved at run
-time — never hard-coded 375.
+list. CENSUS-CONFIRMED: `scripts.backfill_thetadata_eod._resolve_universe()`
+(ETF_ANCHORS 20 ∪ INDEX_ROOTS [SPX, SPXW] ∪ `gex_symbols()`; 378 today). The
+AD denominator stays `engine.options_universe.gex_symbols()` (375 today) and
+both are resolved at run time — never hard-coded.
 
 ### A3. Session gate (Sol §7/§12)
 
@@ -105,6 +106,14 @@ greeks), exactly one one-day request per (tier, session). Root-level
 parallelism comes only from the worker pool (§F), so worker count ≈ active
 request count. Never exceed 6 workers; Terminal ceiling is 8.
 
+CENSUS-CONFIRMED: the collector windows wildcard pulls at ≤7 calendar days,
+so a one-day request is exactly ONE window = one HTTP request (the internal
+`ThreadPoolExecutor(WINDOW_WORKERS=6)` has a single unit of work; greeks
+one-day is likewise a single required request). The collector is thread-safe
+for a root-level pool: fresh `requests.Session` per call/thread, module state
+read-only. Per-window retry (2 retries, 5s/15s backoff) is the collector's
+own; the daily mode adds NO additional retry layer.
+
 ---
 
 ## §B Writer exclusion (Sol §8)
@@ -120,15 +129,26 @@ store:
   `scripts/backfill_thetadata_eod.py` (historical). All acquire before the
   first parquet mutation and hold through the run.
 - Refusal semantics: non-blocking; on refusal the would-be writer mutates
-  NOTHING, emits a machine-readable `writer_locked` outcome (receipt row for
-  `--daily`; log line + the existing nonzero exit for the legacy mode so the
-  levels-seal caller's retry contract is preserved), and exits nonzero.
+  NOTHING — not the parquets and NOT `_manifest.json` (an unlocked manifest
+  write would race the historical backfill's own manifest rewrite). Refusal
+  visibility is a machine-readable single-line JSON to stdout/log
+  (`{"event":"writer_locked",...}`) plus nonzero exit (the legacy mode keeps
+  its existing exit-1 shape so the levels-seal caller's contract is
+  preserved). The `_manifest.json` `daily_refresh` section is written ONLY by
+  a run that HOLDS the flock.
+- Lock-acquisition order in the daily mode: acquire flock FIRST, then the
+  Terminal reachability probe — so a lock-holding run can always write its
+  `failed` receipt safely, and a refused run never needs to.
 - The existing coarse `pgrep -f backfill_thetadata_eod` guard in the topup
   writer stays as belt-and-braces; the flock is the authority.
 - This is local writer coordination only — no queue, no lifecycle plane.
 
-`PENDING-CENSUS:` confirm backfill_thetadata_eod.py has a single mutation
-choke-point where the flock can be acquired once.
+CENSUS-CONFIRMED: `backfill_thetadata_eod.py` mutates only inside its
+`main()` root-year loop (atomic per root-year writes, `_write_manifest` after
+each at ~:586); the flock is acquired once in `main()` before the first
+mutation and held for the run. Today the ONLY cross-writer guards are the two
+pgrep checks (keepalive wrapper :94, topup `_backfill_running()`) — there is
+no lock file at all; the flock is new and closes the pgrep TOCTOU gap.
 
 ---
 
@@ -153,10 +173,16 @@ choke-point where the flock can be acquired once.
 
 Home: the existing T1 `_manifest.json`, new top-level `daily_refresh` section
 (one object, overwritten per run; no unbounded history — the log file carries
-history). `PENDING-CENSUS:` confirm manifest write path + that
-`backfill_thetadata_eod.py` rewrites preserve unknown/other keys; if not, the
-build makes the historical writer read-modify-write so the `daily_refresh`
-section survives (Sol §10 explicitly requires this).
+history). CENSUS-CONFIRMED: `_write_manifest()`
+(`scripts/backfill_thetadata_eod.py:200-215`) rebuilds the manifest FROM
+SCRATCH and full-REPLACEs it after every completed root-year — any foreign
+key is wiped today (measured live: keys are exactly
+store/n_roots/per_root/updated_at, and the keepalive wrapper's
+`universe_pass_complete` completion guard is INERT — that key is never
+written by anything). The build therefore makes `_write_manifest`
+read-modify-write: carry forward `daily_refresh` (and unknown top-level keys
+generally, fail-open) while regenerating its own four keys. Flip-test
+required.
 
 Logical fields (all required):
 
@@ -176,9 +202,14 @@ terminal_health, forced (bool)
 - `healthy` requires `complete_ad_roots / ad_universe_count ≥ 0.90` (the 0.90
   is the existing frozen AD gate constant — reference it, do not mint a second
   literal if importable; ad_universe_count is resolved, never 375-literal).
-- `failed` = run aborted before per-root work (gate pass but terminal
-  unreachable, lock refused, universe resolution failed). Everything between
-  = `partial`.
+- `failed` = run aborted before per-root work while HOLDING the lock (gate
+  pass but terminal unreachable, universe resolution failed). A lock REFUSAL
+  writes no receipt at all (§B — log + exit code are its record). Everything
+  between = `partial`.
+- Outcome mapping from the collector contract: `None` return (window failed
+  after the collector's own retries / stream failure) →
+  `timeout_or_stream_failure`; empty DataFrame → `vendor_empty`;
+  `reachable()` false at startup → `terminal_unreachable` for the run.
 - Receipt writes are atomic (tmp → replace) and happen even on `partial`.
   A gate no-op (non-session / pre-16:10) writes NO receipt (the absence of a
   session's receipt is itself the honest record; no fake healthy rows).
@@ -217,9 +248,28 @@ repo estate.** Exactly one scheduled daily T1 maintainer may be active on m1.
   scheduler). The PR ships the plist + wrapper + runbook; m1 installation is a
   post-Sol-acceptance act. `installed_live_status: NOT_INSTALLED`.
 
-`PENDING-CENSUS:` live m1 label inventory + hand-patch deltas decide whether
-the transition procedure needs extra steps (e.g. the live wrapper differs from
-repo bytes).
+CENSUS-CONFIRMED live-m1 facts the runbook transition section must encode:
+
+- The live lane runs from DETACHED ops worktrees, not a synced main:
+  `theta-ops-wt` HEAD b9e62f5 (2026-07-30) with newer bytes hand-copied onto
+  disk for the wrapper + backfill script, and `collectors/thetadata.py` at
+  the OLD committed revision (511-line diff vs repo — missing the #5942
+  NA-parse fixes; a live data-quality hazard worth naming in the verdict).
+  `topup_thetadata_day.py` exists only in `hub-ops-wt` (HEAD ce456ab,
+  2026-08-02), where the levels-seal caller cds. The install procedure MUST
+  refresh the ops-tree bytes to current main (at minimum:
+  `collectors/thetadata.py`, `scripts/topup_thetadata_day.py`,
+  `scripts/backfill_thetadata_eod.py`, the new wrapper + plist) before
+  bootstrapping the new label.
+- Installed `com.macro.thetadata-backfill.plist` differs from repo only in
+  `EnvironmentVariables PATH` (cosmetic — every theta wrapper hardcodes
+  `PYTHON=/opt/homebrew/Caskroom/miniconda/base/bin/python`, present with
+  Python 3.12.13 + pandas 3.0.5 + pyarrow 25.0.0). The new daily wrapper
+  keeps that hardcoded-python convention.
+- `com.macro.thetadata-surface.plist` is NOT installed on m1; `theta-terminal`
+  and `theta-staleness` are. The transition boots out exactly ONE label
+  (`com.macro.thetadata-backfill`) and bootstraps exactly one
+  (`com.macro.thetadata-daily`).
 
 ---
 
