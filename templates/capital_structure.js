@@ -232,15 +232,29 @@
     ui.status.classList.toggle('is-degraded', kind === 'degraded');
   }
 
+  function coverageNotice(raw) {
+    raw = raw || {};
+    var freshness = String(firstDefined(raw.freshness, 'unknown')).toLowerCase();
+    var horizon = String(firstDefined(raw.horizon_state, raw.state, raw.source_status, 'unknown')).toLowerCase();
+    if (freshness === 'fresh' && horizon === 'current') {
+      return { kind: 'fresh', en: 'Observed filing coverage is current', zh: '已观察披露覆盖范围为最新' };
+    }
+    if (freshness === 'stale' || horizon === 'lagging' || horizon.indexOf('degraded_') === 0) {
+      return { kind: 'degraded', en: 'Observed filing coverage is behind latest SEC filings', zh: '已观察披露覆盖范围落后于最新 SEC 申报' };
+    }
+    if (freshness === 'unknown' || horizon === 'unavailable') {
+      return { kind: 'degraded', en: 'Observed filing freshness is unavailable', zh: '已观察披露新鲜度暂不可用' };
+    }
+    if (horizon === 'partial') {
+      return { kind: 'partial', en: 'Observed filing coverage is partial', zh: '已观察披露覆盖范围不完整' };
+    }
+    return { kind: 'degraded', en: 'Observed filing coverage is temporarily limited', zh: '已观察披露覆盖范围暂时受限' };
+  }
+
   function renderCoverage() {
     var raw = coverageFrom(state.coverage);
-    var status = String(firstDefined(raw.freshness, raw.state, raw.source_status, 'loading')).toLowerCase();
-    var message;
-    if (status === 'fresh' || status === 'ok') message = copy('Observed filing coverage is current', '已观察披露覆盖范围为最新');
-    else if (status === 'partial') message = copy('Observed filing coverage is partial', '已观察披露覆盖范围不完整');
-    else if (status === 'degraded') message = copy('Observed filing coverage is temporarily limited', '已观察披露覆盖范围暂时受限');
-    else message = copy('Observed filing coverage is loading', '正在加载已观察披露覆盖范围');
-    setNotice(message, status === 'fresh' || status === 'ok' ? 'fresh' : status === 'degraded' ? 'degraded' : 'partial');
+    var notice = coverageNotice(raw);
+    setNotice(copy(notice.en, notice.zh), notice.kind);
     ui.asOf.textContent = formatTime(firstDefined(raw.as_of, state.coverage && state.coverage.as_of));
     ui.generatedAt.textContent = formatTime(firstDefined(raw.generated_at, state.coverage && state.coverage.generated_at));
     ui.issuerCount.textContent = firstDefined(raw.issuer_count, raw.issuers, state.overview.length, '—');
@@ -687,6 +701,7 @@
     window.__CAPITAL_STRUCTURE_DESK_TEST__.resolveIssuerId = resolveIssuerId;
     window.__CAPITAL_STRUCTURE_DESK_TEST__.isRecentObserved = isRecentObserved;
     window.__CAPITAL_STRUCTURE_DESK_TEST__.labelPair = labelPair;
+    window.__CAPITAL_STRUCTURE_DESK_TEST__.coverageNotice = coverageNotice;
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
