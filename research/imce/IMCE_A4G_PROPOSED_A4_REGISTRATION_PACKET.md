@@ -142,7 +142,7 @@ decisions are already true in the committed contract — never a new decision A4
 
 - [ ] Contract V1.2 frozen and committed to `origin/main`, with its YAML projection.
 - [ ] All 18 A4G rulings and all 8 A4P rulings encoded in `IMCE_A4G_AMENDMENT_LOG.md`.
-- [ ] Six-cell disposition (`IMCE_A4G_SIX_CELL_DISPOSITION.md`) shows no open item; all six cells settled B≤3 (AP2); the six cell IDs match contract §11 / YAML `six_cell_ids_union` exactly.
+- [ ] Six-cell disposition (`IMCE_A4G_SIX_CELL_DISPOSITION.md`) shows no open item; all six cells settled B≤3 (AP2); the six cell IDs match contract §11 / YAML `six_cell_ids_union` exactly — **[AP8, M2 nit — inlined here for a self-contained packet]:** `imce_phase_v0.next_order_softness_1rp`, `imce_phase_v0.next_order_softness_3rp`, `imce_phase_v0.order_softness_false_repair_3rp`, `imce_sync_v0.next_order_softness_1rp`, `imce_sync_v0.forward_63d_drawdown_tail`, `imce_risk_v0.forward_63_trading_day_drawdown_tail`.
 - [ ] `order_softness` deterministic construction frozen (`IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md`) — no outcome-selected threshold, no grid search, no issuer-specific tuning; block admissibility deferred to the contract's own block list (§3.0); ≥2-issuer cohort floor in force; fail-closed era-coverage gate applied to DHI/TOL.
 - [ ] Source/boundary table recorded, receipt statuses honest (`IMCE_A4G_SOURCE_BOUNDARY_TABLE.md`) — ruling 6 is OPEN/partial, not satisfied (§6 of that document); no boundary asserted without a citation.
 - [ ] `n_effective_blocks` computation path: B ≤ 3, uniform across all six registered cells (AP2); no ρ-based estimator used as N; `n_issuer_precision_diagnostic` is the frozen field name (AP8, no longer TBD).

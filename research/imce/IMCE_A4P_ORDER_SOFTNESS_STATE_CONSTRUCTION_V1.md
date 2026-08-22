@@ -75,6 +75,42 @@ effectively **{PHM, KBH} — exactly the ≥2 floor, not comfortably above it.**
 `IMCE_A4G_SIX_CELL_DISPOSITION.md` §1 for the disposition-level disclosure of this coverage impact, and this
 wave's return packet GAPS for the escalation to Sol.
 
+**Named-subset labelling, not cohort labelling, until DHI/TOL receipts exist [AP8, F2(a)]:** because the
+historically-eligible roster is {PHM, KBH} — a strict two-issuer subset of the nominal four-issuer roster —
+every HISTORICAL `order_softness` read (2014–2023) is a **NAMED-SUBSET claim, `named_subset_basis: [PHM,
+KBH]`**, under the same discipline contract §2 AG14 already applies to `completed_inventory_build`'s
+three-issuer subset. **It may NOT be presented as a full-cohort claim** until DHI's and TOL's era coverage is
+receipted. The **PROSPECTIVE** arm is different in kind, not merely in degree: every roster issuer's
+*current-format* disclosure is already receipted (contract §2, AG14, as scoped by the F2(b) note above), so a
+PROSPECTIVE `order_softness` read retains the genuine four-issuer cohort basis and the cohort label — the
+named-subset restriction is a HISTORICAL-reconstruction-only consequence of the era-coverage gate, not a
+permanent property of the construction. **Two distinct thresholds — never conflated [AP8, F2(c)]:** the ≥2-
+issuer floor (§3.1) is the AG14-derived MINIMUM contributor count for minting any pooled state at all; whether
+a state minted at exactly that floor may carry the stronger COHORT label (vs. named-subset) is a separate,
+stricter, currently-unruled question. **Escalated to Sol [AP8, F2(d)]:** whether a ≥2-contributor
+`order_softness` read may ever bear the cohort label — until Sol rules, named-subset labelling governs every
+historical read.
+
+**Unstated consequences, named explicitly for Sol's ratification review [AP8, F3]:**
+
+1. **The grind block yields ZERO cohort states before FY2016.** Composing the §1a orders-side gate ({PHM, KBH}
+   only, 2014–2023) with §1's cancellation-rate eras (PHM stated FY2016+ only; KBH stated FY2008+ only): a
+   per-issuer `order_softness(i,t)` state requires BOTH `d_orders` and `d_cancel` non-`missing` (§2). For
+   2014-01 through FY2015, PHM's cancellation-rate input is `missing` (its stated-denominator era has not yet
+   begun), so PHM cannot contribute a per-issuer state in that span — leaving KBH as the **sole** contributor.
+   A single contributor is below the ≥2-issuer floor (§3.1) ⇒ `NOT_RECONSTRUCTABLE` for every period in that
+   span. **The grind block's genuinely usable window for minting any `order_softness` cohort state (named-
+   subset or otherwise) is FY2016–2019 only** — roughly the back half of the nominally 2014–2019 block, not
+   the full block.
+2. **Every historical non-null, non-`MIXED` cohort state is, by construction, a PHM–KBH AGREEMENT indicator.**
+   With exactly two eligible historical contributors, the modal-state rule (§3.1) collapses to three cases:
+   either issuer missing an input ⇒ single contributor or fewer ⇒ `NOT_RECONSTRUCTABLE`; both present and
+   disagree ⇒ `MIXED`; both present and agree ⇒ that shared label is the cohort state. **There is no case in
+   which a historical non-null, non-`MIXED` `order_softness` read reflects anything broader than "PHM and KBH
+   independently reported the same direction this period."** This is stated as an honest-N fact, not a defect
+   to be silently worked around — the predetermined `underpowered_accruing` status (contract §12, unaffected
+   by this) already anticipates a thin historical read; this consequence sharpens exactly how thin.
+
 ### 1b. TOL alternate-basis sensitivity is a mandatory diagnostic, never silently absorbed [AP8, m3 fix]
 
 Per AG12 (contract §2 Homebuilders, "TOL cancellation-rate denominator"), TOL's cancellation-rate input to
@@ -171,7 +207,11 @@ actually-eligible-per-period roster are not the same thing [AP8, M7 cross-refere
 era-coverage gate currently disqualifies DHI and TOL from the orders-side input across the entire 2014–2023
 window, so the roster that is actually eligible to contribute a per-issuer state in that window is **{PHM,
 KBH}** — two issuers, not four — until a future census pass receipts DHI's and TOL's pre-FY2025 net-orders
-disclosure format.
+disclosure format. **Labelling consequence [AP8, F2(a)]:** every HISTORICAL cohort state minted from this
+narrower eligible roster carries `named_subset_basis: [PHM, KBH]` and is a named-subset claim, never a
+full-cohort claim — see the labelling discussion immediately following §1a above for the full rule and the
+open Sol escalation on whether a ≥2-contributor read may ever bear the cohort label. The PROSPECTIVE arm is
+unaffected — the nominal four-issuer roster is the genuine cohort basis there.
 
 **Cohort state at period *t* = the modal (most frequent) per-issuer state among the non-`NOT_RECONSTRUCTABLE`
 issuers in {DHI, PHM, KBH, TOL} at *t*, subject to a minimum-contributor floor:**

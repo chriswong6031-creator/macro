@@ -1,7 +1,12 @@
-# Lossless machine-readable projection of
-# research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md
-# The MD document BINDS. This YAML carries no independent authority; on any
-# apparent divergence, the MD controls. [A26]
+# Machine-readable projection of the REGISTRATION-RELEVANT FIELDS of
+# research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md AND
+# research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md (carried by
+# path via d5_state_construction, never inlined). [AP8 F6] "lossless" is
+# dropped as inaccurate -- this is a partial projection (row schemas, cell
+# IDs, block caps, receipt statuses), not a byte-complete restatement of
+# either markdown document. Both markdown documents BIND; this YAML carries
+# no independent authority; on any apparent divergence, the two markdown
+# documents control. [A26]
 # Supersedes IMCE_PREREGISTRATION_CANDIDATE.yaml (schema v0).
 # V1.1 (2026-08-21): applies Sol's 18 A4G amendments (AG1-AG18) atop the 26
 # Round 3 amendments (A1-A26). Full rationale: IMCE_A4G_AMENDMENT_LOG.md.
@@ -572,9 +577,10 @@ prospective_law:                               # [A24]
   come_back_date:
     computed_from: [accrual_rate, n_floor]
     published_at_registration: true
-    homebuilders_estimate: "~2149 at census accrual rate, B=3 uniform cancellation-scoped basis, all 6 registered cells"  # [AP2] supersedes "~2153" (B=5 basis, AG5/BLK-1), which itself superseded "~2145" (non-hardened basis)
-    homebuilders_estimate_prior_basis_B5: "~2153 (AG5, B=5 general basis) - no longer describes any cell registered by this contract"  # [AP2] retained for audit trail only
-    recomputation_arithmetic: "span 2014-01 to 2023-12 = 9.9y over 3 blocks = 3.30y/block; 2026-08 + (40-3)*3.30 = ~2148.8 -> ~2149"  # [AP2]
+    promotion_clock_estimate: "~2160 - zero historical credit per AP3 100% prospective share + AG1; 2026.6667 + 40 x (10.0y/3 blocks) = 2160.0"  # [AP8 F1] THE promotion-relevant headline - historical blocks credit zero toward promotion
+    non_promotion_diagnostic_b3_total_block_estimate: "~2149 - NON-PROMOTION diagnostic only, illustrates historical-arm order-of-magnitude distance from the 40-block floor; arithmetic: span 2014-01 to 2023-12 = 9.9y over 3 blocks = 3.30y/block, 2026-08 + (40-3)*3.30 = ~2148.8 -> ~2149"  # [AP2, relabeled AP8 F1] was homebuilders_estimate; NEVER cited as a promotion timeline
+    non_promotion_diagnostic_prior_basis_b5: "~2153 (AG5, B=5 general basis) - NON-PROMOTION diagnostic, no longer describes any cell registered by this contract"  # [AP2, relabeled AP8 F1] was homebuilders_estimate_prior_basis_B5; retained for audit trail only
+    recomputation_arithmetic: "promotion clock (zero historical credit, inclusive fencepost): 2026 + 8/12 + 40 x (10.0/3) = 2026.6667 + 133.3333 = 2160.0 -> ~2160"  # [AP8 F1] was the (40-3)x3.30 form, which is now the non_promotion_diagnostic_b3_total_block_estimate field's own label above
     memory_and_banks: later_still
   counters:
     n_blocks_hist: 0

@@ -51,6 +51,23 @@ realized episode population within the admissible blocks is thinner than the nom
 implies. **Escalated to Sol** (this wave's return packet GAPS) as an open item for a future census pass to
 receipt DHI's and TOL's pre-FY2025 order-disclosure format, which would restore them as contributors.
 
+**Labelling consequence [AP8, F2(a)]:** because the historically-eligible roster is {PHM, KBH} — a strict
+subset of the nominal four-issuer roster — every HISTORICAL `order_softness` read below (Cells 1–4 directly;
+Cells 5–6 via their `M_t` basis) carries `named_subset_basis: [PHM, KBH]` and is a named-subset claim, never a
+full-cohort claim, until DHI/TOL receipts exist (contract §2, AG14 scope note; construction §1a/§3.1). The
+PROSPECTIVE arm is unaffected — genuine cohort basis there. **Whether a ≥2-contributor read may ever carry the
+cohort label is Sol's open call (contract §2, F2(d)) — until ruled, named-subset labelling governs.**
+
+**Unstated consequences, named for Sol's ratification review [AP8, F3, full detail: construction §1a]:** (1)
+composing the orders-side gate with the cancellation-rate eras (PHM FY2016+, KBH FY2008+), **the grind block
+(Cells 1–4's B≤3 basis includes it) yields ZERO cohort states before FY2016** — before then, PHM's
+cancellation input is `missing`, leaving KBH as the sole contributor, below the ≥2 floor; the grind block's
+genuinely usable window is **FY2016–2019, not the full 2014–2019 span.** (2) **With exactly two eligible
+historical contributors, every non-null, non-`MIXED` cohort state is definitionally a PHM–KBH agreement
+indicator** — there is no historical reading broader than "did PHM and KBH independently report the same
+direction." Neither consequence changes any cell's predetermined `underpowered_accruing` status; both sharpen
+what "thin historical read" concretely means for these cells.
+
 ### Cell 1 — `imce_phase_v0.next_order_softness_1rp` — `rf.cycle_pattern.imce_phase_v0`, target: next family-local state at 1 reporting period
 
 | Field | Value |
@@ -60,7 +77,7 @@ receipt DHI's and TOL's pre-FY2025 order-disclosure format, which would restore 
 | LEN membership | **EXCLUDED — cell-level** (AG10-clarif, MAJ-2). LEN is a B≤3-cell exclusion, issuer-level, matching its cancellation-rate-cell exclusion (contract §2 [A18]/AG10). |
 | NVR stratum handling | Separate stratum, never pooled to raise n (AG13, reaffirmed unchanged). A transfer test is a future registered cell, not this one. |
 | Predetermined status | `underpowered_accruing` (mechanical, §12 zero-pass rule — all 6 historical cells pre-labeled) |
-| State-vector observability (AG14/AP1) | **SETTLED [AP1, A4P binding].** Tracks `order_softness`: full cohort minus LEN — pooled population {DHI, PHM, KBH, TOL}, NVR held out. Deterministic construction: `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md`. `completed_inventory_build` and `incentive_support`/`pace_recovery` are explicitly NOT the tracked state for this target (AP1). |
+| State-vector observability (AG14/AP1) | **SETTLED [AP1, A4P binding].** Tracks `order_softness`. **Nominal** pooled population {DHI, PHM, KBH, TOL} (LEN excluded, NVR held out) — **currently-eligible HISTORICAL contributors {PHM, KBH} only** (construction §1a; every historical read below is `named_subset_basis: [PHM, KBH]`, not a full-cohort claim — see the labelling-consequence paragraph above). Prospectively the full nominal roster is eligible. Deterministic construction: `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md`. `completed_inventory_build` and `incentive_support`/`pace_recovery` are explicitly NOT the tracked state for this target (AP1). |
 | Six elections touched | E2 (fully settled via AP1) |
 
 ### Cell 2 — `imce_phase_v0.next_order_softness_3rp` — `rf.cycle_pattern.imce_phase_v0`, target: next family-local state at 3 reporting periods
@@ -72,7 +89,7 @@ receipt DHI's and TOL's pre-FY2025 order-disclosure format, which would restore 
 | LEN membership | **EXCLUDED — cell-level**, same as Cell 1 |
 | NVR stratum handling | Same as Cell 1 |
 | Predetermined status | `underpowered_accruing` |
-| State-vector observability (AG14/AP1) | **SETTLED [AP1].** Same as Cell 1 — tracks `order_softness`, pooled {DHI, PHM, KBH, TOL}, NVR held out. |
+| State-vector observability (AG14/AP1) | **SETTLED [AP1].** Same as Cell 1 — tracks `order_softness`; nominal pooled population {DHI, PHM, KBH, TOL}, NVR held out; **currently-eligible historical contributors {PHM, KBH} only** (construction §1a, `named_subset_basis: [PHM, KBH]`, see the labelling-consequence paragraph above). |
 | Six elections touched | E2 (fully settled via AP1) |
 
 ### Cell 3 — `imce_phase_v0.order_softness_false_repair_3rp` — `rf.cycle_pattern.imce_phase_v0`, target: false repair/relapse within 3 reporting periods

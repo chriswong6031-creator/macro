@@ -2,7 +2,7 @@
 
 **File scope note (2026-08-21, A4P wave):** this file now records TWO gates in one append-only log, per the
 A4P commissioning instruction ("every edit gets an append-only entry in `IMCE_A4G_AMENDMENT_LOG.md`") — the
-original A4G gate (AG1–AG18, below) and the A4P "preregistration criteria closure" gate (AP1–AP7, appended
+original A4G gate (AG1–AG18, below) and the A4P "preregistration criteria closure" gate (AP1–AP8, appended
 at the end of this file, after the original Summary table). The filename is retained unchanged (an owned-file
 constraint of the A4P commission) rather than renamed; do not infer from the name alone which gate a given
 `AG`/`AP` tag belongs to — the tag prefix is authoritative.
@@ -247,7 +247,7 @@ The exact mapping of the `rf.cycle_pattern.imce_phase_v0` family's 3 declared st
 ---
 ---
 
-# IMCE-A4P — Preregistration Criteria Closure: Amendment Log (AP1–AP7)
+# IMCE-A4P — Preregistration Criteria Closure: Amendment Log (AP1–AP8)
 
 **Wave:** A4P (preregistration criteria closure). **Records-only.** No `data/` write, no outcome access, no
 registration act. Commissioned by Fable, per Sol's A4P authorization (2026-08-21), issued after Sol accepted
@@ -343,6 +343,26 @@ B≤3 (Cells 1–4) and conditional-B≤3-or-B≤5 (Cells 5–6).
   general B≤5 figure (~2153) is retained in this log and in `IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` (not owned by
   this wave, not edited) as the *block-list-level* arithmetic — it no longer describes the six registered
   cells' own come-back date, which is ~2149.
+
+  **[AP8 correction, F1]** The paragraph above is INACCURATE and is corrected here rather than rewritten in
+  place (append-only discipline): **~2149 is NOT the promotion-relevant come-back date and never should have
+  been described as "the published figure" without that qualifier.** AG1 ("promotion-bearing evidence is 100%
+  PROSPECTIVE... historical replay carries zero weight... by any mechanism") and AP3 (minimum prospective
+  share = 100%, exactly) together mean the three historical blocks these six cells have already accrued credit
+  **zero**, not `B=3`, toward any promotion-relevant block count — so `(40−3)×3.30` double-counts historical
+  evidence the contract itself zero-weights. **The genuinely promotion-relevant figure is `~2160`** (zero
+  historical credit, inclusive fencepost: `2026 + 8/12 + 40 × (10.0/3) = 2026.6667 + 133.3333 = 2160.0`).
+  **~2149 is demoted to an explicitly-labeled NON-PROMOTION diagnostic** — it still has a legitimate use (an
+  order-of-magnitude illustration of the historical arm's distance from the 40-block floor, same as ~2153
+  before it), but it is never again cited as a promotion timeline. **The claim above that "every occurrence
+  updated" was itself only partially true when this AP2 entry was first written** — it correctly propagated
+  ~2149 into the contract, YAML, and packet, but at the time this correction was needed, the YAML
+  `prospective_law.come_back_date` block had NOT yet been updated to distinguish the promotion clock from the
+  non-promotion diagnostic (it carried only the ~2149 figure under a `homebuilders_estimate` key with no
+  promotion/non-promotion labeling) — that gap is what this AP8 pass closes: the YAML block is rewritten with
+  a `promotion_clock_estimate` field (~2160) and the ~2149/~2153 figures relabeled
+  `non_promotion_diagnostic_b3_total_block_estimate` / `non_promotion_diagnostic_prior_basis_b5`. See the
+  full AP8 entry below for every file touched by this correction.
 **Where:** Contract §3 (effective-block-count law, cell-level scoping paragraph — rewritten), §9a (Homebuilders
 row), §13 (come-back date), Appendix B/C; `IMCE_A4G_SIX_CELL_DISPOSITION.md` §1 (Cells 5–6 rewritten to match
 Cells 1–4), §2 (cross-cell summary rewritten), §3 (E2 fully settled), §4 (open item closed); YAML
@@ -503,10 +523,139 @@ this AP8 revision, since no `reason` string changed in this revision — see EVI
 records the AP4 bootstrap freeze (800/seed 7) as already-settled rather than "not yet chosen"; a new item
 records the AP3 100% prospective-share figure as already-settled; a new item records the AP5 FDR runner
 obligation. §7 ("what this document does NOT do") is unchanged in kind — the packet still proposes, never
-performs, registration.
+performs, registration. **[AP8 correction, F5] The "~2149" figure named just above is now itself stale
+narration** — AP8's F1 fix corrects the promotion-relevant figure to **~2160** (zero historical credit) and
+demotes ~2149 to an explicitly-labeled non-promotion diagnostic; packet §6's checklist item now reads ~2160
+as the promotion clock, not ~2149. This sentence is the correction; the paragraph above is left as the
+historical record of what AP7 originally did.
 **Where:** `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md` (rewritten in full — §1 recomputation basis, §2–§4
 new reasons/hashes, §6 checklist updated).
 **Authority:** Sol, A4P authorization 2026-08-21 (ruling 7 — regenerate the packet after rulings 1–6).
+
+---
+
+## AP8 — Same-branch revision: fixes from two rounds of Fable's adjudication of Opus red-team passes on PR #6213
+
+**Wave:** A4P, same branch (`claude/imce-a4p-criteria-closure`), two revision rounds, both same-day
+2026-08-21. **Records-only** — no `data/` write, no outcome access, no trial family registered, no engine
+code changed, no `reason` string changed on any `declared_budget` row (all three hashes re-verified stable
+across both rounds).
+**Authority:** Sol, A4P authorization 2026-08-21, via Fable's adjudication of two Opus red-team passes.
+**Scope note:** this single entry consolidates BOTH revision rounds rather than splitting into AP8/AP9, since
+both rounds landed on the same commissioning authorization and the same branch before any merge — every fix
+below is tagged with its originating finding code (round 1: B1/B2/M1–M7/m1–m8/n1–n2; round 2: F1–F8 + the M2
+inline nit) and the file(s) it touches. **This entry resolves the dangling "see the AP8 entry" pointers left
+at AG4's original text (above) and in the Summary table's AP8 row (below) — both now resolve here.**
+
+### Round 1 — 2 blockers + 7 majors + minors
+
+- **B1 (blocker, fabricated composite quotation):** Deleted a composite quote that spliced contract §3's
+  month-boundary clause into the AG17 paragraph via an ellipsis, presenting it as one continuous "AG17"
+  quote and eliding §15/§15a's unconditional-sounding stop-condition wording. Contract §3, the AG17 paragraph,
+  and §15/§15a are now cited separately with their true, non-overlapping scopes, plus an honestly-labeled
+  inference (not a stated contract rule) reconciling them. **Where:** `IMCE_A4G_SOURCE_BOUNDARY_TABLE.md` §6
+  (rewritten "Where an unreceipted boundary may be used..." passage); this log's AP6 entry (corrected bullet).
+- **B2 (blocker, GFC-block readmission risk):** The `order_softness` construction now states explicitly (new
+  §3.0) that block admissibility for the six registered cells is governed exclusively by the contract's
+  registered block list — the construction computes states, it never admits a block; GFC bust/recovery stay
+  unusable regardless of input availability. Added a ≥2-issuer floor (§3.1) before any cohort state may be
+  minted, citing AG14's existing bar on a single-issuer reading wearing a cohort label. **Where:**
+  `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md` §3.0, §3.1.
+- **M1 (bootstrap unit):** Corrected "month/episode-block" to the registered macro-block cluster (the same
+  unit AG9 already uses for inference); disclosed that `engine/grading_stats.py`'s `BOOT_DRAWS`/`BOOT_SEED`
+  (800/7) supply only numeric defaults, never its date-blocked resampling unit; disclosed that a 3-cluster
+  bootstrap is near-degenerate. **Where:** contract §8 item 2, §11; YAML `validation.bootstrap`.
+- **M2 (six cell IDs):** Minted and froze `imce_phase_v0.next_order_softness_1rp` /
+  `.next_order_softness_3rp` / `.order_softness_false_repair_3rp`, `imce_sync_v0.next_order_softness_1rp` /
+  `.forward_63d_drawdown_tail`, `imce_risk_v0.forward_63_trading_day_drawdown_tail` — presented to Sol for
+  ratification. **Where:** contract §11 (new table); YAML `trials[].cell_ids` / `six_cell_ids_union`;
+  `IMCE_A4G_SIX_CELL_DISPOSITION.md` §0 table and per-cell headers.
+- **M3 (packet restricted to exactly Sol's four A4 acts):** Deleted the invented separate "FDR-partition
+  registration" act and its "enforced assertion" requirement (contradicted Sol's own ruling 5 — no new
+  writer at A4); restated the runner obligation as binding a FUTURE evaluation-runner wave, not A4; froze
+  `n_issuer_precision_diagnostic` as the exact field name (was TBD); deleted "execute verbatim or amend
+  before executing," replaced with "execute verbatim or abort back to Sol." **Where:**
+  `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md` §5, §6 (rewritten), §7; contract §3 (`n_issuer_precision_diagnostic`); YAML `effective_block_law.within_block_issuer_dependence.field_name`.
+- **M4 (come-back arithmetic, round 1 pass):** Recomputed on the B=3 basis (~2149), superseding the AG5 B=5
+  basis (~2153) — **this round-1 fix was itself incomplete; see F1 below for the full correction to a
+  zero-historical-credit promotion clock (~2160).**
+- **M5 (census annotations):** Two additive-only annotation blocks added to
+  `IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` at the three cited points — 12 insertions, 0 deletions, original
+  A3 text untouched, per Sol's bar on reopening A3 work (newly granted owned-file scope).
+- **M6 (ruling 6 honesty + Treasury receipt, round 1 pass):** Reframed as "PARTIALLY EXECUTED/OPEN, 0/8
+  boundaries receipted, none changed"; recorded 3 new dated first-party bracketing receipts (NBER x2, Fed);
+  Treasury CMT graded `S` (Sol-attested + search-corroborated only) — **round 1 did not yet have the real
+  browser-obtained receipt; that arrived in round 2, see F-round-2's M6 continuation below.**
+- **M7 (fail-closed era-coverage gate):** Checked `research/imce/hb0/evidence/L2/L3/L4_defs_*.md` — PHM and
+  KBH carry `[VERIFIED]`-grade net-orders receipts covering 2014–2023; DHI and TOL carry only
+  `INF`/`[SOURCE CLAIM]` grade. Added construction §1a: DHI/TOL contribute `NOT_RECONSTRUCTABLE` on orders
+  for 2014–2023; coverage impact recorded in the disposition; escalated to Sol.
+- **Minors m1–m8, n1–n2:** false-repair/relapse rule frozen exactly (construction §4); missing-orders-input
+  lookup row split out (construction §2); AG12 TOL backlog-sensitivity registered as a mandatory diagnostic
+  (construction §1b); (two-way) tie rule stated (construction §3.1, later extended to three-way by round 2's
+  F2/F3 work); YAML prospective share made a non-numeric token (later corrected to numeric `1.0` by round 2);
+  disposition's dangling "§4 open item" pointer fixed to "§4 CLOSED"; construction file named
+  incorporated-by-reference (later formalized fully by F6 below); the three superseded A4G-era row hashes
+  recorded durably in this log's AP7 entry; `hb0/` path prefix fixed in the construction file's §0; the
+  boundary table's "XHB ETF drawdown" phrasing annotated as narrative-only, never a receipt.
+
+### Round 2 — 1 blocker-class carryover + majors + nits (this pass)
+
+- **F1 (blocker — M4's round-1 fix never reached the YAML or a corrective log note):** Rewrote YAML
+  `prospective_law.come_back_date`: added `promotion_clock_estimate` (~2160, work shown: `2026.6667 + 40 ×
+  (10.0/3) = 2160.0`); renamed the ~2149/~2153 fields to `non_promotion_diagnostic_b3_total_block_estimate` /
+  `non_promotion_diagnostic_prior_basis_b5`; rewrote `recomputation_arithmetic` to the ~2160 form. Added an
+  explicit `[AP8 correction, F1]` note directly after this log's AP2 come-back bullet stating ~2160 is the
+  promotion-relevant figure and ~2149 is a non-promotion diagnostic. **Where:** YAML
+  `prospective_law.come_back_date` (rewritten); this log's AP2 entry (correction note added).
+- **F2 (major — AG14 contradiction, conservative resolution, no new authority minted):** (a) Historical
+  `order_softness` reads (2014–2023) are now labelled `named_subset_basis: [PHM, KBH]` under AG14's
+  three-issuer-subset discipline, never presented as full-cohort claims until DHI/TOL receipts exist; the
+  PROSPECTIVE arm keeps the genuine cohort basis/label. (b) Contract's AG14 bullet ("disclosed... by all six
+  roster issuers") now carries a scope note: broadly cohort-observable PROSPECTIVELY; historical
+  reconstruction is currently limited to {PHM, KBH}. (c) Stated as two distinct thresholds: the ≥2-issuer
+  floor (minimum to mint ANY pooled state) vs. the stricter, separate question of whether that state may
+  carry the cohort LABEL. (d) Escalated to Sol: whether a ≥2-contributor read may ever bear the cohort label;
+  named-subset labelling governs until ruled. **Where:** contract §2 Homebuilders (AG14 bullet, two new
+  passages); `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md` §1a (new labelling paragraph), §3.1;
+  `IMCE_A4G_SIX_CELL_DISPOSITION.md` §1 (labelling-consequence paragraph, per-cell rows for Cells 1–2).
+- **F3 (major — unstated consequences of the M7 era gate, named for Sol's ratification review):** (1)
+  Composing the §1a orders gate with the cancellation-rate eras (PHM FY2016+, KBH FY2008+): the grind block
+  yields ZERO cohort states before FY2016 (PHM's cancellation input is `missing` until then, leaving KBH as
+  sole contributor, below the ≥2 floor) — usable window is FY2016–2019, not the full 2014–2019 span. (2)
+  With exactly two eligible historical contributors, every non-null, non-`MIXED` cohort state is
+  definitionally a PHM–KBH agreement indicator — no historical reading is broader than that. **Where:**
+  `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md` §1a (new "Unstated consequences" block);
+  `IMCE_A4G_SIX_CELL_DISPOSITION.md` §1 (new "Unstated consequences" paragraph).
+- **F4 (major — this AP8 entry itself):** Round 1 tagged dozens of fixes `[AP8, ...]` inline but never added
+  a formal `## AP8` log entry, leaving `[AP8, M3(b)]`'s "see the AP8 entry below" (AG4's original text) and
+  the Summary table's AP8 row ("see the AP8 entry above") dangling. This entry is that fix. Both section
+  titles carrying "(AP1–AP7)" (this file's own header, and the A4P section's own title) are corrected to
+  "(AP1–AP8)".
+- **F5 (minor):** This log's AP7 entry narrated "the come-back date line now reads ~2149" as if that were the
+  final state — corrected with an explicit note that ~2160 (not ~2149) is the packet's promotion-clock figure
+  after F1.
+- **F6 (minor — the "lossless" claim was never literally true):** Contract's A26 binding-rule header rewritten:
+  the binding surface is the contract MD PLUS `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md` (incorporated
+  by reference, named normatively); the YAML is a machine-readable projection of the REGISTRATION-RELEVANT
+  FIELDS of both (carrying the construction file by path, never inlining it) — "lossless" dropped as
+  inaccurate. **Where:** contract header (binding-rule line), Appendix A row A26; YAML header comment.
+- **F7 (nit):** Disposition's per-cell "pooled population {DHI, PHM, KBH, TOL}" rows (Cells 1–2, inherited by
+  Cells 3–6 via "same as Cell 1") now distinguish the nominal roster from the currently-eligible historical
+  contributors {PHM, KBH}, pointing to construction §1a.
+- **F8 (nit):** Boundary table §7 now notes the Treasury 2021-12-06 HS→MC construction break falls inside the
+  pandemic-boom block (2020-03→2021-12) — impact nil for the six registered cells, since Treasury CMT is a
+  candidate `C_t` leg only, never an `order_softness` construction input.
+- **M2 inline nit:** The six cell ID strings are now inlined directly in the packet §6 checklist item, not
+  only pointed to by reference, so the packet reads self-contained.
+
+**Where (round 2, consolidated):** `IMCE_PREREGISTRATION_CANDIDATE_V1.yaml` (`prospective_law.come_back_date`,
+header comment); this log (AP2 entry correction, this AP8 entry, header titles); contract MD (A26 header,
+Appendix A row, AG14 bullet); `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md` (§1a, §3.1);
+`IMCE_A4G_SIX_CELL_DISPOSITION.md` (§1, per-cell rows); `IMCE_A4G_SOURCE_BOUNDARY_TABLE.md` (§7);
+`IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md` (§6 checklist item).
+**Authority:** Sol, A4P authorization 2026-08-21, via Fable's adjudication (round 2) of an Opus red-team pass
+on PR #6213 at head `fec9e1c345a396f177618fb0a57a6ca6f0e499ed`.
 
 ---
 
