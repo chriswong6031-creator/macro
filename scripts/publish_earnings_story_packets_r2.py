@@ -123,6 +123,15 @@ def _audit_bound_evidence(
     mapping, but deduplicates immutable objects and packet replays by their
     content ids.  Corrections remain distinct packet ids and therefore retain
     full historical source provenance.
+
+    A bounded catch-up generation is intentionally allowed to project a strict
+    subset of its bound evidence root. Completeness is measured by the
+    story/evidence lag and backlog, not manufactured by pretending an hourly
+    batch contains the entire upstream generation. The audit therefore proves
+    every published packet belongs to and exactly replays its bound evidence;
+    it rejects only packets outside that evidence root. This keeps partial
+    recovery roots and their immutable ancestors auditable while preserving the
+    complete object/evidence replay for everything they actually published.
     """
     from engine.earnings_narrative.story_packets import (  # noqa: PLC0415
         evidence_receipts_from_manifest,
@@ -164,8 +173,8 @@ def _audit_bound_evidence(
             or sha256_bytes(evidence_raw) != evidence_ref.get("manifest_sha256")
         ):
             raise ImmutableAddressIntegrityError("bound earnings evidence manifest receipt mismatch")
-        if set(evidence_manifest["events"]) != set(story_manifest["packets"]):
-            raise ImmutableAddressIntegrityError("story packet catalog does not exactly project its evidence root")
+        if not set(story_manifest["packets"]) <= set(evidence_manifest["events"]):
+            raise ImmutableAddressIntegrityError("story packet catalog contains an event outside its bound evidence root")
 
         policy = story_manifest["policy"]["snapshot"]
         for key, index in story_manifest["packets"].items():
