@@ -1,6 +1,6 @@
 {
-  "ts": "2026-08-22T05:00:48+00:00",
-  "main_sha": "e39f6c26493e784f17a05e3322659d40d1d7fad3",
+  "ts": "2026-08-22T07:11:53+00:00",
+  "main_sha": "4fc9bebfc234ad61f406d05f898ca66374415d0c",
   "red_required": [
     {
       "name": "engine-render-guards",
@@ -22,9 +22,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 20,
+  "consecutive_failures": 21,
   "sensed_shas": [
-    "e39f6c26493e784f17a05e3322659d40d1d7fad3",
+    "4fc9bebfc234ad61f406d05f898ca66374415d0c",
     "cb74a5973d47136b6a5acdbead8428f5b1538851"
   ],
   "heartbeat_degraded": false
