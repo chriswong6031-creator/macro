@@ -1,10 +1,11 @@
 # IMCE-A4P — Deterministic `order_softness` State Construction
 
-**Wave:** A4P (preregistration criteria closure). Records-only. No outcome number, model fit, price/return
+**Wave:** A4P (preregistration criteria closure); label/population semantics updated by A4P.1 (fourth-gate
+preflight closure, ruling R2, 2026-08-22). Records-only. No outcome number, model fit, price/return
 data, or trial-ledger write appears anywhere below.
-**Authority:** amended contract V1.2 §1/§2 Homebuilders (`IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md`),
-Sol's A4P ruling 1 (2026-08-21), `IMCE_A4G_AMENDMENT_LOG.md` §AP1 (the amendment log records both the A4G
-and A4P gates in one append-only file).
+**Authority:** amended contract V1.2.1 §1/§2 Homebuilders (`IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md`),
+Sol's A4P ruling 1 (2026-08-21) and A4P.1 ruling R2 (2026-08-22), `IMCE_A4G_AMENDMENT_LOG.md` §AP1/§A4P.1
+(the amendment log records A4G, A4P, and A4P.1 in one append-only file).
 **Referenced normatively from:** contract §1 (trial families), §2 Homebuilders (state-vector observability
 scoping, AG14/AP1), §15/§15a (registration stop condition — no phase-family target may be registered unless
 mapped to a named D5 state with a registered observability class AND, for `order_softness`, a registered
@@ -87,9 +88,17 @@ named-subset restriction is a HISTORICAL-reconstruction-only consequence of the 
 permanent property of the construction. **Two distinct thresholds — never conflated [AP8, F2(c)]:** the ≥2-
 issuer floor (§3.1) is the AG14-derived MINIMUM contributor count for minting any pooled state at all; whether
 a state minted at exactly that floor may carry the stronger COHORT label (vs. named-subset) is a separate,
-stricter, currently-unruled question. **Escalated to Sol [AP8, F2(d)]:** whether a ≥2-contributor
-`order_softness` read may ever bear the cohort label — until Sol rules, named-subset labelling governs every
-historical read.
+stricter question. **SETTLED [A4P.1 R2, Sol fourth-gate ruling R2, 2026-08-22 — closes the AP8 F2(d)
+escalation]:** the historical v0 population is **permanently** `named_subset_basis: [PHM, KBH]` for the six
+registered historical cells (later DHI/TOL archaeology may improve descriptive evidence or support a future
+v1, but may **never widen v0** after registration); the prospective v0 eligible pooled cohort is `[DHI, PHM,
+KBH, TOL]`. Label rule, applied by contributor count at each period: **4/4 reconstructable contributors →
+`cohort`; 2–3 reconstructable contributors → `named_subset` + the exact contributor list; fewer than 2 →
+`NOT_RECONSTRUCTABLE`** (§2 lookup table / §3.1 ≥2-issuer floor, unchanged). Because the historically-eligible
+roster is currently exactly {PHM, KBH} — two contributors — every historical read stays `named_subset`-labelled
+under this rule until DHI's and TOL's era coverage is receipted (§1a); the rule does not, by itself, change any
+count today. It settles the label a state WOULD carry at any future contributor count, so no further Sol
+roundtrip is needed when DHI/TOL receipts land or when the prospective arm mints a 3- or 4-contributor state.
 
 **Unstated consequences, named explicitly for Sol's ratification review [AP8, F3]:**
 
@@ -199,7 +208,9 @@ apply.
 
 ### 3.1 Pooling and the cohort state
 
-Per contract §1, the phase and sync-Cell-4 targets are declared over a **pooled homebuilder stratum**.
+Per contract §1, the phase and sync-Cell-4 targets are declared over the historical v0 population
+`named_subset_basis: [PHM, KBH]` (permanent for v0) and the prospective v0 eligible pooled cohort
+`[DHI, PHM, KBH, TOL]`, under the label truth table above [**A4P.1 R2**, was "a pooled homebuilder stratum"].
 Per AP2 (all six v0 historical cells are cancellation-scoped, B≤3, LEN excluded cell-level), the **nominal**
 pooled roster for `order_softness` is **{DHI, PHM, KBH, TOL}** — LEN excluded (§2 above; AP2), **NVR held out
 as its own stratum and never pooled** (contract §2 NVR bullet, AG13, unchanged). **The nominal roster and the
@@ -207,11 +218,12 @@ actually-eligible-per-period roster are not the same thing [AP8, M7 cross-refere
 era-coverage gate currently disqualifies DHI and TOL from the orders-side input across the entire 2014–2023
 window, so the roster that is actually eligible to contribute a per-issuer state in that window is **{PHM,
 KBH}** — two issuers, not four — until a future census pass receipts DHI's and TOL's pre-FY2025 net-orders
-disclosure format. **Labelling consequence [AP8, F2(a)]:** every HISTORICAL cohort state minted from this
-narrower eligible roster carries `named_subset_basis: [PHM, KBH]` and is a named-subset claim, never a
+disclosure format. **Labelling consequence [AP8, F2(a); label rule SETTLED A4P.1 R2]:** every HISTORICAL cohort state minted from
+this narrower eligible roster carries `named_subset_basis: [PHM, KBH]` and is a named-subset claim, never a
 full-cohort claim — see the labelling discussion immediately following §1a above for the full rule and the
-open Sol escalation on whether a ≥2-contributor read may ever bear the cohort label. The PROSPECTIVE arm is
-unaffected — the nominal four-issuer roster is the genuine cohort basis there.
+three-row label truth table (4/4 → `cohort`; 2–3 → `named_subset` + exact contributor list; <2 →
+`NOT_RECONSTRUCTABLE`) that now governs every count, settled by Sol's fourth-gate ruling R2. The PROSPECTIVE
+arm is unaffected — the nominal four-issuer roster is the genuine cohort basis there.
 
 **Cohort state at period *t* = the modal (most frequent) per-issuer state among the non-`NOT_RECONSTRUCTABLE`
 issuers in {DHI, PHM, KBH, TOL} at *t*, subject to a minimum-contributor floor:**
