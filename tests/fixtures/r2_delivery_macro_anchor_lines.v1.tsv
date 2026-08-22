@@ -5,8 +5,8 @@
 # fingerprint to whatever a stale line number currently points at. Targets must be
 # non-blank and unique in their file; data/ and site/ anchors are receipt-only.
 # path	line	text
-.github/workflows/daily.yml	2813	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
-.github/workflows/daily.yml	5104	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
+.github/workflows/daily.yml	2811	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
+.github/workflows/daily.yml	5208	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
 app/billing.py	60	def _commercial_emit(kind: str, **fields) -> None:
 app/biocatalyst.py	2333	@router.get("/api/biocatalyst/v1/health")
 collectors/biocatalyst/clinicaltrials_history.py	501	def _receipt(
@@ -86,11 +86,11 @@ scripts/build_options_hub_nightly.py	592	I/O per root is the prior OI year(s) ne
 scripts/build_options_matrix.py	55	R2_PREFIX = "options_structure/matrix/"
 scripts/build_options_prophet.py	1171	def _default_paths() -> dict[str, Path]:
 scripts/build_options_structure_intraday.py	1	#!/usr/bin/env python3
-scripts/build_prophet.py	208	# Landing showcase slice — public teaser payload for the marketing landing
-scripts/build_prophet.py	2216	active_entries.append({
-scripts/build_prophet_marks.py	82	SCHEMA = "prophet.live_marks/v1"
-scripts/build_prophet_marks.py	83	R2_KEY = "live_flow/prophet_marks.json"
-scripts/build_prophet_marks.py	1152	def _private_observation_path(
+scripts/build_prophet.py	267	# Landing showcase slice — public teaser payload for the marketing landing
+scripts/build_prophet.py	2275	active_entries.append({
+scripts/build_prophet_marks.py	87	SCHEMA = "prophet.live_marks/v1"
+scripts/build_prophet_marks.py	88	R2_KEY = "live_flow/prophet_marks.json"
+scripts/build_prophet_marks.py	1174	def _private_observation_path(
 scripts/build_session_digest.py	104	R2_SURFACE_PREFIX = "live_flow/surface/"
 scripts/build_stock_library.py	3615	dchread = dchain.hiring_read(headcount_by_ticker[ticker], rec.get("revisions"))
 scripts/build_stock_library.py	4035	# amended at FS-5.
