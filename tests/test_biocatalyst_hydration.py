@@ -114,6 +114,102 @@ def catalyst_radar_empty() -> dict:
     )
 
 
+def catalyst_radar_with_lineage() -> dict:
+    """A valid radar page whose selected milestone has three revisions."""
+
+    payload = catalyst_radar_empty()
+    lineage = [
+        {
+            "from": None,
+            "to": "2026-09",
+            "from_version": 1,
+            "to_version": 2,
+            "observed_at": "2026-01-10T12:00:00Z",
+            "relation": "no_prior_recorded_value",
+            "predecessor_source_version": None,
+            "predecessor_exact_operation_index": None,
+        },
+        {
+            "from": "2026-09",
+            "to": "2026-11",
+            "from_version": 2,
+            "to_version": 3,
+            "observed_at": "2026-03-10T12:00:00Z",
+            "relation": "supersedes_prior_recorded_value",
+            "predecessor_source_version": 2,
+            "predecessor_exact_operation_index": 4,
+        },
+        {
+            "from": "2026-11",
+            "to": "2026-12",
+            "from_version": 3,
+            "to_version": 4,
+            "observed_at": "2026-06-10T12:00:00Z",
+            "relation": "supersedes_prior_recorded_value",
+            "predecessor_source_version": 3,
+            "predecessor_exact_operation_index": 8,
+        },
+    ]
+    payload["catalyst_radar"] = [
+        {
+            "event_id": "nct:NCT00000001:primary_completion",
+            "nct_id": "NCT00000001",
+            "kind": "primary_completion",
+            "trial": {
+                "title": "Alpha Study",
+                "brief_title": "Alpha Study",
+                "study_type": "INTERVENTIONAL",
+                "phases": ["PHASE2"],
+                "conditions": ["Oncology"],
+                "enrollment": {"count": 100, "type": "ACTUAL"},
+            },
+            "milestone": {
+                "kind": "primary_completion",
+                "date": "2026-12",
+                "date_type": "ESTIMATED",
+                "precision": "month",
+                "interval_start": "2026-12-01",
+                "interval_end": "2026-12-31",
+                "unusable_reason": None,
+            },
+            "timing": {
+                "state": "upcoming",
+                "anchor_date": "2026-08-16",
+                "days_to_milestone": {"exact": None, "min": 107, "max": 137},
+                "days_since_milestone": None,
+            },
+            "trial_status": {"value": "RECRUITING", "activity": "active", "reason_code": None},
+            "issuer": {
+                "state": "unresolved_sponsor",
+                "sponsor_name": "Acme",
+                "ticker": None,
+                "relationship": None,
+                "source": None,
+            },
+            "revision": {
+                "state": "has_revisions",
+                "count": len(lineage),
+                "latest": lineage[-1],
+                "lineage": lineage,
+            },
+            "evidence": {
+                "provider": "ClinicalTrials.gov",
+                "record_id": "NCT00000001",
+                "url": "https://clinicaltrials.gov/study/NCT00000001",
+                "source_clocks": {"updated_at": AS_OF, "retrieved_at": AS_OF},
+            },
+        }
+    ]
+    payload["pagination"] = {"limit": 50, "total": 1, "next_cursor": None}
+    payload["coverage"]["radar"].update(
+        trials_in_cohort=1,
+        trials_with_events=1,
+        events_total=1,
+        events_in_horizon=1,
+    )
+    return payload
+
+
 def prospective_pre_baseline_empty() -> dict:
     return _meta(
         prospective_changes=[],
@@ -328,6 +424,47 @@ def test_first_seen_pre_baseline_zero_is_valid_empty(tmp_path: Path) -> None:
     assert "baseline" in out["queue"].lower() or "No first-seen observations" in out["queue"]
     assert "Registry page unavailable" not in out["queue"]
     assert out["workspaceState"] != "source_outage"
+
+
+@needs_node
+@pytest.mark.parametrize(
+    ("lang", "heading", "order_copy"),
+    [
+        ("en", "Recorded date lineage", "newest recorded change first"),
+        ("zh", "记录日期沿革", "最新记录变更在前"),
+    ],
+)
+def test_milestone_inspector_renders_every_revision_in_both_languages(
+    tmp_path: Path, lang: str, heading: str, order_copy: str
+) -> None:
+    out = _run(
+        tmp_path,
+        {
+            "lang": lang,
+            "routes": {
+                "/api/biocatalyst/v1/catalyst-radar": _route(
+                    200, _json(catalyst_radar_with_lineage())
+                ),
+                "/api/biocatalyst/v1/trials/NCT00000001": _route(
+                    200, _json(trial_detail())
+                ),
+            },
+            "clickTrial": "NCT00000001",
+        },
+    )["second"]
+
+    assert out["workspaceState"] == "ready"
+    assert heading in out["inspector"]
+    assert order_copy in out["inspector"]
+    assert "2026-11 → 2026-12" in out["inspector"]
+    assert "2026-09 → 2026-11" in out["inspector"]
+    if lang == "en":
+        assert "Not available → 2026-09" in out["inspector"]
+        assert out["inspector"].index("2026-11 → 2026-12") < out["inspector"].index(
+            "2026-09 → 2026-11"
+        )
+    else:
+        assert "暂无 → 2026-09" in out["inspector"]
 
 
 @needs_node

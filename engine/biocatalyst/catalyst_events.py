@@ -56,13 +56,10 @@ HALTED_TRIAL_STATUSES = frozenset({"TERMINATED", "WITHDRAWN", "SUSPENDED"})
 _PARTIAL_ISO_DATE = re.compile(r"^\d{4}(-\d{2}(-\d{2})?)?$")
 _DATE_TYPES = frozenset({"ACTUAL", "ESTIMATED", "UNKNOWN"})
 
-# Real ClinicalTrials.gov API v2 field names. Case-sensitive substring
-# matching keeps these disjoint: "completionDateStruct" (lowercase c) is
-# never a substring of "primaryCompletionDateStruct" (capital C).
-_REVISION_KIND_MARKERS: dict[str, str] = {
-    "primary_completion": "primaryCompletionDateStruct",
-    "completion": "completionDateStruct",
-}
+# The serving adapter passes at most the public change-tape contract's 512
+# rows for one NCT.  Keep the pure projection bounded too, even when called
+# directly by a malformed or synthetic caller.
+_MAX_REVISION_LINEAGE = 512
 
 # SUSPENDED is PAUSED, not terminal -- see §6a. Deliberately not named with
 # the word this module and its tests must never use for a schedule fact.
@@ -287,47 +284,78 @@ def _revision_block(
     kind: str,
     revisions_by_nct: Mapping[str, Sequence[Mapping[str, Any]]] | None,
 ) -> dict[str, Any]:
-    """§6c -- lineage from public change rows, matched by json_path marker."""
+    """§6c -- bounded lineage from public rows attributed by the adapter."""
 
     if not isinstance(revisions_by_nct, Mapping) or nct_id not in revisions_by_nct:
-        return {"state": "history_not_collected", "count": 0, "latest": None}
+        return {"state": "history_not_collected", "count": 0, "latest": None, "lineage": []}
     entries = revisions_by_nct.get(nct_id)
     if not isinstance(entries, Sequence) or isinstance(entries, (str, bytes)):
-        return {"state": "history_not_collected", "count": 0, "latest": None}
+        return {"state": "history_not_collected", "count": 0, "latest": None, "lineage": []}
 
-    marker = _REVISION_KIND_MARKERS[kind]
-    matching: list[Mapping[str, Any]] = []
-    for row in entries:
+    matching: list[tuple[int, Mapping[str, Any]]] = []
+    for input_position, row in enumerate(entries[:_MAX_REVISION_LINEAGE]):
         if not isinstance(row, Mapping):
             continue
-        path = row.get("json_path")
-        if not isinstance(path, str):
-            path = row.get("source_json_path")
-        if not isinstance(path, str) or marker not in path:
+        if row.get("milestone_kind") != kind:
             continue
-        matching.append(row)
+        matching.append((input_position, row))
     if not matching:
-        return {"state": "no_revisions_recorded", "count": 0, "latest": None}
+        return {"state": "no_revisions_recorded", "count": 0, "latest": None, "lineage": []}
 
-    best_index: int | None = None
-    best_sort: tuple[int, int] | None = None
-    for index, row in enumerate(matching):
+    def _lineage_sort(item: tuple[int, Mapping[str, Any]]) -> tuple[Any, ...]:
+        input_position, row = item
         after = _version_int(row.get("source_versions"), "after")
-        candidate_sort = (after if after is not None else -1, index)
-        if best_sort is None or candidate_sort >= best_sort:
-            best_sort = candidate_sort
-            best_index = index
-    best_row = matching[best_index]  # type: ignore[index]
-    versions = best_row.get("source_versions")
-    observed_at = best_row.get("observed_at")
-    latest = {
-        "from": _revision_side_date(best_row.get("before")),
-        "to": _revision_side_date(best_row.get("after")),
-        "from_version": _version_int(versions, "before"),
-        "to_version": _version_int(versions, "after"),
-        "observed_at": observed_at if isinstance(observed_at, str) else None,
+        operation_index = row.get("exact_operation_index")
+        operation_index = (
+            operation_index
+            if isinstance(operation_index, int) and not isinstance(operation_index, bool)
+            else None
+        )
+        observed_at = row.get("observed_at")
+        return (
+            after is None,
+            after if after is not None else 0,
+            operation_index is None,
+            operation_index if operation_index is not None else 0,
+            observed_at if isinstance(observed_at, str) else "",
+            input_position,
+        )
+
+    matching.sort(key=_lineage_sort)
+    lineage: list[dict[str, Any]] = []
+    for _input_position, row in matching:
+        versions = row.get("source_versions")
+        observed_at = row.get("observed_at")
+        relation = row.get("relation")
+        predecessor_version = row.get("predecessor_source_version")
+        predecessor_index = row.get("predecessor_exact_operation_index")
+        lineage.append(
+            {
+                "from": _revision_side_date(row.get("before")),
+                "to": _revision_side_date(row.get("after")),
+                "from_version": _version_int(versions, "before"),
+                "to_version": _version_int(versions, "after"),
+                "observed_at": observed_at if isinstance(observed_at, str) else None,
+                "relation": relation if isinstance(relation, str) else None,
+                "predecessor_source_version": (
+                    predecessor_version
+                    if isinstance(predecessor_version, int) and not isinstance(predecessor_version, bool)
+                    else None
+                ),
+                "predecessor_exact_operation_index": (
+                    predecessor_index
+                    if isinstance(predecessor_index, int) and not isinstance(predecessor_index, bool)
+                    else None
+                ),
+            }
+        )
+    latest = dict(lineage[-1])
+    return {
+        "state": "has_revisions",
+        "count": len(lineage),
+        "latest": latest,
+        "lineage": lineage,
     }
-    return {"state": "has_revisions", "count": len(matching), "latest": latest}
 
 
 def _evidence_block(
@@ -408,7 +436,7 @@ def project_trial_milestones(
 
     kinds_tuple = tuple(kinds)
 
-    dated: list[tuple[tuple[date, date, str, str], CatalystEvent]] = []
+    dated: list[tuple[tuple[Any, ...], CatalystEvent]] = []
     unusable: list[tuple[tuple[str, str], CatalystEvent]] = []
 
     trials_with_events: set[str] = set()
@@ -534,14 +562,44 @@ def project_trial_milestones(
             if state == "beyond_horizon":
                 # Counted, but excluded from the rendered rows (§7).
                 continue
-            dated.append(((interval_start, interval_end, nct_key, kind), event))
+            # The primary user job is what comes next, so priority is fixed
+            # before the API paginates: current, upcoming nearest-first, then
+            # occurred most-recent-first.  Event identity is the stable final
+            # tie-break in every group.
+            if state == "current":
+                order_key: tuple[Any, ...] = (
+                    0,
+                    interval_end,
+                    interval_start,
+                    event_id,
+                )
+            elif state == "upcoming":
+                order_key = (
+                    1,
+                    interval_start,
+                    interval_end,
+                    event_id,
+                )
+            else:
+                order_key = (
+                    3,
+                    -interval_end.toordinal(),
+                    -interval_start.toordinal(),
+                    event_id,
+                )
+            dated.append((order_key, event))
 
         if trial_has_event:
             trials_with_events.add(nct_key)
 
     dated.sort(key=lambda item: item[0])
     unusable.sort(key=lambda item: item[0])
-    events = tuple(event for _, event in dated) + tuple(event for _, event in unusable)
+    # Unusable source-date rows sit after useful forward rows but before
+    # historical rows, so needs-source-review cannot starve the user job and
+    # is itself not buried behind an arbitrarily long history.
+    current_and_upcoming = tuple(event for key, event in dated if key[0] < 2)
+    occurred = tuple(event for key, event in dated if key[0] == 3)
+    events = current_and_upcoming + tuple(event for _, event in unusable) + occurred
 
     coverage = {
         "trials_in_cohort": len(trials),

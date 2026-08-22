@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Iterator
 from unittest import mock
@@ -61,6 +62,7 @@ _FORBIDDEN_KEY_FRAGMENTS = (
     "raw_object",
     "receipt",
     "object_key",
+    "source_pointer",
     "source_json_path",
     "manifest_sha",
     "generation_id",
@@ -123,7 +125,12 @@ def test_catalyst_radar_returns_expected_envelope_against_a_real_published_gener
     assert row["timing"]["state"] == "upcoming"
     assert row["trial_status"] == {"value": "RECRUITING", "activity": "active", "reason_code": None}
     assert row["issuer"]["state"] == "sponsor_name_absent"
-    assert row["revision"] == {"state": "history_not_collected", "count": 0, "latest": None}
+    assert row["revision"] == {
+        "state": "history_not_collected",
+        "count": 0,
+        "latest": None,
+        "lineage": [],
+    }
     assert payload["pagination"]["total"] == 1
     assert payload["coverage"]["radar"]["trials_in_cohort"] == 1
     # _meta's own generation coverage block must survive being merged with the
@@ -234,6 +241,74 @@ def test_catalyst_radar_anchor_is_the_generation_clock_not_wall_clock(
     # when the test happens to run.
     assert payload["effective_horizon"]["anchor_date"] == "2026-02-28"
     assert payload["as_of"] == "2026-02-28T23:30:00Z"
+
+
+def test_catalyst_radar_prioritizes_current_and_upcoming_before_paginating_history(
+    entitled_client, monkeypatch
+) -> None:
+    anchor = date(2026, 8, 20)
+    snapshots = [
+        _milestone_snapshot("NCT70000000", primary_completion=("2026-08", "ESTIMATED")),
+        _milestone_snapshot("NCT70000001", primary_completion=("2026-08-21", "ESTIMATED")),
+        _milestone_snapshot("NCT70000002", primary_completion=("2026-09-01", "ESTIMATED")),
+        _milestone_snapshot("NCT70000003", primary_completion=("2026-10-01", "ESTIMATED")),
+    ]
+    snapshots.extend(
+        _milestone_snapshot(
+            f"NCT71{index:06d}",
+            primary_completion=((anchor - timedelta(days=index)).isoformat(), "ACTUAL"),
+        )
+        for index in range(1, 61)
+    )
+    projection = _milestone_projection(
+        snapshots,
+        as_of="2026-08-20T12:00:00Z",
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational()),
+    )
+
+    first_response = entitled_client.get(
+        "/api/biocatalyst/v1/catalyst-radar?horizon=all&limit=50"
+    )
+    assert first_response.status_code == 200
+    first_payload = first_response.json()
+    first_rows = first_payload["catalyst_radar"]
+    assert len(first_rows) == 50
+    assert [row["timing"]["state"] for row in first_rows[:4]] == [
+        "current",
+        "upcoming",
+        "upcoming",
+        "upcoming",
+    ]
+    assert [row["milestone"]["interval_start"] for row in first_rows[1:4]] == [
+        "2026-08-21",
+        "2026-09-01",
+        "2026-10-01",
+    ]
+    assert all(row["timing"]["state"] == "occurred" for row in first_rows[4:])
+    first_occurred_dates = [row["milestone"]["interval_end"] for row in first_rows[4:]]
+    assert first_occurred_dates == sorted(first_occurred_dates, reverse=True)
+
+    cursor = first_payload["pagination"]["next_cursor"]
+    assert isinstance(cursor, str) and cursor
+    second_response = entitled_client.get(
+        f"/api/biocatalyst/v1/catalyst-radar?horizon=all&limit=50&cursor={cursor}"
+    )
+    assert second_response.status_code == 200
+    second_payload = second_response.json()
+    second_rows = second_payload["catalyst_radar"]
+    assert len(second_rows) == 14
+    assert all(row["timing"]["state"] == "occurred" for row in second_rows)
+    second_occurred_dates = [row["milestone"]["interval_end"] for row in second_rows]
+    assert second_occurred_dates == sorted(second_occurred_dates, reverse=True)
+    first_ids = {row["event_id"] for row in first_rows}
+    second_ids = {row["event_id"] for row in second_rows}
+    assert first_ids.isdisjoint(second_ids)
+    assert len(first_ids | second_ids) == 64
+    assert second_payload["pagination"]["next_cursor"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -357,48 +432,59 @@ def _exact_value_entry(value: str) -> dict[str, Any]:
     }
 
 
-def _milestone_date_constraint_row() -> dict[str, Any]:
+def _milestone_date_constraint_row(
+    *,
+    source_pointer: str = "/protocolSection/statusModule/primaryCompletionDateStruct/date",
+    before_value: str = "2027-01",
+    after_value: str = "2027-06",
+    before_version: int = 1,
+    exact_operation_index: int = 0,
+    observed_at: str = "2026-08-02T12:00:00.000000Z",
+    predecessor_basis: str = "before_version_record",
+    predecessor_exact_operation_index: int | None = None,
+) -> dict[str, Any]:
     """A milestone_date_constraint change row disclosing exact before/after values."""
 
     return {
         "field_class": "milestone_date_constraint",
-        "exact_operation_index": 0,
+        "exact_operation_index": exact_operation_index,
         "review_state": "not_required",
         "semantic_resolution": "registry_field_class_only",
         "op": "replace",
         "before_state": "present",
         "after_state": "present",
-        "source_versions": {"before": 1, "after": 2},
-        "observed_at": "2026-08-02T12:00:00.000000Z",
+        "source_versions": {"before": before_version, "after": before_version + 1},
+        "observed_at": observed_at,
         "protocol_change_asserted": False,
         "materiality_assessed": False,
         "correction_assessed": False,
         "exact_values": {
-            "source_pointer": "/protocolSection/statusModule/primaryCompletionDateStruct/date",
-            "before": _exact_value_entry("2027-01"),
-            "after": _exact_value_entry("2027-06"),
+            "source_pointer": source_pointer,
+            "before": _exact_value_entry(before_value),
+            "after": _exact_value_entry(after_value),
         },
         "correction_lineage": {
             "relation": "supersedes_prior_recorded_value",
-            "predecessor_basis": "before_version_record",
-            "predecessor_source_version": 1,
-            "predecessor_exact_operation_index": None,
+            "predecessor_basis": predecessor_basis,
+            "predecessor_source_version": before_version,
+            "predecessor_exact_operation_index": predecessor_exact_operation_index,
             "correction_assessed": False,
         },
     }
 
 
-def test_catalyst_radar_wires_revision_lineage_through_the_endpoint_from_the_change_tape(
-    entitled_client, monkeypatch
-) -> None:
-    revised_nct = "NCT60000001"
-    enrollment_only_nct = "NCT60000002"
-    snapshots = [
-        _milestone_snapshot(revised_nct, primary_completion=("2027-06", "ESTIMATED")),
-        _milestone_snapshot(enrollment_only_nct, primary_completion=("2027-06", "ESTIMATED")),
-    ]
-    revised_tape = _classified_change_tape(revised_nct, rows=[_milestone_date_constraint_row()])
-    revised_tape["value_disclosure"] = {
+def _with_exact_value_disclosure(tape: dict[str, Any]) -> dict[str, Any]:
+    rows = tape["history"]["rows"]
+    tape["history"]["classification_count"] = len(
+        {
+            (
+                row["source_versions"]["before"],
+                row["source_versions"]["after"],
+            )
+            for row in rows
+        }
+    )
+    tape["value_disclosure"] = {
         "encoding": "canonical_json_utf8",
         "locator_grammar": "rfc6901_json_pointer_into_source_record",
         "max_value_bytes": biocatalyst_api._CHANGE_TAPE_MAX_VALUE_JSON_BYTES,
@@ -408,6 +494,56 @@ def test_catalyst_radar_wires_revision_lineage_through_the_endpoint_from_the_cha
         "correction_assessed": False,
         "state": "exact_values_present",
     }
+    return tape
+
+
+def test_catalyst_radar_attributes_both_dates_and_returns_full_public_lineage(
+    entitled_client, monkeypatch
+) -> None:
+    revised_nct = "NCT60000001"
+    enrollment_only_nct = "NCT60000002"
+    snapshots = [
+        _milestone_snapshot(
+            revised_nct,
+            primary_completion=("2027-06", "ESTIMATED"),
+            completion=("2028-02", "ESTIMATED"),
+        ),
+        _milestone_snapshot(enrollment_only_nct, primary_completion=("2027-06", "ESTIMATED")),
+    ]
+    revised_tape = _classified_change_tape(
+        revised_nct,
+        rows=[
+            _milestone_date_constraint_row(
+                before_value="2026-12",
+                after_value="2027-01",
+                observed_at="2026-06-01T12:00:00.000000Z",
+            ),
+            _milestone_date_constraint_row(
+                source_pointer="/protocolSection/statusModule/completionDateStruct/date",
+                before_value="2028-01",
+                after_value="2028-02",
+                exact_operation_index=1,
+                observed_at="2026-06-01T12:00:00.000000Z",
+            ),
+            _milestone_date_constraint_row(
+                before_value="2027-01",
+                after_value="2027-03",
+                before_version=2,
+                observed_at="2026-07-01T12:00:00.000000Z",
+                predecessor_basis="prior_tape_row",
+                predecessor_exact_operation_index=0,
+            ),
+            _milestone_date_constraint_row(
+                before_value="2027-03",
+                after_value="2027-06",
+                before_version=3,
+                observed_at="2026-08-02T12:00:00.000000Z",
+                predecessor_basis="prior_tape_row",
+                predecessor_exact_operation_index=0,
+            ),
+        ],
+    )
+    _with_exact_value_disclosure(revised_tape)
     enrollment_tape = _classified_change_tape(
         enrollment_only_nct,
         rows=[
@@ -434,23 +570,110 @@ def test_catalyst_radar_wires_revision_lineage_through_the_endpoint_from_the_cha
 
     response = entitled_client.get("/api/biocatalyst/v1/catalyst-radar?horizon=all")
     assert response.status_code == 200
-    rows = {row["nct_id"]: row for row in response.json()["catalyst_radar"]}
-    assert set(rows) == {revised_nct, enrollment_only_nct}
+    payload = response.json()
+    rows = {(row["nct_id"], row["kind"]): row for row in payload["catalyst_radar"]}
+    assert set(rows) == {
+        (revised_nct, "primary_completion"),
+        (revised_nct, "completion"),
+        (enrollment_only_nct, "primary_completion"),
+    }
 
-    revision = rows[revised_nct]["revision"]
-    assert revision["state"] == "has_revisions"
-    assert revision["count"] == 1
-    assert revision["latest"]["from"] == "2027-01"
-    assert revision["latest"]["to"] == "2027-06"
-    assert revision["latest"]["from_version"] == 1
-    assert revision["latest"]["to_version"] == 2
+    primary_revision = rows[(revised_nct, "primary_completion")]["revision"]
+    assert primary_revision["state"] == "has_revisions"
+    assert primary_revision["count"] == 3
+    assert [(item["from"], item["to"]) for item in primary_revision["lineage"]] == [
+        ("2026-12", "2027-01"),
+        ("2027-01", "2027-03"),
+        ("2027-03", "2027-06"),
+    ]
+    assert [(item["from_version"], item["to_version"]) for item in primary_revision["lineage"]] == [
+        (1, 2),
+        (2, 3),
+        (3, 4),
+    ]
+    assert primary_revision["latest"] == primary_revision["lineage"][-1]
+
+    completion_revision = rows[(revised_nct, "completion")]["revision"]
+    assert completion_revision["state"] == "has_revisions"
+    assert completion_revision["count"] == 1
+    assert completion_revision["lineage"][0]["from"] == "2028-01"
+    assert completion_revision["lineage"][0]["to"] == "2028-02"
 
     # An enrollment-only change on a covered NCT is real change-tape history,
     # but it is not a milestone-date revision -- it must never be misread as
     # one, and it must not fabricate a "no revisions collected" state either.
-    enrollment_revision = rows[enrollment_only_nct]["revision"]
+    enrollment_revision = rows[(enrollment_only_nct, "primary_completion")]["revision"]
     assert enrollment_revision["state"] == "no_revisions_recorded"
     assert enrollment_revision["count"] == 0
+    assert enrollment_revision["lineage"] == []
+
+    # The source locator is consumed for attribution and discarded.  No
+    # revision-bearing response may expose it at any depth.
+    assert "source_pointer" not in set(_walk_keys(payload))
+
+
+def test_catalyst_radar_never_guesses_kind_without_one_exact_valid_pointer(
+    entitled_client, monkeypatch
+) -> None:
+    absent_nct = "NCT60000011"
+    unrecognized_nct = "NCT60000012"
+    malformed_nct = "NCT60000013"
+    snapshots = [
+        _milestone_snapshot(
+            nct_id,
+            primary_completion=("2027-06", "ESTIMATED"),
+            completion=("2028-02", "ESTIMATED"),
+        )
+        for nct_id in (absent_nct, unrecognized_nct, malformed_nct)
+    ]
+
+    absent_row = _milestone_date_constraint_row()
+    absent_row.pop("exact_values")
+    absent_row.pop("correction_lineage")
+    absent_tape = _classified_change_tape(absent_nct, rows=[absent_row])
+    unrecognized_tape = _with_exact_value_disclosure(
+        _classified_change_tape(
+            unrecognized_nct,
+            rows=[
+                _milestone_date_constraint_row(
+                    source_pointer="/protocolSection/statusModule/startDateStruct/date"
+                )
+            ],
+        )
+    )
+    malformed_tape = _with_exact_value_disclosure(
+        _classified_change_tape(
+            malformed_nct,
+            rows=[
+                _milestone_date_constraint_row(
+                    source_pointer=(
+                        "/protocolSection/statusModule/primaryCompletionDateStruct~2/date"
+                    )
+                )
+            ],
+        )
+    )
+    projection = _classified_change_tape_projection(
+        snapshots,
+        {
+            absent_nct: absent_tape,
+            unrecognized_nct: unrecognized_tape,
+            malformed_nct: malformed_tape,
+        },
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational()),
+    )
+
+    response = entitled_client.get("/api/biocatalyst/v1/catalyst-radar?horizon=all")
+    assert response.status_code == 200
+    rows = response.json()["catalyst_radar"]
+    assert len(rows) == 6
+    assert all(row["revision"]["state"] == "no_revisions_recorded" for row in rows)
+    assert all(row["revision"]["count"] == 0 for row in rows)
+    assert all(row["revision"]["lineage"] == [] for row in rows)
 
 
 # ---------------------------------------------------------------------------

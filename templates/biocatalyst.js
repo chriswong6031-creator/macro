@@ -412,7 +412,7 @@
     if (depth > 12 || value === null || typeof value === 'boolean') return depth <= 12;
     if (typeof value === 'number') return Number.isFinite(value);
     if (typeof value === 'string') return Array.from(value).length <= 12000;
-    if (Array.isArray(value)) return value.length <= 200 && value.every(function (item) { return safeJson(item, depth + 1); });
+    if (Array.isArray(value)) return value.length <= 512 && value.every(function (item) { return safeJson(item, depth + 1); });
     if (!value || typeof value !== 'object' || Object.keys(value).length > 100) return false;
     return Object.keys(value).every(function (key) { return Array.from(key).length <= 256 && safeJson(value[key], depth + 1); });
   }
@@ -455,9 +455,26 @@
       (clean(valueAt(issuer, 'state')) !== 'ticker_only' || !!clean(valueAt(issuer, 'ticker')));
   }
   var CATALYST_RADAR_REVISION_STATES = { history_not_collected: true, no_revisions_recorded: true, has_revisions: true };
+  var CATALYST_RADAR_REVISION_RELATIONS = { no_prior_recorded_value: true, supersedes_prior_recorded_value: true, clears_prior_recorded_value: true };
+  function validCatalystRadarLineageItem(item) {
+    if (!item || typeof item !== 'object' || Object.keys(item).sort().join('|') !== 'from|from_version|observed_at|predecessor_exact_operation_index|predecessor_source_version|relation|to|to_version') return false;
+    var from = valueAt(item, 'from'), to = valueAt(item, 'to'), fromVersion = valueAt(item, 'from_version'), toVersion = valueAt(item, 'to_version'), observedAt = valueAt(item, 'observed_at'), relation = valueAt(item, 'relation'), predecessorVersion = valueAt(item, 'predecessor_source_version'), predecessorIndex = valueAt(item, 'predecessor_exact_operation_index');
+    return (from === null || typeof from === 'string') && (to === null || typeof to === 'string') &&
+      (fromVersion === null || (Number.isSafeInteger(fromVersion) && fromVersion >= 1)) &&
+      (toVersion === null || (Number.isSafeInteger(toVersion) && toVersion >= 1)) &&
+      (observedAt === null || fullTimestamp(observedAt)) &&
+      (relation === null || CATALYST_RADAR_REVISION_RELATIONS[clean(relation)] === true) &&
+      (predecessorVersion === null || (Number.isSafeInteger(predecessorVersion) && predecessorVersion >= 1)) &&
+      (predecessorIndex === null || (Number.isSafeInteger(predecessorIndex) && predecessorIndex >= 0 && predecessorIndex < 4096));
+  }
+  function sameCatalystRadarLineageItem(left, right) {
+    return ['from', 'to', 'from_version', 'to_version', 'observed_at', 'relation', 'predecessor_source_version', 'predecessor_exact_operation_index'].every(function (key) { return valueAt(left, key) === valueAt(right, key); });
+  }
   function validCatalystRadarRevision(revision) {
-    return !!revision && typeof revision === 'object' && CATALYST_RADAR_REVISION_STATES[clean(valueAt(revision, 'state'))] === true &&
-      (clean(valueAt(revision, 'state')) !== 'has_revisions' || (Number.isSafeInteger(valueAt(revision, 'count')) && valueAt(revision, 'count') > 0 && !!valueAt(revision, 'latest')));
+    if (!revision || typeof revision !== 'object' || CATALYST_RADAR_REVISION_STATES[clean(valueAt(revision, 'state'))] !== true || !Array.isArray(valueAt(revision, 'lineage'))) return false;
+    var revisionState = clean(valueAt(revision, 'state')), count = valueAt(revision, 'count'), latest = valueAt(revision, 'latest'), lineage = valueAt(revision, 'lineage');
+    if (revisionState !== 'has_revisions') return count === 0 && latest === null && lineage.length === 0;
+    return Number.isSafeInteger(count) && count > 0 && count === lineage.length && lineage.every(validCatalystRadarLineageItem) && validCatalystRadarLineageItem(latest) && sameCatalystRadarLineageItem(latest, lineage[lineage.length - 1]);
   }
   function validMilestone(item) {
     var trial = valueAt(item, 'trial'), milestone = valueAt(item, 'milestone'), timing = valueAt(item, 'timing'), evidence = valueAt(item, 'evidence'), sourceClocks = valueAt(evidence, 'source_clocks');
@@ -1311,9 +1328,10 @@
   // Segmentation (§3): occurred rows render under a visually separated
   // "Reached" group after upcoming rows; current rows get their own honest
   // group. The engine own row order (chronological, then unusable-last)
-  // is never re-sorted -- only grouped for display. Every returned row is
-  // rendered somewhere; an unparsable source date gets its own honest group
-  // rather than being hidden.
+  // already enforces user-job priority before pagination; the client only
+  // groups those ordered rows for display. Every returned row is rendered
+  // somewhere; an unparsable source date gets its own honest group rather
+  // than being hidden.
   function radarTimingBucket(item) {
     var timingState = clean(valueAt(valueAt(item, 'timing'), 'state'));
     return timingState === 'occurred' || timingState === 'current' || timingState === 'upcoming' ? timingState : 'unusable';
@@ -1656,21 +1674,20 @@
       //
       // MAJOR 2: the headline count must be events_in_horizon (upcoming-only),
       // never pagination.total -- total also counts occurred/current rows the
-      // engine still returns on this page, so it overstates "within the
-      // selected horizon". MAJOR 3: half of a cohort events can legally be
+      // engine still returns on this page, so it overstates upcoming rows.
+      // MAJOR 3: half of a cohort events can legally be
       // beyond_horizon and excluded from every rendered row; that must be
       // stated in plain words, never silently omitted.
-      var horizon = valueAt(payload, 'effective_horizon') || {}, radarCoverage = valueAt(valueAt(payload, 'coverage'), 'radar') || {};
+      var radarCoverage = valueAt(valueAt(payload, 'coverage'), 'radar') || {};
       var cohort = valueAt(radarCoverage, 'trials_in_cohort'), withEvents = valueAt(radarCoverage, 'trials_with_events');
       var inHorizon = valueAt(radarCoverage, 'events_in_horizon'), reached = valueAt(radarCoverage, 'events_occurred'), beyond = valueAt(radarCoverage, 'events_beyond_horizon');
-      var horizonLabel = valueAt(horizon, 'horizon_days') == null ? tr('across the full available record', '覆盖全部可用记录') : tr('within the selected horizon', '位于所选窗口内');
       var mainCount = Number.isSafeInteger(inHorizon) ? inHorizon : total;
-      var headline = mainCount === 1 ? tr('1 trial milestone ' + horizonLabel, '1项试验里程碑' + horizonLabel) : tr(mainCount + ' trial milestones ' + horizonLabel, mainCount + '项试验里程碑' + horizonLabel);
+      var headline = mainCount === 1 ? tr('1 upcoming trial milestone', '1 项即将到来的试验里程碑') : tr(mainCount + ' upcoming trial milestones', mainCount + ' 项即将到来的试验里程碑');
       var reachedLabel = Number.isSafeInteger(reached) && reached > 0
         ? tr(' · ' + reached + ' already reached', ' · 另有 ' + reached + ' 项已到达')
         : '';
       var beyondLabel = Number.isSafeInteger(beyond) && beyond > 0
-        ? tr(' · Beyond horizon: ' + beyond + (beyond === 1 ? ' milestone not shown' : ' milestones not shown'), ' · 超出窗口：' + beyond + ' 项未显示')
+        ? tr(' · ' + beyond + ' beyond horizon', ' · ' + beyond + ' 项超出窗口')
         : '';
       var coverageLabel = Number.isSafeInteger(cohort) && Number.isSafeInteger(withEvents)
         ? tr(' · Current cohort: ' + cohort + ' registered trials, ' + withEvents + ' with a recorded milestone date.', ' · 当前队列：' + cohort + ' 项已登记试验，其中 ' + withEvents + ' 项有已记录的里程碑日期。')
@@ -1805,7 +1822,7 @@
     if (isPeerMode()) parts.push(tr('This compares exactly the trials you listed. No peer is discovered for you.', '此处仅对照你列出的试验，不会替你发现同类试验。'));
     if (states.length > 1) parts.push(tr('Also on this page: ' + states.slice(1).map(stateLabel).join(' · '), '本页还包括：' + states.slice(1).map(stateLabel).join(' · ')));
     clearChildren(ui.panelFoot);
-    ui.panelFoot.appendChild(el('b', '', tr('One page, one receipt. ', '一页一凭证。')));
+    ui.panelFoot.appendChild(el('b', '', tr('Source evidence stays attached to every row. ', '每行均附来源证据。')));
     ui.panelFoot.appendChild(document.createTextNode(parts.join(' ')));
     ui.panelFoot.hidden = false;
   }
@@ -2205,13 +2222,24 @@
       section.appendChild(el('p', 'bci-detail-note', copy));
       return section;
     }
-    var latest = valueAt(revision, 'latest') || {}, card = el('article', 'bci-endpoint'), revisionCount = valueAt(revision, 'count');
+    var lineage = arr(valueAt(revision, 'lineage')), revisionCount = valueAt(revision, 'count');
     var countLabel = revisionCount === 1 ? tr('1 revision recorded', '已记录 1 次变更') : tr(revisionCount + ' revisions recorded', '已记录 ' + revisionCount + ' 次变更');
-    card.appendChild(el('strong', '', tr('Date moved', '日期已变更') + ' · ' + countLabel));
-    card.appendChild(el('p', '', tr('Before: ', '之前：') + (clean(valueAt(latest, 'from')) || tr('Not recorded', '未记录'))));
-    card.appendChild(el('p', '', tr('After: ', '之后：') + (clean(valueAt(latest, 'to')) || tr('Not recorded', '未记录'))));
-    if (clean(valueAt(latest, 'observed_at'))) card.appendChild(el('p', '', tr('Observed at ', '观测于 ') + observationTimestampLabel(valueAt(latest, 'observed_at'))));
-    section.appendChild(card);
+    section.appendChild(el('p', 'bci-detail-note', tr(countLabel + ' · newest recorded change first', countLabel + ' · 最新记录变更在前')));
+    lineage.slice().reverse().forEach(function (item, index) {
+      var card = el('article', 'bci-endpoint'), changeNumber = lineage.length - index;
+      var from = clean(valueAt(item, 'from')) || tr('Not available', '暂无');
+      var to = clean(valueAt(item, 'to')) || tr('Not available', '暂无');
+      card.appendChild(el('strong', '', tr('Recorded date change ' + changeNumber, '记录日期变更 ' + changeNumber) + (index === 0 ? tr(' · newest', ' · 最新') : '')));
+      card.appendChild(el('p', '', tr('Recorded date: ', '记录日期：') + from + ' → ' + to));
+      var fromVersion = valueAt(item, 'from_version'), toVersion = valueAt(item, 'to_version');
+      card.appendChild(el('p', '', Number.isSafeInteger(fromVersion) && Number.isSafeInteger(toVersion)
+        ? tr('Record version ', '记录版本 ') + fromVersion + ' → ' + toVersion
+        : tr('Record versions: not available', '记录版本：暂无')));
+      card.appendChild(el('p', '', clean(valueAt(item, 'observed_at'))
+        ? tr('Observed at ', '观测于 ') + observationTimestampLabel(valueAt(item, 'observed_at'))
+        : tr('Observed time: not available', '观测时间：暂无')));
+      section.appendChild(card);
+    });
     return section;
   }
   function catalystRadarSection(item) {
@@ -2301,7 +2329,7 @@
     var returnFocus = state.returnFocus, returnTrialId = returnFocus && clean(returnFocus.getAttribute('data-trial-id')), returnRowKey = returnFocus && str(returnFocus.getAttribute('data-row-key'));
     ui.inspector.classList.remove('is-open'); document.body.classList.remove('bci-inspector-open'); ui.scrim.hidden = true; syncInspectorDialog();
     state.returnFocus = null; state.selectedId = ''; state.selectedKey = ''; state.selected = null; state.detail = null; state.evidenceCell = null; abort('detailController'); state.detailToken += 1;
-    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source receipt.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源凭证。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source evidence.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源证据。'));
     if (options.writeUrl !== false) writeUrl();
     if (options.render !== false) syncQueueSelection();
     if ((!returnFocus || !document.contains(returnFocus)) && returnRowKey) returnFocus = Array.prototype.slice.call(ui.queue.querySelectorAll('[data-row-key]')).filter(function (row) { return row.getAttribute('data-row-key') === returnRowKey; })[0];
@@ -2571,7 +2599,7 @@
     state.selectedId = ''; state.selectedKey = ''; state.selected = null; state.detail = null; state.returnFocus = null;
     ui.inspector.classList.remove('is-open'); document.body.classList.remove('bci-inspector-open'); ui.scrim.hidden = true; syncInspectorDialog();
     syncControls(); localizeControls(); writeUrl();
-    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source receipt.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源凭证。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source evidence.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源证据。'));
     if (trigger && document.contains(trigger)) trigger.focus({ preventScroll: true });
     loadMilestones({ replace: true });
   }
@@ -2643,7 +2671,7 @@
     // session (MAJOR 5).
     cacheUi(); readUrl(); syncControls(); localizeControls(); bindEvents();
     writeUrl(); paintFrame();
-    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source receipt.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源凭证。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source evidence.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源证据。'));
     loadMilestones({ replace: true });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

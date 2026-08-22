@@ -267,6 +267,8 @@ html[data-theme="light"] body.bci-page { background: var(--bci-ruled), #e8ebf1; 
 
 /* Catalyst Radar — Trial Milestones (BioCatalyst P1-1). */
 .bci-radar-card { align-items: stretch; }
+.bci-radar-card .bci-trial-topline { flex-wrap: wrap; }
+.bci-radar-card .bci-trial-topline > * { flex-shrink: 0; }
 .bci-radar-group-title { margin: 18px 0 8px; padding: 0 2px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
 .bci-radar-group-title:first-child { margin-top: 2px; }
 .bci-phase-chip { display: inline-flex; max-width: 100%; overflow: hidden; padding: 2px 6px; border: 1px solid var(--bci-line); border-radius: 99px; color: var(--muted); font-size: 9px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }

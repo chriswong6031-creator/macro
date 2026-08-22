@@ -91,7 +91,7 @@ def test_projection_is_byte_identical_across_two_runs():
     revisions_by_nct = {
         "NCT00000001": [
             {
-                "json_path": "$.protocolSection.statusModule.primaryCompletionDateStruct.date",
+                "milestone_kind": "primary_completion",
                 "before": {"date": "2027-01", "type": "ESTIMATED"},
                 "after": {"date": "2027-03", "type": "ESTIMATED"},
                 "source_versions": {"before": 3, "after": 4},
@@ -302,32 +302,56 @@ def test_forward_horizon_uses_overlap_not_whole_interval_containment():
 # ---------------------------------------------------------------------------
 
 
-def test_revision_lineage_matching_non_matching_and_missing():
+def test_revision_lineage_is_complete_canonical_and_kind_attributed():
     trials = [_trial("NCT40000001", primary_completion=("2027-01-01", "ESTIMATED"))]
     revisions_by_nct = {
         "NCT40000001": [
             {
-                # Non-matching path: an enrollment change must not count as a
-                # milestone revision.
-                "json_path": "$.protocolSection.designModule.enrollmentInfo.count",
+                # A revision attributed to the other milestone kind must not
+                # attach to primary completion.
+                "milestone_kind": "completion",
                 "before": {"date": "2026-01-01"},
                 "after": {"date": "2026-06-01"},
-                "source_versions": {"before": 1, "after": 2},
-                "observed_at": "2026-01-15T00:00:00Z",
+                "source_versions": {"before": 8, "after": 9},
+                "exact_operation_index": 0,
+                "observed_at": "2026-04-15T00:00:00Z",
             },
             {
-                "json_path": "$.protocolSection.statusModule.primaryCompletionDateStruct.date",
-                "before": {"date": "2026-12-01", "type": "ESTIMATED"},
-                "after": {"date": "2026-11-01", "type": "ESTIMATED"},
-                "source_versions": {"before": 2, "after": 3},
-                "observed_at": "2026-02-01T00:00:00Z",
-            },
-            {
-                "source_json_path": "$.protocolSection.statusModule.primaryCompletionDateStruct.date",
+                # Deliberately supplied newest-first: the engine must emit the
+                # canonical source-version chain oldest-to-newest.
+                "milestone_kind": "primary_completion",
                 "before": {"date": "2026-11-01", "type": "ESTIMATED"},
                 "after": {"date": "2027-01-01", "type": "ESTIMATED"},
                 "source_versions": {"before": 3, "after": 4},
+                "exact_operation_index": 1,
                 "observed_at": "2026-03-01T00:00:00Z",
+                "relation": "supersedes_prior_recorded_value",
+                "predecessor_source_version": 3,
+                "predecessor_exact_operation_index": None,
+            },
+            {
+                "milestone_kind": "primary_completion",
+                "before": {"date": "2026-12-01", "type": "ESTIMATED"},
+                "after": {"date": "2026-11-01", "type": "ESTIMATED"},
+                "source_versions": {"before": 2, "after": 3},
+                "exact_operation_index": 0,
+                "observed_at": "2026-02-01T00:00:00Z",
+                "relation": "supersedes_prior_recorded_value",
+                "predecessor_source_version": 2,
+                "predecessor_exact_operation_index": None,
+            },
+            {
+                # Version lineage remains useful even when exact values were
+                # unavailable; the row must be retained with typed nulls.
+                "milestone_kind": "primary_completion",
+                "before": None,
+                "after": None,
+                "source_versions": {"before": 1, "after": 2},
+                "exact_operation_index": 0,
+                "observed_at": "2026-01-15T00:00:00Z",
+                "relation": "supersedes_prior_recorded_value",
+                "predecessor_source_version": 1,
+                "predecessor_exact_operation_index": None,
             },
         ]
     }
@@ -341,13 +365,23 @@ def test_revision_lineage_matching_non_matching_and_missing():
     event = next(e for e in proj.events if e.nct_id == "NCT40000001")
     revision = event.as_dict()["revision"]
     assert revision["state"] == "has_revisions"
-    assert revision["count"] == 2  # the enrollment row must not be counted
-    assert revision["latest"] == {
+    assert revision["count"] == 3
+    assert [(item["from_version"], item["to_version"]) for item in revision["lineage"]] == [
+        (1, 2),
+        (2, 3),
+        (3, 4),
+    ]
+    assert revision["lineage"][0]["from"] is None
+    assert revision["lineage"][0]["to"] is None
+    assert revision["latest"] == revision["lineage"][-1] == {
         "from": "2026-11-01",
         "to": "2027-01-01",
         "from_version": 3,
         "to_version": 4,
         "observed_at": "2026-03-01T00:00:00Z",
+        "relation": "supersedes_prior_recorded_value",
+        "predecessor_source_version": 3,
+        "predecessor_exact_operation_index": None,
     }
 
     # A missing nct entirely -> history_not_collected.
@@ -359,7 +393,12 @@ def test_revision_lineage_matching_non_matching_and_missing():
         revisions_by_nct=revisions_by_nct,  # does not contain NCT40000002
     )
     missing_event = next(e for e in missing.events if e.nct_id == "NCT40000002")
-    assert missing_event.as_dict()["revision"] == {"state": "history_not_collected", "count": 0, "latest": None}
+    assert missing_event.as_dict()["revision"] == {
+        "state": "history_not_collected",
+        "count": 0,
+        "latest": None,
+        "lineage": [],
+    }
 
     # Entry present, but no matching rows -> no_revisions_recorded.
     no_match = project_trial_milestones(
@@ -370,7 +409,12 @@ def test_revision_lineage_matching_non_matching_and_missing():
         revisions_by_nct={"NCT40000003": []},
     )
     no_match_event = next(e for e in no_match.events if e.nct_id == "NCT40000003")
-    assert no_match_event.as_dict()["revision"] == {"state": "no_revisions_recorded", "count": 0, "latest": None}
+    assert no_match_event.as_dict()["revision"] == {
+        "state": "no_revisions_recorded",
+        "count": 0,
+        "latest": None,
+        "lineage": [],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -612,7 +656,7 @@ def test_no_score_or_confidence_shaped_field_anywhere_in_output():
     revisions_by_nct = {
         "NCT80000001": [
             {
-                "json_path": "$.protocolSection.statusModule.completionDateStruct.date",
+                "milestone_kind": "completion",
                 "before": {"date": "2027-06-01"},
                 "after": {"date": "2028-01-01"},
                 "source_versions": {"before": 1, "after": 2},

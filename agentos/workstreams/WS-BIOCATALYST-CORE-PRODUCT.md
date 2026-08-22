@@ -40,20 +40,17 @@ waves:
     title: Catalyst Radar — Trial Milestones first slice
     status: in_progress
     next_action: >
-      Implemented and held: PR #6191 (HOLD-FOR-SOL, unmerged, no arming label,
-      no auto-merge). Delivered per the amended continuation handoff —
-      engine/biocatalyst/catalyst_events.py projection, the entitled
-      GET /api/biocatalyst/v1/catalyst-radar, and the Milestones tab graduated
-      in place into Catalyst Radar — Trial Milestones. Acceptance is
-      PROVEN_LIVE_COHORT_LIMITED on a production-shaped run (real app over a
-      worker-published generation carrying the four real cohort NCTs, anchor
-      2026-08-20): 4 rows at next_365d (3 upcoming + 1 reached), 2 at
-      next_180d, 4 beyond horizon and disclosed — matching the frozen §9
-      falsification table. An opus review returned DO NOT SHIP on the first
-      checkpoint; all findings are fixed in the second commit. NEXT: Sol
-      adversarially reviews; only on approval does merge → deploy → the
-      entitled production journey against the deployed process happen, to the
-      #6090 receipt standard. Handoff:
+      Review fixes implemented on the existing held PR #6191: exact RFC 6901
+      source-pointer attribution for both milestone date kinds; complete
+      bounded oldest-to-newest public lineage with a newest-first labelled UI;
+      current/upcoming/unusable/occurred server priority before pagination;
+      honest overlap-safe/source-evidence copy; and a real Chromium desktop,
+      mobile and EN/ZH pass. The browser pass found and closed a 390px chip
+      clipping defect. HOLD-FOR-SOL remains; no merge-on-green, merge, deploy,
+      P1-2, source/cadence/cohort or authority change is authorized. NEXT: Sol
+      reviews the final exact PR head recorded in the PR's final-review comment.
+      Only after approval may merge → deploy → real entitled production proof
+      occur. Handoff:
       agentos/handoffs/BIOCATALYST-CORE-PRODUCT-2026-08-21.md.
 decisions:
   - "DEC:BIOCATALYST-P1-FIRST-VERTICAL-MILESTONE-RADAR"
@@ -131,9 +128,9 @@ artifacts:
   - research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md
   - research/BIOCATALYST_P1_CONTINUATION_HANDOFF_2026-08-20.md
 next_action: >
-  After the P1-0R authority-closure PR merges (Sol review first), commission
-  wave P1-1 per the amended continuation handoff. No implementation before
-  that merge.
+  Sol reviews the final held head of PR #6191. Do not merge or deploy until Sol
+  releases HOLD-FOR-SOL; post-approval completion still requires normal merge,
+  deployment, and a real entitled production journey.
 ---
 
 ## Context

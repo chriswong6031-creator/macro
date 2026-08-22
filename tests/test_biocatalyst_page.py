@@ -484,7 +484,7 @@ def test_biocatalyst_change_tape_client_contract_is_mode_bound_and_fail_closed()
     # silently recast as absent facts.
     for token in (
         "Array.from(value).length <= 12000",
-        "value.length <= 200",
+            "value.length <= 512",
         "Object.keys(value).length > 100",
         "Array.from(key).length <= 256",
         "depth > 12",

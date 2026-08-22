@@ -2842,15 +2842,36 @@ def _decode_catalyst_radar_cursor(
     return offset, generation_digest, query_digest
 
 
-# The engine's `_revision_block` selects rows for a milestone kind by a
-# json_path substring marker (see engine/biocatalyst/catalyst_events.py).
-# These are the same ClinicalTrials.gov API v2 field names that module
-# checks against -- restated here only as a match target, never as a value
-# that reaches the response body.
-_CATALYST_RADAR_REVISION_MARKERS: dict[str, str] = {
-    "primary_completion": "primaryCompletionDateStruct",
-    "completion": "completionDateStruct",
+_CATALYST_RADAR_POINTER_KINDS: dict[str, str] = {
+    "primaryCompletionDateStruct": "primary_completion",
+    "completionDateStruct": "completion",
 }
+
+
+def _catalyst_radar_milestone_kind_from_pointer(pointer: object) -> str | None:
+    """Classify one vetted public RFC 6901 pointer by exact path segment.
+
+    The source locator is an attribution input only.  It is never copied to
+    the Radar DTO, and an absent, malformed, unrecognized, or ambiguous
+    pointer stays unattributed rather than being guessed from the trial's
+    currently recorded milestone fields or from before/after values.
+    """
+
+    if not isinstance(pointer, str) or not pointer.startswith("/"):
+        return None
+    decoded_segments: list[str] = []
+    for encoded_segment in pointer[1:].split("/"):
+        if re.fullmatch(r"(?:[^~]|~[01])*", encoded_segment) is None:
+            return None
+        decoded_segments.append(encoded_segment.replace("~1", "/").replace("~0", "~"))
+    matched = {
+        _CATALYST_RADAR_POINTER_KINDS[segment]
+        for segment in decoded_segments
+        if segment in _CATALYST_RADAR_POINTER_KINDS
+    }
+    if len(matched) != 1:
+        return None
+    return next(iter(matched))
 
 
 def _catalyst_radar_revision_value(entry: object) -> Any:
@@ -2884,17 +2905,14 @@ def _catalyst_radar_revisions_by_nct(
     costs zero extra I/O beyond the ``_read_bundle()`` this route already
     performs.
 
-    A trial's public field-class history distinguishes
-    ``milestone_date_constraint`` from every other registry field, but not
-    which of the two milestone dates moved within that family -- that
-    granularity is intentionally not retained past publication and is not
-    reconstructed here.  A row is therefore only ever attached to a specific
-    milestone kind when the trial records exactly one of the two radar
-    kinds; a trial with both dates on file is left unattributed rather than
-    guessed. A trial whose tape was collected but carries no matching row
-    still gets its NCT id recorded (with an empty row list) so the engine
-    reports the honest ``no_revisions_recorded`` -- distinct from
-    ``history_not_collected`` for a trial with no tape at all.
+    The optional public ``exact_values.source_pointer`` retains enough source
+    grammar to distinguish primary completion from overall completion.  The
+    pointer is parsed by exact RFC 6901 segment, converted immediately to the
+    internal ``milestone_kind`` vocabulary, and discarded.  It never reaches
+    the Radar response.  A trial whose tape was collected but carries no
+    attributable row still gets its NCT id recorded (with an empty row list)
+    so the engine reports the honest ``no_revisions_recorded`` -- distinct
+    from ``history_not_collected`` for a trial with no tape at all.
     """
 
     if not isinstance(change_tapes_by_nct, Mapping):
@@ -2915,33 +2933,41 @@ def _catalyst_radar_revisions_by_nct(
             continue
         if tape_state != "available":
             continue
-        dates = trial.get("dates")
-        dates = dates if isinstance(dates, Mapping) else {}
-        kinds_present = [
-            kind
-            for kind in ("primary_completion", "completion")
-            if isinstance(dates.get(kind), Mapping)
-        ]
         milestone_rows = [
             row
             for row in tape_rows
             if isinstance(row, Mapping) and row.get("field_class") == "milestone_date_constraint"
         ]
         shaped: list[dict[str, Any]] = []
-        if milestone_rows and len(kinds_present) == 1:
-            marker = _CATALYST_RADAR_REVISION_MARKERS[kinds_present[0]]
-            for row in milestone_rows:
-                exact_values = row.get("exact_values")
-                exact_values = exact_values if isinstance(exact_values, Mapping) else {}
-                shaped.append(
-                    {
-                        "json_path": marker,
-                        "source_versions": row.get("source_versions"),
-                        "before": _catalyst_radar_revision_value(exact_values.get("before")),
-                        "after": _catalyst_radar_revision_value(exact_values.get("after")),
-                        "observed_at": row.get("observed_at"),
-                    }
-                )
+        for row in milestone_rows:
+            exact_values = row.get("exact_values")
+            exact_values = exact_values if isinstance(exact_values, Mapping) else {}
+            milestone_kind = _catalyst_radar_milestone_kind_from_pointer(
+                exact_values.get("source_pointer")
+            )
+            if milestone_kind is None:
+                continue
+            correction_lineage = row.get("correction_lineage")
+            correction_lineage = (
+                correction_lineage if isinstance(correction_lineage, Mapping) else {}
+            )
+            shaped.append(
+                {
+                    "milestone_kind": milestone_kind,
+                    "source_versions": row.get("source_versions"),
+                    "exact_operation_index": row.get("exact_operation_index"),
+                    "before": _catalyst_radar_revision_value(exact_values.get("before")),
+                    "after": _catalyst_radar_revision_value(exact_values.get("after")),
+                    "observed_at": row.get("observed_at"),
+                    "relation": correction_lineage.get("relation"),
+                    "predecessor_source_version": correction_lineage.get(
+                        "predecessor_source_version"
+                    ),
+                    "predecessor_exact_operation_index": correction_lineage.get(
+                        "predecessor_exact_operation_index"
+                    ),
+                }
+            )
         revisions[nct_id] = shaped
     return revisions
 

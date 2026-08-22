@@ -23,9 +23,11 @@ changed:
       estimate); total timing classification (occurred/current/upcoming/
       beyond_horizon) with overlap semantics on all three live branches; exact
       trial-status preservation (SUSPENDED is paused, never terminal); typed
-      issuer absence; revision lineage with predecessor pointers; public-safe
-      pointer-bound evidence via a key allowlist. No score, probability,
-      materiality, rank, confidence, weight, or composite anywhere.
+      issuer absence; complete bounded revision lineage ordered oldest to
+      newest by source version/operation/time/input position; and user-job
+      ordering before pagination (current, nearest upcoming, unusable, newest
+      occurred). No score, probability, materiality, rank, confidence, weight,
+      or composite anywhere.
   - path: app/biocatalyst.py
     what: >
       New entitled GET /api/biocatalyst/v1/catalyst-radar through the existing
@@ -33,17 +35,26 @@ changed:
       private no-store headers, generation-and-query-bound cursor with its own
       domain). Sponsor map loaded at most once per request inside try/except so
       a map failure degrades every row to sponsor_map_unavailable and never
-      503s. Revision lineage read from projection.change_tapes_by_nct — already
-      in memory from the same _read_bundle() call, zero extra I/O.
+      503s. Revision lineage reads only the already-vetted public change-tape
+      DTO from projection.change_tapes_by_nct. Exact RFC 6901 path segments
+      attribute primary completion and completion independently, while absent,
+      malformed or unrecognized pointers remain unattributed; source_pointer
+      is discarded before the Radar response. Zero extra I/O and no raw/private
+      tape read.
   - path: templates/biocatalyst.js
     what: >
       Milestones mode graduated in place into Catalyst Radar. Glance tier, group
       segmentation, evidence drill-down through the existing inspector drawer,
-      EN/ZH, honest denominators. Dead MILESTONE_API/MILESTONE_WINDOWS removed.
+      all recorded date changes with explicit newest-first wording, EN/ZH,
+      honest overlap-safe denominators, and human source-evidence copy. Dead
+      MILESTONE_API/MILESTONE_WINDOWS removed.
   - path: templates/biocatalyst.html.j2
     what: Tab label, queue title, registry-date select gains "All milestones".
   - path: templates/biocatalyst.css
-    what: Radar row, group, issuer/status/revision chip classes.
+    what: >
+      Radar row, group, issuer/status/revision chip classes; browser-found 390px
+      chip clipping fixed with a Radar-only wrapping topline whose chips never
+      shrink.
   - path: site/biocatalyst.js
     what: Byte-identical paired plain-copy asset.
   - path: site/biocatalyst.css
@@ -66,12 +77,23 @@ changed:
       and site/biocatalyst.css added to its curated scope so the wording guard
       cannot go dark.
 verified:
-  - claim: The engine + API + page + UI + hydration suites all pass.
+  - claim: The takeover engine + API + page + UI + hydration suites all pass.
     command: "python3 -m pytest tests/test_biocatalyst_catalyst_radar.py tests/test_biocatalyst_catalyst_radar_api.py tests/test_biocatalyst_page.py tests/test_biocatalyst_d0b_ui.py tests/test_biocatalyst_hydration.py -q"
-    result: "100 passed, 4 warnings in 55.89s"
+    result: "104 passed, 4 warnings in 25.43s"
   - claim: The rest of the biocatalyst-serving command is unregressed.
-    command: "python3 -m pytest tests/test_biocatalyst_api.py tests/test_biocatalyst_peer_api_contract.py tests/test_biocatalyst_deploy.py -q"
-    result: "171 passed, 9 warnings in 249.83s — zero failures, zero new errors"
+    command: "python3 -m pytest tests/test_biocatalyst_api.py tests/test_biocatalyst_peer_api_contract.py tests/test_biocatalyst_deploy.py tests/test_biocatalyst_sponsor_ticker_map.py -q"
+    result: "206 passed, 9 warnings in 185.18s — zero failures"
+  - claim: >
+      Both milestone date kinds are attributed by exact public RFC 6901 path
+      segment, three revisions survive in canonical order, latest equals the
+      last item, and no source_pointer recursively leaks from Radar.
+    command: "python3 -m pytest tests/test_biocatalyst_catalyst_radar_api.py -q"
+    result: "PASS — both-date attribution, absent/unrecognized/malformed fail-closed cases, three-item lineage and recursive prohibited-key walk"
+  - claim: >
+      Pagination cannot let more than PAGE_LIMIT historical milestones starve
+      current/upcoming rows.
+    command: "tests/test_biocatalyst_catalyst_radar_api.py scale regression over 60 occurred + 1 current + 3 upcoming, real limit=50 and signed second cursor"
+    result: "PASS — first page starts current then nearest upcoming then newest occurred; second page is stable and non-duplicating"
   - claim: >
       The real app over a genuinely published generation carrying the four real
       cohort NCTs returns the frozen acceptance arithmetic — 4 rows at
@@ -81,9 +103,26 @@ verified:
   - claim: No score-like key, no private key, no filesystem path and no bare hash appears anywhere in the live payload.
     command: "python3 recursive key/value walk over the live /catalyst-radar response (regex score|probabilit|materialit|rank|composite|confidence|weight and object_key|receipt|manifest_sha|canonical_content|source_json_path|snapshot_id|query_sha|raw_object)"
     result: "score-like keys NONE; private keys NONE; path/hash values NONE; authority.classification=source_fact decision_authority=False"
-  - claim: The glance tier states the in-horizon count truthfully and discloses the beyond-horizon omission.
-    command: "browser read of #bci-queue-pane innerText on the running production-shaped server"
-    result: "'3 trial milestones within the selected horizon · 1 already reached · Beyond horizon: 4 milestones not shown · Current cohort: 4 registered trials, 4 with a recorded milestone date.'"
+  - claim: >
+      A genuine Chromium render exercised the real app.main API/router plus the
+      checked-out HTML/CSS/JS at desktop and 390px mobile over the frozen
+      four-NCT composition; a clearly controlled public-shaped tape rendered
+      all three lineage cards.
+    command: "in-app Chromium against http://127.0.0.1:8979/biocatalyst.html; local scratch fixture overrides only require_site_full_user and _read_bundle"
+    result: >
+      Desktop default sha256 15fd96c35e7ffd946fe7267d563149304777a2d9fd7a8c19b21708a5272042ea;
+      desktop full-lineage sha256 55d1fb52eed9236717da412f2be7e23e2e2ee4105a607f4cb123d5203307882e;
+      corrected mobile rows sha256 f54b521414e473e637e374e1d45a7ce3f19d30c92bc4793fe7d7f34a4016f9fd.
+      Four rows visible, 3 upcoming + 1 reached + 4 beyond horizon, three
+      lineage cards and oldest visible, no private inspector text.
+  - claim: Mobile and bilingual browser acceptance are clean.
+    command: "Chromium viewport 390x844; DOM geometry, EN/ZH switch, rendered-text safety walk, tab.dev logs"
+    result: >
+      document/body scrollWidth=390 at innerWidth=390; all four first-row chips
+      clientWidth==scrollWidth; no chip or horizontal clipping; EN and ZH Radar
+      headings/subtitles/source-evidence copy present; no machine/private term;
+      console/page errors=[]; ZH screenshot sha256
+      fbd8eab6a4eef00a20c3dd54730c391abd71a6c33c529ae605ea7284cee77925.
   - claim: The horizon control's accessible names match its visible labels after first paint.
     command: "browser read of .bci-window aria-label/aria-checked after load"
     result: "180 days/365 days/730 days/All with aria-checked=true on 365"
@@ -112,27 +151,21 @@ unverified:
       require_site_full_user dependency; the unsigned-401 boundary was proven on
       the same running server before the override was applied, and 401/400 paths
       are covered by tests/test_biocatalyst_catalyst_radar_api.py.
-  - claim: Revision lineage renders has_revisions against the live four-NCT cohort.
+  - claim: Revision lineage renders has_revisions against the real deployed four-NCT cohort.
     what_would_verify: >
-      A cohort generation carrying a milestone-date change tape. The wiring is
-      proven by an endpoint-level test on a constructed generation; the served
-      canary cohort currently reports history_not_collected for every row.
+      A production generation carrying a milestone-date change tape. The exact
+      API and real-browser UI paths are proven with a clearly controlled
+      public-shaped tape; that fixture is not production data.
 unresolved:
-  - >
-    The public change-tape model's field_class ("milestone_date_constraint")
-    does not distinguish primary_completion from completion — the json_path
-    granularity is stripped upstream of the serving plane. A tape row is
-    therefore attributed to a kind only when the trial records exactly one of
-    the two radar kinds; a trial carrying both is left no_revisions_recorded
-    rather than guessed onto the wrong kind. Widening this needs a change in
-    engine/biocatalyst/change_classification.py, which this wave does not own.
   - >
     Pre-existing on main and NOT touched here: the stale-health notice borrows
     the restarted-pagination wording ("the register moved while this page
     loaded") whenever healthState == 'stale'. Byte-identical to origin/main at
     templates/biocatalyst.js; spun off as a separate task.
 next_actions:
-  - Sol adversarially reviews the PR; this session holds it unmerged by charter.
+  - >
+    Sol reviews the final exact head recorded in PR #6191's final-review
+    comment; this session holds it unmerged by charter.
   - >
     On Sol approval: squash-merge, let the shared render lane cover the merge,
     then run the entitled production journey against the deployed macro-api and
