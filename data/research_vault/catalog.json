@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T10:11:52.078147+00:00",
-  "count": 1609,
+  "generated_at": "2026-08-22T11:10:17.874242+00:00",
+  "count": 1612,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -84,6 +84,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-bauofijmh1m-e4e03c",
+      "title": "US Equities Weekly Rundown 8 21 26",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T10:54:26Z",
+      "summary_points": [
+        "**HF Flow Reversal & Sector Selling**: HF net sold US stocks fastest since Liberation Day (2.0 SDs 1-yr), L/S net leverage at 48.3% (1-yr low); Info Tech (1.1 SDs) and Utilities (2.5 SDs) led net selling across 9/11 sectors.",
+        "**Tech Exposure Surge**: Prime Book data shows Info Tech net exposure rising sharply (25th percentile), signaling significant investor inflows into tech for growth portfolios.",
+        "**Momentum Breakdown**: GSPRHIMO (US High Beta Momentum) broke support with -35.0469% drawdown, volatility at 88.57 (highest since 2020), signaling elevated risk and technical deterioration.",
+        "**Crypto Market Catalyst**: Bitcoin’s 3-year weekly gain fuels crypto-sensitive equities rally; IBIT call volume spiked to 1.58mm (record), steepening 3m call skew indicating aggressive crypto/gold positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-hkqzo7h1plz-ce8376",
       "title": "US Weekly Kickstart Hedge funds and mutual funds differ on AI but converge on Financials",
@@ -499,6 +519,23 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-sy59lgmyiib-0a5a13",
+      "title": "Weekly headings snapshot",
+      "institution": "Raymond James",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:20:04Z",
+      "summary_points": [
+        "Document Missing**: No source document provided for extraction"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-sxbmo0iia3b-5db571",
       "title": "Equities Tactical Top Picks",
       "institution": "UBS",
@@ -533,6 +570,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lapl9gofxrm-bcfa35",
+      "title": "USA S&P PMIs Mixed as Services Increase but Manufacturing Edges Down",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:03:26Z",
+      "summary_points": [
+        "**Services-PMI Divergence**: Services PMI (56.8 vs.",
+        "0 forecast) surged on employment (+2.4pt) and new business (+1.1pt), contrasting sharply with manufacturing PMI (53.2 vs.",
+        "9 forecast) declining on output (-2.1pt) and new orders (-0.2pt).",
+        "**Manufacturing Weakness**: Manufacturing PMI fell below forecast, signaling sector stress with output and new orders contracting, despite modest employment growth.",
+        "**Geopolitical Inflation Risk**: S&P highlighted elevated price pressures prone to renewed upward spikes if energy prices rise, amid tariff concerns and Middle East conflict."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
