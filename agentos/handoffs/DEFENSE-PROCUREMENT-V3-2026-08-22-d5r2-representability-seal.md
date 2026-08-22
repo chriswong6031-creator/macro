@@ -64,14 +64,18 @@ changed:
       T16 (relation evidence), T17 (artifact-only coverage derivation).
   - path: research/defense_intelligence/evidence/fixtures/d5-representability-fixtures.json
     what: >
-      NEW — fixtures A-H (Sol §8): Virginia program+capability relation,
+      NEW — fixtures A-I (Sol §8 A-H + a conflict-lifecycle fixture I minted
+      during review): Virginia program+capability relation,
       three role assertions, healthy-source+unreviewed-link event state
       with census receipt, IRDM reviewed_none (real committed event
       identity govws-a6c70850a9cbdce9fa3e7f3b + coverage row), rename
       same-logical-id, identity-break restructure, milestone window
       collision pair (cd326e9ef033 ≠ f9d504cf169e), zero-admission review
-      pass. All content-addressed ids computed under the frozen sha12 law;
-      evidence sha256s are named placeholders.
+      pass, and fixture I (conflict declared → conflicted → cleared via
+      conflicts-row retirement → both surfaces re-derive, replayed at two
+      analysis cuts). All content-addressed ids computed under the frozen
+      sha12 law; placeholder preimages published so every sha256 is
+      reproducible.
   - path: research/defense_intelligence/DEFENSE_D5_PROGRAM_GRAPH_IMPLEMENTATION_HANDOFF.md
     what: >
       Gates 1/2/3/4 re-frozen (seventeen-key skeleton, T1-T17, program-
@@ -116,10 +120,22 @@ verified:
     command: python3 fixture generator (scratchpad) — cd326e9ef033 != f9d504cf169e
   - claim: AgentOS store validates clean after edits
     command: python3 scripts/agentos.py validate
+  - claim: >
+      the commissioned adversarial mutation review concluded YES — zero
+      blocker/high/medium representability findings
+    command: >
+      NINE fresh cold opus reviewer rounds (each a new agent, re-deriving
+      everything): rounds 1-8 found and repaired 2 blocker / 15 high / 33
+      medium / 33 low findings in total; round 9 at 8c986a457426 rendered
+      YES (0/0/0, 2 low — both folded post-verdict as one-clause
+      clarifications: award_change-only event links, DISTINCT-refs =
+      distinct evidence_ids + uniqueItems). Round 9 independently
+      recomputed 20/20 content-addressed ids, verified all 8 placeholder
+      hashes, ran the coverage walk and the fixture-I two-cut replay, and
+      closed 12 mutation attacks including the round-8 timestamp-spelling
+      attack.
 
-unverified:
-  - claim: the seventeen-key skeleton and fixture set leave zero representability gaps
-    what_would_verify: the commissioned adversarial mutation review (run this session; verdict recorded in the PR)
+unverified: []
 
 unresolved:
   - >
