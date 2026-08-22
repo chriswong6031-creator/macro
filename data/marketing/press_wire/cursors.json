@@ -7,6 +7,7 @@
     "019479965d6167376d82fdb6363c8668db0617c8": "2026-08-21T09:10:00.179195+00:00",
     "020c93c7322e196c376e46fa142b08e26765f849": "2026-08-21T17:31:53.400537+00:00",
     "02a1cbf84996e82b22d6df09415c967d5eb2912a": "2026-08-21T10:18:43.740316+00:00",
+    "037c1d1ddf2807569b5f0e760b2abc0c9908c176": "2026-08-22T09:03:26.295762+00:00",
     "03baf95f2cd0c13429f7fea1aabd38d7fc17ea75": "2026-08-21T15:17:19.962686+00:00",
     "03c36f2a29304df57e12559fdd9e5b9c65b83c5d": "2026-08-21T19:16:31.076936+00:00",
     "0484a82daaa4453f8db92446a2ee6916d6a982ce": "2026-08-21T16:21:03.098572+00:00",
@@ -28,6 +29,7 @@
     "0a6b091f221ecbe6da9b3d1d0e9cdbd61456d060": "2026-08-21T16:57:01.922644+00:00",
     "0b86e296bf9d74511bb6fbf3bc62194ea66792be": "2026-08-21T19:58:37.501055+00:00",
     "0b9652230c07fad56018c338c8e138132ea0da32": "2026-08-21T09:10:00.179195+00:00",
+    "0bb342c7967684eebc9ecb3324b7a73b6876f9bd": "2026-08-22T09:03:26.295762+00:00",
     "0bf613cd5d2526947ad41d5499f3f1524af59858": "2026-08-21T21:44:42.909336+00:00",
     "0c3b62d2e8aae331ce5be29221b74fff7ba9c180": "2026-08-22T01:57:12.375935+00:00",
     "0c63fa7ac5c3dd7a4ed2de771a10d9b7053bcdb9": "2026-08-21T22:35:42.567701+00:00",
@@ -41,6 +43,7 @@
     "0ddf02757df9664e585e1b5420185540bd422177": "2026-08-21T16:57:01.922644+00:00",
     "0e028f214c2a857d3411a3c9e6c164fca1d91def": "2026-08-21T18:49:44.036478+00:00",
     "0e6b0897d10eae211f8cb57dce3ac086d0f43e69": "2026-08-21T16:57:01.922644+00:00",
+    "0e7b80ad02ab0597a51ae1ff6a4592ffd8c41246": "2026-08-22T09:03:26.295762+00:00",
     "0eedffe48a19de43635b47e1e9d03e53f338daf0": "2026-08-21T23:26:51.335711+00:00",
     "0f6ad5483d5612cc3c82fe7987130a14edb489ab": "2026-08-21T10:53:39.533220+00:00",
     "0f6e9acec5a0507a7c2fe26f74af4b6eb88b4953": "2026-08-21T17:31:53.400537+00:00",
@@ -366,6 +369,7 @@
     "91ce0607246e95f6ace70e32282b471c9b8fcedc": "2026-08-22T04:54:05.825132+00:00",
     "9376e18639b29c767ba74d7b88ef059469f9e526": "2026-08-21T20:55:15.357435+00:00",
     "937af8304e39f5707197f12885b3f72fff5e69cc": "2026-08-21T17:31:53.400537+00:00",
+    "93b825980350304044527380ed28f5c30a420a60": "2026-08-22T09:03:26.295762+00:00",
     "93dd73231d6155c6dc3bcaa56d884019baf6ba6c": "2026-08-21T14:01:15.640854+00:00",
     "943cab7ede36e04a91a6b769c9f6b3b9624bab99": "2026-08-21T09:51:49.936119+00:00",
     "94547ed1df7452c98fc95f0bcbe9042dd4b8ee45": "2026-08-21T17:31:53.400537+00:00",
@@ -1014,6 +1018,7 @@
     "alpaca:61371129": "2026-08-22T05:21:30.963381+00:00",
     "alpaca:61371251": "2026-08-22T06:15:29.341378+00:00",
     "alpaca:61371303": "2026-08-22T08:00:21.414146+00:00",
+    "alpaca:61371322": "2026-08-22T09:03:26.295762+00:00",
     "b03acf281d5bf1bdf3ee5e23d5b93c1e51831e43": "2026-08-21T12:16:38.704550+00:00",
     "b03d5c77fbb03f1a5bbd62cf1811bc3623abf42e": "2026-08-21T09:10:00.179195+00:00",
     "b0b06761013b8628b69b1a52eece71bf9ef4d08d": "2026-08-21T15:52:41.131771+00:00",
@@ -1227,6 +1232,36 @@
   "corroboration": {
     "claim:none:sec:consumer": {
       "first_ts": "2026-08-22T08:40:33.336221+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
+    "claim:none:sec:energy": {
+      "first_ts": "2026-08-22T09:03:26.295762+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
+    "claim:none:sec:technology": {
+      "first_ts": "2026-08-22T09:03:26.295762+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:corecivic evp david garfinkle sells 17m in cxw stock": {
+      "first_ts": "2026-08-22T09:03:26.295762+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
+    "head:fossil group director pamela edwards buys 40220 in stock": {
+      "first_ts": "2026-08-22T09:03:26.295762+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
+    "head:goosehead insurance director serena jones sells 205m in stock": {
+      "first_ts": "2026-08-22T09:03:26.295762+00:00",
       "sources": [
         "host:investing.com"
       ]
@@ -1826,9 +1861,9 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-22T08:40:33.336221+00:00",
+      "last_poll": "2026-08-22T09:03:26.295762+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
-      "since": "2026-08-22T07:55:37+00:00"
+      "since": "2026-08-22T08:48:07+00:00"
     },
     "cnn_truth_backfill": {
       "etag": "\"fefa5ad5652e042d54741e9bff14c858-3\"",
@@ -1838,7 +1873,7 @@
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1787388035.6213856
+      "last_poll_ts": 1787389408.5177116
     },
     "twitterapiio": {
       "cursors": {
@@ -1907,65 +1942,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-22T08:40:33Z",
+  "updated_at": "2026-08-22T09:03:26Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1787388034.5572143
+      "last_poll_ts": 1787389407.3205025
     },
     "bls_news": {
       "etag": "\"07aaf967531dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 14:01:40 GMT",
-      "last_poll_ts": 1787388034.4350405
+      "last_poll_ts": 1787389407.2782311
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1787388034.6236284
+      "last_poll_ts": 1787389407.429776
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1787388035.3858712
+      "last_poll_ts": 1787389408.2431545
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Sat, 22 Aug 2026 08:36:14 GMT",
-      "last_poll_ts": 1787388035.5753107
+      "last_modified": "Sat, 22 Aug 2026 09:01:15 GMT",
+      "last_poll_ts": 1787389408.4025793
     },
     "fed_press": {
       "etag": "W/\"53636b83de30dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 20 Aug 2026 20:00:13 GMT",
-      "last_poll_ts": 1787388034.3750372
+      "last_poll_ts": 1787389407.2286763
     },
     "forexlive_news": {
-      "etag": "W/\"f1w7ZD2C-nTFK9asRm55AtGqaKY\"",
+      "etag": "W/\"7UA_9OdydX2fKGltFk5fyUIskAU\"",
       "fail_count": 0,
-      "last_poll_ts": 1787388035.112685
+      "last_poll_ts": 1787389407.931522
     },
     "investing_news": {
-      "etag": "W/\"127b-6599e8c677d40\"",
+      "etag": "W/\"128d-6599ed1189004\"",
       "fail_count": 0,
-      "last_modified": "Sat, 22 Aug 2026 08:29:15 GMT",
-      "last_poll_ts": 1787388035.298179
+      "last_modified": "Sat, 22 Aug 2026 08:48:28 GMT",
+      "last_poll_ts": 1787389408.1130242
     },
     "marketwatch_top": {
-      "etag": "W/\"1f78-BfQ0cYZDzExXUJHEuHWbCdim5vQ\"",
+      "etag": "W/\"1f78-9fsTjpd7QFSiAQVa+lj0goXjbx4\"",
       "fail_count": 0,
-      "last_poll_ts": 1787388034.8140326
+      "last_poll_ts": 1787389407.5137258
     },
     "whitehouse_actions": {
       "etag": "\"393774828a07a184ce685a347792bc6c\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 21:35:04 GMT",
-      "last_poll_ts": 1787388034.6052392
+      "last_poll_ts": 1787389407.4087718
     },
     "zerohedge_feed": {
       "fail_count": 0,
       "last_modified": "Sat, 22 Aug 2026 03:39:17 GMT",
-      "last_poll_ts": 1787388034.862886
+      "last_poll_ts": 1787389407.599886
     }
   },
   "wire_day_counts": {
