@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T02:07:51.148072+00:00",
-  "count": 1586,
+  "generated_at": "2026-08-22T04:43:48.578296+00:00",
+  "count": 1593,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -57,6 +57,7 @@
     "Rabobank",
     "Raymond James",
     "RiskHedge",
+    "Rothschild",
     "Royal London on Private Credit",
     "S&T",
     "SEB",
@@ -83,6 +84,142 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-hkqzo7h1plz-ce8376",
+      "title": "US Weekly Kickstart Hedge funds and mutual funds differ on AI but converge on Financials",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T03:18:51Z",
+      "summary_points": [
+        "**Financials Overweight at Record Levels**: Both hedge funds and mutual funds increased Financials exposure to new highs in Q2 2026 (largest since pre-GFC for hedge funds, 2012 high for mutual funds), with concentrated bets on COF, CPAY, FISV, IBKR.",
+        "**AI Exposure Divergence**: Hedge funds sold mega-cap AI stocks (MSFT/AMZN exceptions) while mutual funds bought AMD, MU, SNDK; both added 12 AI infrastructure stocks (e.g., AEP, FLEX, STX), creating institutional consensus in infrastructure despite divergent mega-cap positioning.",
+        "**Hedge Fund Leverage Volatility**: Elevated hedge fund leverage (below 12-mo avg but elevated vs.",
+        "prior years) correlates with sharp de-grossing episodes (Q1 2020, Q2 2022, Q2 2025, Q3 2026), signaling heightened risk sensitivity during market stress.",
+        "**Shared Favorites Outperformance**: Portfolio of shared holdings (BA, COF, MA, TMO, V) delivered 29% YTD return (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kzbiu0oxnqf-233d14",
+      "title": "Global Markets Daily Jackson Hole Roadmap 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T03:18:48Z",
+      "summary_points": [
+        "**Jackson Hole 2026 Policy Signals**: Fed Chair Warsh's keynote (Aug 28) and ECB/RBNZ participation drive critical policy direction amid August central bank lull, shaping Fall rate expectations and triggering FX volatility (median EUR/USD swing ~0.2%).",
+        "**Fed Chair Speech Market Impact**: Warsh's keynote generates significant FX volatility (exceeding Powell's historical impact), with lack of consistent directional impulse on Dollar but high market sensitivity.",
+        "**FX & Bond Stop-Proximity Risk**: Multiple trades (e.g., PLN/HUF short: current 84.44 vs target 80.5, stop 87) show tight stop/target proximity, indicating high risk of stop-loss triggers from minor price moves.",
+        "**Yield Curve Steepener Positioning**: Aggressive fundamental positioning in 2s10s steepeners (NZD, CAD, GBP) and SOFR vs OIS flatteners, with targets/stops near current levels (e.g., NZD steepeners: current 81bp vs target 95bp, stop 80bp)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cu8qsfg2hyv-162c59",
+      "title": "US Equities Weekly Rundown 8 21 26",
+      "institution": "Prime",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T03:14:09Z",
+      "summary_points": [
+        "**HF Flow Reversal & Sector Selling**: HF net sold US stocks fastest since Liberation Day (2.0 SDs 1-yr), L/S net leverage at 48.3% (1-yr low); Info Tech (1.1 SDs) and Utilities (2.5 SDs) led net selling across 9/11 sectors.",
+        "**Tech Exposure Surge**: Prime Book data shows Info Tech net exposure rising sharply (25th percentile), signaling significant investor inflows into tech for growth portfolios.",
+        "**Momentum Breakdown**: GSPRHIMO (US High Beta Momentum) broke support with -35.0469% drawdown, volatility at 88.57 (highest since 2020), signaling elevated risk and technical deterioration.",
+        "**Crypto Market Catalyst**: Bitcoin’s 3-year weekly gain fuels crypto-sensitive equities rally; IBIT call volume spiked to 1.58mm (record), steepening 3m call skew indicating aggressive crypto/gold positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ibztiyxttew-a3a3f2",
+      "title": "Monthly CIO View",
+      "institution": "Rothschild",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:30:49Z",
+      "summary_points": [
+        "**Earnings Momentum**: S&P 500 EPS up 30% YoY (4% above expectations), AI stocks outperforming 28% vs 12% median, Russell 2000 up 23% vs S&P 500's 13%.",
+        "**Geopolitical Resilience**: S&P 500 posted 28 record highs in 2026 despite Iran-US Strait of Hormuz tensions and expired 60-day ceasefire, gaining 3.58% in August.",
+        "**Inflation-Earnings Synergy**: Q2 earnings strongest since 2021 (Stoxx 600 EPS +23%), US core inflation at 2.5% (lowest since 2021), easing rate hike expectations (35% prob).",
+        "**Sovereign Yield Risk**: US 10-yr yields hit 4.68% (25-yr high) driven by debt sustainability, with tech debt issuance ($240B) and Japan yield-driven flows amplifying sector risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-i32rc1excr1-ac9995",
+      "title": "IntradayFXView",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:28:32Z",
+      "summary_points": [
+        "**US Fiscal Constraint**: Treasury buybacks limited by 40T debt ceiling restricting fiscal policy options - **Fed Policy Timeline**: \"Price stability\" path with reinvestment of maturing securities and 2027 horizon - **USD/JPY Rate Expectation**: 80% pricing of September rate hike (July CPI dependency) - **FX Flow Catalyst**: Option expiries (USD/CHF 0.79, GBP/USD 1.3550) driving near-term positioning flows"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-eabjsz0ynyr-1794de",
+      "title": "CIO View Portfolio Perspectives EN",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-22T02:27:47Z",
+      "summary_points": [
+        "**Semiconductor sector outlook**: Underlying AI infrastructure demand intact despite correction; potential entry if AI spending sustains (fundamentals, technicals, geopolitics) - **Duration & Risk stance**: Duration preference downgraded to neutral (from +1) due to elevated yields, Iran conflict, and hawkish central banks; key risks include bond yields and consumer sentiment (policies, risk factors) - **Portfolio allocation changes**: Equity reduced to 2.5% (vs 55.2% anchor), cash/currency up to 3.4%, commodities (gold, Bitcoin) gaining exposure (flows, critical aspects) - **Equity positioning shift**: Neutral stance with overweight EM/Japan (Q2 earnings surprises, AI spending concerns); fixed income favors EUR investment grade over USD credit (fundamentals, policies)"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-sxbmo0iia3b-5db571",
+      "title": "Equities Tactical Top Picks",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:54Z",
+      "summary_points": [
+        "**Regional Performance Divergence**: Europe (+2.7% absolute) outperformed Americas (-1.2%) and Asia-Pacific (-6.2% absolute), highlighting structural underperformance in Americas tech (META, TT) and emerging market fragility in APAC.",
+        "**ACS Br Underperformance**: Trades at 105.6 EUR vs.",
+        "150 EUR target (-2.9% return), despite earnings forecasts above consensus and hyperscaler-driven demand; fundamentals contradict technicals.",
+        "**Americas Tech Lag**: META (715 vs 545.83 target) and TT (570 vs 451.1 target) show significant underperformance (-7.5%, -6.7% returns), signaling tactical risk in tech-heavy allocations.",
+        "**Valuation Gaps**: Prosus at 33.56 EUR vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 21,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-8ogzlznkejo-81ce20",
       "title": "GS Gillard Gold Macro buying w a physical kicker 21 Aug 2026",
