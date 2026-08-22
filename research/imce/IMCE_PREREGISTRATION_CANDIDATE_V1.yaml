@@ -31,7 +31,7 @@
 # Full rationale: the A4P.1 section appended to IMCE_A4G_AMENDMENT_LOG.md.
 
 schema: imce.preregistration_candidate.v1
-status: candidate_not_registered
+status: registered
 version: "1.2.1"                                # [A4P.1-header] was 1.2/V1.2
 date: 2026-08-20
 amended_date: "2026-08-22"                     # [A4P.1-header] A4P.1 fourth-gate preflight-closure gate
@@ -51,21 +51,20 @@ authority:
   may_trade: false
   may_originate: false
 
-# Registration is a future act (IMCE-03): repository pin and config_hash are
-# recorded only at registration, never before. No SHA in this file is
-# "registered" today. [A25]
+# Registered at A4 (IMCE-03): repository pin and config_hash are recorded
+# below, stamped at the moment of the actual registration commit. [A25]
 registration:
-  registered: false
-  repository_pin_observed: null
-  config_hash: null
+  registered: true
+  repository_pin_observed: "782b6e5703505af04ba21943b7d0a332853e286d"
+  config_hash: "05b43f9119fd1fd357d3994bd652abbc3cdff3d8"
   freezer_of_record: fable_operator
   freeze_location:
     - research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md
-    - future trial-ledger declared_budget rows (IMCE-03, not yet performed)
+    - trial-ledger declared_budget rows (appended at registration)
   two_commit_discipline: criteria_commit_strictly_precedes_runner_or_outcome_commit
 
 owner_candidate: cycle_pattern
-requires_fable_adjudication: true
+requires_fable_adjudication: false
 
 primary_question: >-
   Conditional on a source-backed mechanism state frozen before the outcome,
@@ -98,7 +97,7 @@ prospective_accrual_first_posture:            # [A24, strengthened AG1]
 
 trials:                                        # [A5][A6]
   - family_candidate: rf.cycle_pattern.imce_phase_v0
-    status: not_declared
+    status: declared
     cell_budget: 3
     cell_definition: 3 state targets x historical v0 population named_subset_basis [PHM, KBH] (prospective v0 eligible pooled cohort [DHI, PHM, KBH, TOL], label truth table applies) x contrast [M vs family/age prior]  # [A4P.1 R2] was "pooled homebuilder stratum"
     d5_state_mapping: order_softness                      # [AP1] settles the AG14/MAJ-5 open item — all 3 targets
@@ -112,7 +111,7 @@ trials:                                        # [A5][A6]
       - imce_phase_v0.next_order_softness_3rp
       - imce_phase_v0.order_softness_false_repair_3rp
   - family_candidate: rf.cycle_pattern.imce_sync_v0
-    status: not_declared
+    status: declared
     cell_budget: 2
     cell_definition: targets {next_local_state_1rp, forward_63_trading_day_drawdown_tail} x contrast [M+R vs M]  # [A4P.1 R3] was forward_63d_drawdown_tail
     primary_comparison: mechanism_plus_recognition_vs_mechanism_only
@@ -121,7 +120,7 @@ trials:                                        # [A5][A6]
       - imce_sync_v0.next_order_softness_1rp
       - imce_sync_v0.forward_63_trading_day_drawdown_tail  # [A4P.1 R3] was imce_sync_v0.forward_63d_drawdown_tail
   - family_candidate: rf.cycle_pattern.imce_risk_v0
-    status: not_declared
+    status: declared
     cell_budget: 1
     cell_definition: forward_63_trading_day_drawdown_tail x [M vs family/stratum prior]  # [A4P.1 R3] was forward_63d_drawdown_tail
     target: forward_63_trading_day_drawdown_tail

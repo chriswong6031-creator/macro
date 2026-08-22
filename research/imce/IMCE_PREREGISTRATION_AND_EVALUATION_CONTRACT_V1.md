@@ -1,7 +1,7 @@
 # IMCE Preregistration and Evaluation Contract — V1.2.1 (Amended, Frozen)
 ## Mechanism-conditioned market recognition, next-state, and 63-day risk research
 
-**Status:** `candidate_not_registered`. This document has not been registered and no real outcome evaluation has been run. Registration (repository re-pin, `config_hash`, trial-ledger `declared_budget` rows) is a future act — IMCE-03 / A4.
+**Status:** `registered`. This document was registered at A4 (IMCE-03). Repository pin, `config_hash`, and the three trial-ledger `declared_budget` rows are recorded in `IMCE_PREREGISTRATION_CANDIDATE_V1.yaml` `registration` block and in `data/trial_ledger.jsonl`. No outcome evaluation has been run.
 **Binding rule [A26, qualified AP8 F6]:** The binding surface is this markdown document **PLUS**
 `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md`, incorporated by reference and named normatively wherever
 the contract cites `order_softness` (§1, §2, §15/§15a) — both BIND. `IMCE_PREREGISTRATION_CANDIDATE_V1.yaml`
@@ -449,8 +449,8 @@ This contract ends at preregistration design. Do not run it until:
 
 - **Two-commit discipline:** the criteria commit strictly precedes the runner/outcome commit.
 - **Freezer of record:** Fable / operator (V1); Sol / A4G authorization, 2026-08-21 (V1.1); Sol / A4P authorization, 2026-08-21 (V1.2); Sol / fourth-gate verdict, 2026-08-22 (V1.2.1).
-- **Freeze location:** this document (V1.2.1) plus future trial-ledger `declared_budget` rows — IMCE-03 / A4 work, proposed-not-registered in `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md`, not yet performed as an actual registration act. The deterministic `order_softness` construction is frozen normatively in `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md` [AP1].
-- **Repository pin:** re-pinned at registration, a future act. No commit SHA in this document or its YAML projection is asserted as "registered" today.
+- **Freeze location:** this document (as registered) plus the three trial-ledger `declared_budget` rows, appended at registration — IMCE-03 / A4 act, executed per `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md` §2–§4/§4a. The deterministic `order_softness` construction is frozen normatively in `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md` [AP1].
+- **Repository pin:** `782b6e5703505af04ba21943b7d0a332853e286d`, recorded in the YAML `registration.repository_pin_observed` field at the moment of the A4 commit.
 - **`config_hash`:** recorded at registration.
 - **New stop condition** (folded into §15 above): "reachable-status table not recorded."
 - **A4G stop condition** (folded into §15 above): "a macro block boundary lacks a dated-source receipt and an outcome run would partition on it." [AG17]
