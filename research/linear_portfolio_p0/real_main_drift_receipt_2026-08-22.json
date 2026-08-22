@@ -1,0 +1,232 @@
+{
+  "schema": "linear_portfolio_plan_real_main_receipt.v1",
+  "authority": "evidence_only_not_canonical",
+  "capability": "MAS-65 Linear Projector P0 deterministic report-only desired-state compiler",
+  "workstream": "WS:AGENT-OS",
+  "linear_issue": "MAS-65",
+  "repository": "mastermindx-market-intelligence/macro",
+  "pull_request": 6182,
+  "skillpack": {
+    "repository": "mastermindx-market-intelligence/Mastermind",
+    "commit_sha": "fd88ad761b477a84a95bf514a02d932012f211a5",
+    "bootstrap_major": 1
+  },
+  "proof_identity": {
+    "compiler_subject_head_sha": "efdaa8aa4e3a6f67ea20a04ab9d3bee1d0a615a5",
+    "tested_base_main_sha": "2a728891a6564f4da979e00e58499094758e3782",
+    "tested_synthetic_merge_sha": "ad06a34d841737e02210fed21d7380020621c85b",
+    "semantic_ci_run_id": 32572857730,
+    "fences_run_id": 32572857725,
+    "semantic_plan_sha256": "f88900959a0024afc3ec1c23f226b452c844d56444ac8026d753a95d71816380",
+    "changed_file_count_before_receipt": 6,
+    "changed_files_sha256_prefix": "75e2a25c44aa7271"
+  },
+  "post_proof_main_equivalence": {
+    "main_sha_checked": "a595964520daa9c32bac0a0aa24ddea4c0534095",
+    "parent_of_main_sha": "2a728891a6564f4da979e00e58499094758e3782",
+    "main_commit_subject": "render: site re-render 2026-08-22 (scope=all, from=ff17036800d1)",
+    "comparison_result": "only site/** render outputs changed; canonical projector inputs were unchanged",
+    "scripts_agentos_blob_sha": "4ebea9b33b60a1853d2ec59bf658f34a7ec14f18",
+    "generated_agent_os_state_blob_sha": "58ef08a485c4a242b79afb92aca11fe69e3a0d85"
+  },
+  "semantic_result": {
+    "schema": "linear_portfolio_plan.v1",
+    "semantic_hash_without_linear_snapshot": "eb1da2e0bc5fab2f3f0043d819b2498e62b09ab8fd83332195946f8fe045c7cd",
+    "semantic_hash_with_linear_snapshot": "71486ad282d766a37ee20ebff65609f490370ea0f9b5267c53988f126a569e95",
+    "active_project_count": 38,
+    "review_candidate_count": 1,
+    "excluded_project_count": 5,
+    "active_keys": [
+      "WS:ACCOUNT-IDENTITY-HARDENING",
+      "WS:ADVANCED-DATA-OPTIONS",
+      "WS:AGENT-OS",
+      "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+      "WS:BIOCATALYST-CORE-PRODUCT",
+      "WS:BPC-JV-RECON",
+      "WS:BREATHING-PLATFORM",
+      "WS:CALCBENCH-FILING-FORENSICS-PARITY",
+      "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+      "WS:CHAIRMAN-CONTROL-ROOM",
+      "WS:CHINA-ALPHA-INTELLIGENCE",
+      "WS:CI-MERGE-CONTROL-PLANE",
+      "WS:CN-LIMIT-ALPHA",
+      "WS:CN-SOE-DEMAND",
+      "WS:COMMERCIAL-PATH-ALERTING",
+      "WS:CUSTOMER-DATA-BACKUP",
+      "WS:CYCLE-PATTERN-ISSUER-MECHANISM",
+      "WS:DEFENSE-PROCUREMENT-V3",
+      "WS:EVAL-OS-MEASUREMENT-LAW",
+      "WS:EVAL-OS-OUTPUT-HEALTH",
+      "WS:EVAL-OS-T1-ENGINE-REGISTRY",
+      "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+      "WS:FUNDAMENTAL-FORENSICS",
+      "WS:GMI-THEME-GRAPH",
+      "WS:GREY-DEER-RISK-INTELLIGENCE",
+      "WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2",
+      "WS:LIVE-ENTRY-RADAR",
+      "WS:MACRO-CONTEXT-INDEX",
+      "WS:MARKET-MEMORY-W2C",
+      "WS:MARKET-OS",
+      "WS:PROPHET-CONDITIONAL-FUSION",
+      "WS:PROPHET-HK-CA-REVAMP",
+      "WS:PROPHET-US-AVAILABILITY",
+      "WS:PROPHET-US-ENTRY-TIMING",
+      "WS:PROPHET-US-V4-RECOVERY",
+      "WS:RUNNER-FLEET-RESILIENCE",
+      "WS:STOCK-IDENTITY",
+      "WS:WATCHLIST-PORTFOLIO-CEO"
+    ],
+    "review_candidate_keys": [
+      "WS:MASSIVE-STOCK-DAY-R2-COHERENCE"
+    ],
+    "excluded_keys": [
+      "WS:BIOCATALYST-RECOVERY-V2",
+      "WS:CN-COMMERCIAL-SUPPLY-DILIGENCE",
+      "WS:EARNINGS-INTELLIGENCE-OS",
+      "WS:INTRADAY-FLOW-P0-RECOVERY",
+      "WS:TUSHARE-ENTITLEMENT"
+    ]
+  },
+  "linear_witness": {
+    "path": "research/linear_portfolio_p0/linear_snapshot_2026-08-21.json",
+    "schema": "linear_portfolio_snapshot.v1",
+    "authority": "witness_only_not_canonical",
+    "project_count": 36,
+    "observation_session_started_at": "2026-08-21T21:16:00-05:00",
+    "freshness_recheck": {
+      "query": "list_projects(includeArchived=true, updatedAt>2026-08-21T21:16:00-05:00)",
+      "ws_project_updates_after_witness": 0,
+      "non_ws_updates_after_witness": [
+        "Mastermind-X Linear OS"
+      ],
+      "conclusion": "the pinned witness remains current for the WS:* portfolio"
+    }
+  },
+  "drift": {
+    "warning_counts_with_linear_snapshot": {
+      "existing_project_binding_missing": 5,
+      "generated_state_missing_workstream": 1,
+      "github_snapshot_unavailable": 1,
+      "project_lifecycle_drift": 1,
+      "project_name_drift": 33,
+      "project_status_drift": 4,
+      "proposed_requires_review": 1
+    },
+    "warning_counts_without_linear_snapshot": {
+      "generated_state_missing_workstream": 1,
+      "github_snapshot_unavailable": 1,
+      "linear_snapshot_unavailable": 1,
+      "proposed_requires_review": 1
+    },
+    "existing_project_binding_missing": [
+      "WS:ACCOUNT-IDENTITY-HARDENING",
+      "WS:BIOCATALYST-CORE-PRODUCT",
+      "WS:CHAIRMAN-CONTROL-ROOM",
+      "WS:CYCLE-PATTERN-ISSUER-MECHANISM",
+      "WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2"
+    ],
+    "generated_state_missing_workstream": [
+      "WS:CHAIRMAN-CONTROL-ROOM"
+    ],
+    "project_lifecycle_drift": [
+      "WS:INTRADAY-FLOW-P0-RECOVERY"
+    ],
+    "project_name_drift": [
+      "WS:ADVANCED-DATA-OPTIONS",
+      "WS:AGENT-OS",
+      "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+      "WS:BPC-JV-RECON",
+      "WS:BREATHING-PLATFORM",
+      "WS:CALCBENCH-FILING-FORENSICS-PARITY",
+      "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+      "WS:CHINA-ALPHA-INTELLIGENCE",
+      "WS:CI-MERGE-CONTROL-PLANE",
+      "WS:CN-LIMIT-ALPHA",
+      "WS:CN-SOE-DEMAND",
+      "WS:COMMERCIAL-PATH-ALERTING",
+      "WS:CUSTOMER-DATA-BACKUP",
+      "WS:DEFENSE-PROCUREMENT-V3",
+      "WS:EVAL-OS-MEASUREMENT-LAW",
+      "WS:EVAL-OS-OUTPUT-HEALTH",
+      "WS:EVAL-OS-T1-ENGINE-REGISTRY",
+      "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+      "WS:FUNDAMENTAL-FORENSICS",
+      "WS:GMI-THEME-GRAPH",
+      "WS:GREY-DEER-RISK-INTELLIGENCE",
+      "WS:LIVE-ENTRY-RADAR",
+      "WS:MACRO-CONTEXT-INDEX",
+      "WS:MARKET-MEMORY-W2C",
+      "WS:MARKET-OS",
+      "WS:PROPHET-CONDITIONAL-FUSION",
+      "WS:PROPHET-HK-CA-REVAMP",
+      "WS:PROPHET-US-AVAILABILITY",
+      "WS:PROPHET-US-ENTRY-TIMING",
+      "WS:PROPHET-US-V4-RECOVERY",
+      "WS:RUNNER-FLEET-RESILIENCE",
+      "WS:STOCK-IDENTITY",
+      "WS:WATCHLIST-PORTFOLIO-CEO"
+    ],
+    "project_status_drift": [
+      "WS:ADVANCED-DATA-OPTIONS",
+      "WS:CALCBENCH-FILING-FORENSICS-PARITY",
+      "WS:CUSTOMER-DATA-BACKUP",
+      "WS:FUNDAMENTAL-FORENSICS"
+    ],
+    "proposed_requires_review": [
+      "WS:MASSIVE-STOCK-DAY-R2-COHERENCE"
+    ]
+  },
+  "agent_os_census": {
+    "record_counts": {
+      "workstreams": 44,
+      "decisions": 166,
+      "discoveries": 140,
+      "handoffs": 166
+    },
+    "validator_warning_count": 15,
+    "validator_error_count": 0
+  },
+  "hosted_proof": {
+    "semantic_ci": {
+      "run_id": 32572857730,
+      "ci_plan": "success",
+      "contract_delta": "success",
+      "packs_success": 12,
+      "packs_total": 12,
+      "ci_gate": "success"
+    },
+    "fences": {
+      "run_id": 32572857725,
+      "result": "success"
+    },
+    "projector_owner_logical_job": "self-mod-fence in .github/ci/legacy-jobs.yml",
+    "agent_os_compile_suite": {
+      "result": "success",
+      "tests_passed": 151,
+      "emitted_receipt_schema": "linear_portfolio_plan_ci_receipt.v1"
+    },
+    "discriminating_tests": [
+      "tests/linear_portfolio_plan_cases.py::test_socket_disabled_runtime_still_compiles",
+      "tests/linear_portfolio_plan_cases.py::test_same_tree_is_byte_identical_and_has_no_absolute_paths",
+      "tests/linear_portfolio_plan_cases.py::test_yaml_mapping_order_does_not_change_semantic_plan",
+      "tests/linear_portfolio_plan_cases.py::test_one_field_change_is_bounded",
+      "tests/linear_portfolio_plan_live_cases.py::test_current_repository_plan_is_deterministic_and_emits_ci_receipt"
+    ]
+  },
+  "runtime_authority": {
+    "deterministic_only": true,
+    "network_calls_in_compiler": 0,
+    "linear_mutations_in_p0": 0,
+    "github_mutations_by_compiler": 0,
+    "slack_mutations_by_compiler": 0,
+    "issue_creation_instructions": false,
+    "executive_authority": false,
+    "note": "WS:CHAIRMAN-CONTROL-ROOM is a canonical workstream observation only. Its presence in the report grants no Executive, protected-channel, runtime, or mutation authority."
+  },
+  "cold_start_command": "python3 scripts/linear_portfolio_plan.py --root agentos --generated-state data/governance/agent_os_state.json --linear-snapshot research/linear_portfolio_p0/linear_snapshot_2026-08-21.json --json-output /tmp/linear_portfolio_plan.json --report-output /tmp/linear_portfolio_plan.md --receipt-output /tmp/linear_portfolio_plan_receipt.json",
+  "receipt_finalization_law": {
+    "this_file_is_projector_input": false,
+    "expected_effect_on_semantic_hash": "none",
+    "required_final_check": "Exact-head hosted CI after committing this evidence file must remain green and reproduce the two semantic hashes above before merge."
+  }
+}
