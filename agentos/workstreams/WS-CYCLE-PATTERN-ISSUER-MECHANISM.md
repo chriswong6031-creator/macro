@@ -206,16 +206,19 @@ waves:
       independently reproduced across both revision rounds.
   - id: A4P-1
     title: IMCE-A4P.1 — fourth-gate REQUEST_CHANGES preflight closure (Sol wave, 2026-08-22; records only)
-    status: in_progress
+    status: done
     pr: 6237
     depends_on: [A4P]
     next_action: >
-      Records complete, red-team round 1 (MAJ-1 + 7 minors + 2 nits) applied.
-      Durable identifier: DRAFT PR #6237, branch claude/imce-a4p1-records
-      (a recorded head SHA necessarily predates the PR's own final commit —
-      the PR number + branch is the identifier that stays live; check
-      `gh pr view 6237` for the current head) — NOT marked ready, NOT armed
-      merge-on-green. The commissioning session reviews and lands it.
+      DONE — MERGED 2026-08-22T16:35:48Z as 782b6e570350, server-verified
+      identical to main. Opus red-team round (MAJ-1 transition-table
+      incompleteness + 7 minors + 2 nits) fully applied and byte-verified by
+      the commissioning Fable session on head 5cd07a460eda before landing;
+      MAJ-2 (two challenged quotes) adjudicated VERBATIM-CONFIRMED against
+      Sol's actual fourth-gate message by the commissioning session. Checks
+      concluded green on the sweeper-refreshed head (sole red = by-design
+      codex merge-queue-pilot). Sol's conditional A4 authorization thereby
+      ACTIVATED (landed exactly as ruled, no new substantive finding).
       All seven Sol rulings (R1-R7) implemented: R1 retires the stale
       effective_blocks_under_independent_shock_law_with_deff YAML denomination
       (DEFF struck at AG3, three gates ago) and adds annotation-only
@@ -258,8 +261,31 @@ waves:
       A4P.1 section and cross-referenced from the packet's four-acts list.
   - id: A4
     title: IMCE-03 — preregistration finalization (declared_budget trial-ledger rows; criteria commit before any outcome access)
-    status: todo
+    status: done
+    pr: 6244
     depends_on: [CPI-H1-1, A4P, A4P-1]
+    next_action: >
+      DONE — REGISTERED. PR #6244 merged 2026-08-22T17:31:02Z as 256b5695ab6a,
+      server-verified identical to main. Executed EXACTLY the four frozen acts
+      of the packet's §6 under Sol's conditional authorization, verbatim from
+      the §4a transition table: (1) repository_pin_observed =
+      782b6e5703505af04ba21943b7d0a332853e286d (origin/main at A4 pickup,
+      recorded before any edit — the A4P.1 merge itself); (2) three
+      declared_budget rows appended to data/trial_ledger.jsonl via
+      engine/trial_ledger.py log_declared_budget (ledger had 1,667 rows and
+      ZERO pre-existing rf.cycle_pattern.imce_* rows; all three calls
+      returned True; written rows verified byte-parity with frozen hashes
+      a3b8ac5c0d0205cb / 1d69c1fa6b897b6a / 309d76c3a8dfbb5c); (3) registered
+      MD/YAML/packet state stamped per §4a.2/§4a.3/§4a.4 —
+      registration.config_hash = 05b43f9119fd1fd357d3994bd652abbc3cdff3d8
+      (git blob SHA-1 of the as-stamped-registered contract MD; mandatory
+      post-commit verify passed three ways: working tree == committed blob ==
+      YAML record), date placeholder resolved 2026-08-22; (4) no-outcome-
+      access attestation recorded in the registration commit message
+      (0ae5c413471a). One coherent registered state: status registered,
+      registered true, requires_fable_adjudication false, three families
+      declared. Zero outcome computation; no runner; boundary receipts stay
+      honestly open per R6.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's
@@ -273,15 +299,20 @@ next_action: >
   (4) the six minted cell IDs are RATIFIED by R3, with the sync family's
   market-risk cell renamed to forward_63_trading_day_drawdown_tail; (5)
   Treasury storage/reuse basis SETTLED GO_LIMITED by R5 (future ingestion
-  design still not performed). A4 proper (the mechanical registration PR:
-  observe repo pin, write the three declared_budget rows, stamp the
-  registered contract hash, verify criteria-commit-predates-outcomes —
-  nothing else, verbatim-or-abort) now has a complete byte-exact
-  state-transition table (packet §4a, A4P.1 R4) and Sol's explicit
-  conditional authorization to open without a further Sol roundtrip,
-  PROVIDED A4P.1 lands exactly as frozen with no new substantive finding.
-  Stated next priority after A4: prospective observation activation. No
-  auto-roll anywhere; no issuer truth appended; no outcome access.
+  design still not performed). A4 PROPER IS EXECUTED AND MERGED (PR #6244,
+  256b5695ab6a, 2026-08-22): the three rf.cycle_pattern.imce_* trial
+  families are REGISTERED — declared_budget rows live in
+  data/trial_ledger.jsonl, contract V1.2.1 stamped registered with pin
+  782b6e5703505af04ba21943b7d0a332853e286d and config_hash
+  05b43f9119fd1fd357d3994bd652abbc3cdff3d8. The criteria commit strictly
+  precedes all outcome access (attested in commit 0ae5c413471a); outcome
+  evaluation remains FENCED until boundary receipts exist (R6). Next
+  program priority per Sol: PROSPECTIVE OBSERVATION ACTIVATION — every
+  eligible future decision-time observation not captured from first
+  availability is permanently lost evidence; boundary receipting and
+  DHI/TOL historical archaeology are named future waves that must NOT
+  delay first-availability prospective capture. No issuer truth appended;
+  no runner built; awaiting Sol's next directive.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."
