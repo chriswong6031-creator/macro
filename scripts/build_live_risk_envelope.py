@@ -38,15 +38,24 @@ delay from Grey Deer processing latency from browser paint latency:
     read verbatim from `risk_state.json["live"]["source_event_time"]` (itself the
     newest spliced quote's own `quote_ts`, stamped by scripts/build_risk_state.py).
     NEVER `risk_state["built"]`, never any builder wall clock; absent/unparseable
-    -> `null`.
+    -> `null`. Naive (tz-less) clocks are dropped, never assumed UTC (F5); a clock
+    more than 120s ahead of `now` is refused as defense-in-depth (F6) — the source
+    side (scripts/build_risk_state.py's `_source_event_time`) already excludes a
+    single glitched leg from its own max, but this reader never trusts one upstream
+    computation alone for a law this load-bearing.
   - UPSTREAM ARTIFACT CLOCK (`clocks.upstream_built`): the fast lane's own recorded
     wall-clock stamp (`risk_state.json["built"]`), carried here as separate
-    lineage — never repurposed as `event_time`.
+    lineage — never repurposed as `event_time`. Adjudication #3 (restored, F1): a
+    future-refused carrying clock is never republished under ANY key, including
+    this one — `stale_reason` ("refused_future") already explains the omission.
   - OBSERVATION CLOCK (`clocks.observed_at`): sampled here, in THIS module, at the
     point it reads its upstream artifacts.
   - PRODUCTION CLOCK (`clocks.produced_at`): sampled here, in THIS module, at
-    compose/publish — a second, later real clock sample in production (never the
-    same instant as `observed_at` outside a test's frozen-clock override).
+    compose/publish — a second, independent real clock sample in production.
+    Published at millisecond resolution (F2) so two genuinely distinct samples
+    serialize as distinct strings; this is a RESOLUTION guarantee, not a claim
+    that the two samples can never coincide (a test's frozen clock, or an
+    exceptionally fast production run, still can).
 
 WHAT "LIVE SESSION L" IS, AND WHY IT IS NOT A LITERAL FIELD READ
 ------------------------------------------------------------------
@@ -183,16 +192,28 @@ def _parse_built(built: str | None) -> datetime | None:
 
 
 def _iso_z(dt: datetime) -> str:
-    """A tz-aware datetime -> this artifact's ISO-Z clock format (microsecond-free,
-    `Z` suffix), the same convention `observed_at`/`produced_at` already use."""
-    return dt.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    """A tz-aware datetime -> this artifact's ISO-Z clock format, MILLISECOND
+    precision (GD-3R1 F2), `Z` suffix — the convention `event_time`/
+    `upstream_built`/`observed_at`/`produced_at` all use. The four-clock receipt's
+    whole purpose is measuring latency BETWEEN clock samples, and two real
+    `datetime.now()` calls in the same process can land in the same wall-clock
+    SECOND — collapsing `observed_at`/`produced_at` to visually identical strings
+    even though they are genuinely two distinct samples. Millisecond (not
+    microsecond) resolution matches the browser `Date`/`performance.now()`
+    precision the receipt is compared against. Other artifact stamps (`built`
+    etc.) are UNCHANGED by this — this format is scoped to the `clocks` block."""
+    dt = dt.astimezone(timezone.utc)
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.") + f"{dt.microsecond // 1000:03d}Z"
 
 
-def _normalize_event_time(raw: Any) -> str | None:
+def _normalize_event_time(raw: Any, now: datetime) -> str | None:
     """Parse `risk_state.json["live"]["source_event_time"]` (ISO8601, the
     engine.live_quotes `quote_ts` convention) into this artifact's ISO-Z clock
     format. Absent/None/unparseable -> None — NEVER substituted with any builder
-    wall clock (GD-3R1 clocks.event_time law)."""
+    wall clock (GD-3R1 clocks.event_time law). Naive (tz-less) input is dropped,
+    never assumed UTC (F5). A clock more than 120s ahead of `now` (the observation
+    clock) is refused -> None, defense-in-depth (F6) alongside
+    scripts/build_risk_state.py's own `_source_event_time` future-clock guard."""
     if not raw:
         return None
     try:
@@ -200,7 +221,9 @@ def _normalize_event_time(raw: Any) -> str | None:
     except (ValueError, TypeError):
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        return None  # F5: naive clock -> never assumed UTC, dropped
+    if (dt - now).total_seconds() > _FUTURE_TOLERANCE_S:
+        return None  # F6: defense-in-depth future-clock guard
     return _iso_z(dt)
 
 
@@ -457,7 +480,9 @@ def build(root: Path | None = None, now: datetime | None = None,
     Passing only `now` (the pre-GD-3R1 call shape) keeps `produced_at == observed_at`,
     so every existing frozen-clock caller/test is unaffected; the real production
     default (neither argument injected) takes TWO separate real
-    `datetime.now(timezone.utc)` samples so the two clocks are genuinely distinct."""
+    `datetime.now(timezone.utc)` samples, published at millisecond resolution (F2)
+    so the receipt reliably shows them as distinct instants when they occur (not a
+    guarantee they always differ — see `_iso_z`)."""
     root = root or _REPO_ROOT
     _now_injected = now is not None
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -503,8 +528,9 @@ def build(root: Path | None = None, now: datetime | None = None,
     # requirement, preserved: a caller supplying BOTH clocks gets a fully
     # deterministic build). The real production default (neither `now` nor
     # `produced_now` injected) takes a second real `datetime.now(timezone.utc)`
-    # sample here so `observed_at` and `produced_at` are genuinely distinct real
-    # clocks, not one instant relabeled twice.
+    # sample here — two independent samples, published at millisecond resolution
+    # (F2) so the receipt reliably shows them as distinct even when they land in
+    # the same wall-clock second.
     produced_dt = (produced_now if produced_now is not None
                    else (datetime.now(timezone.utc) if not _now_injected else now)
                    ).astimezone(timezone.utc)
@@ -577,16 +603,22 @@ def build(root: Path | None = None, now: datetime | None = None,
             # read verbatim from the live block's own `source_event_time`
             # (scripts/build_risk_state.py's spliced-quote clock), never this
             # artifact's `built` wall clock and never a builder wall clock of any
-            # kind. Absent/None/unparseable -> null (the source's own null law,
-            # never invented here).
+            # kind. Absent/None/unparseable -> null; naive dropped, never assumed
+            # UTC (F5); >120s ahead of `now` refused as defense-in-depth (F6) —
+            # never invented here.
             "event_time": _normalize_event_time(
-                ((risk_state_doc or {}).get("live") or {}).get("source_event_time")
+                ((risk_state_doc or {}).get("live") or {}).get("source_event_time"), now
             ),
             # UPSTREAM ARTIFACT CLOCK (GD-3R1): separate lineage — the fast lane's
-            # own recorded wall-clock stamp, carried honestly regardless of the
-            # future-refusal verdict above (that verdict governs L/precedence
-            # trust, not this record of what the artifact self-reported).
-            "upstream_built": (_iso_z(built_dt) if built_dt else None),
+            # own recorded wall-clock stamp. An untrusted (future-refused) clock is
+            # never republished either — adjudication #3, RESTORED here (F1): it
+            # originally guarded the OLD `clocks.event_time` (which read `built`
+            # directly); GD-3R1 moved `event_time` onto a different source
+            # (`live.source_event_time`), so this same law now guards
+            # `upstream_built` instead. `stale_reason` ("refused_future") already
+            # explains the omission to a reader.
+            "upstream_built": (None if future_refused else
+                                (_iso_z(built_dt) if built_dt else None)),
             "observed_at": observed_stamp,
             "produced_at": produced_stamp,
         },
@@ -594,10 +626,11 @@ def build(root: Path | None = None, now: datetime | None = None,
     return out
 
 
-def write(root: Path | None = None, now: datetime | None = None) -> dict[str, Any]:
+def write(root: Path | None = None, now: datetime | None = None,
+          produced_now: datetime | None = None) -> dict[str, Any]:
     """Build and atomically write. Never raises; returns the envelope (or {})."""
     try:
-        env = build(root, now)
+        env = build(root, now, produced_now)
         payload = canonical_json(env) + "\n"
         _atomic_write(out_path(root), payload)
         log.info(

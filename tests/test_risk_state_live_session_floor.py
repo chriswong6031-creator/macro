@@ -21,6 +21,17 @@ this pins the behaviour of each).
 
 Node ships on CI + dev Macs; the suite skips loudly when it is absent (mirrors
 tests/test_intraday_flow_ncp_js.py).
+
+GD-3R1 ADDENDUM: this file also carries the pure-Python unit coverage for
+scripts/build_risk_state.py's quote-clock plumbing (`_spliced_frames` /
+`_source_event_time`) and, for the same reason, the engine.live_quotes
+`quote_ts_synthetic` flag (amendment F3) — see the `TestSourceEventTime`,
+`TestSplicedFramesQuoteClocks`, and `TestSyntheticQuoteClockFlag` classes near
+the bottom of this file. Nothing in that coverage needs node; those classes run
+under plain pytest. They live here (rather than in a new file, or in
+tests/test_live_quotes.py) because this is the CI-wired suite that already
+mirrors risk_state.json's shape via its `_us_feed`/`_cn_feed` fixtures — see
+each class's own docstring for the full placement rationale.
 """
 from __future__ import annotations
 
@@ -579,7 +590,9 @@ def test_us_unreadable_feed_session_fails_closed(js):
 # classes are the discriminating regression FROZEN SPEC item 5 requires: a
 # spliced quote's own `quote_ts` lands in `live.source_quote_clocks` and the max
 # of those lands in `live.source_event_time`; an unclocked quote is excluded from
-# the max; all-None -> None.
+# the max; all-None -> None. Amendments: F3 (synthetic clocks excluded), F5 (naive
+# dropped, never assumed UTC), F6 (a quote clock >120s ahead of `now` excluded
+# from the max, single-glitch-proof).
 
 def _nightly_close(price: float, n: int = 3) -> pd.Series:
     idx = pd.date_range("2026-08-18", periods=n, freq="D")
@@ -587,40 +600,80 @@ def _nightly_close(price: float, n: int = 3) -> pd.Series:
 
 
 def _live_quote(price: float, quote_ts: str | None, prev_close: float = 100.0,
-                delay_min: float = 0.0) -> dict:
-    # Real engine.live_quotes.fetch_quotes() quotes always carry both `quote_ts`
-    # AND a precomputed `delay_min` (engine/live_quotes.py's `_delay_min`).
-    # `delay_min` is supplied explicitly so `live_overlay.staleness()` can judge
-    # freshness even in the (synthetic, defensive) case a test wants a spliceable
-    # quote whose `quote_ts` is itself None.
+                delay_min: float = 0.0, synthetic: bool = False) -> dict:
+    # Real engine.live_quotes.fetch_quotes() quotes always carry `quote_ts`,
+    # `quote_ts_synthetic` (GD-3R1 F3), AND a precomputed `delay_min`
+    # (engine/live_quotes.py's `_delay_min`). `delay_min` is supplied explicitly
+    # so `live_overlay.staleness()` can judge freshness even in the (synthetic,
+    # defensive) case a test wants a spliceable quote whose `quote_ts` is itself
+    # None.
     return {"price": price, "prev_close": prev_close, "quote_ts": quote_ts,
-            "delay_min": delay_min}
+            "delay_min": delay_min, "quote_ts_synthetic": synthetic}
 
 
 class TestSourceEventTime:
 
     def test_max_of_parseable_clocks_wins(self):
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
         clocks = {
             "SPY": "2026-08-21T09:00:00+00:00",
             "QQQ": "2026-08-21T09:05:00+00:00",   # newest -> must win
             "IWM": "2026-08-21T08:50:00+00:00",
         }
-        assert brs._source_event_time(clocks) == "2026-08-21T09:05:00+00:00"
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:05:00+00:00"
 
     def test_unclocked_quote_is_excluded_from_the_max(self):
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
         clocks = {
             "SPY": "2026-08-21T09:00:00+00:00",
             "QQQ": None,   # spliced but carried no quote_ts — must not participate
         }
-        assert brs._source_event_time(clocks) == "2026-08-21T09:00:00+00:00"
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:00:00+00:00"
 
     def test_all_none_or_empty_is_none(self):
-        assert brs._source_event_time({"SPY": None, "QQQ": None}) is None
-        assert brs._source_event_time({}) is None
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        assert brs._source_event_time({"SPY": None, "QQQ": None}, now) is None
+        assert brs._source_event_time({}, now) is None
 
     def test_unparseable_clock_is_excluded_not_fatal(self):
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
         clocks = {"SPY": "not-a-timestamp", "QQQ": "2026-08-21T09:00:00+00:00"}
-        assert brs._source_event_time(clocks) == "2026-08-21T09:00:00+00:00"
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:00:00+00:00"
+
+    def test_naive_clock_is_dropped_not_assumed_utc(self):
+        """F5: a naive (tz-less) quote_ts is never coerced to UTC — dropped."""
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        clocks = {"SPY": "2026-08-21T09:00:00", "QQQ": "2026-08-21T09:05:00+00:00"}
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:05:00+00:00"
+
+    def test_all_naive_is_none(self):
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        assert brs._source_event_time({"SPY": "2026-08-21T09:00:00"}, now) is None
+
+    def test_single_future_glitch_leg_does_not_poison_the_max(self):
+        """F6: one glitched/clock-skewed leg (>120s ahead of `now`) must not win
+        the max, but a legitimate leg elsewhere still wins normally."""
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        clocks = {
+            "SPY": "2026-08-21T09:05:00+00:00",       # legit, near now
+            "_MOVE": "2027-01-01T00:00:00+00:00",      # glitched far future
+        }
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:05:00+00:00"
+
+    def test_wholesale_future_clocks_yield_none(self):
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        clocks = {"SPY": "2027-01-01T00:00:00+00:00", "QQQ": "2027-01-01T00:05:00+00:00"}
+        assert brs._source_event_time(clocks, now) is None
+
+    def test_clock_within_future_tolerance_still_counts(self):
+        now = datetime(2026, 8, 21, 9, 6, 0, tzinfo=timezone.utc)
+        clocks = {"SPY": "2026-08-21T09:07:00+00:00"}   # 60s ahead, within 120s tolerance
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:07:00+00:00"
+
+    def test_clock_beyond_future_tolerance_is_excluded(self):
+        now = datetime(2026, 8, 21, 9, 6, 0, tzinfo=timezone.utc)
+        clocks = {"SPY": "2026-08-21T09:09:00+00:00"}   # 180s ahead, beyond 120s tolerance
+        assert brs._source_event_time(clocks, now) is None
 
 
 class TestSplicedFramesQuoteClocks:
@@ -641,7 +694,7 @@ class TestSplicedFramesQuoteClocks:
         assert quote_clocks["QQQ"] == "2026-08-21T09:04:10+00:00"
         assert quote_clocks["SPY"] != now.isoformat()
         # and the max of those lands in source_event_time
-        assert brs._source_event_time(quote_clocks) == "2026-08-21T09:05:30+00:00"
+        assert brs._source_event_time(quote_clocks, now) == "2026-08-21T09:05:30+00:00"
 
     def test_a_quote_that_fails_usable_is_never_spliced_and_never_clocked(self, monkeypatch):
         """A rejected (limit-move-guard) quote must not appear in quote_clocks at
@@ -664,7 +717,7 @@ class TestSplicedFramesQuoteClocks:
             quotes, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
         assert "SPY" in spliced
         assert quote_clocks["SPY"] is None
-        assert brs._source_event_time(quote_clocks) is None
+        assert brs._source_event_time(quote_clocks, now) is None
 
     def test_nothing_spliced_yields_empty_quote_clocks(self, monkeypatch):
         monkeypatch.setattr(live_overlay, "read_close", lambda name: None)
@@ -673,4 +726,84 @@ class TestSplicedFramesQuoteClocks:
             {}, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
         assert spliced == {}
         assert quote_clocks == {}
-        assert brs._source_event_time(quote_clocks) is None
+        assert brs._source_event_time(quote_clocks, now) is None
+
+    def test_a_synthetic_flagged_quote_is_excluded_from_the_clock_receipt(self, monkeypatch):
+        """F3: a quote whose quote_ts did NOT come from a real market timestamp
+        (quote_ts_synthetic=True) must still SPLICE normally (pricing/staleness
+        unaffected) but its clock must never enter the receipt — mapped to None."""
+        closes = {"SPY": _nightly_close(500.0)}
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: closes.get(name))
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        quotes = {"SPY": _live_quote(505.0, "2026-08-21T09:05:30+00:00",
+                                     prev_close=500.0, synthetic=True)}
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            quotes, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert "SPY" in spliced          # pricing/splicing unaffected
+        assert live_close["SPY"] == 505.0
+        assert quote_clocks["SPY"] is None    # but excluded from the clock receipt
+        assert brs._source_event_time(quote_clocks, now) is None
+
+    def test_all_synthetic_quotes_yield_none_source_event_time(self, monkeypatch):
+        closes = {"SPY": _nightly_close(500.0), "QQQ": _nightly_close(400.0)}
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: closes.get(name))
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        quotes = {
+            "SPY": _live_quote(505.0, "2026-08-21T09:05:30+00:00", prev_close=500.0, synthetic=True),
+            "QQQ": _live_quote(404.0, "2026-08-21T09:04:10+00:00", prev_close=400.0, synthetic=True),
+        }
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            quotes, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert set(spliced) == {"SPY", "QQQ"}
+        assert quote_clocks == {"SPY": None, "QQQ": None}
+        assert brs._source_event_time(quote_clocks, now) is None
+
+
+# ══ GD-3R1 amendment F3 — engine.live_quotes' quote_ts_synthetic flag ════════════
+#
+# Engine-level coverage for the two fallback-to-wall-clock paths (polygon
+# trade/minute lacking `t`, or day/prev basis; yahoo lacking regularMarketTime)
+# lives HERE rather than in tests/test_live_quotes.py: that file exists
+# (grepped) but carries NO run: step anywhere under .github/ci/ or
+# .github/workflows/ — it is not CI-wired — so a regression added there would be
+# invisible to CI. This file IS CI-wired (.github/ci/legacy-jobs.yml), per the
+# GD-3R1 commission's explicit fallback instruction for exactly this case.
+
+class TestSyntheticQuoteClockFlag:
+
+    def test_polygon_trade_with_real_t_is_not_synthetic(self):
+        from engine import live_quotes as lq
+        now = datetime(2026, 6, 21, 15, 0, tzinfo=timezone.utc)
+        trade_ns = int(datetime(2026, 6, 21, 14, 50, tzinfo=timezone.utc).timestamp() * 1e9)
+        payload = {"tickers": [{"ticker": "AAPL", "lastTrade": {"p": 201.25, "t": trade_ns},
+                                "day": {"c": 200.0}, "prevDay": {"c": 198.0}}]}
+        q = lq.parse_polygon_snapshot(payload, now=now)["AAPL"]
+        assert q["quote_ts_synthetic"] is False
+
+    def test_polygon_trade_without_t_is_synthetic(self):
+        from engine import live_quotes as lq
+        payload = {"tickers": [{"ticker": "AAPL", "lastTrade": {"p": 201.25},  # no "t"
+                                "day": {"c": 200.0}, "prevDay": {"c": 198.0}}]}
+        q = lq.parse_polygon_snapshot(payload)["AAPL"]
+        assert q["quote_ts_synthetic"] is True
+
+    def test_polygon_day_basis_is_synthetic(self):
+        from engine import live_quotes as lq
+        payload = {"tickers": [{"ticker": "AAPL", "day": {"c": 200.0}, "prevDay": {"c": 198.0}}]}
+        q = lq.parse_polygon_snapshot(payload)["AAPL"]
+        assert q["quote_ts_synthetic"] is True
+
+    def test_yahoo_with_regular_market_time_is_not_synthetic(self):
+        from engine import live_quotes as lq
+        ts_s = int(datetime(2026, 6, 21, 14, 30, tzinfo=timezone.utc).timestamp())
+        payload = {"spark": {"result": [{"symbol": "0700.HK", "response": [{"meta": {
+            "regularMarketPrice": 412.6, "regularMarketTime": ts_s}}]}]}}
+        q = lq.parse_yahoo_spark(payload)["0700.HK"]
+        assert q["quote_ts_synthetic"] is False
+
+    def test_yahoo_without_regular_market_time_is_synthetic(self):
+        from engine import live_quotes as lq
+        payload = {"spark": {"result": [{"symbol": "0700.HK", "response": [{"meta": {
+            "regularMarketPrice": 412.6}}]}]}}   # no regularMarketTime
+        q = lq.parse_yahoo_spark(payload)["0700.HK"]
+        assert q["quote_ts_synthetic"] is True

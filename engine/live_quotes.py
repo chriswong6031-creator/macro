@@ -93,7 +93,15 @@ def parse_polygon_snapshot(payload: dict, now: datetime | None = None) -> dict:
     which rung won as ``price_basis``. CRITICAL: the staleness timestamp is taken
     from the *trade/minute* time, NOT ``updated`` (which refreshes even with no
     trade — on a delayed plan or an illiquid name that would falsely look fresh).
-    A day/prev-close basis is stamped not-live so the consumer falls back."""
+    A day/prev-close basis is stamped not-live so the consumer falls back.
+
+    ``quote_ts_synthetic`` (GD-3R1 amendment F3, additive): True exactly when the
+    emitted ``quote_ts`` is NOT a real market timestamp (a trade/minute print) —
+    i.e. it fell back to the snapshot's ``updated`` refresh clock or, lacking even
+    that, this process's own wall clock. A consumer building an event-time receipt
+    (scripts/build_risk_state.py) must never treat a synthetic clock as the real
+    source-market instant (Sol's cannot-be-established -> null law). No pricing/
+    staleness behavior changes — `delay_min`/`price_basis` are unaffected."""
     now = now or _now()
     out: dict[str, dict] = {}
     for row in (payload or {}).get("tickers", []) or []:
@@ -103,6 +111,7 @@ def parse_polygon_snapshot(payload: dict, now: datetime | None = None) -> dict:
         lt, mn = row.get("lastTrade") or {}, row.get("min") or {}
         day, prev = row.get("day") or {}, row.get("prevDay") or {}
         price = basis = ts = None
+        synthetic = False
         if lt.get("p"):                                   # real trade
             price, basis = lt["p"], "trade"
             ts = datetime.fromtimestamp(lt["t"] / 1e9, tz=timezone.utc) if lt.get("t") else None
@@ -116,6 +125,10 @@ def parse_polygon_snapshot(payload: dict, now: datetime | None = None) -> dict:
         if not price:
             continue
         if ts is None:                                    # day/prev (or trade w/o t)
+            # GD-3R1 F3: no real market timestamp exists for this print — the
+            # snapshot's `updated` refresh clock (or, lacking even that, `now`)
+            # is a SYNTHETIC clock, never eligible as a source event clock.
+            synthetic = True
             ts = (datetime.fromtimestamp(row["updated"] / 1e9, tz=timezone.utc)
                   if row.get("updated") else now)
         # Day volume, high, low from the day bucket (zero-extra-request: already fetched).
@@ -124,6 +137,7 @@ def parse_polygon_snapshot(payload: dict, now: datetime | None = None) -> dict:
         day_lo = day.get("l")
         out[sym] = {
             "price": round(float(price), 4), "quote_ts": ts.isoformat(),
+            "quote_ts_synthetic": synthetic,
             "source": "polygon", "price_basis": basis, "delay_min": _delay_min(ts, now),
             "prev_close": round(float(prev["c"]), 4) if prev.get("c") else None,
             "currency": "USD",
@@ -136,7 +150,12 @@ def parse_polygon_snapshot(payload: dict, now: datetime | None = None) -> dict:
 
 def parse_yahoo_spark(payload: dict, now: datetime | None = None) -> dict:
     """Yahoo ``spark`` -> {symbol: quote}. ``regularMarketTime`` is epoch seconds
-    (the last regular-session print) -> basis 'regular'."""
+    (the last regular-session print) -> basis 'regular'.
+
+    ``quote_ts_synthetic`` (GD-3R1 amendment F3, additive): True when Yahoo's own
+    meta carries no ``regularMarketTime`` and ``quote_ts`` fell back to this
+    process's wall clock — see ``parse_polygon_snapshot``'s docstring for the
+    same law. No pricing/staleness behavior changes."""
     now = now or _now()
     out: dict[str, dict] = {}
     for res in (payload or {}).get("spark", {}).get("result", []) or []:
@@ -146,6 +165,7 @@ def parse_yahoo_spark(payload: dict, now: datetime | None = None) -> dict:
         if not sym or price is None:
             continue
         ts_s = meta.get("regularMarketTime")
+        synthetic = not bool(ts_s)
         ts = datetime.fromtimestamp(ts_s, tz=timezone.utc) if ts_s else now
         # Volume, high, low from same meta object — zero extra requests.
         day_vol = meta.get("regularMarketVolume")
@@ -153,6 +173,7 @@ def parse_yahoo_spark(payload: dict, now: datetime | None = None) -> dict:
         day_lo = meta.get("regularMarketDayLow")
         out[sym] = {
             "price": round(float(price), 4), "quote_ts": ts.isoformat(),
+            "quote_ts_synthetic": synthetic,
             "source": "yahoo", "price_basis": "regular", "delay_min": _delay_min(ts, now),
             "prev_close": (round(float(meta["previousClose"]), 4)
                            if meta.get("previousClose") is not None else None),
