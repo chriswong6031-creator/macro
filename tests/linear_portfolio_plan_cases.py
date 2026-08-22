@@ -163,6 +163,15 @@ def test_yaml_mapping_order_does_not_change_semantic_plan(tmp_path):
     assert lpp.semantic_json(second) == lpp.semantic_json(first)
 
 
+def test_next_action_preserves_canonical_parsed_prose(tmp_path):
+    prose = "First exact line.\nSecond exact line with  two internal spaces."
+    root = _store(tmp_path, [("ALPHA", "active", {"next_action": prose})])
+    plan = _compile(root)
+    row = plan["active_projects"][0]
+    assert row["next_action"] == prose
+    assert prose in row["managed_description_block"]
+
+
 def test_one_field_change_is_bounded(tmp_path):
     root = _store(tmp_path, [("ALPHA", "active", {})])
     first = _compile(root)
