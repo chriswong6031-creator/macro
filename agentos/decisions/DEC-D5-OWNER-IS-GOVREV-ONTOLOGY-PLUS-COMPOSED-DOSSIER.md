@@ -13,7 +13,10 @@ answer: >
   quadruple known_at/valid_from/valid_to/evidence_refs) — and the user-facing
   Program Dossier is a composed read model
   (government_program_dossier.v1) joining, at read time: D5 ontology +
-  defense21 recipient identity + GovRev award events (canonical_award_identity)
+  defense21 recipient identity + GovRev award events (via the reviewed
+  program_event_links pointer relation, D5R.2 — exact event_id +
+  source-identity hash + canonical_award_identity agreement, zero copied
+  event truth)
   + the budget owner (projection_missing until it produces) + Stock Identity
   via the identity atlas + GMI economic relationships (reserved-null today,
   rendered not_asserted). No new global supergraph, no defense supplier graph,
