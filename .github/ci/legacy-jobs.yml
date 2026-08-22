@@ -2180,6 +2180,7 @@ jobs:
           tests/test_p_mp1_shell_ladder_error_state.py
           tests/test_p_mp1_shell_css_comment_termination.py
           tests/test_p_mp1_shell_repair_round.py
+          tests/test_p0_prophet_candidate_board.py
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
