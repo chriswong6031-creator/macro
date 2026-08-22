@@ -121,6 +121,18 @@ the evaluation sample), and prints the raw count, the issuer-DEFF count, and the
 serial-dependence-adjusted count as three separate numbers. Until that exists, every homebuilder
 readout states that its `n_effective_blocks` is an upper bound.
 
+> **[SUPERSEDED BY AG3 + A4P.1 R1 (2026-08-22): D4's "Proposed disposition" above recommends A4 register a
+> `rho_block` parameter and print a raw/issuer-DEFF/serial-adjusted three-way count. This is NOT the A4
+> registration law.** The issuer-level DEFF/`rho` estimator this proposal builds on is STRUCK as the
+> `n_effective_blocks` definition (AG3, 2026-08-21); A4 will not register `rho_block` and will not print an
+> issuer-DEFF count. D4's underlying finding — serial dependence between blocks means `n_effective_blocks` is
+> an upper bound, never an estimate — is preserved without a DEFF/`rho_block` construction: AG9 makes inference
+> block-cluster/leave-one-block-out, and any future dependence adjustment "may only ever REDUCE
+> `n_effective_blocks` below its capped value — never increase the shock count" (contract §3, AG9).]**
+> Additive annotation only — the text above is the original A3 lane-2 text, unmodified, per Sol's bar on
+> reopening A3 work. `IMCE_A4G_AMENDMENT_LOG.md`'s AG3/AG9 entries and this wave's `AP9.R1` entry carry the
+> full ruling.
+
 ### D5 — Structural breaks sit ON block boundaries and inside blocks
 
 Block membership is not the same as comparable membership (B-5). Three known events collide with the
@@ -303,6 +315,22 @@ is short by a factor of ~7 and no analytic choice available to A4 closes that ga
 cell's status is therefore predetermined `underpowered_accruing`, invariant to the data — exactly as
 the freeze fixed pre-outcome. This census confirms that determination on its own arithmetic rather
 than inheriting it.
+
+> **[SUPERSEDED BY AG3 + A4P.1 R1 (2026-08-22): §7 and §8 above (including the DEFF formula, the ρ-by-`m`
+> sensitivity grid, and every `n_eff ≈ 5.4–6.7` figure derived from it) compute a candidate `n_effective_blocks`
+> estimator that is NOT the A4 registration law.** The DEFF/`rho` construction is STRUCK as the
+> `n_effective_blocks` definition (AG3, 2026-08-21) — `n_effective_blocks` is capped at the raw closed-block
+> count B (≤5 general, ≤3 cancellation-scoped, AG5/AG6), never derived upward from an issuer-correlation
+> parameter or reported as a fractional `n_eff` figure. A4 will not register any `rho`/`rho_block` value and
+> will not print an issuer-DEFF `n_effective_blocks` count. **This section's own bottom-line conclusion —
+> every historical cell fails the 40-block floor by roughly an order of magnitude, so every historical cell's
+> status is predetermined `underpowered_accruing`, invariant to the data — is UNCHANGED and independently
+> confirmed under the AG3-capped B≤3/B≤5 basis** (contract §3, "the upper bound already fails the... floor of
+> 40 by roughly an order of magnitude... so no analytic refinement changes any cell's predetermined
+> `underpowered_accruing` status").]**
+> Additive annotation only — the text and table above are the original A3 lane-2 text, unmodified, per Sol's
+> bar on reopening A3 work. `IMCE_A4G_AMENDMENT_LOG.md`'s AG3/AG5/AG6 entries and this wave's `AP9.R1` entry
+> carry the full ruling.
 
 ---
 
