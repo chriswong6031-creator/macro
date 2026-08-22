@@ -20,6 +20,12 @@
 #      special-cased — a holiday can inflate the count by 1, which the WARN
 #      tier absorbs; the ALERT tier only false-fires if a holiday AND a real
 #      miss stack, which is exactly when a human look is cheap.)
+#   3. (AD-1T1 F8) Daily-refresh anchor — `_manifest.json`'s `daily_refresh.D`
+#      is the incremental daily lane's own liveness record. ALERT when it is
+#      not today's NYSE session date (`lib.nyse_calendar.session_date()`)
+#      after 22:00 ET on a session day: launchd calendar fires do not wake a
+#      sleeping Mac and COALESCE on wake, so a sleeping/missed host is
+#      otherwise indistinguishable from a healthy one.
 #
 # Outputs (all append/atomic-write, never touches the parquet store):
 #   /tmp/theta_staleness.json  — machine-readable latest verdict
@@ -33,6 +39,10 @@
 set -uo pipefail
 
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
+# AD-1T1 F8: repo root, for importing lib.nyse_calendar (session_date()) in
+# the anchor check below. Computed relative to this script's own location so
+# it resolves correctly wherever the ops-tree copy lives (see runbook).
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 STORE="/Users/chriswong/theta-ops-wt/data/thetadata_eod"
 OUT_JSON="/tmp/theta_staleness.json"
 LOG="/tmp/theta_staleness.log"
@@ -57,6 +67,7 @@ rm -f "${term_body}"
 
 DUE_TODAY="${DUE_TODAY}" TERM_CODE="${term_code}" TERM_BYTES="${term_bytes}" \
 SYMBOLS_MIN_BYTES="${SYMBOLS_MIN_BYTES}" STORE="${STORE}" OUT_JSON="${OUT_JSON}" LOG="${LOG}" \
+REPO_ROOT="${REPO_ROOT}" \
 "${PYTHON}" - <<'PY'
 import datetime as dt
 import json, os, subprocess, sys
@@ -125,6 +136,44 @@ if missing is not None:
         level = "WARN"
         reasons.append(f"greeks 1 session behind (latest={latest})")
 
+# AD-1T1 F8: daily_refresh.D anchor. `_manifest.json`'s daily_refresh section
+# is the incremental daily lane's own liveness record — checked separately
+# from the greeks-staleness check above because a sleeping/missed host and a
+# healthy one look identical to launchd (calendar fires do not wake a
+# sleeping Mac and coalesce on wake).
+daily_refresh_d = None
+expected_session = None
+anchor_err = None
+try:
+    with open(f"{store}/_manifest.json") as f:
+        _manifest = json.load(f)
+    daily_refresh_d = (_manifest.get("daily_refresh") or {}).get("D")
+except Exception as e:
+    anchor_err = f"manifest read failed: {type(e).__name__}: {e}"
+
+anchor_due = False
+try:
+    sys.path.insert(0, os.environ.get("REPO_ROOT", ""))
+    from lib import nyse_calendar
+
+    now_utc = dt.datetime.now(dt.timezone.utc)
+    now_et = now_utc.astimezone(nyse_calendar.ET)
+    expected_session = str(nyse_calendar.session_date(now_utc))
+    anchor_due = (nyse_calendar.is_session(now_et.date())
+                 and now_et.time() >= dt.time(22, 0))
+except Exception as e:
+    anchor_err = anchor_err or f"nyse_calendar import/eval failed: {type(e).__name__}: {e}"
+
+if anchor_due:
+    if anchor_err:
+        level = "ALERT"
+        reasons.append(f"daily_refresh anchor check failed: {anchor_err}")
+    elif daily_refresh_d != expected_session:
+        level = "ALERT"
+        reasons.append(
+            f"daily_refresh.D stale: manifest={daily_refresh_d!r} "
+            f"expected={expected_session!r} (AD-1T1 F8 anchor, after 22:00 ET)")
+
 verdict = {
     "checked_at": now,
     "level": level,
@@ -133,6 +182,9 @@ verdict = {
     "latest_greeks_date": str(latest) if latest else None,
     "sessions_missing": missing,
     "due_today": due_today,
+    "daily_refresh_d": daily_refresh_d,
+    "daily_refresh_expected": expected_session,
+    "daily_refresh_anchor_due": anchor_due,
     "reasons": reasons,
 }
 tmp = out_json + ".tmp"
