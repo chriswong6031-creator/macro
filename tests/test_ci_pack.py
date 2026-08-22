@@ -274,12 +274,15 @@ def test_workflows_cancel_superseded_pr_runs() -> None:
     assert "pull_request.number" in ci["concurrency"]["group"]
     assert "github.ref" in ci["concurrency"]["group"]
     assert "pull_request.number" in fences["concurrency"]["group"]
-    # The 2026-07-28 merged-close fence (PR #3867) lives in the same expression and
-    # must survive every later edit to this block.
-    assert "merged" in ci["concurrency"]["group"], (
-        "a MERGED close must stay fenced into its own group, or a fast squash-merge "
-        "cancels the PR's own proof run and the merged head is unproven forever"
+    assert ci["concurrency"]["group"] == (
+        "ci-${{ github.event.pull_request.number || github.ref }}"
     )
+    triggers = ci.get("on") or ci.get(True)
+    assert triggers["pull_request"]["types"] == [
+        "opened", "synchronize", "reopened"
+    ], "a closed event must never occupy or replace the active PR proof slot"
+    assert "merged" not in ci["concurrency"]["group"]
+    assert "github.event.action" not in ci["concurrency"]["group"]
 
 
 def test_scope_glob_separator_semantics() -> None:
@@ -2318,10 +2321,7 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
         "reintroducing max-parallel only slows main's proof; the hosted concurrency "
         "ceiling is account-wide and this key cannot raise it"
     )
-    # The closed-event fence must LEAD the condition. Wave B appends
-    # `&& needs.ci-plan.outputs.has_work == 'true'`; anything that replaces the
-    # fence instead of extending it re-allocates a runner for every merged-close.
-    assert pack["if"].startswith("github.event.action != 'closed'")
+    assert pack["if"] == "needs.ci-plan.outputs.has_work == 'true'"
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
     )
@@ -2332,7 +2332,9 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     # manifest itself as a workflow.
     triggers = workflow.get("on") or workflow.get(True)
     assert ".github/ci/legacy-jobs.yml" in triggers["pull_request"]["paths"]
-    assert "closed" in triggers["pull_request"]["types"]
+    assert triggers["pull_request"]["types"] == [
+        "opened", "synchronize", "reopened"
+    ]
 
 
 def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
