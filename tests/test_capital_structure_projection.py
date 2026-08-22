@@ -185,6 +185,7 @@ def _build(
     review_items: list[dict] | None = None,
     as_of: str = GENERATED_AT,
     telemetry: dict | None = None,
+    health: dict | None = None,
 ) -> dict:
     return build_projection_bundle(
         events,
@@ -195,7 +196,25 @@ def _build(
         ),
         as_of=as_of,
         generated_at=GENERATED_AT,
+        health=health,
     )
+
+
+def _health_for(telemetry: dict, state: str) -> dict:
+    return {
+        "horizon": {
+            "state": state,
+            "reason_codes": [] if state == "current" else [f"fixture_{state}"],
+            "target_sla_hours": 6,
+            "compiler_generation_id": telemetry.get("generation_id"),
+            "compiler_as_of": telemetry.get("as_of"),
+            "watermarks": {
+                "latest_discovered_in_policy_filing_date": "2026-08-01",
+                "latest_eligible_retained_filing_date": "2026-08-01",
+                "latest_compiled_in_policy_filing_date": "2026-08-01",
+            },
+        }
+    }
 
 
 def _schema_errors(bundle: dict) -> list:
@@ -263,6 +282,48 @@ def test_projection_bundle_is_strict_schema_valid_context_only_and_public_safe()
     assert bundle["unavailable"] == UNAVAILABLE
     forbidden = {"object_key", "raw_document", "raw_docs", "score", "scores", "probability", "probabilities", "capacity", "runway", "overhang"}
     assert not (_all_keys(bundle) & forbidden)
+
+
+def test_compiler_fresh_generation_is_stale_when_bound_horizon_is_lagging():
+    event = _event("0000000001-26-000001", "S-3", seen="2026-08-01T10:00:03Z")
+    telemetry = _telemetry(event_count=1)
+    bundle = _build(
+        [event], telemetry=telemetry, health=_health_for(telemetry, "lagging")
+    )
+    assert bundle["coverage"]["freshness"] == "stale"
+    assert bundle["coverage"]["horizon_state"] == "lagging"
+    assert bundle["coverage"]["generation_freshness"] == "fresh"
+    assert bundle["coverage"]["age_hours"] is None
+    assert bundle["coverage"]["freshness_sla_hours"] == 6
+
+
+def test_compiler_stale_generation_can_be_current_only_with_bound_current_horizon():
+    event = _event("0000000001-26-000001", "S-3", seen="2026-08-01T10:00:03Z")
+    telemetry = _telemetry(event_count=1)
+    telemetry["as_of"] = "2026-08-08T00:00:00Z"
+    bundle = _build(
+        [event],
+        as_of=telemetry["as_of"],
+        telemetry=telemetry,
+        health=_health_for(telemetry, "current"),
+    )
+    assert bundle["coverage"]["freshness"] == "fresh"
+    assert bundle["coverage"]["horizon_state"] == "current"
+    assert bundle["coverage"]["generation_freshness"] == "stale"
+    assert bundle["coverage"]["generation_age_hours"] == 60.0
+
+
+def test_unbound_health_horizon_is_unknown_even_if_it_claims_current():
+    event = _event("0000000001-26-000001", "S-3", seen="2026-08-01T10:00:03Z")
+    telemetry = _telemetry(event_count=1)
+    health = _health_for(telemetry, "current")
+    health["horizon"]["compiler_generation_id"] = "generation:cs:" + "d" * 24
+    bundle = _build([event], telemetry=telemetry, health=health)
+    assert bundle["coverage"]["freshness"] == "unknown"
+    assert bundle["coverage"]["horizon_state"] == "unavailable"
+    assert bundle["coverage"]["horizon_reason_codes"] == [
+        "health_horizon_generation_mismatch"
+    ]
 
 
 def test_system_point_in_time_uses_correction_only_after_mastermind_observed_clock():

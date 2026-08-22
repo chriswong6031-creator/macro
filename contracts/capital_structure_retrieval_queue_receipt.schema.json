@@ -38,6 +38,36 @@
       "maxItems": 7,
       "items": {"$ref": "#/$defs/lane"}
     },
+    "class_quota_slots": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["LIVE_TAIL", "RECOVERY", "HISTORICAL_BACKFILL"],
+      "properties": {
+        "LIVE_TAIL": {"type": "integer", "minimum": 0},
+        "RECOVERY": {"type": "integer", "minimum": 0},
+        "HISTORICAL_BACKFILL": {"type": "integer", "minimum": 0}
+      }
+    },
+    "spill_transfers": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/spill_transfer"}
+    },
+    "work_classes": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {"$ref": "#/$defs/work_class"}
+    },
+    "live_tail_arrivals_current_run": {"type": "integer", "minimum": 0},
+    "live_tail_effective_capacity": {"type": "integer", "minimum": 0},
+    "live_tail_arrival_overflow": {"type": "integer", "minimum": 0},
+    "live_tail_pending_before_selection": {"type": "integer", "minimum": 0},
+    "live_tail_selected": {"type": "integer", "minimum": 0},
+    "live_tail_unserved_after_selection": {"type": "integer", "minimum": 0},
+    "latest_discovered_in_policy_filing_date": {"type": ["string", "null"], "format": "date"},
+    "latest_discovered_in_policy_observed_at": {"type": ["string", "null"], "format": "date-time"},
+    "live_session_pending_count": {"type": "integer", "minimum": 0},
+    "live_session_unserved_count": {"type": "integer", "minimum": 0},
     "authority": {"$ref": "#/$defs/authority"}
   },
   "$defs": {
@@ -62,6 +92,69 @@
         "oldest_pending_first_seen": {"type": ["string", "null"], "format": "date-time"},
         "oldest_pending_age_days": {"type": ["integer", "null"], "minimum": 0},
         "unknown_first_seen_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "class_lane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lane", "pending_count", "selected_count"],
+      "properties": {
+        "lane": {
+          "type": "string",
+          "enum": [
+            "registration", "state", "prospectus", "reg_a", "issuer_current_report",
+            "issuer_periodic", "issuer_proxy"
+          ]
+        },
+        "pending_count": {"type": "integer", "minimum": 0},
+        "selected_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "work_class": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "work_class", "reserved_slots", "quota_slots", "reserved_selected_count",
+        "spill_in_slots", "spill_out_slots", "unused_reserved_slots", "pending_count",
+        "selected_count", "deferred_count", "oldest_filing_date", "newest_filing_date",
+        "current_run_arrivals", "live_session_pending_count", "live_session_unserved_count",
+        "lanes"
+      ],
+      "properties": {
+        "work_class": {
+          "type": "string",
+          "enum": ["LIVE_TAIL", "RECOVERY", "HISTORICAL_BACKFILL"]
+        },
+        "reserved_slots": {"type": "integer", "minimum": 0},
+        "quota_slots": {"type": "integer", "minimum": 0},
+        "reserved_selected_count": {"type": "integer", "minimum": 0},
+        "spill_in_slots": {"type": "integer", "minimum": 0},
+        "spill_out_slots": {"type": "integer", "minimum": 0},
+        "unused_reserved_slots": {"type": "integer", "minimum": 0},
+        "pending_count": {"type": "integer", "minimum": 0},
+        "selected_count": {"type": "integer", "minimum": 0},
+        "deferred_count": {"type": "integer", "minimum": 0},
+        "oldest_filing_date": {"type": ["string", "null"], "format": "date"},
+        "newest_filing_date": {"type": ["string", "null"], "format": "date"},
+        "current_run_arrivals": {"type": "integer", "minimum": 0},
+        "live_session_pending_count": {"type": "integer", "minimum": 0},
+        "live_session_unserved_count": {"type": "integer", "minimum": 0},
+        "lanes": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {"$ref": "#/$defs/class_lane"}
+        }
+      }
+    },
+    "spill_transfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["donor", "recipient", "slots"],
+      "properties": {
+        "donor": {"type": "string", "enum": ["LIVE_TAIL", "RECOVERY", "HISTORICAL_BACKFILL"]},
+        "recipient": {"type": "string", "enum": ["LIVE_TAIL", "RECOVERY", "HISTORICAL_BACKFILL"]},
+        "slots": {"type": "integer", "minimum": 1}
       }
     },
     "authority": {

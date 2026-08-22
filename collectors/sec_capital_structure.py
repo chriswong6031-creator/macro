@@ -138,6 +138,22 @@ RETRIEVAL_LANE_ORDER = tuple(RETRIEVAL_LANE_WEIGHTS)
 DISCOVERY_SCOPE_REGISTRATION = "registration_issuance"
 DISCOVERY_SCOPE_RECONCILIATION = "issuer_reconciliation"
 
+# W2 scheduler metadata is deliberately kept out of the source/evidence/event
+# identity plane.  These reserves partition the existing 200-filing ceiling;
+# they do not create another queue or increase collector capacity.
+WORK_CLASS_ORDER = (
+    "LIVE_TAIL",
+    "RECOVERY",
+    "HISTORICAL_BACKFILL",
+)
+WORK_CLASS_RESERVATIONS = {
+    "LIVE_TAIL": 160,
+    "RECOVERY": 20,
+    "HISTORICAL_BACKFILL": 20,
+}
+LIVE_TAIL_SESSION_COUNT = 5
+RECOVERY_SESSION_COUNT = 20
+
 # A filing whose retrieval keeps failing may not be retried forever.  Before this
 # bound, a systematic defect (the 2026-08-06 NaN manifest abort below) re-deferred
 # the SAME filings every night: 130 identical warnings on 2026-08-06, and the count
@@ -177,7 +193,7 @@ _ATTEMPT_COLUMNS = [
     "attempt_id", "accession", "source_id", "canonical_url", "attempted_at",
     "state", "error", "content_sha256", "retrieval_lane", "collection_scope",
     "http_status", "storage_operation", "store_id", "error_class",
-    "observed_evidence_ids", "retained_available_at",
+    "observed_evidence_ids", "retained_available_at", "work_class",
 ]
 
 class IndexNotPublished(RuntimeError):
@@ -966,12 +982,155 @@ def _retrieval_queue_candidates(
     ].copy()
 
 
+def _completed_sec_sessions(coverage: pd.DataFrame, *, limit: int) -> set[str]:
+    """Return the latest policy-current completed SEC index sessions.
+
+    Calendar subtraction is intentionally not used: the daily-index ledger is
+    the evidence of which SEC sessions were actually observed successfully.
+    """
+    if coverage.empty or limit <= 0 or not {
+        "index_date", "status", "policy_version"
+    }.issubset(coverage.columns):
+        return set()
+    rows = coverage.loc[
+        coverage["status"].astype(str).eq("complete")
+        & coverage["policy_version"].astype(str).eq(FORM_POLICY["policy_version"]),
+        "index_date",
+    ]
+    dates = sorted({str(value)[:10] for value in rows if str(value)}, reverse=True)
+    return set(dates[:limit])
+
+
+def _latest_open_attempt_states(attempts: pd.DataFrame) -> dict[str, str]:
+    """Return each accession's latest recorded queue-open state, if any."""
+    if attempts.empty or not {"accession", "state"}.issubset(attempts.columns):
+        return {}
+    ordered = attempts.copy()
+    if "attempted_at" not in ordered:
+        ordered["attempted_at"] = ""
+    ordered = ordered.sort_values(
+        ["accession", "attempted_at"], kind="stable", na_position="last"
+    )
+    latest = ordered.drop_duplicates("accession", keep="last")
+    return {
+        str(row["accession"]): str(row["state"])
+        for row in latest.to_dict(orient="records")
+        if str(row.get("state") or "") in _UNCLOSED_ATTEMPT_STATES
+    }
+
+
+def _classify_work_classes(
+    candidates: pd.DataFrame,
+    *,
+    coverage: pd.DataFrame | None,
+    attempts: pd.DataFrame | None,
+    current_run_arrivals: set[str] | frozenset[str],
+) -> pd.DataFrame:
+    """Attach deterministic operational classes without changing discovery rows."""
+    queue = candidates.copy()
+    coverage = coverage if coverage is not None else pd.DataFrame()
+    attempts = attempts if attempts is not None else pd.DataFrame()
+    live_sessions = _completed_sec_sessions(coverage, limit=LIVE_TAIL_SESSION_COUNT)
+    recovery_sessions = _completed_sec_sessions(coverage, limit=RECOVERY_SESSION_COUNT)
+    latest_open = _latest_open_attempt_states(attempts)
+    filing_dates = queue.get("filing_date", pd.Series(index=queue.index, dtype=object))
+    filing_dates = filing_dates.astype(str).str[:10]
+    queue["_live_session"] = filing_dates.isin(live_sessions)
+    queue["_current_run_arrival"] = (
+        queue["accession"].astype(str).isin(current_run_arrivals)
+        & queue["_live_session"]
+    )
+
+    def classify(accession: object, filing_date: object) -> str:
+        filing_session = str(filing_date)[:10]
+        # Recovery precedes live-tail by law: a current retry consumes the
+        # bounded recovery reserve while live-session backlog stays separately
+        # observable through _live_session.
+        if (
+            latest_open.get(str(accession)) in _UNCLOSED_ATTEMPT_STATES
+            and filing_session in recovery_sessions
+        ):
+            return "RECOVERY"
+        if filing_session in live_sessions:
+            return "LIVE_TAIL"
+        return "HISTORICAL_BACKFILL"
+
+    queue["_work_class"] = [
+        classify(accession, filing_date)
+        for accession, filing_date in zip(queue["accession"], filing_dates)
+    ]
+    return queue
+
+
+def _class_reservations(max_filings: int) -> dict[str, int]:
+    """Fit the fixed W2 reservations under the existing global ceiling."""
+    remaining = max(0, min(int(max_filings), MAX_FILINGS_PER_RUN))
+    reservations: dict[str, int] = {}
+    for work_class in WORK_CLASS_ORDER:
+        slots = min(WORK_CLASS_RESERVATIONS[work_class], remaining)
+        reservations[work_class] = slots
+        remaining -= slots
+    return reservations
+
+
+def _class_allocation(
+    queue: pd.DataFrame, *, max_filings: int
+) -> tuple[dict[str, int], dict[str, int], dict[str, int], list[dict[str, object]]]:
+    """Allocate reserves, then spill unused donor capacity deterministically."""
+    reserved = _class_reservations(max_filings)
+    pending = {
+        work_class: int(queue["_work_class"].eq(work_class).sum())
+        for work_class in WORK_CLASS_ORDER
+    }
+    quotas = {work_class: min(reserved[work_class], pending[work_class]) for work_class in WORK_CLASS_ORDER}
+    spill_in = {work_class: 0 for work_class in WORK_CLASS_ORDER}
+    spill_out = {work_class: 0 for work_class in WORK_CLASS_ORDER}
+    transfers: list[dict[str, object]] = []
+    for donor in WORK_CLASS_ORDER:
+        unused = reserved[donor] - quotas[donor]
+        if unused <= 0:
+            continue
+        for recipient in WORK_CLASS_ORDER:
+            if recipient == donor or unused <= 0:
+                continue
+            capacity = pending[recipient] - quotas[recipient]
+            moved = min(unused, max(0, capacity))
+            if moved <= 0:
+                continue
+            quotas[recipient] += moved
+            spill_in[recipient] += moved
+            spill_out[donor] += moved
+            transfers.append({"donor": donor, "recipient": recipient, "slots": moved})
+            unused -= moved
+    return quotas, spill_in, spill_out, transfers
+
+
+def _lane_distribution(frame: pd.DataFrame, selected: Sequence[Mapping[str, object]]) -> list[dict]:
+    selected_counts = pd.Series(
+        [str(row.get("_retrieval_lane")) for row in selected], dtype="object"
+    ).value_counts()
+    return [
+        {
+            "lane": lane,
+            "pending_count": int(frame["_retrieval_lane"].eq(lane).sum()),
+            "selected_count": int(selected_counts.get(lane, 0)),
+        }
+        for lane in RETRIEVAL_LANE_ORDER
+    ]
+
+
 def _queue_receipt(
     candidates: pd.DataFrame,
     selected: list[dict],
     *,
     max_filings: int,
     now: datetime,
+    in_policy_discovery: pd.DataFrame | None = None,
+    class_reservations: Mapping[str, int] | None = None,
+    class_quotas: Mapping[str, int] | None = None,
+    spill_in: Mapping[str, int] | None = None,
+    spill_out: Mapping[str, int] | None = None,
+    spill_transfers: Sequence[Mapping[str, object]] = (),
 ) -> dict:
     """Publish operational queue fairness without converting it into issuer truth."""
     stamp = pd.Timestamp(now)
@@ -999,6 +1158,73 @@ def _queue_receipt(
             "oldest_pending_age_days": age_days,
             "unknown_first_seen_count": int(first_seen.isna().sum()),
         })
+    class_reservations = class_reservations or _class_reservations(max_filings)
+    class_quotas = class_quotas or {work_class: 0 for work_class in WORK_CLASS_ORDER}
+    spill_in = spill_in or {work_class: 0 for work_class in WORK_CLASS_ORDER}
+    spill_out = spill_out or {work_class: 0 for work_class in WORK_CLASS_ORDER}
+    classes: list[dict] = []
+    for work_class in WORK_CLASS_ORDER:
+        rows = candidates.loc[candidates.get("_work_class", pd.Series(index=candidates.index, dtype=object)).eq(work_class)]
+        selected_rows = [row for row in selected if row.get("_work_class") == work_class]
+        filing_dates = pd.to_datetime(rows.get("filing_date"), errors="coerce", utc=True)
+        valid_dates = filing_dates.dropna()
+        live_pending = int(rows.get("_live_session", pd.Series(False, index=rows.index)).sum())
+        live_selected = sum(1 for row in selected_rows if row.get("_live_session"))
+        classes.append({
+            "work_class": work_class,
+            "reserved_slots": int(class_reservations[work_class]),
+            "quota_slots": int(class_quotas[work_class]),
+            "reserved_selected_count": min(len(selected_rows), int(class_reservations[work_class])),
+            "spill_in_slots": int(spill_in[work_class]),
+            "spill_out_slots": int(spill_out[work_class]),
+            "unused_reserved_slots": int(class_reservations[work_class]) - min(
+                int(class_reservations[work_class]), len(selected_rows)
+            ),
+            "pending_count": len(rows),
+            "selected_count": len(selected_rows),
+            "deferred_count": len(rows) - len(selected_rows),
+            "oldest_filing_date": valid_dates.min().date().isoformat() if not valid_dates.empty else None,
+            "newest_filing_date": valid_dates.max().date().isoformat() if not valid_dates.empty else None,
+            "current_run_arrivals": int(rows.get("_current_run_arrival", pd.Series(False, index=rows.index)).sum()),
+            "live_session_pending_count": live_pending,
+            "live_session_unserved_count": live_pending - live_selected,
+            "lanes": _lane_distribution(rows, selected_rows),
+        })
+    live_pending_total = int(candidates.get("_live_session", pd.Series(False, index=candidates.index)).sum())
+    live_selected_total = sum(1 for row in selected if row.get("_live_session"))
+    live_arrivals_total = int(
+        candidates.get(
+            "_current_run_arrival", pd.Series(False, index=candidates.index)
+        ).sum()
+    )
+    live_effective_capacity = int(class_quotas.get("LIVE_TAIL", 0))
+    admitted = (
+        in_policy_discovery
+        if isinstance(in_policy_discovery, pd.DataFrame)
+        else pd.DataFrame()
+    )
+    admitted_dates = pd.to_datetime(
+        admitted.get(
+            "filing_date", pd.Series(index=admitted.index, dtype="object")
+        ),
+        errors="coerce", utc=True,
+    )
+    latest_admitted_date = (
+        admitted_dates.dropna().max() if admitted_dates.notna().any() else None
+    )
+    latest_admitted_mask = (
+        admitted_dates.eq(latest_admitted_date)
+        if latest_admitted_date is not None
+        else pd.Series(False, index=admitted.index)
+    )
+    latest_admitted_rows = admitted.loc[latest_admitted_mask]
+    admitted_observed = pd.to_datetime(
+        latest_admitted_rows.get(
+            "_first_seen",
+            pd.Series(index=latest_admitted_rows.index, dtype="object"),
+        ),
+        errors="coerce", utc=True,
+    ).dropna()
     return {
         "schema": "capital_structure.retrieval_queue_receipt.v1",
         "as_of": stamp.isoformat().replace("+00:00", "Z"),
@@ -1008,6 +1234,32 @@ def _queue_receipt(
         "deferred_count": len(candidates) - len(selected),
         "lane_quota_slots": retrieval_lane_quotas(max_filings=max_filings, now=now),
         "lanes": lanes,
+        "class_quota_slots": {work_class: int(class_quotas[work_class]) for work_class in WORK_CLASS_ORDER},
+        "spill_transfers": [dict(row) for row in spill_transfers],
+        "work_classes": classes,
+        "live_tail_arrivals_current_run": live_arrivals_total,
+        "live_tail_effective_capacity": live_effective_capacity,
+        "live_tail_arrival_overflow": max(
+            0, live_arrivals_total - live_effective_capacity
+        ),
+        "live_tail_pending_before_selection": live_pending_total,
+        "live_tail_selected": live_selected_total,
+        "live_tail_unserved_after_selection": (
+            live_pending_total - live_selected_total
+        ),
+        # This policy-filtered discovery watermark is computed before complete
+        # and parked rows are removed. Health consumes this exact collector-law
+        # fact instead of duplicating the evolving form/scope policy.
+        "latest_discovered_in_policy_filing_date": (
+            latest_admitted_date.date().isoformat()
+            if latest_admitted_date is not None else None
+        ),
+        "latest_discovered_in_policy_observed_at": (
+            admitted_observed.max().isoformat().replace("+00:00", "Z")
+            if not admitted_observed.empty else None
+        ),
+        "live_session_pending_count": live_pending_total,
+        "live_session_unserved_count": live_pending_total - live_selected_total,
         "authority": {
             "is_context_only": True,
             "rank_authority": False,
@@ -1083,24 +1335,41 @@ def select_retrieval_queue(
     max_filings: int,
     now: datetime,
     parked: set[str] | frozenset[str] = frozenset(),
+    coverage: pd.DataFrame | None = None,
+    attempts: pd.DataFrame | None = None,
+    current_run_arrivals: set[str] | frozenset[str] = frozenset(),
 ) -> pd.DataFrame:
-    """Select a bounded queue with auditable lane quotas and aging.
+    """Select the bounded work-class queue with lane fairness inside each class.
 
-    Aged candidates sort first *within their lane*, while every selected turn is
-    still allocated by the fair lane rotation.  Therefore a huge aged prospectus
-    backlog cannot continually displace fresh EFFECT, Reg-A, or issuer-scoped
-    current-report/periodic reconciliation evidence.
+    Every selected turn is allocated by the existing fair lane rotation.
+    LIVE_TAIL serves newest filing sessions first within a lane and uses
+    current-run arrival as the same-session tie-break; RECOVERY and
+    HISTORICAL_BACKFILL retain the prior aged-first debt order. Therefore
+    neither an old class nor an old saturated lane can continually displace the
+    newest admitted filing horizon.
     """
     columns = list(discovery.columns)
+    in_policy_discovery = _retrieval_queue_candidates(
+        discovery, have_complete=set(), parked=frozenset()
+    )
     queue = _retrieval_queue_candidates(
         discovery, have_complete=have_complete, parked=parked
     )
+    queue = _classify_work_classes(
+        queue,
+        coverage=coverage,
+        attempts=attempts,
+        current_run_arrivals=current_run_arrivals,
+    )
+    selection_cap = max(0, min(int(max_filings), MAX_FILINGS_PER_RUN))
     if queue.empty or max_filings <= 0:
         empty = queue.head(0)[columns]
         empty.attrs["retrieval_queue_receipt"] = _queue_receipt(
-            queue, [], max_filings=max_filings, now=now
+            queue, [], max_filings=selection_cap, now=now,
+            in_policy_discovery=in_policy_discovery,
         )
         empty.attrs["retrieval_lanes_by_accession"] = {}
+        empty.attrs["retrieval_work_classes_by_accession"] = {}
         return empty
 
     now_stamp = pd.Timestamp(now)
@@ -1124,20 +1393,57 @@ def select_retrieval_queue(
         na_position="last",
         kind="stable",
     )
-    # ``queue`` is already deterministically ordered by lane, age, first-seen,
-    # filing date, and accession.  Passing all candidates into the rotation
-    # makes aging a per-lane tie-break rather than allowing one old, saturated
-    # lane to consume every turn before fresh evidence families are considered.
-    selected = _fair_lane_rows(queue, slots=max_filings, now=now)
+    # The W2 reserve/allocation happens before lane fairness.  Each class invokes
+    # the existing lane selector exactly once, preserving date-rotated lane
+    # rotation without allowing backlog to consume LIVE_TAIL capacity.
+    class_quotas, spill_in, spill_out, transfers = _class_allocation(
+        queue, max_filings=selection_cap
+    )
+    reservations = _class_reservations(selection_cap)
+    selected: list[dict] = []
+    for work_class in WORK_CLASS_ORDER:
+        class_rows = queue.loc[queue["_work_class"].eq(work_class)]
+        if work_class == "LIVE_TAIL":
+            # The class reserve prevents historical debt from consuming live
+            # slots; newest-first ordering inside each existing lane prevents
+            # sustained >cap live arrivals from moving that starvation boundary
+            # forward one session at a time. Lane rotation itself is unchanged.
+            class_rows = class_rows.sort_values(
+                [
+                    "_retrieval_lane", "_filing_date", "_current_run_arrival",
+                    "_first_seen_sort", "accession",
+                ],
+                ascending=[True, False, False, False, True],
+                na_position="last",
+                kind="stable",
+            )
+        selected.extend(_fair_lane_rows(
+            class_rows, slots=class_quotas[work_class], now=now
+        ))
+    if len(selected) > selection_cap:
+        raise ValueError("work-class selection exceeded global filing cap")
     if not selected:
         result = queue.head(0)[columns]
     else:
         result = pd.DataFrame(selected)[columns].reset_index(drop=True)
     result.attrs["retrieval_queue_receipt"] = _queue_receipt(
-        queue, selected, max_filings=max_filings, now=now
+        queue,
+        selected,
+        max_filings=selection_cap,
+        now=now,
+        in_policy_discovery=in_policy_discovery,
+        class_reservations=reservations,
+        class_quotas=class_quotas,
+        spill_in=spill_in,
+        spill_out=spill_out,
+        spill_transfers=transfers,
     )
     result.attrs["retrieval_lanes_by_accession"] = {
         str(row["accession"]): str(row["_retrieval_lane"])
+        for row in selected
+    }
+    result.attrs["retrieval_work_classes_by_accession"] = {
+        str(row["accession"]): str(row["_work_class"])
         for row in selected
     }
     return result
@@ -1259,6 +1565,56 @@ def _validate_retrieval_queue_receipt(record: dict) -> None:
         deferred_total += deferred
     if selected_total != int(record["selected_count"]) or deferred_total != int(record["deferred_count"]):
         raise ValueError("retrieval queue receipt totals are inconsistent")
+    work_classes = record.get("work_classes")
+    if work_classes is None:
+        # Historical v1 receipts remain readable; every new collector write emits
+        # the W2 fields below.
+        return
+    class_names = [row.get("work_class") for row in work_classes]
+    if class_names != list(WORK_CLASS_ORDER):
+        raise ValueError("retrieval queue receipt work classes must be complete and canonical")
+    class_selected = 0
+    class_deferred = 0
+    for row in work_classes:
+        pending = int(row["pending_count"])
+        selected = int(row["selected_count"])
+        deferred = int(row["deferred_count"])
+        if selected > pending or deferred != pending - selected:
+            raise ValueError("retrieval queue receipt work-class counts are inconsistent")
+        if int(row["quota_slots"]) < selected:
+            raise ValueError("retrieval queue receipt work-class selection exceeds quota")
+        class_selected += selected
+        class_deferred += deferred
+    if class_selected != int(record["selected_count"]) or class_deferred != int(record["deferred_count"]):
+        raise ValueError("retrieval queue receipt class totals are inconsistent")
+    class_slots = record.get("class_quota_slots") or {}
+    if [key for key in class_slots] != list(WORK_CLASS_ORDER):
+        raise ValueError("retrieval queue receipt class quota slots must be canonical")
+    if sum(int(value) for value in class_slots.values()) != int(record["selected_count"]):
+        raise ValueError("retrieval queue receipt class quota slots must sum to selection")
+    live_metrics = (
+        "live_tail_arrivals_current_run",
+        "live_tail_effective_capacity",
+        "live_tail_arrival_overflow",
+        "live_tail_pending_before_selection",
+        "live_tail_selected",
+        "live_tail_unserved_after_selection",
+        "latest_discovered_in_policy_filing_date",
+        "latest_discovered_in_policy_observed_at",
+    )
+    if any(name not in record for name in live_metrics):
+        raise ValueError("retrieval queue receipt must emit the W2 live-tail metrics")
+    if int(record["live_tail_arrival_overflow"]) != max(
+        0,
+        int(record["live_tail_arrivals_current_run"])
+        - int(record["live_tail_effective_capacity"]),
+    ):
+        raise ValueError("retrieval queue receipt live-tail arrival overflow is inconsistent")
+    if int(record["live_tail_unserved_after_selection"]) != (
+        int(record["live_tail_pending_before_selection"])
+        - int(record["live_tail_selected"])
+    ):
+        raise ValueError("retrieval queue receipt live-tail unserved count is inconsistent")
 
 
 def _validate_source_manifest(record: dict) -> None:
@@ -1578,6 +1934,7 @@ class SecCapitalStructureAdapter(Adapter):
         discovery = _read_table(discovery_path, _DISCOVERY_COLUMNS)
         coverage = _read_table(coverage_path, _COVERAGE_COLUMNS)
         attempts = _read_table(attempts_path, _ATTEMPT_COLUMNS)
+        known_discovery_accessions = set(discovery.get("accession", pd.Series(dtype=str)).astype(str))
         manifests = read_source_ledger(manifests_path)
         if manifests:
             validate_manifest_ledger(manifests)
@@ -1684,6 +2041,7 @@ class SecCapitalStructureAdapter(Adapter):
         discovery = _append_keep_first(
             discovery, new_discovery, key="accession", columns=_DISCOVERY_COLUMNS
         )
+        current_run_arrivals = set(discovery["accession"].astype(str)) - known_discovery_accessions
         if coverage_updates:
             updates = pd.DataFrame(coverage_updates)
             coverage = pd.concat([coverage, updates], ignore_index=True)
@@ -1719,11 +2077,15 @@ class SecCapitalStructureAdapter(Adapter):
             max_filings=self.max_filings_per_run,
             now=now,
             parked=parked,
+            coverage=coverage,
+            attempts=attempts,
+            current_run_arrivals=current_run_arrivals,
         )
         queue_receipt = queue.attrs["retrieval_queue_receipt"]
         _validate_retrieval_queue_receipt(queue_receipt)
         _atomic_write_json(queue_receipt, queue_receipt_path)
         selected_lanes = queue.attrs["retrieval_lanes_by_accession"]
+        selected_work_classes = queue.attrs["retrieval_work_classes_by_accession"]
 
         source_store = self._source_store()
         watermark_before = source_high_watermark(manifests)
@@ -1742,6 +2104,9 @@ class SecCapitalStructureAdapter(Adapter):
             selected_lane = selected_lanes.get(accession)
             if selected_lane not in RETRIEVAL_LANE_ORDER:
                 raise ValueError(f"{accession}: selected filing has no valid retrieval lane")
+            selected_work_class = selected_work_classes.get(accession)
+            if selected_work_class not in WORK_CLASS_ORDER:
+                raise ValueError(f"{accession}: selected filing has no valid work class")
             url = str(row["canonical_url"])
             source_id = f"{accession}:0:complete-submission.txt"
             bundle_version = _next_bundle_document_version(manifests, accession)
@@ -1905,6 +2270,7 @@ class SecCapitalStructureAdapter(Adapter):
                         "error_class": error_class,
                         "observed_evidence_ids": json.dumps(attempt_observed_eids),
                         "retained_available_at": retained_available_at,
+                        "work_class": selected_work_class,
                     })
                     time.sleep(PACE_SECONDS)
                     continue
@@ -1979,6 +2345,7 @@ class SecCapitalStructureAdapter(Adapter):
                 "error_class": error_class,
                 "observed_evidence_ids": json.dumps(attempt_observed_eids) if attempt_observed_eids else None,
                 "retained_available_at": retained_available_at,
+                "work_class": selected_work_class,
             })
             time.sleep(PACE_SECONDS)
 
@@ -2027,6 +2394,31 @@ class SecCapitalStructureAdapter(Adapter):
         parked_after_run = parked_accessions(attempts, max_attempts=attempt_bound)
         selected_count = int(queue_receipt.get("selected_count") or 0)
         no_new_work_proven = selected_count == 0
+        work_class_progress = []
+        for work_class in WORK_CLASS_ORDER:
+            class_attempts = [
+                attempt for attempt in new_attempts
+                if attempt.get("work_class") == work_class
+            ]
+            work_class_progress.append({
+                "work_class": work_class,
+                "attempted_count": len(class_attempts),
+                "retrieved_count": sum(
+                    attempt.get("state") == "stored" for attempt in class_attempts
+                ),
+                "parser_deferred_count": sum(
+                    attempt.get("state") == "stored_parser_deferred"
+                    for attempt in class_attempts
+                ),
+                "storage_deferred_count": sum(
+                    attempt.get("state") == "storage_deferred"
+                    for attempt in class_attempts
+                ),
+                "transient_error_count": sum(
+                    attempt.get("state") == "transient_error"
+                    for attempt in class_attempts
+                ),
+            })
         ingestion_run = build_ingestion_run(
             as_of=now_iso,
             store_id=getattr(source_store, "store_id", None),
@@ -2047,6 +2439,7 @@ class SecCapitalStructureAdapter(Adapter):
                 if no_new_work_proven
                 else None
             ),
+            work_classes=work_class_progress,
         )
         _atomic_write_json(ingestion_run, root / INGESTION_RUN_FILENAME)
         if ingestion_run["verdict"] == "fail":

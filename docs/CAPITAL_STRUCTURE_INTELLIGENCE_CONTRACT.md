@@ -652,12 +652,37 @@ artifact. They do not read raw evidence or invent a second calculation path.
 
 ## Wave 2A observed-filing-state projection
 
-`scripts/build_capital_structure_projection.py` runs immediately after the offline event
-compiler. It verifies the compiler's telemetry-last artifact hashes and append-only source
+The bounded collector retains its 200-filing ceiling and derives three operational
+classes after ordinary eligibility and parking: `LIVE_TAIL` is the latest five
+policy-current completed SEC index sessions, `RECOVERY` is a latest-open
+`storage_deferred`, `transient_error`, or `stored_parser_deferred` attempt inside
+the latest 20 completed sessions, and `HISTORICAL_BACKFILL` is the remaining
+eligible debt. Their fixed reserves are 160/20/20 with deterministic spill in
+that class order to the same recipient order excluding the donor. Existing lane
+rotation runs once inside each final class allocation. LIVE_TAIL is
+newest-session first inside each lane, with current-run arrival as the
+same-session tie-break; recovery and historical work retain oldest-first debt
+service. Work class is scheduling metadata on retrieval observations and never
+enters source, evidence, event, or projection identity.
+
+`scripts/build_capital_structure_projection.py` runs after the offline event and
+document-term compilers and the generation-bound ingestion-health calculation. It
+verifies the compiler's telemetry-last artifact hashes and append-only source
 receipt before reading any event, edge, or review row. A corrupt, partial, or mismatched
 generation fails closed and cannot replace the last published projection. With an explicit
 `no_source_manifest` or degraded no-artifact receipt, the pure projection contract renders
 `unavailable`; it never renders an empty green state.
+
+Health is the sole calculator of the information horizon. It binds the latest
+policy-admitted discovery filing, eligible-clean retained complete submission, and
+accepted compiled event filing to the compiler generation, counts gaps only across
+persisted completed SEC index sessions, and reports `current`, `lagging`,
+`degraded_capacity`, `degraded_discovery`, or `unavailable` with stable reasons.
+Durable-ingestion `verdict=ok` does not imply `horizon=current`; the #5792
+zero-progress gate remains independently fatal. Public `coverage.freshness` is
+`fresh` only for a generation-bound current horizon. Compiler-clock age remains
+separate as `generation_freshness` / `generation_age_hours` and cannot authorize
+an information-freshness claim.
 
 The projection groups records by canonical SEC issuer ID / CIK rather than ticker, filters
 event versions on canonical Mastermind system availability, and admits relationship edges
