@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T09:16:31.117040+00:00",
-  "count": 1606,
+  "generated_at": "2026-08-22T10:11:52.078147+00:00",
+  "count": 1609,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -367,6 +367,44 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-hjfrvgvyjgk-09cb86",
+      "title": "Global Views They're Not Hiking",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:30:29Z",
+      "summary_points": [
+        "**US Consumer Spending Slowdown**: Real consumer spending growth to 1-1.5% in H2 due to stagnant cash flow; Strait of Hormuz closure risk disproportionately impacts lower/middle-income consumers via gasoline spikes, though business investment and equity gains support GDP.",
+        "**Labor Market Contradiction**: Job growth slowed to 5k (July), unemployment decline driven by lower labor force participation (not hiring), countering tightening narratives; wage growth weakness offsets perceived labor market strength.",
+        "**Fed Policy Shift**: Only 4-5 of 12 FOMC members project 2026 rate hikes; market pricing overhyped, with baseline inflation improvement suggesting no near-term hikes despite fading temporary drivers (tariffs, energy).",
+        "**French Election Geopolitical Risk**: Le Pen’s 95% win probability vs.",
+        "Mélenchon (93% second-round reach) signals high risk of EU policy disruption, increasing eurozone asset volatility and cross-border flow uncertainty."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-b3hfcqf86lc-b5d229",
+      "title": "PreciousMetalsTradingDeskView",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:28:34Z",
+      "summary_points": [
+        "**Gold (XAU/USD)**: Bullish above 4352.00; 4600 break targets 4773.00, strategic doubling longs into dips at 4358.00 - **Silver (XAG/USD)**: Must hold above 63.76 for positive orientation (target 71.55), long position with unwind above 70.00"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-i32rc1excr1-ac9995",
       "title": "IntradayFXView",
       "institution": "Safra",
@@ -437,6 +475,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hhda4vrfsuv-7ba616",
+      "title": "weekly headings",
+      "institution": "Raymond James",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:20:12Z",
+      "summary_points": [
+        "**Fed Chair's Jackson Hole Speech Critical**: Jackson Hole speech clarifies rate trajectory as growth tailwinds fade (nominal GDP 6.5% YoY slowing) and inflation outlook improves (core PCE near 2.2% target), testing new Fed chair's resolve.",
+        "**Bond Opportunity Amid Yield Divergence**: Treasury yields elevated (10Y near 2007 highs) but bond market attractive due to high yields, easing Fed hawkish pivot, and declining inflation pressures (core PCE near 2.2% target).",
+        "**Housing Data & Valuation Pressure**: Housing starts fell 12.4% MoM (3-mo avg lowest since 2020), NAHB Index at 35 amid high mortgage rates; S&P 500 P/E inversely correlates with 10Y Treasury yield, signaling rate-driven valuation risk.",
+        "**Fixed Income Yield Signal for Rate Cuts**: 2Y and 10Y Treasury yields down weekly (-0.3%), 10Y YTD at 1.1%, indicating shifting Fed policy expectations and potential rate cut timing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
