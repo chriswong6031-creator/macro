@@ -1,7 +1,7 @@
 # E3-A — AAPL shadow extraction handoff
 
 **Wave:** E3-A · **Date:** 2026-08-20 · **Amended:** 2026-08-21 · **Authority:** `E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md`  
-**Do not start until Sol accepts E3-0.** No production workspace write. No R2 mutation. No Terminal/UI. No gold file in E3-0.
+**E3-0 landed** (#6161 / `22686d255eb047cf5bffc91a35984515acb3d466`). E3-A may start. No production workspace write. No R2 mutation. No Terminal/UI.
 
 Not done unless a cold builder can replay the gold and the Qwen eval from this file plus the freeze.
 

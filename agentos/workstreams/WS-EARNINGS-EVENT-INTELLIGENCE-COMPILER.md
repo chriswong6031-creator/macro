@@ -9,7 +9,7 @@ objective: >
   E3-C non-empty second-issuer Q&A in product, and E3-P natural-cycle
   accepted exchange on an eligible print. No earnings_qual score as event
   truth and no FIF/Prophet fork.
-status: awaiting_review
+status: active
 program: earnings-intelligence
 repos: [macro, terminal]
 owner: coo-fable
@@ -21,9 +21,11 @@ depends_on:
 decisions:
   - DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER
 next_action: >
-  HOLD-FOR-SOL on PR #6161 after the Sol-review-4998678880 amendment.
-  Do not begin E3-A, model calls, gold files, R2 writes, Terminal, or FIF
-  work until Sol ratifies the amended freeze.
+  E3-0 landed via #6161 squash-merge
+  22686d255eb047cf5bffc91a35984515acb3d466 (Sol review 5000425939).
+  Start E3-A only from
+  research/earnings_intelligence/e3/E3A_AAPL_SHADOW_EXTRACTION_HANDOFF_2026-08-20.md.
+  Do not start E3-B, E3-C, or E3-P.
 owns_paths:
   - research/earnings_intelligence/e3/**
 artifacts:
@@ -33,21 +35,7 @@ artifacts:
   - research/earnings_intelligence/e3/E3C_SECOND_EVENT_GENERALIZATION_HANDOFF_2026-08-20.md
   - research/earnings_intelligence/e3/E3P_NATURAL_CYCLE_COMMISSIONING_HANDOFF_2026-08-20.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-21.md
-needs_ceo:
-  question: >
-    Ratify the amended E3-0 freeze after review 4998678880 (compiler not
-    scorer; versioned nested source-clock with document-revision
-    source_available_at; Q&A-first into existing qa_exchanges; ordered
-    respondents; speaker_unresolvable; taxonomy version/hash;
-    revision-scoped exchange_id; no candidate store; non-vacuous E3-B/C/P)?
-  options:
-    - "Ratify the amended freeze and unlock E3-A"
-    - "Request one further bounded amendment"
-    - "Reject and keep E3 parked"
-  recommendation: >
-    Ratify. The thesis was already accepted; this packet only closes the
-    seven named findings. Do not begin E3-A until this lands.
-  by_when: 2026-08-23
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-22.md
 landmines:
   - WS:EARNINGS-INTELLIGENCE-OS is done; do not reopen E2-T1 or E2-D to make E3 look active.
   - Parent event_workspace.v1 WORKSPACE_KEYS are closed; a new top-level key is a schema bump Terminal exactKeys will fail.
@@ -59,6 +47,7 @@ landmines:
   - identity_not_in_source is not a valid TypedAbsence reason; use speaker_unresolvable.
   - N=7 AAPL gold is calibration, not OOS; do not auto-unlock E3-B without a pre-frozen or Sol-granted usefulness gate.
 do_not_redo:
+  - Do not reopen the ratified E3-0 freeze (#6161 / 22686d255eb047cf5bffc91a35984515acb3d466).
   - Do not implement runtime E3 in the architecture wave.
   - Do not treat earnings_qual output as event truth.
   - Do not create a second Q&A store beside qa_exchanges.
@@ -72,9 +61,11 @@ do_not_redo:
 waves:
   - id: E3-0
     title: Compiler architecture freeze
-    status: awaiting_ci
+    status: done
     pr: 6161
-    next_action: Sol ratification of the amended DRAFT HOLD PR. Docs only.
+    next_action: >
+      Landed. Squash-merge 22686d255eb047cf5bffc91a35984515acb3d466
+      (Sol review 5000425939). Do not reopen architecture.
   - id: E3-A
     title: AAPL shadow extraction gold + leakage-free Qwen eval
     status: todo
@@ -97,6 +88,4 @@ waves:
     next_action: Eligible natural print with source-supported Q&A yields ≥1 accepted exchange to a real consumer.
 ---
 
-E3-0 is research/design only. E0–E2 stay closed on `WS:EARNINGS-INTELLIGENCE-OS`.
-Canonical freeze: `research/earnings_intelligence/e3/E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md`.
-Owner is `coo-fable` (execution). Architecture authority is `DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER` `decided_by: sol`.
+E3-0 landed on main at `22686d255eb047cf5bffc91a35984515acb3d466` (#6161; Sol review 5000425939). E0–E2 stay closed on `WS:EARNINGS-INTELLIGENCE-OS`. Canonical freeze: `research/earnings_intelligence/e3/E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md`. Owner is `coo-fable` (execution). Architecture authority is `DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER` `decided_by: sol`. Next wave is E3-A only.
