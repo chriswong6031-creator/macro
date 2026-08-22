@@ -13,7 +13,7 @@ p0: EXECUTIVE_OS
 repos: [macro, mastermind]
 owner: ceo-sol
 class: build
-blast_radius: platform
+blast_radius: reversible
 ambiguity: scoped
 waves:
   - id: F0
