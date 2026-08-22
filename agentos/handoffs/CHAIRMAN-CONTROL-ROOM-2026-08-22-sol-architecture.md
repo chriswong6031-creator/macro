@@ -111,7 +111,7 @@ danger_areas:
   - "Objective/title similarity must not join a Job, PR, workstream or session; missing exact identity remains UNKNOWN/UNBOUND."
   - "Provider documentation is not installed-version proof. Live local behavior wins and mismatches return to Sol."
   - "Green CI is not P0 completion; real M3 Ultra navigation and restart proof are mandatory."
-prs: [108]
+prs: [6216]
 decisions:
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
 ---
@@ -119,5 +119,7 @@ decisions:
 # Cold-session return point
 
 Read the accepted Mastermind CCR architecture first, then current Agent OS/GitHub
-state. The only authorized next build is FABLE-00 P0. No downstream automatic
-return routing, CEO wake or multi-host work starts from this handoff.
+state. Mastermind PR #108 is the cross-repository architecture receipt; Macro PR
+#6216 is the repository-local organizational-memory receipt. The only authorized
+next build is FABLE-00 P0. No downstream automatic return routing, CEO wake or
+multi-host work starts from this handoff.
