@@ -332,6 +332,7 @@ Authority-grade full-A nominal daily, exact legal limits, sessions, suspensions,
 ### Exact scope
 
 - existing fail-closed spine and range-shard path
+- the bounded canary path (`collect(canary=True)` / lane `mode=canary`): real, hard-bounded (<=12 requests, <=5 calendar days, no `allow_bulk`), permitted while `BULK_HISTORICAL_BACKFILL_READY` is still `False`, and refusing a documented row cap rather than starting the unproven ticker-range campaign
 - live canary parity, throughput, and correctness evidence
 - reviewed `BULK_HISTORICAL_BACKFILL_READY` promotion on that evidence
 - completeness manifest

@@ -1295,6 +1295,111 @@ def test_foundation_only_operational_gate_precedes_store_and_network(monkeypatch
     assert not store.exists()
 
 
+# ---------------------------------------------------------------------------
+# The bounded canary window.  The bulk gate waits on canary evidence, so the
+# canary must be runnable BEFORE the gate opens -- otherwise the promotion
+# sequence is circular.  These tests pin that it is real, hard-bounded, and
+# still cannot exercise the unproven scalable path.
+# ---------------------------------------------------------------------------
+
+
+def test_canary_window_runs_while_the_bulk_gate_is_still_closed(monkeypatch, tmp_path):
+    """The evidence-gathering path is not blocked by the gate it feeds."""
+    monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
+    store = tmp_path / "private-store"
+    result = spine.collect(
+        start="20240102", end="20240103", store=store, max_requests=4,
+        canary=True, require_token=False,
+        query=lambda endpoint, **kwargs: None,
+    )
+    assert result["canary"] is True
+    assert result["bulk_historical_backfill_ready"] is False
+    assert result["dry_run"] is False and result["no_op"] is False
+    # It really ran: the private store exists and the collector was constructed.
+    assert store.exists()
+
+
+def test_canary_refuses_bulk_budgets_and_oversized_windows(monkeypatch, tmp_path):
+    """Hard ceilings are checked before any store or network use."""
+    monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
+    store = tmp_path / "private-store"
+    calls: list[str] = []
+    query = lambda endpoint, **kwargs: calls.append(endpoint)
+
+    with pytest.raises(spine.SpineError, match="never bulk runs"):
+        spine.collect(
+            start="20240102", end="20240103", store=store, max_requests=4,
+            canary=True, allow_bulk=True, require_token=False, query=query,
+        )
+    with pytest.raises(spine.SpineError, match=r"canary max_requests must be 1\.\."):
+        spine.collect(
+            start="20240102", end="20240103", store=store,
+            max_requests=spine.CANARY_MAX_REQUESTS + 1,
+            canary=True, require_token=False, query=query,
+        )
+    with pytest.raises(spine.SpineError, match="canary range is capped"):
+        spine.collect(
+            start="20240102", end="20240131", store=store, max_requests=4,
+            canary=True, require_token=False, query=query,
+        )
+    assert calls == []
+    assert not store.exists()
+
+
+def test_canary_cannot_start_the_unproven_range_campaign(monkeypatch, tmp_path):
+    """A documented row cap refuses inside a canary instead of going scalable."""
+    monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
+    collector = spine.TushareAShareSpineCollector(
+        tmp_path, query=lambda endpoint, **kwargs: None, now=lambda: NOW,
+        max_requests=4, canary=True,
+    )
+    assert collector.canary is True
+    with pytest.raises(spine.SpineError, match="ticker-range campaign stays refused"):
+        collector._activate_range_campaign(
+            "daily", date(2024, 1, 2), date(2024, 1, 3),
+            trigger_unit="2024-01-02", cap_probe_receipt={},
+        )
+
+
+def test_canary_collector_rejects_a_budget_above_the_ceiling(monkeypatch, tmp_path):
+    monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
+    with pytest.raises(spine.SpineError, match="canary window is capped"):
+        spine.TushareAShareSpineCollector(
+            tmp_path, query=lambda endpoint, **kwargs: None, now=lambda: NOW,
+            max_requests=spine.CANARY_MAX_REQUESTS + 1, canary=True,
+        )
+
+
+def test_canary_is_not_a_promotion_and_leaves_the_bulk_gate_shut(monkeypatch, tmp_path):
+    """Running a canary must never flip or imply the bulk gate."""
+    monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
+    store = tmp_path / "private-store"
+    spine.collect(
+        start="20240102", end="20240103", store=store, max_requests=2,
+        canary=True, require_token=False, query=lambda endpoint, **kwargs: None,
+    )
+    assert spine.BULK_HISTORICAL_BACKFILL_READY is False
+    # and the ordinary (non-canary) path is still refused afterwards
+    with pytest.raises(spine.SpineError, match="foundation-only"):
+        spine.collect(
+            start="20240102", end="20240103", store=store, max_requests=2,
+            require_token=False, query=lambda endpoint, **kwargs: None,
+        )
+
+
+def test_backfill_workflow_offers_plan_canary_and_gated_backfill():
+    """The lane's modes match the executable sequence, not a circular one."""
+    lane = Path(spine.__file__).resolve().parents[1] / ".github" / "workflows" / "tushare-spine-backfill.yml"
+    text = lane.read_text(encoding="utf-8")
+    assert "options: [plan, canary, backfill]" in text
+    assert "ARGS+=(--canary)" in text
+    assert "ARGS+=(--dry-run)" in text
+    # backfill stays the gated one; nothing in the lane flips the gate or
+    # smuggles a bulk budget into the collector (a prose mention is fine).
+    assert "BULK_HISTORICAL_BACKFILL_READY = True" not in text
+    assert "ARGS+=(--allow-bulk)" not in text
+
+
 def test_private_store_path_cannot_escape_into_stageable_repo_locations(tmp_path):
     repo = Path(spine.__file__).resolve().parents[1]
     with pytest.raises(spine.SpineError, match="outside the repository"):

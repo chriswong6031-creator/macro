@@ -204,15 +204,11 @@ waves:
       (manifest cap_fallback.live_canary_complete false); no sanitized
       completeness manifest exists because the private store has never been
       built; the dispatch-only lane .github/workflows/tushare-spine-backfill.yml
-      is wired and TUSHARE_TOKEN is alive, and a red execute run there while the
-      technical gate is shut is the gate working. EXACT NEXT TECHNICAL ACTION:
-      dispatch tushare-spine-backfill.yml with mode=plan (network-free) to
-      confirm the lane, store path, and resume plan on the self-hosted runner;
-      then run ONE bounded mode=execute canary window and capture parity,
-      throughput, and error-taxonomy receipts. Only on those receipts may a
-      SEPARATE reviewed change flip BULK_HISTORICAL_BACKFILL_READY, after which
-      the range-shard campaign runs and the sanitized completeness manifest
-      closes this row. The identity half of the eligibility substrate exists
+      is wired (modes plan | canary | backfill) and TUSHARE_TOKEN is alive; a red
+      mode=backfill run while the technical gate is shut is the gate working.
+      EXACT NEXT TECHNICAL ACTION: dispatch .github/workflows/tushare-spine-backfill.yml with mode=plan (network-free), then mode=canary -- a REAL but hard-bounded window that collect(canary=True) permits while BULK_HISTORICAL_BACKFILL_READY is still False (<=12 requests, <=5 calendar days, never allow_bulk, and a documented row cap refuses instead of starting the unproven ticker-range campaign). The canary is runnable BEFORE the gate opens by design: the gate waits on canary evidence, so gating the canary on the gate would be circular. Only on canary parity/throughput/error-taxonomy receipts may a SEPARATE reviewed change flip BULK_HISTORICAL_BACKFILL_READY; mode=backfill (the full range campaign) stays refused until then. After the flip the
+      range-shard campaign runs and the sanitized completeness manifest closes
+      this row. The identity half of the eligibility substrate exists
       (984 CN + 147 HK canonical, see DEP-CAI); the PIT
       membership/suspension/ST-history substrate remains NOT_BUILT and is
       DEP-ID-ELIG's remainder. Standing prohibitions: no request for or

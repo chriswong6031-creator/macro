@@ -25,7 +25,7 @@ SCOPE:
    `WS:TUSHARE-ENTITLEMENT` and
    `DSC:TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT`) already delivers the
    per-family Tushare entitlement/cost matrix (headline verdicts: `stk_surv`
-   and `fund_portfolio` UNKNOWN_RIGHTS — [TuShare licensing SUPERSEDED 2026-08-21 — `DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`: compliance is `CHAIRMAN_VERIFIED_PRIVATE / SATISFIED`, no vendor letter is required or may be requested, and the remaining blockers below are collector/coverage work only.] formerly
+   and `fund_portfolio` COVERAGE_UNKNOWN — [TuShare licensing SUPERSEDED 2026-08-21 — `DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`: compliance is `CHAIRMAN_VERIFIED_PRIVATE / SATISFIED`, no vendor letter is required or may be requested, and the remaining blockers below are collector/coverage work only.] formerly
    "pending vendor letter"; `anns_d` and
    互动/e互动 NOT_NEEDED — native/CNInfo coverage exists; `report_rc` OWNED).
    (b) The GROK-CN-B return (PR #5947) already RAN the PRC entity-resolver

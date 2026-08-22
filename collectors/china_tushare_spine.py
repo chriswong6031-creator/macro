@@ -65,6 +65,14 @@ collection.  ``BULK_HISTORICAL_BACKFILL_READY`` is deliberately false until a
 separately reviewed wave proves the range implementation against live data with
 canary, throughput, and correctness evidence.  It is a technical readiness gate
 and must never be read, restored, or re-titled as a licensing gate.
+
+Because that gate waits on canary evidence, the canary itself must be runnable
+first: ``--canary`` performs real bounded collection while the gate is still
+false, capped at ``CANARY_MAX_REQUESTS`` requests over ``CANARY_MAX_RANGE_DAYS``
+calendar days, never with ``--allow-bulk``, and refusing rather than starting the
+unproven ticker-range campaign if a documented row cap fires.  The three modes
+are therefore ``--dry-run`` (network-free plan), ``--canary`` (real, hard-bounded)
+and the default bulk/backfill path (still gated).
 """
 from __future__ import annotations
 
@@ -103,6 +111,18 @@ STATE_SCHEMA_VERSION = "cn_tushare_a_share_spine_state.v2"
 # and compliance are settled outside this repository and are never re-litigated
 # here (see the module docstring).
 BULK_HISTORICAL_BACKFILL_READY = False
+# The canary is the evidence that gate wants, so it must be runnable BEFORE the
+# gate opens -- otherwise the sequence is circular and the gate can never be
+# retired on measurement.  ``collect(..., canary=True)`` therefore performs real
+# bounded collection while ``BULK_HISTORICAL_BACKFILL_READY`` is still False,
+# under hard ceilings enforced below and with every technical control unchanged
+# (exact request/schema binding, PIT, source-row accounting, receipts, locking).
+# What the canary may NOT do is exercise the unproven scalable path: a documented
+# row cap refuses instead of starting a ticker-range campaign, and bulk/unlimited
+# budgets stay forbidden.  Opening the bulk gate remains a separate reviewed
+# change that cites canary receipts.
+CANARY_MAX_REQUESTS = 12
+CANARY_MAX_RANGE_DAYS = 5
 AUTHORITY = "context_only"
 SOURCE_NAME = "tushare_pro"
 
@@ -2489,12 +2509,20 @@ class TushareAShareSpineCollector:
         query: Callable[..., pd.DataFrame | None] | None = None,
         now: Callable[[], datetime] = _utc_now,
         max_requests: int = DEFAULT_MAX_REQUESTS,
+        canary: bool = False,
     ) -> None:
-        if not BULK_HISTORICAL_BACKFILL_READY:
+        if not BULK_HISTORICAL_BACKFILL_READY and not canary:
             raise SpineError(
                 "full-A collector is foundation-only: scalable ticker-range cap fallback "
-                "has not been code-reviewed, so live/injected collection is disabled"
+                "has not been code-reviewed, so live/injected collection is disabled "
+                "outside a bounded canary window (canary=True)"
             )
+        if canary and int(max_requests) > CANARY_MAX_REQUESTS:
+            raise SpineError(
+                f"canary window is capped at {CANARY_MAX_REQUESTS} requests; "
+                f"got max_requests={max_requests}"
+            )
+        self.canary = bool(canary)
         self.store = _validate_private_store_path(Path(store))
         self.query = query or tc.query
         self.now = now
@@ -2997,6 +3025,15 @@ class TushareAShareSpineCollector:
     ) -> dict[str, Any]:
         if endpoint not in DENSE_ENDPOINTS:
             raise SpineError(f"range campaigns are unavailable for {endpoint}")
+        if self.canary and not BULK_HISTORICAL_BACKFILL_READY:
+            # The scalable ticker-range path is exactly what the bulk gate is
+            # still withholding, so a canary must never be the thing that first
+            # exercises it live.  Refuse and let the operator shrink the window.
+            raise SpineError(
+                f"canary window hit the documented {endpoint} row cap; the ticker-range "
+                "campaign stays refused until BULK_HISTORICAL_BACKFILL_READY is promoted "
+                "in a separate reviewed change. Narrow the canary range and re-run."
+            )
         existing = self._active_range_campaign(endpoint, start, end)
         if existing is not None:
             return existing
@@ -4781,6 +4818,7 @@ def collect(
     allow_bulk: bool = False,
     refresh_reference: bool = False,
     dry_run: bool = False,
+    canary: bool = False,
     query: Callable[..., pd.DataFrame | None] | None = None,
     require_token: bool = True,
     now: Callable[[], datetime] = _utc_now,
@@ -4792,6 +4830,14 @@ def collect(
     the safety ceiling, exact request/schema binding, and
     ``BULK_HISTORICAL_BACKFILL_READY``.  ``require_token=False`` is a test seam
     for injected responses, not a bypass of those gates.
+
+    ``canary=True`` is the one execution path permitted while the bulk gate is
+    still False, because the canary is the evidence that gate is waiting for.  It
+    is hard-bounded before any store or network use -- at most
+    ``CANARY_MAX_REQUESTS`` requests over at most ``CANARY_MAX_RANGE_DAYS``
+    calendar days, never with ``allow_bulk``, and a documented row cap refuses
+    rather than starting the unproven ticker-range campaign.  It is not a bulk
+    backfill and does not promote anything.
     """
     start_date = _parse_date(start)
     end_date = _parse_date(end)
@@ -4808,6 +4854,21 @@ def collect(
             f"max_requests={max_requests} exceeds the {SAFE_MAX_REQUESTS}-call safety ceiling; "
             "pass allow_bulk=True explicitly"
         )
+    if canary:
+        # Hard canary ceilings, checked before any store or network use.  These
+        # are what make a real run safe while the bulk gate is still shut.
+        if allow_bulk:
+            raise SpineError("canary windows are never bulk runs; drop allow_bulk")
+        if max_requests <= 0 or max_requests > CANARY_MAX_REQUESTS:
+            raise SpineError(
+                f"canary max_requests must be 1..{CANARY_MAX_REQUESTS}; got {max_requests}"
+            )
+        span_days = (end_date - start_date).days + 1
+        if span_days > CANARY_MAX_RANGE_DAYS:
+            raise SpineError(
+                f"canary range is capped at {CANARY_MAX_RANGE_DAYS} calendar days; "
+                f"requested {span_days}"
+            )
     if dry_run:
         state = load_state(Path(store))
         return {
@@ -4829,16 +4890,18 @@ def collect(
             "requests_made": 0,
             "error": "TUSHARE_TOKEN is not configured; spine collection made no writes",
         }
-    if not BULK_HISTORICAL_BACKFILL_READY:
+    if not BULK_HISTORICAL_BACKFILL_READY and not canary:
         raise SpineError(
             "full-A collector is foundation-only: scalable ticker-range cap fallback "
-            "has not been code-reviewed, so collection is disabled before store/network use"
+            "has not been code-reviewed, so collection is disabled before store/network "
+            "use outside a bounded canary window (--canary / canary=True)"
         )
 
     store_path = _validate_private_store_path(Path(store))
     with spine_store_lock(store_path):
         collector = TushareAShareSpineCollector(
             store_path, query=query, now=now, max_requests=max_requests,
+            canary=canary,
         )
         capped = False
         stage = "reference"
@@ -4876,6 +4939,8 @@ def collect(
     return {
         "dry_run": False,
         "no_op": False,
+        "canary": bool(canary),
+        "bulk_historical_backfill_ready": BULK_HISTORICAL_BACKFILL_READY,
         "requests_made": collector.requests_made,
         "capped": capped,
         "stage": stage,
@@ -4906,11 +4971,21 @@ def _main() -> None:
                         help="refresh stock_basic and BSE aliases before resuming")
     parser.add_argument("--dry-run", action="store_true",
                         help="network-free/no-write plan summary")
+    parser.add_argument(
+        "--canary", action="store_true",
+        help=(
+            f"bounded real canary window permitted while the bulk readiness gate is "
+            f"still closed: at most {CANARY_MAX_REQUESTS} requests over "
+            f"{CANARY_MAX_RANGE_DAYS} calendar days, never with --allow-bulk, and a "
+            "documented row cap refuses instead of starting a range campaign"
+        ),
+    )
     args = parser.parse_args()
     result = collect(
         start=args.start, end=args.end, store=args.store, endpoints=args.endpoints,
         max_requests=args.max_requests, allow_bulk=args.allow_bulk,
         refresh_reference=args.refresh_reference, dry_run=args.dry_run,
+        canary=args.canary,
     )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 

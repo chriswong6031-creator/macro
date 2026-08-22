@@ -75,7 +75,13 @@ technical:
 - `BULK_HISTORICAL_BACKFILL_READY` — a **technical readiness** gate (live canary
   parity, sustained throughput, range/completeness correctness), never a
   licensing gate. It is `False` until a separately reviewed change cites those
-  measurements.
+  measurements. Because that gate waits on canary evidence, the canary itself is
+  **not** gated on it: `collect(canary=True)` (lane `mode=canary`) performs real
+  collection while the gate is still `False`, hard-bounded to
+  `CANARY_MAX_REQUESTS` (12) requests over `CANARY_MAX_RANGE_DAYS` (5) calendar
+  days, never with `allow_bulk`, and refusing a documented row cap rather than
+  starting the unproven ticker-range campaign. `mode=backfill` stays refused
+  until the gate is promoted.
 - token hygiene — the token is read only through `collectors.tushare_client` and
   is never accepted, persisted, hashed, or logged by the spine; artifacts are
   scanned for configured credential bytes before hashing or receipting.

@@ -366,8 +366,8 @@ per §1.1–§1.7.
   "rights-unknown pending one operator-owned vendor letter" reading
   (`DSC:TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT`, doc 405) is historical and
   must not be used to block work. Adopted per-family verdicts: `stk_surv` +
-  `fund_portfolio` UNKNOWN_RIGHTS (now read as coverage-unverified, NOT
-  letter-gated); `anns_d` NOT_NEEDED
+  `fund_portfolio` COVERAGE_UNKNOWN (no collector / tier unverified; compliance
+  settled, never letter-gated); `anns_d` NOT_NEEDED
   (CNInfo metadata already covers the P0 plane); `hm_list`/`hm_detail` =
   the actual P0 named-actor gap, UNKNOWN_RIGHTS and tier-unlock
   unconfirmed.
@@ -782,10 +782,10 @@ already consumed via Tushare — `stk_auction*`/`stk_mins`/`stk_premarket`,
 rights authority is the CN-A matrix
 (`research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md`): ¥0 cash
 outlay recommended on every P0 family now; `stk_surv` (P1-critical) and
-`fund_portfolio` UNKNOWN_RIGHTS — [TuShare licensing SUPERSEDED 2026-08-21 — `DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`: compliance is `CHAIRMAN_VERIFIED_PRIVATE / SATISFIED`, no vendor letter is required or may be requested, and the remaining blockers below are collector/coverage work only.] formerly
+`fund_portfolio` COVERAGE_UNKNOWN — [TuShare licensing SUPERSEDED 2026-08-21 — `DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`: compliance is `CHAIRMAN_VERIFIED_PRIVATE / SATISFIED`, no vendor letter is required or may be requested, and the remaining blockers below are collector/coverage work only.] formerly
 "pending one operator-owned vendor letter", now coverage-unverified only;
 `anns_d` NOT_NEEDED (CNInfo metadata already covers the P0 plane);
-`hm_list`/`hm_detail` (named actors) = the actual P0 gap, UNKNOWN_RIGHTS
+`hm_list`/`hm_detail` (named actors) = the actual P0 gap, COVERAGE_UNKNOWN
 with tier-unlock unconfirmed
 (`DSC:TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT`). Q&A history and holder
 families are already effectively owned via live NON-Tushare collectors

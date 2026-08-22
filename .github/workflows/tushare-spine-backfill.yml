@@ -6,18 +6,20 @@ name: tushare-spine-backfill
 # trigger — so it can never enter the nightly render budget. It writes only to the
 # private store below and never to `data/`, `site/`, or the repo.
 #
-# WHY THIS EXISTS WHILE THE GATE IS SHUT
-# `collect()` refuses every execute run today: `BULK_HISTORICAL_BACKFILL_READY` is
-# code-reviewed `False` in collectors/china_tushare_spine.py, so an `execute`
-# dispatch raises SpineError before any store or network use. That gate is purely
-# TECHNICAL — live canary parity, throughput, and range/completeness correctness —
-# and is never a licensing gate: TuShare compliance is CHAIRMAN_VERIFIED_PRIVATE /
-# SATISFIED and is settled outside this repository
+# THE THREE MODES AND WHICH ONE IS GATED
+# `plan` is network-free. `canary` is a REAL but hard-bounded window that
+# `collect(canary=True)` permits while `BULK_HISTORICAL_BACKFILL_READY` is still
+# `False` — at most 12 requests over at most 5 calendar days, never with
+# --allow-bulk, and a documented row cap REFUSES rather than starting the unproven
+# ticker-range campaign. `backfill` is the full range campaign and stays refused:
+# `collect()` raises SpineError before any store or network use until that gate is
+# promoted in a SEPARATE reviewed change citing canary receipts.
+# A red `backfill` run here is therefore the gate working, not a broken lane — do
+# not "fix" it by touching the gate constant.
+# The gate is purely TECHNICAL (canary parity, throughput, range/completeness
+# correctness) and is never a licensing gate: TuShare compliance is
+# CHAIRMAN_VERIFIED_PRIVATE / SATISFIED, settled outside this repository
 # (DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE).
-# THAT REFUSAL IS THE CORRECT AND EXPECTED RESULT — a red `execute` run here is the
-# gate working, not a broken lane. The lane is pre-wired so the live canary can be
-# dispatched the moment a SEPARATE, separately reviewed change opens the gate on
-# that technical evidence. Do not "fix" an execute failure by touching the gate.
 #
 # SELF-HOSTED IS LOAD-BEARING, NOT A PREFERENCE: the store root
 # ~/.local/share/macro-dashboard/china_tushare_spine/ must PERSIST across runs for the
@@ -28,13 +30,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "plan = network-free dry run; execute = real collection (refused while the gate is False)"
+        description: "plan = network-free dry run; canary = real HARD-BOUNDED window (<=12 requests, <=5 days); backfill = full range campaign (refused while BULK_HISTORICAL_BACKFILL_READY is False)"
         type: choice
-        options: [plan, execute]
+        options: [plan, canary, backfill]
         default: plan
         required: true
       max_requests:
-        description: "bounded calls this run (safety ceiling is 100)"
+        description: "bounded calls this run (safety ceiling 100; canary mode caps at 12)"
         required: false
         default: "50"
       start:
@@ -83,7 +85,10 @@ jobs:
           if [ -n "$END" ]; then
             ARGS+=(--end "$END")
           fi
-          if [ "$MODE" = "plan" ]; then
-            ARGS+=(--dry-run)
-          fi
+          case "$MODE" in
+            plan)     ARGS+=(--dry-run) ;;
+            canary)   ARGS+=(--canary) ;;
+            backfill) : ;;  # gated: collect() refuses until the bulk gate is promoted
+            *) echo "::error title=tushare-spine-mode::unknown mode '$MODE'"; exit 2 ;;
+          esac
           python -m collectors.china_tushare_spine "${ARGS[@]}"

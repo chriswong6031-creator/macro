@@ -5,12 +5,12 @@
       "sha256": "2a6f203e0a758d189c9a12d24d39bdec5f2203b2204594ee9b8770e6e04646c9"
     },
     "CN_LIMIT_R6_FINAL_ARCHITECTURE_REGISTRY_V1_2026-08-19.json": {
-      "bytes": 105855,
-      "sha256": "cc4faa55b19719f65acc308401fb4a277e09f8065d832269993a90e835f535ae"
+      "bytes": 106148,
+      "sha256": "7911de93dcd3d7ed6d49b2f9a0732d5742f9f2c3263619e42ee3605196dcb345"
     },
     "CN_LIMIT_R6_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md": {
-      "bytes": 57966,
-      "sha256": "500cde59f691034cec9af3b489978e98a3f6babc802c65ac8358fd1e8c961577"
+      "bytes": 58268,
+      "sha256": "63e6f4ae363de78a0017285ceadb4d7677cce10019f6beb3f0b1cdf95011a628"
     },
     "CN_LIMIT_R6_GROK_BOUNDED_COMMISSIONS_2026-08-19.md": {
       "bytes": 10421,
