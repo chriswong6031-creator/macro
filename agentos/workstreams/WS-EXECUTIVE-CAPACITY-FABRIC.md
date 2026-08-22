@@ -27,20 +27,29 @@ waves:
       Implement one no-write Macro vertical from existing key-pool/budget/provider state to
       `mastermind.provider_capacity.v1` and a real JSON/operator consumer, with exact unknown,
       staleness, correction and secret-redline proof. Do not modify Executive placement.
-  - id: CF2
-    title: Executive capacity-aware placement on accepted schema-v4 runtime
+  - id: CF2-F
+    title: Freeze Executive claim-time capacity evidence against landed schema v4
     status: todo
     depends_on: [CF1]
     next_action: >
-      After the separately accepted Phase 1F-C schema-v4 implementation lands, commission one
-      Mastermind wave that consumes `mastermind.provider_capacity.v1` only after Model Router
-      and Executive eligibility filters, binds capacity evidence into the existing placement
-      snapshot/claim path, and proves one real existing-provider canary without adding vendors.
+      After the separately accepted Phase 1F-C schema-v4 implementation lands, freeze and
+      independently review the smallest typed capacity-evidence extension to the existing
+      atomic JOB_CLAIMED receipt. Preserve the closed v4 placement snapshot byte-for-byte;
+      do not create another event/table or assume schema v5 by convenience.
+  - id: CF2-I
+    title: Executive capacity-aware placement using the reviewed claim receipt
+    status: todo
+    depends_on: [CF2-F]
+    next_action: >
+      Consume `mastermind.provider_capacity.v1` only after Model Router and Executive hard
+      eligibility filters, rank eligible candidates deterministically, persist the accepted
+      capacity evidence atomically with JOB_CLAIMED, and prove one existing-provider canary.
 decisions:
   - DEC:EXECUTIVE-CAPACITY-FABRIC-OWNERSHIP-AND-CONTRACT
 artifacts:
   - agentos/decisions/DEC-EXECUTIVE-CAPACITY-FABRIC-OWNERSHIP-AND-CONTRACT.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_ARCHITECTURE_2026-08-22.md
+  - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_PLACEMENT_AMENDMENT_2026-08-22.md
 landmines:
   - "Macro `shared-ai-provider-control` already owns provider availability, auth pools, cooling and quota state; do not create ProviderAccount/QuotaHorizon truth tables in Executive OS."
   - "`usage_snapshot()` display zeros are not proof of zero usage; no source observation means unknown unless a reviewed estimator with a real budget is configured."
@@ -50,6 +59,8 @@ landmines:
   - "Model Router suitability and provider capacity are separate filters. Provider health/cost may rank eligible workers but may not redefine model quality, authority or required independence."
   - "A provider 429/auth/transport failure after an Attempt begins does not authorize blind retry or cross-provider failover; reconcile the Executive Attempt/effect state first."
   - "Phase 1F-C owns schema v4. Capacity Fabric must not introduce another v4 migration or temporary v3 placement schema."
+  - "Phase 1F-C freezes placement_snapshot_json to exactly worker_id/quota_class/provider/account_label/snapshot time. Capacity Fabric must not add quota, host, policy or reason fields to that object or change its digest definition."
+  - "Capacity decision evidence belongs in the existing atomic claim receipt only after a fresh reviewed CF2-F source-law freeze; if that seam proves insufficient, return to Sol rather than inventing a second event/ledger or schema v5."
   - "Subscription headroom should reduce marginal API spend for routine eligible work, but policy may reserve scarce frontier capacity for critical/interactive work."
   - "Never expose auth tokens, cookies, API keys, raw auth files, provider-home contents, email/account PII, or secret-ref values in the capacity projection."
 do_not_redo:
@@ -58,13 +69,14 @@ do_not_redo:
   - "Do not import floating Macro provider internals directly into Mastermind as the cross-repo contract; publish/consume a versioned projection instead."
   - "Do not put live quota/cooling state into Model Router policy files."
   - "Do not use LLM judgment to select a worker, waive an independence requirement, or interpret unknown quota as capacity."
+  - "Do not widen Phase 1F-C placement_snapshot_json for Capacity Fabric."
   - "Do not add Z.AI, Alibaba, Claude Code, Grok, Cursor, OpenRouter or local-provider adapters in CF1; prove the contract first on existing Codex/Claude/DeepSeek sources."
   - "Do not widen Capacity Fabric into Wake, Slack dispatch, Control Room P1, merge/deploy authority or capital/trading authority."
 next_action: >
   After F0 is accepted on Macro main, commission CF1 only: a deterministic, secret-free,
   no-write `mastermind.provider_capacity.v1` producer over existing provider-control state with
-  a real machine/operator consumer and exact-head proof. Keep Executive placement and all new
-  provider verticals held.
+  a real machine/operator consumer and exact-head proof. Keep CF2-F/CF2-I and all new provider
+  verticals held.
 ---
 
 ## Capability state
@@ -79,9 +91,9 @@ A real Sol mission is decomposed through accepted Executive/COO law; child Jobs 
 heterogeneous subscription/API/local workers according to suitability, independence and fresh
 capacity; one provider can become cooling/exhausted without duplicate execution; a different
 eligible provider can take later safe work; independent review/repair still follows Executive
-lineage; placement receipts explain why each worker was selected; the Control Room can later
-project workforce/capacity truth without owning it; and the Chairman does not manually choose
-providers, watch quotas or carry messages between sessions.
+lineage; claim receipts explain why each worker was selected while the closed placement identity
+remains stable; the Control Room can later project workforce/capacity truth without owning it;
+and the Chairman does not manually choose providers, watch quotas or carry messages between sessions.
 
 ## Learning boundary
 
