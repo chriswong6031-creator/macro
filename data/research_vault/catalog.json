@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T06:19:52.663081+00:00",
-  "count": 1598,
+  "generated_at": "2026-08-22T07:22:03.027825+00:00",
+  "count": 1601,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -207,6 +207,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-orgwv3bvh2x-549fa5",
+      "title": "Prime Services Weekly Report 8.21.26",
+      "institution": "Prime",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T03:14:23Z",
+      "summary_points": [
+        "**Tech De-Grossing Extremes**: Info Tech most net sold globally (largest % de-grossing in 2 years), driven by long sales (EM Asia/North America); Prime Book underweight (-6.3% vs MSCI, 49th percentile).",
+        "**Energy Net Buying Surge**: Energy most $ net bought globally (largest % net buying in ~4 years), driven by long buys/short covers; Prime Book over-weight (+0.8% vs MSCI, highest since July '24).",
+        "**Regional Flow Divergence**: EM exhibits largest long sales (-2.12 SDs) and is Overweight (-0.2% MSCI return), while North America Underweight (-2.0% return) with significant short sales (-0.89 SDs)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-cu8qsfg2hyv-162c59",
       "title": "US Equities Weekly Rundown 8 21 26",
       "institution": "Prime",
@@ -223,6 +242,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8ikujb62egv-fdfbd7",
+      "title": "PNC Economics Research Claims 20 August 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-22T02:33:32Z",
+      "summary_points": [
+        "**Claims Beat Forecast**: Initial claims fell to 206,000 (below forecast), with four-week moving average at 204,000, signaling stronger labor market resilience.",
+        "**4-Week Average Decline**: Four-week average of initial claims dropped by ~20,000 (week ending Aug 15), indicating potential rebound in August job gains after July’s decline.",
+        "**Unemployment Rate Stability**: Insured unemployment rate unchanged at 1.2% for 14 consecutive weeks, down YoY but reflecting persistent labor market tightness.",
+        "**August Job Gains Outlook**: Declining four-week average claims suggest August job gains may rebound following July’s minor dip, supporting near-term economic momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
@@ -298,6 +337,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xvmp5cmw0zc-52ab6f",
+      "title": "GM Market Rhythm",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-22T02:21:34Z",
+      "summary_points": [
+        "**S&P 500 Key Levels**: Near-breakout at 7,620/10 (4 Aug gap) with 50dma support at 7,530; rebound to confirm resistance as support or consolidate.",
+        "**OMX Stockholm Uptrend**: Clean breakout confirmed in August; critical support at 3,255–3,200 for sustained bullish momentum.",
+        "**200dma as Universal Support**: Acts as key support across indices (S&P, HSI) after reclamation, sustaining advances despite longer downtrends.",
+        "**GBPUSD Resistance Thresholds**: Target 1.3600/1.3630 achieved; upside capped by daily channel (1.3630) and weekly resistance (1.3650).",
+        "**XAGUSD Momentum Target**: Daily break above 68.74 (100dma) confirms momentum, targeting 70.90–71.00 as next resistance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
