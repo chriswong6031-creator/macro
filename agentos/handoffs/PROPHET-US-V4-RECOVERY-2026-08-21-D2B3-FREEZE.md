@@ -64,7 +64,15 @@ changed:
       materialize entry deleted; probe_theme_exposure_axes + build_theme_graph
       counts added); R-A6 retired-remint check emits a receipt, never raises;
       R-A7 §0 gate reads the sidecar's own newest us generation (expect
-      1210/25/1/1 = 1,237 rows pre-correction); R-A8 minors.
+      1210/25/1/1 = 1,237 rows pre-correction); R-A8 minors. Re-freeze review
+      verdict RE-FREEZE-PASS (all blockers/majors CLOSED, every frozen number
+      re-measured by direct execution; collision blast radius = exactly the
+      one IBIT node); its two minor residuals adopted as AMENDMENT §2:
+      R-A9 ratified_at fail-closed in the guard; R-A10 symbol maps stay total
+      (overlay applies at population selection). The GOLD-bearing sidecar
+      generations are attributed (corroborated by the reviewer's timing
+      signature) to session-executed direct derive_rows wave rebakes reading
+      committed nodes.parquet — no repo caller exists by design.
 verified:
   - claim: >
       Node/edge/sidecar inventory for GOLD/B/ABX/IBIT as stated in contract §1

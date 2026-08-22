@@ -419,3 +419,27 @@ edges 8,294 / edges_latest_belief 8,292 and STABLE (the bake computes no row for
 edge afterward). §1's derive_rows filter cite corrected to identity_resolution.py:536-537. §0's
 "last written by the D2B2 merge" refers to the last COMMIT touching the sidecar; the 08-21 03:47Z
 natural bake ran and appended zero edge rows (`_meta.json rows_appended.edges: 0`).
+
+---
+
+# AMENDMENT §2 (2026-08-21, re-freeze review verdict RE-FREEZE-PASS; two minor residuals adopted)
+
+**R-A9 (closes reviewer residual N1 — ratified_at is fail-CLOSED).** `scripts/
+check_theme_graph_contracts.py` REFUSES any `breaks:` row lacking a parseable ISO-date
+`ratified_at` (fail-closed), and a lifecycle row citing a break row with no `ratified_at` is
+itself a breach. Selftest fixture: a break row with `ratified_at` absent.
+
+**R-A10 (closes reviewer residual N2 — symbol maps stay total).** `probe_theme_exposure_axes.
+node_symbols()` keeps the RAW total id→symbol map (a lookup must never lose a key — the
+`dead_members` diagnostic at :831 exists precisely to describe retired rows); the current-view
+overlay is applied where the probe SELECTS a population, never where it resolves a symbol.
+
+**Attribution note (closes the reviewer's remaining gap).** No repo caller passes committed store
+rows to `derive_rows` because the GOLD-bearing sidecar generations were produced by
+session-executed one-shot direct invocations during the D2A/R1/D2B1/D2B2 waves (the documented
+house rebake pattern — see the D2B2 handoff's "direct derive_rows()+write_identity_resolution()
+(never the full pipeline)" record), which read the committed nodes.parquet and therefore included
+store fossils. The reviewer's timing signature (each GOLD-bearing generation's
+`master_generated_at` seconds before its own `computed_at`; natural generations consuming masters
+hours older) is exactly the fingerprint of those same-invocation rebakes. This is corroborated
+attribution from the commissioning seat's own wave records, not conjecture.
