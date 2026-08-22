@@ -1,0 +1,83 @@
+{
+  "schema": "mastermind.dislocation_p0.a1r_firewall_and_access_receipt.v1",
+  "status": "PASS",
+  "source_acquisition": {
+    "fts": {
+      "hosts": [
+        "efts.sec.gov"
+      ],
+      "access_event_count": 332,
+      "banned_reads": [],
+      "receipt_file": "A1R_QUERY_COMPLETION_AND_POOL_RECEIPT.json",
+      "receipt_file_sha256": "b5b7c101c555f14115e035e78c5c5dd0563b33203ed0be7420c77b0ea6756414"
+    },
+    "canonical_owner": {
+      "hosts": [
+        "data.sec.gov",
+        "www.sec.gov"
+      ],
+      "duplicate_p0_receipt_plane": false,
+      "receipt_file": "A1R_CANONICAL_SOURCE_PACKET_MANIFEST.json",
+      "receipt_file_sha256": "e4f92b48abc9b2c5dbd07e366c82189eca314a1bff3532841f2ea7f5bcc5ac25",
+      "manifest_sha256": "a82394fdedf85de1104c602adab21ccd3532e769c245d796bdbd7c597d2e411c"
+    },
+    "non_sec_source_hosts": []
+  },
+  "physical_workspace_firewall": {
+    "inspected_workspaces": [
+      "work/source_completion",
+      "work/owner_workspace",
+      "work/proposal_workspace",
+      "work/audit_workspace"
+    ],
+    "forbidden_directory_names": [
+      "price",
+      "prices",
+      "market",
+      "markets",
+      "outcome",
+      "outcomes",
+      "ranking",
+      "sizing",
+      "execution"
+    ],
+    "forbidden_directories_present": [],
+    "market_or_outcome_mounts_present": [],
+    "model_packet_index_sha256": "beee0cfacc9891742c361d3e9c1e65f719695561e42b58c3bd7e8ca6b2c204db",
+    "audit_input_bundle_sha256": "b6f8fd0cc8a82e14a62479f0b157906d33a769eb743e47715b2a097199866416"
+  },
+  "model_boundaries": {
+    "grok": {
+      "provider": "xAI",
+      "model": "grok-4.6",
+      "source_input": "twenty canonical packet bytes plus packet-local evidence catalogs",
+      "web_search_enabled": false,
+      "subagents_enabled": false,
+      "prices_or_outcomes_supplied": false,
+      "proposal_bundle_sha256": "bf5f914a14a41b332ff0f0d914b4a8e2cad6d74843b47fc5f3df9a0837176bff",
+      "provider_control_event": "An Adobe MCP auto-initialization attempt returned HTTP 403 before the model pass; it supplied no source and is not counted as source acquisition."
+    },
+    "opus": {
+      "provider": "Anthropic",
+      "bundle_model": "opus",
+      "observed_ui_model": "Opus 5 Max",
+      "channel": "authenticated Claude web chat",
+      "input": "one self-contained public-SEC audit bundle",
+      "github_or_repository_connection_required": false,
+      "github_or_repository_access_assumed": false,
+      "web_search_enabled": false,
+      "outside_sources_used": false,
+      "prices_or_outcomes_supplied": false,
+      "attachment_sandbox_file_commands_used": true,
+      "audit_bundle_sha256": "b8173cf6a19486a996659d73e1f9d47dfe41cbb13ce855453dd6befb91fa79ef",
+      "local_replay_status": "AUDIT_VALID"
+    }
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate_signal": false,
+    "can_escalate": false
+  }
+}

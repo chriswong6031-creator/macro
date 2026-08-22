@@ -1,0 +1,1211 @@
+{
+  "schema": "mastermind.dislocation_p0.a1r_grok_proposals.v1",
+  "source_manifest_sha256": "a82394fdedf85de1104c602adab21ccd3532e769c245d796bdbd7c597d2e411c",
+  "proposer": {
+    "provider": "xAI",
+    "model": "grok-4.6",
+    "role": "GROK_SOURCE_ONLY",
+    "fresh_source_only": true
+  },
+  "proposals": [
+    {
+      "packet_id": "p0cand_000041da5886797dd54c82531b3071594cfd105c77ccd8f9ba16bae3c6bd939f",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "quarterly_cash_dividend_declaration",
+          "evidence": {
+            "document_sha256": "2f86e4a0ccec61c5884fd149417a387123579aa45183805c6e18742abde13cb1",
+            "end": 12589,
+            "excerpt": "On March 3, 2017, Nutraceutical International Corporation (&#8220;Nutraceutical&#8221;) announced that its Board of Directors has declared a quarterly cash dividend on Nutraceutical's common stock.  The declared quarterly dividend of $0.125 per share is payable on April 5, 2017 to stockholders of record on March 20, 2017.  The press release reporting this announcement is attached to this Form 8-K as Exhibit 99.1 and is incorporated by reference herein.",
+            "start": 12133
+          }
+        },
+        "affected_scope": {
+          "value": "Nutraceutical International Corporation common stock and stockholders of record",
+          "evidence": {
+            "document_sha256": "2f86e4a0ccec61c5884fd149417a387123579aa45183805c6e18742abde13cb1",
+            "end": 12589,
+            "excerpt": "On March 3, 2017, Nutraceutical International Corporation (&#8220;Nutraceutical&#8221;) announced that its Board of Directors has declared a quarterly cash dividend on Nutraceutical's common stock.  The declared quarterly dividend of $0.125 per share is payable on April 5, 2017 to stockholders of record on March 20, 2017.  The press release reporting this announcement is attached to this Form 8-K as Exhibit 99.1 and is incorporated by reference herein.",
+            "start": 12133
+          }
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "value": "finite scheduled dividend: payable April 5, 2017 to stockholders of record on March 20, 2017",
+          "evidence": {
+            "document_sha256": "2f86e4a0ccec61c5884fd149417a387123579aa45183805c6e18742abde13cb1",
+            "end": 12589,
+            "excerpt": "On March 3, 2017, Nutraceutical International Corporation (&#8220;Nutraceutical&#8221;) announced that its Board of Directors has declared a quarterly cash dividend on Nutraceutical's common stock.  The declared quarterly dividend of $0.125 per share is payable on April 5, 2017 to stockholders of record on March 20, 2017.  The press release reporting this announcement is attached to this Form 8-K as Exhibit 99.1 and is incorporated by reference herein.",
+            "start": 12133
+          }
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "value": "quarterly cash dividend of $0.125 per share",
+          "evidence": {
+            "document_sha256": "2f86e4a0ccec61c5884fd149417a387123579aa45183805c6e18742abde13cb1",
+            "end": 12589,
+            "excerpt": "On March 3, 2017, Nutraceutical International Corporation (&#8220;Nutraceutical&#8221;) announced that its Board of Directors has declared a quarterly cash dividend on Nutraceutical's common stock.  The declared quarterly dividend of $0.125 per share is payable on April 5, 2017 to stockholders of record on March 20, 2017.  The press release reporting this announcement is attached to this Form 8-K as Exhibit 99.1 and is incorporated by reference herein.",
+            "start": 12133
+          }
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: origin disclosure of this quarterly dividend declaration",
+          "evidence": {
+            "document_sha256": "2f86e4a0ccec61c5884fd149417a387123579aa45183805c6e18742abde13cb1",
+            "end": 12589,
+            "excerpt": "On March 3, 2017, Nutraceutical International Corporation (&#8220;Nutraceutical&#8221;) announced that its Board of Directors has declared a quarterly cash dividend on Nutraceutical's common stock.  The declared quarterly dividend of $0.125 per share is payable on April 5, 2017 to stockholders of record on March 20, 2017.  The press release reporting this announcement is attached to this Form 8-K as Exhibit 99.1 and is incorporated by reference herein.",
+            "start": 12133
+          }
+        }
+      },
+      "notes": "Form 8-K Item 8.01 announces a Board-declared quarterly cash dividend on common stock; the in-packet body contains no operational distress, impairment, or recoverability language."
+    },
+    {
+      "packet_id": "p0cand_00007f6bdb6db0091de10d0cf30ded66aeef5d82314d2d10f30e4aec76686349",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "interim_mda_and_financial_statements_furnishing",
+          "evidence": {
+            "document_sha256": "c16f655de9943ad2ec629bd368e958571be108a1d5fdb10382b99fee121caaf6",
+            "end": 9526,
+            "excerpt": "Management&#8217;s Discussion and Analysis for the period ended September 30, 2016.",
+            "start": 9443
+          }
+        },
+        "affected_scope": {
+          "value": "Precision Drilling Corporation",
+          "evidence": {
+            "document_sha256": "c16f655de9943ad2ec629bd368e958571be108a1d5fdb10382b99fee121caaf6",
+            "end": 2276,
+            "excerpt": "Precision Drilling Corporation",
+            "start": 2246
+          }
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: periodic Form 6-K furnishing of interim MD&A and financial statements for the period ended September 30, 2016",
+          "evidence": {
+            "document_sha256": "c16f655de9943ad2ec629bd368e958571be108a1d5fdb10382b99fee121caaf6",
+            "end": 9526,
+            "excerpt": "Management&#8217;s Discussion and Analysis for the period ended September 30, 2016.",
+            "start": 9443
+          }
+        }
+      },
+      "notes": "Form 6-K cover only. Exhibits identify MD&A and consolidated financial statements for the period ended September 30, 2016, but those exhibits are not in this packet, so results, adverse content, and quantities cannot be read from source here."
+    },
+    {
+      "packet_id": "p0cand_0000ab0867dc702fb7fb21d3729de1cb2813d9d299817397448fbb5a5fc98fa9",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "supplemental_risk_factor_update",
+          "evidence": {
+            "document_sha256": "a5f8a6e95d29afaa1280425860200b839cd2d86ca499737ddae5e4b629efdcda",
+            "end": 20843,
+            "excerpt": "CASI\nPharmaceuticals, Inc. is supplementing the risk factors set forth in Item 1A of its Annual Report on Form 10-K for the fiscal year\nended December 31, 2019 and its Quarterly Report on Form 10-Q for the fiscal quarter March 31, 2020, as well as any amendment or\nupdate to the risk factors reflected in subsequent filings with the SEC, including the supplemental risk factors included in Exhibit\n99.1 to the Current Report on Form 8-K filed on July 21, 2020. The risk factors set forth in the attached Exhibit 99.1",
+            "start": 20327
+          }
+        },
+        "affected_scope": {
+          "value": "CASI Pharmaceuticals, Inc.",
+          "evidence": {
+            "document_sha256": "a5f8a6e95d29afaa1280425860200b839cd2d86ca499737ddae5e4b629efdcda",
+            "end": 5501,
+            "excerpt": "CASI PHARMACEUTICALS, INC.",
+            "start": 5475
+          }
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNKNOWN"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "later pulse: supplements previously disclosed Item 1A risk factors, including the Exhibit 99.1 supplemental risk factors in the Form 8-K filed July 21, 2020",
+          "evidence": {
+            "document_sha256": "a5f8a6e95d29afaa1280425860200b839cd2d86ca499737ddae5e4b629efdcda",
+            "end": 20843,
+            "excerpt": "CASI\nPharmaceuticals, Inc. is supplementing the risk factors set forth in Item 1A of its Annual Report on Form 10-K for the fiscal year\nended December 31, 2019 and its Quarterly Report on Form 10-Q for the fiscal quarter March 31, 2020, as well as any amendment or\nupdate to the risk factors reflected in subsequent filings with the SEC, including the supplemental risk factors included in Exhibit\n99.1 to the Current Report on Form 8-K filed on July 21, 2020. The risk factors set forth in the attached Exhibit 99.1",
+            "start": 20327
+          }
+        }
+      },
+      "notes": "Item 8.01 states the company is supplementing existing 10-K/10-Q risk factors and a prior July 21, 2020 8-K supplement. The actual Exhibit 99.1 risk-factor text is not in this packet, so the substance, duration, and any quantified or structural effects are unavailable."
+    },
+    {
+      "packet_id": "p0cand_0000fecac1deca3b7707b1adcb610dfdc7acfc3898ee09aab0541c2bec40e2a1",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "underwritten_common_stock_offering",
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 20222,
+            "excerpt": "On October&#160;21, 2024, Aspen Aerogels, Inc. (the &#8220;Company&#8221;) entered into an underwriting agreement (the &#8220;Underwriting Agreement&#8221;) with Goldman Sachs&#160;&amp; Co. LLC and Morgan Stanley&#160;&amp; Co. LLC (collectively, the &#8220;Underwriters&#8221;), pursuant to which the Company agreed to issue and sell an aggregate of 4,250,000 shares of the Company&#8217;s common stock, $0.00001 par value per share, to the Underwriters (the &#8220;Offering&#8221;). The price to the public in the Offering was $20.00 per share. Under the terms of the Underwriting Agreement, the Company granted the Underwriters a",
+            "start": 19589
+          }
+        },
+        "affected_scope": {
+          "value": "Aspen Aerogels, Inc. common stock; offering to Goldman Sachs & Co. LLC and Morgan Stanley & Co. LLC as underwriters",
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 20222,
+            "excerpt": "On October&#160;21, 2024, Aspen Aerogels, Inc. (the &#8220;Company&#8221;) entered into an underwriting agreement (the &#8220;Underwriting Agreement&#8221;) with Goldman Sachs&#160;&amp; Co. LLC and Morgan Stanley&#160;&amp; Co. LLC (collectively, the &#8220;Underwriters&#8221;), pursuant to which the Company agreed to issue and sell an aggregate of 4,250,000 shares of the Company&#8217;s common stock, $0.00001 par value per share, to the Underwriters (the &#8220;Offering&#8221;). The price to the public in the Offering was $20.00 per share. Under the terms of the Underwriting Agreement, the Company granted the Underwriters a",
+            "start": 19589
+          }
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "value": "expected closing October 23, 2024, subject to customary closing conditions",
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 21931,
+            "excerpt": "The Company expects to close the Offering on October&#160;23, 2024, subject to the satisfaction of customary closing conditions.",
+            "start": 21803
+          }
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "value": "expected gross proceeds of $85 million before discounts, commissions, and expenses, excluding the 637,500-share overallotment option",
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 20656,
+            "excerpt": "option to purchase up to 637,500 additional shares of common stock of the Company. The gross proceeds to the Company from the Offering are expected to be $85 million, before deducting underwriting discounts and commissions and estimated offering expenses payable by the Company, and excluding any exercise of the Underwriters&#8217; option to purchase additional shares of common stock.",
+            "start": 20270
+          }
+        },
+        "mitigation_resolution_transition": {
+          "value": "net proceeds intended for working capital, capital expenditures, and general corporate purposes",
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 20886,
+            "excerpt": "The Company intends to use the net proceeds of the Offering for working capital, capital expenditures and general corporate purposes.",
+            "start": 20753
+          }
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: origin disclosure of this priced underwritten common-stock offering",
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 20222,
+            "excerpt": "On October&#160;21, 2024, Aspen Aerogels, Inc. (the &#8220;Company&#8221;) entered into an underwriting agreement (the &#8220;Underwriting Agreement&#8221;) with Goldman Sachs&#160;&amp; Co. LLC and Morgan Stanley&#160;&amp; Co. LLC (collectively, the &#8220;Underwriters&#8221;), pursuant to which the Company agreed to issue and sell an aggregate of 4,250,000 shares of the Company&#8217;s common stock, $0.00001 par value per share, to the Underwriters (the &#8220;Offering&#8221;). The price to the public in the Offering was $20.00 per share. Under the terms of the Underwriting Agreement, the Company granted the Underwriters a",
+            "start": 19589
+          }
+        }
+      },
+      "notes": "Item 1.01 prices a registered primary common-stock offering (4,250,000 shares at $20.00; $85 million expected gross proceeds; 637,500-share option). The in-packet text is a capital raise, not an operational or impairment event."
+    },
+    {
+      "packet_id": "p0cand_0001101cefa880400130eb9763ee664b596ae80b49ce4cd1a0ed355c4fe0c22f",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "common_stock_repurchase_agreement",
+          "evidence": {
+            "document_sha256": "411ffd559a33ad5a6f0884d1f31a42751bbc507e900c3dfc79c302daec644bf2",
+            "end": 21511,
+            "excerpt": "On December 14, 2023, Corebridge Financial, Inc. (the &#8220;Company&#8221;) entered into a Share Repurchase Agreement (the &#8220;Share Repurchase Agreement&#8221;) with American International Group, Inc. (&#8220;AIG&#8221;) and an affiliate of Blackstone Inc. (&#8220;Blackstone&#8221;). The per share purchase price will be $21.75, the closing price of the Company&#8217;s common stock on the New York Stock Exchange on December 14, 2023. Pursuant to the Share Repurchase Agreement, the Company is expected to, subject to customary closing conditions, complete the repurchase of shares of its common stock for an aggregate purchase price of approximately $150 million on December 18, 2023.",
+            "start": 20819
+          }
+        },
+        "affected_scope": {
+          "value": "Corebridge Financial, Inc. common stock; counterparties American International Group, Inc. and an affiliate of Blackstone Inc.",
+          "evidence": {
+            "document_sha256": "411ffd559a33ad5a6f0884d1f31a42751bbc507e900c3dfc79c302daec644bf2",
+            "end": 21511,
+            "excerpt": "On December 14, 2023, Corebridge Financial, Inc. (the &#8220;Company&#8221;) entered into a Share Repurchase Agreement (the &#8220;Share Repurchase Agreement&#8221;) with American International Group, Inc. (&#8220;AIG&#8221;) and an affiliate of Blackstone Inc. (&#8220;Blackstone&#8221;). The per share purchase price will be $21.75, the closing price of the Company&#8217;s common stock on the New York Stock Exchange on December 14, 2023. Pursuant to the Share Repurchase Agreement, the Company is expected to, subject to customary closing conditions, complete the repurchase of shares of its common stock for an aggregate purchase price of approximately $150 million on December 18, 2023.",
+            "start": 20819
+          }
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "value": "repurchase expected to complete on December 18, 2023, subject to customary closing conditions",
+          "evidence": {
+            "document_sha256": "411ffd559a33ad5a6f0884d1f31a42751bbc507e900c3dfc79c302daec644bf2",
+            "end": 21511,
+            "excerpt": "On December 14, 2023, Corebridge Financial, Inc. (the &#8220;Company&#8221;) entered into a Share Repurchase Agreement (the &#8220;Share Repurchase Agreement&#8221;) with American International Group, Inc. (&#8220;AIG&#8221;) and an affiliate of Blackstone Inc. (&#8220;Blackstone&#8221;). The per share purchase price will be $21.75, the closing price of the Company&#8217;s common stock on the New York Stock Exchange on December 14, 2023. Pursuant to the Share Repurchase Agreement, the Company is expected to, subject to customary closing conditions, complete the repurchase of shares of its common stock for an aggregate purchase price of approximately $150 million on December 18, 2023.",
+            "start": 20819
+          }
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "value": "per-share purchase price $21.75; aggregate purchase price approximately $150 million",
+          "evidence": {
+            "document_sha256": "411ffd559a33ad5a6f0884d1f31a42751bbc507e900c3dfc79c302daec644bf2",
+            "end": 21511,
+            "excerpt": "On December 14, 2023, Corebridge Financial, Inc. (the &#8220;Company&#8221;) entered into a Share Repurchase Agreement (the &#8220;Share Repurchase Agreement&#8221;) with American International Group, Inc. (&#8220;AIG&#8221;) and an affiliate of Blackstone Inc. (&#8220;Blackstone&#8221;). The per share purchase price will be $21.75, the closing price of the Company&#8217;s common stock on the New York Stock Exchange on December 14, 2023. Pursuant to the Share Repurchase Agreement, the Company is expected to, subject to customary closing conditions, complete the repurchase of shares of its common stock for an aggregate purchase price of approximately $150 million on December 18, 2023.",
+            "start": 20819
+          }
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: origin disclosure of this share-repurchase agreement",
+          "evidence": {
+            "document_sha256": "411ffd559a33ad5a6f0884d1f31a42751bbc507e900c3dfc79c302daec644bf2",
+            "end": 21511,
+            "excerpt": "On December 14, 2023, Corebridge Financial, Inc. (the &#8220;Company&#8221;) entered into a Share Repurchase Agreement (the &#8220;Share Repurchase Agreement&#8221;) with American International Group, Inc. (&#8220;AIG&#8221;) and an affiliate of Blackstone Inc. (&#8220;Blackstone&#8221;). The per share purchase price will be $21.75, the closing price of the Company&#8217;s common stock on the New York Stock Exchange on December 14, 2023. Pursuant to the Share Repurchase Agreement, the Company is expected to, subject to customary closing conditions, complete the repurchase of shares of its common stock for an aggregate purchase price of approximately $150 million on December 18, 2023.",
+            "start": 20819
+          }
+        }
+      },
+      "notes": "Item 1.01 is a bilateral share repurchase from AIG and a Blackstone affiliate at the December 14, 2023 NYSE close, expected to settle December 18, 2023. No adverse operating, impairment, or recoverability facts are stated in-packet."
+    },
+    {
+      "packet_id": "p0cand_000348339a45d1f1ffff77330ec52b06b7e4cdfd4a0b5e35e3d2ea4a4594b77b",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "research_collaboration_and_license_agreement",
+          "evidence": {
+            "document_sha256": "9bf959fe7101114a7abdd40ac2d3b6e2bf219fb2ca7065f9826551ebf7ecc22f",
+            "end": 29867,
+            "excerpt": "On\nSeptember 1, 2023 (the &#8220;Effective Date&#8221;), Palisade Bio, Inc. (the &#8220;Company&#8221;) entered into a Research Collaboration\nand License Agreement (the &#8220;License Agreement&#8221;) with Giiant Pharma Inc. (&#8220;Giiant&#8221;) whereby the Company is receiving\nan exclusive (even as the Giiant and its affiliates), worldwide license (with the right to sublicense in multiple\ntiers) to develop, manufacture, and commercialize substantially all of the assets of Giiant, including: (i) the GT-2018 compound\nand (ii) the GT-1908 compound and the associated intellectual property around each of the foregoing. (the &#8220;Licensed Assets&#8221;).",
+            "start": 29205
+          }
+        },
+        "affected_scope": {
+          "value": "Palisade Bio, Inc. exclusive worldwide license to Giiant Pharma Inc. assets including GT-2018 and GT-1908 and associated intellectual property",
+          "evidence": {
+            "document_sha256": "9bf959fe7101114a7abdd40ac2d3b6e2bf219fb2ca7065f9826551ebf7ecc22f",
+            "end": 29867,
+            "excerpt": "On\nSeptember 1, 2023 (the &#8220;Effective Date&#8221;), Palisade Bio, Inc. (the &#8220;Company&#8221;) entered into a Research Collaboration\nand License Agreement (the &#8220;License Agreement&#8221;) with Giiant Pharma Inc. (&#8220;Giiant&#8221;) whereby the Company is receiving\nan exclusive (even as the Giiant and its affiliates), worldwide license (with the right to sublicense in multiple\ntiers) to develop, manufacture, and commercialize substantially all of the assets of Giiant, including: (i) the GT-2018 compound\nand (ii) the GT-1908 compound and the associated intellectual property around each of the foregoing. (the &#8220;Licensed Assets&#8221;).",
+            "start": 29205
+          }
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "value": "Proof of Concept must be achieved within eighteen months of the September 1, 2023 effective date, subject to extension; company may terminate for convenience, PoC failure, or uncured Giiant material breach",
+          "evidence": {
+            "document_sha256": "9bf959fe7101114a7abdd40ac2d3b6e2bf219fb2ca7065f9826551ebf7ecc22f",
+            "end": 37456,
+            "excerpt": "The\nCompany may unilaterally terminate the License for: (i) convenience (&#8220;Company Convenience Termination&#8221;), (ii) the failure\nto achieve Proof of Concept within eighteen (18) months, subject to extension upon the occurrence of certain event, of the Effective\nDate (&#8220;Proof of Concept Termination&#8221;), or (iii) a material breach by Giiant, that is not cured within ninety (90) days of\nwritten notice (&#8220;Giiant Material Breach Termination&#8221;).",
+            "start": 36985
+          }
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "state": "RIGHTS_BLOCKED"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: origin disclosure of the September 1, 2023 Research Collaboration and License Agreement",
+          "evidence": {
+            "document_sha256": "9bf959fe7101114a7abdd40ac2d3b6e2bf219fb2ca7065f9826551ebf7ecc22f",
+            "end": 29867,
+            "excerpt": "On\nSeptember 1, 2023 (the &#8220;Effective Date&#8221;), Palisade Bio, Inc. (the &#8220;Company&#8221;) entered into a Research Collaboration\nand License Agreement (the &#8220;License Agreement&#8221;) with Giiant Pharma Inc. (&#8220;Giiant&#8221;) whereby the Company is receiving\nan exclusive (even as the Giiant and its affiliates), worldwide license (with the right to sublicense in multiple\ntiers) to develop, manufacture, and commercialize substantially all of the assets of Giiant, including: (i) the GT-2018 compound\nand (ii) the GT-1908 compound and the associated intellectual property around each of the foregoing. (the &#8220;Licensed Assets&#8221;).",
+            "start": 29205
+          }
+        }
+      },
+      "notes": "Item 1.01/2.01 describes an exclusive worldwide research collaboration and license of Giiant compounds GT-2018 and GT-1908. Milestone/royalty economics are referenced but not quantified in the 8-K body, and exhibit portions are omitted as [***], so consideration amounts are rights-blocked. Eighteen-month Proof of Concept is the stated development-duration gate."
+    },
+    {
+      "packet_id": "p0cand_0003ae31d338993bd31458a79978696489adc45f115e114a5fea78f8b5fb3514",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "covid19_operational_disruption_and_reporting_delay",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 12712,
+            "excerpt": "Nova LifeStyle, Inc. (the &#8220;Company&#8221; or &#8220;NVFY&#8221;) is filing this Current Report on Form 8-K in compliance with and in reliance upon the SEC Order issued pursuant to Section 36 of the Securities Exchange Act of 1934, as amended, granting Exemptions from Specified Provisions of the Exchange Act and Certain Rules thereunder (SEC Release No. 34-88465 on March 25, 2020) (the &#8220;Relief Order&#8221;). Set forth below are the Company&#8217;s (i) operational and 2019 audit related updates, (ii) the reasons for the delays in the completion of its 2019 audit and filing of the Annual Report on Form 10-K for the fiscal year ended December 31, 2019 (the &#8220;Annual ",
+            "start": 12025
+          }
+        },
+        "affected_scope": {
+          "value": "Nova LifeStyle, Inc. operations in Los Angeles, Hong Kong, Macao, and Kuala Lumpur",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 13990,
+            "excerpt": "The Company primarily conducts its business operations in four cities: Los Angeles, California, Hong Kong, Macao, China and Kuala Lumpur, Malaysia. In response to the evolving dynamics related to the COVID-19 outbreak, the Company is following the guidelines of local authorities as it prioritizes the health and safety of its employees, contractors, suppliers and retail partners. Our Offices located in Hong Kong and Macau were closed for the Lunar New Year Holiday Break, and remained closed as a result of the outbreak until late February. Both of those Offices are now open. The Company&#8217;s two showrooms and warehouse in Kuala Lumpur have been closed since March 18, 2020. The Los Angeles ",
+            "start": 13291
+          }
+        },
+        "adverse_information_state": {
+          "value": "COVID-19 expected to have a material adverse effect on product demand and a material adverse impact on business, operating results, and financial condition",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 25517,
+            "excerpt": "Company expects that the impact of the COVID-19 outbreak on the United States and world economies will have a material adverse affect on the demand for its products. Any and all of the foregoing could have a material adverse impact on its business, operating results and financial condition. Further, as we do not have access to a revolving credit facility, there can be no assurance that we would be able to secure commercial debt financing in the future in the event that we require additional capital. We currently believe that our financial resources will be adequate to see us through the outbreak. However, in the event that we do need to raise capital in the future, the outbreak-related ",
+            "start": 24822
+          }
+        },
+        "duration_uncertainty": {
+          "value": "issuer unable to predict when Kuala Lumpur and Los Angeles facilities will resume ordinary operations, or whether other facilities may be curtailed or suspended",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 15364,
+            "excerpt": "The COVID-19 pandemic precludes sales calls being made out of all of the Company&#8217;s offices and attendance at furniture trade shows, but the Company continues to receive orders and solicit business via telephone and email. At this juncture, the Company is unable to predict when the Kuala Lumpur and Los Angeles facilities will be able to resume ordinary operations, or whether future developments may cause the Company to curtail or suspend operations in its other facilities.",
+            "start": 14882
+          }
+        },
+        "recoverability_evidence": {
+          "value": "issuer currently believes financial resources will be adequate to finance operations through the outbreak, while noting it has no revolving credit facility",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 18351,
+            "excerpt": "We do not have access to a revolving credit facility. We currently believe that our financial resources will be adequate to finance our operations through the outbreak. However, in the event that we do need to raise capital in the future, the outbreak-related instability in the securities markets could adversely affect our ability to raise additional capital.",
+            "start": 17990
+          }
+        },
+        "structural_impairment_evidence": {
+          "value": "EXPLICIT_NONE",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 19136,
+            "excerpt": "Many of our employees are currently working remotely, and our systems appear adequate to address the current demands on our employees. We do not expect that the remote working arrangements will materially and adversely impact our internal control over financial reporting and disclosure controls and procedures. While there can be no assurance, at the present time we do not expect the outbreak-related circumstances, to result in material impairments of our assets or to significantly affect management&#8217;s judgements in assessing the fair value of our assets.",
+            "start": 18571
+          }
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "value": "alternative solutions implemented to reduce production-delay impact; China manufacturers had recommenced production and shipment in early March",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 16283,
+            "excerpt": "The third-party contract manufacturers that we utilize in China were closed from the beginning of the Lunar New Year Holiday through the beginning of March, and recommenced production and shipment in early March. The Company&#8217;s new products are being sourced from manufacturers in India and Malaysia. The Company expects that as the COVID-19 pandemic continues to spread there will be significant disruptions in the production and shipment of product from those manufacturers. The Company has implemented a series of alternative solutions to attempt to reduce the impact of the production delays. These alternative solutions may not be successful and may result in additional costs being borne ",
+            "start": 15584
+          }
+        },
+        "episode_relationship": {
+          "value": "later pulse of the March 3, 2020 10-K filing-timing disclosure: issuer no longer expects to file within the Rule 12b-25 window and now expects the Annual Report on or before May 14, 2020",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 20669,
+            "excerpt": "On March 3, 2020, the Company issued a press release in which it disclosed among other things that it expected to be able to file its Annual Report on Form 10-K for the fiscal year ended December 31, 2019 (the &#8220;Annual Report&#8221;) during the extension period afforded by Rule 12b-25. Due to the circumstances set forth below the Company no longer expects to meet that schedule. The Company currently expects to file its Annual Report on or before May 14, 2020.",
+            "start": 20201
+          }
+        }
+      },
+      "notes": "Item 8.01, filed in reliance on the March 25, 2020 SEC Relief Order, reports COVID-19 facility closures, supply-chain disruption, expected Q1/Q2 operating-result impact, and a delayed 2019 10-K. No dollar loss is quantified. Management explicitly does not presently expect material asset impairments. Hong Kong/Macao offices had reopened; KL and LA showrooms remained closed."
+    },
+    {
+      "packet_id": "p0cand_000600b12747a796ac9245edc8c493ac44c203433dd04bbe9beb7523d43459ec",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "psilocybin_supply_quality_and_ip_exclusivity_agreements",
+          "evidence": {
+            "document_sha256": "acafb59fd23dc37655bc0913446fdcd58b15df108f03e6c91c5daaaa38703bdc",
+            "end": 6243,
+            "excerpt": "On December 5, 2024, Psyence Biomedical Ltd. (the &ldquo;Company&rdquo;\nor &ldquo;Psyence&rdquo;) entered into three definitive agreements with Optimi Health Corp. (together with their affiliates, &ldquo;Optimi&rdquo;):\nan IP and Mutual Exclusivity Agreement (the &ldquo;MEA&rdquo;), a Quality Agreement (the &ldquo;Quality Agreement&rdquo;), and a Supply\nAgreement (the &ldquo;Supply Agreement,&rdquo; and collectively with the MEA and Quality Agreement, the &ldquo;Optimi Agreements&rdquo;).\nThese agreements govern the supply, quality control, intellectual property licensing exclusivity, and regulatory compliance of pharmaceutical-grade\npsilocybin products.",
+            "start": 5581
+          }
+        },
+        "affected_scope": {
+          "value": "Psyence Biomedical Ltd.; specified pharmaceutical-grade psilocybin products for clinical trials and therapeutic applications in designated fields of use",
+          "evidence": {
+            "document_sha256": "acafb59fd23dc37655bc0913446fdcd58b15df108f03e6c91c5daaaa38703bdc",
+            "end": 6243,
+            "excerpt": "On December 5, 2024, Psyence Biomedical Ltd. (the &ldquo;Company&rdquo;\nor &ldquo;Psyence&rdquo;) entered into three definitive agreements with Optimi Health Corp. (together with their affiliates, &ldquo;Optimi&rdquo;):\nan IP and Mutual Exclusivity Agreement (the &ldquo;MEA&rdquo;), a Quality Agreement (the &ldquo;Quality Agreement&rdquo;), and a Supply\nAgreement (the &ldquo;Supply Agreement,&rdquo; and collectively with the MEA and Quality Agreement, the &ldquo;Optimi Agreements&rdquo;).\nThese agreements govern the supply, quality control, intellectual property licensing exclusivity, and regulatory compliance of pharmaceutical-grade\npsilocybin products.",
+            "start": 5581
+          }
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "value": "exclusivity may terminate if Psyence fails to maintain Nasdaq listing of its common shares prior to commencement of its phase III clinical trial",
+          "evidence": {
+            "document_sha256": "acafb59fd23dc37655bc0913446fdcd58b15df108f03e6c91c5daaaa38703bdc",
+            "end": 8088,
+            "excerpt": "The exclusivity of Psyence&rsquo;s rights may terminate if Psyence\nfails to maintain its Common Shares listed from Nasdaq prior to the commencement of its phase III clinical trial.",
+            "start": 7908
+          }
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "state": "RIGHTS_BLOCKED"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: origin disclosure of the December 5, 2024 Optimi MEA, Quality Agreement, and Supply Agreement",
+          "evidence": {
+            "document_sha256": "acafb59fd23dc37655bc0913446fdcd58b15df108f03e6c91c5daaaa38703bdc",
+            "end": 6243,
+            "excerpt": "On December 5, 2024, Psyence Biomedical Ltd. (the &ldquo;Company&rdquo;\nor &ldquo;Psyence&rdquo;) entered into three definitive agreements with Optimi Health Corp. (together with their affiliates, &ldquo;Optimi&rdquo;):\nan IP and Mutual Exclusivity Agreement (the &ldquo;MEA&rdquo;), a Quality Agreement (the &ldquo;Quality Agreement&rdquo;), and a Supply\nAgreement (the &ldquo;Supply Agreement,&rdquo; and collectively with the MEA and Quality Agreement, the &ldquo;Optimi Agreements&rdquo;).\nThese agreements govern the supply, quality control, intellectual property licensing exclusivity, and regulatory compliance of pharmaceutical-grade\npsilocybin products.",
+            "start": 5581
+          }
+        }
+      },
+      "notes": "Form 6-K summarizes three Optimi agreements governing exclusive royalty-bearing IP rights, cGMP quality, and long-term psilocybin supply. Exclusivity, milestone, and royalty amounts are not stated in the summary, and confidential exhibit portions are omitted. A Nasdaq-listing condition can terminate exclusivity before phase III."
+    },
+    {
+      "packet_id": "p0cand_0006658b0dc071eb05d357e1c656d6fc963bcd3f2a557c3c62d7aa403da80c73",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "super_senior_secured_convertible_note_recapitalization",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 34490,
+            "excerpt": "As previously announced, on October 24, 2022, Rockley Photonics Holdings Limited (the &#8220;Company&#8221;) entered into a repurchase and subscription agreement (the &#8220;Repurchase and Subscription Agreement&#8221;) with holders of its currently outstanding Convertible Senior Secured Notes due 2026 (the &#8220;Existing Notes&#8221;) named therein, holders of its currently outstanding Senior Secured Notes due 2022 (the &#8220;Bridge Notes&#8221;) and another investor (collectively, the &#8220;Purchasers&#8221;), relating to (i) the repurchase of all of the Bridge Notes and a portion of its outstanding Existing Notes in an aggregate original principal amount of $50.0 million (the ",
+            "start": 33799
+          }
+        },
+        "affected_scope": {
+          "value": "Rockley Photonics Holdings Limited and guarantor subsidiaries Rockley Photonics, Inc., Rockley Photonics Limited, Rockley Photonics Ireland Limited, and Rockley Photonics Oy; New Notes and Warrants issued to the Purchasers",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 35860,
+            "excerpt": "On October 25, 2022, the Company completed the repurchase of all of the Bridge Notes and the Specified Existing Notes and its sale to the Purchasers of the New Notes and Warrants pursuant to the Repurchase and Subscription Agreement. The New Notes are initially guaranteed by Rockley Photonics, Inc., Rockley Photonics Limited, Rockley Photonics Ireland Limited and Rockley Photonics Oy, each a wholly owned subsidiary of the Company (the &#8220;Guarantor Subsidiaries&#8221;) and will be guaranteed by the Company&#8217;s future subsidiaries (other than subsidiaries treated as excluded entities).",
+            "start": 35262
+          }
+        },
+        "adverse_information_state": {
+          "value": "only $10.0 million of new-note proceeds retained; approximately $14.5 million escrowed and releasable solely at the direction of the requisite New Note holders",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 36513,
+            "excerpt": "At the completion of the transactions described above (the &#8220;Closing&#8221;), the Company retained $10.0 million of the proceeds from the issuance of the New Notes and approximately $14.5 million of proceeds were placed in an escrow account (the &#8220;Escrow Account&#8221;) with Wilmington Savings Fund Society, FSB (&#8220;WSFS&#8221;), to be released to the Company only at the direction of the requisite number of holders of New Notes.",
+            "start": 36068
+          }
+        },
+        "duration_uncertainty": {
+          "value": "Noteholder Agreement strategic milestones must be met at various times over the period ending December 21, 2022, with satisfaction determined at Purchaser discretion",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 52095,
+            "excerpt": "The Company also entered into a Noteholder Agreement (the &#8220;Noteholder Agreement&#8221;), dated October 25, 2022, with the Purchasers (other than Dr. Rickman), which sets forth certain covenants and other obligations of the Company.  These covenants and obligations include certain weekly reporting obligations and maintaining a minimum variance from approved forecasted cash budgets.  The Noteholder Agreement also contains certain strategic milestones, which must be met at various times over the period ending December 21, 2022 and require the Company to work with its strategic advisor to meet these milestones.  These milestones relate to the Company&#8217;s pursuit of capital raising ",
+            "start": 51399
+          }
+        },
+        "recoverability_evidence": {
+          "value": "limited immediate liquidity: $10.0 million retained from New Notes issuance, with $14.5 million remaining noteholder-controlled in escrow",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 36513,
+            "excerpt": "At the completion of the transactions described above (the &#8220;Closing&#8221;), the Company retained $10.0 million of the proceeds from the issuance of the New Notes and approximately $14.5 million of proceeds were placed in an escrow account (the &#8220;Escrow Account&#8221;) with Wilmington Savings Fund Society, FSB (&#8220;WSFS&#8221;), to be released to the Company only at the direction of the requisite number of holders of New Notes.",
+            "start": 36068
+          }
+        },
+        "structural_impairment_evidence": {
+          "value": "New Notes are super senior secured obligations of the company and guarantor subsidiaries, secured by substantially all of their assets, with existing-note liens contractually subordinated",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 39027,
+            "excerpt": "The New Notes were issued pursuant to an indenture (the &#8220;Indenture&#8221; and collectively with the &#8220;Existing Notes Indenture&#8221;, the &#8220;Indentures&#8221;), dated as of October 25, 2022, among the Company, the Guarantor Subsidiaries, as guarantors, and WSFS, as trustee and collateral agent (collectively, in such capacities, the &#8220;Trustee&#8221;). The New Notes are super senior secured obligations of the Company and the Guarantor Subsidiaries secured by substantially all assets of each of the Company and each Guarantor Subsidiary. The liens securing the Existing Notes and related guarantees of the Guarantor Subsidiaries are contractually subordinated to the liens ",
+            "start": 38331
+          }
+        },
+        "quantified_impact": {
+          "value": "approximately $90.6 million aggregate original principal amount of Convertible Senior Secured Notes due 2026 at a $0.6888 initial conversion price, plus warrants to purchase 131.6 million ordinary shares at $1.1182",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 35051,
+            "excerpt": "&#8220;Specified Existing Notes&#8221;) and (ii) the sale by the Company to the Purchasers of approximately $90.6 million aggregate original principal amount of a new series of Convertible Senior Secured Notes due 2026 (the &#8220;New Notes&#8221;) with an initial conversion price of $0.6888 and warrants (the &#8220;Warrants&#8221;) to purchase 131.6 million ordinary shares of the Company, $0.000004026575398 nominal value per share (the &#8220;Ordinary Shares&#8221;), at an exercise price of $1.1182 per share, subject to certain anti-dilution adjustments.",
+            "start": 34490
+          }
+        },
+        "mitigation_resolution_transition": {
+          "value": "October 25, 2022 closing completed repurchase of all Bridge Notes and the Specified Existing Notes and sale of the New Notes and Warrants",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 35860,
+            "excerpt": "On October 25, 2022, the Company completed the repurchase of all of the Bridge Notes and the Specified Existing Notes and its sale to the Purchasers of the New Notes and Warrants pursuant to the Repurchase and Subscription Agreement. The New Notes are initially guaranteed by Rockley Photonics, Inc., Rockley Photonics Limited, Rockley Photonics Ireland Limited and Rockley Photonics Oy, each a wholly owned subsidiary of the Company (the &#8220;Guarantor Subsidiaries&#8221;) and will be guaranteed by the Company&#8217;s future subsidiaries (other than subsidiaries treated as excluded entities).",
+            "start": 35262
+          }
+        },
+        "episode_relationship": {
+          "value": "later pulse: closing of the previously announced October 24, 2022 Repurchase and Subscription Agreement",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 34490,
+            "excerpt": "As previously announced, on October 24, 2022, Rockley Photonics Holdings Limited (the &#8220;Company&#8221;) entered into a repurchase and subscription agreement (the &#8220;Repurchase and Subscription Agreement&#8221;) with holders of its currently outstanding Convertible Senior Secured Notes due 2026 (the &#8220;Existing Notes&#8221;) named therein, holders of its currently outstanding Senior Secured Notes due 2022 (the &#8220;Bridge Notes&#8221;) and another investor (collectively, the &#8220;Purchasers&#8221;), relating to (i) the repurchase of all of the Bridge Notes and a portion of its outstanding Existing Notes in an aggregate original principal amount of $50.0 million (the ",
+            "start": 33799
+          }
+        }
+      },
+      "notes": "Item 1.01/2.03/3.02 is the closing of a previously announced recapitalization: repurchase of 2022 Bridge Notes and $50.0 million of Existing Notes, issuance of ~$90.6 million super-senior convertibles due May 15, 2026, and 131.6 million warrants. Cash is largely escrowed; noteholders impose weekly reporting, budget-variance, and near-term strategic-transaction milestones with acceleration remedies. This is a constrained refinancing, not a clean-up resolution."
+    },
+    {
+      "packet_id": "p0cand_0006c0ecaaed6310e98e5a48ce08489205cd14c0fed59a341cc08b3a2b2b01da",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "quarterly_earnings_press_release",
+          "evidence": {
+            "document_sha256": "221398365a8f17559bc7aad3aa53933a344a5ced84e9d227680844ab7df7ff5d",
+            "end": 13380,
+            "excerpt": "On March&#160;10, 2021, the Company issued a press release announcing its results of operations for the fiscal quarter ended December&#160;31, 2020.",
+            "start": 13232
+          }
+        },
+        "affected_scope": {
+          "value": "FalconStor Software, Inc.",
+          "evidence": {
+            "document_sha256": "221398365a8f17559bc7aad3aa53933a344a5ced84e9d227680844ab7df7ff5d",
+            "end": 2751,
+            "excerpt": "FALCONSTOR SOFTWARE, INC.",
+            "start": 2726
+          }
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: Form 8-K Item 2.02 announcing results of operations for the fiscal quarter ended December 31, 2020",
+          "evidence": {
+            "document_sha256": "221398365a8f17559bc7aad3aa53933a344a5ced84e9d227680844ab7df7ff5d",
+            "end": 13380,
+            "excerpt": "On March&#160;10, 2021, the Company issued a press release announcing its results of operations for the fiscal quarter ended December&#160;31, 2020.",
+            "start": 13232
+          }
+        }
+      },
+      "notes": "Item 2.02 furnishes a press release of quarterly results; the press-release exhibit is not in this packet, so earnings figures, adverse content, and any impairment or recoverability discussion are unavailable here."
+    },
+    {
+      "packet_id": "p0cand_00074fafe12768c2ffc227a9a99639ec07ffada61f672045037230b0db53885d",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "preliminary_unaudited_earnings_release",
+          "evidence": {
+            "document_sha256": "4e94698a3de56fd147cb16c62fcdbd2483c82ea61350457e1690fed83f261b97",
+            "end": 30478,
+            "excerpt": "On February 12, 2025, Dominion Energy, Inc. issued a press release announcing preliminary unaudited earnings for the three and twelve months ended December 31, 2024. The press release and related preliminary earnings tables are furnished with this Form 8-K as Exhibit 99.",
+            "start": 30207
+          }
+        },
+        "affected_scope": {
+          "value": "Dominion Energy, Inc.",
+          "evidence": {
+            "document_sha256": "4e94698a3de56fd147cb16c62fcdbd2483c82ea61350457e1690fed83f261b97",
+            "end": 30478,
+            "excerpt": "On February 12, 2025, Dominion Energy, Inc. issued a press release announcing preliminary unaudited earnings for the three and twelve months ended December 31, 2024. The press release and related preliminary earnings tables are furnished with this Form 8-K as Exhibit 99.",
+            "start": 30207
+          }
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: origin disclosure of preliminary unaudited earnings for the three and twelve months ended December 31, 2024",
+          "evidence": {
+            "document_sha256": "4e94698a3de56fd147cb16c62fcdbd2483c82ea61350457e1690fed83f261b97",
+            "end": 30478,
+            "excerpt": "On February 12, 2025, Dominion Energy, Inc. issued a press release announcing preliminary unaudited earnings for the three and twelve months ended December 31, 2024. The press release and related preliminary earnings tables are furnished with this Form 8-K as Exhibit 99.",
+            "start": 30207
+          }
+        }
+      },
+      "notes": "Item 2.02 announces preliminary unaudited earnings and furnishes Exhibit 99. Those earnings tables are not in this packet, so no result, quantity, or adverse/impairment content can be asserted from the cover."
+    },
+    {
+      "packet_id": "p0cand_000c9cc45758b999462201d3de8baf3e573631f33a72dd0aa4917f18e47a8075",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "pillar3_risk_and_capital_management_disclosure",
+          "evidence": {
+            "document_sha256": "1909e1dbe10cd63aede8029a0deec19d530b365afa0043c124cbd227b7034f88",
+            "end": 8355,
+            "excerpt": "ITA&Uacute; UNIBANCO - Announcement to the Market &ndash; Risk and Capital Management Pillar 3 &ndash; 3Q25",
+            "start": 8248
+          }
+        },
+        "affected_scope": {
+          "value": "Itau Unibanco Holding S.A.",
+          "evidence": {
+            "document_sha256": "1909e1dbe10cd63aede8029a0deec19d530b365afa0043c124cbd227b7034f88",
+            "end": 2676,
+            "excerpt": "Ita&uacute; Unibanco Holding S.A.",
+            "start": 2643
+          }
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: periodic 3Q25 Pillar 3 risk and capital management announcement to the market",
+          "evidence": {
+            "document_sha256": "1909e1dbe10cd63aede8029a0deec19d530b365afa0043c124cbd227b7034f88",
+            "end": 8355,
+            "excerpt": "ITA&Uacute; UNIBANCO - Announcement to the Market &ndash; Risk and Capital Management Pillar 3 &ndash; 3Q25",
+            "start": 8248
+          }
+        }
+      },
+      "notes": "Form 6-K exhibit index identifies an Itaú Unibanco announcement titled Risk and Capital Management Pillar 3 – 3Q25. The announcement body is not in this packet."
+    },
+    {
+      "packet_id": "p0cand_001fd449bccffebaf07e5ae749a4371d6529629a701a307d0f4c2a66ad2c022b",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "debt_indenture_supplement",
+          "evidence": {
+            "document_sha256": "f77b0f8bb0f058eb030b463ca9f1833770110291c0638ff7a79a8e713b49ac87",
+            "end": 9005,
+            "excerpt": "Third Supplemental   Indenture, dated November&nbsp;15, 2018 between Santander UK Group Holdings   plc and Wells Fargo Bank, National Association, as trustee.",
+            "start": 8847
+          }
+        },
+        "affected_scope": {
+          "value": "Santander UK Group Holdings plc; incorporated into Form F-3 File No. 333-227554",
+          "evidence": {
+            "document_sha256": "f77b0f8bb0f058eb030b463ca9f1833770110291c0638ff7a79a8e713b49ac87",
+            "end": 7149,
+            "excerpt": "Santander UK Group Holdings plc hereby incorporates by reference the following exhibits to this report on Form&nbsp;6-K into its Registration Statement on Form&nbsp;F-3 (File No.&nbsp;333-227554).",
+            "start": 6953
+          }
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNKNOWN"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "amendment: Third Supplemental Indenture dated November 15, 2018 to an existing indenture with Wells Fargo Bank, National Association as trustee",
+          "evidence": {
+            "document_sha256": "f77b0f8bb0f058eb030b463ca9f1833770110291c0638ff7a79a8e713b49ac87",
+            "end": 9005,
+            "excerpt": "Third Supplemental   Indenture, dated November&nbsp;15, 2018 between Santander UK Group Holdings   plc and Wells Fargo Bank, National Association, as trustee.",
+            "start": 8847
+          }
+        }
+      },
+      "notes": "Form 6-K furnishes a Third Supplemental Indenture and related counsel opinions for incorporation into an F-3. Indenture economics are in the exhibit, not in this cover packet. The filing is an indenture amendment, not a distress disclosure."
+    },
+    {
+      "packet_id": "p0cand_00219a4d4f37112ffe576f7bea7acc139c026a37ab9ccaca53c94576da5258ac",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "quarterly_earnings_release_and_presentation",
+          "evidence": {
+            "document_sha256": "780f73613a7666c987146a8a5a4ab8032cd2030fcd2c4fed5e8c9137662cd4a0",
+            "end": 92439,
+            "excerpt": "The registrant&#8217;s press release dated April 19, 2022, regarding its financial results for the period ended March 31, 2022, including consolidated financial statements for the period ended March 31, 2022, is Exhibit&#160;99.1 of this Form&#160;8-K.",
+            "start": 92187
+          }
+        },
+        "affected_scope": {
+          "value": "International Business Machines Corporation",
+          "evidence": {
+            "document_sha256": "780f73613a7666c987146a8a5a4ab8032cd2030fcd2c4fed5e8c9137662cd4a0",
+            "end": 22936,
+            "excerpt": "INTERNATIONAL BUSINESS MACHINES CORPORATION",
+            "start": 22893
+          }
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: Item 2.02/7.01 furnishing of Q1 2022 earnings release, non-GAAP discussion, and earnings presentation",
+          "evidence": {
+            "document_sha256": "780f73613a7666c987146a8a5a4ab8032cd2030fcd2c4fed5e8c9137662cd4a0",
+            "end": 92439,
+            "excerpt": "The registrant&#8217;s press release dated April 19, 2022, regarding its financial results for the period ended March 31, 2022, including consolidated financial statements for the period ended March 31, 2022, is Exhibit&#160;99.1 of this Form&#160;8-K.",
+            "start": 92187
+          }
+        }
+      },
+      "notes": "Item 2.02/7.01 furnishes IBM's April 19, 2022 earnings release, non-GAAP discussion, and slides for the period ended March 31, 2022. Those exhibits are not in this packet, so results and any adverse or quantified content are unavailable here."
+    },
+    {
+      "packet_id": "p0cand_0031d7b733fc1a31b22d09883ae1bcb4ada957a7e851b07fcdd3bade1433a095",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "state": "UNKNOWN"
+        },
+        "affected_scope": {
+          "value": "Collective Mining Ltd.",
+          "evidence": {
+            "document_sha256": "420cd785e2f646e8b5991e4c48f5496d604d139464648890a07bdfe6872f62f2",
+            "end": 3818,
+            "excerpt": "Collective Mining Ltd.",
+            "start": 3796
+          }
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "UNAVAILABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: Form 6-K furnishing a press release dated October 1, 2025 whose text is not in this packet",
+          "evidence": {
+            "document_sha256": "420cd785e2f646e8b5991e4c48f5496d604d139464648890a07bdfe6872f62f2",
+            "end": 8817,
+            "excerpt": "Press release dated October 1, 2025",
+            "start": 8782
+          }
+        }
+      },
+      "notes": "Form 6-K cover identifies Collective Mining Ltd. and an October 1, 2025 press-release exhibit. The press-release body is not in this packet, so the underlying economic event cannot be interpreted from source."
+    },
+    {
+      "packet_id": "p0cand_0048ea4c26a9605bdde6755147f747fb803afa8798a2cb418ab5646ebc5d6c4b",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "interim_mda_and_financial_statements_furnishing",
+          "evidence": {
+            "document_sha256": "8c582c709ed75aeedf4dbd14de73466f781fcb2e83d00f061e55af517904f95e",
+            "end": 139972,
+            "excerpt": "Management&#x2019;s Discussion and Analysis of Financial Condition and Results of Operations as of and for the three and six months ended June 30, 2023",
+            "start": 139821
+          }
+        },
+        "affected_scope": {
+          "value": "Triple Flag Precious Metals Corp.",
+          "evidence": {
+            "document_sha256": "8c582c709ed75aeedf4dbd14de73466f781fcb2e83d00f061e55af517904f95e",
+            "end": 1569,
+            "excerpt": "Triple Flag Precious Metals Corp",
+            "start": 1537
+          }
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: periodic Form 6-K furnishing MD&A and unaudited condensed interim consolidated financial statements for the three and six months ended June 30, 2023",
+          "evidence": {
+            "document_sha256": "8c582c709ed75aeedf4dbd14de73466f781fcb2e83d00f061e55af517904f95e",
+            "end": 139972,
+            "excerpt": "Management&#x2019;s Discussion and Analysis of Financial Condition and Results of Operations as of and for the three and six months ended June 30, 2023",
+            "start": 139821
+          }
+        }
+      },
+      "notes": "Form 6-K cover furnishes Triple Flag MD&A and unaudited interim financials for Q2/H1 2023. Those exhibits are not in this packet. Inline XBRL taxonomy member names that include the word impairment are not an asserted impairment event and are not used as semantic evidence."
+    },
+    {
+      "packet_id": "p0cand_00535e3d17884c62f7f3087b0ed82613e045944cef39c00238ce260eb78f5124",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "equity_distribution_agreement",
+          "evidence": {
+            "document_sha256": "484124dc4c569f578eb30933eb1d4b7fe003e4e3b22d988bd4693fe417072cca",
+            "end": 17469,
+            "excerpt": "Equity\n    Distribution Agreement dated August 20, 2025",
+            "start": 17414
+          }
+        },
+        "affected_scope": {
+          "value": "Uranium Royalty Corp.",
+          "evidence": {
+            "document_sha256": "484124dc4c569f578eb30933eb1d4b7fe003e4e3b22d988bd4693fe417072cca",
+            "end": 4055,
+            "excerpt": "Uranium\nRoyalty Corp.",
+            "start": 4034
+          }
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNKNOWN"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: origin disclosure of the August 20, 2025 Equity Distribution Agreement and related material-change/press-release exhibits",
+          "evidence": {
+            "document_sha256": "484124dc4c569f578eb30933eb1d4b7fe003e4e3b22d988bd4693fe417072cca",
+            "end": 17469,
+            "excerpt": "Equity\n    Distribution Agreement dated August 20, 2025",
+            "start": 17414
+          }
+        }
+      },
+      "notes": "Form 6-K exhibit index and F-10 incorporation identify an August 20, 2025 Equity Distribution Agreement, material change report, and press release. Agreement size, duration, and terms are in those exhibits, which are not in this packet."
+    },
+    {
+      "packet_id": "p0cand_00767e151da21cd75e1d9f7c193d21a0fdd3b95b126384cd0636bddc09e4923c",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "annual_and_quarterly_earnings_release",
+          "evidence": {
+            "document_sha256": "e9285d57882740041000b65d8376984bf5f8bc91d299666eb17addcad611915e",
+            "end": 41677,
+            "excerpt": "Attached hereto as Exhibit 99.1 and incorporated by reference into this Item 2.02 is a copy of the press release, dated February&#160;6, 2025, announcing the financial results of Eli Lilly and Company for the quarter and year ended December 31, 2024.",
+            "start": 41427
+          }
+        },
+        "affected_scope": {
+          "value": "Eli Lilly and Company",
+          "evidence": {
+            "document_sha256": "e9285d57882740041000b65d8376984bf5f8bc91d299666eb17addcad611915e",
+            "end": 43984,
+            "excerpt": "Press Release of Eli Lilly and Company, dated",
+            "start": 43939
+          }
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: Item 2.02 furnishing of the February 6, 2025 press release of results for the quarter and year ended December 31, 2024",
+          "evidence": {
+            "document_sha256": "e9285d57882740041000b65d8376984bf5f8bc91d299666eb17addcad611915e",
+            "end": 41677,
+            "excerpt": "Attached hereto as Exhibit 99.1 and incorporated by reference into this Item 2.02 is a copy of the press release, dated February&#160;6, 2025, announcing the financial results of Eli Lilly and Company for the quarter and year ended December 31, 2024.",
+            "start": 41427
+          }
+        }
+      },
+      "notes": "Item 2.02 furnishes Lilly's year-end and quarterly earnings press release. The release is not in this packet, so results, quantities, and any adverse or impairment content are unavailable here."
+    },
+    {
+      "packet_id": "p0cand_007c5c79567a1cde987f7ce9d748b2e55bebcae781fbe4e7a2ef49b0e14613d3",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "renewable_fuels_joint_venture_equity_contribution",
+          "evidence": {
+            "document_sha256": "ee729979e9e484827fb3953aa9196b58f9655454798d5cc12d77efb5720d92b2",
+            "end": 20528,
+            "excerpt": "&#8221;), pursuant to which the Company and Alohi will establish ProjectCo as a joint venture, with Alohi owning a 36.5% equity interest in ProjectCo and the Company owning the remaining interest. The joint venture is being formed for the development, construction, ownership and operation of that certain renewable fuels manufacturing facility",
+            "start": 20184
+          }
+        },
+        "affected_scope": {
+          "value": "joint venture ProjectCo between the company and Alohi, with Alohi owning a 36.5% equity interest and the company owning the remaining interest, for development, construction, ownership and operation of a renewable fuels manufacturing facility",
+          "evidence": {
+            "document_sha256": "ee729979e9e484827fb3953aa9196b58f9655454798d5cc12d77efb5720d92b2",
+            "end": 20528,
+            "excerpt": "&#8221;), pursuant to which the Company and Alohi will establish ProjectCo as a joint venture, with Alohi owning a 36.5% equity interest in ProjectCo and the Company owning the remaining interest. The joint venture is being formed for the development, construction, ownership and operation of that certain renewable fuels manufacturing facility",
+            "start": 20184
+          }
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "value": "transaction expected to close in the second half of 2025, subject to customary closing conditions including the absence of legal impediments and receipt of regulatory approvals",
+          "evidence": {
+            "document_sha256": "ee729979e9e484827fb3953aa9196b58f9655454798d5cc12d77efb5720d92b2",
+            "end": 23535,
+            "excerpt": "The transaction is expected to close in the second half of 2025, subject to satisfaction of customary closing conditions, including the absence of legal impediments prohibiting the transaction and the receipt of regulatory approvals.",
+            "start": 23302
+          }
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "value": "Alohi to contribute $100 million in cash; company cash contributions of up to $21,039,382, less construction-related costs from July 1, 2025 to closing",
+          "evidence": {
+            "document_sha256": "ee729979e9e484827fb3953aa9196b58f9655454798d5cc12d77efb5720d92b2",
+            "end": 23049,
+            "excerpt": "Upon the closing of the transaction, the Company and its subsidiaries will contribute to ProjectCo certain assets related to the Renewable Fuels Facility, the Company will commit to making cash contributions to ProjectCo of up to $21,039,382, less any actual and documented construction-related costs incurred in the period from July&#160;1, 2025 to the closing date, to complete the engineering, construction and delivery of the Renewable Fuels Facility through its commercial operation date, and Alohi will contribute to ProjectCo $100&#160;million in cash. The Renewable Fuels Facility is expected to be completed and operational by the end of 2025 and is expected to produce approximately ",
+            "start": 22356
+          }
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: origin disclosure of signing definitive joint-venture agreements with Mitsubishi and ENEOS",
+          "evidence": {
+            "document_sha256": "ee729979e9e484827fb3953aa9196b58f9655454798d5cc12d77efb5720d92b2",
+            "end": 27408,
+            "excerpt": "On July&#160;21, 2025, the Company issued a press release announcing the signing of definitive agreements with Mitsubishi and ENEOS to establish a joint venture for renewable fuels in Hawaii. A copy of the press release is furnished as Exhibit 99.1 to this Current Report on Form",
+            "start": 27129
+          }
+        }
+      },
+      "notes": "Item 1.01 is a development joint venture, not a distress event. Alohi (Mitsubishi/ENEOS) takes 36.5% of Hawaii Renewables for $100 million cash; Par Pacific contributes facility assets and up to $21,039,382 cash. The 8-K also states expected production of about 61 million gallons per year, which is a capacity estimate rather than a realized impact."
+    },
+    {
+      "packet_id": "p0cand_02bf4b1a35ae3d90e982e2c27fbe1636fe8f6fb1c8d9a9cafe2b0859697cad59",
+      "proposer_role": "GROK_SOURCE_ONLY",
+      "proposal_state": "PROPOSED",
+      "semantic": {
+        "event_family": {
+          "value": "quarterly_earnings_release",
+          "evidence": {
+            "document_sha256": "08f361292e00fb280dd3f417578298418811c569d59e2b2e8a646589fd2621f2",
+            "end": 17273,
+            "excerpt": "On October 16, 2017, Equity LifeStyle Properties, Inc. (referred to herein as &#8220;we,&#8221; &#8220;us,&#8221; and &#8220;our&#8221;) issued a news release announcing our results of operations for the three and nine months ended September 30, 2017.",
+            "start": 17022
+          }
+        },
+        "affected_scope": {
+          "value": "Equity LifeStyle Properties, Inc.; 404 properties in 32 states and British Columbia comprising 149,446 sites",
+          "evidence": {
+            "document_sha256": "08f361292e00fb280dd3f417578298418811c569d59e2b2e8a646589fd2621f2",
+            "end": 35824,
+            "excerpt": "We are a fully integrated owner and operator of lifestyle-oriented properties and own or have an interest in 404 quality properties in 32 states and British Columbia consisting of 149,446 sites. We are a self-administered, self-managed, real estate investment trust (REIT) with headquarters in Chicago.",
+            "start": 35522
+          }
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "value": "2017 and 2018 per-share projections are ranges of possible outcomes; actual results could vary materially if assumptions are incorrect",
+          "evidence": {
+            "document_sha256": "08f361292e00fb280dd3f417578298418811c569d59e2b2e8a646589fd2621f2",
+            "end": 19716,
+            "excerpt": "The projected 2017 and 2018 per Common Share amounts represent a range of possible outcomes and the mid-point of each range reflects management&#8217;s best estimate of the most likely outcome. Actual results could vary materially from these amounts if any of our assumptions are incorrect. The news release is furnished as Exhibit 99.1 to this report on Form 8-K. The news release was also posted on our website, www.equitylifestyleproperties.com, on October 16, 2017.",
+            "start": 19247
+          }
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "value": "projected diluted net income per common share $0.47-$0.53 for Q4 2017 and $2.13-$2.19 for FY 2017; preliminary FY 2018 $2.43-$2.53",
+          "evidence": {
+            "document_sha256": "08f361292e00fb280dd3f417578298418811c569d59e2b2e8a646589fd2621f2",
+            "end": 18074,
+            "excerpt": "The news release also contains detailed guidance assumptions on our projections for the year ending December 31, 2017 and preliminary projections for the year ending December 31, 2018. We project our Net income per Common Share (fully diluted) for the three months and year ending December 31, 2017, to be between $0.47 and $0.53 and $2.13 and $2.19, respectively.  We preliminarily project our Net income per Common Share (fully diluted) for the year ending December 31, 2018 to be between $2.43 and $2.53.",
+            "start": 17567
+          }
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "value": "presently standalone episode proposal: origin disclosure of results of operations for the three and nine months ended September 30, 2017",
+          "evidence": {
+            "document_sha256": "08f361292e00fb280dd3f417578298418811c569d59e2b2e8a646589fd2621f2",
+            "end": 17273,
+            "excerpt": "On October 16, 2017, Equity LifeStyle Properties, Inc. (referred to herein as &#8220;we,&#8221; &#8220;us,&#8221; and &#8220;our&#8221;) issued a news release announcing our results of operations for the three and nine months ended September 30, 2017.",
+            "start": 17022
+          }
+        }
+      },
+      "notes": "Item 2.02/7.01 announces Q3 2017 results by news release and embeds quantified NI/FFO/Normalized FFO guidance plus an intended 2018 dividend increase from $1.95 to $2.20. Forward-looking risk language includes a possible 'rate of decline in customers' but does not disclose a current decline. No impairment or recoverability event is stated."
+    }
+  ],
+  "relationship_hypotheses": []
+}

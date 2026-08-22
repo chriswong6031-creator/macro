@@ -1,0 +1,130 @@
+{
+  "schema": "mastermind.dislocation_p0.a1r_owner_and_model_attempt_history.v1",
+  "owner_attempts": [
+    {
+      "attempt_id": "a1r-owner-attempt-1",
+      "status": "SUPERSEDED_BOUNDARY_DEFECT",
+      "source_manifest_sha256": "be38b5dca11a0d61ce21ac1fae0542dde7923d5362a9380012d99ef2788f4e79",
+      "model_packet_index_sha256": "beee0cfacc9891742c361d3e9c1e65f719695561e42b58c3bd7e8ca6b2c204db",
+      "defect": "The current-Submissions transport was obtained through the held broad_sec_store.live_fetchers helper instead of the generic SEC raw collector boundary.",
+      "durable_evidence": [
+        "work/model_attempt_history/proposal_bundle_owner_manifest_be38b5.json",
+        "work/model_attempt_history/audit_input_bundle_owner_manifest_be38b5.json"
+      ],
+      "admissible": false
+    },
+    {
+      "attempt_id": "a1r-owner-attempt-2",
+      "status": "SUPERSEDED_RECEIPT_BINDING_DEFECT",
+      "observed_manifest_sha256_prefix": "bc02",
+      "model_packet_index_sha256": "beee0cfacc9891742c361d3e9c1e65f719695561e42b58c3bd7e8ca6b2c204db",
+      "defect": "The public owner manifest embedded the newly returned in-memory retrieval receipt rather than the exact persisted generic receipt sidecar it cited.",
+      "durable_evidence": "SESSION_HISTORY_ONLY_NO_EXACT_MANIFEST_RETAINED",
+      "admissible": false
+    },
+    {
+      "attempt_id": "a1r-owner-attempt-3",
+      "status": "COMPLETE_ACCEPTED_CANONICAL_OWNER_CHAIN",
+      "source_manifest_sha256": "a82394fdedf85de1104c602adab21ccd3532e769c245d796bdbd7c597d2e411c",
+      "source_manifest_file_sha256": "e4f92b48abc9b2c5dbd07e366c82189eca314a1bff3532841f2ea7f5bcc5ac25",
+      "model_packet_index_sha256": "beee0cfacc9891742c361d3e9c1e65f719695561e42b58c3bd7e8ca6b2c204db",
+      "model_packet_set_byte_identical_across_owner_attempts": true,
+      "owner_chain": [
+        "collectors.edgar_forensics.SecForensicsCollector",
+        "persisted fundamental_forensics_retrieval.v1 sidecar and content-addressed gzip replay",
+        "build_filing_manifests",
+        "SecFilingArchiveCollector.fetch_primary_document",
+        "retain_filing_manifest",
+        "read_exact_p0_source_packets"
+      ],
+      "admissible": true
+    }
+  ],
+  "grok_attempts": [
+    {
+      "attempt_id": "a1r-grok-attempt-1",
+      "status": "SUPERSEDED_OWNER_BINDING",
+      "proposal_bundle_sha256": "974e63e205809f550e78cbb82c24fded6805ff83c14a544e9cb8054b569bdb20",
+      "source_manifest_sha256": "be38b5dca11a0d61ce21ac1fae0542dde7923d5362a9380012d99ef2788f4e79",
+      "durable_evidence": "work/model_attempt_history/proposal_bundle_owner_manifest_be38b5.json",
+      "admissible": false
+    },
+    {
+      "attempt_id": "a1r-grok-attempt-2",
+      "status": "INTERRUPTED_NO_BUNDLE",
+      "session_id": "01a02b0a-ecc9-7f72-aa3e-5699ff09c697",
+      "failure": "The isolated runtime could not complete its source reads; no proposal bundle was emitted.",
+      "durable_evidence": "SESSION_HISTORY_ONLY",
+      "admissible": false
+    },
+    {
+      "attempt_id": "a1r-grok-attempt-3",
+      "status": "COMPLETE_ACCEPTED_PROPOSAL_ONLY",
+      "provider": "xAI",
+      "model": "grok-4.6",
+      "proposal_bundle_sha256": "bf5f914a14a41b332ff0f0d914b4a8e2cad6d74843b47fc5f3df9a0837176bff",
+      "source_manifest_sha256": "a82394fdedf85de1104c602adab21ccd3532e769c245d796bdbd7c597d2e411c",
+      "source_only": true,
+      "admissible_as_final_semantics_without_audit": false
+    }
+  ],
+  "opus_attempts": [
+    {
+      "attempt_id": "a1r-opus-attempt-1",
+      "status": "INTERRUPTED_NO_BUNDLE",
+      "failure": "The first audit commission incorrectly implied universal episode coverage and was stopped before any output was accepted.",
+      "durable_evidence": "SESSION_HISTORY_ONLY",
+      "admissible": false
+    },
+    {
+      "attempt_id": "a1r-opus-attempt-2",
+      "status": "REJECTED_BY_LOCAL_FAIL_CLOSED_VALIDATOR",
+      "audit_bundle_sha256": "4774513c4411e48e3274168c8bad922553d963148db1f3767b9a659c68e279b5",
+      "source_manifest_sha256": "a82394fdedf85de1104c602adab21ccd3532e769c245d796bdbd7c597d2e411c",
+      "proposal_bundle_sha256": "bf5f914a14a41b332ff0f0d914b4a8e2cad6d74843b47fc5f3df9a0837176bff",
+      "failure": "All six per-packet relationship assessments used status instead of typed state or an evidenced value.",
+      "durable_evidence": "work/model_attempt_history/opus_audit_invalid_relationship_schema_4774513c4411.json",
+      "admissible": false
+    },
+    {
+      "attempt_id": "a1r-opus-attempt-3",
+      "status": "COMPLETE_ACCEPTED_INDEPENDENT_AUDIT",
+      "audit_bundle_sha256": "b8173cf6a19486a996659d73e1f9d47dfe41cbb13ce855453dd6befb91fa79ef",
+      "source_manifest_sha256": "a82394fdedf85de1104c602adab21ccd3532e769c245d796bdbd7c597d2e411c",
+      "proposal_bundle_sha256": "bf5f914a14a41b332ff0f0d914b4a8e2cad6d74843b47fc5f3df9a0837176bff",
+      "auditor": {
+        "provider": "Anthropic",
+        "bundle_model": "opus",
+        "observed_ui_model": "Opus 5 Max",
+        "role": "OPUS",
+        "independent_source_only": true
+      },
+      "execution_boundary": {
+        "channel": "authenticated Claude web chat",
+        "github_or_repository_connection_required": false,
+        "github_or_repository_access_assumed": false,
+        "input": "one self-contained public-SEC audit bundle",
+        "web_search_enabled": false,
+        "outside_sources_used": false,
+        "attachment_sandbox_file_commands_used": true,
+        "note": "The reviewer reported using attachment-local shell reads because the single-line JSON viewer truncated the 1.5 MB bundle. It reported no network, outside source, or repository access; every returned span and relationship was replay-validated locally."
+      },
+      "audit_result_counts": {
+        "ACCEPT": 6,
+        "REPAIR": 13,
+        "REJECT": 1,
+        "resolved_disagreements": 41,
+        "unresolved_disagreements": 0,
+        "economic_episodes": 9
+      },
+      "admissible": true
+    }
+  ],
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate_signal": false,
+    "can_escalate": false
+  }
+}

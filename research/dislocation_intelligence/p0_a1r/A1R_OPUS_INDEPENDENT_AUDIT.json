@@ -1,0 +1,1778 @@
+{
+  "schema": "mastermind.dislocation_p0.a1r_opus_audit.v1",
+  "source_manifest_sha256": "a82394fdedf85de1104c602adab21ccd3532e769c245d796bdbd7c597d2e411c",
+  "proposal_bundle_sha256": "bf5f914a14a41b332ff0f0d914b4a8e2cad6d74843b47fc5f3df9a0837176bff",
+  "auditor": {
+    "provider": "Anthropic",
+    "model": "opus",
+    "role": "OPUS",
+    "independent_source_only": true
+  },
+  "audits": [
+    {
+      "packet_id": "p0cand_000041da5886797dd54c82531b3071594cfd105c77ccd8f9ba16bae3c6bd939f",
+      "auditor_role": "OPUS",
+      "verdict": "ACCEPT",
+      "disagreements": [],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "The 8-K amends no prior filing in this corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or this declaration."
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is mitigated."
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is resolved."
+        },
+        "episode": {
+          "value": "singleton economic episode episode_0001050007-17-000011: a Board-declared quarterly cash dividend, this packet its sole member",
+          "evidence": {
+            "document_sha256": "2f86e4a0ccec61c5884fd149417a387123579aa45183805c6e18742abde13cb1",
+            "end": 12589,
+            "excerpt": "On March 3, 2017, Nutraceutical International Corporation (&#8220;Nutraceutical&#8221;) announced that its Board of Directors has declared a quarterly cash dividend on Nutraceutical's common stock.  The declared quarterly dividend of $0.125 per share is payable on April 5, 2017 to stockholders of record on March 20, 2017.  The press release reporting this announcement is attached to this Form 8-K as Exhibit 99.1 and is incorporated by reference herein.",
+            "start": 12133
+          },
+          "note": "Item 8.01 states a completed Board declaration with amount and both dates in-body, which establishes a discrete economic episode without reference to any other packet."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_00007f6bdb6db0091de10d0cf30ded66aeef5d82314d2d10f30e4aec76686349",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "duration_uncertainty",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet."
+        },
+        {
+          "field": "mitigation_resolution_transition",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet."
+        },
+        {
+          "field": "episode_relationship",
+          "proposal": "presently standalone episode proposal: periodic Form 6-K furnishing of interim MD&A and financial statements for the period ended September 30, 2016",
+          "audited": "UNKNOWN",
+          "resolution": "REPAIR",
+          "rationale": "The packet body establishes only that a filing was made and exhibits furnished; the economic substance sits in an exhibit outside the packet. Treating the furnishing act itself as a standalone economic episode would manufacture an episode to cover an accession, so no episode is bound and no episode edge is emitted."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "c16f655de9943ad2ec629bd368e958571be108a1d5fdb10382b99fee121caaf6",
+            "end": 9526,
+            "excerpt": "Management&#8217;s Discussion and Analysis for the period ended September 30, 2016.",
+            "start": 9443
+          },
+          "value": "interim_mda_and_financial_statements_furnishing"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "c16f655de9943ad2ec629bd368e958571be108a1d5fdb10382b99fee121caaf6",
+            "end": 2276,
+            "excerpt": "Precision Drilling Corporation",
+            "start": 2246
+          },
+          "value": "Precision Drilling Corporation"
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "UNAVAILABLE"
+        },
+        "episode_relationship": {
+          "state": "UNKNOWN"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "Nothing in the cover amends a prior filing in this corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or reporting period."
+        },
+        "mitigation": {
+          "state": "UNKNOWN",
+          "note": "The MD&A that would disclose any mitigation is not in this packet."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "The MD&A that would disclose any resolution is not in this packet."
+        },
+        "episode": {
+          "state": "UNKNOWN",
+          "note": "Cover-only furnishing; no economic episode is readable from source."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0000ab0867dc702fb7fb21d3729de1cb2813d9d299817397448fbb5a5fc98fa9",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "duration_uncertainty",
+          "proposal": "UNKNOWN",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "The supplemental risk-factor text is Exhibit 99.1 and is not in this packet. UNAVAILABLE names why the field cannot be read; UNKNOWN understates a locatable gap."
+        },
+        {
+          "field": "quantified_impact",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "NOT_APPLICABLE asserts no quantity applies, which cannot be known without reading Exhibit 99.1. Risk-factor supplements routinely carry quantities."
+        },
+        {
+          "field": "mitigation_resolution_transition",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "a5f8a6e95d29afaa1280425860200b839cd2d86ca499737ddae5e4b629efdcda",
+            "end": 20843,
+            "excerpt": "CASI\nPharmaceuticals, Inc. is supplementing the risk factors set forth in Item 1A of its Annual Report on Form 10-K for the fiscal year\nended December 31, 2019 and its Quarterly Report on Form 10-Q for the fiscal quarter March 31, 2020, as well as any amendment or\nupdate to the risk factors reflected in subsequent filings with the SEC, including the supplemental risk factors included in Exhibit\n99.1 to the Current Report on Form 8-K filed on July 21, 2020. The risk factors set forth in the attached Exhibit 99.1",
+            "start": 20327
+          },
+          "value": "supplemental_risk_factor_update"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "a5f8a6e95d29afaa1280425860200b839cd2d86ca499737ddae5e4b629efdcda",
+            "end": 5501,
+            "excerpt": "CASI PHARMACEUTICALS, INC.",
+            "start": 5475
+          },
+          "value": "CASI Pharmaceuticals, Inc."
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "UNAVAILABLE"
+        },
+        "episode_relationship": {
+          "evidence": {
+            "document_sha256": "a5f8a6e95d29afaa1280425860200b839cd2d86ca499737ddae5e4b629efdcda",
+            "end": 20843,
+            "excerpt": "CASI\nPharmaceuticals, Inc. is supplementing the risk factors set forth in Item 1A of its Annual Report on Form 10-K for the fiscal year\nended December 31, 2019 and its Quarterly Report on Form 10-Q for the fiscal quarter March 31, 2020, as well as any amendment or\nupdate to the risk factors reflected in subsequent filings with the SEC, including the supplemental risk factors included in Exhibit\n99.1 to the Current Report on Form 8-K filed on July 21, 2020. The risk factors set forth in the attached Exhibit 99.1",
+            "start": 20327
+          },
+          "value": "later pulse: supplements previously disclosed Item 1A risk factors, including the Exhibit 99.1 supplemental risk factors in the Form 8-K filed July 21, 2020"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "This supplements rather than amends, and no counterpart is in corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "The source does establish that this supplements the Exhibit 99.1 risk factors of a Form 8-K filed July 21, 2020, but that filing is not one of the twenty packets, so no in-corpus pulse edge can be drawn."
+        },
+        "mitigation": {
+          "state": "UNKNOWN",
+          "note": "Exhibit 99.1 is not in this packet."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "Exhibit 99.1 is not in this packet."
+        },
+        "episode": {
+          "state": "UNKNOWN",
+          "note": "The economic substance of the supplement is outside the packet."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0000fecac1deca3b7707b1adcb610dfdc7acfc3898ee09aab0541c2bec40e2a1",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "mitigation_resolution_transition",
+          "proposal": "net proceeds intended for working capital, capital expenditures, and general corporate purposes",
+          "audited": "NOT_APPLICABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is NOT_APPLICABLE, so no adverse condition exists to mitigate or resolve. Use of proceeds is ordinary disclosure in any registered offering; classifying it as a mitigation transition reads a dislocation into an ordinary capital raise. The excerpt is accurate but belongs to no such transition."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 20222,
+            "excerpt": "On October&#160;21, 2024, Aspen Aerogels, Inc. (the &#8220;Company&#8221;) entered into an underwriting agreement (the &#8220;Underwriting Agreement&#8221;) with Goldman Sachs&#160;&amp; Co. LLC and Morgan Stanley&#160;&amp; Co. LLC (collectively, the &#8220;Underwriters&#8221;), pursuant to which the Company agreed to issue and sell an aggregate of 4,250,000 shares of the Company&#8217;s common stock, $0.00001 par value per share, to the Underwriters (the &#8220;Offering&#8221;). The price to the public in the Offering was $20.00 per share. Under the terms of the Underwriting Agreement, the Company granted the Underwriters a",
+            "start": 19589
+          },
+          "value": "underwritten_common_stock_offering"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 20222,
+            "excerpt": "On October&#160;21, 2024, Aspen Aerogels, Inc. (the &#8220;Company&#8221;) entered into an underwriting agreement (the &#8220;Underwriting Agreement&#8221;) with Goldman Sachs&#160;&amp; Co. LLC and Morgan Stanley&#160;&amp; Co. LLC (collectively, the &#8220;Underwriters&#8221;), pursuant to which the Company agreed to issue and sell an aggregate of 4,250,000 shares of the Company&#8217;s common stock, $0.00001 par value per share, to the Underwriters (the &#8220;Offering&#8221;). The price to the public in the Offering was $20.00 per share. Under the terms of the Underwriting Agreement, the Company granted the Underwriters a",
+            "start": 19589
+          },
+          "value": "Aspen Aerogels, Inc. common stock; offering to Goldman Sachs & Co. LLC and Morgan Stanley & Co. LLC as underwriters"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 21931,
+            "excerpt": "The Company expects to close the Offering on October&#160;23, 2024, subject to the satisfaction of customary closing conditions.",
+            "start": 21803
+          },
+          "value": "expected closing October 23, 2024, subject to customary closing conditions"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 20656,
+            "excerpt": "option to purchase up to 637,500 additional shares of common stock of the Company. The gross proceeds to the Company from the Offering are expected to be $85 million, before deducting underwriting discounts and commissions and estimated offering expenses payable by the Company, and excluding any exercise of the Underwriters&#8217; option to purchase additional shares of common stock.",
+            "start": 20270
+          },
+          "value": "expected gross proceeds of $85 million before discounts, commissions, and expenses, excluding the 637,500-share overallotment option"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 20222,
+            "excerpt": "On October&#160;21, 2024, Aspen Aerogels, Inc. (the &#8220;Company&#8221;) entered into an underwriting agreement (the &#8220;Underwriting Agreement&#8221;) with Goldman Sachs&#160;&amp; Co. LLC and Morgan Stanley&#160;&amp; Co. LLC (collectively, the &#8220;Underwriters&#8221;), pursuant to which the Company agreed to issue and sell an aggregate of 4,250,000 shares of the Company&#8217;s common stock, $0.00001 par value per share, to the Underwriters (the &#8220;Offering&#8221;). The price to the public in the Offering was $20.00 per share. Under the terms of the Underwriting Agreement, the Company granted the Underwriters a",
+            "start": 19589
+          },
+          "value": "presently standalone episode proposal: origin disclosure of this priced underwritten common-stock offering"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "No prior filing in this corpus is amended."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or this offering."
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is mitigated."
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is resolved."
+        },
+        "episode": {
+          "value": "singleton economic episode episode_0001193125-24-241153: an executed underwritten common-stock offering, this packet its sole member",
+          "evidence": {
+            "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+            "end": 20222,
+            "excerpt": "On October&#160;21, 2024, Aspen Aerogels, Inc. (the &#8220;Company&#8221;) entered into an underwriting agreement (the &#8220;Underwriting Agreement&#8221;) with Goldman Sachs&#160;&amp; Co. LLC and Morgan Stanley&#160;&amp; Co. LLC (collectively, the &#8220;Underwriters&#8221;), pursuant to which the Company agreed to issue and sell an aggregate of 4,250,000 shares of the Company&#8217;s common stock, $0.00001 par value per share, to the Underwriters (the &#8220;Offering&#8221;). The price to the public in the Offering was $20.00 per share. Under the terms of the Underwriting Agreement, the Company granted the Underwriters a",
+            "start": 19589
+          },
+          "note": "Item 1.01 states an executed underwriting agreement, named underwriters, share count and price in-body, establishing a discrete economic episode."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0001101cefa880400130eb9763ee664b596ae80b49ce4cd1a0ed355c4fe0c22f",
+      "auditor_role": "OPUS",
+      "verdict": "ACCEPT",
+      "disagreements": [],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "No prior filing in this corpus is amended."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or this repurchase."
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is mitigated."
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is resolved."
+        },
+        "episode": {
+          "value": "singleton economic episode episode_0001628280-23-041631: an executed related-party share repurchase agreement, this packet its sole member",
+          "evidence": {
+            "document_sha256": "411ffd559a33ad5a6f0884d1f31a42751bbc507e900c3dfc79c302daec644bf2",
+            "end": 21511,
+            "excerpt": "On December 14, 2023, Corebridge Financial, Inc. (the &#8220;Company&#8221;) entered into a Share Repurchase Agreement (the &#8220;Share Repurchase Agreement&#8221;) with American International Group, Inc. (&#8220;AIG&#8221;) and an affiliate of Blackstone Inc. (&#8220;Blackstone&#8221;). The per share purchase price will be $21.75, the closing price of the Company&#8217;s common stock on the New York Stock Exchange on December 14, 2023. Pursuant to the Share Repurchase Agreement, the Company is expected to, subject to customary closing conditions, complete the repurchase of shares of its common stock for an aggregate purchase price of approximately $150 million on December 18, 2023.",
+            "start": 20819
+          },
+          "note": "Item 1.01 states an executed Share Repurchase Agreement with per-share price, aggregate price and expected completion date in-body."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_000348339a45d1f1ffff77330ec52b06b7e4cdfd4a0b5e35e3d2ea4a4594b77b",
+      "auditor_role": "OPUS",
+      "verdict": "ACCEPT",
+      "disagreements": [],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "No prior filing in this corpus is amended."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or this license."
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is mitigated."
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is resolved."
+        },
+        "episode": {
+          "value": "singleton economic episode episode_0001493152-23-032118: an executed exclusive worldwide research collaboration and license agreement, this packet its sole member",
+          "evidence": {
+            "document_sha256": "9bf959fe7101114a7abdd40ac2d3b6e2bf219fb2ca7065f9826551ebf7ecc22f",
+            "end": 29867,
+            "excerpt": "On\nSeptember 1, 2023 (the &#8220;Effective Date&#8221;), Palisade Bio, Inc. (the &#8220;Company&#8221;) entered into a Research Collaboration\nand License Agreement (the &#8220;License Agreement&#8221;) with Giiant Pharma Inc. (&#8220;Giiant&#8221;) whereby the Company is receiving\nan exclusive (even as the Giiant and its affiliates), worldwide license (with the right to sublicense in multiple\ntiers) to develop, manufacture, and commercialize substantially all of the assets of Giiant, including: (i) the GT-2018 compound\nand (ii) the GT-1908 compound and the associated intellectual property around each of the foregoing. (the &#8220;Licensed Assets&#8221;).",
+            "start": 29205
+          },
+          "note": "Item 1.01/2.01 states an executed Research Collaboration and License Agreement and the named licensed compounds in-body."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0003ae31d338993bd31458a79978696489adc45f115e114a5fea78f8b5fb3514",
+      "auditor_role": "OPUS",
+      "verdict": "ACCEPT",
+      "disagreements": [],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "No prior filing in this corpus is amended."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "The source establishes that this supersedes the filing-timing expectation of a March 3, 2020 press release, but that release is not one of the twenty packets, so no in-corpus pulse edge can be drawn."
+        },
+        "mitigation": {
+          "value": "in-packet mitigation of the disclosed disruption: alternative solutions implemented to reduce production-delay impact, and China contract manufacturers recommenced production and shipment in early March",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 16283,
+            "excerpt": "The third-party contract manufacturers that we utilize in China were closed from the beginning of the Lunar New Year Holiday through the beginning of March, and recommenced production and shipment in early March. The Company&#8217;s new products are being sourced from manufacturers in India and Malaysia. The Company expects that as the COVID-19 pandemic continues to spread there will be significant disruptions in the production and shipment of product from those manufacturers. The Company has implemented a series of alternative solutions to attempt to reduce the impact of the production delays. These alternative solutions may not be successful and may result in additional costs being borne ",
+            "start": 15584
+          },
+          "note": "Mitigation is disclosed and bound inside this packet and is internal to its own episode. No other packet reports this issuer, so it creates no cross-packet mitigation edge."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "The disruption is ongoing at the filing date; no resolution is stated and none can be inferred from a later packet."
+        },
+        "episode": {
+          "value": "singleton economic episode episode_0001185185-20-000359: a COVID-19 operational disruption and delayed annual report, this packet its sole member",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 12712,
+            "excerpt": "Nova LifeStyle, Inc. (the &#8220;Company&#8221; or &#8220;NVFY&#8221;) is filing this Current Report on Form 8-K in compliance with and in reliance upon the SEC Order issued pursuant to Section 36 of the Securities Exchange Act of 1934, as amended, granting Exemptions from Specified Provisions of the Exchange Act and Certain Rules thereunder (SEC Release No. 34-88465 on March 25, 2020) (the &#8220;Relief Order&#8221;). Set forth below are the Company&#8217;s (i) operational and 2019 audit related updates, (ii) the reasons for the delays in the completion of its 2019 audit and filing of the Annual Report on Form 10-K for the fiscal year ended December 31, 2019 (the &#8220;Annual ",
+            "start": 12025
+          },
+          "note": "Item 8.01 carries the disruption, the duration statement, the explicit impairment negation and the revised filing dates in-body."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_000600b12747a796ac9245edc8c493ac44c203433dd04bbe9beb7523d43459ec",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "affected_scope",
+          "proposal": "Psyence Biomedical Ltd.; specified pharmaceutical-grade psilocybin products for clinical trials and therapeutic applications in designated fields of use",
+          "audited": "Psyence Biomedical Ltd. and Optimi Health Corp.; supply, quality control, intellectual property licensing exclusivity, and regulatory compliance of pharmaceutical-grade psilocybin products",
+          "resolution": "REPAIR",
+          "rationale": "The cited span [5581:6243] does not contain \"clinical trials\" or \"designated fields of use\"; that language sits in a different catalog segment [6395:7094]. A field carries one evidence object, so the value is narrowed to what the cited span actually supports. The counterparty Optimi Health Corp. is added because the same span names it and the scope is bilateral."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "acafb59fd23dc37655bc0913446fdcd58b15df108f03e6c91c5daaaa38703bdc",
+            "end": 6243,
+            "excerpt": "On December 5, 2024, Psyence Biomedical Ltd. (the &ldquo;Company&rdquo;\nor &ldquo;Psyence&rdquo;) entered into three definitive agreements with Optimi Health Corp. (together with their affiliates, &ldquo;Optimi&rdquo;):\nan IP and Mutual Exclusivity Agreement (the &ldquo;MEA&rdquo;), a Quality Agreement (the &ldquo;Quality Agreement&rdquo;), and a Supply\nAgreement (the &ldquo;Supply Agreement,&rdquo; and collectively with the MEA and Quality Agreement, the &ldquo;Optimi Agreements&rdquo;).\nThese agreements govern the supply, quality control, intellectual property licensing exclusivity, and regulatory compliance of pharmaceutical-grade\npsilocybin products.",
+            "start": 5581
+          },
+          "value": "psilocybin_supply_quality_and_ip_exclusivity_agreements"
+        },
+        "affected_scope": {
+          "value": "Psyence Biomedical Ltd. and Optimi Health Corp.; supply, quality control, intellectual property licensing exclusivity, and regulatory compliance of pharmaceutical-grade psilocybin products",
+          "evidence": {
+            "document_sha256": "acafb59fd23dc37655bc0913446fdcd58b15df108f03e6c91c5daaaa38703bdc",
+            "end": 6243,
+            "excerpt": "On December 5, 2024, Psyence Biomedical Ltd. (the &ldquo;Company&rdquo;\nor &ldquo;Psyence&rdquo;) entered into three definitive agreements with Optimi Health Corp. (together with their affiliates, &ldquo;Optimi&rdquo;):\nan IP and Mutual Exclusivity Agreement (the &ldquo;MEA&rdquo;), a Quality Agreement (the &ldquo;Quality Agreement&rdquo;), and a Supply\nAgreement (the &ldquo;Supply Agreement,&rdquo; and collectively with the MEA and Quality Agreement, the &ldquo;Optimi Agreements&rdquo;).\nThese agreements govern the supply, quality control, intellectual property licensing exclusivity, and regulatory compliance of pharmaceutical-grade\npsilocybin products.",
+            "start": 5581
+          }
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "evidence": {
+            "document_sha256": "acafb59fd23dc37655bc0913446fdcd58b15df108f03e6c91c5daaaa38703bdc",
+            "end": 8088,
+            "excerpt": "The exclusivity of Psyence&rsquo;s rights may terminate if Psyence\nfails to maintain its Common Shares listed from Nasdaq prior to the commencement of its phase III clinical trial.",
+            "start": 7908
+          },
+          "value": "exclusivity may terminate if Psyence fails to maintain Nasdaq listing of its common shares prior to commencement of its phase III clinical trial"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "state": "RIGHTS_BLOCKED"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "evidence": {
+            "document_sha256": "acafb59fd23dc37655bc0913446fdcd58b15df108f03e6c91c5daaaa38703bdc",
+            "end": 6243,
+            "excerpt": "On December 5, 2024, Psyence Biomedical Ltd. (the &ldquo;Company&rdquo;\nor &ldquo;Psyence&rdquo;) entered into three definitive agreements with Optimi Health Corp. (together with their affiliates, &ldquo;Optimi&rdquo;):\nan IP and Mutual Exclusivity Agreement (the &ldquo;MEA&rdquo;), a Quality Agreement (the &ldquo;Quality Agreement&rdquo;), and a Supply\nAgreement (the &ldquo;Supply Agreement,&rdquo; and collectively with the MEA and Quality Agreement, the &ldquo;Optimi Agreements&rdquo;).\nThese agreements govern the supply, quality control, intellectual property licensing exclusivity, and regulatory compliance of pharmaceutical-grade\npsilocybin products.",
+            "start": 5581
+          },
+          "value": "presently standalone episode proposal: origin disclosure of the December 5, 2024 Optimi MEA, Quality Agreement, and Supply Agreement"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "No prior filing in this corpus is amended."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or these agreements."
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is mitigated."
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is resolved."
+        },
+        "episode": {
+          "value": "singleton economic episode episode_0001104659-24-129990: three executed Optimi agreements dated December 5, 2024, this packet its sole member",
+          "evidence": {
+            "document_sha256": "acafb59fd23dc37655bc0913446fdcd58b15df108f03e6c91c5daaaa38703bdc",
+            "end": 6243,
+            "excerpt": "On December 5, 2024, Psyence Biomedical Ltd. (the &ldquo;Company&rdquo;\nor &ldquo;Psyence&rdquo;) entered into three definitive agreements with Optimi Health Corp. (together with their affiliates, &ldquo;Optimi&rdquo;):\nan IP and Mutual Exclusivity Agreement (the &ldquo;MEA&rdquo;), a Quality Agreement (the &ldquo;Quality Agreement&rdquo;), and a Supply\nAgreement (the &ldquo;Supply Agreement,&rdquo; and collectively with the MEA and Quality Agreement, the &ldquo;Optimi Agreements&rdquo;).\nThese agreements govern the supply, quality control, intellectual property licensing exclusivity, and regulatory compliance of pharmaceutical-grade\npsilocybin products.",
+            "start": 5581
+          },
+          "note": "The explanatory note states three executed agreements of a stated date and subject matter in-body."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0006658b0dc071eb05d357e1c656d6fc963bcd3f2a557c3c62d7aa403da80c73",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "duration_uncertainty",
+          "proposal": "Noteholder Agreement strategic milestones must be met at various times over the period ending December 21, 2022, with satisfaction determined at Purchaser discretion",
+          "audited": "Noteholder Agreement imposes weekly reporting obligations and minimum variance from approved forecasted cash budgets, with strategic milestones that must be met at various times over the period ending December 21, 2022",
+          "resolution": "REPAIR",
+          "rationale": "The cited span [51399:52095] ends mid-sentence at \"pursuit of capital raising\". \"The satisfaction of each of these milestones will be determined at the discretion of the Purchasers\" begins the next catalog segment [52095:52704] and is therefore outside the cited evidence. The value is narrowed to the covenants the cited span does carry, which are the substantive duration constraints."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 34490,
+            "excerpt": "As previously announced, on October 24, 2022, Rockley Photonics Holdings Limited (the &#8220;Company&#8221;) entered into a repurchase and subscription agreement (the &#8220;Repurchase and Subscription Agreement&#8221;) with holders of its currently outstanding Convertible Senior Secured Notes due 2026 (the &#8220;Existing Notes&#8221;) named therein, holders of its currently outstanding Senior Secured Notes due 2022 (the &#8220;Bridge Notes&#8221;) and another investor (collectively, the &#8220;Purchasers&#8221;), relating to (i) the repurchase of all of the Bridge Notes and a portion of its outstanding Existing Notes in an aggregate original principal amount of $50.0 million (the ",
+            "start": 33799
+          },
+          "value": "super_senior_secured_convertible_note_recapitalization"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 35860,
+            "excerpt": "On October 25, 2022, the Company completed the repurchase of all of the Bridge Notes and the Specified Existing Notes and its sale to the Purchasers of the New Notes and Warrants pursuant to the Repurchase and Subscription Agreement. The New Notes are initially guaranteed by Rockley Photonics, Inc., Rockley Photonics Limited, Rockley Photonics Ireland Limited and Rockley Photonics Oy, each a wholly owned subsidiary of the Company (the &#8220;Guarantor Subsidiaries&#8221;) and will be guaranteed by the Company&#8217;s future subsidiaries (other than subsidiaries treated as excluded entities).",
+            "start": 35262
+          },
+          "value": "Rockley Photonics Holdings Limited and guarantor subsidiaries Rockley Photonics, Inc., Rockley Photonics Limited, Rockley Photonics Ireland Limited, and Rockley Photonics Oy; New Notes and Warrants issued to the Purchasers"
+        },
+        "adverse_information_state": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 36513,
+            "excerpt": "At the completion of the transactions described above (the &#8220;Closing&#8221;), the Company retained $10.0 million of the proceeds from the issuance of the New Notes and approximately $14.5 million of proceeds were placed in an escrow account (the &#8220;Escrow Account&#8221;) with Wilmington Savings Fund Society, FSB (&#8220;WSFS&#8221;), to be released to the Company only at the direction of the requisite number of holders of New Notes.",
+            "start": 36068
+          },
+          "value": "only $10.0 million of new-note proceeds retained; approximately $14.5 million escrowed and releasable solely at the direction of the requisite New Note holders"
+        },
+        "duration_uncertainty": {
+          "value": "Noteholder Agreement imposes weekly reporting obligations and minimum variance from approved forecasted cash budgets, with strategic milestones that must be met at various times over the period ending December 21, 2022",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 52095,
+            "excerpt": "The Company also entered into a Noteholder Agreement (the &#8220;Noteholder Agreement&#8221;), dated October 25, 2022, with the Purchasers (other than Dr. Rickman), which sets forth certain covenants and other obligations of the Company.  These covenants and obligations include certain weekly reporting obligations and maintaining a minimum variance from approved forecasted cash budgets.  The Noteholder Agreement also contains certain strategic milestones, which must be met at various times over the period ending December 21, 2022 and require the Company to work with its strategic advisor to meet these milestones.  These milestones relate to the Company&#8217;s pursuit of capital raising ",
+            "start": 51399
+          }
+        },
+        "recoverability_evidence": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 36513,
+            "excerpt": "At the completion of the transactions described above (the &#8220;Closing&#8221;), the Company retained $10.0 million of the proceeds from the issuance of the New Notes and approximately $14.5 million of proceeds were placed in an escrow account (the &#8220;Escrow Account&#8221;) with Wilmington Savings Fund Society, FSB (&#8220;WSFS&#8221;), to be released to the Company only at the direction of the requisite number of holders of New Notes.",
+            "start": 36068
+          },
+          "value": "limited immediate liquidity: $10.0 million retained from New Notes issuance, with $14.5 million remaining noteholder-controlled in escrow"
+        },
+        "structural_impairment_evidence": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 39027,
+            "excerpt": "The New Notes were issued pursuant to an indenture (the &#8220;Indenture&#8221; and collectively with the &#8220;Existing Notes Indenture&#8221;, the &#8220;Indentures&#8221;), dated as of October 25, 2022, among the Company, the Guarantor Subsidiaries, as guarantors, and WSFS, as trustee and collateral agent (collectively, in such capacities, the &#8220;Trustee&#8221;). The New Notes are super senior secured obligations of the Company and the Guarantor Subsidiaries secured by substantially all assets of each of the Company and each Guarantor Subsidiary. The liens securing the Existing Notes and related guarantees of the Guarantor Subsidiaries are contractually subordinated to the liens ",
+            "start": 38331
+          },
+          "value": "New Notes are super senior secured obligations of the company and guarantor subsidiaries, secured by substantially all of their assets, with existing-note liens contractually subordinated"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 35051,
+            "excerpt": "&#8220;Specified Existing Notes&#8221;) and (ii) the sale by the Company to the Purchasers of approximately $90.6 million aggregate original principal amount of a new series of Convertible Senior Secured Notes due 2026 (the &#8220;New Notes&#8221;) with an initial conversion price of $0.6888 and warrants (the &#8220;Warrants&#8221;) to purchase 131.6 million ordinary shares of the Company, $0.000004026575398 nominal value per share (the &#8220;Ordinary Shares&#8221;), at an exercise price of $1.1182 per share, subject to certain anti-dilution adjustments.",
+            "start": 34490
+          },
+          "value": "approximately $90.6 million aggregate original principal amount of Convertible Senior Secured Notes due 2026 at a $0.6888 initial conversion price, plus warrants to purchase 131.6 million ordinary shares at $1.1182"
+        },
+        "mitigation_resolution_transition": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 35860,
+            "excerpt": "On October 25, 2022, the Company completed the repurchase of all of the Bridge Notes and the Specified Existing Notes and its sale to the Purchasers of the New Notes and Warrants pursuant to the Repurchase and Subscription Agreement. The New Notes are initially guaranteed by Rockley Photonics, Inc., Rockley Photonics Limited, Rockley Photonics Ireland Limited and Rockley Photonics Oy, each a wholly owned subsidiary of the Company (the &#8220;Guarantor Subsidiaries&#8221;) and will be guaranteed by the Company&#8217;s future subsidiaries (other than subsidiaries treated as excluded entities).",
+            "start": 35262
+          },
+          "value": "October 25, 2022 closing completed repurchase of all Bridge Notes and the Specified Existing Notes and sale of the New Notes and Warrants"
+        },
+        "episode_relationship": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 34490,
+            "excerpt": "As previously announced, on October 24, 2022, Rockley Photonics Holdings Limited (the &#8220;Company&#8221;) entered into a repurchase and subscription agreement (the &#8220;Repurchase and Subscription Agreement&#8221;) with holders of its currently outstanding Convertible Senior Secured Notes due 2026 (the &#8220;Existing Notes&#8221;) named therein, holders of its currently outstanding Senior Secured Notes due 2022 (the &#8220;Bridge Notes&#8221;) and another investor (collectively, the &#8220;Purchasers&#8221;), relating to (i) the repurchase of all of the Bridge Notes and a portion of its outstanding Existing Notes in an aggregate original principal amount of $50.0 million (the ",
+            "start": 33799
+          },
+          "value": "later pulse: closing of the previously announced October 24, 2022 Repurchase and Subscription Agreement"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "The Fourth Supplemental Indenture amends the Existing Notes Indenture, but that indenture is not a packet in this corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "The source establishes this as the closing of the previously announced October 24, 2022 agreement, but that announcement is not one of the twenty packets, so no in-corpus pulse edge can be drawn."
+        },
+        "mitigation": {
+          "value": "in-packet mitigation transition: the October 25, 2022 closing completed the repurchase of all Bridge Notes and the Specified Existing Notes and the sale of the New Notes and Warrants",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 35860,
+            "excerpt": "On October 25, 2022, the Company completed the repurchase of all of the Bridge Notes and the Specified Existing Notes and its sale to the Purchasers of the New Notes and Warrants pursuant to the Repurchase and Subscription Agreement. The New Notes are initially guaranteed by Rockley Photonics, Inc., Rockley Photonics Limited, Rockley Photonics Ireland Limited and Rockley Photonics Oy, each a wholly owned subsidiary of the Company (the &#8220;Guarantor Subsidiaries&#8221;) and will be guaranteed by the Company&#8217;s future subsidiaries (other than subsidiaries treated as excluded entities).",
+            "start": 35262
+          },
+          "note": "The closing is the bound transition and is internal to this packet; no counterpart packet exists, so it creates no cross-packet mitigation edge."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "Noteholder milestones run past the filing date and no packet reports their outcome; the recapitalization is constrained, not resolved."
+        },
+        "episode": {
+          "value": "singleton economic episode episode_0001852117-22-000410: the closing of a super-senior secured convertible note recapitalization, this packet its sole member",
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 34490,
+            "excerpt": "As previously announced, on October 24, 2022, Rockley Photonics Holdings Limited (the &#8220;Company&#8221;) entered into a repurchase and subscription agreement (the &#8220;Repurchase and Subscription Agreement&#8221;) with holders of its currently outstanding Convertible Senior Secured Notes due 2026 (the &#8220;Existing Notes&#8221;) named therein, holders of its currently outstanding Senior Secured Notes due 2022 (the &#8220;Bridge Notes&#8221;) and another investor (collectively, the &#8220;Purchasers&#8221;), relating to (i) the repurchase of all of the Bridge Notes and a portion of its outstanding Existing Notes in an aggregate original principal amount of $50.0 million (the ",
+            "start": 33799
+          },
+          "note": "The completed repurchase, issuance, escrow split, lien subordination and covenant package are all stated in-body."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0006c0ecaaed6310e98e5a48ce08489205cd14c0fed59a341cc08b3a2b2b01da",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "duration_uncertainty",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The press release carrying the results is furnished as Exhibit 99.1 and is not in this packet."
+        },
+        {
+          "field": "mitigation_resolution_transition",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The press release carrying the results is furnished as Exhibit 99.1 and is not in this packet."
+        },
+        {
+          "field": "episode_relationship",
+          "proposal": "presently standalone episode proposal: Form 8-K Item 2.02 announcing results of operations for the fiscal quarter ended December 31, 2020",
+          "audited": "UNKNOWN",
+          "resolution": "REPAIR",
+          "rationale": "The packet body establishes only that a filing was made and exhibits furnished; the economic substance sits in an exhibit outside the packet. Treating the furnishing act itself as a standalone economic episode would manufacture an episode to cover an accession, so no episode is bound and no episode edge is emitted."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "221398365a8f17559bc7aad3aa53933a344a5ced84e9d227680844ab7df7ff5d",
+            "end": 13380,
+            "excerpt": "On March&#160;10, 2021, the Company issued a press release announcing its results of operations for the fiscal quarter ended December&#160;31, 2020.",
+            "start": 13232
+          },
+          "value": "quarterly_earnings_press_release"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "221398365a8f17559bc7aad3aa53933a344a5ced84e9d227680844ab7df7ff5d",
+            "end": 2751,
+            "excerpt": "FALCONSTOR SOFTWARE, INC.",
+            "start": 2726
+          },
+          "value": "FalconStor Software, Inc."
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "UNAVAILABLE"
+        },
+        "episode_relationship": {
+          "state": "UNKNOWN"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "Nothing in the cover amends a prior filing in this corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or reporting period."
+        },
+        "mitigation": {
+          "state": "UNKNOWN",
+          "note": "The press release carrying the results is furnished as Exhibit 99.1 and is not in this packet."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "The press release carrying the results is furnished as Exhibit 99.1 and is not in this packet."
+        },
+        "episode": {
+          "state": "UNKNOWN",
+          "note": "Cover-only furnishing; no economic episode is readable from source."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_00074fafe12768c2ffc227a9a99639ec07ffada61f672045037230b0db53885d",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "duration_uncertainty",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The press release and earnings tables are furnished as Exhibit 99 and are not in this packet."
+        },
+        {
+          "field": "mitigation_resolution_transition",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The press release and earnings tables are furnished as Exhibit 99 and are not in this packet."
+        },
+        {
+          "field": "episode_relationship",
+          "proposal": "presently standalone episode proposal: origin disclosure of preliminary unaudited earnings for the three and twelve months ended December 31, 2024",
+          "audited": "UNKNOWN",
+          "resolution": "REPAIR",
+          "rationale": "The packet body establishes only that a filing was made and exhibits furnished; the economic substance sits in an exhibit outside the packet. Treating the furnishing act itself as a standalone economic episode would manufacture an episode to cover an accession, so no episode is bound and no episode edge is emitted."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "4e94698a3de56fd147cb16c62fcdbd2483c82ea61350457e1690fed83f261b97",
+            "end": 30478,
+            "excerpt": "On February 12, 2025, Dominion Energy, Inc. issued a press release announcing preliminary unaudited earnings for the three and twelve months ended December 31, 2024. The press release and related preliminary earnings tables are furnished with this Form 8-K as Exhibit 99.",
+            "start": 30207
+          },
+          "value": "preliminary_unaudited_earnings_release"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "4e94698a3de56fd147cb16c62fcdbd2483c82ea61350457e1690fed83f261b97",
+            "end": 30478,
+            "excerpt": "On February 12, 2025, Dominion Energy, Inc. issued a press release announcing preliminary unaudited earnings for the three and twelve months ended December 31, 2024. The press release and related preliminary earnings tables are furnished with this Form 8-K as Exhibit 99.",
+            "start": 30207
+          },
+          "value": "Dominion Energy, Inc."
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "UNAVAILABLE"
+        },
+        "episode_relationship": {
+          "state": "UNKNOWN"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "Nothing in the cover amends a prior filing in this corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or reporting period."
+        },
+        "mitigation": {
+          "state": "UNKNOWN",
+          "note": "The press release and earnings tables are furnished as Exhibit 99 and are not in this packet."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "The press release and earnings tables are furnished as Exhibit 99 and are not in this packet."
+        },
+        "episode": {
+          "state": "UNKNOWN",
+          "note": "Cover-only furnishing; no economic episode is readable from source."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_000c9cc45758b999462201d3de8baf3e573631f33a72dd0aa4917f18e47a8075",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "duration_uncertainty",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The Pillar 3 announcement is Exhibit 99.1 and is not in this packet."
+        },
+        {
+          "field": "mitigation_resolution_transition",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The Pillar 3 announcement is Exhibit 99.1 and is not in this packet."
+        },
+        {
+          "field": "episode_relationship",
+          "proposal": "presently standalone episode proposal: periodic 3Q25 Pillar 3 risk and capital management announcement to the market",
+          "audited": "UNKNOWN",
+          "resolution": "REPAIR",
+          "rationale": "The packet body establishes only that a filing was made and exhibits furnished; the economic substance sits in an exhibit outside the packet. Treating the furnishing act itself as a standalone economic episode would manufacture an episode to cover an accession, so no episode is bound and no episode edge is emitted."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "1909e1dbe10cd63aede8029a0deec19d530b365afa0043c124cbd227b7034f88",
+            "end": 8355,
+            "excerpt": "ITA&Uacute; UNIBANCO - Announcement to the Market &ndash; Risk and Capital Management Pillar 3 &ndash; 3Q25",
+            "start": 8248
+          },
+          "value": "pillar3_risk_and_capital_management_disclosure"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "1909e1dbe10cd63aede8029a0deec19d530b365afa0043c124cbd227b7034f88",
+            "end": 2676,
+            "excerpt": "Ita&uacute; Unibanco Holding S.A.",
+            "start": 2643
+          },
+          "value": "Itau Unibanco Holding S.A."
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "UNAVAILABLE"
+        },
+        "episode_relationship": {
+          "state": "UNKNOWN"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "Nothing in the cover amends a prior filing in this corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or reporting period."
+        },
+        "mitigation": {
+          "state": "UNKNOWN",
+          "note": "The Pillar 3 announcement is Exhibit 99.1 and is not in this packet."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "The Pillar 3 announcement is Exhibit 99.1 and is not in this packet."
+        },
+        "episode": {
+          "state": "UNKNOWN",
+          "note": "Cover-only furnishing; no economic episode is readable from source."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_001fd449bccffebaf07e5ae749a4371d6529629a701a307d0f4c2a66ad2c022b",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "adverse_information_state",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "The indenture terms sit in the exhibit, not this cover. A supplemental indenture can carry adverse terms, so affirming that no adverse state applies exceeds the source."
+        },
+        {
+          "field": "duration_uncertainty",
+          "proposal": "UNKNOWN",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "The tenor and terms are in the exhibit. UNAVAILABLE names the locatable gap."
+        },
+        {
+          "field": "recoverability_evidence",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "Same absent exhibit governs; NOT_APPLICABLE affirms an unreadable determination."
+        },
+        {
+          "field": "structural_impairment_evidence",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "Same absent exhibit governs; ranking and security terms live in the indenture."
+        },
+        {
+          "field": "mitigation_resolution_transition",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "Same absent exhibit governs."
+        },
+        {
+          "field": "episode_relationship",
+          "proposal": "amendment: Third Supplemental Indenture dated November 15, 2018 to an existing indenture with Wells Fargo Bank, National Association as trustee",
+          "audited": "UNKNOWN",
+          "resolution": "REPAIR",
+          "rationale": "The cited excerpt names the Third Supplemental Indenture and its trustee but never identifies the base indenture it supplements; that the ordinal implies a predecessor is inference, not source. No counterpart packet exists in this corpus and the indenture economics are outside the packet, so no amendment relationship is bound."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "f77b0f8bb0f058eb030b463ca9f1833770110291c0638ff7a79a8e713b49ac87",
+            "end": 9005,
+            "excerpt": "Third Supplemental   Indenture, dated November&nbsp;15, 2018 between Santander UK Group Holdings   plc and Wells Fargo Bank, National Association, as trustee.",
+            "start": 8847
+          },
+          "value": "debt_indenture_supplement"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "f77b0f8bb0f058eb030b463ca9f1833770110291c0638ff7a79a8e713b49ac87",
+            "end": 7149,
+            "excerpt": "Santander UK Group Holdings plc hereby incorporates by reference the following exhibits to this report on Form&nbsp;6-K into its Registration Statement on Form&nbsp;F-3 (File No.&nbsp;333-227554).",
+            "start": 6953
+          },
+          "value": "Santander UK Group Holdings plc; incorporated into Form F-3 File No. 333-227554"
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "UNAVAILABLE"
+        },
+        "episode_relationship": {
+          "state": "UNKNOWN"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "UNKNOWN",
+          "note": "The instrument is styled \"Third Supplemental\" but the base indenture is neither identified in the excerpt nor present as a packet, so no amendment edge is establishable."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer."
+        },
+        "mitigation": {
+          "state": "UNKNOWN",
+          "note": "The indenture is not in this packet."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "The indenture is not in this packet."
+        },
+        "episode": {
+          "state": "UNKNOWN",
+          "note": "Furnishing and incorporation act only; economics outside the packet."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_00219a4d4f37112ffe576f7bea7acc139c026a37ab9ccaca53c94576da5258ac",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "duration_uncertainty",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The earnings release, non-GAAP exhibit and slides are Exhibits 99.1-99.3 and are not in this packet."
+        },
+        {
+          "field": "mitigation_resolution_transition",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The earnings release, non-GAAP exhibit and slides are Exhibits 99.1-99.3 and are not in this packet."
+        },
+        {
+          "field": "episode_relationship",
+          "proposal": "presently standalone episode proposal: Item 2.02/7.01 furnishing of Q1 2022 earnings release, non-GAAP discussion, and earnings presentation",
+          "audited": "UNKNOWN",
+          "resolution": "REPAIR",
+          "rationale": "The packet body establishes only that a filing was made and exhibits furnished; the economic substance sits in an exhibit outside the packet. Treating the furnishing act itself as a standalone economic episode would manufacture an episode to cover an accession, so no episode is bound and no episode edge is emitted."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "780f73613a7666c987146a8a5a4ab8032cd2030fcd2c4fed5e8c9137662cd4a0",
+            "end": 92439,
+            "excerpt": "The registrant&#8217;s press release dated April 19, 2022, regarding its financial results for the period ended March 31, 2022, including consolidated financial statements for the period ended March 31, 2022, is Exhibit&#160;99.1 of this Form&#160;8-K.",
+            "start": 92187
+          },
+          "value": "quarterly_earnings_release_and_presentation"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "780f73613a7666c987146a8a5a4ab8032cd2030fcd2c4fed5e8c9137662cd4a0",
+            "end": 22936,
+            "excerpt": "INTERNATIONAL BUSINESS MACHINES CORPORATION",
+            "start": 22893
+          },
+          "value": "International Business Machines Corporation"
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "UNAVAILABLE"
+        },
+        "episode_relationship": {
+          "state": "UNKNOWN"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "Nothing in the cover amends a prior filing in this corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or reporting period."
+        },
+        "mitigation": {
+          "state": "UNKNOWN",
+          "note": "The earnings release, non-GAAP exhibit and slides are Exhibits 99.1-99.3 and are not in this packet."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "The earnings release, non-GAAP exhibit and slides are Exhibits 99.1-99.3 and are not in this packet."
+        },
+        "episode": {
+          "state": "UNKNOWN",
+          "note": "Cover-only furnishing; no economic episode is readable from source."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0031d7b733fc1a31b22d09883ae1bcb4ada957a7e851b07fcdd3bade1433a095",
+      "auditor_role": "OPUS",
+      "verdict": "REJECT",
+      "disagreements": [
+        {
+          "field": "event_family",
+          "proposal": "UNKNOWN",
+          "audited": "UNAVAILABLE",
+          "resolution": "REJECT",
+          "rationale": "The packet is a Form 6-K cover and exhibit index. The only description of the furnished item is \"Press release dated October 1, 2025\", which states no subject matter. Unlike the other cover-only packets, whose covers name the filing type (interim MD&A, results of operations, Pillar 3, equity distribution agreement), nothing here identifies what economic event occurred. UNAVAILABLE locates the gap; UNKNOWN implies indeterminacy where the cause is a specific absent exhibit."
+        },
+        {
+          "field": "episode_relationship",
+          "proposal": "presently standalone episode proposal: Form 6-K furnishing a press release dated October 1, 2025 whose text is not in this packet",
+          "audited": "UNKNOWN",
+          "resolution": "REJECT",
+          "rationale": "With no readable event family there is no economic episode to bind. Recording the furnishing act as a standalone episode would manufacture an episode to cover an accession, which the contract forbids."
+        }
+      ],
+      "typed_refusal": "UNAVAILABLE",
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "Nothing in the cover amends a prior filing in this corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer."
+        },
+        "mitigation": {
+          "state": "UNKNOWN",
+          "note": "The press release is not in this packet."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "The press release is not in this packet."
+        },
+        "episode": {
+          "state": "UNKNOWN",
+          "note": "No economic event is readable from source; no episode edge is emitted."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0048ea4c26a9605bdde6755147f747fb803afa8798a2cb418ab5646ebc5d6c4b",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "duration_uncertainty",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The MD&A and interim financial statements are Exhibits 99.1 and 99.2 and are not in this packet. Inline XBRL taxonomy member names in the cover are dimension labels, not asserted facts, and are correctly excluded from evidence by the proposal."
+        },
+        {
+          "field": "mitigation_resolution_transition",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The MD&A and interim financial statements are Exhibits 99.1 and 99.2 and are not in this packet. Inline XBRL taxonomy member names in the cover are dimension labels, not asserted facts, and are correctly excluded from evidence by the proposal."
+        },
+        {
+          "field": "episode_relationship",
+          "proposal": "presently standalone episode proposal: periodic Form 6-K furnishing MD&A and unaudited condensed interim consolidated financial statements for the three and six months ended June 30, 2023",
+          "audited": "UNKNOWN",
+          "resolution": "REPAIR",
+          "rationale": "The packet body establishes only that a filing was made and exhibits furnished; the economic substance sits in an exhibit outside the packet. Treating the furnishing act itself as a standalone economic episode would manufacture an episode to cover an accession, so no episode is bound and no episode edge is emitted."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "8c582c709ed75aeedf4dbd14de73466f781fcb2e83d00f061e55af517904f95e",
+            "end": 139972,
+            "excerpt": "Management&#x2019;s Discussion and Analysis of Financial Condition and Results of Operations as of and for the three and six months ended June 30, 2023",
+            "start": 139821
+          },
+          "value": "interim_mda_and_financial_statements_furnishing"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "8c582c709ed75aeedf4dbd14de73466f781fcb2e83d00f061e55af517904f95e",
+            "end": 1569,
+            "excerpt": "Triple Flag Precious Metals Corp",
+            "start": 1537
+          },
+          "value": "Triple Flag Precious Metals Corp."
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "UNAVAILABLE"
+        },
+        "episode_relationship": {
+          "state": "UNKNOWN"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "Nothing in the cover amends a prior filing in this corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or reporting period."
+        },
+        "mitigation": {
+          "state": "UNKNOWN",
+          "note": "The MD&A and interim financial statements are Exhibits 99.1 and 99.2 and are not in this packet. Inline XBRL taxonomy member names in the cover are dimension labels, not asserted facts, and are correctly excluded from evidence by the proposal."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "The MD&A and interim financial statements are Exhibits 99.1 and 99.2 and are not in this packet. Inline XBRL taxonomy member names in the cover are dimension labels, not asserted facts, and are correctly excluded from evidence by the proposal."
+        },
+        "episode": {
+          "state": "UNKNOWN",
+          "note": "Cover-only furnishing; no economic episode is readable from source."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_00535e3d17884c62f7f3087b0ed82613e045944cef39c00238ce260eb78f5124",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "adverse_information_state",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "The press release, material change report and the agreement itself are Exhibits 99.1-99.6 and are not in this packet; no adverse state can be affirmed or excluded."
+        },
+        {
+          "field": "duration_uncertainty",
+          "proposal": "UNKNOWN",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "The term of the Equity Distribution Agreement is in the exhibit, a locatable gap."
+        },
+        {
+          "field": "recoverability_evidence",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "Same absent exhibits govern."
+        },
+        {
+          "field": "structural_impairment_evidence",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "Same absent exhibits govern."
+        },
+        {
+          "field": "mitigation_resolution_transition",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "Same absent exhibits govern."
+        },
+        {
+          "field": "episode_relationship",
+          "proposal": "presently standalone episode proposal: origin disclosure of the August 20, 2025 Equity Distribution Agreement and related material-change/press-release exhibits",
+          "audited": "UNKNOWN",
+          "resolution": "REPAIR",
+          "rationale": "The packet body establishes only that a filing was made and exhibits furnished; the economic substance sits in an exhibit outside the packet. Treating the furnishing act itself as a standalone economic episode would manufacture an episode to cover an accession, so no episode is bound and no episode edge is emitted. The exhibit index names the agreement but states no size, term or counterparty, so no economic episode is established in-packet."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "484124dc4c569f578eb30933eb1d4b7fe003e4e3b22d988bd4693fe417072cca",
+            "end": 17469,
+            "excerpt": "Equity\n    Distribution Agreement dated August 20, 2025",
+            "start": 17414
+          },
+          "value": "equity_distribution_agreement"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "484124dc4c569f578eb30933eb1d4b7fe003e4e3b22d988bd4693fe417072cca",
+            "end": 4055,
+            "excerpt": "Uranium\nRoyalty Corp.",
+            "start": 4034
+          },
+          "value": "Uranium Royalty Corp."
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "UNAVAILABLE"
+        },
+        "episode_relationship": {
+          "state": "UNKNOWN"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "Nothing in the cover amends a prior filing in this corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer."
+        },
+        "mitigation": {
+          "state": "UNKNOWN",
+          "note": "Exhibits 99.1-99.6 are not in this packet."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "Exhibits 99.1-99.6 are not in this packet."
+        },
+        "episode": {
+          "state": "UNKNOWN",
+          "note": "Exhibit index and F-10 incorporation only; economics outside the packet."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_00767e151da21cd75e1d9f7c193d21a0fdd3b95b126384cd0636bddc09e4923c",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "duration_uncertainty",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The press release is Exhibit 99.1 and is not in this packet."
+        },
+        {
+          "field": "mitigation_resolution_transition",
+          "proposal": "NOT_APPLICABLE",
+          "audited": "UNAVAILABLE",
+          "resolution": "REPAIR",
+          "rationale": "adverse_information_state is UNAVAILABLE because the substantive exhibit is not in this packet; the same absent exhibit governs this field, so NOT_APPLICABLE would affirm a determination the source does not support. UNAVAILABLE is the honest state and matches the treatment this proposal already gives recoverability_evidence and structural_impairment_evidence in the same packet. The press release is Exhibit 99.1 and is not in this packet."
+        },
+        {
+          "field": "episode_relationship",
+          "proposal": "presently standalone episode proposal: Item 2.02 furnishing of the February 6, 2025 press release of results for the quarter and year ended December 31, 2024",
+          "audited": "UNKNOWN",
+          "resolution": "REPAIR",
+          "rationale": "The packet body establishes only that a filing was made and exhibits furnished; the economic substance sits in an exhibit outside the packet. Treating the furnishing act itself as a standalone economic episode would manufacture an episode to cover an accession, so no episode is bound and no episode edge is emitted."
+        }
+      ],
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "e9285d57882740041000b65d8376984bf5f8bc91d299666eb17addcad611915e",
+            "end": 41677,
+            "excerpt": "Attached hereto as Exhibit 99.1 and incorporated by reference into this Item 2.02 is a copy of the press release, dated February&#160;6, 2025, announcing the financial results of Eli Lilly and Company for the quarter and year ended December 31, 2024.",
+            "start": 41427
+          },
+          "value": "annual_and_quarterly_earnings_release"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "e9285d57882740041000b65d8376984bf5f8bc91d299666eb17addcad611915e",
+            "end": 43984,
+            "excerpt": "Press Release of Eli Lilly and Company, dated",
+            "start": 43939
+          },
+          "value": "Eli Lilly and Company"
+        },
+        "adverse_information_state": {
+          "state": "UNAVAILABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "UNAVAILABLE"
+        },
+        "episode_relationship": {
+          "state": "UNKNOWN"
+        }
+      },
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "Nothing in the cover amends a prior filing in this corpus."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or reporting period."
+        },
+        "mitigation": {
+          "state": "UNKNOWN",
+          "note": "The press release is Exhibit 99.1 and is not in this packet."
+        },
+        "resolution": {
+          "state": "UNKNOWN",
+          "note": "The press release is Exhibit 99.1 and is not in this packet."
+        },
+        "episode": {
+          "state": "UNKNOWN",
+          "note": "Cover-only furnishing; no economic episode is readable from source."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_007c5c79567a1cde987f7ce9d748b2e55bebcae781fbe4e7a2ef49b0e14613d3",
+      "auditor_role": "OPUS",
+      "verdict": "ACCEPT",
+      "disagreements": [],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "No prior filing in this corpus is amended."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or this joint venture."
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is mitigated."
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is resolved."
+        },
+        "episode": {
+          "value": "singleton economic episode episode_0001193125-25-161924: an executed renewable-fuels joint venture equity contribution, this packet its sole member",
+          "evidence": {
+            "document_sha256": "ee729979e9e484827fb3953aa9196b58f9655454798d5cc12d77efb5720d92b2",
+            "end": 20528,
+            "excerpt": "&#8221;), pursuant to which the Company and Alohi will establish ProjectCo as a joint venture, with Alohi owning a 36.5% equity interest in ProjectCo and the Company owning the remaining interest. The joint venture is being formed for the development, construction, ownership and operation of that certain renewable fuels manufacturing facility",
+            "start": 20184
+          },
+          "note": "Item 1.01 states an executed Equity Contribution Agreement and the equity split in-body. Closing is pending, which the bound duration field carries; a pending close does not defeat the episode."
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_02bf4b1a35ae3d90e982e2c27fbe1636fe8f6fb1c8d9a9cafe2b0859697cad59",
+      "auditor_role": "OPUS",
+      "verdict": "ACCEPT",
+      "disagreements": [],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE",
+          "note": "Twenty distinct CIKs, accessions and document_sha256 values; no other packet reproduces this document."
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE",
+          "note": "No prior filing in this corpus is amended."
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE",
+          "note": "No other packet shares this issuer or this period."
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is mitigated."
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE",
+          "note": "No adverse condition is disclosed, so nothing is resolved."
+        },
+        "episode": {
+          "value": "singleton economic episode episode_0000895417-17-000084: a quarterly results announcement with in-body forward guidance, this packet its sole member",
+          "evidence": {
+            "document_sha256": "08f361292e00fb280dd3f417578298418811c569d59e2b2e8a646589fd2621f2",
+            "end": 17273,
+            "excerpt": "On October 16, 2017, Equity LifeStyle Properties, Inc. (referred to herein as &#8220;we,&#8221; &#8220;us,&#8221; and &#8220;our&#8221;) issued a news release announcing our results of operations for the three and nine months ended September 30, 2017.",
+            "start": 17022
+          },
+          "note": "Unlike the other Item 2.02 packets, the guidance ranges are stated in the 8-K body rather than left to the exhibit, which establishes a readable economic episode."
+        }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "kind": "episode",
+      "packet_ids": [
+        "p0cand_000041da5886797dd54c82531b3071594cfd105c77ccd8f9ba16bae3c6bd939f"
+      ],
+      "episode_id": "episode_0001050007-17-000011",
+      "evidence": {
+        "document_sha256": "2f86e4a0ccec61c5884fd149417a387123579aa45183805c6e18742abde13cb1",
+        "end": 12589,
+        "excerpt": "On March 3, 2017, Nutraceutical International Corporation (&#8220;Nutraceutical&#8221;) announced that its Board of Directors has declared a quarterly cash dividend on Nutraceutical's common stock.  The declared quarterly dividend of $0.125 per share is payable on April 5, 2017 to stockholders of record on March 20, 2017.  The press release reporting this announcement is attached to this Form 8-K as Exhibit 99.1 and is incorporated by reference herein.",
+        "start": 12133
+      },
+      "auditor_role": "OPUS",
+      "audit_verdict": "ACCEPT",
+      "resolution": "RESOLVED"
+    },
+    {
+      "kind": "episode",
+      "packet_ids": [
+        "p0cand_0000fecac1deca3b7707b1adcb610dfdc7acfc3898ee09aab0541c2bec40e2a1"
+      ],
+      "episode_id": "episode_0001193125-24-241153",
+      "evidence": {
+        "document_sha256": "58a39edabeb718ea28971c5639e0206c3d8fb325d651d727d941de6e9b2e12ea",
+        "end": 20222,
+        "excerpt": "On October&#160;21, 2024, Aspen Aerogels, Inc. (the &#8220;Company&#8221;) entered into an underwriting agreement (the &#8220;Underwriting Agreement&#8221;) with Goldman Sachs&#160;&amp; Co. LLC and Morgan Stanley&#160;&amp; Co. LLC (collectively, the &#8220;Underwriters&#8221;), pursuant to which the Company agreed to issue and sell an aggregate of 4,250,000 shares of the Company&#8217;s common stock, $0.00001 par value per share, to the Underwriters (the &#8220;Offering&#8221;). The price to the public in the Offering was $20.00 per share. Under the terms of the Underwriting Agreement, the Company granted the Underwriters a",
+        "start": 19589
+      },
+      "auditor_role": "OPUS",
+      "audit_verdict": "REPAIR",
+      "resolution": "RESOLVED"
+    },
+    {
+      "kind": "episode",
+      "packet_ids": [
+        "p0cand_0001101cefa880400130eb9763ee664b596ae80b49ce4cd1a0ed355c4fe0c22f"
+      ],
+      "episode_id": "episode_0001628280-23-041631",
+      "evidence": {
+        "document_sha256": "411ffd559a33ad5a6f0884d1f31a42751bbc507e900c3dfc79c302daec644bf2",
+        "end": 21511,
+        "excerpt": "On December 14, 2023, Corebridge Financial, Inc. (the &#8220;Company&#8221;) entered into a Share Repurchase Agreement (the &#8220;Share Repurchase Agreement&#8221;) with American International Group, Inc. (&#8220;AIG&#8221;) and an affiliate of Blackstone Inc. (&#8220;Blackstone&#8221;). The per share purchase price will be $21.75, the closing price of the Company&#8217;s common stock on the New York Stock Exchange on December 14, 2023. Pursuant to the Share Repurchase Agreement, the Company is expected to, subject to customary closing conditions, complete the repurchase of shares of its common stock for an aggregate purchase price of approximately $150 million on December 18, 2023.",
+        "start": 20819
+      },
+      "auditor_role": "OPUS",
+      "audit_verdict": "ACCEPT",
+      "resolution": "RESOLVED"
+    },
+    {
+      "kind": "episode",
+      "packet_ids": [
+        "p0cand_000348339a45d1f1ffff77330ec52b06b7e4cdfd4a0b5e35e3d2ea4a4594b77b"
+      ],
+      "episode_id": "episode_0001493152-23-032118",
+      "evidence": {
+        "document_sha256": "9bf959fe7101114a7abdd40ac2d3b6e2bf219fb2ca7065f9826551ebf7ecc22f",
+        "end": 29867,
+        "excerpt": "On\nSeptember 1, 2023 (the &#8220;Effective Date&#8221;), Palisade Bio, Inc. (the &#8220;Company&#8221;) entered into a Research Collaboration\nand License Agreement (the &#8220;License Agreement&#8221;) with Giiant Pharma Inc. (&#8220;Giiant&#8221;) whereby the Company is receiving\nan exclusive (even as the Giiant and its affiliates), worldwide license (with the right to sublicense in multiple\ntiers) to develop, manufacture, and commercialize substantially all of the assets of Giiant, including: (i) the GT-2018 compound\nand (ii) the GT-1908 compound and the associated intellectual property around each of the foregoing. (the &#8220;Licensed Assets&#8221;).",
+        "start": 29205
+      },
+      "auditor_role": "OPUS",
+      "audit_verdict": "ACCEPT",
+      "resolution": "RESOLVED"
+    },
+    {
+      "kind": "episode",
+      "packet_ids": [
+        "p0cand_0003ae31d338993bd31458a79978696489adc45f115e114a5fea78f8b5fb3514"
+      ],
+      "episode_id": "episode_0001185185-20-000359",
+      "evidence": {
+        "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+        "end": 12712,
+        "excerpt": "Nova LifeStyle, Inc. (the &#8220;Company&#8221; or &#8220;NVFY&#8221;) is filing this Current Report on Form 8-K in compliance with and in reliance upon the SEC Order issued pursuant to Section 36 of the Securities Exchange Act of 1934, as amended, granting Exemptions from Specified Provisions of the Exchange Act and Certain Rules thereunder (SEC Release No. 34-88465 on March 25, 2020) (the &#8220;Relief Order&#8221;). Set forth below are the Company&#8217;s (i) operational and 2019 audit related updates, (ii) the reasons for the delays in the completion of its 2019 audit and filing of the Annual Report on Form 10-K for the fiscal year ended December 31, 2019 (the &#8220;Annual ",
+        "start": 12025
+      },
+      "auditor_role": "OPUS",
+      "audit_verdict": "ACCEPT",
+      "resolution": "RESOLVED"
+    },
+    {
+      "kind": "episode",
+      "packet_ids": [
+        "p0cand_000600b12747a796ac9245edc8c493ac44c203433dd04bbe9beb7523d43459ec"
+      ],
+      "episode_id": "episode_0001104659-24-129990",
+      "evidence": {
+        "document_sha256": "acafb59fd23dc37655bc0913446fdcd58b15df108f03e6c91c5daaaa38703bdc",
+        "end": 6243,
+        "excerpt": "On December 5, 2024, Psyence Biomedical Ltd. (the &ldquo;Company&rdquo;\nor &ldquo;Psyence&rdquo;) entered into three definitive agreements with Optimi Health Corp. (together with their affiliates, &ldquo;Optimi&rdquo;):\nan IP and Mutual Exclusivity Agreement (the &ldquo;MEA&rdquo;), a Quality Agreement (the &ldquo;Quality Agreement&rdquo;), and a Supply\nAgreement (the &ldquo;Supply Agreement,&rdquo; and collectively with the MEA and Quality Agreement, the &ldquo;Optimi Agreements&rdquo;).\nThese agreements govern the supply, quality control, intellectual property licensing exclusivity, and regulatory compliance of pharmaceutical-grade\npsilocybin products.",
+        "start": 5581
+      },
+      "auditor_role": "OPUS",
+      "audit_verdict": "REPAIR",
+      "resolution": "RESOLVED"
+    },
+    {
+      "kind": "episode",
+      "packet_ids": [
+        "p0cand_0006658b0dc071eb05d357e1c656d6fc963bcd3f2a557c3c62d7aa403da80c73"
+      ],
+      "episode_id": "episode_0001852117-22-000410",
+      "evidence": {
+        "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+        "end": 34490,
+        "excerpt": "As previously announced, on October 24, 2022, Rockley Photonics Holdings Limited (the &#8220;Company&#8221;) entered into a repurchase and subscription agreement (the &#8220;Repurchase and Subscription Agreement&#8221;) with holders of its currently outstanding Convertible Senior Secured Notes due 2026 (the &#8220;Existing Notes&#8221;) named therein, holders of its currently outstanding Senior Secured Notes due 2022 (the &#8220;Bridge Notes&#8221;) and another investor (collectively, the &#8220;Purchasers&#8221;), relating to (i) the repurchase of all of the Bridge Notes and a portion of its outstanding Existing Notes in an aggregate original principal amount of $50.0 million (the ",
+        "start": 33799
+      },
+      "auditor_role": "OPUS",
+      "audit_verdict": "REPAIR",
+      "resolution": "RESOLVED"
+    },
+    {
+      "kind": "episode",
+      "packet_ids": [
+        "p0cand_007c5c79567a1cde987f7ce9d748b2e55bebcae781fbe4e7a2ef49b0e14613d3"
+      ],
+      "episode_id": "episode_0001193125-25-161924",
+      "evidence": {
+        "document_sha256": "ee729979e9e484827fb3953aa9196b58f9655454798d5cc12d77efb5720d92b2",
+        "end": 20528,
+        "excerpt": "&#8221;), pursuant to which the Company and Alohi will establish ProjectCo as a joint venture, with Alohi owning a 36.5% equity interest in ProjectCo and the Company owning the remaining interest. The joint venture is being formed for the development, construction, ownership and operation of that certain renewable fuels manufacturing facility",
+        "start": 20184
+      },
+      "auditor_role": "OPUS",
+      "audit_verdict": "ACCEPT",
+      "resolution": "RESOLVED"
+    },
+    {
+      "kind": "episode",
+      "packet_ids": [
+        "p0cand_02bf4b1a35ae3d90e982e2c27fbe1636fe8f6fb1c8d9a9cafe2b0859697cad59"
+      ],
+      "episode_id": "episode_0000895417-17-000084",
+      "evidence": {
+        "document_sha256": "08f361292e00fb280dd3f417578298418811c569d59e2b2e8a646589fd2621f2",
+        "end": 17273,
+        "excerpt": "On October 16, 2017, Equity LifeStyle Properties, Inc. (referred to herein as &#8220;we,&#8221; &#8220;us,&#8221; and &#8220;our&#8221;) issued a news release announcing our results of operations for the three and nine months ended September 30, 2017.",
+        "start": 17022
+      },
+      "auditor_role": "OPUS",
+      "audit_verdict": "ACCEPT",
+      "resolution": "RESOLVED"
+    }
+  ]
+}
