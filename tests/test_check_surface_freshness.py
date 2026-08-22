@@ -325,3 +325,154 @@ def test_candidates_check_rides_run_without_breaking_it(tmp_root, monkeypatch):
         raise RuntimeError("synthetic")
     monkeypatch.setattr(sentinel, "check_candidates_freshness", boom)
     assert sentinel.run(now=REF_NOW, root=tmp_root) == 0
+
+
+# ---------------------------------------------------------------------------
+# K-D8 — hk-discovery freshness ladder (WS:PROPHET-HK-CA-REVAMP)
+#
+# Four distinct receipt fixtures — missing / stale as_of / registry_state
+# error / fresh-zero — must emit exactly the three distinct warnings on the
+# first three and stay SILENT on the fourth (a lawful zero-candidate session
+# is healthy, not an incident).
+# ---------------------------------------------------------------------------
+_HK_RECEIPT_PATH = "data/prophet_shadow/hk_discovery_receipt.json"
+
+
+def _write_hk_receipt(root: Path, payload: dict) -> None:
+    p = root / _HK_RECEIPT_PATH
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(payload))
+
+
+def test_k_d8_missing_receipt_warns_missing(tmp_path, capsys):
+    fired = sentinel.check_hk_discovery_freshness(tmp_path, now=REF_NOW)
+    out = capsys.readouterr().out
+    assert fired == [sentinel.HK_DISCOVERY_MISSING]
+    assert "::warning title=hk-discovery-receipt-missing::" in out
+    assert "hk-discovery-receipt-stale" not in out
+    assert "hk-discovery-registry-error" not in out
+    assert "hk-discovery-challenger-failed" not in out
+
+
+def test_k_d8_stale_as_of_warns_stale(tmp_path, capsys):
+    _write_hk_receipt(tmp_path, {
+        "market": "HK", "as_of": "2020-01-01", "registry_state": "wrote_n_rows n=0",
+        "written": 0, "definitions": ["hk_discovery_v1"], "challenger_failures": [],
+        "stamped_at": "2020-01-01T00:00:00+00:00",
+    })
+    fired = sentinel.check_hk_discovery_freshness(tmp_path, now=REF_NOW)
+    out = capsys.readouterr().out
+    assert fired == [sentinel.HK_DISCOVERY_STALE]
+    assert "::warning title=hk-discovery-receipt-stale::" in out
+    assert "hk-discovery-receipt-missing" not in out
+    assert "hk-discovery-registry-error" not in out
+
+
+def test_k_d8_registry_error_warns_error(tmp_path, capsys):
+    _write_hk_receipt(tmp_path, {
+        "market": "HK", "as_of": EXPECTED, "registry_state": "error",
+        "written": 0, "definitions": ["hk_discovery_v1"], "challenger_failures": [],
+        "stamped_at": f"{EXPECTED}T00:00:00+00:00",
+    })
+    fired = sentinel.check_hk_discovery_freshness(tmp_path, now=REF_NOW)
+    out = capsys.readouterr().out
+    assert fired == [sentinel.HK_DISCOVERY_ERROR]
+    assert "::warning title=hk-discovery-registry-error::" in out
+    assert "hk-discovery-receipt-stale" not in out
+
+
+def test_k_d8_challenger_failures_warns_challenger_failed(tmp_path, capsys):
+    _write_hk_receipt(tmp_path, {
+        "market": "HK", "as_of": EXPECTED, "registry_state": "wrote_n_rows n=0",
+        "written": 0, "definitions": ["hk_discovery_v1"],
+        "challenger_failures": [{"definition": "hk_discovery_v1", "error": "boom"}],
+        "stamped_at": f"{EXPECTED}T00:00:00+00:00",
+    })
+    fired = sentinel.check_hk_discovery_freshness(tmp_path, now=REF_NOW)
+    out = capsys.readouterr().out
+    assert fired == [sentinel.HK_DISCOVERY_CHALLENGER_FAILED]
+    assert "::warning title=hk-discovery-challenger-failed::" in out
+    assert "hk_discovery_v1" in out
+
+
+def test_k_d8_fresh_zero_session_is_silent(tmp_path, capsys):
+    """A fresh receipt with written=0 and no failures is a LAWFUL zero —
+    healthy, not an incident. MUTATION THIS KILLS: collapsing the
+    error/zero distinction (e.g. treating any non-positive `written` as an
+    error) would make this fixture warn."""
+    _write_hk_receipt(tmp_path, {
+        "market": "HK", "as_of": EXPECTED, "registry_state": "wrote_n_rows n=0",
+        "written": 0, "definitions": ["hk_discovery_v1"], "challenger_failures": [],
+        "stamped_at": f"{EXPECTED}T00:00:00+00:00",
+    })
+    fired = sentinel.check_hk_discovery_freshness(tmp_path, now=REF_NOW)
+    out = capsys.readouterr().out
+    assert fired == []
+    assert "hk-discovery" not in out
+
+
+def test_k_d8_rides_run_without_breaking_it(tmp_root, monkeypatch):
+    """run() calls the specialized check; a blow-up inside it must not cost
+    FT-R8's warn-only, always-exit-0 contract."""
+    def boom(root, now=None):
+        raise RuntimeError("synthetic")
+    monkeypatch.setattr(sentinel, "check_hk_discovery_freshness", boom)
+    assert sentinel.run(now=REF_NOW, root=tmp_root) == 0
+
+
+def test_k_d8_receipt_never_enters_the_generic_artifacts_loop():
+    """R1 (F1+F10): the receipt path must NOT be a member of _ARTIFACTS — it
+    has its own specialized check with its own HK-session gap arithmetic, and
+    folding it into the generic NYSE-clock loop would collapse its four
+    distinguishable states into one SURFACE STALE line and escalate it under
+    the wrong calendar. MUTATION THIS KILLS: re-adding an ArtifactSpec for
+    _HK_DISCOVERY_RECEIPT_PATH to _ARTIFACTS."""
+    assert all(spec.path != sentinel._HK_DISCOVERY_RECEIPT_PATH for spec in _ARTIFACTS)
+
+
+# ---------------------------------------------------------------------------
+# R11 — calendar-divergence fixture: the receipt's staleness gap is on HKEX's
+# OWN session calendar, never NYSE's, even at an instant where the two
+# calendars would name a DIFFERENT expected session entirely.
+# ---------------------------------------------------------------------------
+def test_r11_hk_discovery_stale_uses_hk_calendar_gap_not_nyse(tmp_path):
+    """At now=2026-04-07T03:00Z, HK's own calendar expects session 2026-04-02
+    while NYSE's calendar would expect 2026-04-06 — a 4-calendar-day
+    divergence. A receipt exactly AT the HK expected session is silent; one
+    HK session before it (2026-03-31) warns stale and must report the
+    HK-session gap (2), never a NYSE-derived one, and must never even mention
+    the NYSE expected date."""
+    now = datetime(2026, 4, 7, 3, 0, tzinfo=timezone.utc)
+    hk_expected = str(sentinel.hk_calendar.expected_last_session(now))
+    nyse_expected = str(sentinel.nyse_calendar.expected_last_session(now))
+    assert hk_expected == "2026-04-02"
+    assert nyse_expected == "2026-04-06"
+    assert hk_expected != nyse_expected  # the divergence this fixture exists to exercise
+
+    tmp = tmp_path
+    _write_hk_receipt(tmp, {
+        "market": "HK", "as_of": hk_expected, "registry_state": "wrote_n_rows n=0",
+        "written": 0, "definitions": ["hk_discovery_v1"], "challenger_failures": [],
+        "stamped_at": f"{hk_expected}T00:00:00+00:00",
+    })
+    import io, contextlib
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        fired = sentinel.check_hk_discovery_freshness(tmp, now=now)
+    assert fired == [], "a receipt exactly at the HK expected session must be silent"
+    assert buf.getvalue() == ""
+
+    stale_as_of = "2026-03-31"   # one HK session behind hk_expected
+    _write_hk_receipt(tmp, {
+        "market": "HK", "as_of": stale_as_of, "registry_state": "wrote_n_rows n=0",
+        "written": 0, "definitions": ["hk_discovery_v1"], "challenger_failures": [],
+        "stamped_at": f"{stale_as_of}T00:00:00+00:00",
+    })
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        fired = sentinel.check_hk_discovery_freshness(tmp, now=now)
+    out = buf.getvalue()
+    assert fired == [sentinel.HK_DISCOVERY_STALE]
+    assert "::warning title=hk-discovery-receipt-stale::" in out
+    assert "sessions_behind=2" in out, out
+    assert nyse_expected not in out, "must never report a NYSE-derived expected date"
