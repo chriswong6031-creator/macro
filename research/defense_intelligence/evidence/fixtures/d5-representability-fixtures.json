@@ -196,7 +196,7 @@
     ]
    }
   ],
-  "assertion": "all three ids recompute from the SS3.1 preimage; economic_weight is present and null on every row; BWXT carries shared_scope true; HII and BWXT carry single_document_dual_scope true (one document covers program_identity AND role)."
+  "assertion": "all three ids recompute from the SS3.1 preimage; economic_weight is present and null on every row; BWXT carries shared_scope true; single_document_dual_scope equals the SS3.1 loader-computed predicate - true iff no pair of DISTINCT refs independently supplies program_identity and role: HII/BWXT (one ref) compute true; GD computes false because ev_p1 supplies program_identity while ev_crs supplies role."
  },
  "C_event_link_state": {
   "census": "NO government_procurement_event.v2 row for the 2026-07-29 Block VI award exists on origin/main 7e00f8746ce5 (2026-08-22 census: awards.parquet 3,807 rows, award_actions.parquet 35,284 rows, award_snapshots/award_event_snapshots parquet, dossiers/latest/workspace JSON stores - zero Block VI / $42.1B / 2026-07-29 GD-Virginia rows; newest corpus known_at 2026-08-21T23:22:35Z).",
@@ -243,6 +243,7 @@
    "worksheet_sha256": "a4d0c6cbb8b75de2bfa92ba4ac86f16a615320a71e9e5e509cc6e062a08b764c",
    "admitted_count": 0
   },
+  "coverage_normalized_preimage": "program_event_link|award_event|govws-a6c70850a9cbdce9fa3e7f3b|a4d0c6cbb8b75de2bfa92ba4ac86f16a615320a71e9e5e509cc6e062a08b764c|2026-08-22t08:00:00+00:00",
   "program_link": {
    "state": "reviewed_none",
    "reason_code": "no_reviewed_program_link",
@@ -446,6 +447,7 @@
    "worksheet_sha256": "946c0c87d41bdecd7de17c8ce1877e0f9acaad2ace1dfec773b4d9dad0adac2d",
    "admitted_count": 0
   },
+  "coverage_normalized_preimage": "milestones|program|acq-program:example-alpha|946c0c87d41bdecd7de17c8ce1877e0f9acaad2ace1dfec773b4d9dad0adac2d|2026-08-22t08:00:00+00:00",
   "subject_note": "acq-program:example-alpha is fixture E's program (rows restated there)",
   "derived_rail_state": {
    "rail": "milestones",
