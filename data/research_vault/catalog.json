@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T13:23:14.484631+00:00",
-  "count": 1618,
+  "generated_at": "2026-08-22T14:10:25.375475+00:00",
+  "count": 1621,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -843,6 +843,47 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-mvgglzfphkr-d054de",
+      "title": "Market Intelligence US Morning Update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:02:57Z",
+      "summary_points": [
+        "**Korea Exports & China Consumer Path**: Mid-month Korea exports rebound 3.1% (chip demand-driven), while China consumer data uncertainty shapes global trade flows and tech sector sentiment.",
+        "**US PMI Data Releases**: S&P Global US manufacturing/services PMI near consensus (53.9/53.9 vs prior 53.9/54.6) signals potential economic slowdown concerns.",
+        "**Japan Market Vulnerability**: Concentrated AI/BoJ policy stocks face momentum reversal risk amid structural fragility from cross-shareholding unwinding.",
+        "**G10 Consumer Spending Slowdown**: July 2026 data signals weakening demand, critical for equity valuations and sector rotation (e.g., consumer discretionary)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5cg2d9zt4w4-d0e0ec",
+      "title": "GS TWIG Notes This Week in Global Research August 21, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:02:54Z",
+      "summary_points": [
+        "**Fed Rate Outlook**: Sluggish growth (2H26 real spending 1-1.5%), weak labor market (5K/mo job growth, 40bp unemployment drop), low core inflation → no rate hikes; Fed transparency debate may amplify volatility.",
+        "**Germany Labor Market Tightening**: Rising real wages amid stagnant productivity, aging workforce + immigration controls driving 0.4% annual labor supply contraction (fundamentals, risk factor).",
+        "**Drug Innovation Catalysts**: MRNA/MRK melanoma vaccine trial success (FDA approval potential) and GLP-1s off-patent in Canada/Brazil (generic opportunity, Sandoz best positioned).",
+        "**Hedge Fund Positioning**: Mutual funds outperforming benchmarks (41% vs 37% avg), US equity long/short returns 10% post-July (flows, technicals).",
+        "**SEC Policy Shift**: Crypto Assets proposal could expand digital asset use into tokenization/DeFi, creating new use cases (policy, flow catalyst)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-r83vp6rpdrp-0e1aaa",
       "title": "Global Rates Trader Macro Problems, Micro Solutions",
       "institution": "Goldman Sachs",
@@ -942,6 +983,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5mh0jm3gdzp-2d60c1",
+      "title": "Asia Pacific Weekly Kickstart MXAPJ rose another 1 as HK China Offshore rebounded and Asian FX strengthened despite resumed...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:02:46Z",
+      "summary_points": [
+        "**MXAPJ Performance & Key Drivers**: MXAPJ rose +1.0% on HK/China offshore rebound, Asian FX strength, and resilient tech exports; US manufacturing beat, China July activity miss, Japan Q2 GDP disappointment.",
+        "**MSCI Rebalancing Flow Impact**: $42bn gross flows (Aug 31, 2026), Japan (+$2.2bn), India (+$1.5bn), Taiwan (+$0.7bn) inflows; Korea (-$1.1bn), Australia (-$0.7bn), ASEAN (-$0.7bn) outflows.",
+        "**Korea ETF Rebound vs Taiwan Outflows**: Korea leveraged ETF AUM rebounded to $25bn (1.8% market exposure); Taiwan leveraged ETF AUM near record $13bn with $1B profit-taking outflows.",
+        "**Earnings Beat/Miss Impact**: Beats (+5%+) drive +2.5% relative price return (vs.",
+        "5-yr avg), misses (-5%+) trigger -2.2% underperformance; Australia, China A, Taiwan show strongest beat gains (+6%)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 35,
       "language": "en",
       "needs_metadata": false
     },
