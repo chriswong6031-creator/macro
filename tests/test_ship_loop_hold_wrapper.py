@@ -1,4 +1,4 @@
-"""Regression tests for the narrow HOLD-FOR-SOL Stop-hook terminal state."""
+"""Regression tests for the narrow HOLD-FOR-SOL Stop-hook state adapter."""
 
 from __future__ import annotations
 
@@ -171,21 +171,65 @@ def test_lawful_sol_authority_branch_parks_after_unsafe_branch(monkeypatch, tmp_
 
 
 def test_unsafe_branch_hold_exception_is_sol_namespace_only(monkeypatch, tmp_path):
-    """The PARKED exception must not undo the codex/* branch-law incident repair."""
+    """The HOLD adapter must not undo the codex/* branch-law incident repair."""
     _stub_clean_pushed_git(monkeypatch, branch="codex/forbidden-delivery")
     guard, calls = _fake_guard(tmp_path, state={"last_blocker": "unsafe_branch"})
 
-    assert WRAPPER._parked_hold(guard, {"hook_event_name": "Stop"}) is None
+    assert WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"}) is None
     assert calls == {"open_pull": 0, "checks": 0}
 
 
-def test_red_or_pending_hold_does_not_park(monkeypatch, tmp_path):
+def test_red_or_pending_claude_hold_does_not_park(monkeypatch, tmp_path):
+    """Ordinary claude/* behavior stays delegated until the hold is fully green."""
     _stub_clean_pushed_git(monkeypatch)
     red_guard, _ = _fake_guard(tmp_path, split=(["ci-pack-1 (failure)"], [], ["fences"]))
     assert WRAPPER._parked_hold(red_guard, {"hook_event_name": "Stop"}) is None
 
     pending_guard, _ = _fake_guard(tmp_path, split=([], ["ci-gate"], ["fences"]))
     assert WRAPPER._parked_hold(pending_guard, {"hook_event_name": "Stop"}) is None
+
+
+def test_pending_sol_hold_waits_without_unsafe_branch_remediation(monkeypatch, tmp_path):
+    """The #6207 pre-green state must wait, never invite a destructive rename."""
+    branch = "sol/chairman-tushare-compliance-override-2026-08-21"
+    _stub_clean_pushed_git(monkeypatch, branch=branch)
+    guard, calls = _fake_guard(
+        tmp_path,
+        state={"last_blocker": "unsafe_branch"},
+        split=([], ["ci-pack-4", "ci-gate"], ["fences"]),
+    )
+
+    probe = WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"})
+    assert probe is not None and probe["status"] == "pending"
+    block = WRAPPER._hold_block(probe)
+    assert block is not None and block["decision"] == "block"
+    reason = block["reason"].lower()
+    assert "hold-for-sol waiting" in reason
+    assert "do not rename" in reason
+    assert "wait for the existing check watcher only" in reason
+    assert "unsafe_branch" not in reason
+    assert calls == {"open_pull": 1, "checks": 1}
+
+
+def test_red_sol_hold_repairs_check_without_branch_remediation(monkeypatch, tmp_path):
+    """A real red remains a block, but the red—not the Sol branch—is the action."""
+    branch = "sol/chairman-tushare-compliance-override-2026-08-21"
+    _stub_clean_pushed_git(monkeypatch, branch=branch)
+    guard, _ = _fake_guard(
+        tmp_path,
+        state={"last_blocker": "unsafe_branch"},
+        split=(["ci-pack-1 (failure)"], [], ["fences"]),
+    )
+
+    probe = WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"})
+    assert probe is not None and probe["status"] == "red"
+    block = WRAPPER._hold_block(probe)
+    assert block is not None and block["decision"] == "block"
+    reason = block["reason"].lower()
+    assert "hold-for-sol checks red" in reason
+    assert "repair the failing check" in reason
+    assert "do not rename" in reason
+    assert "unsafe_branch" not in reason
 
 
 def test_dirty_or_not_exactly_pushed_hold_does_not_park(monkeypatch, tmp_path):
@@ -208,15 +252,15 @@ def test_dirty_or_not_exactly_pushed_hold_does_not_park(monkeypatch, tmp_path):
     assert WRAPPER._parked_hold(guard, {"hook_event_name": "Stop"}) is None
 
 
-def test_hold_probe_spends_no_github_quota_before_terminal_candidate_blocker(monkeypatch, tmp_path):
+def test_hold_probe_spends_no_github_quota_before_hold_candidate_blocker(monkeypatch, tmp_path):
     guard, calls = _fake_guard(tmp_path, state={"last_blocker": "render_pending"})
     monkeypatch.setattr(
         WRAPPER,
         "_git",
-        lambda *_a, **_k: pytest.fail("non-terminal blocker must not even inspect the branch"),
+        lambda *_a, **_k: pytest.fail("non-hold blocker must not even inspect the branch"),
     )
 
-    assert WRAPPER._parked_hold(guard, {"hook_event_name": "Stop"}) is None
+    assert WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"}) is None
     assert calls == {"open_pull": 0, "checks": 0}
 
 
