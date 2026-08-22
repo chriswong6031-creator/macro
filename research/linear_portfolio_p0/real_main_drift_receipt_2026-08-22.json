@@ -12,27 +12,39 @@
     "bootstrap_major": 1
   },
   "proof_identity": {
-    "compiler_subject_head_sha": "efdaa8aa4e3a6f67ea20a04ab9d3bee1d0a615a5",
-    "tested_base_main_sha": "2a728891a6564f4da979e00e58499094758e3782",
-    "tested_synthetic_merge_sha": "ad06a34d841737e02210fed21d7380020621c85b",
-    "semantic_ci_run_id": 32572857730,
-    "fences_run_id": 32572857725,
-    "semantic_plan_sha256": "f88900959a0024afc3ec1c23f226b452c844d56444ac8026d753a95d71816380",
-    "changed_file_count_before_receipt": 6,
-    "changed_files_sha256_prefix": "75e2a25c44aa7271"
+    "compiler_subject_head_sha": "ce6cab1b847ecd089cb94adde9038930e16ef1ed",
+    "tested_base_main_sha": "7e00f8746ce5fa9fa8bf6a9732897935d8fe557e",
+    "tested_synthetic_merge_sha": "7449cdd1647cde59ca60571846a07b2c33a6ad63",
+    "semantic_ci_run_id": 32579696180,
+    "fences_run_id": 32579696175,
+    "semantic_plan_sha256": "69a78cb44b80a728557679b79fd31547b91465485db387dec459673f852cc161",
+    "changed_file_count": 7,
+    "changed_files_sha256": "36a54296038d09cdf746fa49aeaa303a47bd01d0881d3efe691af9df7df52ac1"
   },
   "post_proof_main_equivalence": {
-    "main_sha_checked": "a595964520daa9c32bac0a0aa24ddea4c0534095",
-    "parent_of_main_sha": "2a728891a6564f4da979e00e58499094758e3782",
-    "main_commit_subject": "render: site re-render 2026-08-22 (scope=all, from=ff17036800d1)",
-    "comparison_result": "only site/** render outputs changed; canonical projector inputs were unchanged",
-    "scripts_agentos_blob_sha": "4ebea9b33b60a1853d2ec59bf658f34a7ec14f18",
-    "generated_agent_os_state_blob_sha": "58ef08a485c4a242b79afb92aca11fe69e3a0d85"
+    "main_sha_checked": "8ab622038b84ffc92a4c209860bf6adca02af21f",
+    "compared_from_tested_base_sha": "7e00f8746ce5fa9fa8bf6a9732897935d8fe557e",
+    "changed_paths": [
+      "data/marketing/content_outbox.jsonl",
+      "data/press/property_state.json",
+      "data/press/wire_cursor.json",
+      "metabolism/data/ci-status.json"
+    ],
+    "comparison_result": "Only operational marketing/press/metabolism status data changed after the tested base.",
+    "projector_input_equivalence": true,
+    "conclusion": "No direct Agent OS workstream record, scripts/agentos.py, data/governance/agent_os_state.json, config/mastermind_programs.yml, Linear witness, projector implementation, projector test, or CI ownership input changed."
+  },
+  "input_blobs": {
+    "scripts/agentos.py": "4ebea9b33b60a1853d2ec59bf658f34a7ec14f18",
+    "data/governance/agent_os_state.json": "58ef08a485c4a242b79afb92aca11fe69e3a0d85",
+    "config/mastermind_programs.yml": "d2359403a103297f90a6f2721574808f1e0f2573",
+    "scripts/linear_portfolio_plan.py": "30b4f306be509959cbdd149d7874ab1c1bc641db",
+    "research/linear_portfolio_p0/linear_snapshot_2026-08-21.json": "54b7c41d0a64de8dde8ed537a8bba2a0ace5bfa0"
   },
   "semantic_result": {
     "schema": "linear_portfolio_plan.v1",
-    "semantic_hash_without_linear_snapshot": "eb1da2e0bc5fab2f3f0043d819b2498e62b09ab8fd83332195946f8fe045c7cd",
-    "semantic_hash_with_linear_snapshot": "71486ad282d766a37ee20ebff65609f490370ea0f9b5267c53988f126a569e95",
+    "semantic_hash_without_linear_snapshot": "0ae02e62d0feaac3cc87cf00b83b14cd74046eb1d14acdc7a6cf18d7b94cddb8",
+    "semantic_hash_with_linear_snapshot": "b93786e7cc83ad0759aec6aef93a73773906b6b357b955060daf45f106ede8c8",
     "active_project_count": 38,
     "review_candidate_count": 1,
     "excluded_project_count": 5,
@@ -99,7 +111,7 @@
       "non_ws_updates_after_witness": [
         "Mastermind-X Linear OS"
       ],
-      "conclusion": "the pinned witness remains current for the WS:* portfolio"
+      "conclusion": "The pinned witness remained current for the WS:* portfolio at the P0 proof boundary."
     }
   },
   "drift": {
@@ -176,19 +188,36 @@
       "WS:MASSIVE-STOCK-DAY-R2-COHERENCE"
     ]
   },
+  "manual_adjudication": {
+    "proposed_workstream": "WS:MASSIVE-STOCK-DAY-R2-COHERENCE remains a review candidate and is not admitted as an active Linear project.",
+    "drift_authority": "All missing-binding, name, status, lifecycle, generated-state, and snapshot warnings are report outputs only; none authorizes a Linear mutation.",
+    "binding_review": "No ambiguous current WS:* project binding was found in the pinned witness.",
+    "managed_marker_precedence": {
+      "selected_contract": [
+        "<!-- mastermind-portfolio-projector:managed:v1 -->",
+        "<!-- /mastermind-portfolio-projector:managed:v1 -->"
+      ],
+      "ruling": "The later V1 architecture freeze owns the HTML-comment marker contract. Older MAS-66/P1 projection text using bracketed MMX-PROJECTOR markers is stale and must be corrected without changing P0 code."
+    },
+    "acceptance_scope": "This receipt accepts only P0 deterministic local report generation and exact drift evidence. It does not accept P1 app credentials, Linear apply, scheduling, issue/gate projection, or Executive/Slack integration."
+  },
   "agent_os_census": {
     "record_counts": {
       "workstreams": 44,
-      "decisions": 166,
+      "decisions": 167,
       "discoveries": 140,
-      "handoffs": 166
+      "handoffs": 168
     },
+    "total_records": 519,
     "validator_warning_count": 15,
     "validator_error_count": 0
   },
   "hosted_proof": {
     "semantic_ci": {
-      "run_id": 32572857730,
+      "run_id": 32579696180,
+      "tested_tree_sha": "7449cdd1647cde59ca60571846a07b2c33a6ad63",
+      "tested_base_sha": "7e00f8746ce5fa9fa8bf6a9732897935d8fe557e",
+      "subject_head_sha": "ce6cab1b847ecd089cb94adde9038930e16ef1ed",
       "ci_plan": "success",
       "contract_delta": "success",
       "packs_success": 12,
@@ -196,14 +225,16 @@
       "ci_gate": "success"
     },
     "fences": {
-      "run_id": 32572857725,
+      "run_id": 32579696175,
       "result": "success"
     },
     "projector_owner_logical_job": "self-mod-fence in .github/ci/legacy-jobs.yml",
     "agent_os_compile_suite": {
       "result": "success",
       "tests_passed": 151,
-      "emitted_receipt_schema": "linear_portfolio_plan_ci_receipt.v1"
+      "emitted_receipt_schema": "linear_portfolio_plan_ci_receipt.v1",
+      "semantic_hash_without_linear_snapshot": "0ae02e62d0feaac3cc87cf00b83b14cd74046eb1d14acdc7a6cf18d7b94cddb8",
+      "semantic_hash_with_linear_snapshot": "b93786e7cc83ad0759aec6aef93a73773906b6b357b955060daf45f106ede8c8"
     },
     "discriminating_tests": [
       "tests/linear_portfolio_plan_cases.py::test_socket_disabled_runtime_still_compiles",
@@ -227,6 +258,7 @@
   "receipt_finalization_law": {
     "this_file_is_projector_input": false,
     "expected_effect_on_semantic_hash": "none",
-    "required_final_check": "Exact-head hosted CI after committing this evidence file must remain green and reproduce the two semantic hashes above before merge."
+    "required_final_check": "After committing this evidence file, one final exact-head PR proof against the then-current main must remain green and reproduce both semantic hashes before merge.",
+    "non_recursive_proof_record": "The final post-receipt workflow IDs and merge acceptance belong in the PR/Linear/Agent OS closeout rather than being written back into this receipt and creating an infinite proof recursion."
   }
 }
