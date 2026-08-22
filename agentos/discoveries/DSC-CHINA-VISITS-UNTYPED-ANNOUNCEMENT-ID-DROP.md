@@ -99,3 +99,9 @@ and `tests/test_china_visits_collector.py::TestAccountingMutationGuard`
 accounting, not on the test's own logic). This closes the hole this record
 describes; the falsifier and `verified_at` above remain an accurate record
 of what was true when this discovery was first verified.
+
+Sequel: repairing this mechanism without designing its lifecycle introduced two
+new lifecycle defects — [[DSC:CHINA-VISITS-KEY-EXCLUSION-LATCH-AND-AGING-FORGETFULNESS]]
+— closed by P1-R3 (DEC:CHINA-COVERAGE-EXCEPTION-LEDGER). This record's own claim
+and falsifier are unaffected: the bare-comprehension drop it describes was real
+and #6229 did remove it.

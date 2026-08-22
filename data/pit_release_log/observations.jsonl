@@ -15925,3 +15925,6 @@
 {"series": "china_filings", "group": "china_filings", "fetch_ts": "2026-08-22T09:10:07.487231+00:00", "last_obs_date": "2026-08-22"}
 {"series": "china_visits", "group": "china_visits", "fetch_ts": "2026-08-22T09:10:07.509965+00:00", "last_obs_date": "2026-08-22"}
 {"series": "china_irm", "group": "china_irm", "fetch_ts": "2026-08-22T09:11:28.023342+00:00", "last_obs_date": "2026-08-22"}
+{"series": "fundamentals", "group": "fundamentals", "fetch_ts": "2026-08-22T14:16:11.427620+00:00", "last_obs_date": "2026-08-22"}
+{"series": "stock_fundamentals", "group": "stock_fundamentals", "fetch_ts": "2026-08-22T14:19:17.396510+00:00", "last_obs_date": "2026-08-22"}
+{"series": "cot", "group": "cot", "fetch_ts": "2026-08-22T14:19:33.979837+00:00", "last_obs_date": "2026-08-18"}

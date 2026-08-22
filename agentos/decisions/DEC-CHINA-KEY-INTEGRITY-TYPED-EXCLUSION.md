@@ -138,3 +138,48 @@ announcementIds in practice (this record was written when the path had
 fired zero times ever), the zero-valued "rare-branch repair" framing above
 would need re-examination, though the mechanism itself would not need to
 change.
+
+## AMENDED BY P1-R3 (2026-08-22) — temporal + scope semantics only
+
+The paragraph immediately above called its own shot: "a future plane that needs
+to RECOVER a malformed row ... would need a genuinely new decision ... nothing
+persists a full excluded-row ledger." That decision is now
+DEC:CHINA-COVERAGE-EXCEPTION-LEDGER, commissioned by Sol as P1-R3 after
+accepting this implementation with no rollback.
+
+**Still binding, unchanged, and explicitly re-affirmed by the P1-R3 commission:**
+`key_anomaly()` remains the SINGLE natural-key validity predicate, owned here and
+imported by `china_visits`, never re-derived; no fallback/composite/synthetic
+canonical `announcementId` may ever be minted; no keyless row may enter canonical
+`filings.parquet`; the strict unreadable-store ABORT in `write_filings()` stays;
+the mechanical candidate-accounting identity in `china_visits.refresh()` stays as
+an explicit branch, not an `assert`. P1-R3 changes none of these.
+
+**Amended:** this record's answer left the exclusion's LIFETIME and SCOPE at the
+values it inherited — per-run, and plane-global — because the commission bounded
+it to the two write boundaries. Measured against the merged bytes
+(`DSC:CHINA-VISITS-KEY-EXCLUSION-LATCH-AND-AGING-FORGETFULNESS`), those two
+defaults fail in opposite directions and are jointly exhaustive over where a
+malformed visit row can sit, so neither was ever right. P1-R3 replaces them:
+a malformed institutional-visit observation becomes a DURABLE coverage-exception
+ledger row, remembered until deterministically reconciled, and suppression is
+scoped to the affected company whenever the company is knowable.
+
+**Deliberately reversed:** P1-R2's requirement that malformed-key conditions must
+not advance clean `last_success_utc`. With the ledger carrying the suppression
+per company, a globally-clean run now MAY advance `last_success_utc` and MAY
+stamp `coverage_start` — and must, because freezing them is exactly the latch
+that prevents the visit plane from ever starting. Typed key exclusions are
+therefore no longer a plane-global `upstream_degraded` cause; the remaining
+global causes are transport degradation, key-integrity UNKNOWN, an unreadable
+ledger, and the accounting-identity failure.
+
+**Also lifted by that commission:** this record's rationale leans on
+`engine/china_intel_hub.py` being out of scope ("the fix must work within the
+hub's existing vocabulary, not extend it"). Sol's P1-R3 ruling states that the
+prohibition "does not survive when that prohibition itself prevents correct
+per-company semantics" — the hub is now edited to carry a structured
+`coverage_exception` projection. The reasoning about literal state-string routing
+is unchanged and still load-bearing: P1-R3 still adds no new top-level state
+enum, and routes through the existing `not_yet_available` value for exactly the
+reason recorded here.

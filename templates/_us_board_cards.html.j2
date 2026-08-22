@@ -62,7 +62,7 @@
            path (G0.1), `lane` is the legacy lane partition an old artifact still gets. #}
         {% if n.get('_heading') and n.get('stage_hd') %}
         {% set _sk = n.stage_hd %}
-        <div class="nb-stage-hd sg-{{ _sk }}" data-stage="{{ _sk }}" data-tip-en="{{ _stage_tip_en[_sk] }}" data-tip-zh="{{ _stage_tip_zh[_sk] }}">
+        <div class="nb-stage-hd sg-{{ _sk }}" data-stage="{{ _sk }}" data-sm-heading="1" data-tip-en="{{ _stage_tip_en[_sk] }}" data-tip-zh="{{ _stage_tip_zh[_sk] }}">
           <span class="sh-l"><span class="l-en">{{ _stage_en[_sk] }}</span><span class="l-zh">{{ _stage_zh[_sk] }}</span></span>
           <span class="sh-n">{{ n.count }}</span>
           <span class="sh-s"><span class="l-en">{{ _stage_sub_en[_sk] }}</span><span class="l-zh">{{ _stage_sub_zh[_sk] }}</span></span>
@@ -74,7 +74,7 @@
            hydrate() merges them by this attribute (dashboard.html.j2). Without it
            the lane path can only fall back to appending, which is what drew the
            heading twice. Display is unchanged — the CSS keys on the class. #}
-        <div class="nb-lane-hd" data-lane="{{ n.lane }}">
+        <div class="nb-lane-hd" data-lane="{{ n.lane }}" data-sm-heading="1">
           <span class="l-en">{{ _lane_labels_en.get(n.lane, n.lane) }} · {{ n.count }}</span>
           <span class="l-zh">{{ _lane_labels_zh.get(n.lane, n.lane) }} · {{ n.count }}</span>
         </div>

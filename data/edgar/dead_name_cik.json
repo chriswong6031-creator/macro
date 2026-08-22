@@ -2432,12 +2432,12 @@
 "method": "unresolved"
 },
 "MFE": {
-"cik": null,
-"method": "unresolved"
+"cik": 890801,
+"method": "edgar_fts"
 },
 "MGLN": {
-"cik": null,
-"method": "unresolved"
+"cik": 19411,
+"method": "edgar_fts"
 },
 "MGPI": {
 "cik": null,
@@ -2476,8 +2476,8 @@
 "method": "unresolved"
 },
 "MLAB": {
-"cik": null,
-"method": "unresolved"
+"cik": 724004,
+"method": "edgar_fts"
 },
 "MMC": {
 "cik": null,
@@ -2504,20 +2504,20 @@
 "method": "unresolved"
 },
 "MODV": {
-"cik": null,
-"method": "unresolved"
+"cik": 1220754,
+"method": "edgar_fts"
 },
 "MOLX": {
-"cik": null,
-"method": "unresolved"
+"cik": 67472,
+"method": "edgar_fts"
 },
 "MON": {
 "cik": null,
 "method": "unresolved"
 },
 "MOV": {
-"cik": null,
-"method": "unresolved"
+"cik": 72573,
+"method": "edgar_fts"
 },
 "MPAA": {
 "cik": null,
@@ -2528,8 +2528,8 @@
 "method": "unresolved"
 },
 "MRO": {
-"cik": null,
-"method": "unresolved"
+"cik": 101778,
+"method": "edgar_fts"
 },
 "MRX": {
 "cik": null,
@@ -2588,16 +2588,16 @@
 "method": "seed"
 },
 "MYE": {
-"cik": null,
-"method": "unresolved"
+"cik": 69488,
+"method": "edgar_fts"
 },
 "MYG": {
 "cik": null,
 "method": "unresolved"
 },
 "MYGN": {
-"cik": null,
-"method": "unresolved"
+"cik": 899923,
+"method": "edgar_fts"
 },
 "MYL": {
 "cik": null,
@@ -2612,12 +2612,12 @@
 "method": "unresolved"
 },
 "NARI": {
-"cik": null,
-"method": "unresolved"
+"cik": 1531048,
+"method": "edgar_fts"
 },
 "NATI": {
-"cik": null,
-"method": "unresolved"
+"cik": 935494,
+"method": "edgar_fts"
 },
 "NAV": {
 "cik": null,
@@ -2628,8 +2628,8 @@
 "method": "seed"
 },
 "NBR": {
-"cik": null,
-"method": "unresolved"
+"cik": 1163739,
+"method": "edgar_fts"
 },
 "NC": {
 "cik": null,
@@ -2656,24 +2656,24 @@
 "method": "unresolved"
 },
 "NFB": {
-"cik": null,
-"method": "unresolved"
+"cik": 352510,
+"method": "edgar_fts"
 },
 "NFBK": {
 "cik": null,
 "method": "unresolved"
 },
 "NFX": {
-"cik": null,
-"method": "unresolved"
+"cik": 912750,
+"method": "edgar_fts"
 },
 "NGH": {
 "cik": null,
 "method": "unresolved"
 },
 "NKTR": {
-"cik": null,
-"method": "unresolved"
+"cik": 906709,
+"method": "edgar_fts"
 },
 "NLC": {
 "cik": null,
@@ -2712,8 +2712,8 @@
 "method": "unresolved"
 },
 "NSI": {
-"cik": null,
-"method": "unresolved"
+"cik": 70538,
+"method": "edgar_fts"
 },
 "NSM": {
 "cik": null,
@@ -2724,20 +2724,20 @@
 "method": "unresolved"
 },
 "NTGR": {
-"cik": null,
-"method": "unresolved"
+"cik": 1122904,
+"method": "edgar_fts"
 },
 "NTUS": {
-"cik": null,
-"method": "unresolved"
+"cik": 878526,
+"method": "edgar_fts"
 },
 "NUS": {
 "cik": null,
 "method": "unresolved"
 },
 "NUVA": {
-"cik": null,
-"method": "unresolved"
+"cik": 1142596,
+"method": "edgar_fts"
 },
 "NVE": {
 "cik": null,
@@ -2748,20 +2748,20 @@
 "method": "unresolved"
 },
 "NVLS": {
-"cik": null,
-"method": "unresolved"
+"cik": 836106,
+"method": "edgar_fts"
 },
 "NVRI": {
-"cik": null,
-"method": "unresolved"
+"cik": 45876,
+"method": "edgar_fts"
 },
 "NXGN": {
-"cik": null,
-"method": "unresolved"
+"cik": 708818,
+"method": "edgar_fts"
 },
 "NXTL": {
-"cik": null,
-"method": "unresolved"
+"cik": 824169,
+"method": "edgar_fts"
 },
 "NYMT": {
 "cik": null,
@@ -2772,12 +2772,12 @@
 "method": "unresolved"
 },
 "NYX": {
-"cik": null,
-"method": "unresolved"
+"cik": 1368007,
+"method": "edgar_fts"
 },
 "OA": {
-"cik": null,
-"method": "unresolved"
+"cik": 866121,
+"method": "edgar_fts"
 },
 "OAS": {
 "cik": null,
@@ -2792,8 +2792,8 @@
 "method": "unresolved"
 },
 "OFIX": {
-"cik": null,
-"method": "unresolved"
+"cik": 884624,
+"method": "edgar_fts"
 },
 "OIS": {
 "cik": null,
@@ -2836,20 +2836,20 @@
 "method": "unresolved"
 },
 "ORGO": {
-"cik": null,
-"method": "unresolved"
+"cik": 1661181,
+"method": "edgar_fts"
 },
 "ORX": {
 "cik": null,
 "method": "unresolved"
 },
 "OSPN": {
-"cik": null,
-"method": "unresolved"
+"cik": 1044777,
+"method": "edgar_fts"
 },
 "OSUR": {
-"cik": null,
-"method": "unresolved"
+"cik": 1116463,
+"method": "edgar_fts"
 },
 "OWENQ": {
 "cik": null,
@@ -2860,8 +2860,8 @@
 "method": "unresolved"
 },
 "PACW": {
-"cik": null,
-"method": "unresolved"
+"cik": 1102112,
+"method": "edgar_fts"
 },
 "PALM": {
 "cik": null,
@@ -2900,8 +2900,8 @@
 "method": "unresolved"
 },
 "PCP": {
-"cik": null,
-"method": "unresolved"
+"cik": 79958,
+"method": "edgar_fts"
 },
 "PCS": {
 "cik": null,
@@ -2920,8 +2920,8 @@
 "method": "unresolved"
 },
 "PDCO": {
-"cik": null,
-"method": "unresolved"
+"cik": 891024,
+"method": "edgar_fts"
 },
 "PDG": {
 "cik": null,
@@ -2944,8 +2944,8 @@
 "method": "unresolved"
 },
 "PETM": {
-"cik": null,
-"method": "unresolved"
+"cik": 863157,
+"method": "edgar_fts"
 },
 "PETS": {
 "cik": null,
@@ -2960,8 +2960,8 @@
 "method": "unresolved"
 },
 "PGTI": {
-"cik": null,
-"method": "unresolved"
+"cik": 1354327,
+"method": "edgar_fts"
 },
 "PHA": {
 "cik": null,
@@ -2988,12 +2988,12 @@
 "method": "unresolved"
 },
 "PLCE": {
-"cik": null,
-"method": "unresolved"
+"cik": 1041859,
+"method": "edgar_fts"
 },
 "PLCM": {
-"cik": null,
-"method": "unresolved"
+"cik": 1010552,
+"method": "edgar_fts"
 },
 "PLL": {
 "cik": null,
@@ -3048,24 +3048,24 @@
 "method": "unresolved"
 },
 "PRFT": {
-"cik": null,
-"method": "unresolved"
+"cik": 1085869,
+"method": "edgar_fts"
 },
 "PRSP": {
 "cik": null,
 "method": "unresolved"
 },
 "PRXL": {
-"cik": null,
-"method": "unresolved"
+"cik": 799729,
+"method": "edgar_fts"
 },
 "PSB": {
 "cik": null,
 "method": "unresolved"
 },
 "PSFT": {
-"cik": null,
-"method": "unresolved"
+"cik": 875570,
+"method": "edgar_fts"
 },
 "PSS": {
 "cik": null,
@@ -3108,32 +3108,32 @@
 "method": "unresolved"
 },
 "PXP": {
-"cik": null,
-"method": "unresolved"
+"cik": 891456,
+"method": "edgar_fts"
 },
 "PZE": {
 "cik": null,
 "method": "unresolved"
 },
 "QCP": {
-"cik": null,
-"method": "unresolved"
+"cik": 1677203,
+"method": "edgar_fts"
 },
 "QEP": {
-"cik": null,
-"method": "unresolved"
+"cik": 1108827,
+"method": "edgar_fts"
 },
 "QLGC": {
-"cik": null,
-"method": "unresolved"
+"cik": 918386,
+"method": "edgar_fts"
 },
 "QTRN": {
 "cik": null,
 "method": "unresolved"
 },
 "QURE": {
-"cik": null,
-"method": "unresolved"
+"cik": 1590560,
+"method": "edgar_fts"
 },
 "RAD": {
 "cik": null,
@@ -3144,8 +3144,8 @@
 "method": "unresolved"
 },
 "RAI": {
-"cik": null,
-"method": "unresolved"
+"cik": 1275283,
+"method": "edgar_fts"
 },
 "RATL": {
 "cik": null,
@@ -3192,40 +3192,40 @@
 "method": "unresolved"
 },
 "REGI": {
-"cik": null,
-"method": "unresolved"
+"cik": 1463258,
+"method": "edgar_fts"
 },
 "REI": {
 "cik": null,
 "method": "unresolved"
 },
 "RGNX": {
-"cik": null,
-"method": "unresolved"
+"cik": 1590877,
+"method": "edgar_fts"
 },
 "RGP": {
-"cik": null,
-"method": "unresolved"
+"cik": 1084765,
+"method": "edgar_fts"
 },
 "RGR": {
 "cik": null,
 "method": "unresolved"
 },
 "RGS": {
-"cik": null,
-"method": "unresolved"
+"cik": 716643,
+"method": "edgar_fts"
 },
 "RHT": {
-"cik": null,
-"method": "unresolved"
+"cik": 1087423,
+"method": "edgar_fts"
 },
 "RIG": {
 "cik": null,
 "method": "unresolved"
 },
 "RILY": {
-"cik": null,
-"method": "unresolved"
+"cik": 1464790,
+"method": "edgar_fts"
 },
 "RLGY": {
 "cik": null,
@@ -3236,8 +3236,8 @@
 "method": "unresolved"
 },
 "RMAX": {
-"cik": null,
-"method": "unresolved"
+"cik": 1581091,
+"method": "edgar_fts"
 },
 "RML": {
 "cik": null,
