@@ -10,8 +10,12 @@ from __future__ import annotations
 
 import itertools
 import json
+import sys
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping
+
+_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_ROOT))
 
 from scripts.research.dislocation_p0_a1_lib import (
     PRIMARY_FAMILIES,
@@ -24,7 +28,7 @@ from scripts.research.dislocation_p0_a1_lib import (
     is_design_excluded,
     selection_key,
     sha256_text,
-)
+)  # noqa: E402
 
 
 STRUCTURAL_CONTROL = "STRUCTURAL_IMPAIRMENT_CONTROL"

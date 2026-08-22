@@ -8,12 +8,16 @@ document spine and its archive collector.
 """
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from collectors.sec_document_spine import ArchiveStoreError, read_primary_document
-from collectors.sec_document_spine import read_filing_manifest
+_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_ROOT))
+
+from collectors.sec_document_spine import ArchiveStoreError, read_primary_document  # noqa: E402
+from collectors.sec_document_spine import read_filing_manifest  # noqa: E402
 
 
 REQUIRED_PACKET_COUNT = 20
