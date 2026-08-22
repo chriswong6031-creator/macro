@@ -273,7 +273,10 @@ Sol accepted A4P's architecture (amendments AP1-AP8 are FINAL, never reopened or
 returned bounded REQUEST_CHANGES: seven rulings (R1-R7) closing every field A4 proper would
 otherwise have had to invent, interpret, or choose. This build-worker packet implements all seven
 as records-only edits to research/imce/* + agentos/*, on branch claude/imce-a4p1-records, DRAFT PR
-pending the commissioning session's review and merge (fill in PR number/head SHA on landing).
+#6237 (head 14ed224c4929), NOT marked ready, NOT armed merge-on-green, pending the commissioning
+session's review and merge. This addendum records the state at the point the DRAFT PR opened; the
+head SHA above will shift by one commit once this addendum + the WS wave entry's own PR-number
+back-fill land (self-referential — the same defect every prior gate's addendum also carries).
 
 - **R1** — retires the stale `effective_blocks_under_independent_shock_law_with_deff` YAML
   denomination (DEFF struck three gates ago at AG3); census confirms this was the ONLY live

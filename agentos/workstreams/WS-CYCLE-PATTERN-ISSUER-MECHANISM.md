@@ -207,10 +207,12 @@ waves:
   - id: A4P-1
     title: IMCE-A4P.1 — fourth-gate REQUEST_CHANGES preflight closure (Sol wave, 2026-08-22; records only)
     status: in_progress
+    pr: 6237
     depends_on: [A4P]
     next_action: >
-      Records complete on this build-worker's branch, DRAFT PR opened
-      (commissioning session fills in the PR number/head SHA on landing).
+      Records complete. DRAFT PR #6237 opened (head 14ed224c4929,
+      branch claude/imce-a4p1-records) — NOT marked ready, NOT armed
+      merge-on-green. The commissioning session reviews and lands it.
       All seven Sol rulings (R1-R7) implemented: R1 retires the stale
       effective_blocks_under_independent_shock_law_with_deff YAML denomination
       (DEFF struck at AG3, three gates ago) and adds annotation-only
