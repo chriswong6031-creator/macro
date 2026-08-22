@@ -2,23 +2,23 @@
   "display_only": true,
   "organ": "hk_narrative",
   "as_of": "2026-08-22",
-  "generated_utc": "2026-08-22T08:13:49+00:00",
-  "freshness": "stale",
+  "generated_utc": "2026-08-22T09:52:47+00:00",
+  "freshness": "degraded",
   "entities": [
     {
       "slug": "alibaba",
       "ticker": "9988.HK",
       "name_en": "Alibaba",
       "name_zh": "\u963f\u91cc\u5df4\u5df4",
-      "attention_shock_z": 0.898,
-      "tone_pctile": null,
-      "narrative_state": "quiet",
+      "attention_shock_z": -0.71,
+      "tone_pctile": 16.5,
+      "narrative_state": "tone_negative_shift",
       "young": false,
       "n_obs": 86,
-      "as_of_date": "2026-08-12",
+      "as_of_date": "2026-08-22",
       "no_data_reason": null,
-      "state_en": "quiet",
-      "state_zh": "\u5e73\u9759"
+      "state_en": "tone souring",
+      "state_zh": "\u8206\u60c5\u8f6c\u5f31"
     },
     {
       "slug": "tencent",
@@ -135,15 +135,15 @@
       "ticker": "9988.HK",
       "name_en": "Alibaba",
       "name_zh": "\u963f\u91cc\u5df4\u5df4",
-      "attention_shock_z": 0.898,
-      "tone_pctile": null,
-      "narrative_state": "quiet",
+      "attention_shock_z": -0.71,
+      "tone_pctile": 16.5,
+      "narrative_state": "tone_negative_shift",
       "young": false,
       "n_obs": 86,
-      "as_of_date": "2026-08-12",
+      "as_of_date": "2026-08-22",
       "no_data_reason": null,
-      "state_en": "quiet",
-      "state_zh": "\u5e73\u9759"
+      "state_en": "tone souring",
+      "state_zh": "\u8206\u60c5\u8f6c\u5f31"
     },
     {
       "slug": "smic",
