@@ -30,6 +30,7 @@ from engine.capital_structure.projection import (
     build_projection_bundle,
     validate_projection_bundle,
 )  # noqa: E402
+from engine.capital_structure.ingestion_health import _validate_health  # noqa: E402
 from engine.capital_structure.verified_projection_generation import (
     read_verified_projection_generation,
 )  # noqa: E402
@@ -196,6 +197,29 @@ def _promote_pair(payload: bytes, canonical_path: Path, public_path: Path) -> No
                 path.unlink()
 
 
+def _read_bound_health(root: Path, telemetry: Mapping[str, Any]) -> dict[str, Any]:
+    """Load the canonical horizon only when it binds the verified generation."""
+    path = root / "health.json"
+    if not path.exists():
+        raise ValueError("capital-structure health receipt is required for projection")
+    try:
+        health = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("capital-structure health receipt is unreadable") from exc
+    if not isinstance(health, Mapping):
+        raise ValueError("capital-structure health receipt root must be an object")
+    _validate_health(health)
+    horizon = health.get("horizon")
+    if not isinstance(horizon, Mapping):
+        raise ValueError("capital-structure health horizon is required for projection")
+    if (
+        horizon.get("compiler_generation_id") != telemetry.get("generation_id")
+        or horizon.get("compiler_as_of") != telemetry.get("as_of")
+    ):
+        raise ValueError("capital-structure health horizon does not bind verified generation")
+    return dict(health)
+
+
 def build_from_disk(
     *,
     root: Path | None = None,
@@ -219,6 +243,7 @@ def build_from_disk(
 
     generation = read_verified_projection_generation(root)
     telemetry = generation.telemetry
+    health = _read_bound_health(root, telemetry)
 
     projection_as_of = as_of or telemetry.get("as_of") or produced_at
     bundle = build_projection_bundle(
@@ -228,6 +253,7 @@ def build_from_disk(
         telemetry,
         as_of=str(projection_as_of),
         generated_at=produced_at,
+        health=health,
     )
     validate_projection_bundle(bundle)
     payload = (

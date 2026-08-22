@@ -376,10 +376,47 @@ def _freshness(
     return ("fresh" if age <= FRESHNESS_SLA_HOURS else "stale"), round(age, 6)
 
 
-def _unavailable_bundle(
-    telemetry: Mapping[str, Any], *, as_of: str, generated_at: str, reason: str
+def _horizon_coverage(
+    health: Mapping[str, Any] | None,
+    telemetry: Mapping[str, Any],
 ) -> dict[str, Any]:
-    freshness, age_hours = _freshness(telemetry, generated_at)
+    """Expose only a telemetry-bound canonical health horizon to the public view."""
+    horizon = (health or {}).get("horizon") if isinstance(health, Mapping) else None
+    if not isinstance(horizon, Mapping):
+        return {
+            "freshness": "unknown", "horizon_state": "unavailable",
+            "horizon_reason_codes": ["health_horizon_missing"],
+            "horizon_watermarks": None,
+            "freshness_sla_hours": 6,
+        }
+    if (
+        horizon.get("compiler_generation_id") != telemetry.get("generation_id")
+        or horizon.get("compiler_as_of") != telemetry.get("as_of")
+    ):
+        return {
+            "freshness": "unknown", "horizon_state": "unavailable",
+            "horizon_reason_codes": ["health_horizon_generation_mismatch"],
+            "horizon_watermarks": None,
+            "freshness_sla_hours": float(horizon.get("target_sla_hours") or 6),
+        }
+    state = str(horizon.get("state") or "unavailable")
+    if state not in {"current", "lagging", "degraded_capacity", "degraded_discovery", "unavailable"}:
+        raise ValueError("health horizon has an invalid state")
+    return {
+        "freshness": "fresh" if state == "current" else ("unknown" if state == "unavailable" else "stale"),
+        "horizon_state": state,
+        "horizon_reason_codes": list(horizon.get("reason_codes") or []),
+        "horizon_watermarks": deepcopy(dict(horizon.get("watermarks") or {})),
+        "freshness_sla_hours": float(horizon.get("target_sla_hours") or 6),
+    }
+
+
+def _unavailable_bundle(
+    telemetry: Mapping[str, Any], *, as_of: str, generated_at: str, reason: str,
+    health: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    generation_freshness, generation_age_hours = _freshness(telemetry, generated_at)
+    horizon = _horizon_coverage(health, telemetry)
     artifact_hashes = telemetry.get("artifact_hashes") or {}
     source_receipt = {
         "generation_id": telemetry.get("generation_id"),
@@ -399,9 +436,15 @@ def _unavailable_bundle(
         "source_receipt": source_receipt,
         "coverage": {
             "state": "unavailable",
-            "freshness": freshness,
-            "age_hours": age_hours,
-            "freshness_sla_hours": FRESHNESS_SLA_HOURS,
+            "freshness": horizon["freshness"],
+            "age_hours": None,
+            "freshness_sla_hours": horizon["freshness_sla_hours"],
+            "generation_freshness": generation_freshness,
+            "generation_age_hours": generation_age_hours,
+            "generation_freshness_sla_hours": FRESHNESS_SLA_HOURS,
+            "horizon_state": horizon["horizon_state"],
+            "horizon_reason_codes": horizon["horizon_reason_codes"],
+            "horizon_watermarks": horizon["horizon_watermarks"],
             "source_status": str(telemetry.get("status") or "missing"),
             "coverage_claim": telemetry.get("coverage_claim"),
             "known_exclusions": sorted(str(value) for value in telemetry.get("known_exclusions") or []),
@@ -428,6 +471,7 @@ def build_projection_bundle(
     telemetry: Mapping[str, Any],
     as_of: str,
     generated_at: str,
+    health: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a strict event-state snapshot from an already-verified generation."""
     as_of_iso = _iso(as_of, "as_of")
@@ -445,6 +489,7 @@ def build_projection_bundle(
             as_of=as_of_iso,
             generated_at=generated_iso,
             reason=f"source_generation_{source_status}",
+            health=health,
         )
     if not telemetry.get("generation_id"):
         return _unavailable_bundle(
@@ -452,6 +497,7 @@ def build_projection_bundle(
             as_of=as_of_iso,
             generated_at=generated_iso,
             reason="source_generation_unbound",
+            health=health,
         )
 
     source_as_of = _parse_time(telemetry.get("as_of"), "telemetry.as_of")
@@ -579,7 +625,8 @@ def build_projection_bundle(
             "authority": dict(AUTHORITY),
         })
 
-    freshness, age_hours = _freshness(telemetry, generated_iso)
+    generation_freshness, generation_age_hours = _freshness(telemetry, generated_iso)
+    horizon = _horizon_coverage(health, telemetry)
     classified_count = sum(
         (event.get("classification") or {}).get("state") == "classified"
         for event in visible_events
@@ -608,9 +655,15 @@ def build_projection_bundle(
         "source_receipt": source_receipt,
         "coverage": {
             "state": bundle_state,
-            "freshness": freshness,
-            "age_hours": age_hours,
-            "freshness_sla_hours": FRESHNESS_SLA_HOURS,
+            "freshness": horizon["freshness"],
+            "age_hours": None,
+            "freshness_sla_hours": horizon["freshness_sla_hours"],
+            "generation_freshness": generation_freshness,
+            "generation_age_hours": generation_age_hours,
+            "generation_freshness_sla_hours": FRESHNESS_SLA_HOURS,
+            "horizon_state": horizon["horizon_state"],
+            "horizon_reason_codes": horizon["horizon_reason_codes"],
+            "horizon_watermarks": horizon["horizon_watermarks"],
             "source_status": source_status,
             "coverage_claim": telemetry.get("coverage_claim"),
             "known_exclusions": sorted(str(value) for value in telemetry.get("known_exclusions") or []),
