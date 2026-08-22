@@ -86,6 +86,20 @@ def _identity_resolution_state_counts(rows: list[dict]) -> dict[str, int]:
     return dict(sorted(out.items()))
 
 
+def _retired_node_ids() -> frozenset[str]:
+    """Node_ids whose latest node_lifecycle status is retired/merged (V4-D2B3, R-A6).
+
+    Read here — the impure orchestrator — and handed to materialize.build() as a plain
+    frozenset; materialize itself reads no store (purity, R-A6). An empty/absent
+    lifecycle table (pre-correction checkouts) yields an empty set, a no-op.
+    """
+    lifecycle = store.read_node_lifecycle(latest=True)
+    if lifecycle.empty:
+        return frozenset()
+    retired = lifecycle[lifecycle["status"].isin(store.RETIRED_LIKE_STATUSES)]
+    return frozenset(str(n) for n in retired["node_id"])
+
+
 def run(*, backfill: bool, force_backfill: bool,
         allow_source_shrink: tuple[str, ...] = ()) -> int:
     lane = store.collect_lane()
@@ -99,7 +113,8 @@ def run(*, backfill: bool, force_backfill: bool,
                   "--force-backfill only if that is genuinely what you want.", len(stored))
         return 1
 
-    view = materialize.build(era=era, raw_snapshot=_newest_raw_snapshot())
+    view = materialize.build(era=era, raw_snapshot=_newest_raw_snapshot(),
+                             retired_node_ids=_retired_node_ids())
     edges = view.edges if backfill else materialize.changed_edges(view.edges, stored)
 
     # SECOND WALL (§2). The refresh contract's interlocks guard the path a refresh takes;
@@ -120,6 +135,14 @@ def run(*, backfill: bool, force_backfill: bool,
              len(view.capability), _capability_counts(view.capability),
              len(view.identity_resolution),
              _identity_resolution_state_counts(view.identity_resolution), era, lane)
+    if view.company_mint_refusals:
+        # V4-D2B3 — a titled ::notice, never a warning: a refused mint is the fence
+        # WORKING, not a failure. Bare print, line-start, flushed (GitHub annotation law).
+        log.info("  %d company mint refusal(s): %s", len(view.company_mint_refusals),
+                 json.dumps(view.company_mint_refusals, ensure_ascii=False, sort_keys=True)[:600])
+        print("::notice title=theme graph — company mint refusal(s)::"
+              + json.dumps(view.company_mint_refusals, ensure_ascii=False, sort_keys=True),
+              flush=True)
     for family, report in sorted(view.local_plane.items()):
         log.info("  local plane %s: %s", family, json.dumps(report, ensure_ascii=False,
                                                             sort_keys=True)[:600])
@@ -159,6 +182,9 @@ def run(*, backfill: bool, force_backfill: bool,
             "evidence": int(len(store.read_evidence())),
             "capability": int(len(store.read_capability())),
             "identity_resolution": int(len(store.read_identity_resolution())),
+            # V4-D2B3 — current-view row count (one per node with a lifecycle act);
+            # the nightly bake never WRITES this table (R-D2B3-5), only reads it.
+            "node_lifecycle": int(len(store.read_node_lifecycle())),
         },
         "rows_appended": {"nodes": added_nodes, "edges": added_edges,
                           "evidence": added_ev, "capability": added_cap,
@@ -174,6 +200,10 @@ def run(*, backfill: bool, force_backfill: bool,
         "local_plane": view.local_plane,
         "unknown_ths_concepts": view.unknown_ths_concepts,
         "capability_counts": _capability_counts(view.capability),
+        # V4-D2B3 (R-D2B3-4 / R-A1) — one typed refusal per structurally-suppressed
+        # company mint this build. Empty on every night nothing tried to re-mint a
+        # corrected symbol; present and non-empty is the resurrection fence WORKING.
+        "company_mint_refusals": view.company_mint_refusals,
     }
     if store.write_meta(meta, lane=lane, allow_backfill=allow):
         log.info("wrote %s — appended %d nodes / %d edges / %d evidence rows",
