@@ -2,7 +2,7 @@
 workstream: "WS:ADVANCED-DATA-OPTIONS"
 session: claude/ad1t0-thetadata-source-cutover
 model: fable
-ended_because: done
+ended_because: complete
 mission: >
   Sol/Chairman AD-1T0 directive: record the Chairman source ruling (ThetaData
   = canonical options source), correct the workstream's durable state, census
