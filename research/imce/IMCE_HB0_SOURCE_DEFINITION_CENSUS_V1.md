@@ -334,7 +334,19 @@ Per contract §1 (A5/A6) and §9a: **6 historical cells in one BH partition `imc
 | `rf.cycle_pattern.imce_risk_v0` | 1 (`forward_63d_drawdown_tail` × [M vs family/stratum prior]) | Same feature-level treatment as above. | contract §1, A5 |
 | **Total** | **6**, BH-FDR q=0.10 over the union as one partition `imce_hist_v0` | LEN is a roster member in all 6 cells at the ISSUER level; its exclusion binds at the cancellation-rate FEATURE level within `M_t` construction for whichever cells use that feature — this is this document's best-effort reading, not a contract-confirmed scoping (gap, §8). | contract §1, A6; §9a |
 
+> **[SUPERSEDED BY A4P AP1/AP2 (2026-08-21): phase family targets order_softness only; LEN excluded cell-level
+> from all six v0 historical cells; B≤3 all six; come-back figure superseded — see contract §9a/§13.]**
+> Additive annotation only — the table and gap-flagging above are the original A3-census text, unmodified, per
+> Sol's bar on reopening A3 work. `IMCE_A4G_AMENDMENT_LOG.md` AP1/AP2 carries the full settlement.
+
 Honest historical blocks: **5–7** (freeze §7.2, §9a) — matches the 7-entry block list in §6a. **Floor and come-back date are two different quantities [m1, corrected]:** the promotion floor is `n_effective_blocks ≥ 40` (contract §8 item 5); the projected **come-back YEAR** at the census accrual rate is **~2145** (contract §9a/§13) — the prior draft's "(floor ~2145...)" parenthetical conflated the two into one number and is corrected here. Max reachable ladder rung on history: `REGISTERED`→`REPLAYED`, estimation-only, **never `DISPLAY`, never `PROMOTE_ELIGIBLE`.** **No new cell is created, proposed, or implied by this document.**
+
+> **[SUPERSEDED BY A4P AP1/AP2 (2026-08-21): phase family targets order_softness only; LEN excluded cell-level
+> from all six v0 historical cells; B≤3 all six; come-back figure superseded — see contract §9a/§13.]**
+> Additive annotation only — the ~2145 figure above is the original A3-census text, unmodified. The genuinely
+> promotion-relevant figure, corrected by AP8 (M4), is ~2160 (zero-historical-credit, prospective-only basis);
+> ~2145 (and its ~2153/~2149 successors) are non-promotion diagnostics only. See contract §13 and
+> `IMCE_A4G_AMENDMENT_LOG.md` AP2/AP8.
 
 ---
 
