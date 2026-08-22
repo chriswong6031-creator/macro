@@ -2,6 +2,77 @@
  "_reference": "D5R.2 representability fixtures (Sol D5R.2 SS8 items A-H). Documentation/reference ONLY: not production fixtures, not admitted data, not a schema instance. Every content-addressed id here is computed under the frozen sha12 law (DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md SS3.1a) so a cold builder can recompute and verify each one. Evidence sha256 values are placeholders: each is sha256 of the named 'd5r2-reference-placeholder:*' string, NOT of a real document; real admission requires re-fetch + receipt + human review (handoff SS3).",
  "sha12_law": "first 12 lowercase hex of sha256 over the '|'-joined preimage; each field NFC-normalized, lowercased, whitespace-collapsed; absent optional field encoded '-'; integers as decimal strings",
  "graph_id_example": "program-ontology:reviewed:2026-08-22:defense-d5-v1",
+ "evidence_rows_referenced": [
+  {
+   "evidence_id": "ev:7e57bb71753d",
+   "evidence_class": "official_budget_exhibit",
+   "sha256": "7e57bb71753d1da0e289734b1c1b8b5cca7260be990d416d21542d00d99ea8c1",
+   "source_url": "https://www.secnav.navy.mil/fmc/fmb/Documents/11pres/SCN_BA2_BOOK.pdf",
+   "retrieved_from_url": "https://www.globalsecurity.org/military/library/budget/fy2011/navy-peds/scn_ba2_book.pdf",
+   "retrieved_at": "2026-08-22T08:00:00+00:00",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "claim_scopes": [
+    "program_identity"
+   ]
+  },
+  {
+   "evidence_id": "ev:4f8d159388a7",
+   "evidence_class": "congressional_research",
+   "sha256": "4f8d159388a732c82699f11b2be27768d6f1e2dc1b561ecb3e688e21185c43ad",
+   "source_url": "https://crsreports.congress.gov/product/pdf/RL/RL32418",
+   "retrieved_from_url": "https://www.everycrsreport.com/reports/RL32418.html",
+   "retrieved_at": "2026-08-22T08:00:00+00:00",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "claim_scopes": [
+    "program_identity",
+    "capability_need",
+    "program_capability_link",
+    "role",
+    "milestone"
+   ]
+  },
+  {
+   "evidence_id": "ev:2f718fd13f51",
+   "evidence_class": "official_contract_announcement",
+   "sha256": "2f718fd13f51c621268a01f0cc1cff186281231acd0466f5a71af4d9385d77cd",
+   "source_url": "https://www.war.gov/News/Contracts/Contract/Article/example-2026-07-29/",
+   "retrieved_from_url": "https://www.war.gov/News/Contracts/Contract/Article/example-2026-07-29/",
+   "retrieved_at": "2026-08-22T08:00:00+00:00",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "claim_scopes": [
+    "program_identity",
+    "role"
+   ]
+  },
+  {
+   "evidence_id": "ev:31e47b3a83dd",
+   "evidence_class": "issuer_disclosure",
+   "sha256": "31e47b3a83dd03ded474b20a3d7640b997534efe6ff9622cd1630af24affc34e",
+   "source_url": "https://investors.bwxt.com/news/example-2025-02-19",
+   "retrieved_from_url": "https://investors.bwxt.com/news/example-2025-02-19",
+   "retrieved_at": "2026-08-22T08:00:00+00:00",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "claim_scopes": [
+    "program_identity",
+    "role"
+   ],
+   "pinned_issuer_host": "investors.bwxt.com",
+   "pinned_issuer_host_basis": "Host identified as BWX Technologies' investor-relations site in the issuer's own SEC filings."
+  },
+  {
+   "evidence_id": "ev:50fb58872bd7",
+   "evidence_class": "official_program_page",
+   "sha256": "50fb58872bd7e549915dd0742e25df001bb4ad99627a3a120da093edfd3fc70d",
+   "source_url": "https://www.defense.gov/example-program-page/",
+   "retrieved_from_url": "https://www.defense.gov/example-program-page/",
+   "retrieved_at": "2026-08-22T08:00:00+00:00",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "claim_scopes": [
+    "program_identity",
+    "milestone"
+   ]
+  }
+ ],
  "A_program_capability_relation": {
   "program": {
    "id": "acq-program:virginia-class-ssn",
@@ -61,7 +132,7 @@
     "ev:4f8d159388a7"
    ]
   },
-  "preimage": "acq-program:virginia-class-ssn | acq-capability:undersea-warfare | 2010-01-26T00:00:00+00:00 | 1",
+  "normalized_preimage": "acq-program:virginia-class-ssn|acq-capability:undersea-warfare|2010-01-26t00:00:00+00:00|1",
   "assertion": "link_id recomputes to the stored value; the link's evidence must carry claim scope program_capability_link — the RELATION's own scope, not merely program_identity + capability_need on the endpoints."
  },
  "B_role_assertions": {
@@ -151,6 +222,7 @@
     "ev:2f718fd13f51"
    ]
   },
+  "synthetic_link_normalized_preimage": "acq-program:virginia-class-ssn|government_procurement_event.v2|govws-0000000000000000example|2026-07-29t00:00:00+00:00|1",
   "synthetic_note": "shape example only - event_id/source identity are synthetic; a production row must pass the loader's event-store verification (event exists; event_source_identity_id and event_source_identity_content_sha256 equal the live event's award_change.source_identity.id/.content_sha256; canonical_award_identity matches)."
  },
  "D_irdm_reviewed_none": {
@@ -162,7 +234,7 @@
    "receipt": "git show origin/main:data/government_revenue/workspace.json (2026-08-22)"
   },
   "review_coverage_row": {
-   "coverage_id": "rev-cov:e74c3e6b1833",
+   "coverage_id": "rev-cov:1f312c8cddad",
    "scope": "program_event_link",
    "subject_type": "award_event",
    "subject_id": "govws-a6c70850a9cbdce9fa3e7f3b",
@@ -357,15 +429,15 @@
     ]
    }
   ],
-  "preimages": [
-   "acq-program:virginia-class-ssn | delivery_event | AUKUS Pillar 1 initial transfer window | window | 2030-01-01 | 2032-12-31 | 1",
-   "acq-program:virginia-class-ssn | delivery_event | AUKUS Pillar 1 initial transfer window | window | 2030-01-01 | 2033-12-31 | 1"
+  "normalized_preimages": [
+   "acq-program:virginia-class-ssn|delivery_event|aukus pillar 1 initial transfer window|window|2030-01-01|2032-12-31|1",
+   "acq-program:virginia-class-ssn|delivery_event|aukus pillar 1 initial transfer window|window|2030-01-01|2033-12-31|1"
   ],
   "assertion": "the two rows differ ONLY in window.to and their ids MUST differ (both window endpoints are in the preimage); a milestone row carrying both date and window, or a temporal_kind that does not match the populated field, is refused at load."
  },
  "H_zero_admission_review_pass": {
   "review_coverage_row": {
-   "coverage_id": "rev-cov:3d7c979ebcc5",
+   "coverage_id": "rev-cov:30bb2002e45b",
    "scope": "milestones",
    "subject_type": "program",
    "subject_id": "acq-program:example-alpha",
@@ -374,6 +446,7 @@
    "worksheet_sha256": "946c0c87d41bdecd7de17c8ce1877e0f9acaad2ace1dfec773b4d9dad0adac2d",
    "admitted_count": 0
   },
+  "subject_note": "acq-program:example-alpha is fixture E's program (rows restated there)",
   "derived_rail_state": {
    "rail": "milestones",
    "subject": "acq-program:example-alpha",
