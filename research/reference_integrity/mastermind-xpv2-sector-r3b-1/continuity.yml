@@ -23,8 +23,12 @@ predecessors:
   closure:
   - id: VTC-003
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "ZH-dark ink-rung token added (--ink-mix-up: 84% under dark+ZH, shell.html) — 立即买入/现可入场 4.26->4.79, 领先/就绪/风险偏好 4.45->4.97, EN unregressed to the 2nd decimal; full matrix mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/lane_crops_b/CONTRAST_TABLE.md; Lane B commit 264987cfb032, adjudicated research/reference_integrity/mastermind-xpv2-sector-r3b-1/ORCHESTRATOR_ADJUDICATIONS_R3B1.md S5"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/shell.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/moving.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: ZH-dark action/risk state labels 4.26-4.45:1 vs the artifact's own 4.5:1
       floor; escalated by the critic to sole blocker. Fix = R3B1-11 (semantic token route
       only).
@@ -38,30 +42,44 @@ predecessors:
       on its row. Fix = R3B1-13 (producer-accurate label or return field to Sol).
   - id: MAC-001
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "All three Moving help controls: 44x44 targets, unique localized accessible names, real-DOM explanation with stable #r3-receipt id, aria-expanded/controls, keyboard+coarse-pointer activation, Esc/focusout dismissal; behavioural probe + crops lane_crops_b/01-05; commit 264987cfb032"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/moving.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: Moving help controls 16x16, named only '?', explanation in generated
       content. Fix = R3B1-08.
   - id: MAC-002
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Money verdict chip wraps (no painted clipping at 320-physical/200%), plus treemap painted-width label gates; zoom_sweep.py 0/48 failing cells by painted-box method; crops lane_crops_b/06-07; commit 264987cfb032"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/money.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/zoom_sweep.py
     predecessor_note: Money semantic clipping at 320-physical/200% (.mny-verdict leaf clipped).
       Fix = R3B1-09 with full six-view sweep.
   - id: MAC-003
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Document language: boot lang=en, ZH mode sets zh-CN (production value, templates/theme.js:600) via MutationObserver on data-lang; survives view/hash repaints; lang_probe.py 7/7, lane_crops_b/LANG_PROBE.txt; commit 264987cfb032"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/runtime_shim.js
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/lang_probe.py
     predecessor_note: Document language stays en in ZH mode. Fix = R3B1-10.
   - id: MAC-005
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Light Still measuring / 测量中 3.61 -> 6.33 via ink-rung binding (--ink-warn/--ink-up instead of raw hues); mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/lane_crops_b/CONTRAST_TABLE.md; commit 264987cfb032"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/moving.html
     predecessor_note: Light-theme 'Still measuring / 测量中' 3.61:1. Fix = R3B1-11.
   - id: MAC-006
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "build_reference.py mints unique id=ref-data-<n>; aria_id_audit.py: 253 ids 0 duplicated, 74 ARIA references 0 unresolved (EN+ZH); commit 264987cfb032"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/build_reference.py
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/aria_id_audit.py
     predecessor_note: 22 duplicate id=ref-data. Fix = R3B1-12.
   - id: DAC-101
     kind: blocker
@@ -187,38 +205,49 @@ predecessors:
       for Baskets.
   - id: R3B1-08
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with MAC-001 above (governed named-receipt pattern reused, no second controller)."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/moving.html
     predecessor_note: 'Moving help controls: >=44x44 effective target, unique localized accessible
       names, real DOM explanations with stable IDs, valid expanded/controls relationship,
       keyboard + coarse-pointer activation, EN/ZH, lawful dismiss for persistent disclosure;
       no new global tooltip controller.'
   - id: R3B1-09
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with MAC-002 above plus full 6x4x2 200% sweep at zero document overflow / zero painted semantic clipping / zero clipped controls."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/zoom_sweep.py
     predecessor_note: 'Fix Money semantic clipping at 320-physical/200%, then sweep all six
       views at 320/390/768/820 under the same method EN/ZH: zero document overflow, zero painted
       semantic clipping, zero clipped primary controls/names; not scrollWidth-only.'
   - id: R3B1-10
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with MAC-003 above."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/runtime_shim.js
     predecessor_note: 'Document language: initial html lang=en; Chinese mode sets the house-approved
       Chinese lang tag; runtime toggle updates lang and data-lang including localized ARIA;
       view/hash repaint must not reset it.'
   - id: R3B1-11
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with VTC-003 + MAC-005 above plus 20d-vs-market 3.91/3.43 -> 5.57/5.43 at 10px; semantic-token route only, 0 sub-10px cells remain (was 44); mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/lane_crops_b/CONTRAST_TABLE.md"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/shell.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: 'Contrast/type repair closing ZH-dark action/risk labels (4.26-4.45:1),
       light Still-measuring (3.61:1), and 20d-vs-market label (3.91 dark / 3.43 light): >=4.5:1
       at actual size, live type >=10px, semantic token route only, no page-local literal-color
       patch, EN stays passing, dark/light x EN/ZH measured.'
   - id: R3B1-12
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with MAC-006 above."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/build_reference.py
     predecessor_note: Remove the 22 duplicate id=ref-data values (data-path as registry key
       or unique IDs); run duplicate-ID and ARIA-reference audits clean.
   - id: R3B1-13

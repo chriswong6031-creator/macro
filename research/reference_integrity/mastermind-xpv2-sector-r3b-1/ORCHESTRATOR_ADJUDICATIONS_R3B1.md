@@ -113,4 +113,37 @@ Rulings on the lane's flagged items:
    in-grammar design execution; the CSS source-order specificity trap is handed to Lanes
    B/C in their commissions.
 
-(§5+ appended as further lane returns are adjudicated.)
+## §5 Lane B return — adjudicated ACCEPTED (commit 264987cfb032)
+
+All of R3B1-08..12 landed by the semantic-token route with committed rerunnable gates
+(zoom_sweep.py, contrast_audit.py, aria_id_audit.py, lang_probe.py). Evidence accepted:
+candidate `fec05b058fbc…` deterministic ×2, verify 10/10, R3A suite 59 passed, zoom 0/48
+failing (painted-box method), contrast 0 AA failures / 0 sub-10px (was 44) / 0 parser
+suspects with EN and Lane A floors unregressed to the second decimal, 0 duplicate ids /
+0 unresolved ARIA refs, lang probe 7/7 with `zh-CN` cited from production
+(`templates/theme.js:600`). The ZH-dark repair is a structural token — the missing fourth
+quadrant of the ink-rung matrix (`--ink-mix-up: 84%` under dark+ZH), the same rung the
+system already gives red in both light cells — not a spot patch.
+
+Rulings on the lane's flagged items:
+
+1. **sc_flows verbatim fragment (75 cells 2.24–4.45:1) NOT repaired — UPHELD.** Those tint
+   fills are producer bytes under a sha256 receipt the reference may not rewrite; the
+   commissioned R3B1-11 cells are all closed. Production's own contrast debt is recorded
+   where the commission directs — `design_system_dependency_r3c.md` — as a bounded
+   Design-System dependency for R3C.
+2. **Heatmap shadowed tile text has no honest flat-surface ratio — UPHELD.** Measured and
+   bucketed rather than scored under a formula that does not apply; the repair delivered is
+   containment (painted-width label gates, no cut tickers), which is what the finding's
+   customer harm was.
+3. **Cross-lane geometry fixes ACCEPTED**: the sweep found 25px/1px overflow cells
+   introduced by Lane A's new hero controls and repaired them as geometry only (producer
+   copy untouched) — exactly the gate's job. The shared receipt controller changes (stable
+   `#r3-receipt` id, tap-toggle promotion, Escape/focusout dismissal) were required by
+   R3B1-08's no-second-controller rule and verifiably left Lane A's floor at 5.11:1.
+4. **Raising the six 9.5px glyphs and the 9px eyebrow beyond the named cells — UPHELD**:
+   "live type >=10px, no 9px exception" is a floor, not a named-cell list.
+5. **Dark+EN red rung (`--ink-mix-down: 100%`) untouched — UPHELD** (5.07:1 passing today;
+   tuning it is an uncommissioned EN visual change; recorded D-1 in the dependency file).
+
+(§6+ appended as further lane returns are adjudicated.)
