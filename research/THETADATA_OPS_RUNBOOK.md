@@ -177,6 +177,12 @@ installation is a post-Sol-acceptance act, done by hand following the steps
 below** — the PR does not run `launchctl` itself (§I out of scope for the
 builder).
 
+**Current status:** `com.macro.thetadata-daily` — `installed_live_status: NOT_INSTALLED`
+pending Sol acceptance. Do not install, bootout, or bootstrap anything in
+this section until Sol has accepted the PR; the steps below are the
+documented procedure for whoever performs that install, not an instruction
+to this build.
+
 **Step 0 — refresh the ops-tree bytes to current main FIRST.** The live lane
 runs from a DETACHED worktree, not a synced main (measured 2026-08-22:
 `theta-ops-wt` HEAD was weeks behind, with newer bytes hand-copied on top for
