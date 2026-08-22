@@ -6,10 +6,10 @@
   "reconciled_at": "2026-08-11T06:57:31Z",
   "baseline_commit": "22cf8a9f8f54e341e2efb63c6d5c6984476252db",
   "ownership_registry_ref": "config/sector_intelligence_ownership.yml",
-  "ownership_registry_sha256": "48ad80734df866ab9427c72ba046b8a9dfbefcc37c1451426fadb41ed3aeb6e3",
+  "ownership_registry_sha256": "ee7739df7ef4b11e4fc5c82091f0dbd9c9ed1108fa6b2178dcd854bc1cd597bb",
   "ownership_registry_reconciled_against_commit": "22cf8a9f8f54e341e2efb63c6d5c6984476252db",
   "adapter_fixture_ref": "data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json",
-  "adapter_fixture_sha256": "0e6ed4ff3f437e82957e4dea1f57e78b4ea713ca584b98c25cdb828645a83198",
+  "adapter_fixture_sha256": "014652beec3a56bceebb73928fca9cc5a049d22d7b3645dfac39c8d345579feb",
   "adapter_fixture_baseline_commit": "22cf8a9f8f54e341e2efb63c6d5c6984476252db",
   "eligibility_rule": {
     "requires_executable_contract": true,
@@ -201,6 +201,6 @@
     "originates_signals_scores_or_ranking": false
   },
   "hash_scope": "canonical_payload_excluding_receipt_id_and_content_sha256",
-  "receipt_id": "biocatalyst_f0_delta_6a72f5fbe06a4482d70f6f11",
-  "content_sha256": "6a72f5fbe06a4482d70f6f111b066195c18f745870682fee150afbbd2dced6b2"
+  "receipt_id": "biocatalyst_f0_delta_8c7914cafeaab44a0d695f15",
+  "content_sha256": "8c7914cafeaab44a0d695f156205e40f2310812b40ce2b487b736d20110577e2"
 }

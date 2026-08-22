@@ -57,6 +57,7 @@ read_adapters:
       - /api/biocatalyst/v1/trials/changes
       - /api/biocatalyst/v1/trials/change-tape
       - /api/biocatalyst/v1/trials/milestones
+      - /api/biocatalyst/v1/catalyst-radar
       - /api/biocatalyst/v1/trials/prospective-changes
       - /api/biocatalyst/v1/trials/{nct_id}
     input_identity: source_native_nct_id

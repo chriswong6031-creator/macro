@@ -6606,10 +6606,15 @@ jobs:
       - "tests/test_biocatalyst_hydration.py"
       - "tests/biocatalyst_hydration_harness.js"
       - "tests/test_biocatalyst_page.py"
+      - "tests/test_biocatalyst_catalyst_radar.py"
+      - "tests/test_biocatalyst_catalyst_radar_api.py"
       - "tests/test_biocatalyst_peer_api_contract.py"
       - "tests/test_biocatalyst_worker.py"
       - "templates/biocatalyst.js"
       - "site/biocatalyst.js"
+      - "templates/biocatalyst.html.j2"
+      - "templates/biocatalyst.css"
+      - "site/biocatalyst.css"
     # BioCatalyst's authenticated workbench and deployment-isolation boundary.
     # This is an intentionally bounded command, not part of a single aggregate
     # B1/B1b/B2 command: the legacy pack runner applies timeout-minutes per
@@ -6631,6 +6636,8 @@ jobs:
           tests/test_biocatalyst_peer_api_contract.py
           tests/test_biocatalyst_deploy.py
           tests/test_biocatalyst_page.py
+          tests/test_biocatalyst_catalyst_radar.py
+          tests/test_biocatalyst_catalyst_radar_api.py
           tests/test_biocatalyst_d0b_ui.py
           tests/test_biocatalyst_hydration.py -q
 

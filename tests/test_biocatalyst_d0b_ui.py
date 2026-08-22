@@ -319,7 +319,7 @@ def test_secondary_states_are_named_once_in_the_footer_not_on_every_row():
 
     assert "states.slice(1).map(stateLabel)" in JS
     assert "function paintPanelFoot()" in JS
-    assert 'ui.panelFoot.appendChild(el(\'b\', \'\', tr(\'One page, one receipt. \'' in JS
+    assert 'ui.panelFoot.appendChild(el(\'b\', \'\', tr(\'Source evidence stays attached to every row. \'' in JS
     # The row renderers must not reprint the panel-wide caveats.
     row = JS[JS.index("function makeChangeRow(") : JS.index("function screenText(")]
     assert "no trade call" not in row.lower()
