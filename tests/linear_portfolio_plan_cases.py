@@ -143,6 +143,26 @@ def test_same_tree_is_byte_identical_and_has_no_absolute_paths(tmp_path):
     assert str(tmp_path) not in lpp.semantic_json(first)
 
 
+def test_yaml_mapping_order_does_not_change_semantic_plan(tmp_path):
+    root = _store(tmp_path, [("ALPHA", "active", {})])
+    path = root / "workstreams" / "WS-ALPHA.md"
+    first = _compile(root)
+    first_hash = first["active_projects"][0]["source_content_sha256"]
+
+    rec, body = lpp.agentos.parse_record(path)
+    import yaml
+
+    path.write_text(
+        "---\n" + yaml.safe_dump(rec, sort_keys=True) + "---\n" + body,
+        encoding="utf-8",
+    )
+    second = _compile(root)
+
+    assert second["active_projects"][0]["source_content_sha256"] == first_hash
+    assert second["semantic_hash"] == first["semantic_hash"]
+    assert lpp.semantic_json(second) == lpp.semantic_json(first)
+
+
 def test_one_field_change_is_bounded(tmp_path):
     root = _store(tmp_path, [("ALPHA", "active", {})])
     first = _compile(root)
