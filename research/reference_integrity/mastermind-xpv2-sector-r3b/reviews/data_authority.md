@@ -205,7 +205,11 @@ re-invoked on `langchange` (:3070). Executed against the frozen fixture it retur
 > market page. Volatile markets get smaller position sizes. This does not change the basket ranking."
 
 **Candidate.** `hero-sizing`, `pulse-size`, `positions sized`, `仓位缩`, `regime_demoted` →
-**0 rendered occurrences**; `regime_sizing` appears only inside the embedded data blob.
+**0 occurrences** in the frozen bytes; `regime_sizing` appears only inside the embedded data blob.
+**Confirmed at render level** (`probe_hero_omissions.py`, headless Chromium against the frozen
+artifact): `document.body.innerText` contains none of `positions sized`, `仓位缩`, `sized to`,
+`gross`. The rendered Overview carries exactly **two** receipts — the `factor_season` seasonal
+note and the lane-grading legend. No sizing statement exists anywhere in the document.
 
 **Why this is a data/authority defect, not a composition choice.** Sizing is one of the four
 governed authority verbs on this page — the Bottoming Watch producer stamps `may_size: false`
@@ -234,6 +238,8 @@ carrying an explicit non-forecast caveat. The candidate keeps the assertion and 
 > construction**; suggested weights unchanged. **Shape read only — not a forecast.**"
 
 **Candidate.** `How this works`, `原理说明`, `Trailing-momentum`, `skips the most recent` → **0**.
+**Confirmed at render level:** `document.body.innerText` contains none of `not a forecast`,
+`How this works`, or `Trailing-momentum`.
 The single `not a forecast` string in the 5.4 MB artifact is inside an embedded fixture JSON
 `note_en` value, not rendered copy. Meanwhile the hero *does* render the full succession claim:
 "LOSING THE LEAD Memory, HBM & Storage WAS #1 → TAKING THE LEAD Big Pharma · Health Care …
@@ -273,14 +279,21 @@ Falls under ledger #24 (RETAIN). **Condition:** restore, or record explicitly fo
 "per-view working-destination inventory"). The frozen candidate contains **0** occurrences of
 `allocation.html`, `Open the playbook`, or `操盘手册`.
 
+**Confirmed at render level.** With all runtime content painted, the rendered Overview's
+complete destination inventory is: `#actnow-section`, `#confluence`, 18 × `basket/*.html`,
+and `plans.html` — **21 destinations, none of them `allocation.html`**. `document.body.innerText`
+contains neither `Open the playbook` nor `allocation`.
+
 R3A is explicit: *"nothing in this wave is REMOVE or RELOCATE — any candidate for those
 requires a new ruling in ADJUDICATIONS.md first."* No such ruling exists. This also removes
 the only path from the context reading to the place it becomes actionable.
 
 **Aggravating:** `capability_crosscheck.md` row **#86 is marked VERIFIED**, and its evidence
 enumerates the overview destinations as "`basket/*`, `plans.html`, in-page hashes" —
-`allocation.html` is simply not in the list, and its absence was read as completeness. See
-`DAC-108`.
+`allocation.html` is simply not in the list, and its absence was read as completeness. My
+independent render reproduces *exactly* that set — which is the point: the crosscheck saw the
+same 21 destinations and, having nothing to diff them against, called the inventory verified.
+See `DAC-108`.
 
 ---
 
@@ -424,3 +437,7 @@ created are this review and
   (lane counts, foot, rows, disclosures, hero text, watch band).
 - `reviews/evidence_data_authority_fresh/probe_confluence.py` — independent render probe
   (tab order, per-universe coverage foot, class-tab counts).
+- `reviews/evidence_data_authority_fresh/probe_hero_omissions.py` — render-level proof for
+  `DAC-101`/`DAC-102`/`DAC-104`: full rendered destination inventory of the Overview, every
+  receipt tooltip it carries, and `innerText` absence checks for the sizing statement, the
+  non-forecast caveat, and the playbook link.
