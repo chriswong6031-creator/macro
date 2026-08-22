@@ -146,7 +146,7 @@ danger_areas:
     the Stop guard treats the merged head as authority_changed=true; the
     clearing lever is a green main-descendant ci.yml run, per
     DEC-AUTHORITY-FREEZE-CLEARS-ON-DESCENDANT-BASELINE.
-prs: []
+prs: [6226]
 ---
 
 # Session narrative (cold-stranger summary)
