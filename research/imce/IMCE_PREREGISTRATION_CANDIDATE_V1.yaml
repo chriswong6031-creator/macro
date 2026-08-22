@@ -1,18 +1,30 @@
-# Lossless machine-readable projection of
-# research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md
-# The MD document BINDS. This YAML carries no independent authority; on any
-# apparent divergence, the MD controls. [A26]
+# Machine-readable projection of the REGISTRATION-RELEVANT FIELDS of
+# research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md AND
+# research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md (carried by
+# path via d5_state_construction, never inlined). [AP8 F6] "lossless" is
+# dropped as inaccurate -- this is a partial projection (row schemas, cell
+# IDs, block caps, receipt statuses), not a byte-complete restatement of
+# either markdown document. Both markdown documents BIND; this YAML carries
+# no independent authority; on any apparent divergence, the two markdown
+# documents control. [A26]
 # Supersedes IMCE_PREREGISTRATION_CANDIDATE.yaml (schema v0).
 # V1.1 (2026-08-21): applies Sol's 18 A4G amendments (AG1-AG18) atop the 26
 # Round 3 amendments (A1-A26). Full rationale: IMCE_A4G_AMENDMENT_LOG.md.
+# V1.2 (2026-08-21): applies Sol's 8 A4P amendments (AP1-AP8) atop V1.1 -
+# preregistration criteria closure (phase-target mapping, historical basis
+# uniformity, prospective share, bootstrap, FDR runner obligation, macro
+# boundary receipts, packet regeneration) plus AP8, the same-branch revision
+# fixing Fable's adjudication of an Opus red-team pass. Full rationale: the
+# A4P section appended to IMCE_A4G_AMENDMENT_LOG.md.
 
 schema: imce.preregistration_candidate.v1
 status: candidate_not_registered
-version: "1.1"                                 # [AG-header] was 1.0/V1
+version: "1.2"                                 # [AP-header] was 1.1/V1.1
 date: 2026-08-20
-amended_date: "2026-08-21"                     # [AG-header] A4G amendment gate
-amendment_gate: A4G
-amendment_gate_authority: sol_a4g_authorization_2026_08_21
+amended_date: "2026-08-21"                     # [AP-header] A4P criteria-closure gate (same day as A4G)
+amendment_gate: A4P                             # [AP-header] was A4G; A4P supersedes as the latest gate
+amendment_gates_applied: [A4G, A4P]             # [AP-header] both gates applied, in order
+amendment_gate_authority: sol_a4p_authorization_2026_08_21
 binds: research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md
 supersedes:
   md: IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT.md
@@ -76,22 +88,42 @@ trials:                                        # [A5][A6]
     status: not_declared
     cell_budget: 3
     cell_definition: 3 state targets x pooled homebuilder stratum x contrast [M vs family/age prior]
+    d5_state_mapping: order_softness                      # [AP1] settles the AG14/MAJ-5 open item — all 3 targets
+    d5_state_construction: research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md  # [AP1]
     targets:
       - next_local_state_1_reporting_period
       - next_local_state_3_reporting_periods
       - false_repair_3_reporting_periods
+    cell_ids:                                              # [AP8, M2] minted/frozen; presented to Sol for ratification
+      - imce_phase_v0.next_order_softness_1rp
+      - imce_phase_v0.next_order_softness_3rp
+      - imce_phase_v0.order_softness_false_repair_3rp
   - family_candidate: rf.cycle_pattern.imce_sync_v0
     status: not_declared
     cell_budget: 2
     cell_definition: targets {next_local_state_1rp, forward_63d_drawdown_tail} x contrast [M+R vs M]
     primary_comparison: mechanism_plus_recognition_vs_mechanism_only
+    cell_4_d5_state_mapping: order_softness                # [AP1] next_local_state_1rp -> same state as phase target (a)
+    cell_ids:                                              # [AP8, M2] minted/frozen; presented to Sol for ratification
+      - imce_sync_v0.next_order_softness_1rp
+      - imce_sync_v0.forward_63d_drawdown_tail
   - family_candidate: rf.cycle_pattern.imce_risk_v0
     status: not_declared
     cell_budget: 1
     cell_definition: forward_63d_drawdown_tail x [M vs family/stratum prior]
     target: forward_63_trading_day_drawdown_tail
+    cell_ids:                                              # [AP8, M2] minted/frozen; presented to Sol for ratification
+      - imce_risk_v0.forward_63_trading_day_drawdown_tail
 
 historical_cell_budget_total: 6                # [A5]
+all_6_cells_share_order_softness_basis: true    # [AP2] uniform B<=3, cancellation-scoped, LEN excluded from all 6
+six_cell_ids_union:                             # [AP8, M2] the exact union the future runner must assert against [AP5]
+  - imce_phase_v0.next_order_softness_1rp
+  - imce_phase_v0.next_order_softness_3rp
+  - imce_phase_v0.order_softness_false_repair_3rp
+  - imce_sync_v0.next_order_softness_1rp
+  - imce_sync_v0.forward_63d_drawdown_tail
+  - imce_risk_v0.forward_63_trading_day_drawdown_tail
 
 fdr:                                           # [A6]
   partitions:
@@ -99,6 +131,7 @@ fdr:                                           # [A6]
       q: 0.10
       member_cells: 6
       note: single BH-FDR partition over the union of all 6 historical cells; the three rf.* family names are trial-ledger provenance labels, not separate FDR partitions
+      runner_obligation: assert_exactly_six_registered_cell_ids_before_bh_correction_one_correction_over_union_no_seventh_cell  # [AP5] registration stop condition, not code
 
 baselines:                                     # [A22][A23]
   - family_age_prior
@@ -142,9 +175,14 @@ validation:
   leave_cycle_out: required
   fdr_q: 0.10
   bootstrap:
-    unit: episode_or_month_block
+    unit: registered_block_cluster            # [AP8, M1 fix] was episode_or_month_block; the SAME cluster unit AG9 uses for inference - never a date/month block
+    unit_note: engine/grading_stats.py BOOT_DRAWS/BOOT_SEED (800/7) supply only the numeric defaults - its block_bootstrap_ci resamples whole calendar DATES, that unit is NOT imported
     ci_type: one_sided_90_percent            # [A21]
-    draws_and_seed: registered_at_preregistration
+    draws_and_seed: 800_draws_seed_7         # [AP4] CPI house default VALUE convention, frozen, no tuning
+    draws: 800                                # [AP4]
+    seed: 7                                   # [AP4]
+    n_clusters_at_b3: 3                       # [AP8, M1 fix]
+    degenerate_disclosure_at_b3: true         # [AP8, M1 fix] bootstrap over 3 clusters is near-vacuous; same disclosure class as the BH-FDR low-n note
   min_effective_blocks: 40                   # [A12]
   parameter_ranges: single_frozen_values_required   # [A22] was "preferably single frozen values"; any grid counts into cell budget
   sign_stability_share: 2_of_3_blocks        # [A21]
@@ -181,6 +219,17 @@ effective_block_law:                           # [A9, amended AG2/AG3/AG4/AG5/AG
     exact_pseudo_n_necessary: false               # upper bound already fails floor=40 by ~order of magnitude
     cap_scoping: cell_level_not_feature_level      # [MAJ-1] a cell whose registered basis includes cancellation-rate data is B<=3 ENTIRE; order_softness (contract section 2, AG14) currently draws cancellation rate, so any cell targeting it is B<=3 as registered; stripping cancellation from a cell's basis is a future registration-time amendment, not an open election
     grind_block_cancellation_coverage: partial_fy2016_plus_for_phm_and_nvr  # [AG6][M9-fix]
+  all_6_v0_historical_cells_uniform_basis:         # [AP2, A4P binding]
+    basis: order_softness_mechanism_basis_including_cancellation_evidence
+    applies_to_cells: [1, 2, 3, 4, 5, 6]
+    cap: 3
+    general_b5_cap_describes_any_registered_cell_today: false
+    len_excluded_from_all_6_cells: true
+    nvr_separate_stratum_unchanged: true
+    gfc_blocks_1_2_unusable_for_all_6_cells: true
+    contributing_blocks: [grind_2014_2019_partial_fy2016_plus, pandemic_boom, rate_shock_cancellation_spike]
+    may_never_relax_to_b5_to_obtain_larger_n: true
+    come_back_date_recomputed: true                # see prospective_law.come_back_date below
   block_count_reconciliation:                    # [AG5] records the C2 disposition
     lane1_source: research/imce/IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md
     lane2_source: research/imce/hb0/IMCE_HB0_INDEPENDENT_BLOCK_LIST.md
@@ -194,7 +243,7 @@ effective_block_law:                           # [A9, amended AG2/AG3/AG4/AG5/AG
   open_era_contributes_zero_historical_n: true   # [AG8]
   within_block_issuer_dependence:                # [AG4] renamed, demoted
     status: precision_diagnostic_only
-    proposed_field_name: n_issuer_precision_diagnostic
+    field_name: n_issuer_precision_diagnostic     # [AP8, M3(b)] frozen now, was proposed_field_name/TBD-at-registration
     may_substitute_for_n_effective_blocks: false
     can_satisfy_40_block_floor: false
     carries_promotion_authority: false
@@ -276,7 +325,7 @@ frozen_historical_block_list:                  # [A8, restructured AG5/AG7/AG8]
     counts_toward_n_effective_blocks: false               # [AG8] zero historical N
     counts_toward_n_blocks_prosp_on_close: true
 named_list_entries_total: 7
-n_effective_blocks_contributing_entries: 5     # [AG5] hardened B=5 for N-accounting
+n_effective_blocks_contributing_entries: 5     # [AG5] block-list-level fact: 5 of 7 named blocks are closed/non-overlapping (taxonomy, not a per-cell cap). Per-cell cap for all 6 registered v0 historical cells is 3, not 5 [AP2] - only 3 of these 5 blocks carry cancellation-reconstructable disclosure.
 change_requires: new_amendment_log_entry
 month_boundaries_receipt_status: proposed_not_yet_receipted   # [AG17] see IMCE_A4G_SOURCE_BOUNDARY_TABLE.md
 
@@ -286,7 +335,7 @@ reachable_status_table:                        # [A1]
     historical_cells: 0
     max_reachable_ladder_rung_on_history: DESCRIPTIVE
   homebuilders:
-    honest_historical_blocks: "cap_general_5_cap_cancellation_3"  # [AG5][AG6] BLK-1 fix, was "5-7"
+    honest_historical_blocks: "cap_3_uniform_all_6_cells_cancellation_scoped"  # [AP2] was "cap_general_5_cap_cancellation_3" (AG5/AG6); general cap_5 describes no cell registered today
     historical_cells: 6
     fdr_partition: imce_hist_v0
     fdr_q: 0.10
@@ -343,8 +392,9 @@ memory:                                        # [A14][A15]
     mechanism_grammar_epochs_cross_folds: false
 
 homebuilders:                                  # [A1][A17][A18][G8-B4][G8-M2][G8-M6]
-  n_effective_blocks_cap_general: 5              # [AG5] BLK-3 fix, was honest_historical_blocks_min/max: 5/7 (stale)
+  n_effective_blocks_cap_general: 5              # [AG5] BLK-3 fix, was honest_historical_blocks_min/max: 5/7 (stale); describes no cell registered today [AP2]
   n_effective_blocks_cap_cancellation: 3         # [AG6] BLK-3 fix
+  n_effective_blocks_cap_applied_to_all_6_registered_cells: 3  # [AP2] uniform basis, all six v0 historical cells
   named_list_entries: 7                          # unchanged — the 7-entry named taxonomy (§3), never widened
   historical_cells: 6
   max_reachable_ladder_rung_on_history: REGISTERED_TO_REPLAYED_ESTIMATION_ONLY
@@ -373,7 +423,8 @@ homebuilders:                                  # [A1][A17][A18][G8-B4][G8-M2][G8
     exclusion_scope: cell_level_entire_issuer_excluded_from_cancellation_basis_cells  # [AG10-clarif][MAJ-2 fix]
     exclusion_reason: no_stated_formula_denominator_unverifiable_plus_era_correlated_press_release_absence  # [AG10, restates C1] was era_correlated_missingness_no_press_release_cancellation_rate
     exclusion_reason_note: 10k_mda_does_disclose_14_pct_fy2025_missingness_is_press_release_channel_scoped_not_absolute
-    non_cancellation_cell_treatment: roster_member_cancellation_feature_typed_missing_never_imputed  # [AG10-clarif][MAJ-2 fix] AG11 ban applies, not an exclusion
+    excluded_from_all_6_registered_v0_historical_cells: true  # [AP2] was cells 1-4 only at A4G; AP2 extends to cells 5-6
+    non_cancellation_cell_treatment: roster_member_cancellation_feature_typed_missing_never_imputed  # [AG10-clarif][MAJ-2 fix] AG11 ban applies, not an exclusion; describes a hypothetical non-registered general cell only [AP2]
     break_flag: millrose_2025_02
     exclusion_printed: true
   nvr:
@@ -398,15 +449,20 @@ homebuilders:                                  # [A1][A17][A18][G8-B4][G8-M2][G8
       subset: [DHI, LEN, PHM]
       is_cohort_claim: false
       is_named_subset_claim: true
+      is_v0_cohort_inferential_target: false   # [AP1] explicitly excluded from the 3 declared phase-family targets
     incentive_support:
       observability: descriptive_only
       may_be_imputed_into_cohort_cell: false
       single_disclosing_issuer: LEN
+      mapped_to_a_declared_target: false        # [AP1]
     pace_recovery:
       observability: descriptive_only
       may_be_imputed_into_cohort_cell: false
       single_disclosing_issuer: KBH
-    exact_phase_family_target_to_d5_state_mapping: open_a4_registration_item  # not invented by this amendment
+      mapped_to_a_declared_target: false        # [AP1]
+    exact_phase_family_target_to_d5_state_mapping: order_softness_all_3_targets_plus_sync_cell_4  # [AP1] SETTLED, was open_a4_registration_item
+    d5_state_construction: research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md  # [AP1]
+    d5_state_construction_pooled_issuers: [DHI, PHM, KBH, TOL]  # [AP1][AP2] LEN excluded, NVR separate stratum
   pit_class_enum:                                   # [AG15]
     closed: true
     values: [pit_pure, revision_optimistic, mixed]
@@ -508,7 +564,8 @@ stop_conditions:                               # [A25]
   - criteria_commit_does_not_precede_outcome_access
   - reachable_status_table_not_recorded            # [A25] new
   - macro_block_boundary_lacks_dated_source_receipt_and_outcome_run_would_partition_on_it  # [AG17] new
-  - phase_family_state_target_lacks_registered_mapping_to_named_d5_state_with_registered_observability_class  # [AG14][MAJ-5] new
+  - phase_family_state_target_lacks_registered_mapping_to_named_d5_state_with_registered_observability_class  # [AG14][MAJ-5] new — DISCHARGED for the 3 declared phase targets + sync Cell 4 by [AP1]; remains binding for any future target
+  - historical_cell_runner_does_not_assert_exactly_six_registered_cell_ids_or_applies_more_than_one_bh_correction_or_a_seventh_cell_enters_denominator  # [AP5] new, registration stop condition not code
 
 prospective_law:                               # [A24]
   nightly_is_sole_forward_ledger_advancer: true
@@ -520,12 +577,15 @@ prospective_law:                               # [A24]
   come_back_date:
     computed_from: [accrual_rate, n_floor]
     published_at_registration: true
-    homebuilders_estimate: "~2153 at census accrual rate, B=5 hardened basis"  # [AG5] BLK-1 fix, was "~2145" (non-hardened basis, superseded, no basis election)
+    promotion_clock_estimate: "~2160 - zero historical credit per AP3 100% prospective share + AG1; 2026.6667 + 40 x (10.0y/3 blocks) = 2160.0"  # [AP8 F1] THE promotion-relevant headline - historical blocks credit zero toward promotion
+    non_promotion_diagnostic_b3_total_block_estimate: "~2149 - NON-PROMOTION diagnostic only, illustrates historical-arm order-of-magnitude distance from the 40-block floor; arithmetic: span 2014-01 to 2023-12 = 9.9y over 3 blocks = 3.30y/block, 2026-08 + (40-3)*3.30 = ~2148.8 -> ~2149"  # [AP2, relabeled AP8 F1] was homebuilders_estimate; NEVER cited as a promotion timeline
+    non_promotion_diagnostic_prior_basis_b5: "~2153 (AG5, B=5 general basis) - NON-PROMOTION diagnostic, no longer describes any cell registered by this contract"  # [AP2, relabeled AP8 F1] was homebuilders_estimate_prior_basis_B5; retained for audit trail only
+    recomputation_arithmetic: "promotion clock (zero historical credit, inclusive fencepost): 2026 + 8/12 + 40 x (10.0/3) = 2026.6667 + 133.3333 = 2160.0 -> ~2160"  # [AP8 F1] was the (40-3)x3.30 form, which is now the non_promotion_diagnostic_b3_total_block_estimate field's own label above
     memory_and_banks: later_still
   counters:
     n_blocks_hist: 0
     n_blocks_prosp: 0
-  preregistered_minimum_prospective_share_before_promotion: required_value_tbd_at_registration
+  preregistered_minimum_prospective_share_before_promotion: 1.0  # = 100% [AP3, AP8 m5 fix - numeric, was the non-numeric token "100_percent"]; was required_value_tbd_at_registration; already implied by AG1
 
 authority_ladder:
   sequence: [DESCRIPTIVE, REGISTERED, REPLAYED, DISPLAY, PROSPECTIVE_SHADOW, PROMOTE_ELIGIBLE]

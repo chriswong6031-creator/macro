@@ -8,13 +8,13 @@
   "scope_en": "Republic of Korea national economy; KOSPI is market context.",
   "scope_zh": "大韩民国全国经济；KOSPI仅作市场背景。",
   "asof": "2026-08-20",
-  "built": "2026-08-21 04:06 UTC",
+  "built": "2026-08-22 05:12 UTC",
   "regime": {
     "quad": "Q3",
     "name": "Stagflation",
     "growth_score": -0.143,
-    "inflation_score": -0.5,
-    "confidence": 0.321,
+    "inflation_score": 0.0,
+    "confidence": 0.071,
     "liquidity": "neutral",
     "recession_score": 36.0,
     "recession_band": "low",
@@ -183,13 +183,13 @@
     "index_label": "KOSPI",
     "currency_label": "USD/KRW",
     "equity": {
-      "price": 6669.44,
-      "off_52w_high": -26.8,
+      "price": 6852.58,
+      "off_52w_high": -24.8,
       "above_50d": false,
       "above_200d": true,
-      "realvol": 92.0,
-      "rsi": 49.0,
-      "ext_z": -1.45,
+      "realvol": 93.7,
+      "rsi": 51.0,
+      "ext_z": -1.28,
       "ext_grade": "steady",
       "drawdown_risk": 70.0,
       "drawdown_band": "elevated",
@@ -204,17 +204,17 @@
   },
   "risk": {
     "state": "calm",
-    "top_score": 31,
+    "top_score": 35,
     "dominant_en": "Calm — no driver elevated",
     "dominant_zh": "平静 — 无驱动升高",
     "h21": 0.289,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 31.3,
+      "intensity": 35.3,
       "peak": 73.6,
       "peak_days_ago": 27,
-      "off_peak": 42.3,
-      "velocity": -8.9,
+      "off_peak": 38.3,
+      "velocity": -5.0,
       "phase": "receding",
       "reached_risk": true,
       "state_now": "calm",
@@ -245,9 +245,9 @@
         52.0,
         47.2,
         36.9,
-        31.3
+        35.3
       ],
-      "spark_pts": "3.0,6.9 6.9,6.9 10.8,5.9 14.7,6.3 18.7,3.0 22.6,3.0 26.5,3.4 30.4,10.7 34.3,20.0 38.2,17.3 42.1,6.8 46.0,9.5 50.0,11.4 53.9,9.7 57.8,13.3 61.7,16.7 65.6,12.3 69.5,14.6 73.4,17.6 77.3,16.3 81.3,10.7 85.2,13.5 89.1,19.7 93.0,23.0",
+      "spark_pts": "3.0,7.5 6.9,7.5 10.8,6.2 14.7,6.8 18.7,3.0 22.6,3.0 26.5,3.4 30.4,11.7 34.3,22.3 38.2,19.2 42.1,7.3 46.0,10.4 50.0,12.5 53.9,10.6 57.8,14.7 61.7,18.5 65.6,13.6 69.5,16.2 73.4,19.6 77.3,18.1 81.3,11.7 85.2,15.0 89.1,21.9 93.0,23.0",
       "spark_peak": {
         "x": 18.7,
         "y": 3.0
@@ -266,7 +266,7 @@
         "tier": "A",
         "label_en": "Parabolic extension / exhaustion",
         "label_zh": "抛物线伸展／透支",
-        "score": 84.6,
+        "score": 86.6,
         "band": "elevated",
         "firing_legs": [
           {
@@ -276,7 +276,7 @@
           },
           {
             "leg": "ext_idx",
-            "pctile": 0.802,
+            "pctile": 0.842,
             "confirmed": false
           }
         ]
@@ -286,9 +286,15 @@
         "tier": "A",
         "label_en": "US rate shock",
         "label_zh": "美债利率冲击",
-        "score": 44.4,
+        "score": 47.3,
         "band": "calm",
-        "firing_legs": []
+        "firing_legs": [
+          {
+            "leg": "us_rate_10y",
+            "pctile": 0.611,
+            "confirmed": false
+          }
+        ]
       },
       {
         "scare": "capital_flow",
@@ -379,8 +385,8 @@
       "key": "drawdown",
       "label_en": "Index from 52w high",
       "label_zh": "指数距52周高点",
-      "raw": -26.8,
-      "value": "-26.80%",
+      "raw": -24.8,
+      "value": "-24.80%",
       "unit": "%",
       "asof": null
     },
@@ -388,8 +394,8 @@
       "key": "realvol",
       "label_en": "Realized volatility",
       "label_zh": "实现波动率",
-      "raw": 92.0,
-      "value": "92.00%",
+      "raw": 93.7,
+      "value": "93.70%",
       "unit": "%",
       "asof": null
     }
@@ -530,7 +536,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2025-04",
-      "age_days": 507,
+      "age_days": 508,
       "state": "stale",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -538,7 +544,7 @@
     {
       "metric": "gdp",
       "asof": "2026-04",
-      "age_days": 142,
+      "age_days": 143,
       "state": "fresh",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -546,7 +552,7 @@
     {
       "metric": "unemployment",
       "asof": "2026-07",
-      "age_days": 51,
+      "age_days": 52,
       "state": "fresh",
       "label_en": "Labour",
       "label_zh": "就业"
@@ -554,7 +560,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-06",
-      "age_days": 81,
+      "age_days": 82,
       "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"
