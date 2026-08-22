@@ -15,6 +15,20 @@ Category normalizer: title-keyword → category. Priority order is encoded in
 CATEGORY_PRIORITY so investigation > inquiry_letter > other. First-match-wins.
 
 Pacing: 1.5 s + jitter between page requests.
+
+P1-R2 announcement-id integrity (2026-08-22, DSC:CHINA-VISITS-UNTYPED-
+ANNOUNCEMENT-ID-DROP): announcementId is this plane's natural key, and a
+falsy/NaN/whitespace key used to be dropped SILENTLY — drop_duplicates()
+treats every row sharing "" as a duplicate of every other such row, so N
+malformed rows collapsed into ONE with no counter, no log, no health note.
+key_anomaly()/normalize_announcement_id()/partition_by_key_integrity() below
+are the single typed predicate for "is this key malformed, and how";
+write_filings() now excludes malformed rows as a TYPED, COUNTED exclusion
+(module global LAST_KEY_INTEGRITY, folded into LAST_RUN_OUTCOME) instead of
+letting them silently collapse or appending them keyless. collectors/
+china_visits.py imports key_anomaly() from here rather than growing its own
+opinion, so china_filings' write boundary and china_visits' candidate filter
+can never silently diverge on what counts as malformed.
 """
 from __future__ import annotations
 
@@ -46,6 +60,36 @@ log = logging.getLogger(__name__)
 # here: it is self-healing by design (keep-FIRST dedup + the 3-day re-pull), so a
 # truncated-but-successful exchange still counts as ok.
 LAST_RUN_OUTCOME: dict | None = None
+
+# P1-R2 announcement-id integrity contract: process-local outcome of the
+# key-integrity partition performed by the MOST RECENT write_filings() call in
+# THIS process. Never persisted to disk — same rationale as LAST_RUN_OUTCOME
+# above (a sidecar would let a later `--only china_visits` run inherit a
+# stale verdict from a prior process). Reset fail-closed to None at
+# ChinaFilingsAdapter.fetch() entry, same as LAST_RUN_OUTCOME, so a fetch()
+# that raises before ever calling write_filings() reads as "unknown", never
+# as a false "clean". write_filings() itself sets this on EVERY call (zeros
+# when clean) — see its docstring. Canonical shape, every field always
+# present when set:
+#   {"excluded_total": int, "excluded_by_type": {anomaly: count},
+#    "preexisting_unkeyed": int, "at": iso}
+LAST_KEY_INTEGRITY: dict | None = None
+
+
+def _zero_key_integrity(at: str = "") -> dict:
+    """Fresh canonical-shape LAST_KEY_INTEGRITY dict, all zeros/empty.
+
+    A function (not a shared module-level constant) so every caller gets its
+    own `excluded_by_type` dict — a shared mutable default would let one
+    caller's count leak into another's "zero" reading.
+    """
+    return {
+        "excluded_total": 0,
+        "excluded_by_type": {},
+        "preexisting_unkeyed": 0,
+        "at": at,
+    }
+
 
 # ------------------------------------------------------------------ constants --
 
@@ -102,7 +146,12 @@ def _store_path() -> Path:
 
 
 def load_filings() -> pd.DataFrame:
-    """Read existing parquet, or return an empty frame with the canonical schema."""
+    """Read existing parquet, or return an empty frame with the canonical schema.
+
+    A present-but-unreadable store also reads EMPTY here, because a reader must
+    not crash. Callers that go on to REWRITE the store must not use this — see
+    _read_filings_strict() and write_filings().
+    """
     path = _store_path()
     if path.exists():
         try:
@@ -112,32 +161,263 @@ def load_filings() -> pd.DataFrame:
     return pd.DataFrame(columns=list(_COLUMNS))
 
 
+def _read_filings_strict() -> pd.DataFrame | None:
+    """Like load_filings() but returns None (not empty) for a present-but-
+    UNREADABLE store, so write_filings() can ABORT instead of overwriting it.
+
+    Why this exists (P1-R2, adversarial review 2026-08-22): write_filings()
+    rewrites the entire accrued tape every night, and it used to source that
+    rewrite from load_filings(), which swallows a read error and answers
+    EMPTY. A corrupt store therefore read as "no existing rows" and the next
+    write REPLACED the whole tape with tonight's batch — measured, a 500-row
+    store became 1 row, with net_new reported as 1 and every key-integrity
+    instrument reading clean. That is the same class of lie this repair
+    exists to close (missing data silently becoming clean authority), just
+    with a far larger blast radius than a malformed key. collectors/
+    china_visits.py has carried exactly this strict-read + ABORT pattern
+    since P1 (_read_store_strict / write_visits); china_filings simply never
+    grew one.
+    """
+    path = _store_path()
+    if not path.exists():
+        return pd.DataFrame(columns=list(_COLUMNS))
+    try:
+        return pd.read_parquet(path).reindex(columns=list(_COLUMNS))
+    except Exception as e:  # noqa: BLE001
+        log.error("china_filings: filings.parquet is present but UNREADABLE (%s)", e)
+        return None
+
+
+# ------------------------------------------------------------------ key integrity (P1-R2) --
+#
+# announcementId is the natural key of this whole plane — china_visits derives
+# its own natural key from it 1:1. drop_duplicates(subset=["announcementId"])
+# below treats every row sharing a falsy key ("", None-as-NaN once frame-ified,
+# etc.) as a DUPLICATE of every other such row, so N malformed rows silently
+# COLLAPSE INTO ONE with no counter, no log, no health note — a real filing
+# quietly becomes indistinguishable from "no filing". Recorded as
+# DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP. These three functions are the
+# single typed predicate for "is this key malformed, and how" — china_visits.py
+# imports key_anomaly() from here rather than growing a second opinion, so the
+# two boundaries (this module's store write, and china_visits' candidate
+# filter) can never silently diverge on what counts as malformed.
+
+_KEY_ANOMALIES = ("missing", "nan", "empty", "whitespace")
+
+
+def key_anomaly(value) -> str | None:
+    """Classify one raw announcementId value's malformation, or None if it is
+    well-formed. Pure, and — deliberately — NEVER raises, for any input.
+
+    Returns exactly one of the frozen typed anomaly names:
+      "missing"    — value is None (including a dict key that was absent:
+                     row.get("announcementId") already yields None for that).
+      "nan"        — value is a NaN-like scalar: float('nan'), pd.NA, pd.NaT,
+                     np.nan (anything pandas' own pd.isna() calls missing).
+      "empty"      — value is a string equal to "".
+      "whitespace" — value is a non-empty string that STRIPS to "" — covers
+                     plain space, tab, newline, and the ideographic space
+                     "　" (U+3000), which .strip() also removes.
+    None (well-formed) otherwise — including a non-string scalar that
+    coerces to a non-empty string (e.g. an int id): only a string carries
+    the empty/whitespace anomalies, and a non-string is never NaN-like once
+    the pd.isna() check above has already passed.
+
+    Ordering is load-bearing: the NaN check runs BEFORE any str() coercion,
+    because str(float('nan')) == 'nan' — a non-empty string that would
+    misread as well-formed if the string branch ran first.
+
+    pd.isna() is guarded rather than trusted: it returns an ARRAY (not a
+    scalar bool) for list/array-like input instead of raising, and truth-
+    testing that array raises ValueError ("ambiguous"); some object types
+    raise TypeError directly. Catch both — a non-scalar value is never
+    NaN-like, and this helper must never raise for weird input (a list, a
+    dict, a tuple all pass through unharmed).
+    """
+    if value is None:
+        return "missing"
+    try:
+        if pd.isna(value):
+            return "nan"
+    except (TypeError, ValueError):
+        pass  # non-scalar (list/array/...) input — never NaN-like
+    if isinstance(value, str):
+        if value == "":
+            return "empty"
+        if value.strip() == "":
+            return "whitespace"
+        return None
+    return None
+
+
+def normalize_announcement_id(value) -> str:
+    """"" for every malformed form key_anomaly() names; otherwise
+    str(value).strip(). Pure, and — like key_anomaly() — NEVER raises.
+
+    The str() coercion is guarded rather than trusted: key_anomaly() answers
+    None (well-formed) for any non-string object it cannot call NaN-like,
+    including one whose own __str__ raises, so an unguarded str() here would
+    be the one path in this pair that can throw. Measured 2026-08-22 by
+    probing both helpers over a hostile input table: key_anomaly() survived
+    every case, this function raised RuntimeError on an object with a raising
+    __str__. No production caller exists today (this helper is the canonical
+    normalizer for future callers), but it sits one import away from the C0
+    market-critical Asia lane, where a raise is a lane failure — so an
+    un-stringable value is treated as exactly what it is, a key we cannot
+    read, and normalizes to "".
+    """
+    if key_anomaly(value) is not None:
+        return ""
+    try:
+        return str(value).strip()
+    except Exception:  # noqa: BLE001 — an un-stringable key is an absent key
+        return ""
+
+
+def partition_by_key_integrity(
+    rows,
+) -> tuple[list[dict], list[dict], dict[str, int]]:
+    """Split row dicts on key_anomaly(row.get("announcementId")). Pure.
+
+    Returns (well_keyed, malformed, counts) — counts maps anomaly name ->
+    occurrence count for the anomalies that actually occurred (an anomaly
+    name that never fired is omitted, not zero-valued). Each malformed row
+    is counted INDIVIDUALLY: three rows sharing "" are three, never one —
+    this is the property drop_duplicates lacks and the whole repair exists
+    to restore. Input order is preserved within each output list.
+    """
+    well_keyed: list[dict] = []
+    malformed: list[dict] = []
+    counts: dict[str, int] = {}
+    for row in rows:
+        anomaly = key_anomaly(row.get("announcementId"))
+        if anomaly is None:
+            well_keyed.append(row)
+        else:
+            malformed.append(row)
+            counts[anomaly] = counts.get(anomaly, 0) + 1
+    return well_keyed, malformed, counts
+
+
 def write_filings(new_rows: list[dict]) -> int:
     """Append rows to filings.parquet, keep-FIRST on announcementId.
 
     Returns the count of net-new rows written (0 when all duplicates).
     Never raises — failures are logged and silently skipped.
+
+    P1-R2: `new_rows` is partitioned by key integrity BEFORE any dedup — only
+    well-keyed rows ever enter the keep-FIRST dedup pool. A malformed row is a
+    TYPED, COUNTED exclusion, never a silent drop_duplicates collapse and
+    never appended keyless (that would grow the store unbounded across the
+    3-day re-pull, and minting a fallback key is a forbidden new identity
+    system). The ACCRUED store gets the same protection: any row already on
+    disk with a malformed key is split off as `preexisting_unkeyed` and
+    written back VERBATIM, untouched by the keyed dedup, so a historical
+    malformed row can never be silently collapsed into a keyed row's slot
+    either. net_new is computed off the KEYED frames only, so a malformed
+    row can never inflate or deflate that count.
+
+    Sets module-global LAST_KEY_INTEGRITY on every call (zeros when clean —
+    see _zero_key_integrity()). LOUD (log.error + a bare line-start GitHub
+    annotation — never through the logger, see
+    tests/test_gh_annotation_line_start.py) whenever anything was excluded
+    or a pre-existing unkeyed row was carried forward.
     """
+    global LAST_KEY_INTEGRITY
     if not new_rows:
+        LAST_KEY_INTEGRITY = _zero_key_integrity(datetime.now(timezone.utc).isoformat())
         return 0
     try:
         path = _store_path()
-        new_df = pd.DataFrame(new_rows).reindex(columns=list(_COLUMNS))
-        existing = load_filings()
-        if existing.empty:
-            # No existing store: dedup within the new batch itself, then write.
-            merged = new_df.drop_duplicates(subset=["announcementId"], keep="first")
-            net_new = len(merged)
+        well_keyed, malformed, new_counts = partition_by_key_integrity(new_rows)
+        new_df = pd.DataFrame(well_keyed).reindex(columns=list(_COLUMNS))
+        if not new_df.empty:
+            # Canonicalize the key of every row that IS well-keyed. Without
+            # this, " 1223456789 " and "1223456789" are two distinct keys, so
+            # the same filing published once with incidental padding stores
+            # TWICE and shows twice in the dossier's recent-visit list — a
+            # duplicate-identity bug the malformed-key partition does not
+            # catch, because padding that strips to a real value is not
+            # malformed. It also coerces any non-string key to its string
+            # form, which keeps drop_duplicates() hashable: an unhashable
+            # value (a list, a Series) would otherwise raise inside the
+            # try/except below and lose the WHOLE batch silently. Measured
+            # 2026-08-22: 0 of the 54,078 accrued keys are padded, so this is
+            # a no-op on today's tape and pure protection going forward.
+            new_df["announcementId"] = new_df["announcementId"].map(
+                normalize_announcement_id
+            )
+
+        existing = _read_filings_strict()
+        if existing is None:
+            log.error("china_filings: ABORTING the filings.parquet write — the accrued "
+                      "store is unreadable and is left untouched for manual recovery")
+            print(
+                "::warning title=china-filings-store-unreadable::"
+                "filings.parquet is present but unreadable — the nightly write was "
+                "ABORTED and the accrued store left untouched for manual recovery",
+                flush=True,
+            )
+            return 0
+        # Split the ACCRUED store with a vectorized mask over the SAME
+        # predicate, not partition_by_key_integrity(existing.to_dict("records")).
+        # The two are semantically identical, but the dict spelling materializes
+        # one dict per stored row and rebuilds a frame from them; masking walks
+        # the key column once and slices the ORIGINAL frame, so the store keeps
+        # its own dtypes and column order untouched. Measured 2026-08-22 on the
+        # real 54,078-row store: 0.55s vs 0.01s (~45x), and that cost grows with
+        # the store (~2,860 net-new rows/night) on the 4-core-bound runner where
+        # the render budget is law. partition_by_key_integrity() still owns the
+        # NEW batch, which arrives as dicts and is ~13k rows, not the whole tape.
+        unkeyed_mask = existing["announcementId"].map(key_anomaly).notna()
+        existing_keyed_df = existing[~unkeyed_mask]
+        existing_unkeyed_df = existing[unkeyed_mask]
+        preexisting_unkeyed = int(unkeyed_mask.sum())
+
+        if existing_keyed_df.empty:
+            # No existing keyed rows: dedup within the new well-keyed batch itself.
+            merged_keyed = new_df.drop_duplicates(subset=["announcementId"], keep="first")
+            net_new = len(merged_keyed)
         else:
-            pre_count = existing["announcementId"].nunique()
-            merged = pd.concat([existing, new_df], ignore_index=True)
-            merged = merged.drop_duplicates(subset=["announcementId"], keep="first")
-            post_count = merged["announcementId"].nunique()
+            pre_count = existing_keyed_df["announcementId"].nunique()
+            merged_keyed = pd.concat([existing_keyed_df, new_df], ignore_index=True)
+            merged_keyed = merged_keyed.drop_duplicates(subset=["announcementId"], keep="first")
+            post_count = merged_keyed["announcementId"].nunique()
             net_new = post_count - pre_count
-        merged = merged.sort_values(
+
+        # Pre-existing unkeyed rows ride along VERBATIM — never subjected to
+        # the keyed dedup, never dropped.
+        final = pd.concat([existing_unkeyed_df, merged_keyed], ignore_index=True)
+        final = final.sort_values(
             ["publish_ts", "announcementId"], na_position="last"
         ).reset_index(drop=True)
-        merged.to_parquet(path, index=False)
+        final.to_parquet(path, index=False)
+
+        excluded_total = len(malformed)
+        LAST_KEY_INTEGRITY = {
+            "excluded_total": excluded_total,
+            "excluded_by_type": dict(new_counts),
+            "preexisting_unkeyed": preexisting_unkeyed,
+            "at": datetime.now(timezone.utc).isoformat(),
+        }
+        if excluded_total or preexisting_unkeyed:
+            log.error(
+                "china_filings: %d malformed announcementId row(s) excluded this "
+                "call (%s); %d pre-existing unkeyed row(s) preserved verbatim in "
+                "the store (never collapsed by the keyed dedup)",
+                excluded_total, new_counts, preexisting_unkeyed,
+            )
+            # Bare print, NOT log.* — this repo's loggers prefix the line
+            # (e.g. "ERROR ..."), which makes GitHub silently drop the
+            # annotation because it only parses "::" at column 0
+            # (tests/test_gh_annotation_line_start.py).
+            print(
+                f"::warning title=china-filings-malformed-announcement-id::"
+                f"{excluded_total} malformed announcementId row(s) excluded "
+                f"this call ({new_counts}); {preexisting_unkeyed} pre-existing "
+                f"unkeyed row(s) preserved verbatim in the store",
+                flush=True,
+            )
         return net_new
     except Exception as e:  # noqa: BLE001
         log.error("china_filings.write_filings failed: %s", e)
@@ -308,13 +588,20 @@ def _fetch_page(
 
 
 def _parse_announcement(ann: dict, exchange: str, collected_at: str) -> dict:
-    """Map one raw announcement dict → canonical row dict. Pure (no I/O)."""
+    """Map one raw announcement dict → canonical row dict. Pure (no I/O).
+
+    announcementId: P1-R2 — a truly ABSENT key must stay None ("missing" per
+    key_anomaly()), never get flattened to "" ("empty"). Both are malformed
+    and both get typed-excluded at write_filings(), but collapsing "missing"
+    into "empty" here would have thrown away the more specific anomaly name
+    before it ever reached the partition.
+    """
     title = ann.get("announcementTitle") or ""
     ts_ms = ann.get("announcementTime")
     cat = categorize(title)
     kind: str | None = classify_kind(title) if cat == "inquiry_letter" else None
     return {
-        "announcementId": ann.get("announcementId", ""),
+        "announcementId": ann.get("announcementId"),
         "sec_code": ann.get("secCode", ""),
         "sec_name": ann.get("secName", ""),
         "org_id": ann.get("orgId", ""),
@@ -419,12 +706,14 @@ class ChinaFilingsAdapter(Adapter):
         date_range = self._date_range(full_history)
         collected_at = datetime.now(timezone.utc).isoformat()
 
-        global LAST_RUN_OUTCOME
+        global LAST_RUN_OUTCOME, LAST_KEY_INTEGRITY
+        LAST_KEY_INTEGRITY = None  # P1-R2: fail-closed at entry, mirrors LAST_RUN_OUTCOME
         LAST_RUN_OUTCOME = {
             "ok": False,
             "errors": ["refresh started but did not complete"],
             "per_exchange": {},
             "at": collected_at,
+            "key_integrity": _zero_key_integrity(collected_at),
         }
 
         session = requests.Session()
@@ -453,6 +742,7 @@ class ChinaFilingsAdapter(Adapter):
                 "errors": errors,
                 "per_exchange": per_exchange,
                 "at": collected_at,
+                "key_integrity": _zero_key_integrity(collected_at),
             }
             raise RuntimeError(
                 "china_filings: all exchanges failed — " + " | ".join(errors)
@@ -463,11 +753,47 @@ class ChinaFilingsAdapter(Adapter):
             "china_filings: %d raw rows collected, %d net-new stored (%s)",
             len(all_rows), net_new, per_exchange,
         )
+
+        # P1-R2: write_filings() just set LAST_KEY_INTEGRITY (canonical shape,
+        # zeros when clean). Fold it into LAST_RUN_OUTCOME so every consumer
+        # reads one stable shape, and — FAIL-SOFT PRESERVED — malformed keys
+        # degrade `ok` to False via a typed errors[] entry rather than ever
+        # raising; the only raise in this method stays the all-exchanges-
+        # failed branch above. Valid sibling rows are still fetched, stored,
+        # and returned even when this branch fires.
+        # LAST_KEY_INTEGRITY is None ONLY when write_filings() did not reach its
+        # own assignment — i.e. its internal try/except fired (a store write or
+        # read blew up) and it returned 0 without telling us what it had
+        # partitioned. That is UNKNOWN, and `or _zero_key_integrity(...)` alone
+        # would silently launder it into "clean": measured 2026-08-22, a batch
+        # of 4 rows with 3 malformed and a failing to_parquet folded in
+        # excluded_total=0, left ok=True, and china_visits then stamped
+        # coverage and advanced last_success_utc over a store that was never
+        # written — a false clean absence, the exact failure this repair
+        # exists to prevent. Fail closed: name the unknown in errors[] so `ok`
+        # degrades, and keep the zero-shape only so consumers still read one
+        # stable shape.
+        if LAST_KEY_INTEGRITY is None:
+            errors.append(
+                "key_integrity: UNKNOWN — write_filings() did not complete its "
+                "key-integrity partition, so this run proves nothing about "
+                "whether malformed rows were excluded"
+            )
+        key_integrity = LAST_KEY_INTEGRITY or _zero_key_integrity(collected_at)
+        if key_integrity["excluded_total"] or key_integrity["preexisting_unkeyed"]:
+            errors.append(
+                f"key_integrity: {key_integrity['excluded_total']} malformed "
+                f"announcementId row(s) excluded ({key_integrity['excluded_by_type']}); "
+                f"{key_integrity['preexisting_unkeyed']} pre-existing unkeyed row(s) "
+                "in store"
+            )
+
         LAST_RUN_OUTCOME = {
             "ok": not errors,
             "errors": errors,
             "per_exchange": per_exchange,
             "at": collected_at,
+            "key_integrity": key_integrity,
         }
 
         # Summary frame — DatetimeIndex is required by base.validate() /

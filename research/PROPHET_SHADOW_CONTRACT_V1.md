@@ -612,8 +612,17 @@ for the candidate set (never scraped from the buys loop) and shares no
 input with the origin predicates. Read-availability is explicit: when the
 placement gate, knife pass, or extension map is unavailable AS A WHOLE, a
 name that would otherwise be ENTRY_OPEN reports UNAVAILABLE_DATA with a
-source naming the unavailable read — unknown NEVER defaults to a pass
-(executed mutation kill K-D4). Per-name absence inside an available read is
+source naming the unavailable read — unknown NEVER defaults to a pass.
+Correction (Sol pre-settlement review, 2026-08-22): the K-D4 arms as first
+merged closed this only for EXPLICIT `False` flags — an OMITTED flag
+defaulted to available, and two tests asserted that default on purpose. The
+repair wave makes ENTRY_OPEN reachable only when `plc_available`,
+`knife_available`, and `extension_available` are all explicitly present and
+affirmatively True; omitted/`None` fails closed to UNAVAILABLE_DATA with a
+`…_unavailable(unstated)` source (executed mutation kill: restoring the
+default fails four named tests). Known per-name blockers
+(RIGHTS_BLOCKED/WAIT_PULLBACK/RAN_DONT_CHASE/WAIT_CONFLUENCE) are not
+weakened by an absent flag. Per-name absence inside an available read is
 a genuine False. Availability preserves "interesting but wait": it is never
 buy authority.
 
