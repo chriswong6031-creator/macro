@@ -3,7 +3,7 @@ workstream: WS:DEFENSE-PROCUREMENT-V3
 session: claude/d5r1-docs-consistency
 model: fable
 ended_because: complete
-prs: []
+prs: [6219]
 decisions: []
 discoveries: []
 
