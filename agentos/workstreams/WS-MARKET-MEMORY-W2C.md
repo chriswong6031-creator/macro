@@ -56,19 +56,27 @@ waves:
       capture per session in [04:00:00Z, 04:05:00Z) D+1; keyless technicals-v2;
       registration v2 encoding the seal predicate; experience-v2 at 04:32Z;
       strict prospective activation. Do not mix D-class R2 coherence into this PR.
+  - id: V1-CONTEXT-AUDIT-DECOUPLE
+    title: Restore v1 owner replay by decoupling trusted context from Options audit
+    status: in_progress
+    next_action: >
+      Merge and deploy the trusted-context / Options-audit split. Do not start
+      experience oneshots by hand. Confirm macro-market-memory-experience.timer
+      is enabled/active/waiting with a future 04:30 UTC fire after canonical
+      updater owner replay. Options audit remains independently overdue.
 next_action: >
-  Implement the M0D runtime vertical slice from
-  agentos/handoffs/MARKET-MEMORY-W2C-2026-08-21-m0d0.md under
-  DEC:W2C-M0D0-0400Z-SOURCE-SEAL-GO. Seal one canonical results[] capture per
-  session in [04:00:00Z, 04:05:00Z) D+1; do not treat first REST availability
-  as readiness; keep v1 isolation and 04:32Z stagger. Stop at a design
-  contradiction or first authenticated natural v2 opportunity.
+  Deploy DEC:W2C-V1-CONTEXT-OWNER-DECOUPLED-FROM-OPTIONS-AUDIT so canonical
+  macro-update can complete source → trusted-context → technicals →
+  w2c_reconcile_timer() and re-arm the v1 experience timer. Tuesday 2026-08-25
+  M0D v2 proof proceeds independently; if v1 is not restored, grade v2 as
+  v1_control_unavailable. Do not implement Options Audit preregistration v2 here.
 decisions:
   - "DEC:W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE"
   - "DEC:W2C-M0C-V2-REST-SINGLE-TICKER-DAILY"
   - "DEC:W2C-M0C-V2-HYBRID-PRICE-ACTIVITY-SCOPE"
   - "DEC:W2C-M0C-SOL-RATIFIED-REST-SUCCESSOR"
   - "DEC:W2C-M0D0-0400Z-SOURCE-SEAL-GO"
+  - "DEC:W2C-V1-CONTEXT-OWNER-DECOUPLED-FROM-OPTIONS-AUDIT"
 discoveries:
   - "DSC:MASSIVE-DAY-AGGS-LASTMODIFIED-FOLLOWS-0430Z"
   - "DSC:SPY-REST-UNADJUSTED-DAILY-MATCHES-FLATFILE-OHLC"
@@ -76,6 +84,7 @@ discoveries:
   - "DSC:SPY-DAILY-AGG-IS-RTH-PRICE-FULLDAY-ACTIVITY"
   - "DSC:W2C-V1-TRUSTED-CAPTURES-THREE-PER-WINDOW"
   - "DSC:W2C-M0D0-SPY-REST-FORMING-BAR-SEAL-STABLE"
+  - "DSC:OPTIONS-CONTEXT-AUDIT-V1-TIMEOUT-PRECEDES-4096-REFUSAL"
 do_not_redo:
   - Do not treat a lawful in-window abstained row as missed, absent, or an M0A failure.
   - Do not reopen #5805 or the nested __case_v1 filename admit without a live journal reproducing the noncanonical-filename exception.
@@ -98,10 +107,12 @@ do_not_redo:
   - Do not treat first REST availability as W2C opportunity readiness; the D+1 04:00–04:05Z source seal is the readiness boundary.
   - Do not persist forming-bar revisions as production source generations; one stable seal equals one capture.
   - Do not re-run M0D-0 as a standing gate; the 2026-08-20 trajectory already passed.
+  - Do not recouple the Options Context Audit into macro-market-memory-context.service or scripts/project_market_memory_context.py main().
   - Do not backdate activation_session or rush Monday 2026-08-24.
 landmines:
   - Nested-path admission must round-trip artifact_relative_path. Any slash, mixed-case nested name, or hex that decodes to an uppercase ticker reopens traversal and identity-fold bugs.
   - Experience timer enabled-but-inactive is not armed. Armed means enabled plus active/waiting with a future NextElapse.
+  - Coupled Options Context Audit publication inside the trusted-context oneshot prevents w2c_reconcile_timer() once the owner corpus is large enough to burn the 90s CPU budget.
   - technical_session_absent is a lawful same-session evidence miss, not a missed window. The writer did run.
   - Technicals Result=success with a lagged session is a different defect from technicals failing closed.
   - Session 2026-08-18 also lacked a trusted same-session pin; that is concurrent with, not a substitute for, the technical lag.
@@ -123,17 +134,20 @@ artifacts:
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-m0c-sol-ratification.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-v2-slice.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-21-m0d0.md
+  - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-22-v1-context-decouple.md
   - agentos/decisions/DEC-W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE.md
   - agentos/decisions/DEC-W2C-M0C-V2-REST-SINGLE-TICKER-DAILY.md
   - agentos/decisions/DEC-W2C-M0C-V2-HYBRID-PRICE-ACTIVITY-SCOPE.md
   - agentos/decisions/DEC-W2C-M0C-SOL-RATIFIED-REST-SUCCESSOR.md
   - agentos/decisions/DEC-W2C-M0D0-0400Z-SOURCE-SEAL-GO.md
+  - agentos/decisions/DEC-W2C-V1-CONTEXT-OWNER-DECOUPLED-FROM-OPTIONS-AUDIT.md
   - agentos/discoveries/DSC-MASSIVE-DAY-AGGS-LASTMODIFIED-FOLLOWS-0430Z.md
   - agentos/discoveries/DSC-SPY-REST-UNADJUSTED-DAILY-MATCHES-FLATFILE-OHLC.md
   - agentos/discoveries/DSC-MASSIVE-GROUPED-DAILY-AVAILABLE-AT-XNYS-CLOSE.md
   - agentos/discoveries/DSC-SPY-DAILY-AGG-IS-RTH-PRICE-FULLDAY-ACTIVITY.md
   - agentos/discoveries/DSC-W2C-V1-TRUSTED-CAPTURES-THREE-PER-WINDOW.md
   - agentos/discoveries/DSC-W2C-M0D0-SPY-REST-FORMING-BAR-SEAL-STABLE.md
+  - agentos/discoveries/DSC-OPTIONS-CONTEXT-AUDIT-V1-TIMEOUT-PRECEDES-4096-REFUSAL.md
   - research/market_memory/W2C_M0D0_SPY_REST_REVISION_TRAJECTORY_2026-08-20.tsv
 ---
 

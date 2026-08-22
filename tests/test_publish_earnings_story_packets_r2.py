@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from engine.earnings_narrative import story_store
 from engine.earnings_narrative.contracts import canonical_json_bytes, sha256_bytes
 from scripts import publish_earnings_story_packets_r2 as publisher
 
@@ -87,9 +88,32 @@ def _verify_store(out_dir: Path, *, manifest: dict) -> dict[str, int | str]:
     return {"status": "ready", "packet_count": len(manifest["packets"])}
 
 
+def _verify_delta_store(out_dir: Path, manifest: dict, *, prior_manifest: dict) -> dict[str, int | str]:
+    """Test-double contract for the publisher's sparse child-staging path."""
+    _manifest_is_valid(manifest)
+    _manifest_is_valid(prior_manifest)
+    if manifest["parent_generation_id"] != prior_manifest["generation_id"]:
+        raise ValueError("parent receipt")
+    root = Path(out_dir)
+    for packet, index in manifest["packets"].items():
+        logical = index["object"]
+        receipt = manifest["files"][logical]
+        old_index = prior_manifest["packets"].get(packet)
+        if (
+            old_index == index
+            and prior_manifest["files"].get(logical) == receipt
+        ):
+            continue
+        body = (root / receipt["object_key"]).read_bytes()
+        if len(body) != receipt["bytes"] or sha256_bytes(body) != receipt["sha256"]:
+            raise ValueError("delta object receipt")
+    return {"status": "ready", "packet_count": len(manifest["packets"])}
+
+
 @pytest.fixture(autouse=True)
 def _projection_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(publisher, "_story_contracts", lambda: (_manifest_is_valid, _verify_store))
+    monkeypatch.setattr(story_store, "verify_story_packet_delta_store", _verify_delta_store)
     monkeypatch.setattr(publisher, "_audit_bound_evidence", lambda *args, **kwargs: None)
 
 
