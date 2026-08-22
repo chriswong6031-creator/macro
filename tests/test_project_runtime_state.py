@@ -16,6 +16,7 @@ from lib.project_runtime_state import (  # noqa: E402
     PrivacyViolation,
     SystemEvidenceReader,
     TopologyError,
+    _probe_sha,
     assert_private_safe,
     canonical_json,
     collect_runtime_state,
@@ -623,3 +624,203 @@ def test_expired_snapshot_is_machine_detectable_and_visibly_marked():
     assert "EXPIRED" in render_markdown(state, evaluated_at=evaluated)
     state["valid_until"] = "2000-01-01T00:00:00Z"
     assert "EXPIRED" in render_markdown(state)
+
+
+# ---------------------------------------------------------------------------
+# DEC:B1-MACRO-PRIVATE-CUTOVER — `_probe_sha`'s "git_remote_ref"/"github_ref"
+# resolution probe must go through a LOCAL already-authenticated checkout
+# (``repo_path``) instead of an anonymous ``git ls-remote <public-url>``,
+# which 404s once the repository is private.
+# ---------------------------------------------------------------------------
+
+class _ProbeReader:
+    """Minimal reader stub scoped to `_probe_sha`'s remote-ref branches.
+
+    Distinct from the shared ``FakeReader`` above (which drives full
+    ``collect_runtime_state`` fixtures with a fixed command dispatch table) —
+    this one records every call verbatim so a test can assert on the EXACT
+    argv issued, in particular that no anonymous URL ever appears in it.
+    """
+
+    def __init__(self, *, origin_url: str | None = None, ref_sha: str = "a" * 40):
+        self.origin_url = origin_url
+        self.ref_sha = ref_sha
+        self.calls: list[tuple] = []
+
+    def path(self, value):
+        self.calls.append(("path", str(value)))
+        return Path(str(value))
+
+    def run(self, argv, *, timeout=8.0):
+        argv = tuple(argv)
+        self.calls.append(("run", argv, timeout))
+        if "config" in argv and "--get" in argv:
+            if self.origin_url is None:
+                return 1, ""
+            return 0, self.origin_url + "\n"
+        if "ls-remote" in argv:
+            ref = argv[-1]
+            return 0, f"{self.ref_sha}\t{ref}\n"
+        raise AssertionError(f"unexpected command: {argv!r}")
+
+
+def test_probe_sha_repo_path_resolves_via_local_authenticated_checkout():
+    reader = _ProbeReader(origin_url="git@github.com:mastermindx-market-intelligence/macro.git")
+    sha = _probe_sha(
+        {"kind": "git_remote_ref", "repo_path": "/opt/macro", "ref": "refs/heads/main"},
+        reader,
+    )
+    assert sha == reader.ref_sha
+    run_calls = [c for c in reader.calls if c[0] == "run"]
+    assert ("run", ("git", "-C", "/opt/macro", "ls-remote", "origin", "refs/heads/main"), 12) in run_calls
+    # No anonymous URL anywhere in any issued command.
+    for _, argv, _ in run_calls:
+        for arg in argv:
+            assert "github.com/mastermindx-market-intelligence" not in arg or arg == (
+                "git@github.com:mastermindx-market-intelligence/macro.git"
+            )
+            assert "https://github.com" not in arg
+
+
+def test_probe_sha_repo_path_accepts_bare_main_and_master_ref_shorthand():
+    reader = _ProbeReader(origin_url="git@github.com:mastermindx-market-intelligence/macro.git")
+    sha = _probe_sha({"kind": "git_remote_ref", "repo_path": "/opt/macro", "ref": "main"}, reader)
+    assert sha == reader.ref_sha
+    run_calls = [c for c in reader.calls if c[0] == "run"]
+    assert ("run", ("git", "-C", "/opt/macro", "ls-remote", "origin", "refs/heads/main"), 12) in run_calls
+
+
+def test_probe_sha_repo_path_accepts_https_origin_form_too():
+    reader = _ProbeReader(origin_url="https://github.com/mastermindx-market-intelligence/macro.git")
+    sha = _probe_sha(
+        {"kind": "github_ref", "repo_path": "/opt/macro", "ref": "refs/heads/main"},
+        reader,
+    )
+    assert sha == reader.ref_sha
+
+
+def test_probe_sha_repo_path_rejects_unapproved_checkout_origin():
+    reader = _ProbeReader(origin_url="git@github.com:some-other-org/other-repo.git")
+    with pytest.raises(TopologyError, match="unapproved canonical git remote"):
+        _probe_sha({"kind": "git_remote_ref", "repo_path": "/opt/macro", "ref": "main"}, reader)
+    # Fails BEFORE ever attempting ls-remote against the unapproved checkout.
+    assert not any("ls-remote" in c[1] for c in reader.calls if c[0] == "run")
+
+
+def test_probe_sha_repo_path_rejects_when_origin_url_unreadable():
+    reader = _ProbeReader(origin_url=None)  # simulates `git config --get` failing
+    with pytest.raises(TopologyError, match="unapproved canonical git remote"):
+        _probe_sha({"kind": "git_remote_ref", "repo_path": "/opt/macro", "ref": "main"}, reader)
+
+
+def test_probe_sha_repo_path_absent_is_byte_identical_to_legacy_anonymous_path():
+    """When `repo_path` is absent, behavior must be unchanged: an anonymous
+    `git ls-remote <remote> <ref>` against the hard-coded approved-URL
+    allowlist — same command shape, same approved values, same errors."""
+    reader = _ProbeReader(ref_sha="b" * 40)
+    sha = _probe_sha(
+        {
+            "kind": "git_remote_ref",
+            "remote": "https://github.com/mastermindx-market-intelligence/macro.git",
+            "ref": "refs/heads/main",
+        },
+        reader,
+    )
+    assert sha == reader.ref_sha
+    assert reader.calls == [
+        (
+            "run",
+            (
+                "git",
+                "ls-remote",
+                "https://github.com/mastermindx-market-intelligence/macro.git",
+                "refs/heads/main",
+            ),
+            12,
+        )
+    ]
+    # No `reader.path()` call at all — the repo_path branch is untouched.
+    assert not any(c[0] == "path" for c in reader.calls)
+
+
+def test_probe_sha_repo_path_absent_still_rejects_an_unapproved_remote():
+    reader = _ProbeReader()
+    with pytest.raises(TopologyError, match="unapproved canonical git remote"):
+        _probe_sha(
+            {"kind": "git_remote_ref", "remote": "https://github.com/someone-else/other.git", "ref": "main"},
+            reader,
+        )
+
+
+def test_probe_sha_repo_path_absent_slug_form_still_works_unchanged():
+    """`github_ref` with a bare `slug` (no explicit `remote`) — the portfolio
+    repo's existing probe shape in config/production_topology.yml — is
+    untouched by the repo_path addition."""
+    reader = _ProbeReader(ref_sha="c" * 40)
+    sha = _probe_sha(
+        {
+            "kind": "github_ref",
+            "slug": "mastermindx-market-intelligence/Mastermind",
+            "ref": "master",
+        },
+        reader,
+    )
+    assert sha == reader.ref_sha
+    assert reader.calls == [
+        (
+            "run",
+            (
+                "git",
+                "ls-remote",
+                "https://github.com/mastermindx-market-intelligence/Mastermind.git",
+                "refs/heads/master",
+            ),
+            12,
+        )
+    ]
+
+
+def test_release_match_release_update_probe_prefers_canonical_repo_path():
+    """The macro.release_update `release_match` probe now forwards
+    `canonical_repo_path` into a repo_path-shaped `git_remote_ref` probe
+    instead of the old anonymous `canonical_remote` — exercised end to end
+    via the real topology fixture augmented with the release_match probe."""
+    reader = _reader()
+    reader.crontab = "*/3 * * * * /usr/local/bin/macro-update\n"
+    topology = _topology()
+    topology["scheduled_systems"].append({
+        "id": "macro.release_update",
+        "repo": "macro",
+        "owner": "macro-admin",
+        "host_class": "vps",
+        "probe": {
+            "kind": "release_match",
+            "deployed_repo": "/opt/macro",
+            "canonical_ref": "origin/main",
+            "canonical_repo_path": "/opt/macro",
+            "required_cron_id": "macro_update",
+        },
+        "expected_state": "active",
+        "cadence": "every_3_minutes",
+    })
+
+    class _RepoPathAwareReader(FakeReader):
+        def run(self, argv, *, timeout=8.0):
+            argv = list(argv)
+            if "config" in argv and "--get" in argv:
+                self.calls.append(("run", tuple(argv)))
+                return 0, "git@github.com:mastermindx-market-intelligence/macro.git\n"
+            return super().run(argv, timeout=timeout)
+
+    aware_reader = _RepoPathAwareReader()
+    aware_reader.__dict__.update(reader.__dict__)
+    state = collect_runtime_state(topology, reader=aware_reader, now=NOW, mode="fixture")
+    schedule = next(s for s in state["scheduled_systems"] if s["id"] == "macro.release_update")
+    assert schedule["state"] != "failed"
+    issued = [c[1] for c in aware_reader.calls if c[0] == "run"]
+    assert any("config" in argv and "--get" in argv for argv in issued)
+    assert any("ls-remote" in argv and "origin" in argv for argv in issued)
+    # No anonymous canonical_remote URL anywhere in an issued command.
+    for argv in issued:
+        for arg in argv:
+            assert "https://github.com/mastermindx-market-intelligence/macro" not in str(arg)

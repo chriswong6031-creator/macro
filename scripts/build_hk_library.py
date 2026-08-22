@@ -2112,6 +2112,22 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("hk_standouts.json persist skipped (%s)", e)
 
+    # ---- ZERO-AUTHORITY SHADOW SUBSTRATE (WS:PROPHET-HK-CA-REVAMP,
+    # research/PROPHET_SHADOW_CONTRACT_V1.md §4) — placed BELOW the
+    # hk_standouts.json persist above, deliberately NOT beside the
+    # board_ledger.append_board call ~189 lines upstream: the buy/watch list
+    # objects that get serialized into hk_standouts.json are still live in
+    # scope up there, and a shadow call at that site could mutate the
+    # published board (contract §4, F1). Reuses the exact same `calls`
+    # population and `as_of` already handed to append_board. Fail-soft
+    # (write_shadow never raises) and wrapped anyway, so a defect here can
+    # never touch the standout-board persist above.
+    try:
+        from engine import board_shadow
+        board_shadow.write_shadow(calls, market="HK", asof=str(as_of) if as_of else None)
+    except Exception as _bse:  # noqa: BLE001 — additive research telemetry; never fatal
+        log.warning("hk board_shadow write failed (%s) — render continues", _bse)
+
     # ---- HK PICK LAB PRODUCER BLOCK (spec §5, HKPL-R7) --------------------------------
     # Writes the nightly HK snapshot parquet and the 1D Velocity Desk price-only first
     # pass.  Never-fatal: a failure here must not block the standout board persist above.

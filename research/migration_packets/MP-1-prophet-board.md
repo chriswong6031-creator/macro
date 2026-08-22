@@ -229,6 +229,40 @@ its trigger is the existence/design ownership of a real plan-book dense/table
 view; it is not a B1 blocker; and it is not to be smuggled into P-LAB-UI
 unless the frozen P-LAB-UI architecture already owns that table surface.
 
+### COMPLETION BOUNDARY (Sol Day-6 AMENDMENT clause G, 2026-08-21) — `DEC:B1-CUTOVER-HARDENING`
+
+Sol independently inspected the live production Prophet surface and confirmed a
+standing product defect: the **Setups Grid** renders the new Prophet
+plan-book/lifecycle population while the apparent **Setups Table** still exposes
+the old candidate StockTable population, the Setups header still carries
+candidate-era counts/copy, and Grid density/show-more is not the final MP-1 §10
+behavior. This is the defect visible in the Chairman's production screenshots.
+
+The separation ruling above is UNCHANGED — this defect is not absorbed into
+Day-6 and not absorbed into P-LAB-UI. What is added is a completion boundary:
+
+> **Neither P-LAB-UI completion nor B1 closure authorizes calling the U.S.
+> Prophet product redesign complete while P-MP1-DENSE remains open.**
+
+After (1) B1 CLOSED, (2) §8b BOUNDARY PASS, and (3) P-LAB-UI implemented and
+production-proven, the session STOPS and returns to Sol. The continuation report
+must say explicitly `P-MP1-DENSE OWED — current Setups Grid/Table parity defect
+remains`, unless another separately reviewed PR has lawfully closed it in the
+interim, and must also carry: exact current production Grid/Table behavior, any
+UI defect found while implementing the single controller, exact production
+URL/browser proof, and the exact next bounded commission. Do not start
+P-MP1-DENSE without Sol review, and do not silently inherit the current legacy
+Table and call the redesign finished.
+
+P-MP1-DENSE's future observable mission (frozen here so it is not re-derived): a
+user can view Prophet Setups in Grid or Table; sees the same canonical plan-book
+population in both; can select any lifecycle cell and get the same plan
+identities in either view; can distinguish plan IDs from ticker
+identities/multi-episode names; can use a lifecycle-aware 40-card dense Grid
+without deleting or filtering away legal rows; sees the complete active-filter
+population in Table; keeps Candidates as a separate screener population; and
+sees no candidate-era count/entry-dot language masquerading as plan-book truth.
+
 ---
 
 *Record (factory §3.7): mark DONE with the PR number here when merged; deviations/dissents append below this line.*

@@ -1485,7 +1485,14 @@
     if (reviewPendingCount()) noteState(list, 'ambiguous_identity', knownAt, 'endpoint edits are not matched to a named endpoint.', '终点改动尚未对应到具体终点。');
     if (tapeConflicts()) noteState(list, 'contradiction', knownAt, 'one field was both added and removed.', '同一字段既新增又移除。');
     if (correctionCount()) noteState(list, 'correction', knownAt, 'an earlier recorded value was replaced.', '先前记录的值已被替换。');
-    if (healthState === 'stale' || state.restarted) noteState(list, 'stale', knownAt, 'the register moved while this page loaded.', '本页加载期间登记库已更新。');
+    // Two unrelated causes share the `stale` rank and must not share its copy.
+    // A published page behind its freshness budget is not a generation that
+    // moved under a reader mid-pagination: telling a reader of an old page that
+    // something changed while they loaded it describes a race that never
+    // happened. Freshness leads when both hold, matching the order the status
+    // band uses in updateMetadata() so the stamp and the band never disagree.
+    if (healthState === 'stale') noteState(list, 'stale', knownAt, 'the newest registry update has not arrived yet.', '登记库最新一次更新尚未送达。');
+    else if (state.restarted) noteState(list, 'stale', knownAt, 'the register moved while this page loaded.', '本页加载期间登记库已更新。');
     if (isChangeMode() && state.rows.length) noteState(list, 'historical', knownAt, 'these are superseded record versions.', '这些是已被取代的记录版本。');
     if (partial) noteState(list, 'partial', knownAt, 'part of this set is not on the record.', '其中一部分未收录在记录中。');
     if (state.hasLoaded && !state.rows.length && !state.accessLocked && !state.workspaceDown && !state.contractFailed && !state.displayFailed) {

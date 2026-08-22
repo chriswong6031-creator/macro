@@ -1,0 +1,72 @@
+# RIG artifact manifest (RIG V1 S3) -- XPV2-SC-R3B, US Sector Central six-view workspace.
+# Successor to mastermind-xpv2-turn3-r2 (r2 BLOCKed on all four independent critics and issued
+# no verdict.yml; see continuity.yml header). Authority substrate is
+# research/reference_integrity/mastermind-xpv2-sector-r3/ (R3A capability ledger + adjudications
+# + producer/routing/access contracts + frozen fixture) -- that directory is NOT itself a RIG
+# artifact set (no manifest.yml) and is therefore not a declared predecessor; it is cited
+# throughout baseline.yml/proposal.yml/continuity.yml as authority substrate per
+# COMMISSION.md S20/S2, not approval.
+#
+# status: in_review is deliberate -- this is the SCAFFOLDING pass (manifest/baseline/proposal/
+# continuity) that COMMISSION.md S21 calls "RIG successor manifest/proposal/continuity packet",
+# produced BEFORE the R3B design lanes build the actual candidate artifact (COMMISSION.md S19).
+# The orchestrator flips status: draft -> in_review at freeze, once proposed_artifact.frozen_sha in
+# proposal.yml and reference_files[].frozen_sha below are real 40-hex SHAs and evidence lands.
+schema: mastermind.rig_manifest.v1
+reference_id: mastermind-xpv2-sector-r3b
+scope: full
+status: in_review
+
+surface:
+  route: sector_central.html
+  registry_row: "macro:sector_central"
+  archetype: intelligence_desk
+
+author:
+  identity: "XPV2-SC-R3B design commission -- Fable orchestrator with delegated Opus design lanes (COMMISSION.md, Sol-issued 2026-08-20)"
+  role: designer
+
+lineage:
+  predecessors:
+    - mastermind-xpv2-turn3-r2
+  # Ordered oldest -> nearest (RIG S13); a single entry here because mastermind-xpv2-turn3-r2 is
+  # the only prior RIG artifact set (has a manifest.yml) governing this route. The R3A capability
+  # ledger (mastermind-xpv2-sector-r3) is authority substrate per COMMISSION.md S20, not a RIG
+  # cycle, and correctly has no manifest.yml -- it is not a "predecessor" in RIG S13 terms.
+
+reference_files:            # the proposed reference artifact -- PLANNED paths, not yet frozen.
+  # frozen_sha carries an explicit non-hex placeholder rather than a fabricated SHA (RETURN
+  # GAPS): scripts/check_reference_integrity.py has no format/regex validation on frozen_sha at
+  # any status; the value is only byte-compared against review-receipt artifact_sha under
+  # GROUP_REVIEW, which arms at status revise/rejected/approved, never draft/in_review. The
+  # orchestrator MUST replace every PENDING_FREEZE_* value with the real 40-hex commit SHA when
+  # the R3B design lanes freeze the candidate (COMMISSION.md S19), in the same edit that flips
+  # status: draft -> in_review.
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+    frozen_sha: "dc84f78cddf04d9be90e9249126f9767de5725a6"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/proposal/BUILD_MANIFEST.json
+    frozen_sha: "dc84f78cddf04d9be90e9249126f9767de5725a6"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/build/
+    frozen_sha: "dc84f78cddf04d9be90e9249126f9767de5725a6"
+    note: "source directory -- fixture adapter/projection code + design-lane working files (COMMISSION.md S21 deliverable 3); build/fixture_supplement/ already has design-lane output landing under this reference_id at draft time"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/
+    frozen_sha: "dc84f78cddf04d9be90e9249126f9767de5725a6"
+    note: "evidence crop index + responsive/state/access matrix (COMMISSION.md S21 deliverable 12, S22 evidence matrix) -- lands with the frozen candidate, not this scaffolding pass"
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  continuity: continuity.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  verdict: verdict.yml
+  # approval: approval.yml        # COMMISSION.md S21 "Do not produce approval.yml" /
+                                   # S26 "Do not ... self-approve" -- exists only much later,
+                                   # after Sol's fresh post-R3B critic wave (COMMISSION.md S27)
+                                   # and design-authority verdict, never issued by this wave.
+
+# lightweight: not applicable -- scope: full (this is a full six-view workspace redesign
+# carrying real information-hierarchy and visual-language change, RIG S2).
+
+# superseded: not applicable -- status: draft, no successor exists.

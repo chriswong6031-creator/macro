@@ -2,7 +2,7 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-08-21",
-  "generated_utc": "2026-08-21T09:53:08Z",
+  "generated_utc": "2026-08-21T21:09:01Z",
   "note": "Empty overlay: no candidates in us_standouts_v2",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded.",
   "board_concentration": {

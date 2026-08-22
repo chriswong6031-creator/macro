@@ -116,6 +116,37 @@ jobs:
       - name: vector and crypto Tier-1 shelf governor
         run: python3 scripts/check_crypto_shelves.py
 
+  board-shadow-substrate:
+    if: ${{ false }}
+    gate: code
+    # HK+Canada Prophet zero-authority shadow substrate (WS:PROPHET-HK-CA-REVAMP,
+    # research/PROPHET_SHADOW_CONTRACT_V1.md). K1-K14 + standing clauses for
+    # engine/board_shadow.py. Kept on the CODE gate — unlike its
+    # china_prophet_shadow/board_ledger siblings (unrun-picks-boards /
+    # engine-render-guards, both `gate: data`) — because almost every kill
+    # builds its own tmp_path fixtures rather than asserting against moving
+    # committed data/site bytes; the merge-gate-rides-moving-data trap those
+    # two jobs exist to dodge does not apply here (see
+    # research/CI_MERGE_CONTROL_PLANE... / the moving-data finding). Left
+    # UNSCOPED (no `paths:`), mirroring all-exports-resolve/no-module-leak
+    # above: K6's repo-wide walk for the `prophet_shadow` string literal is
+    # exactly the opaque-traversal shape `infer_job_scopes` cannot narrow
+    # (scripts/run_ci_pack.py), so a declared `paths:` here would either be
+    # wrong or drift — always-on is correct for this job, not lazy.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        # plotly/pillow/requests: the K1 legs import the REAL production
+        # builders (scripts.build_canada / scripts.build_hk_library), whose
+        # import closure needs the render deps — without them both K1 tests
+        # die on ModuleNotFoundError before asserting anything.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests
+      - name: HK+CA Prophet shadow substrate — K1-K14 + standing clauses
+        run: python -m pytest tests/test_board_shadow.py -q
+
   board-contradictions:
     if: ${{ false }}
     gate: code
@@ -2105,6 +2136,8 @@ jobs:
           tests/test_fundamental_forensics_filing_package.py
           tests/test_fundamental_forensics_financial_query_service.py
           tests/test_fundamental_forensics_financial_query_api.py
+          tests/test_fundamental_forensics_financial_revision_service.py
+          tests/test_fundamental_forensics_financial_revision_api.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
           tests/test_fundamental_forensics_broad_sec.py
@@ -2207,6 +2240,14 @@ jobs:
       - "tests/test_prophet_lab_timeparse.py"
       - "tests/test_prophet_lab_commissioning.py"
       - "tests/fixtures/prophet_lab/**"
+      # test_caddy_hub_boundary.py's fastapi/starlette half imports
+      # app.prophet_lab (its importorskip reasons literally read "prophet_lab
+      # guard tests need fastapi") — it rides HERE so those tests execute
+      # somewhere; the thin unrun-dark-guards venv runs only its
+      # Caddyfile/string half and skip-only gated red on integration-baseline
+      # (first red main run 32480845137, introduced by #6184).
+      - "tests/test_caddy_hub_boundary.py"
+      - "scripts/check_caddy_hub_boundary.py"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2228,7 +2269,8 @@ jobs:
           tests/test_prophet_lab.py
           tests/test_prophet_lab_api.py
           tests/test_prophet_lab_timeparse.py
-          tests/test_prophet_lab_commissioning.py -q
+          tests/test_prophet_lab_commissioning.py
+          tests/test_caddy_hub_boundary.py -q
 
   attested-history-guards:
     if: ${{ false }}
@@ -3898,7 +3940,11 @@ jobs:
       - name: authority guard selftest (gate fires on planted violation)
         run: python scripts/check_cycle_pattern_authority.py --selftest
       - name: cycle-pattern authority test suite
-        run: python -m pytest tests/test_check_cycle_pattern_authority.py -q
+        run: >-
+          python -m pytest
+          tests/test_check_cycle_pattern_authority.py
+          tests/test_cpi_h1_consumer_authority.py
+          -q
 
   private-boundary:
     if: ${{ false }}
@@ -9631,6 +9677,7 @@ jobs:
       - "engine/baskets_region.py"
       - "engine/beneficial_ownership.py"
       - "engine/board_ledger.py"
+      - "engine/board_shadow.py"
       - "engine/bottleneck.py"
       - "engine/bottom_radar.py"
       - "engine/bottom_ruler.py"
@@ -11119,7 +11166,15 @@ jobs:
         # manifest's narrow-diff ceiling reds a 181st job): same publication-
         # boundary family, and its daily.yml/text pins are exactly the subject
         # the rescue watchdog polices (DEC:B1-PROPHET-PUBLIC-SPLIT).
-        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py tests/test_live_snapshot_host_guard.py tests/test_no_pages_publish.py -q
+        #
+        # The three private-cutover guards ride it for the same reason and are
+        # the same family — an anonymous-distribution boundary that is invisible
+        # to the import-derived auditor because its subjects are shell scripts,
+        # a Caddyfile, and URL string literals (DEC:B1-CUTOVER-HARDENING):
+        #   test_deploy_bootstrap_private.py   — no curl|bash raw bootstrap survives
+        #   test_macro_anon_dependency_guard.py — the anonymous-Macro regression fence
+        #   test_caddy_hub_boundary.py         — no public proxy path reaches /api/hub/*
+        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py tests/test_live_snapshot_host_guard.py tests/test_no_pages_publish.py tests/test_deploy_bootstrap_private.py tests/test_macro_anon_dependency_guard.py tests/test_caddy_hub_boundary.py -q
 
   # ── THE HK BOARD PAIR — BORN DARK EIGHT DAYS AFTER THE CENSUS (2026-08-05) ──
   # tests/test_hk_board_rank.py (163 tests) + tests/test_hk_board_ui.py landed
@@ -12405,6 +12460,9 @@ jobs:
       # binding spec path as a string; contract-delta requires declared paths
       # to cover it (widening is the safe direction).
       - research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md
+      # V4-D2B2-US: same shape — the us_gmi_admission receipt block names its
+      # binding contract path as a string.
+      - research/prophet_v4/d2/D2B2_US_FROZEN_CONTRACT_2026-08-21.md
       - .github/ci/legacy-jobs.yml
       - .github/workflows/ci.yml
       - config/dataset_registry.yml

@@ -31,23 +31,24 @@ AgentOS records: `agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md`, eight
 
 The wave matrix is a mechanical index under 3. The GD-1 packet governs GD-1 research conduct under 2–3.
 
-## Current next action (updated 2026-08-20, Gate 8 closeout)
+## Current next action (updated 2026-08-21, GD-3 + GD-4A.1 wave)
 
 - **GD-1 closed:** GD-1A DONE; GD-1B ACCEPTED_NO_PROMOTION — zero GD-5 promotions
   (`DEC:GD1-ACCEPTED-NO-PROMOTION`). Dossier: `gd1/`. **GD-1C closed** DONE /
   BLOCKED_NO_PROMOTION (#6038): PIT membership unreconstructable; GD-5A/B/C stay CLOSED.
-- **GD-2 DONE:** settled envelope + three-answer hero merged (#6026), semantically
-  repaired (GD-2R1 #6037), and **Gate 8 production acceptance PASSED 2026-08-20**
-  (receipts on the workstream record: publisher `fae690766555`, live DOM at
-  390/768/1440, bundle `fd9ccdbe47f7f008`).
-- **GD-4A:** implementation merged (#6022); wave closes on the real Asia-close proof
-  (one current CN row + one current HK row, idempotent, zero intraday).
-- **GD-3 commissioned** (unblocked by Gate 8): packet
-  `commissions/GD-3_LIVE_PROVISIONAL_ENVELOPE_COMMISSION_2026-08-20.md` — live
-  provisional envelope on the existing VPS live plane, display/advisory only, same pure
-  composer. Build not started.
-- **Gates:** GD-5A/B/C remain closed (GD-1C did not clear the promotion gate). GD-6/7,
-  GD-8/9, Portfolio cutover: not authorized.
+- **GD-2 DONE** (Gate 8 passed 2026-08-20). **GD-4A DONE** (real settled proof +
+  idempotence, 2026-08-20). **GD-4A.1 DONE** (#6140 merged `e4f18b53e9d0`,
+  live-verified run 32435846087; ledger freshness now graded by the liveness lane).
+- **GD-3 built/merged/deployed** (#6144, `55d7ea02ce3e`; commission §0b carries Sol's
+  seven clarifications) — wave OPEN on **WAITING_FOR_PRODUCTION_EVENT**: the only
+  remaining step is the Gate-8-equivalent four-clock receipt, which requires an
+  AUTHENTICATED browser during a US live window (the payload and consumer script are
+  tier-gated by design). Receipt spec + witness gap: workstream record and
+  `agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-21.md`. Never simulate the
+  event.
+- **Gates:** GD-5A/B/C remain closed (GD-1C did not clear the promotion gate). GD-8/9
+  gated on GD-3 production acceptance (Sol 2026-08-21). GD-6/7, Portfolio cutover: not
+  authorized.
 
 ## Do not start (explicit)
 
