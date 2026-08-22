@@ -2980,11 +2980,21 @@ jobs:
         # margin, block trades, buybacks, _first_seen_store. Same WIRING LAW as
         # the range-shard suite above: named by no run: step when it landed
         # (#5730), so workflow-yaml painted pack-1 red. Offline, no new deps.
+        # test_tushare_compliance_anti_resurrection.py joins here for the same
+        # reason and in the same breath as the guard it covers (#6207, Chairman
+        # override). That guard is the DURABLE half of the override: it fails CI
+        # when an active authority surface — the full-A contract, WS-CN-LIMIT-ALPHA,
+        # the R6 freeze/registry/command packet, the TuShare rights matrix, the
+        # China Alpha rights records — re-acquires a vendor-letter/written-grant/
+        # license-document requirement. Leaving it unnamed would reproduce exactly
+        # the hole this step's comment is about, and would make "enforced in CI"
+        # false the day it landed. Offline, no new deps.
         run: >
           python -m pytest
           tests/test_china_tushare_spine.py
           tests/test_china_tushare_range_shards.py
           tests/test_cn_intel_pit_accrual.py
+          tests/test_tushare_compliance_anti_resurrection.py
           -q
       # The three TuShare takeover suites (lane A #5177 add-ons, lane B #5163
       # minutes, lane C #5162 chips). Same WIRING LAW as every step above, same
