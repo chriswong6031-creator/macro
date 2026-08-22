@@ -146,4 +146,24 @@ Rulings on the lane's flagged items:
 5. **Dark+EN red rung (`--ink-mix-down: 100%`) untouched — UPHELD** (5.07:1 passing today;
    tuning it is an uncommissioned EN visual change; recorded D-1 in the dependency file).
 
-(§6+ appended as further lane returns are adjudicated.)
+## §6 Lane C return — adjudicated ACCEPTED (commit 6fb0646826dc)
+
+R3B1-14 landed as commissioned: bidirectional inventory (`inventory_check.py` — direction 1
+= 15 producer-derived pins re-computed from fixture bytes at every run, checked against the
+RENDERED DOM, never candidate self-enumeration; direction 2 = 22/22 registry blocks traced
+to receipts, unresolved fetches all documented exceptions, every data-ref-nav href matched
+to one of 8 contract-derived destination families), unique-kill mutation suite (11
+mutations, pristine-copy green proven, all reds pairwise distinct — "a guard true before
+the feature is not a guard" satisfied literally), and acceptance wiring
+(`verify_reference.py` now 16 checks, slow browser gates asserted from committed
+artifacts). Evidence accepted: 16/16 ALL GREEN, inventory 26/26, mutation 13/13, R3A suite
+59 passed, candidate sha unchanged `fec05b058fbc…`. DAC-108's failure mechanism —
+completeness proven by the candidate enumerating itself — is now structurally impossible
+for the pinned inventory: removing any restored hero fact produces a unique named red.
+
+Rulings: (1) the premiumdata access-gate fetch not being in ALLOWED_UNRESOLVED_FETCHES is
+correct-as-built (the default boot path never issues it; instructions recorded for any
+later wave that wires it); (2) the two extra direction-1 entries (coverage sentence,
+Conviction label) follow the commission's own scope text — accepted, not scope creep.
+
+(§7+ appended as further lane returns are adjudicated.)
