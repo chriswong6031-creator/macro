@@ -3,6 +3,7 @@ workstream: WS:CHINA-ALPHA-INTELLIGENCE
 session: claude/p1-r2-announcement-id-integrity
 model: opus
 ended_because: complete
+prs: [6229]
 decisions: [DEC:CHINA-KEY-INTEGRITY-TYPED-EXCLUSION]
 discoveries: [DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP]
 mission: >
