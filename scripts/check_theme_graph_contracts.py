@@ -711,6 +711,57 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
                     f"company with a live membership is a breach (retired-consistency "
                     f"invariant, §6)")
 
+    # --- V4-D2B3 (adjudicated fix, review 2026-08-22 FIX-3) — conflict-retirement
+    # invariant: ANY company-kind node in RAW nodes.parquet whose symbol equals an
+    # etf-kind node's symbol (the same structural evidence the bake suppression uses,
+    # R-A1 — no ticker literal, no registry lookup) must show retired/merged in the
+    # CURRENT lifecycle view. This is deliberately independent of the break-retirement
+    # invariant above (which only knows about REGISTRY-ratified breaks): it makes a
+    # silent revert of the IBIT lifecycle row — or any future entity-kind collision
+    # landing unretired — a guard breach even though nothing in
+    # config/theme_graph_identity_breaks.yml ever mentions it. -----------------------
+    if {"kind", "node_id", "external_ids"} <= set(nodes.columns):
+        def _symbol_from_external_ids(ext: object) -> str | None:
+            if _is_null(ext):
+                return None
+            try:
+                sym = (json.loads(str(ext)) or {}).get("symbol")
+            except Exception:  # noqa: BLE001 — malformed external_ids caught elsewhere
+                return None
+            return str(sym).strip().upper() if sym else None
+
+        etf_symbol_owner: dict[str, str] = {}
+        company_nodes_by_symbol: dict[str, list[str]] = {}
+        for row in nodes.to_dict("records"):
+            sym = _symbol_from_external_ids(row.get("external_ids"))
+            if not sym:
+                continue
+            kind = str(row.get("kind"))
+            nid = str(row.get("node_id"))
+            if kind == "etf":
+                etf_symbol_owner.setdefault(sym, nid)
+            elif kind == "company":
+                company_nodes_by_symbol.setdefault(sym, []).append(nid)
+
+        retired_or_merged: set[str] = set()
+        if "status" in lifecycle_latest.columns:
+            retired_or_merged = {str(n) for n in lifecycle_latest.loc[
+                lifecycle_latest["status"].isin(["retired", "merged"]), "node_id"]}
+
+        unretired_collisions: list[str] = []
+        for sym, etf_node in sorted(etf_symbol_owner.items()):
+            for co_node in company_nodes_by_symbol.get(sym, []):
+                if co_node not in retired_or_merged:
+                    unretired_collisions.append(
+                        f"{co_node} (symbol {sym!r}, collides with {etf_node!r})")
+        if unretired_collisions:
+            breaches.append(
+                f"{len(unretired_collisions)} company node(s) collide with a "
+                f"same-symbol etf node and are NOT retired/merged in the current "
+                f"lifecycle view (first: {unretired_collisions[0]}) — an entity-kind "
+                f"conflict must be retired (conflict-retirement invariant, structural, "
+                f"registry-independent, §6)")
+
     # --- capability side-car (optional; absent is pre-first-run) --------------
     cap_path = store_dir / "capability.parquet"
     if cap_path.exists():
@@ -1447,6 +1498,39 @@ def selftest(tmp_root: Path | None = None) -> int:
     checks.append((not any("break-retirement invariant" in x for x in b),
                    f"a ratified break whose prior node is absent must be a no-op, never "
                    f"a breach (ABX generality control): {b}"))
+
+    # --- FIX-3 (adjudicated fix, review 2026-08-22) — conflict-retirement invariant,
+    # both directions. Registry-independent: no breaks row involved at all — the
+    # collision is purely a same-symbol company/etf pair in nodes.parquet.
+    #
+    # (ix) unretired collision breaches: co:us:AAA and etf:AAA share symbol AAA;
+    # co:us:AAA carries NO lifecycle row at all.
+    nodes, edges, ev = _clean_rows()
+    nodes[0]["external_ids"] = json.dumps({"symbol": "AAA"})
+    nodes.append({**nodes[0], "node_id": "etf:AAA", "kind": "etf"})
+    d = _fixture(tmp_root / "conflict_retirement_unretired", nodes=nodes, edges=edges,
+                evidence=ev)
+    b, n = audit(d, empty_breaks)
+    checks.append((any("conflict-retirement invariant" in x for x in b),
+                   f"a company/etf symbol collision with no retired lifecycle row must "
+                   f"breach (FIX-3): {b}"))
+
+    # (x) the same collision, but co:us:AAA IS retired — must pass cleanly (this
+    # specific breach class, at least; the fixture's edge is still open, so the
+    # SEPARATE retired-consistency invariant would fire unless the edge is also
+    # closed — closed here to isolate FIX-3 from that unrelated invariant).
+    nodes, edges, ev = _clean_rows()
+    nodes[0]["external_ids"] = json.dumps({"symbol": "AAA"})
+    nodes.append({**nodes[0], "node_id": "etf:AAA", "kind": "etf"})
+    edges[0]["valid_to"] = "2024-01-01"
+    d = _fixture(tmp_root / "conflict_retirement_retired", nodes=nodes, edges=edges,
+                evidence=ev)
+    _write_lifecycle(d, [_clean_lifecycle_row(node_id="co:us:AAA",
+                                              reason="entity_type_conflict")])
+    b, n = audit(d, empty_breaks)
+    checks.append((not any("conflict-retirement invariant" in x for x in b),
+                   f"the same collision, with co:us:AAA retired, must NOT breach FIX-3's "
+                   f"conflict-retirement invariant: {b}"))
 
     bad = [m for ok, m in checks if not ok]
     for m in bad:

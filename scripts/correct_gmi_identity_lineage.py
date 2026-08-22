@@ -37,7 +37,7 @@ DATA OS NON-INTERFERENCE (§8, commission OUT OF SCOPE). This module imports ONL
 reads or writes anything under ``data/reference/``; the IBIT conflict's evidence field
 cites GMI's OWN already-computed ``data/theme_graph/identity_resolution.parquet``
 sidecar receipts (if present) — a GMI artifact, not a Data OS one — never the Data OS
-master directly. ``tests/test_correct_gmi_identity_lineage.py`` pins both invariants
+master directly. ``tests/test_theme_graph_lifecycle.py`` pins both invariants
 by static source inspection.
 
 IDEMPOTENT BY CONSTRUCTION. A node already carrying a ``retired``/``merged`` lifecycle
