@@ -28,10 +28,10 @@ FIF observed state on current main: FIF-2A remains accepted (`#5983`).
 FIF-2B has **landed** via `#6157` squash-merge
 `56d1a36caa43ca2a8ea4570808edca75ca2fc334` (merged 2026-08-21T16:08:36Z).
 Current `WS:FINANCIAL-INTELLIGENCE-FABRIC` records FIF-2B as
-`BUILT_NOT_ACCEPTED` (fixture-proven revision-history read; not
-production-issuer coverage). FIF-7 (earnings / non-GAAP / KPI / guidance
-convergence) remains `todo`. **E3 does not fork FIF-7.** Do not say
-FIF-2B is unstarted.
+`ACCEPTED / FIXTURE_PROVEN / ON_MAIN` (accepted head `55663277a32c`,
+merge `56d1a36caa43`, PR `#6157`; fixture-proven revision-history read;
+not production-issuer coverage). FIF-7 (earnings / non-GAAP / KPI /
+guidance convergence) remains `todo`. **E3 does not fork FIF-7.**
 
 ---
 

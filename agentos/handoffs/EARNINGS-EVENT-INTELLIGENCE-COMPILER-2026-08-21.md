@@ -48,10 +48,14 @@ verified:
   - claim: "FIF-2B landed via PR #6157 squash-merge 56d1a36caa43 on 2026-08-21T16:08:36Z."
     command: gh pr view 6157 --repo mastermindx-market-intelligence/macro --json state,mergedAt,mergeCommit
     result: MERGED mergeCommit 56d1a36caa43 mergedAt 2026-08-21T16:08:36Z
-  - claim: Current WS FINANCIAL-INTELLIGENCE-FABRIC records FIF-2B as BUILT_NOT_ACCEPTED and FIF-7 as todo.
+  - claim: At amendment start, WS FINANCIAL-INTELLIGENCE-FABRIC recorded FIF-2B as BUILT_NOT_ACCEPTED and FIF-7 as todo.
     command: >
       git show origin/main:agentos/workstreams/WS-FINANCIAL-INTELLIGENCE-FABRIC.md
     result: frontmatter/wave FIF-2B BUILT_NOT_ACCEPTED; FIF-7 status todo
+  - claim: Current WS FINANCIAL-INTELLIGENCE-FABRIC records FIF-2B as ACCEPTED / FIXTURE_PROVEN / ON_MAIN via PR #6157 / merge 56d1a36caa43; FIF-7 remains todo.
+    command: >
+      git show origin/main:agentos/workstreams/WS-FINANCIAL-INTELLIGENCE-FABRIC.md
+    result: FIF-2B ACCEPTED / FIXTURE_PROVEN / ON_MAIN; FIF-7 status todo
   - claim: identity_not_in_source is not in ABSENCE_REASONS; speaker_unresolvable is.
     command: sed -n '72,87p' engine/company_intelligence/documents.py
     result: speaker_unresolvable present; identity_not_in_source absent

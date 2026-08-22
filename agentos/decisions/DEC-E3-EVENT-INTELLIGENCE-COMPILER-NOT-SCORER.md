@@ -82,7 +82,7 @@ evidence:
   - "engine/llm_auth.py make_call; lib/ai_costs.py record_usage"
   - "research/earnings_intelligence/g0/G0_EVENT_CLOCK_AND_CONTRACT_CENSUS.md collapsed clocks"
   - "DNR:KILL-LLM-ORIGINATION DNR:KILL-LLM-FRAME-TAGS"
-  - "PR #6157 merged 56d1a36caa43 FIF-2B BUILT_NOT_ACCEPTED; WS:FINANCIAL-INTELLIGENCE-FABRIC FIF-7 still todo"
+  - "PR #6157 merged 56d1a36caa43 FIF-2B ACCEPTED / FIXTURE_PROVEN / ON_MAIN; WS:FINANCIAL-INTELLIGENCE-FABRIC FIF-7 still todo"
   - "PR #6161 review 4998678880 Sol thesis pass / freeze ratification blocked for this amendment"
 affects:
   - WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER
