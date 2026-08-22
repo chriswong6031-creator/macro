@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T07:22:03.027825+00:00",
-  "count": 1601,
+  "generated_at": "2026-08-22T08:15:30.749261+00:00",
+  "count": 1604,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -143,6 +143,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rn3d4bay23f-bc047d",
+      "title": "Global FX Trader Tinker Taylor Holder Why",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T03:18:47Z",
+      "summary_points": [
+        "**USD Weakness Drivers**: Structural Treasury supply/demand imbalance, FOMC policy bias (Taylor rule discomfort), and Treasury’s activist stance (buyback/EUR/JPY intervention) amplify Dollar uncertainty without post-Liberation Day foreign asset appetite decline.",
+        "**Turkey FX Regime & Forecasts**: Revised USD/TRY forecasts to 51/53/59 (3/6/12m) from 48/50/54; recommend long TRY/NGN/KZT basket (7.5-10% weighted) with tightened stops to 4% for carry returns.",
+        "**Jackson Hole Catalyst & Volatility**: Fed Chair Wash’s Aug 28 keynote (first as Chair) introduces uncertainty; historical EUR/USD volatility (Exhibit 5) and lack of forward guidance amplify near-term FX risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
@@ -337,6 +356,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jzctrgkhue4-3b35db",
+      "title": "Market Insights Weekly 21 Aug 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-22T02:25:09Z",
+      "summary_points": [
+        "**Treasury Bond Purchase Volatility**: US Treasury surprise 30-yr bond purchase drives yields to 5.3% (2007 high), strengthens USD (GBP/USD >1.36, EUR/USD >1.17), with market uncertainty on Fed reaction function ahead of Jackson Hole.",
+        "**Jackson Hole Policy Clarity Focus**: Fed symposium (27-29 Aug) is critical event for rate trajectory; Chair Warsh speaks 28 Aug, contrasting UK’s BoE patience amid resilient data and US policy uncertainty.",
+        "**UK Resilience vs Geopolitical Risks**: UK PMI, confidence, and retail sales signal resilience (BoE holds rates), but headline CPI (2.9% energy-linked) and Middle East conflict fuel energy volatility amid stable core CPI (2.6%)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -767,6 +805,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 67,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-olr6yncpcwt-4296c7",
+      "title": "The European Credit Strategist Omni Bessent",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T15:24:34Z",
+      "summary_points": [
+        "**US Fed hawkishness & Euro credit catalyst**: Coordinated US Treasury intervention (buyback support) + 20+ yr high mortgage rates support Euro IG yield curve; hawkish Fed at Jackson Hole may boost long-dated Euro credit (Utilities/telecoms tailwinds).",
+        "**Hyperscaler issuance crowding out quality credit**: AA spreads underperforming BBB due to AI-driven hyperscaler issuance; Euro credit vulnerable if YTD issuance continues, crowding out high-quality debt demand.",
+        "**Structural US debt yield pressures**: 30yr UST yields at 5.3% (2007 high), UST $40tr+ market cap, yield gap vs S&P dividends at 2002 high; rising public debt vs stable yields signals structural long-term rate risk.",
+        "**Euro credit maturity gap divergence**: Euro IG has only 7% >10yrs maturity (vs 30% US IG), making front-end rates pivotal; ECB’s shallow hike cycle limits front-end shock risk despite sovereign yield spikes."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
