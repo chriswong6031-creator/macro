@@ -141,16 +141,23 @@ jobs:
             exit 1
           fi
           BRANCH="${{ github.head_ref }}"
-          TRAILERS=$(git log --format="%B" "$MERGE_BASE..$SUBJECT_HEAD_SHA")
-          FILES=$(git diff --name-only "$MERGE_BASE" "$SUBJECT_HEAD_SHA")
-          if [ -z "$FILES" ]; then
-            echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
-            exit 1
-          fi
+          SELF_MOD_INPUT_DIR="$RUNNER_TEMP/self-mod-fence"
+          FILES_FILE="$SELF_MOD_INPUT_DIR/changed-files.json"
+          TRAILERS_FILE="$SELF_MOD_INPUT_DIR/commit-messages.txt"
+          mkdir -p "$SELF_MOD_INPUT_DIR"
+          # PR #5898 / run 32546500471 proved that both populations can exhaust
+          # execve before Python starts. Keep the exact attribution above, but
+          # carry Git's unbounded outputs only through files. The changed paths
+          # use the canonical CI_CHANGED_FILES_FILE JSON representation; -z
+          # preserves every legal Git pathname without a shell split.
+          git diff --name-only -z "$MERGE_BASE" "$SUBJECT_HEAD_SHA" |
+            python3 scripts/check_self_mod_fence.py \
+              --write-files-file-from-nul "$FILES_FILE"
+          git log --format="%B" "$MERGE_BASE..$SUBJECT_HEAD_SHA" > "$TRAILERS_FILE"
           python3 scripts/check_self_mod_fence.py \
             --branch "$BRANCH" \
-            --files $FILES \
-            --trailers "$TRAILERS"
+            --files-file "$FILES_FILE" \
+            --trailers-file "$TRAILERS_FILE"
       - name: self-mod-fence test suite
         id: self_mod_tests
         continue-on-error: true
@@ -309,18 +316,21 @@ jobs:
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         if: github.event_name == 'pull_request'
         run: |
+          set -euo pipefail
           git fetch origin ${{ github.base_ref || 'main' }}
           BRANCH="${{ github.head_ref }}"
-          TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
-          FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
-          if [ -z "$FILES" ]; then
-            echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
-            exit 1
-          fi
+          SELF_MOD_INPUT_DIR="$RUNNER_TEMP/self-mod-fence"
+          FILES_FILE="$SELF_MOD_INPUT_DIR/changed-files.json"
+          TRAILERS_FILE="$SELF_MOD_INPUT_DIR/commit-messages.txt"
+          mkdir -p "$SELF_MOD_INPUT_DIR"
+          git diff --name-only -z origin/${{ github.base_ref || 'main' }}...HEAD |
+            python3 scripts/check_self_mod_fence.py \
+              --write-files-file-from-nul "$FILES_FILE"
+          git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD > "$TRAILERS_FILE"
           python3 scripts/check_self_mod_fence.py \
             --branch "$BRANCH" \
-            --files $FILES \
-            --trailers "$TRAILERS"
+            --files-file "$FILES_FILE" \
+            --trailers-file "$TRAILERS_FILE"
       - run: python -m pytest tests/test_self_mod_fence.py -q
 
   fork-capability-broker:
