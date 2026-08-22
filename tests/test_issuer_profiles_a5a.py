@@ -25,8 +25,17 @@ and :func:`scripts.refresh_event_workspaces._stated_period_end`:
   2026-07-22, period end 2026-06-30, exhibit ``ex991earningspr06302026.htm``.
   This particular exhibit does not disclose a cancellation rate at all — a
   real, historical typed-absence case, not a synthesized one.
+* PHM FY2026 Q1 — accession ``0000822416-26-000021``, filingDate 2026-04-23,
+  reportDate 2026-04-22 (the one real exception seen where reportDate is not
+  identical to filingDate — used as-is), period end 2026-03-31, exhibit
+  ``ex991earningspr3312026.htm``.  Carries NO year-to-date column at all
+  (nothing to accumulate yet in Q1) — NEW-A regression fixture.
 * KBH FY2026 Q2 — accession ``0000795266-26-000060``, filingDate/reportDate
   2026-06-23, period end 2026-05-31, exhibit ``exh991kbh-earningsrelease0.htm``.
+* KBH FY2026 Q1 — accession ``0000795266-26-000037``, filingDate/reportDate
+  2026-03-24, period end 2026-02-28, exhibit ``exh991kbh-earningsrelease0.htm``
+  (same filename as Q2's, different accession/content).  Also no YTD column —
+  NEW-A regression fixture.
 * TOL FY2026 Q3 — accession ``0000794170-26-000096``, filingDate/reportDate
   2026-08-18, period end 2026-07-31, exhibit ``tol-7312026x8kexh991.htm``.
 """
@@ -68,19 +77,30 @@ AAPL_EXHIBIT = FIXTURES / "aapl_fy2026_q3_ex99_1.htm"
 DHI_EXHIBIT = FIXTURES / "dhi_fy2026q3_ex99_1.htm"
 DHI_Q2_EXHIBIT = FIXTURES / "dhi_fy2026q2_ex99_1.htm"
 PHM_EXHIBIT = FIXTURES / "phm_fy2026q2_ex99_1.htm"
+PHM_Q1_EXHIBIT = FIXTURES / "phm_fy2026q1_ex99_1.htm"
 KBH_EXHIBIT = FIXTURES / "kbh_fy2026q2_ex99_1.htm"
+KBH_Q1_EXHIBIT = FIXTURES / "kbh_fy2026q1_ex99_1.htm"
 TOL_EXHIBIT = FIXTURES / "tol_fy2026q3_ex99_1.htm"
 
-# reportDate == filingDate on every real Item-2.02 8-K observed (F1) — the
-# press-release date, never the fiscal period end.
+# reportDate == filingDate on almost every real Item-2.02 8-K observed (F1) —
+# the press-release date, never the fiscal period end.  PHM's Q1 row is the
+# one real exception seen (reportDate one day before filingDate); used as-is,
+# not forced to match, since fiscal_period_for_report_date() treats
+# reportDate as an ANCHOR regardless of the exact gap.
 DHI_ACCESSION = "0000882184-26-000092"
 DHI_REPORT_DATE = "2026-07-21"
 DHI_Q2_ACCESSION = "0000882184-26-000062"
 DHI_Q2_REPORT_DATE = "2026-04-21"
 PHM_ACCESSION = "0000822416-26-000034"
 PHM_REPORT_DATE = "2026-07-22"
+# NEW-A: real Q1 filings, no YTD column at all -- accessions/reportDate
+# verified against each issuer's own SEC submissions JSON.
+PHM_Q1_ACCESSION = "0000822416-26-000021"
+PHM_Q1_REPORT_DATE = "2026-04-22"
 KBH_ACCESSION = "0000795266-26-000060"
 KBH_REPORT_DATE = "2026-06-23"
+KBH_Q1_ACCESSION = "0000795266-26-000037"
+KBH_Q1_REPORT_DATE = "2026-03-24"
 TOL_ACCESSION = "0000794170-26-000096"
 TOL_REPORT_DATE = "2026-08-18"
 
@@ -395,7 +415,13 @@ def test_dhi_q2_historical_release_widened_net_orders_verb_and_equal_value_cance
     "increased 11% to 24,992 homes" (not "totaled"/"of"), which the original
     regex missed entirely.  F3: the cancellation rate is EQUAL between
     quarters ("16%, consistent with the prior year quarter") — both facts
-    must still be present, each with its OWN disjoint receipt."""
+    must still be present.  NEW-A: DHI Q2's own YTD column says "Six Months
+    Ended" (not "Nine"), so fact_net_orders_prior_year must ALSO be present
+    (this test previously never asserted on it — the widened net-orders regex
+    made 4/5 facts look green while the fifth silently went ABSENT).  NEW-B:
+    the prior-year cancellation fact's receipt must span the FULL clause
+    (both the stated digits AND the equality assertion), never the
+    equality phrase alone."""
     bound = _bound(
         DHI_Q2_EXHIBIT, cik="882184", accession=DHI_Q2_ACCESSION,
         filing_date=DHI_Q2_REPORT_DATE, report_date=DHI_Q2_REPORT_DATE,
@@ -407,19 +433,31 @@ def test_dhi_q2_historical_release_widened_net_orders_verb_and_equal_value_cance
     )
     by_id = {fact["fact_id"]: fact for fact in facts}
     assert by_id["fact_net_orders_current"]["value"] == 24992
+    # NEW-A: real DHI Q2 NET SALES ORDERS table total row, prior-year (2025)
+    # quarter column — was silently ABSENT under the old single-hardcoded-
+    # marker ("Nine Months Ended") binding check.
+    assert "typed_absence" not in by_id["fact_net_orders_prior_year"]
+    assert by_id["fact_net_orders_prior_year"]["value"] == 22437
     assert by_id["fact_cancellation_rate_current"]["value"] == 16.0
     assert by_id["fact_cancellation_rate_prior_year"]["value"] == 16.0  # equal, per the document itself
     assert "typed_absence" not in by_id["fact_cancellation_rate_current"]
     assert "typed_absence" not in by_id["fact_cancellation_rate_prior_year"]
-    # F3: two DISJOINT spans even though the values are numerically equal —
-    # neither receipt is a copy of the other's byte range.
+    # F3: two DISTINCT spans even though the values are numerically equal —
+    # neither receipt is a byte-identical copy of the other's range.
     current_span = by_id["fact_cancellation_rate_current"]["source_span"]
     prior_span = by_id["fact_cancellation_rate_prior_year"]["source_span"]
     assert current_span["span_id"] != prior_span["span_id"]
-    assert current_span["locator"]["span_start_byte"] != prior_span["locator"]["span_start_byte"]
-    # The prior fact's receipt cites the document's OWN equality clause, not
-    # the current fact's digits (span-stated, not inferred).
+    # NEW-B: the prior-year fact's receipt spans the FULL clause -- it must
+    # carry BOTH the stated current-quarter digits AND the equality
+    # assertion, never the equality phrase alone (which cites no number and
+    # would be prose inference, forbidden).
+    assert "16%" in prior_span["display_excerpt"]
     assert "consistent with the prior year quarter" in prior_span["display_excerpt"]
+    assert prior_span["display_excerpt"] != current_span["display_excerpt"]
+    assert (
+        "prior-year value stated by explicit equality with the current-quarter figure"
+        in by_id["fact_cancellation_rate_prior_year"]["basis"]
+    )
     _verify_all_spans(facts, bound=bound)
 
 
@@ -452,6 +490,42 @@ def test_dhi_cancellation_current_equal_prior_synthetic_never_collides() -> None
     prior_span = by_id["fact_cancellation_rate_prior_year"]["source_span"]
     assert current_span["span_id"] != prior_span["span_id"]
     assert current_span["locator"]["span_start_byte"] != prior_span["locator"]["span_start_byte"]
+    _verify_all_spans(facts, bound=bound)
+
+
+def test_dhi_q1_shaped_synthetic_net_orders_table_with_no_ytd_column() -> None:
+    """NEW-A regression, DHI: a SYNTHETIC Q1-shaped NET SALES ORDERS table
+    (modeled on DHI's own real table structure, but with only a "Three
+    Months Ended" column and no "Nine Months Ended" column, matching how a
+    real DHI Q1 filing would look) must still bind and extract both the
+    current and prior-year net-orders facts.  DHI has no committed real Q1
+    fixture, unlike KBH/PHM below, so this is explicitly labeled synthetic."""
+    synthetic_body = (
+        "<html><body>"
+        "<p>Net sales orders totaled 20,000 homes with an order value of $7.0 billion.</p>"
+        "<table>"
+        "<tr><td>NET SALES ORDERS</td></tr>"
+        "<tr><td></td><td>Three Months Ended December 31,</td></tr>"
+        "<tr><td></td><td>2026</td><td></td><td>2025</td></tr>"
+        "<tr><td></td><td>Homes</td><td></td><td>Value</td><td></td><td>Homes</td><td></td><td>Value</td></tr>"
+        "<tr><td></td><td>20,000</td><td>$</td><td>7,000.0</td><td></td><td>18,500</td><td>$</td><td>6,500.0</td></tr>"
+        "</table>"
+        "</body></html>"
+    )
+    bound = bind_release_document(
+        cik="882184", accession="0000882184-26-000200", body=synthetic_body, form="8-K",
+        filing_date="2026-01-20", acceptance_datetime="2026-01-20T16:05:00.000Z",
+        report_date="2026-01-20", exhibit_url="https://example/dhi_q1.htm",
+    )
+    fiscal_period = FiscalPeriod(year=2026, quarter=1, calendar_end=date(2025, 12, 31))
+    facts = dhi_profile().extract_release_facts(
+        bound=bound, document_id="doc:dhi-q1-synthetic", event_id="evt_x", fiscal_period=fiscal_period,
+    )
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    assert "typed_absence" not in by_id["fact_net_orders_current"]
+    assert "typed_absence" not in by_id["fact_net_orders_prior_year"]
+    assert by_id["fact_net_orders_current"]["value"] == 20000
+    assert by_id["fact_net_orders_prior_year"]["value"] == 18500
     _verify_all_spans(facts, bound=bound)
 
 
@@ -521,6 +595,30 @@ def test_phm_cancellation_denominator_synthetic_present_path() -> None:
     _verify_all_spans(facts, bound=bound)
 
 
+def test_phm_q1_historical_release_net_orders_no_ytd_column() -> None:
+    """NEW-A regression: PulteGroup's real FY2026 Q1 Exhibit 99.1 (accession
+    0000822416-26-000021) carries NO year-to-date column at all -- there is
+    nothing to accumulate yet in Q1.  The original per-issuer hardcoded YTD
+    marker ("Six Months Ended") made ``_quarterly_precedes_ytd`` fail closed
+    on this real, live document (measured pre-fix: ABSENT/ABSENT instead of
+    the true 8,034/7,765)."""
+    bound = _bound(
+        PHM_Q1_EXHIBIT, cik="822416", accession=PHM_Q1_ACCESSION,
+        filing_date=PHM_Q1_REPORT_DATE, report_date=PHM_Q1_REPORT_DATE,
+    )
+    fiscal_period = FiscalPeriod(year=2026, quarter=1, calendar_end=date(2026, 3, 31))
+    facts = phm_profile().extract_release_facts(
+        bound=bound, document_id="doc:phm-q1-historical", event_id="evt_cik0000822416_2026q1_results",
+        fiscal_period=fiscal_period,
+    )
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    assert "typed_absence" not in by_id["fact_net_orders_current"]
+    assert "typed_absence" not in by_id["fact_net_orders_prior_year"]
+    assert by_id["fact_net_orders_current"]["value"] == 8034
+    assert by_id["fact_net_orders_prior_year"]["value"] == 7765
+    _verify_all_spans(facts, bound=bound)
+
+
 def test_kbh_historical_release_facts_replay() -> None:
     """Reconstruction from KB Home's real FY2026 Q2 Exhibit 99.1 (0000795266-26-000060)."""
     bound = _bound(KBH_EXHIBIT, cik="795266", accession=KBH_ACCESSION, filing_date=KBH_REPORT_DATE, report_date=KBH_REPORT_DATE)
@@ -535,6 +633,27 @@ def test_kbh_historical_release_facts_replay() -> None:
     assert by_id["fact_cancellation_rate_current"]["value"] == 12.0
     assert by_id["fact_cancellation_rate_prior_year"]["value"] == 16.0
     assert by_id["fact_cancellation_rate_denominator"]["value"] == "as a percentage of gross orders"
+    _verify_all_spans(facts, bound=bound)
+
+
+def test_kbh_q1_historical_release_net_orders_no_ytd_column() -> None:
+    """NEW-A regression: KB Home's real FY2026 Q1 Exhibit 99.1 (accession
+    0000795266-26-000037) also carries no YTD column (measured pre-fix:
+    ABSENT/ABSENT instead of the true 2,846/2,772)."""
+    bound = _bound(
+        KBH_Q1_EXHIBIT, cik="795266", accession=KBH_Q1_ACCESSION,
+        filing_date=KBH_Q1_REPORT_DATE, report_date=KBH_Q1_REPORT_DATE,
+    )
+    fiscal_period = FiscalPeriod(year=2026, quarter=1, calendar_end=date(2026, 2, 28))
+    facts = kbh_profile().extract_release_facts(
+        bound=bound, document_id="doc:kbh-q1-historical", event_id="evt_cik0000795266_2026q1_results",
+        fiscal_period=fiscal_period,
+    )
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    assert "typed_absence" not in by_id["fact_net_orders_current"]
+    assert "typed_absence" not in by_id["fact_net_orders_prior_year"]
+    assert by_id["fact_net_orders_current"]["value"] == 2846
+    assert by_id["fact_net_orders_prior_year"]["value"] == 2772
     _verify_all_spans(facts, bound=bound)
 
 

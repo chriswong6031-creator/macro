@@ -421,22 +421,63 @@ def _period_label(fiscal_period: Any) -> str | None:
     return calendar_end.isoformat() if calendar_end else None
 
 
-def _quarterly_precedes_ytd(table_block: DisclosureBlock, *, quarterly_marker: str, ytd_marker: str) -> bool:
-    """F12 binding check: refuse to trust a table's column POSITIONS unless
-    its own header row states *quarterly_marker* in a cell that comes before
-    a DIFFERENT cell stating *ytd_marker*.
+# Every YTD phrasing observed or plausible across the four issuers' quarters
+# (DHI/PHM/KBH: "Six/Nine Months Ended"; a full-year release would say "Twelve
+# Months Ended" or "Year Ended").  Matched as a SET, not one hardcoded string
+# per issuer (NEW-A) -- Q1 tables carry no YTD column of ANY kind at all,
+# because there is nothing to accumulate yet, and a single hardcoded marker
+# (e.g. "Nine Months Ended" for DHI) falsely fails to bind DHI's own Q2 table,
+# which says "Six Months Ended".
+_YTD_MARKERS: tuple[str, ...] = ("Six Months Ended", "Nine Months Ended", "Twelve Months Ended", "Year Ended")
+
+
+def _quarterly_precedes_ytd(
+    table_block: DisclosureBlock, *, quarterly_marker: str, ytd_markers: Sequence[str] = _YTD_MARKERS
+) -> bool:
+    """F12 binding check, widened for Q1 tables (NEW-A).
+
+    Binds when EITHER:
+
+    (a) the quarterly marker is present somewhere in the block and NO YTD
+        marker (from the closed set above) occurs ANYWHERE in the block --
+        a genuine Q1 shape, where the table has only a quarterly column
+        because there is no year-to-date figure yet (measured: KBH FY2026 Q1
+        and PHM FY2026 Q1 real filings carry no YTD column at all); or
+
+    (b) a header row states the quarterly marker in a cell that comes before
+        a DIFFERENT cell stating one of the YTD markers.
 
     A caption line that happens to mention both phrases in ONE cell (e.g.
-    KBH's "For the Three Months and Six Months Ended...") does not count --
-    only a row where the two markers sit in separate cells binds the
-    positions the caller is about to read.  Returning ``False`` here means a
-    reshaped or reordered table mints a typed absence instead of a wrong
-    value under a still-valid byte receipt.
+    KBH's "For the Three Months and Six Months Ended...") does not count
+    toward (b) -- only a row where the two markers sit in separate cells
+    binds the positions the caller is about to read.  Returning ``False``
+    means a reshaped or reordered table mints a typed absence instead of a
+    wrong value under a still-valid byte receipt.
     """
-    q_lower, y_lower = quarterly_marker.lower(), ytd_marker.lower()
+    q_lower = quarterly_marker.lower()
+    ytd_lowers = [marker.lower() for marker in ytd_markers]
+    has_quarterly_anywhere = False
+    has_ytd_anywhere = False
+    for row in table_block.table.rows:
+        for cell in row:
+            cell_lower = cell.text.lower()
+            if q_lower in cell_lower:
+                has_quarterly_anywhere = True
+            if any(ytd_lower in cell_lower for ytd_lower in ytd_lowers):
+                has_ytd_anywhere = True
+    if not has_ytd_anywhere:
+        # Rule (a): a Q1-shaped table (or one with no quarterly marker at
+        # all, which fails closed via ``has_quarterly_anywhere`` being False).
+        return has_quarterly_anywhere
+    # Rule (b): a YTD marker exists somewhere in the block, so a genuine
+    # multi-period table is in play -- require the two markers to sit in
+    # separate cells of the SAME row to bind column order.
     for row in table_block.table.rows:
         q_idx = next((i for i, cell in enumerate(row) if q_lower in cell.text.lower()), None)
-        y_idx = next((i for i, cell in enumerate(row) if y_lower in cell.text.lower()), None)
+        y_idx = next(
+            (i for i, cell in enumerate(row) if any(ytd_lower in cell.text.lower() for ytd_lower in ytd_lowers)),
+            None,
+        )
         if q_idx is not None and y_idx is not None and q_idx != y_idx:
             return q_idx < y_idx
     return False
@@ -512,11 +553,12 @@ def _dhi_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
     # (ii) net_orders same-basis prior-year comparator — the NET SALES ORDERS
     # table's unlabeled total row, homes column, prior-year quarter.  F12:
     # only trust the column positions if the table's own header confirms
-    # "Three Months Ended" precedes "Nine Months Ended".
+    # "Three Months Ended" precedes a YTD period marker, or (a genuine Q1
+    # shape) carries no YTD marker at all (NEW-A).
     prior_fact: dict[str, Any] | None = None
     table_block = _find_table_after_heading(blocks, "NET SALES ORDERS")
     bound_columns = table_block is not None and table_block.table.rows and _quarterly_precedes_ytd(
-        table_block, quarterly_marker="Three Months Ended", ytd_marker="Nine Months Ended"
+        table_block, quarterly_marker="Three Months Ended",
     )
     if bound_columns:
         total_row = table_block.table.rows[-1]
@@ -556,6 +598,7 @@ def _dhi_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
     cancel_para = _find_paragraph_containing(blocks, "cancellation rate")
     current_receipt = prior_receipt = denom_receipt = None
     current_pct = prior_pct = denom_text = None
+    used_equality_clause = False
     if cancel_para is not None:
         compared = _DHI_CANCELLATION_COMPARED_RE.search(cancel_para.text)
         consistent = None if compared is not None else _DHI_CANCELLATION_CONSISTENT_RE.search(cancel_para.text)
@@ -565,29 +608,43 @@ def _dhi_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
             pcts = _PCT_RE.findall(full)
             current_pct, prior_pct = pcts[0][:-1], pcts[1][:-1]
             split = _split_disjoint_clauses(full, "compared to")
+            if split is not None:
+                current_clause, prior_clause = split
+                current_receipt = _literal_receipt(
+                    bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                    literal=current_clause,
+                )
+                prior_receipt = _literal_receipt(
+                    bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                    literal=prior_clause,
+                )
         elif consistent is not None:
             full = consistent.group(0)
             denom_text = consistent.group(1)
             pcts = _PCT_RE.findall(full)
             current_pct = pcts[0][:-1]
-            # The document states equality explicitly (span-stated, not
-            # inferred): the prior-year fact carries the SAME value, but its
-            # own receipt points at the equality clause itself, never at the
-            # current fact's digits.
             prior_pct = current_pct
-            raw_split = _split_disjoint_clauses(full, ", consistent with the prior year quarter")
-            split = (raw_split[0], raw_split[1].lstrip(", ")) if raw_split is not None else None
-        else:
-            split = None
-        if split is not None:
-            current_clause, prior_clause = split
-            current_receipt = _literal_receipt(
-                bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
-                literal=current_clause,
-            )
+            used_equality_clause = True
+            # The current fact keeps a DISJOINT clause ending at its own
+            # digits (no inference issue: it has a real "16%" in its span).
+            split = _split_disjoint_clauses(full, ", consistent with the prior year quarter")
+            if split is not None:
+                current_clause, _equality_fragment = split
+                current_receipt = _literal_receipt(
+                    bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
+                    literal=current_clause,
+                )
+            # The prior-year fact is PRESENT only when its OWN receipt spans
+            # the FULL clause -- both the stated current digits AND the
+            # equality assertion together.  A receipt over the equality
+            # fragment alone ("consistent with the prior year quarter") cites
+            # no number and would be prose inference, which is forbidden; the
+            # full clause is what the document actually asserts ("16%, ...
+            # consistent with the prior year quarter" IS the prior value's
+            # only source-stated evidence).
             prior_receipt = _literal_receipt(
                 bound, search_start=cancel_para.source_span.char_start, search_end=cancel_para.source_span.char_end,
-                literal=prior_clause,
+                literal=full,
             )
         if denom_text is not None:
             denom_receipt = _literal_receipt(
@@ -596,6 +653,14 @@ def _dhi_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
             )
 
     basis_text = "cancelled sales orders divided by gross sales orders (DHI convention)"
+    prior_year_basis = (
+        f"{basis_text}; prior-year value stated by explicit equality with the current-quarter figure "
+        "in the same clause"
+    ) if used_equality_clause else basis_text
+    prior_absence_detail = (
+        "the release states cancellation-rate consistency with the prior year quarter, but its own "
+        "clause does not carry a uniquely addressable prior-year value"
+    ) if used_equality_clause else "prior-year cancellation rate is not present or not uniquely addressable in Exhibit 99.1"
     facts.append(
         _fact_present(
             fact_id="fact_cancellation_rate_current", event_id=event_id, metric="cancellation_rate",
@@ -612,13 +677,13 @@ def _dhi_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
     facts.append(
         _fact_present(
             fact_id="fact_cancellation_rate_prior_year", event_id=event_id, metric="cancellation_rate",
-            value=float(prior_pct), unit="percent", period="prior_year_same_quarter", basis=basis_text,
+            value=float(prior_pct), unit="percent", period="prior_year_same_quarter", basis=prior_year_basis,
             document_id=document_id, bound=bound, receipt=prior_receipt,
         )
         if prior_receipt is not None
         else _fact_absent(
             fact_id="fact_cancellation_rate_prior_year", event_id=event_id, metric="cancellation_rate",
-            detail="prior-year cancellation rate is not present or not uniquely addressable in Exhibit 99.1",
+            detail=prior_absence_detail,
             document_id=document_id,
         )
     )
@@ -683,8 +748,11 @@ def _phm_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
 
     table_block = _find_paragraph_table(blocks, "Net new orders - units")
     current_fact = prior_fact = None
+    # NEW-A: a Q1 filing carries no YTD column at all (nothing to accumulate
+    # yet) -- _quarterly_precedes_ytd() binds on that shape too, not only
+    # when a YTD marker is present and ordered after the quarterly one.
     bound_columns = table_block is not None and _quarterly_precedes_ytd(
-        table_block, quarterly_marker="Three Months Ended", ytd_marker="Six Months Ended"
+        table_block, quarterly_marker="Three Months Ended",
     )
     if bound_columns:
         total_row = _phm_section_total_row(table_block, "Net new orders - units")
@@ -857,10 +925,11 @@ def _kbh_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
 
     total_row, kbh_table = _kbh_total_row_after_label(blocks, "Net orders:")
     current_fact = prior_fact = None
+    # NEW-A: a Q1 filing carries no YTD column at all.
     bound_columns = (
         total_row is not None
         and kbh_table is not None
-        and _quarterly_precedes_ytd(kbh_table, quarterly_marker="Three Months Ended", ytd_marker="Six Months Ended")
+        and _quarterly_precedes_ytd(kbh_table, quarterly_marker="Three Months Ended")
     )
     if bound_columns:
         cells = [cell for cell in total_row[1:] if cell.text.strip() not in ("", "$")]
