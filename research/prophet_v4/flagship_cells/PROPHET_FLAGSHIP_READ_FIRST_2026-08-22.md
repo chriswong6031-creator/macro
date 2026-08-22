@@ -28,6 +28,8 @@ No cell may create a parallel graph, ranker, memory store, evaluation plane, ide
 
 Research may kill a hypothesis. It may not weaken the product thesis or silently change ownership.
 
+The integrated masterplan has already received an adversarial architecture pass. Its **A1-A12 anti-circularity/leakage amendments are binding** on future research.
+
 ---
 
 # 1. Required read order for every new cell session
@@ -63,7 +65,32 @@ Read:
 
 This freezes where a successful research result is allowed to land inside existing owners/V4 waves.
 
-## Step 4 — What is still only a hypothesis
+## Step 4 — Binding adversarial amendments
+
+Read:
+
+`research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_ADVERSARIAL_REVIEW_AND_AMENDMENTS_2026-08-22.md`
+
+The adversarial review found a real architecture-level risk: an apparently sensible expected-response model can become mathematically circular if the target contributes to its own theme/peer impulse, if historical priors use future folds, if price-derived exposure overlaps the response window, or if issuer materiality is inferred from the same price move being explained.
+
+**Binding A1-A12 controls include:**
+
+- leave-target-economic-issuer-out theme/peer baselines;
+- fold-frozen historical priors;
+- strictly pre-event price-derived exposure windows;
+- ex-target-price issuer materiality for incorporation studies;
+- family-first calibration before any cross-family scalarization;
+- B computes incorporation / F transports / Fusion governs influence;
+- fragility cannot become a hidden lane veto;
+- product copy must match authority tier;
+- graph path/cycle re-entry guards;
+- source-root vs economic-dependence distinction;
+- coverage-selection audits;
+- contemporaneous-belief vs final-corrected historical views.
+
+A Cell A/B result that ignores relevant A1-A12 controls cannot PASS.
+
+## Step 5 — What is still only a hypothesis
 
 Read:
 
@@ -71,7 +98,7 @@ Read:
 
 This prevents desired features from being mistaken for validated alpha.
 
-## Step 5 — External institutional/academic baseline
+## Step 6 — External institutional/academic baseline
 
 Read:
 
@@ -79,7 +106,7 @@ Read:
 
 Do not spend half the session repeating generic research into segment exposure, thematic NLP, supply-chain propagation, expectations, novelty or factor residualization. Use the benchmark as the shared starting point, then investigate the cell's genuinely open Mastermind-specific question.
 
-## Step 6 — Concrete product/intelligence states
+## Step 7 — Concrete product/intelligence states
 
 Read:
 
@@ -87,7 +114,7 @@ Read:
 
 If your proposed architecture cannot represent the negative/missing/conflicted/correction cases in that file, it is probably flattening the system incorrectly.
 
-## Step 7 — Executive decision hygiene
+## Step 8 — Executive decision hygiene
 
 Read:
 
@@ -95,19 +122,19 @@ Read:
 
 Do not re-litigate settled architecture or escalate questions that are not yet executive decisions.
 
-## Step 8 — Universal execution law
+## Step 9 — Universal execution law
 
 Read:
 
 `research/prophet_v4/flagship_cells/RESEARCH_CELL_EXECUTION_CONSTITUTION_2026-08-22.md`
 
-## Step 9 — Inter-cell ownership
+## Step 10 — Inter-cell ownership
 
 Read:
 
 `research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_CELL_HARDENING_INDEX_2026-08-22.md`
 
-## Step 10 — Your dedicated cell handoff
+## Step 11 — Your dedicated cell handoff
 
 - A / MAS-117 → `CELL_A_THEME_INTELLIGENCE_HANDOFF_2026-08-22.md`
 - B / MAS-118 → `CELL_B_EVIDENCE_PRICE_GAP_HANDOFF_2026-08-22.md`
@@ -118,7 +145,7 @@ Read:
 - G / MAS-123 → `CELL_G_VALUE_OF_INFORMATION_MEASUREMENT_HANDOFF_2026-08-22.md`
 - H / MAS-124 → `CELL_H_FLAGSHIP_PRODUCT_EXPERIENCE_HANDOFF_2026-08-22.md`
 
-## Step 11 — Standard return shape
+## Step 12 — Standard return shape
 
 Read before doing the work, not only at closeout:
 
@@ -147,8 +174,9 @@ There is no single total ordering for all questions. Use the correct precedence 
 2. accepted Sol architecture decisions / original V4 masterplan;
 3. integrated flagship masterplan;
 4. architecture freeze/integration graph;
-5. cell handoff;
-6. Linear summary.
+5. binding adversarial amendments where they tighten research mechanics;
+6. cell handoff;
+7. Linear summary.
 
 ## 2.3 “Who owns this?”
 
@@ -163,7 +191,7 @@ A stale `next_action` does not transfer ownership.
 
 1. prospective promoted evidence / Eval OS ruling;
 2. preregistered confirmatory evidence;
-3. PIT-safe retrospective research;
+3. PIT-safe retrospective research that satisfies applicable adversarial amendments;
 4. hypothesis matrix;
 5. architecture desire.
 
@@ -187,13 +215,14 @@ A desired product capability is last in this ordering, not first.
 - Prospective promotion required.
 - Strong thesis + bad entry is valid.
 - Empty/no-action days are valid.
+- A1-A12 anti-circularity/leakage controls for relevant research.
 
 ## Open
 
 - which exposure axes prove useful;
-- whether exposure-weighted theme impulse adds alpha;
+- whether exposure-weighted theme impulse adds alpha after target-issuer exclusion;
 - which transmission mechanisms are estimable;
-- whether an incorporation-gap state adds value;
+- whether an incorporation-gap state adds value after fold-frozen/PIT controls;
 - which domains support expectation/materiality well;
 - whether species routing adds value;
 - whether analogues calibrate outcomes;
@@ -230,7 +259,7 @@ Your cell should **not** own the entire chain.
 
 ---
 
-# 5. The fastest misconstruction test
+# 5. The fastest misconstruction / leakage test
 
 Before writing a conclusion, ask:
 
@@ -244,8 +273,16 @@ Before writing a conclusion, ask:
 8. Did I turn a graph edge into causal transmission without a mechanism/control?
 9. Did I turn a large price drop into “dislocation” without testing justified impairment?
 10. Did I output a probability/score from inadequate effective N?
-11. Did I preserve correction lineage?
-12. Does my return say what should be killed if the hypothesis fails?
+11. Did I preserve correction lineage and contemporaneous-belief features?
+12. Does my target security or same economic issuer contribute to the baseline predicting itself?
+13. Did any historical prior/calibration see the target episode or future fold?
+14. Does any price-derived exposure/sensitivity overlap the response window being judged?
+15. Is issuer materiality partly defined by the same target price reaction being explained?
+16. Did I collapse incompatible component units into a universal score before calibration?
+17. Can a graph path cycle back into the target and leak its own response?
+18. Did I confuse different source roots with economically independent information?
+19. Could coverage itself be the feature my model is learning?
+20. Does my return say what should be killed if the hypothesis fails?
 
 Any `yes` is a reason to HOLD and repair the research design.
 
@@ -260,6 +297,7 @@ SOL RESEARCH SESSION CLAIMED
 current main: <sha>
 canonical owner(s): <...>
 masterplan read: yes
+adversarial amendments read: yes
 material status disagreements: <...>
 open hypothesis IDs owned by this cell: <...>
 mutation authority: RESEARCH ONLY
@@ -278,6 +316,7 @@ A complete research return must:
 - use the standard deliverable template;
 - reconcile to current main at closeout;
 - classify capabilities honestly;
+- show compliance with all applicable adversarial amendments;
 - update the hypothesis/kill outcomes for the questions it actually tested;
 - name external benchmark methods used and where Mastermind differs;
 - produce `ADOPT / EXTEND / DEFER / REJECT` rulings;
