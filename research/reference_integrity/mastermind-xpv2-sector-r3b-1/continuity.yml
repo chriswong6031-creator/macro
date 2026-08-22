@@ -30,8 +30,10 @@ predecessors:
       only).
   - id: VTC-006
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Picks figure identified as subsector_confluence combined_score (contract engine/subsector_confluence.py:322-347) and labeled with production's own header Conviction / 综合把握 (templates/subsectors.js:330); crops mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/lane_crops_a/08/09_confluence_picks_1440_dark_en/zh.png; Lane A commit 3dd85a6a05d4, adjudicated research/reference_integrity/mastermind-xpv2-sector-r3b-1/ORCHESTRATOR_ADJUDICATIONS_R3B1.md S4"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/confluence.html
     predecessor_note: Confluence Stock-picks unlabeled 0.xx decimal is the heaviest element
       on its row. Fix = R3B1-13 (producer-accurate label or return field to Sol).
   - id: MAC-001
@@ -63,42 +65,56 @@ predecessors:
     predecessor_note: 22 duplicate id=ref-data. Fix = R3B1-12.
   - id: DAC-101
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Sizing directive restored bound to theme_intel.regime_sizing (81%) with production inert-when-calm guard reproduced from templates/sector_central.html.j2:2888, data-r3b1=01 marker; crops mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/lane_crops_a/01/02; commit 3dd85a6a05d4"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: Hero drops LIVE regime_sizing directive (active=true, gross_scalar=0.81).
       Fix = R3B1-01 with mutation guard.
   - id: DAC-102
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Methodology receipt restored with both clauses verbatim from templates/sector_central.html.j2:2155 (non-forecast caveat leads), keyboard+touch 44px control, EN/ZH; crops mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/lane_crops_a/05_caveat_open_1440_dark_en.png + 05b_caveat_open_390_dark_zh.png; commit 3dd85a6a05d4"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: Hero keeps the leadership assertion but drops its governing methodology
       caveat. Fix = R3B1-02 with mutation guard.
   - id: DAC-103
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "theme_context.migration.note_en/note_zh bound in the Money-is-rotating block (production site :2130), producer bytes verbatim; crop mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/lane_crops_a/01_overview_hero_1440_dark_en.png; commit 3dd85a6a05d4"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: theme_context.migration.note_en/zh producer fact dropped. Fix = R3B1-03.
   - id: DAC-104
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Real href=allocation.html Open the playbook / 打开操盘手册 with data-ref-nav (production :2163); crop mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/lane_crops_a/01; commit 3dd85a6a05d4"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: allocation.html working destination silently deleted. Fix = R3B1-04.
   - id: DAC-105
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "S&P coverage sentence corrected to omitted-from-table semantics (65 of 113 timeable / 48 omitted) with native ZH twin, Baskets renders nothing (BLOCKED_DATA intact); crops mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/lane_crops_a/06/07_confluence_coverage_1440_dark_en/zh.png; commit 3dd85a6a05d4"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/confluence.html
     predecessor_note: S&P coverage sentence asserts absent rows are listed in the table. Fix
       = R3B1-07.
   - id: DAC-106
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Hero enrichment restored: outgoing 20d/5d, incoming 20d/CLIMBING FAST, 49 themes / 15 categories, production guards reproduced (:2926-2933), tertiary treatment; crop mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/lane_crops_a/01; commit 3dd85a6a05d4"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: Hero handoff enrichment and 49-themes/15-categories counts dropped.
       Fix = R3B1-05.
   - id: DAC-107
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "theme_intel score carries one name (Strength / 强度) on context surfaces (map.html data-r3b1=06); action-board Score column retained per commission carve-out — residual disclosed to Sol in research/reference_integrity/mastermind-xpv2-sector-r3b-1/ORCHESTRATOR_ADJUDICATIONS_R3B1.md S4.1; commit 3dd85a6a05d4"
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/map.html
     predecessor_note: One producer field (theme_intel.themes[].score) under two labels. Fix
       = R3B1-06 (Strength / 强度 in context surfaces).
   - id: DAC-108
@@ -109,49 +125,63 @@ predecessors:
       an omission. Fix = R3B1-14 (bidirectional inventory + unique-kill mutations).
   - id: R3B1-01
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with DAC-101 above (same change, sizing directive + mutation marker)."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: 'Restore active regime sizing from basketdata/baskets.json theme_intel.regime_sizing
       (active=true, gross_scalar=0.81 at frozen fixture): render ''positions sized to 81%
       / 仓位缩至 81%'' with the production inert-when-calm rule, visually distinct from graded
       action lanes, no local sizing logic; removing sizing while active must fail a check.'
   - id: R3B1-02
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with DAC-102 above (same change, both clauses pinned)."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: Restore the leadership methodology caveat as a compact Explain/receipt
       carrying both clauses (most recent ~3 weeks skipped by construction; shape read only,
       not a forecast), EN/ZH, keyboard/touch reachable, no paragraph tooltip; deleting either
       clause must fail a check.
   - id: R3B1-03
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with DAC-103 above."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: Bind theme_context.migration.note_en/note_zh and show it compactly in
       the Money-is-rotating context block.
   - id: R3B1-04
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with DAC-104 above."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: Restore the real allocation.html 'Open the playbook' destination with
       native ZH twin; no recorder-only fake href.
   - id: R3B1-05
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with DAC-106 above."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/overview.html
     predecessor_note: 'Restore subordinate producer-backed hero enrichment: outgoing 20d/5d
       relative performance, incoming 20d / climbing-fast context where present, and the 49
       themes / 15 categories counts.'
   - id: R3B1-06
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with DAC-107 above (carve-out residual disclosed, adjudications S4.1)."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/map.html
     predecessor_note: Label theme_intel.themes[].score as Strength / 强度 in Overview-context
       and Map; do not rename the independent action-board score.
   - id: R3B1-07
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with DAC-105 above."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/confluence.html
     predecessor_note: Correct the S&P thin-coverage sentence to payload-bound omitted-from-table
       semantics (65 of 113 timeable; 48 too thin and omitted), native ZH twin; do not render
       for Baskets.
@@ -193,8 +223,10 @@ predecessors:
       or unique IDs); run duplicate-ID and ARIA-reference audits clean.
   - id: R3B1-13
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.1 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with VTC-006 above (producer-named Conviction / 综合把握)."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/views/confluence.html
     predecessor_note: Identify the exact producer field behind the Confluence Stock-picks
       0.xx figure and label it accurately with ZH twin; never Score/Probability/Confidence/Strength
       unless the producer contract says so; if ownership is ambiguous, stop and return the
