@@ -1,7 +1,7 @@
 # IMCE-A4G / A4P — Final Six-Cell Disposition
 
 **Wave:** A4G, updated by A4P (2026-08-21). Records-only. No outcome number, model fit, or trial-ledger write appears anywhere below.
-**Authority:** amended contract V1.2 §1/§8/§9a (`IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md`), as amended by `IMCE_A4G_AMENDMENT_LOG.md` (AG1–AG18, AP1–AP7).
+**Authority:** amended contract V1.2 §1/§8/§9a (`IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md`), as amended by `IMCE_A4G_AMENDMENT_LOG.md` (AG1–AG18, AP1–AP8).
 **Purpose:** the mandatory Sol deliverable (c) — for each of the 6 registered historical cells: target, block basis, LEN membership, NVR stratum handling, predetermined status, and the lane-2 §8 six elections settled or marked settled-by-ruling. **This is a living A4G/A4P artifact, updated in place to the current law (not an append-only ledger); every material change is logged in `IMCE_A4G_AMENDMENT_LOG.md`.** A4P (AP1, AP2) settles the two items A4G left open: the phase-family target-to-D5-state mapping (§4 below, was open, now closed) and Cells 5–6's conditional block basis (§1 below, was conditional, now uniform B≤3 like Cells 1–4).
 
 ---
@@ -16,6 +16,18 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 | `rf.cycle_pattern.imce_sync_v0` | 2 | targets {`next_local_state_1rp`, `forward_63d_drawdown_tail`} × contrast [M+R vs M] |
 | `rf.cycle_pattern.imce_risk_v0` | 1 | `forward_63d_drawdown_tail` × [M vs family/stratum prior] |
 
+**Six cell IDs — minted and frozen [AP8, M2, A4P binding; presented to Sol for ratification], the canonical
+source is contract §11 and YAML `six_cell_ids_union`; this table uses them, it does not itself define them:**
+
+| Cell | ID |
+|---|---|
+| 1 | `imce_phase_v0.next_order_softness_1rp` |
+| 2 | `imce_phase_v0.next_order_softness_3rp` |
+| 3 | `imce_phase_v0.order_softness_false_repair_3rp` |
+| 4 | `imce_sync_v0.next_order_softness_1rp` |
+| 5 | `imce_sync_v0.forward_63d_drawdown_tail` |
+| 6 | `imce_risk_v0.forward_63_trading_day_drawdown_tail` |
+
 ---
 
 ## 1. Per-cell disposition
@@ -24,19 +36,34 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 
 **Uniform basis ruling, closes the Cell 5/6 conditional [AP2, A4P binding, 2026-08-21]:** A4G left Cells 5 and 6 conditional on an undetermined `M_t` feature composition. **AP2 settles it: all six registered v0 historical cells — not only Cells 1–4 — share the `order_softness` mechanism basis** (AP1's target mapping, `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md`), and that basis names cancellation-rate disclosure. **Cells 5 and 6 are therefore B≤3-entire, LEN-excluded, on the same footing as Cells 1–4 — the "B≤5 if cancellation excluded" branch is retired for these six cells; it never applies to any of them.** This basis may never be relaxed to B=5 merely to obtain a larger nominal N (AP2).
 
-### Cell 1 — `rf.cycle_pattern.imce_phase_v0`, target: next family-local state at 1 reporting period
+**Coverage impact — honestly recorded, not silently assumed [AP8, M7 fix].** The `order_softness`
+construction's pooled roster is nominally {DHI, PHM, KBH, TOL} (§3.1 of the construction file), but the hb0
+evidence census (`research/imce/hb0/evidence/`) has NOT positively receipted DHI's or TOL's net-orders
+disclosure format for the 2014–2023 window that matters to all six cells — only PHM and KBH carry a
+`[VERIFIED]`-grade receipt covering that window (construction file §1a, full citation trail there). Under the
+construction's fail-closed rule, **DHI and TOL currently contribute `NOT_RECONSTRUCTABLE` on the orders-side
+input for the entire 2014–2023 window**, so the roster actually eligible to mint a cohort state in that window
+is **{PHM, KBH} — exactly the §3.1 ≥2-issuer floor, not comfortably above it.** This affects every cell below
+that keys on the pooled `order_softness` cohort state (Cells 1–4 directly; Cells 5–6 via their `M_t` input
+basis) — it does not change any cell's B≤3 block-basis or predetermined `underpowered_accruing` status
+(§9a/§12 already predetermine that mechanically, independent of realized coverage), but it does mean the
+realized episode population within the admissible blocks is thinner than the nominal four-issuer roster
+implies. **Escalated to Sol** (this wave's return packet GAPS) as an open item for a future census pass to
+receipt DHI's and TOL's pre-FY2025 order-disclosure format, which would restore them as contributors.
+
+### Cell 1 — `imce_phase_v0.next_order_softness_1rp` — `rf.cycle_pattern.imce_phase_v0`, target: next family-local state at 1 reporting period
 
 | Field | Value |
 |---|---|
 | Target | next family-local state, 1 reporting period (D5 mechanism-local state transition) |
-| Block basis | **B ≤ 3** (cancellation-scoped, AG6, MAJ-1) — 2014–2019 grind (**partial, FY2016+ PHM/NVR coverage**), 2020–2021 pandemic boom, 2022–2023 rate shock. GFC bust/recovery excluded (unstated early denominator convention); taper/air-pocket subepisodes zero N (AG7); affordability era `OPEN_ACCRUING` zero N (AG8). Applies because this cell's registered basis draws `order_softness`, which names cancellation-rate disclosure (AG14) — see the cell-level ruling above and §4's open item on the exact target-to-state mapping. |
+| Block basis | **B ≤ 3** (cancellation-scoped, AG6, MAJ-1) — 2014–2019 grind (**partial, FY2016+ PHM/NVR coverage**), 2020–2021 pandemic boom, 2022–2023 rate shock. GFC bust/recovery excluded (unstated early denominator convention); taper/air-pocket subepisodes zero N (AG7); affordability era `OPEN_ACCRUING` zero N (AG8). Applies because this cell's registered basis draws `order_softness`, which names cancellation-rate disclosure (AG14) — see the cell-level ruling above and §4 (**[AP8, m6 fix] CLOSED, not an open item** — the exact target-to-state mapping is settled by AP1). |
 | LEN membership | **EXCLUDED — cell-level** (AG10-clarif, MAJ-2). LEN is a B≤3-cell exclusion, issuer-level, matching its cancellation-rate-cell exclusion (contract §2 [A18]/AG10). |
 | NVR stratum handling | Separate stratum, never pooled to raise n (AG13, reaffirmed unchanged). A transfer test is a future registered cell, not this one. |
 | Predetermined status | `underpowered_accruing` (mechanical, §12 zero-pass rule — all 6 historical cells pre-labeled) |
 | State-vector observability (AG14/AP1) | **SETTLED [AP1, A4P binding].** Tracks `order_softness`: full cohort minus LEN — pooled population {DHI, PHM, KBH, TOL}, NVR held out. Deterministic construction: `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md`. `completed_inventory_build` and `incentive_support`/`pace_recovery` are explicitly NOT the tracked state for this target (AP1). |
 | Six elections touched | E2 (fully settled via AP1) |
 
-### Cell 2 — `rf.cycle_pattern.imce_phase_v0`, target: next family-local state at 3 reporting periods
+### Cell 2 — `imce_phase_v0.next_order_softness_3rp` — `rf.cycle_pattern.imce_phase_v0`, target: next family-local state at 3 reporting periods
 
 | Field | Value |
 |---|---|
@@ -48,7 +75,7 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 | State-vector observability (AG14/AP1) | **SETTLED [AP1].** Same as Cell 1 — tracks `order_softness`, pooled {DHI, PHM, KBH, TOL}, NVR held out. |
 | Six elections touched | E2 (fully settled via AP1) |
 
-### Cell 3 — `rf.cycle_pattern.imce_phase_v0`, target: false repair/relapse within 3 reporting periods
+### Cell 3 — `imce_phase_v0.order_softness_false_repair_3rp` — `rf.cycle_pattern.imce_phase_v0`, target: false repair/relapse within 3 reporting periods
 
 | Field | Value |
 |---|---|
@@ -60,7 +87,7 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 | State-vector observability (AG14/AP1) | **SETTLED [AP1].** Same as Cell 1 — tracks `order_softness`, false-repair/relapse defined as a `SOFTENING → TIGHTENING` cohort transition (a "repair") that reverts to `SOFTENING` within 3 reporting periods (`IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md` §4). |
 | Six elections touched | E2 (fully settled via AP1) |
 
-### Cell 4 — `rf.cycle_pattern.imce_sync_v0`, target: `next_local_state_1rp` (M+R vs M)
+### Cell 4 — `imce_sync_v0.next_order_softness_1rp` — `rf.cycle_pattern.imce_sync_v0`, target: `next_local_state_1rp` (M+R vs M)
 
 | Field | Value |
 |---|---|
@@ -72,7 +99,7 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 | State-vector observability (AG14/AP1) | **SETTLED [AP1].** `next_local_state_1rp` tracks the same `order_softness` next-period cohort state as Cell 1 — not an independently-defined state. |
 | Six elections touched | E2 (fully settled via AP1) |
 
-### Cell 5 — `rf.cycle_pattern.imce_sync_v0`, target: `forward_63d_drawdown_tail` (M+R vs M)
+### Cell 5 — `imce_sync_v0.forward_63d_drawdown_tail` — `rf.cycle_pattern.imce_sync_v0`, target: `forward_63d_drawdown_tail` (M+R vs M)
 
 | Field | Value |
 |---|---|
@@ -84,7 +111,7 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 | State-vector observability (AG14/AP1) | The cell's *target* (`forward_63d_drawdown_tail`) is a market drawdown outcome, not itself a D5-state target — AG14/AP1's target-to-state mapping governs the phase family and sync Cell 4 only. This cell's `M_t` **input basis** draws `order_softness` (AP2), which is why its block cap is now B≤3 rather than B≤5. |
 | Six elections touched | E2 bears on feature construction (now settled — `order_softness` is the basis, AP2) |
 
-### Cell 6 — `rf.cycle_pattern.imce_risk_v0`, target: `forward_63_trading_day_drawdown_tail` (M vs family/stratum prior)
+### Cell 6 — `imce_risk_v0.forward_63_trading_day_drawdown_tail` — `rf.cycle_pattern.imce_risk_v0`, target: `forward_63_trading_day_drawdown_tail` (M vs family/stratum prior)
 
 | Field | Value |
 |---|---|

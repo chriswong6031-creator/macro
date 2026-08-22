@@ -56,7 +56,7 @@ constraint of the A4P commission) rather than renamed; do not infer from the nam
 
 ## AG4 — Within-block dependence survives only as a differently-named precision diagnostic
 
-**What changed:** The struck DEFF/ρ construction is not deleted from the research record — it is renamed and demoted to `n_issuer_precision_diagnostic` (exact field name TBD at A4 registration), usable to characterize within-block issuer-pooling precision but explicitly barred from ever substituting for `n_effective_blocks`, from ever satisfying the §8 item 5 forty-block floor, and from carrying any promotion authority.
+**What changed:** The struck DEFF/ρ construction is not deleted from the research record — it is renamed and demoted to `n_issuer_precision_diagnostic` (exact field name **frozen by AP8/M3(b)**, was "TBD at A4 registration" in this original AG4 draft — see the AP8 entry below), usable to characterize within-block issuer-pooling precision but explicitly barred from ever substituting for `n_effective_blocks`, from ever satisfying the §8 item 5 forty-block floor, and from carrying any promotion authority.
 **Where:** Contract §3 (new paragraph); YAML `effective_block_law.within_block_issuer_dependence`.
 **Why:** Preserves the analytic content lane 2 built (`IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` §3, `IMCE_HB0_INDEPENDENT_BLOCK_LIST.md` §8 — the full ρ ∈ {0.5...0.95} sensitivity grid) as a legitimate, disclosed diagnostic, while closing the promotion-authority leak AG3 identified.
 **Authority:** Sol, A4G authorization 2026-08-21.
@@ -386,8 +386,11 @@ substance. `TrialLedger` (`engine/trial_ledger.py`) owns only the three declared
 disclosed, `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md` §5, M6 fix). AP5 adds a **binding runner obligation**
 — a registration stop condition, not a code change — to contract §15/§15a: the future runner that actually
 computes historical cell verdicts **must** assert, before applying BH correction, that (a) exactly six
-verdict-bearing historical cells are being corrected, (b) they are exactly the six registered cell IDs named
-in `IMCE_A4G_SIX_CELL_DISPOSITION.md` §0, and (c) one BH correction runs across their union at q=0.10 — no
+verdict-bearing historical cells are being corrected, (b) they are exactly the six registered cell IDs
+**[AP8, M2 fix — repointed: these are now minted and enumerated in contract §11 and YAML
+`six_cell_ids_union`, not merely "named in `IMCE_A4G_SIX_CELL_DISPOSITION.md` §0" as the original AP5 draft
+said before the IDs themselves existed; the disposition document uses the same IDs but is no longer the
+source of them]**, and (c) one BH correction runs across their union at q=0.10 — no
 seventh cell may silently enter the denominator (e.g. a diagnostic, a sensitivity re-run, or a future cell
 from a different family).
 **Where:** Contract §15/§15a (new stop condition — "the future historical-cell runner asserts exactly the six
@@ -438,9 +441,10 @@ outcome access. **Full detail, sources, URLs, and verdicts: `IMCE_A4G_SOURCE_BOU
   boundary** — using a general-economy date to assert a housing-specific boundary would be exactly the
   wrong-instrument substitution AG17/M4 exists to prevent. **No boundary is changed by this ruling** — none
   of the newly-found evidence contradicts a proposed month boundary; every proposed month boundary remains
-  within the search evidence's bracket. Per the ruling's own instruction ("if a proposed boundary cannot be
-  supported by the source evidence, change it NOW... never leave a boundary un-receipted where it could be
-  otherwise") — no change is made because no boundary was found unsupported, only under-evidenced.
+  within the search evidence's bracket. Per the ruling's own instruction — "if a proposed boundary cannot be
+  supported by the source evidence, change it NOW with an amendment-log entry — never after outcome access"
+  (the A4P commissioning text verbatim, not paraphrased) — no change is made because no boundary was found
+  unsupported, only under-evidenced.
 - **Remaining gap, honestly named, not silently left:** the exact month-level start/end boundary of every
   block (GFC bust, GFC recovery, the grind block, the 2018 air-pocket sub-episode, the rate-shock block's own
   end date) is **still `not_yet_receipted`** — no first-party, housing-sector-specific, dated macro-series
@@ -448,15 +452,35 @@ outcome access. **Full detail, sources, URLs, and verdicts: `IMCE_A4G_SOURCE_BOU
   finding the A4G wave reached with its own research effort (`IMCE_A4G_SOURCE_BOUNDARY_TABLE.md` §6, prior
   text) — a systematic macro-series boundary-dating pass across all block boundaries (lane-1 gap 11) remains
   open, unperformed by this wave, and is named as a GAP in this wave's return packet rather than resolved by
-  inventing a date or misapplying a general-economy source to a housing-specific claim. The year-level block
-  boundaries (contract §3, frozen, not "proposed") remain fully usable without month-level receipting per the
-  contract's own existing escape clause (AG17: "a `not_yet_receipted` boundary may not be used to partition an
-  outcome run **on that boundary**... or the year-level boundary is used instead").
+  inventing a date or misapplying a general-economy source to a housing-specific claim.
+  **[AP8 correction, see below] The year-level-fallback claim previously made here relied on a fabricated
+  composite quotation and has been corrected** — see AP8's own entry for the honest, separately-cited
+  treatment of contract §3 (the block-list intro paragraph), the AG17 paragraph, and §15/§15a's stop
+  condition, none of which may be spliced together as if they were one continuous quote.
 **Where:** `IMCE_A4G_SOURCE_BOUNDARY_TABLE.md` §2 (row 13, Notes extended), §6 (rewritten with new receipts),
 new §7 (Treasury archive receipt detail); no contract-MD or YAML change — AG17/AG18's existing law already
 covers this ruling's disposition (record receipts, change nothing that lacks contradicting evidence, do not
 ingest).
 **Authority:** Sol, A4P authorization 2026-08-21.
+
+**Revision note (2026-08-21, A4P revision, AP8, M6):** Fable's adjudication of the Opus red-team found this
+entry's original framing overstated completion — it read as a satisfied ruling rather than a partial one.
+**Corrected: ruling 6's status is PARTIALLY EXECUTED / OPEN, not satisfied.** Of the 8 boundary rows in
+`IMCE_A4G_SOURCE_BOUNDARY_TABLE.md` §6, **zero month-level boundaries are receipted; none was changed** (no
+contradicting evidence found); 2 genuinely new bracketing receipts were obtained (NBER peak/trough, 1 Fed
+press release), which is real progress on the surrounding record but not itself boundary receipting.
+Month-level receipting for the remaining boundaries is escalated to Sol in this wave's return packet.
+**Separately: the Treasury CSV/XML archive row is UPGRADED from `S` to `V`** — the commissioning (Fable)
+session obtained the receipt directly via a real browser on 2026-08-21 (page content, URL, page stamp, 161
+2026-YTD entries, CSV/XML/archive links, and a genuine construction-break receipt: the 2021-12-06 HS→MC spline
+methodology change), attributed exactly "obtained by commissioning session via direct browser access
+2026-08-21" — distinct from this build worker's own repeated `WebFetch` failures (6 total across two
+sessions, unchanged, retained for the record). Storage/reuse basis remains explicitly unsettled; no
+ingestion occurs. Full detail: `IMCE_A4G_SOURCE_BOUNDARY_TABLE.md` §2 row 13 (rewritten) and §7 (rewritten).
+Also fixed in this revision: boundary:134's "authoritative" framing is softened to "asserted by the
+commissioning authority; not itself a source receipt" wherever the original Sol-attestation language remains
+relevant context (superseded in substance by the new `V`-grade receipt, but the grading discipline — an
+assertion is not itself a receipt — is preserved as a general principle).
 
 ---
 
@@ -469,7 +493,11 @@ cancellation-scoped [AG5/AG6]" language is stale after AP2 hardens all six cells
 against `engine/trial_ledger.py` lines 53–62, 159–190; no engine code executed, a standalone pure-function
 check only), a changed `reason` string changes the hash. **All three row hashes are recomputed, not carried
 forward from A4G** — see EVIDENCE in this wave's return packet for the exact recomputation commands and
-before/after hash values. The criteria-commit checklist (§6) is updated: the come-back date line now reads
+before/after hash values. **[AP8, m8 fix] The three superseded (A4G-era) hashes, recorded here durably for
+the audit trail rather than left only in git history:** `rf.cycle_pattern.imce_phase_v0` was
+`29dce2d62989e7f1`, `rf.cycle_pattern.imce_sync_v0` was `76b9eb13dcc0fbf8`, `rf.cycle_pattern.imce_risk_v0`
+was `82749c8a20babb5a` — each superseded by the A4P-regenerated hash in the packet's §2–§4 (unchanged again by
+this AP8 revision, since no `reason` string changed in this revision — see EVIDENCE). The criteria-commit checklist (§6) is updated: the come-back date line now reads
 ~2149 (AP2), not ~2153; a new checklist item records the AP1 phase-target mapping and the
 `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md` construction as a registration precondition; a new item
 records the AP4 bootstrap freeze (800/seed 7) as already-settled rather than "not yet chosen"; a new item
@@ -487,16 +515,17 @@ new reasons/hashes, §6 checklist updated).
 | # | Ruling (one line) | Contract section(s) | Resolves |
 |---|---|---|---|
 | AP1 | Phase-family targets mapped to `order_softness`; deterministic construction frozen | §1, §2, §15/§15a; new file | AG14/MAJ-5 open item |
-| AP2 | All six v0 historical cells cancellation-scoped, B≤3; come-back date ~2149 | §3, §9a, §13, Appendix B/C | Six-cell disposition §4 (Cells 5–6 conditional item) |
+| AP2 | All six v0 historical cells cancellation-scoped, B≤3 | §1, §2, §3, §9a | Six-cell disposition §4 (Cells 5–6 conditional item) |
 | AP3 | Minimum prospective share for promotion = 100%, machine-readable | §13 | remaining TBD |
-| AP4 | Bootstrap: 800 draws, seed 7 (house default) | §8, §11 | bootstrap draws/seed line |
+| AP4 | Bootstrap: 800 draws, seed 7 (house default value convention) | §8, §11 | bootstrap draws/seed line |
 | AP5 | No new FDR writer; binding runner obligation (six-cell assertion, one BH correction) | §15/§15a | — |
-| AP6 | Macro boundary receipts: Treasury recorded (Sol-attested + S-grade); 3 new V/S-grade dated events; no boundary changed (none contradicted) | `IMCE_A4G_SOURCE_BOUNDARY_TABLE.md` §2/§6/§7 | partial — lane-1 gap 11 remains open |
+| AP6 | Macro boundary receipts: PARTIALLY EXECUTED/OPEN (0/8 boundaries receipted, none changed); Treasury `V`-grade receipt (AP8 revision) | `IMCE_A4G_SOURCE_BOUNDARY_TABLE.md` §2/§6/§7 | partial — lane-1 gap 11 remains open, escalated to Sol |
 | AP7 | A4 packet regenerated; row hashes recomputed (reason strings changed) | packet §1–§6 | — |
+| AP8 | Same-branch revision: fixes 2 blockers + 7 majors + minors from Fable's adjudication of the Opus red-team pass on PR #6213 — see the AP8 entry above and this log's revision notes on AP2/AP5/AP6 | §3, §8, §11, §13, §15/§15a, Appendix A/B/C headers; construction file; disposition; boundary table; packet; census annotations | corrects B1/B2/M1–M7 and all named minors |
 
 ---
 
 **This log entry authorizes nothing beyond itself.** No cell, model, score, or outcome computation has
 started here. No `rf.cycle_pattern.imce_*` family is registered. The next authorized act on this family is A4
-registration proper — see `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md` (as regenerated by AP7) for the exact
-proposed (not registered) content of that future act.
+registration proper — see `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md` (as regenerated by AP7, corrected by
+AP8) for the exact proposed (not registered) content of that future act.

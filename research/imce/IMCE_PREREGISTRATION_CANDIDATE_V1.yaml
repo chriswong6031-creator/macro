@@ -5,11 +5,12 @@
 # Supersedes IMCE_PREREGISTRATION_CANDIDATE.yaml (schema v0).
 # V1.1 (2026-08-21): applies Sol's 18 A4G amendments (AG1-AG18) atop the 26
 # Round 3 amendments (A1-A26). Full rationale: IMCE_A4G_AMENDMENT_LOG.md.
-# V1.2 (2026-08-21): applies Sol's 7 A4P amendments (AP1-AP7) atop V1.1 -
+# V1.2 (2026-08-21): applies Sol's 8 A4P amendments (AP1-AP8) atop V1.1 -
 # preregistration criteria closure (phase-target mapping, historical basis
 # uniformity, prospective share, bootstrap, FDR runner obligation, macro
-# boundary receipts, packet regeneration). Full rationale: the A4P section
-# appended to IMCE_A4G_AMENDMENT_LOG.md.
+# boundary receipts, packet regeneration) plus AP8, the same-branch revision
+# fixing Fable's adjudication of an Opus red-team pass. Full rationale: the
+# A4P section appended to IMCE_A4G_AMENDMENT_LOG.md.
 
 schema: imce.preregistration_candidate.v1
 status: candidate_not_registered
@@ -88,20 +89,36 @@ trials:                                        # [A5][A6]
       - next_local_state_1_reporting_period
       - next_local_state_3_reporting_periods
       - false_repair_3_reporting_periods
+    cell_ids:                                              # [AP8, M2] minted/frozen; presented to Sol for ratification
+      - imce_phase_v0.next_order_softness_1rp
+      - imce_phase_v0.next_order_softness_3rp
+      - imce_phase_v0.order_softness_false_repair_3rp
   - family_candidate: rf.cycle_pattern.imce_sync_v0
     status: not_declared
     cell_budget: 2
     cell_definition: targets {next_local_state_1rp, forward_63d_drawdown_tail} x contrast [M+R vs M]
     primary_comparison: mechanism_plus_recognition_vs_mechanism_only
     cell_4_d5_state_mapping: order_softness                # [AP1] next_local_state_1rp -> same state as phase target (a)
+    cell_ids:                                              # [AP8, M2] minted/frozen; presented to Sol for ratification
+      - imce_sync_v0.next_order_softness_1rp
+      - imce_sync_v0.forward_63d_drawdown_tail
   - family_candidate: rf.cycle_pattern.imce_risk_v0
     status: not_declared
     cell_budget: 1
     cell_definition: forward_63d_drawdown_tail x [M vs family/stratum prior]
     target: forward_63_trading_day_drawdown_tail
+    cell_ids:                                              # [AP8, M2] minted/frozen; presented to Sol for ratification
+      - imce_risk_v0.forward_63_trading_day_drawdown_tail
 
 historical_cell_budget_total: 6                # [A5]
 all_6_cells_share_order_softness_basis: true    # [AP2] uniform B<=3, cancellation-scoped, LEN excluded from all 6
+six_cell_ids_union:                             # [AP8, M2] the exact union the future runner must assert against [AP5]
+  - imce_phase_v0.next_order_softness_1rp
+  - imce_phase_v0.next_order_softness_3rp
+  - imce_phase_v0.order_softness_false_repair_3rp
+  - imce_sync_v0.next_order_softness_1rp
+  - imce_sync_v0.forward_63d_drawdown_tail
+  - imce_risk_v0.forward_63_trading_day_drawdown_tail
 
 fdr:                                           # [A6]
   partitions:
@@ -153,11 +170,14 @@ validation:
   leave_cycle_out: required
   fdr_q: 0.10
   bootstrap:
-    unit: episode_or_month_block
+    unit: registered_block_cluster            # [AP8, M1 fix] was episode_or_month_block; the SAME cluster unit AG9 uses for inference - never a date/month block
+    unit_note: engine/grading_stats.py BOOT_DRAWS/BOOT_SEED (800/7) supply only the numeric defaults - its block_bootstrap_ci resamples whole calendar DATES, that unit is NOT imported
     ci_type: one_sided_90_percent            # [A21]
-    draws_and_seed: 800_draws_seed_7         # [AP4] CPI house default, frozen, no tuning
+    draws_and_seed: 800_draws_seed_7         # [AP4] CPI house default VALUE convention, frozen, no tuning
     draws: 800                                # [AP4]
     seed: 7                                   # [AP4]
+    n_clusters_at_b3: 3                       # [AP8, M1 fix]
+    degenerate_disclosure_at_b3: true         # [AP8, M1 fix] bootstrap over 3 clusters is near-vacuous; same disclosure class as the BH-FDR low-n note
   min_effective_blocks: 40                   # [A12]
   parameter_ranges: single_frozen_values_required   # [A22] was "preferably single frozen values"; any grid counts into cell budget
   sign_stability_share: 2_of_3_blocks        # [A21]
@@ -218,7 +238,7 @@ effective_block_law:                           # [A9, amended AG2/AG3/AG4/AG5/AG
   open_era_contributes_zero_historical_n: true   # [AG8]
   within_block_issuer_dependence:                # [AG4] renamed, demoted
     status: precision_diagnostic_only
-    proposed_field_name: n_issuer_precision_diagnostic
+    field_name: n_issuer_precision_diagnostic     # [AP8, M3(b)] frozen now, was proposed_field_name/TBD-at-registration
     may_substitute_for_n_effective_blocks: false
     can_satisfy_40_block_floor: false
     carries_promotion_authority: false
@@ -559,7 +579,7 @@ prospective_law:                               # [A24]
   counters:
     n_blocks_hist: 0
     n_blocks_prosp: 0
-  preregistered_minimum_prospective_share_before_promotion: 100_percent  # [AP3] was required_value_tbd_at_registration; already implied by AG1
+  preregistered_minimum_prospective_share_before_promotion: 1.0  # = 100% [AP3, AP8 m5 fix - numeric, was the non-numeric token "100_percent"]; was required_value_tbd_at_registration; already implied by AG1
 
 authority_ladder:
   sequence: [DESCRIPTIVE, REGISTERED, REPLAYED, DISPLAY, PROSPECTIVE_SHADOW, PROMOTE_ELIGIBLE]
