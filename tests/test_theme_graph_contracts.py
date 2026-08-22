@@ -169,7 +169,12 @@ def test_a_ratified_epoch_passes(tmp_path):
     bfile.write_text(
         "breaks:\n  - symbol: AAA\n    market: us\n    break_date: '2024-01-01'\n"
         "    prior_node_retired_as: co:us:AAA\n    new_epoch: 2\n"
-        "    evidence: fixture\n    ratified_by: fixture\n", encoding="utf-8")
+        "    evidence: fixture\n    ratified_by: fixture\n"
+        # V4-D2B3 R-A9: every breaks row must carry a parseable ratified_at,
+        # fail-closed — this fixture's prior node (co:us:AAA, epoch 1) is absent from
+        # this store (only co:us:AAA#2 exists), so the break-retirement invariant is a
+        # no-op here (ABX shape) and this row exists purely to satisfy R-A9.
+        "    ratified_at: '2024-01-02'\n", encoding="utf-8")
     root = _write_store(
         tmp_path / "epoch_ok",
         nodes=[_node_row(node_id="co:us:AAA#2", identity_epoch=2),

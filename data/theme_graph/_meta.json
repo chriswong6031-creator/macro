@@ -5,12 +5,41 @@
     "semantic_only": 142
   },
   "computed_at": "2026-08-22T04:50:47Z",
+  "correction_receipt": {
+    "entity_type_conflict": [
+      {
+        "edges_annulled": [
+          "member_of:co:us:IBIT->basket:baskets:crypto_rails@2023-05-09"
+        ],
+        "node_id": "co:us:IBIT",
+        "retire_date": "2026-08-22"
+      }
+    ],
+    "identity_break": [
+      {
+        "edges_truncated": [
+          "member_of:co:us:GOLD->basket:baskets:gold_miners@2023-05-09"
+        ],
+        "node_id": "co:us:GOLD",
+        "retire_date": "2025-12-02"
+      }
+    ],
+    "rows_appended": {
+      "edges": 2,
+      "evidence": 2,
+      "node_lifecycle": 2
+    },
+    "run_at": "2026-08-22T12:58:35Z",
+    "script": "scripts.correct_gmi_identity_lineage",
+    "skipped_already_retired": []
+  },
   "counts": {
     "capability": 641,
-    "edges": 8292,
+    "edges": 8294,
     "edges_latest_belief": 8292,
-    "evidence": 11,
+    "evidence": 13,
     "identity_resolution": 2806,
+    "node_lifecycle": 2,
     "nodes": 3878
   },
   "engine_version": "theme_graph.v1",
