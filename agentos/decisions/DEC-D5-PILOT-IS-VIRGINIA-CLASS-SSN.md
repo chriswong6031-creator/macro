@@ -6,10 +6,16 @@ question: >
 answer: >
   Positive pilot: Virginia-class SSN / undersea warfare
   (acq-program:virginia-class-ssn) — capability → program → Block variants →
-  GD Electric Boat prime + HII/NNS teammate → central:GD / central:HII →
-  BWXT supplier role (shared_scope true) → Block VI milestone (2026-07-29).
+  GD Electric Boat prime (legal:gd:electric-boat-corp) + HII teaming partner
+  (legal:hii:huntington-ingalls-inc; NNS is a division, carried in
+  role_scope prose) → central:GD / central:HII → BWXT supplier role
+  (shared_scope true; entity per the attachment rule — whichever BWXT
+  entity the re-fetched document names as performing the work) → Block VI
+  milestone (2026-07-29). Role labels bind to what the re-fetched documents
+  support; these are the evidence-based expectations.
   Negative control: IRDM / P00032 stays program-null
-  (state not_asserted, reason no_reviewed_exact_path) with every D1-D4 rail
+  (state not_reviewed | reviewed_none, reason no_reviewed_program_link,
+  rendered as "unresolved / not asserted") with every D1-D4 rail
   byte-unchanged. Runner-up recorded, not authorized: PAC-3 MSE.
 rationale: >
   Scored on the commissioned six criteria against Patriot/GEM-T.

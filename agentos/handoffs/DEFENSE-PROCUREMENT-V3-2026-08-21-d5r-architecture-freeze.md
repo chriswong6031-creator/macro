@@ -36,8 +36,13 @@ changed:
       record kinds, three edge kinds, closed role enum), three-tier authority
       (no automatic tier inside D5 v1), temporal quadruple + append-only
       correction law, failure-state reuse table (no uppercase enums minted),
-      pilot freeze (Virginia-class SSN; IRDM P00032 null control), ten frozen
-      adversarial tests T1-T10, experience law, deliberate non-freezes.
+      pilot freeze (Virginia-class SSN; IRDM P00032 null control), fourteen
+      frozen adversarial tests T1-T14, evidence admissibility gates (§3.1a),
+      the fourteen-state experience law, deliberate non-freezes. Opus
+      red-team pass folded in pre-merge (1 blocker + 13 must-fix accepted:
+      evidence admissibility frozen, no_reviewed_program_link minted,
+      not_reviewed/reviewed_none split, role enum re-split with exact pilot
+      entity ids, prog-role preimage widened, T5/T9 reconciled).
   - path: research/defense_intelligence/DEFENSE_D5_PROGRAM_GRAPH_IMPLEMENTATION_HANDOFF.md
     what: >
       Cold-builder handoff: §0 not-done-unless acceptance gates (ten),
@@ -86,7 +91,7 @@ danger_areas:
     GIT_TRACE_PERFORMANCE (hang after diff-files) before blaming git or
     budgets; escalate to operator for materialization/reboot.
   - >
-    The ten frozen tests are gate:code fixtures-only by law (D4 §4); wiring
+    The fourteen frozen tests are gate:code fixtures-only by law (D4 §4); wiring
     any of them into a gate:data family silently removes them from the merge
     gate.
 unverified:
@@ -104,7 +109,10 @@ unverified:
       Parse the PDF-portfolio format (D6 tooling dependency) or obtain the
       exhibit table from the comptroller print set.
 
-unresolved: []
+unresolved:
+  - >
+    D5 implementation authorization — D5R returns to Sol; the build may not
+    start until Sol accepts this freeze and explicitly authorizes D5.
 
 next_actions:
   - Return to Sol for D5R acceptance review.
