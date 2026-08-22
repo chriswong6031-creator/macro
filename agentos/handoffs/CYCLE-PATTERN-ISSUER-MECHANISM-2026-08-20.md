@@ -119,3 +119,66 @@ CONDITIONAL_GO (2+1-open blocks) · G4 homebuilders CONDITIONAL_GO (5–7 blocks
 G5 banks GO_FEASIBILITY/DEFER-stock · G6 rights GO_LIMITED (22/22, zero reversals) ·
 G7 prereg PASS (statuses predetermined; 26 amendments) · G8 red team REVISE → all
 blockers/majors amended (freeze §10, §10a carry the full table and dispositions).
+
+# A-wave closure addendum (same session, post-Sol-release, 2026-08-21Z)
+
+Sol returned **PASS / ACCEPTED FOR LANDING** on the freeze and released HOLD-FOR-SOL.
+This session then completed, in one continuous arc:
+
+- **IMCE-00 landed:** PR #6127 squash-merged 2026-08-21T03:55:28Z (merge `ec44ae7d1659`),
+  verified on origin/main. Release recorded as a PR comment naming Sol's verdict and the
+  accepted head; `merge-blocked` removed only after that record.
+- **A1/A2/A3 dispatched in parallel exactly as frozen** (three sonnet builder lanes →
+  draft PRs), each Opus-red-teamed (verdicts: REVISE ×3), each revision adjudicated by
+  Fable with rulings recorded IN the artifacts, each landed on concluded checks:
+  - **A2** `IMCE_A2_CPI_TRUTH_VOCABULARY_AUDIT_V1.md` — PR #6147, merge `2a0fae4672ea`
+    04:57:17Z. Adjudicated: D1(c) releases only on the APPLIED heal (not audit landing);
+    F6 five promoted_null rows heal to conform to the matrix class rule.
+  - **A1** `IMCE_CELH1_CYCLE_AUTOPSY_V1.md` — PR #6150, merge `44ac9b89ff9e` 05:19:45Z.
+    Adjudicated: strict crossover predicate frozen (33 events, 16 bullish/17 bearish,
+    2009-11-27 → 2025-12-05); pre-2010 question RESOLVED consistent with [G8-v5];
+    E2 ends 2024-12-31 (true partition); quarantined-tape outcome clause elided.
+  - **A3** `IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` — PR #6148, merge `b7b173efde83`
+    05:21:18Z. Adjudicated: survivorship population rule + Centex→PHM absorption
+    category; two-key re-key (majority-month pooling, zero-collision); NVR separate
+    stratum FROZEN; no pit_class tokens minted; ρ typed REQUIRED-BEFORE-A4.
+- **Parallel-lane reconciliation:** an operator-account lane independently landed its own
+  A1 packet (PR #6153, merge `0d5bc41d3d67`, 05:01:55Z: `CELH_CYCLE_AUTOPSY_2018_2026.md`
+  + `research/imce/celh/` CSVs + a NOT_ACTIVATED prospective-registration YAML), framed
+  in its own WS edit as "returned to Fable for adjudication". ADJUDICATED: canonical A1 =
+  #6150's record; #6153 = ACCEPTED companion machine-readable evidence packet — its event
+  tape is byte-consistent (same 33 events/16 bullish dates), CSVs carry bar-state columns
+  only, registration stays NOT_ACTIVATED (A4-gated). U7 ruled: phase inside the existing
+  epoch until a mechanism boundary receipt dates a new one.
+- **Second parallel lane (A3):** the same operator account landed PR #6154 (merge
+  `c15d76130046`, 05:42:56Z) — nine HB-0 adjudication artifacts + seven evidence packets
+  under `research/imce/hb0/`, four DSCs, a `-hb0` handoff, and corrections C1–C3 proposed
+  for Fable/Sol. ADJUDICATED: both A3 records stand as delivered evidence; lane-1
+  (#6148)'s frozen operational rulings (NVR separate stratum, two-key re-key, no minted
+  pit_class tokens) BIND pre-A4. **C1 ACCEPTED in direction** — LEN's 10-K MD&A does
+  disclose a 14% cancellation rate (verified in `hb0/evidence/L2_defs_DHI_LEN.md` rows
+  3/3a) while stating NO formula, so the exclusion stands on the restated ground ("no
+  stated formula — denominator unverifiable — plus era-correlated press-release
+  absence") and the freeze's original reason owes an amendment-log entry at the A4 gate.
+  **C2 (B=5 block-hardening vs the #6148 frozen 7-list) and C3 ([A18] extension)
+  DEFERRED** to the Sol/Fable A4-gate adjudication with both block lists on the table;
+  the six elections in `hb0/IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` §8 land there too.
+
+**verified:** every merge above re-verified via `gh pr view <n> --json state,mergedAt,mergeCommit`
+and `git merge-base --is-ancestor <merge> origin/main` (A2; A1/A3 pending the same check
+from this closure worktree, whose HEAD already contains both merges); the parallel tape
+consistency via `awk` field extraction of `celh_recognition_events.csv` against the
+canonical §5.2 table.
+
+**A4 gate (NOT authorized; no auto-roll):** minimum prospective share; ρ / statistical-unit
+and power questions (Sol reserved these to the A4-gate adjudication); pit_class candidate
+vocabulary; macro-series evidence at block boundaries; "2013 taper" boundary dates; G6
+UNDERLYING_MACRO_OWNERS leg-list confirmation. Separately: the CPI-owned heal wave is the
+D1(c) release condition — NO issuer truth before it lands, per the adjudicated ruling in
+the A2 record.
+
+**do_not_redo (additions):** do not re-run the A1 event derivation (two independent lanes
+already converged byte-identically); do not re-open the A2 token census (re-derived
+byte-exact by adversarial review); do not mint pit_class or consumer-vocabulary tokens
+outside the A2 §8c / A3 gap-10 decision processes; do not treat #6153's registration YAML
+as activated.

@@ -143,3 +143,5 @@
 {"date": "2026-08-19", "ticker": "0981.HK", "slug": "smic", "name_en": "SMIC", "attention_shock_z": -1.364, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "ok", "organ": "hk_narrative"}
 {"date": "2026-08-20", "ticker": "9988.HK", "slug": "alibaba", "name_en": "Alibaba", "attention_shock_z": 0.898, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}
 {"date": "2026-08-20", "ticker": "0981.HK", "slug": "smic", "name_en": "SMIC", "attention_shock_z": -1.364, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}
+{"date": "2026-08-21", "ticker": "9988.HK", "slug": "alibaba", "name_en": "Alibaba", "attention_shock_z": 0.898, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}
+{"date": "2026-08-21", "ticker": "0981.HK", "slug": "smic", "name_en": "SMIC", "attention_shock_z": -1.364, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}

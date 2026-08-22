@@ -242,8 +242,20 @@ def prepare_live_frame(stage_frame, root: Path | None = None,
 
 
 def coverage_snapshot(stage_frame, expected_asof: str | None,
-                      output_rows: int) -> dict:
-    """Return non-vacuous coverage/freshness diagnostics for an artifact."""
+                      output_rows: int, *,
+                      expected_stage_week: str | None = None) -> dict:
+    """Return non-vacuous coverage/freshness diagnostics for an artifact.
+
+    Wave 8 §6.1 — the classifier is weekly-native, so a current Stage week
+    must not be downgraded to ``warn`` merely because the UTC build clock
+    rolled forward one calendar day. When the caller supplies
+    ``expected_stage_week`` (the resolved target Stage week) AND the frame
+    itself carries ``stage_week_end`` values, freshness is judged on the
+    STAGE-WEEK plane (equality of completed weeks) rather than the daily
+    ``expected_asof`` vs ``source_asof`` comparison. The daily values stay in
+    the payload for audit either way, but only generate an issue when the
+    week plane could not answer (``freshness.plane == "daily"``).
+    """
     import pandas as pd
 
     if stage_frame is None or not isinstance(stage_frame, pd.DataFrame):
@@ -280,13 +292,38 @@ def coverage_snapshot(stage_frame, expected_asof: str | None,
             source_asof = parsed.max().date().isoformat()
             break
     if source_asof is None or expected_asof is None:
-        freshness = "unknown"
+        daily_freshness = "unknown"
     elif source_asof == str(expected_asof):
-        freshness = "current"
+        daily_freshness = "current"
     elif source_asof < str(expected_asof):
-        freshness = "stale"
+        daily_freshness = "stale"
     else:
-        freshness = "future"
+        daily_freshness = "future"
+
+    # Wave 8 §6.1 — the STAGE-WEEK plane. `source_stage_week` = max of the
+    # frame's own `stage_week_end` values (the completed week the classifier
+    # actually read). When both it and the resolved target week exist, that
+    # is the authoritative freshness plane; the wall-clock-driven daily
+    # comparison above is audit-only in that case.
+    source_stage_week = None
+    if "stage_week_end" in df.columns:
+        raw = df["stage_week_end"].dropna().astype(str).str.strip()
+        raw = raw[~raw.str.lower().isin({"", "nan", "none"})]
+        if not raw.empty:
+            source_stage_week = str(raw.max())
+
+    if expected_stage_week is not None and source_stage_week is not None:
+        plane = "stage_week"
+        if source_stage_week == str(expected_stage_week):
+            week_freshness = "current"
+        elif source_stage_week < str(expected_stage_week):
+            week_freshness = "stale"
+        else:
+            week_freshness = "future"
+        freshness = week_freshness
+    else:
+        plane = "daily"
+        freshness = daily_freshness
 
     non_vacuous = eligible_rows > 0 and int(output_rows) > 0
     issues: list[str] = []
@@ -300,8 +337,15 @@ def coverage_snapshot(stage_frame, expected_asof: str | None,
         issues.append("taxonomy_coverage_below_floor")
     if eligible_rows and change_pct < MIN_RS_CHANGE_COVERAGE_PCT:
         issues.append("rs_change_coverage_below_floor")
-    if freshness != "current":
-        issues.append(f"source_asof_{freshness}")
+    # The daily-plane issue must NEVER fire once the week plane has answered
+    # (§6.1) — a settled daily tape behind a rolled UTC calendar is not
+    # staleness when the Stage week itself is current.
+    if plane == "daily":
+        if freshness != "current":
+            issues.append(f"source_asof_{freshness}")
+    else:
+        if freshness != "current":
+            issues.append(f"source_stage_week_{freshness}")
 
     regions = sorted(str(v) for v in df.loc[taxonomy, "region"].dropna().unique()) \
         if "region" in df.columns else []
@@ -320,6 +364,9 @@ def coverage_snapshot(stage_frame, expected_asof: str | None,
             "expected_asof": expected_asof,
             "source_asof": source_asof,
             "status": freshness,
+            "plane": plane,
+            "expected_stage_week": expected_stage_week,
+            "source_stage_week": source_stage_week,
         },
         "floors": {
             "taxonomy_coverage_pct": MIN_TAXONOMY_COVERAGE_PCT,
@@ -519,67 +566,176 @@ def name_industry_percentiles(stage_frame=None, root: Path | None = None) -> dic
 
 
 # ---------------------------------------------------------------------------
+# Industry rank HISTORY — house-native weekly accrual (Wave 8 §7)
+# ---------------------------------------------------------------------------
+# The heatmap below used to read a one-shot proprietary EquityDesk export
+# (`data/stage_analysis/backfill/industry_ranks.parquet`) that is ABSENT from
+# the committed backfill — the heatmap was structurally dead (`regions: []`).
+# We do NOT re-import that seed as an ongoing production dependency. Instead
+# this nightly Stage lane accrues its OWN weekly history, one record per
+# (stage_week_end, region, industry_id), following the house JSONL idiom
+# `engine/stage_analysis.py::append_forward_ledger`: keyed on a DATA-plane
+# date (the Stage week), never a clock read; deduped; fail-open; disclosing
+# skips via `::warning`. Past weeks are IMMUTABLE — only the target week's
+# record set may ever be dropped or rewritten (a same-week rerun replaces
+# that week's point, which is also the deterministic correction path for a
+# corrected OHLCV file). DISPLAY-TIER / CONTEXT-ONLY throughout.
+
+_HISTORY_FIELDS = ("industry_id", "industry_name", "region", "n", "score",
+                   "rank", "bucket", "industry_percentile")
+_HISTORY_KEEP_WEEKS = 30       # newest 30 distinct stage_week_end values
+
+
+def _history_path(dr: Path) -> Path:
+    return dr / "stage_analysis" / "industry_rank_history.jsonl"
+
+
+def _read_history(dr: Path) -> list[dict]:
+    """Read all history records. Fail-open -> []; malformed lines are skipped."""
+    p = _history_path(dr)
+    if not p.exists():
+        return []
+    out: list[dict] = []
+    try:
+        raw = p.read_text()
+    except Exception as e:  # noqa: BLE001
+        log.warning("stage_industry: history unreadable (%s)", e)
+        return []
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+        except Exception:  # noqa: BLE001 — one bad line never sinks the rest
+            continue
+        if isinstance(rec, dict):
+            out.append(rec)
+    return out
+
+
+def _atomic_write_jsonl(path: Path, records: list[dict]) -> None:
+    """Temp-file + os.replace atomic whole-file rewrite (house law)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    lines = [json.dumps(r, ensure_ascii=False, separators=(",", ":")) for r in records]
+    tmp.write_text("\n".join(lines) + ("\n" if lines else ""))
+    os.replace(tmp, path)
+
+
+def append_industry_rank_history(all_ranks: list[dict], stage_week_end: str | None,
+                                 coverage: dict | None,
+                                 root: Path | None = None) -> dict:
+    """Accrue one house-native weekly point per (stage_week_end, region,
+    industry_id) into ``data/stage_analysis/industry_rank_history.jsonl``.
+
+    Advances ONLY when all of (§7.3):
+      - `stage_week_end` is not None;
+      - `coverage["non_vacuous"] is True`;
+      - `coverage["status"] == "ready"` (which already implies no currentness
+        issue — `coverage_snapshot` only reports "ready" when `issues` is
+        empty).
+
+    Otherwise: skip and warn naming exactly why; the prior history stands.
+    Idempotent: a rebuild for the SAME target week REPLACES that week's
+    records (drop-then-append), never duplicates them. Past weeks are never
+    touched except by the retention trim (newest `_HISTORY_KEEP_WEEKS`
+    distinct weeks). Never advances from a wall-clock date, never
+    synthesizes, never re-imports the seed.
+    """
+    dr = _data_root(root)
+    coverage = coverage or {}
+
+    reasons: list[str] = []
+    if stage_week_end is None:
+        reasons.append("no_target_stage_week")
+    if coverage.get("non_vacuous") is not True:
+        reasons.append("not_non_vacuous")
+    if coverage.get("status") != "ready":
+        reasons.append("coverage_not_ready")
+    if reasons:
+        print("::warning title=industry-rank-history::stage_industry: history "
+              f"NOT advanced ({','.join(reasons)})", flush=True)
+        return {"advanced": False, "reason": ",".join(reasons), "week": stage_week_end}
+
+    built = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    new_records: list[dict] = []
+    for r in all_ranks:
+        rec = {"stage_week_end": stage_week_end}
+        for f in _HISTORY_FIELDS:
+            rec[f] = r.get(f)
+        rec["built"] = built
+        rec["source"] = "stage_industry.live"
+        new_records.append(rec)
+
+    existing = _read_history(dr)
+    # Idempotent replace: drop every record for the target week, then append
+    # the freshly computed set — a same-week rebuild REPLACES the point.
+    kept = [r for r in existing if r.get("stage_week_end") != stage_week_end]
+    merged = kept + new_records
+
+    weeks = sorted({str(r["stage_week_end"]) for r in merged if r.get("stage_week_end")})
+    if len(weeks) > _HISTORY_KEEP_WEEKS:
+        keep_weeks = set(weeks[-_HISTORY_KEEP_WEEKS:])
+        merged = [r for r in merged if str(r.get("stage_week_end")) in keep_weeks]
+
+    merged.sort(key=lambda r: (
+        str(r.get("stage_week_end")), str(r.get("region")),
+        r.get("rank") if r.get("rank") is not None else 0,
+    ))
+
+    try:
+        _atomic_write_jsonl(_history_path(dr), merged)
+    except Exception as e:  # noqa: BLE001 — write failure never breaks a build
+        print(f"::warning title=industry-rank-history::stage_industry: failed to "
+              f"write history ({e})", flush=True)
+        return {"advanced": False, "reason": "write_failed", "week": stage_week_end}
+
+    return {"advanced": True, "reason": None, "week": stage_week_end,
+            "n_records": len(new_records), "n_total": len(merged)}
+
+
+# ---------------------------------------------------------------------------
 # Industry rank HEATMAP (weekly rank-over-time grid, per region)
 # ---------------------------------------------------------------------------
 # Consumed by the Industries surface as a rank-over-time heatmap: rows are GICS
-# industries, columns are trailing Friday weeks (most-recent first), cells are
-# the industry's rank that week (1 = strongest). Source is the committed
-# EquityDesk seed ``industry_ranks.parquet`` (weekly Mansfield-RS ranks, our
-# only multi-week rank history) — the live ``ranks()`` above only produces the
-# CURRENT week from a stage frame, so the heatmap reads history straight from
-# the seed. DISPLAY-TIER / CONTEXT-ONLY: never a signal or a sizing input.
+# industries, columns are trailing Stage weeks (most-recent first), cells are
+# the industry's rank that week (1 = strongest). Source is the house-native
+# `industry_rank_history.jsonl` above — the live ``ranks()`` function only
+# produces the CURRENT week from a stage frame, so the heatmap reads
+# multi-week history straight from the accrual store. DISPLAY-TIER /
+# CONTEXT-ONLY: never a signal or a sizing input.
 
-_HEATMAP_WEEKS = 26           # trailing Friday columns
+_HEATMAP_WEEKS = 26           # trailing Stage-week columns
 _HEATMAP_MAX_ROWS = 90        # cap industries/region (well under the 1.2MB budget)
 _HEATMAP_REGIONS = ("USA", "EUROPE", "ASIA")
-
-
-def _ranks_seed_path(dr: Path) -> Path:
-    return dr / "stage_analysis" / "backfill" / "industry_ranks.parquet"
 
 
 def industry_heatmap(root: Path | None = None,
                      *, weeks: int = _HEATMAP_WEEKS,
                      max_rows: int = _HEATMAP_MAX_ROWS) -> dict:
-    """Per-region rank-over-time grid from the EquityDesk ranks seed.
+    """Per-region rank-over-time grid from the house-native rank history.
 
-    Returns {region: {weeks:[Friday dates, most-recent first],
+    Returns {region: {weeks:[Stage-week dates, most-recent first],
                       rows:[{industry, industry_id, ranks:[rank|null per week]}],
                       n_industries, n_weeks}}. Rows are ordered by the
     most-recent week's rank (strongest first); ``ranks[]`` is aligned to
     ``weeks[]`` with ``null`` where an industry has no rank that week. Fail-open:
-    a missing/unreadable seed yields {} (caller renders an empty state).
+    an absent/empty history yields {} (caller renders an explicit
+    accruing/unavailable state, never a healthy-looking blank panel).
     """
-    import pandas as pd  # noqa: PLC0415
-
     dr = _data_root(root)
-    p = _ranks_seed_path(dr)
-    if not p.exists():
-        return {}
-    try:
-        df = pd.read_parquet(
-            p, columns=["region", "industry_id", "industry_name",
-                        "as_of_date", "rank"])
-    except Exception as e:  # noqa: BLE001
-        log.warning("stage_industry: heatmap seed unreadable (%s)", e)
-        return {}
-    if df.empty:
+    records = _read_history(dr)
+    if not records:
         return {}
 
     out: dict[str, dict] = {}
     try:
-        dates = pd.to_datetime(df["as_of_date"], errors="coerce")
-        df = df.assign(dt_=dates)
-        # Restrict to week-ending Fridays (their as_of convention); the seed is
-        # daily, so a Friday filter yields the clean weekly grid the page draws.
-        fri = df[df["dt_"].dt.weekday == 4]
-        if fri.empty:
-            return {}
         for reg in _HEATMAP_REGIONS:
-            sub = fri[fri["region"] == reg]
-            if sub.empty:
+            sub = [r for r in records if r.get("region") == reg]
+            if not sub:
                 continue
-            grid = _heatmap_region(sub, weeks=weeks, max_rows=max_rows)
+            grid = _heatmap_region_from_history(sub, weeks=weeks, max_rows=max_rows)
             if grid is not None:
                 out[reg] = grid
     except Exception as e:  # noqa: BLE001 — one bad region never sinks the rest
@@ -587,34 +743,32 @@ def industry_heatmap(root: Path | None = None,
     return out
 
 
-def _heatmap_region(sub, *, weeks: int, max_rows: int) -> dict | None:
-    """Build one region's grid. `sub` = Friday rows for a single region."""
-    import pandas as pd  # noqa: PLC0415
-
-    # Trailing `weeks` Friday columns, most-recent first.
-    all_weeks = sorted(sub["dt_"].dropna().unique())
+def _heatmap_region_from_history(sub: list[dict], *, weeks: int,
+                                 max_rows: int) -> dict | None:
+    """Build one region's grid. `sub` = history records for a single region."""
+    all_weeks = sorted({str(r["stage_week_end"]) for r in sub
+                        if r.get("stage_week_end")})
     if not all_weeks:
         return None
     keep = all_weeks[-weeks:]
-    week_labels = [pd.Timestamp(w).date().isoformat() for w in reversed(keep)]
+    week_labels = list(reversed(keep))
     keep_set = set(keep)
-    win = sub[sub["dt_"].isin(keep_set)]
 
-    # rank per (industry_id, week) — dedupe to one row per cell (last wins).
-    win = win.sort_values("dt_")
     name_by_id: dict[str, str] = {}
     ranks_by_id: dict[str, dict] = {}
-    for row in win.itertuples():
-        iid = str(row.industry_id)
+    for r in sub:
+        wk = str(r.get("stage_week_end") or "")
+        if wk not in keep_set:
+            continue
+        iid = str(r.get("industry_id") or "")
         if iid in ("", "nan", "None"):
             continue
-        wk = pd.Timestamp(row.dt_).date().isoformat()
         try:
-            rk = int(row.rank)
-        except (TypeError, ValueError):
+            rk = int(r["rank"])
+        except (TypeError, ValueError, KeyError):
             continue
         ranks_by_id.setdefault(iid, {})[wk] = rk
-        name_by_id[iid] = str(row.industry_name)
+        name_by_id[iid] = str(r.get("industry_name") or iid)
 
     if not ranks_by_id:
         return None
@@ -645,6 +799,33 @@ def _heatmap_region(sub, *, weeks: int, max_rows: int) -> dict | None:
     }
 
 
+def _history_status_block(dr: Path) -> dict:
+    """§7.4 — honest accrual status for the heatmap contract.
+
+    `unavailable` = 0 distinct weeks; `accruing` = 1-25; `ready` = 26+. The
+    client must never render a blank panel that reads as healthy, and must
+    never fabricate 26 weeks — on first deployment the truthful render is one
+    real column.
+    """
+    records = _read_history(dr)
+    distinct_weeks = sorted({str(r["stage_week_end"]) for r in records
+                             if r.get("stage_week_end")})
+    n_weeks = len(distinct_weeks)
+    if n_weeks == 0:
+        status = "unavailable"
+    elif n_weeks < _HEATMAP_WEEKS:
+        status = "accruing"
+    else:
+        status = "ready"
+    return {
+        "status": status,
+        "weeks_available": n_weeks,
+        "weeks_target": _HEATMAP_WEEKS,
+        "first_week": distinct_weeks[0] if distinct_weeks else None,
+        "latest_week": distinct_weeks[-1] if distinct_weeks else None,
+    }
+
+
 def build_industry_heatmap(root: Path | None = None,
                            asof: str | None = None) -> dict:
     """Compute the per-region rank heatmap and write the display-tier artifact.
@@ -665,9 +846,11 @@ def build_industry_heatmap(root: Path | None = None,
         "display_only": True,
         "disclaimer": ("Context only — industry rank-over-time for rotation "
                        "display, never a signal or sizing input."),
-        "source": "stageanalysis_industry_ranks_weekly (EquityDesk seed)",
-        "note": ("cell = industry rank that Friday week (1 = strongest); "
+        "source": ("house-native stage industry rank history "
+                   "(data/stage_analysis/industry_rank_history.jsonl)"),
+        "note": ("cell = industry rank that Stage week (1 = strongest); "
                  "weeks most-recent-first; null = no rank that week"),
+        "history": _history_status_block(dr),
         "regions": regions,
         "n_regions": len(regions),
     }
@@ -693,14 +876,25 @@ def _atomic_write_json(path: Path, obj: Any) -> None:
 
 
 def build(stage_frame=None, root: Path | None = None,
-          asof: str | None = None) -> dict:
+          asof: str | None = None,
+          target_stage_week: str | None = None) -> dict:
     """Compute ranks for all regions, write display-tier artifacts, return the
     contract.  Fail-open throughout.
+
+    Args:
+        target_stage_week: the resolved completed Stage week (Wave 8 §1.2).
+            Threaded into `coverage_snapshot` as `expected_stage_week` so
+            freshness is judged on the Stage-week plane (§6.1), and into
+            `append_industry_rank_history` as the key a healthy build
+            advances (§7.3). ``None`` from a caller that has no current
+            cross-sectional authority — coverage falls back to the daily
+            plane and history does not advance.
 
     Writes:
         data/stage_analysis/industry_ranks.json  (industry-level ranks)
         data/stage_analysis/industry_name_pctile.json  (per-name Ind %ile)
         data/stage_analysis/industry_heatmap.json  (rank-over-time grid)
+        data/stage_analysis/industry_rank_history.jsonl  (weekly accrual, §7)
     """
     dr = _data_root(root)
     if asof is None:
@@ -730,7 +924,8 @@ def build(stage_frame=None, root: Path | None = None,
     for r in all_ranks:
         by_region.setdefault(r["region"], []).append(r)
     coverage = coverage_snapshot(source_frame, expected_asof=asof,
-                                 output_rows=len(all_ranks))
+                                 output_rows=len(all_ranks),
+                                 expected_stage_week=target_stage_week)
 
     contract = {
         "schema": "stage_industry_ranks.v1",
@@ -742,11 +937,21 @@ def build(stage_frame=None, root: Path | None = None,
         "display_only": True,
         "disclaimer": ("Context only — industry momentum ranks for rotation "
                        "display, never a signal or sizing input."),
+        # Wave 8 §6.3 — separate WHAT we compute (method, house-native, plane)
+        # from WHAT we historically compare it against (calibration, an
+        # ordinal yardstick only). The shipping path builds this frame from
+        # our own OHLCV classifier records; EquityDesk is never an input.
+        "method": {
+            "live": ("House-native: Mansfield RS and 4-week RS change computed "
+                     "from our own OHLCV via the Weinstein stage classifier, "
+                     "grouped by reference GICS taxonomy. Ranks are per-region "
+                     "z-scores of the blended score."),
+            "plane": "completed W-FRI stage week",
+        },
         "calibration": {
             "target": "stageanalysis_industry_ranks_weekly (EquityDesk)",
-            "method": ("our aggregation of THEIR Mansfield RS + rate-of-change "
-                       "(not a from-our-OHLCV RS reconstruction — that is future "
-                       "work)"),
+            "yardstick": ("Historical comparison only — the EquityDesk dataset "
+                          "is NOT an input to the shipping calculation."),
             "note": ("rank rho ~0.4 (USA .36 / EUR .49 / ASIA .43); "
                      "quartile-bucket agreement ~35% — measured, ordinal only"),
         },
@@ -791,7 +996,18 @@ def build(stage_frame=None, root: Path | None = None,
     except Exception as e:  # noqa: BLE001
         print(f"::warning:: stage_industry: failed to write name pctile ({e})", flush=True)
 
-    # Rank-over-time heatmap grid (reads the weekly ranks seed directly, so it
+    # Wave 8 §7.3 — house-native weekly history accrual. Advances only on a
+    # genuinely healthy, current build (see the function docstring for the
+    # exact guard); every other case skips and warns naming why. Must run
+    # BEFORE the heatmap rebuild below so a freshly-accrued week is visible
+    # in the same build that produced it.
+    try:
+        append_industry_rank_history(all_ranks, target_stage_week, coverage, root)
+    except Exception as e:  # noqa: BLE001 — history accrual never breaks a build
+        print(f"::warning title=industry-rank-history::stage_industry: failed to "
+              f"append history ({e})", flush=True)
+
+    # Rank-over-time heatmap grid (reads the house-native weekly history, so it
     # runs independent of the stage frame). Fail-open — never breaks the build.
     try:
         build_industry_heatmap(root=root, asof=asof)

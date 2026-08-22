@@ -1,0 +1,200 @@
+schema: imce.prospective_observation_registration.candidate.v0
+status: proposed_records_only_NOT_ACTIVATED
+authority:
+  rank: false
+  gate: false
+  size: false
+  escalate: false
+  trade: false
+  originate: false
+  display: false
+parent_freeze: research/IMCE_ROUND3_ARCHITECTURE_FREEZE_BY_FABLE.md
+parent_merge_commit: ec44ae7d1659
+wave: IMCE-CELH-1 (A1)
+subject:
+  issuer_cik: "0001341766"
+  issuer_name: Celsius Holdings, Inc.
+  former_names: [VECTOR VENTURES CORP.]
+  price_plane: data/yahoo/CELH.parquet
+  data_os_security_id: unresolved_identity
+  stock_identity_identity_epoch: not_yet_built
+
+preamble: >
+  This file REGISTERS NOTHING. It is a records-only proposal for what Mastermind should
+  begin capturing from now onward so that the fields this autopsy found unobservable
+  become observable prospectively. No collector, schedule, store, page, trial family, or
+  runtime path is created or requested by this document. Activation is a separate wave
+  with its own approval; nothing here auto-rolls. CELH remains DESCRIPTIVE forever and
+  may never enter an inferential sample (freeze D9) — these observations exist to make
+  the MECHANISM CLASS instrumentable on other issuers, not to build a CELH model.
+
+first_observation_wins: true
+no_historical_backfill: true
+corrections_append_and_supersede: true
+missing_is_never_zero: true
+
+# ---------------------------------------------------------------------------
+# TIER 1 — capturable today from public first-party sources at known cadence
+# ---------------------------------------------------------------------------
+tier_1_observable_now:
+  - field: accrued_promotional_allowance
+    clock: accounting_translation
+    why: >
+      The single most under-instrumented translation field found. It moved 99.8 -> 453.0
+      USD millions (2023-12-31 -> 2026-06-30) while quarterly revenue moved 2.4x, and it
+      is the balance-sheet stock corresponding to the trade investment that reduces
+      reported net revenue.
+    source: filed 10-Q/10-K balance sheet and 8-K EX-99.1 press-release balance sheet
+    capture_note: >
+      NOT available from the SEC XBRL companyfacts API — no CELH custom namespace is
+      published. Requires statement-level parsing. Capture the value, the statement date,
+      the accession, and the filing date separately.
+    stamps: [measurement_end, available_at, accession]
+    pit_class: original_disclosure_pinned
+    evidence_class: observed_numeric
+
+  - field: issuer_cited_retail_sellthrough
+    clock: operating
+    why: The sell-through leg of the wedge; the only end-demand read available at all.
+    source: 8-K EX-99.1 press release citing Circana
+    capture_note: >
+      MUST capture the verbatim denominator footnote with the value — scope (portfolio vs
+      named brand), universe (MULOC vs MULO+ w/C vs a custom segment), category (RTD Energy),
+      and the exact window end date. Three different denominators appeared inside 2023-2026;
+      a value captured without its denominator is unusable and must be recorded as missing.
+    stamps: [measurement_start, measurement_end, available_at, denominator_string]
+    pit_class: original_disclosure_pinned
+    evidence_class: issuer_claim_numeric
+    rights: GO_LIMITED — issuer-disclosed aggregate only; Circana direct is HOLD.
+
+  - field: per_brand_revenue_and_growth
+    clock: accounting_translation
+    why: >
+      After 2025-04-01 consolidated revenue is a multi-brand aggregate and cannot be
+      differenced against a single brand's sell-through. Per-brand revenue is what makes
+      the wedge computable at all in the portfolio era.
+    source: 8-K EX-99.1 press release narrative
+    capture_note: Capture per named brand; absence for a brand-quarter is not_available_for_date.
+    stamps: [measurement_start, measurement_end, available_at]
+    evidence_class: issuer_claim_numeric
+
+  - field: distribution_points_and_acv
+    clock: operating
+    why: >
+      Separates distribution-driven sell-in growth from demand-driven growth. CELSIUS was
+      at 98.5% ACV in FY2025 — the lever is nearly exhausted, which is only visible with
+      the series.
+    source: 8-K EX-99.1 press release citing Circana
+    capture_note: First disclosed FY2025; no 2018-2024 comparator exists and none can be created.
+    stamps: [measurement_end, available_at]
+    evidence_class: issuer_claim_numeric
+
+  - field: dollars_per_point_of_distribution
+    clock: operating
+    why: The productivity-per-point read; the direct test of falsifier H4.
+    source: 8-K EX-99.1 press release
+    capture_note: One observation exists (2026Q2, +16% QoQ). Treat as a series of length 1.
+    stamps: [measurement_start, measurement_end, available_at]
+    evidence_class: issuer_claim_numeric
+
+  - field: channel_inventory_narrative_and_quantification
+    clock: operating
+    why: >
+      The mechanism itself. Quantified only three times in nine years and only when the
+      issuer elected to; capturing every instance at disclosure time is the only way a
+      forward series ever exists.
+    source: 8-K EX-99.1, 10-Q MD&A
+    capture_note: >
+      Capture BOTH the directional narrative and any dollar quantification, separately
+      typed. A quarter with narrative but no number is issuer_claim_directional, not a
+      missing number.
+    stamps: [measurement_start, measurement_end, available_at]
+    evidence_class: [issuer_claim_directional, issuer_claim_numeric]
+
+  - field: distribution_agreement_events
+    clock: operating
+    why: >
+      Amendment No. 1 (2024-03-23, available 2024-03-26) preceded the first destock
+      disclosure by 42 days and is the earliest structural warning in the 2024 episode.
+    source: 8-K items 1.01 / 1.02 / 2.01
+    capture_note: Capture event_time AND filing date; they differ (2022-07-28 vs 2022-08-03).
+    stamps: [event_time, available_at, items]
+    evidence_class: deterministic_fact
+
+  - field: retro_disclosure_events
+    clock: accounting_translation
+    why: >
+      A first-class observation in its own right. When a filing restates the CAUSE of a
+      prior period, record the lag. CELH's Q1-2023 pipeline fill carried a 364-day lag.
+    source: any filing that characterizes a prior period's drivers for the first time
+    capture_note: >
+      Record (period_referred_to, original_available_at, retro_available_at, lag_days).
+      This field is what prevents a later explanation being projected backward.
+    stamps: [measurement_end, original_available_at, available_at, lag_days]
+    evidence_class: issuer_claim_numeric
+    missingness_on_use: reconstructed_not_operational_pit
+
+  - field: circana_denominator_string
+    clock: operating
+    why: >
+      A denominator change inside an episode silently destroys comparability. Capturing
+      the string makes the break detectable instead of invisible.
+    source: press-release footnotes
+    stamps: [available_at]
+    evidence_class: deterministic_fact
+    missingness_on_change: superseded_by_recompute
+
+# ---------------------------------------------------------------------------
+# TIER 2 — capturable only prospectively from capture date (no history exists)
+# ---------------------------------------------------------------------------
+tier_2_prospective_from_capture:
+  - field: equity_estimate_revisions
+    clock: market_recognition
+    rights: REUSE_LIMITED
+    rule: >
+      Absence of a captured historical snapshot => not_reconstructable for that cutoff;
+      the field is DROPPED and never backfilled (freeze §6 control 10 — a rule, not a
+      control). A current-vintage estimate history is a backfill and is forbidden.
+  - field: short_interest_and_borrow
+    clock: market_recognition
+    rights: REUSE (FINRA) / REUSE_LIMITED (IBKR borrow)
+    rule: Joined on knowable/publication date only — never the settlement date.
+
+# ---------------------------------------------------------------------------
+# TIER 3 — wanted, and NOT obtainable. Recorded so nobody re-proposes them.
+# ---------------------------------------------------------------------------
+tier_3_unavailable:
+  - field: distributor_channel_inventory_level_units_or_weeks
+    state: not_reconstructable
+    why: Never disclosed in any form in the window. The central mechanism has no direct sensor.
+  - field: circana_direct_consistent_denominator_series
+    state: rights_blocked
+    why: Enterprise contract, confidentiality-bound; freeze §8 disposition is HOLD.
+  - field: earnings_call_transcript_text
+    state: rights_blocked
+    why: Reproduction rights not established for this wave; no transcript is quoted in this packet.
+  - field: household_or_buyer_panel_data
+    state: rights_blocked
+    why: >
+      Would separate internal cannibalization (CELSIUS -> Alani) from competitive share
+      loss — the open half of falsifier H6. Not licensed.
+  - field: sellthrough_sellin_wedge_before_2024Q1
+    state: not_reconstructable
+    why: >
+      Requires both legs in comparable windows. Absent for M0/M1 by construction.
+      Typed absence — not backfillable and never zero.
+
+recognition_telemetry:
+  construction_name: >
+    engine.canon._resample_weekly(daily_close, "2W-FRI") + engine.technicals.macd_hist
+    (classic 12-26-9), completed-bar shift(1) semantics
+  fields: [macd, signal, hist, hist_sign, hist_first_difference, state, cross, closed_bar_flag]
+  forbidden: >
+    Any forward-return, horizon, win-rate, hit-rate, p-value, skill or accuracy field.
+    Outcome fields attach only after the A4 criteria commit (two-commit discipline, G8-B1).
+  third_implementation: forbidden — the house holds exactly two canonical 2W MACD constructions.
+
+stop: >
+  This registration is a record. Activation requires its own wave approval, and any trial
+  family it might one day feed requires A2 (CPI vocabulary audit) and A4 (declared_budget
+  rows) first. Nothing in this file schedules, gates, dispatches, or proves liveness.

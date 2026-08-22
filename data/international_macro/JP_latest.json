@@ -8,7 +8,7 @@
   "scope_en": "Japan national economy; Nikkei 225 is market context, not the macro universe.",
   "scope_zh": "日本全国经济；日经225仅作市场背景，并非宏观统计范围。",
   "asof": "2026-08-20",
-  "built": "2026-08-20 08:52 UTC",
+  "built": "2026-08-21 04:06 UTC",
   "regime": {
     "quad": "Q3",
     "name": "Stagflation",
@@ -204,17 +204,17 @@
   },
   "risk": {
     "state": "calm",
-    "top_score": 41,
+    "top_score": 35,
     "dominant_en": "Calm — no driver elevated",
     "dominant_zh": "平静 — 无驱动升高",
     "h21": 0.307,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 40.7,
+      "intensity": 34.7,
       "peak": 93.7,
       "peak_days_ago": 27,
-      "off_peak": 53.0,
-      "velocity": -8.7,
+      "off_peak": 58.9,
+      "velocity": -14.7,
       "phase": "receding",
       "reached_risk": true,
       "state_now": "calm",
@@ -244,10 +244,10 @@
         55.0,
         64.9,
         53.2,
-        52.0,
-        40.7
+        49.2,
+        34.7
       ],
-      "spark_pts": "3.0,10.9 6.9,13.5 10.8,6.2 14.7,6.8 18.7,5.9 22.6,3.0 26.5,3.3 30.4,9.6 34.3,11.6 38.2,8.4 42.1,14.1 46.0,17.0 50.0,17.2 53.9,15.7 57.8,17.0 61.7,18.4 65.6,15.7 69.5,16.6 73.4,19.3 77.3,17.0 81.3,12.8 85.2,17.7 89.1,18.2 93.0,23.0",
+      "spark_pts": "3.0,10.0 6.9,12.3 10.8,5.8 14.7,6.4 18.7,5.5 22.6,3.0 26.5,3.2 30.4,8.9 34.3,10.7 38.2,7.8 42.1,12.8 46.0,15.4 50.0,15.6 53.9,14.2 57.8,15.4 61.7,16.7 65.6,14.2 69.5,15.1 73.4,17.5 77.3,15.4 81.3,11.7 85.2,16.1 89.1,17.6 93.0,23.0",
       "spark_peak": {
         "x": 22.6,
         "y": 3.0
@@ -266,7 +266,7 @@
         "tier": "A",
         "label_en": "Parabolic extension / exhaustion",
         "label_zh": "抛物线伸展／透支",
-        "score": 79.4,
+        "score": 78.3,
         "band": "elevated",
         "firing_legs": [
           {
@@ -276,7 +276,7 @@
           },
           {
             "leg": "ext_etf",
-            "pctile": 0.769,
+            "pctile": 0.746,
             "confirmed": false
           }
         ]
@@ -286,20 +286,9 @@
         "tier": "A",
         "label_en": "US rate shock",
         "label_zh": "美债利率冲击",
-        "score": 52.7,
+        "score": 44.9,
         "band": "calm",
-        "firing_legs": [
-          {
-            "leg": "us_rate_10y",
-            "pctile": 0.631,
-            "confirmed": false
-          },
-          {
-            "leg": "us_real_rate",
-            "pctile": 0.562,
-            "confirmed": false
-          }
-        ]
+        "firing_legs": []
       },
       {
         "scare": "capital_flow",
@@ -372,8 +361,8 @@
       "key": "fx",
       "label_en": "FX reference",
       "label_zh": "汇率参考",
-      "raw": 158.32,
-      "value": "158.32",
+      "raw": 158.276,
+      "value": "158.28",
       "unit": "",
       "asof": null
     },
@@ -381,8 +370,8 @@
       "key": "fx_strength_3m",
       "label_en": "Currency strength, 3m",
       "label_zh": "货币强弱，3个月",
-      "raw": 1.13,
-      "value": "1.13%",
+      "raw": 1.16,
+      "value": "1.16%",
       "unit": "%",
       "asof": null
     },
@@ -464,7 +453,7 @@
       "title_zh": "日元压力",
       "why_en": "Imported inflation, funding and foreign-flow pressure.",
       "why_zh": "输入性通胀、融资与外资流动压力。",
-      "value": "158.32",
+      "value": "158.28",
       "available": true,
       "metric": "fx",
       "source_key": "boj",
@@ -554,7 +543,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2021-06",
-      "age_days": 1906,
+      "age_days": 1907,
       "state": "stale",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -562,7 +551,7 @@
     {
       "metric": "gdp",
       "asof": "2026-04",
-      "age_days": 141,
+      "age_days": 142,
       "state": "fresh",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -570,16 +559,16 @@
     {
       "metric": "unemployment",
       "asof": "2026-06",
-      "age_days": 80,
-      "state": "fresh",
+      "age_days": 81,
+      "state": "stale",
       "label_en": "Labour",
       "label_zh": "就业"
     },
     {
       "metric": "yield_10y",
       "asof": "2026-06",
-      "age_days": 80,
-      "state": "fresh",
+      "age_days": 81,
+      "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"
     }

@@ -789,6 +789,17 @@ def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
                      _ca_doc.get("meta", {}).get("n_total", 0))
         except Exception as _cale:  # noqa: BLE001 — ledger is additive; never fatal
             log.warning("ca track_ledger emit failed (%s) — render continues", _cale)
+        # Zero-authority shadow substrate (WS:PROPHET-HK-CA-REVAMP,
+        # research/PROPHET_SHADOW_CONTRACT_V1.md §4). Placed DOWNSTREAM of the
+        # append_board call and the track_ledger emit above — reuses the exact
+        # same `calls` population and `asof` handed to append_board. One
+        # fail-soft call; write_shadow() never raises, but this is wrapped
+        # anyway so a defect here can never touch the board-ledger block above.
+        try:
+            from engine import board_shadow
+            board_shadow.write_shadow(calls, market="CA", asof=asof)
+        except Exception as _cse:  # noqa: BLE001 — additive research telemetry; never fatal
+            log.warning("ca board_shadow write failed (%s) — render continues", _cse)
     except Exception as e:  # noqa: BLE001 — fail-open-LOUD (health row + log)
         health.append({"en": "Board ledger (FAILED — see build log)",
                        "zh": "榜单账本（失败 — 查看构建日志）",

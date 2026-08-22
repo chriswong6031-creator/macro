@@ -1,60 +1,20 @@
 {
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
-  "as_of": "2026-08-19",
-  "generated_utc": "2026-08-21T01:54:41Z",
-  "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
-  "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
+  "as_of": "2026-08-21",
+  "generated_utc": "2026-08-21T21:09:01Z",
+  "note": "Empty overlay: no candidates in us_standouts_v2",
+  "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded.",
   "board_concentration": {
-    "n": 1,
-    "n_eff": 1.0,
-    "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 1 candidates \u2248 1.0 independent bets."
-  },
-  "same_thesis_groups": [],
-  "earnings_coverage_frac": 1.0,
-  "by_ticker": {
-    "JNJ": {
-      "verdict": "new",
-      "max_similarity": 0.0,
-      "basis": "membership+high-tier-factor",
-      "nearest": [],
-      "earnings_leg": {
-        "next_date": "2026-10-13",
-        "same_week_peers": [],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "JNJ: no close peers found in the candidate set.",
-      "why_zh": "JNJ\uff1a\u5019\u9009\u96c6\u4e2d\u672a\u627e\u5230\u76f8\u8fd1\u7684\u540d\u79f0\u3002"
-    }
-  },
-  "pair_basis": {},
-  "verdicts": {
-    "duplicate_thresh": 0.65,
-    "partial_thresh": 0.35,
-    "duplicate_note": "similarity >= 0.65 \u2192 same hidden trade",
-    "partial_note": "similarity >= 0.35 \u2192 partial overlap",
-    "new_note": "similarity < 0.35 \u2192 distinct bet"
+    "n": 0,
+    "n_eff": 0.0,
+    "basis": "none"
   },
   "n_eff_by_lane": {
-    "entry_open": 1.0,
+    "entry_open": null,
     "setting_up": null
   },
-  "source_passport": {
-    "factor_betas": {
-      "path": "site/factor_betas.json",
-      "found": true,
-      "as_of": "2026-08-07"
-    },
-    "us_standouts_v2": {
-      "path": "site/factordata/us_standouts_v2.json",
-      "found": true,
-      "as_of": "2026-08-19"
-    },
-    "membership": {
-      "path": "data/baskets/membership.json",
-      "found": true
-    }
-  }
+  "by_ticker": {},
+  "pair_basis": {},
+  "verdicts": {}
 }

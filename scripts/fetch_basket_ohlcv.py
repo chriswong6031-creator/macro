@@ -28,7 +28,9 @@ Usage:
                                                                    # data/finviz_screener/<flt>.json
     python -m scripts.fetch_basket_ohlcv --finviz ... --members    # index universes UNIONED
                                                                    # with the basket membership
-    python -m scripts.fetch_basket_ohlcv --census                  # no fetch; per-member
+    python -m scripts.fetch_basket_ohlcv --finviz ... --store      # ...UNIONED with every
+                                                                   # ticker already on disk
+    python -m scripts.fetch_basket_ohlcv --census                  # no fetch; store-wide
                                                                    # staleness tripwire only
 The explicit/finviz modes back the NDX/Russell subsector desks (the deep store
 engine/basket_index prefers also serves their EW subsector indices). An explicit universe
@@ -37,6 +39,23 @@ must keep membership covered (2026-07-16 incident: PR #776 switched collect.py t
 --finviz-only and 528 member files silently froze at 2026-06-29 for 11 sessions while the
 aggregate as_of stayed fresh off the NDX/RUT names; check_membership_staleness below is
 the per-member tripwire that makes that failure mode visible).
+
+--store EXISTS BECAUSE AN INDEX UNIVERSE SHRINKS (2026-08-20 fetch-universe drift).
+The finviz screener JSONs are re-pulled nightly, so a name dropped by an index
+reconstitution silently leaves the maintained set — and because nothing ever fetched it
+again, its parquet froze on disk FOREVER while `engine/stage_analysis.build_universe()`
+kept classifying it (that function globs the store, so it never forgets a ticker).
+Measured on 2026-08-20: 183 of 2,782 files were stale, 179 of them outside
+`membership ∪ finviz(idx_ndx, idx_rut)`, with 110 frozen on one day — 2026-07-10 — which
+is a reconstitution drop-out, not 110 simultaneous delistings. A live vendor probe of that
+cluster returned a current tape for 10 of 10 sampled names (ARWR/AXSM/BBIO/BE/AAOI/...),
+so the tapes were never dead: they were merely unrequested. --store closes that hole by
+making the store SELF-MAINTAINING — every ticker already on disk keeps being fetched, so
+leaving an index can no longer freeze a file. The one lawful way out of the fetch universe
+is now an EXIT ROW in config/delisted_symbols.yml (lib/delisted_symbols), which this
+module subtracts from every derived leg: a security that stopped existing must not be
+requested nightly forever. See `check_membership_staleness` for the census that keeps the
+two halves honest.
 """
 from __future__ import annotations
 
@@ -52,7 +71,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config  # noqa: E402
+from lib import config, delisted_symbols  # noqa: E402
 from lib.ticker_aliases import YAHOO_FETCH_ALIASES as ALIASES  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -149,13 +168,64 @@ def _finviz_tickers(filters: list[str]) -> list[str]:
     return sorted(out)
 
 
-def _resolve_universe(explicit: list[str], fv: list[str], with_members: bool) -> list[str]:
+def _store_tickers(odir: Path | None = None) -> list[str]:
+    """Every ticker that already has a parquet in the deep store.
+
+    This is the SELF-MAINTENANCE leg (--store): a file on disk is, by itself, a standing
+    claim that something once wanted this tape. Honouring that claim is what stops an
+    index reconstitution from silently orphaning a name — see the module docstring."""
+    odir = odir or (config.data_dir() / "baskets" / "ohlcv")
+    if not odir.is_dir():
+        return []
+    return sorted(p.stem for p in odir.glob("*.parquet"))
+
+
+def _resolve_universe(explicit: list[str], fv: list[str], with_members: bool,
+                      with_store: bool = False) -> list[str]:
     """The tickers a run maintains. Membership is the default universe; an explicit
-    --tickers/--finviz set replaces it unless with_members unions it back in."""
-    pool: set[str] = set(explicit) | set(fv)
-    if with_members or not pool:
-        pool |= set(_membership_tickers())
-    return sorted(pool)
+    --tickers/--finviz set replaces it unless with_members unions it back in.
+    with_store additionally unions every ticker already on disk.
+
+    Resolved exits (config/delisted_symbols.yml) are subtracted from every DERIVED leg —
+    membership, finviz and store — because a security that stopped existing can never
+    return and requesting it nightly forever parks a permanent entry in the missing-symbol
+    warning, training the reader to ignore the one tripwire that would catch the next real
+    outage. An operator's EXPLICIT --tickers is never filtered: asking for a dead symbol by
+    name is a deliberate backfill/debug act, not the nightly's standing request list."""
+    derived: set[str] = set(fv)
+    if with_store:
+        derived |= set(_store_tickers())
+    if with_members or not (derived or explicit):
+        derived |= set(_membership_tickers())
+    return sorted((derived - delisted_symbols.tickers()) | set(explicit))
+
+
+# The finviz screener universes the NIGHTLY IS CONTRACTUALLY REQUIRED TO MAINTAIN, declared
+# here rather than read back off the fetch call's arguments. That independence is the whole
+# point (the #776 lesson): a census parameterised from the fetch's own argv goes blind at
+# exactly the moment the fetch loses a universe, which is the failure it exists to catch.
+# If collect.py stops passing these filters, the census keeps judging their names and the
+# resulting laggards are reported — loudly — instead of quietly leaving the ruler.
+MAINTAINED_FINVIZ_FILTERS: tuple[str, ...] = ("idx_ndx", "idx_rut")
+
+
+def _sponsored_universe() -> tuple[set[str], list[str]]:
+    """(tickers someone actively DECLARES should be tracked, filters that failed to resolve).
+
+    Sponsorship = an active basket-membership row or a declared finviz index universe. It is
+    deliberately NOT the same thing as "maintained": --store also maintains names no index or
+    curator claims any more, and telling those two apart is what lets the census separate a
+    BROKEN PULL (sponsored, lagging) from an ORPHAN (unsponsored, lagging) — the first is an
+    outage, the second is a name awaiting re-sponsorship or an exit row."""
+    unresolved: list[str] = []
+    fv: set[str] = set()
+    base = config.data_dir() / "finviz_screener"
+    for flt in MAINTAINED_FINVIZ_FILTERS:
+        got = _finviz_tickers([flt])
+        if not got or not (base / f"{flt}.json").exists():
+            unresolved.append(flt)
+        fv |= set(got)
+    return (set(_membership_tickers(active_only=True)) | fv) - delisted_symbols.tickers(), unresolved
 
 
 # ------------------------------------------------------------------ staleness tripwire
@@ -231,6 +301,30 @@ def check_membership_staleness(odir: Path | None = None, members: list[str] | No
     named in `inactive` with its last bar and exit stamp, so the marker EXPLAINS it instead
     of going quietly green (BLD/TopBuild: acquired by QXO, NYSE-suspended 2026-07-01, no
     successor symbol — it read as a 22-session red line for a month).
+
+    THE CENSUS JUDGES THE WHOLE STORE, NOT THE MEMBERSHIP SUBSET (2026-08-20). It used to
+    ask only the 702 active members, so on a store of 2,782 files holding 183 stale ones it
+    reported `n_stale: 1` — and that blindness is exactly why 179 orphaned files reached
+    production. Every file now lands in one of three dispositions, and the three are kept
+    apart because their CURES are different:
+
+      * `stale`     — SPONSORED (an active membership row or a declared index universe,
+                      `_sponsored_universe`) and lagging. Nothing should be able to sponsor
+                      a name and not fetch it, so this is a BROKEN PULL: an outage. Alarm.
+      * `unsponsored` — on disk, lagging, and claimed by no membership row and no declared
+                      index universe. Not an outage — a name an index dropped. --store keeps
+                      fetching it, so a live tape self-heals within one nightly; what remains
+                      here after that is a tape that has genuinely STOPPED and needs a
+                      resolved exit row (or re-sponsorship). A drainable work queue, reported
+                      under its own annotation so it never dilutes the outage alarm.
+      * `retired`   — a resolved exit row in config/delisted_symbols.yml. The security stopped
+                      existing; its last bar is a FACT, not a defect. Disclosed with its
+                      receipt and excluded from every alarm, at ANY lag. AVB (AvalonBay,
+                      acquired 2026-08-17) had a well-formed exit row on 2026-08-20 while
+                      still sitting one session behind the store max — nothing read the
+                      ledger, so it was days away from becoming BLD's permanent red line for
+                      the second time.
+
     Writes data/quality/basket_ohlcv_freshness.json and returns the payload."""
     payload: dict = {"status": "error", "checked_at": datetime.now(timezone.utc).isoformat(),
                      "threshold_sessions": threshold}
@@ -251,10 +345,20 @@ def check_membership_staleness(odir: Path | None = None, members: list[str] | No
             _write_freshness_marker(payload)
             return payload
         store_max = max(last.values())
+        dead = delisted_symbols.tickers()
+        # The alarm ruler is the SPONSORED universe (active membership + the declared index
+        # universes), not membership alone — a broken pull on an NDX/Russell name was
+        # invisible to this census for as long as it existed. `members` stays the ruler for
+        # `missing`/`absent_all_rungs` below, whose subject is basket COVERAGE (a basket
+        # rendering on N-1 members), which an index name cannot affect.
+        if explicit_members:
+            sponsored, finviz_unresolved = set(members) - dead, []
+        else:
+            sponsored, finviz_unresolved = _sponsored_universe()
         stale: dict[str, dict] = {}
         behind_ok = 0
-        missing = sorted(t for t in members if t not in last)
-        for t in members:
+        missing = sorted(t for t in members if t not in last and t not in dead)
+        for t in sponsored:
             d = last.get(t)
             if d is None or d >= store_max:
                 continue
@@ -263,13 +367,49 @@ def check_membership_staleness(odir: Path | None = None, members: list[str] | No
                 stale[t] = {"last": d.isoformat(), "sessions_behind": lag}
             elif lag > 0:
                 behind_ok += 1
+        stale = dict(sorted(stale.items(), key=lambda kv: -kv[1]["sessions_behind"]))
+
+        # --- the store plane: every file, including the ones nothing sponsors any more ---
+        # A resolved exit is disclosed at ANY lag (its last bar is a fact, not a defect) and
+        # never reaches an alarm bucket. Everything else on disk that no one sponsors is an
+        # ORPHAN: --store keeps fetching it, so a live tape self-heals by the next nightly
+        # and only a genuinely stopped one persists here.
+        retired: dict[str, dict] = {}
+        for t in sorted(dead & set(last)):
+            row = delisted_symbols.disclosure(t) or {}
+            d = last[t]
+            retired[t] = {"last": d.isoformat(),
+                          "sessions_behind": _sessions_behind(d, store_max) if d < store_max else 0,
+                          # `last_session` is the TRUE tape end; `last` is the store tip, and
+                          # the two differ whenever the vendor flat-forwards a dead symbol
+                          # (AVB's store tip 2026-08-19 is a 0-volume repeat carried four
+                          # sessions past its real 2026-08-14 close). Reporting both is what
+                          # lets a reader see padding rather than trust it as trading.
+                          "last_session": row.get("last_session"),
+                          "delisted_on": row.get("on"),
+                          "reason": row.get("reason"),
+                          # null = nothing continues this price series (ledger header)
+                          "successor_ticker": row.get("successor_ticker")}
+        unsponsored: dict[str, dict] = {}
+        unsponsored_fresh = 0
+        for t in sorted(set(last) - sponsored - dead):
+            d = last[t]
+            if d >= store_max:
+                unsponsored_fresh += 1
+                continue
+            lag = _sessions_behind(d, store_max)
+            if lag > threshold:
+                unsponsored[t] = {"last": d.isoformat(), "sessions_behind": lag}
+            else:
+                unsponsored_fresh += 1
+        unsponsored = dict(sorted(unsponsored.items(), key=lambda kv: -kv[1]["sessions_behind"]))
         # Disclosure, not silence: an inactive member whose tape has ALSO stopped is named
         # here with its last real bar and exit stamp. Excluded from n_stale (it is not a
         # broken pull) but never invisible — a delisting must be readable in the marker.
         inactive: dict[str, dict] = {}
         for t, rec in ({} if explicit_members else _removed_members()).items():
             d = last.get(t)
-            if d is None or d >= store_max:
+            if d is None or d >= store_max or t in dead:   # a resolved exit is `retired`
                 continue
             lag = _sessions_behind(d, store_max)
             if lag > threshold:
@@ -278,15 +418,69 @@ def check_membership_staleness(odir: Path | None = None, members: list[str] | No
         # fallbacks cover the rest, so only these are actual coverage loss.
         dark = _absent_from_all_rungs(missing, odir.parent.parent)
         payload.update({
+            # `status` stays bound to the SPONSORED plane. Orphans deliberately do not turn
+            # it red: the genuinely-stopped tail of them can only be cleared by curating exit
+            # rows, and a top-line status that stays red until someone does is a status
+            # nobody reads — the same warning-fatigue argument config/delisted_symbols.yml
+            # makes about never requesting a dead symbol forever. They get their own
+            # annotation and their own counts instead.
             "status": "stale" if (stale or missing) else "ok",
             "store_max": store_max.isoformat(), "n_members": len(members),
             "n_stale": len(stale), "n_behind_within_threshold": behind_ok,
-            "stale": dict(sorted(stale.items(), key=lambda kv: -kv[1]["sessions_behind"])),
+            "stale": stale,
             "missing": missing,
             "inactive": dict(sorted(inactive.items(), key=lambda kv: -kv[1]["sessions_behind"])),
             "absent_all_rungs": dark,
             "n_absent_all_rungs": len(dark),
+            # --- store plane (2026-08-20): the whole store, not the membership subset ---
+            "n_store_files": len(last),
+            "n_sponsored": len(sponsored),
+            "n_sponsored_no_file": len(sponsored - set(last)),
+            "unsponsored": unsponsored,
+            "n_unsponsored_stale": len(unsponsored),
+            "n_unsponsored_fresh": unsponsored_fresh,
+            "retired": retired,
+            "n_retired": len(retired),
+            # A declared universe that resolves to NOTHING is itself the outage: every name
+            # it sponsors silently becomes an orphan. Named so the marker distinguishes
+            # "the index dropped 110 names" from "the screener pull failed".
+            "maintained_finviz_filters": list(MAINTAINED_FINVIZ_FILTERS),
+            "finviz_unresolved": finviz_unresolved,
         })
+        if finviz_unresolved:
+            fmsg = (f"declared finviz universe(s) resolved to nothing: "
+                    f"{', '.join(finviz_unresolved)} — every name they sponsor now reads as "
+                    f"UNSPONSORED, so a failed screener pull is masquerading as an index "
+                    f"reconstitution. Check data/finviz_screener/<filter>.json")
+            print(f"::warning title=basket-ohlcv-finviz-unresolved::{fmsg}", flush=True)
+            log.warning(fmsg)
+        if unsponsored:
+            worst_u = max(unsponsored.items(), key=lambda kv: kv[1]["sessions_behind"])
+            umsg = (f"basket OHLCV store: {len(unsponsored)} file(s) are stale AND sponsored by "
+                    f"no active membership row or declared index universe "
+                    f"({', '.join(MAINTAINED_FINVIZ_FILTERS)}) — worst {worst_u[0]} @ "
+                    f"{worst_u[1]['last']}, {worst_u[1]['sessions_behind']} sessions behind: "
+                    f"{', '.join(list(unsponsored)[:8])}. --store keeps fetching these, so a name "
+                    "still trading self-heals on the next nightly; one that persists here has a "
+                    "STOPPED tape and needs either re-sponsorship (a membership row / index "
+                    "filter) or a resolved exit row in config/delisted_symbols.yml. Until then "
+                    "engine/stage_analysis.build_universe() keeps classifying it, because that "
+                    "function globs the store and never forgets a ticker. "
+                    "See data/quality/basket_ohlcv_freshness.json")
+            print(f"::warning title=basket-ohlcv-unsponsored-stale::{umsg}", flush=True)
+            log.warning(umsg)
+            if ops_alert:
+                try:
+                    from engine.alert_triage import push_ops_alert  # noqa: PLC0415
+                    push_ops_alert(source="fetch_basket_ohlcv", type_="basket_ohlcv_unsponsored_stale",
+                                   message=umsg, severity="minor", lane="collect", window_hours=20)
+                except Exception as e:  # noqa: BLE001 — fail-open, the ::warning stands
+                    log.debug("unsponsored census: push_ops_alert unavailable (%s)", e)
+        if retired:
+            log.info("staleness census: %d resolved exit(s) disclosed, excluded from every "
+                     "alarm: %s", len(retired),
+                     ", ".join(f"{t} (last {v['last']}, delisted {v['delisted_on']})"
+                               for t, v in retired.items()))
         if inactive:
             log.info("staleness census: %d inactive member tape(s) stopped, disclosed not "
                      "flagged: %s", len(inactive),
@@ -402,8 +596,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--members", action="store_true",
                     help="union the basket membership into an explicit --tickers/--finviz "
                          "universe (it is the default only when neither is given)")
+    ap.add_argument("--store", action="store_true",
+                    help="union every ticker already in data/baskets/ohlcv into the universe, "
+                         "so a name an index reconstitution dropped keeps being maintained "
+                         "instead of freezing on disk forever (resolved exits still excluded)")
     ap.add_argument("--census", action="store_true",
-                    help="skip fetching; run only the per-member staleness tripwire")
+                    help="skip fetching; run only the store-wide staleness tripwire")
     args = ap.parse_args(argv)
 
     odir = config.data_dir() / "baskets" / "ohlcv"
@@ -411,14 +609,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.census:
         payload = check_membership_staleness(odir)
-        log.info("staleness census: %s (store max %s, %s stale, %s missing)",
-                 payload.get("status"), payload.get("store_max"),
-                 payload.get("n_stale"), len(payload.get("missing") or []))
+        log.info("staleness census: %s (store max %s, %s files, %s stale, %s missing, "
+                 "%s unsponsored-stale, %s retired)",
+                 payload.get("status"), payload.get("store_max"), payload.get("n_store_files"),
+                 payload.get("n_stale"), len(payload.get("missing") or []),
+                 payload.get("n_unsponsored_stale"), payload.get("n_retired"))
         return 0
 
     explicit = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
     fv = _finviz_tickers([f.strip() for f in args.finviz.split(",") if f.strip()]) if args.finviz else []
-    members = _resolve_universe(explicit, fv, args.members)
+    members = _resolve_universe(explicit, fv, args.members, args.store)
     if args.limit:
         members = members[:args.limit]
     if not members:

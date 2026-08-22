@@ -57,6 +57,10 @@ FRESH_MAX_WEEKS = 10    # SGA-R1 fresh Stage 2 ceiling
 MAX_WORKERS_CAP = 4     # masterplan W1 — off the render-critical path, capped at 4
 
 # sga_score weights (SGA-R4 — deterministic blend, sum of positive components).
+# W_FRESHNESS scores Stage-2 EARLINESS (lifecycle position: fresh Stage 2 vs an
+# aged Stage-2 run), never data recency. Do not conflate with `stage_current`
+# (observation currentness, §2 Wave 8) — a stale row never reaches this
+# component at all because stale/unknown records get sga_score=None (§2.3).
 W_FRESHNESS = 25
 W_SLOPE_PCTILE = 25
 W_MANSFIELD_CHIP = 10
@@ -189,6 +193,31 @@ def build_universe(root: Path | None = None) -> dict[str, dict]:
                 _add(p.stem, "stocks")
         except Exception as e:  # noqa: BLE001
             log.warning("stage_analysis: stocks glob failed (%s)", e)
+
+    # --- the retirement half of the store contract (2026-08-20) ---
+    # This function globs the stores, so it NEVER FORGETS A TICKER: a parquet written once
+    # keeps being classified for as long as the file exists. That is correct for a name that
+    # merely fell out of an index (scripts/fetch_basket_ohlcv --store keeps its tape moving),
+    # and wrong for a security that STOPPED EXISTING — its last bar is a fact, not an
+    # observation of a live company, and no future fetch can ever advance it.
+    #
+    # DISCLOSURE, NOT DELETION. The ticker stays in the universe on purpose: the exit ledger's
+    # own contract is that a delisting is disclosed rather than disappeared (the store keeps
+    # its history, the page keeps its deep links, CSP-R1 forbids fail-dark), and dropping the
+    # key here would blank a browseable name instead of labelling it. Consumers read `retired`
+    # to strip CURRENT authority while leaving the row readable.
+    try:
+        from lib import delisted_symbols  # noqa: PLC0415 — lib/, no engine import cycle
+        for tk, row in delisted_symbols.ledger().items():
+            d = meta.get(tk)
+            if d is None:
+                continue
+            d["retired"] = True
+            d["retired_on"] = str(row.get("delisted_on") or "") or None
+            d["retired_last_session"] = str(row.get("last_session") or "") or None
+            d["retired_reason"] = str(row.get("reason") or "") or None
+    except Exception as e:  # noqa: BLE001 — fail-open: an unreadable ledger must not
+        log.warning("stage_analysis: delisted ledger unreadable (%s)", e)
 
     # Attach company/sector (fallback ticker / 'Unknown').
     for tk, d in meta.items():
@@ -440,8 +469,19 @@ def _load_industry_pctile(dr: Path) -> dict[str, float]:
 
 
 def _build_live_industry_surfaces(recs: list[dict], root: Path | None,
-                                  asof: str) -> tuple[dict[str, float], dict[str, dict]]:
+                                  asof: str, current_tickers: set[str] | None = None,
+                                  target_stage_week: str | None = None,
+                                  ) -> tuple[dict[str, float], dict[str, dict]]:
     """Build ranks + flows from the exact live classifier records in this run.
+
+    Wave 8 §6.2 — `prepare_live_frame` runs on ALL records (including stale
+    ones) so every row still gets its reference-taxonomy identity for the
+    screener's industry column; but only a frame filtered to `current_tickers`
+    is passed into `stage_industry.build()`, `stage_flows.build()`, and
+    `name_industry_percentiles()`. A stale row therefore contributes no rank
+    authority and its `industry_percentile` comes back null (correct — it has
+    no current rank).  `current_tickers=None` means "no partition available"
+    (§2.4, no target week) and ranks/flows build from an empty frame.
 
     Returns ``(per_name_percentiles, taxonomy_by_ticker)`` for immediate use by
     the screener.  Both side engines receive the same prepared DataFrame and
@@ -486,13 +526,22 @@ def _build_live_industry_surfaces(recs: list[dict], root: Path | None,
                 "sub_industry": _clean(row.get("sub_industry_name")),
             }
 
+    # §6.2 — mixed vintages excluded BEFORE aggregation: only current tickers'
+    # rows feed ranks/flows/percentiles. `current_tickers is None` (no target
+    # week resolved, §2.4) filters to an empty frame — no current authority.
+    current_frame = live_frame
+    if live_frame is not None and not live_frame.empty:
+        wanted = current_tickers or set()
+        current_frame = live_frame[live_frame["ticker"].isin(wanted)]
+
     name_pct: dict[str, float] = {}
     try:
         industry_contract = stage_industry.build(
-            stage_frame=live_frame, root=root, asof=asof,
+            stage_frame=current_frame, root=root, asof=asof,
+            target_stage_week=target_stage_week,
         )
         name_pct = stage_industry.name_industry_percentiles(
-            stage_frame=live_frame, root=root,
+            stage_frame=current_frame, root=root,
         )
         if (industry_contract.get("coverage") or {}).get("non_vacuous") is not True:
             issues = (industry_contract.get("coverage") or {}).get("issues") or []
@@ -504,7 +553,8 @@ def _build_live_industry_surfaces(recs: list[dict], root: Path | None,
 
     try:
         flows_contract = stage_flows.build(
-            stage_frame=live_frame, root=root, asof=asof,
+            stage_frame=current_frame, root=root, asof=asof,
+            target_stage_week=target_stage_week,
         )
         if (flows_contract.get("coverage") or {}).get("non_vacuous") is not True:
             issues = (flows_contract.get("coverage") or {}).get("issues") or []
@@ -920,36 +970,57 @@ def _diff_by_key(base: dict[str, dict], new: dict[str, dict]) -> list[dict]:
 
 def _build_changes_block(old_contract: dict | None,
                          new_by_key: dict[str, dict],
-                         new_asof: str) -> tuple[dict, dict]:
-    """Same-day-idempotent changes block (mirrors special_sits_intel logic).
+                         target_stage_week: str | None) -> tuple[dict, dict]:
+    """Same-Stage-week-idempotent changes block (Wave 8 §5; mirrors
+    special_sits_intel logic, re-keyed on the Stage week instead of the wall
+    clock).
 
     Returns (changes_block, prev_state_block).
-      - prev_state.by_key = the diff BASE (yesterday's state), frozen for the day.
-      - _current_by_key   = today's snapshot, used as base by NEXT day.
-    Same-day re-runs reuse prev_state.by_key so the change set is preserved,
-    not wiped.
+      - prev_state.by_key    = the diff BASE, frozen for the Stage week.
+      - prev_state.stage_week = the Stage week that base belongs to.
+      - _current_by_key (caller-side) = a carry-forward UNION so a name that
+        goes stale does not drop out of the key map and fire a spurious
+        "first sighting" when it returns current.
+
+    Base selection: if the stored target_stage_week differs from today's, the
+    base is the stored `_current_by_key` (the week advanced -> genuine
+    transitions may fire). If it is the same week, the base is the stored
+    prev_state.by_key, frozen (a same-week rerun with a rolled wall-clock
+    `asof` preserves the change set rather than wiping or duplicating it).
+    `target_stage_week is None` -> no current authority: empty changes,
+    preserve prev_state untouched.
     """
+    if target_stage_week is None:
+        prev = (old_contract or {}).get("prev_state") or {
+            "asof": None, "stage_week": None, "by_key": {},
+        }
+        return {"items": [], "n": 0}, prev
+
     if old_contract is None:
-        return {"items": [], "n": 0}, {"asof": None, "by_key": {}}
+        return ({"items": [], "n": 0},
+                {"asof": None, "stage_week": target_stage_week, "by_key": {}})
 
-    old_asof = old_contract.get("asof")
+    old_stage_week = old_contract.get("target_stage_week")
 
-    if old_asof != new_asof:
+    if old_stage_week != target_stage_week:
         base_by_key = (old_contract.get("_current_by_key")
                        or (old_contract.get("prev_state") or {}).get("by_key")
                        or {})
-        base_asof = old_asof
+        base_asof = old_contract.get("asof")
+        base_stage_week = old_stage_week
     else:
         stored_ps = old_contract.get("prev_state") or {}
         base_by_key = stored_ps.get("by_key") or {}
         base_asof = stored_ps.get("asof")
+        base_stage_week = stored_ps.get("stage_week") or old_stage_week
 
     if not base_by_key or base_asof is None:
-        return {"items": [], "n": 0}, {"asof": base_asof, "by_key": base_by_key}
+        return ({"items": [], "n": 0},
+                {"asof": base_asof, "stage_week": base_stage_week, "by_key": base_by_key})
 
     items = _diff_by_key(base_by_key, new_by_key)[:CHANGES_CAP]
     return ({"items": items, "n": len(items)},
-            {"asof": base_asof, "by_key": base_by_key})
+            {"asof": base_asof, "stage_week": base_stage_week, "by_key": base_by_key})
 
 
 # ---------------------------------------------------------------------------
@@ -1147,13 +1218,18 @@ SNAPSHOT_MIN_ROWS = 50
 
 def append_stage_snapshot(recs: list[dict], asof: str,
                           root: Path | None = None, *,
+                          target_stage_week: str | None = None,
                           min_rows: int = SNAPSHOT_MIN_ROWS) -> int:
-    """Append tonight's live US stage rows to the overview parquet.
+    """Append tonight's CURRENT live US stage rows to the overview parquet.
 
-    Same-as_of re-runs replace (idempotent). Rows are ordered newest-as_of
-    first because two brain_gateway readers take the first matching ticker row.
-    Fail-open: any error prints ::warning:: and returns 0 without raising.
-    Returns the number of engine rows written for *asof*.
+    Wave 8 §4.1: the "latest live snapshot" is current-state inventory, so it
+    admits only rows with `stage_current is True` — a June observation must
+    never look fresh to a downstream candidate pool merely because it rode
+    along inside an Aug-dated snapshot. Same-as_of re-runs replace
+    (idempotent). Rows are ordered newest-as_of first because two
+    brain_gateway readers take the first matching ticker row. Fail-open: any
+    error prints ::warning:: and returns 0 without raising. Returns the
+    number of engine rows written for *asof*.
     """
     try:
         import pandas as pd  # noqa: PLC0415
@@ -1163,10 +1239,23 @@ def append_stage_snapshot(recs: list[dict], asof: str,
             print("::warning title=stage-snapshot::no asof date — "
                   "stage snapshot not advanced", flush=True)
             return 0
+        if target_stage_week is None:
+            print("::warning title=stage-snapshot::no target Stage week resolved "
+                  "— stage snapshot not advanced, prior snapshot stands", flush=True)
+            return 0
+
         rows: list[dict] = []
+        n_stale = 0
+        n_unknown = 0
         for r in recs or []:
             tk = str(r.get("ticker") or "").strip().upper()
             if not tk or r.get("stage") is None:
+                continue
+            if r.get("stage_current") is not True:
+                if r.get("stage_current") is False:
+                    n_stale += 1
+                else:
+                    n_unknown += 1
                 continue
             rows.append({
                 "ticker": tk,
@@ -1186,11 +1275,19 @@ def append_stage_snapshot(recs: list[dict], asof: str,
                 "atr_ext": r.get("atr_ext"),
                 "industry_percentile": r.get("industry_percentile"),
                 "stage_date": r.get("stage_source_asof"),
+                "stage_week_end": r.get("stage_week_end"),
+                "stage_current": r.get("stage_current"),
                 "as_of_date": asof,
                 "source": SNAPSHOT_SOURCE,
             })
+
+        if n_stale or n_unknown:
+            print(f"::warning title=stage-snapshot::{n_stale} stale + {n_unknown} "
+                  f"unknown row(s) excluded from the {target_stage_week} snapshot",
+                  flush=True)
+
         if len(rows) < min_rows:
-            print(f"::warning title=stage-snapshot::only {len(rows)} classified "
+            print(f"::warning title=stage-snapshot::only {len(rows)} admitted current "
                   f"rows (floor {min_rows}) — stage snapshot not advanced, "
                   "prior snapshot stands", flush=True)
             return 0
@@ -1411,6 +1508,12 @@ def _seed_screener_rows(root: Path | None = None) -> tuple[list[dict], dict]:
                 # A seed row is "fresh" on the same rule our engine uses: fresh
                 # Stage-2 with <= FRESH_MAX_WEEKS completed weeks (SGA-R1).
                 "fresh": bool(stage == 2 and weeks is not None and weeks <= FRESH_MAX_WEEKS),
+                # Wave 8 §3: seed rows are display inventory (EquityDesk EU/ASIA
+                # export) and never enter current authority — unknown, not
+                # current, not stale (we have no Stage-week provenance for them).
+                "stage_week_end": None,
+                "stage_source_asof": None,
+                "stage_current": None,
                 "atr_ext": round(_num(r.get("atr_ext")), 3) if _num(r.get("atr_ext")) is not None else None,
                 "atr_pct_price": round(atr_pct, 5) if atr_pct is not None else None,
                 "mansfield_rs": round(_num(r.get("mansfield_rs")), 2) if _num(r.get("mansfield_rs")) is not None else None,
@@ -1529,6 +1632,13 @@ def _screener_row(r: dict) -> dict:
         "stage_label": _stage_ui_label(r.get("stage_detailed"), r.get("stage")),
         "weeks_in_stage": r["weeks_in_stage"],
         "fresh": r["fresh"],
+        # Observation-currentness provenance (Wave 8 §3) — NOT the same fact as
+        # `source == "live"` (that means "our classifier vs the EquityDesk
+        # seed"). A stale row's `rating` is already null (sga_score is null
+        # off the partition boundary, §2.3) so it carries no current rank.
+        "stage_week_end": r.get("stage_week_end"),
+        "stage_source_asof": r.get("stage_source_asof"),
+        "stage_current": r.get("stage_current"),
         "atr_ext": r.get("atr_ext"),
         "atr_pct_price": r.get("atr_pct_price"),
         "mansfield_rs": r.get("mansfield_rs"),
@@ -1563,13 +1673,19 @@ def _stage_board_contract(schema_tag: str, asof: str, built: str,
                           recs: list[dict], counts_full: dict,
                           market: dict, cadence_note: str | None = None,
                           seed_rows: list[dict] | None = None,
-                          region_counts: dict | None = None) -> dict:
+                          region_counts: dict | None = None,
+                          target_stage_week: str | None = None,
+                          target_week_source: str | None = None,
+                          stage_week_end: str | None = None,
+                          population: dict | None = None) -> dict:
     """Assemble one stage-board contract (daily or weekly variant).
 
-    Rows sorted fresh-first then by rating (sga_score) so the board leads with
-    the freshest, highest-quality Stage-2 names — matching the EquityDesk
-    Trending Stocks default order. Non-stage-2 names still ship (filterable
-    client-side) but sink below the Stage-2 block.
+    Rows sorted current-first, then fresh-first, then by rating (sga_score) so
+    the board leads with the freshest, highest-quality CURRENT Stage-2 names —
+    matching the EquityDesk Trending Stocks default order. Stale rows still
+    ship (filterable/browseable client-side, §3/§4) but sink below the current
+    block and carry no current rank (`rating` is null off the sga_score
+    partition boundary, §2.3).
 
     seed_rows: pre-built EU/ASIA rows from the EquityDesk overview seed (FIX 1b),
     already in _screener_row shape with source="seed"; appended AFTER the live US
@@ -1578,6 +1694,11 @@ def _stage_board_contract(schema_tag: str, asof: str, built: str,
 
     cadence_note: an extra plain-word disclosure appended to calibration (the
     daily board passes _DAILY_CADENCE_NOTE — item 14 honesty).
+
+    target_stage_week / target_week_source / stage_week_end / population: the
+    Wave 8 §2.5 clock + population receipt, mirrored onto every stage-board
+    contract (screener + daily + weekly) so a client reading any one of them
+    sees the same observation-truth provenance as the primary context feed.
     """
     rows = [_screener_row(r) for r in recs]
     if seed_rows:
@@ -1586,11 +1707,16 @@ def _stage_board_contract(schema_tag: str, asof: str, built: str,
     # heads the default/unfiltered view — the seed `rating` (EquityDesk
     # combined_rating, mean≈78) and our live `rating` (sga_score, mean≈23) are on
     # DIFFERENT 0-100 scales, so interleaving them by rating would bury every US
-    # name under the seed block. The region toggle is the primary filter; within
-    # each region the existing stage/fresh/rating order is preserved. Stage may be
-    # None on a seed row → treated as non-Stage-2 (sinks below within its block).
+    # name under the seed block. `stage_current is not True` sorts current rows
+    # first immediately after the source split (Wave 8 §3) — a seed row's
+    # stage_current is always None (unknown) so it never outranks a stale live
+    # row here; region is still the primary filter for seed inventory. Within
+    # each block the existing stage/fresh/rating order is preserved. Stage may
+    # be None on a seed row → treated as non-Stage-2 (sinks below within its
+    # block).
     rows.sort(key=lambda x: (
         x.get("source") != "live",             # live US block first
+        x.get("stage_current") is not True,    # current rows first (§3)
         x.get("stage") != 2,                   # Stage 2 first
         not x.get("fresh"),                    # fresh first within Stage 2
         -(x.get("rating") or 0),               # then by rating (within same scale)
@@ -1618,8 +1744,224 @@ def _stage_board_contract(schema_tag: str, asof: str, built: str,
         "calibration": calibration,
         "counts": counts_out,
         "market": market,
+        "target_stage_week": target_stage_week,
+        "target_week_source": target_week_source,
+        "stage_week_end": stage_week_end,
+        "population": population,
         "rows": rows,
         "n": len(rows),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Target-week resolver (Wave 8 §1.2 — amended: capped-at-SPY population mode)
+# ---------------------------------------------------------------------------
+# The current-observation boundary this whole wave builds needs ONE completed
+# Stage week the entire cross-section is judged against. SPY alone is not
+# sufficient: SPY lives in data/yahoo/SPY.parquet while the universe lives in
+# data/baskets/ohlcv/ — different stores, different collectors — and a one-day
+# drift that crosses a Friday flips SPY into a new completed week while the
+# universe still sits on the prior one. A SPY-only rule would then mark the
+# ENTIRE population stale over a one-store drift and withhold an otherwise
+# valid market read. So the target week is the population's MODAL completed
+# week, capped at (never later than) SPY's own completed week: SPY still
+# gates whether a week can be "current" at all (unresolved SPY -> no current
+# authority, §2.4), but does not single-handedly evict a population that has
+# already, correctly, completed a week SPY's store has not caught up to yet.
+def _resolve_target_stage_week_detail(dr: Path,
+                                      classified: dict[str, dict | None]) -> dict:
+    """Full detail behind `_resolve_target_stage_week` (population mode + spy).
+
+    Returns a dict with target_stage_week / target_week_source / spy_stage_week
+    / population_modal_week — the extra two feed the §2.5 population receipt
+    so the resolution is auditable at a glance. Never guesses a date and never
+    falls back to a wall-clock Friday: an unresolved SPY yields target_stage_week
+    = None, target_week_source = "unresolved" (§2.4 — no current cross-sectional
+    authority).
+    """
+    spy_res = classified.get("SPY")
+    if not spy_res:
+        try:
+            bench = _load_bench_close(dr)
+            if bench is not None and len(bench):
+                spy_res = _classify(bench, None, bench)
+                if spy_res is not None:
+                    # Cache so callers (spy_stage/spy_weeks market fields) reuse
+                    # this exact classification instead of running SPY through
+                    # the classifier a second time.
+                    classified["SPY"] = spy_res
+        except Exception:  # noqa: BLE001 — never guess a date
+            spy_res = None
+
+    spy_week = spy_res.get("stage_week_end") if spy_res else None
+    if not spy_week:
+        return {
+            "target_stage_week": None, "target_week_source": "unresolved",
+            "spy_stage_week": None, "population_modal_week": None,
+        }
+    spy_week = str(spy_week)
+
+    # Population modal completed week (ties -> the LATER week). `str(wk)` is
+    # load-bearing: a classify shim returning a date object would otherwise make
+    # the max()/comparison below raise TypeError out of this fail-open engine.
+    week_counts: dict[str, int] = {}
+    for res in classified.values():
+        if not res:
+            continue
+        wk = res.get("stage_week_end")
+        if wk:
+            wk = str(wk)
+            week_counts[wk] = week_counts.get(wk, 0) + 1
+
+    if not week_counts:
+        # No population signal at all (degenerate classify run) — SPY stands.
+        return {
+            "target_stage_week": spy_week, "target_week_source": "spy_benchmark",
+            "spy_stage_week": spy_week, "population_modal_week": None,
+        }
+
+    modal_week = max(week_counts.items(), key=lambda kv: (kv[1], kv[0]))[0]
+
+    # THE MODE IS THE TARGET IN EVERY CASE — never min(spy, modal).
+    #
+    # An earlier draft capped the mode at SPY's week "whichever direction the
+    # divergence runs". That cap is two-sided and INVERTS the population when the
+    # BENCHMARK store is the one that freezes: SPY stuck at 2026-06-26 while 2,600
+    # names classify to 2026-08-14 makes min() pick June, so the ~100 genuinely
+    # stale rows become `stage_current=True` (and get stamped that way into the
+    # machine snapshot, which the §4.2 consumer gate then passes) while the 2,600
+    # current rows are marked stale. Single-store freezes are the norm here — see
+    # research/STAGE_OBSERVATION_TRUTH_WAVE8.md §9, 183 frozen OHLCV files with a
+    # tripwire blind to all of them — and data/yahoo/ can freeze the same way.
+    #
+    # Worked both directions, the modal week is correct in BOTH: SPY ahead (benign
+    # Friday store skew) -> the population's week is the valid cross-section; SPY
+    # behind (benchmark broken) -> the population's week is still the valid
+    # cross-section. min() was right in the first case only because modal < spy
+    # there. SPY's real job is corroboration, so a divergence in either direction
+    # is disclosed loudly rather than silently resolved.
+    target = modal_week
+    if modal_week == spy_week:
+        source = "spy_benchmark"
+    else:
+        source = ("population_mode_benchmark_ahead" if spy_week > modal_week
+                  else "population_mode_benchmark_lagging")
+        # Bare print, NOT a logger call: GitHub only parses a workflow command
+        # when "::" STARTS the line, and this module's logging format prefixes
+        # every record, which silently drops the annotation.
+        print(f"::warning title=stage-target-week::benchmark week {spy_week} "
+              f"diverges from the population's modal completed week {modal_week} "
+              f"— anchoring the cross-section to {target} ({source})", flush=True)
+
+    return {
+        "target_stage_week": target, "target_week_source": source,
+        "spy_stage_week": spy_week, "population_modal_week": modal_week,
+    }
+
+
+def _resolve_target_stage_week(dr: Path,
+                               classified: dict[str, dict | None]) -> tuple[str | None, str]:
+    """Resolve the completed Stage week the whole cross-section is anchored to.
+
+    (week, source) — the target is ALWAYS the population's modal completed week;
+    SPY corroborates but never overrides it. source is "spy_benchmark" (they
+    agree, the normal case), "population_mode_benchmark_ahead" (SPY is later —
+    benign cross-store skew) or "population_mode_benchmark_lagging" (SPY is
+    earlier — the benchmark store has frozen). `(None, "unresolved")` when SPY
+    itself cannot be classified. This resolver must run before the population is
+    partitioned (§1.2/§2.1).
+    """
+    d = _resolve_target_stage_week_detail(dr, classified)
+    return d["target_stage_week"], d["target_week_source"]
+
+
+# ---------------------------------------------------------------------------
+# Population receipt (Wave 8 §2.5)
+# ---------------------------------------------------------------------------
+def _population_receipt(current_recs: list[dict], stale_recs: list[dict],
+                        unknown_recs: list[dict], target_stage_week: str | None,
+                        target_week_source: str, spy_stage_week: str | None,
+                        population_modal_week: str | None,
+                        data_session: str | None,
+                        data_session_all: str | None) -> dict:
+    """Assemble the `population` receipt block (§2.5) — the alarm that makes a
+    target-week/population disagreement visible immediately instead of
+    silently blacking out the page. `status="warn"` (not suppressed) when
+    current_coverage_pct < 60; `status="no_target_week"` when the resolver
+    could not establish a target week at all (§2.4)."""
+    current_n = len(current_recs)
+    stale_n = len(stale_recs)
+    unknown_n = len(unknown_recs)
+    total = current_n + stale_n + unknown_n
+
+    week_counts: dict[str, int] = {}
+    for r in current_recs:
+        wk = r.get("stage_week_end")
+        if wk:
+            week_counts[wk] = week_counts.get(wk, 0) + 1
+    for r in stale_recs:
+        wk = r.get("stage_week_end")
+        if wk:
+            week_counts[wk] = week_counts.get(wk, 0) + 1
+    for r in unknown_recs:
+        wk = r.get("stage_week_end")
+        if wk:
+            week_counts[wk] = week_counts.get(wk, 0) + 1
+    week_histogram = [
+        {"week": wk, "n": n}
+        for wk, n in sorted(week_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
+    ]
+
+    if target_stage_week is None:
+        return {
+            "status": "no_target_week",
+            "target_stage_week": None,
+            "target_week_source": target_week_source,
+            "spy_stage_week": spy_stage_week,
+            "population_modal_week": population_modal_week,
+            "current": current_n, "stale": stale_n, "unknown": unknown_n,
+            "total": total,
+            "current_coverage_pct": None,
+            "data_session": None,
+            "data_session_all": data_session_all,
+            "week_histogram": week_histogram,
+            "issues": ["no_target_week"],
+        }
+
+    coverage = round(100.0 * current_n / total, 1) if total else 0.0
+    issues: list[str] = []
+    status = "ready"
+    # A benchmark/population week disagreement is a data-integrity alarm in BOTH
+    # directions (one of the two stores has frozen), so it is named in the receipt
+    # rather than silently resolved by the resolver. It does not suppress the
+    # render: the cross-section is still assembled at the population's own week.
+    if (spy_stage_week and population_modal_week
+            and spy_stage_week != population_modal_week):
+        status = "warn"
+        issues.append("benchmark_week_divergence")
+    if coverage < 60.0:
+        status = "warn"
+        issues.append("current_coverage_below_floor")
+        print(
+            f"::warning title=stage-population::current_coverage_pct={coverage} "
+            f"below floor (60.0) — {current_n} current of {total} total "
+            f"(target week {target_stage_week})",
+            flush=True,
+        )
+
+    return {
+        "status": status,
+        "target_stage_week": target_stage_week,
+        "target_week_source": target_week_source,
+        "spy_stage_week": spy_stage_week,
+        "population_modal_week": population_modal_week,
+        "current": current_n, "stale": stale_n, "unknown": unknown_n,
+        "total": total,
+        "current_coverage_pct": coverage,
+        "data_session": data_session,
+        "data_session_all": data_session_all,
+        "week_histogram": week_histogram,
+        "issues": issues,
     }
 
 
@@ -1654,30 +1996,43 @@ def build_context_feed(root: Path | None = None,
     except Exception:  # noqa: BLE001
         asof_date = None
 
-    # --- assemble per-name records ---
-    recs: list[dict] = []
-    too_young = 0
-    counts = {"stage1": 0, "stage2": 0, "stage2_fresh": 0, "stage3": 0, "stage4": 0}
+    # --- SPY + target Stage week, resolved ONCE, above the record loop (§1.2) ---
+    # `_resolve_target_stage_week_detail` reuses classified.get("SPY") when
+    # present and otherwise classifies SPY exactly once, caching the result
+    # back into `classified["SPY"]` — the spy_stage/spy_weeks market fields
+    # below reuse that same result rather than classifying SPY a second time.
+    # This resolver MUST run before the population is partitioned (§2.1).
+    # Fail-open like every other side input in this builder: a resolver that
+    # raises (a classify shim handing back an odd `stage_week_end`, an unreadable
+    # benchmark) must degrade to "no current authority" — §2.4's honest
+    # unavailable state — never take the whole nightly context build down.
+    try:
+        _week_detail = _resolve_target_stage_week_detail(dr, classified)
+    except Exception as e:  # noqa: BLE001
+        print(f"::warning title=stage-target-week::target-week resolver failed "
+              f"({e}) — no current cross-sectional authority this run", flush=True)
+        _week_detail = {
+            "target_stage_week": None, "target_week_source": "unresolved",
+            "spy_stage_week": None, "population_modal_week": None,
+        }
+    target_stage_week = _week_detail["target_stage_week"]
+    target_week_source = _week_detail["target_week_source"]
+    spy_stage_week = _week_detail["spy_stage_week"]
+    population_modal_week = _week_detail["population_modal_week"]
+
     # Null until SPY classifies cleanly — a failed SPY read must NOT masquerade
     # as "Stage 2" (FIX 3). The template already guards `spy_stage is not none`.
     spy_stage = None
     spy_weeks = None
+    spy_res = classified.get("SPY")
+    if spy_res and spy_res.get("stage"):
+        spy_stage = spy_res.get("stage")
+        spy_weeks = int(spy_res.get("weeks_in_stage") or 0)
 
-    # Cross-sectional slope population (Stage-2 names) for the percentile.
-    slope_pop: list[float] = []
-    for tk, res in classified.items():
-        if not res:
-            continue
-        if res.get("stage") == 2:
-            sl = res.get("ma30_slope_pct5w")
-            if sl is not None:
-                try:
-                    slope_pop.append(float(sl))
-                except (TypeError, ValueError):
-                    pass
-    slope_pop.sort()
-
-    roster: dict[str, list] = {}
+    # --- assemble per-name records (NOT yet scored — scoring depends on the
+    # current/stale/unknown partition below, §2.3 ordering) ---
+    recs: list[dict] = []
+    too_young = 0
 
     for tk in tickers:
         res = classified.get(tk)
@@ -1708,23 +2063,32 @@ def build_context_feed(root: Path | None = None,
         weeks = int(res.get("weeks_in_stage") or 0)
         fresh = bool(res.get("fresh"))
 
-        # counts + roster
-        if stage == 1:
-            counts["stage1"] += 1
-        elif stage == 2:
-            counts["stage2"] += 1
-            if fresh:
-                counts["stage2_fresh"] += 1
-        elif stage == 3:
-            counts["stage3"] += 1
-        elif stage == 4:
-            counts["stage4"] += 1
-        roster[tk] = [stage, weeks]
+        # Wave 8 §2.1 — stamp the tri-valued observation-currentness partition
+        # key. `fresh` (lifecycle: Stage 2 and <=10 weeks in it) and
+        # `stage_current` (observation: this row's own completed week equals
+        # the resolved target week) are separate facts — `fresh=True,
+        # stage_current=False` is a legitimate, expected combination (a name
+        # frozen on stale tape can still be lifecycle-fresh from its own last
+        # classification).
+        stage_week_end = res.get("stage_week_end")
+        if target_stage_week is not None and stage_week_end is not None:
+            stage_current = bool(stage_week_end == target_stage_week)
+        else:
+            stage_current = None
+
+        # A RETIRED name can never be observation-current, whatever its week says. The
+        # week comparison alone is not enough: a security that delists mid-week still has a
+        # completed prior week, and a vendor that flat-forwards a dead symbol (AVB's tape
+        # carried 0-volume repeats four sessions past its real 2026-08-14 close) can even
+        # push that week up to the target. Both shapes read as `stage_current=True` on the
+        # week test alone, which would let a company that no longer exists rank beside live
+        # names. The exit ledger is the authority; this only feeds it into the boundary
+        # Wave 8 already built, rather than adding a second one.
+        retired = bool(meta.get("retired"))
+        if retired:
+            stage_current = False
 
         gate_tier = gate_tiers.get(tk)
-        slope = res.get("ma30_slope_pct5w")
-        slope_pctile = _pctile(
-            None if slope is None else float(slope), slope_pop)
 
         rec = {
             "ticker": tk,
@@ -1738,13 +2102,27 @@ def build_context_feed(root: Path | None = None,
             "sub_industry_id": None,
             "sub_industry": None,
             "stage_source_asof": res.get("stage_source_asof"),
+            # The security stopped existing (config/delisted_symbols.yml). Carried so the
+            # row can SAY so — a retired name stays browseable with its history intact
+            # (disclosure, not deletion), it just holds no current authority.
+            "retired": retired,
+            "retired_on": meta.get("retired_on"),
+            "retired_reason": meta.get("retired_reason"),
+            # Wave 8 §1/§2 clock fields — the completed week THIS row's stage
+            # was actually read from, and whether that equals the resolved
+            # target week. Never derived from `source == "live"` (§3).
+            "stage_week_end": stage_week_end,
+            "stage_current": stage_current,
             "stage": stage,
             "weeks_in_stage": weeks,
             "fresh": fresh,
             # A flow start is the actual first completed week in Stage 2. The
             # broader UI `fresh` label intentionally remains <=10 weeks.
             "is_stage2_start": bool(stage == 2 and weeks == 1),
-            "ma30_slope_pct5w": None if slope is None else round(float(slope), 3),
+            "ma30_slope_pct5w": (
+                None if res.get("ma30_slope_pct5w") is None
+                else round(float(res["ma30_slope_pct5w"]), 3)
+            ),
             "pct_vs_ma30": None if res.get("pct_vs_ma30") is None else round(float(res["pct_vs_ma30"]), 2),
             "mansfield_rs": None if res.get("mansfield_rs") is None else round(float(res["mansfield_rs"]), 2),
             "mansfield_rs_change": (
@@ -1766,7 +2144,10 @@ def build_context_feed(root: Path | None = None,
             # reference taxonomy cannot match the ticker).
             "industry_percentile": None,
         }
-        rec["sga_score"] = _compute_sga_score(rec, slope_pctile, gate_tier)
+        # sga_score is deferred until AFTER the current/stale/unknown partition
+        # below — it depends on slope_pop, which is itself built from current
+        # Stage-2 records only (§2.3). Stale/unknown rows resolve to None.
+        rec["sga_score"] = None
 
         # blackout (SGA-R8) — fail-open.
         blackout = False
@@ -1788,11 +2169,31 @@ def build_context_feed(root: Path | None = None,
 
         recs.append(rec)
 
-    # Build the side surfaces only after the live fan-out exists. Previously
-    # the CLI ran these first against a missing stage_daily.parquet seed, which
-    # silently emitted zero-industry artifacts. The returned taxonomy and
-    # percentiles are applied to the same records before any UI projection.
-    industry_pctile, taxonomy = _build_live_industry_surfaces(recs, root, asof)
+    # --- Wave 8 §2.1 partition: current / stale / unknown, by completed-week
+    # equality against the resolved target Stage week. Everything below this
+    # point that claims current authority (counts, slope_pop, sga_score,
+    # top_stage2, warnings_stage3, sectors, roster, data_session, the change
+    # feed, the machine snapshot, and — per §6.2 — the industry rank/flow
+    # frame) is computed from `current_recs` ONLY (§2.2). `recs` (all three
+    # buckets) still feeds the screener and both stage boards below, so stale
+    # names stay browseable.
+    current_recs = [r for r in recs if r.get("stage_current") is True]
+    stale_recs = [r for r in recs if r.get("stage_current") is False]
+    unknown_recs = [r for r in recs if r.get("stage_current") is None]
+    current_tickers = {r["ticker"] for r in current_recs}
+
+    # Build the side surfaces only after the live fan-out AND the current/
+    # stale partition above exist. §6.2 moved this call from before the
+    # partition to after it: `prepare_live_frame` still runs on ALL records
+    # inside the helper (every row, including stale ones, keeps its
+    # reference-taxonomy identity for the screener's industry column), but
+    # the frame handed to `stage_industry.build()` / `stage_flows.build()` /
+    # `name_industry_percentiles()` is filtered to `current_tickers` only —
+    # a stale row must not contaminate the current industry cross-section.
+    industry_pctile, taxonomy = _build_live_industry_surfaces(
+        recs, root, asof, current_tickers=current_tickers,
+        target_stage_week=target_stage_week,
+    )
     for rec in recs:
         tk = rec["ticker"]
         ref = taxonomy.get(tk) or {}
@@ -1802,30 +2203,61 @@ def build_context_feed(root: Path | None = None,
                 rec[key] = ref[key]
         rec["industry_percentile"] = industry_pctile.get(tk)
 
-    # --- underlying session: the newest bar any classified leg actually read ---
+    # --- underlying session: the newest bar any CURRENT leg actually read ---
     # Forward-ledger calendar-asof audit 2026-08-05 (#4568 pattern). `asof`
     # above is a CLOCK read (or a caller's label) and keeps its display
     # semantics untouched — exactly as the basket-turn sibling left `as_of`.
-    # This field is the DATA plane: max over the per-ticker
-    # `stage_source_asof`, which _classify_one derives from the classified
-    # OHLCV's own index. append_forward_ledger stamps row dates from the data
-    # plane only, so a run against a frozen store re-derives the sessions it
-    # already recorded and appends nothing instead of re-describing old tape
-    # under a fresh calendar date.
-    data_session: str | None = None
-    try:
-        _sessions = [
-            str(r["stage_source_asof"])
-            for r in recs
-            if r.get("stage_source_asof")
-        ]
-        if _sessions:
-            data_session = max(_sessions)
-    except Exception as _ex:  # noqa: BLE001 — stamp derivation is never fatal
-        log.debug("stage_analysis: data_session derivation failed: %s", _ex)
-        data_session = None
+    # `data_session` narrows to the CURRENT population (§2.5 — the tape behind
+    # the comparable cross-section); `data_session_all` preserves the old
+    # max-over-everything for audit. append_forward_ledger's rung (a)
+    # (row.stage_source_asof) is preferred and, because top_stage2 is now
+    # current-only, always resolves — so narrowing data_session cannot change
+    # a ledger row's date (§12).
+    def _max_session(rows: list[dict]) -> str | None:
+        try:
+            sessions = [str(r["stage_source_asof"]) for r in rows if r.get("stage_source_asof")]
+            return max(sessions) if sessions else None
+        except Exception as _ex:  # noqa: BLE001 — stamp derivation is never fatal
+            log.debug("stage_analysis: session derivation failed: %s", _ex)
+            return None
 
-    total = len(recs)
+    data_session = _max_session(current_recs)
+    data_session_all = _max_session(recs)
+
+    # --- slope_pop: CURRENT Stage-2 records only (§2.3) — a stale row must
+    # not distort the current cross-section it is not a member of. ---
+    slope_pop: list[float] = sorted(
+        float(r["ma30_slope_pct5w"])
+        for r in current_recs
+        if r.get("stage") == 2 and r.get("ma30_slope_pct5w") is not None
+    )
+
+    # --- sga_score: current records scored; stale/unknown carry no current
+    # rank (§2.3 — the admission boundary, not a retune; stale_recs and
+    # unknown_recs already carry sga_score=None from the assembly loop). ---
+    for r in current_recs:
+        slope = r.get("ma30_slope_pct5w")
+        slope_pctile = _pctile(None if slope is None else float(slope), slope_pop)
+        r["sga_score"] = _compute_sga_score(r, slope_pctile, r.get("gate_tier"))
+
+    # --- headline counts + roster: CURRENT records only (§2.2) ---
+    counts = {"stage1": 0, "stage2": 0, "stage2_fresh": 0, "stage3": 0, "stage4": 0}
+    roster: dict[str, list] = {}
+    for r in current_recs:
+        st = r["stage"]
+        if st == 1:
+            counts["stage1"] += 1
+        elif st == 2:
+            counts["stage2"] += 1
+            if r.get("fresh"):
+                counts["stage2_fresh"] += 1
+        elif st == 3:
+            counts["stage3"] += 1
+        elif st == 4:
+            counts["stage4"] += 1
+        roster[r["ticker"]] = [st, r["weeks_in_stage"]]
+
+    total = len(current_recs)
     counts_full = {
         "total": total,
         "stage1": counts["stage1"],
@@ -1837,39 +2269,51 @@ def build_context_feed(root: Path | None = None,
         "new_today": 0,  # filled from the change feed below
     }
 
-    # --- SPY market context (single benchmark) ---
-    # SPY lives in data/yahoo/ as the benchmark, not the roster universe, so it
-    # is rarely in `classified`. Classify it directly against itself so the
-    # market block reports SPY's own stage honestly. Fail-open on any error.
-    spy_res = classified.get("SPY")
-    if not spy_res:
-        try:
-            bench = _load_bench_close(dr)
-            if bench is not None and len(bench):
-                spy_res = _classify(bench, None, bench)
-        except Exception:  # noqa: BLE001
-            spy_res = None
-    if spy_res and spy_res.get("stage"):
-        spy_stage = spy_res.get("stage")
-        spy_weeks = int(spy_res.get("weeks_in_stage") or 0)
+    # --- population receipt (§2.5) — the alarm that makes a target-week /
+    # population disagreement visible immediately instead of silently
+    # blacking out the page. ---
+    population = _population_receipt(
+        current_recs, stale_recs, unknown_recs,
+        target_stage_week, target_week_source,
+        spy_stage_week, population_modal_week,
+        data_session, data_session_all,
+    )
+    no_target_week = population["status"] == "no_target_week"
 
-    pct_stage2 = round(100.0 * counts["stage2"] / total, 1) if total else 0.0
-    pct_stage4 = round(100.0 * counts["stage4"] / total, 1) if total else 0.0
+    # --- market weather: CURRENT records only (§2.2) ---
+    if no_target_week:
+        # §2.4 — no current cross-sectional authority: every counts value is
+        # NULL, not zero (zero is a measurement; null is the absence of one),
+        # and market.weather is null so the template's unavailable branch fires.
+        # `too_young` is EXEMPT: it counts names the classifier could not stage
+        # at all, which is measured in the record loop and does not depend on the
+        # target week. Nulling a value we did in fact measure is the mirror error
+        # of reporting zero for one we did not (§11).
+        counts_full = {k: (too_young if k == "too_young" else None)
+                       for k in counts_full}
+        pct_stage2 = None
+        pct_stage4 = None
+        weather = None
+    else:
+        pct_stage2 = round(100.0 * counts["stage2"] / total, 1) if total else 0.0
+        pct_stage4 = round(100.0 * counts["stage4"] / total, 1) if total else 0.0
+        weather = _weather(pct_stage2, pct_stage4)
+
     market = {
         "pct_stage2": pct_stage2,
         "pct_stage4": pct_stage4,
-        "weather": _weather(pct_stage2, pct_stage4),
+        "weather": weather,
         "spy_stage": spy_stage,
         "spy_weeks": spy_weeks,
     }
 
-    # --- top_stage2 board (fresh first, then by sga_score) ---
-    stage2 = [r for r in recs if r.get("stage") == 2]
+    # --- top_stage2 board (current + fresh first, then by sga_score, §2.2) ---
+    stage2 = [r for r in current_recs if r.get("stage") == 2]
     stage2.sort(key=lambda r: (not r.get("fresh"), -(r.get("sga_score") or 0), r.get("ticker")))
     top_stage2 = [_top_row(r) for r in stage2[:TOP_STAGE2_CAP]]
 
-    # --- warnings (Stage 3, topping) ---
-    stage3 = [r for r in recs if r.get("stage") == 3]
+    # --- warnings (Stage 3, topping) — CURRENT only (§2.2) ---
+    stage3 = [r for r in current_recs if r.get("stage") == 3]
     stage3.sort(key=lambda r: (-(r.get("sga_score") or 0), r.get("ticker")))
     warnings_stage3 = [
         {"ticker": r["ticker"], "company": r["company"],
@@ -1877,9 +2321,9 @@ def build_context_feed(root: Path | None = None,
         for r in stage3[:WARNINGS_CAP]
     ]
 
-    sectors = _sector_rollup(recs)
+    sectors = _sector_rollup(current_recs)
 
-    # --- change feed (same-day idempotent) ---
+    # --- change feed (Wave 8 §5 — keyed on the Stage week, not the wall clock) ---
     outpath = dr / "stage_analysis" / "context" / "latest.json"
     old_contract: dict | None = None
     if outpath.exists():
@@ -1888,24 +2332,48 @@ def build_context_feed(root: Path | None = None,
         except Exception as e:  # noqa: BLE001
             log.warning("stage_analysis: could not read old latest.json (%s)", e)
 
-    new_by_key = _by_key_from_recs(recs)
-    changes, prev_state = _build_changes_block(old_contract, new_by_key, asof)
-    counts_full["new_today"] = sum(
-        1 for it in changes["items"]
-        if it.get("kind") in ("entered_stage2", "breakout"))
+    new_by_key = _by_key_from_recs(current_recs)
+    changes, prev_state = _build_changes_block(
+        old_contract, new_by_key, target_stage_week)
+    counts_full["new_today"] = (
+        None if no_target_week else
+        sum(1 for it in changes["items"]
+            if it.get("kind") in ("entered_stage2", "breakout"))
+    )
+
+    # _current_by_key is a carry-forward UNION (§5): without it, a name that
+    # goes stale drops out of the key map and then fires a spurious
+    # entered_stage2 "first sighting" when it returns.
+    #
+    # PRUNED to this run's universe. A plain union grows monotonically and this
+    # dict ships inside the artifact the client downloads, so a name that leaves
+    # the roster for good would keep its last-known stage dict forever. Pruning
+    # is safe precisely because a ticker outside `tickers` cannot be classified,
+    # so it can never come back as a current row needing a diff base.
+    old_current_by_key = (old_contract or {}).get("_current_by_key") or {}
+    _universe_keys = set(tickers)
+    current_by_key_union = {k: v for k, v in old_current_by_key.items()
+                            if k in _universe_keys}
+    current_by_key_union.update(new_by_key)
 
     contract = {
         "schema": "stage_context.v1",
         # DISPLAY label (clock or caller-supplied) — deliberately unchanged by
         # the 2026-08-05 forward-ledger audit; only the ledger stamp moved.
         "asof": asof,
-        # Provenance: the newest bar the classified legs read. Additive.
+        # Provenance: the newest bar the classified legs read, narrowed to the
+        # CURRENT population (§2.5). Additive.
         "data_session": data_session,
         "built": built,
         "is_context_only": True,
         "display_only": True,
         "disclaimer": ("Context only — stage classification display, "
                        "never a signal or sizing input."),
+        # Wave 8 §1/§2.5 clock + population receipt.
+        "target_stage_week": target_stage_week,
+        "target_week_source": target_week_source,
+        "stage_week_end": target_stage_week,
+        "population": population,
         "counts": counts_full,
         "market": market,
         "top_stage2": top_stage2,
@@ -1914,7 +2382,7 @@ def build_context_feed(root: Path | None = None,
         "roster": roster,
         "changes": changes,
         "prev_state": prev_state,
-        "_current_by_key": new_by_key,
+        "_current_by_key": current_by_key_union,
     }
 
     contract = _json_safe(contract)
@@ -1977,7 +2445,10 @@ def build_context_feed(root: Path | None = None,
         capped = recs[:SCREENER_CAP] if len(recs) > SCREENER_CAP else recs
         screener = _stage_board_contract(
             "stage_screener.v1", asof, built, capped, counts_full, market,
-            seed_rows=seed_rows, region_counts=region_counts)
+            seed_rows=seed_rows, region_counts=region_counts,
+            target_stage_week=target_stage_week,
+            target_week_source=target_week_source,
+            stage_week_end=target_stage_week, population=population)
         screener["surface"] = "A"
         _atomic_write_json(
             dr / "stage_analysis" / "screener.json", _json_safe(screener),
@@ -1995,7 +2466,10 @@ def build_context_feed(root: Path | None = None,
             board = _stage_board_contract(
                 f"stage_board_{variant}.v1", asof, built, capped,
                 counts_full, market, cadence_note=cadence,
-                seed_rows=seed_rows, region_counts=region_counts)
+                seed_rows=seed_rows, region_counts=region_counts,
+                target_stage_week=target_stage_week,
+                target_week_source=target_week_source,
+                stage_week_end=target_stage_week, population=population)
             board["variant"] = variant
             _atomic_write_json(
                 dr / "stage_analysis" / fname, _json_safe(board),
@@ -2004,9 +2478,11 @@ def build_context_feed(root: Path | None = None,
             print(f"::warning:: stage_analysis: failed to write {fname} ({e})", flush=True)
 
     # Advance the overview parquet with tonight's live US snapshot (the
-    # marketing stage feeds' sole freshness source). Runs only in the daily
-    # lane (this engine is dag-declared daily-only); fail-open inside.
-    n_snap = append_stage_snapshot(recs, asof, root)
+    # marketing stage feeds' sole freshness source). Admits only CURRENT rows
+    # (§4.1). Runs only in the daily lane (this engine is dag-declared
+    # daily-only); fail-open inside.
+    n_snap = append_stage_snapshot(
+        recs, asof, root, target_stage_week=target_stage_week)
     if n_snap:
         log.info("stage snapshot: %d engine rows appended for %s", n_snap, asof)
 
@@ -2023,6 +2499,10 @@ def _top_row(r: dict) -> dict:
         # forward-ledger calendar-asof audit 2026-08-05). append_forward_ledger
         # stamps the row date from it, so the projection must carry it through.
         "stage_source_asof": r.get("stage_source_asof"),
+        # Wave 8 §3: top_stage2 rows are always current (built from current_recs
+        # only, §2.2) but the field must travel for the forward ledger and tests.
+        "stage_week_end": r.get("stage_week_end"),
+        "stage_current": r.get("stage_current"),
         "stage": r["stage"],
         "weeks_in_stage": r["weeks_in_stage"],
         "fresh": r["fresh"],

@@ -1,4 +1,4 @@
-"""The agent worktree-root list is duplicated in three places; pin them in step.
+"""The agent worktree-root list is duplicated in four places; pin them in step.
 
 A repository serving several agent fleets accumulates one checkout root per fleet.
 Each root has to be declared three times, and each declaration does a different job:
@@ -11,6 +11,11 @@ Each root has to be declared three times, and each declaration does a different 
   target ``outside configured roots``.
 * ``ship_loop_guard.AGENT_WORKTREE_ROOTS`` — excludes another fleet's churn from
   this session's dirty gate.
+* ``worktree_create_sparse.SESSION_WORKTREE_ROOTS`` (added 2026-08-20) — the roots
+  the WorktreeCreate hook climbs OUT of when choosing where to plant, so a spawn
+  from inside a session tree makes a sibling instead of a nested child. A root
+  missing here nests silently: the child is then invisible to the GC's depth-1
+  orphan scan and is dragged along when its parent is swept.
 
 Drift is silent and each miss fails differently, which is why it went unnoticed
 twice. Measured 2026-08-11: ``.codex/worktrees/`` was declared in NONE of the three
@@ -35,6 +40,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 GC_CONFIG = REPO_ROOT / "config" / "worktree_gc.json"
 GITIGNORE = REPO_ROOT / ".gitignore"
 GUARD = REPO_ROOT / ".claude" / "hooks" / "ship_loop_guard.py"
+HOOK = REPO_ROOT / ".claude" / "hooks" / "worktree_create_sparse.py"
 
 
 def _in_repo_gc_roots() -> set[str]:
@@ -65,6 +71,26 @@ def _guard_roots() -> set[str]:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return set(module.AGENT_WORKTREE_ROOTS)
+
+
+def _hook_roots() -> set[str]:
+    """``SESSION_WORKTREE_ROOTS`` as the WorktreeCreate hook itself defines it."""
+    spec = importlib.util.spec_from_file_location("_worktree_create_sparse_roots", HOOK)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return set(module.SESSION_WORKTREE_ROOTS)
+
+
+def test_every_in_repo_gc_root_is_climbed_out_of_by_the_create_hook() -> None:
+    """A root the hook cannot recognise gets a NESTED worktree planted inside it."""
+    missing = sorted(_in_repo_gc_roots() - _hook_roots())
+    assert not missing, (
+        f"worktree roots swept by the GC but absent from "
+        f"worktree_create_sparse.SESSION_WORKTREE_ROOTS: {missing}. A spawn from "
+        "inside one of those trees would plant a child inside it, which the GC's "
+        "depth-1 orphan scan cannot see."
+    )
 
 
 def test_every_in_repo_gc_root_is_git_ignored() -> None:
@@ -111,6 +137,7 @@ def test_known_fleet_roots_are_declared_everywhere(root: str) -> None:
     assert root in _in_repo_gc_roots(), f"{root} missing from config/worktree_gc.json"
     assert root in _gitignore_roots(), f"{root} missing from .gitignore"
     assert root in _guard_roots(), f"{root} missing from AGENT_WORKTREE_ROOTS"
+    assert root in _hook_roots(), f"{root} missing from SESSION_WORKTREE_ROOTS"
 
 
 def test_gc_config_still_declares_the_home_codex_root() -> None:

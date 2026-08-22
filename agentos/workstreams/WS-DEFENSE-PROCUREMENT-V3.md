@@ -100,24 +100,44 @@ waves:
   - id: D4
     title: Company financial truth bridge
     status: done
-    pr: [6123]
+    pr: [6123, 6173, 6192]
     depends_on: [D3]
     next_action: >
-      Done — shipped and live 2026-08-20 (merge b5548ece927d) under Sol's
-      IRDM-only charter. Owner preflight: case A on the v1 context plane
-      (GET /api/company-intelligence/IRDM serves company_intelligence_
-      context.v1 live; event_workspace.v1 stays AAPL-only; DEC:D4-COMPANY-
-      RAIL-CONSUMES-CI-V1-CONTEXT). Bridge renders GOVERNMENT FACT (P00032,
-      transaction receipt by content_sha256) / COMPANY TRUTH
-      (earnings_history-lineage fields only, fail-closed typed unavailable)
-      / COMPARISON fixed not_comparable with no ratio node / RESEARCH
-      QUESTION. 27-test hostile suite on a committed P00032 fixture in the
-      MERGE-BINDING gate:code job govrev-company-bridge. Opus review found
-      the suite would have shipped dark (gate:data holding pen) and a
-      wrong-receipt link — repaired pre-merge, probes pinned as tests.
-      Page fence unchanged (baked 296,693 <= 303,104). Awaiting Sol
-      acceptance; D5 unauthorized. Residual: one entitled production
-      eyeball (operator-side; all inputs individually live-proven).
+      Done / SOL ACCEPTANCE PENDING — shipped under Sol's IRDM-only charter
+      in #6123 and provenance-hardened in #6173. D4P entitled production
+      proof CLOSED 2026-08-21 on the real signed-in route
+      government_revenue.html?mode=companies&item=company:IRDM. Production
+      rendered GOVERNMENT FACT P00032 for exactly $18,416,666.66, effective
+      2026-05-12, first known 2026-08-12, late discovery. The rendered
+      official-receipt target was selected by exact
+      content_sha256=2a07ba19681a3c9d07f69b3316850b4646db48a8075d2ea8375755e112d02bab,
+      byte-equal to award_change.source_identity.content_sha256; the decoy
+      award receipt carried a different sha. One actual authenticated GET
+      /api/company-intelligence/IRDM completed 200 (no D4 fetch storm and no
+      D4 console/request error), and COMPANY TRUTH rendered the successful
+      packet state, never Company packet unavailable. Live owner packet:
+      company_intelligence_context.v1, generated_at
+      2026-08-21T06:53:16Z, latest_event
+      cie_77ff210df9c064c3b2fe4aa1, FY2026 Q1 / call 2026-04-23. Live
+      procurement workspace: government_procurement_workspace.v2,
+      generated_at 2026-08-21T06:52:47.804099+00:00; P00032 event
+      govws-a6c70850a9cbdce9fa3e7f3b. The first production pass exposed one
+      real D4 defect: the rendered source-status line leaked metadata-only
+      score_overlay lineage. #6192 removed that forbidden lineage at the
+      rendering boundary, pinned it with a captured failing regression, and
+      merged concluded-green as 7b6e5d126e7a; public-render run 32482669089
+      completed green and production /api/health reported checkout
+      7b6e5d126e7. Post-deploy proof has zero rendered score_overlay lineage;
+      COMPARISON remains not_comparable, with zero denominator-value nodes
+      and zero ratio nodes. Responsive proof: 1280x900 EN desktop inspector
+      in-bounds with no horizontal overflow; 768x1024 EN mobile sheet
+      in-bounds with no horizontal overflow; 375x812 ZH mobile sheet
+      localized (政府事实 / 公司披露 / 不可比) and in-bounds with no horizontal
+      overflow. LMT negative: no D4 bridge host and zero
+      /api/company-intelligence/LMT fetches. Anonymous negative: D4 module
+      and workspace JSON each 401 authentication_required/locked; page 200
+      exposes one hidden empty bridge host only. Return to Sol for final D4
+      acceptance. D5 remains unauthorized and unstarted.
   - id: D5
     title: Program, mission, capability, and product graph
     status: todo
@@ -163,14 +183,13 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  Sol D4 acceptance review. D0R/D1/D1.1/D2/D3 done and accepted; D4 shipped
-  and live 2026-08-20 (#6123, merge b5548ece927d) — GovRev P00032 beside
-  the canonical owner's live IRDM context packet, comparison closed
-  (not_comparable, null ratio) with no lawful denominator asserted. D5 is
-  unauthorized. #5424 is closed/superseded by defense21-v1. Do not
-  re-baseline. Publisher-vintage alarm remains a reliability follow-up;
-  new candidate follow-up: fixture-freeze the D2/D3 law suites out of the
-  unrun-government-revenue holding pen (advisory-only today).
+  Sol final D4 acceptance. D4P entitled production proof is CLOSED on the
+  real signed-in IRDM route after #6192 removed the live-discovered
+  score_overlay rendering defect; D4 is done / SOL ACCEPTANCE PENDING.
+  D5 is unauthorized and unstarted. #5424 is closed/superseded by
+  defense21-v1. Publisher-vintage alarm and fixture-freezing the D2/D3 law
+  suites out of the unrun-government-revenue holding pen remain separate
+  follow-ups — do not fold them into the D4 closeout.
 ---
 
 ## Context

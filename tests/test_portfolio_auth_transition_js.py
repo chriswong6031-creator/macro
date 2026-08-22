@@ -73,6 +73,8 @@ PORTFOLIO = ROOT / "templates" / "portfolio.js"
 PORTFOLIO_STATE = ROOT / "templates" / "portfolio_state.js"
 WATCHLIST = ROOT / "templates" / "watchlist.js"
 FACTOR_EXPOSURE = ROOT / "templates" / "factor_exposure.js"
+WATCHLIST_RISK = ROOT / "templates" / "watchlist_risk.js"
+RISK_CORE = ROOT / "templates" / "risk_core.js"
 
 USER = {"id": "u1"}
 
@@ -214,7 +216,17 @@ global.WS = {
   stageCell: function () { return ''; },
   stageOf: function () { return null; },
   scopeLine: function (shown, all) { return shown + ' / ' + all; },
-  seam: function () {}
+  seam: function () {},
+  // LAW 3 (A1A round-3) test seam: this SHIM stands in for the real watchlist.js
+  // workspace shell, which portfolio.js's setBookRisk() now reads via
+  // window.WS.prov() to fail-closed-reject any risk publication lacking valid
+  // provenance. A CONSTANT portfolio-scope/gen-0 answer is enough for this file's
+  // direct setBookRisk() test calls (below), which stamp the SAME constant —
+  // this suite is not exercising the provenance seam itself (that is
+  // tests/test_watchlist_workspace_js.py's/this file's own LAW 3 scenarios), it
+  // is exercising payloadIsConsistentWithBook()'s SYMBOL-overlap validation, which
+  // must still run as an independent layer once a payload's provenance is valid.
+  prov: function () { return { scope: 'portfolio', gen: 0 }; }
 };
 
 // ---- window.FX call recorder: Sol blocker 1 (Risk Center residue) — pushFxWeights()
@@ -1005,7 +1017,14 @@ def test_f2_wl_auth_identity_change_resets_risk_full_a_signout_b_sequence():
 
     MUTATION CHECK: delete the `document.addEventListener('wl-auth', ...)` RISK-
     reset block from watchlist.js's wireEvents() and this reds — A's content
-    survives into B's session."""
+    survives into B's session.
+
+    LAW 3 mechanical accommodation (A1A round-3): setRisk() now rejects any
+    payload without provenance matching the CURRENT scope+generation (Sol P0,
+    fail-closed). This direct setRisk() call stamps `prov: window.WS.prov()`,
+    read at the moment of the call, so it is accepted exactly as a real producer's
+    publication would be — the assertions below are unchanged and still pin the
+    wl-auth identity-reset behavior, not the new provenance seam."""
     script = (
         WATCHLIST_RISK_LATCH_SHIM
         + "\nvar pfCountVal = 3;\nwindow.PF = { count: function () { return pfCountVal; }, render: function () {} };\n"
@@ -1019,7 +1038,8 @@ def test_f2_wl_auth_identity_change_resets_risk_full_a_signout_b_sequence():
           shares: { USERA_NVDA: 0.62 },
           concHTML: '<p>USERA_NVDA carries 62% of your risk</p>',
           rcTabs: { conc: '<p>USERA_NVDA carries 62% of your risk</p>' },
-          labHTML: '', seamItems: null, coverage: null, headline: 'USERA_NVDA 62%'
+          labHTML: '', seamItems: null, coverage: null, headline: 'USERA_NVDA 62%',
+          prov: window.WS.prov()
         });
         var whileA = node('rc_body').innerHTML;
         var writesBeforeSignOut = __writes.length;
@@ -1490,7 +1510,12 @@ def test_n1_foreign_watchlist_keyed_payload_never_repaints_portfolio_surfaces():
         window.PF.setBookRisk({
           shares: { WLONLY_TSLA: 0.71, WLONLY_META: 0.29 },
           covered: { WLONLY_TSLA: 1, WLONLY_META: 1 },
-          bets: null, modeledN: 2, regime: '', concHTML: '', rcTabs: null, labHTML: ''
+          bets: null, modeledN: 2, regime: '', concHTML: '', rcTabs: null, labHTML: '',
+          // LAW 3 mechanical accommodation: valid (portfolio-scope, matching the
+          // SHIM's constant gen) provenance, so this call reaches
+          // payloadIsConsistentWithBook() — the SYMBOL-overlap layer this test
+          // actually pins — rather than being rejected earlier for scope alone.
+          prov: { scope: 'portfolio', gen: 0 }
         });
         await drain(4);
         var writesAfter = __writes.length;
@@ -1534,16 +1559,21 @@ def test_n1_foreign_payload_never_produces_the_false_coverage_sentence():
           { id:'p2', ticker:'MSFT', shares:5,  entry_price:200, entry_date:null, notes:null, status:'open', created_at:'2' }
         ], error:null });
         await drain(10);
-        // a genuine PORTFOLIO-derived payload first
+        // a genuine PORTFOLIO-derived payload first (valid provenance — LAW 3
+        // mechanical accommodation, matching the SHIM's constant window.WS.prov())
         window.PF.setBookRisk({ shares: { AAPL: 0.6, MSFT: 0.4 }, covered: { AAPL: 1, MSFT: 1 },
-                                 bets: null, modeledN: 2, regime: '', concHTML: '', rcTabs: null, labHTML: '' });
+                                 bets: null, modeledN: 2, regime: '', concHTML: '', rcTabs: null, labHTML: '',
+                                 prov: { scope: 'portfolio', gen: 0 } });
         await drain(3);
         var covPortfolio = node('ws_book_coverage').innerHTML;
 
-        // now the WATCHLIST-derived payload
+        // now the WATCHLIST-derived payload (same valid provenance, so this
+        // reaches payloadIsConsistentWithBook()'s symbol-overlap rejection, not
+        // LAW 3's earlier scope gate — the mechanism this test actually pins)
         window.PF.setBookRisk({ shares: { WLONLY_TSLA: 0.71, WLONLY_META: 0.29 },
                                  covered: { WLONLY_TSLA: 1, WLONLY_META: 1 },
-                                 bets: null, modeledN: 2, regime: '', concHTML: '', rcTabs: null, labHTML: '' });
+                                 bets: null, modeledN: 2, regime: '', concHTML: '', rcTabs: null, labHTML: '',
+                                 prov: { scope: 'portfolio', gen: 0 } });
         await drain(3);
         OUT({
           coverage_portfolioPayload: covPortfolio,
@@ -1575,7 +1605,12 @@ def test_n1_empty_payload_is_still_accepted_as_a_clear():
         await drain(10);
         var writesBefore = __writes.length;
         window.PF.setBookRisk({ shares: {}, covered: {}, bets: null, modeledN: 0,
-                                 regime: '', concHTML: '', rcTabs: null, labHTML: '' });
+                                 regime: '', concHTML: '', rcTabs: null, labHTML: '',
+                                 // LAW 3: valid provenance — this test is pinning the
+                                 // empty-payload early-accept INSIDE
+                                 // payloadIsConsistentWithBook(), which only runs once
+                                 // the provenance gate itself has already passed.
+                                 prov: { scope: 'portfolio', gen: 0 } });
         await drain(4);
         OUT({ repainted: __writes.length > writesBefore });
         """,
@@ -1870,3 +1905,1136 @@ def test_n5_hiding_the_fx_panel_also_clears_its_innerhtml():
     assert out["displayAfterRealBook"] == "block"
     assert out["displayAfterThinBook"] == "none"
     assert out["htmlAfterThinBook"] == ""
+
+
+# ===========================================================================
+# A1A ROUND 3 (frozen spec FROZEN_SPEC_R3.md, Sol's 2026-08-21 P0) — auth-
+# generation binding (LAW 1), consumer request-generation guard (LAW 2), risk
+# provenance (LAW 3), client terminality (LAW 4). Sol rejected round-2 acceptance
+# with an executed reproduction (scratchpad dbg2/) showing user A's late-
+# resolving read painting A's private rows under user B, a deferred risk
+# republish repainting a watchlist-derived Risk Center read into a zero-position
+# Portfolio, and two client-init paths leaving loading permanently unresolved.
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# T-D1a/b/c — LAW 1 (watchstore.js): every Portfolio operation binds to the
+# auth epoch captured AT ENTRY; a stale-epoch resolution mutates nothing and
+# answers null, never the resolved rows.
+# ---------------------------------------------------------------------------
+@needs_node
+def test_d1a_late_resolving_read_under_a_stale_identity_never_touches_state_or_degrades_into_it():
+    """T-D1a (frozen spec LAW 1a; Sol's exact P0 scenario). A's cloud read is
+    PENDING when A signs out and B signs in and readies; only THEN does A's
+    stale read resolve, carrying A's PRIVATE row. Assert pfReadState (which
+    folds in pfLastGoodCloud's bookkeeping) is byte-identical before and after
+    A's late resolution — then prove B's NEXT read failing degrades to B's OWN
+    last-good, never A's rows.
+
+    MUTATION CHECK: remove the `if (authEpoch !== epochAtCall) return null;`
+    guard from portfolioList()'s readPromise .then handler (watchstore.js) and
+    this reds — A's row lands in pfLastGoodCloud under B's session, and B's next
+    FAILED read then degrade-serves A's private AAAA_PRIVATE_A row as B's own
+    last-good."""
+    out = _run(
+        """
+        boot();
+        var A = { id: 'user-A' }, B = { id: 'user-B' };
+        var dbA = makeDeferredDb(), dbB = makeDeferredDb();
+
+        WSL.onAuthUser(A);
+        WSL._setTestSession(A, dbA.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: A } }));
+        await drain(5);
+
+        // A signs out; B signs in and readies — A's read is STILL pending
+        WSL.onAuthUser(null);
+        WSL.onAuthUser(B);
+        WSL._setTestSession(B, dbB.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: B } }));
+        await drain(5);
+        dbB.settleNext({ data: [{ id: 'b1', ticker: 'BBBB_OWNED_B', shares: 5, entry_price: 50,
+                                    entry_date: null, notes: null, status: 'open', created_at: '1' }],
+                          error: null });
+        await drain(8);
+        var beforeLate = WSL.portfolio.readState();
+
+        // A's OLD read now resolves, with A's PRIVATE row
+        dbA.settleNext({ data: [{ id: 'a1', ticker: 'AAAA_PRIVATE_A', shares: 100, entry_price: 10,
+                                    entry_date: null, notes: null, status: 'open', created_at: '1' }],
+                          error: null });
+        await drain(10);
+        var afterLate = WSL.portfolio.readState();
+        var domAfterLate = node('tbl_pf').innerHTML;
+
+        // B's NEXT read fails -> degraded fallback must serve B's OWN last-good,
+        // never A's rows (re-fire 'wl-auth' with the SAME identity, the house
+        // pattern scenario3 already uses to trigger "a LATER read")
+        var dbB2 = makeDeferredDb();
+        WSL._setTestSession(B, dbB2.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: B } }));
+        await drain(3);
+        dbB2.settleNext({ data: null, error: { message: 'network down' } });
+        await drain(8);
+
+        OUT({
+          beforeLate: beforeLate, afterLate: afterLate,
+          domAfterLate_hasA: domAfterLate.indexOf('AAAA_PRIVATE_A') >= 0,
+          degradedReadState: WSL.portfolio.readState(),
+          degradedDom_hasB: node('tbl_pf').innerHTML.indexOf('BBBB_OWNED_B') >= 0,
+          degradedDom_hasA: node('tbl_pf').innerHTML.indexOf('AAAA_PRIVATE_A') >= 0
+        });
+        """
+    )
+    assert out["beforeLate"] == out["afterLate"], (
+        "A's late resolution mutated pfReadState/pfLastGoodCloud under B's session")
+    assert out["domAfterLate_hasA"] is False
+    assert out["degradedReadState"]["state"] == "degraded"
+    assert out["degradedReadState"]["last_good_at"] == out["beforeLate"]["last_good_at"]
+    assert out["degradedDom_hasB"] is True
+    assert out["degradedDom_hasA"] is False
+
+
+@needs_node
+def test_f4_stale_epoch_read_rejection_never_touches_state_under_the_new_identity():
+    """F4 (adversarial review, MINOR — T-D1a extra leg, the ordinary .catch
+    path). Same shape as T-D1a, but A's stale `order()` call itself REJECTS
+    (a genuine promise rejection — a network-level failure, not the Supabase
+    `{data,error}` convention, which the readPromise .then handler's OWN epoch
+    guard already intercepts before ever inspecting `.error`, so it cannot
+    reach .catch() at all under a stale epoch) after the epoch flip. readState()
+    and portfolioOk must be byte-identical before and after — the stale
+    rejection must not flip portfolioOk or warn under B's identity either.
+
+    MUTATION CHECK: remove the `if (authEpoch !== epochAtCall) return null;`
+    guard from portfolioList()'s readPromise .catch handler (watchstore.js,
+    M2) and this reds — A's rejected read flips portfolioOk to false and
+    mutates pfReadState under B's session."""
+    out = _run(
+        """
+        boot();
+        var A = { id: 'user-A' }, B = { id: 'user-B' };
+        var dbA = { _p: [], from: function () { return {
+          select: function () { return this; }, eq: function () { return this; },
+          order: function () { return new Promise(function (r, j) { dbA._p.push({ res: r, rej: j }); }); }
+        }; } };
+        var dbB = makeDeferredDb();
+
+        WSL.onAuthUser(A);
+        WSL._setTestSession(A, dbA);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: A } }));
+        await drain(5);
+
+        WSL.onAuthUser(null);
+        WSL.onAuthUser(B);
+        WSL._setTestSession(B, dbB.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: B } }));
+        await drain(5);
+        dbB.settleNext({ data: [{ id: 'b1', ticker: 'BBBB_OWNED_B', shares: 5, entry_price: 50,
+                                    entry_date: null, notes: null, status: 'open', created_at: '1' }],
+                          error: null });
+        await drain(8);
+        var beforeLate = WSL.portfolio.readState();
+        var okBefore = window.WatchStore.portfolioOk();
+
+        // A's OLD `order()` call now genuinely REJECTS
+        dbA._p[0].rej(new Error('A read boom'));
+        await drain(10);
+        var afterLate = WSL.portfolio.readState();
+        var okAfter = window.WatchStore.portfolioOk();
+
+        OUT({ pendingCount: dbA._p.length, beforeLate: beforeLate, afterLate: afterLate,
+              okBefore: okBefore, okAfter: okAfter });
+        """
+    )
+    assert out["pendingCount"] == 1, "sanity: A's read genuinely reached order() and registered pending"
+    assert out["okBefore"] is True
+    assert out["okAfter"] is True, "A's stale REJECTED read flipped portfolioOk under B's session"
+    assert out["beforeLate"] == out["afterLate"], (
+        "A's stale rejection mutated pfReadState under B's session")
+
+
+@needs_node
+def test_f4_stale_epoch_read_timeout_never_touches_state_under_the_new_identity():
+    """F4 (adversarial review, MINOR — T-D1a extra leg, the read-timeout race
+    path). A's read never settles at all; its own per-call deadline (shortened
+    via `_setCloudDeadlineMs`) elapses AFTER A signs out and B signs in and
+    readies. readState() must be byte-identical before and after the deadline
+    fires — the timed-out call answering under a LATER identity must never
+    claim last-good rows that may belong to the previous identity.
+
+    MUTATION CHECK: remove the `if (authEpoch !== epochAtCall) return null;`
+    guard from the read-timeout race's .catch handler (watchstore.js, M3) and
+    this reds — A's stale timeout overwrites pfReadState under B's session."""
+    out = _run(
+        """
+        boot();
+        WSL._setCloudDeadlineMs(20);
+        var A = { id: 'user-A' }, B = { id: 'user-B' };
+        var dbA = makeDeferredDb(), dbB = makeDeferredDb();
+
+        WSL.onAuthUser(A);
+        WSL._setTestSession(A, dbA.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: A } }));
+        await drain(5);
+        // A's read is issued and left PENDING FOREVER -- its own 20ms deadline
+        // will fire on its own, well after the identity flip below.
+
+        WSL.onAuthUser(null);
+        WSL.onAuthUser(B);
+        WSL._setTestSession(B, dbB.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: B } }));
+        await drain(5);
+        dbB.settleNext({ data: [{ id: 'b1', ticker: 'BBBB_OWNED_B', shares: 5, entry_price: 50,
+                                    entry_date: null, notes: null, status: 'open', created_at: '1' }],
+                          error: null });
+        await drain(8);
+        var beforeTimeout = WSL.portfolio.readState();
+
+        // wait well past A's shortened 20ms deadline
+        await new Promise(function (r) { setTimeout(r, 150); });
+        await drain(10);
+        var afterTimeout = WSL.portfolio.readState();
+
+        OUT({ beforeTimeout: beforeTimeout, afterTimeout: afterTimeout });
+        """
+    )
+    assert out["beforeTimeout"] == out["afterTimeout"], (
+        "A's stale read-timeout mutated pfReadState under B's session: %r vs %r"
+        % (out["beforeTimeout"], out["afterTimeout"]))
+
+
+@needs_node
+def test_d1b_stale_consumer_then_resolution_is_fully_discarded():
+    """T-D1b (frozen spec LAW 2, portfolio.js's consumer request-generation
+    guard). Two overlapping reload() calls (both via the real 'pf-folded' event,
+    the same public trigger test_n2_* already uses) — the OLDER settles LAST,
+    with genuinely different data. Its .then handler must mutate NOTHING:
+    portfolio.js's own readState mirror, the DOM, count, the chip dispatch
+    history and the FX push chain must all be byte-identical to right after the
+    newer call settled.
+
+    MUTATION CHECK: remove the `if (gen !== loadGen) return;` guard from
+    reload()'s .then handler (portfolio.js) and this reds — the stale OLDER
+    call's data (STALE_OLDER_ROW) repaints over the newer call's answer."""
+    out = _run(
+        """
+        boot();
+        var db = { _p: [], from: function () { return {
+          select: function () { return this; }, eq: function () { return this; },
+          order: function () { return new Promise(function (r) { db._p.push(r); }); }
+        }; } };
+        function settleAt(i, result) { var r = db._p[i]; db._p[i] = null; if (r) r(result); }
+
+        WSL._setTestSession(USER, db);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        settleAt(0, { data: [{ id: 'c0', ticker: 'INITIAL', shares: 1, entry_price: 1,
+          entry_date: null, notes: null, status: 'open', created_at: '0' }], error: null });
+        await drain(8);
+
+        var chipHistory = [];
+        document.addEventListener('pf-save', function (e) { chipHistory.push(e.detail.state); });
+        var fxCallsBefore = __fxCalls.length;
+
+        // call #1 (OLDER) via a real 'pf-folded' background refetch -> reload()
+        document.dispatchEvent(new CustomEvent('pf-folded', {}));
+        await drain(3);
+        // call #2 (NEWER) -- a second 'pf-folded' BEFORE #1 resolves
+        document.dispatchEvent(new CustomEvent('pf-folded', {}));
+        await drain(3);
+        var pendingAfterBoth = db._p.filter(function (x) { return x; }).length;
+
+        // index 0 was already consumed by the initial signed-in read above, so
+        // index 1 is call #1 (OLDER, the FIRST 'pf-folded') and index 2 is call
+        // #2 (NEWER, the SECOND 'pf-folded') — resolve the NEWER (index 2) FIRST
+        settleAt(2, { data: [{ id: 'c2', ticker: 'NEWER_ROW', shares: 2, entry_price: 2,
+          entry_date: null, notes: null, status: 'open', created_at: '2' }], error: null });
+        await drain(8);
+        var afterNewer = {
+          dom: node('tbl_pf').innerHTML, count: window.PF.count(),
+          chipLen: chipHistory.length, fxLen: __fxCalls.length,
+          pfReadState: window.PF.readState()
+        };
+
+        // resolve the OLDER (STALE) call (index 1) LAST — must change NOTHING
+        settleAt(1, { data: [{ id: 'c1', ticker: 'STALE_OLDER_ROW', shares: 9, entry_price: 9,
+          entry_date: null, notes: null, status: 'open', created_at: '1' }], error: null });
+        await drain(8);
+        var afterStale = {
+          dom: node('tbl_pf').innerHTML, count: window.PF.count(),
+          chipLen: chipHistory.length, fxLen: __fxCalls.length,
+          pfReadState: window.PF.readState()
+        };
+
+        OUT({ pendingAfterBoth: pendingAfterBoth, afterNewer: afterNewer, afterStale: afterStale });
+        """,
+        {"USER": USER},
+    )
+    assert out["pendingAfterBoth"] == 2, "sanity: both overlapping reload() calls issued a real pending read"
+    assert "NEWER_ROW" in out["afterNewer"]["dom"]
+    # the stale, later-settling OLDER call must change nothing at all
+    assert out["afterStale"]["dom"] == out["afterNewer"]["dom"]
+    assert "STALE_OLDER_ROW" not in out["afterStale"]["dom"]
+    assert out["afterStale"]["count"] == out["afterNewer"]["count"]
+    assert out["afterStale"]["chipLen"] == out["afterNewer"]["chipLen"]
+    assert out["afterStale"]["fxLen"] == out["afterNewer"]["fxLen"]
+    assert out["afterStale"]["pfReadState"] == out["afterNewer"]["pfReadState"]
+
+
+@needs_node
+def test_d1b_stale_consumer_catch_resolution_is_fully_discarded():
+    """T-D1b, the .catch half. watchstore.js's own list() is architected to
+    NEVER reject (every internal failure resolves gracefully to a degraded/
+    error read-state answer, per the module's own "never propagate a raw
+    rejection" design) — so portfolio.js's own reload().catch() cannot be
+    reached through the real watchstore.js at all; it is defensive belt-and-
+    braces code. This test therefore stubs `window.WatchStore.portfolio.list`
+    directly (AFTER boot()'s own initial anonymous-book read, which uses the
+    REAL implementation) to get full control over resolve/reject timing, and
+    proves LAW 2's SAME gen guard on the .catch handler independently of LAW 1a.
+
+    Same overlapping-reload() shape as the .then test above — the OLDER call
+    REJECTS after the newer one has already succeeded — the stale rejection
+    must not downgrade readState/dispatch a read-unavailable/repaint anything.
+
+    MUTATION CHECK: remove the `if (gen !== loadGen) return;` guard from
+    reload()'s .catch handler (portfolio.js) and this reds — the stale OLDER
+    rejection flips portfolio.js's own readState mirror to 'error' after the
+    newer call had already established 'ready'."""
+    out = _run(
+        """
+        boot();
+        await drain(8);   // let boot()'s own initial (anonymous) list() settle first
+
+        var pending = [];
+        window.WatchStore.portfolio.list = function () {
+          return new Promise(function (res, rej) { pending.push({ res: res, rej: rej }); });
+        };
+        window.WatchStore.portfolio.readState = function () {
+          return { authority: 'cloud', state: 'ready', last_good_at: null, warning: null };
+        };
+
+        document.dispatchEvent(new CustomEvent('pf-folded', {}));   // call #1 (OLDER) -> pending[0]
+        await drain(3);
+        document.dispatchEvent(new CustomEvent('pf-folded', {}));   // call #2 (NEWER) -> pending[1]
+        await drain(3);
+
+        // resolve the NEWER call FIRST
+        pending[1].res([{ id: 'c2', ticker: 'NEWER_ROW', shares: 2, entry_price: 2,
+          entry_date: null, notes: null, status: 'open', created_at: '2' }]);
+        await drain(8);
+        var afterNewer = { dom: node('tbl_pf').innerHTML, pfReadState: window.PF.readState() };
+
+        // REJECT the OLDER (STALE) call LAST
+        pending[0].rej(new Error('stale-older-failure'));
+        await drain(8);
+        var afterStale = { dom: node('tbl_pf').innerHTML, pfReadState: window.PF.readState() };
+
+        OUT({ pendingCount: pending.length, afterNewer: afterNewer, afterStale: afterStale });
+        """,
+        {"USER": USER},
+    )
+    assert out["pendingCount"] == 2, "sanity: both overlapping reload() calls issued a real pending list() call"
+    assert "NEWER_ROW" in out["afterNewer"]["dom"]
+    assert out["afterNewer"]["pfReadState"]["state"] != "error"
+    assert out["afterStale"]["dom"] == out["afterNewer"]["dom"]
+    assert out["afterStale"]["pfReadState"] == out["afterNewer"]["pfReadState"]
+
+
+@needs_node
+def test_f5_stale_onauth_resolution_via_a_real_wl_auth_double_fire_is_discarded():
+    """F5 (adversarial review, MINOR — a T-D1b variant driven through onAuth(),
+    not reload()). T-D1b's own tests exercise reload()'s gen guard (triggered
+    via the public 'pf-folded' background-refetch event); onAuth() is the
+    OTHER LAW 2 call site (triggered by 'wl-auth', including the S6 double-
+    fire the house test suite already documents — the SAME identity's client
+    resolving after the FIRST 'wl-auth' already ran onAuth() once). Two
+    overlapping onAuth() calls via a real S6-style wl-auth double-fire (the
+    SAME user re-dispatched, exactly as watchstore.js's clientReady()/
+    clientFailed() do) — the OLDER settles LAST, with different data — must
+    change nothing.
+
+    MUTATION CHECK: remove the `if (gen !== loadGen) return;` guard from
+    onAuth()'s .then handler (portfolio.js, M8) and this reds — the stale
+    OLDER call's data (STALE_OLDER_ROW) repaints over the newer call's
+    answer."""
+    out = _run(
+        """
+        boot();
+        var db = { _p: [], from: function () { return {
+          select: function () { return this; }, eq: function () { return this; },
+          order: function () { return new Promise(function (r) { db._p.push(r); }); }
+        }; } };
+        function settleAt(i, result) { var r = db._p[i]; db._p[i] = null; if (r) r(result); }
+
+        WSL._setTestSession(USER, db);
+        // call #0: the FIRST wl-auth (a real sign-in) -> onAuth() -> index 0
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        settleAt(0, { data: [{ id: 'c0', ticker: 'INITIAL', shares: 1, entry_price: 1,
+          entry_date: null, notes: null, status: 'open', created_at: '0' }], error: null });
+        await drain(8);
+
+        var chipHistory = [];
+        document.addEventListener('pf-save', function (e) { chipHistory.push(e.detail.state); });
+        var fxCallsBefore = __fxCalls.length;
+
+        // call #1 (OLDER) via a real S6-style wl-auth RE-FIRE (same user,
+        // exactly as watchstore.js's clientReady() re-dispatches once `sb`
+        // resolves) -> index 1
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        // call #2 (NEWER) -- a SECOND re-fire before #1 resolves -> index 2
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        var pendingAfterBoth = db._p.filter(function (x) { return x; }).length;
+
+        // resolve the NEWER call (index 2) FIRST
+        settleAt(2, { data: [{ id: 'c2', ticker: 'NEWER_ROW', shares: 2, entry_price: 2,
+          entry_date: null, notes: null, status: 'open', created_at: '2' }], error: null });
+        await drain(8);
+        var afterNewer = {
+          dom: node('tbl_pf').innerHTML, count: window.PF.count(),
+          chipLen: chipHistory.length, fxLen: __fxCalls.length,
+          pfReadState: window.PF.readState()
+        };
+
+        // resolve the OLDER (STALE) call (index 1) LAST -- must change NOTHING
+        settleAt(1, { data: [{ id: 'c1', ticker: 'STALE_OLDER_ROW', shares: 9, entry_price: 9,
+          entry_date: null, notes: null, status: 'open', created_at: '1' }], error: null });
+        await drain(8);
+        var afterStale = {
+          dom: node('tbl_pf').innerHTML, count: window.PF.count(),
+          chipLen: chipHistory.length, fxLen: __fxCalls.length,
+          pfReadState: window.PF.readState()
+        };
+
+        OUT({ pendingAfterBoth: pendingAfterBoth, afterNewer: afterNewer, afterStale: afterStale });
+        """,
+        {"USER": USER},
+    )
+    assert out["pendingAfterBoth"] == 2, "sanity: both overlapping onAuth() calls issued a real pending read"
+    assert "NEWER_ROW" in out["afterNewer"]["dom"]
+    assert out["afterStale"]["dom"] == out["afterNewer"]["dom"]
+    assert "STALE_OLDER_ROW" not in out["afterStale"]["dom"]
+    assert out["afterStale"]["count"] == out["afterNewer"]["count"]
+    assert out["afterStale"]["chipLen"] == out["afterNewer"]["chipLen"]
+    assert out["afterStale"]["fxLen"] == out["afterNewer"]["fxLen"]
+    assert out["afterStale"]["pfReadState"] == out["afterNewer"]["pfReadState"]
+
+
+@needs_node
+def test_d1c_pending_upsert_at_signout_then_signin_aborts_the_continuation():
+    """T-D1c (frozen spec LAW 1b, upsert). A's upsert is issued (the
+    `_portfolioGuard().then()` continuation has NOT run yet — no await) when A
+    signs out and B signs in. MUTATION CHECK: remove the
+    `if (authEpoch !== epochAtCall) return null;` guard from portfolioUpsert()'s
+    continuation (watchstore.js) and this reds — the row gets BUILT and the fake
+    sb records a post-flip insert call (with `uidAtCall` still protecting the
+    row's `user_id`, this is A's data landing under B's live session; with the
+    `uidAtCall` substitution also reverted, it is worse — A's data attributed to
+    B outright)."""
+    out = _run(
+        """
+        boot();
+        var A = { id: 'user-A' }, B = { id: 'user-B' };
+        var inserted = [];
+        var api = {
+          select: function () { return api; }, eq: function () { return api; },
+          order: function () { return Promise.resolve({ data: [], error: null }); },
+          insert: function (row) { inserted.push(JSON.parse(JSON.stringify(row))); return api; },
+          single: function () { return Promise.resolve({ data: { id: 'srv1' }, error: null }); }
+        };
+        var db = { from: function () { return api; } };
+
+        WSL.onAuthUser(A);
+        WSL._setTestSession(A, db);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: A } }));
+        await drain(5);
+
+        // A issues the write — NO await — then signs out; B signs in, before the
+        // _portfolioGuard().then() continuation has had a chance to run
+        var upsertP = WSL.portfolio.upsert({ ticker: 'A_WRITE', shares: 1,
+          entry_price: 1, entry_date: null, status: 'open' });
+        WSL.onAuthUser(null);
+        WSL.onAuthUser(B);
+        WSL._setTestSession(B, db);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: B } }));
+        await drain(10);
+
+        var upsertResult = await upsertP;
+        OUT({
+          upsertResult: upsertResult,
+          insertedCount: inserted.length,
+          portfolioOk: window.WatchStore.portfolioOk()
+        });
+        """
+    )
+    assert out["upsertResult"] is None
+    assert out["insertedCount"] == 0, "A's stale write built a row under B's identity"
+    assert out["portfolioOk"] is True
+
+
+@needs_node
+def test_d1c_pending_close_and_remove_at_signout_then_signin_abort_the_continuation():
+    """T-D1c (frozen spec LAW 1b, "same for close/remove"). Identical shape to
+    the upsert case above, for portfolioClose() and portfolioRemove().
+
+    MUTATION CHECK: remove the epoch guard from either continuation
+    (watchstore.js) and the corresponding assertion below reds — the fake sb
+    records a post-flip update/delete call."""
+    out = _run(
+        """
+        boot();
+        var A = { id: 'user-A' }, B = { id: 'user-B' };
+        var updated = [], removedCount = 0;
+        var closeApi = {
+          eq: function () { return closeApi; },
+          update: function (row) { updated.push(JSON.parse(JSON.stringify(row))); return closeApi; },
+          select: function () { return closeApi; },
+          single: function () { return Promise.resolve({ data: { id: 'srv1' }, error: null }); }
+        };
+        var removeApi = {
+          eq: function () { return removeApi; },
+          delete: function () { return removeApi; },
+          then: function (onFulfilled) {
+            removedCount++;
+            return Promise.resolve({ data: null, error: null }).then(onFulfilled);
+          }
+        };
+        var dbClose = { from: function () { return closeApi; } };
+        var dbRemove = { from: function () { return removeApi; } };
+
+        // ---- close() ----
+        WSL.onAuthUser(A);
+        WSL._setTestSession(A, dbClose);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: A } }));
+        await drain(5);
+        var closeP = WSL.portfolio.close('pos-1');
+        WSL.onAuthUser(null);
+        WSL.onAuthUser(B);
+        WSL._setTestSession(B, dbClose);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: B } }));
+        await drain(10);
+        var closeResult = await closeP;
+
+        // ---- remove(), same shape, fresh identity pair ----
+        var A2 = { id: 'user-A2' }, B2 = { id: 'user-B2' };
+        WSL.onAuthUser(A2);
+        WSL._setTestSession(A2, dbRemove);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: A2 } }));
+        await drain(5);
+        var removeP = WSL.portfolio.remove('pos-2');
+        WSL.onAuthUser(null);
+        WSL.onAuthUser(B2);
+        WSL._setTestSession(B2, dbRemove);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: B2 } }));
+        await drain(10);
+        var removeResult = await removeP;
+
+        OUT({
+          closeResult: closeResult, updatedCount: updated.length,
+          removeResult: removeResult, removedCount: removedCount
+        });
+        """
+    )
+    assert out["closeResult"] is None
+    assert out["updatedCount"] == 0, "A's stale close() built an update call under B's identity"
+    assert out["removeResult"] is None
+    assert out["removedCount"] == 0, "A's stale remove() issued a delete call under B's identity"
+
+
+# ---------------------------------------------------------------------------
+# T-D2/T-D2b/T-D2c — LAW 3 (watchlist.js + watchlist_risk.js + factor_exposure.js
+# + portfolio.js): risk publications carry provenance minted at the source;
+# consumers reject stale/wrong-scope publications fail-closed.
+# ---------------------------------------------------------------------------
+LAW3_SHIM = r"""
+var __store = {};
+global.localStorage = {
+  getItem: function (k) { return Object.prototype.hasOwnProperty.call(__store, k) ? __store[k] : null; },
+  setItem: function (k, v) { __store[k] = String(v); }, removeItem: function (k) { delete __store[k]; }
+};
+global.CustomEvent = function (t, o) { this.type = t; this.detail = o && o.detail; };
+var __docListeners = {};
+var __writes = [];
+var nodes = {};
+function node(id) {
+  if (!nodes[id]) {
+    var n = {
+      id: id, _html: '', _text: '', style: {}, className: '', _attrs: {},
+      classList: { contains: function () { return false; }, toggle: function () {}, add: function () {}, remove: function () {} },
+      setAttribute: function (k, v) { this._attrs[k] = v; },
+      getAttribute: function (k) { return this._attrs[k] != null ? this._attrs[k] : null; },
+      querySelector: function () { return null; }, querySelectorAll: function () { return []; },
+      addEventListener: function () {}
+    };
+    Object.defineProperty(n, 'innerHTML', {
+      get: function () { return this._html; },
+      set: function (v) { this._html = v; __writes.push({ id: id, value: v }); }
+    });
+    Object.defineProperty(n, 'textContent', {
+      get: function () { return this._text; },
+      set: function (v) { this._text = v; __writes.push({ id: id, value: v }); }
+    });
+    nodes[id] = n;
+  }
+  return nodes[id];
+}
+global.document = {
+  readyState: 'complete',
+  documentElement: {
+    _a: {},
+    getAttribute: function (k) { return this._a[k] != null ? this._a[k] : null; },
+    setAttribute: function (k, v) { this._a[k] = v; },
+    classList: { add: function () {}, remove: function () {} }
+  },
+  getElementById: function (id) { return node(id); },
+  querySelector: function () { return null; }, querySelectorAll: function () { return []; },
+  addEventListener: function (t, f) { (__docListeners[t] = __docListeners[t] || []).push(f); },
+  removeEventListener: function () {},
+  dispatchEvent: function (e) { (__docListeners[e.type] || []).slice().forEach(function (f) { f(e); }); return true; },
+  createElement: function () { return { style: {}, classList: { add: function () {} } }; }
+};
+global.window = global;
+global.window.addEventListener = function () {};
+global.location = { hash: '', pathname: '/watchlist.html', search: '', origin: 'https://x' };
+global.MutationObserver = function () { return { observe: function () {} }; };
+node('rc_tabs').querySelectorAll = function () { return []; };
+window.SD = {};        // signed-in shell — renderRiskCenter()'s gate
+window.RiskCore = null;   // populated for real by requiring risk_core.js
+
+// ---- the factor artifact fetch() would serve, CONTROLLABLE (held pending) ------
+var __factorFetchResolvers = [];
+var MODEL = {
+  factors: [{ key: 'mkt', label: 'Market', tier: 'core' }, { key: 'rates', label: 'Rates', tier: 'core' }],
+  betas: {
+    WLONLY_ALPHA: { mkt: 1.20, rates: -0.30, idio_vol: 0.20 },
+    WLONLY_BETA:  { mkt: 0.90, rates: 0.40, idio_vol: 0.25 },
+    PF_AAPL: { mkt: 1.10, rates: -0.10, idio_vol: 0.20 },
+    PF_MSFT: { mkt: 1.00, rates: -0.05, idio_vol: 0.18 }
+  },
+  factor_cov: { mkt: { mkt: 0.0400, rates: 0.0020 }, rates: { mkt: 0.0020, rates: 0.0100 } }
+};
+global.fetch = function (url) {
+  if (String(url).indexOf('factor_betas.json') >= 0) {
+    return new Promise(function (resolve) {
+      __factorFetchResolvers.push(function () {
+        resolve({ ok: true, json: function () { return Promise.resolve(MODEL); } });
+      });
+    });
+  }
+  return Promise.resolve({ ok: false, json: function () { return Promise.resolve(null); } });
+};
+function settleFactorFetch() { var r = __factorFetchResolvers.shift(); if (r) r(); }
+
+var __pfCount = 2;
+var __setBookRiskCalls = [];
+window.PF = {
+  count: function () { return __pfCount; },
+  render: function () {},
+  setBookRisk: function (p) { __setBookRiskCalls.push(p); },
+  resetBookRisk: function () {}
+};
+window.MB = {
+  presentBooks: function () { return ['us']; }, modeledOnly: function (s) { return s; },
+  marketOf: function () { return 'us'; }, refresh: function () {}, setFact: function () {},
+  inActive: function () { return true; }, isModeled: function () { return true; },
+  getBook: function () { return 'all'; }
+};
+
+function tick() { return new Promise(function (r) { setImmediate(r); }); }
+async function drain(n) { for (var i = 0; i < (n || 8); i++) await tick(); }
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function OUT(o) { process.stdout.write(JSON.stringify(o)); }
+"""
+
+
+@needs_node
+def test_d2_deferred_republish_across_the_mode_boundary_is_rejected_then_a_fresh_publish_is_accepted():
+    """T-D2 (frozen spec LAW 3, republishTabs self-check + setRisk consumer
+    rejection). Seed a provenance-stamped LAST_READ in Watchlists mode,
+    scheduleTabRefresh() (via the real WRI.noteJson hydration entry point),
+    then setMode('portfolio') on a zero-position book BEFORE the deferred
+    rAF/setTimeout fires. RISK must stay the reset default. Then a FRESH
+    portfolio-scope publish at the current generation must be ACCEPTED — the
+    guard must not dead-end legitimate publications (non-vacuity).
+
+    MUTATION CHECK: remove the provenance self-check from republishTabs()
+    (watchlist_risk.js) — or the `payload.prov.gen === wsGen` check from
+    setRisk() (watchlist.js) — and this reds: the watchlist-derived tickers
+    reappear in a zero-position Portfolio's rc_body."""
+    script = (
+        LAW3_SHIM
+        + "\nrequire(%s);\n" % json.dumps(str(RISK_CORE))
+        + "var WLT = require(%s);\n" % json.dumps(str(WATCHLIST))
+        + "var WRIM = require(%s);\n" % json.dumps(str(WATCHLIST_RISK))
+        + """
+        (async function () {
+          WLT.setMode('watchlists', false);
+
+          // seed LAST_READ via the REAL derivation path, watchlist-scoped
+          var wlWeights = { universe: ['WLONLY_ALPHA', 'WLONLY_BETA'],
+                             wmap: { WLONLY_ALPHA: 60000, WLONLY_BETA: 40000 },
+                             mode: 'manual', prov: window.WS.prov() };
+          document.dispatchEvent(new CustomEvent('fx-weights', { detail: wlWeights }));
+          settleFactorFetch();   // resolves the ONE shared factor_betas.json fetch
+          await drain(15);
+          // setRisk() only PAINTS rc_body while mode==='portfolio' (existing law,
+          // unrelated to LAW 3) — the first publish happens in watchlists mode, so
+          // the seed check reads window.PF.setBookRisk's spy (called
+          // UNCONDITIONALLY by publish(), regardless of mode) rather than the DOM.
+          var firstPublishShares = __setBookRiskCalls.length
+            ? Object.keys(__setBookRiskCalls[__setBookRiskCalls.length - 1].shares || {})
+            : [];
+          var domAfterFirstPublish = node('rc_body').innerHTML;
+
+          // a hydration wave arms scheduleTabRefresh — the REAL entry point
+          window.WRI.noteJson('WLONLY_ALPHA', { earnings: { next: '2026-09-01' } });
+
+          // SYNCHRONOUSLY switch into Portfolio (zero positions) before the
+          // deferred republish fires
+          __pfCount = 0;
+          WLT.setMode('portfolio', false);
+          var domAfterSwitch = node('rc_body').innerHTML;
+
+          // flush the deferred rAF/setTimeout(16) republishTabs()
+          await sleep(60);
+          await drain(10);
+          var domAfterFlush = node('rc_body').innerHTML;
+
+          // fresh portfolio-scope derivation at the CURRENT generation
+          var pfWeights = { universe: ['PF_AAPL', 'PF_MSFT'],
+                             wmap: { PF_AAPL: 5000, PF_MSFT: 3000 },
+                             mode: 'auto', prov: window.WS.prov() };
+          document.dispatchEvent(new CustomEvent('fx-weights', { detail: pfWeights }));
+          await drain(15);
+          var domAfterFreshPublish = node('rc_body').innerHTML;
+
+          OUT({
+            mode: window.WS.mode(),
+            firstPublishShares: firstPublishShares,
+            domAfterSwitch_hasWL: domAfterSwitch.indexOf('WLONLY') >= 0,
+            domAfterFlush_hasWL: domAfterFlush.indexOf('WLONLY') >= 0,
+            domAfterFreshPublish_hasPF: domAfterFreshPublish.indexOf('PF_AAPL') >= 0
+          });
+        })();
+        """
+    )
+    out = _run_node_script(script)
+    assert out["mode"] == "portfolio"
+    # sanity: the first (watchlist-scope) publish genuinely reached window.PF (the
+    # WIDER of the two consumers, called unconditionally regardless of mode) — a
+    # broken seed would make the rest pass vacuously
+    assert "WLONLY_ALPHA" in out["firstPublishShares"], out["firstPublishShares"]
+    assert out["domAfterSwitch_hasWL"] is False
+    assert out["domAfterFlush_hasWL"] is False
+    # non-vacuity: a fresh, correctly-stamped publish in the new mode IS accepted
+    assert out["domAfterFreshPublish_hasPF"] is True
+
+
+@needs_node
+def test_d2b_recomputebook_fetch_deferred_closure_rejects_a_boundary_crossing_publish():
+    """T-D2b (frozen spec LAW 3, recomputeBook's self-check — the WIDEST replay
+    window, reaching BOTH consumers). Dispatch fx-weights in Watchlists mode
+    while the factor_betas.json fetch is HELD PENDING, cross the mode boundary
+    (setMode('portfolio')), THEN settle the fetch: the captured weights are
+    stale by the time recomputeBook's `.then()` runs. The publish must be
+    aborted entirely — window.PF.setBookRisk (the WIDER of the two consumers,
+    called unconditionally by publish()) must never see it. Then a fresh post-
+    boundary derivation publishes and is accepted (non-vacuity).
+
+    MUTATION CHECK: remove the self-check block from recomputeBook()'s
+    `loadData().then(...)` closure (watchlist_risk.js) and this reds — the
+    stale WLONLY-keyed payload reaches window.PF.setBookRisk (harmlessly
+    rejected there too by LAW 3's OWN consumer-side gate in portfolio.js, but
+    watchlist.js's setRisk() would also see it if window.PF were absent — the
+    self-check is what stops it from EVER being built, not merely from EVER
+    being painted)."""
+    script = (
+        LAW3_SHIM
+        + "\nrequire(%s);\n" % json.dumps(str(RISK_CORE))
+        + "var WLT = require(%s);\n" % json.dumps(str(WATCHLIST))
+        + "var WRIM = require(%s);\n" % json.dumps(str(WATCHLIST_RISK))
+        + """
+        (async function () {
+          WLT.setMode('watchlists', false);
+          var genInWatchlists = window.WS.prov().gen;
+
+          // dispatch fx-weights WHILE THE FETCH IS STILL PENDING — the module's
+          // bootstrap init() already has ONE pending .then() on this same fetch
+          // (harmless: it self-rejects via the gen:-1 fail-closed stamp)
+          var staleWeights = { universe: ['WLONLY_ALPHA', 'WLONLY_BETA'],
+                                wmap: { WLONLY_ALPHA: 60000, WLONLY_BETA: 40000 },
+                                mode: 'manual', prov: { scope: 'watchlist', gen: genInWatchlists } };
+          document.dispatchEvent(new CustomEvent('fx-weights', { detail: staleWeights }));
+          await drain(5);   // let recomputeBook register its .then() on loadData()
+
+          // cross the boundary WHILE the fetch is still pending
+          __pfCount = 0;
+          WLT.setMode('portfolio', false);
+          var genAfterSwitch = window.WS.prov().gen;
+
+          var setBookRiskCallsBefore = __setBookRiskCalls.length;
+
+          // NOW settle the fetch — the captured `staleWeights` are stale
+          settleFactorFetch();
+          await drain(15);
+
+          OUT({
+            genInWatchlists: genInWatchlists, genAfterSwitch: genAfterSwitch,
+            mode: window.WS.mode(),
+            rcBody_afterStaleSettle: node('rc_body').innerHTML,
+            setBookRiskCallsAfterStaleSettle: __setBookRiskCalls.length - setBookRiskCallsBefore
+          });
+        })();
+        """
+    )
+    out = _run_node_script(script)
+    assert out["genAfterSwitch"] != out["genInWatchlists"], (
+        "sanity: the mode switch must actually bump the generation")
+    assert out["mode"] == "portfolio"
+    # the stale publish never even reached window.PF.setBookRisk — aborted at
+    # recomputeBook's self-check, not merely rejected downstream
+    assert out["setBookRiskCallsAfterStaleSettle"] == 0
+    assert "WLONLY" not in out["rcBody_afterStaleSettle"]
+
+
+@needs_node
+def test_d2c_consumer_rejection_is_provenance_based_not_overlap_based():
+    """T-D2c (frozen spec LAW 3, setBookRisk consumer rejection — exact-ticker-
+    overlap does NOT excuse a stale generation; Sol: "symbol overlap alone is
+    not provenance"). Also proves a stale-gen EMPTY payload is still rejected —
+    payloadIsConsistentWithBook()'s "empty payload is consistent" answer is a
+    boolean PREDICATE (true = "not inconsistent with the book"), never a
+    controlling early-return of setBookRisk() itself, so it cannot wave a
+    stale-gen empty payload through on its own; the provenance check is what
+    actually rejects it, and it must be PRESENT (source order between the two
+    guards is not independently load-bearing in this shape, since
+    payloadIsConsistentWithBook never short-circuits the function on TRUE).
+
+    MUTATION CHECK: remove the provenance check block from setBookRisk()
+    (portfolio.js) entirely and BOTH assertions below red — the exact-ticker-
+    match payload AND the stale-gen empty payload are both waved through on
+    payloadIsConsistentWithBook()'s symbol-overlap logic alone."""
+    out = _run(
+        """
+        boot();
+        var db = makeDeferredDb();
+        WSL._setTestSession(USER, db.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        db.settleNext({ data: [
+          { id:'p1', ticker:'AAPL', shares:10, entry_price:100, entry_date:null, notes:null, status:'open', created_at:'1' },
+          { id:'p2', ticker:'MSFT', shares:5,  entry_price:200, entry_date:null, notes:null, status:'open', created_at:'2' }
+        ], error:null });
+        await drain(10);
+        var writesBefore = __writes.length;
+
+        // EXACT ticker match with the book, but a STALE gen (the SHIM's
+        // window.WS.prov() answers gen 0)
+        window.PF.setBookRisk({ shares: { AAPL: 0.6, MSFT: 0.4 }, covered: { AAPL: 1, MSFT: 1 },
+                                 bets: null, modeledN: 2, regime: '', concHTML: '<p>STALE_GEN_MARKER</p>',
+                                 rcTabs: null, labHTML: '', prov: { scope: 'portfolio', gen: 1 } });
+        await drain(4);
+        var afterStaleGen = { repainted: __writes.length > writesBefore, tbl: node('tbl_pf').innerHTML };
+
+        // the SAME payload, current gen -> accepted
+        var writesBefore2 = __writes.length;
+        window.PF.setBookRisk({ shares: { AAPL: 0.6, MSFT: 0.4 }, covered: { AAPL: 1, MSFT: 1 },
+                                 bets: null, modeledN: 2, regime: '', concHTML: '<p>VALID_GEN_MARKER</p>',
+                                 rcTabs: null, labHTML: '', prov: { scope: 'portfolio', gen: 0 } });
+        await drain(4);
+        var afterValidGen = { repainted: __writes.length > writesBefore2 };
+
+        // a stale-gen EMPTY payload -- the prov check must run BEFORE the
+        // empty-payload early-accept
+        var writesBefore3 = __writes.length;
+        window.PF.setBookRisk({ shares: {}, covered: {}, bets: null, modeledN: 0,
+                                 regime: '', concHTML: '', rcTabs: null, labHTML: '',
+                                 prov: { scope: 'portfolio', gen: 1 } });
+        await drain(4);
+        var afterStaleEmpty = { repainted: __writes.length > writesBefore3 };
+
+        OUT({ afterStaleGen: afterStaleGen, afterValidGen: afterValidGen, afterStaleEmpty: afterStaleEmpty });
+        """,
+        {"USER": USER},
+    )
+    assert out["afterStaleGen"]["repainted"] is False, (
+        "an exact-ticker-match payload with a stale gen was accepted — overlap is not provenance")
+    assert out["afterValidGen"]["repainted"] is True
+    assert out["afterStaleEmpty"]["repainted"] is False, (
+        "a stale-gen EMPTY payload was waved through the empty-payload early-accept")
+
+
+@needs_node
+def test_f2_wl_auth_boundary_invalidates_the_retained_fx_latch_before_a_post_boundary_rerender():
+    """F2 (adversarial review, MAJOR — reviewer's executed proof, probe_regen.js).
+    Two independent leak mechanisms across the SAME wl-auth identity boundary,
+    each closed by a DIFFERENT half of the fix:
+
+    LEG 1 (closed by the NEW `window.FX.setAutoWeights({})` clear): LAW 3's mint
+    reads window.WS.prov() LIVE at factor_exposure.js's render() time, and
+    render() reads AUTO_W LIVE too — so a POST-boundary RE-RENDER
+    (window.FX.refresh(), reachable via the lang-btn click listener at
+    factor_exposure.js's bottom) over a PRE-boundary AUTO_W latch mints the
+    CURRENT (post-boundary) gen and is ACCEPTED: provenance binds the MOMENT of
+    derivation, not the DATA. AUTO_W (portfolio.js's dollar-weighted push) is a
+    retained latch nothing invalidated at the wl-auth boundary before this fix.
+    This leg is INSENSITIVE to `wsGen++` alone — the mint always reads whatever
+    gen is CURRENT at render time, bumped or not, so a plain re-render never
+    carries a stale captured gen to compare against.
+
+    LEG 2 (closed by `wsGen++`): a publish CAPTURED (its provenance read) BEFORE
+    the boundary, delivered to setRisk() AFTER it — modelling any in-flight
+    publish whose closure grabbed `window.WS.prov()` pre-boundary (a deferred
+    republishTabs(), a recomputeBook() mid-fetch, etc. — LAW 3's OTHER self-
+    checks already pin those specific channels; this leg isolates the RAW
+    consumer-side gen comparison itself). setRisk()'s consumer check compares
+    the CAPTURED (pre-boundary) gen against the CURRENT gen — if the boundary
+    never bumped wsGen, the captured gen still equals the current one and the
+    stale publish is wrongly accepted. This leg calls `setRisk()` directly,
+    synchronously, right after the flip — before the wl-auth listener's OWN
+    `window.FX.setAutoWeights({})` clear can trigger its own async recompute
+    and null LAST_READ as an (unrelated) side effect, which would otherwise
+    mask whether `wsGen++` itself did anything. This leg is INSENSITIVE to the
+    FX clear alone — it never touches AUTO_W or LAST_READ.
+
+    Both legs drive the REAL risk_core.js + watchlist.js + factor_exposure.js +
+    watchlist_risk.js chain.
+
+    MUTATION CHECK: remove `wsGen++` from the wl-auth identity-change listener
+    (watchlist.js) and LEG 2 reds (the captured pre-boundary gen still matches
+    the unbumped current one, so the stale publish is accepted). Remove the NEW
+    `window.FX.setAutoWeights({})` clear (leaving `wsGen++` in place) and LEG 1
+    reds (the retained AUTO_W re-mints under the new gen on the very next re-
+    render, exactly as the reviewer's probe demonstrated) — either mutation
+    reds this test."""
+    script = (
+        LAW3_SHIM
+        + "\nrequire(%s);\n" % json.dumps(str(RISK_CORE))
+        + "var WLT = require(%s);\n" % json.dumps(str(WATCHLIST))
+        + "require(%s);\n" % json.dumps(str(FACTOR_EXPOSURE))
+        + "var WRIM = require(%s);\n" % json.dumps(str(WATCHLIST_RISK))
+        + """
+        (async function () {
+          // ---- LEG 1: plain re-render over a retained AUTO_W latch ----------
+          document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: { id: 'user-A' } } }));
+          WLT.setMode('portfolio', false);
+          window.FX.setAutoWeights({ PF_AAPL: 5000, PF_MSFT: 3000 });
+          await drain(6); settleFactorFetch(); settleFactorFetch(); await drain(25);
+          var rcA = node('rc_body').innerHTML;
+
+          // identity flip to user B -- the wl-auth boundary. Nothing re-pushes
+          // a book for B: AUTO_W still holds user A's dollar weights.
+          document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: { id: 'user-B' } } }));
+          node('rc_body')._html = '';
+          __setBookRiskCalls.length = 0;
+
+          // a plain re-render -- exactly what the lang-btn click listener does,
+          // NOT a fresh FX.setAutoWeights() push
+          window.FX.refresh();
+          await drain(6); settleFactorFetch(); settleFactorFetch(); await drain(25);
+
+          var lastPublish = __setBookRiskCalls[__setBookRiskCalls.length - 1] || {};
+          var leg1PublishedNames = Object.keys(lastPublish.shares || {});
+          var leg1_rcBody_hasPFAAPL = node('rc_body').innerHTML.indexOf('PF_AAPL') >= 0;
+
+          // ---- LEG 2: a DEFERRED republish scheduled before, fired after ----
+          // fresh identities (C/D) so this leg starts from a clean LAST_READ,
+          // independent of leg 1's history.
+          document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: { id: 'user-C' } } }));
+          window.FX.setAutoWeights({ PF_AAPL: 5000, PF_MSFT: 3000 });
+          await drain(6); settleFactorFetch(); settleFactorFetch(); await drain(25);
+          // C's genuine, CURRENT provenance -- captured BEFORE the boundary,
+          // exactly like a real in-flight publish's closure would capture it.
+          var staleProv = window.WS.prov();
+
+          // identity flip to D -- the boundary. `staleProv` above must now be
+          // stale for D's session. Note: the wl-auth listener's OWN
+          // `window.FX.setAutoWeights({})` clear (unmutated by the M15 probe
+          // below) ALSO triggers an async recompute that nulls LAST_READ on its
+          // own -- driving this leg through a genuinely SCHEDULED
+          // republishTabs() would therefore be blind to the M15 mutation
+          // specifically (the FX-clear's side effect masks it). Calling
+          // setRisk() directly, synchronously, right after the flip -- before
+          // that async recompute's microtask even runs -- isolates EXACTLY
+          // what `wsGen++` protects: a publish captured before the boundary,
+          // arriving after it.
+          document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: { id: 'user-D' } } }));
+          node('rc_body')._html = '';
+          window.WS.setRisk({
+            shares: { PF_AAPL: 0.6 }, concHTML: '<p>PF_AAPL carries the risk</p>',
+            rcTabs: { conc: '<p>PF_AAPL carries the risk</p>' }, labHTML: '',
+            seamItems: null, coverage: null, headline: null,
+            prov: staleProv
+          });
+          var leg2_rcBody_hasPFAAPL = node('rc_body').innerHTML.indexOf('PF_AAPL') >= 0;
+
+          OUT({
+            rcA_hasPFAAPL: rcA.indexOf('PF_AAPL') >= 0,
+            leg1PublishedNames: leg1PublishedNames,
+            leg1_rcBody_hasPFAAPL: leg1_rcBody_hasPFAAPL,
+            leg2_rcBody_hasPFAAPL: leg2_rcBody_hasPFAAPL
+          });
+        })();
+        """
+    )
+    out = _run_node_script(script)
+    assert out["rcA_hasPFAAPL"] is True, "sanity: A's book genuinely painted before the flip"
+    assert out["leg1PublishedNames"] == [], (
+        "LEG 1: A's retained AUTO_W book re-published under B's generation via a plain "
+        "re-render: %r" % out["leg1PublishedNames"])
+    assert out["leg1_rcBody_hasPFAAPL"] is False, (
+        "LEG 1: A's book painted into B's Risk Center via a post-boundary re-render")
+    assert out["leg2_rcBody_hasPFAAPL"] is False, (
+        "LEG 2: C's pre-boundary-captured provenance was accepted under D's session")
+
+
+@needs_node
+def test_f1_legitimate_portfolio_push_reaches_rc_body_through_the_real_producer_chain():
+    """F1 (adversarial review, MAJOR — the PRODUCER half of LAW 3 had ZERO
+    coverage). Every other LAW 3 test in this suite either hand-mints
+    `prov: window.WS.prov()` in a stub FX (T-D2/T-D2b) or manipulates setRisk/
+    setBookRisk directly (T-D2c) — none of them drive the REAL mint site,
+    factor_exposure.js's CUR assignment, end to end. A silent regression there
+    (the mint stops stamping prov at all, or watchlist_risk.js stops carrying it
+    through) leaves every OTHER LAW 3 test green — they all supply their own
+    prov by hand — while production breaks completely: the failure mode is a
+    PERMANENTLY EMPTY Risk Center, because setRisk()/setBookRisk() fail-closed-
+    reject every real payload the same way they correctly reject a forged one.
+
+    setMode('portfolio') -> a real FX.setAutoWeights() push -> settle the real
+    factor_betas.json fetch -> the derivation must reach both consumers and
+    paint rc_body with a real portfolio ticker. A SECOND leg then clears
+    rc_body by hand and drives a REAL deferred republish (the hydration-wave
+    path, scheduleTabRefresh/republishTabs) — that path reads FROM
+    watchlist_risk.js's own `LAST_READ.prov`, a SEPARATE carry from the
+    `out.prov` stamp the immediate publish above already proves, so it is the
+    only leg that can catch a regression in that specific carry.
+
+    MUTATION CHECK (all four independently red this test — see EVIDENCE for the
+    paste of each): X5 (factor_exposure.js's BOTH CUR-assignment prov stamps
+    removed) and X6 (currentWeights() stops forwarding CUR.prov) both red the
+    FIRST leg (rc_body never paints at all). M16 (the single normal-resolution
+    prov stamp removed) also reds the first leg. M17 (watchlist_risk.js's
+    LAST_READ stops carrying weights.prov) leaves the FIRST leg green — `out.
+    prov` is a separate stamp — but reds the SECOND leg: the deferred republish
+    can no longer prove its own provenance to itself and silently no-ops."""
+    script = (
+        LAW3_SHIM
+        + "\nrequire(%s);\n" % json.dumps(str(RISK_CORE))
+        + "var WLT = require(%s);\n" % json.dumps(str(WATCHLIST))
+        + "require(%s);\n" % json.dumps(str(FACTOR_EXPOSURE))
+        + "var WRIM = require(%s);\n" % json.dumps(str(WATCHLIST_RISK))
+        + """
+        (async function () {
+          WLT.setMode('portfolio', false);
+          window.FX.setAutoWeights({ PF_AAPL: 5000, PF_MSFT: 3000 });
+          await drain(6); settleFactorFetch(); settleFactorFetch(); await drain(25);
+          var rcBody = node('rc_body').innerHTML;
+          var setBookRiskNames = Object.keys((__setBookRiskCalls[__setBookRiskCalls.length - 1] || {}).shares || {});
+
+          // LEG 2: clear rc_body by hand, then drive a REAL deferred republish
+          // (the hydration-wave path) at the SAME generation -- it must
+          // re-populate rc_body by successfully checking its OWN LAST_READ.prov
+          // against the current gen, never by re-deriving anything.
+          node('rc_body')._html = '';
+          window.WRI.noteJson('PF_AAPL', { earnings: { next: '2026-09-01' } });
+          await sleep(60);
+          await drain(15);
+          var rcBodyAfterRepublish = node('rc_body').innerHTML;
+
+          OUT({ rcBody: rcBody, setBookRiskNames: setBookRiskNames, rcBodyAfterRepublish: rcBodyAfterRepublish });
+        })();
+        """
+    )
+    out = _run_node_script(script)
+    assert "PF_AAPL" in out["rcBody"] or "PF_MSFT" in out["rcBody"], (
+        "a real portfolio push through the real producer chain never painted rc_body: %r"
+        % out["rcBody"][:200])
+    assert "PF_AAPL" in out["setBookRiskNames"], out["setBookRiskNames"]
+    assert "PF_AAPL" in out["rcBodyAfterRepublish"] or "PF_MSFT" in out["rcBodyAfterRepublish"], (
+        "a real deferred republish at the SAME generation never re-populated rc_body: %r"
+        % out["rcBodyAfterRepublish"][:200])
+
+
+# ---------------------------------------------------------------------------
+# T-D3a/T-D3b — LAW 4 (watchstore.js): client resolution always reaches a
+# terminal state — no getSupabaseClient factory, and a synchronous throw from
+# calling it, both route through the SAME terminal path a rejected/timed-out
+# client uses.
+# ---------------------------------------------------------------------------
+@needs_node
+def test_d3a_missing_client_factory_reaches_a_terminal_state_not_stuck_loading():
+    """T-D3a (frozen spec LAW 4a). window.getSupabaseClient is entirely absent.
+    Before this fix the `if (!getClient)` branch returned WITHOUT ever setting
+    sbInitFailed, leaving `_isCloudLoading()` (not `_isClientUnavailable()`)
+    true for the rest of the session — portfolioList() answered 'loading'
+    forever, and no second 'wl-auth' ever rescued a listener holding that
+    transient answer.
+
+    MUTATION CHECK: revert the `if (!getClient) { ... }` branch to the old bare
+    `setPill('offline'); warnOnce(...); return;` (dropping the clientFailed()
+    call) and this reds — readState stays 'loading', list() never terminally
+    resolves, and only ONE 'wl-auth' ever fires."""
+    out = _run(
+        """
+        boot();
+        delete window.getSupabaseClient;
+        var wlAuthCount = 0;
+        document.addEventListener('wl-auth', function () { wlAuthCount++; });
+        WSL.onAuthUser(USER);
+        await drain(10);
+
+        var readState = WSL.portfolio.readState();
+        var listResult = await WSL.portfolio.list();
+        await drain(5);
+
+        OUT({ readState: readState, listResult: listResult, wlAuthCount: wlAuthCount });
+        """,
+        {"USER": USER},
+    )
+    assert out["readState"]["state"] in ("degraded", "error")
+    assert out["readState"]["authority"] == "cloud"
+    assert out["readState"]["warning"] == "client-unavailable"
+    assert out["listResult"] is None   # no last-good -> honest error, never []
+    # the FIRST 'wl-auth' fires synchronously inside onAuthUser's signed-in
+    # branch; the terminal path must re-fire a SECOND one so every listener
+    # holding that transient answer resolves
+    assert out["wlAuthCount"] >= 2
+
+
+@needs_node
+def test_d3b_synchronous_getclient_throw_reaches_the_same_terminal_state_no_uncaught_exception():
+    """T-D3b (frozen spec LAW 4b). getSupabaseClient() throws SYNCHRONOUSLY —
+    before this fix that escaped onAuthUser() entirely (past the Promise.race
+    .catch, which can only see a REJECTED promise, never a synchronous throw)
+    and landed uncaught in the caller (window.MDXAuth.onChange's callback has
+    no try/catch of its own).
+
+    MUTATION CHECK: replace `Promise.resolve(getClient())` with a bare
+    `getClient()` call (dropping the try/catch, watchstore.js) and this reds —
+    the exception escapes onAuthUser() synchronously instead of being caught
+    and routed through clientFailed()."""
+    out = _run(
+        """
+        boot();
+        window.getSupabaseClient = function () { throw new TypeError('supabase factory exploded'); };
+        var escaped = null;
+        try { WSL.onAuthUser(USER); } catch (e) { escaped = String(e && e.name); }
+        await drain(10);
+
+        var readState = WSL.portfolio.readState();
+        var listResult = await WSL.portfolio.list();
+        await drain(5);
+
+        OUT({ escaped: escaped, readState: readState, listResult: listResult });
+        """,
+        {"USER": USER},
+    )
+    assert out["escaped"] is None, "the synchronous throw escaped onAuthUser() uncaught"
+    assert out["readState"]["state"] in ("degraded", "error")
+    assert out["readState"]["warning"] == "client-unavailable"
+    assert out["listResult"] is None

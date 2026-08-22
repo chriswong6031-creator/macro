@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-08-20",
+  "as_of": "2026-08-21",
   "coverage": {
-    "end": "2026-08-20",
+    "end": "2026-08-21",
     "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W34; 14 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-21"
+    "start": "2026-05-22"
   },
   "iso_week": "2026-W34",
   "schema": "chronicle.rollup.weekly/v1",
@@ -11,15 +11,21 @@
     {
       "clusters": [
         {
-          "n_events": 216,
+          "n_events": 273,
           "source": "research_vault",
           "theme": null,
           "top_events": []
         },
         {
-          "n_events": 29,
+          "n_events": 58,
           "source": "earnings_call",
           "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 4,
+          "source": "prophet_ledger",
+          "theme": null,
           "top_events": []
         },
         {
@@ -36,8 +42,8 @@
         },
         {
           "n_events": 1,
-          "source": "prophet_ledger",
-          "theme": null,
+          "source": "research_vault",
+          "theme": "Mcelligott",
           "top_events": []
         }
       ],
@@ -46,7 +52,7 @@
     {
       "clusters": [
         {
-          "n_events": 440,
+          "n_events": 441,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
@@ -97,18 +103,7 @@
           "n_events": 1,
           "source": "regime_flip",
           "theme": "regime",
-          "top_events": [
-            {
-              "date": "2026-08-10",
-              "id": "cev-regime_flip-3df289330159",
-              "kind": "state_flip",
-              "source": "regime_flip",
-              "source_ref": "state_log#2026-08-10#regime_china",
-              "tickers": [],
-              "title": "CHINA regime: Q3 Stagflation → Q4 Growth-scare",
-              "weight_hint": 3
-            }
-          ]
+          "top_events": []
         }
       ],
       "iso_week": "2026-W33"
@@ -116,7 +111,7 @@
     {
       "clusters": [
         {
-          "n_events": 657,
+          "n_events": 658,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
@@ -271,7 +266,7 @@
           ]
         },
         {
-          "n_events": 107,
+          "n_events": 109,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
@@ -574,6 +569,12 @@
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
+        },
+        {
+          "n_events": 2,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
         }
       ],
       "iso_week": "2026-W22"
@@ -581,7 +582,7 @@
     {
       "clusters": [
         {
-          "n_events": 19,
+          "n_events": 2,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []

@@ -162,6 +162,46 @@ def resolve_primary_root(start: Path | None = None) -> Path:
     return common.parent
 
 
+def path_under_session_root(path: Path, rel_roots: list[str]) -> bool:
+    """True when ``path`` sits inside one of the repo-relative session roots."""
+    parts = Path(path).parts
+    for rel in rel_roots:
+        marker = tuple(rel.strip("/").split("/"))
+        span = len(marker)
+        for index in range(len(parts) - span + 1):
+            if parts[index:index + span] == marker:
+                return True
+    return False
+
+
+def host_checkouts(primary: Path, registered: list["Worktree"], rel_roots: list[str]) -> list[Path]:
+    """Every checkout that can HOST session worktrees, primary first.
+
+    The configured roots are repo-RELATIVE, and until 2026-08-20 they were only
+    ever expanded under the primary checkout. That silently scoped the sweeper to
+    one folder: a session tree planted under any other checkout of the same clone
+    matched no root, so it never entered ``in_scope``, never reached the report,
+    and would have been refused at the deletion belt as "outside configured
+    roots" even if it had. A clone with two checkouts (here: the occupied primary
+    and the operator's designated local root) has two places worktrees are
+    planted, and the sweeper has to sweep both.
+
+    A registration that is ITSELF under a session root is a session tree, not a
+    host — including it would let the sweeper expand roots inside the very trees
+    it reclaims.
+    """
+    hosts = [primary.resolve()]
+    for wt in registered:
+        try:
+            path = wt.path.resolve()
+        except OSError:
+            continue
+        if path in hosts or path_under_session_root(path, rel_roots):
+            continue
+        hosts.append(path)
+    return hosts
+
+
 def parse_worktree_list(text: str) -> list[Worktree]:
     out: list[Worktree] = []
     cur: Worktree | None = None
@@ -190,13 +230,21 @@ def parse_worktree_list(text: str) -> list[Worktree]:
     return out
 
 
-def expand_roots(primary: Path, roots: list[str]) -> list[Path]:
-    out = []
+def expand_roots(hosts: Path | list[Path], roots: list[str]) -> list[Path]:
+    """Absolute sweep roots. A relative root expands under EVERY host checkout."""
+    if isinstance(hosts, (str, Path)):
+        hosts = [Path(hosts)]
+    out: list[Path] = []
     for r in roots:
         p = Path(os.path.expanduser(r))
-        if not p.is_absolute():
-            p = primary / r
-        out.append(p)
+        if p.is_absolute():
+            if p not in out:
+                out.append(p)
+            continue
+        for host in hosts:
+            q = Path(host) / r
+            if q not in out:
+                out.append(q)
     return out
 
 
@@ -567,12 +615,17 @@ def classify(
 
 # ── orphan scan ──────────────────────────────────────────────────────────────
 
-def scan_orphans(primary: Path, roots: list[Path], registered: list[Worktree]) -> list[Worktree]:
+def scan_orphans(hosts: Path | list[Path], roots: list[Path],
+                 registered: list[Worktree]) -> list[Worktree]:
     """Depth-1 entries under the in-repo roots not covered by any registration."""
+    if isinstance(hosts, (str, Path)):
+        hosts = [Path(hosts)]
     reg_paths = [w.path.resolve() for w in registered]
     out: list[Worktree] = []
     for root in roots:
-        if not _under(root, primary):        # only scan roots inside the repo
+        # Only scan roots inside the repo — under ANY host checkout, not just the
+        # primary, or orphans beside a second checkout are never seen.
+        if not any(_under(root, h) for h in hosts):
             continue
         try:
             entries = sorted(os.scandir(root), key=lambda e: e.name)
@@ -606,6 +659,7 @@ def apply_deletions(
     cfg: dict,
     roots: list[Path],
     dry_run: bool = False,
+    hosts: list[Path] | None = None,
 ) -> dict:
     summary = {"deleted": [], "pruned": False, "branches_deleted": [], "errors": [], "skipped_cap": 0}
     now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -626,6 +680,13 @@ def apply_deletions(
         # must not be the primary checkout or the sweeper's own tree.
         if wt.path.resolve() == primary.resolve() or not any(_under(wt.path, r) for r in roots):
             summary["errors"].append(f"{wt.path}: refused — outside configured roots")
+            continue
+        # A host is a CHECKOUT, never a session tree. It cannot reach the belt
+        # (no host sits under a root) — this is the belt behind the belt, because
+        # the operator's designated local root is one of them and deleting it
+        # destroys every sibling worktree at once.
+        if any(wt.path.resolve() == Path(h).resolve() for h in (hosts or ())):
+            summary["errors"].append(f"{wt.path}: refused — host checkout")
             continue
         if _under(Path.cwd(), wt.path):
             summary["errors"].append(f"{wt.path}: refused — sweeper cwd inside")
@@ -788,13 +849,19 @@ def main(argv: list[str] | None = None) -> int:
         cfg["pr_limit"] = args.pr_limit
     do_apply = bool(args.apply)
 
-    roots = expand_roots(primary, list(cfg["roots"]))
     now = time.time()
 
+    # The registration list comes FIRST: the hosts that relative roots expand
+    # under are themselves registrations of this clone.
     rc, out, err = _git(primary, "worktree", "list", "--porcelain", timeout=60)
     if rc != 0:
         raise SystemExit(f"git worktree list failed: {err.strip()}")
     registered = parse_worktree_list(out)
+
+    rel_roots = [r for r in cfg["roots"]
+                 if not r.startswith("~") and not os.path.isabs(r)]
+    hosts = host_checkouts(primary, registered, rel_roots)
+    roots = expand_roots(hosts, list(cfg["roots"]))
 
     in_scope: list[Worktree] = []
     for w in registered:
@@ -803,7 +870,7 @@ def main(argv: list[str] | None = None) -> int:
                 w.root = str(r)
                 in_scope.append(w)
                 break
-    orphans = scan_orphans(primary, roots, registered)
+    orphans = scan_orphans(hosts, roots, registered)
 
     fetch_ok = False if args.no_fetch else fetch_origin(primary)
     pr_states: dict[str, dict] | None = None
@@ -848,7 +915,8 @@ def main(argv: list[str] | None = None) -> int:
         if refused:
             log.error(refused)
         else:
-            apply_summary = apply_deletions(primary, candidates, cfg, roots, dry_run=args.dry_run)
+            apply_summary = apply_deletions(primary, candidates, cfg, roots,
+                                            dry_run=args.dry_run, hosts=hosts)
 
     payload = {
         "meta": meta,

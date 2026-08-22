@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "china",
-  "generated_at": "2026-08-20T08:08:44.421571+00:00",
+  "generated_at": "2026-08-21T03:40:21.132900+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {

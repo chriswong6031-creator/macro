@@ -1,0 +1,34 @@
+---
+description: Terminal delivery state for lawfully held pull requests
+alwaysApply: true
+---
+
+# Ship-loop terminal states
+
+Ordinary pushed-but-unmerged work is still unfinished. Do not weaken the normal
+commit -> push -> PR -> CI -> merge -> live contract and do not treat
+`merge-on-green` by itself as completion.
+
+There is one distinct operator-controlled terminal state: **PARKED**.
+
+A pull request is PARKED only when all of these are true:
+
+- its title starts with `HOLD-FOR-SOL`;
+- it is still a draft;
+- its exact current head is pushed and the worktree is clean;
+- it has no `merge-on-green` label and native GitHub auto-merge is not armed;
+- the PR body or comments record an explicit Sol authority and a release condition
+  controlled by Sol;
+- the hold explicitly says not to merge;
+- all binding checks on that exact head have concluded clean.
+
+When those conditions hold, the unmerged state is intentional and externally
+controlled. Report the work as **PARKED / HOLD-FOR-SOL**, not SHIPPED and not
+`SHIP LOOP BLOCKED`. Do not merge, mark ready, arm automation, relabel, or repeatedly
+poll/retry merely to satisfy the ordinary merge completion rule. End the session
+after one concise evidence report. Resume the ship loop only after Sol releases or
+changes the hold.
+
+If any condition above is missing, ambiguous, red, pending, dirty, or stale, fail
+closed and follow the ordinary ship loop instead. A vague request to "hold" or
+"review later" is never enough to create the PARKED state.

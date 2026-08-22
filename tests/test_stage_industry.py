@@ -204,6 +204,82 @@ def test_coverage_guard_marks_stale_source(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
+# Wave 8 §6.1 — the false-stale warning: judge freshness on the Stage-week
+# plane when both sides carry one, falling back to the daily comparison only
+# when the week plane cannot answer.
+# ---------------------------------------------------------------------------
+def test_coverage_week_plane_not_stale_despite_daily_lag():
+    """Required §10 case: an Aug-20 build with an Aug-19 daily source and a
+    target completed Stage week Aug-14 is NOT reported stale, because the
+    classifier is weekly-native and the frame's own stage_week_end also
+    resolves to Aug-14."""
+    frame = _frame().assign(stage_source_asof="2026-08-19",
+                            stage_week_end="2026-08-14")
+    cov = si.coverage_snapshot(frame, expected_asof="2026-08-20",
+                               output_rows=3, expected_stage_week="2026-08-14")
+    assert cov["freshness"]["plane"] == "stage_week"
+    assert cov["freshness"]["status"] == "current"
+    assert cov["status"] == "ready"
+    assert "source_asof_stale" not in cov["issues"]
+    assert not any(i.startswith("source_stage_week_") for i in cov["issues"])
+    # daily values stay in the payload for audit even though they did not
+    # decide the freshness verdict.
+    assert cov["freshness"]["source_asof"] == "2026-08-19"
+    assert cov["freshness"]["expected_asof"] == "2026-08-20"
+    assert cov["freshness"]["expected_stage_week"] == "2026-08-14"
+    assert cov["freshness"]["source_stage_week"] == "2026-08-14"
+
+
+def test_coverage_week_plane_flags_a_genuine_week_mismatch():
+    frame = _frame().assign(stage_week_end="2026-06-26")
+    cov = si.coverage_snapshot(frame, expected_asof="2026-08-20",
+                               output_rows=3, expected_stage_week="2026-08-14")
+    assert cov["freshness"]["plane"] == "stage_week"
+    assert cov["freshness"]["status"] == "stale"
+    assert "source_stage_week_stale" in cov["issues"]
+    assert cov["status"] == "warn"
+
+
+def test_coverage_falls_back_to_daily_plane_when_week_plane_unavailable():
+    """No `stage_week_end` column on the frame -> the plane stays 'daily'
+    even when the caller supplies `expected_stage_week`."""
+    frame = _frame().assign(stage_source_asof="2026-07-19")
+    cov = si.coverage_snapshot(frame, expected_asof="2026-07-20",
+                               output_rows=3, expected_stage_week="2026-08-14")
+    assert cov["freshness"]["plane"] == "daily"
+    assert cov["freshness"]["status"] == "stale"
+    assert "source_asof_stale" in cov["issues"]
+    assert not any(i.startswith("source_stage_week_") for i in cov["issues"])
+
+
+def test_build_threads_target_stage_week_into_coverage(tmp_path: Path):
+    frame = _frame().assign(stage_source_asof="2026-08-19",
+                            stage_week_end="2026-08-14")
+    contract = si.build(stage_frame=frame, root=tmp_path, asof="2026-08-20",
+                        target_stage_week="2026-08-14")
+    assert contract["status"] == "ready"
+    assert contract["coverage"]["freshness"]["plane"] == "stage_week"
+    assert "source_asof_stale" not in contract["coverage"]["issues"]
+
+
+# ---------------------------------------------------------------------------
+# Wave 8 §6.3 — provenance text split: house-native `method` vs the
+# EquityDesk historical `calibration` yardstick.
+# ---------------------------------------------------------------------------
+def test_method_and_calibration_blocks_are_split(tmp_path: Path):
+    contract = si.build(stage_frame=_frame(), root=tmp_path, asof="2026-07-20")
+    assert contract["method"]["plane"] == "completed W-FRI stage week"
+    assert "House-native" in contract["method"]["live"]
+    assert "OHLCV" in contract["method"]["live"]
+    assert contract["calibration"]["target"] == (
+        "stageanalysis_industry_ranks_weekly (EquityDesk)")
+    assert "NOT an input" in contract["calibration"]["yardstick"]
+    assert "rank rho" in contract["calibration"]["note"]
+    # the old nested calibration.method key is gone — method is now top-level.
+    assert "method" not in contract["calibration"]
+
+
+# ---------------------------------------------------------------------------
 # Calibration smoke — ordinal agreement vs EquityDesk industry_ranks.
 # ---------------------------------------------------------------------------
 _BACKFILL = (Path(__file__).resolve().parents[1] / "data" / "stage_analysis"
@@ -295,110 +371,263 @@ def test_calibration_floors():
 
 
 # ---------------------------------------------------------------------------
-# Industry rank HEATMAP (rank-over-time grid) — hermetic + real-seed calibration.
+# Industry rank HISTORY — house-native weekly accrual (Wave 8 §7).
+#
+# The heatmap used to read a one-shot proprietary EquityDesk export
+# (`data/stage_analysis/backfill/industry_ranks.parquet`) that is ABSENT from
+# the committed backfill; the whole seed-reading path is DELETED (§7.4). All
+# heatmap tests below drive the house-native
+# `data/stage_analysis/industry_rank_history.jsonl` store instead — either
+# directly via `append_industry_rank_history` (the real accrual path) or via
+# a raw-write helper for hermetic grid-shape fixtures.
 # ---------------------------------------------------------------------------
-def _write_ranks_seed(root: Path) -> None:
-    """Tiny synthetic industry_ranks seed: 2 regions x 3 industries x 3 Fridays,
-    plus one non-Friday row that must be excluded from the weekly grid."""
-    rows = []
-    fridays = ["2026-07-03", "2026-07-10", "2026-07-17"]  # all Fridays
-    for reg in ("USA", "EUROPE"):
-        for wi, day in enumerate(fridays):
-            for iid, base in (("10", 1), ("20", 2), ("30", 3)):
-                rows.append(dict(region=reg, industry_id=iid,
-                                 industry_name=f"{reg}-{iid}", as_of_date=day,
-                                 rank=base, score=0.0, bucket="Leading",
-                                 z_rsroc=0.0, z_mom=0.0, industry_percentile=0.0,
-                                 created_at=day))
-    # a Thursday row (weekday != 4) that MUST be filtered out of the weekly grid
-    rows.append(dict(region="USA", industry_id="10", industry_name="USA-10",
-                     as_of_date="2026-07-16", rank=99, score=0.0, bucket="Leading",
-                     z_rsroc=0.0, z_mom=0.0, industry_percentile=0.0,
-                     created_at="2026-07-16"))
-    p = root / "stage_analysis" / "backfill" / "industry_ranks.parquet"
+def _history_row(week: str, region: str, iid: str, name: str, rank: int,
+                 score: float = 0.0, bucket: str = "Leading", n: int = 1) -> dict:
+    return {"stage_week_end": week, "region": region, "industry_id": iid,
+            "industry_name": name, "rank": rank, "score": score,
+            "bucket": bucket, "n": n, "built": f"{week}T00:00:00Z",
+            "source": "stage_industry.live"}
+
+
+def _write_history_jsonl(root: Path, records: list[dict]) -> None:
+    """Raw write of history records (bypasses the advance-guard) — used for
+    hermetic heatmap grid-shape fixtures."""
+    p = root / "stage_analysis" / "industry_rank_history.jsonl"
     p.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(rows).to_parquet(p)
+    lines = [json.dumps(r) for r in records]
+    p.write_text("\n".join(lines) + ("\n" if lines else ""))
 
 
+def test_history_advances_on_a_healthy_current_build(tmp_path: Path):
+    all_ranks = si.ranks(region="USA", stage_frame=_frame())
+    coverage = {"non_vacuous": True, "status": "ready"}
+    report = si.append_industry_rank_history(all_ranks, "2026-08-14", coverage, tmp_path)
+    assert report["advanced"] is True
+    p = tmp_path / "stage_analysis" / "industry_rank_history.jsonl"
+    assert p.exists()
+    lines = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+    assert len(lines) == len(all_ranks)
+    assert {ln["stage_week_end"] for ln in lines} == {"2026-08-14"}
+    # record fields map 1:1 onto what `_rank_region()` already returns.
+    for rec in lines:
+        for f in ("industry_id", "industry_name", "region", "n", "score",
+                  "rank", "bucket", "industry_percentile"):
+            assert f in rec
+
+
+def test_history_does_not_advance_without_a_target_week(tmp_path: Path):
+    all_ranks = si.ranks(region="USA", stage_frame=_frame())
+    coverage = {"non_vacuous": True, "status": "ready"}
+    report = si.append_industry_rank_history(all_ranks, None, coverage, tmp_path)
+    assert report["advanced"] is False
+    assert "no_target_stage_week" in report["reason"]
+    assert not (tmp_path / "stage_analysis" / "industry_rank_history.jsonl").exists()
+
+
+def test_history_does_not_advance_on_degraded_coverage(tmp_path: Path):
+    all_ranks = si.ranks(region="USA", stage_frame=_frame())
+    coverage = {"non_vacuous": True, "status": "warn",
+                "issues": ["source_stage_week_stale"]}
+    report = si.append_industry_rank_history(all_ranks, "2026-08-14", coverage, tmp_path)
+    assert report["advanced"] is False
+    assert "coverage_not_ready" in report["reason"]
+    assert not (tmp_path / "stage_analysis" / "industry_rank_history.jsonl").exists()
+
+
+def test_history_does_not_advance_on_vacuous_output(tmp_path: Path):
+    coverage = {"non_vacuous": False, "status": "warn"}
+    report = si.append_industry_rank_history([], "2026-08-14", coverage, tmp_path)
+    assert report["advanced"] is False
+    assert "not_non_vacuous" in report["reason"]
+
+
+def test_same_week_rerun_replaces_not_duplicates(tmp_path: Path):
+    coverage = {"non_vacuous": True, "status": "ready"}
+    first = si.ranks(region="USA", stage_frame=_frame())
+    si.append_industry_rank_history(first, "2026-08-14", coverage, tmp_path)
+    # A corrected same-week rebuild (e.g. a corrected OHLCV file) with
+    # different scores must REPLACE the week's point, not duplicate it.
+    second = si.ranks(region="USA", stage_frame=_frame())
+    for r in second:
+        r["score"] = r["score"] + 100.0
+    si.append_industry_rank_history(second, "2026-08-14", coverage, tmp_path)
+    p = tmp_path / "stage_analysis" / "industry_rank_history.jsonl"
+    lines = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+    assert len(lines) == len(first)          # still one week's worth
+    assert all(ln["score"] > 50 for ln in lines)   # the corrected values won
+
+
+def test_next_completed_week_yields_two_columns(tmp_path: Path):
+    coverage = {"non_vacuous": True, "status": "ready"}
+    all_ranks = si.ranks(region="USA", stage_frame=_frame())
+    si.append_industry_rank_history(all_ranks, "2026-08-07", coverage, tmp_path)
+    si.append_industry_rank_history(all_ranks, "2026-08-14", coverage, tmp_path)
+    grids = si.industry_heatmap(root=tmp_path)
+    assert grids["USA"]["n_weeks"] == 2
+    assert grids["USA"]["weeks"] == ["2026-08-14", "2026-08-07"]
+    contract = si.build_industry_heatmap(root=tmp_path, asof="2026-08-20")
+    assert contract["history"]["status"] == "accruing"
+    assert contract["history"]["weeks_available"] == 2
+    assert contract["history"]["first_week"] == "2026-08-07"
+    assert contract["history"]["latest_week"] == "2026-08-14"
+
+
+def test_history_key_is_stage_week_never_the_build_date(tmp_path: Path):
+    coverage = {"non_vacuous": True, "status": "ready"}
+    all_ranks = si.ranks(region="USA", stage_frame=_frame())
+    # Two builds on DIFFERENT wall-clock dates, but the SAME target Stage
+    # week, must never fork into two weekly points.
+    si.append_industry_rank_history(all_ranks, "2026-08-14", coverage, tmp_path)
+    si.append_industry_rank_history(all_ranks, "2026-08-14", coverage, tmp_path)
+    p = tmp_path / "stage_analysis" / "industry_rank_history.jsonl"
+    lines = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+    assert {ln["stage_week_end"] for ln in lines} == {"2026-08-14"}
+    assert len(lines) == len(all_ranks)
+
+
+def test_past_week_never_rewritten_by_a_later_run(tmp_path: Path):
+    coverage = {"non_vacuous": True, "status": "ready"}
+    week1 = si.ranks(region="USA", stage_frame=_frame())
+    si.append_industry_rank_history(week1, "2026-08-07", coverage, tmp_path)
+    p = tmp_path / "stage_analysis" / "industry_rank_history.jsonl"
+    before = {ln["industry_id"]: ln["score"] for ln in
+              (json.loads(x) for x in p.read_text().splitlines() if x.strip())}
+
+    week2 = si.ranks(region="USA", stage_frame=_frame())
+    for r in week2:
+        r["score"] = r["score"] + 999.0
+    si.append_industry_rank_history(week2, "2026-08-14", coverage, tmp_path)
+
+    lines = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+    after_week1 = {ln["industry_id"]: ln["score"] for ln in lines
+                  if ln["stage_week_end"] == "2026-08-07"}
+    assert after_week1 == before   # the past week's scores are untouched
+
+
+def test_history_retention_keeps_newest_30_weeks(tmp_path: Path):
+    from datetime import date, timedelta
+
+    coverage = {"non_vacuous": True, "status": "ready"}
+    all_ranks = si.ranks(region="USA", stage_frame=_frame())
+    start = date(2026, 1, 2)  # a Friday
+    weeks = [(start + timedelta(weeks=i)).isoformat() for i in range(32)]
+    for wk in weeks:
+        si.append_industry_rank_history(all_ranks, wk, coverage, tmp_path)
+    p = tmp_path / "stage_analysis" / "industry_rank_history.jsonl"
+    lines = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+    distinct = sorted({ln["stage_week_end"] for ln in lines})
+    assert len(distinct) == 30
+    assert distinct == sorted(weeks)[-30:]
+
+
+# ---------------------------------------------------------------------------
+# Industry rank HEATMAP (rank-over-time grid) — hermetic, reads the history.
+# ---------------------------------------------------------------------------
 def test_industry_heatmap_grid_shape(tmp_path: Path):
-    _write_ranks_seed(tmp_path)
+    weeks = ["2026-07-03", "2026-07-10", "2026-07-17"]
+    rows = []
+    for reg in ("USA", "EUROPE"):
+        for wk in weeks:
+            for iid, rk in (("10", 1), ("20", 2), ("30", 3)):
+                rows.append(_history_row(wk, reg, iid, f"{reg}-{iid}", rk))
+    _write_history_jsonl(tmp_path, rows)
     grids = si.industry_heatmap(root=tmp_path)
     assert set(grids.keys()) == {"USA", "EUROPE"}
     usa = grids["USA"]
-    # weeks most-recent-first, Fridays only (the Thursday row is excluded).
     assert usa["weeks"] == ["2026-07-17", "2026-07-10", "2026-07-03"]
     assert usa["n_weeks"] == 3
     assert usa["n_industries"] == 3
-    # ranks aligned to weeks[]; industry 10 is rank 1 every week (top of grid).
     row0 = usa["rows"][0]
     assert row0["industry_id"] == "10"
     assert row0["ranks"] == [1, 1, 1]
-    # the excluded Thursday rank 99 never surfaces.
-    all_ranks = [rk for r in usa["rows"] for rk in r["ranks"] if rk is not None]
-    assert 99 not in all_ranks
-    assert min(all_ranks) == 1
 
 
 def test_industry_heatmap_null_alignment(tmp_path: Path):
     """A cell missing for one week aligns to null, not a shifted rank."""
     rows = [
-        dict(region="USA", industry_id="10", industry_name="A", as_of_date="2026-07-03",
-             rank=1, score=0.0, bucket="Leading", z_rsroc=0.0, z_mom=0.0,
-             industry_percentile=0.0, created_at="x"),
+        _history_row("2026-07-03", "USA", "10", "A", 1),
         # industry 10 skips 2026-07-10, returns 2026-07-17
-        dict(region="USA", industry_id="10", industry_name="A", as_of_date="2026-07-17",
-             rank=2, score=0.0, bucket="Leading", z_rsroc=0.0, z_mom=0.0,
-             industry_percentile=0.0, created_at="x"),
+        _history_row("2026-07-17", "USA", "10", "A", 2),
     ]
-    p = tmp_path / "stage_analysis" / "backfill" / "industry_ranks.parquet"
-    p.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(rows).to_parquet(p)
+    _write_history_jsonl(tmp_path, rows)
     grids = si.industry_heatmap(root=tmp_path)
     usa = grids["USA"]
     assert usa["weeks"] == ["2026-07-17", "2026-07-03"]
     r = usa["rows"][0]
-    # weeks[]=[07-17, 07-03] -> ranks[]=[2, 1]; no missing week here, both present.
     assert r["ranks"] == [2, 1]
 
 
-def test_industry_heatmap_fail_open_missing_seed(tmp_path: Path):
-    # No seed under tmp_path -> {} (page renders an empty state).
+def test_industry_heatmap_fail_open_missing_history(tmp_path: Path):
+    # No history file under tmp_path -> {} (page renders an explicit
+    # accruing/unavailable state, never a healthy-looking empty panel).
     assert si.industry_heatmap(root=tmp_path) == {}
 
 
 def test_build_industry_heatmap_display_tier(tmp_path: Path):
-    _write_ranks_seed(tmp_path)
+    rows = []
+    for reg in ("USA", "EUROPE"):
+        for iid, rk in (("10", 1), ("20", 2)):
+            rows.append(_history_row("2026-07-20", reg, iid, f"{reg}-{iid}", rk))
+    _write_history_jsonl(tmp_path, rows)
     contract = si.build_industry_heatmap(root=tmp_path, asof="2026-07-20")
     assert contract["schema"] == "stage_industry_heatmap.v1"
     assert contract["is_context_only"] is True and contract["display_only"] is True
+    assert contract["source"] == (
+        "house-native stage industry rank history "
+        "(data/stage_analysis/industry_rank_history.jsonl)")
     out_p = tmp_path / "stage_analysis" / "industry_heatmap.json"
     assert out_p.exists()
     written = json.loads(out_p.read_text())
     assert set(written["regions"].keys()) == {"USA", "EUROPE"}
 
 
-@pytest.mark.skipif(
-    not (_BACKFILL / "industry_ranks.parquet").exists(),
-    reason="industry_ranks backfill parquet not present",
-)
-def test_industry_heatmap_real_seed():
-    """Real-seed smoke: three regions, ~26 trailing Fridays, ranks in [1, N]."""
-    grids = si.industry_heatmap()
-    assert set(grids.keys()) == {"USA", "EUROPE", "ASIA"}
-    for reg, g in grids.items():
-        assert 20 <= g["n_weeks"] <= 26, f"{reg} n_weeks={g['n_weeks']}"
-        assert 40 <= g["n_industries"] <= 90, f"{reg} n_industries={g['n_industries']}"
-        # weeks strictly most-recent-first and unique.
-        assert g["weeks"] == sorted(g["weeks"], reverse=True)
-        assert len(set(g["weeks"])) == len(g["weeks"])
-        # every row's ranks[] aligns to weeks[]; ranks are 1..N ints or null.
-        n = g["n_industries"]
-        for row in g["rows"]:
-            assert len(row["ranks"]) == g["n_weeks"]
-            for rk in row["ranks"]:
-                assert rk is None or (isinstance(rk, int) and 1 <= rk <= 200)
-        # rank 1 exists in the latest week (someone is strongest).
-        latest_ranks = [row["ranks"][0] for row in g["rows"] if row["ranks"][0] is not None]
-        assert min(latest_ranks) == 1
-        # the top-of-grid row IS the latest-week rank-1 industry.
-        assert grids[reg]["rows"][0]["ranks"][0] == 1
+# ---------------------------------------------------------------------------
+# Wave 8 §7.4 — the heatmap's `history` accrual-status block.
+# ---------------------------------------------------------------------------
+def test_heatmap_history_block_unavailable_with_no_house_history(tmp_path: Path):
+    """No accrued house history -> an explicit `unavailable` status, not a
+    healthy-looking empty panel."""
+    contract = si.build_industry_heatmap(root=tmp_path, asof="2026-08-20")
+    assert contract["history"] == {
+        "status": "unavailable", "weeks_available": 0, "weeks_target": 26,
+        "first_week": None, "latest_week": None,
+    }
+    assert contract["regions"] == {}
+    assert contract["n_regions"] == 0
+
+
+def test_heatmap_history_block_first_valid_week_is_one_column(tmp_path: Path):
+    coverage = {"non_vacuous": True, "status": "ready"}
+    all_ranks = si.ranks(region="USA", stage_frame=_frame())
+    si.append_industry_rank_history(all_ranks, "2026-08-14", coverage, tmp_path)
+    contract = si.build_industry_heatmap(root=tmp_path, asof="2026-08-20")
+    assert contract["history"]["status"] == "accruing"
+    assert contract["history"]["weeks_available"] == 1
+    assert contract["history"]["first_week"] == "2026-08-14"
+    assert contract["history"]["latest_week"] == "2026-08-14"
+    assert contract["regions"]["USA"]["n_weeks"] == 1
+    assert contract["n_regions"] == 1
+
+
+def test_heatmap_history_block_same_week_rerun_stays_one_column(tmp_path: Path):
+    coverage = {"non_vacuous": True, "status": "ready"}
+    all_ranks = si.ranks(region="USA", stage_frame=_frame())
+    si.append_industry_rank_history(all_ranks, "2026-08-14", coverage, tmp_path)
+    si.append_industry_rank_history(all_ranks, "2026-08-14", coverage, tmp_path)
+    contract = si.build_industry_heatmap(root=tmp_path, asof="2026-08-20")
+    assert contract["history"]["weeks_available"] == 1     # no duplicate
+    assert contract["regions"]["USA"]["n_weeks"] == 1
+
+
+def test_heatmap_history_block_ready_at_26_weeks(tmp_path: Path):
+    from datetime import date, timedelta
+
+    coverage = {"non_vacuous": True, "status": "ready"}
+    all_ranks = si.ranks(region="USA", stage_frame=_frame())
+    start = date(2026, 1, 2)
+    for i in range(26):
+        wk = (start + timedelta(weeks=i)).isoformat()
+        si.append_industry_rank_history(all_ranks, wk, coverage, tmp_path)
+    contract = si.build_industry_heatmap(root=tmp_path, asof="2026-08-20")
+    assert contract["history"]["status"] == "ready"
+    assert contract["history"]["weeks_available"] == 26

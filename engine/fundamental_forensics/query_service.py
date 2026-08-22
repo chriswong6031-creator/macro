@@ -101,6 +101,16 @@ class FinancialQueryResult:
     envelope: dict
 
 
+@dataclass(frozen=True)
+class AdmittedFinancialRequest:
+    """Shared FIF-2A/FIF-2B admission result. No provider has been opened."""
+
+    entity_id: str
+    policy: QueryPolicy
+    metric_ids: list[str]
+    periods: list[Any]
+
+
 # ---------------------------------------------------------------------------
 # Provider protocol
 # ---------------------------------------------------------------------------
@@ -204,14 +214,41 @@ def _admit_bytes(body: bytes) -> dict[str, Any]:
     return parsed
 
 
-def _check_root_fields(parsed: dict[str, Any]) -> None:
+def _check_root_fields(parsed: dict[str, Any], *, request_schema: str = _REQUEST_SCHEMA) -> None:
     extra = set(parsed) - _REQUIRED_ROOT_FIELDS
     missing = _REQUIRED_ROOT_FIELDS - set(parsed)
     if extra or missing:
         raise FinancialQueryAdmissionError(400, "request contract violation")
 
-    if parsed.get("schema") != _REQUEST_SCHEMA:
+    if parsed.get("schema") != request_schema:
         raise FinancialQueryAdmissionError(400, "request contract violation")
+
+
+def admit_financial_request(
+    body: bytes,
+    *,
+    request_schema: str = _REQUEST_SCHEMA,
+) -> AdmittedFinancialRequest:
+    """Admit a bounded canonical issuer × metrics × periods × explicit PIT body.
+
+    Shared by FIF-2A query and FIF-2B revisions. Provider.resolve is never
+    called here.
+    """
+    parsed = _admit_bytes(body)
+    _check_root_fields(parsed, request_schema=request_schema)
+    entity_id = _admit_entity_id(parsed)
+    policy = _admit_policy(parsed)
+    metric_ids = _admit_metric_ids(parsed)
+    period_requests = _admit_periods(parsed)
+    cross_product = len(metric_ids) * len(period_requests)
+    if cross_product > _MAX_CELLS:
+        raise FinancialQueryAdmissionError(413, "request exceeds transport bound")
+    return AdmittedFinancialRequest(
+        entity_id=entity_id,
+        policy=policy,
+        metric_ids=metric_ids,
+        periods=period_requests,
+    )
 
 
 def _admit_entity_id(parsed: dict[str, Any]) -> str:
@@ -393,6 +430,9 @@ def _validate_supplied_dataset(entity_id: str, dataset: FinancialQueryDataset) -
     return binding
 
 
+validate_supplied_dataset = _validate_supplied_dataset
+
+
 # ---------------------------------------------------------------------------
 # Main execute function
 # ---------------------------------------------------------------------------
@@ -404,17 +444,11 @@ def execute_financial_query(*, body: bytes, provider: FinancialQueryProvider) ->
     Provider.resolve is never called before admission succeeds.
     """
     # Phase 1: admit bytes (no provider)
-    parsed = _admit_bytes(body)
-    _check_root_fields(parsed)
-    entity_id = _admit_entity_id(parsed)
-    policy = _admit_policy(parsed)
-    metric_ids = _admit_metric_ids(parsed)
-    period_requests = _admit_periods(parsed)
-
-    # Cross-product bound
-    cross_product = len(metric_ids) * len(period_requests)
-    if cross_product > _MAX_CELLS:
-        raise FinancialQueryAdmissionError(413, "request exceeds transport bound")
+    admitted = admit_financial_request(body, request_schema=_REQUEST_SCHEMA)
+    entity_id = admitted.entity_id
+    policy = admitted.policy
+    metric_ids = admitted.metric_ids
+    period_requests = admitted.periods
 
     # Phase 2: resolve and fail-closed on a malformed/misbound dataset.
     # A provider that returns the requested canonical ID with a foreign CIK
@@ -493,6 +527,7 @@ def execute_financial_query(*, body: bytes, provider: FinancialQueryProvider) ->
 
 
 __all__ = [
+    "AdmittedFinancialRequest",
     "CanonicalEntityBinding",
     "FinancialQueryAdmissionError",
     "FinancialQueryDataset",
@@ -500,8 +535,10 @@ __all__ = [
     "FinancialQueryResult",
     "FinancialQueryUnavailableError",
     "UnavailableFinancialQueryProvider",
+    "admit_financial_request",
     "execute_financial_query",
     "fip1_fixture_dataset",
+    "validate_supplied_dataset",
     "MAX_REQUEST_BYTES",
     "MAX_RESPONSE_BYTES",
     "MAX_METRIC_IDS",

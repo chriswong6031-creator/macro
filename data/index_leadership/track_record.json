@@ -1,55 +1,55 @@
 {
   "schema": "index_leadership.track_record.v1",
   "as_of": "2026-08-19",
-  "generated_at": "2026-08-20T07:42:09.442850+00:00",
+  "generated_at": "2026-08-21T03:12:15.951580+00:00",
   "is_context_only": true,
   "n_snapshots": 345,
   "n_days": 11,
   "horizons": {
     "5": {
-      "n_matured": 253,
+      "n_matured": 258,
       "by_stage": {
         "running": {
-          "n": 226,
-          "mean_fwd_rel": 0.0007,
-          "hit_rate": 0.5
+          "n": 230,
+          "mean_fwd_rel": 0.0,
+          "hit_rate": 0.504
         },
         "coiling": {
           "n": 13,
-          "mean_fwd_rel": 0.005,
-          "hit_rate": 0.692
+          "mean_fwd_rel": 0.0013,
+          "hit_rate": 0.615
         },
         "coiling_primed": {
-          "n": 14,
-          "mean_fwd_rel": 0.0207,
-          "hit_rate": 0.857
+          "n": 15,
+          "mean_fwd_rel": 0.0264,
+          "hit_rate": 0.867
         }
       },
-      "running_ic": 0.1953,
-      "running_ic_t_hac": 4.141,
+      "running_ic": 0.2162,
+      "running_ic_t_hac": 3.456,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 209,
+      "n_matured": 213,
       "by_stage": {
         "running": {
-          "n": 191,
-          "mean_fwd_rel": 0.0009,
-          "hit_rate": 0.534
+          "n": 194,
+          "mean_fwd_rel": 0.0012,
+          "hit_rate": 0.536
         },
         "coiling": {
           "n": 10,
-          "mean_fwd_rel": -0.0139,
-          "hit_rate": 0.4
+          "mean_fwd_rel": -0.0214,
+          "hit_rate": 0.1
         },
         "coiling_primed": {
-          "n": 8,
-          "mean_fwd_rel": 0.0258,
-          "hit_rate": 0.75
+          "n": 9,
+          "mean_fwd_rel": 0.0371,
+          "hit_rate": 0.778
         }
       },
-      "running_ic": 0.1398,
+      "running_ic": 0.159,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
@@ -59,12 +59,12 @@
       "by_stage": {
         "running": {
           "n": 24,
-          "mean_fwd_rel": -0.023,
+          "mean_fwd_rel": -0.0232,
           "hit_rate": 0.458
         },
         "coiling": {
           "n": 7,
-          "mean_fwd_rel": -0.0154,
+          "mean_fwd_rel": -0.0141,
           "hit_rate": 0.571
         }
       },
@@ -83,7 +83,7 @@
     }
   },
   "lead_time_d": 5,
-  "peak_ic": 0.1953,
+  "peak_ic": 0.2162,
   "proven": {
     "5": true,
     "10": false,
@@ -120,6 +120,14 @@
     },
     {
       "date": "2026-06-30",
+      "id": "baskets:housing",
+      "name": "Housing Chain",
+      "stage": "running",
+      "fwd_rel": -0.0981,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-06-30",
       "id": "subsectors:industrial-distribution",
       "name": "Industrial Distribution",
       "stage": "running",
@@ -128,10 +136,10 @@
     },
     {
       "date": "2026-06-30",
-      "id": "baskets:housing",
-      "name": "Housing Chain",
-      "stage": "running",
-      "fwd_rel": -0.0947,
+      "id": "russell:specialty-industrial-machinery",
+      "name": "Specialty Industrial Machinery",
+      "stage": "coiling",
+      "fwd_rel": -0.0791,
       "horizon_d": 21
     },
     {
@@ -139,15 +147,7 @@
       "id": "russell:scientific-technical-instruments",
       "name": "Scientific & Technical Instruments",
       "stage": "coiling",
-      "fwd_rel": -0.0865,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-06-30",
-      "id": "russell:specialty-industrial-machinery",
-      "name": "Specialty Industrial Machinery",
-      "stage": "coiling",
-      "fwd_rel": -0.0834,
+      "fwd_rel": -0.0674,
       "horizon_d": 21
     },
     {
@@ -155,7 +155,7 @@
       "id": "russell:credit-services",
       "name": "Credit Services",
       "stage": "running",
-      "fwd_rel": -0.0706,
+      "fwd_rel": -0.0628,
       "horizon_d": 21
     }
   ],

@@ -2,13 +2,15 @@
 # Idempotent provisioning for the mastermind-x.com static origin (DO droplet, Ubuntu).
 # Serves the prebuilt site/ via Caddy behind Cloudflare. Safe to re-run.
 #
-# One-shot from a clean droplet (repo is public — no auth needed):
-#   curl -fsSL https://raw.githubusercontent.com/mastermindx-market-intelligence/macro/main/app/deploy/setup.sh | bash
+# The canonical repo is PRIVATE (DEC:B1-MACRO-PRIVATE-CUTOVER). A fresh box
+# needs a READ-ONLY deploy key installed at /root/.ssh/macro_ro_selfupdate
+# first (provisioned out of band — never embedded in this repo), then bootstrap
+# is a governed authenticated clone, one shot:
+#   install -m 0600 <key> /root/.ssh/macro_ro_selfupdate && git -c core.sshCommand='ssh -i /root/.ssh/macro_ro_selfupdate -o IdentitiesOnly=yes' clone --depth 1 git@github.com:mastermindx-market-intelligence/macro.git /opt/macro && bash /opt/macro/app/deploy/setup.sh
 # Or, after the repo is already cloned:  bash /opt/macro/app/deploy/setup.sh
 set -euo pipefail
 
-REPO_URL="https://github.com/mastermindx-market-intelligence/macro.git"
-APP_DIR="/opt/macro"
+APP_DIR="${MACRO_APP_DIR:-/opt/macro}"
 DOMAIN="mastermind-x.com"
 
 log() { echo "[setup] $*"; }
@@ -28,15 +30,17 @@ if ! command -v caddy >/dev/null 2>&1; then
 	apt-get install -y caddy
 fi
 
-log "[3/6] clone/refresh repo (depth-1, public)"
+log "[3/6] clone/refresh repo (depth-1, governed authenticated remote)"
 mkdir -p "$(dirname "$APP_DIR")"
-if [ -d "$APP_DIR/.git" ]; then
-	git -C "$APP_DIR" fetch --depth 1 origin main
-	git -C "$APP_DIR" reset --hard FETCH_HEAD
-else
-	git clone --depth 1 --branch main "$REPO_URL" "$APP_DIR"
+BOOTSTRAP_SCRIPT="$(dirname "${BASH_SOURCE[0]}")/bootstrap_repo.sh"
+if [ ! -f "$BOOTSTRAP_SCRIPT" ]; then
+	# Piped/stdin invocation: BASH_SOURCE isn't a real file, so fall back to the
+	# copy inside an existing checkout. On a truly empty box neither path exists
+	# — that case is the governed clone in the header comment, which must run
+	# first; failing here is correct, not a regression.
+	BOOTSTRAP_SCRIPT="$APP_DIR/app/deploy/bootstrap_repo.sh"
 fi
-test -f "$APP_DIR/site/index.html" || { log "FATAL: $APP_DIR/site/index.html missing after clone"; exit 1; }
+bash "$BOOTSTRAP_SCRIPT" "$APP_DIR"
 
 # Publish the served tree ATOMICALLY into a dir OUTSIDE the git work-tree, so the
 # `git reset --hard` in update.sh can never expose a 0-byte file to Caddy/the CDN

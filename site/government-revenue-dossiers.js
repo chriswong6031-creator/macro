@@ -605,12 +605,20 @@
     /* R4: the receipt bound to THIS action's own transaction record --
      * matched by content_sha256 against award_change.source_identity, never
      * by URL shape (an /awards/ URL is the AWARD snapshot receipt, a
-     * different observation from the action that actually carries P00032). */
+     * different observation from the action that actually carries P00032).
+     * R14: no exact sha match => NO source link, never a positional fallback --
+     * a missing/absent source_identity or a receipt set with no matching
+     * content_sha256 must never fall back to rows[0]: presenting an
+     * unrelated first receipt as "Open official receipt" recreates the
+     * award-snapshot-vs-transaction provenance error R4 exists to prevent.
+     * The government facts still render with no link at all in that case. */
     function receiptUrl(event){
       var award=obj(event.award_change)?event.award_change:{},identity=obj(award.source_identity)?award.source_identity:{},wantSha=text(identity.content_sha256,'');
       var rows=arr((event.evidence||{}).receipts).filter(obj);
-      var pick=(wantSha&&rows.find(function(r){return text(r.content_sha256,'')===wantSha}))||rows[0];
-      return pick?safeUrl(pick.url):'';
+      if(!wantSha)return'';
+      var pick=rows.find(function(r){return text(r.content_sha256,'')===wantSha});
+      if(!pick)return'';
+      return safeUrl(pick.url);
     }
     /* R5: govEvent() returning null is ambiguous between "not yet hydrated"
      * (the embedded first-paint slice may not carry this event) and
@@ -691,7 +699,10 @@
       return'<div class="atlas-sub">'+esc(label)+'</div><ul class="atlas-open">'+kept.map(function(t){return'<li>'+esc(t)+'</li>'}).join('')+'</ul>';
     }
     function sourcesLine(latest){
-      var rows=arr(latest.sources).filter(obj);
+      /* R15: source-status metadata is lineage too. D4 may disclose the
+       * earnings/transcript rails, but must never surface the banned
+       * score_overlay rail merely because it arrived in latest.sources. */
+      var rows=arr(latest.sources).filter(obj).filter(function(s){return text(s.kind)!=='score_overlay'});
       if(!rows.length)return'';
       return'<div class="limit-copy">'+esc(rows.map(function(s){return text(s.kind)+': '+text(s.status)}).join(' · '))+'</div>';
     }

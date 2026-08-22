@@ -20,6 +20,16 @@ first, then ``enforce_site_full(..., always=True)`` (app/paywall.py) gates on
 the paid entitlement even while the global paywall switch is in observe
 mode — Lab candidates must never reach an unentitled caller, let alone
 anonymous HTML (LAB-0 §5).
+
+``GET /api/hub/prophet`` is a SEPARATE, INTERNAL-ONLY route (DEC:B1-PROPHET-
+PUBLIC-SPLIT): it serves the raw bytes of the same canonical local index file
+``_resolve_roots()`` above resolves, for the Terminal's server-side ``/api/flow``
+route to read the full Prophet plan book without falling through to the public
+R2 mirror that exposure closed. It carries NO paywall/user auth — its guard is
+same-box-only (loopback TCP peer AND no ``X-MM-Peer`` header; see
+``_hub_prophet_authorized``), which is a materially different trust boundary
+than every other route in this file and must never be relaxed to a header or
+token check a caller could supply from off-box.
 """
 from __future__ import annotations
 
@@ -28,8 +38,8 @@ import os
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import JSONResponse, Response
 
 from engine.prophet_lab import LabRoots, build_lab_response
 from engine.prophet_lab.contracts import KILL_SWITCH_ENV
@@ -38,6 +48,12 @@ router = APIRouter()
 log = logging.getLogger("macro.prophet_lab")
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
+
+#: INTERNAL-ONLY loopback addresses. macro-api always sits behind Caddy on
+#: 127.0.0.1 (app/main.py::_brain_identity docstring), so a bare TCP-peer check
+#: alone cannot distinguish an edge-proxied request from a direct same-box call —
+#: BOTH show up as 127.0.0.1. See ``_hub_prophet_guard`` below.
+_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1"})
 
 _PRIVATE_HEADERS = {
     "Cache-Control": "private, no-store",
@@ -197,6 +213,54 @@ def lab_v1(_user: dict = Depends(require_site_full_user)) -> JSONResponse:
             status_code=503,
         )
     return _response(payload)
+
+
+def _hub_prophet_authorized(request: Request) -> bool:
+    """INTERNAL-ONLY guard for ``/api/hub/prophet`` (DEC:B1-PROPHET-PUBLIC-SPLIT).
+
+    This route exists so the Terminal's server-side ``/api/flow`` route
+    (``terminal/app/api/flow/route.ts:83``, which already targets
+    ``${FLOW_API_BASE:-http://127.0.0.1:8000}/api/hub/prophet`` as its canonical
+    backend) can read the full Prophet plan book without ever touching public R2
+    — the very exposure this closure exists to shut. It is NOT a public or even
+    an authenticated-user endpoint: it hands back the raw premium plan book with
+    no paywall check, so it must be provably unreachable from outside the box.
+
+    Caddy's ``reverse_proxy /api/*`` block REPLACES any inbound ``X-MM-Peer``
+    with the real TCP peer on every edge-proxied request (app/deploy/Caddyfile,
+    the ``header_up X-MM-Peer {remote_host}`` line under that block) — so a
+    request that arrived through the public edge ALWAYS carries the header. A
+    direct same-box call to uvicorn (bypassing Caddy entirely, e.g. the
+    co-located Terminal process hitting 127.0.0.1:8000 directly) carries no such
+    header. Because macro-api always sits behind Caddy on 127.0.0.1, the TCP
+    peer alone cannot tell the two apart — both read 127.0.0.1 (same "no
+    source-IP check is enough behind Caddy" reasoning as
+    ``app/main.py::_brain_identity``). The header's ABSENCE, combined with a
+    loopback peer, is therefore the load-bearing half of this guard.
+    """
+    peer = request.client.host if request.client else None
+    if peer not in _LOOPBACK_HOSTS:
+        return False
+    return request.headers.get("x-mm-peer") is None
+
+
+@router.get("/api/hub/prophet")
+def hub_prophet(request: Request) -> Response:
+    if not _hub_prophet_authorized(request):
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+    index_path = _resolve_roots().prophet_index_path
+    if index_path is None or not index_path.is_file():
+        return JSONResponse({"error": "prophet_index_unavailable"}, status_code=503)
+    try:
+        raw = index_path.read_bytes()
+    except OSError as exc:
+        log.warning("hub_prophet: index read failed (%s: %s)", type(exc).__name__, exc)
+        return JSONResponse({"error": "prophet_index_unavailable"}, status_code=503)
+    return Response(
+        content=raw,
+        media_type="application/json",
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 __all__ = ["router", "require_site_full_user"]

@@ -190,6 +190,46 @@ def test_too_young_returns_stage_zero():
 
 
 # ---------------------------------------------------------------------------
+# 6b. stage_week_end (Wave 8 §1.1) — exposes the classifier's own completed-
+#     week grid. Additive only; `fresh` (§1.1 line ~536) is untouched by it.
+# ---------------------------------------------------------------------------
+def test_stage_week_end_matches_last_completed_week():
+    close = _round_trip_close()
+    n = len(close)
+    bench = _flat_bench(n)
+    res = ws.classify(close, None, bench)
+    wf = ws.weekly_frame(close, None, bench)
+    assert wf.index[-1].date().isoformat() == res["stage_week_end"]
+    # A real, stageable result must not carry a null week.
+    assert res["stage_week_end"] is not None
+
+
+def test_stage_week_end_none_on_too_young():
+    close = _series(np.linspace(100.0, 120.0, 30))  # only 30 weeks
+    res = ws.classify(close, None, _flat_bench(30))
+    assert res["too_young"] is True
+    assert res["stage_week_end"] is None
+
+
+def test_stage_week_end_none_on_empty_result_directly():
+    """`_empty_result` (the too-young / all-NaN sentinel) always nulls the
+    field — never a guessed date."""
+    empty = ws._empty_result(too_young=True, n_weeks=0)
+    assert empty["stage_week_end"] is None
+
+
+def test_fresh_meaning_is_unmoved_by_stage_week_end():
+    """`fresh` = Stage 2 AND weeks_in_stage <= 10 — a lifecycle fact, computed
+    with no reference to stage_week_end / wall clock. Adding the new field
+    must not change a fresh verdict for an otherwise-identical series."""
+    close = _round_trip_close()
+    n = len(close)
+    bench = _flat_bench(n)
+    res = ws.classify(close, None, bench)
+    assert res["fresh"] == bool(res["stage"] == 2 and res["weeks_in_stage"] <= 10)
+
+
+# ---------------------------------------------------------------------------
 # 7. missing volume path — vol fields None, volume-gated events skipped
 # ---------------------------------------------------------------------------
 def test_missing_volume_nulls_vol_fields():

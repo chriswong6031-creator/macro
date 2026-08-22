@@ -139,29 +139,86 @@ waves:
       DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT binds unchanged.
   - id: DEP-CAI
     title: China Alpha Intelligence PR-0B telemetry + rights/identity closure
-    status: todo
+    status: done
     depends_on: [R6-0]
     next_action: >-
-      State moved after the R6 packet was prepared: the architecture chain
-      (#5953/#5933/#5943/#5955) all MERGED 2026-08-19 16:05-18:13Z, so the
-      open-PR half is resolved. Remaining gate = execute PR-0B from
-      research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md
-      inside WS:CHINA-ALPHA-INTELLIGENCE and prove full intel_ anatomy on real
-      asia-close candidate rows (DSC:CN-PR0B-NOT-LIVE-BLOCKS-CANDIDATE-PLANE).
-      CN-Limit candidate-plane work stays blocked until PROVEN_LIVE, not merely
-      merged.
+      CLOSED 2026-08-21 (reconciliation + natural-run identity proof; Sol
+      R6-continuation ruling). All three constituent gates are satisfied
+      inside WS:CHINA-ALPHA-INTELLIGENCE and its owner route. (1) PR-0B
+      candidate-plane telemetry DONE + PROVEN_LIVE: real asia-close run
+      32348780228 / candidate commit baf4cf7c9291 wrote candidates.parquet
+      with full intel_* anatomy (24,070 rows; 1,636-1,640 non-null covered +
+      4 typed intel_unavailable_reason refusals) — the
+      DSC:CN-PR0B-NOT-LIVE-BLOCKS-CANDIDATE-PLANE block on the candidate
+      plane is released. (2) RIGHTS-0 entitlement audit DONE (PR #6046,
+      merge 458ad2e18052; CNInfo primary route rights-clear; no Tushare
+      stk_surv; ¥0 outlay). (3) China identity: PR-0D was OWNER-ROUTED
+      (DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK) to child D2B2-CN-HK under
+      WS:PROPHET-US-V4-RECOVERY (PR #6116, squash
+      ed28d0d992a144aec5f0ef2616024e3e32d83b1a: 984/1021 CN + 147/147 HK
+      admitted to the canonical Data OS master), then PROVEN_LIVE on natural
+      production nightly run 32426513915 and adjudicated done by the owner
+      (Sol natural-proof adjudication 2026-08-21, records PR #6165 squash
+      26365f63029b — both owner D2B2 and pr0d flipped there; that record
+      holds the full accounting). This session independently re-measured the
+      same run and corroborates every number: canonical
+      build_security_master re-ran in-run (data/reference/_receipt.json
+      generated_at 2026-08-21T01:17:00, row_counts security_master=1836;
+      commit 65070e623f1c) with the master parquet byte-stable vs the #6116
+      merge (blob d774ea76ab59); the fresh GMI identity_resolution/v1 batch
+      (computed_at 2026-08-21T03:47:13Z, commit 5ba8447ca827) is pinned to
+      exactly that master generation — CN 984/1021 RESOLVED (96.4%, 37
+      typed refusals), HK 147/147 (100%), US resolved-set identical (702=702
+      as sets; the sole US delta is co:us:GOLD leaving the GMI graph — graph
+      composition, reserved D2B3 topic, not identity semantics). The
+      run-level `cancelled` conclusion is solely the unrelated
+      standout_audit_us job, which started 05:52Z after engine+publish
+      concluded 04:59Z. CN-Limit may now consume the candidate plane's
+      intel_* telemetry and canonical CN identity under the R6 contracts.
+      DEP-ID-ELIG remains gated on DEP-EXACT.
   - id: DEP-EXACT
     title: Exact-plane authorization, live canary, range campaign, completeness
     status: todo
     depends_on: [R6-0]
     next_action: >-
-      BLOCKED_RIGHTS_AND_AUTHORITY: close written authorization/trust-root
-      governance, run licensed exact-schema canaries, promote the range
-      campaign only through reviewed gates, produce the sanitized completeness
-      manifest (packet §DEP-EXACT). No self-authored authorization; no gate
-      constant edits; the fail-closed spine stays fail-closed until the
-      operator-level authority decision recorded in this workstream's 08-13
-      state is taken.
+      WAITING_FOR_WRITTEN_VENDOR_GRANT (authority decision TAKEN 2026-08-21:
+      DEC:CNLI-EXACT-PLANE-REQUIRES-WRITTEN-COMMERCIAL-GRANT, ceo-sol — the
+      written vendor/institutional grant + cryptographically pinned receipt
+      path is binding for the full-A authority-grade exact plane; the
+      ruling-3 plain-provenance alternative is REJECTED because current
+      Tushare terms grant personal/non-commercial service and the 2026-08-09
+      wiring ruling is an access instruction, not a vendor commercial
+      grant). The DEC alone does NOT satisfy the runtime authorization gate:
+      the gate reads bytes, and both fail-closed constants remain exactly as
+      designed — CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256 =
+      frozenset() and BULK_HISTORICAL_BACKFILL_READY = False
+      (collectors/china_tushare_spine.py; receipt schema
+      cn_tushare_written_authorization.v1 in load_authorization_grant). No
+      live canary has ever run; no completeness manifest exists; the
+      dispatch-only campaign lane .github/workflows/
+      tushare-spine-backfill.yml stays ready but unauthorized. SINGLE
+      BLOCKING ARTIFACT: the vendor's written reply to the five-question
+      letter in
+      research/cn_limit/TUSHARE_VENDOR_LETTER_PACKET_2026-08-21.md (¥0
+      cash; questions map 1:1 onto the receipt's required scope booleans:
+      api_access, bulk_local_retention, quantitative_strategy_research,
+      commercial_use, private_internal_derivatives). EXACT OPERATOR ACTION:
+      send that packet's §1 Chinese letter from the account-holder
+      identity. Post-grant procedure is PRE-STAGED, NOT ACTIVATED (packet
+      §3, each step gated on the previous artifact + its own review):
+      private written grant -> authorization receipt -> independent
+      allowlist -> reviewed trust-root pin -> licensed canary (plan ->
+      bounded execute) -> canary review -> separately reviewed READY flip
+      -> range campaign -> sanitized completeness manifest (the artifact
+      that flips this row done and, with DEP-CAI already done, opens
+      DEP-ID-ELIG). The identity half of the eligibility substrate exists
+      (984 CN + 147 HK canonical, see DEP-CAI); the PIT
+      membership/suspension/ST-history substrate remains NOT_BUILT and is
+      DEP-ID-ELIG's remainder. Standing prohibitions unchanged: no
+      self-authored authorization; no session-side gate-constant edits; a
+      vendor "no" returns to the operator (institutional contract or stop),
+      never to a coding workaround; a red execute run on the campaign lane
+      is the gate working. DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT untouched.
   - id: DEP-ID-ELIG
     title: Canonical China identity, PIT membership, eligibility overlay
     status: todo

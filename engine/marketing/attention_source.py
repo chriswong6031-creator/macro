@@ -739,22 +739,80 @@ def earnings_this_week(
 _STAGE_COLS = [
     "ticker", "region", "stage_flag", "stage_detailed",
     "sata_score", "weeks_in_stage", "as_of_date",
+    # Wave 8 §4.2 observation-truth columns. A pre-Wave-8 ("legacy") parquet
+    # carries `stage_date` (pre-existing, written by append_stage_snapshot)
+    # but not `stage_week_end` / `stage_current` (new this wave) — the schema
+    # intersection below tolerates any subset, including none of the three.
+    "stage_date", "stage_week_end", "stage_current",
 ]
 
 
 def _read_stage(root: PathLike | None):
-    """The stage backfill frame, or None. Same read ``radar_internal._feed_stage`` does."""
+    """The stage backfill frame, or None. Same read ``radar_internal._feed_stage``
+    does, widened for the Wave 8 columns. ``pd.read_parquet(columns=…)`` raises
+    on a column the file does not have, so the request is intersected against
+    the file's own schema first — never assume the new columns exist."""
     path = Path(str(root or ".")) / STAGE_REL
     if not path.exists():
         return None
     try:
         import pandas as pd
-        df = pd.read_parquet(path, columns=_STAGE_COLS)
+        cols: list[str] | None
+        try:
+            import pyarrow.parquet as pq  # noqa: PLC0415
+            available = set(pq.ParquetFile(path).schema.names)
+            cols = [c for c in _STAGE_COLS if c in available]
+        except Exception:  # noqa: BLE001 — pyarrow schema peek optional
+            cols = None
+        df = pd.read_parquet(path, columns=cols)
     except Exception:  # noqa: BLE001
         return None
     if df is None or df.empty:
         return None
+    if cols is None:
+        # No schema introspection available — subset defensively in pandas
+        # rather than trust every column in the file is one we asked for.
+        keep = [c for c in _STAGE_COLS if c in df.columns]
+        if keep:
+            df = df[keep]
     return df
+
+
+def _currentness_gate(df, ref: date, budget: int):
+    """Wave 8 §4.2 — four-step per-row currentness gate, FAILS CLOSED.
+
+    Applied regardless of what the producer already did (append_stage_snapshot
+    §4.1 already excludes stale rows, but this gate does not trust that — a
+    machine candidate pool must not reacquire a stale row through any future
+    producer regression). Precedence, first column present on *df* wins:
+
+      1. ``stage_current`` column -> require ``== True``.
+      2. else ``stage_week_end``  -> require ``== max(stage_week_end)`` within
+         *df* (the rows already share one ``as_of_date`` / comparison-key
+         selection, so the max is that selection's own strongest observed week).
+      3. else ``stage_date``      -> require the row's own date is not more
+         than *budget* sessions behind *ref* (the same session budget the
+         module-level freshness gate uses).
+      4. else -> no per-row provenance at all: admit nothing.
+
+    Returns ``(admitted_df, gate_used)`` where ``gate_used`` is one of
+    ``{"stage_current", "stage_week_end", "stage_date", "none"}`` — callers
+    warn by name rather than silently returning an empty pool.
+    """
+    if df is None or df.empty:
+        return df, "none"
+    if "stage_current" in df.columns:
+        return df[df["stage_current"] == True], "stage_current"  # noqa: E712
+    if "stage_week_end" in df.columns:
+        weeks = df["stage_week_end"].dropna().astype(str)
+        if weeks.empty:
+            return df.iloc[0:0], "stage_week_end"
+        max_week = weeks.max()
+        return df[df["stage_week_end"].astype(str) == max_week], "stage_week_end"
+    if "stage_date" in df.columns:
+        admitted = df[df["stage_date"].apply(lambda d: not _is_stale(d, ref, budget))]
+        return admitted, "stage_date"
+    return df.iloc[0:0], "none"
 
 
 def stage2_leaders(
@@ -792,7 +850,26 @@ def stage2_leaders(
     try:
         sel = df[(df["region"] == "USA") & (df["stage_flag"] == 2)].copy()
         sel = sel[sel["as_of_date"].astype(str).str[:10] == latest]
-        sel = sel.sort_values(["sata_score", "ticker"], ascending=[False, True])
+    except Exception:  # noqa: BLE001
+        return []
+
+    # Wave 8 §4.2 — per-row currentness gate, applied REGARDLESS of what the
+    # producer already excluded: a June observation rewritten into a fresh
+    # snapshot must not look current to this machine candidate pool.
+    gated, gate_used = _currentness_gate(sel, ref, budget)
+    if gate_used == "none":
+        _warn("marketing-supply-stage2",
+              f"{STAGE_REL} carries no per-row currentness provenance "
+              "(stage_current / stage_week_end / stage_date) — stage-2 pool empty")
+        return []
+    if gated is None or gated.empty:
+        _warn("marketing-supply-stage2",
+              f"every stage-2 row in snapshot {latest} failed the {gate_used} "
+              "currentness gate — stage-2 pool empty")
+        return []
+
+    try:
+        sel = gated.sort_values(["sata_score", "ticker"], ascending=[False, True])
     except Exception:  # noqa: BLE001
         return []
 
@@ -817,15 +894,16 @@ def stage_transitions(
     *,
     as_of: object = None,
 ) -> list[dict]:
-    """Names whose stage_flag changed between the two newest snapshots.
+    """Names whose stage_flag changed between the two newest DIFFERENT Stage
+    weeks (Wave 8 §4.2).
 
-    STRUCTURAL LIMIT, stated rather than hidden: the shipped backfill parquet
-    carries exactly ONE ``as_of_date`` (2026-07-17 as of this build), so there
-    is no prior snapshot to diff and this pool is empty for a reason that has
-    nothing to do with staleness. The diff is implemented anyway — it is the
-    cheap half — and it starts producing rows the day the backfill retains two
-    snapshots. Until then the pool says so in an annotation instead of quietly
-    returning ``[]`` and letting a caller read that as "no transitions today".
+    The comparison plane is ``stage_week_end`` when the column carries any
+    value, never the build date: two snapshots stamped on different calendar
+    days can be the SAME completed Stage week, and diffing them would
+    manufacture a phantom transition out of a same-week rerun. A legacy
+    parquet with no ``stage_week_end`` column falls back to ``as_of_date``
+    (its own pre-existing structural-limit behavior, unchanged). The current
+    side is additionally passed through the §4.2 per-row currentness gate.
     """
     ref = _iso_date(as_of) or _today()
     budget = max_stale_sessions(root, "stage_transitions")
@@ -834,31 +912,59 @@ def stage_transitions(
         _warn("marketing-supply-stage-transitions",
               f"{STAGE_REL} absent or unreadable — stage-transition pool empty")
         return []
+
+    has_week = "stage_week_end" in df.columns and df["stage_week_end"].notna().any()
+    key_col = "stage_week_end" if has_week else "as_of_date"
+
     try:
-        snapshots = sorted({str(x)[:10] for x in df["as_of_date"].dropna()})
+        keys = sorted({str(x)[:10] for x in df[key_col].dropna()})
     except Exception:  # noqa: BLE001
-        snapshots = []
-    if len(snapshots) < 2:
+        keys = []
+    if len(keys) < 2:
         _warn("marketing-supply-stage-transitions",
-              f"{STAGE_REL} retains {len(snapshots)} snapshot(s) "
-              f"({snapshots[-1] if snapshots else 'none'}) — a stage transition needs two, "
-              "so the pool is structurally empty, not quiet")
+              f"{STAGE_REL} retains {len(keys)} distinct {key_col} value(s) "
+              f"({keys[-1] if keys else 'none'}) — a stage transition needs two "
+              "DIFFERENT Stage weeks, so the pool is structurally empty, not quiet")
         return []
-    latest, prior = snapshots[-1], snapshots[-2]
-    if _is_stale(latest, ref, budget):
+    latest_key, prior_key = keys[-1], keys[-2]
+
+    # The wall-clock freshness gate always reads as_of_date (the build stamp),
+    # independent of which key resolved the week-vs-week comparison above.
+    try:
+        as_of_vals = sorted({str(x)[:10] for x in df["as_of_date"].dropna()})
+    except Exception:  # noqa: BLE001
+        as_of_vals = []
+    latest_as_of = as_of_vals[-1] if as_of_vals else ""
+    if _is_stale(latest_as_of, ref, budget):
         _warn("marketing-supply-stage-transitions",
-              f"stage backfill snapshot {latest} is more than {budget} sessions behind "
-              f"{ref.isoformat()} — stage-transition pool empty")
+              f"stage backfill snapshot {latest_as_of or 'unstamped'} is more than "
+              f"{budget} sessions behind {ref.isoformat()} — stage-transition pool empty")
         return []
 
     try:
         usa = df[df["region"] == "USA"].copy()
-        asof_s = usa["as_of_date"].astype(str).str[:10]
-        cur = usa[asof_s == latest]
-        old = usa[asof_s == prior]
+        key_s = usa[key_col].astype(str).str[:10]
+        cur = usa[key_s == latest_key]
+        old = usa[key_s == prior_key]
+    except Exception:  # noqa: BLE001
+        return []
+
+    gated_cur, gate_used = _currentness_gate(cur, ref, budget)
+    if gate_used == "none":
+        _warn("marketing-supply-stage-transitions",
+              f"{STAGE_REL} carries no per-row currentness provenance — "
+              "stage-transition pool empty")
+        return []
+    if gated_cur is None or gated_cur.empty:
+        _warn("marketing-supply-stage-transitions",
+              f"every current-side row in {latest_key} failed the {gate_used} "
+              "currentness gate — stage-transition pool empty")
+        return []
+
+    try:
         prev_flag = {str(r.get("ticker") or "").upper(): r.get("stage_flag")
                      for _, r in old.iterrows()}
-        cur = cur.sort_values(["sata_score", "ticker"], ascending=[False, True])
+        cur = gated_cur.sort_values(["sata_score", "ticker"], ascending=[False, True])
     except Exception:  # noqa: BLE001
         return []
 
@@ -872,9 +978,9 @@ def stage_transitions(
             continue
         items.append({
             "ticker": t,
-            "why": (f"stage {was} to {now} since {prior}, "
+            "why": (f"stage {was} to {now} since {prior_key}, "
                     f"SATA {row.get('sata_score')}, now {row.get('stage_detailed')}"),
-            "asof": latest,
+            "asof": latest_key,
             "source": "stage_analysis",
         })
     return _rows(items, n)

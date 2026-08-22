@@ -58,8 +58,13 @@ def _minimal_truth(tmp_path: Path) -> dict:
         "ci_summary": "CI [−1%, +1%] straddles zero",
         "era_stability": "unknown",
         "pit_class": "pit_pure",
-        "allowed_consumers": ["measurement_surface"],
-        "forbidden_consumers": ["position_sizing"],
+        "allowed_consumers": ["measurement_page"],
+        "forbidden_consumers": [
+            "board_rank",
+            "oracle_escalation",
+            "sector_central_direction_score",
+            "position_sizing",
+        ],
         "falsifiers": ["If CI excludes zero, null is refuted."],
         "monitoring": {
             "metric": "test_metric",
@@ -399,13 +404,31 @@ def test_load_truths_empty_lines_skipped(tmp_path):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_seeded_truths_all_valid():
-    """All seeded truths in data/cycle_pattern/truths.jsonl pass schema validation."""
+    """All seeded truths in data/cycle_pattern/truths.jsonl pass schema validation.
+
+    Consumer-vocabulary content (CPI-H1) is checked only for each truth_id's
+    LATEST version: the registry is append-only (truth_schema.md — old lines
+    are never mutated), so a historical row written before a vocabulary heal
+    can never be corrected in place. What matters is that the CURRENT
+    (latest) version of every truth_id is canonical — see
+    research/imce/IMCE_D1C_RELEASE_RECORD.md.
+    """
     rows = load_truths(TRUTHS_PATH)
     assert len(rows) >= 15, f"Expected >= 15 seeded truths, got {len(rows)}"
 
+    latest_version: dict[str, int] = {}
     for row in rows:
+        tid = row["truth_id"]
+        latest_version[tid] = max(latest_version.get(tid, 0), row["version"])
+
+    for row in rows:
+        is_latest = row["version"] == latest_version[row["truth_id"]]
         # skip version>1 rows (transitions) — they may not have new evidence_refs
-        validate_truth(row, check_refs_exist=(row["version"] == 1))
+        validate_truth(
+            row,
+            check_refs_exist=(row["version"] == 1),
+            check_consumer_vocabulary=is_latest,
+        )
 
 
 def test_seeded_active_count():

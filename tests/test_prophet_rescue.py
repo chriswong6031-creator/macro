@@ -116,7 +116,7 @@ def state(**kw):
     session = kw.pop("session", THU)          # what the calendar owes at `now`
     defaults = dict(
         main_index=index(source_asof=session.isoformat()),
-        r2_index=index(source_asof=session.isoformat()),
+        r2_health=index(source_asof=session.isoformat()),
         vps_status={"checks": {"site": {
             "commit_time": (now - timedelta(minutes=4)).isoformat()}}},
         runs=[run_row(created=at(session, 22, 31))],
@@ -214,7 +214,7 @@ def test_saturday_and_sunday_are_quiet_after_a_friday_bake():
         snapshot = state(
             now=at(day, hour), session=FRI,
             main_index=index(source_asof=FRI.isoformat()),
-            r2_index=index(source_asof=FRI.isoformat()),
+            r2_health=index(source_asof=FRI.isoformat()),
             runs=[run_row(created=at(FRI, 22, 33))],
         )
         actions = RESCUE.decide(snapshot)
@@ -234,7 +234,7 @@ def test_the_tuesday_after_a_monday_holiday_expects_friday():
     actions = RESCUE.decide(state(
         now=at(tuesday, 8, 40), session=friday,
         main_index=index(source_asof=friday.isoformat()),
-        r2_index=index(source_asof=friday.isoformat()),
+        r2_health=index(source_asof=friday.isoformat()),
         runs=[run_row(created=at(friday, 22, 31))],
     ))
     assert verdicts(actions) == [RESCUE.HEALTHY]
@@ -252,7 +252,7 @@ def test_a_fresh_asof_over_a_three_session_stale_source_asof_alarms():
     snapshot = state(
         now=at(THU, 9, 40), session=THU,
         main_index=index(source_asof="2026-08-10", asof=THU.isoformat()),
-        r2_index=index(source_asof="2026-08-10"),
+        r2_health=index(source_asof="2026-08-10"),
         runs=[run_row(status="completed", conclusion="failure",
                       created=at(WED, 23, 11))],
         dispatch_runs_today=0,
@@ -268,7 +268,7 @@ def test_the_top_level_asof_is_never_read():
     stale = index(source_asof="2026-08-10", asof="2026-08-10")
     restamped = index(source_asof="2026-08-10", asof="2026-08-13")
     base = dict(now=at(THU, 9, 40), session=THU,
-                r2_index=index(source_asof="2026-08-10"),
+                r2_health=index(source_asof="2026-08-10"),
                 runs=[run_row(conclusion="failure", created=at(WED, 23, 11))])
     assert (verdicts(RESCUE.decide(state(main_index=stale, **base)))
             == verdicts(RESCUE.decide(state(main_index=restamped, **base))))
@@ -292,7 +292,7 @@ def test_no_fire_is_not_a_strand_before_the_0140z_deadline():
     snapshot = state(
         now=at(FRI, 0, 10), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[],
     )
     actions = RESCUE.decide(snapshot)
@@ -306,7 +306,7 @@ def test_no_fire_becomes_a_strand_dispatch_at_0140z():
     snapshot = state(
         now=at(FRI, 1, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[],
     )
     actions = RESCUE.decide(snapshot)
@@ -322,7 +322,7 @@ def test_stale_data_is_not_an_alarm_before_the_0940z_completion_deadline():
     snapshot = state(
         now=at(FRI, 5, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[run_row(status="in_progress", conclusion=None,
                       created=at(THU, 22, 31))],
     )
@@ -338,7 +338,7 @@ def test_past_the_1340z_floor_a_stale_night_alarms_without_dispatching():
     snapshot = state(
         now=at(FRI, 13, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[],
     )
     actions = RESCUE.decide(snapshot)
@@ -355,7 +355,7 @@ def test_a_newest_cancelled_run_with_stale_data_is_re_armed():
     snapshot = state(
         now=at(FRI, 9, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[run_row(status="completed", conclusion="cancelled",
                       created=at(THU, 23, 11))],
     )
@@ -390,7 +390,7 @@ def test_cancelled_real_plus_surviving_gate_skip_is_not_a_bake():
     snapshot = state(
         now=at(FRI, 2, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[cancelled, skip],
     )
     facts = RESCUE.run_facts(snapshot.runs, at(THU, 22, 0), now=snapshot.now)
@@ -456,7 +456,7 @@ def test_a_live_run_blocks_the_dispatch(status):
     snapshot = state(
         now=at(FRI, 9, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[run_row(status=status, conclusion=None, created=at(THU, 22, 31))],
         dispatch_runs_today=0,
     )
@@ -471,7 +471,7 @@ def test_a_live_run_before_the_completion_deadline_is_quiet():
     snapshot = state(
         now=at(FRI, 5, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[run_row(status="in_progress", conclusion=None, created=at(THU, 22, 31))],
     )
     actions = RESCUE.decide(snapshot)
@@ -496,7 +496,7 @@ def test_a_hung_bake_past_the_completion_deadline_goes_LOUD(status):
     snapshot = state(
         now=at(FRI, 11, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[run_row(status=status, conclusion=None, created=at(THU, 22, 31),
                       event="workflow_dispatch", run_id=31583415065)],
     )
@@ -521,7 +521,7 @@ def test_a_live_run_still_blocks_when_other_blockers_also_apply():
     snapshot = state(
         now=at(FRI, 13, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[run_row(status="in_progress", conclusion=None, created=at(THU, 22, 31))],
         dispatch_runs_today=9,
     )
@@ -560,7 +560,7 @@ def hostage_state(**kw):
     defaults = dict(
         now=at(FRI, 11, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[run_row(status="queued", conclusion=None, created=at(THU, 22, 52),
                       run_id=31977372592)],
         dispatch_runs_today=0,
@@ -691,7 +691,7 @@ def test_budget_spent_downgrades_to_alert_only():
     snapshot = state(
         now=at(FRI, 9, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[run_row(conclusion="failure", created=at(THU, 23, 11))],
         dispatch_runs_today=RESCUE.AUTO_DISPATCH_BUDGET,
     )
@@ -708,7 +708,7 @@ def test_one_dispatch_short_of_the_budget_still_re_arms():
     snapshot = state(
         now=at(FRI, 9, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[run_row(conclusion="failure", created=at(THU, 23, 11))],
         dispatch_runs_today=RESCUE.AUTO_DISPATCH_BUDGET - 1,
     )
@@ -720,7 +720,7 @@ def test_two_wakes_spend_one_budget_each_and_then_stop():
     when wake 2 looks, so wake 2 waits; by wake 3 the budget is gone."""
     base = dict(session=THU,
                 main_index=index(source_asof=WED.isoformat()),
-                r2_index=index(source_asof=WED.isoformat()))
+                r2_health=index(source_asof=WED.isoformat()))
     wake1 = RESCUE.decide(state(
         now=at(FRI, 9, 40), runs=[run_row(conclusion="failure",
                                           created=at(THU, 23, 11))],
@@ -838,7 +838,7 @@ def test_the_only_pipeline_write_is_a_dispatch():
             f"pagination in {url} — one page per wake, always"
         )
     assert {u for u in surface if "api.github.com" not in u} == {
-        RESCUE.R2_INDEX_URL,
+        RESCUE.R2_HEALTH_URL,
         RESCUE.VPS_STATUS_URL,
         "https://api.telegram.org/bot{tg_token}/sendMessage",
     }, "an unexpected external host appeared"
@@ -858,7 +858,7 @@ def test_an_unreadable_run_list_never_dispatches():
     snapshot = state(
         now=at(FRI, 9, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=None, runs_error="HTTP 403",
         dispatch_runs_today=0,
     )
@@ -877,7 +877,7 @@ def test_an_unreadable_budget_probe_never_dispatches():
     snapshot = state(
         now=at(FRI, 1, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[],
         dispatch_runs_today=None, dispatch_probe_error="Timeout",
     )
@@ -892,7 +892,7 @@ def test_an_unreadable_main_index_alarms_rather_than_scoring_green():
     snapshot = state(
         now=at(FRI, 8, 40), session=THU,
         main_index=None, main_error="HTTP 404",
-        r2_index=None,
+        r2_health=None,
     )
     actions = RESCUE.decide(snapshot)
     assert verdicts(actions) == [RESCUE.API_DARK]
@@ -910,7 +910,7 @@ def test_a_fresh_store_with_no_cohort_and_eligible_candidates_is_no_cohort():
         now=at(FRI, 9, 40), session=THU,
         main_index=index(source_asof=THU.isoformat(), cohort_date=WED.isoformat(),
                          cohort_n=25, eligible=40),
-        r2_index=index(source_asof=THU.isoformat()),
+        r2_health=index(source_asof=THU.isoformat()),
         runs=[run_row(created=at(THU, 22, 31))],
     )
     actions = RESCUE.decide(snapshot)
@@ -926,43 +926,46 @@ def test_an_empty_cohort_with_zero_eligible_candidates_is_not_a_wedge():
         now=at(FRI, 9, 40), session=THU,
         main_index=index(source_asof=THU.isoformat(), cohort_date=WED.isoformat(),
                          cohort_n=25, eligible=0),
-        r2_index=index(source_asof=THU.isoformat()),
+        r2_health=index(source_asof=THU.isoformat()),
         runs=[run_row(created=at(THU, 22, 31))],
     )
     assert verdicts(RESCUE.decide(snapshot)) == [RESCUE.HEALTHY]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# serve splits — main is the truth, the edges are what users read
+# publish lag — main is the truth, the health receipt only proves publication
+# (DEC:B1-PROPHET-PUBLIC-SPLIT: users are served by the protected origin, never
+# by the R2 health receipt, so a lagging receipt is a publish-leg defect)
 # ─────────────────────────────────────────────────────────────────────────────
-def test_a_stale_public_r2_mirror_is_a_serve_split():
-    """The browser paints Prophet from the R2 public base, so main being right is
-    not the same as the product being right."""
+def test_a_stale_public_health_receipt_is_a_publish_lag():
+    """The public R2 object is a health receipt, never the plan book — but a
+    lagging receipt still means the nightly's publish leg did not complete."""
     snapshot = state(
         now=at(FRI, 8, 40), session=THU,
         main_index=index(source_asof=THU.isoformat()),
-        r2_index=index(source_asof="2026-08-10"),
+        r2_health=index(source_asof="2026-08-10"),
     )
     actions = RESCUE.decide(snapshot)
-    assert verdicts(actions) == [RESCUE.SERVE_SPLIT_R2]
+    assert verdicts(actions) == [RESCUE.R2_HEALTH_LAG]
     assert not dispatched(actions)
     assert RESCUE.exit_code(actions) != 0
 
 
-def test_an_r2_mirror_ahead_of_main_is_not_a_split():
-    """R2 can lead main mid-publish. Only R2 BEHIND main is a user-visible split."""
+def test_a_health_receipt_ahead_of_main_is_not_a_lag():
+    """The receipt can lead main mid-publish. Only a receipt BEHIND main is a lag."""
     snapshot = state(
         now=at(FRI, 8, 40), session=THU,
         main_index=index(source_asof="2026-08-12"),
-        r2_index=index(source_asof=THU.isoformat()),
+        r2_health=index(source_asof=THU.isoformat()),
     )
-    assert RESCUE.SERVE_SPLIT_R2 not in verdicts(RESCUE.decide(snapshot))
+    assert RESCUE.R2_HEALTH_LAG not in verdicts(RESCUE.decide(snapshot))
 
 
-def test_an_unreachable_r2_is_not_reported_as_a_split():
-    """Blind is not a breach — the R2 fetch failing must not manufacture a verdict."""
+def test_an_unreachable_r2_health_receipt_is_not_reported_as_a_lag():
+    """Blind is not a breach — the health-receipt fetch failing must not
+    manufacture a verdict."""
     snapshot = state(now=at(FRI, 8, 40), session=THU,
-                     r2_index=None, r2_error="HTTP 522")
+                     r2_health=None, r2_health_error="HTTP 522")
     assert verdicts(RESCUE.decide(snapshot)) == [RESCUE.HEALTHY]
 
 
@@ -1119,7 +1122,7 @@ def test_a_healthy_wake_spends_exactly_three_github_reads():
     called = sorted(n.func.id for n in ast.walk(fn)
                     if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
                     and n.func.id.startswith("fetch_"))
-    assert called == ["fetch_dispatch_budget", "fetch_main_index", "fetch_r2_index",
+    assert called == ["fetch_dispatch_budget", "fetch_main_index", "fetch_r2_health",
                       "fetch_runs", "fetch_vps_status"], called
     github = {"fetch_main_index", "fetch_runs", "fetch_dispatch_budget"}
     assert len(github & set(called)) == 3
@@ -1137,8 +1140,8 @@ def test_the_public_r2_base_matches_the_configured_data_plane():
     config_text = (ROOT / "config.yml").read_text(encoding="utf-8")
     assert 'public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"' \
         in config_text
-    assert RESCUE.R2_INDEX_URL == (
-        "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/prophet/index.json"
+    assert RESCUE.R2_HEALTH_URL == (
+        "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/prophet/health.json"
     )
 
 
@@ -1171,7 +1174,7 @@ def test_receipts_alone_can_exhaust_the_budget():
     snapshot = state(
         now=at(FRI, 9, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[run_row(conclusion="failure", created=at(THU, 23, 11))],
         dispatch_runs_today=0,                 # GitHub recorded nothing...
         dispatch_receipts_today=2,             # ...but we tried twice
@@ -1185,7 +1188,7 @@ def test_receipts_alone_can_exhaust_the_budget():
 def test_the_budget_takes_the_larger_of_runs_and_receipts():
     base = dict(now=at(FRI, 9, 40), session=THU,
                 main_index=index(source_asof=WED.isoformat()),
-                r2_index=index(source_asof=WED.isoformat()),
+                r2_health=index(source_asof=WED.isoformat()),
                 runs=[run_row(conclusion="failure", created=at(THU, 23, 11))])
     assert dispatched(RESCUE.decide(state(dispatch_runs_today=1,
                                           dispatch_receipts_today=1, **base)))
@@ -1227,7 +1230,7 @@ def test_a_dispatch_receipt_round_trips_through_the_ledger():
     snapshot = state(
         now=at(FRI, 9, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[run_row(conclusion="failure", created=at(THU, 23, 11))],
     )
     actions = RESCUE.decide(snapshot)
@@ -1290,7 +1293,7 @@ def test_an_unparseable_created_at_on_a_live_run_still_blocks_the_dispatch():
     snapshot = state(
         now=at(FRI, 9, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[{"id": 77, "status": "in_progress", "conclusion": None,
                "created_at": "not-a-timestamp", "event": "schedule"}],
     )
@@ -1307,7 +1310,7 @@ def test_a_run_row_with_no_status_counts_as_alive():
     snapshot = state(
         now=at(FRI, 9, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[{"id": 88, "conclusion": None,
                "created_at": at(THU, 22, 31).strftime("%Y-%m-%dT%H:%M:%SZ")}],
     )
@@ -1397,7 +1400,7 @@ def test_a_store_that_has_not_advanced_is_never_called_HEALTHY():
     snapshot = state(
         now=at(THU, 23, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
-        r2_index=index(source_asof=WED.isoformat()),
+        r2_health=index(source_asof=WED.isoformat()),
         runs=[],                       # the bake has not even fired yet
     )
     actions = RESCUE.decide(snapshot)

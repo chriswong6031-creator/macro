@@ -1,10 +1,10 @@
 {
-  "belief_time": "2026-08-20",
+  "belief_time": "2026-08-21",
   "capability_counts": {
     "measurement_candidate": 499,
     "semantic_only": 142
   },
-  "computed_at": "2026-08-20T13:33:30Z",
+  "computed_at": "2026-08-21T03:47:15Z",
   "counts": {
     "capability": 641,
     "edges": 8292,
@@ -18,8 +18,8 @@
   "identity_resolution_state_counts": {
     "DEFERRED_IDENTITY_EXCEPTION": 2,
     "ENTITY_TYPE_CONFLICT": 1,
-    "NOT_IN_MASTER": 737,
-    "RESOLVED": 1833,
+    "NOT_IN_MASTER": 229,
+    "RESOLVED": 2341,
     "UNSUPPORTED_MARKET": 233
   },
   "lane": "nightly",

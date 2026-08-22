@@ -189,8 +189,9 @@ def apply_truths(artifact: dict) -> None:
             "ci_summary": "gap_wf −0.0350 CI95 [−0.0688, −0.0021]; boot p=0.04; BH q=0.10 FAIL",
             "era_stability": "stable",
             "pit_class": "pit_pure",
-            "allowed_consumers": ["neuralweb_context", "cycle_docs", "research_factory",
-                                  "measurement_page"],
+            # promoted_null: neuralweb_context is class-forbidden (matrix wins —
+            # CPI-H1 ruling 6 / A2 F6); do not grant it here.
+            "allowed_consumers": ["cycle_docs", "research_factory", "measurement_page"],
             "forbidden_consumers": ["board_rank", "oracle_escalation",
                                     "sector_central_direction_score", "position_sizing"],
             "falsifiers": [

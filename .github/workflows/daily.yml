@@ -39,8 +39,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   # Daily stays off the shared "pipeline" lane (a 2-3h backfill once starved it).
@@ -2905,7 +2903,7 @@ jobs:
           push_lost
           echo "::error title=Prophet checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); R2 remains on its prior accepted object, and the final engine commit is fenced from publishing this uncheckpointed Prophet tree"
           exit 1
-      - name: publish checkpointed Prophet index to R2
+      - name: publish Prophet public health receipt to R2
         if: steps.prophet_checkpoint.outputs.r2_ready == 'true'
         timeout-minutes: 5
         continue-on-error: true
@@ -2917,9 +2915,15 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         # Reconstruct from the accepted Git commit, verify its content hash, then
-        # re-check current main immediately before upload. A failed/rejected Git
-        # checkpoint never sets r2_ready, and a newer Prophet/correction commit
-        # supersedes this publisher rather than being overwritten in R2.
+        # re-check current main immediately before upload — same checkpoint-proof
+        # machinery as before. What changed is the PAYLOAD (DEC:B1-PROPHET-PUBLIC-
+        # SPLIT): the full plan book is premium/private and must never reach public
+        # R2 again, so this publisher builds and puts ONLY the minimal public health
+        # projection (prophet/health.json). It no longer owns the forbidden-key
+        # tombstone — that self-heal runs unconditionally in the dedicated
+        # "enforce Prophet R2 index tombstone" step below, on every nightly wake
+        # regardless of whether this step ran (r2_ready gates ONLY on an index
+        # content change, so an unchanged-index night must not skip the tombstone).
         run: |
           set -euo pipefail
           R2_INDEX_FILE="$(mktemp "${RUNNER_TEMP}/prophet-r2-index.XXXXXX.json")"
@@ -2955,12 +2959,19 @@ jobs:
             exit 0
           fi
           python3 - "$R2_INDEX_FILE" <<'PY'
+          import json
           import os
           import subprocess
           import sys
+          from datetime import datetime, timezone
           from pathlib import Path
 
-          from scripts.build_prophet import R2_INDEX_KEY, _r2_client
+          from scripts.build_prophet import (
+              R2_HEALTH_KEY,
+              _r2_client,
+              build_public_health_projection,
+              guarded_put_object,
+          )
 
           local_path = Path(sys.argv[1])
           client = _r2_client()
@@ -2976,11 +2987,23 @@ jobs:
           bucket = os.environ.get("R2_BUCKET") or "mastermindx"
           expected_sha = os.environ["PROPHET_INDEX_SHA256"]
           checkpoint_sha = os.environ["PROPHET_CHECKPOINT_SHA"]
+          published_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+          index = json.loads(local_path.read_text(encoding="utf-8"))
+          health_payload = build_public_health_projection(
+              index,
+              checkpoint_sha=checkpoint_sha,
+              index_sha256=expected_sha,
+              published_at=published_at,
+          )
+          health_bytes = json.dumps(
+              health_payload, allow_nan=False, default=str, indent=2,
+          ).encode("utf-8")
 
           # Snapshot the destination generation first. The conditional put below
           # makes any concurrent R2 writer win rather than be overwritten.
           try:
-              current = client.head_object(Bucket=bucket, Key=R2_INDEX_KEY)
+              current = client.head_object(Bucket=bucket, Key=R2_HEALTH_KEY)
           except ClientError as exc:
               response = exc.response or {}
               status = (response.get("ResponseMetadata") or {}).get("HTTPStatusCode")
@@ -3035,10 +3058,11 @@ jobs:
               raise SystemExit(0)
 
           try:
-              client.put_object(
-                  Bucket=bucket,
-                  Key=R2_INDEX_KEY,
-                  Body=local_path.read_bytes(),
+              guarded_put_object(
+                  client,
+                  bucket=bucket,
+                  key=R2_HEALTH_KEY,
+                  Body=health_bytes,
                   ContentType="application/json",
                   Metadata={
                       "git-checkpoint": checkpoint_sha,
@@ -3059,13 +3083,93 @@ jobs:
                   raise SystemExit(0) from exc
               print(
                   "::error title=Prophet R2 upload failed::"
-                  "guarded Git checkpoint landed but its verified index did not reach R2",
+                  "guarded Git checkpoint landed but its verified health receipt did not reach R2",
                   flush=True,
               )
               raise SystemExit(1) from exc
           print(
               "::notice title=Prophet R2 published::"
-              "uploaded the hash-verified index from the guarded Git checkpoint",
+              "uploaded the public health receipt for the guarded Git checkpoint",
+              flush=True,
+          )
+          PY
+      - name: enforce Prophet R2 index tombstone (unconditional)
+        if: ${{ !cancelled() }}
+        timeout-minutes: 5
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        # Reviewer finding (§8b): the previous tombstone lived inside the
+        # publisher step above, which is gated `r2_ready == 'true'` — and
+        # r2_ready is set ONLY when the checkpointed index content actually
+        # changed that night. On an unchanged-index night the publisher step
+        # is skipped entirely, so NO tombstone ran and a reappeared
+        # prophet/index.json on public R2 (DEC:B1-PROPHET-PUBLIC-SPLIT
+        # forbids it — the full plan book must never be public) would sit
+        # undetected until the next content-changing night. This step is
+        # decoupled from that gate: it runs on every nightly wake the R2
+        # creds exist, independent of whether the health publish ran, and is
+        # the sole tombstone owner (the publisher step no longer enforces
+        # it). `!cancelled()` runs this even if an earlier step in the job
+        # failed, so a red upstream step never suppresses the self-heal.
+        run: |
+          python3 - <<'PY'
+          import os
+
+          from scripts.build_prophet import _r2_client
+
+          # Forbidden public key literal (DEC:B1-PROPHET-PUBLIC-SPLIT), named
+          # here rather than imported — the tombstone check/delete never
+          # needs a live index, only the key it must never let stand.
+          FORBIDDEN_INDEX_KEY = "prophet/index.json"
+
+          client = _r2_client()
+          if client is None:
+              print(
+                  "::notice title=Prophet R2 tombstone skipped::"
+                  "R2 credentials unavailable; nothing to enforce",
+                  flush=True,
+              )
+              raise SystemExit(0)
+          from botocore.exceptions import ClientError
+
+          bucket = os.environ.get("R2_BUCKET") or "mastermindx"
+
+          try:
+              client.head_object(Bucket=bucket, Key=FORBIDDEN_INDEX_KEY)
+          except ClientError as exc:
+              response = exc.response or {}
+              status = (response.get("ResponseMetadata") or {}).get("HTTPStatusCode")
+              code = str((response.get("Error") or {}).get("Code") or "")
+              if status == 404 or code in {"404", "NoSuchKey", "NotFound"}:
+                  print(
+                      "::notice title=Prophet R2 tombstone::"
+                      f"{FORBIDDEN_INDEX_KEY} already absent",
+                      flush=True,
+                  )
+                  raise SystemExit(0)
+              print(
+                  "::warning title=Prophet R2 tombstone check failed::"
+                  f"could not verify {FORBIDDEN_INDEX_KEY} absence: {exc}",
+                  flush=True,
+              )
+              raise SystemExit(0)
+
+          try:
+              client.delete_object(Bucket=bucket, Key=FORBIDDEN_INDEX_KEY)
+          except Exception as exc:  # noqa: BLE001 — deletion failure is non-fatal
+              print(
+                  "::warning title=Prophet R2 tombstone delete failed::"
+                  f"forbidden public object {FORBIDDEN_INDEX_KEY} could not be removed: {exc}",
+                  flush=True,
+              )
+              raise SystemExit(0)
+          print(
+              "::notice title=Prophet R2 tombstone::"
+              f"removed forbidden public object {FORBIDDEN_INDEX_KEY}",
               flush=True,
           )
           PY
@@ -5322,8 +5426,8 @@ jobs:
           # A lost runner-only commit must turn the run red. Every remaining engine
           # delivery step and every downstream job that needs engine uses always(),
           # so Pages/R2/off-render delivery still runs after this failure.
-          echo "::error title=nightly engine outputs NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — the nightly's data/ forward ledgers + rendered site/ exist only on this runner and are lost at the next checkout (the site still deploys via artifact, the LEDGER DAY does not). See scripts/rebase_autoresolve_hashed_css.sh."
-          echo "### ❌ nightly engine outputs NOT pushed after $PUSH_ATTEMPT attempts ($PUSH_STOP) — forward-ledger day at risk (site still deploys via artifact)" >> "$GITHUB_STEP_SUMMARY"
+          echo "::error title=nightly engine outputs NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — the nightly's data/ forward ledgers + rendered site/ exist only on this runner and are lost at the next checkout (the LEDGER DAY does not advance and the VPS/origin deploy does not get this render; the Pages-artifact fallback was retired pre-private-cutover). See scripts/rebase_autoresolve_hashed_css.sh."
+          echo "### ❌ nightly engine outputs NOT pushed after $PUSH_ATTEMPT attempts ($PUSH_STOP) — forward-ledger day at risk (no Pages-artifact fallback anymore)" >> "$GITHUB_STEP_SUMMARY"
           exit 1
       - name: assemble machine-consumable feeds (site/feeds -> R2)
         if: always()
@@ -5384,15 +5488,6 @@ jobs:
       - name: timings ledger + 85% budget tripwire (W2)
         if: always()   # DELIBERATELY AHEAD of the two delivery steps below — this is the ONLY job where the finish step is not last, and the exception is load-bearing. `if: always()` steps DO run after a timeout-cancel, but only inside the runner's ~5-minute force-termination grace, and this job's tail is the most expensive always() tail in the workflow. Evidence, run 31067383446 (2026-08-06): engine started 10:05:45Z, completed 13:30:46Z = 205.0m = the 200m cap + exactly 5m of grace; steps 117-121 (commit engine outputs → feeds → R2 publish → verify → strip) all ran post-cancel, step 122 "upload pages artifact" burned what was left and ended `failure`, and step 123 — this one — WAS NEVER SCHEDULED AT ALL (the GH jobs API step list jumps straight from 122 to the Post steps). Result: data/ops/nightly_timings/engine.jsonl carried ONE row, source `backfill-gh-api`, while all 15 sibling jobs had native rows — the 85% tripwire was structurally dark for the ONE job whose creep caused the Jul31-Aug6 outage, and dark on exactly the nights it existed to pre-announce. Ordering it here costs a healthy night nothing (both steps still run to completion) and on a cancel night trades an artifact upload that is already failing for the telemetry that explains WHY the night died. The row + the ::warning land in this step's first second; only its bounded commit/push can be cut short. Pinned by tests/test_nightly_timings.py::test_finish_step_is_not_stranded_behind_the_pages_artifact_upload — do not move it back below the upload.
         run: bash scripts/ci/nightly_timings_finish.sh 300
-      - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
-        if: always()
-        run: |
-          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday site/feeds site/oddsmatrix 2>/dev/null || true
-      - name: upload pages artifact
-        if: always()   # deploy must not hinge on the commit-push above succeeding
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/
 
   # The factor-portfolio RETURN SERIES (factors-page chart) is a ~22-min month-end
   # walk (compute_factors x ~38 month-ends x 2 universes) — it was the real engine
@@ -6962,27 +7057,20 @@ jobs:
         if: always()
         run: bash scripts/ci/nightly_timings_finish.sh 10
 
-  publish:
-    # GitHub Pages can't serve a /site folder from a branch — deploy the
-    # artifact instead (repo Settings -> Pages -> Source: GitHub Actions)
-    needs: [et_gate, engine]
-    if: always() && needs.et_gate.outputs.run != 'false'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+  # The `publish` GitHub Pages deploy job (needs: [et_gate, engine], deploy-pages@v4)
+  # was RETIRED pre-private-cutover (DEC:B1-MACRO-PRIVATE-CUTOVER) — the Pages mirror
+  # served the premium book/premiumdata anonymously and must not keep re-publishing
+  # once the repo goes private. The VPS/origin deploy (the site's real serving path)
+  # is untouched; only the Pages producer went away.
 
-  # CSP-W6: forward-ledger heartbeat — runs AFTER publish so we know whether
+  # CSP-W6: forward-ledger heartbeat — runs after the engine job so we know whether
   # the site committed fresh pages for today (render_happened detection).
   # if: always() so this detection step runs even on partial nights — it is a
   # pure detector, never a gate (CSP-R1 forbids fail-dark).
   # daily.yml also touched by other open lanes today (merge-order conflicts
   # expected — keep this diff minimal and rebased on fresh main).
   ledger_heartbeat:
-    needs: [et_gate, engine, publish]
+    needs: [et_gate, engine]
     if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 5
@@ -7002,9 +7090,11 @@ jobs:
       - run: pip install -r requirements.txt
       - name: check forward-ledger advance (CSP-W6 heartbeat)
         # Detection only — never gates or fails the deploy (CSP-R1).
-        # --render-happened: the engine job committed and the publish job ran
-        # (both needed: engine always() = may have committed even on partial
-        # night; publish always() = deployed whatever the engine left).
+        # --render-happened: the engine job may have committed even on a partial
+        # night (its commit step runs if: always()). The Pages `publish` deploy job
+        # this comment used to also wait on was retired pre-private-cutover
+        # (DEC:B1-MACRO-PRIVATE-CUTOVER); the VPS/origin deploy is the site's real
+        # serving path and is untouched.
         # The flag is always passed unconditionally here — run_check() is itself
         # trading-day-aware (skips weekends/holidays) and idempotent per date.
         run: |
