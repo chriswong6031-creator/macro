@@ -21,7 +21,7 @@ schema: mastermind.rig_proposal.v1
 reference_id: mastermind-xpv2-sector-r3b-1
 
 proposed_artifact:
-  frozen_sha: "dc84f78cddf04d9be90e9249126f9767de5725a6"   # replace with the real 40-hex commit SHA at freeze (RIG S3); nothing downstream may bind to this value before then
+  frozen_sha: "0667f800764bf210af6c1237ccf0b5f0a71b4af2"   # successor freeze commit (RIG S3); stamped at freeze, binds the four NEW critic receipts
   paths:
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/proposal/BUILD_MANIFEST.json
