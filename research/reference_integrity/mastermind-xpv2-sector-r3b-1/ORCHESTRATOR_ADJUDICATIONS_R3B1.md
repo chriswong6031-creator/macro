@@ -166,4 +166,37 @@ correct-as-built (the default boot path never issues it; instructions recorded f
 later wave that wires it); (2) the two extra direction-1 entries (coverage sentence,
 Conviction label) follow the commission's own scope text — accepted, not scope creep.
 
-(§7+ appended as further lane returns are adjudicated.)
+## §7 Lane D return — adjudicated ACCEPTED (commit e288c1b5a90d)
+
+Fresh 49-file evidence matrix + EVIDENCE_INDEX.md at candidate sha `fec05b058fbc…`
+(cross-verified against BUILD_MANIFEST.json), all 12 commissioned items captured, index
+100% bidirectional (49/49 files indexed, 0 dangling rows). Machine gates reproduced fresh
+and agree with Lane B/C at the same sha: lang 7/7, aria 253/0 + 74/0, zoom 48/48. Hash
+smoke: 6/6 canonical + 21/21 legacy anchors resolve to the contracted views; the one
+absent scroll-target (`#sc-top`) is the documented recorded seam. Access states captured
+with counts (gated preview 15 rows + 4 disclosures; hydrated +29 inserted rows,
+0 disclosures; reffail fail-open placeholder with 8 recorded simulated-fail fetches).
+
+Rulings: (1) Lane D's router-as-ground-truth deviation is CORRECT — the commission's
+`#si-*` shorthand names three hashes that are themselves LEGACY entries; the router's
+`VIEWS` list (`overview/map/moving/money/explore/confluence`) is the canonical contract
+and all 27 hashes were exercised. (2) The reffail observation (embedded-registry content
+renders beside the failed live-fetch board) is a correct fail-open path, kept as positive
+evidence, not a defect. (3) Supplementary machine-readable JSON twins are accepted —
+indexed, non-orphaned.
+
+## §8 Freeze record
+
+Freeze mechanics executed by the orchestrator after all four lanes converged and were
+adjudicated (§4–§7): origin/main merged into the branch (lane commit SHAs cited in
+continuity.yml preserved — a rebase would have rewritten them), proposal.yml re-pointed
+to the successor namespace with the additions-ledger nav row corrected to name both grid
+shapes (3 cols × 2 rows at 360–767; 2 cols × 3 rows at ≤359, Sol-ratified via the MAC-004
+override), manifest placeholders stamped with the freeze commit, status draft →
+in_review anchored on the newline-bounded field. Acceptance at freeze: verify_reference
+16/16 ALL GREEN, R3A attack suite 59 passed, RIG scan exit 0, candidate sha
+`fec05b058fbc…` unchanged, no production-path diff (verified against origin/main).
+The stop condition is met: no approval.yml, no self-verdict, production untouched,
+R3C_HANDOFF_DRAFT.md carries only live-integration conditions and is DO-NOT-START.
+The four NEW fresh critic seats are Sol's to fan out against the frozen successor SHA;
+the R3B.1 lane workers and this orchestrator may not hold those seats.

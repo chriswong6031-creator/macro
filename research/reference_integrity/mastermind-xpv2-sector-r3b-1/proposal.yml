@@ -2,8 +2,12 @@
 # production baseline facts and capability inventory are unchanged (same R3A ledger, same
 # frozen fixture epoch 4c55fe433490adfd75fd901ef25f5793db2202db). Predecessor evidence
 # paths under mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/ remain valid
-# committed bytes and are cited as-is; only reference_id is re-stamped. Rows touched by
-# the R3B1-01..14 fix packet get updated proposal/evidence text at successor freeze.
+# committed bytes; at freeze the proposed_artifact paths and evidence screenshots were
+# re-pointed to THIS cycle's namespace (fresh 49-file matrix, evidence/EVIDENCE_INDEX.md)
+# and frozen_sha stamped with the successor freeze commit. Capability dispositions are
+# unchanged (90 RETAIN + 2 BLOCKED_DATA); the R3B1-01..14 repairs are recorded in
+# continuity.yml + ORCHESTRATOR_ADJUDICATIONS_R3B1.md rather than as new dispositions,
+# because every restored fact is a RETAIN capability the predecessor candidate dropped.
 # Proposal ledger (RIG V1 S5-S6) -- dispositions, task matrix, authority delta, info-economics.
 # XPV2-SC-R3B. Every baseline.yml capability id (SC-001..SC-092) appears exactly once below --
 # 90 RETAIN + 2 BLOCKED_DATA, matching the R3A capability_disposition_ledger.md disposition
@@ -12,28 +16,22 @@
 # wave, per ADJUDICATIONS.md and COMMISSION.md S20/S2: "R3A is authority substrate ... any
 # candidate for [IMPROVE/RELOCATE/REMOVE] requires a new ruling first -- no implicit deletion."
 #
-# proposed_artifact.frozen_sha is PENDING: this file is drafted BEFORE the R3B candidate exists
-# (COMMISSION.md S19 "Create a reference-only interactive artifact" is the design lanes' later
-# deliverable, not this drafting pass's). The checker (scripts/check_reference_integrity.py) has
-# no format/regex validation on frozen_sha -- it is compared byte-for-byte against each review
-# receipt's artifact_sha only under GROUP_REVIEW, which is armed at status revise/rejected/
-# approved, never at draft/in_review (STATUS_GROUPS). A placeholder is therefore schema-legal at
-# draft and is explicitly named as a GAP (see RETURN GAPS) rather than a fabricated hash.
+# (Predecessor drafting-pass note about a PENDING frozen_sha removed at successor freeze.)
 schema: mastermind.rig_proposal.v1
 reference_id: mastermind-xpv2-sector-r3b-1
 
 proposed_artifact:
   frozen_sha: "dc84f78cddf04d9be90e9249126f9767de5725a6"   # replace with the real 40-hex commit SHA at freeze (RIG S3); nothing downstream may bind to this value before then
   paths:
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/proposal/BUILD_MANIFEST.json
-  screenshots:   # frozen-candidate evidence matrix (62 files); index: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/EVIDENCE_INDEX.md
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/overview-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/map-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/moving-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/money-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/explore-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/confluence-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/proposal/BUILD_MANIFEST.json
+  screenshots:   # fresh successor evidence matrix (49 files + index); index: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/evidence/EVIDENCE_INDEX.md
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/evidence/overview-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/evidence/map-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/evidence/moving-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/evidence/money-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/evidence/explore-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/evidence/confluence-1440-dark-en.png
 
 # EVERY baseline capability id appears exactly once. No implicit deletion (RIG S1/S5).
 dispositions:
@@ -160,7 +158,7 @@ dispositions:
 additions:   # new surfaces the reference proposes beyond production (each authority-neutral; see authority_delta)
   - {id: add.sector_cycles_accessible_table, what: "table/list projection of the same window.SECTOR_CYCLES fields the cycle chart reads (Map view)", authority: "Context -- same fields, no new rank/state calculation (COMMISSION.md S9 mandatory)", evidence: "evidence/map-accessible-table.png; accessible_alternative_contract.md S1"}
   - {id: add.heatmap_accessible_table, what: "table/text equivalent of the market-heat treemap from the same marketdata/sp500_heatmap.json fields, plus the per-stock Browse-the-names disclosure mirroring production heatmap.js layoutList()/stock_url", authority: "Context -- no alternate scoring (COMMISSION.md S11 mandatory)", evidence: "evidence/money-heatmap-accessible.png; accessible_alternative_contract.md S2; FIX_VERIFICATION.md QA3-05"}
-  - {id: add.chrome_divergences_mobile_nav, what: "768-1100 rail labels kept; <=767 six-tab horizontal scroller replaced by a 3x2 grid (production hides Explore/Confluence off-edge at 320-390)", authority: "navigation availability only -- repairs the VTC-002 hidden-capability defect class; R3C must adjudicate for production", evidence: "ORCHESTRATOR_ADJUDICATIONS.md S3; design_notes.md S4"}
+  - {id: add.chrome_divergences_mobile_nav, what: "768-1100 rail labels kept; <=767 six-tab horizontal scroller replaced by a grid -- 3 cols x 2 rows at 360-767 and 2 cols x 3 rows at <=359 (production hides Explore/Confluence off-edge at 320-390)", authority: "navigation availability only -- repairs the VTC-002 hidden-capability defect class; the <=359 2x3 shape is Sol-RATIFIED (R3B.1 commission do-not-reopen list, MAC-004 override in mastermind-xpv2-sector-r3b/verdict.yml); R3C must adjudicate the full divergence for production", evidence: "ORCHESTRATOR_ADJUDICATIONS.md S3; design_notes.md S4; ORCHESTRATOR_ADJUDICATIONS_R3B1.md S1"}
   - {id: add.rank_scope_note, what: "one muted clarifying note (Rank across all groups / ZH twin) under the Map ranked table -- producer rank is global; scope filters make it non-contiguous", authority: "Context label; no value changed", evidence: "copy_ledger.md; build/views/map.html"}
 
 # Cold-reader tasks per view (COMMISSION.md S23 "Acceptance -- product"). verdict: UNKNOWN
