@@ -1,79 +1,84 @@
 ---
 workstream: "WS:FINANCIAL-INTELLIGENCE-FABRIC"
-session: claude/fif-2b-acceptance-records
+session: claude/fif-2c
 model: local
-ended_because: complete
-prs: [6157]
+ended_because: ci_handoff
 mission: >
-  Records-only closure after Sol PASS / ACCEPTED of FIF-2B. Repair durable
-  program truth. Do not touch product code. Do not start FIF-2C. Do not
-  repair the merge-control plane.
+  FIF-2C authenticated full financial_intelligence_packet.v1 HTTP read.
+  Stop for Sol. Do not merge. Do not start FIF-2D.
 state_before: >
-  Sol source-reviewed amended head 55663277a32c12251dbeb80945d0abcf36570b58
-  as PASS / ACCEPTED. GitHub had already squash-merged PR #6157 as
-  56d1a36caa43ca2a8ea4570808edca75ca2fc334 while HOLD FOR SOL remained in
-  force. AgentOS still said FIF-2B BUILT_NOT_ACCEPTED pending Sol.
+  FIF-1 DONE/FROZEN. FIF-2 IN_PROGRESS. FIF-2A ACCEPTED/FIXTURE_PROVEN/ON_MAIN
+  (PR #5983). FIF-2B ACCEPTED/FIXTURE_PROVEN/ON_MAIN (accepted head
+  55663277a32c, merge 56d1a36caa43, records PR #6214 / 1d1d95d8). FIF-2C
+  was UNLOCKED / NOT_STARTED.
 changed:
+  - path: engine/fundamental_forensics/packet_service.py
+    what: FIF-2C adapter serving exact canonical_packet_bytes; no unsupported-metric 400.
+  - path: engine/fundamental_forensics/revision_service.py
+    what: Expose packet_query_request and validate_packet_dataset; FIF-2B still calls them.
+  - path: app/forensics.py
+    what: POST /api/forensics/v1/financial/packet plus private 405 methods.
+  - path: tests/test_fundamental_forensics_financial_packet_service.py
+    what: Direct-vs-HTTP byte equality, PIT, unsupported 200, FIF-2A/2B regressions.
+  - path: tests/test_fundamental_forensics_financial_packet_api.py
+    what: Auth/privacy, exact bytes, CustomerCount 200, multi-hop/delayed-mapping HTTP.
+  - path: tests/test_forensics_api.py
+    what: Mount packet route on production app OpenAPI and paid-path inventory.
+  - path: .github/ci/legacy-jobs.yml
+    what: Additive FIF-2C test registration in the existing Fundamental Forensics step.
   - path: agentos/workstreams/WS-FINANCIAL-INTELLIGENCE-FABRIC.md
-    what: FIF-2B ACCEPTED / FIXTURE_PROVEN / ON_MAIN; FIF-2C UNLOCKED / NOT_STARTED.
-  - path: agentos/handoffs/FINANCIAL-INTELLIGENCE-FABRIC-2026-08-22.md
-    what: Acceptance/closure handoff for FIF-2B.
-  - path: agentos/discoveries/DSC-REVIEW-HOLD-PROSE-IS-NOT-FAIL-CLOSED.md
-    what: Attach PR #6157 premature merge as additional hold-bypass evidence.
+    what: FIF-2C BUILT_NOT_ACCEPTED; FIF-2D NOT_STARTED.
 decisions:
   - DEC:FIF-1-V1-FROZEN
+  - DEC:FIF-ENTITY-ID-IS-NOT-CIK
   - DEC:FIF-REVISION-ROOT-PRIOR-REVISED
   - DEC:FIF-PACKET-GOVERNANCE-IS-CUTOFF-VISIBLE
-  - DEC:FIF-ENTITY-ID-IS-NOT-CIK
   - DEC:SOL-HOLD-IS-A-MERGE-BARRIER
 discoveries:
   - DSC:REVIEW-HOLD-PROSE-IS-NOT-FAIL-CLOSED
   - DSC:PR-HOLD-REQUIRES-NATIVE-AUTOMERGE-DISARM
 verified:
-  - claim: GitHub reports PR #6157 MERGED with accepted head 55663277a32c and merge commit 56d1a36caa43.
-    command: gh pr view 6157 --json state,mergedAt,mergeCommit,headRefOid
-    result: MERGED at 2026-08-21T16:08:36Z; headRefOid 55663277a32c12251dbeb80945d0abcf36570b58; mergeCommit 56d1a36caa43ca2a8ea4570808edca75ca2fc334
-  - claim: Current origin/main FIF-2B product files match the GitHub merge commit.
-    command: git diff --stat 56d1a36caa43ca2a8ea4570808edca75ca2fc334 origin/main -- engine/fundamental_forensics/revision_service.py engine/fundamental_forensics/query_service.py app/forensics.py tests/test_fundamental_forensics_financial_revision_service.py tests/test_fundamental_forensics_financial_revision_api.py
+  - claim: FIF-2C plus predecessor/kernel suites pass (443 tests; 45 FIF-2C).
+    command: python3 -m pytest -q tests/test_fundamental_forensics_financial_packet_service.py tests/test_fundamental_forensics_financial_packet_api.py tests/test_fundamental_forensics_financial_revision_service.py tests/test_fundamental_forensics_financial_revision_api.py tests/test_fundamental_forensics_financial_query_service.py tests/test_fundamental_forensics_financial_query_api.py tests/test_forensics_api.py tests/test_fundamental_forensics_financial_intelligence_packet.py tests/test_fundamental_forensics_financial_intelligence_packet_r2.py tests/test_fundamental_forensics_financial_intelligence_packet_r3.py tests/test_fundamental_forensics_metric_registry.py tests/test_fundamental_forensics_raw_ledger.py tests/test_fundamental_forensics_query.py
+    result: 443 passed
+  - claim: Frozen FIF-1 implementation and schema have empty diff against origin/main.
+    command: git diff --stat origin/main -- engine/fundamental_forensics/financial_intelligence_packet.py engine/fundamental_forensics/query.py engine/fundamental_forensics/raw_ledger.py engine/fundamental_forensics/metric_registry.py engine/fundamental_forensics/synthetic_filing_package.py contracts/financial_intelligence_packet.schema.json
     result: empty
-  - claim: Production default revision provider remains UnavailableFinancialPacketProvider.
-    command: python3 -c "import ast,pathlib; p=pathlib.Path('app/forensics.py').read_text(); print('UnavailableFinancialPacketProvider' in p and '_financial_revision_provider' in p)"
+  - claim: Rich FIP1 HTTP packet is 18270 bytes, under PACKET_MAX_SERIALIZED_BYTES, with HTTP bytes equal to canonical_packet_bytes.
+    command: python3 -c 'execute_financial_packet rich FIP1 request; print packet_id, content_sha256, response_sha256, len(body)'
+    result: packet_id fip_49718dcaf4c6855592b6ba0a; content_sha256 49718dcaf4c6855592b6ba0a160851c608b4733b44f8ac9a6cf7d907df7565e5; X-FIF-Response-SHA256 310f6579ab0014e6af16a3341f005078eab3fdcc70ebe67ec83cf138b9e6c23a; 18270 bytes
+  - claim: Production default packet provider remains UnavailableFinancialPacketProvider.
+    command: python3 -c "from pathlib import Path; t=Path('app/forensics.py').read_text(); print('_financial_packet_provider' in t and 'UnavailableFinancialPacketProvider' in t)"
     result: True
-  - claim: PR #6157 had empty labels and null autoMergeRequest after merge, with HOLD body and two hold comments before merge.
-    command: gh api graphql -f query='query { repository(owner:"mastermindx-market-intelligence", name:"macro") { pullRequest(number:6157) { autoMergeRequest { enabledAt } labels(first:20) { nodes { name } } } } }'
-    result: autoMergeRequest null; labels []; body HOLD FOR SOL; comments 5365329297 and 5368311316
-  - claim: Exact-head hosted CI packs and fences concluded success on 55663277a32c.
-    command: gh api repos/mastermindx-market-intelligence/macro/commits/55663277a32c12251dbeb80945d0abcf36570b58/check-runs?per_page=100
-    result: ci-pack-0..11 success; ci-gate success; self-mod-fence/capability-broker/grader-manifest/fence-pack success; merge-queue-pilot failure by design
-  - claim: AgentOS validate exits 0 on the records tree.
-    command: python3 scripts/agentos.py validate
-    result: 0 error(s), 24 warning(s)
-unverified: []
+unverified:
+  - claim: Hosted CI and fences conclude on the exact FIF-2C head.
+    what_would_verify: gh checks on the opened PR after push
 unresolved:
-  - FIF-2 remains in_progress. FIF-2C is UNLOCKED / NOT_STARTED.
+  - FIF-2C is BUILT_NOT_ACCEPTED pending Sol. Do not merge.
+  - FIF-2 remains in_progress. FIF-2D is NOT_STARTED.
   - Production issuer packages remain FIF-3. Default packet provider returns 503.
   - Merge-control fail-closed hold remains with its existing owner; not repaired here.
 next_actions:
-  - A later session may start FIF-2C from the masterplan. Do not reopen FIF-2B.
-  - Do not claim production issuer revision coverage until FIF-3 wires admitted packages.
-  - Do not mix a sol-review-required control-plane build into FIF-2C.
+  - Sol reviews FIF-2C source. Do not start FIF-2D.
+  - Do not claim production issuer packet coverage until FIF-3 wires admitted packages.
+  - Do not mix a sol-review-required control-plane build into this PR.
 do_not_redo:
-  - Do not reopen frozen financial_intelligence_packet.v1 or the 63/64 lineage bound.
-  - Do not reconstruct revision semantics in the HTTP adapter.
-  - Do not reopen FIF-2B canonical packet identity, fixture digest, pre-provider 400, or PIT proofs.
-  - Do not claim production issuer revision coverage.
-  - Do not revert the accepted FIF-2B product because the hold was bypassed.
-  - Do not attach committed FIP1 fixture hashes to arbitrary in-memory/multi-hop fixtures.
+  - Do not reopen frozen financial_intelligence_packet.v1.
+  - Do not wrap the HTTP body in a second envelope.
+  - Do not call the FIF-2A/FIF-2B unsupported-metric 400 gate on /financial/packet.
+  - Do not reopen FIF-2A or FIF-2B accepted behavior.
+  - Do not start FIF-2D, statements, trace, bulk, or production issuer wiring.
+  - Do not pass built_at=now into assemble_financial_intelligence_packet.
 danger_areas:
-  - JSONResponse would re-serialize and break X-FIF-Response-SHA256.
-  - Canonical Mastermind entity_id and SEC CIK are different; never rewrite packet revisions or raw ledger identity.
+  - JSONResponse would re-serialize and break X-FIF-Response-SHA256 and exact-byte equality.
+  - Canonical Mastermind entity_id and SEC CIK are different; never rewrite raw ledger identity.
+  - HTTP response SHA and packet content_sha256 are different contracts.
   - PR-body HOLD language is not a merge barrier in the live control plane; see DSC:REVIEW-HOLD-PROSE-IS-NOT-FAIL-CLOSED.
 ---
 
-Sol PASS / ACCEPTED for FIF-2B on head 55663277a32c. Product already on
-main via PR #6157 merge 56d1a36caa43. Route is POST
-/api/forensics/v1/financial/revisions. 40 FIF-2B tests and 293
-predecessor/regression tests remain the accepted proof. Production
-default provider stays 503. FIF-1 remains DONE / FROZEN. FIF-2A remains
-ACCEPTED / FIXTURE_PROVEN / ON_MAIN. FIF-2 is not done. FIF-2C is
-UNLOCKED / NOT_STARTED. This is not a production issuer service.
+FIF-2C ships POST /api/forensics/v1/financial/packet as an authenticated
+read of exact canonical_packet_bytes from the frozen assembler. Request
+schema is fundamental_forensics.financial_packet_request/v1. Response
+schema is the packet's own financial_intelligence_packet.v1. Unsupported
+metrics stay packet cells, not API 400s. Production default provider
+remains 503. Stop for Sol. Do not merge. Do not start FIF-2D.
