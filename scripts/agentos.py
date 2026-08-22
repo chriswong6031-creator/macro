@@ -123,7 +123,7 @@ DISCOVERY_KIND = {
     "architecture", "data", "landmine", "dead_code", "constraint", "runtime",
 }
 REPOS = {"macro", "terminal", "mastermind"}
-HANDOFF_MODEL = {"fable", "opus", "sonnet", "haiku", "codex", "local"}
+HANDOFF_MODEL = {"fable", "opus", "sonnet", "haiku", "codex", "local", "sol"}
 HANDOFF_ENDED = {"complete", "ci_handoff", "blocked", "context_budget", "crashed"}
 
 # A provenance string must carry something a reader can RUN or OPEN.  Deliberately

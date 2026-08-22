@@ -9,7 +9,8 @@ file: agentos/handoffs/<WS-KEY>-<YYYY-MM-DD>.md
 required:
   workstream:    {type: string, pattern: "WS:<KEY>"}
   session:       {type: string, note: branch or worktree name}
-  model:         {enum: [fable, opus, sonnet, haiku, codex, local]}
+  model:         {enum: [fable, opus, sonnet, haiku, codex, local, sol],
+                  note: sol = a record authored by the AI CEO (GPT-5.x Sol) rather than a repo session model}
   ended_because: {enum: [complete, ci_handoff, blocked, context_budget, crashed]}
   mission:       {type: string}
   state_before:  {type: string}
