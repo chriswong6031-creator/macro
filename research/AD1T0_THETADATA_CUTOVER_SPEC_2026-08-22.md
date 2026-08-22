@@ -48,6 +48,18 @@ Hard constraints, all fail-closed:
    ENTIRE root for that session and count it in an adapter-level diagnostic (root-level
    exclusion, engine's coverage gate then reports it honestly). Never row-level silent
    dedup; never a whole-board crash.
+6. (Review round 2026-08-22.) Additional fail-closed exclusions, all measured EMPTY on
+   the live store but required structurally: `right ∉ {C, P}` after upper-casing →
+   exclusion path, never coerced to "P"; non-finite strike (NaN, ±inf) and
+   `strike <= 0` → exclusion path, never a crash and never a lawful-looking ticker.
+7. (Review round, BLOCKER B1.) OI-baseline availability is a ROOT-LEVEL precondition:
+   a root with eod rows but ZERO oi rows for a materialised session s is excluded from
+   that session's chain frame entirely and counted in the exclusion diagnostic — the
+   frozen engine's `oi_prev.fillna(0)` must never read an ABSENT baseline as a ZERO
+   baseline (measured harm: Q_oi direction reversal on a put-heavy book). Row-level
+   eod∖oi gaps (new listings, ~2% of rows) remain NaN→0 by engine law — genuinely-new
+   contracts have a true zero baseline; the guard is against systemic slice absence,
+   which the live census measured at 0 roots over the last 5 sessions.
 
 `engine.thetadata_store.make_chain_provider()` is PROHIBITED on the AD-1 path (string
 `expiry`, no `strike_ticker`, and the forbidden volume-weighted-strike spot fallback).
@@ -68,12 +80,19 @@ publication availability (~06:30 ET on D), never market-effective time.
 | chain[s] `oi` (ΔOI baseline; presence term) | oi tier rows dated s (= EOD s−1 positions, known before s opens) |
 | chain[s] `spot` | §D spot law |
 | chain[s] `T` | (expiration − s).days / 365.0, clipped ≥ 0 (freeze the /365.0 divisor) |
-| `chain_next` (D) | **oi tier rows dated D ONLY** (5 columns: identity + open_interest → underlying, strike_ticker, expiry, is_call, oi). `eod[D]`/`greeks[D]` are NEVER opened. |
+| `chain_next` (D) | **oi tier rows dated D ONLY** (5 columns: identity + open_interest → underlying, strike_ticker, expiry, is_call, oi). No eod/greeks VALUE dated D is ever materialised into any frame. |
 | dtypes | underlying category, expiry datetime64, K/T/iv/delta/oi/volume/spot **float32**, is_call bool (engine's declared production dtypes) |
 
-Leak proof is structural: the only D-dated bytes in the process are the 5-column OI
-projection (generated pre-open on D); every s-dated feature is an end-of-session-s
-quantity consumed only for sessions ≤ S.
+Leak barrier (corrected wording, review round 2026-08-22): the barrier is a
+FILTERING guarantee, not a never-opened guarantee. Session-presence counting for the
+§C predicate necessarily reads identity/date columns across the candidate range in
+every tier — including a D-dated eod probe when such rows exist — but (a) no
+eod/greeks VALUE dated D is ever materialised into a scored frame (every value load
+is bounded ≤ S; the D frame is the 5-column OI projection generated pre-open on D),
+and (b) the presence counts that drive session selection bind into the
+`session_presence` receipt (§F), so a D-dated row-population change that could move
+`as_of_session` always moves `receipt_id`. Every s-dated feature is an
+end-of-session-s quantity consumed only for sessions ≤ S.
 
 ## §C. Pair selection + committed sessions
 
@@ -81,7 +100,11 @@ quantity consumed only for sessions ≤ S.
 
 ```
 n_eod(s), n_oi(s) = count of UNIVERSE roots with ≥1 row dated s in that tier
-full(s)  := is_nyse_session(s) AND n_eod(s) > 0 AND n_oi(s) >= 0.90 * n_eod(s)
+full(s)  := is_nyse_session(s) AND n_eod(s) > 0
+            AND n_oi(s) >= 0.90 * n_eod(s) AND n_eod(s) >= 0.90 * n_oi(s)
+            # symmetric floor (review round): a half-written tier on EITHER side
+            # disqualifies the session; a partial eod[D] (< 90% of oi[D]) can
+            # therefore never flip D into F and move S.
 F        = ascending [s : full(s)]
 X        = next_nyse_session(max(F)), admitted iff n_oi(X) >= 0.90 * n_eod(max(F))
 committed_sessions = sorted(F ∪ {X if admitted})
@@ -152,10 +175,25 @@ year files → receipt churn would break contract §7's semantic no-op).
   actually consumed + the spot-history slices), or empty when nothing consumed.
   `gex_confirm` = empty (§E).
 - NEW `input_receipts` entry `spot_authority`: per-symbol rung used (1/2/3 counts) +
-  sha256 over the per-symbol rung map. Spot is score-affecting and must bind.
+  sha256 over the per-symbol rung map INCLUDING, for every rung-2 symbol, the consumed
+  resolved close VALUE (fixed decimal repr), the ladder `price_source` tag, and the
+  series last index date — a rung-2 close change MUST move `receipt_id`
+  (review round, BLOCKER B2; property-tested).
+- NEW `input_receipts` entry `session_presence`: sha256 over the ordered per-candidate
+  (session, n_eod, n_oi) counts consumed by the §C predicate — binds the presence
+  facts that drive S/D selection (review round, M1). Counts are re-pull-stable, so
+  contract §7's semantic no-op survives byte rewrites.
 - `chains_S`/`chains_D` receipts: keep logical_source names; `path` becomes the logical
-  URI; `sha256` = that session's composite digest; store resolution recorded
-  (resolved store path + source) in a `store_resolution` receipt entry.
+  URI; `sha256` = that session's composite digest. `store_resolution` receipt: the
+  hash binds the resolver SOURCE TAG (env/data_dir/ops-wt), NOT the absolute path —
+  a host/path migration with identical data must not churn `receipt_id`; the absolute
+  resolved path is recorded in the diagnostic `_run` block only (review round, m5).
+- Digest float canonicalisation normalises `-0.0` to `0.0` before repr (review round,
+  m3). A corrupt/unreadable year parquet emits a line-start `::warning` and is
+  visible in the receipt state, never only a debug log (review round, m6).
+- Staleness anchor: `max(committed_sessions)` EXACTLY (§C law; review round BLOCKER
+  B3 caught a drift to newest-eod-date — every Monday build would have published
+  STALE_SOURCE with zero cards).
 - Property tests: mutating a consumed (session, tier) slice moves `receipt_id`;
   rewriting an unconsumed session/column/root does not.
 
