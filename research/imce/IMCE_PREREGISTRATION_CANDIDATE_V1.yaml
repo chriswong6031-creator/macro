@@ -16,15 +16,28 @@
 # boundary receipts, packet regeneration) plus AP8, the same-branch revision
 # fixing Fable's adjudication of an Opus red-team pass. Full rationale: the
 # A4P section appended to IMCE_A4G_AMENDMENT_LOG.md.
+# V1.2.1 (2026-08-22): applies Sol's fourth-gate REQUEST_CHANGES preflight
+# closure (wave A4P.1, rulings R1-R7) atop V1.2 - retires the stale DEFF
+# machine-readable denomination from the coverage/abstention claim class
+# (R1); permanently freezes the historical v0 population as the PHM/KBH
+# named subset with a separate prospective eligible pooled cohort and a
+# three-row label truth table (R2); ratifies and normalizes the six frozen
+# cell IDs to the canonical forward_63_trading_day_drawdown_tail naming
+# (R3); freezes the complete A4 registration state-transition, byte-exact,
+# verbatim-or-abort (R4); settles Treasury CMT's storage/reuse disposition
+# as GO_LIMITED (R5); keeps boundary receipts honestly open with the two
+# lawful post-registration dispositions named (R6); and regenerates all
+# three declared_budget row reason strings and config_hash values (R7).
+# Full rationale: the A4P.1 section appended to IMCE_A4G_AMENDMENT_LOG.md.
 
 schema: imce.preregistration_candidate.v1
 status: candidate_not_registered
-version: "1.2"                                 # [AP-header] was 1.1/V1.1
+version: "1.2.1"                                # [A4P.1-header] was 1.2/V1.2
 date: 2026-08-20
-amended_date: "2026-08-21"                     # [AP-header] A4P criteria-closure gate (same day as A4G)
-amendment_gate: A4P                             # [AP-header] was A4G; A4P supersedes as the latest gate
-amendment_gates_applied: [A4G, A4P]             # [AP-header] both gates applied, in order
-amendment_gate_authority: sol_a4p_authorization_2026_08_21
+amended_date: "2026-08-22"                     # [A4P.1-header] A4P.1 fourth-gate preflight-closure gate
+amendment_gate: A4P1                            # [A4P.1-header] was A4P; A4P1 supersedes as the latest gate
+amendment_gates_applied: [A4G, A4P, A4P1]       # [A4P.1-header] three gates applied, in order
+amendment_gate_authority: sol_fourth_gate_verdict_2026_08_22
 binds: research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md
 supersedes:
   md: IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT.md
@@ -79,7 +92,7 @@ prospective_accrual_first_posture:            # [A24, strengthened AG1]
     - name: coverage_abstention_claims          # [G8-B5]
       description: coverage_and_abstention_calibration
       natural_replicate: effective_block
-      denomination: effective_blocks_under_independent_shock_law_with_deff
+      denomination: independent_shock_blocks_capped_at_raw_closed_B  # [A4P.1 R1] was effective_blocks_under_independent_shock_law_with_deff (DEFF struck, AG3)
       row_counts: printed_never_used_as_n
       forecast_authority: none
 
@@ -87,7 +100,7 @@ trials:                                        # [A5][A6]
   - family_candidate: rf.cycle_pattern.imce_phase_v0
     status: not_declared
     cell_budget: 3
-    cell_definition: 3 state targets x pooled homebuilder stratum x contrast [M vs family/age prior]
+    cell_definition: 3 state targets x historical v0 population named_subset_basis [PHM, KBH] (prospective v0 eligible pooled cohort [DHI, PHM, KBH, TOL], label truth table applies) x contrast [M vs family/age prior]  # [A4P.1 R2] was "pooled homebuilder stratum"
     d5_state_mapping: order_softness                      # [AP1] settles the AG14/MAJ-5 open item — all 3 targets
     d5_state_construction: research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md  # [AP1]
     targets:
@@ -101,28 +114,28 @@ trials:                                        # [A5][A6]
   - family_candidate: rf.cycle_pattern.imce_sync_v0
     status: not_declared
     cell_budget: 2
-    cell_definition: targets {next_local_state_1rp, forward_63d_drawdown_tail} x contrast [M+R vs M]
+    cell_definition: targets {next_local_state_1rp, forward_63_trading_day_drawdown_tail} x contrast [M+R vs M]  # [A4P.1 R3] was forward_63d_drawdown_tail
     primary_comparison: mechanism_plus_recognition_vs_mechanism_only
     cell_4_d5_state_mapping: order_softness                # [AP1] next_local_state_1rp -> same state as phase target (a)
-    cell_ids:                                              # [AP8, M2] minted/frozen; presented to Sol for ratification
+    cell_ids:                                              # [AP8, M2] minted; [A4P.1 R3] ratified + naming normalized by Sol's fourth gate
       - imce_sync_v0.next_order_softness_1rp
-      - imce_sync_v0.forward_63d_drawdown_tail
+      - imce_sync_v0.forward_63_trading_day_drawdown_tail  # [A4P.1 R3] was imce_sync_v0.forward_63d_drawdown_tail
   - family_candidate: rf.cycle_pattern.imce_risk_v0
     status: not_declared
     cell_budget: 1
-    cell_definition: forward_63d_drawdown_tail x [M vs family/stratum prior]
+    cell_definition: forward_63_trading_day_drawdown_tail x [M vs family/stratum prior]  # [A4P.1 R3] was forward_63d_drawdown_tail
     target: forward_63_trading_day_drawdown_tail
     cell_ids:                                              # [AP8, M2] minted/frozen; presented to Sol for ratification
       - imce_risk_v0.forward_63_trading_day_drawdown_tail
 
 historical_cell_budget_total: 6                # [A5]
 all_6_cells_share_order_softness_basis: true    # [AP2] uniform B<=3, cancellation-scoped, LEN excluded from all 6
-six_cell_ids_union:                             # [AP8, M2] the exact union the future runner must assert against [AP5]
+six_cell_ids_union:                             # [AP8, M2] minted; [A4P.1 R3] final Sol ratification + naming normalization — the exact union the future runner must assert against [AP5]
   - imce_phase_v0.next_order_softness_1rp
   - imce_phase_v0.next_order_softness_3rp
   - imce_phase_v0.order_softness_false_repair_3rp
   - imce_sync_v0.next_order_softness_1rp
-  - imce_sync_v0.forward_63d_drawdown_tail
+  - imce_sync_v0.forward_63_trading_day_drawdown_tail  # [A4P.1 R3] was imce_sync_v0.forward_63d_drawdown_tail
   - imce_risk_v0.forward_63_trading_day_drawdown_tail
 
 fdr:                                           # [A6]
@@ -252,6 +265,13 @@ effective_block_law:                           # [A9, amended AG2/AG3/AG4/AG5/AG
   macro_boundary_receipt_required_before_outcome_partition: true  # [AG17]
   not_yet_receipted_boundary_manufactures_new_block: false        # [AG17]
   raw_block_count: always_printed_alongside_effective_count
+  post_registration_boundary_evidence_law:                        # [A4P.1 R6] Sol verbatim, 2026-08-22 — boundaries remain honestly open, no receipt fabricated to make A4 green
+    registration_permitted_with_open_boundary_receipts: true       # binding law is: no unreceipted boundary may be used to partition an outcome run
+    post_registration_options:                                     # exactly the two Sol names; a boundary evidence wave picks one per boundary
+      - receipt_the_already_frozen_v0_boundary_from_a_lawful_first_party_source
+      - NOT_RECONSTRUCTABLE_FOR_V0_OUTCOME_PARTITION
+    registered_v0_boundary_may_move_after_outcome_inspection: false
+    different_boundary_requires: new_preregistration_version
 
 frozen_hierarchy:                              # [A10]
   meaning: frozen_in_the_pre_outcome_registration_commit
@@ -444,6 +464,19 @@ homebuilders:                                  # [A1][A17][A18][G8-B4][G8-M2][G8
     order_softness:
       observability: cohort_wide
       basis: net_orders_backlog_cancellation_rate_disclosed_by_all_six_issuers_with_caveats
+      historical_v0_population:                                        # [A4P.1 R2] Sol fourth-gate ruling, 2026-08-22, permanent for v0
+        named_subset_basis: [PHM, KBH]
+        permanent_for_v0: true
+        may_widen_v0_after_registration: false
+        future_dhi_tol_archaeology_may_support: v1_only               # descriptive evidence only pre-registration; never widens v0
+      prospective_v0_eligible_pooled_cohort: [DHI, PHM, KBH, TOL]       # [A4P.1 R2] eligible once current-format disclosures are receipted; not the historical population
+      label_truth_table:                                               # [A4P.1 R2] Sol verbatim rule, 2026-08-22
+        - reconstructable_contributors: 4
+          label: cohort
+        - reconstructable_contributors: [2, 3]
+          label: named_subset_plus_exact_contributor_list
+        - reconstructable_contributors: [0, 1]
+          label: NOT_RECONSTRUCTABLE
     completed_inventory_build:
       observability: named_three_issuer_subset
       subset: [DHI, LEN, PHM]
@@ -462,7 +495,7 @@ homebuilders:                                  # [A1][A17][A18][G8-B4][G8-M2][G8
       mapped_to_a_declared_target: false        # [AP1]
     exact_phase_family_target_to_d5_state_mapping: order_softness_all_3_targets_plus_sync_cell_4  # [AP1] SETTLED, was open_a4_registration_item
     d5_state_construction: research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md  # [AP1]
-    d5_state_construction_pooled_issuers: [DHI, PHM, KBH, TOL]  # [AP1][AP2] LEN excluded, NVR separate stratum
+    d5_state_construction_pooled_issuers: [DHI, PHM, KBH, TOL]  # [AP1][AP2] LEN excluded, NVR separate stratum. [A4P.1 R2 clarification] this is the PROSPECTIVE v0 eligible pooled cohort (see order_softness.prospective_v0_eligible_pooled_cohort above), NOT the historical v0 population, which is permanently the named_subset_basis [PHM, KBH] (order_softness.historical_v0_population above)
   pit_class_enum:                                   # [AG15]
     closed: true
     values: [pit_pure, revision_optimistic, mixed]
@@ -478,6 +511,11 @@ homebuilders:                                  # [A1][A17][A18][G8-B4][G8-M2][G8
     treasury_cmt:
       status: pit_pure_public_domain_full_archive
       role: primary_rate_leg_pending_pmms_resolution
+      rights_disposition: GO_LIMITED                              # [A4P.1 R5] Sol fourth-gate ruling, 2026-08-22 — closes the prior wave's escalation item 5
+      rights_disposition_scope: internal_research_persistence_and_use_of_treasury_published_daily_treasury_par_yield_curve_values_with_first_party_treasury_provenance_retrieval_timestamp_and_methodology_source_reference
+      rights_disposition_basis: treasury_is_the_publishing_federal_agency_17_usc_101_105_places_us_government_works_prepared_as_official_duties_outside_us_copyright_protection
+      rights_disposition_excludes: unrelated_external_third_party_content_linked_datasets_raw_underlying_third_party_quotations
+      rights_disposition_authorizes_future_ingestion_design_only: true  # this wave still ingests nothing
     nar_series:
       may_be_stored: false
       reason: nar_terms_bar_storage_in_retrieval_system_not_merely_redistribution

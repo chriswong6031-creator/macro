@@ -204,31 +204,73 @@ waves:
       ingestion); packet leaves A4 proper exactly Sol's four mechanical acts,
       verbatim-or-abort. All three family config_hash values stable and
       independently reproduced across both revision rounds.
+  - id: A4P-1
+    title: IMCE-A4P.1 — fourth-gate REQUEST_CHANGES preflight closure (Sol wave, 2026-08-22; records only)
+    status: in_progress
+    depends_on: [A4P]
+    next_action: >
+      Records complete on this build-worker's branch, DRAFT PR opened
+      (commissioning session fills in the PR number/head SHA on landing).
+      All seven Sol rulings (R1-R7) implemented: R1 retires the stale
+      effective_blocks_under_independent_shock_law_with_deff YAML denomination
+      (DEFF struck at AG3, three gates ago) and adds annotation-only
+      supersession notes to the three hb0 lane-2 artifacts still recommending
+      A4 register rho_block/print issuer-DEFF counts; R2 freezes historical
+      v0 population as PERMANENT named_subset_basis [PHM, KBH] for the six
+      registered cells (distinct from the prospective v0 eligible pooled
+      cohort [DHI, PHM, KBH, TOL]) under a three-row label truth table,
+      closing AP8's own open F2(d) escalation, and rewords every live
+      "pooled homebuilder stratum" occurrence; R3 ratifies the six minted
+      cell IDs and normalizes the sync family's market-risk cell to
+      forward_63_trading_day_drawdown_tail everywhere it identifies the
+      actual target/cell; R4 adds a new packet section (§4a) freezing the
+      complete A4 registration state-transition byte-exact, verbatim-or-abort,
+      with both placeholder procedures (repository_pin_observed via git
+      rev-parse origin/main; config_hash via git hash-object on the
+      as-stamped-registered contract MD) frozen deterministically — A4P.1
+      itself performs none of the flips, every registration-state field
+      stays candidate_not_registered/not_declared; R5 settles Treasury CMT's
+      storage/reuse disposition GO_LIMITED with Sol's exact scope+basis
+      quoted verbatim, closing the prior wave's escalation item 5 (PMMS/FRED/
+      ALFRED/NAR unchanged); R6 keeps boundary receipts honestly open
+      (month_boundaries_receipt_status unchanged) with the two lawful
+      post-registration dispositions named, including the literal token
+      NOT_RECONSTRUCTABLE_FOR_V0_OUTCOME_PARTITION; R7 regenerates all three
+      declared_budget row reason strings and recomputes their config_hash
+      values via engine/trial_ledger.py's own _hash/_canon functions (read-
+      only, no ledger write), recording the three superseded V1.2 hashes.
+      Version bumped V1.2 -> V1.2.1 (amendment_gate A4P1, gates_applied
+      [A4G, A4P, A4P1]). Zero data/ writes, zero outcome access, zero
+      fabricated receipts/quotes. Sol's explicit conditional authorization
+      to start A4 proper without a further roundtrip (provided A4P.1 lands
+      exactly as frozen) is recorded verbatim in the amendment log's new
+      A4P.1 section and cross-referenced from the packet's four-acts list.
   - id: A4
     title: IMCE-03 — preregistration finalization (declared_budget trial-ledger rows; criteria commit before any outcome access)
     status: todo
-    depends_on: [CPI-H1-1, A4P]
+    depends_on: [CPI-H1-1, A4P, A4P-1]
 next_action: >
-  Sol's THIRD GATE is executed: CPI-H1.1 (#6211, 5f9fbe23) and IMCE-A4P
-  (#6213, 18858570) are both MERGED and verified on origin/main (2026-08-21).
-  Three of the prior gate's open items are now RESOLVED: the seven
-  class-subset rows (Sol adjudicated legitimate; envelopes amended; subset
-  invariant now HARD law), the phase-target→D5 mapping (order_softness only,
-  AP1), and Treasury CMT availability (first-party V-grade receipt by direct
-  browser). A4 proper (the mechanical registration PR: observe repo pin,
-  write the three declared_budget rows, stamp the registered contract hash,
-  verify criteria-commit-predates-outcomes — nothing else, verbatim-or-abort)
-  opens ONLY after Sol accepts both returns. FIVE escalations await Sol with
-  the returns: (1) whether a ≥2-contributor order_softness read may ever bear
-  the cohort label (named-subset labelling governs meanwhile, AG14); (2)
-  ruling 6 remains OPEN — 0/8 month-level boundary receipts, lane-1 gap 11
-  needs a dedicated housing-sector boundary-dating wave; (3) DHI/TOL
-  pre-FY2025 order-disclosure era receipting (drives the {PHM, KBH} historical
-  arm and the FY2016+ grind-block limit); (4) ratification of the six minted
-  cell IDs; (5) Treasury storage/reuse basis before any persistent CMT
-  ingestion. Stated next priority after A4: prospective observation
-  activation. No auto-roll anywhere; no issuer truth appended; no outcome
-  access.
+  Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
+  open with the returns: (1) AG14 cohort-label question SETTLED by R2's
+  three-row label truth table (named-subset labelling still governs every
+  historical read today — the eligible historical roster is still exactly
+  {PHM, KBH} — but the rule no longer needs a further Sol roundtrip once
+  DHI/TOL receipts land); (2) ruling 6 (boundary receipts) stays honestly
+  OPEN by design (R6) — registration is explicitly PERMITTED with receipts
+  open, closed only by a future boundary-evidence wave; (3) DHI/TOL
+  pre-FY2025 era receipting remains a named future census pass, unchanged;
+  (4) the six minted cell IDs are RATIFIED by R3, with the sync family's
+  market-risk cell renamed to forward_63_trading_day_drawdown_tail; (5)
+  Treasury storage/reuse basis SETTLED GO_LIMITED by R5 (future ingestion
+  design still not performed). A4 proper (the mechanical registration PR:
+  observe repo pin, write the three declared_budget rows, stamp the
+  registered contract hash, verify criteria-commit-predates-outcomes —
+  nothing else, verbatim-or-abort) now has a complete byte-exact
+  state-transition table (packet §4a, A4P.1 R4) and Sol's explicit
+  conditional authorization to open without a further Sol roundtrip,
+  PROVIDED A4P.1 lands exactly as frozen with no new substantive finding.
+  Stated next priority after A4: prospective observation activation. No
+  auto-roll anywhere; no issuer truth appended; no outcome access.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."
@@ -246,6 +288,10 @@ do_not_redo:
   - "Do not re-run the G0-G7 censuses (owner/collision, CELH sources+tape, memory, homebuilders, banks, rights, prereg power) — packets preserved in agentos/handoffs/CYCLE-PATTERN-ISSUER-MECHANISM-2026-08-20.md and the freeze doc; re-verify only what a new main moves."
   - "Do not re-litigate the 40-block floor by changing units — the honest/dishonest unit line is frozen in the V1 contract (independent shock realizations only)."
   - "Do not propose a new episode ID, graph store, mechanism-observation contract, or second as-known-at envelope — owner map frozen in the freeze doc §3."
+  - "Do not reopen or rewrite A4P's amendments AP1-AP8 — Sol accepted A4P's architecture at the fourth gate; A4P.1 (R1-R7) is a bounded preflight closure on top, appended-only, never a redesign."
+  - "Do not widen the historical v0 population past named_subset_basis [PHM, KBH] — permanent for v0 per A4P.1 R2; DHI/TOL archaeology may only ever support a future v1, never v0 after registration."
+  - "Do not fabricate a boundary receipt to close ruling 6 — A4P.1 R6 makes registration-with-open-receipts the explicit law; a boundary-evidence wave receipts from a lawful first-party source or marks NOT_RECONSTRUCTABLE_FOR_V0_OUTCOME_PARTITION, never both at once and never by moving a registered v0 boundary after outcome inspection."
+  - "Do not execute A4's registration-state transition from any table other than the packet's own §4a (A4P.1 R4) — every flip is byte-exact and verbatim-or-abort; a stale or hand-improvised flip is a new decision, not an execution of the frozen one."
 artifacts:
   - research/IMCE_ROUND3_ARCHITECTURE_FREEZE_BY_FABLE.md
   - research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md
