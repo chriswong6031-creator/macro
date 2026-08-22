@@ -401,3 +401,64 @@ def test_no_shipped_page_links_a_basket_page_that_does_not_exist():
         + ", ".join(f"{k} (from {v[0]}{', +%d more' % (len(v) - 1) if len(v) > 1 else ''})"
                     for k, v in sorted(dead.items())[:10])
     )
+
+
+# ── Pressure Watch band (engine/stocks_hub) ──────────────────────────────────
+# The fourth emitter of the same shape, found by the guard's SOFT tier rather
+# than by a 404 report: six rows on stocks/index.html — ARGX, CLM, CRF, NUVL,
+# PRA, SATS — linked a dossier that never rendered, on every render up to
+# 2026-08-22. The band reads data/price_pressure/latest.json, a PIT event ledger
+# that KEEPS an episode after its name leaves coverage or stops trading (two of
+# those six resolved as "stopped trading"), so the fix cannot be to drop the
+# row: the resolved list is the honesty check on the base rates above it, and
+# filtering it to survivors would bias the very record it exists to keep.
+
+def _pressure_payload() -> dict:
+    import json
+
+    return json.loads(
+        (_REPO / "tests" / "fixtures" / "price_pressure_latest.json")
+        .read_text(encoding="utf-8")
+    )
+
+
+def test_pressure_row_without_a_page_keeps_its_record_and_loses_its_href():
+    from engine import stocks_hub
+
+    band = stocks_hub.pressure_band(
+        _pressure_payload(), board_asof="2026-07-02",
+        linkable=frozenset({"CDE", "SGMO"}),
+    )
+    rows = {r["t"]: r for r in band["resolved"] + band["open"]}
+    assert {"SGMO", "BEAM", "ATRA", "CDE", "ARQT", "IONQ", "VKTX"} <= set(rows), (
+        "every row survives — only the anchor is conditional"
+    )
+    assert rows["CDE"]["href"] == "CDE.html"
+    assert rows["SGMO"]["href"] == "SGMO.html"
+    for t in ("BEAM", "ATRA", "ARQT", "IONQ", "VKTX"):
+        assert rows[t]["href"] is None, f"{t} ships no dossier and must not link one"
+    # The substance is still there to read, unlinked.
+    assert rows["BEAM"]["move_en"] and rows["BEAM"]["end_en"]
+    assert rows["VKTX"]["move_en"]
+
+
+def test_pressure_linkable_none_links_every_row():
+    """The pre-filter behaviour, for callers with no site tree to consult."""
+    from engine import stocks_hub
+
+    band = stocks_hub.pressure_band(_pressure_payload(), board_asof="2026-07-02")
+    rows = band["resolved"] + band["open"]
+    assert rows and all(r["href"] == f"{r['t']}.html" for r in rows)
+
+
+def test_pressure_rows_survive_an_empty_linkable_set():
+    """Nothing ships -> nothing links, and the band still renders its record."""
+    from engine import stocks_hub
+
+    band = stocks_hub.pressure_band(
+        _pressure_payload(), board_asof="2026-07-02", linkable=frozenset(),
+    )
+    assert band["mode"] == "live"
+    rows = band["resolved"] + band["open"]
+    assert len(rows) == 7
+    assert not any(r["href"] for r in rows)
