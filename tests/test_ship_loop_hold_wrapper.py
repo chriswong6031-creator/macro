@@ -154,7 +154,7 @@ def test_lawful_concluded_green_hold_becomes_parked(monkeypatch, tmp_path):
 
 
 def test_lawful_sol_authority_branch_parks_after_unsafe_branch(monkeypatch, tmp_path):
-    """PR #6207 class: a ratified Sol hold must not loop forever on branch law."""
+    """The already-looping #6207 state becomes PARKED without a rename."""
     branch = "sol/chairman-tushare-compliance-override-2026-08-21"
     _stub_clean_pushed_git(monkeypatch, branch=branch)
     guard, calls = _fake_guard(tmp_path, state={"last_blocker": "unsafe_branch"})
@@ -167,6 +167,22 @@ def test_lawful_sol_authority_branch_parks_after_unsafe_branch(monkeypatch, tmp_
         "head": HEAD,
         "passed": ["ci-gate", "fences"],
     }
+    assert calls == {"open_pull": 1, "checks": 1}
+
+
+def test_lawful_sol_authority_branch_parks_before_first_unsafe_branch(monkeypatch, tmp_path):
+    """A green Sol hold must never need one false unsafe_branch message first."""
+    branch = "sol/chairman-tushare-compliance-override-2026-08-21"
+    _stub_clean_pushed_git(monkeypatch, branch=branch)
+    guard, calls = _fake_guard(tmp_path, state={"last_blocker": ""})
+
+    probe = WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"})
+
+    assert probe is not None
+    assert probe["candidate_kind"] == "sol_authority"
+    assert probe["source_blocker"] == ""
+    assert probe["status"] == "parked"
+    assert probe["branch"] == branch
     assert calls == {"open_pull": 1, "checks": 1}
 
 
@@ -189,18 +205,19 @@ def test_red_or_pending_claude_hold_does_not_park(monkeypatch, tmp_path):
     assert WRAPPER._parked_hold(pending_guard, {"hook_event_name": "Stop"}) is None
 
 
-def test_pending_sol_hold_waits_without_unsafe_branch_remediation(monkeypatch, tmp_path):
-    """The #6207 pre-green state must wait, never invite a destructive rename."""
+def test_pending_sol_hold_waits_before_first_unsafe_branch_remediation(monkeypatch, tmp_path):
+    """The #6207 pre-green state must wait before any destructive branch advice."""
     branch = "sol/chairman-tushare-compliance-override-2026-08-21"
     _stub_clean_pushed_git(monkeypatch, branch=branch)
     guard, calls = _fake_guard(
         tmp_path,
-        state={"last_blocker": "unsafe_branch"},
+        state={"last_blocker": ""},
         split=([], ["ci-pack-4", "ci-gate"], ["fences"]),
     )
 
     probe = WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"})
     assert probe is not None and probe["status"] == "pending"
+    assert probe["candidate_kind"] == "sol_authority"
     block = WRAPPER._hold_block(probe)
     assert block is not None and block["decision"] == "block"
     reason = block["reason"].lower()
@@ -252,14 +269,16 @@ def test_dirty_or_not_exactly_pushed_hold_does_not_park(monkeypatch, tmp_path):
     assert WRAPPER._parked_hold(guard, {"hook_event_name": "Stop"}) is None
 
 
-def test_hold_probe_spends_no_github_quota_before_hold_candidate_blocker(monkeypatch, tmp_path):
+def test_hold_probe_spends_no_github_quota_outside_candidate_branches(monkeypatch, tmp_path):
+    """Normal blockers pay one local branch read but no GitHub hold probes."""
     guard, calls = _fake_guard(tmp_path, state={"last_blocker": "render_pending"})
-    monkeypatch.setattr(
-        WRAPPER,
-        "_git",
-        lambda *_a, **_k: pytest.fail("non-hold blocker must not even inspect the branch"),
-    )
 
+    def branch_only(_root, *args, **_kwargs):
+        if args == ("branch", "--show-current"):
+            return "claude/ordinary-feature"
+        pytest.fail(f"non-candidate blocker must not inspect further git state: {args}")
+
+    monkeypatch.setattr(WRAPPER, "_git", branch_only)
     assert WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"}) is None
     assert calls == {"open_pull": 0, "checks": 0}
 
