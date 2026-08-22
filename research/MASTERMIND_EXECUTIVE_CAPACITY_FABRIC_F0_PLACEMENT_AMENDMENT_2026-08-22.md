@@ -4,10 +4,10 @@
 **Owner:** Sol, AI CEO  
 **Amends:** `research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_ARCHITECTURE_2026-08-22.md`  
 **Status:** **SOL SOURCE-LAW CORRECTION / RECORDS ONLY**  
-**Mastermind authority checked:** protected `0f319c79a7b3373a96d4866412c734de12cbf701`  
+**Mastermind authority checked:** protected `00d15138eeea715fd833ba772518b06ce274a9b7`  
 **Controlling Executive source law:** `research/EXECUTIVE_OS_PHASE1FC_CEO_POLICY_AND_IMPLEMENTATION_COMMISSION_2026-08-20.md`
 
-This amendment corrects one potential ambiguity in F0 before acceptance. It does not change the provider-capacity ownership or `mastermind.provider_capacity.v1` contract.
+This amendment corrects potential integration ambiguities in F0 before acceptance. It does not change the provider-capacity ownership or `mastermind.provider_capacity.v1` contract.
 
 ---
 
@@ -115,6 +115,8 @@ Preferred properties:
 
 Only after CF2-F passes may code consume `mastermind.provider_capacity.v1` for Executive ranking/exclusion and write the accepted capacity evidence through the claim receipt.
 
+The first CF2-I canary may remain **single-provider / multi-account** on the existing Codex worker route. That is enough to prove the Provider Control → capacity snapshot → deterministic account/worker selection → atomic claim-evidence vertical without changing Model Router semantics.
+
 If the landed v4 runtime proves `JOB_CLAIMED` cannot safely carry the required evidence atomically, **stop and return to Sol**. Do not widen placement snapshot, invent a second Event/ledger, or declare schema v5 by convenience. A new schema/event boundary would require its own explicit ruling.
 
 ---
@@ -143,16 +145,79 @@ This separation is the reason not to put mutable quota/health fields inside plac
 
 ---
 
-## 6. Revised sequence
+## 6. Heterogeneous routing requires provider-neutral equivalence before PF1
+
+Current Mastermind `ModelRouter` is the correct canonical routing plane: deterministic, stateless, side-effect-free, and explicitly separate from lifecycle. F0 does **not** create another router.
+
+However, v1 `ModelAlias` is concrete: every alias binds one `provider_alias`, adapter, model, effort, cost class and capability set. Worker routes then return an **ordered list of concrete model aliases**. Current Executive candidate ranking uses that alias position as a route rank before stable tie-breaks.
+
+That is safe for today's single live worker-provider family, but it creates a hidden future trap:
+
+```text
+routine route = [codex.fast, alibaba.fast, grok.fast]
+```
+
+would make list/vendor order look like a quality preference even when those aliases are intended to be equally acceptable for the task. Capacity Fabric may not solve this by silently ignoring Model Router order, and Model Router may not solve it by importing quota/cooling state.
+
+Therefore the **first heterogeneous provider may not join an existing shared task route until a separate routing-equivalence source law is accepted.** Call this gate `RF1`.
+
+### RF1 — existing Model Router evolution, not another router
+
+RF1 must preserve Model Router as the sole task/model-suitability owner and choose the smallest reviewed representation for **ordered suitability tiers**. Acceptable candidate shapes include:
+
+1. ordered equivalence tiers containing concrete model aliases; or
+2. a provider-neutral execution/quality-class grouping that deterministically resolves to concrete eligible aliases.
+
+The final shape is not frozen by F0. It must be reviewed against the then-current router/runtime tests.
+
+Binding semantics must be:
+
+```text
+risk / ambiguity / required capabilities
+        |
+        v
+Model Router ordered suitability tiers
+        |
+        v
+first tier with lawful Executive candidates
+        |
+        v
+Capacity Fabric ranks candidates WITHIN that tier
+        |
+        v
+Executive atomic claim
+```
+
+Rules:
+
+- aliases inside one equivalence tier are **equally acceptable on model/task policy**; provider order inside the tier is not a preference signal;
+- a lower-quality/lower-suitability tier may not beat an available higher tier merely because it has more quota or lower marginal cost;
+- Capacity Fabric never changes risk, ambiguity, required capabilities, review requirements or the chosen suitability tier;
+- Model Router contains no live quota, health, cooling, account or host state;
+- capacity/cost/reliability chooses only among candidates already admitted by the first non-empty lawful suitability tier;
+- route/equivalence policy version/hash and the selected concrete model alias remain receipted in the existing claim path;
+- unknown capacity may cause escalation/degraded placement policy, but never semantic promotion of a lower-suitability model;
+- tests must prove shuffling aliases within an equivalence tier cannot change a placement solely because of file/order position when capacity evidence is otherwise identical.
+
+### Sequencing consequence
+
+CF2-I may prove capacity-aware account selection with the current Codex route before RF1, because no heterogeneous alias competition exists.
+
+**RF1 is mandatory before PF1**, the first new provider is made eligible for the same Executive task routes as an existing provider. New provider adapter development may occur in isolation before RF1, but it cannot be called integrated heterogeneous routing until RF1 passes.
+
+---
+
+## 7. Revised sequence
 
 ```text
 F0     provider-capacity ownership + contract freeze
 CF1    Macro provider_capacity.v1 producer + real no-write consumer
 OF1    accepted Phase 1F-C v4 implementation
 CF2-F  Executive claim-evidence source-law freeze against landed v4
-CF2-I  capacity-aware placement implementation using the accepted claim receipt seam
-PF1+   one new provider/harness vertical per PR
+CF2-I  existing-provider capacity-aware placement using the accepted claim receipt seam
+RF1    provider-neutral Model Router suitability/equivalence source-law freeze + implementation
+PF1+   one new provider/harness vertical per PR, then route admission after RF1
 OF2    real heterogeneous Fable fan-out / exhaustion / review / repair / aggregation proof
 ```
 
-This amendment supersedes any reading of F0 that would put Capacity Fabric fields directly into `placement_snapshot_json` or claim that CF2 implementation can begin immediately after v4 without a fresh claim-evidence source-law review.
+This amendment supersedes any reading of F0 that would put Capacity Fabric fields directly into `placement_snapshot_json`, claim that CF2 implementation can begin immediately after v4 without a fresh claim-evidence source-law review, or use concrete model-alias list order as an accidental cross-provider scheduler.
