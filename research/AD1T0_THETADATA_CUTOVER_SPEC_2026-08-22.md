@@ -66,7 +66,11 @@ Hard constraints, all fail-closed:
    the trailing materialisation window; when one enters it, exclusion-with-diagnostic
    is the honest disposition (one thinner history observation, never a fabricated
    direction). Row-level eod∖oi gaps above the floor remain NaN→0 by engine law —
-   genuinely-new contracts have a true zero baseline.
+   genuinely-new contracts have a true zero baseline. The excluded entries
+   (root, reason, measured rate) are additionally surfaced LEGIBLY in the
+   artifact's unhashed `_run` diagnostic block — cryptographic binding alone
+   satisfies auditability but not the operator's diagnostic purpose
+   (verify-round 2 should-fix).
 
 `engine.thetadata_store.make_chain_provider()` is PROHIBITED on the AD-1 path (string
 `expiry`, no `strike_ticker`, and the forbidden volume-weighted-strike spot fallback).
@@ -116,10 +120,18 @@ plaus(s)   := is_nyse_session(s) AND n_eod(s) > 0
               AND n_oi(s) >= 0.90 * n_eod(s)      # OI baseline coverage vs s's own eod population
               AND n_eod(s) >= 0.25 * n_oi(s)      # pathology floor only (blocks 3-vs-400 thinness)
 F          = ascending [s : plaus(s)]             # history membership: graded partials admitted
-S-role     : while F and n_eod(max F) < 0.90 * n_oi(max F): demote max F from F
+S-role     : while F and n_eod(max F) < 0.90 * n_oi(max F)
+             and len(demoted) < 2:   demote max F from F
              # balance is required only of the session that can take the S role —
              # a mid-capture partial eod[D] is demoted, stays D/X-eligible, and can
-             # never flip as_of_session; no store shape blacks out the whole board.
+             # never flip as_of_session. The demotion is CAPPED at 2
+             # (_S_ROLE_MAX_DEMOTIONS): demotion targets the mid-capture frontier
+             # tail only. A store whose imbalance is SYSTEMIC (every session
+             # unbalanced — the shape §H's 48-root eod spine can produce against a
+             # broader oi tier) stops at the cap and takes the newest plausible
+             # session as S with GRADED coverage — an unbounded loop emptied F
+             # into a causeless MIXED_VINTAGE blackout (verify-round 2, N4
+             # carried). No store shape may black out the whole board.
 X          = next_nyse_session(max F) after demotion,
              admitted iff n_oi(X) >= 0.90 * n_eod(max F)
              (a demoted session is naturally the X candidate when consecutive)
