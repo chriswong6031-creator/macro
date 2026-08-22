@@ -946,6 +946,7 @@ def test_production_openapi_mounts_every_attested_history_route() -> None:
     assert "/api/forensics/v1/financial/query" in paths
     assert "/api/forensics/v1/financial/revisions" in paths
     assert "/api/forensics/v1/financial/packet" in paths
+    assert "/api/forensics/v1/financial/statements" in paths
 
 
 def test_financial_query_post_unauthenticated_returns_401_with_private_headers() -> None:
@@ -990,6 +991,20 @@ def test_financial_packet_post_unauthenticated_returns_401_with_private_headers(
     _assert_private_headers(response)
 
 
+def test_financial_statements_post_unauthenticated_returns_401_with_private_headers() -> None:
+    """POST /api/forensics/v1/financial/statements without auth returns 401 with private headers."""
+    import app.main as main_mod
+
+    client = TestClient(main_mod.app, raise_server_exceptions=False)
+    response = client.post(
+        "/api/forensics/v1/financial/statements",
+        content=b'{"schema":"fundamental_forensics.financial_statement_request/v1","entity_id":"ISS:US-XNAS-AAPL","accession":"0000320193-25-000079"}',
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 401
+    _assert_private_headers(response)
+
+
 # Every paid route this router owns, in the form a client actually requests.
 # The private catch-all is deliberately include_in_schema=False, so the OpenAPI
 # assertion above can never see it: only a real request proves it is mounted.
@@ -1003,6 +1018,7 @@ _MOUNTED_PAID_PATHS = (
     "/api/forensics/v1/financial/query",
     "/api/forensics/v1/financial/revisions",
     "/api/forensics/v1/financial/packet",
+    "/api/forensics/v1/financial/statements",
 )
 
 
@@ -1015,7 +1031,7 @@ def test_every_paid_route_is_mounted_on_the_assembled_production_app() -> None:
     unauthenticated requests reach the entitlement boundary (401) instead of
     falling through to the router's 404. Entitled routes: state, health,
     the four attested-history receipt paths, FIF-2A query, FIF-2B revisions,
-    and FIF-2C packet.
+    FIF-2C packet, and FIF-3A1 statements.
     GET is registered on the financial POST-only routes so auth runs before a
     private 405.
     """
