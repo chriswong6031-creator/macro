@@ -2398,14 +2398,15 @@ def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
     assert re.search(r"\bhttpx\b", publish_ops_install)
 
 
-def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> None:
-    """ci-plan keeps full history; packs shallow-checkout the current tree.
+def test_ci_pack_partial_clone_stays_separate_from_planner_ancestry() -> None:
+    """Packs stay depth one while ci-plan proves the exact parent-pair ancestry.
 
     Measured PR #5550 / run 31729769728: twelve packs fetching fetch-depth:0 at
     once put ci-pack-1 in "Checking out the ref" for 31 minutes. Packs consume
     ci-plan's changed-file list and only need the current working tree (legacy
-    suites inspect committed site/ artifacts, not historical blobs). Do not
-    replace this with sparse checkout.
+    suites inspect committed site/ artifacts, not historical blobs). The planner
+    now starts at depth two, then proves/acquires the true parent merge-base with
+    a full-history correctness fallback. Neither job may use sparse checkout.
     """
     workflow = _yaml(WORKFLOW)
     pack = workflow["jobs"]["ci-pack"]
@@ -2423,7 +2424,12 @@ def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> 
         for step in plan["steps"]
         if str(step.get("uses", "")).startswith("actions/checkout@")
     )
-    assert plan_checkout["with"]["fetch-depth"] == 0
+    assert plan_checkout["with"]["filter"] == "blob:none"
+    assert plan_checkout["with"]["fetch-depth"] == 2
+    assert "sparse-checkout" not in plan_checkout["with"]
+    ancestry = next(step for step in plan["steps"] if step.get("id") == "ancestry")
+    assert 'git merge-base "$TESTED_BASE_SHA" "$SUBJECT_HEAD_SHA"' in ancestry["run"]
+    assert "--unshallow" in ancestry["run"]
 
 
 def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:

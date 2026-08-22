@@ -27,6 +27,9 @@ Run: python3 -m pytest tests/test_ci_plan_workflow.py -q
 """
 from __future__ import annotations
 
+import os
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -74,6 +77,117 @@ def _gate_step(name: str) -> dict[str, Any]:
     matches = [step for step in _job("ci-gate")["steps"] if step.get("name") == name]
     assert len(matches) == 1, f"expected one ci-gate step named {name!r}"
     return matches[0]
+
+
+def _identity_step() -> dict[str, Any]:
+    matches = [step for step in _job("ci-plan")["steps"] if step.get("id") == "identity"]
+    assert len(matches) == 1
+    return matches[0]
+
+
+def _ancestry_step() -> dict[str, Any]:
+    matches = [step for step in _job("ci-plan")["steps"] if step.get("id") == "ancestry"]
+    assert len(matches) == 1
+    return matches[0]
+
+
+def _git(cwd: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        check=check,
+        capture_output=True,
+        text=True,
+    )
+
+
+def _commit_file(repo: Path, name: str, content: str, message: str) -> str:
+    (repo / name).write_text(content, encoding="utf-8")
+    _git(repo, "add", "--", name)
+    _git(repo, "commit", "-m", message)
+    return _git(repo, "rev-parse", "HEAD").stdout.strip()
+
+
+def _hostile_shallow_merge(tmp_path: Path) -> tuple[Path, str, str, str, str]:
+    """Depth two has the merge and both parents, but not their branch point."""
+    source = tmp_path / "source"
+    source.mkdir()
+    _git(source, "init", "--initial-branch=main")
+    _git(source, "config", "user.name", "CI topology fixture")
+    _git(source, "config", "user.email", "ci-topology@example.invalid")
+    branch_point = _commit_file(source, "root.txt", "root\n", "root")
+    _git(source, "branch", "subject", branch_point)
+
+    for index in range(8):
+        _commit_file(
+            source,
+            f"base-{index}.txt",
+            f"base {index}\n",
+            f"base {index}",
+        )
+    _git(source, "checkout", "subject")
+    for index in range(8):
+        _commit_file(
+            source,
+            f"subject-{index}.txt",
+            f"subject {index}\n",
+            f"subject {index}",
+        )
+    _git(source, "checkout", "main")
+    _git(source, "merge", "--no-ff", "subject", "-m", "synthetic merge")
+
+    parents = _git(source, "rev-list", "--parents", "-n", "1", "HEAD").stdout.split()
+    assert len(parents) == 3
+    merge_sha, tested_base_sha, subject_head_sha = parents
+    assert _git(source, "merge-base", tested_base_sha, subject_head_sha).stdout.strip() == branch_point
+
+    origin = tmp_path / "origin.git"
+    _git(tmp_path, "clone", "--bare", str(source), str(origin))
+    _git(origin, "config", "uploadpack.allowFilter", "true")
+    _git(origin, "config", "uploadpack.allowAnySHA1InWant", "true")
+    shallow = tmp_path / "shallow"
+    _git(
+        tmp_path,
+        "clone",
+        "--no-local",
+        "--filter=blob:none",
+        "--depth",
+        "2",
+        "--branch",
+        "main",
+        origin.resolve().as_uri(),
+        str(shallow),
+    )
+    assert _git(shallow, "rev-parse", "HEAD").stdout.strip() == merge_sha
+    return shallow, merge_sha, tested_base_sha, subject_head_sha, branch_point
+
+
+def _run_ancestry_step(
+    repo: Path,
+    merge_sha: str,
+    tested_base_sha: str,
+    subject_head_sha: str,
+    *,
+    extra_env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env.update(
+        {
+            "TESTED_TREE_SHA": merge_sha,
+            "TESTED_BASE_SHA": tested_base_sha,
+            "SUBJECT_HEAD_SHA": subject_head_sha,
+        }
+    )
+    if extra_env:
+        env.update(extra_env)
+    return subprocess.run(
+        ["bash", "-c", str(_ancestry_step()["run"])],
+        cwd=repo,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
 
 
 # ─── ci-plan ────────────────────────────────────────────────────────────────────
@@ -133,16 +247,119 @@ def test_closed_lifecycle_events_cannot_enter_semantic_ci_concurrency() -> None:
     assert "if" not in _job("ci-plan")
 
 
-def test_ci_plan_checks_out_full_history_for_the_base_diff() -> None:
-    """The planner diffs against synthetic-merge parent 1, which a shallow clone may lack.
-
-    Drop `fetch-depth: 0` and the diff fails, the planner widens to the full suite by
-    law (fail-SAFE), and every PR runs everything while the plan still reports
-    success.  The regression costs the entire feature and reds nothing.
-    """
+def test_ci_plan_materializes_exact_tree_then_proves_ancestry_before_planning() -> None:
+    """Depth two is transport only; a proven true merge-base is the invariant."""
     checkouts = [s for s in _job("ci-plan")["steps"] if str(s.get("uses", "")).startswith("actions/checkout@")]
     assert len(checkouts) == 1, f"ci-plan should check out exactly once, found {len(checkouts)}"
-    assert checkouts[0]["with"]["fetch-depth"] == 0
+    assert checkouts[0]["with"] == {
+        "ref": "${{ github.sha }}",
+        "filter": "blob:none",
+        "fetch-depth": 2,
+    }
+
+    identity_run = str(_identity_step()["run"])
+    assert 'git cat-file -e "${parent_sha}^{commit}"' in identity_run
+    assert "synthetic merge parent $parent_sha is unavailable" in identity_run
+
+    ancestry = _ancestry_step()
+    assert ancestry["if"] == "github.event_name == 'pull_request'"
+    assert ancestry["env"] == {
+        "TESTED_TREE_SHA": "${{ steps.identity.outputs.tested_tree_sha }}",
+        "TESTED_BASE_SHA": "${{ steps.identity.outputs.tested_base_sha }}",
+        "SUBJECT_HEAD_SHA": "${{ steps.identity.outputs.subject_head_sha }}",
+    }
+    run = str(ancestry["run"])
+    assert 'git merge-base "$TESTED_BASE_SHA" "$SUBJECT_HEAD_SHA"' in run
+    assert 'origin "$TESTED_TREE_SHA"' in run
+    assert "for deepen_by in 32 128 512 2048" in run
+    assert "--unshallow" in run
+    assert "full-history-fallback" in run
+    for mutable in MUTABLE_REFS:
+        assert mutable not in run
+
+    steps = _job("ci-plan")["steps"]
+    assert steps.index(_identity_step()) < steps.index(ancestry) < steps.index(_plan_step())
+
+
+def test_depth_two_can_have_both_parents_without_the_true_merge_base(tmp_path: Path) -> None:
+    """Immediate parent presence must never masquerade as sufficient ancestry."""
+    shallow, merge_sha, tested_base_sha, subject_head_sha, true_merge_base = (
+        _hostile_shallow_merge(tmp_path)
+    )
+    for parent_sha in (tested_base_sha, subject_head_sha):
+        assert _git(shallow, "cat-file", "-e", f"{parent_sha}^{{commit}}").returncode == 0
+    before = _git(
+        shallow,
+        "merge-base",
+        tested_base_sha,
+        subject_head_sha,
+        check=False,
+    )
+    assert before.returncode != 0
+    assert before.stdout.strip() == ""
+
+    acquired = _run_ancestry_step(
+        shallow,
+        merge_sha,
+        tested_base_sha,
+        subject_head_sha,
+    )
+    assert acquired.returncode == 0, acquired.stdout + acquired.stderr
+    assert "title=ci-ancestry" in acquired.stdout
+    assert (
+        _git(shallow, "merge-base", tested_base_sha, subject_head_sha).stdout.strip()
+        == true_merge_base
+    )
+
+
+def test_targeted_fetch_failure_uses_full_history_correctness_fallback(tmp_path: Path) -> None:
+    """A failed optimization may cost latency; it may not narrow the plan."""
+    shallow, merge_sha, tested_base_sha, subject_head_sha, true_merge_base = (
+        _hostile_shallow_merge(tmp_path)
+    )
+    real_git = shutil.which("git")
+    assert real_git is not None
+    wrapper_dir = tmp_path / "wrapper"
+    wrapper_dir.mkdir()
+    wrapper = wrapper_dir / "git"
+    wrapper.write_text(
+        "#!/bin/sh\n"
+        "for arg in \"$@\"; do\n"
+        "  case \"$arg\" in --deepen=*) exit 86 ;; esac\n"
+        "done\n"
+        "exec \"$REAL_GIT\" \"$@\"\n",
+        encoding="utf-8",
+    )
+    wrapper.chmod(0o755)
+    result = _run_ancestry_step(
+        shallow,
+        merge_sha,
+        tested_base_sha,
+        subject_head_sha,
+        extra_env={
+            "PATH": f"{wrapper_dir}{os.pathsep}{os.environ['PATH']}",
+            "REAL_GIT": real_git,
+        },
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "targeted deepen failed" in result.stdout
+    assert "via full-history-fallback" in result.stdout
+    assert _git(shallow, "rev-parse", "--is-shallow-repository").stdout.strip() == "false"
+    assert (
+        _git(shallow, "merge-base", tested_base_sha, subject_head_sha).stdout.strip()
+        == true_merge_base
+    )
+
+
+def test_total_ancestry_fetch_failure_stops_before_the_plan(tmp_path: Path) -> None:
+    """Network refusal must red ancestry acquisition, never emit a smaller plan."""
+    shallow, merge_sha, tested_base_sha, subject_head_sha, _ = _hostile_shallow_merge(tmp_path)
+    _git(shallow, "remote", "set-url", "origin", (tmp_path / "missing.git").resolve().as_uri())
+    result = _run_ancestry_step(shallow, merge_sha, tested_base_sha, subject_head_sha)
+    assert result.returncode != 0
+    assert "full-history correctness fallback" in result.stdout
+    steps = _job("ci-plan")["steps"]
+    assert steps.index(_ancestry_step()) < steps.index(_plan_step())
 
 
 def test_ci_plan_passes_pack_count_twelve() -> None:

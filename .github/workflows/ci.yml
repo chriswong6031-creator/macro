@@ -4351,15 +4351,15 @@ jobs:
           # run proves GitHub's synthetic merge commit, not a later API-resolved
           # branch tip, so make the event SHA explicit.
           ref: ${{ github.sha }}
-          # `fetch-depth: 0` is REQUIRED, not an optimisation. The planner derives
-          # the tested base from parent 1 of this exact synthetic merge commit, and
-          # a shallow clone may not contain that commit — the diff would fail, the planner would widen to the full
-          # suite by law, and the plan would be meaningless on every PR. The
-          # blob:none filter keeps full history cheap. Packs do NOT repeat this
-          # fetch: they download the `ci-changed-files` artifact and
-          # shallow-checkout.
+          # Materialize the exact tested tree and both immediate synthetic-merge
+          # parents first; the ancestry step below then proves/acquires the TRUE
+          # parent1/parent2 merge-base before scoped planning. Depth 2 is only the
+          # initial transport shape, never evidence that the merge-base exists.
+          # The explicit full-history fallback preserves the old correctness law.
+          # Packs do NOT repeat this fetch: they download the
+          # `ci-changed-files` artifact and shallow-checkout.
           filter: blob:none
-          fetch-depth: 0
+          fetch-depth: 2
       - uses: actions/setup-python@v5
         with:
           # PINNED to an exact patch release, not the floating "3.12".
@@ -4417,6 +4417,12 @@ jobs:
               echo "::error title=ci-tested-base::PR event SHA is not an exact two-parent merge commit"
               exit 1
             fi
+            for parent_sha in "$tested_base_sha" "$subject_head_sha"; do
+              if ! git cat-file -e "${parent_sha}^{commit}"; then
+                echo "::error title=ci-tested-base::synthetic merge parent $parent_sha is unavailable"
+                exit 1
+              fi
+            done
             if [ "$subject_head_sha" != "$EVENT_HEAD_SHA" ]; then
               echo "::error title=ci-tested-base::merge parent 2 $subject_head_sha does not match event head $EVENT_HEAD_SHA"
               exit 1
@@ -4434,6 +4440,53 @@ jobs:
             echo "semantic_role=$semantic_role"
             echo "plan_artifact_name=ci-semantic-plan-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           } >> "$GITHUB_OUTPUT"
+      - id: ancestry
+        name: acquire and prove exact pull request ancestry
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          TESTED_TREE_SHA: ${{ steps.identity.outputs.tested_tree_sha }}
+          TESTED_BASE_SHA: ${{ steps.identity.outputs.tested_base_sha }}
+          SUBJECT_HEAD_SHA: ${{ steps.identity.outputs.subject_head_sha }}
+        run: |
+          set -euo pipefail
+          SECONDS=0
+          merge_base_sha=""
+          acquisition="initial-depth-2"
+          if merge_base_sha=$(git merge-base "$TESTED_BASE_SHA" "$SUBJECT_HEAD_SHA" 2>/dev/null); then
+            :
+          else
+            for deepen_by in 32 128 512 2048; do
+              acquisition="deepen-${deepen_by}"
+              echo "::notice title=ci-ancestry::merge-base unavailable; deepening exact tested tree by ${deepen_by}"
+              if ! git fetch --no-tags --filter=blob:none --deepen="$deepen_by" origin "$TESTED_TREE_SHA"; then
+                echo "::warning title=ci-ancestry::targeted deepen failed; entering full-history correctness fallback"
+                merge_base_sha=""
+                break
+              fi
+              if merge_base_sha=$(git merge-base "$TESTED_BASE_SHA" "$SUBJECT_HEAD_SHA" 2>/dev/null); then
+                break
+              fi
+            done
+          fi
+          if [ -z "$merge_base_sha" ]; then
+            acquisition="full-history-fallback"
+            echo "::notice title=ci-ancestry::bounded acquisition did not establish merge-base; fetching complete exact-tree history"
+            if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+              git fetch --no-tags --filter=blob:none --unshallow origin "$TESTED_TREE_SHA"
+            else
+              git fetch --no-tags --filter=blob:none origin "$TESTED_TREE_SHA"
+            fi
+            if ! merge_base_sha=$(git merge-base "$TESTED_BASE_SHA" "$SUBJECT_HEAD_SHA" 2>/dev/null); then
+              echo "::error title=ci-ancestry::true merge-base remains unavailable after correctness fallback"
+              exit 1
+            fi
+          fi
+          if ! git merge-base --is-ancestor "$merge_base_sha" "$TESTED_BASE_SHA" || ! git merge-base --is-ancestor "$merge_base_sha" "$SUBJECT_HEAD_SHA"; then
+            echo "::error title=ci-ancestry::resolved merge-base $merge_base_sha is not an ancestor of the exact parent pair"
+            exit 1
+          fi
+          echo "::notice title=ci-ancestry::merge-base $merge_base_sha established via $acquisition in ${SECONDS}s"
       - name: install isolated pack runner
         run: |
           python -m venv "$RUNNER_TEMP/ci-plan-runner"
