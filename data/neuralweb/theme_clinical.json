@@ -1,7 +1,7 @@
 {
   "schema": "theme_clinical.v1",
-  "as_of": "2026-08-21",
-  "generated_at": "2026-08-21T02:15:40.302489+00:00",
+  "as_of": "2026-08-22",
+  "generated_at": "2026-08-22T01:19:22.811414+00:00",
   "vocabulary_version": "v1",
   "authority": {
     "may_rank": false,
@@ -19,7 +19,7 @@
     "total_themes": 3,
     "themes_with_data": 3,
     "total_modalities_configured": 9,
-    "total_studies_stored": 2519,
+    "total_studies_stored": 2520,
     "parquet_absent": false
   },
   "pit_coverage": {
@@ -32,8 +32,8 @@
     "themes": {
       "diagnostics_lifesci": {
         "n_studies_pit": 0,
-        "n_studies_legacy": 1854,
-        "n_studies_total": 1854,
+        "n_studies_legacy": 1855,
+        "n_studies_total": 1855,
         "pit_backed_fraction": 0.0,
         "provenance": "legacy_theme_store"
       },
@@ -61,9 +61,9 @@
       "theme_id": "diagnostics_lifesci",
       "n_modalities_configured": 6,
       "n_modalities_with_data": 6,
-      "n_studies_total": 1854,
+      "n_studies_total": 1855,
       "year_month_max": "2026-08",
-      "theme_registration_yoy_pct": 14.92,
+      "theme_registration_yoy_pct": 15.09,
       "theme_registration_velocity_read": "accelerating",
       "theme_registration_magnitude_band": "moderate",
       "n_phase3_trailing12m": 32,
@@ -203,33 +203,33 @@
         "car_t_cell_therapy": {
           "modality_id": "car_t_cell_therapy",
           "theme_id": "diagnostics_lifesci",
-          "n_studies_total": 728,
+          "n_studies_total": 729,
           "year_month_max": "2026-08",
-          "registration_yoy_pct": 24.24,
+          "registration_yoy_pct": 25.25,
           "registration_velocity_read": "accelerating",
-          "registration_magnitude_band": "moderate",
-          "enrollment_yoy_pct": 61.55,
+          "registration_magnitude_band": "large",
+          "enrollment_yoy_pct": 62.19,
           "enrollment_velocity_read": "accelerating",
           "enrollment_magnitude_band": "large",
           "phase_distribution": {
-            "share_phase2plus_recent": 0.3821,
+            "share_phase2plus_recent": 0.3871,
             "share_phase2plus_prior": 0.2424,
             "delta_pp": null,
-            "n_total_recent": 123,
-            "n_phase2plus_recent": 47,
+            "n_total_recent": 124,
+            "n_phase2plus_recent": 48,
             "n_phase3_recent": 8,
             "n_total_prior": 99,
             "n_phase2plus_prior": 24,
             "read": "mixed",
             "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
-            "coverage_note": "123 INDUSTRY studies in trailing 12m (47 Phase-2+, 8 Phase-3; phase as of ingest, near-PIT for recent registrations); 99 studies in prior window (phase upper-biased; cross-cohort delta not published)"
+            "coverage_note": "124 INDUSTRY studies in trailing 12m (48 Phase-2+, 8 Phase-3; phase as of ingest, near-PIT for recent registrations); 99 studies in prior window (phase upper-biased; cross-cohort delta not published)"
           },
           "n_phase3_trailing12m": 8,
-          "coverage_note": "728 INDUSTRY-sponsored studies; most recent registration: 2026-08; 103 months of registration data",
-          "coverage_note_zh": "共728个行业赞助研究；最近注册月份：2026-08；103个月的注册数据",
+          "coverage_note": "729 INDUSTRY-sponsored studies; most recent registration: 2026-08; 103 months of registration data",
+          "coverage_note_zh": "共729个行业赞助研究；最近注册月份：2026-08；103个月的注册数据",
           "expected_read": "phase-2/3 migration = development cost commitment",
           "n_studies_pit": 0,
-          "n_studies_legacy": 728,
+          "n_studies_legacy": 729,
           "pit_backed_fraction": 0.0,
           "provenance": "legacy_theme_store"
         },
@@ -267,10 +267,10 @@
           "provenance": "legacy_theme_store"
         }
       },
-      "coverage_note": "6/6 modalities have data; 1854 total INDUSTRY-sponsored studies; most recent: 2026-08",
-      "coverage_note_zh": "6个模态中6个有数据；共1854个行业赞助研究；最新月份：2026-08",
+      "coverage_note": "6/6 modalities have data; 1855 total INDUSTRY-sponsored studies; most recent: 2026-08",
+      "coverage_note_zh": "6个模态中6个有数据；共1855个行业赞助研究；最新月份：2026-08",
       "n_studies_pit": 0,
-      "n_studies_legacy": 1854,
+      "n_studies_legacy": 1855,
       "pit_backed_fraction": 0.0,
       "provenance": "legacy_theme_store"
     },
