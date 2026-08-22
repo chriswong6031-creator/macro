@@ -1,0 +1,13 @@
+[Unit]
+Description=Retry the Options Context Audit after trusted context each hour
+
+[Timer]
+OnBootSec=12min
+OnCalendar=*-*-* *:20:00 UTC
+AccuracySec=1min
+RandomizedDelaySec=120s
+Persistent=true
+Unit=macro-market-memory-options-context-audit.service
+
+[Install]
+WantedBy=timers.target

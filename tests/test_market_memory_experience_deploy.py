@@ -605,7 +605,23 @@ def test_setup_and_updater_install_attest_run_and_arm_experience_lane() -> None:
         assert token in block
     assert "systemctl restart macro-market-memory-experience.timer" not in block
     assert "for profile in source context identity breadth technicals experience" in update
-    assert "for RECIPROCAL_PROFILE in source context identity breadth technicals" in update
+    rearm = re.search(r"for RECIPROCAL_PROFILE in ([^\n;]+)", update)
+    assert rearm is not None
+    rearm_tokens = rearm.group(1).split()
+    for required in (
+        "source",
+        "source-spy-rest",
+        "context",
+        "identity",
+        "breadth",
+        "technicals",
+        "technicals-v2",
+        "experience-v2",
+        "production-records",
+        "options-context-audit",
+    ):
+        assert required in rearm_tokens
+    assert "experience" not in rearm_tokens
     finalization = update.split("# BEGIN W1B5_TIMER_FINALIZATION\n", 1)[1].split(
         "# END W1B5_TIMER_FINALIZATION", 1
     )[0]
