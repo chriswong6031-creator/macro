@@ -707,6 +707,14 @@ these are A3 lane-2 census artifacts, not the registration law, and per Sol's `[
 convention they gain additive supersession notes marking those recommendations superseded by AG3 (DEFF struck)
 and this ruling: A4 will not register any `rho`/`rho_block` value or print an issuer-DEFF `n_effective_blocks`
 count.
+**Census completion, red-team round 1 (MIN-2), pre-existing on main, not a regression:** YAML
+`predetermined_historical_status.label_assignment` carried the value
+`mechanical_by_preregistered_n_eff_vs_floor_computed_pre_outcome_never_post_hoc` — a bare `n_eff` token inside
+the same class of live machine-readable field MAJ-4 (A4G) already swept from contract §12's prose. Renamed to
+`mechanical_by_preregistered_n_effective_blocks_vs_floor_computed_pre_outcome_never_post_hoc`, comment-tagged
+`[A4P.1 R1]`. This value predates A4P.1 (it was untouched since the original A4G MAJ-4 sweep, which fixed only
+the contract MD's prose, never this YAML value) — it is a census gap this ruling's own R1 scope closes, not a
+new defect introduced by this wave.
 **Where:** YAML `prospective_accrual_first_posture.claim_classes[coverage_abstention_claims].denomination`;
 `IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md` (annotation after the B7 table row); `IMCE_HB0_INDEPENDENT_BLOCK_LIST.md`
 (annotations after §D4 and after §8); `IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` (annotations after §3's table and
@@ -782,15 +790,25 @@ an annotation bracket ("was `forward_63d_drawdown_tail`") in a live document.
 for mutually contradictory registration-state fields. There must be one state, not a registered bit nested
 inside a document that still calls itself candidate/not-declared."* A new packet section, §4a "A4 STATE
 TRANSITION (frozen, verbatim-or-abort)", enumerates EVERY registration-state site across the contract MD, the
-YAML, and the packet's own STATUS header, with byte-exact old→new replacement pairs: YAML `status`,
+YAML, and the packet's own registration-state prose, with byte-exact old→new replacement pairs: YAML `status`,
 `registration.registered`, `.repository_pin_observed`, `.config_hash`, `.freeze_location`'s second bullet,
 top-level `requires_fable_adjudication`, and all three `trials[].status` fields; contract MD's opening Status
-line and its §15a freeze-location/repository-pin bullets; and this packet's own opening STATUS line. Both
-placeholder procedures are frozen deterministically: `repository_pin_observed` = the full 40-hex SHA of
-`origin/main` observed at A4 pickup via `git rev-parse origin/main`, recorded before any A4 edit;
-`registration.config_hash` = the git blob SHA-1 of the contract MD **as stamped registered** in the A4 commit,
-via `git hash-object`, computed AFTER the MD's frozen transition edits and BEFORE writing the YAML — the hash
-lands only in the YAML, never self-referenced in the MD. **A4P.1 itself performs NONE of these flips** —
+line and its §15a freeze-location/repository-pin bullets; and **the packet's own H1 title, §0 opening
+paragraph (full — not merely its bold STATUS sentence), `Wave:` line's closing clause, and `Purpose:` line's
+"PROPOSED — NOT REGISTERED" marking clause** [§4a.4, red-team round 1, MAJ-1 fix — the original version
+covered only the packet's opening bold sentence, which would have left the untouched remainder of that same
+paragraph, plus three more live sites, reading "future act"/"registers nothing"/"PROPOSED — NOT REGISTERED"
+directly beneath a freshly-stamped "EXECUTED — REGISTERED" line, exactly the nested-contradiction defect
+Sol's ruling forbids]. Three placeholder procedures are frozen deterministically [expanded from two,
+red-team round 1, FIX-9/FIX-10]: `repository_pin_observed` = the full 40-hex SHA of `origin/main` observed at
+A4 pickup via `git rev-parse origin/main`, recorded before any A4 edit; `registration.config_hash` = the git
+blob SHA-1 of the contract MD **as stamped registered** in the A4 commit, via `git hash-object`, computed
+AFTER the MD's frozen transition edits and BEFORE writing the YAML — the hash lands only in the YAML, never
+self-referenced in the MD, and MUST be re-verified against the actually-committed head immediately before any
+push, aborting and repairing on any mismatch (closes a silent-invalidation hole a later same-PR MD edit could
+otherwise open); `<A4 registration commit date>` = the UTC calendar date, ISO-8601 `YYYY-MM-DD`, via `date -u
++%F`, observed at the moment the A4 registration commit is created. **A4P.1 itself performs NONE of these
+flips** —
 `IMCE_PREREGISTRATION_CANDIDATE_V1.yaml` and `IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md` both stay
 `candidate_not_registered`/unregistered after this wave lands, byte-identical on every registration-state field
 to their pre-A4P.1 values (only the version/gate header fields and the R1/R2/R3/R5/R6 substantive fields this
@@ -890,14 +908,68 @@ All three superseded V1.2 hashes are recorded above, never silently dropped, per
 
 ### Sol's conditional authorization for A4 proper
 
-Recorded verbatim, per the A4P.1 commissioning instruction: *"If—and only if—A4P.1 lands exactly as above with
-no new substantive finding, you do not need another Sol roundtrip to start A4 proper. This message is the
+Recorded verbatim — **Sol fourth-gate verdict, 2026-08-22 (relayed verbatim in the A4P.1 commissioning
+instruction)** [red-team round 1, MAJ-2 adjudicated by Fable, who holds Sol's actual message: this quote and
+the four-act list below are CONFIRMED verbatim Sol, not the commissioning session's own text — only the
+attribution is sharpened here, the quoted content is unchanged]: *"If—and only if—A4P.1 lands exactly as above
+with no new substantive finding, you do not need another Sol roundtrip to start A4 proper. This message is the
 explicit conditional authorization."* The A4-proper act list, verbatim: *"1. observe and record current
 repository pin; 2. append the three exact frozen declared_budget rows to canonical data/trial_ledger.jsonl;
 3. stamp the complete registered MD/YAML state and contract hash exactly as frozen by A4P.1; 4. record/prove
 that no outcome access occurred before the criteria/registration commit."* These four acts map exactly onto
 `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md` §6's existing four-acts numbering (Act 1↔1, Act 2↔2, Act 3↔3,
 Act 4↔4), now cross-referencing the frozen §4a transition table for Acts 1 and 3.
+
+### Revision record — red-team round 1 (Opus, adjudicated by Fable, 2026-08-22)
+
+**Verdict: REVISE.** 1 major confirmed (MAJ-1) and fixed; 1 major (MAJ-2) adjudicated as a correct
+verbatim-Sol quote needing only sharper attribution, not a demotion or reword; 7 minors and 2 nits fixed.
+None of the fixes altered any of the three `declared_budget` reason strings — the hash-parity script was
+re-run after every fix and confirmed the three `config_hash` values are UNCHANGED:
+`a3b8ac5c0d0205cb` / `1d69c1fa6b897b6a` / `309d76c3a8dfbb5c`.
+
+- **MAJ-1 (confirmed, fixed):** packet §4a.4 covered only the opening bold STATUS sentence, leaving the
+  untouched remainder of that paragraph plus three more live registration-state sites (H1 title, `Wave:`
+  line, `Purpose:` line) uncovered — exactly the "registered bit nested inside a document that still calls
+  itself candidate/not-declared" defect ruling 4 forbids. Fixed: all four sites added to §4a.4 with byte-exact
+  old→new pairs; a post-edit packet-internal registration-state census confirms zero uncovered live sites.
+- **MAJ-2 (adjudicated, verbatim-confirmed — no reword):** Fable, who holds Sol's actual message, confirmed
+  both challenged quotes (the conditional-authorization sentence and the four-act list) are verbatim Sol, not
+  commissioning-session paraphrase. Only the attribution at both sites (this section above, and packet §6) is
+  sharpened to "Sol fourth-gate verdict, 2026-08-22 (relayed verbatim in the A4P.1 commissioning instruction)"
+  — the quoted content is byte-unchanged.
+- **MIN-1 (fixed):** the four remaining "presented to Sol for ratification" live sites (YAML `cell_ids`
+  comments ×2, contract MD §11, disposition §0) updated to "ratified + naming normalized by Sol's fourth gate
+  [A4P.1 R3]," matching the wording already at the two sites R3 originally touched.
+- **MIN-2 (fixed):** YAML `predetermined_historical_status.label_assignment` carried a bare `n_eff` token
+  (the struck DEFF estimator's own variable name, same class MAJ-4/A4G already swept from contract §12) —
+  renamed to `n_effective_blocks` inline, comment-tagged `[A4P.1 R1]`. Pre-existing on main since the original
+  A4G MAJ-4 sweep (which fixed only the contract MD's prose, never this YAML value) — a census gap this
+  wave's R1 scope closes, not a regression introduced by A4P.1.
+- **MIN-3 (fixed):** `IMCE_A4G_SOURCE_BOUNDARY_TABLE.md` row 13's R5 quote was silently truncated at "…raw
+  underlying third-party quotations." — the dropped final three sentences ("PMMS remains HELD. FRED/ALFRED
+  remain excluded. NAR storage remains prohibited.") restored so the quote is complete.
+- **MIN-4 (fixed):** the new HB0 census annotation claimed the "pooled homebuilder stratum" wording was "not
+  reproduced in this table" — it IS in the table (row :332). Annotation corrected (this wave's own additive
+  text, freely editable — the A3 original table stays untouched).
+- **MIN-5 (fixed):** contract MD's "Freezer of record" bullet (§15a) listed V1/V1.1/V1.2 but not V1.2.1 —
+  appended "Sol / fourth-gate verdict, 2026-08-22 (V1.2.1)."
+- **MIN-6 (fixed):** Appendix D's R1 row claimed §0a was touched — it is byte-unchanged by R1 (§0a's
+  coverage/abstention-claims bullet already cited the AG3 cap correctly before this wave). Row corrected to
+  name the sections R1 actually touched (YAML fields + hb0 annotation files).
+- **MIN-7 (fixed):** §4a's `<A4 registration commit date>` placeholder had no frozen format. Added as a third
+  §4a.1 procedure: UTC calendar date, ISO-8601 `YYYY-MM-DD`, via `date -u +%F`.
+- **config_hash hardening (reviewer PLAUSIBLE, accepted, fixed):** added a mandatory post-commit
+  verification step to §4a.1 procedure 2 / §6 Act 3 — after the A4 registration commit is created,
+  `git hash-object` on the committed contract MD MUST equal the YAML-recorded `registration.config_hash`;
+  on mismatch A4 aborts and repairs before push. Closes the silent-invalidation hole where a later same-PR
+  MD edit could invalidate an already-recorded hash unnoticed.
+- **n1 (fixed):** YAML `label_truth_table.reconstructable_contributors` typing normalized to uniform list
+  form: `[4]` / `[2, 3]` / `[0, 1]` (was a bare scalar `4` for the first row).
+- **n2 (fixed):** WS/handoff self-reference pattern now cites PR #6237 / branch `claude/imce-a4p1-records`
+  as the durable identifier, with an explicit note that any recorded head SHA necessarily predates the PR's
+  own next commit — `gh pr view 6237 --json headRefOid` is the live source, these records are provenance
+  snapshots only.
 
 ### AP9 Summary table
 
@@ -906,7 +978,7 @@ Act 4↔4), now cross-referencing the frozen §4a transition table for Acts 1 an
 | R1 | Retire the stale DEFF `n_effective_blocks` denomination; census + annotate hb0 lane-2 recommendations superseded | YAML; hb0/*.md (annotation-only) | stale-machine-readable-field defect |
 | R2 | Historical v0 population permanently `named_subset_basis: [PHM, KBH]`; prospective eligible cohort `[DHI, PHM, KBH, TOL]`; three-row label truth table | YAML; contract MD; disposition; packet; construction file (§1a, §3.1 wording); census (existing annotation) | AP8 F2(d) escalation |
 | R3 | Ratify the six minted cell IDs; normalize sync family naming to `forward_63_trading_day_drawdown_tail` | YAML; contract MD; disposition; packet | prior wave's escalation item 4 |
-| R4 | Freeze the complete A4 registration state-transition, byte-exact, verbatim-or-abort; both placeholder procedures frozen | packet (new §4a) | "one state, not nested" requirement |
+| R4 | Freeze the complete A4 registration state-transition, byte-exact, verbatim-or-abort, covering the contract MD, YAML, AND the packet's own title/opening paragraph/Wave-line/Purpose-line; three placeholder procedures frozen (repo pin, config_hash + post-commit verify-or-abort, commit date) | packet (new §4a) | "one state, not nested" requirement |
 | R5 | Treasury CMT source-rights disposition: `GO_LIMITED`, scope + basis frozen verbatim | boundary table; contract MD (mirror sentence); YAML | prior wave's escalation item 5 |
 | R6 | Boundary receipts remain honestly open; exactly the two named post-registration dispositions | YAML; contract MD (mirror sentence); boundary table | boundary-evidence-wave law |
 | R7 | Regenerate all three declared_budget row reason strings and `config_hash` values; verify hash parity; record superseded hashes | packet §2–§4, §1 | stale-hash-after-wording-change defect |

@@ -339,12 +339,13 @@ Per contract §1 (A5/A6) and §9a: **6 historical cells in one BH partition `imc
 > Additive annotation only — the table and gap-flagging above are the original A3-census text, unmodified, per
 > Sol's bar on reopening A3 work. `IMCE_A4G_AMENDMENT_LOG.md` AP1/AP2 carries the full settlement.
 
-> **[SUPERSEDED BY A4P.1 R2/R3 (2026-08-22): the `imce_sync_v0`/`imce_risk_v0` rows above name
-> `forward_63d_drawdown_tail` and the `imce_phase_v0` row's own prose (not reproduced in this table but present
-> elsewhere in this document) uses "pooled homebuilder stratum" wording — both are pre-A4P.1 naming/population
-> conventions. The canonical target name is now `forward_63_trading_day_drawdown_tail` (Sol fourth-gate ruling
-> R3); the historical v0 population is permanently `named_subset_basis: [PHM, KBH]`, with a separate
-> prospective v0 eligible pooled cohort `[DHI, PHM, KBH, TOL]` under a three-row label truth table (Sol
+> **[SUPERSEDED BY A4P.1 R2/R3 (2026-08-22, corrected in the red-team round — MIN-3): the `imce_phase_v0` row
+> above names "pooled homebuilder stratum" (:332), and the `imce_sync_v0`/`imce_risk_v0` rows name
+> `forward_63d_drawdown_tail` (:333, :334) — both are pre-A4P.1 naming/population conventions, present directly
+> in this table, not merely elsewhere in this document. The canonical target name is now
+> `forward_63_trading_day_drawdown_tail` (Sol fourth-gate ruling R3); the historical v0 population is
+> permanently `named_subset_basis: [PHM, KBH]`, with a separate prospective v0 eligible pooled cohort
+> `[DHI, PHM, KBH, TOL]` under a three-row label truth table (Sol
 > fourth-gate ruling R2).]**
 > Additive annotation only — the table above is the original A3-census text, unmodified, per Sol's bar on
 > reopening A3 work. `IMCE_A4G_AMENDMENT_LOG.md`'s A4P.1 section (`AP9.R2`, `AP9.R3`) carries the full

@@ -90,10 +90,11 @@ committed text at A4P.1 HEAD (this wave's own commit) — `IMCE_PREREGISTRATION_
 this wave lands, exactly as before. A4 executes every row below verbatim, in order, or aborts back to Sol —
 the same discipline §7's "execute verbatim or abort" rule already binds the rest of this packet to.
 
-### 4a.1 Two placeholder procedures, frozen deterministically
+### 4a.1 Three placeholder procedures, frozen deterministically [expanded, red-team round 1 — FIX-9/FIX-10]
 
-Two fields below cannot be given a literal value today because their inputs do not exist until the moment of
-the actual A4 commit. Both procedures are frozen exactly, so A4 makes no choice about how to compute them:
+Three fields/tokens below cannot be given a literal value today because their inputs do not exist until the
+moment of the actual A4 commit. All three procedures are frozen exactly, so A4 makes no choice about how to
+compute them:
 
 1. **`registration.repository_pin_observed`:** the full 40-hex-character SHA of `origin/main`, observed at
    A4 pickup, via `git rev-parse origin/main`, **recorded before any A4 edit is made** (so the pin describes
@@ -103,7 +104,18 @@ the actual A4 commit. Both procedures are frozen exactly, so A4 makes no choice 
    **AFTER** applying this table's MD transition edits (§4a.2 below) and **BEFORE** writing the YAML
    (§4a.3 below). The hash lands **only** in the YAML; the MD file never contains its own hash — no
    self-reference. This is a different, broader hash than the three row-level `config_hash` values in §2–§4
-   above (which cover only `(family, n, reason)` each).
+   above (which cover only `(family, n, reason)` each). **Mandatory verification step, closes a silent-
+   invalidation hole (FIX-10):** immediately after the A4 registration commit is created — and before any
+   push — re-run `git hash-object research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md` against
+   the actually-committed head and confirm it EQUALS the value just written into
+   `registration.config_hash`. **On any mismatch (e.g. the contract MD was edited again, later, in the same
+   commit or PR, after the hash was computed) A4 ABORTS — it does not push — and repairs the hash before any
+   further action.** This closes the class of defect where a late MD edit silently invalidates an
+   already-recorded hash without anyone re-checking it.
+3. **`<A4 registration commit date>`** (packet §4a.4, §0 opening line): the UTC calendar date, ISO-8601
+   `YYYY-MM-DD` format, observed at the moment the A4 registration commit is created — procedure: `date -u
+   +%F`. Frozen so no ambiguity exists between a local-timezone date, a push timestamp, or an authorship date;
+   the registration commit's own creation instant, in UTC, is the sole source.
 
 ### 4a.2 Contract MD (`IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md`) — exact transitions
 
@@ -128,18 +140,31 @@ the actual A4 commit. Both procedures are frozen exactly, so A4 makes no choice 
 | `trials[1].status` (`rf.cycle_pattern.imce_sync_v0`) | `    status: not_declared` | `    status: declared` |
 | `trials[2].status` (`rf.cycle_pattern.imce_risk_v0`) | `    status: not_declared` | `    status: declared` |
 
-### 4a.4 This packet's own STATUS header — exact transition
+### 4a.4 This packet's own registration-state prose — exact transitions [MAJ-1 fix, red-team round 1]
+
+**Red-team finding, confirmed:** the original version of this subsection covered only §0's opening bold
+STATUS line. Executing that one row verbatim would leave `**STATUS: EXECUTED — REGISTERED…**` sitting directly
+above the UNTOUCHED remainder of the same paragraph ("No `data/` write has occurred… Registration is a
+separate, future act…") and above three more live sites (the H1 title, the `Wave:` line's closing clause, and
+the `Purpose:` line's "PROPOSED — NOT REGISTERED" marking) — producing exactly the defect Sol's ruling 4
+forbids: *"a registered bit nested inside a document that still calls itself candidate/not-declared."* Every
+remaining live registration-state site in THIS packet is now enumerated below, byte-exact.
 
 | Site | Current (A4P.1, unchanged by this wave) | A4-time replacement |
 |---|---|---|
-| §0, opening STATUS line | `**STATUS: PROPOSED — NOT REGISTERED.**` (this document's own first bold line) | `**STATUS: EXECUTED — REGISTERED at A4 (IMCE-03), <A4 registration commit date>.** The three \`rf.cycle_pattern.imce_*\` families are registered per the transitions in §4a.2/§4a.3 above.` |
+| H1 title (line 1) | `# IMCE-A4G / A4P — Proposed A4 Registration Packet` | `# IMCE-A4G / A4P — A4 Registration Packet (EXECUTED, REGISTERED)` |
+| §0 opening paragraph (line 3, full) | `**STATUS: PROPOSED — NOT REGISTERED.** No \`data/\` write has occurred. No \`declared_budget\` row has actually been appended to \`data/trial_ledger.jsonl\`. No \`rf.cycle_pattern.imce_*\` family is registered by this document or by any document in the A4G/A4P wave sequence. Registration is a separate, future act (A4 / IMCE-03), requiring its own wave approval per \`agentos/workstreams/WS-CYCLE-PATTERN-ISSUER-MECHANISM.md\`.` | `**STATUS: EXECUTED — REGISTERED at A4 (IMCE-03), <A4 registration commit date, §4a.1 procedure 3>.** The three \`declared_budget\` rows below have been appended to \`data/trial_ledger.jsonl\` (Act 2, §6). All three \`rf.cycle_pattern.imce_*\` families named in this document are registered. Registration was performed exactly per this section (§4a) and §6's four acts, under Sol's fourth-gate conditional authorization (§6) and \`agentos/workstreams/WS-CYCLE-PATTERN-ISSUER-MECHANISM.md\`'s A4 wave.` |
+| `Wave:` line, closing clause (line 5) | `**This document proposes exact byte-ready row contents; it registers nothing.**` | `**This document proposed exact byte-ready row contents; A4 executed them verbatim — the three families are now registered.**` |
+| `Purpose:` line, marking clause (line 7) | `byte-ready, clearly marked PROPOSED — NOT REGISTERED;` | `byte-ready and executed verbatim, marked EXECUTED — REGISTERED;` |
 
 **After this table executes:** every registration-state field across all three documents (contract MD, YAML,
-and this packet) reads `registered`/`true`/`declared`/`EXECUTED` consistently, `repository_pin_observed` and
-`config_hash` are both non-null, `requires_fable_adjudication` is `false`, and no remaining live prose in any
-document calls a declared-budget row "future," "not yet performed," or "PROPOSED — NOT REGISTERED" —
-satisfying Sol's ruling 4 verbatim: **one state, not a registered bit nested inside a document that still
-calls itself candidate/not-declared.**
+and this packet — including this packet's own title, opening paragraph, `Wave:` line, and `Purpose:` line)
+reads `registered`/`true`/`declared`/`EXECUTED` consistently, `repository_pin_observed` and `config_hash` are
+both non-null, `requires_fable_adjudication` is `false`, and no remaining live prose in ANY of the three
+documents calls a declared-budget row "future," "not yet performed," "proposed," or "PROPOSED — NOT
+REGISTERED" — satisfying Sol's ruling 4 verbatim: **one state, not a registered bit nested inside a document
+that still calls itself candidate/not-declared.** A post-edit registration-state census (contract MD, YAML,
+and this packet together) confirms zero uncovered live sites remain outside this §4a's own transition tables.
 
 ### 4a.5 Cross-reference to the four A4 acts (§6 below)
 
@@ -187,11 +212,12 @@ own review — not inherited from, or required by, this packet.
 this" from "this is already true and A4 merely verifies it," which is how the FDR-writer contradiction (§5,
 M3(a)) crept in. A4 registration, as a discrete act, performs EXACTLY four things — no more:**
 
-**Sol's explicit conditional authorization to start A4 proper, verbatim, recorded here so A4 can cite it
-without a further roundtrip:** *"If—and only if—A4P.1 lands exactly as above with no new substantive
-finding, you do not need another Sol roundtrip to start A4 proper. This message is the explicit conditional
-authorization."* A4 opens under this authorization only if this wave (A4P.1) landed exactly as frozen — any
-new substantive finding discovered while executing A4 reopens the question, it does not waive it.
+**Sol fourth-gate verdict, 2026-08-22 (relayed verbatim in the A4P.1 commissioning instruction) — explicit
+conditional authorization to start A4 proper, recorded here so A4 can cite it without a further roundtrip:**
+*"If—and only if—A4P.1 lands exactly as above with no new substantive finding, you do not need another Sol
+roundtrip to start A4 proper. This message is the explicit conditional authorization."* A4 opens under this
+authorization only if this wave (A4P.1) landed exactly as frozen — any new substantive finding discovered
+while executing A4 reopens the question, it does not waive it.
 
 1. **Observe the current repository pin** — read the exact commit SHA of `origin/main` at the moment of
    registration and record it as the `repository_pin_observed` value (contract §15a; procedure frozen exactly
@@ -200,11 +226,14 @@ new substantive finding discovered while executing A4 reopens the question, it d
    §2–§4 above, `ts` populated at the moment of the actual write, `config_hash` matching the values already
    computed above (not recomputed at registration time — they are a pure function of `(family, n, reason)`,
    already fixed).
-3. **Stamp the final registered contract hash/state** — compute and record `config_hash` (contract §15a; both
-   placeholder procedures frozen exactly in §4a.1 above) over the actually-committed contract content (a
-   different, broader hash than the three row-level `config_hash` values in §2–§4, which cover only
-   `(family, n, reason)` each), and execute every byte-exact old→new pair in §4a.2/§4a.3/§4a.4 above —
-   including `registration.registered: true` in the YAML projection and this packet's own STATUS header.
+3. **Stamp the final registered contract hash/state** — compute and record `config_hash` (contract §15a; all
+   three placeholder procedures frozen exactly in §4a.1 above, including the `<A4 registration commit date>`
+   procedure and the mandatory post-commit hash-verification-or-abort step) over the actually-committed
+   contract content (a different, broader hash than the three row-level `config_hash` values in §2–§4, which
+   cover only `(family, n, reason)` each), and execute every byte-exact old→new pair in §4a.2/§4a.3/§4a.4
+   above — including `registration.registered: true` in the YAML projection and this packet's own STATUS
+   header. **Before pushing, re-verify per §4a.1 procedure 2's verification step** — a mismatch aborts and
+   repairs, it never pushes silently.
 4. **Verify the criteria commit predates any outcome access** — an explicit, checked statement in the
    registration commit message or record that no forward return, drawdown, Brier score, calibration
    statistic, p-value, correlation, or regression was computed on any of the six cells before acts 1–3 above

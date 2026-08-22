@@ -346,7 +346,7 @@ A point estimate without the full conjunction is not a pass.
 
 Before any real run, register:
 
-- exact candidate cells — frozen at **6 historical cells** (§1); [A5] **minted and frozen as exactly these six dotted cell IDs [AP8, M2 binding — presented to Sol for ratification]:**
+- exact candidate cells — frozen at **6 historical cells** (§1); [A5] **minted and frozen as exactly these six dotted cell IDs [AP8, M2 binding; ratified + naming normalized by Sol's fourth gate, A4P.1 R3]:**
 
   | # | Cell ID | Family | Target (§1) |
   |---|---|---|---|
@@ -448,7 +448,7 @@ This contract ends at preregistration design. Do not run it until:
 # 15a. Freeze mechanics [A25]
 
 - **Two-commit discipline:** the criteria commit strictly precedes the runner/outcome commit.
-- **Freezer of record:** Fable / operator (V1); Sol / A4G authorization, 2026-08-21 (V1.1); Sol / A4P authorization, 2026-08-21 (V1.2).
+- **Freezer of record:** Fable / operator (V1); Sol / A4G authorization, 2026-08-21 (V1.1); Sol / A4P authorization, 2026-08-21 (V1.2); Sol / fourth-gate verdict, 2026-08-22 (V1.2.1).
 - **Freeze location:** this document (V1.2.1) plus future trial-ledger `declared_budget` rows — IMCE-03 / A4 work, proposed-not-registered in `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md`, not yet performed as an actual registration act. The deterministic `order_softness` construction is frozen normatively in `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md` [AP1].
 - **Repository pin:** re-pinned at registration, a future act. No commit SHA in this document or its YAML projection is asserted as "registered" today.
 - **`config_hash`:** recorded at registration.
@@ -545,7 +545,7 @@ Traceability map from each of Sol's 7 A4P.1 rulings (fourth-gate REQUEST_CHANGES
 
 | Ruling | Ruling (short) | Section(s) touched |
 |---|---|---|
-| R1 | Retire the stale DEFF `n_effective_blocks` denomination from the coverage/abstention claim class; census every registration-relevant artifact for other live DEFF/ρ prose; annotate the hb0 lane-2 recommendations as superseded | §0a; YAML `prospective_accrual_first_posture.claim_classes[coverage_abstention_claims].denomination`; `IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md`, `IMCE_HB0_INDEPENDENT_BLOCK_LIST.md`, `IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` (annotation-only) |
+| R1 | Retire the stale DEFF `n_effective_blocks` denomination from the coverage/abstention claim class; census every registration-relevant artifact for other live DEFF/ρ prose; annotate the hb0 lane-2 recommendations as superseded | **No contract-MD section touched** — §0a's own coverage/abstention-claims bullet already cited the AG3 cap correctly (byte-unchanged by R1, corrected in the red-team round — MIN-4); the live defect was YAML-only. Touched instead: YAML `prospective_accrual_first_posture.claim_classes[coverage_abstention_claims].denomination`, YAML `predetermined_historical_status.label_assignment` (census completion, red-team round); `IMCE_HB0_BLOCKERS_AND_FALSIFIERS.md`, `IMCE_HB0_INDEPENDENT_BLOCK_LIST.md`, `IMCE_HB0_A4_CELL_BUDGET_INPUTS.md` (annotation-only) |
 | R2 | Freeze population and label semantics: historical v0 population permanently `named_subset_basis: [PHM, KBH]`; prospective v0 eligible pooled cohort `[DHI, PHM, KBH, TOL]`; three-row label truth table; reword misleading "pooled homebuilder stratum" prose | §1, §2 Homebuilders; YAML `state_vector_observability_scoping.order_softness`; `IMCE_A4G_SIX_CELL_DISPOSITION.md`; `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md`; `IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md` §3.1 label-semantics wording; `IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` (annotation-only) |
 | R3 | Ratify the six frozen cell IDs; normalize the sync family's target nomenclature to `forward_63_trading_day_drawdown_tail` everywhere it identifies the actual target/cell | §1, §11, §11 table; YAML `trials[].cell_definition`/`.cell_ids`, `six_cell_ids_union`; `IMCE_A4G_SIX_CELL_DISPOSITION.md`; `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md`; `IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md` (annotation-only) |
 | R4 | Freeze the complete A4 registration state-transition — every registration-state site enumerated with byte-exact old→new text; both placeholder procedures (`repository_pin_observed`, `config_hash`) frozen deterministically; A4P.1 performs none of the flips | `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md` (new §"A4 STATE TRANSITION (frozen, verbatim-or-abort)") — no change to this contract's or the YAML's live status fields, which stay `candidate_not_registered` until A4 itself executes |

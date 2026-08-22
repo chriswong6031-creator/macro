@@ -210,8 +210,11 @@ waves:
     pr: 6237
     depends_on: [A4P]
     next_action: >
-      Records complete. DRAFT PR #6237 opened (head 14ed224c4929,
-      branch claude/imce-a4p1-records) — NOT marked ready, NOT armed
+      Records complete, red-team round 1 (MAJ-1 + 7 minors + 2 nits) applied.
+      Durable identifier: DRAFT PR #6237, branch claude/imce-a4p1-records
+      (a recorded head SHA necessarily predates the PR's own final commit —
+      the PR number + branch is the identifier that stays live; check
+      `gh pr view 6237` for the current head) — NOT marked ready, NOT armed
       merge-on-green. The commissioning session reviews and lands it.
       All seven Sol rulings (R1-R7) implemented: R1 retires the stale
       effective_blocks_under_independent_shock_law_with_deff YAML denomination
@@ -223,17 +226,23 @@ waves:
       cohort [DHI, PHM, KBH, TOL]) under a three-row label truth table,
       closing AP8's own open F2(d) escalation, and rewords every live
       "pooled homebuilder stratum" occurrence; R3 ratifies the six minted
-      cell IDs and normalizes the sync family's market-risk cell to
-      forward_63_trading_day_drawdown_tail everywhere it identifies the
-      actual target/cell; R4 adds a new packet section (§4a) freezing the
-      complete A4 registration state-transition byte-exact, verbatim-or-abort,
-      with both placeholder procedures (repository_pin_observed via git
-      rev-parse origin/main; config_hash via git hash-object on the
-      as-stamped-registered contract MD) frozen deterministically — A4P.1
-      itself performs none of the flips, every registration-state field
-      stays candidate_not_registered/not_declared; R5 settles Treasury CMT's
+      cell IDs (all four remaining "presented to Sol for ratification" sites
+      updated, red-team round 1) and normalizes the sync family's
+      market-risk cell to forward_63_trading_day_drawdown_tail everywhere it
+      identifies the actual target/cell; R4 adds a new packet section (§4a)
+      freezing the complete A4 registration state-transition byte-exact,
+      verbatim-or-abort, covering the contract MD, YAML, AND (after
+      red-team MAJ-1 fix) the packet's own title/opening paragraph/
+      Wave-line/Purpose-line, with three placeholder procedures
+      (repository_pin_observed via git rev-parse origin/main; config_hash
+      via git hash-object on the as-stamped-registered contract MD plus a
+      mandatory post-commit verify-or-abort step; the A4 commit date via
+      date -u +%F) frozen deterministically — A4P.1 itself performs none of
+      the flips, every registration-state field stays
+      candidate_not_registered/not_declared; R5 settles Treasury CMT's
       storage/reuse disposition GO_LIMITED with Sol's exact scope+basis
-      quoted verbatim, closing the prior wave's escalation item 5 (PMMS/FRED/
+      quoted verbatim (quote completed in the boundary table, red-team
+      round 1), closing the prior wave's escalation item 5 (PMMS/FRED/
       ALFRED/NAR unchanged); R6 keeps boundary receipts honestly open
       (month_boundaries_receipt_status unchanged) with the two lawful
       post-registration dispositions named, including the literal token

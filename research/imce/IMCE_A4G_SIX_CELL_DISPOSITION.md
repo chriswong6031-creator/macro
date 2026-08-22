@@ -16,7 +16,7 @@ Per contract §1 (A5/A6, unamended by A4G): **6 historical cells**, one BH-FDR p
 | `rf.cycle_pattern.imce_sync_v0` | 2 | targets {`next_local_state_1rp`, `forward_63_trading_day_drawdown_tail`} × contrast [M+R vs M] **[A4P.1 R3]**, was `forward_63d_drawdown_tail` |
 | `rf.cycle_pattern.imce_risk_v0` | 1 | `forward_63_trading_day_drawdown_tail` × [M vs family/stratum prior] |
 
-**Six cell IDs — minted and frozen [AP8, M2, A4P binding; presented to Sol for ratification], the canonical
+**Six cell IDs — minted and frozen [AP8, M2, A4P binding; ratified + naming normalized by Sol's fourth gate, A4P.1 R3], the canonical
 source is contract §11 and YAML `six_cell_ids_union`; this table uses them, it does not itself define them:**
 
 | Cell | ID |

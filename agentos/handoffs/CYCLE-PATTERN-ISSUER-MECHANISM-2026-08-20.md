@@ -273,10 +273,12 @@ Sol accepted A4P's architecture (amendments AP1-AP8 are FINAL, never reopened or
 returned bounded REQUEST_CHANGES: seven rulings (R1-R7) closing every field A4 proper would
 otherwise have had to invent, interpret, or choose. This build-worker packet implements all seven
 as records-only edits to research/imce/* + agentos/*, on branch claude/imce-a4p1-records, DRAFT PR
-#6237 (head 14ed224c4929), NOT marked ready, NOT armed merge-on-green, pending the commissioning
-session's review and merge. This addendum records the state at the point the DRAFT PR opened; the
-head SHA above will shift by one commit once this addendum + the WS wave entry's own PR-number
-back-fill land (self-referential — the same defect every prior gate's addendum also carries).
+#6237, NOT marked ready, NOT armed merge-on-green, pending the commissioning session's review and
+merge. **Durable identifier: PR #6237 / branch claude/imce-a4p1-records, not a head SHA** — any head
+SHA recorded in this file necessarily predates the PR's own next commit (this addendum's own edit is
+itself proof: it landed after a red-team round that added commits past the SHA this file first
+recorded), so `gh pr view 6237 --json headRefOid` is the live source, this file is a provenance
+snapshot only.
 
 - **R1** — retires the stale `effective_blocks_under_independent_shock_law_with_deff` YAML
   denomination (DEFF struck three gates ago at AG3); census confirms this was the ONLY live
@@ -298,12 +300,15 @@ back-fill land (self-referential — the same defect every prior gate's addendum
 - **R4** — adds a new packet section (§4a "A4 STATE TRANSITION, frozen verbatim-or-abort")
   enumerating every registration-state site (YAML `status`, `registration.*`,
   `requires_fable_adjudication`, all three `trials[].status`; contract MD's Status header and §15a
-  freeze-location/repository-pin prose; the packet's own STATUS header) with byte-exact old->new
-  pairs; both placeholder procedures (`repository_pin_observed` via `git rev-parse origin/main`
-  before any A4 edit; `config_hash` via `git hash-object` on the as-stamped-registered contract MD,
-  after the MD edits and before the YAML write) are frozen deterministically. **A4P.1 itself
-  performs NONE of these flips** — every registration-state field is byte-identical to its
-  pre-A4P.1 value; only the version/gate header and the R1/R2/R3/R5/R6 substantive fields changed.
+  freeze-location/repository-pin prose; and — after red-team round 1's MAJ-1 fix — the packet's own
+  H1 title, full opening paragraph, `Wave:` line, and `Purpose:` line, not merely its bold STATUS
+  sentence) with byte-exact old->new pairs; three placeholder procedures (`repository_pin_observed`
+  via `git rev-parse origin/main` before any A4 edit; `config_hash` via `git hash-object` on the
+  as-stamped-registered contract MD, after the MD edits and before the YAML write, plus a mandatory
+  post-commit verify-or-abort step; the `<A4 registration commit date>` via `date -u +%F`) are
+  frozen deterministically. **A4P.1 itself performs NONE of these flips** — every registration-state
+  field is byte-identical to its pre-A4P.1 value; only the version/gate header and the
+  R1/R2/R3/R5/R6 substantive fields changed.
 - **R5** — settles Treasury CMT's storage/reuse disposition as `GO_LIMITED`, Sol's exact
   scope+basis quoted verbatim and attributed, closing the prior wave's escalation item 5. PMMS
   stays HELD, FRED/ALFRED stay excluded, NAR storage stays prohibited — all three UNCHANGED.

@@ -107,7 +107,7 @@ trials:                                        # [A5][A6]
       - next_local_state_1_reporting_period
       - next_local_state_3_reporting_periods
       - false_repair_3_reporting_periods
-    cell_ids:                                              # [AP8, M2] minted/frozen; presented to Sol for ratification
+    cell_ids:                                              # [AP8, M2] minted/frozen; [A4P.1 R3] ratified + naming normalized by Sol's fourth gate
       - imce_phase_v0.next_order_softness_1rp
       - imce_phase_v0.next_order_softness_3rp
       - imce_phase_v0.order_softness_false_repair_3rp
@@ -125,7 +125,7 @@ trials:                                        # [A5][A6]
     cell_budget: 1
     cell_definition: forward_63_trading_day_drawdown_tail x [M vs family/stratum prior]  # [A4P.1 R3] was forward_63d_drawdown_tail
     target: forward_63_trading_day_drawdown_tail
-    cell_ids:                                              # [AP8, M2] minted/frozen; presented to Sol for ratification
+    cell_ids:                                              # [AP8, M2] minted/frozen; [A4P.1 R3] ratified + naming normalized by Sol's fourth gate
       - imce_risk_v0.forward_63_trading_day_drawdown_tail
 
 historical_cell_budget_total: 6                # [A5]
@@ -375,7 +375,7 @@ predetermined_historical_status:               # [A2][A3]
   status_labels:
     - promoted_null
     - underpowered_accruing
-  label_assignment: mechanical_by_preregistered_n_eff_vs_floor_computed_pre_outcome_never_post_hoc
+  label_assignment: mechanical_by_preregistered_n_effective_blocks_vs_floor_computed_pre_outcome_never_post_hoc  # [A4P.1 R1] was ..._n_eff_vs_floor... — bare n_eff was the struck DEFF estimator's own variable name
   all_6_historical_cells_prelabeled: underpowered_accruing
   requeue_pointer_semantics: per_house_research_factory_runbook
   sub_floor_nominal_pass:
@@ -471,7 +471,7 @@ homebuilders:                                  # [A1][A17][A18][G8-B4][G8-M2][G8
         future_dhi_tol_archaeology_may_support: v1_only               # descriptive evidence only pre-registration; never widens v0
       prospective_v0_eligible_pooled_cohort: [DHI, PHM, KBH, TOL]       # [A4P.1 R2] eligible once current-format disclosures are receipted; not the historical population
       label_truth_table:                                               # [A4P.1 R2] Sol verbatim rule, 2026-08-22
-        - reconstructable_contributors: 4
+        - reconstructable_contributors: [4]
           label: cohort
         - reconstructable_contributors: [2, 3]
           label: named_subset_plus_exact_contributor_list
