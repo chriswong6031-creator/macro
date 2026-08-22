@@ -48,9 +48,10 @@ decisions:
   - DEC:FIF-1-V1-FROZEN
 next_action: >
   FIF-1 is DONE / FROZEN. FIF-2A is ACCEPTED / FIXTURE_PROVEN / ON_MAIN
-  (PR #5983). FIF-2 remains IN_PROGRESS. FIF-2B is BUILT_NOT_ACCEPTED
-  pending Sol (PR #6157, Sol-review corrections). FIF-2C is NOT_STARTED.
-  Do not reopen A–D. Do not claim production issuer revision coverage.
+  (PR #5983). FIF-2 remains IN_PROGRESS. FIF-2B is ACCEPTED /
+  FIXTURE_PROVEN / ON_MAIN (accepted head 55663277a32c, merge
+  56d1a36caa43, PR #6157). FIF-2C is UNLOCKED / NOT_STARTED. Do not
+  reopen FIF-2A A–D or FIF-2B. Do not claim production issuer coverage.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -72,14 +73,17 @@ landmines:
   - >
     Removing merge-on-green does not disable GitHub native auto-merge.
     See DSC:PR-HOLD-REQUIRES-NATIVE-AUTOMERGE-DISARM. Even both disarmed plus
-    PR-body prose is not fail-closed; see DSC:REVIEW-HOLD-PROSE-IS-NOT-FAIL-CLOSED.
+    PR-body prose is not fail-closed; see DSC:REVIEW-HOLD-PROSE-IS-NOT-FAIL-CLOSED
+    (additional evidence: PR #6157 merged 2026-08-21T16:08:36Z while HOLD FOR SOL
+    remained in the body and comments).
 do_not_redo:
   - Do not create a second semantic model, query kernel, or metric registry.
   - Do not fetch SEC data, write R2, add an API, page, detector, peer engine, LLM, or score in FIF-1.
   - Do not debug or replace the attested-history Wave 0B credential path.
   - Do not reopen frozen financial_intelligence_packet.v1 semantics; FIF-1 is DONE (DEC:FIF-1-V1-FROZEN).
   - FIF-2A is ACCEPTED / FIXTURE_PROVEN; do not reopen A–D or add FIF-2A hardening.
-  - FIF-2B is BUILT_NOT_ACCEPTED; do not start statements/trace/packet-read/bulk/FIF-2C from this PR.
+  - FIF-2B is ACCEPTED / FIXTURE_PROVEN; do not reopen revision projection, packet identity, or add FIF-2B hardening.
+  - FIF-2C is UNLOCKED / NOT_STARTED; do not implement statements/trace/packet-read/bulk in a records PR.
   - Do not claim production issuer coverage; FIF-2A/FIF-2B are fixture-proven against FIP1. FIF-3 wires admitted issuer packages.
   - Do not manufacture a filing-authority fixture by flipping dimensions_known or injecting revision_of onto Company Facts rows.
   - Do not put filesystem, schema, or digest discovery inside assemble_financial_intelligence_packet.
@@ -106,11 +110,13 @@ waves:
     title: Read-only financial query API
     status: in_progress
     depends_on: [FIF-1]
-    pr: 5983
+    pr: [5983, 6157]
     next_action: >
-      FIF-2A ACCEPTED / FIXTURE_PROVEN / ON_MAIN via PR #5983. FIF-2B is
-      BUILT_NOT_ACCEPTED. FIF-2C is NOT_STARTED. Production issuer coverage
-      is FIF-3; default packet provider remains unavailable/503.
+      FIF-2A ACCEPTED / FIXTURE_PROVEN / ON_MAIN via PR #5983. FIF-2B
+      ACCEPTED / FIXTURE_PROVEN / ON_MAIN via PR #6157 (accepted head
+      55663277a32c, merge 56d1a36caa43). FIF-2C is UNLOCKED / NOT_STARTED.
+      Production issuer coverage is FIF-3; default packet provider remains
+      unavailable/503.
   - id: FIF-3
     title: Golden five-issuer vertical slice
     status: todo
@@ -181,6 +187,18 @@ head `1b7a65be23bc683706eb660c92f8fc26e81cc80e` as PASS /
 ACCEPTED_FOR_LANDING. A–D (mixed duration+instant, cutoff-governed
 unsupported metric, bounded streaming ingress, fail-closed
 canonical→source binding) are accepted. FIF-2A is ACCEPTED /
-FIXTURE_PROVEN / ON_MAIN via PR #5983. FIF-2B is UNLOCKED / NOT_STARTED.
-Do not create FIF-1R4. Do not reopen accepted packet semantics. Do not
-claim production issuer query coverage.
+FIXTURE_PROVEN / ON_MAIN via PR #5983. FIF-2B is the authenticated HTTP
+adapter over the frozen packet revision plane
+(`POST /api/forensics/v1/financial/revisions`). Sol source-reviewed
+amended head `55663277a32c12251dbeb80945d0abcf36570b58` as PASS /
+ACCEPTED. GitHub squash-merged PR #6157 as
+`56d1a36caa43ca2a8ea4570808edca75ca2fc334` on 2026-08-21T16:08:36Z
+while the explicit Sol hold was still in force; the accepted product
+was not reverted. Canonical packet identity is bound; arbitrary
+synthetic fixtures cannot claim committed FIP1 receipts; packet request
+validation precedes provider opening; B-visible/C-hidden and delayed-
+mapping PIT laws are proven; #5983 hashes remain unchanged. Production
+default provider remains unavailable/503. FIF-2B is ACCEPTED /
+FIXTURE_PROVEN / ON_MAIN. FIF-2C is UNLOCKED / NOT_STARTED. Do not
+create FIF-1R4. Do not reopen accepted packet or revision semantics.
+Do not claim production issuer coverage; that remains FIF-3.
