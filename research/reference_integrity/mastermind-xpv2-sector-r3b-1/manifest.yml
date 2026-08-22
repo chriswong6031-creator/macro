@@ -1,0 +1,65 @@
+# RIG artifact manifest (RIG V1 S3) -- XPV2-SC-R3B.1, US Sector Central six-view workspace,
+# SURGICAL CORRECTION cycle over the REVISE'd mastermind-xpv2-sector-r3b reference.
+# Commission: COMMISSION.md in this directory (Sol, 2026-08-22). The R3B product architecture,
+# information hierarchy and visual grammar are FROZEN (commission do-not-reopen list); this
+# cycle fixes exactly the R3B1-01..14 packet the four fresh critics proved defective.
+# The build tree started as a byte-identical copy of the frozen R3B build (untouched copy
+# rebuilt to the same candidate sha256 19553267d3f51659503fc836da6b6bdaa06afc9cdd607aafb1bb
+# 795e46c47dca before any fix landed).
+schema: mastermind.rig_manifest.v1
+reference_id: mastermind-xpv2-sector-r3b-1
+scope: full
+status: draft
+# The orchestrator flips status: draft -> in_review at successor freeze, once
+# proposed_artifact.frozen_sha in proposal.yml and reference_files[].frozen_sha below are the
+# real 40-hex successor commit SHA and the fresh evidence matrix lands (commission
+# "Evidence at successor freeze" + "Stop condition").
+
+surface:
+  route: sector_central.html
+  registry_row: "macro:sector_central"
+  archetype: intelligence_desk
+
+author:
+  identity: "XPV2-SC-R3B.1 surgical correction -- returning R3B Fable orchestrator with delegated Opus design + Sonnet build/QA lanes (COMMISSION.md, Sol-issued 2026-08-22)"
+  role: designer
+
+lineage:
+  predecessors:
+    - mastermind-xpv2-turn3-r2
+    - mastermind-xpv2-sector-r3b
+  # Ordered oldest -> nearest (RIG S13); the closure obligation runs against the NEAREST,
+  # mastermind-xpv2-sector-r3b, whose verdict.yml (Sol REVISE, 2026-08-22) mints 14
+  # upheld_revise findings + 14 R3B1-* conditions = 28 open items this cycle's continuity.yml
+  # closes. The R3A substrate (mastermind-xpv2-sector-r3) remains authority substrate, not a
+  # RIG predecessor (no manifest.yml), unchanged from the R3B ruling.
+
+reference_files:            # the successor reference artifact -- PLANNED paths, not yet frozen.
+  # PENDING_FREEZE_* placeholders are replaced with the real 40-hex commit SHA in the same
+  # edit that flips status: draft -> in_review (same convention as the predecessor manifest;
+  # frozen_sha is only byte-compared against review receipts under GROUP_REVIEW, which never
+  # arms at draft/in_review).
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+    frozen_sha: "PENDING_FREEZE_R3B1_CANDIDATE"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/proposal/BUILD_MANIFEST.json
+    frozen_sha: "PENDING_FREEZE_R3B1_CANDIDATE"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/
+    frozen_sha: "PENDING_FREEZE_R3B1_CANDIDATE"
+    note: "source directory -- byte-identical copy of the frozen R3B build at cycle start; lanes A (authority hero repair), B (accessibility/token repair), C (verification hardening) modify ONLY what an R3B1-* item requires"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/evidence/
+    frozen_sha: "PENDING_FREEZE_R3B1_CANDIDATE"
+    note: "fresh evidence matrix per commission 'Evidence at successor freeze' -- predecessor screenshots are stale for approval once the SHA changes; lands with the frozen successor"
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  continuity: continuity.yml
+  # reviews/: the FOUR NEW fresh critic seats Sol fans out after the successor freeze
+  # (commission "Final review" -- current critics may verify fixes during the build but may
+  # not be the final approval seats). Never authored by this cycle.
+  # verdict/approval: Sol's, post-critics. Never authored by this cycle (commission "Do not
+  # issue approval, self-verdict").
+
+# lightweight: not applicable -- scope: full (the successor carries the full six-view
+# workspace reference forward; the correction is surgical but the artifact is whole).
+# superseded: not applicable -- status: draft, no successor exists.

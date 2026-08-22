@@ -1,0 +1,198 @@
+# CARRIED FORWARD from mastermind-xpv2-sector-r3b for the R3B.1 surgical cycle -- the
+# production baseline facts and capability inventory are unchanged (same R3A ledger, same
+# frozen fixture epoch 4c55fe433490adfd75fd901ef25f5793db2202db). Predecessor evidence
+# paths under mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/ remain valid
+# committed bytes and are cited as-is; only reference_id is re-stamped. Rows touched by
+# the R3B1-01..14 fix packet get updated proposal/evidence text at successor freeze.
+# Proposal ledger (RIG V1 S5-S6) -- dispositions, task matrix, authority delta, info-economics.
+# XPV2-SC-R3B. Every baseline.yml capability id (SC-001..SC-092) appears exactly once below --
+# 90 RETAIN + 2 BLOCKED_DATA, matching the R3A capability_disposition_ledger.md disposition
+# summary exactly (research/reference_integrity/mastermind-xpv2-sector-r3/
+# capability_disposition_ledger.md:155-159). No IMPROVE/RELOCATE/REMOVE is used anywhere in this
+# wave, per ADJUDICATIONS.md and COMMISSION.md S20/S2: "R3A is authority substrate ... any
+# candidate for [IMPROVE/RELOCATE/REMOVE] requires a new ruling first -- no implicit deletion."
+#
+# proposed_artifact.frozen_sha is PENDING: this file is drafted BEFORE the R3B candidate exists
+# (COMMISSION.md S19 "Create a reference-only interactive artifact" is the design lanes' later
+# deliverable, not this drafting pass's). The checker (scripts/check_reference_integrity.py) has
+# no format/regex validation on frozen_sha -- it is compared byte-for-byte against each review
+# receipt's artifact_sha only under GROUP_REVIEW, which is armed at status revise/rejected/
+# approved, never at draft/in_review (STATUS_GROUPS). A placeholder is therefore schema-legal at
+# draft and is explicitly named as a GAP (see RETURN GAPS) rather than a fabricated hash.
+schema: mastermind.rig_proposal.v1
+reference_id: mastermind-xpv2-sector-r3b-1
+
+proposed_artifact:
+  frozen_sha: "dc84f78cddf04d9be90e9249126f9767de5725a6"   # replace with the real 40-hex commit SHA at freeze (RIG S3); nothing downstream may bind to this value before then
+  paths:
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/proposal/BUILD_MANIFEST.json
+  screenshots:   # frozen-candidate evidence matrix (62 files); index: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/EVIDENCE_INDEX.md
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/overview-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/map-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/moving-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/money-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/explore-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/evidence/confluence-1440-dark-en.png
+
+# EVERY baseline capability id appears exactly once. No implicit deletion (RIG S1/S5).
+dispositions:
+  # -- Overview (COMMISSION.md S8) --
+  - {id: SC-001, disposition: RETAIN, target: "candidate Overview -- five rendered action-lane columns from the six producer keys, unchanged fold rule (hold+avoid -> Stand aside), COMMISSION.md S8"}
+  - {id: SC-002, disposition: RETAIN, target: "candidate Overview -- exact EN/ZH lane labels+subcopy carried verbatim into the new visual language, COMMISSION.md S8 'Do not change vocabulary for design convenience'"}
+  - {id: SC-003, disposition: RETAIN, target: "candidate Overview -- lane header counts still computed off the full board, ungated, COMMISSION.md S8"}
+  - {id: SC-004, disposition: RETAIN, target: "candidate Overview -- theme-then-sector row merge order preserved inside each redesigned lane"}
+  - {id: SC-005, disposition: RETAIN, target: "candidate Overview -- buy_soon sub-list keeps days-ascending sort"}
+  - {id: SC-006, disposition: RETAIN, target: "candidate Overview -- theme row score + perf_20d_rel numeric fields retained on the redesigned row"}
+  - {id: SC-007, disposition: RETAIN, target: "candidate Overview -- sector row qualitative stat_en/stat_zh chip retained, no invented blended score"}
+  - {id: SC-008, disposition: RETAIN, target: "candidate Overview -- per-sector conviction score retained as a distinct field from the action board"}
+  - {id: SC-009, disposition: RETAIN, target: "candidate Overview -- sector row destination unchanged (sectors/<TICKER>.html via override table)"}
+  - {id: SC-010, disposition: RETAIN, target: "candidate Overview -- theme row destination unchanged (basket/<id>.html)"}
+  - {id: SC-011, disposition: RETAIN, target: "candidate Overview -- Bottoming Watch row destination consumed verbatim from producer"}
+  - {id: SC-012, disposition: RETAIN, target: "candidate Overview -- '+N more' same-page anchor to #actnow-section retained on every lane"}
+  - {id: SC-013, disposition: RETAIN, target: "candidate Overview -- lane-foot 'Drill to stocks' in-page switch to Confluence retained"}
+  - {id: SC-014, disposition: RETAIN, target: "candidate Overview -- premium gate switch + preview/locked split rendered exactly, COMMISSION.md S15"}
+  - {id: SC-015, disposition: RETAIN, target: "candidate Overview -- split still computed twice from the identical source list (payload + shell)"}
+  - {id: SC-016, disposition: RETAIN, target: "candidate Overview -- premiumdata/sector_central.json / tier_payload.v1 consumption unchanged"}
+  - {id: SC-017, disposition: RETAIN, target: "candidate Overview -- sector_central.json payload isolation from us_stocks.json preserved (no shared-file write path introduced)"}
+  - {id: SC-018, disposition: RETAIN, target: "candidate Overview -- /premiumdata/ URL-level enforcement unchanged (reference consumes the same fixture-bound gate, no client-side gate reimplementation)"}
+  - {id: SC-019, disposition: RETAIN, target: "candidate Overview -- authenticated hydration flow (fetch/hydrate/restoreFold/disclosure removal) reproduced against the frozen fixture, COMMISSION.md S15 evidence matrix"}
+  - {id: SC-020, disposition: RETAIN, target: "candidate Overview -- si-read-overview summary strip retained, display-tier only"}
+  - {id: SC-021, disposition: RETAIN, target: "candidate Overview -- Bottoming Watch display-tier/watch-only contract preserved, signal/timing_state fields still never rendered, COMMISSION.md S8"}
+  - {id: SC-022, disposition: RETAIN, target: "candidate Overview -- Bottoming Watch exact EN/ZH wording (title/subcopy/chips/empty-state/null disclosure) carried verbatim"}
+  - {id: SC-023, disposition: RETAIN, target: "candidate Overview -- Bottoming Watch stays a full-width strip under the five lanes, never a sixth lane, COMMISSION.md S8"}
+  - {id: SC-024, disposition: RETAIN, target: "candidate Overview -- leadership-context hero (handoff/What changed) retained as an independent read from the action board, COMMISSION.md S7.3 dual-read pattern"}
+  - {id: SC-025, disposition: RETAIN, target: "candidate Overview -- generic hero fallback retained when si_handoff.json is absent/corrupt"}
+  - {id: SC-026, disposition: RETAIN, target: "candidate Overview -- structural separation between hero leadership text and action-board lane placement preserved, COMMISSION.md S7.3 'no arrows, shared color, or prose that implies... caused an action state'"}
+  - {id: SC-027, disposition: RETAIN, target: "candidate Overview -- absolute-clock stale guard retained (known fail-open defect not repaired this wave, per ledger note)"}
+  - {id: SC-028, disposition: RETAIN, target: "candidate Overview -- zero-vs-missing distinction preserved in every redesigned null-guard path"}
+  - {id: SC-029, disposition: RETAIN, target: "candidate Overview -- per-lane genuine-empty-state copy preserved"}
+  - {id: SC-030, disposition: RETAIN, target: "candidate Overview -- independent fail-soft degrade per secondary source preserved"}
+  - {id: SC-031, disposition: RETAIN, target: "candidate Overview -- single fixed fetch-fail/malformed-JSON failure string preserved"}
+  - {id: SC-032, disposition: RETAIN, target: "candidate Overview -- 401/403/offline no-op-to-baked-preview contract preserved, COMMISSION.md S15"}
+  - {id: SC-033, disposition: RETAIN, target: "candidate Overview -- long-name abbreviation table + ellipsis fallback preserved"}
+  - {id: SC-034, disposition: RETAIN, target: "candidate Overview -- fold/show-more 3-row threshold and restoreFold() parity preserved"}
+  - {id: SC-035, disposition: RETAIN, target: "candidate Overview -- self-grader/Track Record retained, DOM home stays Overview, nightly-sole-advancer contract unchanged"}
+
+  # -- The Map (COMMISSION.md S9) --
+  - {id: SC-036, disposition: RETAIN, target: "candidate Map -- quadrant scatter remains the dominant desktop object, context-labeled, no gated call, COMMISSION.md S9"}
+  - {id: SC-037, disposition: RETAIN, target: "candidate Map -- accessible text/table equivalent retained and required at mobile per COMMISSION.md S9 'Accessible equivalent -- mandatory'"}
+  - {id: SC-038, disposition: RETAIN, target: "candidate Map -- linked-board reco tags retained beneath the context disclaimer, NOT amplified/enlarged/made a primary CTA, COMMISSION.md S9 'Known reco conflict'"}
+  - {id: SC-039, disposition: RETAIN, target: "candidate Map -- sector-cycle clock chart retained; new accessible text equivalent added per design brief requirement"}
+  - {id: SC-040, disposition: RETAIN, target: "candidate Map -- one-gated-read-per-sector board retained for all 11 GICS SPDRs"}
+  - {id: SC-041, disposition: RETAIN, target: "candidate Map -- si-read-map strip retained"}
+  - {id: SC-042, disposition: RETAIN, target: "candidate Map -- context disclaimer copy retained verbatim beneath the reco tags"}
+
+  # -- What's Moving (COMMISSION.md S10) --
+  - {id: SC-043, disposition: RETAIN, target: "candidate Moving -- si-read-moving strip retained"}
+  - {id: SC-044, disposition: RETAIN, target: "candidate Moving -- rotation-events/flow-lane board retained"}
+  - {id: SC-045, disposition: RETAIN, target: "candidate Moving -- whole-market rotation map + text accessible equivalents retained"}
+  - {id: SC-046, disposition: RETAIN, target: "candidate Moving -- desk-watch panel retained, display-only, quiet-tape sentence preserved"}
+  - {id: SC-047, disposition: RETAIN, target: "candidate Moving -- five-artifact binding preserved exactly (rotation_events/sector_fragmentation/subsector_rotation/oracle_turn_desk/oracle_tape_onset), COMMISSION.md S10 'Do not invent a leadership narrative from other payloads'"}
+
+  # -- Money & Breadth (COMMISSION.md S11) --
+  - {id: SC-048, disposition: RETAIN, target: "candidate Money -- si-read-money regime strip retained"}
+  - {id: SC-049, disposition: RETAIN, target: "candidate Money -- flow-regime verdict card + supporting chips retained, not fused into a new health/action score, COMMISSION.md S11"}
+  - {id: SC-050, disposition: RETAIN, target: "candidate Money -- market breadth gcards retained with per-field null guards"}
+  - {id: SC-051, disposition: RETAIN, target: "candidate Money -- sector-ETF flow board table retained, section omitted (not placeholdered) when flows_html is None"}
+  - {id: SC-052, disposition: RETAIN, target: "candidate Money -- market-heat treemap + accessible table/text equivalent retained, COMMISSION.md S11 'Accessible equivalent -- mandatory'"}
+  - {id: SC-053, disposition: RETAIN, target: "candidate Money -- index-leadership strip with self-graded sub-line retained"}
+
+  # -- Explore (COMMISSION.md S12) --
+  - {id: SC-054, disposition: RETAIN, target: "candidate Explore -- client-side filter/sort controls with localStorage persistence retained end-to-end, COMMISSION.md S12"}
+  - {id: SC-055, disposition: RETAIN, target: "candidate Explore -- full basket comparison table retained with every documented column"}
+  - {id: SC-056, disposition: RETAIN, target: "candidate Explore -- default 20d-descending sort, top-8/bottom-8 + Show all retained"}
+  - {id: SC-057, disposition: RETAIN, target: "candidate Explore -- selected performance chart retained; table/aria-label accessible fallback ADDED per design brief requirement, COMMISSION.md S17 chart accessibility"}
+  - {id: SC-058, disposition: RETAIN, target: "candidate Explore -- Time Machine retained end-to-end"}
+  - {id: SC-059, disposition: RETAIN, target: "candidate Explore -- Forming Narratives deterministic score + 5-leg breakdown retained"}
+  - {id: SC-060, disposition: RETAIN, target: "candidate Explore -- ai_watch field retained, visibly labeled 'Model analysis' + approved ZH twin, COMMISSION.md S12"}
+  - {id: SC-061, disposition: RETAIN, target: "candidate Explore -- Forming Narratives standing caveat text retained"}
+  - {id: SC-062, disposition: RETAIN, target: "candidate Explore -- falsifier-register read-time label rewrite retained (operator ruling #3821)"}
+
+  # -- Confluence (COMMISSION.md S13) --
+  - {id: SC-063, disposition: RETAIN, target: "candidate Confluence -- four independent universe artifacts through one shared render engine, no client-side mixing, COMMISSION.md S13 Active-universe law"}
+  - {id: SC-064, disposition: RETAIN, target: "candidate Confluence -- universe order S&P/Nasdaq/Russell/Baskets preserved, COMMISSION.md S13 Universe order"}
+  - {id: SC-065, disposition: RETAIN, target: "candidate Confluence -- S&P thin-but-listed wording retained (known semantic-inaccuracy defect not repaired this wave)"}
+  - {id: SC-067, disposition: RETAIN, target: "candidate Confluence -- Nasdaq/Russell thin-but-listed wording retained via the same shared code path as S&P"}
+  - {id: SC-068, disposition: RETAIN, target: "candidate Confluence -- 9-state EN/ZH regime vocabulary retained across all four universes, COMMISSION.md S13 'Use canonical producer vocabulary... do not replace it with R2 synonyms'"}
+  - {id: SC-069, disposition: RETAIN, target: "candidate Confluence -- coarse class/ribbon buckets retained, forming still folds into Neutral"}
+  - {id: SC-070, disposition: RETAIN, target: "candidate Confluence -- S&P row identity + producer sort order retained"}
+  - {id: SC-071, disposition: RETAIN, target: "candidate Confluence -- full-table client-side re-sort retained"}
+  - {id: SC-072, disposition: RETAIN, target: "candidate Confluence -- basket_id + b- prefix disambiguation retained"}
+  - {id: SC-073, disposition: RETAIN, target: "candidate Confluence -- Nasdaq/Russell amalgamation rows retained"}
+  - {id: SC-074, disposition: RETAIN, target: "candidate Confluence -- per-universe group detail pages retained, COMMISSION.md S13 'Preserve group detail, member stocks, stock detail'"}
+  - {id: SC-075, disposition: RETAIN, target: "candidate Confluence -- members-listing sort retained"}
+  - {id: SC-076, disposition: RETAIN, target: "candidate Confluence -- uniform stock.html#<TICKER> destination retained across all four universes"}
+  - {id: SC-077, disposition: RETAIN, target: "candidate Confluence -- coverage wording template retained verbatim, only the universe noun swaps"}
+  - {id: SC-078, disposition: RETAIN, target: "candidate Confluence -- S&P foreign/theme-row identity detector retained (attack-test-pinned mechanism)"}
+  - {id: SC-079, disposition: RETAIN, target: "candidate Confluence -- full-table search stays without an invented no-results message; count-only 0/N header preserved, COMMISSION.md S13/S16 'no invented Baskets/no-results affordance'"}
+
+  # -- Confluence BLOCKED_DATA --
+  - id: SC-066
+    disposition: BLOCKED_DATA
+    dependency: "basket_confluence.json carries only n_baskets -- no gateable/thin producer field exists for the Baskets tab, per capability_disposition_ledger.md#66 and ADJUDICATIONS.md 'Capability ledger priors'"
+    escalation: "escalated as a new-producer-field requirement to be adjudicated via the ADJUDICATIONS.md process / Sol, before any Baskets thin/gateable disclosure may ship -- COMMISSION.md S13 'Baskets has no gateable/thin producer field. Do not invent a Baskets thin disclosure.'"
+    interim: "candidate Baskets tab renders no thin/gateable disclosure line at all -- the absence is rendered as absence (no placeholder, no borrowed S&P wording), matching production's current silent behavior for this tab"
+
+  # -- Cross-cutting: routing (COMMISSION.md S14) --
+  - {id: SC-080, disposition: RETAIN, target: "candidate -- six canonical views + exact-match hash dispatch retained unchanged, COMMISSION.md S14 'may not rewrite the production router'"}
+  - {id: SC-081, disposition: RETAIN, target: "candidate -- 21-entry LEGACY_ANCHORS table retained; canonical+legacy hash landings additionally demonstrate correct scroll-offset behavior (no sticky-chrome occlusion), COMMISSION.md S14 required reference behavior"}
+  - {id: SC-082, disposition: RETAIN, target: "candidate -- #theme-* boot-time-only redirect retained (recorded seam not repaired this wave)"}
+  - {id: SC-083, disposition: RETAIN, target: "candidate -- #read-* trace-open defer/retry retained"}
+  - {id: SC-084, disposition: RETAIN, target: "candidate -- unknown/empty-hash fallback to Overview retained"}
+  - {id: SC-085, disposition: RETAIN, target: "candidate -- instant (non-smooth) deep-link scroll mechanics retained"}
+  - {id: SC-086, disposition: RETAIN, target: "candidate -- per-view working-destination inventory retained end-to-end, COMMISSION.md S19 'Never use href=\"#\"'"}
+
+  # -- Cross-cutting: access/hydration (COMMISSION.md S15-16) --
+  - {id: SC-087, disposition: RETAIN, target: "candidate -- single premium wall gating ONLY the Overview Act-Now board retained, COMMISSION.md S15 'Only Overview Act-Now is premium-gated'"}
+  - {id: SC-088, disposition: RETAIN, target: "candidate -- Explore/Confluence/Map/Moving/Money payloads stay ungated, COMMISSION.md S15"}
+  - {id: SC-089, disposition: RETAIN, target: "candidate -- nightly-sole-advancer rule for the Track Record ledger retained"}
+  - {id: SC-090, disposition: RETAIN, target: "candidate -- baked-shell loading state retained (no invented skeleton loader)"}
+  - {id: SC-091, disposition: RETAIN, target: "candidate -- cardinality-extreme capping with count-labeled controls retained"}
+
+  # -- Access/hydration BLOCKED_DATA --
+  - id: SC-092
+    disposition: BLOCKED_DATA
+    dependency: "no producer contract emits a correction/revision marker for any value on this surface -- per capability_disposition_ledger.md#92 and ADJUDICATIONS.md 'Capability ledger priors', no code path in the read sources renders one today"
+    escalation: "escalated as a new-producer-field requirement to be adjudicated via the ADJUDICATIONS.md process / Sol before any correction/revision affordance may ship -- COMMISSION.md S16 'Correction/revision: BLOCKED_DATA. No correction badge/history can be invented.'"
+    interim: "candidate renders values exactly as the producer states them today, with no correction/revision UI of any kind -- a later-corrected value looks identical to a never-corrected one until a producer field exists to distinguish them"
+
+additions:   # new surfaces the reference proposes beyond production (each authority-neutral; see authority_delta)
+  - {id: add.sector_cycles_accessible_table, what: "table/list projection of the same window.SECTOR_CYCLES fields the cycle chart reads (Map view)", authority: "Context -- same fields, no new rank/state calculation (COMMISSION.md S9 mandatory)", evidence: "evidence/map-accessible-table.png; accessible_alternative_contract.md S1"}
+  - {id: add.heatmap_accessible_table, what: "table/text equivalent of the market-heat treemap from the same marketdata/sp500_heatmap.json fields, plus the per-stock Browse-the-names disclosure mirroring production heatmap.js layoutList()/stock_url", authority: "Context -- no alternate scoring (COMMISSION.md S11 mandatory)", evidence: "evidence/money-heatmap-accessible.png; accessible_alternative_contract.md S2; FIX_VERIFICATION.md QA3-05"}
+  - {id: add.chrome_divergences_mobile_nav, what: "768-1100 rail labels kept; <=767 six-tab horizontal scroller replaced by a 3x2 grid (production hides Explore/Confluence off-edge at 320-390)", authority: "navigation availability only -- repairs the VTC-002 hidden-capability defect class; R3C must adjudicate for production", evidence: "ORCHESTRATOR_ADJUDICATIONS.md S3; design_notes.md S4"}
+  - {id: add.rank_scope_note, what: "one muted clarifying note (Rank across all groups / ZH twin) under the Map ranked table -- producer rank is global; scope filters make it non-contiguous", authority: "Context label; no value changed", evidence: "copy_ledger.md; build/views/map.html"}
+
+# Cold-reader tasks per view (COMMISSION.md S23 "Acceptance -- product"). verdict: UNKNOWN
+# throughout -- the candidate does not exist yet at this scaffolding stage (COMMISSION.md S19
+# is a later design-lane deliverable), so no BETTER/EQUAL/WORSE claim can be honestly made here.
+# A later cycle (post-freeze, pre-critic) must fill these in against the real frozen SHA.
+user_tasks:
+  - {id: task.overview_distinguish_context_vs_action, task: "distinguish contextual leadership from gated action", critical: true, production: "hero context and Act-Now board are structurally separated (SC-024/026)", proposal: "unboxed context band with in-band handoff arrow + Display-only line vs bordered State Ledge board; spatial-grammar separation [evidence/overview-1440-dark-en.png; QA S7 authority masquerade PASS]", verdict: EQUIVALENT, notes: "COMMISSION.md S23 Overview acceptance task; binds SC-024/026/SC-021 (Bottoming Watch watch-only) closure"}
+  - {id: task.overview_open_real_row, task: "open a real row from any lane", critical: true, production: "sector/theme rows route to sectors/<TICKER>.html or basket/<id>.html (SC-009/010)", proposal: "every lane row carries its real producer href via data-ref-nav; recorder logs the exact route; #read-<id> trace opens [capability_crosscheck.md rows 9/10; evidence/hash_evidence.md; FIX_VERIFICATION.md F-1/F-2]", verdict: EQUIVALENT, notes: "COMMISSION.md S23 Overview acceptance task"}
+  - {id: task.map_select_group_reach_detail, task: "select a group on the Map and reach detail, or the nonvisual equivalent", critical: true, production: "SVG quadrant scatter + accessible text/table equivalent (SC-036/037)", proposal: "row-focus lights the dot and fills the selected-object rail; ranked table is the primary keyboard path; SECTOR_CYCLES accessible table added; no ledge/action treatment on Map [evidence/map-1440-dark-en.png; evidence/map-accessible-table.png; QA Gate 2 PASS]", verdict: EQUIVALENT, notes: "COMMISSION.md S23 Map acceptance task; must never be mistaken for an action board"}
+  - {id: task.moving_identify_recent_change, task: "identify recent changes from the correct five bound artifacts", critical: true, production: "Moving binds exactly the five nightly artifacts, not si_handoff.json (SC-047)", proposal: "transition rows/strip/desk watch bound to exactly the five A2 artifacts; recorder proves no si_handoff fetch; no action language (QA S7 PASS) [capability_crosscheck.md row 47; QA S7]", verdict: EQUIVALENT, notes: "COMMISSION.md S23 Moving acceptance task; no invented action language"}
+  - {id: task.money_understand_flow_breadth, task: "understand flow/breadth and use the accessible heat alternative", critical: true, production: "flow-regime verdict card + breadth gcards + heatmap accessible equivalent (SC-049/050/052)", proposal: "one answer + achromatic threshold-annotated measures + verbatim flow fragment + treemap with table equivalent and per-stock names disclosure [evidence/money-1440-dark-en.png; evidence/money-heatmap-accessible.png]", verdict: EQUIVALENT, notes: "COMMISSION.md S23 Money acceptance task"}
+  - {id: task.explore_search_compare_reach_history, task: "search/filter, compare, inspect performance, reach Time Machine and Track Record", critical: true, production: "full basket table + performance chart + Time Machine + Forming Narratives (SC-054/055/057/058)", proposal: "filters/sort with localStorage, 49-basket table + Show all, SVG chart with legend-as-text-equivalent, Time Machine manifest shell with deferred fetch recorded, Forming Narratives with null ai_watch preserved [capability_crosscheck.md rows 54-62; evidence/explore-1440-dark-en.png]", verdict: EQUIVALENT, notes: "COMMISSION.md S23 Explore acceptance task; ai_watch must render correctly labeled"}
+  - {id: task.confluence_switch_universes_no_mixing, task: "switch all four universes, see matching counts/rows, never a foreign-universe row", critical: true, production: "four independent universe artifacts through one shared engine, no client-side mixing (SC-063)", proposal: "four tabs with per-universe counts 65/12/93/49, active-universe law verified, zero foreign rows, coverage only where fields exist [capability_crosscheck.md rows 63-78; evidence/confluence-universe-sp.png through -baskets.png]", verdict: EQUIVALENT, notes: "COMMISSION.md S23/S24 Confluence acceptance task; also an authority-drift attack surface"}
+
+# Does the proposal claim MORE than production, anywhere (RIG S6)? Full-scope requires this
+# audit (RIG S6, GROUP_REGRESSION -- armed at revise/rejected/approved, not at this wave's
+# draft status, but the audit is house diligence regardless of when the gate arms).
+authority_delta:
+  - {id: auth.map_reco_conflict, production_claim: "Map reco tags render Buy/Add/Hold/Trim/Avoid vocabulary beneath a context-only disclaimer (recorded CONFLICT, SC-038)", proposal_claim: "same reco tags, same disclaimer -- NOT enlarged, brightened, or made a primary CTA", direction: equal, warranted: true, evidence: "COMMISSION.md S9 'Preserve capability but do not amplify it... Do not fix or re-author its semantics in R3B'"}
+  - {id: auth.confluence_coverage_wording, production_claim: "S&P thin-but-listed wording is semantically inaccurate for 48 gate-dropped groups (recorded defect, SC-065)", proposal_claim: "same wording, unrepaired this wave", direction: equal, warranted: true, evidence: "capability_disposition_ledger.md#65; ADJUDICATIONS.md -- no IMPROVE invented for recorded-but-unrepaired defects"}
+  - {id: auth.overview_hero_vs_action, production_claim: "hero leadership context carries no action authority; structurally separate from the Act-Now board (SC-026)", proposal_claim: "same structural separation, made visually LEGIBLE per COMMISSION.md S7.3 dual-read pattern -- never implying the hero caused an action state", direction: equal, warranted: true, evidence: "COMMISSION.md S7.3 'Do not use arrows, shared color, or prose that implies contextual leadership caused an action state'"}
+  - {id: auth.bottoming_watch_authority, production_claim: "Bottoming Watch is display-only, nonpredictive, not an entry pipeline, not a sixth action lane (SC-021/023)", proposal_claim: "same authority ceiling; must not be relabeled Early Entry / Early Turn Pipeline / Upgrade Watch or similar", direction: equal, warranted: true, evidence: "COMMISSION.md S8 Bottoming Watch section"}
+
+information_economics:
+  words_per_card: {production: "~56 EN-visible words (~80 incl. ZH) per Act-Now theme row, measured on site/sector_central.html at HEAD (gold_miners row: name+score+label+leadership read+breadth all on-card)", proposal: "~22 EN-visible words for the same row (name, kind+leaders sub, score, signed 20d-vs-market, why-clause); the removed words moved one step deeper (trace card / detail), not deleted -- measured from the frozen candidate render"}
+  findings:
+    - "per-card word count cut ~60 percent with identical producer facts on-card (score, 20d-vs-market, why); nothing deleted -- depth moved to the trace/detail step (north star: deeper evidence one step away)"
+  preserved:
+    - "repeated per-row constants deduplicated to section feet (Bottoming Watch chip line, board legend); chip budget enforced at <=2 per section at rest"
+
+# revision_mandate is OPTIONAL (continuity.yml is the record). Left empty here on purpose: every
+# id continuity.yml carries a disposition for is already covered in full by that file, and an
+# incomplete restatement here would itself trip mandate-incomplete once a mandate is declared.
+revision_mandate: []
