@@ -1,0 +1,101 @@
+{
+  "schema": "e3a_adjudication_receipt.v1",
+  "adjudication_method": "dual_session",
+  "gold_path": "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json",
+  "gold_sha256": "6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761",
+  "taxonomy_version": "qa_topic.v1",
+  "taxonomy_hash": "a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e",
+  "gold_correction": false,
+  "source": {
+    "fixture_transcript": "tests/fixtures/company_intelligence/aapl_fy2026_q3.json.gz",
+    "transcript_sha256_uncompressed": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+    "live_generation_id": "f709a0a6ec514282d5769e7d",
+    "live_workspace_sha256": "dbd50e5c30e8a031f844e02362ffd53b25e3230e75eeef19bf3825543cb81197",
+    "live_read": "engine.neuralweb.company_intelligence_reader.read_event_workspace",
+    "assumed_from_handoff": false
+  },
+  "pass_a": {
+    "session": "E3-A original gold adjudication (2026-08-22T16:27:00Z)",
+    "method": "operator_intro_go_ahead",
+    "boundary_segments": [32, 42, 52, 63, 76, 84, 97],
+    "questioners": [
+      {"ordinal": 0, "name": "Amit Daryanani", "affiliation": "Evercore"},
+      {"ordinal": 1, "name": "Michael Ng", "affiliation": "Goldman Sachs"},
+      {"ordinal": 2, "name": "Ben Reitzes", "affiliation": "Melius Research"},
+      {"ordinal": 3, "name": "Erik Woodring", "affiliation": "Morgan Stanley"},
+      {"ordinal": 4, "name": "Aaron Rakers", "affiliation": "Wells Fargo"},
+      {"ordinal": 5, "name": "Wamsi Mohan", "affiliation": "Bank of America"},
+      {"ordinal": 6, "name": "Samik Chatterjee", "affiliation": "JPMorgan"}
+    ],
+    "exchange_5_respondents": [
+      {"name": "Tim Cook", "role": "CEO"},
+      {"name": "John Ternus", "role": "CEO"}
+    ]
+  },
+  "pass_b": {
+    "session": "E3-A R1 independent fixture rescan (2026-08-22)",
+    "method": "independent_operator_go_ahead_scan_of_held_transcript",
+    "command": "python3 scan of tests/fixtures/company_intelligence/aapl_fy2026_q3.json.gz segments where role==Operator and 'go ahead' in text",
+    "boundary_segments": [32, 42, 52, 63, 76, 84, 97],
+    "questioners_from_operator_text": [
+      {"boundary": 32, "name": "Amit Daryanani", "affiliation": "Evercore"},
+      {"boundary": 42, "name": "Michael Ng", "affiliation": "Goldman Sachs"},
+      {"boundary": 52, "name": "Ben Reitzes", "affiliation": "Melius Research"},
+      {"boundary": 63, "name": "Erik Woodring", "affiliation": "Morgan Stanley"},
+      {"boundary": 76, "name": "Aaron Rakers", "affiliation": "Wells Fargo"},
+      {"boundary": 84, "name": "Wamsi Mohan", "affiliation": "Bank of America"},
+      {"boundary": 97, "name": "Samik Chatterjee", "affiliation": "JPMorgan"}
+    ],
+    "john_ternus_answer_segment": {
+      "segment_index": 94,
+      "speaker": "John Ternus",
+      "role": "CEO",
+      "source": "held transcript segment metadata, not external biography",
+      "intro_text_segment_0_excerpt": "Also joining us on today's call is incoming CEO John Ternus."
+    }
+  },
+  "reconciliation": {
+    "boundaries_agree": true,
+    "questioners_agree": true,
+    "exchange_count": 7,
+    "overlay_14_rejected": true,
+    "john_ternus_role": {
+      "held_source_role": "CEO",
+      "gold_role": "CEO",
+      "return_packet_claimed": "SVP Hardware Engineering",
+      "pinned": "CEO",
+      "external_biography_not_used": true,
+      "reason": "Segment 94 of the held transcript has speaker=John Ternus role=CEO. IR intro (segment 0) calls him incoming CEO. Gold already matched the held source, so no gold correction and no SHA change."
+    },
+    "gold_sha_unchanged": true
+  },
+  "pre_evaluation_failures": [
+    {
+      "when": "E3-A first return to Sol (eval receipt c8813cb20270fde3)",
+      "qwen": {
+        "status": "provider_unavailable",
+        "degraded_reason": "openai_compat_error",
+        "note": "Resolved YAML placeholder http://localhost:11434 (connection refused). Durable worker override is http://127.0.0.1:11435 serving qwen3.5:9b."
+      },
+      "comparator": {
+        "status": "provider_unavailable",
+        "degraded_reason": "anthropic_not_configured_or_no_key",
+        "note": "Filtered to anthropic-only instead of the existing llm_auth oauth/anthropic plane."
+      },
+      "evaluator": "false-green: accepted_count=0 reported source_span_replay_success_pct=100.0 and hard_gates.all_pass=true"
+    },
+    {
+      "when": "E3-A R1 pre-success comparator run bf4f1ff71e5f27d1",
+      "qwen": {
+        "status": "ok",
+        "n_candidates": 0,
+        "note": "Worker endpoint 127.0.0.1:11435 / qwen3.5:9b returned []. Recorded as a real model result, not an environment blocker."
+      },
+      "comparator": {
+        "status": "ok",
+        "n_candidates": 7,
+        "note": "Haiku produced 7 closed-schema candidates. Validator wrongly required boundary_segment_index in question_segment_indexes and rejected all 7 as invalid_schema. That was an evaluator bug, not a gold error. Constraint removed before the measured run d32326459522ff95."
+      }
+    }
+  ]
+}

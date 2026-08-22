@@ -325,37 +325,38 @@ def test_operator_intro_segments():
         )
 
 
-def test_score_attempt_no_candidates():
-    """score_attempt with 0 candidates must trivially pass all hard gates."""
-    from engine.company_intelligence.e3_shadow_compiler import ModelAttempt, score_attempt
+def test_score_attempt_no_candidates_not_exercised():
+    """Zero candidates must NOT report 100% replay or all_pass=true."""
+    from engine.company_intelligence.e3_shadow_compiler import (
+        ModelAttempt, load_transcript_segments, score_attempt,
+    )
     attempt = ModelAttempt(provider="test", model="test", status="provider_unavailable")
     gold = json.loads(GOLD_PATH.read_bytes())
-    score = score_attempt(attempt, gold)
-    assert score["hard_gates"]["all_pass"] is True
-    assert score["hard_gates"]["accepted_unsupported"] == 0
-    assert score["hard_gates"]["cross_event"] == 0
+    segs = load_transcript_segments(REPO_ROOT)
+    score = score_attempt(attempt, gold, segs)
+    assert score["hard_gates"]["status"] == "NOT_EXERCISED"
+    assert score["hard_gates"]["all_pass"] is False
     assert score["accepted_count"] == 0
-    assert score["source_span_replay_success_pct"] == 100.0
+    assert score["source_span_replay_success_pct"] is None
+    assert score["source_span_replay_success_pct"] != 100.0
 
 
 def test_score_attempt_cross_event_detected():
-    """score_attempt must detect cross-event contamination in candidates."""
-    from engine.company_intelligence.e3_shadow_compiler import ModelAttempt, score_attempt
-    attempt = ModelAttempt(
-        provider="test", model="test", status="ok",
-        candidates=[{
-            "ordinal": 0,
-            "event_id": "evt_cik0000000000_2026q3_results",  # wrong event
-            "questioner_name": "Amit Daryanani",
-            "questioner_affiliation": "Evercore",
-            "topics": ["demand"],
-        }],
+    """Foreign event_id is rejected and never trusted as a TP."""
+    from engine.company_intelligence.e3_shadow_compiler import (
+        ModelAttempt, gold_exchange_to_candidate, load_transcript_segments,
+        score_attempt,
     )
     gold = json.loads(GOLD_PATH.read_bytes())
-    score = score_attempt(attempt, gold)
-    assert score["cross_event_contamination_accepted"] == 1
+    segs = load_transcript_segments(REPO_ROOT)
+    cand = gold_exchange_to_candidate(gold["exchanges"][0])
+    cand["event_id"] = "evt_cik0000000000_2026q3_results"
+    attempt = ModelAttempt(provider="test", model="test", status="ok", candidates=[cand])
+    score = score_attempt(attempt, gold, segs)
+    assert score["cross_event_rejected"] == 1
     assert score["hard_gates"]["cross_event"] == 1
-    assert score["hard_gates"]["all_pass"] is False
+    assert score["accepted_count"] == 0
+    assert score["exchange_boundary_quality"]["tp"] == 0
 
 
 def test_parse_candidates_valid_json():
@@ -412,3 +413,223 @@ def test_gold_all_seven_questioners(gold):
         "Samik Chatterjee",
     }
     assert names == expected
+
+
+def test_gold_respondent_name_and_role_match_answer_segment_metadata(gold):
+    """Pin respondent identity to held transcript metadata, not biography."""
+    with gzip.open(FIXTURE_DIR / "aapl_fy2026_q3.json.gz") as f:
+        segs = json.load(f)["segments"]
+    for ex in gold["exchanges"]:
+        for span in ex["answer_spans"]:
+            seg = segs[span["segment_index"]]
+            assert span["speaker"] == seg["speaker"]
+            assert span["role"] == seg["role"]
+        for resp in ex["respondents"]:
+            assert any(
+                span["speaker"] == resp["name"] and span["role"] == resp["role"]
+                for span in ex["answer_spans"]
+            ), f"exchange {ex['ordinal']}: {resp} not in answer segment metadata"
+    ternus_span = segs[94]
+    assert ternus_span["speaker"] == "John Ternus"
+    assert ternus_span["role"] == "CEO"
+    gold_ternus = next(
+        r for r in gold["exchanges"][5]["respondents"] if r["name"] == "John Ternus"
+    )
+    assert gold_ternus["role"] == ternus_span["role"] == "CEO"
+
+
+def test_adjudication_receipt_dual_session():
+    path = REPO_ROOT / "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_adjudication_receipt.json"
+    receipt = json.loads(path.read_bytes())
+    assert receipt["adjudication_method"] == "dual_session"
+    assert receipt["gold_sha256"] == GOLD_SHA256
+    assert receipt["gold_correction"] is False
+    assert receipt["pass_a"]["boundary_segments"] == EXPECTED_OPERATOR_INTRO_SEGMENTS
+    assert receipt["pass_b"]["boundary_segments"] == EXPECTED_OPERATOR_INTRO_SEGMENTS
+    assert receipt["reconciliation"]["boundaries_agree"] is True
+    assert receipt["reconciliation"]["john_ternus_role"]["pinned"] == "CEO"
+    assert receipt["source"]["assumed_from_handoff"] is False
+
+
+def test_qwen_resolves_worker_override_before_yaml(monkeypatch):
+    from engine.company_intelligence.e3_shadow_compiler import resolve_qwen_openai_compat_cfg
+    monkeypatch.delenv("EARNINGS_LLM_BASE_URL", raising=False)
+    monkeypatch.delenv("EARNINGS_LLM_MODEL", raising=False)
+    cfg = resolve_qwen_openai_compat_cfg(
+        REPO_ROOT, {"base_url": "http://localhost:11434/v1", "model": "qwen3.5:9b"}
+    )
+    assert cfg["base_url"] == "http://127.0.0.1:11435/v1"
+    assert cfg["model"] == "qwen3.5:9b"
+    assert cfg["base_url_source"] == "earnings_worker_plist"
+    monkeypatch.setenv("EARNINGS_LLM_BASE_URL", "http://127.0.0.1:9/v1")
+    monkeypatch.setenv("EARNINGS_LLM_MODEL", "qwen3.5:9b")
+    env_cfg = resolve_qwen_openai_compat_cfg(
+        REPO_ROOT, {"base_url": "http://localhost:11434/v1", "model": "placeholder"}
+    )
+    assert env_cfg["base_url_source"] == "env"
+    assert env_cfg["base_url"] == "http://127.0.0.1:9/v1"
+
+
+def _gold_cand(gold, ordinal=0, **overrides):
+    from engine.company_intelligence.e3_shadow_compiler import gold_exchange_to_candidate
+    cand = gold_exchange_to_candidate(gold["exchanges"][ordinal])
+    cand.update(overrides)
+    return cand
+
+
+def test_validator_boundary_need_not_be_in_question_indexes(gold):
+    """Closed schema lists boundary_segment_index separately from question indexes."""
+    from engine.company_intelligence.e3_shadow_compiler import (
+        load_transcript_segments, validate_candidate,
+    )
+    segs = load_transcript_segments(REPO_ROOT)
+    cand = _gold_cand(gold, ordinal=0)
+    cand["question_segment_indexes"] = [33, 38]
+    cand["boundary_segment_index"] = 32
+    result = validate_candidate(cand, segs)
+    assert result["ok"] is True
+
+
+def test_validator_out_of_range_segment_rejected(gold):
+    from engine.company_intelligence.e3_shadow_compiler import (
+        load_transcript_segments, validate_candidate,
+    )
+    segs = load_transcript_segments(REPO_ROOT)
+    cand = _gold_cand(gold, question_segment_indexes=[32, 999])
+    result = validate_candidate(cand, segs)
+    assert result["ok"] is False
+    assert result["reason"] == "out_of_range_segment"
+
+
+def test_validator_unknown_topic_rejected(gold):
+    from engine.company_intelligence.e3_shadow_compiler import (
+        load_transcript_segments, validate_candidate,
+    )
+    segs = load_transcript_segments(REPO_ROOT)
+    cand = _gold_cand(gold, topics=["deflection"])
+    result = validate_candidate(cand, segs)
+    assert result["ok"] is False
+    assert result["reason"] == "unknown_topic"
+
+
+def test_validator_missing_or_wrong_type_rejected(gold):
+    from engine.company_intelligence.e3_shadow_compiler import (
+        load_transcript_segments, validate_candidate,
+    )
+    segs = load_transcript_segments(REPO_ROOT)
+    missing = _gold_cand(gold)
+    del missing["affiliation"]
+    assert validate_candidate(missing, segs)["reason"] == "invalid_schema"
+    wrong = _gold_cand(gold)
+    wrong["ordinal"] = "0"
+    assert validate_candidate(wrong, segs)["reason"] == "invalid_schema"
+
+
+def test_validator_foreign_event_field_rejected_never_trusted(gold):
+    from engine.company_intelligence.e3_shadow_compiler import (
+        load_transcript_segments, validate_candidate,
+    )
+    segs = load_transcript_segments(REPO_ROOT)
+    cand = _gold_cand(gold, event_id="evt_foreign")
+    result = validate_candidate(cand, segs)
+    assert result["ok"] is False
+    assert result["reason"] == "cross_event"
+
+
+def test_correct_questioner_wrong_operator_boundary_is_not_tp(gold):
+    from engine.company_intelligence.e3_shadow_compiler import (
+        ModelAttempt, load_transcript_segments, score_attempt,
+    )
+    segs = load_transcript_segments(REPO_ROOT)
+    cand = _gold_cand(gold, ordinal=0)
+    cand["boundary_segment_index"] = 42
+    cand["question_segment_indexes"] = [42, 43]
+    cand["answer_segment_indexes"] = [44]
+    cand["respondents"] = [{"name": "Tim Cook", "role": "CEO"}]
+    attempt = ModelAttempt(provider="test", model="test", status="ok", candidates=[cand])
+    score = score_attempt(attempt, gold, segs)
+    matched = [row for row in score["per_exchange"] if row["candidate_ordinal"] == 0]
+    assert matched[0]["gold_ordinal"] == 1
+    assert score["exchange_boundary_quality"]["tp"] == 1
+    assert score["exchange_boundary_quality"]["recall"] <= 1.0
+
+
+def test_duplicate_prediction_cannot_inflate_tp(gold):
+    from engine.company_intelligence.e3_shadow_compiler import (
+        ModelAttempt, load_transcript_segments, score_attempt,
+    )
+    segs = load_transcript_segments(REPO_ROOT)
+    cand = _gold_cand(gold, ordinal=0)
+    dup = dict(cand)
+    dup["ordinal"] = 99
+    attempt = ModelAttempt(
+        provider="test", model="test", status="ok", candidates=[cand, dup],
+    )
+    score = score_attempt(attempt, gold, segs)
+    assert score["exchange_boundary_quality"]["tp"] == 1
+    assert score["exchange_boundary_quality"]["recall"] <= 1.0
+    assert score["exchange_boundary_quality"]["recall"] == pytest.approx(1.0 / 7)
+
+
+def test_wrong_respondent_role_is_identity_error(gold):
+    from engine.company_intelligence.e3_shadow_compiler import (
+        ModelAttempt, load_transcript_segments, score_attempt,
+    )
+    segs = load_transcript_segments(REPO_ROOT)
+    cand = _gold_cand(gold, ordinal=5)
+    cand["respondents"] = [
+        {"name": "Tim Cook", "role": "CEO"},
+        {"name": "John Ternus", "role": "SVP Hardware Engineering"},
+    ]
+    attempt = ModelAttempt(provider="test", model="test", status="ok", candidates=[cand])
+    score = score_attempt(attempt, gold, segs)
+    row = next(r for r in score["per_exchange"] if r["gold_ordinal"] == 5)
+    assert "respondent_roles" in row["identity_errors"]
+    ident = score["identity_role_availability"]
+    assert ident["respondent_role_order_match_rate"] == 0.0
+
+
+def test_altered_source_bytes_fail_replay(gold):
+    from engine.company_intelligence.e3_shadow_compiler import (
+        gold_exchange_to_candidate, validate_candidate,
+    )
+    cand = gold_exchange_to_candidate(gold["exchanges"][0])
+    mutated = [{"text": "", "speaker": "x", "role": "y"} for _ in range(108)]
+    result = validate_candidate(cand, mutated)
+    assert result["ok"] is False
+    assert result["reason"] == "span_replay_failure"
+
+
+def test_valid_synthetic_candidate_is_shadow_admitted_with_real_replay(gold):
+    from engine.company_intelligence.e3_shadow_compiler import (
+        ModelAttempt, load_transcript_segments, score_attempt, validate_candidate,
+    )
+    segs = load_transcript_segments(REPO_ROOT)
+    cand = _gold_cand(gold, ordinal=0)
+    admitted = validate_candidate(cand, segs)
+    assert admitted["ok"] is True
+    attempt = ModelAttempt(provider="test", model="test", status="ok", candidates=[cand])
+    score = score_attempt(attempt, gold, segs)
+    assert score["accepted_count"] == 1
+    assert score["accepted_span_replay_count"] == 1
+    assert score["source_span_replay_success_pct"] == 100.0
+    assert score["n_model_candidates"] == 1
+    assert score["exchange_boundary_quality"]["tp"] == 1
+
+
+def test_hardcoded_false_green_cannot_return():
+    """If the old 100.0 / 0.0 / accepted_count=0 / all_pass=true path is restored, fail."""
+    from engine.company_intelligence.e3_shadow_compiler import (
+        ModelAttempt, load_transcript_segments, score_attempt,
+    )
+    segs = load_transcript_segments(REPO_ROOT)
+    gold = json.loads(GOLD_PATH.read_bytes())
+    empty = score_attempt(
+        ModelAttempt(provider="t", model="t", status="provider_unavailable"),
+        gold,
+        segs,
+    )
+    assert empty["hard_gates"]["status"] == "NOT_EXERCISED"
+    assert empty["hard_gates"]["all_pass"] is not True
+    assert empty["source_span_replay_success_pct"] != 100.0
+    assert empty["accepted_count"] == 0
