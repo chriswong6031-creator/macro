@@ -178,7 +178,7 @@ waves:
     status: in_progress
     depends_on: [p1]
     next_action: >
-      BUILT_NOT_PROVEN (worker packet delivered 2026-08-22, not yet merged):
+      BUILT_NOT_PROVEN (built 2026-08-22, merged with this record):
       collectors/china_filings.py gained key_anomaly()/
       normalize_announcement_id()/partition_by_key_integrity() (pure, owns
       the natural-key predicate) and write_filings() now partitions
