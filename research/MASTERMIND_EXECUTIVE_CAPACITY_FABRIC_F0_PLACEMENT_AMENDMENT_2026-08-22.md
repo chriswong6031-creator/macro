@@ -4,7 +4,7 @@
 **Owner:** Sol, AI CEO  
 **Amends:** `research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_ARCHITECTURE_2026-08-22.md`  
 **Status:** **SOL SOURCE-LAW CORRECTION / RECORDS ONLY**  
-**Mastermind authority checked:** protected `00d15138eeea715fd833ba772518b06ce274a9b7`  
+**Mastermind authority checked:** protected `e1101eb2c1f17d801d480ded497b3fc1bb0ef18b`  
 **Controlling Executive source law:** `research/EXECUTIVE_OS_PHASE1FC_CEO_POLICY_AND_IMPLEMENTATION_COMMISSION_2026-08-20.md`
 
 This amendment corrects potential integration ambiguities in F0 before acceptance. It does not change the provider-capacity ownership or `mastermind.provider_capacity.v1` contract.
@@ -207,7 +207,90 @@ CF2-I may prove capacity-aware account selection with the current Codex route be
 
 ---
 
-## 7. Revised sequence
+## 7. Non-Codex providers require a provider-neutral harness contract before PF1
+
+Current Mastermind has the correct architectural instinct in `control_plane/worker_adapter.py`: one `WorkerExecutionAdapter` interface is meant to let future Qwen/GLM/xAI/ACP/cloud workers reuse the existing Executive lifecycle rather than create their own queue, lease model or database.
+
+But the current **v1 type boundary is still Codex-owned**:
+
+- `WorkerExecutionAdapter` imports `LaunchSpec`, `ProcessRef`, `CollectionReceipt`, `CancelReceipt` and `ValidationReceipt` from `control_plane.codex_worker`;
+- common `LaunchSpec` is documented as a Codex turn and contains a literal `codex_home` field;
+- `ProcessRef` and result receipts carry Codex-module `BinaryAttestation`/worker structures;
+- the production `executive_worker_broker.py` is explicitly a dedicated Codex worker broker and directly imports/instantiates `CodexWorkerAdapter`;
+- existing secret-canary/auth exception language is Codex-specific and must not be falsely generalized to another provider.
+
+Therefore the first non-Codex provider may not be implemented by:
+
+```text
+passing an Alibaba/Z.AI/Grok home through `codex_home`
+```
+
+or by:
+
+```text
+creating executive_alibaba_broker.py + executive_grok_broker.py + ...
+```
+
+Both would violate the one-canonical-system law: the former makes a provider-specific contract lie about identity; the latter creates provider-specific lifecycle/control planes.
+
+Call the required gate **HF1 — Harness Contract generalization**.
+
+### HF1 — generalize the existing harness/broker, preserve Codex v1
+
+HF1 must be a separate source-law + bounded implementation wave before PF1. It may proceed in parallel with RF1 after CF2-I when their changed paths are disjoint, but PF1 depends on both.
+
+HF1 must preserve these current truths:
+
+- current Codex adapter behavior, P1B/OHF semantics and accepted live/proof receipts remain valid;
+- Executive Job/Attempt/lease/claim lifecycle remains unchanged;
+- there is one reviewed worker-broker lifecycle boundary, not one per provider;
+- dedicated OS-principal/UID sweep, process identity, cancellation and validation semantics remain centralized where they are provider-neutral;
+- provider-native session and auth/home mechanics remain adapter-private;
+- provider-specific attestation may be added through explicit typed capability/receipt extensions without weakening the common floor.
+
+The preferred architecture is conceptually:
+
+```text
+Executive immutable authorized work handoff
+        |
+        v
+provider-neutral execution request/spec
+        |
+        v
+one reviewed worker broker / adapter resolver
+        |
+        +--> Codex adapter + Codex-private home/auth mechanics
+        +--> supported-coding-tool adapter + provider-private plan endpoint/auth mechanics
+        +--> ACP adapter + ACP-private session/transport mechanics
+```
+
+The exact common v2 schema is **not frozen here**. HF1 must first separate truly common fields from Codex-specific fields on the landed runtime. Likely common facts include Job/worker/run identity, workspace/run directory, immutable grant/authority, model/execution selection, timeout/cancel bounds, artifact/validation limits, expected base, isolation evidence and supervisor-required process receipts. A generic contract must not include a field whose name or semantics assumes Codex.
+
+Provider-private configuration should be referenced through a reviewed adapter registration/config boundary. It may include a dedicated provider home or endpoint reference where needed, but raw token/key/cookie bytes remain outside model-visible handoffs and Executive persisted payloads.
+
+The broker must resolve an immutable reviewed adapter identity; the model/caller may not select arbitrary executable/provider commands. An unimplemented or unapproved adapter remains fail-closed exactly as v1 `ADAPTER_DESCRIPTORS` intends.
+
+### HF1 acceptance requirements
+
+At minimum, HF1 must prove:
+
+1. current Codex golden paths/receipts remain byte/behavior compatible where source law requires it;
+2. one synthetic non-Codex fake adapter can traverse the **same** broker/supervisor start/status/collect/cancel/validate lifecycle without any provider-specific broker or second queue/state store;
+3. common request/receipt types contain no `codex_*`-named field and no vendor-secret value;
+4. adapter-private provider home/auth/session details cannot leak into prompts, generic logs, Executive events or cross-provider config;
+5. peer authorization, dedicated-principal/process cleanup, cancellation, timeout, validation and replay behavior do not weaken for the new adapter seam;
+6. unknown/unimplemented adapter IDs refuse before provider contact;
+7. the adapter identity/provider relationship is immutable and receipted so a job cannot begin on one adapter and be collected as another;
+8. HF1 introduces zero autonomous provider failover/retry. A provider failure returns through normal Executive Attempt semantics;
+9. Phase 1F-C placement/execution-principal evidence remains valid; if a required HF1 change would alter a frozen P1B/1F-C evidence schema, HF1 stops for an explicit source-law amendment instead of silently widening it.
+
+### Sequencing consequence
+
+Provider adapter research/fixtures may happen before HF1, but **no non-Codex provider can be called an Executive worker vertical until HF1 passes**. Alibaba/Z.AI should share the supported-coding-tool harness family where lawful; Grok/Cursor should share an ACP family where lawful. Provider-specific execution mechanics live behind those reviewed adapters, not in Executive lifecycle.
+
+---
+
+## 8. Revised sequence
 
 ```text
 F0     provider-capacity ownership + contract freeze
@@ -215,9 +298,12 @@ CF1    Macro provider_capacity.v1 producer + real no-write consumer
 OF1    accepted Phase 1F-C v4 implementation
 CF2-F  Executive claim-evidence source-law freeze against landed v4
 CF2-I  existing-provider capacity-aware placement using the accepted claim receipt seam
-RF1    provider-neutral Model Router suitability/equivalence source-law freeze + implementation
-PF1+   one new provider/harness vertical per PR, then route admission after RF1
+RF1    provider-neutral Model Router suitability/equivalence freeze + implementation
+HF1    provider-neutral worker-harness/broker contract freeze + implementation
+PF1+   one new provider/harness vertical per PR; shared-route admission requires RF1 + HF1
 OF2    real heterogeneous Fable fan-out / exhaustion / review / repair / aggregation proof
 ```
 
-This amendment supersedes any reading of F0 that would put Capacity Fabric fields directly into `placement_snapshot_json`, claim that CF2 implementation can begin immediately after v4 without a fresh claim-evidence source-law review, or use concrete model-alias list order as an accidental cross-provider scheduler.
+RF1 and HF1 may run in parallel after their shared upstream gates only when their exact source/code paths are disjoint. PF1 depends on **both**.
+
+This amendment supersedes any reading of F0 that would put Capacity Fabric fields directly into `placement_snapshot_json`, claim that CF2 implementation can begin immediately after v4 without a fresh claim-evidence source-law review, use concrete model-alias list order as an accidental cross-provider scheduler, disguise a new provider behind Codex-specific common types, or create one Executive broker/lifecycle per vendor.
