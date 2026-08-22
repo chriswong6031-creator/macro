@@ -871,6 +871,64 @@ def confirmation_move(
     return {"pct_since": read["pct_since"], "measured_from": stamp}
 
 
+def _veto_anchor_read(
+    verdict: Mapping[str, Any] | None,
+    ticker: str | None = None,
+    close_of: Callable[[str], tuple[Sequence[Any], Sequence[Any]] | None] | None = None,
+) -> dict[str, Any] | None:
+    """The exact anchor computation :func:`build_vetoed_rows` uses to derive
+    ``sessions_since`` (and the ``cross_date``/``anchor`` fields the display
+    row also needs) from a blocked-signal ``verdict``.
+
+    Build commission R2 (F2): :func:`engine.hk_discovery_challenger.
+    _fires_blocked_signal` must apply the IDENTICAL staleness bound
+    (:data:`VETOED_MAX_SESSIONS`) this lane does, so the computation is
+    extracted here ONCE and both callers use it — never a second,
+    independently maintained copy of the marker_date/fresh_bars/cross_read
+    logic.
+
+    Returns ``{"read": ..., "series": ..., "marker_date": ...}`` where
+    ``read`` carries ``cross_date``/``sessions_since``/``pct_since``/
+    ``anchor``. Returns ``None`` when the age is not anchorable at all — no
+    marker date AND no ``fresh_bars`` (the age would have to be invented,
+    :func:`build_vetoed_rows`'s own ``dropped_no_anchor`` case).
+    """
+    verdict = verdict or {}
+    marker = verdict.get("last") or {}
+    marker_date = marker.get("date")
+    fresh = _finite_int(verdict.get("fresh_bars"))
+    if fresh is not None and fresh < 0:
+        fresh = None
+    if not _as_date(marker_date) and fresh is None:
+        return None
+    series = close_of(ticker) if (close_of is not None and ticker is not None) else None
+    read: dict[str, Any] | None = None
+    if series is not None:
+        dates, closes = series
+        read = cross_read(dates, closes, cross_date=marker_date, sessions_back=fresh)
+    if read is None:
+        read = _ubr._anchor_only_read(marker_date, fresh)
+    return {"read": read, "series": series, "marker_date": marker_date}
+
+
+def veto_sessions_since(
+    verdict: Mapping[str, Any] | None,
+    ticker: str | None = None,
+    close_of: Callable[[str], tuple[Sequence[Any], Sequence[Any]] | None] | None = None,
+) -> int | None:
+    """The sessions-since-veto measure :func:`build_vetoed_rows` bounds
+    against :data:`VETOED_MAX_SESSIONS`. ``None`` means unknown age (not
+    anchorable at all), never a lawful zero — a caller that treats unknown
+    age differently from "old" (see
+    ``engine.hk_discovery_challenger._fires_blocked_signal``, build
+    commission R2) must keep that distinction rather than collapsing it.
+    """
+    anchor = _veto_anchor_read(verdict, ticker, close_of)
+    if anchor is None:
+        return None
+    return anchor["read"].get("sessions_since")
+
+
 def build_vetoed_rows(
     verdict_by: Mapping[str, Mapping[str, Any]],
     *,
@@ -949,21 +1007,13 @@ def build_vetoed_rows(
             continue
 
         marker = (verdict or {}).get("last") or {}
-        marker_date = marker.get("date")
-        fresh = _finite_int((verdict or {}).get("fresh_bars"))
-        if fresh is not None and fresh < 0:
-            fresh = None
-        if not _as_date(marker_date) and fresh is None:
+        anchor = _veto_anchor_read(verdict, ticker, close_of)
+        if anchor is None:
             dropped_no_anchor += 1          # the age would have to be invented
             continue
-
-        series = close_of(ticker) if close_of is not None else None
-        read: dict[str, Any] | None = None
-        if series is not None:
-            dates, closes = series
-            read = cross_read(dates, closes, cross_date=marker_date, sessions_back=fresh)
-        if read is None:
-            read = _ubr._anchor_only_read(marker_date, fresh)
+        read = anchor["read"]
+        series = anchor["series"]
+        marker_date = anchor["marker_date"]
 
         sessions = read.get("sessions_since")
         if sessions is not None and sessions > int(max_sessions):

@@ -540,3 +540,116 @@ builder call sites in `scripts/build_canada.py` and
 market=..., asof=...)`, which is unaffected by the registration-side repair).
 No challenger was registered in production as part of this correction — the
 registry remains EMPTY at merge, as it was before.
+
+## Wave HK-DISCOVERY-SHADOW (2026-08-22): first registered challenger + freshness activation
+
+This wave registers the FIRST production challenger and, per §4's deferred
+clause ("when a challenger registers, the store paths get wired into the
+surface-freshness absent-vs-stale vocabulary in that wave"), activates the
+freshness wiring. Nothing in §§1-7 is weakened; this section records the
+wave's additive contracts. The build survived an Opus adversarial review
+(MERGE-BLOCKED round with findings F1-F13, all adjudicated and repaired
+before ship — see the wave's Agent OS handoff for the ledger).
+
+### Registration
+
+- Exactly ONE challenger: `register_challenger("HK", "hk_discovery_v1",
+  discovery_fn=...)`, wired in `scripts/build_hk_library.py` inside
+  `compute_hk_standouts`, textually and causally BETWEEN the
+  `hk_standouts.json` persist and the existing fail-soft
+  `write_shadow(calls, market="HK", ...)` call. The market literal appears
+  only at this registration call. No CA registration, no Lane-A `rank_fn`,
+  and `FAMILY_REGISTRY` remains the empty tuple (families are Wave 6
+  HK-NATIVE-INTEL).
+- The discovery function is a pure closure over an explicitly assembled,
+  DEEP-COPIED evidence bundle of pre-cut structures (the §4 F1 non-aliasing
+  invariant applied to the Lane-B path): it takes no market, reads no env,
+  reads no published artifact, and consumes no board rank / composite-score
+  order / featured / published-membership field (source-fenced + permutation-
+  tested).
+
+### Candidate origination (deterministic origin ledger)
+
+A name is a candidate iff ≥1 origin predicate fires; `candidate_origin` is
+the "+"-joined list of firing origins in this FIXED canonical order, with
+deterministic sub-tokens in parens:
+
+1. `washout_reclaim` — 2W washout/reclaim state-map emergence
+   (`engine.cycles._tf_state`-derived map built in `compute_hk_standouts`).
+2. `leadership` — `engine.hk_leadership.compute()` membership (fixed
+   mega-cap cohort; the population limitation is honest and recorded).
+3. `ripening` — the UNCAPPED `hk_board_rank.build_ripening_rows` admission
+   (a second call with `cap=10**9, ready_cap=10**9`; the display call and
+   its caps are untouched; the uncapped kwargs are pinned by a named test).
+4. `aged_turn` — the bare `hk_board_rank.ran_admits` admission predicate
+   (probed identical to the display builder's; anchor/close-series drops are
+   display-only and deliberately NOT applied to the research population).
+5. `blocked_signal(<reason-slug>)` — the bare `hk_board_rank.veto_admits`
+   admission predicate PLUS the display builder's own staleness bound
+   (`VETOED_MAX_SESSIONS`): a veto older than the bound is no longer news
+   about this tape and does NOT re-mint a fresh observation each session
+   (adversarial-review finding F2 — unbounded stale-state accretion).
+6. `hk_native_onset(southbound)` — the per-name southbound signal fired
+   this session.
+7. `ah_dislocation` — `ah_value_signal` emergence for names WITH a
+   resolvable A/H twin only; a no-twin name never fires and never receives
+   a fabricated zero (missing ≠ zero).
+
+A-twin lead/read-through emergence (packet §10.2's eighth class) is
+DELIBERATELY ABSENT: censused NOT PRESENT in current code, and this wave
+invents no new alpha machinery. UI caps exist only in display lanes; the
+research population carries NO producer cap (executed mutation kill K-D1).
+
+### Availability (first real read — independent, fail-closed)
+
+Frozen enum: ENTRY_OPEN, WAIT_PULLBACK, WAIT_CONFLUENCE, RAN_DONT_CHASE,
+RIGHTS_BLOCKED, UNAVAILABLE_DATA. Fixed precedence: missing required inputs
+→ UNAVAILABLE_DATA (`missing_inputs(...)`); placement/rights flag →
+RIGHTS_BLOCKED; knife → WAIT_PULLBACK; ran/extension → RAN_DONT_CHASE; gate
+passed with every hygiene read AVAILABLE → ENTRY_OPEN; else
+WAIT_CONFLUENCE. Availability is computed from hygiene/entry reads invoked
+for the candidate set (never scraped from the buys loop) and shares no
+input with the origin predicates. Read-availability is explicit: when the
+placement gate, knife pass, or extension map is unavailable AS A WHOLE, a
+name that would otherwise be ENTRY_OPEN reports UNAVAILABLE_DATA with a
+source naming the unavailable read — unknown NEVER defaults to a pass
+(executed mutation kill K-D4). Per-name absence inside an available read is
+a genuine False. Availability preserves "interesting but wait": it is never
+buy authority.
+
+### Freshness receipt (absent-vs-stale vocabulary)
+
+Because Lane B is append-only, a lawful zero-candidate session leaves no
+trace in the parquet — store bytes alone cannot distinguish "healthy zero"
+from "stale". `write_shadow` therefore writes
+`data/prophet_shadow/<market>_discovery_receipt.json` (market-prefixed
+basename, inside the write-surface fence) on every POST-GATE pass for a
+market with ≥1 registration: `{market, as_of, registry_state, written,
+definitions, challenger_failures, stamped_at}`. Pre-gate refusals
+(off-lane/no-asof/unsupported/reentrant) write nothing; a market with zero
+registrations writes nothing (a CA pass with only the HK registration
+creates NO CA file — proven with the real registration, kill K-D7).
+Receipt write is best-effort fail-soft and does not alter D7 semantics;
+per-registration failures are named in `challenger_failures` while the pass
+still concludes `wrote_n_rows n=<true sibling count>`.
+
+`scripts/check_surface_freshness.check_hk_discovery_freshness()` is the
+SOLE reader: warn-only (exit 0), on the HK session clock
+(`lib.hk_calendar`), with DISTINCT line-start annotations for absent /
+stale (HK-session gap) / substrate `error` / non-empty
+`challenger_failures`, and SILENCE on a fresh zero-candidate receipt. The
+receipt is deliberately NOT in `_ARTIFACTS`: it must never join the
+first-class surface list, the SURFACE STALE escalation, or the ops paging
+spine (review finding F1 — a zero-authority research store may not page an
+operator). The receipt reaches the sentinel's checkout via the asia-close
+lane's `git add data/` commit; `daily.yml` neither writes nor
+cache-restores `data/prophet_shadow/`, so no W0b-class clobber vector
+exists today (re-check if a cache ever covers that directory).
+
+### Zero authority (unchanged)
+
+`hk_standouts.json` and every HK Brain input are byte/behavior unchanged:
+the registration block sits downstream of the persist, reads none of the
+published payload, and the display lanes keep their existing caps. The
+challenger writes only `data/prophet_shadow/hk_*`. `visible_to_user=False`
+and `published_authority=False` on every row.

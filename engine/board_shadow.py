@@ -476,6 +476,7 @@ def _write_lane_a(
     definition: str,
     rank_fn: Callable[[list[dict]], dict],
     incumbent_positions: dict[str, int],
+    failures: list[dict[str, str]] | None = None,
 ) -> int:
     """Mint Lane A rows ONLY from ``calls`` (contract §2 population law,
     attack class 2): the writer takes the exact calls list as its sole
@@ -483,7 +484,12 @@ def _write_lane_a(
     score gets a row with null challenger fields (missing != zero); a name
     the challenger emitted that is NOT in the incumbent population is
     filtered out and counted in challenger_offlist_n, never silently
-    dropped-and-forgotten."""
+    dropped-and-forgotten.
+
+    ``failures`` (hk-discovery wave, additive): when supplied, a ``rank_fn``
+    exception is ALSO appended to it as ``{"definition": ..., "error": ...}``
+    — the receipt's failure-threading, never a change to this function's own
+    fail-soft contract (it still returns a valid int either way)."""
     tickers: list[str] = []
     call_by_ticker: dict[str, dict] = {}
     for call in calls:
@@ -502,6 +508,8 @@ def _write_lane_a(
         raw_scores = dict(rank_fn(copy.deepcopy(calls)) or {})
     except Exception as exc:  # noqa: BLE001 — a challenger must never break the build
         log.warning("board_shadow(%s): challenger %s rank_fn failed (%s)", market, definition, exc)
+        if failures is not None:
+            failures.append({"definition": definition, "error": str(exc)})
         raw_scores = {}
 
     offlist = sorted({str(t) for t in raw_scores} - set(call_by_ticker))
@@ -612,11 +620,17 @@ def _discovery_first_seen_lookup(market: str, definition: str) -> dict[str, str]
 
 
 def _write_lane_b(market: str, asof: str, definition: str,
-                   discovery_fn: Callable[[str], list[dict]]) -> int:
+                   discovery_fn: Callable[[str], list[dict]],
+                   failures: list[dict[str, str]] | None = None) -> int:
+    """``failures`` (hk-discovery wave, additive): see :func:`_write_lane_a`'s
+    matching note — a ``discovery_fn`` exception is ALSO appended to it,
+    never a change to this function's own fail-soft contract."""
     try:
         raw_rows = list(discovery_fn(str(asof)) or [])
     except Exception as exc:  # noqa: BLE001 — a challenger must never break the build
         log.warning("board_shadow(%s): challenger %s discovery_fn failed (%s)", market, definition, exc)
+        if failures is not None:
+            failures.append({"definition": definition, "error": str(exc)})
         return 0
     if not raw_rows:
         return 0
@@ -751,6 +765,54 @@ def _merge_write_lane_b(market: str, new_frame: pd.DataFrame) -> int:
 _WRITE_SHADOW_ACTIVE = False
 
 
+def _discovery_receipt_path(market: str) -> Path:
+    """hk-discovery wave (contract §4's deferred surface-freshness wiring):
+    the per-market freshness receipt, basename ``<market.lower()>_discovery_
+    receipt.json`` (write-surface fence: the basename starts with the
+    market's own lowercase prefix, exactly like the Lane A/B store files)."""
+    return _store_dir() / f"{market.lower()}_discovery_receipt.json"
+
+
+def _write_discovery_receipt(
+    market: str,
+    asof: str,
+    registry_state: str,
+    written: int,
+    market_registrations: list[tuple[str, dict[str, Callable | None]]],
+    challenger_failures: list[dict[str, str]],
+) -> None:
+    """Best-effort freshness receipt — additive, never raises. Written ONLY
+    when :func:`_registrations_for` was non-empty for this market (callers
+    check that before calling this), on BOTH the ``wrote_n_rows`` and
+    ``error`` registry-state paths, so scripts/check_surface_freshness.py can
+    tell 'absent, not yet wired' apart from 'wired and healthy' apart from
+    'wired and broken'. A receipt-write failure logs a line-start
+    ``::warning`` (bare print, flush=True — CLAUDE.md annotation law) and
+    never breaks write_shadow's own fail-soft contract."""
+    try:
+        import json as _json
+
+        payload = {
+            "market": market,
+            "as_of": asof,
+            "registry_state": registry_state,
+            "written": int(written),
+            "definitions": sorted(definition for definition, _spec in market_registrations),
+            "challenger_failures": list(challenger_failures),
+            "stamped_at": _now_iso(),
+        }
+        path = _discovery_receipt_path(market)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(_json.dumps(payload, sort_keys=True))
+    except Exception as exc:  # noqa: BLE001 — additive; never break write_shadow
+        print(
+            f"::warning title=board-shadow-receipt-failed::{market}: discovery "
+            f"receipt write failed ({exc}) — the surface-freshness vocabulary "
+            "sees no update this pass",
+            flush=True,
+        )
+
+
 def write_shadow(calls: list[dict], market: str, asof: str | None = None) -> dict:
     """The ONE fail-soft call per market (contract §4). Never raises into a
     build. Deep-copies ``calls`` on entry (F1 defense-in-depth) so nothing
@@ -852,6 +914,12 @@ def write_shadow(calls: list[dict], market: str, asof: str | None = None) -> dic
                 log.info("board_shadow(%s): registry_state=no_challenger_for_market", market)
                 return {"written": 0, "registry_state": "no_challenger_for_market"}
 
+            # hk-discovery wave: threaded into the receipt below (both the
+            # success and error paths) without changing D7 semantics — a
+            # per-registration failure is still caught here and the pass
+            # still concludes wrote_n_rows n=<true total>; the receipt
+            # simply also NAMES the failures.
+            challenger_failures: list[dict[str, str]] = []
             incumbent_positions = _read_incumbent_positions(market, str(asof))
             for definition, spec in market_registrations:
                 rank_fn = spec.get("rank_fn")
@@ -860,9 +928,13 @@ def write_shadow(calls: list[dict], market: str, asof: str | None = None) -> dic
                     if rank_fn is not None:
                         total += _write_lane_a(
                             market, str(asof), calls_copy, definition, rank_fn, incumbent_positions,
+                            failures=challenger_failures,
                         )
                     if discovery_fn is not None:
-                        total += _write_lane_b(market, str(asof), definition, discovery_fn)
+                        total += _write_lane_b(
+                            market, str(asof), definition, discovery_fn,
+                            failures=challenger_failures,
+                        )
                 except Exception as exc:  # noqa: BLE001 — D7: one registration's
                     # failure must never mute the rest of the pass, and must
                     # never be reported as the whole pass erroring.
@@ -870,9 +942,13 @@ def write_shadow(calls: list[dict], market: str, asof: str | None = None) -> dic
                         "board_shadow(%s): challenger_failed definition=%s (%s)",
                         market, definition, exc,
                     )
+                    challenger_failures.append({"definition": definition, "error": str(exc)})
                     continue
             state = f"wrote_n_rows n={total}"
             log.info("board_shadow(%s): registry_state=%s", market, state)
+            _write_discovery_receipt(
+                market, str(asof), state, total, market_registrations, challenger_failures,
+            )
             return {"written": total, "registry_state": state}
         except Exception as exc:  # noqa: BLE001 — fail-soft backstop: a
             # SUBSTRATE-level failure (never a single challenger raising —
@@ -882,6 +958,20 @@ def write_shadow(calls: list[dict], market: str, asof: str | None = None) -> dic
                 "board_shadow(%s): write_shadow failed (%s) — registry_state=error",
                 market, exc,
             )
+            try:
+                # Receipt owed on the error path too (contract), but ONLY
+                # when this market actually had a registration — a
+                # substrate failure before that point (e.g. the
+                # CHALLENGER_REGISTRY/market pre-gates above) must not mint
+                # a receipt for a market with nothing registered.
+                _error_registrations = _registrations_for(market)
+                if _error_registrations:
+                    _write_discovery_receipt(
+                        market, str(asof), "error", total, _error_registrations,
+                        challenger_failures if "challenger_failures" in locals() else [],
+                    )
+            except Exception:  # noqa: BLE001 — receipt is best-effort even here
+                pass
             return {"written": total, "registry_state": "error"}
     finally:
         _WRITE_SHADOW_ACTIVE = False
