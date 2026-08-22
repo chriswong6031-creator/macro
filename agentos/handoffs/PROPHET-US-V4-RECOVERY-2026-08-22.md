@@ -8,8 +8,10 @@ mission: >
   fresh Sol CEO session can recover Chairman intent, canonical ownership,
   data/time/null/correction law, buildability/estimability, falsifiers, failure
   states, bounded wave targets and stop conditions without reconstructing the
-  originating chat or silently building a parallel system. Preserve current
-  Prophet V4 and specialist owner gates; this wave is research/handoff only.
+  originating chat or silently building a parallel system. Standardize both the
+  commission and the research return so parallel Sol sessions produce compatible,
+  cold-stranger-recoverable work. Preserve current Prophet V4 and specialist owner
+  gates; this wave is research/handoff only.
 state_before: >
   MAS-116 and MAS-117..MAS-124 already existed as a broad Linear research fan-out,
   and research/prophet_v4/PROPHET_FLAGSHIP_INTELLIGENCE_EXPANSION_FANOUT_2026-08-22.md
@@ -34,6 +36,16 @@ changed:
       E fragility/crowding, F translation, existing Fusion ranking, G evaluation,
       H follower experience. Freezes shared vocabulary/clock/null/authority seams and
       program-wide failure scenarios.
+  - path: research/prophet_v4/flagship_cells/RESEARCH_CELL_DELIVERABLE_TEMPLATE_2026-08-22.md
+    what: >
+      Added the mandatory standardized return shape for MAS-117..MAS-124: claim/current
+      SHA metadata and disagreement ledger; Chairman-intent reconstruction; capability
+      and producer-to-consumer ledgers; owner/reuse/supersession matrix; external
+      research; contracts/identity/clocks/nulls/corrections; method and buildability/
+      estimability tables; experience/failure/falsification artifacts; sibling-cell
+      interface check; 3-5 bounded future-wave mini-handoffs; CEO docket; misconstruction
+      self-test; final disposition and cold-stranger continuation. Domain additions are
+      allowed; required sections may be omitted only with explicit NOT_APPLICABLE reason.
   - path: research/prophet_v4/flagship_cells/CELL_A_THEME_INTELLIGENCE_HANDOFF_2026-08-22.md
     what: >
       Hardened MAS-117 with current GMI/D1 ownership, multi-axis exposure semantics,
@@ -86,8 +98,10 @@ changed:
       no semantic invention for visual convenience.
   - path: Linear MAS-116 and MAS-117..MAS-124
     what: >
-      Added direct attachments to the mandatory constitution/index, each child's
-      dedicated hardened handoff and draft PR #6264. Children remain unassigned Backlog;
+      Added direct attachments to the mandatory constitution/index/standard return
+      template, each child's dedicated hardened handoff and draft PR #6264. Added a
+      parent precedence notice and direct child warnings that the short Linear body is
+      dispatch context rather than specification. Children remain unassigned Backlog;
       no claim/runtime worker is implied.
 verified:
   - claim: "Current Sol operating procedure was loaded from protected Skillpack master, not stale chat memory."
@@ -97,13 +111,14 @@ verified:
       90db9baf5bcc5f2221e3c9870c2aa09a95293c99; INDEX schema
       mastermind.sol_skillpack.v1, version 1.0.0, minimum bootstrap major 1;
       COLD_START, COMMISSION_WAVE, RECONCILE_STATE and CLOSEOUT loaded from the same SHA.
-  - claim: "The hardening branch did not collide with active owner/runtime paths."
-    command: "compare main...sol/prophet-flagship-fanout-hardening-20260822 before Agent OS closeout"
+  - claim: "The hardening changes remain additive and do not overlap active owner/runtime paths."
+    command: "compare main...sol/prophet-flagship-fanout-hardening-20260822"
     result: >
-      At current-main 0e57b06d8e23bf83f4f3f12e755931a283cce0b5 the branch was
-      ahead by 10 research commits and behind by 2 unrelated main commits; every changed
-      path was additive under research/prophet_v4/flagship_cells. This handoff is the only
-      added Agent OS path and no current bare-dated handoff existed at this path.
+      Reconciled again against moving main f513b1793e25e0b5b5e7e10426e0e45e64e57b1d:
+      branch 12 commits ahead / 5 behind at that read, exactly 12 additive changed paths
+      (11 research/handoff architecture files plus this one Agent OS handoff), zero
+      deletions, merge base af7f4af9a86c67885e13dd2bcf80b9932e3c399a. Reconcile/rebase
+      again before landing because main is moving.
   - claim: "Current owner truth was re-read before hardening."
     command: "GitHub current/default-branch Agent OS, research and PR archaeology"
     result: >
@@ -111,40 +126,56 @@ verified:
       Earnings E3/open #6245, BioCatalyst/open #6139, Defense Procurement V3, Stock
       Identity, Market Memory W2C, Advanced Options, Capital Structure V2, FIF,
       Fundamental Forensics, V4 Experience Reference Compositions and MP-1.
-  - claim: "Linear dispatch now resolves to the detailed packets."
-    command: "Linear save_issue attachments on MAS-116..MAS-124"
+  - claim: "Linear dispatch and return law resolve to the detailed packets."
+    command: "Linear attachments/comments on MAS-116..MAS-124"
     result: >
-      MAS-116 links constitution/index/#6264; every child MAS-117..124 links its
-      dedicated hardened handoff and #6264 while remaining Backlog/unassigned.
+      MAS-116 links constitution/index/standard return template/#6264 and carries the
+      mandatory precedence notice; every child MAS-117..124 links its dedicated hardened
+      handoff and #6264, carries a direct scope warning, and remains Backlog/unassigned.
   - claim: "Review surface exists without auto-merge authority."
-    command: "GitHub PR creation"
-    result: "Draft PR #6264 open; research/handoff-only body; auto-merge not enabled."
+    command: "GitHub PR creation/update"
+    result: >
+      Draft PR #6264 open; research/handoff-only body now describes the constitution,
+      eight dedicated handoffs, inter-cell index, standard return template, compiler-
+      visible Agent OS handoff, Linear precedence, current-main reconciliation and proof state.
+  - claim: "Required final-head fence lane passed before the final Agent OS reconciliation edit."
+    command: "GitHub Actions on 8c9ee12d024f549419dfc17a1e7240396d4fa032"
+    result: >
+      fences run 32599846448 completed SUCCESS; broader CI run 32599846442 was still
+      in progress. This Agent OS reconciliation edit creates a newer head, so fresh final-
+      head CI/fences remain owed and the earlier fence success must not be presented as
+      proof of the post-edit head.
 unverified:
   - >
-    Agent OS validator has not been executed from this connector session after adding
-    this bare-dated handoff. PR CI/fences remain required; do not claim this record
-    mechanically valid until scripts/agentos.py validate / owned CI passes on the final head.
+    Agent OS validator has not been executed locally from this connector session; the
+    code-execution sandbox cannot resolve GitHub. Fresh PR CI/fences remain required on
+    the post-reconciliation head. Do not claim this record mechanically valid until the
+    owned validation lanes pass.
   - >
-    No child cell has been claimed or completed. The hardening documents are handoffs,
-    not research results or implementation proof.
+    No child cell has been claimed or completed. The hardening documents are commissions/
+    return contracts, not research results, implementation, production proof or promotion.
   - >
-    The branch has not been rebased/merged with the two newer main commits because the
-    diff is additive and PR review should decide final integration; re-reconcile before landing.
+    The branch has not been rebased/merged with moving main; current-main reconciliation
+    must be repeated before landing and any changed owner law must amend the relevant cell.
 unresolved:
   - >
     D2B3 natural production proof and all existing V4/specialist owner gates remain
     separately owed. This handoff deliberately does not adjudicate them.
   - >
-    The draft PR should receive adversarial review specifically for ambiguous language,
-    cross-cell ownership leaks and missing failure/null/time semantics before ready-for-review.
+    Draft PR #6264 should receive adversarial review specifically for ambiguous language,
+    cross-cell ownership leaks, idealized-but-unestimable constructs, missing failure/
+    null/time semantics and whether the standardized return contract is sufficient for
+    cold-stranger integration before ready-for-review/merge.
 next_actions:
   - >
-    Review PR #6264 against current main; run Agent OS/schema/owned CI. If current-main
-    changes touch any cited owner law, amend the affected handoff rather than merging stale prose.
+    Re-run/follow PR #6264 final-head Agent OS/schema/owned CI and re-reconcile against
+    current main. If current-main changes touch any cited owner law, amend the affected
+    handoff rather than merging stale prose. Keep the PR draft until that review/proof is earned.
   - >
     After #6264 lands, recommended first parallel fresh-Sol research claims are MAS-117
     (A Theme), MAS-122 (F Translation), MAS-123 (G VOI) and MAS-118 (B Incorporation).
-    Each must follow the constitution claim protocol and re-reconcile current owner truth.
+    Each must follow the constitution claim protocol, re-reconcile current owner truth,
+    and return through RESEARCH_CELL_DELIVERABLE_TEMPLATE_2026-08-22.md.
   - >
     Route every completed cell back to Sol for integration review before any proposed
     implementation wave is added to an owner workstream or commissioned.
@@ -154,6 +185,7 @@ next_actions:
     unless an actual implementation dependency says so.
 do_not_redo:
   - "Do not replace these packets with shorter Linear prose; Linear is dispatch only."
+  - "Do not allow bespoke research-return formats to omit the standard capability/owner/clock/null/buildability/falsification/continuation fields without an explicit NOT_APPLICABLE ruling."
   - "Do not create a second theme graph, memory store, ranker, evidence warehouse, evaluator, catalyst engine or risk score."
   - "Do not let a cell claim imply mutation authority over its canonical owner."
   - "Do not let Cell B contaminate current Dislocation P0 or turn incorporation into intrinsic fair value."
@@ -163,7 +195,7 @@ do_not_redo:
   - "Do not let Cell F become a second Fusion ranker or turn dependent observations into confirmation counts."
   - "Do not let Cell G read outcomes protected by current evidence clocks or create another scoreboard."
   - "Do not let Cell H invent upstream semantics for visual convenience or redesign accepted V4/MP-1 law from scratch."
-  - "Do not create a new suffixed Prophet V4 handoff for this date; this bare-dated file is intentionally compiler-visible."
+  - "Do not create a new suffixed Prophet V4 handoff for this date; this bare-dated file is intentionally compiler-visible and must be updated in place for this closeout."
 danger_areas:
   - >
     Several older Prophet handoffs use suffixes after YYYY-MM-DD. Repo evidence from Eval OS
@@ -175,17 +207,21 @@ danger_areas:
   - >
     The most likely architecture failure is semantic duplication rather than file conflict:
     a future session may create a new owner while believing it is merely implementing a good idea.
+  - >
+    The second likely failure is integration drift: individually strong sessions may return
+    incompatible research artifacts. The standard return template is load-bearing and must
+    remain attached to MAS-116 alongside the per-cell packets.
 ---
 
 # Prophet V4 flagship research-cell hardening closeout
 
-The original fan-out solved context limits. This closeout solves interpretation drift.
-A fresh Sol should start from Linear MAS-116, the hardened index, the execution
-constitution and exactly one dedicated child handoff. It must then read current
-canonical owner truth before conclusions or action.
+The original fan-out solved context limits. This closeout solves interpretation drift
+**and return-format drift**. A fresh Sol should start from Linear MAS-116, the hardened
+index, the execution constitution, the standard return template and exactly one dedicated
+child handoff. It must then read current canonical owner truth before conclusions or action.
 
 The hardening is intentionally stronger than a build plan: every cell can be killed,
-narrowed, deferred or routed into an existing owner if current archaeology or
-estimability says the idea should not ship. The only fixed outcome is the Chairman's
-product thesis — early, explainable, evidence-rich opportunity inference with truth,
-intelligence, deterministic actionability and scientific promotion kept distinct.
+narrowed, deferred or routed into an existing owner if current archaeology or estimability
+says the idea should not ship. The only fixed outcome is the Chairman's product thesis —
+early, explainable, evidence-rich opportunity inference with truth, intelligence,
+deterministic actionability and scientific promotion kept distinct.
