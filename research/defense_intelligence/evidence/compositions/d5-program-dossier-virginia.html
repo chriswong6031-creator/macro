@@ -78,7 +78,7 @@
   <div class="card">
     <p class="q"><i></i><b>What is this?</b></p>
     <p class="lead">The Navy's attack-submarine production line, built by two yards on the same hulls.</p>
-    <p>Phase: production. Contract type: definitive contract <span class="tok">award plane award_type, verbatim</span>. Sponsor: Department of the Navy.</p>
+    <p>Phase: production. Contract type: not yet linked <span class="tok">link_state not_reviewed</span> — read verbatim from the award plane's award_type only once a reviewed program-event link exists. Sponsor: Department of the Navy.</p>
     <p>It carries its own line in the Navy's shipbuilding budget book, with a sibling line for material bought a year ahead, and its own name in the Pentagon's acquisition report.</p>
     <p>Latest block in the reviewed record: Block VI.</p>
     <p class="do"><b>Why this matters.</b> One program, one identity. Match awards and filings to the program, never to a yard's name.</p>
@@ -88,15 +88,15 @@
     <p class="q"><i></i><b>Why the government needs it</b></p>
     <p class="lead">Undersea warfare — the Navy says its attack-submarine force is short of its own goal.</p>
     <p>The force-level goal and the shortfall are set out in Congressional Research Service report RL32418.</p>
-    <p>Boats have been running at about one a year against a two-a-year target. The July 2026 award funds nine more Block VI boats — quantity read from the change tape, not from this graph.</p>
+    <p>Boats have been running at about one a year against a two-a-year target. The July 2026 award announcement (an official document held as ontology evidence) covers nine more Block VI boats — but no procurement-tape event for it exists yet, so no quantity is read from the tape; the gap is named, not filled.</p>
     <p class="src">Need statement is quoted from an official source. Program cost figures (EAC) are not collected — a later official-source wave. There is no forecast and no production model on this page.</p>
     <p class="do"><b>Why this matters.</b> The gap between the goal and the build rate is the demand story here. It is a stated need, not a projection.</p>
   </div>
 
   <div class="card">
     <p class="q"><i></i><b>What changed</b></p>
-    <p class="lead">A $42.1 billion Block VI construction contract, awarded 29 July 2026. <span class="tok">tape current</span></p>
-    <p>Nine boats, SSN 814 through SSN 822, plus material for a tenth. This is the change tape's event — realized, never a forward milestone.</p>
+    <p class="lead">The award plane is healthy, but no change event is reviewed against this program yet. <span class="tok">source current</span> <span class="tok">link not_reviewed</span></p>
+    <p>A $42.1 billion Block VI construction contract (nine boats, SSN 814&ndash;822, plus material for a tenth) was announced 29 July 2026 &mdash; an official document held as ontology evidence. No procurement-tape event for it exists on the tape yet, so nothing here reads as tape truth; a realized award, once on the tape and reviewed, renders here &mdash; never as a forward milestone.</p>
     <p>A contract award is not revenue, not a budget request, and not an obligation schedule. Those are four different clocks and this page shows one of them.</p>
     <p class="src">Sources: the official DoD contract announcement and General Dynamics' own release.</p>
     <p class="do"><b>What to do.</b> Watch how the work divides between the yards. Do not price $42.1B into either company.</p>
@@ -179,7 +179,7 @@
       <div class="kv"><span>Role · teaming</span><div><code>prog-role:3d7be015c8a4</code></div></div>
       <div class="kv"><span>Role · supplier</span><div><code>prog-role:c14a8f60d92b</code> <span class="tok">shared_scope true</span></div></div>
       <div class="kv"><span>Milestone</span><div><code>prog-milestone:70e5c2b1a48f</code> <span class="tok">delivery_event window early 2030s · AUKUS Pillar 1 · forward-only</span></div></div>
-      <div class="kv"><span>Changed event</span><div><span class="tok">29 Jul 2026 Block VI award = GovRev/D3 event ("what changed"), never a D5 milestone</span></div></div>
+      <div class="kv"><span>Changed event</span><div><span class="tok">29 Jul 2026 Block VI award = changed-event plane (GovRev/D3), never a D5 milestone; no tape event exists on main as of the D5R.2 census &mdash; awards rail source_state current + link_state not_reviewed</span></div></div>
     </div>
     <div>
       <div class="kv"><span>Source identity</span><div><code>p1_line_item</code> · Appropriation 1611N, Shipbuilding &amp; Conversion Navy, BA-02, line "Virginia Class Submarine" + Advance Procurement sibling line</div></div>
@@ -188,7 +188,7 @@
       <div class="kv"><span>Receipts</span><div><code>sha256 4a91c0e2…</code> · <code>sha256 b7d3159f…</code> · <code>sha256 e05c8a74…</code></div></div>
     </div>
   </div>
-  <p class="muted" style="margin:10px 0 0;font-size:12.5px">Receipt ids and sha256 values above are placeholders in this composition. Admission of any role assertion or milestone requires the fetched document with its sha256, URL and retrieved_at; search synthesis is not admissible evidence. Budget rail state <code>projection_missing</code>; economic-relationship rail <code>not_asserted</code> (GMI reserved-null); awards rail state <code>current</code> per the tape cut (a general program→award edge set is not part of D5 v1). Display tier: this surface cannot rank, size, gate, or originate a signal. Production build ships EN/ZH parity; this reference is EN only.</p>
+  <p class="muted" style="margin:10px 0 0;font-size:12.5px">Receipt ids and sha256 values above are placeholders in this composition. Admission of any role assertion or milestone requires the fetched document with its sha256, URL and retrieved_at; search synthesis is not admissible evidence. Budget rail state <code>projection_missing</code>; economic-relationship rail <code>not_asserted</code> (GMI reserved-null); awards rail <code>source_state current</code> + <code>link_state not_reviewed</code> per the D5R.2 census — no tape event for the Block VI award exists yet, and awards join D5 only through reviewed program_event_links (a general program→award edge set is not part of D5 v1). Display tier: this surface cannot rank, size, gate, or originate a signal. Production build ships EN/ZH parity; this reference is EN only.</p>
 </div>
 
 </div>

@@ -1,0 +1,384 @@
+{
+ "_reference": "D5R.2 representability fixtures (Sol D5R.2 SS8 items A-H). Documentation/reference ONLY: not production fixtures, not admitted data, not a schema instance. Every content-addressed id here is computed under the frozen sha12 law (DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md SS3.1a) so a cold builder can recompute and verify each one. Evidence sha256 values are placeholders: each is sha256 of the named 'd5r2-reference-placeholder:*' string, NOT of a real document; real admission requires re-fetch + receipt + human review (handoff SS3).",
+ "sha12_law": "first 12 lowercase hex of sha256 over the '|'-joined preimage; each field NFC-normalized, lowercased, whitespace-collapsed; absent optional field encoded '-'; integers as decimal strings",
+ "graph_id_example": "program-ontology:reviewed:2026-08-22:defense-d5-v1",
+ "A_program_capability_relation": {
+  "program": {
+   "id": "acq-program:virginia-class-ssn",
+   "revision": 1,
+   "name": "Virginia-class SSN",
+   "aliases": [
+    "SSN 774 class"
+   ],
+   "source_identities": [
+    {
+     "system": "p1_line_item",
+     "native_identifier": "1611N BA-02 Virginia Class Submarine",
+     "evidence_ref": "ev:7e57bb71753d"
+    }
+   ],
+   "phase": "production",
+   "sponsor_agency": "Department of the Navy",
+   "budget_program_keys": [],
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2010-01-26T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:7e57bb71753d"
+   ]
+  },
+  "capability": {
+   "id": "acq-capability:undersea-warfare",
+   "revision": 1,
+   "name": "Undersea warfare",
+   "need_statement": "Attack-submarine force level below the Navy's stated force-structure goal.",
+   "source_identities": [
+    {
+     "system": "congressional_research",
+     "native_identifier": "CRS RL32418",
+     "evidence_ref": "ev:4f8d159388a7"
+    }
+   ],
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2025-03-28T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:4f8d159388a7"
+   ]
+  },
+  "program_capability_link": {
+   "link_id": "prog-cap:6c61262a44f6",
+   "revision": 1,
+   "program_id": "acq-program:virginia-class-ssn",
+   "capability_id": "acq-capability:undersea-warfare",
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2010-01-26T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:4f8d159388a7"
+   ]
+  },
+  "preimage": "acq-program:virginia-class-ssn | acq-capability:undersea-warfare | 2010-01-26T00:00:00+00:00 | 1",
+  "assertion": "link_id recomputes to the stored value; the link's evidence must carry claim scope program_capability_link — the RELATION's own scope, not merely program_identity + capability_need on the endpoints."
+ },
+ "B_role_assertions": {
+  "rows": [
+   {
+    "id": "prog-role:21c01a4ec620",
+    "revision": 1,
+    "program_id": "acq-program:virginia-class-ssn",
+    "platform_id": null,
+    "entity_id": "legal:gd:electric-boat-corp",
+    "role": "prime_contractor",
+    "role_scope": "the program's prime contractor",
+    "shared_scope": false,
+    "single_document_dual_scope": false,
+    "economic_weight": null,
+    "verification_state": "reviewed",
+    "known_at": "2026-08-22T08:00:00+00:00",
+    "valid_to": null,
+    "valid_from": "2025-03-28T00:00:00+00:00",
+    "evidence_refs": [
+     "ev:4f8d159388a7",
+     "ev:7e57bb71753d"
+    ]
+   },
+   {
+    "id": "prog-role:4db1f7c7bfba",
+    "revision": 1,
+    "program_id": "acq-program:virginia-class-ssn",
+    "platform_id": null,
+    "entity_id": "legal:hii:huntington-ingalls-inc",
+    "role": "teaming_partner",
+    "role_scope": "joint construction of Virginia-class boats (~50-50 split)",
+    "shared_scope": false,
+    "single_document_dual_scope": true,
+    "economic_weight": null,
+    "verification_state": "reviewed",
+    "known_at": "2026-08-22T08:00:00+00:00",
+    "valid_to": null,
+    "valid_from": "2025-03-28T00:00:00+00:00",
+    "evidence_refs": [
+     "ev:4f8d159388a7"
+    ]
+   },
+   {
+    "id": "prog-role:1cc0b3429f99",
+    "revision": 1,
+    "program_id": "acq-program:virginia-class-ssn",
+    "platform_id": null,
+    "entity_id": "legal:bwxt:bwx-technologies-inc",
+    "role": "supplier",
+    "role_scope": "naval nuclear reactor components",
+    "shared_scope": true,
+    "single_document_dual_scope": true,
+    "economic_weight": null,
+    "verification_state": "reviewed",
+    "known_at": "2026-08-22T08:00:00+00:00",
+    "valid_to": null,
+    "valid_from": "2025-02-19T00:00:00+00:00",
+    "evidence_refs": [
+     "ev:31e47b3a83dd"
+    ]
+   }
+  ],
+  "assertion": "all three ids recompute from the SS3.1 preimage; economic_weight is present and null on every row; BWXT carries shared_scope true; HII and BWXT carry single_document_dual_scope true (one document covers program_identity AND role)."
+ },
+ "C_event_link_state": {
+  "census": "NO government_procurement_event.v2 row for the 2026-07-29 Block VI award exists on origin/main 7e00f8746ce5 (2026-08-22 census: awards.parquet 3,807 rows, award_actions.parquet 35,284 rows, award_snapshots/award_event_snapshots parquet, dossiers/latest/workspace JSON stores - zero Block VI / $42.1B / 2026-07-29 GD-Virginia rows; newest corpus known_at 2026-08-21T23:22:35Z).",
+  "awards_rail_state": {
+   "source_state": "current",
+   "link_state": "not_reviewed"
+  },
+  "rule": "healthy source + nobody reviewed => source_state current + link_state not_reviewed - NEVER source_unavailable. No DoD announcements collector in D5; never fabricate 'tape current'. The 2026-07-29 official document remains admissible D5 ontology evidence where SS3.1a permits, but that does not make it a GovRev event.",
+  "synthetic_shape_example": {
+   "link_id": "prog-event:1b5c5cc8b33d",
+   "revision": 1,
+   "program_id": "acq-program:virginia-class-ssn",
+   "event_contract": "government_procurement_event.v2",
+   "event_id": "govws-0000000000000000example",
+   "event_source_identity_id": "action:EXAMPLE_SYNTHETIC_0",
+   "event_source_identity_content_sha256": "a15b4df2ff5653b980308567a2ec051bf57db7793106eb64629f4197c54fd3ac",
+   "canonical_award_identity": "generated:EXAMPLE_SYNTHETIC_AWARD",
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2026-07-29T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:2f718fd13f51"
+   ]
+  },
+  "synthetic_note": "shape example only - event_id/source identity are synthetic; a production row must pass the loader's event-store verification (event exists; event_source_identity_id and event_source_identity_content_sha256 equal the live event's award_change.source_identity.id/.content_sha256; canonical_award_identity matches)."
+ },
+ "D_irdm_reviewed_none": {
+  "real_event_identity": {
+   "event_id": "govws-a6c70850a9cbdce9fa3e7f3b",
+   "record_id": "award:generated:CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-",
+   "source_identity_id": "action:CONT_TX_9700_-NONE-_HC101319C0006_P00032_-NONE-_0",
+   "source_identity_content_sha256": "2a07ba19681a3c9d07f69b3316850b4646db48a8075d2ea8375755e112d02bab",
+   "receipt": "git show origin/main:data/government_revenue/workspace.json (2026-08-22)"
+  },
+  "review_coverage_row": {
+   "coverage_id": "rev-cov:e74c3e6b1833",
+   "scope": "program_event_link",
+   "subject_type": "award_event",
+   "subject_id": "govws-a6c70850a9cbdce9fa3e7f3b",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-irdm-example.json",
+   "worksheet_sha256": "a4d0c6cbb8b75de2bfa92ba4ac86f16a615320a71e9e5e509cc6e062a08b764c",
+   "admitted_count": 0
+  },
+  "program_link": {
+   "state": "reviewed_none",
+   "reason_code": "no_reviewed_program_link",
+   "program_id": null,
+   "program_event_link_id": null,
+   "ontology_graph_id": "program-ontology:reviewed:2026-08-22:defense-d5-v1"
+  },
+  "alternate_not_reviewed": {
+   "state": "not_reviewed",
+   "reason_code": "no_reviewed_program_link",
+   "program_id": null,
+   "program_event_link_id": null,
+   "ontology_graph_id": "program-ontology:reviewed:2026-08-22:defense-d5-v1"
+  },
+  "assertion": "reviewed_none is derivable from the artifact alone: the coverage row with admitted_count 0 covering this award_event subject exists and no admitted program_event_link cites the event. Without the coverage row the state is not_reviewed. No program name is copied into program_link."
+ },
+ "E_rename_same_logical_id": {
+  "rows": [
+   {
+    "id": "acq-program:example-alpha",
+    "revision": 1,
+    "name": "Alpha Strike Weapon",
+    "aliases": [],
+    "source_identities": [
+     {
+      "system": "official_program_page",
+      "native_identifier": "Example program page",
+      "evidence_ref": "ev:50fb58872bd7"
+     }
+    ],
+    "phase": "development",
+    "sponsor_agency": "Department of Example",
+    "budget_program_keys": [],
+    "verification_state": "reviewed",
+    "known_at": "2026-03-01T00:00:00+00:00",
+    "valid_from": "2026-01-15T00:00:00+00:00",
+    "valid_to": null,
+    "evidence_refs": [
+     "ev:50fb58872bd7"
+    ]
+   },
+   {
+    "id": "acq-program:example-alpha",
+    "revision": 2,
+    "name": "Beta Strike Weapon",
+    "aliases": [],
+    "source_identities": [
+     {
+      "system": "official_program_page",
+      "native_identifier": "Example program page",
+      "evidence_ref": "ev:50fb58872bd7"
+     }
+    ],
+    "phase": "development",
+    "sponsor_agency": "Department of Example",
+    "budget_program_keys": [],
+    "verification_state": "reviewed",
+    "known_at": "2026-06-01T00:00:00+00:00",
+    "valid_from": "2026-05-15T00:00:00+00:00",
+    "valid_to": null,
+    "evidence_refs": [
+     "ev:50fb58872bd7"
+    ],
+    "succession_reason": "renamed"
+   }
+  ],
+  "assertion": "revision-1 row stays byte-identical after the rename lands; replay at analysis_as_of < 2026-06-01T00:00:00+00:00 renders 'Alpha Strike Weapon' and never 'Beta'; at analysis_as_of >= known_at(rev2), an award effective 2026-02-01 renders 'Alpha' (latest known revision whose validity covers that time) and one effective 2026-07-01 renders 'Beta'; NO second logical id is minted - the programs collection still contains exactly one acq-program:example-alpha identity."
+ },
+ "F_identity_break_restructure": {
+  "rows": [
+   {
+    "id": "acq-program:example-legacy",
+    "revision": 1,
+    "name": "Legacy Joint Program",
+    "aliases": [],
+    "source_identities": [
+     {
+      "system": "official_program_page",
+      "native_identifier": "Example program page",
+      "evidence_ref": "ev:50fb58872bd7"
+     }
+    ],
+    "phase": "production",
+    "sponsor_agency": "Department of Example",
+    "budget_program_keys": [],
+    "verification_state": "reviewed",
+    "known_at": "2026-02-01T00:00:00+00:00",
+    "valid_from": "2026-01-01T00:00:00+00:00",
+    "valid_to": null,
+    "evidence_refs": [
+     "ev:50fb58872bd7"
+    ]
+   },
+   {
+    "id": "acq-program:example-successor",
+    "revision": 1,
+    "name": "Successor Program",
+    "aliases": [],
+    "source_identities": [
+     {
+      "system": "official_program_page",
+      "native_identifier": "Example program page",
+      "evidence_ref": "ev:50fb58872bd7"
+     }
+    ],
+    "phase": "production",
+    "sponsor_agency": "Department of Example",
+    "budget_program_keys": [],
+    "predecessor_id": "acq-program:example-legacy",
+    "succession_reason": "restructured",
+    "verification_state": "reviewed",
+    "known_at": "2026-07-10T00:00:00+00:00",
+    "valid_from": "2026-07-01T00:00:00+00:00",
+    "valid_to": null,
+    "evidence_refs": [
+     "ev:50fb58872bd7"
+    ]
+   },
+   {
+    "id": "acq-program:example-legacy",
+    "revision": 2,
+    "name": "Legacy Joint Program",
+    "aliases": [],
+    "source_identities": [
+     {
+      "system": "official_program_page",
+      "native_identifier": "Example program page",
+      "evidence_ref": "ev:50fb58872bd7"
+     }
+    ],
+    "phase": "production",
+    "sponsor_agency": "Department of Example",
+    "budget_program_keys": [],
+    "verification_state": "reviewed",
+    "known_at": "2026-07-10T00:00:00+00:00",
+    "valid_from": "2026-01-01T00:00:00+00:00",
+    "valid_to": "2026-07-01T00:00:00+00:00",
+    "evidence_refs": [
+     "ev:50fb58872bd7"
+    ],
+    "succession_reason": "restructured"
+   }
+  ],
+  "assertion": "the successor is a NEW logical id at revision 1 carrying predecessor_id + succession_reason restructured (the ONLY case predecessor_id is legal on a logical kind); the predecessor close-out is revision 2 of the OLD id with valid_to set and succession_reason restructured; replay before 2026-07-10T00:00:00+00:00 shows only the predecessor; the predecessor's revision-1 row stays byte-identical."
+ },
+ "G_milestone_window_collision": {
+  "rows": [
+   {
+    "id": "prog-milestone:cd326e9ef033",
+    "revision": 1,
+    "program_id": "acq-program:virginia-class-ssn",
+    "kind": "delivery_event",
+    "title": "AUKUS Pillar 1 initial transfer window",
+    "temporal_kind": "window",
+    "window": {
+     "from": "2030-01-01",
+     "to": "2032-12-31"
+    },
+    "verification_state": "reviewed",
+    "known_at": "2026-08-22T08:00:00+00:00",
+    "valid_to": null,
+    "valid_from": "2025-03-28T00:00:00+00:00",
+    "evidence_refs": [
+     "ev:4f8d159388a7"
+    ]
+   },
+   {
+    "id": "prog-milestone:f9d504cf169e",
+    "revision": 1,
+    "program_id": "acq-program:virginia-class-ssn",
+    "kind": "delivery_event",
+    "title": "AUKUS Pillar 1 initial transfer window",
+    "temporal_kind": "window",
+    "window": {
+     "from": "2030-01-01",
+     "to": "2033-12-31"
+    },
+    "verification_state": "reviewed",
+    "known_at": "2026-08-22T08:00:00+00:00",
+    "valid_to": null,
+    "valid_from": "2025-03-28T00:00:00+00:00",
+    "evidence_refs": [
+     "ev:4f8d159388a7"
+    ]
+   }
+  ],
+  "preimages": [
+   "acq-program:virginia-class-ssn | delivery_event | AUKUS Pillar 1 initial transfer window | window | 2030-01-01 | 2032-12-31 | 1",
+   "acq-program:virginia-class-ssn | delivery_event | AUKUS Pillar 1 initial transfer window | window | 2030-01-01 | 2033-12-31 | 1"
+  ],
+  "assertion": "the two rows differ ONLY in window.to and their ids MUST differ (both window endpoints are in the preimage); a milestone row carrying both date and window, or a temporal_kind that does not match the populated field, is refused at load."
+ },
+ "H_zero_admission_review_pass": {
+  "review_coverage_row": {
+   "coverage_id": "rev-cov:3d7c979ebcc5",
+   "scope": "milestones",
+   "subject_type": "program",
+   "subject_id": "acq-program:example-alpha",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-example-alpha.json",
+   "worksheet_sha256": "946c0c87d41bdecd7de17c8ce1877e0f9acaad2ace1dfec773b4d9dad0adac2d",
+   "admitted_count": 0
+  },
+  "derived_rail_state": {
+   "rail": "milestones",
+   "subject": "acq-program:example-alpha",
+   "state": "reviewed_none"
+  },
+  "assertion": "reviewed_none is reproducible from the artifact alone: the coverage row (scope milestones, admitted_count 0) exists and zero admitted milestone rows cite the subject program; deleting the coverage row flips the derivation to not_reviewed; the coverage row records the human-review act and manufactures no source truth."
+ }
+}

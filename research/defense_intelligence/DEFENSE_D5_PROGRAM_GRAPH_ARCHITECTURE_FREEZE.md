@@ -75,7 +75,355 @@ This is the same two-artifact shape the estate has already ratified twice (recip
 **Contract:** `government_program_ontology.v1` at `contracts/government_revenue/government_program_ontology.v1.schema.json`.
 **Canonical artifact:** `data/government_revenue/program_ontology.json`.
 **Producer discipline:** `scripts/propose_government_program_ontology.py` (discovery → candidate file only, `proposed` rows, output-path guard) and `scripts/curate_government_program_ontology.py` (atomic admission of a human-reviewed worksheet) — the recipient-graph propose/curate **script pattern**, with D5's own evidence gates per §3.1a (the recipient graph's closed evidence classes/hosts do NOT transfer — they would reject every D5 source). Engine reader: `engine/government_revenue/program_ontology.py`.
-**Contract discipline (inherited, mandatory):** closed top-level key set; `additionalProperties: false` on every def; const-pinned `schema_version`; the verbatim all-false display-tier `AUTHORITY` block (`tier: display`, `context_only: true`, `can_rank/size/gate/originate_signal/add_candidates/escalate: false`); an `evidence` table whose rows carry receipt id + sha256 + source URL + retrieved_at; top-level `conflicts` and `overrides` collections with the recipient-graph override action semantics.
+**Contract discipline (inherited, mandatory):** closed top-level key set (enumerated in §3.0); `additionalProperties: false` on every def; const-pinned `schema_version`; the verbatim all-false display-tier `AUTHORITY` block (`tier: display`, `context_only: true`, `can_rank/size/gate/originate_signal/add_candidates/escalate: false` — exact key names per `dossiers.py:47-56`); an `evidence` table whose row shape is frozen in §3.1a; top-level `conflicts` and `overrides` collections with D5-scoped rows following the recipient-graph structural pattern (§5).
+
+### 3.0 Top-level contract skeleton (frozen — D5R.2 representability seal)
+
+The top-level key set is CLOSED and enumerated. `government_program_ontology.v1` has exactly these **seventeen** top-level keys, in this order, and **no additional top-level collection is allowed in D5 v1** — adding one returns to Sol before any change:
+
+`contract` · `schema_version` · `graph_id` · `graph_known_at` · `graph_effective_at` · `authority` · `evidence` · `programs` · `capabilities` · `platforms` · `program_capability_links` · `role_assertions` · `milestones` · `program_event_links` · `review_coverage` · `conflicts` · `overrides`
+
+- **`contract`**: const `"government_program_ontology.v1"`. **`schema_version`**: const `"1.0.0"` (semver string, const-pinned — the recipient graph pins `"1.1.0"` the same way, `entity_resolution.py:40`).
+- **`graph_id` grammar (frozen):** `program-ontology:<status>:<YYYY-MM-DD>:<batch-slug>` with `status ∈ {candidate, reviewed}` — the recipient graph's exact grammar shape (committed value `recipient-graph:reviewed:2026-08-19:defense21-v1`; the propose script mints `candidate`, the curate script re-mints `reviewed` on admission, per the `propose_government_revenue_recipient_graph.py:1469-1480` precedent). Example: `program-ontology:reviewed:2026-08-22:defense-d5-v1`.
+- **Graph clocks:** `graph_known_at` / `graph_effective_at`, strict RFC3339 with explicit UTC offset (§5) — graph-style clocks because this is reviewed PIT truth, not a transient workspace projection; the `as_of`/`generated_at` idiom belongs to read models (§4) and is not used here. Header receipt: the recipient graph's required header is exactly `contract, schema_version, graph_id, graph_known_at, graph_effective_at` (`entity_resolution.py:51-55`).
+
+**Reference object (documentation only — the production schema file is a D5 deliverable and is NOT created in D5R):** every content-addressed id below recomputes under §3.1a's sha12 law, and the identical values appear in `evidence/fixtures/d5-representability-fixtures.json` so a cold builder can verify them. Evidence `sha256` values are placeholders (each is sha256 of the named `d5r2-reference-placeholder:*` string, not of a real document), and the `program_event_links` row is a SYNTHETIC shape example — the 2026-08-22 census found NO real Virginia Block VI `government_procurement_event.v2` row on `origin/main` `7e00f874` (§3.1b).
+
+```json
+{
+ "contract": "government_program_ontology.v1",
+ "schema_version": "1.0.0",
+ "graph_id": "program-ontology:reviewed:2026-08-22:defense-d5-v1",
+ "graph_known_at": "2026-08-22T08:00:00+00:00",
+ "graph_effective_at": "2026-08-22T08:00:00+00:00",
+ "authority": {
+  "tier": "display",
+  "context_only": true,
+  "can_rank": false,
+  "can_size": false,
+  "can_gate": false,
+  "can_originate_signal": false,
+  "can_add_candidates": false,
+  "can_escalate": false
+ },
+ "evidence": [
+  {
+   "evidence_id": "ev:7e57bb71753d",
+   "evidence_class": "official_budget_exhibit",
+   "sha256": "7e57bb71753d1da0e289734b1c1b8b5cca7260be990d416d21542d00d99ea8c1",
+   "source_url": "https://www.secnav.navy.mil/fmc/fmb/Documents/11pres/SCN_BA2_BOOK.pdf",
+   "retrieved_from_url": "https://www.globalsecurity.org/military/library/budget/fy2011/navy-peds/scn_ba2_book.pdf",
+   "retrieved_at": "2026-08-22T08:00:00+00:00",
+   "claim_scopes": [
+    "program_identity"
+   ]
+  },
+  {
+   "evidence_id": "ev:4f8d159388a7",
+   "evidence_class": "congressional_research",
+   "sha256": "4f8d159388a732c82699f11b2be27768d6f1e2dc1b561ecb3e688e21185c43ad",
+   "source_url": "https://crsreports.congress.gov/product/pdf/RL/RL32418",
+   "retrieved_from_url": "https://www.everycrsreport.com/reports/RL32418.html",
+   "retrieved_at": "2026-08-22T08:00:00+00:00",
+   "claim_scopes": [
+    "program_identity",
+    "capability_need",
+    "program_capability_link",
+    "role",
+    "milestone"
+   ]
+  },
+  {
+   "evidence_id": "ev:2f718fd13f51",
+   "evidence_class": "official_contract_announcement",
+   "sha256": "2f718fd13f51c621268a01f0cc1cff186281231acd0466f5a71af4d9385d77cd",
+   "source_url": "https://www.war.gov/News/Contracts/Contract/Article/example-2026-07-29/",
+   "retrieved_from_url": "https://www.war.gov/News/Contracts/Contract/Article/example-2026-07-29/",
+   "retrieved_at": "2026-08-22T08:00:00+00:00",
+   "claim_scopes": [
+    "program_identity",
+    "role"
+   ]
+  },
+  {
+   "evidence_id": "ev:31e47b3a83dd",
+   "evidence_class": "issuer_disclosure",
+   "sha256": "31e47b3a83dd03ded474b20a3d7640b997534efe6ff9622cd1630af24affc34e",
+   "source_url": "https://investors.bwxt.com/news/example-2025-02-19",
+   "retrieved_from_url": "https://investors.bwxt.com/news/example-2025-02-19",
+   "retrieved_at": "2026-08-22T08:00:00+00:00",
+   "claim_scopes": [
+    "program_identity",
+    "role"
+   ],
+   "pinned_issuer_host": "investors.bwxt.com",
+   "pinned_issuer_host_basis": "Host identified as BWX Technologies' investor-relations site in the issuer's own SEC filings."
+  }
+ ],
+ "programs": [
+  {
+   "id": "acq-program:virginia-class-ssn",
+   "revision": 1,
+   "name": "Virginia-class SSN",
+   "aliases": [
+    "SSN 774 class"
+   ],
+   "source_identities": [
+    {
+     "system": "p1_line_item",
+     "native_identifier": "1611N BA-02 Virginia Class Submarine",
+     "evidence_ref": "ev:7e57bb71753d"
+    }
+   ],
+   "phase": "production",
+   "sponsor_agency": "Department of the Navy",
+   "budget_program_keys": [],
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2010-01-26T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:7e57bb71753d"
+   ]
+  }
+ ],
+ "capabilities": [
+  {
+   "id": "acq-capability:undersea-warfare",
+   "revision": 1,
+   "name": "Undersea warfare",
+   "need_statement": "Attack-submarine force level below the Navy's stated force-structure goal.",
+   "source_identities": [
+    {
+     "system": "congressional_research",
+     "native_identifier": "CRS RL32418",
+     "evidence_ref": "ev:4f8d159388a7"
+    }
+   ],
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2025-03-28T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:4f8d159388a7"
+   ]
+  }
+ ],
+ "platforms": [
+  {
+   "id": "platform:virginia-block-v",
+   "revision": 1,
+   "name": "Virginia Block V",
+   "program_id": "acq-program:virginia-class-ssn",
+   "variant_of": null,
+   "source_identities": [
+    {
+     "system": "congressional_research",
+     "native_identifier": "CRS RL32418 (Block V)",
+     "evidence_ref": "ev:4f8d159388a7"
+    }
+   ],
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2019-12-02T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:4f8d159388a7"
+   ]
+  },
+  {
+   "id": "platform:virginia-block-vi",
+   "revision": 1,
+   "name": "Virginia Block VI",
+   "program_id": "acq-program:virginia-class-ssn",
+   "variant_of": "platform:virginia-block-v",
+   "source_identities": [
+    {
+     "system": "contract_announcement",
+     "native_identifier": "Block VI construction award, 2026-07-29",
+     "evidence_ref": "ev:2f718fd13f51"
+    }
+   ],
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2026-07-29T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:2f718fd13f51"
+   ]
+  }
+ ],
+ "program_capability_links": [
+  {
+   "link_id": "prog-cap:6c61262a44f6",
+   "revision": 1,
+   "program_id": "acq-program:virginia-class-ssn",
+   "capability_id": "acq-capability:undersea-warfare",
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2010-01-26T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:4f8d159388a7"
+   ]
+  }
+ ],
+ "role_assertions": [
+  {
+   "id": "prog-role:21c01a4ec620",
+   "revision": 1,
+   "program_id": "acq-program:virginia-class-ssn",
+   "platform_id": null,
+   "entity_id": "legal:gd:electric-boat-corp",
+   "role": "prime_contractor",
+   "role_scope": "the program's prime contractor",
+   "shared_scope": false,
+   "single_document_dual_scope": false,
+   "economic_weight": null,
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2025-03-28T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:4f8d159388a7",
+    "ev:7e57bb71753d"
+   ]
+  },
+  {
+   "id": "prog-role:4db1f7c7bfba",
+   "revision": 1,
+   "program_id": "acq-program:virginia-class-ssn",
+   "platform_id": null,
+   "entity_id": "legal:hii:huntington-ingalls-inc",
+   "role": "teaming_partner",
+   "role_scope": "joint construction of Virginia-class boats (~50-50 split)",
+   "shared_scope": false,
+   "single_document_dual_scope": true,
+   "economic_weight": null,
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2025-03-28T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:4f8d159388a7"
+   ]
+  },
+  {
+   "id": "prog-role:1cc0b3429f99",
+   "revision": 1,
+   "program_id": "acq-program:virginia-class-ssn",
+   "platform_id": null,
+   "entity_id": "legal:bwxt:bwx-technologies-inc",
+   "role": "supplier",
+   "role_scope": "naval nuclear reactor components",
+   "shared_scope": true,
+   "single_document_dual_scope": true,
+   "economic_weight": null,
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2025-02-19T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:31e47b3a83dd"
+   ]
+  }
+ ],
+ "milestones": [
+  {
+   "id": "prog-milestone:cd326e9ef033",
+   "revision": 1,
+   "program_id": "acq-program:virginia-class-ssn",
+   "kind": "delivery_event",
+   "title": "AUKUS Pillar 1 initial transfer window",
+   "temporal_kind": "window",
+   "window": {
+    "from": "2030-01-01",
+    "to": "2032-12-31"
+   },
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2025-03-28T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:4f8d159388a7"
+   ]
+  }
+ ],
+ "program_event_links": [
+  {
+   "link_id": "prog-event:1b5c5cc8b33d",
+   "revision": 1,
+   "program_id": "acq-program:virginia-class-ssn",
+   "event_contract": "government_procurement_event.v2",
+   "event_id": "govws-0000000000000000example",
+   "event_source_identity_id": "action:EXAMPLE_SYNTHETIC_0",
+   "event_source_identity_content_sha256": "a15b4df2ff5653b980308567a2ec051bf57db7793106eb64629f4197c54fd3ac",
+   "canonical_award_identity": "generated:EXAMPLE_SYNTHETIC_AWARD",
+   "verification_state": "reviewed",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "valid_to": null,
+   "valid_from": "2026-07-29T00:00:00+00:00",
+   "evidence_refs": [
+    "ev:2f718fd13f51"
+   ]
+  }
+ ],
+ "review_coverage": [
+  {
+   "coverage_id": "rev-cov:3beb9bcce8af",
+   "scope": "program_identity",
+   "subject_type": "program",
+   "subject_id": "acq-program:virginia-class-ssn",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-example.json",
+   "worksheet_sha256": "283987ebaab45ea45aab5ad37ea07f1d9fc7b83364f7e9eebd0a04a0cf5adbd0",
+   "admitted_count": 1
+  },
+  {
+   "coverage_id": "rev-cov:79ae0f4f0ef7",
+   "scope": "capability",
+   "subject_type": "program",
+   "subject_id": "acq-program:virginia-class-ssn",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-example.json",
+   "worksheet_sha256": "283987ebaab45ea45aab5ad37ea07f1d9fc7b83364f7e9eebd0a04a0cf5adbd0",
+   "admitted_count": 1
+  },
+  {
+   "coverage_id": "rev-cov:09da1d981ce9",
+   "scope": "participants",
+   "subject_type": "program",
+   "subject_id": "acq-program:virginia-class-ssn",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-example.json",
+   "worksheet_sha256": "283987ebaab45ea45aab5ad37ea07f1d9fc7b83364f7e9eebd0a04a0cf5adbd0",
+   "admitted_count": 3
+  },
+  {
+   "coverage_id": "rev-cov:8c2274d3714a",
+   "scope": "milestones",
+   "subject_type": "program",
+   "subject_id": "acq-program:virginia-class-ssn",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-example.json",
+   "worksheet_sha256": "283987ebaab45ea45aab5ad37ea07f1d9fc7b83364f7e9eebd0a04a0cf5adbd0",
+   "admitted_count": 1
+  },
+  {
+   "coverage_id": "rev-cov:e74c3e6b1833",
+   "scope": "program_event_link",
+   "subject_type": "award_event",
+   "subject_id": "govws-a6c70850a9cbdce9fa3e7f3b",
+   "known_at": "2026-08-22T08:00:00+00:00",
+   "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-irdm-example.json",
+   "worksheet_sha256": "a4d0c6cbb8b75de2bfa92ba4ac86f16a615320a71e9e5e509cc6e062a08b764c",
+   "admitted_count": 0
+  }
+ ],
+ "conflicts": [],
+ "overrides": []
+}
+```
 
 ### 3.1 Object model (the minimum D5 vertical — deliberately reduced)
 
@@ -83,26 +431,65 @@ The V3 masterplan's broad vocabulary (threat, conflict, operation, munition, sen
 
 | Record | ID grammar | Required fields (beyond the temporal quadruple of §5) | Notes |
 |---|---|---|---|
-| `program` | `acq-program:<slug>` | `name`, `aliases[]` (reviewed), `source_identities[]`, `phase` (closed: `development \| production \| sustainment \| restructured \| terminated`), `sponsor_agency` (verbatim official string) | The slug is minted once at first review and never re-derived from the name; renames/restructures append a successor record (§5). `source_identities[]` rows: `{system ∈ {p1_line_item, rdte_pe, sar_msar, official_program_page, contract_announcement}, native_identifier, evidence_ref}` — identity evidence, never budget figures. |
+| `program` | `acq-program:<slug>` | `name`, `aliases[]` (reviewed), `source_identities[]`, `phase` (closed: `development \| production \| sustainment \| restructured \| terminated`), `sponsor_agency` (verbatim official string) | The slug is minted once at first review and never re-derived from the name; renames/restructures append a successor record (§5). `source_identities[]` rows: `{system ∈ {p1_line_item, rdte_pe, sar_msar, official_program_page, contract_announcement, congressional_research}, native_identifier, evidence_ref}` — identity evidence, never budget figures (`congressional_research` added D5R.2 so a capability's CRS-sourced identity is representable without abusing another system value). |
 | `capability` | `acq-capability:<slug>` (prefixed — GMI already owns an unrelated `capability.v1` row class in the plane D5 records must stay consumable by) | `name`, `need_statement` (evidence-bound prose from an official source), `source_identities[]` | D5 carries ONE capability layer. Mission/threat/conflict cascade is explicitly out (D6+). The user-job "mission requirement" hop is answered by the capability record's evidence-bound `need_statement`. |
 | `platform` | `platform:<slug>` | `name`, `program_id`, optional `variant_of` (another `platform:` id), `source_identities[]` | Blocks/variants (Block V, Block VI) are `platform` records with `variant_of`; succession appends, never edits. |
 | `role_assertion` | `prog-role:<sha12>` (content-derived from the normalized tuple `program_id \| platform_id-or-"-" \| entity_id \| role \| role_scope \| valid_from \| revision` — `role_scope` and the platform slot are IN the preimage so two assertions differing only in scope or block can never collide; `revision` is an integer starting at 1 that increments ONLY on a `superseded_evidence` succession, so an evidence-superseding successor mints a distinct id while an identical resubmission stays idempotent) | `program_id` (**REQUIRED**), `platform_id` (**OPTIONAL**; when present the loader enforces: the referenced platform exists, `platform.program_id == role_assertion.program_id`, and the platform's and assertion's temporal intervals are compatible — **platform-only role assertions are invalid in v1**), `entity_id` (a defense21 legal-entity id — never a raw name, never a ticker), `role` (closed: `prime_contractor \| teaming_partner \| subcontractor \| supplier` — teaming co-production is NOT subcontracting; D0R F2 keeps JV/consortium distinct and the enum must not fuse them), `role_scope` (evidence-bound prose quoting the source's own words, e.g. "naval nuclear reactor components"), `shared_scope: bool` (true when the evidence sentence covers multiple programs), `single_document_dual_scope: bool`, `economic_weight` (**REQUIRED, `const: null`** — it names the absence of an earned economic share; do not derive, estimate, populate, rank, or otherwise make it non-null — no ratio or exposure share exists in D5), `evidence_refs[]` (`minItems: 1`; loader-enforced coverage rule: the union of the refs' `claim_scopes` must cover BOTH `program_identity` AND `role`; when ONE document covers both, `single_document_dual_scope: true` is required and the review worksheet must quote the exact source-native sentence) | This is the supplier law's carrier, mirroring `government_budget_edge.v1 reviewed_documentary` discipline with the coverage rule made loader-checkable. **Entity attachment rule:** the role attaches to the legal entity the evidence document names as performing the work; a parent-issued release naming a subsidiary's work attaches to the subsidiary. |
-| `milestone` | `prog-milestone:<sha12>` | `program_id`, `kind` (closed: `budget_event \| contract_event \| delivery_event \| review_event`), `title`, `date` or `window {from,to}`, `evidence_refs[]` | **FORWARD-ONLY.** Official forward-looking statements only; the dossier's "next" rail reads these, and no milestone exists without an official document. An already-realized procurement event (e.g. the 2026-07-29 Block VI award) is GovRev/D3 truth — it renders under "what changed" and is NEVER duplicated as a milestone. A milestone whose date/window has passed is closed out (`valid_to`), not re-shown as "next". |
+| `milestone` | `prog-milestone:<sha12>` (preimage per §3.1a — BOTH window endpoints are in it) | `program_id`, `kind` (closed: `budget_event \| contract_event \| delivery_event \| review_event`), `title`, `temporal_kind` (closed: `date \| window`), then an exact XOR: `temporal_kind: date` ⇒ `date` (RFC3339 full-date) REQUIRED and `window` FORBIDDEN; `temporal_kind: window` ⇒ `window {from, to}` (both RFC3339 full-dates, `from <= to`) REQUIRED and `date` FORBIDDEN — a row carrying both, neither, or a `temporal_kind` that does not match the populated field is refused at load; `evidence_refs[]` | **FORWARD-ONLY.** Official forward-looking statements only; the dossier's "next" rail reads these, and no milestone exists without an official document. An already-realized procurement event (e.g. the 2026-07-29 Block VI award) is GovRev/D3 truth — it renders under "what changed" and is NEVER duplicated as a milestone. A milestone whose date/window has passed is closed out (`valid_to`), not re-shown as "next". |
 
-Both content-addressed kinds (`role_assertion`, `milestone`) additionally REQUIRE a stored **`revision`** field (integer, starts at 1) — the same value that enters their id preimages, so the loader can recompute and verify `<sha12>` and curate can mint `revision+1` on a `superseded_evidence` succession; declared here at record level exactly as `predecessor_id`/`succession_reason` are in §5.
+**Universal `revision` law (D5R.2):** EVERY canonical row kind — `program`, `capability`, `platform`, `role_assertion`, `milestone`, `program_capability_link`, `program_event_link` — carries a REQUIRED stored **`revision`** field (integer, starts at 1). On the two content-addressed record kinds and the two link collections, `revision` also enters the id preimage (as its decimal string), so the loader can recompute and verify every `<sha12>` and a `superseded_evidence` succession mints a distinct id (`revision+1`) while an identical resubmission stays idempotent. On the three **logical** kinds (`program`, `capability`, `platform`) the id is a minted slug, not content-derived, and `revision` versions the SAME logical identity per §5's logical-id law (rename / corrected evidence / attribute revision ⇒ same id, `revision+1`; identity break ⇒ new id at revision 1 with `predecessor_id`).
 
-Intra-ontology edges (closed): `implements_capability` (program→capability), `part_of_program` (platform→program, carried as `program_id`), `variant_of` (platform→platform). No other edge kind exists in v1; adding one is a contract version bump with its own review.
+**Relationship representation law (D5R.2 — one representation per relation; nothing inferred from names):**
+
+- **program → capability** is represented ONLY by `program_capability_links[]` rows (the `implements_capability` semantic). Row shape (all REQUIRED unless marked): `link_id` = `prog-cap:<sha12>` (preimage `program_id | capability_id | valid_from | revision`), `program_id`, `capability_id`, `revision`, `verification_state`, `known_at`, `valid_from`, `valid_to` (nullable), `evidence_refs[]` (`minItems: 1`). The loader enforces: both endpoints exist in this artifact; the link's `[valid_from, valid_to)` interval is temporally compatible with both endpoints'; and the refs' `claim_scopes` union includes **`program_capability_link`** — the RELATION's own scope. Evidence proving the program and the capability separately exist (`program_identity` + `capability_need`) does NOT establish the relation; **no capability relationship may ever be inferred from names, slugs, or prose similarity.**
+- **platform → program** is the platform record's `program_id` field; **platform → platform variant** is the platform record's `variant_of` field (nullable; when present the referenced platform must exist and belong to the same `program_id`). Neither has an edge collection.
+- **program → GovRev event** (cross-plane) is represented ONLY by `program_event_links[]` rows, frozen in §3.1b.
+
+No other relationship representation exists in v1; adding one is a contract version bump with its own review.
 
 ### 3.1a Evidence admissibility (frozen — the recipient graph's closed sets do not transfer)
 
 The recipient graph's evidence gates (`_GRAPH_EVIDENCE_CLASSES` = official_filing/official_award/issuer_disclosure; publisher hosts closed at SEC/USAspending; `entity_resolution.py:116-127,400-433`) would reject every D5 pilot source. D5 freezes its own closed sets — same enforcement pattern, D5 vocabulary:
 
+- **Evidence row shape (frozen, D5R.2):** every row in the top-level `evidence` table carries exactly `evidence_id` (`ev:<sha12>` — here the twelve hex characters are the first 12 of the row's own document `sha256`, no preimage join), `evidence_class`, `sha256` (the retrieved bytes' receipt), `source_url`, `retrieved_from_url`, `retrieved_at` (strict RFC3339), `claim_scopes[]`, plus — on `issuer_disclosure` rows ONLY — `pinned_issuer_host` and `pinned_issuer_host_basis` (the issuer-host authority block below). `evidence_refs[]` on records and links reference rows by `evidence_id`.
 - **`evidence_class` enum:** `official_budget_exhibit | official_acquisition_report | official_contract_announcement | official_program_page | congressional_research | issuer_disclosure`. Nothing else admits.
 - **Publisher host allowlist** (loader-enforced, extend only by contract version bump): `comptroller.defense.gov`, `comptroller.war.gov`, `www.defense.gov`, `www.war.gov`, `www.secnav.navy.mil`, `www.navy.mil`, `www.esd.whs.mil`, `www.gao.gov`, `www.congress.gov`, `crsreports.congress.gov`, `api.usaspending.gov`, `www.usaspending.gov`, `www.sec.gov`, plus the asserting issuer's own IR host for `issuer_disclosure` rows only, per the issuer-host authority block below.
 - **Issuer-disclosure host authority (frozen after a bounded census, D5R.1):** **no canonical issuer→IR-host owner exists in the estate** — `reference.issuer_master` carries no website field (`scripts/build_security_master.py:188-197`), the earnings plane ingests no first-party releases/filings (`config/earnings_story_promotion.yml:11-16` `not_ingested`), and `config/biocatalyst_sources.yml` is per-dataset, not per-issuer. D5 therefore does **NOT** mint a company-source registry, and the implementation may not invent one. The issuer→host binding is split exactly as follows: **schema-enforced** — every `issuer_disclosure` evidence row REQUIRES `source_url`, `retrieved_from_url`, `pinned_issuer_host`, and `pinned_issuer_host_basis` (a short prose sentence copied from the worksheet into the artifact at curate time; shape/presence only — the schema asserts no host truth); **curator/human-reviewed** — the review worksheet pins `pinned_issuer_host` per row, with the reviewer recording the basis for "this host is the asserting issuer's official IR/corporate host" (e.g. the host named in the issuer's own SEC filings or site identification), and the curate script copies both pin and basis into the artifact row; **loader-enforced** — the loader (which reads only the artifact, never the worksheet) refuses any `issuer_disclosure` row whose `source_url` host does not equal that row's `pinned_issuer_host`, or whose `pinned_issuer_host` / `pinned_issuer_host_basis` is missing or empty. There is no global issuer→host table to consult; per-row worksheet pins are the ONLY authority. If a canonical issuer→IR-host owner later exists (e.g. the security master grows a website field), D5 rejoins it read-only via a contract version bump — never by minting its own.
 - **Mirror rule:** every evidence row carries `source_url` (the host of record for the document — must be on the allowlist) AND `retrieved_from_url` (the host actually fetched, which MAY be a mirror, e.g. a globalsecurity.org-hosted Navy exhibit or an EveryCRSReport CRS copy). The receipt sha256 binds the retrieved bytes; the citation is always the host of record; a mirror-only row whose document cannot be tied to a host-of-record identity does not admit.
-- **`claim_scopes` enum** on every evidence row: `program_identity | capability_need | role | milestone | ownership_context`. Per-kind required coverage (loader-enforced, this table is exhaustive): `program` → `program_identity`; `capability` → `capability_need`; `platform` → `program_identity` (a variant's identity is program-native); `role_assertion` → `program_identity` AND `role` (§3.1); `milestone` → `milestone`. `ownership_context` is never required — it may only annotate.
-- **`<sha12>` definition** (applies to every content-derived id): the first 12 lowercase hex characters of SHA-256 over the UTF-8 preimage fields joined with `|`, each field NFC-normalized, lowercased, whitespace-collapsed, with an absent optional field encoded as `-`. Preimages: `prog-role:` per §3.1 (including its `revision` slot); `prog-milestone:` = `program_id | kind | title | date-or-window-from | revision` (two milestones on one program with different titles or dates never collide; an identical resubmission at the same revision is idempotent; a `superseded_evidence` succession increments `revision`, giving the successor a distinct id while §5's predecessor byte-identity holds).
+- **`claim_scopes` enum** on every evidence row (D5R.2 adds the two relation scopes): `program_identity | capability_need | role | milestone | program_capability_link | program_event_link | ownership_context`. Per-kind required coverage (loader-enforced, this table is exhaustive): `program` → `program_identity`; `capability` → `capability_need`; `platform` → `program_identity` (a variant's identity is program-native); `role_assertion` → `program_identity` AND `role` (§3.1); `milestone` → `milestone`; `program_capability_link` → `program_capability_link` (§3.1 — the relation's own scope, never satisfied by the endpoint scopes); `program_event_link` → `program_event_link` (§3.1b). `ownership_context` is never required — it may only annotate.
+- **`<sha12>` definition** (applies to every content-derived id): the first 12 lowercase hex characters of SHA-256 over the UTF-8 preimage fields joined with `|`, each field NFC-normalized, lowercased, whitespace-collapsed, with an absent optional field encoded as `-` and integers as decimal strings. Preimage registry (exhaustive, D5R.2):
+  - `prog-role:` = `program_id | platform_id-or-"-" | entity_id | role | role_scope | valid_from | revision` (§3.1);
+  - `prog-milestone:` = `program_id | kind | title | temporal_kind | date-or-window-from | window-to-or-"-" | revision` — the COMPLETE temporal identity is in the preimage: `temporal_kind: date` rows put the date in slot 5 and `-` in slot 6; `temporal_kind: window` rows put `window.from` in slot 5 and `window.to` in slot 6, so **two windows sharing a start but differing in end mint DISTINCT ids** (the D5R.1 preimage omitted `window.to` and could collide there — repaired here; nothing was ever produced under the old preimage);
+  - `prog-cap:` = `program_id | capability_id | valid_from | revision` (§3.1);
+  - `prog-event:` = `program_id | event_contract | event_id | valid_from | revision` (§3.1b);
+  - `rev-cov:` = `scope | subject_type | subject_id | worksheet_sha256` (§3.1c);
+  - `conf:` = `scope | subject_type | subject_id | known_at` and `ovr:` = `action | target_row_id-or-subject_id | known_at` (§5).
+  Across all of them: two rows differing in any preimage slot never collide; an identical resubmission at the same revision is idempotent; a `superseded_evidence` succession increments `revision`, giving the successor a distinct id while §5's predecessor byte-identity holds.
+
+### 3.1b Program → GovRev event linkage — `program_event_links[]` (frozen, D5R.2)
+
+D5 answers "What changed?" through ONE bounded cross-plane relation: a reviewed **pointer/assertion** at an existing `government_procurement_event.v2` row. It copies **no event truth** — no amount, date, agency, recipient name, or description ever lives inside D5.
+
+**Row shape (all REQUIRED unless marked):** `link_id` = `prog-event:<sha12>` (preimage `program_id | event_contract | event_id | valid_from | revision`), `revision`, `program_id`, `event_contract` (const `"government_procurement_event.v2"` in v1), `event_id` (the event's top-level `event_id`, `award_events.py:1907`), `event_source_identity_id` and `event_source_identity_content_sha256` (verbatim copies, recorded at review time, of the target event's `award_change.source_identity.id` and `.content_sha256` — the nested block built at `award_events.py:1844-1848`), `canonical_award_identity` (REQUIRED in v1 — every v2 event is award/action truth; grammar per `point_in_time.py:148`: `generated:<id>` preferred, raw `award_key`, `piid:<id>` last resort), `verification_state`, `known_at`, `valid_from`, `valid_to` (nullable), `evidence_refs[]` (`minItems: 1`; coverage scope `program_event_link` per §3.1a).
+
+**Loader verification (fail-closed):** the referenced event must EXIST in the event store, and the live event's `award_change.source_identity.id` / `.content_sha256` and its canonical award identity must EQUAL the link's recorded values — any mismatch or missing event refuses the row with a named error. **No name matching. No description matching. No ticker matching. No fuzzy program matching** — the join is exact-identity-plus-hash or nothing.
+
+**Derivation:** the workspace award view's `program_link` field (§4) is DERIVED from this reviewed relation plus §3.1c coverage — never asserted independently.
+
+**Census honesty (binding on the pilot):** as of `origin/main` `7e00f874` (2026-08-22 census, receipts in the fixtures file), **no `government_procurement_event.v2` row for the 2026-07-29 Virginia Block VI award exists** — the tape's 13 Electric Boat awards are all pre-2026, and the corpus's newest `known_at` is 2026-08-21T23:22:35Z. Therefore, at D5 implementation start: re-locate an exact existing Virginia event on FRESH main; if one exists and survives review, it may populate this relation; if none exists, the linkage stays honestly `not_reviewed` / `reviewed_none`, the source-rail gap is recorded for D6, and **D5 does NOT implement a DoD announcements collector, does not fabricate "tape current", and does not call the July-29 announcement a GovRev event**. The July-29 official document may still serve as admissible D5 ontology evidence where §3.1a permits (e.g. `official_contract_announcement` behind a platform identity or role) — that does not turn it into an existing GovRev event.
+
+### 3.1c Review coverage — `review_coverage[]` (frozen, D5R.2 — makes `reviewed_none` real)
+
+Production never reads research prose to decide that somebody reviewed something. The ontology artifact itself carries the audit rows of every human-review act; **no second review/lifecycle database exists**, and a coverage row **records the review act — it manufactures no source truth**. No estate precedent exists (census: no artifact carries `worksheet_ref`/`worksheet_sha256`/`admitted_count` as a review-coverage record; the Prophet plane's `admitted_count` is an unrelated pick-intake receipt field) — this is a clean D5 mint.
+
+**Row shape (all REQUIRED):** `coverage_id` = `rev-cov:<sha12>` (preimage `scope | subject_type | subject_id | worksheet_sha256`), `scope` (closed v1: `program_identity | capability | participants | milestones | program_event_link`), `subject_type` (closed v1: `program | award_event`), `subject_id` (an `acq-program:*` id, or the target event's `event_id` for `award_event`), `known_at`, `worksheet_ref` (the review worksheet's repo path), `worksheet_sha256` (receipt of the worksheet bytes as reviewed), `admitted_count` (integer ≥ 0 — rows this pass admitted for this scope+subject). Scope↔subject pairing: `program_event_link` coverage takes `subject_type: award_event`; the other four take `subject_type: program`. The curate script appends a coverage row for every scope×subject a worksheet covered — **including scopes where it admitted nothing** — atomically with the admissions themselves.
+
+**Derivation law (frozen; PIT — coverage rows with `known_at` after `analysis_as_of` are invisible like every row):**
+
+1. admitted current canonical row(s) for the scope+subject exist and are compatible ⇒ **`reviewed`**;
+2. incompatible admitted claims ⇒ **`conflicted`** (with the §5 `conflicts[]` row);
+3. no admitted rows, but a visible coverage row covers the scope+subject ⇒ **`reviewed_none`** (carrying that pass's `known_at`);
+4. no admitted rows and no applicable coverage row ⇒ **`not_reviewed`** (no timestamp claim).
 
 ### 3.2 Review states and authority tiers
 
@@ -130,6 +517,8 @@ LLM boundary (A7-consistent): a model may draft alias candidates or summarize ev
 
 **Contract:** `contracts/government_revenue/government_program_dossier.v1.schema.json`. **Artifact:** `data/government_revenue/program_dossier.json` + site twin `site/government-revenue-data/program-dossier.json`. **Composer:** `engine/government_revenue/program_dossier.py`, invoked from `scripts/build_government_revenue.py` beside the workspace build. Read-only composition; owns zero truth; every section carries its owner's ids so the UI can deep-link.
 
+**Bundle contract (frozen, D5R.2 — one shape, not builder choice).** Exactly these top-level keys: `contract` (const `"government_program_dossier.v1"`), `schema_version` (const `"1.0.0"`), `content_id`, `generated_at`, `as_of`, `ontology_graph_id` (the composing ontology artifact's `graph_id`, §3.0), `authority` (verbatim all-false block), `dossiers[]`, `limitations[]`. `content_id` follows the estate's dossier law verbatim: the canonical-JSON hash of the payload excluding `content_id` and `generated_at` themselves (`dossiers.py:219-225,780-783` — the shipped `government_revenue_dossiers.v1` precedent, whose committed top-level keys were census-verified 2026-08-22). Each `dossiers[]` entry carries `program_id` plus exactly the seven rails below — no additional rail in v1.
+
 Per-program rails, each with a typed state (vocabulary in §6):
 
 Empty-rail honesty (D0R law: never coerce 0+unavailable into empty-valid): every review-gated rail distinguishes **`not_reviewed`** (no review pass has covered this subject — carries no timestamp claim) from **`reviewed_none`** (a review worksheet covered it and admitted nothing — carries the pass's `known_at`). Both render the plain-word "unresolved / not asserted" umbrella copy with the sub-state in the inspector tier.
@@ -138,13 +527,33 @@ Empty-rail honesty (D0R law: never coerce 0+unavailable into empty-valid): every
 |---|---|---|
 | `program_identity` | D5 ontology | `reviewed` / `not_reviewed` / `reviewed_none` / `conflicted` |
 | `capability` | D5 ontology | `reviewed` / `not_reviewed` / `reviewed_none` / `conflicted` |
-| `awards` | award plane via role-assertion/milestone evidence references (D5 v1: a general program→award edge set is the budget owner's `reviewed_documentary` shape, not duplicated here) | `current` / `partial` / `stale` (USAspending latency is days–weeks per the D0R registry) / `source_unavailable` |
+| `awards` | award plane via the reviewed `program_event_links[]` relation (§3.1b — pointer only; a general program→award edge set remains the budget owner's `reviewed_documentary` shape, not duplicated here) | **TWO independent axes (D5R.2)**: `source_state ∈ current \| partial \| stale \| source_unavailable` (the award PLANE's health — USAspending latency is days–weeks per the D0R registry) × `link_state ∈ reviewed \| not_reviewed \| reviewed_none \| conflicted` (whether a human reviewed any event against THIS program, §3.1c). "Source is healthy but nobody reviewed this event against this program" is `source_state: current` + `link_state: not_reviewed` — representing it as `source_unavailable` is a defect. |
 | `budget` | budget owner | `projection_missing` (today) / `source_unavailable` |
 | `participants` | D5 role assertions × defense21 × atlas | per-row `reviewed` + issuer state, ATLAS vocabulary only (`verified_live` / `listing_terminated` / `not_in_si_universe`, or issuer-path `not_asserted` when no reviewed path exists — the machine token `not_asserted` is shared with the economic_relationships rail, but copy keys are RAIL-SCOPED per gate 6, so the rendered strings never collide); rail-level `not_reviewed` / `reviewed_none` / `conflicted`. **Two frozen limitation strings, both required, verbatim:** `participation_limitation` = "Companies on this rail participate in the same program; no commercial relationship between them is asserted." and `allocation_limitation` = "Reviewed participation is not a share of revenue. Nothing here allocates award value to a ticker." |
 | `economic_relationships` | GMI (reserved-null today) | `not_asserted` (GMI's own absence — rendered as "no reviewed economic-relationship data", never fabricated) |
 | `milestones` | D5 ontology | `reviewed` / `not_reviewed` / `reviewed_none` / `conflicted` |
 
-The IRDM P00032 award view keeps its D1–D4 rails untouched and gains exactly one D5 field: `program_link: {state: not_reviewed | reviewed_none, reason_code: no_reviewed_program_link}` — the honest null (§8, test T1). `no_reviewed_program_link` is a **new, program-rail-scoped reason code**: reusing the atlas's `no_reviewed_exact_path` would render its bound bilingual recipient-identity copy ("No reviewed exact recipient → legal entity path…") on a program gap — the #6188 shared-rank-shared-copy trap. A test must assert the program rail and the atlas rail never share a copy string.
+**`workspace.program_link` — exact frozen shapes (D5R.2).** The workspace award view gains exactly one D5 field, DERIVED from `program_event_links[]` + `review_coverage[]` (§3.1b/§3.1c), with exactly these three shapes and five keys — no program name is ever copied into `program_link`:
+
+Reviewed positive:
+
+```json
+{"state": "reviewed", "reason_code": null,
+ "program_id": "<acq-program:*>", "program_event_link_id": "<prog-event:*>",
+ "ontology_graph_id": "<the composing artifact's graph_id>"}
+```
+
+Honest unresolved (IRDM P00032 today — §8, test T1):
+
+```json
+{"state": "not_reviewed | reviewed_none", "reason_code": "no_reviewed_program_link",
+ "program_id": null, "program_event_link_id": null,
+ "ontology_graph_id": "<current graph_id>"}
+```
+
+Conflict: `state: conflicted`, attribution withheld (`program_id`/`program_event_link_id` null, `reason_code: null`), the `conflicts[]` evidence remains inspectable via the ontology artifact.
+
+`no_reviewed_program_link` is a **new, program-rail-scoped reason code**: reusing the atlas's `no_reviewed_exact_path` would render its bound bilingual recipient-identity copy ("No reviewed exact recipient → legal entity path…") on a program gap — the #6188 shared-rank-shared-copy trap. A test must assert the program rail and the atlas rail never share a copy string.
 
 ---
 
@@ -155,10 +564,16 @@ Every D5 record and edge carries the graph-plane temporal quadruple, exact names
 - **Never backdate knowledge.** Evidence dated 2025 learned in August 2026 ⇒ `valid_from` may be 2025 (if the evidence establishes it), `known_at` = the 2026 collection time. A replay at any `analysis_as_of` before `known_at` returns the record as absent. "A mapping learned later cannot appear in an earlier replay."
 - **`source_published_at` MUST NOT exist as a key** (D3 law — named null).
 - **The knowledge clock is never presented as official** (D0R F3's `known_at.semantic ≠ "official"` law, restated for the graph plane): D5's `known_at` is a plain RFC3339 scalar with no nested `semantic` key; no D5 field, copy string, or doc may label `known_at` as a source/official clock — the official clocks are the evidence documents' own dates, carried in evidence rows.
-- **Renames / restructures / variant changes append, never rewrite.** The predecessor record's id, `known_at`, `valid_from`, and `evidence_refs` stay byte-identical; a successor record is appended with its own clocks and evidence and a **`predecessor_id`** field (new mint for the graph plane, sibling of the event plane's `prior_source_identity`) plus `succession_reason` (closed: `renamed \| restructured \| variant_added \| superseded_evidence`). Names are attributes on time-boxed rows; identity is the minted id.
+- **Logical-id vs immutable-revision law (D5R.2 — supersedes the D5R succession wording; nothing was ever produced under it).** `program`, `capability`, and `platform` are **logical identities**: rows are keyed `(id, revision)`, `revision` starts at 1, and every append leaves every prior row byte-identical.
+  - **Same real-world object** (a rename, corrected evidence, or an attribute/metadata revision): append a row with the **SAME logical id**, `revision + 1`, its own `known_at`, and `valid_from` reflecting when the new fact became true. The successor row carries `succession_reason` ∈ `renamed | attribute_revision | superseded_evidence` (REQUIRED on every logical-kind row with `revision ≥ 2`; FORBIDDEN on an ordinary revision-1 row). **A pure rename MUST NOT mint a second acquisition-program identity.**
+  - **Resolution:** at `analysis_as_of`, revisions with `known_at` after the cut are invisible; at an effective/event time, choose the latest known revision whose `[valid_from, valid_to)` validity covers that time.
+  - **True identity break** (a restructure the reviewed evidence says is a DIFFERENT acquisition identity): mint a **new logical id** at `revision: 1` carrying **`predecessor_id`** (the old logical id — the ONLY case `predecessor_id` is legal on a logical kind) and `succession_reason: restructured`; in the same admission, close out the predecessor with a same-old-id `revision + 1` row whose `valid_to` is set and whose `succession_reason` is likewise `restructured`. The old identity remains historical and replayable.
+  - **Platform variants are not renames:** a new block/variant is a NEW logical `platform` record (revision 1) with `variant_of` — never a succession; the D5R enum value `variant_added` is REMOVED.
+  - **Content-addressed kinds** (`role_assertion`, `milestone`, and the two link collections) succeed ONLY by `superseded_evidence`: `revision + 1` in the preimage mints a distinct id, the successor carries `predecessor_id` (the superseded row's content-addressed id) + `succession_reason: superseded_evidence`, and the predecessor stays byte-identical.
+  - Closed enum, all uses: `succession_reason ∈ renamed | attribute_revision | superseded_evidence | restructured`, where `restructured` is valid ONLY on the identity-break pair above. Names are attributes on time-boxed rows; identity is the minted id.
 - **Source corrections** append (successor row + predecessor close-out row); receipts are never overwritten (D0R F2).
-- **Reviewer reversal** is an appended `override` row (recipient-graph action vocabulary: `retire_edge`, `block`, …) that changes resolution only for `analysis_as_of ≥` the override's `known_at`. Reversal-by-mutation is forbidden and untestable under T2's byte-identity assertion.
-- **Conflicts fail closed.** Two admissible incompatible claims ⇒ `resolution_state: conflicted`, attribution withheld, BOTH sides' evidence kept, a `conflicts[]` row appended; the underlying records stay visible. `unknown != false`; `missing != zero`.
+- **Reviewer reversal** is an appended `override` row that changes resolution only for `analysis_as_of ≥` the override's `known_at`. Reversal-by-mutation is forbidden and untestable under T2's byte-identity assertion. **D5 override row shape (frozen, D5R.2 — the recipient graph's rows are identity-domain-specific and do not transfer; D5 follows the same structural pattern with its own vocabulary):** `override_id` = `ovr:<sha12>` (preimage §3.1a), `action` (closed v1: `retire_row` — reviewer reversal of one admitted row, requires `target_row_id`; `block` — refuse future admission of a named candidate, requires `subject_type` + `subject_id`), `target_row_id` (conditional), `subject_type`/`subject_id` (conditional), `verification_state`, `known_at`, `valid_from`, `valid_to` (nullable), `evidence_refs[]`.
+- **Conflicts fail closed.** Two admissible incompatible claims ⇒ `resolution_state: conflicted`, attribution withheld, BOTH sides' evidence kept, a `conflicts[]` row appended; the underlying records stay visible. `unknown != false`; `missing != zero`. **D5 conflict row shape (frozen, D5R.2):** `conflict_id` = `conf:<sha12>` (preimage §3.1a), `scope` (the same closed five as §3.1c coverage scopes), `subject_type`/`subject_id` (§3.1c vocabulary), `candidate_row_ids[]` (`minItems: 2` — the incompatible admitted rows), `reason_code`, `verification_state`, `known_at`, `valid_from`, `valid_to` (nullable), `evidence_refs[]`.
 
 ---
 
@@ -178,7 +593,7 @@ Machine enums are lowercase snake_case in artifacts; bilingual display copy live
 | `HISTORICAL_ONLY` | role assertion with `valid_to` in the past + issuer state `listing_terminated` (SPR pattern); rail chip "historical only" | atlas + G1b, composed — no new enum |
 | `CONFLICTING_EVIDENCE` | `conflicted` + `conflicts[]` row | `entity_resolution.py` states, reused; the string `conflicting_evidence` exists nowhere in the estate and is not minted |
 
-**Complete new-mint inventory** (anything not listed here or defined in §3.1/§3.1a is NOT minted — this list and those sections are the same closed set stated twice): failure/state vocabulary — `no_reviewed_program_link`, the `not_reviewed`/`reviewed_none` empty-rail split, `unverified_supplier_language` (extends the closed `_action_text_annotations` family), `OntologyInputError`; field/enum mints defined in §3.1/§3.1a — the `role` enum, `succession_reason` + `predecessor_id`, `economic_weight` (const null), `shared_scope`, `single_document_dual_scope`, the `phase` enum, the milestone `kind` enum, `budget_program_keys` (const `[]`, on the `program` record), `evidence_class`, `claim_scopes`, `pinned_issuer_host` + `pinned_issuer_host_basis`, `source_url`/`retrieved_from_url`; the `program_link` field on the workspace award view (defined in §4; genuinely new — no `program_link` exists in the estate) with its `revision` sibling on content-addressed kinds (§3.1/§3.1a); and the id grammars `acq-program:` / `acq-capability:` / `platform:` / `prog-role:` / `prog-milestone:`.
+**Complete new-mint inventory** (anything not listed here or defined in §3.0–§3.1c is NOT minted — this list and those sections are the same closed set stated twice): failure/state vocabulary — `no_reviewed_program_link`, the `not_reviewed`/`reviewed_none` empty-rail split, `unverified_supplier_language` (extends the closed `_action_text_annotations` family), `OntologyInputError`, and the awards-rail axis pair `source_state`/`link_state` (§4); field/enum mints defined in §3.1/§3.1a — the `role` enum, `succession_reason` (closed `renamed | attribute_revision | superseded_evidence | restructured`, D5R.2 — `variant_added` removed) + `predecessor_id`, `economic_weight` (const null), `shared_scope`, `single_document_dual_scope`, the `phase` enum, the milestone `kind` enum + `temporal_kind` + the date/window XOR, `budget_program_keys` (const `[]`, on the `program` record), `evidence_class`, `claim_scopes` (including the two D5R.2 relation scopes `program_capability_link`/`program_event_link`), `pinned_issuer_host` + `pinned_issuer_host_basis`, `source_url`/`retrieved_from_url`, the universal `revision` field, and the evidence-row `evidence_id` shape; collection/row mints defined in §3.0–§3.1c — the seventeen-key top-level skeleton with `graph_id` grammar `program-ontology:<status>:<YYYY-MM-DD>:<batch-slug>`, `program_capability_links[]`, `program_event_links[]` (with `event_contract`, `event_id`, `event_source_identity_id`, `event_source_identity_content_sha256`; `canonical_award_identity` REUSES the event plane's existing grammar, not a mint), `review_coverage[]` (`coverage_id`, `scope`, `subject_type`, `subject_id`, `worksheet_ref`, `worksheet_sha256`, `admitted_count` — D5-plane mints; the Prophet receipt field of the same `admitted_count` name is unrelated), and the D5-scoped `conflicts[]`/`overrides[]` row shapes (§5); the `program_link` field on the workspace award view with its five-key frozen shapes (§4; genuinely new — no `program_link` exists in the estate); dossier-bundle keys `ontology_graph_id` + `dossiers[]` (§4; the rest reuse the shipped dossier idiom); and the id grammars `acq-program:` / `acq-capability:` / `platform:` / `prog-role:` / `prog-milestone:` / `prog-cap:` / `prog-event:` / `rev-cov:` / `conf:` / `ovr:` / `ev:`.
 
 ---
 
@@ -193,7 +608,7 @@ Compared against Patriot/GEM-T on the commission's six criteria (full source cen
 - **Pilot entity ids (frozen against defense21-v1 committed bytes):** GD/EB prime → `legal:gd:electric-boat-corp` (exists ✓). HII → `legal:hii:huntington-ingalls-inc` — **Newport News Shipbuilding is a division, not a legal entity in the graph**; "NNS" is carried in `role_scope` prose, never as an entity id. BWXT → per the §3.1 entity-attachment rule, whichever entity the re-fetched document names as performing the work: `legal:bwxt:bwx-technologies-inc` (parent, the release's issuer) or `legal:bwxt:bwxt-nuclear-operations-group-inc` (the operating subsidiary) — the worksheet records the sentence that decides. A needed-but-absent entity is a worksheet handed to the recipient-graph lane, never a D5 edit.
 - **Supplier rail:** BWXT first-party IR release ties naval nuclear reactor component contracts to "Virginia-class and Columbia-class submarines … as well as … Ford-class" — first-party, sentence-level, **shared-scope** (three programs in one sentence), which is exactly the nuance `role_assertion.shared_scope` exists to represent honestly. Decisive tie-breaker: BWXT's issuer identity already has reviewed chains in defense21-v1 (D2), so the full ontology→identity→issuer chain is executable in the current estate with zero new identity work.
 - **Prose-vs-role discriminator (frozen; resolves the apparent T4↔pilot tension):** prose may establish a role ONLY when (a) the publisher is the asserting party itself (first-party `issuer_disclosure`) or a government source of record on the §3.1a allowlist, AND (b) the program is named via a reviewed alias tracing to an official `source_identities[]` document. Third-party award-description prose (USAspending descriptions, press aggregators) NEVER creates a role — it can at most earn the `unverified_supplier_language` annotation. The BWXT admission satisfies (a)+(b); "supplied by ACME" in an award description satisfies neither.
-- **Change event + forward milestone (separated by law, §3.1):** the Block VI construction award, 2026-07-29 ($42.1B, SSN 814-822 + material for a tenth boat; official contracts page + GD first-party release) is the **GovRev/D3 "what changed" event — never a D5 milestone**. The forward-milestone candidate is the **AUKUS Pillar-1 window** (sale of up to three in-service boats to Australia, early 2030s); source candidate = CRS RL32418 (congress.gov CRS product, 2025-03-28 update) — document access VERIFIED in D5R, but the AUKUS sentence itself is held at SOURCE CLAIM (paraphrase, not verbatim-quoted), so admission requires re-fetch + receipt + human review like every other role/milestone. If no source survives review, `milestones.state = not_reviewed \| reviewed_none` is a **valid D5 production outcome** — never backfilled from model knowledge or a generic web claim.
+- **Change event + forward milestone (separated by law, §3.1):** the Block VI construction award, 2026-07-29 ($42.1B, SSN 814-822 + material for a tenth boat; official contracts page + GD first-party release) belongs to the **GovRev/D3 changed-event plane — never a D5 milestone**. Census honesty (D5R.2, §3.1b): **no `government_procurement_event.v2` row for it exists on `origin/main` as of `7e00f874`** — until one exists and survives review, the program-event linkage stays `not_reviewed`/`reviewed_none`, the dossier renders `source_state: current` + `link_state: not_reviewed`, and the official announcement document serves only as admissible ontology evidence, never as tape truth. The forward-milestone candidate is the **AUKUS Pillar-1 window** (sale of up to three in-service boats to Australia, early 2030s); source candidate = CRS RL32418 (congress.gov CRS product, 2025-03-28 update) — document access VERIFIED in D5R, but the AUKUS sentence itself is held at SOURCE CLAIM (paraphrase, not verbatim-quoted), so admission requires re-fetch + receipt + human review like every other role/milestone. If no source survives review, `milestones.state = not_reviewed \| reviewed_none` is a **valid D5 production outcome** — never backfilled from model knowledge or a generic web claim.
 - **Rights:** all government sources are public-domain US works; corporate materials quotable with attribution; no paywall, no licensed-ontology dependence.
 - **Complexity bound:** rich enough to exercise every hop (capability → program → block variants → two yards → two issuers → supplier → milestone) without the F-35 universe.
 
@@ -211,8 +626,8 @@ The award `HC101319C0006` mod `P00032` (DoD/DISA, $18,416,666.66, effective 2026
 
 Object roles: PR = program record, RA = role assertion, DRM = dossier read model, RG = reviewed recipient graph, EV = event row. All fixtures are committed test fixtures (D4 CI-wiring law: law gates ride `gate: code` with frozen fixtures, never nightly-rewritten artifacts).
 
-1. **T1 — IRDM stays program-null.** Given the frozen P00032 EV and zero RAs citing that award: the WORKSPACE award view (the artifact that owns the single `program_link` field per §4; the DRM surfaces it unchanged) emits `program_link {state: not_reviewed, reason_code: no_reviewed_program_link}` (and, with a pilot worksheet row that covered P00032 and admitted nothing, `state: reviewed_none` — both render the "unresolved / not asserted" plain copy); no program name token renders; government fact bytes unchanged; no `source_published_at` key anywhere; the program rail's rendered copy string is asserted UNEQUAL to the atlas's `no_reviewed_exact_path` copy.
-2. **T2 — rename does not rewrite.** Given PR "Alpha" and a later restructure to "Beta" (observed `K2`): predecessor PR is byte-identical post-rebuild; successor carries `predecessor_id` + own clocks; replay at `analysis_as_of < K2` renders "Alpha" and never "Beta"; historical awards render under the name valid at their `effective_at`.
+1. **T1 — IRDM stays program-null.** Given the frozen P00032 EV, zero `program_event_links` citing its `event_id`, and no §3.1c coverage row for it: the WORKSPACE award view (the artifact that owns the single `program_link` field per §4; the DRM surfaces it unchanged) emits the exact §4 honest-unresolved shape `{state: not_reviewed, reason_code: no_reviewed_program_link, program_id: null, program_event_link_id: null, ontology_graph_id: <current graph_id>}`; adding ONLY a coverage row (`scope: program_event_link`, `subject_type: award_event`, `subject_id` = the P00032 `event_id`, `admitted_count: 0`) flips `state` to `reviewed_none` with every other key unchanged — both render the "unresolved / not asserted" plain copy; no program name token renders anywhere in `program_link`; government fact bytes unchanged; no `source_published_at` key anywhere; the program rail's rendered copy string is asserted UNEQUAL to the atlas's `no_reviewed_exact_path` copy.
+2. **T2 — revision does not rewrite; identity survives a rename and breaks only on a reviewed restructure.** (a) Rename: given `acq-program:x` revision 1 named "Alpha" (`known_at K1`) and an admitted revision 2 named "Beta" (`succession_reason: renamed`, `known_at K2 > K1`, `valid_from V2`): the revision-1 row is byte-identical post-rebuild; NO new logical id exists (the programs collection carries exactly one `acq-program:x` identity); replay at `analysis_as_of < K2` renders "Alpha" and never "Beta"; at `analysis_as_of ≥ K2`, an award with `effective_at < V2` renders "Alpha" (latest known revision whose validity covers that time) and one with `effective_at ≥ V2` renders "Beta". (b) Identity break: given a reviewed restructure admitting `acq-program:y` (revision 1, `predecessor_id: acq-program:x`, `succession_reason: restructured`) plus the predecessor close-out (`acq-program:x` revision +1 with `valid_to` set, `succession_reason: restructured`): replay before the break's `known_at` shows only `acq-program:x`; after it, `acq-program:x` remains historical and replayable with its revision-1 row byte-identical. (c) Refusals: a revision-1 row carrying `succession_reason` (outside the identity-break successor case), a `revision ≥ 2` row missing it, `predecessor_id` with any `succession_reason` other than `restructured` on a logical kind, and a rename submitted as a new logical id when the worksheet marks it the same real-world object — each refused/rejected with a named error.
 3. **T3 — prime role does not smear to siblings.** Given RA(prime) on `legal:X:parent` and two RG subsidiaries with no RA: exposed set = parent only; `economic_weight` is present and typed null on every RA (named null, never a number); the frozen `allocation_limitation` string (§4) renders verbatim.
 4. **T4 — prose supplier mention is not an edge.** Given an EV description containing "supplied by ACME": zero RAs created (fails BOTH halves of the §7.1 prose-vs-role discriminator — third-party prose, no reviewed alias); at most an `unverified_supplier_language` annotation; rejection ledger row recorded; forbidden-provenance keys refused at the door.
 5. **T5 — request ≠ appropriation ≠ obligation (label law).** A render/template test, not an artifact-field test: no numeric node ever sums or compares a budget-request figure with an obligation; EN **and** ZH assert that no request amount is labeled obligation / appropriation / revenue / backlog. (The four-stage `source_coverage` object belongs to the budget owner's artifact — `government_budget_program_graph.v1`, unproduced until D6 — and is NOT asserted on the D5 rail; the shipped rail shape is T9's.)
@@ -224,21 +639,24 @@ Object roles: PR = program record, RA = role assertion, DRM = dossier read model
 11. **T11 — dual-scope evidence coverage.** An RA whose refs' `claim_scopes` cover `role` but not `program_identity` (or vice versa) is refused at load with a named coverage error; a single-ref RA admitting both scopes REQUIRES `single_document_dual_scope: true` and a worksheet `scope_statement` quoting the source-native sentence — absent either, refused.
 12. **T12 — co-participation is not a counterparty edge.** Given the full pilot dossier (prime + teaming partner + supplier on one program): the emitted payload contains zero firm→firm edges or adjacency structures of any kind, and BOTH §4 participants-rail limitation strings (`participation_limitation` and `allocation_limitation`) render verbatim (EN and ZH); additionally, the participants rail's rendered copy for the `not_asserted` token is asserted UNEQUAL to the economic_relationships rail's copy (rail-scoped copy keys, gate 6).
 13. **T13 — evidence publisher/host refusal (asserts only authority that exists).** (a) An evidence row whose `source_url` host is off the §3.1a government/official allowlist (e.g. a press aggregator) is refused at load with the host named. (b) An `issuer_disclosure` row whose `source_url` host ≠ that row's worksheet-pinned `pinned_issuer_host` is refused — the comparison is against the PER-ROW PIN, never against any global issuer→host table (none exists in the estate). (c) An `issuer_disclosure` row missing or carrying an empty `pinned_issuer_host` or `pinned_issuer_host_basis` (both artifact fields per §3.1a — the loader never reads the worksheet) is refused. (d) A mirror-fetched row missing its host-of-record `source_url` is refused.
-14. **T14 — role-id collision resistance + platform referential integrity.** (a) Two admissible RAs identical except `role_scope` (or except `platform_id` Block V vs Block VI) mint DISTINCT `prog-role:` ids from the frozen preimage `program_id | platform_id-or-"-" | entity_id | role | role_scope | valid_from | revision`; a rebuild with both present leaves each byte-identical; a `superseded_evidence` successor (revision+1) likewise mints a distinct id with the predecessor byte-identical. (b) An RA carrying a `platform_id` whose platform does not exist, or whose `platform.program_id != role_assertion.program_id`, or whose temporal interval is incompatible with the platform's, is refused at load with a named error; an RA carrying `platform_id` with no `program_id` is refused (platform-only assertions invalid in v1).
+14. **T14 — content-id collision resistance + platform referential integrity.** (a) Two admissible RAs identical except `role_scope` (or except `platform_id` Block V vs Block VI) mint DISTINCT `prog-role:` ids from the frozen preimage `program_id | platform_id-or-"-" | entity_id | role | role_scope | valid_from | revision`; a rebuild with both present leaves each byte-identical; a `superseded_evidence` successor (revision+1) likewise mints a distinct id with the predecessor byte-identical. (b) An RA carrying a `platform_id` whose platform does not exist, or whose `platform.program_id != role_assertion.program_id`, or whose temporal interval is incompatible with the platform's, is refused at load with a named error; an RA carrying `platform_id` with no `program_id` is refused (platform-only assertions invalid in v1). (c) **Milestone window collision (D5R.2):** two milestone rows identical except `window.to` mint DISTINCT `prog-milestone:` ids (both endpoints are preimage slots — fixture G carries the computed pair); a milestone carrying both `date` and `window`, neither, or a `temporal_kind` mismatching the populated field is refused at load with a named error.
+15. **T15 — event link is exact-identity or nothing (D5R.2).** (a) A `program_event_link` whose `event_id` does not exist in the event store is refused at load with a named error. (b) A link whose recorded `event_source_identity_id` or `event_source_identity_content_sha256` does not equal the live event's `award_change.source_identity.id`/`.content_sha256`, or whose `canonical_award_identity` does not match, is refused — hash agreement is mandatory, not advisory. (c) No fallback path exists: the loader has no name, description, ticker, or fuzzy matching input to consult (structural — those fields do not exist on the link row), and a candidate row carrying any such association provenance is rejected at the door (T6 vocabulary). (d) The link row carries zero copied event truth: no amount, date, agency, or recipient-name key exists on it.
+16. **T16 — capability relation requires relation evidence (D5R.2).** A `program_capability_link` whose refs' `claim_scopes` union covers `program_identity` and `capability_need` but NOT `program_capability_link` is refused at load with a named coverage error; a link naming a nonexistent program or capability, or temporally incompatible with either endpoint, is refused; no `implements_capability` relationship exists anywhere except as a `program_capability_links[]` row (grep-level assertion on the artifact: the relation cannot be smuggled in prose fields or inferred from slugs).
+17. **T17 — review coverage derivation is artifact-only (D5R.2).** From the artifact alone (no worksheet, no research doc): a scope+subject with admitted rows derives `reviewed`; with a coverage row and zero admitted rows derives `reviewed_none` carrying the pass's `known_at`; with neither derives `not_reviewed`; with incompatible admitted rows derives `conflicted` plus a `conflicts[]` row. Deleting the coverage row from the reviewed_none fixture flips the derivation to `not_reviewed` (proving the state is derived, never stored free-floating); a coverage row with `known_at` after `analysis_as_of` is invisible to the derivation; the ONLY producer of coverage rows is the curate script (the propose script emitting one is refused).
 
 ---
 
 ## 9. Experience architecture (Program / Platform Dossier)
 
-Reference composition: `research/defense_intelligence/evidence/compositions/d5-program-dossier-virginia.html` (real pilot data, 1440/820/390 via CSS, shared `d0r-target.css`, sibling of the frozen D1/D2 targets). D0R H composition #5 law applies with two **recorded deviations** (deliberate, D6-bounded — not silent substitutions): (1) D0R's glance element "last GAO/DOT&E" requires GAO/DOT&E sources that are D6 scope; until then the glance carries phase + contract type + latest official program state (sources for each defined at the end of this paragraph), and the GAO/DOT&E element renders as a named gap. (2) D0R's why-rail "EAC / quantity": quantity is composed READ-ONLY from the GovRev/D3 changed-event evidence already on the tape (e.g. the Block VI award = nine boats, official announcement — rendered under "what changed", NEVER admitted as a D5 milestone per §3.1); EAC and all cost figures are D6 (SAR/budget) — the why rail renders that changed-event quantity + the capability need statement and names the economics gap. The glance's "contract type" element is likewise composed read-only from the award plane's existing `award_type` field (USAspending `contract_award_type` vocabulary, `collectors/usaspending_awards.py:1268`), rendered verbatim as the estate carries it (e.g. "definitive contract") — never a D5 field and never synthesized prose. The glance's "latest official program state" element is sourced from the reviewed PLATFORM/variant record (e.g. "Latest block in the reviewed record: Block VI"), not from milestones (which are forward-only, §3.1). The GAO/DOT&E element renders as a named gap keyed off `source_unavailable` (sense: no GAO/DOT&E assessment on file, source not yet collected; exact bilingual copy is template-owned). Changed = award events (budget events once the budget plane lives); evidence = exact official sources; next = next FORWARD official milestone only.
+Reference composition: `research/defense_intelligence/evidence/compositions/d5-program-dossier-virginia.html` (real pilot data, 1440/820/390 via CSS, shared `d0r-target.css`, sibling of the frozen D1/D2 targets). D0R H composition #5 law applies with two **recorded deviations** (deliberate, D6-bounded — not silent substitutions): (1) D0R's glance element "last GAO/DOT&E" requires GAO/DOT&E sources that are D6 scope; until then the glance carries phase + contract type + latest official program state (sources for each defined at the end of this paragraph), and the GAO/DOT&E element renders as a named gap. (2) D0R's why-rail "EAC / quantity": quantity is composed READ-ONLY from the tape event a **reviewed `program_event_link` (§3.1b)** points at — never from unlinked tape rows, never from ontology prose, NEVER admitted as a D5 milestone per §3.1; with no reviewed link (the census-actual state — no Virginia Block VI event exists on main, §3.1b) the why rail renders the capability need statement and NAMES the quantity gap alongside the economics gap. EAC and all cost figures are D6 (SAR/budget). The glance's "contract type" element is likewise composed read-only from the `award_type` field (USAspending `contract_award_type` vocabulary, `collectors/usaspending_awards.py:1268`) of the award the reviewed `program_event_link` targets, rendered verbatim as the estate carries it (e.g. "definitive contract") — never a D5 field, never synthesized prose, and with no reviewed link it renders as a named gap keyed off `link_state: not_reviewed`, never a fabricated value. The glance's "latest official program state" element is sourced from the reviewed PLATFORM/variant record (e.g. "Latest block in the reviewed record: Block VI"), not from milestones (which are forward-only, §3.1). The GAO/DOT&E element renders as a named gap keyed off `source_unavailable` (sense: no GAO/DOT&E assessment on file, source not yet collected; exact bilingual copy is template-owned). Changed = award events reached ONLY via reviewed `program_event_links` (§3.1b; honest `link_state` gap otherwise — budget events once the budget plane lives); evidence = exact official sources; next = next FORWARD official milestone only.
 
 D0R H2's fourteen required states, mapped (every composition must specify all; N/A must say why):
 
 | D0R state | D5 dossier form |
 |---|---|
 | complete/current | all rails reviewed/current with cut clock in chrome |
-| partial coverage | `partial` on awards rail; per-rail mixed states |
-| stale source / fresh transport | awards rail `stale` (source latency days–weeks) with fresh `generated_at` shown |
+| partial coverage | `source_state: partial` on the awards rail; per-rail mixed states |
+| stale source / fresh transport | awards rail `source_state: stale` (source latency days–weeks) with fresh `generated_at` shown |
 | stale transport | artifact `generated_at` older than the nightly cadence ⇒ rail-level stale banner (workspace freshness idiom) |
 | identity unresolved | participant row whose issuer path is not reviewed — exactly §4's per-row enum (atlas issuer-path `not_asserted`, or `public_security` state `not_in_si_universe` — the row FIELD, not the schema's `publicSecurity` $defs alias); resolution-plane states (`unresolved`/`candidate_review`) never render on this rail — row shows the identity-state chip, no issuer link |
 | conflicting graph | `conflicted` + conflicts row (§5) — attribution withheld, both evidences visible |
