@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T08:15:30.749261+00:00",
-  "count": 1604,
+  "generated_at": "2026-08-22T09:16:31.117040+00:00",
+  "count": 1606,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -166,6 +166,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-4f2gdl14iex-9b3724",
+      "title": "Global Economics Wrap Up August 21, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T03:18:46Z",
+      "summary_points": [
+        "**AI Labor Market Impact**: France/US lead in AI adoption (20% vs.",
+        "DMs 15-20%, EMs 10-15%), with negative correlation between AI exposure and job openings since 2022; hiring headwinds confined to narrow industries/workers, signaling structural labor market disruption.",
+        "**US PCE & Fed Policy Outlook**: Core PCE +0.20% MoM (3.24% YoY), portfolio management component +5.5%; FOMC minutes indicate most support 3.5-3.75% target, inflation expected to slow to 2.9% by Dec 2026, keeping FOMC on hold.",
+        "**China's Domestic Weakness**: Industrial production 4.5% yoy, fixed asset investment -12.8% yoy, Q3 GDP forecast 4.6% yoy; domestic data weakness contradicts growth narratives, raising EM portfolio risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-fchfwo2vf2c-0d1baa",
       "title": "Americas Uranium Read across from Kazatomprom 1H26 results and 2026 production guidance",
       "institution": "Goldman Sachs",
@@ -261,6 +281,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vof6fvogutv-5d86b7",
+      "title": "Asia FX Weekly Focus on Asian central bank meetings",
+      "institution": "MUFG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T03:12:42Z",
+      "summary_points": [
+        "**South Korean Won Outperformance**: USD/KRW index up 14.3% YTD driven by BOK rate hike (3.00%), semiconductor exports, and energy price sensitivity, outperforming Dollar Index.",
+        "**Asian Equity Outflows Accelerate**: Net foreign outflows hit $1.5bn (week ended 21 Aug), led by South Korea ($1.4bn), fueled by elevated US yields and policy volatility.",
+        "**China FAI Slump & Fiscal Shift**: Private FAI down -9.4% YTD; state-owned FAI at -3.3% YTD, prompting RMB 100bn fiscal subsidy fund to stabilize growth.",
+        "**US Yield Spillover Dominates**: 10-year Treasury yield rebounded to 4.70% (vs.",
+        "temporary buyback support), overriding Fed policy signals and driving Asian FX volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
       "language": "en",
       "needs_metadata": false
     },
