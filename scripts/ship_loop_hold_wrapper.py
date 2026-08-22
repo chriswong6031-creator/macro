@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded terminal exit for a lawfully parked HOLD-FOR-SOL pull request.
+"""Bounded HOLD-FOR-SOL state adapter in front of the completion guard.
 
 The main completion guard deliberately treats an ordinary unmerged PR as unfinished.
 That remains correct. A different state exists in repository law, however: Sol/CEO
@@ -8,15 +8,23 @@ then requires the PR to be draft, disarmed, and unmerged. Waiting for that prohi
 merge is unsatisfiable and used to make Claude repeat ``SHIP LOOP BLOCKED`` until the
 generic ten-block escape ladder fired.
 
-This front-end is intentionally narrow and quota-conscious. It only probes for a
-lawful hold after the existing guard has already reached one terminal-candidate
-blocker: ordinary ``unmerged`` on a sanctioned ``claude/*`` branch, or
-``unsafe_branch`` on an authority-owned ``sol/*`` branch. It then requires the exact
-pushed head, a clean worktree, a draft PR whose title starts ``HOLD-FOR-SOL``, no
-``merge-on-green`` label, no native auto-merge, recorded Sol authority and Sol release
-condition, and concluded-green binding checks. Only that state becomes
-``SHIP LOOP PARKED``. Every other state delegates byte-for-byte to the existing guard,
-preserving all of its ordinary branch/merge/CI/render/live enforcement.
+This front-end is intentionally narrow and fail-closed. It only probes for a lawful
+hold after the existing guard has already reached one hold-candidate blocker:
+ordinary ``unmerged`` on a sanctioned ``claude/*`` branch, or ``unsafe_branch`` on
+Sol's ``sol/*`` authority namespace. It then requires the exact pushed head, a clean
+worktree, a draft PR whose title starts ``HOLD-FOR-SOL``, no ``merge-on-green`` label,
+no native auto-merge, recorded Sol authority and Sol release condition, and binding
+check evidence.
+
+A concluded-green candidate becomes ``SHIP LOOP PARKED``. For the special ``sol/*``
+case only, a valid hold whose checks are still pending or red is intercepted before
+the ordinary branch-law message: pending checks produce a non-terminal HOLD wait and
+red checks produce a HOLD repair block, both explicitly forbidding branch/PR identity
+mutation. This matters because telling a ratified hold that its branch is unsafe made
+agents try to rename the held branch, which closes/rekeys the PR instead of advancing
+the lawful hold. Every malformed/ambiguous hold and every non-``sol/*`` unsafe branch
+delegates byte-for-byte to the canonical guard. Ordinary branch, merge, CI, render,
+and live enforcement therefore remains unchanged.
 """
 
 from __future__ import annotations
@@ -149,16 +157,23 @@ def _hold_protocol_is_complete(pull: dict[str, Any], comments: list[dict[str, An
     return True
 
 
-def _parked_hold(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | None:
+def _hold_probe(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | None:
+    """Resolve a fully authenticated hold candidate without granting an exit.
+
+    ``status`` is ``parked`` only when all binding checks are concluded green.
+    ``pending`` and ``red`` are actionable only for the ``sol/*`` authority-branch
+    interception in ``main``; ordinary ``claude/*`` behavior still delegates unless
+    the hold is fully PARKED.
+    """
     root = guard._repo_root(payload)
     if root is None:
         return None
     root = Path(root)
     state = guard._load(guard._state_path(root, payload))
     # Do not spend shared GitHub quota on every Stop. The ordinary guard must first
-    # reach a state that can lawfully terminate as PARKED. ``unmerged`` is the
-    # sanctioned claude/* path; ``unsafe_branch`` is accepted only for Sol's own
-    # sol/* authority namespace. Any other blocker still belongs to the delegate.
+    # reach a state that can be a lawful hold. ``unmerged`` is the sanctioned
+    # claude/* path; ``unsafe_branch`` is considered only for Sol's own sol/*
+    # authority namespace. Any other blocker still belongs entirely to the delegate.
     if not isinstance(state, dict):
         return None
     last_blocker = str(state.get("last_blocker") or "")
@@ -182,7 +197,7 @@ def _parked_hold(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] |
     if int(_git(root, "rev-list", "--count", f"{upstream}..HEAD") or "0") != 0:
         return None
     # The prior guard verdict proved the tree clean at that Stop. Recheck now so
-    # edits made after the block can never be laundered by the hold terminal state.
+    # edits made after the block can never be laundered by the hold adapter.
     if _git(root, "status", "--porcelain=v1", "--untracked-files=all"):
         return None
 
@@ -201,15 +216,73 @@ def _parked_hold(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] |
 
     runs = guard._head_check_runs(owner, repo, head)
     red, pending, passed = guard._split_head_runs(runs)
-    if red or pending or not passed:
-        return None
+    if red:
+        status = "red"
+    elif pending or not passed:
+        # No concluded-green binding check is evidence-incomplete, not permission
+        # to PARK. Treat it like pending so the Sol authority branch cannot fall
+        # back to the misleading rename-oriented unsafe_branch message.
+        status = "pending"
+    else:
+        status = "parked"
 
     return {
         "number": number,
         "branch": branch,
         "head": head,
+        "source_blocker": last_blocker,
+        "status": status,
+        "red": red,
+        "pending": pending,
         "passed": passed,
     }
+
+
+def _parked_hold(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | None:
+    """Backward-compatible terminal view used by the canonical regression suite."""
+    probe = _hold_probe(guard, payload)
+    if probe is None or probe["status"] != "parked":
+        return None
+    return {
+        "number": probe["number"],
+        "branch": probe["branch"],
+        "head": probe["head"],
+        "passed": probe["passed"],
+    }
+
+
+def _hold_block(probe: dict[str, Any]) -> dict[str, str] | None:
+    """Return the non-terminal block for a valid Sol authority hold, if any."""
+    if probe.get("source_blocker") != "unsafe_branch" or not str(probe.get("branch") or "").startswith("sol/"):
+        return None
+    status = probe.get("status")
+    if status == "pending":
+        pending = ", ".join(str(name) for name in probe.get("pending", [])[:8]) or "binding checks not yet concluded"
+        return {
+            "decision": "block",
+            "reason": (
+                f"HOLD-FOR-SOL WAITING: PR #{probe['number']} is a ratified Sol hold on "
+                f"{probe['branch']}; exact head {str(probe['head'])[:12]} is pushed and clean, "
+                f"but checks are not yet complete ({pending}). Do not rename the branch, "
+                "close/reopen the PR, arm merge-on-green, merge, render, or mutate PR identity. "
+                "Wait for the existing check watcher only. If checks conclude green this state "
+                "becomes terminal PARKED; if a binding check concludes red, repair that check "
+                "without treating the Sol authority branch as the blocker."
+            ),
+        }
+    if status == "red":
+        red = ", ".join(str(name) for name in probe.get("red", [])[:8]) or "binding check failure"
+        return {
+            "decision": "block",
+            "reason": (
+                f"HOLD-FOR-SOL CHECKS RED: PR #{probe['number']} remains held and must not merge. "
+                f"Binding checks are red ({red}). Repair the failing check on the same held PR; "
+                "do not rename the Sol authority branch, close/reopen the PR, arm merge-on-green, "
+                "or use branch mutation as a ship-loop escape. A new exact head must earn its own "
+                "green binding proof before it can become PARKED."
+            ),
+        }
+    return None
 
 
 def main() -> None:
@@ -226,19 +299,19 @@ def main() -> None:
     if str(payload.get("hook_event_name") or "") == "Stop":
         try:
             guard = _load_guard(delegate)
-            parked = _parked_hold(guard, payload)
+            probe = _hold_probe(guard, payload)
         except Exception:
             # Any uncertainty restores the original fail-closed guard. This wrapper
-            # is only allowed to add one proven terminal state; it may never replace
-            # an ordinary guard error with permission to stop.
-            parked = None
-        if parked is not None:
-            checks = ", ".join(str(name) for name in parked["passed"][:8])
+            # may correct the reason for one proven hold state; it may never replace
+            # an ambiguous ordinary guard error with permission to stop.
+            probe = None
+        if probe is not None and probe["status"] == "parked":
+            checks = ", ".join(str(name) for name in probe["passed"][:8])
             print(
                 json.dumps(
                     {
                         "systemMessage": (
-                            f"SHIP LOOP PARKED: PR #{parked['number']} is lawfully {HOLD_TOKEN}. "
+                            f"SHIP LOOP PARKED: PR #{probe['number']} is lawfully {HOLD_TOKEN}. "
                             "The exact local head is pushed; the worktree is clean; the PR is "
                             "draft; merge-on-green and native auto-merge are disarmed; Sol "
                             "authority plus Sol release condition are recorded; and all binding "
@@ -252,6 +325,11 @@ def main() -> None:
                 )
             )
             return
+        if probe is not None:
+            hold_block = _hold_block(probe)
+            if hold_block is not None:
+                print(json.dumps(hold_block, ensure_ascii=False))
+                return
 
     _relay(delegate, raw, cwd)
 
