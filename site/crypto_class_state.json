@@ -13,12 +13,12 @@
   "flows": {
     "etf": "Rising",
     "stablecoins": "Steady",
-    "volume": "Quiet tape"
+    "volume": "High participation"
   },
   "heat": {
     "funding": "Balanced",
-    "open_interest": "Leverage normal",
-    "volatility": "Volatility compressed",
+    "open_interest": "Leverage light",
+    "volatility": "Volatility normal",
     "altseason": "Alt participation broad"
   },
   "assets": {

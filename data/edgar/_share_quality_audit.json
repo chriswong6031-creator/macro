@@ -1,16 +1,16 @@
 {
-"applied": "2026-08-14T03:56:33.449971+00:00",
-"rows_flagged": 1078,
-"tickers_flagged": 656,
+"applied": "2026-08-22T03:01:07.134191+00:00",
+"rows_flagged": 1073,
+"tickers_flagged": 657,
 "by_flag": {
-"placeholder": 76,
+"placeholder": 75,
 "pre_public": 839,
 "pre_public_tiny": 56,
 "unit_extreme": 27,
 "unit_level": 12,
-"unit_scale": 68
+"unit_scale": 64
 },
-"repaired": 130,
+"repaired": 125,
 "nulled": 948,
 "rows": [
 {
@@ -3742,6 +3742,14 @@
 "note": "no confident repair (lead)"
 },
 {
+"ticker": "IA",
+"fy": 2022,
+"flag": "unit_level",
+"shares_raw": 1717366224.0,
+"repair": 17271768.0,
+"note": "carry-forward last clean prior"
+},
+{
 "ticker": "IBTA",
 "fy": 2023,
 "flag": "pre_public",
@@ -3892,14 +3900,6 @@
 "shares_raw": 1410565.0,
 "repair": null,
 "note": "period_end<2016-09-01"
-},
-{
-"ticker": "ISSC",
-"fy": 2022,
-"flag": "unit_level",
-"shares_raw": 1717366224.0,
-"repair": 17271768.0,
-"note": "carry-forward last clean prior"
 },
 {
 "ticker": "ISTR",
@@ -6982,6 +6982,14 @@
 "note": "x1e-3"
 },
 {
+"ticker": "STLN",
+"fy": 2019,
+"flag": "pre_public",
+"shares_raw": 5750000.0,
+"repair": null,
+"note": "period_end<2020-05-02"
+},
+{
 "ticker": "STOK",
 "fy": 2018,
 "flag": "pre_public",
@@ -7156,6 +7164,14 @@
 "shares_raw": 141590000.0,
 "repair": null,
 "note": "period_end<2023-05-02"
+},
+{
+"ticker": "SWMR",
+"fy": 2025,
+"flag": "pre_public",
+"shares_raw": 911255.0,
+"repair": null,
+"note": "period_end<2026-01-30"
 },
 {
 "ticker": "SXI",
@@ -7462,22 +7478,6 @@
 "note": "no clean flank snap"
 },
 {
-"ticker": "TOI",
-"fy": 2019,
-"flag": "pre_public",
-"shares_raw": 5750000.0,
-"repair": null,
-"note": "period_end<2021-10-02"
-},
-{
-"ticker": "TOI",
-"fy": 2020,
-"flag": "pre_public",
-"shares_raw": 23000000.0,
-"repair": null,
-"note": "period_end<2021-10-02"
-},
-{
 "ticker": "TRDA",
 "fy": 2020,
 "flag": "pre_public",
@@ -7511,11 +7511,11 @@
 },
 {
 "ticker": "TSSI",
-"fy": 2025,
-"flag": "placeholder",
-"shares_raw": 27593.0,
-"repair": 27593000.0,
-"note": "x1e3 vs left flank"
+"fy": 2014,
+"flag": "unit_scale",
+"shares_raw": 15209.0,
+"repair": 15209000.0,
+"note": "x1e3"
 },
 {
 "ticker": "TTAN",
@@ -8596,46 +8596,6 @@
 "shares_raw": 5697517.0,
 "repair": null,
 "note": "leading segment <2e+07"
-},
-{
-"ticker": "TSSI",
-"fy": 2010,
-"flag": "unit_scale",
-"shares_raw": 13384860.0,
-"repair": 13384860.0,
-"note": "x1e3 (lead)"
-},
-{
-"ticker": "TSSI",
-"fy": 2011,
-"flag": "unit_scale",
-"shares_raw": 14028413.0,
-"repair": 14028413.0,
-"note": "x1e3 (lead)"
-},
-{
-"ticker": "TSSI",
-"fy": 2012,
-"flag": "unit_scale",
-"shares_raw": 14278772.0,
-"repair": 14278772.0,
-"note": "x1e3 (lead)"
-},
-{
-"ticker": "TSSI",
-"fy": 2013,
-"flag": "unit_scale",
-"shares_raw": 14572000.0,
-"repair": 14572000.0,
-"note": "x1e3 (lead)"
-},
-{
-"ticker": "TSSI",
-"fy": 2014,
-"flag": "unit_scale",
-"shares_raw": 15209.0,
-"repair": 15209000.0,
-"note": "x1e3 (lead)"
 }
 ]
 }

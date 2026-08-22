@@ -3,17 +3,17 @@
   "contract_phase": "w0",
   "display_only": true,
   "as_of": "2026-08-21",
-  "generated_at": "2026-08-21T21:45:29+00:00",
+  "generated_at": "2026-08-22T05:12:20+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 73407.13,
-    "change_24h_pct": 0.54,
+    "price": 78304.72,
+    "change_24h_pct": 7.25,
     "stance_en": "STRONG RISK-ON",
     "stance_zh": "强烈偏多",
-    "summary_en": "The big picture reads strongly risk-on. Support comes from the pace of the move and momentum; the drag comes from futures positioning and stablecoin flows. Day-to-day direction is a coin flip — watch the dip-risk read below.",
-    "summary_zh": "大方向明显偏多。支撑来自涨跌节奏与动量；拖累来自期货持仓与稳定币资金。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
-    "master_score": 41,
-    "exposure_pct": 50,
+    "summary_en": "The big picture reads strongly risk-on. Support comes from momentum and the pace of the move; the drag comes from futures positioning and US buyers. Day-to-day direction is a coin flip — watch the dip-risk read below.",
+    "summary_zh": "大方向明显偏多。支撑来自动量与涨跌节奏；拖累来自期货持仓与美国买盘。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
+    "master_score": 46,
+    "exposure_pct": 100,
     "gate_active": false
   },
   "axes": [
@@ -109,13 +109,13 @@
       "label_zh": "流动性与资金流",
       "primary": {
         "key": "etf",
-        "label_en": "Etf",
-        "label_zh": "etf",
+        "label_en": "ETF flows",
+        "label_zh": "ETF 资金流",
         "source": "master.board.etf",
-        "state_en": "Unavailable",
-        "state_zh": "暂无",
-        "tone": "neutral",
-        "grade": null
+        "state_en": "Accumulation",
+        "state_zh": "吸筹",
+        "tone": "bull",
+        "grade": "DIRECTIONAL"
       },
       "spark_source": "signals.etf_flow_z",
       "receipt_members": [
@@ -134,9 +134,9 @@
           "label_en": "Coinbase premium",
           "label_zh": "Coinbase 溢价",
           "source": "master.board.premium",
-          "state_en": "Healthy demand",
-          "state_zh": "健康需求",
-          "tone": "bull",
+          "state_en": "Overheated or absent",
+          "state_zh": "过热或缺位",
+          "tone": "bear",
           "grade": "EXTREMES"
         }
       ]
@@ -236,9 +236,9 @@
         "label_en": "Macro liquidity",
         "label_zh": "宏观流动性",
         "source": "master.board.macro",
-        "state_en": "Tailwind",
-        "state_zh": "顺风",
-        "tone": "bull",
+        "state_en": "Neutral",
+        "state_zh": "中性",
+        "tone": "neutral",
         "grade": "CONFIRMED"
       },
       "spark_source": "signals.macro_score",
@@ -248,9 +248,9 @@
           "label_en": "Conditional beta",
           "label_zh": "条件贝塔",
           "source": "master.board.beta",
-          "state_en": "Limited downside",
-          "state_zh": "下行受限",
-          "tone": "bull",
+          "state_en": "Amplifies sell-offs",
+          "state_zh": "放大下跌",
+          "tone": "bear",
           "grade": "CONFIRMED"
         }
       ]

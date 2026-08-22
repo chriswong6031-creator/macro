@@ -1,17 +1,17 @@
 {
  "schema": "mag7_washout.v1",
- "as_of": "2026-08-20",
+ "as_of": "2026-08-21",
  "state": "idle",
  "basket": {
   "stoch2w_k": 65.7,
   "stoch2w_d": 58.8,
   "rsi_macd_1w": {
-   "line": -0.77,
-   "sig": -0.92
+   "line": -0.69,
+   "sig": -0.9
   },
   "rsi_macd_3d": {
-   "line": -0.25,
-   "sig": -0.56
+   "line": -0.2,
+   "sig": -0.49
   }
  },
  "members_washed": 1,
