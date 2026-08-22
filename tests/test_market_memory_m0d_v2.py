@@ -966,16 +966,44 @@ def test_h3_update_sh_write_install_marker() -> None:
 
 
 def test_h3_update_sh_reciprocal_loops_include_v2_profiles() -> None:
-    """H3: Both reciprocal loops include source-spy-rest, technicals-v2, experience-v2."""
+    """H3: STOP and RE-ARM loops include v2 profiles; READY loop does not."""
+    import re
     update_sh = ROOT / "app" / "deploy" / "update.sh"
     content = update_sh.read_text()
+
+    # Extract the stop function body
+    m_stop = re.search(
+        r"stop_reciprocal_market_memory_writers\(\)\s*\{(.*?)\n\}",
+        content,
+        re.DOTALL,
+    )
+    assert m_stop, "stop_reciprocal_market_memory_writers function not found"
+    stop_body = m_stop.group(1)
+
+    # Extract the re-arm loop line
+    m_rearm = re.search(r"for RECIPROCAL_PROFILE in ([^\n;]+)", content)
+    assert m_rearm, "for RECIPROCAL_PROFILE in ... (re-arm loop) not found"
+    rearm_line = m_rearm.group(1)
+
+    # Extract the ready function body
+    m_ready = re.search(
+        r"reciprocal_market_memory_units_ready\(\)\s*\{(.*?)\n\}",
+        content,
+        re.DOTALL,
+    )
+    assert m_ready, "reciprocal_market_memory_units_ready function not found"
+    ready_body = m_ready.group(1)
+
     for profile in ("source-spy-rest", "technicals-v2", "experience-v2"):
-        # Check both stop and ready functions
-        count = content.count(f' {profile} ')
-        # Each should appear at least twice (once in stop loop, once in ready loop)
-        assert count >= 2, (
-            f"update.sh reciprocal loops must include '{profile}' in BOTH loops; "
-            f"found only {count} occurrence(s)"
+        assert profile in stop_body, (
+            f"stop_reciprocal_market_memory_writers must contain '{profile}'"
+        )
+        assert profile in rearm_line, (
+            f"re-arm loop must contain '{profile}'"
+        )
+        assert profile not in ready_body, (
+            f"reciprocal_market_memory_units_ready must NOT contain '{profile}' "
+            "(v2 units may not exist on first deploy and would deadlock the v1 gate)"
         )
 
 
@@ -1348,11 +1376,15 @@ def test_n1_stop_loop_has_v2_profiles() -> None:
 
 
 def test_n4_rearm_loop_has_v2_profiles() -> None:
-    """N4: The re-arm loop (for RECIPROCAL_PROFILE in ...) must include v2 profiles."""
+    """N4: The re-arm loop must include v2 profiles and must NOT include bare 'experience'.
+
+    'experience' (v1) timer is owned by w2c_reconcile_timer (Persistent=true) and
+    must not be re-armed directly; only experience-v2 belongs here.
+    """
+    import re
     update_sh = ROOT / "app" / "deploy" / "update.sh"
     content = update_sh.read_text()
 
-    import re
     m = re.search(r"for RECIPROCAL_PROFILE in ([^\n;]+)", content)
     assert m, "for RECIPROCAL_PROFILE in ... not found in update.sh"
     loop_line = m.group(1)
@@ -1361,6 +1393,15 @@ def test_n4_rearm_loop_has_v2_profiles() -> None:
         assert profile in loop_line, (
             f"re-arm loop must include '{profile}'; got: {loop_line!r}"
         )
+
+    # Must NOT contain bare 'experience' (the v1 timer — owned by w2c_reconcile_timer)
+    # Use word-boundary check: 'experience' followed by space or end-of-tokens
+    tokens = loop_line.split()
+    bare_experience = [t for t in tokens if t == "experience"]
+    assert not bare_experience, (
+        f"re-arm loop must NOT contain bare 'experience' (v1, Persistent=true, "
+        f"owned by w2c_reconcile_timer); got loop: {loop_line!r}"
+    )
 
 
 def test_n2_b3_marker_uses_macro_api_venv_and_not_env_python() -> None:
@@ -1492,6 +1533,36 @@ def test_n6_technicals_main_no_session_returns_0() -> None:
     rc = tech_main([], clock=monday_clock)
     assert rc == 0, (
         f"_main must return 0 (not 1) when derive_morning_session is None; got {rc}"
+    )
+
+
+def test_n4_marker_write_before_w2c_attested_exit() -> None:
+    """N4: --write-install-marker must appear before the W2C MARKET_MEMORY_EXPERIENCE_ATTESTED block.
+
+    A previous regression placed the marker write AFTER the W2C exit 1, causing
+    first-ship to never write the marker. The marker block must precede the
+    MARKET_MEMORY_EXPERIENCE_ATTESTED initialization and its surrounding exit 1.
+    """
+    update_sh = ROOT / "app" / "deploy" / "update.sh"
+    lines = update_sh.read_text().splitlines()
+
+    marker_lineno = None
+    attested_lineno = None
+
+    for i, line in enumerate(lines, start=1):
+        if "--write-install-marker" in line and marker_lineno is None:
+            marker_lineno = i
+        if "MARKET_MEMORY_EXPERIENCE_ATTESTED=0" in line and attested_lineno is None:
+            attested_lineno = i
+
+    assert marker_lineno is not None, "--write-install-marker not found in update.sh"
+    assert attested_lineno is not None, (
+        "MARKET_MEMORY_EXPERIENCE_ATTESTED=0 initialization not found in update.sh"
+    )
+    assert marker_lineno < attested_lineno, (
+        f"--write-install-marker (line {marker_lineno}) must appear BEFORE "
+        f"MARKET_MEMORY_EXPERIENCE_ATTESTED=0 (line {attested_lineno}); "
+        "marker write was previously placed after the W2C exit, preventing first-ship"
     )
 
 

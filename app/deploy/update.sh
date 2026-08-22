@@ -1545,11 +1545,13 @@ if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ] && \
 		exit 1
 	fi
 	# END W2C_DEFERRED_REPLAY
-	for RECIPROCAL_PROFILE in source source-spy-rest context identity breadth technicals technicals-v2 experience experience-v2 production-records; do
-		if [ "$RECIPROCAL_PROFILE" = production-records ]; then
-			systemctl enable --now "macro-market-memory-$RECIPROCAL_PROFILE.timer"
-		else
-			systemctl start "macro-market-memory-$RECIPROCAL_PROFILE.timer"
+	for RECIPROCAL_PROFILE in source source-spy-rest context identity breadth technicals technicals-v2 experience-v2 production-records; do
+		if [ -e "/etc/systemd/system/macro-market-memory-$RECIPROCAL_PROFILE.timer" ]; then
+			if [ "$RECIPROCAL_PROFILE" = production-records ]; then
+				systemctl enable --now "macro-market-memory-$RECIPROCAL_PROFILE.timer" || true
+			else
+				systemctl start "macro-market-memory-$RECIPROCAL_PROFILE.timer" || true
+			fi
 		fi
 	done
 	if ! w2c_reconcile_timer; then
