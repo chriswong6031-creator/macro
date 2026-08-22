@@ -1,0 +1,26 @@
+{
+  "subsectors": {
+    "subsectors": "S&P 500\n65",
+    "nasdaq": "Nasdaq-100\n12",
+    "russell": "Russell-2000\n93",
+    "baskets": "Thematic Baskets\n49"
+  },
+  "nasdaq": {
+    "subsectors": "S&P 500\n65",
+    "nasdaq": "Nasdaq-100\n12",
+    "russell": "Russell-2000\n93",
+    "baskets": "Thematic Baskets\n49"
+  },
+  "russell": {
+    "subsectors": "S&P 500\n65",
+    "nasdaq": "Nasdaq-100\n12",
+    "russell": "Russell-2000\n93",
+    "baskets": "Thematic Baskets\n49"
+  },
+  "baskets": {
+    "subsectors": "S&P 500\n65",
+    "nasdaq": "Nasdaq-100\n12",
+    "russell": "Russell-2000\n93",
+    "baskets": "Thematic Baskets\n49"
+  }
+}

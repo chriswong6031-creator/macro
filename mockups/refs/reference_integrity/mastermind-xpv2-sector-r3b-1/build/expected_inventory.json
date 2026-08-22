@@ -1,0 +1,287 @@
+{
+ "entries": [
+  {
+   "id": "sizing_pct",
+   "capability": "sizing_directive",
+   "view": "overview",
+   "selector": "[data-r3b1=\"01\"]",
+   "check": "text",
+   "must_contain_en": [
+    "positions sized to 81%"
+   ],
+   "must_contain_zh": [
+    "仓位缩至 81%"
+   ],
+   "source": "basketdata/baskets.json theme_intel.regime_sizing.gross_scalar = 0.81 (round(*100)=81); production sector_central.html.j2:2886-2919 renderRegimeSizing()"
+  },
+  {
+   "id": "caveat_not_forecast",
+   "capability": "method_caveat_clause_a",
+   "view": "overview",
+   "selector": "[data-r3b1=\"02\"] [data-tip-en]",
+   "check": "attr",
+   "attrs": [
+    "data-tip-en",
+    "data-tip-zh"
+   ],
+   "must_contain_en": [
+    "not a forecast"
+   ],
+   "must_contain_zh": [
+    "非预测"
+   ],
+   "source": "production sector_central.html.j2:2153, quoted DAC-102 'Shape read only — not a forecast.'"
+  },
+  {
+   "id": "caveat_construction_lag",
+   "capability": "method_caveat_clause_b",
+   "view": "overview",
+   "selector": "[data-r3b1=\"02\"] [data-tip-en]",
+   "check": "attr",
+   "attrs": [
+    "data-tip-en",
+    "data-tip-zh"
+   ],
+   "must_contain_en": [
+    "~3 weeks by construction"
+   ],
+   "must_contain_zh": [
+    "约3周"
+   ],
+   "source": "production sector_central.html.j2:2153, quoted DAC-102 'skips the most recent ~3 weeks by construction'"
+  },
+  {
+   "id": "migration_note",
+   "capability": "migration_note",
+   "view": "overview",
+   "selector": "[data-r3b1=\"03\"]",
+   "check": "text",
+   "must_contain_en": [
+    "Money is moving into Software and out of Semiconductors."
+   ],
+   "must_contain_zh": [
+    "资金正流入软件，流出半导体。"
+   ],
+   "source": "basketdata/si_handoff.json theme_context.migration.note_en/note_zh; production sector_central.html.j2:2130 (DAC-103)"
+  },
+  {
+   "id": "allocation_href",
+   "capability": "allocation_destination",
+   "view": "overview",
+   "selector": "[data-r3b1=\"04\"]",
+   "check": "href",
+   "equals": "allocation.html",
+   "source": "R3A capability_disposition_ledger.md #86 'per-view working-destination inventory', Overview 'Hero leadership context' row; production sector_central.html.j2:2163 (DAC-104)"
+  },
+  {
+   "id": "allocation_text",
+   "capability": "allocation_destination",
+   "view": "overview",
+   "selector": "[data-r3b1=\"04\"]",
+   "check": "text",
+   "must_contain_en": [
+    "Open the playbook"
+   ],
+   "must_contain_zh": [
+    "打开操盘手册"
+   ],
+   "source": "same as allocation_href"
+  },
+  {
+   "id": "hero_enrichment_outgoing",
+   "capability": "hero_enrichment_outgoing",
+   "view": "overview",
+   "selector": "[data-r3b1=\"05a\"]",
+   "check": "text",
+   "must_contain_en": [
+    "-9.6% 20d"
+   ],
+   "must_contain_zh": [
+    "-9.6% 20日"
+   ],
+   "source": "basketdata/baskets.json theme_intel.themes[id='memory_storage'].perf['20d'].rel / .perf['5d'].rel (relTxt); basketdata/si_handoff.json theme_context.leadership.trailing_leader; production sector_central.html.j2:2928-2933 (DAC-106)"
+  },
+  {
+   "id": "hero_enrichment_incoming",
+   "capability": "hero_enrichment_incoming",
+   "view": "overview",
+   "selector": "[data-r3b1=\"05b\"]",
+   "check": "text",
+   "must_contain_en": [
+    "+11.5% 20d · climbing fast"
+   ],
+   "must_contain_zh": [
+    "+11.5% 20日 · 快速上行"
+   ],
+   "source": "basketdata/baskets.json theme_intel.themes[id='big_pharma'].perf['20d'].rel / .pulse_rank_delta_5d; basketdata/si_handoff.json theme_context.leadership.strength[0]; production sector_central.html.j2:2928-2933 (DAC-106)"
+  },
+  {
+   "id": "hero_counts_themes",
+   "capability": "hero_enrichment_counts",
+   "view": "overview",
+   "selector": "[data-r3b1=\"05c\"]",
+   "check": "text",
+   "must_contain_en": [
+    "49 themes"
+   ],
+   "must_contain_zh": [
+    "49 个主题"
+   ],
+   "source": "basketdata/baskets.json baskets[].length=49 (production :2926 mirror; DAC-106)"
+  },
+  {
+   "id": "hero_counts_categories",
+   "capability": "hero_enrichment_counts",
+   "view": "overview",
+   "selector": "[data-r3b1=\"05c\"]",
+   "check": "text",
+   "must_contain_en": [
+    "15 categories"
+   ],
+   "must_contain_zh": [
+    "15 个分类"
+   ],
+   "source": "basketdata/baskets.json categories[].length=15 (production :2926 mirror; DAC-106)"
+  },
+  {
+   "id": "sp_coverage_gateable",
+   "capability": "sp_coverage_sentence",
+   "view": "confluence",
+   "tab": "subsectors",
+   "selector": "[data-r3b1=\"07\"]",
+   "check": "text",
+   "must_contain_en": [
+    "65"
+   ],
+   "must_contain_zh": [
+    "65"
+   ],
+   "source": "marketdata/subsector_confluence.json coverage.n_gateable=65"
+  },
+  {
+   "id": "sp_coverage_total",
+   "capability": "sp_coverage_sentence",
+   "view": "confluence",
+   "tab": "subsectors",
+   "selector": "[data-r3b1=\"07\"]",
+   "check": "text",
+   "must_contain_en": [
+    "113"
+   ],
+   "must_contain_zh": [
+    "113"
+   ],
+   "source": "marketdata/subsector_confluence.json coverage.n_subsectors=113"
+  },
+  {
+   "id": "sp_coverage_thin",
+   "capability": "sp_coverage_sentence",
+   "view": "confluence",
+   "tab": "subsectors",
+   "selector": "[data-r3b1=\"07\"]",
+   "check": "text",
+   "must_contain_en": [
+    "48"
+   ],
+   "must_contain_zh": [
+    "48"
+   ],
+   "source": "marketdata/subsector_confluence.json coverage.n_thin=48"
+  },
+  {
+   "id": "sp_coverage_phrase",
+   "capability": "sp_coverage_sentence",
+   "view": "confluence",
+   "tab": "subsectors",
+   "selector": "[data-r3b1=\"07\"]",
+   "check": "text",
+   "must_contain_en": [
+    "have enough live data"
+   ],
+   "must_contain_zh": [
+    "实时数据"
+   ],
+   "source": "views/confluence.html paintFoot() honest-wording literal (R3B1-07, DAC-105 wording condition); static UI copy, not a producer-derived number"
+  },
+  {
+   "id": "conviction_label",
+   "capability": "conviction_picks_label",
+   "view": "confluence",
+   "tab": "subsectors",
+   "selector": "[data-r3b1=\"13\"]",
+   "check": "text_ci",
+   "must_contain_en": [
+    "conviction"
+   ],
+   "must_contain_zh": [
+    "综合把握"
+   ],
+   "source": "ORCHESTRATOR_ADJUDICATIONS_R3B1.md R3B1-13 ruling (producer-named 'Conviction' combined_score column, not an invented label)"
+  }
+ ],
+ "destination_families": [
+  {
+   "id": "basket_family",
+   "pattern": "^basket/",
+   "source": "routing_contract.md §7 Overview/Map/Explore: basket/<id>.html"
+  },
+  {
+   "id": "subsector_family",
+   "pattern": "^subsector",
+   "source": "routing_contract.md §7 Confluence detailHref: subsector/, subsector_nasdaq/, subsector_russell/, subsector/b-*"
+  },
+  {
+   "id": "stock_family",
+   "pattern": "^stock\\.html#",
+   "source": "routing_contract.md §7 Confluence stockHref(tk): stock.html#<TICKER>"
+  },
+  {
+   "id": "rotation_family",
+   "pattern": "^rotation/",
+   "source": "capability_crosscheck.md row #86 Moving view: rotation/*"
+  },
+  {
+   "id": "sector_cycles_family",
+   "pattern": "^sector_cycles\\.html",
+   "source": "capability_crosscheck.md row #86 Map view: sector_cycles.html / sector_cycles.html#*"
+  },
+  {
+   "id": "plans_family",
+   "pattern": "^plans\\.html",
+   "source": "routing_contract.md §7 Overview gated tease: plans.html"
+  },
+  {
+   "id": "allocation_family",
+   "pattern": "^allocation\\.html",
+   "source": "R3A capability ledger #86 Overview hero destination: allocation.html (DAC-104 restoration, R3B1-04)"
+  },
+  {
+   "id": "terminal_cross_repo_family",
+   "pattern": "^https://app\\.mastermind-x\\.com/terminal\\?symbol=",
+   "source": "build/fixture_supplement/marketdata/sp500_heatmap.json stock_url field; money.html STOCK_URL mirrors production heatmap.js:826 (data.stock_url fallback)",
+   "producer_note": "the fixture's own stock_url is the external terminal URL, not the 'stock.html#' fallback; both are genuine per production's own field"
+  }
+ ],
+ "allowed_unresolved_fetches": {
+  "basketdata/pulse.json": "Explore Time Machine mount — R3C-only condition (COMMISSION.md 'Time Machine live oracledata episode/chunk fetch'); README_BUILD.md 'Time Machine — recorded-not-executed ruling'"
+ },
+ "derived_values": {
+  "sizing_pct": 81,
+  "trailing_leader_id": "memory_storage",
+  "taker_id": "big_pharma",
+  "n_themes": 49,
+  "n_categories": 15,
+  "coverage": {
+   "n_subsectors": 113,
+   "n_gateable": 65,
+   "n_thin": 48,
+   "n_sectors": 11,
+   "n_high": 8,
+   "n_med": 26,
+   "n_low_conf": 31,
+   "thin_share": 0.477
+  },
+  "migration_note_en": "Money is moving into Software and out of Semiconductors.",
+  "migration_note_zh": "资金正流入软件，流出半导体。"
+ }
+}
