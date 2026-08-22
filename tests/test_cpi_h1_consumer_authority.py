@@ -140,13 +140,17 @@ class TestPromotedNullNeuralwebContextFails:
         validate_consumer_vocabulary(row)  # must not raise
 
     @pytest.mark.parametrize("status", ["candidate", "retired", "superseded"])
-    def test_class_conditional_check_extended_beyond_promoted_null(self, status):
-        """Fable adjudication (2026-08-21, extending rulings 6+8): the
-        neuralweb_context-vs-class-forbid check is matrix-driven, not
-        hardcoded to promoted_null — the `candidates`, `retired`, and
-        `superseded` classes in consumer_matrix.yml also forbid
-        neuralweb_context, so a row of any of those statuses granting it
-        must fail identically to the original 5 promoted_null rows."""
+    def test_subset_check_rejects_neuralweb_context_beyond_promoted_null(self, status):
+        """CPI-H1.1: the general row-allowed ⊆ class-allowed subset check
+        (ruling 8) is matrix-driven per status, not hardcoded to
+        promoted_null — the `candidates`, `retired`, and `superseded`
+        classes' matrix allowed_consumers also omit neuralweb_context, so a
+        row of any of those statuses granting it must fail identically to
+        the original 5 promoted_null rows. This is the general subset
+        invariant firing on this one token, not a separate neuralweb-only
+        mechanism (the earlier bounded check this test used to name was
+        superseded by CPI-H1.1 — see engine/cycle_pattern/
+        consumer_authority.py's module docstring)."""
         row = _base_row(
             status=status,
             allowed_consumers=["neuralweb_context", "cycle_docs", "research_factory"],
@@ -155,13 +159,14 @@ class TestPromotedNullNeuralwebContextFails:
             validate_consumer_vocabulary(row)
 
     @pytest.mark.parametrize("status", ["display", "confirmer", "scored"])
-    def test_class_conditional_check_is_matrix_driven_not_promoted_null_only(self, status):
-        """Direct proof the check reads the matrix rather than a hardcoded
-        status set: the display/confirmer/scored classes do NOT forbid
-        neuralweb_context in consumer_matrix.yml, so those statuses must
-        still pass with it granted — only classes the matrix actually
-        forbids it for (promoted_null, candidates, retired, superseded) may
-        reject it."""
+    def test_subset_check_permits_neuralweb_context_where_class_allows_it(self, status):
+        """Direct proof the subset check reads the matrix per-status rather
+        than any hardcoded status set: the display/confirmer/scored classes'
+        matrix allowed_consumers DO include neuralweb_context, so those
+        statuses must still pass with it granted — only classes whose
+        matrix allowed_consumers omits it (promoted_null, candidate,
+        retired, superseded) reject it, per the general row ⊆ class subset
+        invariant (CPI-H1 ruling 8, HARD since CPI-H1.1)."""
         row = _base_row(
             status=status,
             allowed_consumers=["neuralweb_context", "cycle_docs", "research_factory"],

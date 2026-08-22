@@ -31,20 +31,13 @@ Design (CPI-H1 rulings, referenced by number below):
      any row-level grant (A2 finding F6).
   8. Row allowlists are least-privilege subsets of their status class.
 
-  Fable adjudication (2026-08-21, extending rulings 6+8): the neuralweb_context
-  check below is matrix-DRIVEN, not a hardcoded single-status allowlist — it
-  checks, for a row's actual status, whether that status's artifact_classes
-  entry in consumer_matrix.yml forbids neuralweb_context, and if so rejects a
-  row-level grant. Originally implemented as a promoted_null-only hardcoded
-  set (the only status A2's F6 enumerated); Fable adjudicated that the
-  identical defect exists one class over — the `candidates`/`retired`
-  classes also forbid neuralweb_context in the matrix, and a row of that
-  status granting it is the same "matrix wins" violation, not a different
-  rule. This is still a bounded, single-token check (not a general
-  row-allowed ⊆ class-allowed subset check for every token) — it only ever
-  fires for neuralweb_context, driven by whatever the matrix currently says
-  for that one token per class, so it self-updates if the matrix's per-class
-  forbids change and needs no further hardcoded edits here.
+  Fable adjudication (2026-08-21, extending rulings 6+8) originally added a
+  bounded, neuralweb_context-only class-conditional check here (matrix-
+  driven per-class forbid, not a hardcoded promoted_null-only set). CPI-H1.1
+  (below) SUPERSEDES that single-token mechanism with the general
+  row-allowed ⊆ class-allowed subset check — ruling 6's neuralweb_context
+  case is now just one instance of ruling 8's general invariant, not a
+  separate code path.
 
   Fable adjudication round 2 (2026-08-21, Opus red-team closure): HARD checks
   added — allowed_consumers may never contain a surfaces:money_path token
@@ -323,6 +316,15 @@ def validate_consumer_vocabulary(row: dict[str, Any], *, path: Path | None = Non
     # check: any class that forbids/omits a token from its own
     # allowed_consumers now rejects a row-level grant of that token,
     # uniformly, not just for neuralweb_context.
+    #
+    # NIT-2 (2026-08-22): this call is now the SOLE reachable path from
+    # validate_consumer_vocabulary() into _require_class_entry()'s unknown-
+    # status guard (MINOR-1) — nothing else in this function calls
+    # class_allowed_consumers()/class_forbidden_consumers(). A future
+    # refactor that removes or short-circuits this subset check must keep an
+    # equivalent call so an unmapped/typo'd status still raises rather than
+    # silently passing; TestUnknownStatusRaises in
+    # tests/test_cpi_h1_consumer_authority.py pins this behavior.
     class_allowed = class_allowed_consumers(status, path)
     extra = set(allowed) - class_allowed
     if extra:
