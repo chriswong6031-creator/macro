@@ -1,7 +1,7 @@
 # Dislocation P0-A1R — Source-law amendment
 
-**Date:** 2026-08-22  
-**Authority:** Sol ruling; research/source-only; zero rank, gate, size, candidate, Prophet, Radar, Fusion, execution, price, counterfactual, or outcome authority.  
+**Date:** 2026-08-22
+**Authority:** Sol ruling; research/source-only; zero rank, gate, size, candidate, Prophet, Radar, Fusion, execution, price, counterfactual, or outcome authority.
 **Amends:** Turn-5 P0-S0/S1 in `DISLOCATION_TURN5_SOURCE_ARCHITECTURE_FREEZE_2026-08-20.md`; the P0-A1 freeze contract; not the Cross-Issuer P0 preregistration's blind-manifest-before-price law.
 
 ## Controlling law

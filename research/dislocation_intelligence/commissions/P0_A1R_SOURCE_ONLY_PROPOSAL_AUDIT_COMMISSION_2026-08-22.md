@@ -1,7 +1,7 @@
 # P0-A1R source-only proposal and audit commission
 
 **Authority:** `DEC:DISLOCATION-P0-A1R-SOURCE-LAW-RECONCILIATION` and
-`DISLOCATION_P0_A1R_SOURCE_LAW_AMENDMENT_2026-08-22.md`.  
+`DISLOCATION_P0_A1R_SOURCE_LAW_AMENDMENT_2026-08-22.md`.
 **Scope:** exactly twenty canonical-owner SEC packets; source-only; no network,
 prices, outcomes, counterfactuals, scoring, ranking, or execution authority.
 
