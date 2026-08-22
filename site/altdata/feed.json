@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-22T05:28:13.307282+00:00",
+  "generated_utc": "2026-08-22T04:39:30.129350+00:00",
   "as_of": "2026-08-22",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -26847,14 +26847,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "QQQ",
-        "mentions": 25,
-        "sentiment": 0.074
-      },
-      {
         "ticker": "MSFT",
         "mentions": 25,
         "sentiment": 0.015
+      },
+      {
+        "ticker": "QQQ",
+        "mentions": 25,
+        "sentiment": 0.074
       },
       {
         "ticker": "OKLO",
@@ -29041,15 +29041,14 @@
         "why": "13f_add: Curated Wealth Partners LLC +$2,030,517,264 \u00b7 analyst_upgrade_cluster: net upgrades +21 revision delta \u00b7 special_situation: Acquisitions"
       },
       {
-        "ticker": "SBUX",
-        "score": 3,
+        "ticker": "CAT",
+        "score": 2,
         "weighted_score": 0.95,
         "channel_list": [
-          "analyst_upgrade_cluster",
-          "app_demand",
-          "special_situation"
+          "13f_add",
+          "insider_mspr"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +24 revision delta \u00b7 app_demand: 4.89\u2605 \u00d7 8,190,519 reviews \u00b7 special_situation: Strategic Reviews"
+        "why": "13f_add: Ascentis Wealth Management, LLC +$2,679,146,768 \u00b7 insider_mspr: MSPR 100.0"
       }
     ]
   }

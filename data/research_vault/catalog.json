@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T05:16:34.572028+00:00",
-  "count": 1595,
+  "generated_at": "2026-08-22T06:19:52.663081+00:00",
+  "count": 1598,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -147,6 +147,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-fchfwo2vf2c-0d1baa",
+      "title": "Americas Uranium Read across from Kazatomprom 1H26 results and 2026 production guidance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T03:18:45Z",
+      "summary_points": [
+        "**2026 Guidance & Cost Surge**: Maintained production guidance (71.49mn-75.39mn lbs) despite 9% YoY output growth, but revised revenue down to KZT 2.1-2.2tn and C1 cash costs up 37% YoY to $24.48/lb due to KZT appreciation, sulfuric acid inflation, and MET regime.",
+        "**Operational Cost Pressures**: Sulfuric acid costs rose 39% YoY, with TQZ plant delay (3Q27-1Q28) and ongoing inflation in materials/equipment/drilling services driving AISC up 25% YoY to $38.45/lb.",
+        "**Critical Facility Delay**: TQZ plant commissioning delayed to 3Q27-1Q28, compounding near-term cost pressures and supply chain risks amid sulfuric acid inflation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-j7hesirialr-eae64b",
       "title": "Americas Construction Building Products Non Residential Construction Data Centers and Institutional Projects Support Growt...",
       "institution": "Goldman Sachs",
@@ -168,6 +187,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-swhceuusbup-4b9a3f",
+      "title": "Americas Energy Oil Refining SRE Decisions Expected by End of August",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T03:18:44Z",
+      "summary_points": [
+        "**EPA RVO Deadline Extension**: EPA extends 2025 RVO deadline to end-August, enabling DK’s cash inflow >20% of market cap via SRE exemptions; PARR/DINO benefit from reduced CVI RVO liability.",
+        "**SRE Cash Flow Catalyst**: DK’s 2025 SREs drive >20% market cap cash flow (vs PARR’s >7%); key triggers: EPA deadline ruling, small refinery exemptions (end-Aug), and litigation on 2019-2022 \"zombie\" RINs.",
+        "**Investment Thesis & Risks**: Buy-rated DK ($83 target) and PARR ($90 target); critical risks: refining margins, operational execution, and PARR retail earnings.",
+        "**Target Price Upside**: Consistent outperformance (PARR: $90 target vs $82.07 close; DK: $83 target vs $67.21 close) signals bullish sentiment and material upside."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-cu8qsfg2hyv-162c59",
       "title": "US Equities Weekly Rundown 8 21 26",
       "institution": "Prime",
@@ -184,6 +223,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e2obauk6d5w-2b8140",
+      "title": "dailypoints20260821",
+      "institution": "Scotiabank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:32:52Z",
+      "summary_points": [
+        "**Canada-US Trade Agreement & Auto Tariffs**: Imminent Agreement Day with tariff confusion (15% autos tariff vs.",
+        "CUSMA exemptions), heightened political risk from US VP remarks amid Quebec election and Carney support dynamics.",
+        "**UK Retail Sales Disappointment**: July sales -0.5% m/m SA (vs.",
+        "consensus), driven by negative June revision (-0.5% vs.",
+        "+1.0% prior) and weak ex-fuel sales (-0.9% m/m), signaling consumer weakness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },

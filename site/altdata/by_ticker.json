@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-22",
-  "generated_utc": "2026-08-22T05:28:22.582940+00:00",
-  "n_tickers": 2584,
+  "generated_utc": "2026-08-22T04:39:43.059436+00:00",
+  "n_tickers": 2589,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
@@ -1963,7 +1963,6 @@
       "weighted_score": 0.95,
       "app_rating": 4.89,
       "app_reviews": 8190519,
-      "analyst_bull_ratio": 0.96,
       "congress_position_usd": 62100000.0,
       "convergence_score": 3,
       "trump_linked": false,
@@ -2717,6 +2716,44 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "MCO": {
+      "ticker": "MCO",
+      "channels": [
+        "analyst_upgrade_cluster"
+      ],
+      "weighted_score": 0.35,
+      "analyst_bull_ratio": 0.95,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "AMGN": {
+      "ticker": "AMGN",
+      "channels": [
+        "analyst_upgrade_cluster",
+        "clinical_phase3_start",
+        "special_situation"
+      ],
+      "weighted_score": 0.75,
+      "analyst_bull_ratio": 0.92,
+      "clinical_phase3_starts": 8,
+      "clinical_halts": 4,
+      "congress_position_usd": 36575000.0,
+      "convergence_score": 3,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "CDNS": {
+      "ticker": "CDNS",
+      "channels": [
+        "analyst_upgrade_cluster"
+      ],
+      "weighted_score": 0.35,
+      "analyst_bull_ratio": 1.0,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "CW": {
       "ticker": "CW",
       "channels": [
@@ -3344,20 +3381,6 @@
       "clinical_phase3_starts": 9,
       "clinical_halts": 1,
       "congress_position_usd": 44400000.0,
-      "convergence_score": 2,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "AMGN": {
-      "ticker": "AMGN",
-      "channels": [
-        "clinical_phase3_start",
-        "special_situation"
-      ],
-      "weighted_score": 0.4,
-      "clinical_phase3_starts": 8,
-      "clinical_halts": 4,
-      "congress_position_usd": 36575000.0,
       "convergence_score": 2,
       "trump_linked": false,
       "affiliated": false

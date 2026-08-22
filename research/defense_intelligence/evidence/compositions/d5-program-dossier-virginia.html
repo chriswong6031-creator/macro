@@ -66,7 +66,7 @@
 <div class="stance">
   <span class="chip ok">Program identity reviewed<span class="tok">reviewed</span></span>
   <span class="chip warn">Budget request rail unavailable<span class="tok">projection_missing</span></span>
-  <span class="chip">No economic-relationship data<span class="tok">not_asserted</span></span>
+  <span class="chip">No reviewed economic-relationship data<span class="tok">not_asserted</span></span>
   <span class="chip">Display only</span>
   <span class="chip">Watch — don't chase</span>
 </div>
@@ -78,7 +78,7 @@
   <div class="card">
     <p class="q"><i></i><b>What is this?</b></p>
     <p class="lead">The Navy's attack-submarine production line, built by two yards on the same hulls.</p>
-    <p>Phase: production. Sponsor: Department of the Navy.</p>
+    <p>Phase: production. Contract type: definitive contract <span class="tok">award plane award_type, verbatim</span>. Sponsor: Department of the Navy.</p>
     <p>It carries its own line in the Navy's shipbuilding budget book, with a sibling line for material bought a year ahead, and its own name in the Pentagon's acquisition report.</p>
     <p>Latest block in the reviewed record: Block VI.</p>
     <p class="do"><b>Why this matters.</b> One program, one identity. Match awards and filings to the program, never to a yard's name.</p>
@@ -88,15 +88,15 @@
     <p class="q"><i></i><b>Why the government needs it</b></p>
     <p class="lead">Undersea warfare — the Navy says its attack-submarine force is short of its own goal.</p>
     <p>The force-level goal and the shortfall are set out in Congressional Research Service report RL32418.</p>
-    <p>Boats have been running at about one a year against a two-a-year target.</p>
-    <p class="src">Need statement is quoted from an official source. There is no forecast and no production model on this page.</p>
+    <p>Boats have been running at about one a year against a two-a-year target. The July 2026 award funds nine more Block VI boats — quantity read from the change tape, not from this graph.</p>
+    <p class="src">Need statement is quoted from an official source. Program cost figures (EAC) are not collected — a later official-source wave. There is no forecast and no production model on this page.</p>
     <p class="do"><b>Why this matters.</b> The gap between the goal and the build rate is the demand story here. It is a stated need, not a projection.</p>
   </div>
 
   <div class="card">
     <p class="q"><i></i><b>What changed</b></p>
-    <p class="lead">A $42.1 billion Block VI construction contract, awarded 29 July 2026.</p>
-    <p>Nine boats, SSN 814 through SSN 822, plus material for a tenth.</p>
+    <p class="lead">A $42.1 billion Block VI construction contract, awarded 29 July 2026. <span class="tok">tape current</span></p>
+    <p>Nine boats, SSN 814 through SSN 822, plus material for a tenth. This is the change tape's event — realized, never a forward milestone.</p>
     <p>A contract award is not revenue, not a budget request, and not an obligation schedule. Those are four different clocks and this page shows one of them.</p>
     <p class="src">Sources: the official DoD contract announcement and General Dynamics' own release.</p>
     <p class="do"><b>What to do.</b> Watch how the work divides between the yards. Do not price $42.1B into either company.</p>
@@ -107,25 +107,25 @@
     <div class="prow">
       <code>GD</code>
       <div>
-        <b>General Dynamics Electric Boat <span class="chip ok">reviewed</span></b>
+        <b>General Dynamics Electric Boat <span class="chip ok">reviewed</span><span class="tok">verified_live</span></b>
         <div class="muted">Prime contractor — "the program's prime contractor" (CRS RL32418).</div>
       </div>
     </div>
     <div class="prow">
       <code>HII</code>
       <div>
-        <b>HII Newport News Shipbuilding <span class="chip ok">reviewed</span></b>
-        <div class="muted">Teaming partner — roughly a 50-50 construction split (CRS). Newport News is a division of HII.</div>
+        <b>Huntington Ingalls Industries <span class="chip ok">reviewed</span><span class="tok">verified_live</span></b>
+        <div class="muted">Teaming partner — roughly a 50-50 construction split (CRS). The work sits at Newport News Shipbuilding, a division of HII, carried in the role scope — the party is the legal entity.</div>
       </div>
     </div>
     <div class="prow">
       <code>BWXT</code>
       <div>
-        <b>BWX Technologies <span class="chip ok">reviewed</span> <span class="chip warn">shared scope</span></b>
+        <b>BWX Technologies <span class="chip ok">reviewed</span><span class="tok">verified_live</span> <span class="chip warn">shared scope</span></b>
         <div class="muted">Supplier — naval nuclear reactor components, first-party release.</div>
       </div>
     </div>
-    <p class="do"><b>What to do.</b> Read these as reviewed participation, not as a share of revenue. Nothing here allocates $42.1B to a ticker.</p>
+    <p class="do"><b>What to do.</b> Reviewed participation is not a share of revenue. Nothing here allocates award value to a ticker.</p>
     <p class="muted">Companies on this rail participate in the same program; no commercial relationship between them is asserted.</p>
   </div>
 
@@ -147,6 +147,10 @@
       <span class="chip warn">Supplier scope shared across three programs<span class="tok">shared scope</span></span>
       <p class="muted">BWXT's release names Virginia, Columbia and Ford class together.</p>
     </div>
+    <div class="state">
+      <span class="chip warn">No GAO/DOT&amp;E assessment on file<span class="tok">source_unavailable</span></span>
+      <p class="muted">Oversight-report sources not yet collected — a later official-source wave.</p>
+    </div>
     <p class="do"><b>What to do.</b> Read every blank above as a missing source, not a zero.</p>
   </div>
 
@@ -155,6 +159,7 @@
     <p class="lead">One dated forward item: an AUKUS sale of up to three boats to Australia, early 2030s.</p>
     <p>Pillar 1. Official, forward-looking, and years out — a window, not a date.</p>
     <p>No other forward milestone is admitted yet. Delivery dates for SSN 814-822 are not in the reviewed record, so this rail stays short on purpose.</p>
+    <p class="muted">This composition shows the reviewed-milestone variant. If document review does not admit the source, this rail honestly renders "No reviewed forward milestone yet" (not_reviewed / reviewed_none) — a valid outcome, never backfilled.</p>
     <p class="do"><b>What to do.</b> Watch — don't chase. This rail is re-read whenever an official milestone is admitted.</p>
   </div>
 
@@ -165,7 +170,7 @@
   <div class="ins-grid">
     <div>
       <div class="kv"><span>Program</span><div><code>acq-program:virginia-class-ssn</code></div></div>
-      <div class="kv"><span>Capability</span><div><code>capability:undersea-warfare</code></div></div>
+      <div class="kv"><span>Capability</span><div><code>acq-capability:undersea-warfare</code></div></div>
       <div class="kv"><span>Platform</span><div><code>platform:virginia-class-block-vi</code></div></div>
       <div class="kv"><span>Read model</span><div><code>government_program_dossier.v1</code></div></div>
     </div>
@@ -173,7 +178,8 @@
       <div class="kv"><span>Role · prime</span><div><code>prog-role:9f2c41ab7e05</code></div></div>
       <div class="kv"><span>Role · teaming</span><div><code>prog-role:3d7be015c8a4</code></div></div>
       <div class="kv"><span>Role · supplier</span><div><code>prog-role:c14a8f60d92b</code> <span class="tok">shared_scope true</span></div></div>
-      <div class="kv"><span>Milestone</span><div><code>prog-milestone:70e5c2b1a48f</code> <span class="tok">contract_event 2026-07-29</span></div></div>
+      <div class="kv"><span>Milestone</span><div><code>prog-milestone:70e5c2b1a48f</code> <span class="tok">delivery_event window early 2030s · AUKUS Pillar 1 · forward-only</span></div></div>
+      <div class="kv"><span>Changed event</span><div><span class="tok">29 Jul 2026 Block VI award = GovRev/D3 event ("what changed"), never a D5 milestone</span></div></div>
     </div>
     <div>
       <div class="kv"><span>Source identity</span><div><code>p1_line_item</code> · Appropriation 1611N, Shipbuilding &amp; Conversion Navy, BA-02, line "Virginia Class Submarine" + Advance Procurement sibling line</div></div>
@@ -182,7 +188,7 @@
       <div class="kv"><span>Receipts</span><div><code>sha256 4a91c0e2…</code> · <code>sha256 b7d3159f…</code> · <code>sha256 e05c8a74…</code></div></div>
     </div>
   </div>
-  <p class="muted" style="margin:10px 0 0;font-size:12.5px">Receipt ids and sha256 values above are placeholders in this composition. Admission of any role assertion or milestone requires the fetched document with its sha256, URL and retrieved_at; search synthesis is not admissible evidence. Budget rail state <code>projection_missing</code>; economic-relationship rail <code>not_asserted</code> (GMI reserved-null). The award rail composes on the award plane and is not exercised here. Display tier: this surface cannot rank, size, gate, or originate a signal. Production build ships EN/ZH parity; this reference is EN only.</p>
+  <p class="muted" style="margin:10px 0 0;font-size:12.5px">Receipt ids and sha256 values above are placeholders in this composition. Admission of any role assertion or milestone requires the fetched document with its sha256, URL and retrieved_at; search synthesis is not admissible evidence. Budget rail state <code>projection_missing</code>; economic-relationship rail <code>not_asserted</code> (GMI reserved-null); awards rail state <code>current</code> per the tape cut (a general program→award edge set is not part of D5 v1). Display tier: this surface cannot rank, size, gate, or originate a signal. Production build ships EN/ZH parity; this reference is EN only.</p>
 </div>
 
 </div>
