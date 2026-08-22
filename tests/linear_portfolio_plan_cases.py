@@ -243,6 +243,14 @@ def test_socket_disabled_runtime_still_compiles(tmp_path, monkeypatch):
     assert plan["summary"]["active_projects"] == 1
 
 
+def test_missing_optional_external_snapshots_are_typed_unknown(tmp_path):
+    root = _store(tmp_path, [("ALPHA", "active", {})])
+    plan = _compile(root)
+    codes = {warning["code"] for warning in plan["warnings"]}
+    assert "linear_snapshot_unavailable" in codes
+    assert "github_snapshot_unavailable" in codes
+
+
 def test_typed_gate_is_observed_not_inferred_and_missing_source_is_named(tmp_path):
     root = _store(
         tmp_path,
