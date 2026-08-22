@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-22T00:45:38.438932+00:00",
+  "generated_at": "2026-08-22T14:24:41.481249+00:00",
   "as_of": "2026-08-22",
   "absent_stores": [],
   "feature_coverage": {
@@ -218,15 +218,15 @@
         "2026-W30": 135,
         "2026-W31": 302,
         "2026-W32": 47,
-        "2026-W33": 45
+        "2026-W33": 86
       },
       "n_stamped_cond": 0,
       "cond_hit_share": 0.0,
       "readiness_forecast": {
         "forecast": "unknown",
         "reason": "zero cadence or zero cond_hit_share in post-W-C window",
-        "post_wc_fires": 730,
-        "post_wc_span_days": 38
+        "post_wc_fires": 771,
+        "post_wc_span_days": 39
       }
     },
     {
@@ -244,10 +244,10 @@
         "2026-W30": 135,
         "2026-W31": 302,
         "2026-W32": 47,
-        "2026-W33": 45
+        "2026-W33": 86
       },
       "n_stamped_cond": 685,
-      "cond_hit_share": 0.7838,
+      "cond_hit_share": 0.7486,
       "readiness_forecast": {
         "forecast": "already_ready",
         "n_cond": 123
@@ -256,8 +256,8 @@
     {
       "family": "S-VOI",
       "status": "building_history",
-      "n_cond": 135,
-      "n_base": 40,
+      "n_cond": 146,
+      "n_base": 47,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -268,20 +268,20 @@
         "2026-W30": 135,
         "2026-W31": 302,
         "2026-W32": 47,
-        "2026-W33": 45
+        "2026-W33": 86
       },
-      "n_stamped_cond": 648,
-      "cond_hit_share": 0.7414,
+      "n_stamped_cond": 684,
+      "cond_hit_share": 0.7475,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 135
+        "n_cond": 146
       }
     },
     {
       "family": "S-IVSPREAD-F",
       "status": "building_history",
-      "n_cond": 102,
-      "n_base": 96,
+      "n_cond": 111,
+      "n_base": 108,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -292,20 +292,20 @@
         "2026-W30": 135,
         "2026-W31": 302,
         "2026-W32": 47,
-        "2026-W33": 45
+        "2026-W33": 86
       },
-      "n_stamped_cond": 779,
-      "cond_hit_share": 0.8913,
+      "n_stamped_cond": 818,
+      "cond_hit_share": 0.894,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 102
+        "n_cond": 111
       }
     },
     {
       "family": "S-SKEW_DECEL",
       "status": "building_history",
-      "n_cond": 23,
-      "n_base": 174,
+      "n_cond": 26,
+      "n_base": 192,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -316,23 +316,23 @@
         "2026-W30": 135,
         "2026-W31": 302,
         "2026-W32": 47,
-        "2026-W33": 45
+        "2026-W33": 86
       },
-      "n_stamped_cond": 802,
-      "cond_hit_share": 0.9176,
+      "n_stamped_cond": 843,
+      "cond_hit_share": 0.9213,
       "readiness_forecast": {
         "forecast": "date",
         "forecast_date": "2026-08-22",
-        "basis": "n_cond=23/30 needed; post-W-C cadence=19.211/day \u00d7 cond_hit_share=0.992 \u2192 0 days",
-        "post_wc_fires": 730,
-        "post_wc_span_days": 38
+        "basis": "n_cond=26/30 needed; post-W-C cadence=19.769/day \u00d7 cond_hit_share=0.992 \u2192 0 days",
+        "post_wc_fires": 771,
+        "post_wc_span_days": 39
       }
     },
     {
       "family": "S-TOP_RISK",
       "status": "building_history",
-      "n_cond": 134,
-      "n_base": 63,
+      "n_cond": 149,
+      "n_base": 69,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -343,20 +343,20 @@
         "2026-W30": 135,
         "2026-W31": 302,
         "2026-W32": 47,
-        "2026-W33": 45
+        "2026-W33": 86
       },
-      "n_stamped_cond": 779,
-      "cond_hit_share": 0.8913,
+      "n_stamped_cond": 818,
+      "cond_hit_share": 0.894,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 134
+        "n_cond": 149
       }
     },
     {
       "family": "S-PIN_RISK",
       "status": "building_history",
       "n_cond": 13,
-      "n_base": 201,
+      "n_base": 222,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -367,16 +367,16 @@
         "2026-W30": 135,
         "2026-W31": 302,
         "2026-W32": 47,
-        "2026-W33": 45
+        "2026-W33": 86
       },
-      "n_stamped_cond": 814,
-      "cond_hit_share": 0.9314,
+      "n_stamped_cond": 854,
+      "cond_hit_share": 0.9333,
       "readiness_forecast": {
         "forecast": "date",
         "forecast_date": "2026-08-22",
-        "basis": "n_cond=13/30 needed; post-W-C cadence=19.211/day \u00d7 cond_hit_share=0.986 \u2192 1 days",
-        "post_wc_fires": 730,
-        "post_wc_span_days": 38
+        "basis": "n_cond=13/30 needed; post-W-C cadence=19.769/day \u00d7 cond_hit_share=0.986 \u2192 1 days",
+        "post_wc_fires": 771,
+        "post_wc_span_days": 39
       }
     },
     {
@@ -394,23 +394,23 @@
         "2026-W30": 135,
         "2026-W31": 302,
         "2026-W32": 47,
-        "2026-W33": 45
+        "2026-W33": 86
       },
-      "n_stamped_cond": 648,
-      "cond_hit_share": 0.7414,
+      "n_stamped_cond": 684,
+      "cond_hit_share": 0.7475,
       "readiness_forecast": {
         "forecast": "date",
         "forecast_date": "2026-08-24",
-        "basis": "n_cond=0/30 needed; post-W-C cadence=19.211/day \u00d7 cond_hit_share=0.751 \u2192 2 days",
-        "post_wc_fires": 730,
-        "post_wc_span_days": 38
+        "basis": "n_cond=0/30 needed; post-W-C cadence=19.769/day \u00d7 cond_hit_share=0.757 \u2192 2 days",
+        "post_wc_fires": 771,
+        "post_wc_span_days": 39
       }
     },
     {
       "family": "S-VANNA-RELIEF",
       "status": "building_history",
-      "n_cond": 52,
-      "n_base": 92,
+      "n_cond": 61,
+      "n_base": 104,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -421,20 +421,20 @@
         "2026-W30": 135,
         "2026-W31": 302,
         "2026-W32": 47,
-        "2026-W33": 45
+        "2026-W33": 86
       },
       "n_stamped_cond": 0,
       "cond_hit_share": 0.0,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 52
+        "n_cond": 61
       }
     },
     {
       "family": "S-FRONT-CHARM",
       "status": "building_history",
-      "n_cond": 89,
-      "n_base": 71,
+      "n_cond": 95,
+      "n_base": 83,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -445,13 +445,13 @@
         "2026-W30": 135,
         "2026-W31": 302,
         "2026-W32": 47,
-        "2026-W33": 45
+        "2026-W33": 86
       },
       "n_stamped_cond": 0,
       "cond_hit_share": 0.0,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 89
+        "n_cond": 95
       }
     }
   ],
@@ -506,32 +506,34 @@
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-08-21 04:20 UTC",
-          "age_days_from_today": 1,
+          "latest_as_of": "2026-08-22 05:24 UTC",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
-          "latest_as_of": "2026-08-12",
-          "age_days_from_today": 10,
+          "latest_as_of": "2026-08-13",
+          "age_days_from_today": 9,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-22T00:45:38.372856+00:00",
+      "generated_at": "2026-08-22T14:24:41.415352+00:00",
       "ok": false,
       "fail_reasons": [
         "CHAINS STALE: latest chain file is 2026-08-13 (6 NYSE session(s) behind last_session=2026-08-21); threshold=1 \u2014 OI snapshot may have been missed",
         "CHAINS SESSION FAILED: session 2026-08-21 has a health-receipt attempt but NO chain parquet was ever written for it \u2014 the accrual captured nothing for the most recently attempted session (see data/polygon_gex_health/2026-08-21.json)"
       ],
-      "warnings": []
+      "warnings": [
+        "OPTIONS FLOW CREDS ABSENT: MASSIVE_S3_ACCESS_KEY_ID / MASSIVE_S3_SECRET_ACCESS_KEY / MASSIVE_S3_ENDPOINT not set \u2014 build_options_flow will no-op silently (F1 from masterplan \u00a71)"
+      ]
     }
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-22T00:45:38.438924+00:00",
+    "generated_at_utc": "2026-08-22T14:24:41.481240+00:00",
     "as_of": "2026-08-22",
     "absent_stores": []
   }

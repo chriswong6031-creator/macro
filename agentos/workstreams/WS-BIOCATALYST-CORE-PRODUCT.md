@@ -17,6 +17,7 @@ blast_radius: user_facing
 ambiguity: specified
 owns_paths:
   - app/biocatalyst.py
+  - engine/biocatalyst/catalyst_events.py
   - templates/biocatalyst.html.j2
   - templates/biocatalyst.js
   - templates/biocatalyst.css
@@ -29,23 +30,28 @@ owns_paths:
   - tests/test_biocatalyst_hydration.py
   - tests/biocatalyst_hydration_harness.js
   - tests/test_biocatalyst_peer_api_contract.py
+  - tests/test_biocatalyst_catalyst_radar.py
+  - tests/test_biocatalyst_catalyst_radar_api.py
   - research/BIOCATALYST_P1_*
   - agentos/workstreams/WS-BIOCATALYST-CORE-PRODUCT.md
   - agentos/handoffs/BIOCATALYST-CORE-PRODUCT-*
 waves:
   - id: P1-1
     title: Catalyst Radar — Trial Milestones first slice
-    status: todo
+    status: in_progress
     next_action: >
-      Commissioned automatically when the P1-0R authority-closure PR merges
-      after Sol review (commissioned_after_this_PR_merges). Execute
-      research/BIOCATALYST_P1_CONTINUATION_HANDOFF_2026-08-20.md as amended
-      by P1-0R — including the identity, evidence-projection, trial-status,
-      coverage (PROVEN_LIVE_COHORT_LIMITED), and stop-for-Sol-review
-      corrections. The implementing session has no self-merge authority:
-      implementation → focused tests → full CI/fences → production-shaped
-      browser evidence → open PR → STOP FOR SOL REVIEW; merge/deploy/entitled
-      production proof only after Sol approval.
+      Review fixes implemented on the existing held PR #6191: exact RFC 6901
+      source-pointer attribution for both milestone date kinds; complete
+      bounded oldest-to-newest public lineage with a newest-first labelled UI;
+      current/upcoming/unusable/occurred server priority before pagination;
+      honest overlap-safe/source-evidence copy; and a real Chromium desktop,
+      mobile and EN/ZH pass. The browser pass found and closed a 390px chip
+      clipping defect. HOLD-FOR-SOL remains; no merge-on-green, merge, deploy,
+      P1-2, source/cadence/cohort or authority change is authorized. NEXT: Sol
+      reviews the final exact PR head recorded in the PR's final-review comment.
+      Only after approval may merge → deploy → real entitled production proof
+      occur. Handoff:
+      agentos/handoffs/BIOCATALYST-CORE-PRODUCT-2026-08-21.md.
 decisions:
   - "DEC:BIOCATALYST-P1-FIRST-VERTICAL-MILESTONE-RADAR"
   - "DEC:BIOCATALYST-PDUFA-TRUTH-IS-CORPORATE-DISCLOSURE-PLANE"
@@ -122,9 +128,9 @@ artifacts:
   - research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md
   - research/BIOCATALYST_P1_CONTINUATION_HANDOFF_2026-08-20.md
 next_action: >
-  After the P1-0R authority-closure PR merges (Sol review first), commission
-  wave P1-1 per the amended continuation handoff. No implementation before
-  that merge.
+  Sol reviews the final held head of PR #6191. Do not merge or deploy until Sol
+  releases HOLD-FOR-SOL; post-approval completion still requires normal merge,
+  deployment, and a real entitled production journey.
 ---
 
 ## Context

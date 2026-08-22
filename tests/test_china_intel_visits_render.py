@@ -253,3 +253,80 @@ def test_no_translated_text_in_a_bare_title_attribute():
         val = m.group(1)
         assert not re.search(r"[一-鿿]", val), (
             f"Chinese text found inside a bare title= attribute: {val!r}")
+
+
+# --------------------------------------------------------------------------- #
+# P1-R3 (durable scoped key-exclusion recovery) — not_yet_available state,
+# coverage-incomplete line. A SEPARATE fixture (not _cmd_full_fixture()) so
+# every test above stays byte-identical against the default fixture.
+# --------------------------------------------------------------------------- #
+
+def _cmd_full_fixture_with_exceptions() -> dict:
+    return {
+        "command": [
+            _cmd_row("600519.SS", "贵州茅台",
+                     {"state": "ok", "coverage_start": "2026-08-01",
+                      "recent": [_RESOLVED_ROW], "n_total": 1,
+                      "coverage_exception": {"scope": "company", "open": 1}}),
+            _cmd_row("000001.SZ", "平安银行",
+                     {"state": "not_yet_available", "coverage_start": "2026-08-01",
+                      "recent": [],
+                      "coverage_exception": {"scope": "company", "open": 1}}),
+            _cmd_row("000002.SZ", "万科A",
+                     {"state": "not_yet_available", "coverage_start": "2026-08-01",
+                      "recent": [],
+                      "coverage_exception": {"scope": "plane", "open": 2}}),
+        ],
+        "discovery": [],
+        "visits_coverage_start": "2026-08-01",
+    }
+
+
+def test_not_yet_available_company_scope_copy():
+    html = _render(cmd_full=_cmd_full_fixture_with_exceptions())
+    assert "A visit filing was observed for this company but could not be "\
+        "read yet" in html
+    assert "“no visits” cannot be confirmed." in html
+    assert "已观察到该公司的调研备案但尚无法读取" in html
+    assert "暂无法确认“无调研”。" in html
+
+
+def test_not_yet_available_plane_scope_copy():
+    html = _render(cmd_full=_cmd_full_fixture_with_exceptions())
+    assert "Some visit filings could not be read this cycle and the "\
+        "affected companies are unknown" in html
+    assert "本轮有调研备案无法读取且无法确定涉及哪些公司" in html
+
+
+def test_not_yet_available_never_uses_falsifier_vocabulary():
+    """House law (operator 2026-07-27, #3821): falsifier/refutation
+    language is never front-facing. 'refuted'/'falsifier'/'thesis' must
+    never appear in the not_yet_available copy."""
+    html = _render(cmd_full=_cmd_full_fixture_with_exceptions())
+    section = html.split("Institutional visits", 1)[1]
+    section = section.split("<h2", 1)[0]
+    for banned in ("falsifier", "refuted", "thesis", "证伪"):
+        assert banned not in section.lower() and banned not in section
+
+
+def test_ok_state_with_coverage_exception_shows_incomplete_line_after_rows():
+    """Rows present + an open coverage exception for the SAME company:
+    positive evidence renders first, and the coverage-incomplete line
+    follows it — completeness is never asserted alongside the rows."""
+    html = _render(cmd_full=_cmd_full_fixture_with_exceptions())
+    assert "A further visit filing could not be read — this list may be "\
+        "incomplete." in html
+    assert "另有调研备案无法读取——此列表可能不完整。" in html
+    # positive evidence (the resolved row's visitor name) appears BEFORE the
+    # incomplete-line copy, in source order.
+    idx_row = html.index("某知名私募基金")
+    idx_incomplete = html.index("A further visit filing could not be read")
+    assert idx_row < idx_incomplete
+
+
+def test_ok_state_without_coverage_exception_has_no_incomplete_line():
+    """The default fixture's 'ok' row carries no coverage_exception — the
+    incomplete line must not appear anywhere near it."""
+    html = _render()
+    assert "A further visit filing could not be read" not in html
+    assert "另有调研备案无法读取" not in html

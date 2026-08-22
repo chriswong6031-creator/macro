@@ -355,6 +355,59 @@ def test_write_surface_fence_trips_on_a_foreign_market_file():
     assert offenders_hk == ["prophet_shadow/ca_rank_pairs.parquet"]
 
 
+def test_write_surface_fence_only_data_prophet_shadow_is_touched_hk(tmp_path, monkeypatch):
+    """R8 (F8, build commission): the HK arm of the REAL snapshot write-surface
+    fence — mirrors test_write_surface_fence_only_data_prophet_shadow_is_touched
+    above (CA, Lane A) but exercises HK's Lane B DISCOVERY write (the
+    hk_discovery_v1 registration + its receipt), a path the CA arm above never
+    touches at all. Same before/after filesystem snapshot technique: every
+    path CREATED or MODIFIED by a real write_shadow(market="HK") pass must lie
+    under data/prophet_shadow/ and carry the hk_ market prefix.
+
+    This is the REAL fence R8 asks for — unlike
+    test_write_surface_fence_accepts_the_hk_discovery_receipt_path below
+    (fixed by this same commission to stop claiming it is this test), the
+    `changed` set here comes from an actual before/after directory walk, never
+    a hand-written literal.
+
+    MUTATION THIS KILLS: adding any write inside the HK discovery path
+    (_write_lane_b / _merge_write_lane_b / _write_discovery_receipt) that
+    targets a path outside data/prophet_shadow/, or a foreign-market
+    (ca_-prefixed) file.
+    """
+    data_root = tmp_path / "data"
+    monkeypatch.setattr(config, "data_dir", lambda: data_root)
+    _lane_on(monkeypatch, "HK")
+
+    def _snapshot() -> dict[str, tuple[int, int]]:
+        if not data_root.exists():
+            return {}
+        return {
+            str(p.relative_to(data_root)): (p.stat().st_mtime_ns, p.stat().st_size)
+            for p in data_root.rglob("*") if p.is_file()
+        }
+
+    before = _snapshot()
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
+    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    assert result["written"] > 0  # POSITIVE CONTROL
+    after = _snapshot()
+
+    changed = {p for p in (set(before) | set(after)) if before.get(p) != after.get(p)}
+    offenders = _offenders_for_market(changed, "HK")
+    assert not offenders, (
+        f"write_shadow(HK) touched path(s) outside HK's own data/prophet_shadow/ "
+        f"files: {offenders}"
+    )
+    assert any(p.startswith("prophet_shadow/") for p in changed), (
+        "positive control: the write must actually touch data/prophet_shadow/"
+    )
+    assert "prophet_shadow/hk_discovery_receipt.json" in changed, (
+        "a real HK pass writes the receipt too — this fence must see it, not "
+        "just the Lane B parquet"
+    )
+
+
 # ---------------------------------------------------------------------------
 # K2 — silent population divergence
 # ---------------------------------------------------------------------------
@@ -671,6 +724,13 @@ _K6_FORMS: dict[str, re.Pattern] = {
     # `prophet_shadow.score` — the same label above, but backtick-wrapped
     # prose in prophet_bridge.py's docstring rather than a quoted string.
     "bridge_prose_attribute": re.compile(r"`prophet_shadow\.score`"),
+    # hk-discovery wave: scripts/check_surface_freshness.py's ONE reviewed
+    # reference — a module-level path CONSTANT naming the additive
+    # hk_discovery_receipt.json (never the Lane A/B stores themselves), the
+    # contract §4 "surface-freshness absent-vs-stale vocabulary" wiring.
+    "freshness_receipt_path": re.compile(
+        r'"data/prophet_shadow/hk_discovery_receipt\.json"'
+    ),
 }
 
 #: {file: (allowed form names, reason)} — PER-FILE, not global: a file may
@@ -730,6 +790,41 @@ _K6_PREEXISTING_UNRELATED_FILES: dict[str, tuple[tuple[str, ...], str]] = {
     )),
 }
 
+#: {file: (allowed form names, reason)} — files whose 'prophet_shadow'
+#: occurrence is NOT pre-existing/unrelated (unlike every entry in
+#: _K6_PREEXISTING_UNRELATED_FILES above): it is a REVIEWED READER this
+#: contract itself sanctions, added and audited as part of THIS wave.
+#: Re-filed here out of _K6_PREEXISTING_UNRELATED_FILES (build commission
+#: R10/F13) — that dict's own name/docstring claims "pre-existing,
+#: unrelated" code, which this file's occurrence never was: it is
+#: scripts/check_surface_freshness.py's own sanctioned, contract-cited read
+#: of engine/board_shadow.py's additive receipt, filed under the same name
+#: as genuinely unrelated pre-existing collisions was itself a mis-filing.
+#: Merged into the same fence below via _K6_ALL_ALLOWLISTED_FILES — the
+#: per-file pinned-token-form mechanism (M2's fix) is unchanged; only the
+#: bookkeeping of WHICH dict a file's entry lives in changed.
+_K6_REVIEWED_READER_FILES: dict[str, tuple[tuple[str, ...], str]] = {
+    "scripts/check_surface_freshness.py": (("freshness_receipt_path",), (
+        "hk-discovery wave (WS:PROPHET-HK-CA-REVAMP): the sanctioned "
+        "surface-freshness reader of engine/board_shadow.py's OWN additive "
+        "hk_discovery_receipt.json — contract §4's 'when a challenger "
+        "registers, the store paths get wired into the surface-freshness "
+        "absent-vs-stale vocabulary' clause names exactly this. It never "
+        "reads the Lane A/B parquet stores themselves, so it is not the "
+        "production-reader leak K6 exists to catch."
+    )),
+}
+
+#: The fence's actual per-file lookup — every file excused from the raw K6
+#: walk, regardless of WHY (pre-existing-unrelated vs. reviewed-reader). Never
+#: read _K6_PREEXISTING_UNRELATED_FILES or _K6_REVIEWED_READER_FILES directly
+#: at the scan site below; this union is the one source of truth for "is this
+#: file excused, and under which forms".
+_K6_ALL_ALLOWLISTED_FILES: dict[str, tuple[tuple[str, ...], str]] = {
+    **_K6_PREEXISTING_UNRELATED_FILES,
+    **_K6_REVIEWED_READER_FILES,
+}
+
 
 def _k6_unclassified_occurrences(text: str, allowed_forms: tuple[str, ...]) -> list[str]:
     """Every raw 'prophet_shadow' occurrence in `text` whose position is not
@@ -773,6 +868,12 @@ def test_k6_prophet_shadow_literal_is_confined_to_its_own_module_and_tests():
     maskable: delete one legitimate occurrence, add a differently-shaped
     dangerous one, net count unchanged), so a NEW occurrence whose shape
     matches none of that file's declared forms still fails loudly.
+    scripts/check_surface_freshness.py is excused too, but is filed
+    separately in _K6_REVIEWED_READER_FILES (build commission R10/F13): it is
+    a REVIEWED READER this contract itself sanctions, not a pre-existing
+    coincidence, so it does not belong in the "pre-existing, unrelated" dict
+    above. Both dicts merge into _K6_ALL_ALLOWLISTED_FILES, which is what the
+    scan below actually reads.
 
     MUTATION THIS KILLS: any production module importing
     engine.board_shadow / referencing 'prophet_shadow' by name (e.g. a
@@ -805,8 +906,8 @@ def test_k6_prophet_shadow_literal_is_confined_to_its_own_module_and_tests():
                 continue  # binary/unreadable files carry no source-level leak
             if "prophet_shadow" not in text:
                 continue
-            if rel in _K6_PREEXISTING_UNRELATED_FILES:
-                allowed_forms, _reason = _K6_PREEXISTING_UNRELATED_FILES[rel]
+            if rel in _K6_ALL_ALLOWLISTED_FILES:
+                allowed_forms, _reason = _K6_ALL_ALLOWLISTED_FILES[rel]
                 unclassified = _k6_unclassified_occurrences(text, allowed_forms)
                 if unclassified:
                     offenders.append(
@@ -1906,3 +2007,113 @@ def test_hk_shadow_call_is_textually_downstream_of_the_standouts_json_write():
         "hk_standouts.json write, never beside the upstream append_board site "
         "— that upstream placement is the named F1 contract breach"
     )
+
+
+# ---------------------------------------------------------------------------
+# hk-discovery wave — receipt emission (contract §4's deferred
+# surface-freshness wiring, activated by the hk_discovery_v1 registration).
+# ---------------------------------------------------------------------------
+def _discovery_fn_ok(asof_arg: str) -> list[dict]:
+    return [{
+        "session_date": asof_arg, "security_ref_raw": "AAA",
+        "candidate_origin": "washout_reclaim",
+        "availability_status": "WAIT_CONFLUENCE",
+        "availability_source": "hk_signal_gate",
+    }]
+
+
+def _receipt_path(market: str) -> Path:
+    return config.data_dir() / "prophet_shadow" / f"{market.lower()}_discovery_receipt.json"
+
+
+def test_discovery_receipt_written_on_a_successful_pass(monkeypatch):
+    _lane_on(monkeypatch, "HK")
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
+    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    assert result["written"] == 1  # POSITIVE CONTROL
+
+    path = _receipt_path("HK")
+    assert path.exists()
+    payload = json.loads(path.read_text())
+    assert payload["market"] == "HK"
+    assert payload["as_of"] == "2026-08-21"
+    assert payload["registry_state"] == "wrote_n_rows n=1"
+    assert payload["written"] == 1
+    assert payload["definitions"] == ["hk_discovery_v1"]
+    assert payload["challenger_failures"] == []
+    assert payload["stamped_at"]
+
+
+def test_discovery_receipt_not_written_when_the_market_has_no_registration(monkeypatch):
+    """A CA pass with only an HK registration must create NO CA receipt —
+    the receipt is written ONLY when _registrations_for(market) is non-empty
+    for THIS market's own call."""
+    _lane_on(monkeypatch, "CA")
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
+    result = bs.write_shadow([], market="CA", asof="2026-08-21")
+    assert result["registry_state"] == "no_challenger_for_market"
+    assert not _receipt_path("CA").exists()
+
+
+def test_discovery_receipt_written_on_the_error_path(monkeypatch):
+    """A substrate-level failure (below the per-registration boundary) still
+    owes a receipt — registry_state=error, with the true accumulated
+    `written` total."""
+    _lane_on(monkeypatch, "HK")
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("synthetic substrate failure")
+
+    monkeypatch.setattr(bs, "_read_incumbent_positions", _boom)
+    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    assert result["registry_state"] == "error"
+
+    path = _receipt_path("HK")
+    assert path.exists()
+    payload = json.loads(path.read_text())
+    assert payload["registry_state"] == "error"
+
+
+def test_discovery_receipt_names_a_per_registration_challenger_failure(monkeypatch):
+    """D7 semantics preserved: one registration raising does not flip the
+    whole pass to error, but the receipt NAMES the failure."""
+    _lane_on(monkeypatch, "HK")
+
+    def _boom_discovery(asof_arg):
+        raise RuntimeError("challenger exploded")
+
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_boom_discovery)
+    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    assert result["registry_state"] == "wrote_n_rows n=0"
+
+    payload = json.loads(_receipt_path("HK").read_text())
+    assert payload["registry_state"] == "wrote_n_rows n=0"
+    assert len(payload["challenger_failures"]) == 1
+    assert payload["challenger_failures"][0]["definition"] == "hk_discovery_v1"
+    assert "challenger exploded" in payload["challenger_failures"][0]["error"]
+
+
+def test_write_surface_fence_accepts_the_hk_discovery_receipt_path(monkeypatch):
+    """R8 (F8, build commission) fix: this is a PREDICATE-ONLY check of
+    _offenders_for_market's market-prefix rule against the
+    hk_discovery_receipt.json shape (hk_ prefix), using hand-constructed
+    `changed` literals — the same pattern as
+    test_write_surface_fence_trips_on_a_foreign_market_file above. It is NOT
+    a real-write snapshot fence: the docstring previously claimed this
+    exercised the predicate "against a REAL receipt write", which overstated
+    what the assertions below actually check (they never look at the real
+    filesystem at all). test_write_surface_fence_only_data_prophet_shadow_
+    is_touched_hk is the actual real-snapshot fence for HK. The write_shadow
+    call here is kept only as a positive control proving the receipt path is
+    real and reachable, not as evidence for the offender-predicate assertions
+    below."""
+    _lane_on(monkeypatch, "HK")
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
+    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    assert result["written"] == 1  # POSITIVE CONTROL
+
+    changed = {"prophet_shadow/hk_discovery_receipt.json", "prophet_shadow/hk_discovery.parquet"}
+    assert _offenders_for_market(changed, "HK") == []
+    # Mirror: a CA pass must reject an HK-named receipt as a foreign file.
+    assert _offenders_for_market(changed, "CA") == list(sorted(changed))

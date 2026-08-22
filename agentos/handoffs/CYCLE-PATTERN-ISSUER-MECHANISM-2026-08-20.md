@@ -214,3 +214,190 @@ reproduced twice against engine/trial_ledger.py); do not re-run the CPI-H1 row h
 append further registry versions before Sol's disposition of the escalated rows; do not
 treat the D1(c) release as authorization to append an issuer truth — vocabulary release
 ≠ content authorization, and every issuer truth still needs its own lawful basis.
+
+# CPI-H1.1 + A4P closure addendum (Sol's third gate, 2026-08-21)
+
+Sol accepted the second gate (CPI-H1 + A4G + #6203), kept A4 registration HELD, and
+authorized two bounded predecessor waves in parallel. Both are now MERGED and verified
+(server-side compare = identical to origin/main tip at merge time):
+
+- **CPI-H1.1** (PR #6211, merge `5f9fbe23a300`): the seven escalated class-subset rows
+  are RESOLVED — Sol adjudicated them legitimate specialized display consumers and the
+  status-class envelopes incomplete. display gained exactly seven tokens, promoted_null
+  gained sync_gauge_display, nothing else widened, zero registry changes; every added
+  token proven required by ≥1 real row. The row⊆class subset invariant is now HARD law
+  in the single canonical validator, binding validate_truth() and the CI scan (job
+  confirmed gate:code / merge-gate-binding). Opus red-team ACCEPT on mutation-tested
+  evidence; four hygiene fixes applied pre-merge.
+- **A4P** (PR #6213, merge `18858570deea`): contract V1.2. Two red-team REVISE rounds
+  dispositioned — round 1 caught a fabricated composite AG17 quotation (the A4G MAJ-2
+  defect class recurring) and the order_softness construction readmitting GFC blocks;
+  round 2 caught the promotion clock unpropagated to YAML/log and the AG14
+  cohort-label contradiction. Final: order_softness-only targets; deterministic
+  construction frozen (IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md, ≥2 floor,
+  contract-governed admissibility, fail-closed era gate); B≤3 uniform, LEN excluded
+  cell-level; historical arm = named_subset_basis [PHM, KBH], grind block usable
+  FY2016–2019 only; share = 1.0 numeric; bootstrap 800/seed-7 on the registered
+  block-cluster unit; six cell IDs minted identically in contract/YAML/disposition/
+  packet; promotion clock ~2160 (ZERO historical credit) propagated everywhere with
+  old figures demoted to labelled diagnostics; AP8 amendment entry consolidates both
+  rounds; ruling 6 recorded PARTIALLY EXECUTED / OPEN with an honest disposition;
+  Treasury availability upgraded to a first-party V-grade receipt (commissioning
+  session, direct browser 2026-08-21, incl. the 2021-12-06 HS→MC series-break);
+  packet leaves A4 proper exactly four mechanical acts, verbatim-or-abort. All three
+  config_hash values stable and reproduced across both rounds.
+
+**verified:** both merges via `gh pr view --json state,mergeCommit` + server-side
+`gh api repos/{owner}/{repo}/compare/<merge>...main` → `status: identical` at merge
+time (local fetch was intermittently timing out; the compare API is the proof).
+
+**A4 gate:** opens only on Sol's acceptance of BOTH returns; A4 proper = the four
+packet acts only, then STOP; next priority after = prospective observation activation.
+FIVE escalations ride with the returns: (1) AG14 — may a ≥2-contributor read ever bear
+the cohort label (named-subset labelling governs meanwhile); (2) ruling 6 OPEN — 0/8
+month-level boundary receipts, dedicated housing-sector boundary-dating wave needed
+(lane-1 gap 11); (3) DHI/TOL pre-FY2025 era receipting; (4) ratification of the six
+minted cell IDs; (5) Treasury storage/reuse basis before persistent ingestion.
+
+**do_not_redo (additions):** do not re-verify the eight envelope tokens' necessity
+(proven by registry set-difference, one per adjudicated row); do not restore the
+retired WARN-tier advisory functions (their absence is test-pinned); do not cite ~2149
+or ~2153 as a promotion timeline (non-promotion diagnostics only — the promotion clock
+is ~2160 at zero historical credit); do not present historical order_softness reads as
+cohort claims (named_subset_basis [PHM, KBH] until DHI/TOL era receipts exist); do not
+ingest Treasury CMT before the storage/reuse basis is settled.
+
+# A4P.1 closure addendum (Sol's fourth gate, 2026-08-22)
+
+Sol accepted A4P's architecture (amendments AP1-AP8 are FINAL, never reopened or rewritten) but
+returned bounded REQUEST_CHANGES: seven rulings (R1-R7) closing every field A4 proper would
+otherwise have had to invent, interpret, or choose. This build-worker packet implements all seven
+as records-only edits to research/imce/* + agentos/*, on branch claude/imce-a4p1-records, DRAFT PR
+#6237, NOT marked ready, NOT armed merge-on-green, pending the commissioning session's review and
+merge. **Durable identifier: PR #6237 / branch claude/imce-a4p1-records, not a head SHA** — any head
+SHA recorded in this file necessarily predates the PR's own next commit (this addendum's own edit is
+itself proof: it landed after a red-team round that added commits past the SHA this file first
+recorded), so `gh pr view 6237 --json headRefOid` is the live source, this file is a provenance
+snapshot only.
+
+- **R1** — retires the stale `effective_blocks_under_independent_shock_law_with_deff` YAML
+  denomination (DEFF struck three gates ago at AG3); census confirms this was the ONLY live
+  machine-readable hit anywhere in `research/ agentos/ config/ engine/ scripts/`; adds
+  annotation-only supersession notes (additive, zero deletions) to the three hb0 lane-2 artifacts
+  still recommending A4 register `rho_block`/print issuer-DEFF counts.
+- **R2** — freezes the historical v0 population as PERMANENT `named_subset_basis: [PHM, KBH]` for
+  the six registered historical cells (may never widen v0 after registration; later DHI/TOL
+  archaeology may only support a future v1), separate from the prospective v0 eligible pooled
+  cohort `[DHI, PHM, KBH, TOL]`, under a three-row label truth table (4/4 -> cohort; 2-3 ->
+  named_subset + exact contributor list; <2 -> NOT_RECONSTRUCTABLE). This closes AP8's own open F2(d)
+  escalation. Every live "pooled homebuilder stratum" occurrence is reworded with an
+  annotation-marked "was" note — census confirms zero live, unannotated occurrences remain.
+- **R3** — ratifies the six minted cell IDs and normalizes the sync family's market-risk cell from
+  `forward_63d_drawdown_tail` to the canonical `forward_63_trading_day_drawdown_tail` everywhere it
+  identifies the actual target/cell (YAML, contract MD, disposition, packet); historical log entries
+  (this workstream's own amendment-log AG5/M2 entries) stay untouched as genuine historical
+  statements; census confirms every remaining hit is either historical or annotation-marked.
+- **R4** — adds a new packet section (§4a "A4 STATE TRANSITION, frozen verbatim-or-abort")
+  enumerating every registration-state site (YAML `status`, `registration.*`,
+  `requires_fable_adjudication`, all three `trials[].status`; contract MD's Status header and §15a
+  freeze-location/repository-pin prose; and — after red-team round 1's MAJ-1 fix — the packet's own
+  H1 title, full opening paragraph, `Wave:` line, and `Purpose:` line, not merely its bold STATUS
+  sentence) with byte-exact old->new pairs; three placeholder procedures (`repository_pin_observed`
+  via `git rev-parse origin/main` before any A4 edit; `config_hash` via `git hash-object` on the
+  as-stamped-registered contract MD, after the MD edits and before the YAML write, plus a mandatory
+  post-commit verify-or-abort step; the `<A4 registration commit date>` via `date -u +%F`) are
+  frozen deterministically. **A4P.1 itself performs NONE of these flips** — every registration-state
+  field is byte-identical to its pre-A4P.1 value; only the version/gate header and the
+  R1/R2/R3/R5/R6 substantive fields changed.
+- **R5** — settles Treasury CMT's storage/reuse disposition as `GO_LIMITED`, Sol's exact
+  scope+basis quoted verbatim and attributed, closing the prior wave's escalation item 5. PMMS
+  stays HELD, FRED/ALFRED stay excluded, NAR storage stays prohibited — all three UNCHANGED.
+  GO_LIMITED authorizes a FUTURE ingestion design only; this wave ingests nothing.
+- **R6** — keeps boundary receipts honestly open: `month_boundaries_receipt_status:
+  proposed_not_yet_receipted` is UNCHANGED; a new YAML block plus mirrored contract-MD and
+  boundary-table prose name exactly the two lawful post-registration dispositions (receipt from a
+  lawful first-party source, or `NOT_RECONSTRUCTABLE_FOR_V0_OUTCOME_PARTITION`), forbid moving a
+  registered v0 boundary after outcome inspection, and require a new preregistration version for
+  any scientifically necessary different boundary. Zero receipts fabricated.
+- **R7** — regenerates all three `declared_budget` row reason strings (V1.2.1 wording, PHM/KBH
+  population phrasing, canonical target naming) and recomputes their `config_hash` values by
+  importing `engine/trial_ledger.py`'s own `_hash`/`_canon` functions read-only (no `TrialLedger`
+  instantiated, no ledger write) — cross-verified against a standalone hand-inlined reimplementation
+  of the identical formula, byte-identical output. New hashes: `a3b8ac5c0d0205cb` (phase),
+  `1d69c1fa6b897b6a` (sync), `309d76c3a8dfbb5c` (risk); superseded V1.2 hashes
+  (`d4fb6b5f517fe32c`, `f76dc44e1f5edc18`, `3eff3ee65158e41b`) recorded, never dropped.
+
+**Cross-cutting:** version bumped `1.2` -> `1.2.1` (`amendment_gate: A4P1`,
+`amendment_gates_applied: [A4G, A4P, A4P1]`, `amendment_gate_authority:
+sol_fourth_gate_verdict_2026_08_22`). Amendment log gains a new append-only section (`AP9.R1`-
+`AP9.R7`), recording each ruling, its edit sites, the superseded hashes, and the closure of the
+Treasury-storage and cell-ID-ratification escalations. Sol's explicit conditional authorization to
+start A4 proper without a further Sol roundtrip — quoted verbatim, provided A4P.1 lands exactly as
+frozen with no new substantive finding — and the four A4-proper acts are recorded in the amendment
+log's new section and cross-referenced from the packet's four-acts list (§6).
+
+**verified:** `python3 -c "import yaml; yaml.safe_load(...)"` on the candidate YAML exits 0;
+`python3 scripts/agentos.py validate` exits 0; the hash-parity scratchpad script's output matches
+the packet's three `config_hash` values byte-for-byte, cross-checked by an independent
+hand-inlined reimplementation; `git diff --stat origin/main HEAD` touches only the OWNED FILES
+named in this wave's commission.
+
+**A4 gate:** unchanged in substance — A4 proper opens only on the commissioning session's
+acceptance of this wave (Sol's fourth-gate rulings applied as frozen, no new substantive finding
+surfacing on review), executing exactly the four acts named in `IMCE_A4G_PROPOSED_A4_REGISTRATION_PACKET.md`
+§6, using the byte-exact transition table in that document's new §4a. No auto-roll; no issuer
+truth appended; no outcome access before the criteria/registration commit.
+
+**do_not_redo (additions):** do not reopen or rewrite A4P's AP1-AP8 amendments — this wave is a
+bounded preflight closure on top, never a redesign; do not widen the historical v0 population past
+`named_subset_basis: [PHM, KBH]` for v0 — permanent, DHI/TOL archaeology may only ever support a
+future v1; do not fabricate a boundary receipt to close ruling 6 — registration-with-open-receipts
+is the explicit law now; do not execute A4's state transition from anywhere but the packet's own
+§4a — every flip is byte-exact and verbatim-or-abort; do not re-derive the three `config_hash`
+values by hand without importing `engine/trial_ledger.py`'s actual functions — the formula is a
+pure function of `(family, n, reason)` and any hand-approximation risks a silent mismatch.
+
+# A4 registration closure addendum (Sol's conditional authorization executed, 2026-08-22)
+
+**What happened:** the full fourth-gate chain closed in one session. A4P.1 landed (PR #6237,
+merged `782b6e570350` 16:35:48Z, server-verified identical to main) after one Opus red-team
+round — MAJ-1 (the §4a transition table missed the packet's own title/§0/Wave/Purpose lines;
+executing it verbatim would have produced exactly the "registered bit inside a candidate
+document" state Sol forbade) plus 7 minors and 2 nits, all fixed and byte-verified by the
+commissioning Fable session on head `5cd07a460eda`; MAJ-2 (two quotes absent from the reviewer's
+supplied standard) adjudicated VERBATIM-CONFIRMED against Sol's actual message by the
+commissioning session, which holds it. That landing activated Sol's explicit conditional
+authorization, and **A4 proper executed the same day**: PR #6244, merged `256b5695ab6a`
+17:31:02Z, server-verified identical to main.
+
+**Registered state (the cold stranger starts here):** the three `rf.cycle_pattern.imce_*`
+trial families are REGISTERED. `data/trial_ledger.jsonl` carries three `declared_budget` rows
+(phase n=3 `a3b8ac5c0d0205cb`, sync n=2 `1d69c1fa6b897b6a`, risk n=1 `309d76c3a8dfbb5c`),
+appended via `engine/trial_ledger.py log_declared_budget` (all returned True; ledger previously
+held 1,667 rows, zero imce rows). Contract V1.2.1 is stamped `registered` with
+`repository_pin_observed: 782b6e5703505af04ba21943b7d0a332853e286d` (origin/main at A4 pickup,
+recorded before any edit) and `registration.config_hash: 05b43f9119fd1fd357d3994bd652abbc3cdff3d8`
+(git blob SHA-1 of the as-stamped-registered contract MD; the mandatory §4a.1 post-commit
+verification passed three ways — working tree == committed blob == YAML record).
+`requires_fable_adjudication: false`; three families `declared`; the packet reads
+EXECUTED — REGISTERED at A4 (IMCE-03), 2026-08-22. Registration commit `0ae5c413471a` carries
+the Act-4 no-outcome-access attestation in its message.
+
+**verified:** merge `gh api repos/.../compare/256b5695ab6a...main` → `status: identical`;
+ledger rows `python3` re-read of the tail three rows against the frozen hashes; YAML
+`yaml.safe_load` parse + field assertions; post-commit `git hash-object` triple-equality.
+
+**What is NOT done, by design:** no runner, no historical returns, no Brier/p-values, no CPI
+issuer truth, no Radar/Prophet/sizing, no prospective collector, no FDR-partition writer, no
+boundary receipts (honestly open per R6 — outcome evaluation stays FENCED until a boundary
+evidence wave receipts the frozen v0 boundaries from first-party sources or marks blocks
+`NOT_RECONSTRUCTABLE_FOR_V0_OUTCOME_PARTITION`). Next program priority per Sol: PROSPECTIVE
+OBSERVATION ACTIVATION — first-availability capture must not wait on boundary receipting or
+DHI/TOL archaeology.
+
+**do_not_redo (additions):** do not re-append or re-stamp the registration — the three ledger
+rows and the registered YAML/MD/packet state are live on main; a second `log_declared_budget`
+call for these families returns False by design (dedup on `(family, n, reason)` hash) and any
+re-stamp is a new decision, not an execution. Do not compute ANY outcome statistic on the six
+registered cells until the boundary-receipt fence lifts — the registered `criteria-commit
+strictly precedes outcome access` attestation binds every future session.

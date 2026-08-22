@@ -62,16 +62,18 @@ permissions:
   issues: write          # lazily create/add/remove the durable refresh-lease label
 
 # Concurrency belongs on the JOB, after its event gate, and only now that the job
-# has a runner no workload can saturate. A former workflow-wide constant group
+# has a runner route outside the M2 production failure domain. A former workflow-
+# wide constant group
 # livelocked this lane to 0 successes in 100 runs: the shared hosted queue held the
 # one pending slot for 25-107 minutes while a new trigger replaced it every ~50 s.
 # The job-level group below instead coalesces only redundant FULL reconciliations.
 # Failure wake-ups are keyed by head SHA because each one runs a bounded marker pass
 # for exactly that head; coalescing different failed heads would recreate #5291's
 # invisible-red window. `cancel-in-progress: false` protects a sweep already doing
-# work, while the dedicated runner keeps the pending interval to seconds rather
-# than hours. The live-state race guards in scripts/merge_on_green.py remain as
-# defense in depth for pre-deploy runs and out-of-band callers.
+# work. W1-A canaries 32460999625, 32462063772, and 32463008422 proved the
+# GitHub-hosted pickup/environment path, including genuine M2 render overlap.
+# The live-state race guards in scripts/merge_on_green.py remain as defense in
+# depth for pre-deploy runs and out-of-band callers.
 
 jobs:
   sweep:
@@ -146,26 +148,19 @@ jobs:
         || 'lease-reconcile' }}
       cancel-in-progress: false
 
-    # CONTROL PLANE, NOT WORKLOAD. On 2026-08-11 the hosted pool was hard-saturated
-    # at 180 running jobs with 91 queued; sweeps waited 4-16 minutes and then finished
-    # in 6-39 seconds while mac-builder-4 sat online and idle. The unique
-    # `merge-control` label reserves that tiny runner for this arbiter. It carries no
-    # render-linux, render-heavy, macstudio, or macstudio-light label, so render,
-    # nightly, and light workloads cannot land here. Never replace the unique label
-    # with `parked`: mac-builder-5 also carries `parked` and is nightly failover.
+    # CONTROL PLANE, NOT WORKLOAD. W1-B moves the arbiter to GitHub-hosted capacity
+    # so M2 production/render contention cannot starve shipping control. W1-A proved
+    # this exact environment shape three times on main; run 32460999625 overlapped
+    # genuine M2 render work and still met the frozen pickup gate.
     #
-    # CURRENT JAM (measured 2026-08-13 run 31736859799, 19:38–19:40Z): the
-    # hosted-pool saturation and live-inherited-red path are NOT the live
-    # failure. integration-baseline was GREEN. Six check-clean PRs were
-    # classified STALE because #5545 touched an unowned DESIGN_NOTES.md catch-
-    # all; one refresh slot (#5528) and five refresh-deferred. Meanwhile skip-
-    # ci fences-on-main ticks plus PR-pack completions coalesced pending
-    # merge-on-green runs (last 10 around 19:36–19:45 mostly cancelled). See
-    # scripts/merge_on_green.py.
+    # `merge-control` remains registered and live on M2 mac-builder-4 as rollback-
+    # only capacity through W5. No production workflow routes there after this
+    # cutover. Rollback is route-only to
+    # `[self-hosted, macOS, ARM64, merge-control]`; no state migration exists.
     #
     # The job needs only Python, network, a sparse checkout, and PyYAML; no
     # setup-python step or persistent workspace is load-bearing.
-    runs-on: [self-hosted, macOS, ARM64, merge-control]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:

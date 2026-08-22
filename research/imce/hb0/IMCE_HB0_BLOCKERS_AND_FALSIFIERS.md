@@ -20,6 +20,20 @@ inherits an honest account of what this census did and did not establish.
 | **B6** | **No denominator for a mortality/hazard rate.** The census supplies named deaths (numerator) and no population-by-date (denominator). | Any statement of what fraction of public homebuilders failed. | A separate, harder population census. Explicitly not attempted. |
 | **B7** | **Block-to-block dependence is unaddressed by the DEFF rule.** It collapses issuer correlation *within* a block and says nothing about correlation *between* blocks — but the block list is a sequence of phases of one national housing-cycle process. | Treating `n_effective_blocks` as an estimate. It is an **upper bound**. | A4 registers `rho_block` pre-outcome and prints three counts (raw, issuer-DEFF, serial-adjusted). |
 
+> **[SUPERSEDED BY AG3 + A4P.1 R1 (2026-08-22): B7's "What resolves it" column recommends A4 register `rho_block`
+> pre-outcome and print a raw/issuer-DEFF/serial-adjusted three-way count. This is NOT the A4 registration law.**
+> The DEFF/`rho`-based estimator is STRUCK as the `n_effective_blocks` definition (AG3, 2026-08-21) —
+> `n_effective_blocks` is capped at the raw closed-block count B (AG3/AG5/AG6), never derived upward from an
+> issuer-correlation parameter. A4 will not register any `rho`/`rho_block` value and will not print an
+> issuer-DEFF `n_effective_blocks` count; the renamed, demoted `n_issuer_precision_diagnostic` (AG4) survives
+> only as a non-N diagnostic, never usable for N-accounting or promotion. B7's own underlying finding —
+> block-to-block dependence means `n_effective_blocks` is an upper bound, not a point estimate — remains true
+> and is captured, without a DEFF/`rho_block` construction, by AG9's block-cluster/leave-one-block-out
+> inference rule and the "dependence adjustment may only reduce, never increase" law.]**
+> Additive annotation only — the table above is the original A3 lane-2 text, unmodified, per Sol's bar on
+> reopening A3 work. `IMCE_A4G_AMENDMENT_LOG.md`'s AG3/AG4 entries and this wave's `AP9.R1` entry carry the
+> full ruling.
+
 ---
 
 ## 2. Soft blockers — resolvable with bounded further work

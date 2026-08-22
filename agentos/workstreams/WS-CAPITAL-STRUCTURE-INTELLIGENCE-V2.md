@@ -43,6 +43,7 @@ decisions:
   - DEC:CS-V2-SIX-QUESTION-ONTOLOGY
   - DEC:CS-V2-W1B-SOL-ACCEPTED-NATURAL-PROOF-GATE
   - DEC:CS-V2-W1-IDENTITY-PUBLICATION-PROVEN-LIVE
+  - DEC:CS-V2-W2A-CLASS-RESERVES-AND-HORIZON-FRESHNESS
 discoveries:
   - DSC:CS-MANIFEST-ID-HASHES-RETRIEVAL-CLOCKS
   - DSC:CS-SOURCE-MANIFEST-UNSPECIFIED-MERGE
@@ -73,21 +74,23 @@ landmines:
   - "Candidate-only classify_bundle_against_published misses deselected current members"
   - "Subset-hashing v2 manifest_id fights validate_manifest_ledger one-id-one-body"
   - "Concurrent daily.yml collect is still possible; CS must be idempotent"
-  - "Projection freshness is compiler age, not information horizon"
+  - "W2A code separates compiler age from information horizon, but it is not proven live until the first natural post-merge collector -> Capital Structure chain"
   - "Share-count v2 and Company Facts are default-off / unprovisioned — not live"
   - "W1B merge is not its production receipt: wait for the first natural scheduled collector -> Capital Structure chain on a descendant containing #6044; never manufacture that proof with a duplicate daily dispatch"
 artifacts:
   - research/CAPITAL_STRUCTURE_INTELLIGENCE_V2_MASTERPLAN_2026-08-18.md
+  - research/CAPITAL_STRUCTURE_W2A_QUEUE_CENSUS_2026-08-21.md
   - docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md
   - research/CAPITAL_STRUCTURE_ISSUER_STATE_W3_BUILD_DOCKET.md
   - research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-20.md
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-20-w1b-sol-acceptance-reconciliation.md
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-21.md
+  - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-21-w2a.md
 next_action: >
-  W2 is the exact next action (LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus
-  horizon health). Do not start W2 in this closeout; return to Sol for a
-  bounded W2 commission. W1/W1A/W1B are PROVEN_LIVE.
+  Independent Sol review is PASS. Finish attributable CI, merge, then use the
+  first natural scheduled collector -> Capital Structure chain for production
+  proof. Do not dispatch a duplicate daily and do not start W3/W4.
 waves:
   - id: W0
     title: Architecture freeze, estate audit, competitor/regulatory refresh
@@ -123,11 +126,12 @@ waves:
       DSC:CS-V2-W1B-NATURAL-CHAIN-PROVEN-LIVE. Do not start W2 here.
   - id: W2
     title: LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health
-    status: todo
+    status: in_progress
     depends_on: [W1B]
     next_action: >
-      Exact next action. W1 is PROVEN_LIVE. Do not auto-start; Sol must
-      commission LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health.
+      W2A implementation has independent Sol PASS. After attributable CI and
+      merge, wait for the first natural scheduled collector -> Capital Structure
+      chain and record exact class, horizon, W1, and twin-hash proof.
   - id: W3
     title: Capital Changes Desk and issuer Capital Twin UX on honest states
     status: todo
@@ -153,5 +157,5 @@ waves:
 Capital Structure V2 recovers the 2026-08-01 product thesis after PR #5792
 fixed ingestion. Destination is a PIT issuer capital twin. W0 research and
 this AMEND were executed by Cursor Grok 4.6; COO Fable remains the program
-owner. W1/W1A/W1B are PROVEN_LIVE. W2 is the exact next action and is not
-started by this closeout.
+owner. W1/W1A/W1B are PROVEN_LIVE. W2A is in progress and cannot close before
+its first natural post-merge collector -> Capital Structure production receipt.

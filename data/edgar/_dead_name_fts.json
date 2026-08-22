@@ -6661,5 +6661,2229 @@
 "top_docs": 4,
 "top_name": "MERCURY INTERACTIVE CORPORATION  (CIK 0000867058)",
 "total": 7
+},
+"MFE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 890801,
+"confirm": "accept",
+"confirm_name": "McAfee, Inc.",
+"current_tickers": [],
+"former_names": [
+"NETWORKS ASSOCIATES INC/",
+"NETWORK ASSOCIATES INC",
+"MCAFEE ASSOCIATES INC"
+],
+"n_entities": 10,
+"runner_docs": 5,
+"status": "resolved",
+"top_docs": 17,
+"top_name": "McAfee, Inc.  (CIK 0000890801)",
+"total": 32
+},
+"MGLN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 19411,
+"confirm": "accept",
+"confirm_name": "MAGELLAN HEALTH INC",
+"current_tickers": [],
+"former_names": [
+"MAGELLAN HEALTH SERVICES INC",
+"CHARTER MEDICAL CORP"
+],
+"n_entities": 3,
+"runner_docs": 3,
+"status": "resolved",
+"top_docs": 10,
+"top_name": "MAGELLAN HEALTH INC  (CIK 0000019411)",
+"total": 14
+},
+"MGPI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 3,
+"runner_docs": 12,
+"status": "no_dominant",
+"top_docs": 19,
+"top_name": "MGP INGREDIENTS INC  (MGPI)  (CIK 0000835011)",
+"total": 33
+},
+"MHS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 13,
+"status": "no_dominant",
+"top_docs": 26,
+"top_name": "MEDCO HEALTH SOLUTIONS INC  (CIK 0001170650)",
+"total": 204
+},
+"MI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 36,
+"status": "no_dominant",
+"top_docs": 84,
+"top_name": "MI DEVELOPMENTS INC  (CIK 0001252509)",
+"total": 9814
+},
+"MII": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"MIK": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 1593936,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "Michaels Companies, Inc.",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 6,
+"runner_docs": 5,
+"status": "reject_no_name_corroboration",
+"top_docs": 22,
+"top_name": "Michaels Companies, Inc.  (CIK 0001593936)",
+"total": 35
+},
+"MIL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 13,
+"status": "no_dominant",
+"top_docs": 21,
+"top_name": "CROSS COUNTRY HEALTHCARE INC  (CCRN)  (CIK 0001141103)",
+"total": 1475
+},
+"MIME": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 5,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "Cosan S.A.  (CSAN)  (CIK 0001430162)",
+"total": 9
+},
+"MJN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 6,
+"runner_docs": 19,
+"status": "no_dominant",
+"top_docs": 24,
+"top_name": "Mead Johnson Nutrition Co  (CIK 0001452575)",
+"total": 52
+},
+"MKG": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"MLAB": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 724004,
+"confirm": "accept",
+"confirm_name": "MESA LABORATORIES INC /CO/",
+"current_tickers": [
+"MLAB"
+],
+"former_names": [
+"MESA LABORATORIES INC /CO"
+],
+"n_entities": 13,
+"runner_docs": 4,
+"status": "resolved",
+"top_docs": 15,
+"top_name": "MESA LABORATORIES INC /CO/  (MLAB)  (CIK 0000724004)",
+"total": 38
+},
+"MNK": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 1567892,
+"confirm": "reject_still_active",
+"confirm_name": "Keenova Therapeutics plc",
+"current_tickers": [],
+"former_names": [
+"Mallinckrodt plc"
+],
+"last_annual": "2026-04-15",
+"n_entities": 12,
+"runner_docs": 4,
+"status": "reject_still_active",
+"top_docs": 27,
+"top_name": "Mallinckrodt plc  (CIK 0001567892)",
+"total": 43
+},
+"MNR": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"MNTA": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 2,
+"runner_docs": 1,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "MOMENTA PHARMACEUTICALS INC  (CIK 0001235010)",
+"total": 2
+},
+"MOB": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"MODG": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 3,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "Topgolf Callaway Brands Corp.  (MODG)  (CIK 0000837465)",
+"total": 8
+},
+"MODV": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1220754,
+"confirm": "accept",
+"confirm_name": "ModivCare Inc",
+"current_tickers": [],
+"former_names": [
+"PROVIDENCE SERVICE CORP"
+],
+"n_entities": 3,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 7,
+"top_name": "ModivCare Inc  (MODV)  (CIK 0001220754)",
+"total": 10
+},
+"MOLX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 67472,
+"confirm": "accept",
+"confirm_name": "MOLEX INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 6,
+"runner_docs": 4,
+"status": "resolved",
+"top_docs": 14,
+"top_name": "MOLEX INC  (CIK 0000067472)",
+"total": 19
+},
+"MON": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 24,
+"status": "no_dominant",
+"top_docs": 28,
+"top_name": "MONSANTO CO /NEW/  (CIK 0001110783)",
+"total": 1316
+},
+"MOV": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 72573,
+"confirm": "accept",
+"confirm_name": "MOVADO GROUP INC",
+"current_tickers": [
+"MOV",
+"MOVAA"
+],
+"former_names": [],
+"n_entities": 18,
+"runner_docs": 3,
+"status": "resolved",
+"top_docs": 52,
+"top_name": "MOVADO GROUP INC  (MOV, MOVAA)  (CIK 0000072573)",
+"total": 83
+},
+"MPAA": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 10,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "Omnitek Engineering Corp  (OMTK)  (CIK 0001404804)",
+"total": 19
+},
+"MPW": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 28,
+"runner_docs": 100,
+"status": "no_dominant",
+"top_docs": 100,
+"top_name": "MEDICAL PROPERTIES TRUST INC  (MPW)  (CIK 0001287865)",
+"total": 153
+},
+"MRO": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 101778,
+"confirm": "accept",
+"confirm_name": "MARATHON OIL CORP",
+"current_tickers": [],
+"former_names": [
+"USX CORP"
+],
+"n_entities": 30,
+"runner_docs": 35,
+"status": "resolved",
+"top_docs": 227,
+"top_name": "MARATHON OIL CORP  (MRO)  (CIK 0000101778)",
+"total": 2425
+},
+"MRX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 6,
+"runner_docs": 1,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "Intellicell Biosciences, Inc.  (CIK 0001125280)",
+"total": 8
+},
+"MSCC": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 8,
+"status": "no_dominant",
+"top_docs": 8,
+"top_name": "Bank of America Merrill Lynch Commercial Mortgage Trust 2015-UBS7  (CIK 0001652031)",
+"total": 2009
+},
+"MST": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"MSTR": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 1050446,
+"confirm": "reject_still_active",
+"confirm_name": "Strategy Inc",
+"current_tickers": [
+"MSTR",
+"STRC",
+"STRD",
+"STRF",
+"STRK"
+],
+"former_names": [
+"MICROSTRATEGY INC",
+"MICROSTRATEGY Inc"
+],
+"last_annual": "2026-02-19",
+"n_entities": 2,
+"runner_docs": 1,
+"status": "reject_still_active",
+"top_docs": 25,
+"top_name": "MICROSTRATEGY Inc  (MSTR)  (CIK 0001050446)",
+"total": 26
+},
+"MTL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"MTLQQ": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "General Motors Co  (GM)  (CIK 0001467858)",
+"total": 1
+},
+"MTOR": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 7,
+"status": "no_dominant",
+"top_docs": 16,
+"top_name": "MERITOR, INC.  (CIK 0001113256)",
+"total": 174
+},
+"MTRX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 6,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "Great Lakes Dredge & Dock CORP  (GLDD)  (CIK 0001372020)",
+"total": 17
+},
+"MTSC": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 3,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 2,
+"top_name": "AMPHENOL CORP /DE/  (APH)  (CIK 0000820313)",
+"total": 5
+},
+"MTW": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 61986,
+"confirm": "reject_still_active",
+"confirm_name": "MANITOWOC CO INC",
+"current_tickers": [
+"MTW"
+],
+"former_names": [],
+"last_annual": "2026-02-18",
+"n_entities": 5,
+"runner_docs": 2,
+"status": "reject_still_active",
+"top_docs": 6,
+"top_name": "MANITOWOC CO INC  (MTW)  (CIK 0000061986)",
+"total": 11
+},
+"MWI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"MWV": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 14,
+"runner_docs": 10,
+"status": "no_dominant",
+"top_docs": 10,
+"top_name": "MEADWESTVACO Corp  (CIK 0001159297)",
+"total": 64
+},
+"MWW": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 20,
+"runner_docs": 7,
+"status": "no_dominant",
+"top_docs": 10,
+"top_name": "INTERPUBLIC GROUP OF COMPANIES, INC.  (IPG)  (CIK 0000051644)",
+"total": 66
+},
+"MYE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 69488,
+"confirm": "accept",
+"confirm_name": "MYERS INDUSTRIES INC",
+"current_tickers": [
+"MYE"
+],
+"former_names": [],
+"n_entities": 7,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 61,
+"top_name": "MYERS INDUSTRIES INC  (MYE)  (CIK 0000069488)",
+"total": 68
+},
+"MYG": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 2,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "MAYTAG CORP  (CIK 0000063541)",
+"total": 6
+},
+"MYGN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 899923,
+"confirm": "accept",
+"confirm_name": "MYRIAD GENETICS INC",
+"current_tickers": [
+"MYGN"
+],
+"former_names": [
+"MYRIAD GENETICS INC"
+],
+"n_entities": 8,
+"runner_docs": 6,
+"status": "resolved",
+"top_docs": 34,
+"top_name": "MYRIAD GENETICS INC  (MYGN)  (CIK 0000899923)",
+"total": 51
+},
+"MYL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 24,
+"runner_docs": 10,
+"status": "no_dominant",
+"top_docs": 11,
+"top_name": "Macquarie Infrastructure CO LLC  (CIK 0001289790)",
+"total": 68
+},
+"MZIAQ": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"NAE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"NARI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1531048,
+"confirm": "accept",
+"confirm_name": "Inari Medical, Inc.",
+"current_tickers": [],
+"former_names": [
+"Inceptus Newco1 Inc."
+],
+"n_entities": 8,
+"runner_docs": 3,
+"status": "resolved",
+"top_docs": 10,
+"top_name": "Inari Medical, Inc.  (NARI)  (CIK 0001531048)",
+"total": 23
+},
+"NATI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 935494,
+"confirm": "accept",
+"confirm_name": "NATIONAL INSTRUMENTS CORP",
+"current_tickers": [],
+"former_names": [
+"NATIONAL INSTRUMENTS CORP /DE/"
+],
+"n_entities": 30,
+"runner_docs": 21,
+"status": "resolved",
+"top_docs": 58,
+"top_name": "NATIONAL INSTRUMENTS CORP  (CIK 0000935494)",
+"total": 624
+},
+"NAV": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 11,
+"status": "no_dominant",
+"top_docs": 14,
+"top_name": "DIVERSIFIED FUTURES TRUST I  (CIK 0000926805)",
+"total": 565
+},
+"NBR": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1163739,
+"confirm": "accept",
+"confirm_name": "NABORS INDUSTRIES LTD",
+"current_tickers": [
+"NBR"
+],
+"former_names": [],
+"n_entities": 30,
+"runner_docs": 33,
+"status": "resolved",
+"top_docs": 115,
+"top_name": "NABORS INDUSTRIES LTD  (NBR, NBRWF)  (CIK 0001163739)",
+"total": 536
+},
+"NC": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 10,
+"status": "no_dominant",
+"top_docs": 15,
+"top_name": "NEW CENTURY FINANCIAL CORP  (CIK 0001036075)",
+"total": 604
+},
+"NCC": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 10,
+"status": "no_dominant",
+"top_docs": 14,
+"top_name": "AMETEK INC/  (AME)  (CIK 0001037868)",
+"total": 330
+},
+"NCE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 21,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 5,
+"top_name": "CHARTER COMMUNICATIONS INC /MO/  (CHTR)  (CIK 0001091667)",
+"total": 28
+},
+"NCR": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 70866,
+"confirm": "reject_live_mismatch",
+"confirm_name": "NCR Voyix Corp",
+"current_tickers": [
+"VYX",
+"NCRRP"
+],
+"former_names": [
+"NCR CORP"
+],
+"n_entities": 30,
+"runner_docs": 21,
+"status": "reject_live_mismatch",
+"top_docs": 80,
+"top_name": "NCR CORP  (VYX, NCRRP)  (CIK 0000070866)",
+"total": 1012
+},
+"NDN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"NEX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "CME GROUP INC.  (CME)  (CIK 0001156375)",
+"total": 64
+},
+"NFB": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 352510,
+"confirm": "accept",
+"confirm_name": "NORTH FORK BANCORPORATION INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 8,
+"runner_docs": 5,
+"status": "resolved",
+"top_docs": 15,
+"top_name": "NORTH FORK BANCORPORATION INC  (CIK 0000352510)",
+"total": 27
+},
+"NFBK": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 5,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 9,
+"top_name": "Northfield Bancorp, Inc.  (NFBK)  (CIK 0001493225)",
+"total": 18
+},
+"NFX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 912750,
+"confirm": "accept",
+"confirm_name": "NEWFIELD EXPLORATION CO /DE/",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 14,
+"runner_docs": 5,
+"status": "resolved",
+"top_docs": 20,
+"top_name": "NEWFIELD EXPLORATION CO /DE/  (CIK 0000912750)",
+"total": 46
+},
+"NGH": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 3,
+"runner_docs": 1,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "NATIONAL GRID GROUP PLC  (NGG, NEWEN, NGGTF, NMKBP, NMKCP, NMPWP)  (CIK 0001004315)",
+"total": 3
+},
+"NKTR": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 906709,
+"confirm": "accept",
+"confirm_name": "NEKTAR THERAPEUTICS",
+"current_tickers": [
+"NKTR"
+],
+"former_names": [
+"INHALE THERAPEUTIC SYSTEMS INC",
+"INHALE THERAPEUTIC SYSTEMS"
+],
+"n_entities": 28,
+"runner_docs": 5,
+"status": "resolved",
+"top_docs": 34,
+"top_name": "NEKTAR THERAPEUTICS  (NKTR)  (CIK 0000906709)",
+"total": 72
+},
+"NLC": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"NLOK": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 849399,
+"confirm": "reject_live_mismatch",
+"confirm_name": "Gen Digital Inc.",
+"current_tickers": [
+"GEN",
+"GENVR"
+],
+"former_names": [
+"NortonLifeLock Inc.",
+"SYMANTEC CORP"
+],
+"n_entities": 1,
+"runner_docs": 0,
+"status": "reject_live_mismatch",
+"top_docs": 6,
+"top_name": "NortonLifeLock Inc.  (GEN)  (CIK 0000849399)",
+"total": 6
+},
+"NLSN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 10,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 10,
+"top_name": "Nielsen Holdings plc  (CIK 0001492633)",
+"total": 26
+},
+"NLV": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"NMK": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 3,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 2,
+"top_name": "NIAGARA MOHAWK HOLDINGS INC/NY  (CIK 0001079182)",
+"total": 5
+},
+"NOVL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 4,
+"runner_docs": 10,
+"status": "no_dominant",
+"top_docs": 14,
+"top_name": "NOVELL INC  (CIK 0000758004)",
+"total": 26
+},
+"NP": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 8,
+"status": "no_dominant",
+"top_docs": 12,
+"top_name": "EMERA INC  (EMICF, EMRAF, EMRJF, ERRAF)  (CIK 0001127248)",
+"total": 488
+},
+"NR": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 8,
+"top_name": "CHEMICAL & MINING CO OF CHILE INC  (SQM)  (CIK 0000909037)",
+"total": 303
+},
+"NRTLQ": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"NSI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 70538,
+"confirm": "accept",
+"confirm_name": "NATIONAL SERVICE INDUSTRIES INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 28,
+"runner_docs": 6,
+"status": "resolved",
+"top_docs": 26,
+"top_name": "NATIONAL SERVICE INDUSTRIES INC  (CIK 0000070538)",
+"total": 78
+},
+"NSM": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 8,
+"status": "no_dominant",
+"top_docs": 11,
+"top_name": "SILVER STANDARD RESOURCES INC  (SSRM, SSRGF)  (CIK 0000921638)",
+"total": 151
+},
+"NSR": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 24,
+"status": "no_dominant",
+"top_docs": 32,
+"top_name": "EMGOLD MINING CORP  (EGMCF)  (CIK 0001199392)",
+"total": 1896
+},
+"NTGR": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1122904,
+"confirm": "accept",
+"confirm_name": "NETGEAR, INC.",
+"current_tickers": [
+"NTGR"
+],
+"former_names": [
+"NETGEAR, INC",
+"NETGEAR INC"
+],
+"n_entities": 3,
+"runner_docs": 1,
+"status": "resolved",
+"top_docs": 41,
+"top_name": "NETGEAR, INC.  (NTGR)  (CIK 0001122904)",
+"total": 43
+},
+"NTUS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 878526,
+"confirm": "accept",
+"confirm_name": "NATUS MEDICAL INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 2,
+"runner_docs": 1,
+"status": "resolved",
+"top_docs": 4,
+"top_name": "NATUS MEDICAL INC  (CIK 0000878526)",
+"total": 5
+},
+"NUS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 10,
+"status": "no_dominant",
+"top_docs": 13,
+"top_name": "Suzano S.A.  (SUZ)  (CIK 0000909327)",
+"total": 243
+},
+"NUVA": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1142596,
+"confirm": "accept",
+"confirm_name": "NUVASIVE INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 11,
+"runner_docs": 7,
+"status": "resolved",
+"top_docs": 104,
+"top_name": "NUVASIVE INC  (CIK 0001142596)",
+"total": 135
+},
+"NVE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 724910,
+"confirm": "reject_live_mismatch",
+"confirm_name": "NVE CORP /NEW/",
+"current_tickers": [
+"NVEC"
+],
+"former_names": [
+"PREMIS CORP"
+],
+"n_entities": 24,
+"runner_docs": 3,
+"status": "reject_live_mismatch",
+"top_docs": 16,
+"top_name": "NVE CORP /NEW/  (NVEC)  (CIK 0000724910)",
+"total": 50
+},
+"NVEE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 1532961,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "NV5 Global, Inc.",
+"current_tickers": [],
+"former_names": [
+"NV5 Holdings, Inc."
+],
+"n_entities": 2,
+"runner_docs": 5,
+"status": "reject_no_name_corroboration",
+"top_docs": 40,
+"top_name": "NV5 Global, Inc.  (NVEE)  (CIK 0001532961)",
+"total": 45
+},
+"NVLS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 836106,
+"confirm": "accept",
+"confirm_name": "NOVELLUS SYSTEMS INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 1,
+"runner_docs": 0,
+"status": "resolved",
+"top_docs": 13,
+"top_name": "NOVELLUS SYSTEMS INC  (CIK 0000836106)",
+"total": 13
+},
+"NVRI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 45876,
+"confirm": "accept",
+"confirm_name": "ENVIRI LLC",
+"current_tickers": [],
+"former_names": [
+"ENVIRI Corp",
+"HARSCO CORP"
+],
+"n_entities": 2,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 18,
+"top_name": "ENVIRI Corp  (NVRI)  (CIK 0000045876)",
+"total": 20
+},
+"NXGN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 708818,
+"confirm": "accept",
+"confirm_name": "NEXTGEN HEALTHCARE, INC.",
+"current_tickers": [],
+"former_names": [
+"QUALITY SYSTEMS, INC",
+"QUALITY SYSTEMS INC"
+],
+"n_entities": 5,
+"runner_docs": 5,
+"status": "resolved",
+"top_docs": 32,
+"top_name": "NEXTGEN HEALTHCARE, INC.  (CIK 0000708818)",
+"total": 46
+},
+"NXTL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 824169,
+"confirm": "accept",
+"confirm_name": "NEXTEL COMMUNICATIONS INC",
+"current_tickers": [],
+"former_names": [
+"NEXTEL COMMUNICATIONS INC/DE/",
+"NEXTEL COMMUNICATIONS, INC"
+],
+"n_entities": 1,
+"runner_docs": 0,
+"status": "resolved",
+"top_docs": 5,
+"top_name": "NEXTEL COMMUNICATIONS INC  (CIK 0000824169)",
+"total": 5
+},
+"NYMT": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 18,
+"runner_docs": 10,
+"status": "no_dominant",
+"top_docs": 14,
+"top_name": "NEW YORK MORTGAGE TRUST INC  (NYMT, NYMTI, NYMTL, NYMTM, NYMTN, NYMTZ)  (CIK 0001273685)",
+"total": 93
+},
+"NYN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"NYX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1368007,
+"confirm": "accept",
+"confirm_name": "NYSE Euronext",
+"current_tickers": [],
+"former_names": [
+"NYSE Euronext, Inc."
+],
+"n_entities": 26,
+"runner_docs": 8,
+"status": "resolved",
+"top_docs": 29,
+"top_name": "NYSE Euronext  (CIK 0001368007)",
+"total": 91
+},
+"OA": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 866121,
+"confirm": "accept",
+"confirm_name": "Northrop Grumman Innovation Systems, Inc.",
+"current_tickers": [],
+"former_names": [
+"ORBITAL ATK, INC.",
+"ALLIANT TECHSYSTEMS INC"
+],
+"n_entities": 30,
+"runner_docs": 11,
+"status": "resolved",
+"top_docs": 41,
+"top_name": "ORBITAL ATK, INC.  (CIK 0000866121)",
+"total": 478
+},
+"OAS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 1486159,
+"confirm": "reject_live_mismatch",
+"confirm_name": "Chord Energy Corp",
+"current_tickers": [
+"CHRD"
+],
+"former_names": [
+"Oasis Petroleum Inc."
+],
+"n_entities": 30,
+"runner_docs": 7,
+"status": "reject_live_mismatch",
+"top_docs": 30,
+"top_name": "Oasis Petroleum Inc.  (CHRD, OASPW, WLLAW, WLLBW)  (CIK 0001486159)",
+"total": 147
+},
+"OAT": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 22,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "GALAXY NUTRITIONAL FOODS CO  (CIK 0000819527)",
+"total": 31
+},
+"ODP": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 42,
+"status": "no_dominant",
+"top_docs": 45,
+"top_name": "OFFICE DEPOT INC  (ODP)  (CIK 0000800240)",
+"total": 278
+},
+"OFIX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 884624,
+"confirm": "accept",
+"confirm_name": "Orthofix Medical Inc.",
+"current_tickers": [
+"OFIX"
+],
+"former_names": [
+"ORTHOFIX INTERNATIONAL N V"
+],
+"n_entities": 6,
+"runner_docs": 4,
+"status": "resolved",
+"top_docs": 59,
+"top_name": "Orthofix Medical Inc.  (OFIX)  (CIK 0000884624)",
+"total": 68
+},
+"OIS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 44,
+"status": "no_dominant",
+"top_docs": 59,
+"top_name": "VIDEOTRON LTEE  (CIK 0000890746)",
+"total": 2332
+},
+"OK": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 7,
+"top_name": "ALTERRA HEALTHCARE CORP  (CIK 0001013218)",
+"total": 412
+},
+"OM": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"OMI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 15,
+"status": "no_dominant",
+"top_docs": 34,
+"top_name": "OWENS & MINOR INC/VA/  (OMI)  (CIK 0000075252)",
+"total": 305
+},
+"OMX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 11,
+"status": "no_dominant",
+"top_docs": 20,
+"top_name": "NASDAQ OMX GROUP, INC.  (NDAQ)  (CIK 0001120193)",
+"total": 145
+},
+"ONE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 102,
+"status": "no_dominant",
+"top_docs": 103,
+"top_name": "FIRSTENERGY CORP  (FE)  (CIK 0001031296)",
+"total": 10000
+},
+"ONL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 12,
+"status": "no_dominant",
+"top_docs": 12,
+"top_name": "BANK 2018-BNK12  (CIK 0001739423)",
+"total": 3177
+},
+"OPB": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 9,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 2,
+"top_name": "BOEING CO  (BA)  (CIK 0000012927)",
+"total": 14
+},
+"OPI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 7,
+"status": "no_dominant",
+"top_docs": 12,
+"top_name": "OFFICE PROPERTIES INCOME TRUST  (OPI, OPINL)  (CIK 0001456772)",
+"total": 110
+},
+"OPRX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 4,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "OptimizeRx Corp  (OPRX)  (CIK 0001448431)",
+"total": 9
+},
+"ORGO": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1661181,
+"confirm": "accept",
+"confirm_name": "Organogenesis Holdings Inc.",
+"current_tickers": [
+"ORGO"
+],
+"former_names": [
+"Avista Healthcare Public Acquisition Corp."
+],
+"n_entities": 1,
+"runner_docs": 0,
+"status": "resolved",
+"top_docs": 16,
+"top_name": "Organogenesis Holdings Inc.  (ORGO)  (CIK 0001661181)",
+"total": 16
+},
+"ORX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"OSPN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1044777,
+"confirm": "accept",
+"confirm_name": "OneSpan Inc.",
+"current_tickers": [
+"OSPN"
+],
+"former_names": [
+"One Span Inc.",
+"VASCO DATA SECURITY INTERNATIONAL INC"
+],
+"n_entities": 5,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 32,
+"top_name": "OneSpan Inc.  (OSPN)  (CIK 0001044777)",
+"total": 37
+},
+"OSUR": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1116463,
+"confirm": "accept",
+"confirm_name": "ORASURE TECHNOLOGIES INC",
+"current_tickers": [
+"OSUR"
+],
+"former_names": [],
+"n_entities": 5,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 52,
+"top_name": "ORASURE TECHNOLOGIES INC  (OSUR)  (CIK 0001116463)",
+"total": 58
+},
+"OWENQ": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"PAC": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"PACW": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1102112,
+"confirm": "accept",
+"confirm_name": "PACWEST BANCORP",
+"current_tickers": [],
+"former_names": [
+"FIRST COMMUNITY BANCORP /CA/"
+],
+"n_entities": 8,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 14,
+"top_name": "PACWEST BANCORP  (CIK 0001102112)",
+"total": 22
+},
+"PALM": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 16,
+"status": "no_dominant",
+"top_docs": 37,
+"top_name": "NSTOR TECHNOLOGIES INC  (CIK 0000075448)",
+"total": 2297
+},
+"PARA": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 29,
+"status": "no_dominant",
+"top_docs": 33,
+"top_name": "XEROX CORP  (CIK 0000108772)",
+"total": 2184
+},
+"PAS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"PAY": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 137,
+"status": "no_dominant",
+"top_docs": 142,
+"top_name": "PRIME ACQUISITION CORP  (CIK 0001485922)",
+"total": 10000
+},
+"PBCT": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 1378946,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "People's United Financial, Inc.",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 5,
+"runner_docs": 1,
+"status": "reject_no_name_corroboration",
+"top_docs": 48,
+"top_name": "People's United Financial, Inc.  (CIK 0001378946)",
+"total": 52
+},
+"PBG": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 29,
+"status": "no_dominant",
+"top_docs": 62,
+"top_name": "PEPSI BOTTLING GROUP INC  (CIK 0001076405)",
+"total": 224
+},
+"PBY": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"PCH": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 47,
+"status": "no_dominant",
+"top_docs": 52,
+"top_name": "POTLATCHDELTIC CORP  (PCH)  (CIK 0001338749)",
+"total": 580
+},
+"PCL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 26,
+"status": "no_dominant",
+"top_docs": 51,
+"top_name": "PCL Employees Holdings Ltd.  (CIK 0001326107)",
+"total": 601
+},
+"PCP": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 79958,
+"confirm": "accept",
+"confirm_name": "PRECISION CASTPARTS CORP",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 30,
+"runner_docs": 15,
+"status": "resolved",
+"top_docs": 54,
+"top_name": "PRECISION CASTPARTS CORP  (CIK 0000079958)",
+"total": 407
+},
+"PCS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 40,
+"status": "no_dominant",
+"top_docs": 74,
+"top_name": "AIRGATE PCS INC /DE/  (CIK 0001086844)",
+"total": 3704
+},
+"PCX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 3,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "Patriot Coal CORP  (CIK 0001376812)",
+"total": 8
+},
+"PD": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 15,
+"status": "no_dominant",
+"top_docs": 18,
+"top_name": "DUSA PHARMACEUTICALS INC  (CIK 0000879993)",
+"total": 938
+},
+"PDCE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 7,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 6,
+"top_name": "CAMECO CORP  (CCJ)  (CIK 0001009001)",
+"total": 16
+},
+"PDCO": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 891024,
+"confirm": "accept",
+"confirm_name": "PATTERSON COMPANIES, INC.",
+"current_tickers": [],
+"former_names": [
+"PATTERSON DENTAL CO"
+],
+"n_entities": 30,
+"runner_docs": 12,
+"status": "resolved",
+"top_docs": 59,
+"top_name": "PATTERSON COMPANIES, INC.  (PDCO)  (CIK 0000891024)",
+"total": 971
+},
+"PDG": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 24,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 9,
+"top_name": "PDG ENVIRONMENTAL INC  (CIK 0000771485)",
+"total": 44
+},
+"PEAK": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 23,
+"status": "no_dominant",
+"top_docs": 24,
+"top_name": "PEAK PHARMACEUTICALS, INC.  (RMHI)  (CIK 0001452804)",
+"total": 10000
+},
+"PEI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 9,
+"status": "no_dominant",
+"top_docs": 17,
+"top_name": "PENNSYLVANIA REAL ESTATE INVESTMENT TRUST  (CIK 0000077281)",
+"total": 125
+},
+"PEL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"PET": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"PETM": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 863157,
+"confirm": "accept",
+"confirm_name": "PETSMART INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 4,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 21,
+"top_name": "PETSMART INC  (CIK 0000863157)",
+"total": 26
+},
+"PETS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 12,
+"status": "no_dominant",
+"top_docs": 27,
+"top_name": "PETMED EXPRESS INC  (PETS)  (CIK 0001040130)",
+"total": 665
+},
+"PGL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 22,
+"runner_docs": 16,
+"status": "no_dominant",
+"top_docs": 16,
+"top_name": "NORTH SHORE GAS CO /IL/  (CIK 0000110101)",
+"total": 56
+},
+"PGN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 20,
+"runner_docs": 32,
+"status": "no_dominant",
+"top_docs": 32,
+"top_name": "CAROLINA POWER & LIGHT CO  (CIK 0000017797)",
+"total": 85
+},
+"PGTI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1354327,
+"confirm": "accept",
+"confirm_name": "PGT Innovations, Inc.",
+"current_tickers": [],
+"former_names": [
+"PGT, Inc."
+],
+"n_entities": 4,
+"runner_docs": 3,
+"status": "resolved",
+"top_docs": 59,
+"top_name": "PGT Innovations, Inc.  (CIK 0001354327)",
+"total": 64
+},
+"PHA": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 19,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 7,
+"top_name": "CENTRAL EUROPEAN DISTRIBUTION CORP  (CIK 0001046880)",
+"total": 32
+},
+"PHB": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"PINC": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 13,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 9,
+"top_name": "Premier, Inc.  (PINC)  (CIK 0001577916)",
+"total": 30
+},
+"PKE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 3,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 5,
+"top_name": "THERAPEUTIC SOLUTIONS INTERNATIONAL, INC.  (TSOI)  (CIK 0001419051)",
+"total": 10
+},
+"PKI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 26,
+"status": "no_dominant",
+"top_docs": 29,
+"top_name": "PERKINELMER INC  (RVTY)  (CIK 0000031791)",
+"total": 576
+},
+"PLAY": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 11,
+"status": "no_dominant",
+"top_docs": 12,
+"top_name": "MGM Resorts International  (MGM)  (CIK 0000789570)",
+"total": 10000
+},
+"PLCE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1041859,
+"confirm": "accept",
+"confirm_name": "Childrens Place, Inc.",
+"current_tickers": [
+"PLCE"
+],
+"former_names": [
+"CHILDRENS PLACE RETAIL STORES INC"
+],
+"n_entities": 7,
+"runner_docs": 6,
+"status": "resolved",
+"top_docs": 38,
+"top_name": "Childrens Place, Inc.  (PLCE)  (CIK 0001041859)",
+"total": 54
+},
+"PLCM": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1010552,
+"confirm": "accept",
+"confirm_name": "POLYCOM INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 2,
+"runner_docs": 6,
+"status": "resolved",
+"top_docs": 25,
+"top_name": "POLYCOM INC  (CIK 0001010552)",
+"total": 31
+},
+"PLL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 38,
+"status": "no_dominant",
+"top_docs": 38,
+"top_name": "ENTERGY ARKANSAS INC  (EAI)  (CIK 0000007323)",
+"total": 354
+},
+"PLT": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 10,
+"status": "no_dominant",
+"top_docs": 12,
+"top_name": "PLANTRONICS INC /CA/  (CIK 0000914025)",
+"total": 168
+},
+"PMCS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 767920,
+"confirm": "reject_still_active",
+"confirm_name": "PMC SIERRA INC",
+"current_tickers": [],
+"former_names": [
+"SIERRA SEMICONDUCTOR CORP",
+"SIERRA SEMICONDUCTOR CORPORATION"
+],
+"last_annual": "2015-02-24",
+"n_entities": 4,
+"runner_docs": 3,
+"status": "reject_still_active",
+"top_docs": 9,
+"top_name": "PMC SIERRA INC  (CIK 0000767920)",
+"total": 15
+},
+"PMI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"PNRA": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 3,
+"runner_docs": 6,
+"status": "no_dominant",
+"top_docs": 6,
+"top_name": "DENNYS CORP  (DENN)  (CIK 0000852772)",
+"total": 15
+},
+"PNTG": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 3,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 7,
+"top_name": "Pennant Group, Inc.  (PNTG)  (CIK 0001766400)",
+"total": 12
+},
+"PNU": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "NEOPHARM INC  (CIK 0000942788)",
+"total": 1
+},
+"POLY": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 9,
+"status": "no_dominant",
+"top_docs": 14,
+"top_name": "POLYMET MINING CORP  (CIK 0000866028)",
+"total": 778
+},
+"POM": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 15,
+"status": "no_dominant",
+"top_docs": 15,
+"top_name": "CBL & ASSOCIATES PROPERTIES INC  (CBL)  (CIK 0000910612)",
+"total": 149
+},
+"PPBI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 5,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 8,
+"top_name": "PACIFIC PREMIER BANCORP INC  (PPBI)  (CIK 0001028918)",
+"total": 16
+},
+"PPW": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"PRAH": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 8,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 9,
+"top_name": "CB Financial Services, Inc.  (CBFV)  (CIK 0001605301)",
+"total": 24
+},
+"PRD": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 5,
+"runner_docs": 1,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "POLAROID CORP  (CIK 0000079326)",
+"total": 7
+},
+"PRFT": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1085869,
+"confirm": "accept",
+"confirm_name": "PERFICIENT INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 4,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 7,
+"top_name": "PERFICIENT INC  (PRFT)  (CIK 0001085869)",
+"total": 12
+},
+"PRSP": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 9,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 11,
+"top_name": "ALLEGHENY TECHNOLOGIES INC  (ATI)  (CIK 0001018963)",
+"total": 33
+},
+"PRXL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 799729,
+"confirm": "accept",
+"confirm_name": "PAREXEL INTERNATIONAL CORP",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 4,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 8,
+"top_name": "PAREXEL INTERNATIONAL CORP  (CIK 0000799729)",
+"total": 13
+},
+"PSB": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 23,
+"status": "no_dominant",
+"top_docs": 52,
+"top_name": "PS BUSINESS PARKS INC/CA  (CIK 0000866368)",
+"total": 1542
+},
+"PSFT": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 875570,
+"confirm": "accept",
+"confirm_name": "PEOPLESOFT INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 3,
+"runner_docs": 1,
+"status": "resolved",
+"top_docs": 6,
+"top_name": "PEOPLESOFT INC  (CIK 0000875570)",
+"total": 8
+},
+"PSS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 6,
+"status": "no_dominant",
+"top_docs": 14,
+"top_name": "PSS WORLD MEDICAL INC  (CIK 0000920527)",
+"total": 90
+},
+"PTV": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 7,
+"status": "no_dominant",
+"top_docs": 9,
+"top_name": "PACTIV CORP  (CIK 0001089976)",
+"total": 84
+},
+"PUMP": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 21,
+"status": "no_dominant",
+"top_docs": 21,
+"top_name": "ALBEMARLE CORP  (ALB, ALB-PA)  (CIK 0000915913)",
+"total": 4147
+},
+"PVN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 4,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 7,
+"top_name": "PROVIDIAN FINANCIAL CORP  (CIK 0001035713)",
+"total": 15
+},
+"PVT": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"PVTB": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "PRIVATEBANCORP, INC  (CIK 0000889936)",
+"total": 1
+},
+"PWER": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 1042825,
+"confirm": "reject_still_active",
+"confirm_name": "POWER ONE INC",
+"current_tickers": [],
+"former_names": [],
+"last_annual": "2013-04-29",
+"n_entities": 2,
+"runner_docs": 1,
+"status": "reject_still_active",
+"top_docs": 5,
+"top_name": "POWER ONE INC  (CIK 0001042825)",
+"total": 6
+},
+"PWJ": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"PX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 43,
+"status": "no_dominant",
+"top_docs": 102,
+"top_name": "PRAXAIR INC  (CIK 0000884905)",
+"total": 837
+},
+"PXD": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 1038357,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "PIONEER NATURAL RESOURCES CO",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 23,
+"runner_docs": 7,
+"status": "reject_no_name_corroboration",
+"top_docs": 107,
+"top_name": "PIONEER NATURAL RESOURCES CO  (CIK 0001038357)",
+"total": 148
+},
+"PXP": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 891456,
+"confirm": "accept",
+"confirm_name": "PLAINS EXPLORATION & PRODUCTION CO",
+"current_tickers": [],
+"former_names": [
+"PLAINS EXPLORATION & PRODUCTION CO L P",
+"STOCKER RESOURCES LP"
+],
+"n_entities": 12,
+"runner_docs": 4,
+"status": "resolved",
+"top_docs": 14,
+"top_name": "PLAINS EXPLORATION & PRODUCTION CO  (CIK 0000891456)",
+"total": 34
+},
+"PZE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"QCP": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1677203,
+"confirm": "accept",
+"confirm_name": "QUALITY CARE PROPERTIES, INC.",
+"current_tickers": [],
+"former_names": [
+"HCP SpinCo, Inc."
+],
+"n_entities": 11,
+"runner_docs": 3,
+"status": "resolved",
+"top_docs": 12,
+"top_name": "QUALITY CARE PROPERTIES, INC.  (CIK 0001677203)",
+"total": 30
+},
+"QEP": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1108827,
+"confirm": "accept",
+"confirm_name": "QEP RESOURCES, INC.",
+"current_tickers": [],
+"former_names": [
+"QUESTAR MARKET RESOURCES INC"
+],
+"n_entities": 30,
+"runner_docs": 19,
+"status": "resolved",
+"top_docs": 139,
+"top_name": "QEP RESOURCES, INC.  (CIK 0001108827)",
+"total": 445
+},
+"QLGC": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 918386,
+"confirm": "accept",
+"confirm_name": "QLOGIC CORP",
+"current_tickers": [],
+"former_names": [
+"Q LOGIC CORP"
+],
+"n_entities": 1,
+"runner_docs": 0,
+"status": "resolved",
+"top_docs": 27,
+"top_name": "QLOGIC CORP  (CIK 0000918386)",
+"total": 27
+},
+"QTRN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "QUINTILES TRANSNATIONAL CORP  (CIK 0000919623)",
+"total": 3
+},
+"QURE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1590560,
+"confirm": "accept",
+"confirm_name": "uniQure N.V.",
+"current_tickers": [
+"QURE"
+],
+"former_names": [
+"uniQure B.V."
+],
+"n_entities": 8,
+"runner_docs": 3,
+"status": "resolved",
+"top_docs": 33,
+"top_name": "uniQure N.V.  (QURE)  (CIK 0001590560)",
+"total": 44
+},
+"RAD": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "BIO RAD LABORATORIES INC  (BIO, BIO-B)  (CIK 0000012208)",
+"total": 46
+},
+"RAH": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 7,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 7,
+"top_name": "MDC HOLDINGS INC  (CIK 0000773141)",
+"total": 24
+},
+"RAI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1275283,
+"confirm": "accept",
+"confirm_name": "REYNOLDS AMERICAN INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 30,
+"runner_docs": 34,
+"status": "resolved",
+"top_docs": 110,
+"top_name": "REYNOLDS AMERICAN INC  (CIK 0001275283)",
+"total": 730
+},
+"RATL": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "RATIONAL SOFTWARE CORP  (CIK 0000722056)",
+"total": 1
+},
+"RAVN": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 5,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "Portman Ridge Finance Corp  (PTMN)  (CIK 0001372807)",
+"total": 12
+},
+"RAX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 1107694,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "RACKSPACE HOSTING, INC.",
+"current_tickers": [],
+"former_names": [
+"RACKSPACE INC",
+"RACKSPACE MANAGED HOSTING INC",
+"RACKSPACE COM INC"
+],
+"n_entities": 6,
+"runner_docs": 6,
+"status": "reject_no_name_corroboration",
+"top_docs": 34,
+"top_name": "RACKSPACE HOSTING, INC.  (CIK 0001107694)",
+"total": 46
+},
+"RBD": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"RBK": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 5,
+"runner_docs": 7,
+"status": "no_dominant",
+"top_docs": 8,
+"top_name": "REEBOK INTERNATIONAL LTD  (CIK 0000770949)",
+"total": 19
+},
+"RC": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 25,
+"status": "no_dominant",
+"top_docs": 51,
+"top_name": "Ready Capital Corp  (RC, RCB, RCC, RC-PC, RC-PE)  (CIK 0001527590)",
+"total": 1840
+},
+"RCII": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 4,
+"runner_docs": 6,
+"status": "no_dominant",
+"top_docs": 6,
+"top_name": "EZCORP INC  (EZPW)  (CIK 0000876523)",
+"total": 14
+},
+"RCM": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 700841,
+"confirm": "reject_live_mismatch",
+"confirm_name": "RCM TECHNOLOGIES, INC.",
+"current_tickers": [
+"RCMT"
+],
+"former_names": [
+"RCM TECHNOLOGIES INC"
+],
+"n_entities": 30,
+"runner_docs": 25,
+"status": "reject_live_mismatch",
+"top_docs": 63,
+"top_name": "RCM TECHNOLOGIES, INC.  (RCMT)  (CIK 0000700841)",
+"total": 448
+},
+"RDC": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 19,
+"status": "no_dominant",
+"top_docs": 25,
+"top_name": "ELRON ELECTRONIC INDUSTRIES LTD /NY/  (CIK 0000315126)",
+"total": 461
+},
+"RDS-A": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "QRS CORP  (CIK 0000906551)",
+"total": 3
+},
+"RE": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 333,
+"status": "no_dominant",
+"top_docs": 359,
+"top_name": "SANTANDER DRIVE AUTO RECEIVABLES LLC  (CIK 0001383094)",
+"total": 10000
+},
+"REGI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1463258,
+"confirm": "accept",
+"confirm_name": "Renewable Energy Group, Inc.",
+"current_tickers": [],
+"former_names": [
+"REG Newco, Inc."
+],
+"n_entities": 30,
+"runner_docs": 8,
+"status": "resolved",
+"top_docs": 23,
+"top_name": "Renewable Energy Group, Inc.  (CIK 0001463258)",
+"total": 200
+},
+"REI": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"candidate_cik": 1384195,
+"confirm": "reject_still_active",
+"confirm_name": "RING ENERGY, INC.",
+"current_tickers": [
+"REI"
+],
+"former_names": [
+"Transglobal Mining Corp.",
+"Blanca Corp."
+],
+"last_annual": "2026-03-04",
+"n_entities": 30,
+"runner_docs": 3,
+"status": "reject_still_active",
+"top_docs": 16,
+"top_name": "RING ENERGY, INC.  (REI)  (CIK 0001384195)",
+"total": 121
+},
+"RGNX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1590877,
+"confirm": "accept",
+"confirm_name": "REGENXBIO Inc.",
+"current_tickers": [
+"RGNX"
+],
+"former_names": [
+"ReGenX Biosciences, LLC"
+],
+"n_entities": 9,
+"runner_docs": 6,
+"status": "resolved",
+"top_docs": 49,
+"top_name": "REGENXBIO Inc.  (RGNX)  (CIK 0001590877)",
+"total": 65
+},
+"RGP": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1084765,
+"confirm": "accept",
+"confirm_name": "RESOURCES CONNECTION, INC.",
+"current_tickers": [
+"RGP"
+],
+"former_names": [
+"RESOURCES CONNECTION INC"
+],
+"n_entities": 20,
+"runner_docs": 12,
+"status": "resolved",
+"top_docs": 36,
+"top_name": "RESOURCES CONNECTION, INC.  (RGP)  (CIK 0001084765)",
+"total": 101
+},
+"RGR": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 17,
+"runner_docs": 10,
+"status": "no_dominant",
+"top_docs": 12,
+"top_name": "High Tide Inc.  (HITI)  (CIK 0001847409)",
+"total": 75
+},
+"RGS": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 716643,
+"confirm": "accept",
+"confirm_name": "REGIS CORP",
+"current_tickers": [
+"RGS"
+],
+"former_names": [
+"REGIS CORPORATION"
+],
+"n_entities": 30,
+"runner_docs": 13,
+"status": "resolved",
+"top_docs": 94,
+"top_name": "REGIS CORP  (RGS)  (CIK 0000716643)",
+"total": 250
+},
+"RHT": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1087423,
+"confirm": "accept",
+"confirm_name": "RED HAT INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 11,
+"runner_docs": 12,
+"status": "resolved",
+"top_docs": 34,
+"top_name": "RED HAT INC  (CIK 0001087423)",
+"total": 57
+},
+"RIG": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 30,
+"runner_docs": 77,
+"status": "no_dominant",
+"top_docs": 121,
+"top_name": "Ocean Rig UDW Inc.  (CIK 0001447382)",
+"total": 9635
+},
+"RILY": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1464790,
+"confirm": "accept",
+"confirm_name": "BRC Group Holdings, Inc.",
+"current_tickers": [
+"RILY",
+"RILYG",
+"RILYL",
+"RILYN",
+"RILYP",
+"RILYT",
+"RILYZ"
+],
+"former_names": [
+"BRC Group Holdings, Inc.",
+"B. Riley Financial, Inc.",
+"Great American Group, Inc."
+],
+"n_entities": 30,
+"runner_docs": 7,
+"status": "resolved",
+"top_docs": 20,
+"top_name": "B. Riley Financial, Inc.  (RILY, RILYG, RILYK, RILYL, RILYM, RILYN, RILYP, RILYT, RILYZ)  (CIK 0001464790)",
+"total": 86
+},
+"RLGY": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 2,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "REALOGY GROUP LLC  (CIK 0001355001)",
+"total": 3
+},
+"RLM": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 2,
+"runner_docs": 1,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "DIEBOLD INC  (DBD)  (CIK 0000028823)",
+"total": 2
+},
+"RMAX": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"cik": 1581091,
+"confirm": "accept",
+"confirm_name": "RE/MAX Holdings, Inc.",
+"current_tickers": [
+"RMAX"
+],
+"former_names": [],
+"n_entities": 3,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 34,
+"top_name": "RE/MAX Holdings, Inc.  (RMAX)  (CIK 0001581091)",
+"total": 37
+},
+"RML": {
+"attempted_utc": "2026-08-22T14:24:44.566934+00:00",
+"n_entities": 3,
+"runner_docs": 1,
+"status": "no_dominant",
+"top_docs": 2,
+"top_name": "HCC INSURANCE HOLDINGS INC/DE/  (CIK 0000888919)",
+"total": 4
 }
 }

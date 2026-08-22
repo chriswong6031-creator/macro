@@ -450,3 +450,78 @@ def test_live_collection_aborts_the_whole_snapshot_on_one_repository_failure():
         return []
 
     assert project_map.collect_source_snapshot(gh_runner=fake_gh) is None
+
+
+def test_json_stdout_prints_pure_document_and_writes_no_files(tmp_path, monkeypatch, capsys):
+    snapshot_in = tmp_path / "source.json"
+    json_out = tmp_path / "project.json"
+    md_out = tmp_path / "project.md"
+    snapshot_in.write_text(json.dumps(_source_snapshot()), encoding="utf-8")
+
+    def no_network(_args):
+        raise AssertionError("json-stdout mode attempted GitHub access")
+
+    monkeypatch.setattr(project_map, "_run_gh", no_network)
+    exit_code = project_map.main(
+        [
+            "--snapshot-in",
+            str(snapshot_in),
+            "--json-out",
+            str(json_out),
+            "--md-out",
+            str(md_out),
+            "--json-stdout",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert not json_out.exists()
+    assert not md_out.exists()
+    payload = json.loads(captured.out)
+    assert payload["schema"] == "project_active_builds.v1"
+    assert payload["collected_at"] == "2026-08-11T12:00:00+00:00"
+    assert "===" not in captured.out
+    assert "===" not in captured.err
+
+
+def test_json_stdout_wins_over_dry_run(tmp_path, monkeypatch, capsys):
+    snapshot_in = tmp_path / "source.json"
+    json_out = tmp_path / "project.json"
+    md_out = tmp_path / "project.md"
+    snapshot_in.write_text(json.dumps(_source_snapshot()), encoding="utf-8")
+    monkeypatch.setattr(
+        project_map, "_run_gh", lambda _args: (_ for _ in ()).throw(AssertionError("no network"))
+    )
+
+    exit_code = project_map.main(
+        [
+            "--snapshot-in",
+            str(snapshot_in),
+            "--json-out",
+            str(json_out),
+            "--md-out",
+            str(md_out),
+            "--dry-run",
+            "--json-stdout",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert not json_out.exists()
+    assert not md_out.exists()
+    assert "=== JSON OUTPUT ===" not in captured.out
+    assert "=== MARKDOWN OUTPUT ===" not in captured.out
+    payload = json.loads(captured.out)
+    assert payload["schema"] == "project_active_builds.v1"
+
+
+def test_json_stdout_failure_path_prints_nothing_to_stdout(tmp_path, capsys):
+    missing_snapshot = tmp_path / "does-not-exist.json"
+
+    exit_code = project_map.main(
+        ["--snapshot-in", str(missing_snapshot), "--json-stdout"]
+    )
+    captured = capsys.readouterr()
+    assert exit_code != 0
+    assert captured.out == ""
+    assert captured.err.strip() != ""

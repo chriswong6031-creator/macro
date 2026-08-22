@@ -445,8 +445,53 @@ waves:
       agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-D2B2-US.md). DONE
       requires the next natural production nightly showing source → master →
       fresh GMI projection with measured before/after U.S. counts. D2B2-Canada
-      (167 ca nodes) and D2B3+ remain NOT authorized — Sol reviews after this
-      child returns."
+      (167 ca nodes) remains NOT authorized — Sol reviews after this
+      child returns.
+      D2B3 CONTRACT-FROZEN 2026-08-21 (Sol commission; archaeology + freeze
+      ONLY — the commission's precondition gates implementation on D2B2-US
+      PROVEN_LIVE, and at freeze the Aug-22 Data OS generation existed
+      (receipt 2026-08-22T01:07:17, us_gmi_admission 1236/1210/0 natural
+      steady state) but no natural GMI generation had consumed it yet).
+      Frozen contract research/prophet_v4/d2/D2B3_FROZEN_CONTRACT_2026-08-21.md:
+      GOLD reuse corrected by retiring the epoch-1 fossil node (retire_date =
+      ratified break_date 2025-12-02 verbatim) + truncating its stale
+      gold_miners edge via the EXISTING (edge_id, belief_time) lineage; IBIT
+      corrected by retiring the company-kind node + ANNULLING its crypto_rails
+      company edge (empty interval) + a deterministic bake-side etf-conflict
+      mint refusal with typed receipt; retirement expressed in a NEW
+      node_lifecycle.parquet sibling table (KEY=(node_id,computed_at), same
+      append-only/latest pattern as capability) because nodes are write-once
+      keep-first with NO existing retirement path — nodes.parquet rows stay
+      bit-identical forever; ABX = generality control on the prior-node-ABSENT
+      shape (no co:us:ABX exists; nothing is minted); #2 nodes NEVER
+      pre-minted (live epoch law routes future evidence). Pre-implementation
+      Opus design review returned FAIL; all findings adopted as AMENDMENT §1
+      (re-frozen): belief_time is the RUN DATE so keep-first never protects a
+      correction across days — the bake must stop COMPUTING corrected rows
+      (post-pass node+edge suppression with typed receipts); derive_rows runs
+      over the COMPUTED generation, so co:us:GOLD is ALREADY absent from the
+      natural sidecar population (next natural gen: us DEFERRED 1 = B only —
+      graders must not read that as regression); the live IBIT conflict
+      counter lawfully drops to 0 post-correction while history stays
+      append-only; additive ratified_at field makes the backdating guard
+      implementable; retired-remint check receipts, never raises. Handoff
+      agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-D2B3-FREEZE.md.
+      D2B2-US NATURAL-PROOF ADJUDICATION (Sol, 2026-08-22): DONE /
+      PROVEN_LIVE. Production receipt recorded by Sol from the natural
+      chain: Data OS generated_at 2026-08-22T01:07:17; GMI natural
+      generation computed_at 2026-08-22T04:50:47Z (lane/mode
+      nightly/nightly) consuming that master; reconciled U.S. generation
+      RESOLVED=1210 / NOT_IN_MASTER=25 / DEFERRED=1 (B only, GOLD absent
+      per D2B3 AMENDMENT §1 R-A2 population mechanics — not regression) /
+      ENTITY_TYPE_CONFLICT=1; the daily engine run carrying that natural
+      generation ran 02:26:06Z→05:56:19Z, after the Data OS generation
+      existed. D2B3 implementation gate OPEN (Sol GO, 2026-08-22):
+      implementing session executes the frozen contract + AMENDMENTS
+      §1-§2 verbatim (amendments win over base prose); one Sonnet builder,
+      fresh Opus review, merge = BUILT_NOT_PROVEN; DONE = next natural
+      GMI cycle proving no resurrection, corrected current view, refusal
+      receipt live, 1,210-resolved coverage non-regressed. STOP unchanged:
+      no D2C/D2D/D2E/D3/D5/Canada."
     status: in_progress
   - id: d3
     depends_on: [d2]

@@ -1139,6 +1139,14 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--md-out", default=str(_DEFAULT_MD_OUT))
     parser.add_argument("--merged-days", type=int, default=14)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--json-stdout",
+        action="store_true",
+        help=(
+            "print the project_active_builds.v1 JSON document to stdout and write no "
+            "files (machine-consumer seam; overrides --dry-run)"
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -1171,6 +1179,9 @@ def main(argv: list[str] | None = None) -> int:
 
     json_text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     markdown_text = render_markdown(payload)
+    if args.json_stdout:
+        print(json_text, end="")
+        return 0
     if args.dry_run:
         print("=== JSON OUTPUT ===")
         print(json_text, end="")

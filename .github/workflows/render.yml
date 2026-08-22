@@ -40,9 +40,9 @@ on:
         default: all
         options: [all, macro, intl, china, hk, canada, markets, gex, baskets, sits]
       runner:
-        description: "Runner label — render-heavy is reserved; macstudio/render-linux are manual fallbacks"
+        description: "Runner label — render-linux is routine; render-heavy/macstudio are explicit Mac fallbacks"
         type: choice
-        default: render-heavy
+        default: render-linux
         options: [render-heavy, render-linux, macstudio]
   push:
     branches: [main]
@@ -229,14 +229,12 @@ concurrency:
 
 jobs:
   render:
-    # `macstudio` currently represents logical agents on only two physical Macs.
-    # General daily/asia/codex jobs could therefore run beside this serial renderer
-    # and turn a 40-71m quiet-box build into a 2h+ run. `render-heavy` reserves one
-    # M2 host for this lane. The dispatch input retains the shared Mac pool and
-    # render-linux as explicit operator fallbacks; bootstrap remains portable.
+    # Routine render runs on the physically separate PC render-linux fleet. The
+    # dispatch input retains render-heavy as the reserved M2 rollback and macstudio
+    # as an explicit shared-Mac fallback; bootstrap remains portable.
     runs-on:
       - self-hosted
-      - ${{ github.event.inputs.runner || 'render-heavy' }}
+      - ${{ github.event.inputs.runner || 'render-linux' }}
     # was 75 — a scope=all render now takes 40-71m when the box is quiet (measured
     # 2026-07-11: run 29155365959 = 40m, run 29169451233 = 71.4m) and blew straight
     # through 75m under the evening merge-spree congestion (run 29172926033 CANCELLED

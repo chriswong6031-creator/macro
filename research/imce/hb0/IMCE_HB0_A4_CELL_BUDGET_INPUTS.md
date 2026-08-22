@@ -82,6 +82,17 @@ pre-outcome and fits it on train folds only. This is a pre-registered sensitivit
 **No cell reaches the floor. No choice available to A4 changes that.** Adding issuers barely moves
 `n_eff` once ρ is high — which is the DEFF rule working as designed.
 
+> **[SUPERSEDED BY AG3 + A4P.1 R1 (2026-08-22): the DEFF formula and the `n_eff @ρ=0.7/0.8/0.9` table above
+> compute a candidate `n_effective_blocks` estimator that is NOT the A4 registration law.** The DEFF/`rho`
+> construction is STRUCK as the `n_effective_blocks` definition (AG3, 2026-08-21) — `n_effective_blocks` is
+> capped at the raw closed-block count B (general cells ≤5, cancellation cells ≤3, AG5/AG6), never derived
+> upward from an issuer-correlation parameter. A4 will not register any `rho` value and will not print an
+> issuer-DEFF `n_eff` figure. This section's own bottom line — no cell class reaches the 40-block floor, ~7–11×
+> short — is UNCHANGED and independently confirmed on the AG3-capped basis (contract §3, §8 item 5).]**
+> Additive annotation only — the table and text above are the original A3 lane-2 text, unmodified, per Sol's
+> bar on reopening A3 work. `IMCE_A4G_AMENDMENT_LOG.md`'s AG3/AG5/AG6 entries and this wave's `AP9.R1` entry
+> carry the full ruling.
+
 ---
 
 ## 4. Why the cancellation cell gets B = 3, not 5
@@ -138,6 +149,17 @@ no verifiable denominator.**
    footnote/balance-sheet detail only at the 10-Q/10-K.
 10. **`n_effective_blocks` is an upper bound** until `rho_block` exists (block list §D4); print raw,
     issuer-DEFF, and serial-adjusted counts separately.
+
+> **[SUPERSEDED BY AG3 + A4P.1 R1 (2026-08-22): item 10 above conditions "upper bound" status on a `rho_block`
+> parameter that does not exist, and recommends printing an issuer-DEFF count. This is NOT the A4 registration
+> law.** The DEFF/`rho` construction is STRUCK as the `n_effective_blocks` definition (AG3, 2026-08-21) —
+> `n_effective_blocks` is capped at the raw closed-block count B unconditionally (AG5/AG6), an upper bound by
+> construction regardless of whether any `rho_block` is ever registered; A4 will not register `rho_block` and
+> will not print an issuer-DEFF count. `raw_block_count` is printed alongside the effective count (contract §3)
+> — that discipline is preserved without the DEFF construction.]**
+> Additive annotation only — the list above is the original A3 lane-2 text, unmodified, per Sol's bar on
+> reopening A3 work. `IMCE_A4G_AMENDMENT_LOG.md`'s AG3/AG5/AG6 entries and this wave's `AP9.R1` entry carry the
+> full ruling.
 
 ---
 

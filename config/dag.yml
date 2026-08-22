@@ -210,21 +210,26 @@ lanes:
           scoped decimal strings and exact cell spans, and fails on missing/mismatched bytes. It does not aggregate
           rows or create instruments, remaining capacity, risk, probability, ranking,
           sizing, entry, or Prophet authority.
-      - id: build_capital_structure_projection
-        module: scripts.build_capital_structure_projection
-        note: >
-          Offline deterministic observed-filing-state projection. It verifies the
-          event compiler's telemetry-last receipt before publishing a canonical JSON
-          artifact and byte-identical public twin. Context-only; unknown terms and
-          issuer-state capabilities remain explicitly unavailable.
       - id: check_capital_structure_health
         module: scripts.check_capital_structure_health
         note: >
           Fail-closed ingestion-truth gate. Distinguishes compiler generation time
-          (telemetry.as_of) from latest retained source freshness. Reds this job
-          when filings were selected but zero durable verified evidence progressed;
-          a proven empty/already-known queue is the only permitted zero-progress
-          non-fail. Collect stays green so the market plane is not frozen.
+          (telemetry.as_of) from the canonical discovered, retained, and compiled
+          filing horizons. Reds this job when filings were selected but zero durable
+          verified evidence progressed; a proven empty/already-known queue is the
+          only permitted zero-progress non-fail. Its generation-bound horizon feeds
+          the following projection without changing that ingestion verdict. Collect
+          stays green so the market plane is not frozen.
+      - id: build_capital_structure_projection
+        module: scripts.build_capital_structure_projection
+        note: >
+          Offline deterministic observed-filing-state projection. It verifies the
+          event compiler's telemetry-last receipt and requires the preceding health
+          artifact to bind the same generation before publishing one canonical JSON
+          payload and byte-identical public twin. Public freshness derives from the
+          discovery→retained→compiled horizon; compiler age remains separate
+          generation telemetry. Context-only; unknown terms and issuer-state
+          capabilities remain explicitly unavailable.
 
   # ── daily.yml / collect_tail ─────────────────────────────────────────────
   # 2026-07-14 collect split: the slow post-adapter accrual band (ThetaData

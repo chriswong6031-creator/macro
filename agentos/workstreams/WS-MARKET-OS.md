@@ -36,12 +36,16 @@ waves:
       recorded (DEC:MERGE-AUTOMATION-MUST-ENFORCE-RECORDED-HOLDS) and enforced
       in automation (#6149, merge 8a1b93889061). Anonymous production matrix
       PASSED live (round-2 receipts in agentos/handoffs/MARKET-OS-2026-08-21.md;
-      round-3 re-verification after render at merge sha). Remaining before
-      status done: the AUTHENTICATED production acceptance matrix + Terminal
-      conformance + privacy inspection, which need an operator-supplied
-      authenticated vehicle (connect the Claude Chrome extension with a
-      signed-in session, or designate a test account). Then Sol reviews and
-      accepts. Do not mark done before that.
+      round-3 re-verification after render at merge sha). PD1 Terminal mutation
+      authority repair #456 is merged/deployed at 3f85efeb19bd and its bounded
+      authenticated one-sentinel create/update/failure-honesty/close/reopen/delete
+      production reproof passed with exact receipts, Macro-Terminal canonical
+      agreement, durable cleanup to the sealed 13-row multiset, and unchanged
+      Watchlists (agentos/handoffs/MARKET-OS-2026-08-22.md). Remaining before
+      status done: the separately authorized broader authenticated production
+      scenes and privacy inspection, followed by Sol review and acceptance. Do
+      not execute Scene 9 or begin A1B without separate authority, and do not
+      mark A1A done before Sol accepts it.
   - id: A1B
     title: Portfolio Fast Start Import
     status: todo
@@ -88,6 +92,7 @@ decisions:
 discoveries:
   - "DSC:MARKET-OS-PASTE-FLOW-WRITES-WATCHLIST-NOT-PORTFOLIO"
   - "DSC:MARKET-OS-AUTHENTICATED-PORTFOLIO-FAILS-OPEN-TO-LOCAL"
+  - "DSC:MARKET-OS-MUTATION-SUCCESS-REQUIRES-AFFECTED-ROW"
 landmines:
   - >-
     FIXED by A1A (#6098): `templates/market_books.js::buildModel` no longer unions
@@ -122,11 +127,15 @@ artifacts:
   - research/market_os/MASTERMIND_MARKET_OS_ARCHITECTURE_FREEZE_AND_A1A_COMMISSIONING_2026-08-20.md
   - agentos/handoffs/MARKET-OS-2026-08-20.md
   - agentos/handoffs/MARKET-OS-2026-08-21.md
+  - agentos/handoffs/MARKET-OS-2026-08-22.md
 next_action: >
-  A1A engineering is merged and live (#6136, 2633380f800a) with the anonymous
-  production matrix passed; the authenticated matrix + Terminal conformance + privacy
-  inspection await an operator-supplied authenticated vehicle, then Sol's acceptance.
-  A1B and every later wave remain blocked on Sol accepting A1A in production.
+  A1A engineering is merged and live (#6136, 2633380f800a). PD1 Terminal repair
+  #456 is also merged/live at 3f85efeb19bd, and its bounded authenticated
+  one-sentinel production reproof passed with durable cleanup and unchanged
+  Watchlists. Resume only the remaining separately authorized authenticated A1A
+  scenes and privacy inspection, then return the full packet for Sol's explicit
+  acceptance. Scene 9 remains excluded, and A1B plus every later dependent wave
+  remain blocked on Sol accepting A1A in production.
 ---
 
 ## Current state

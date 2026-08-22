@@ -205,8 +205,34 @@ waves:
       reviewer MERGE-BLOCKED with D1-D10, all repaired and re-killed.
   - id: hk-discovery
     title: HK candidate-recall shadow
-    status: todo
+    status: in_progress
     depends_on: [shadow-contract]
+    detail: >
+      HK-DISCOVERY-SHADOW (Sol commission 2026-08-22): first real challenger
+      hk_discovery_v1 registered via register_challenger("HK", ...,
+      discovery_fn=...) in build_hk_library, downstream of the
+      hk_standouts.json persist. Seven deterministic origins (washout_reclaim,
+      leadership, ripening [uncapped, cap=10**9], aged_turn [bare ran_admits],
+      blocked_signal [bare veto_admits + VETOED_MAX_SESSIONS staleness bound],
+      hk_native_onset(southbound), ah_dislocation [twin-only, missing≠zero]);
+      A-twin lead honestly ABSENT (censused not-present; no new alpha
+      machinery). First real availability read: 6-state fail-closed ladder,
+      read-availability explicit (placement/knife/extension whole-read
+      unavailable => never ENTRY_OPEN). Sol pre-settlement repair 2026-08-22:
+      the merged #6226 code defaulted OMITTED availability flags to available
+      (tests asserted the default) — repaired so ENTRY_OPEN requires all
+      three flags explicitly True; omitted/None fails closed to
+      UNAVAILABLE_DATA `…_unavailable(unstated)`; executed omission-mutation
+      arm kills four named tests. Freshness via per-market receipt
+      data/prophet_shadow/<mkt>_discovery_receipt.json written by write_shadow
+      only for markets with >=1 registration (lawful-zero distinguishable from
+      stale/error/absent); sole reader check_hk_discovery_freshness on the HK
+      session clock, warn-only, deliberately NOT in _ARTIFACTS (zero-authority
+      store must not page ops). Opus adversarial round MERGE-BLOCKED with
+      F1-F13; all adjudicated + repaired (R1-R11), 120 targeted tests green,
+      5 executed mutation arms. PENDING: merge + first prospective production
+      receipt (next HK session 2026-08-24) + CA non-invocation proof on the
+      first post-merge nightly.
   - id: hk-intel
     title: HK native intelligence adapters
     status: todo
@@ -232,14 +258,17 @@ waves:
     status: todo
     depends_on: [hk-race, ca-race]
 next_action: >
-  SHADOW-CONTRACT merged + verified fc5282f438fb 2026-08-21 (wave entry).
-  Next lawful waves per the graph: hk-discovery and ca-intel (both depend
-  only on shadow-contract) and ca-pit (depends on ledger-era) — each needs
-  its own commissioning decision; no challenger REGISTRATION before the
-  wave that owns it wires surface-freshness for the stores. Standing
-  follow-up: ≈2026-08-26 verify the CA board-ledger-era-empty warning
-  self-cleared (ledger-era wave entry); if it persists once gradable
-  current-era rows exist, investigate — never silence.
+  HK-DISCOVERY-SHADOW shipped 2026-08-22 (wave entry): after merge, verify
+  the first prospective production receipt on the next HK asia-close session
+  (2026-08-24 — hk_discovery.parquet rows + fresh hk_discovery_receipt.json,
+  HK-only) and the CA non-invocation proof on the first post-merge nightly
+  (registry_state=no_challenger_for_market, no CA shadow file from the HK
+  registration), then flip the wave to done with the receipt. Next lawful
+  waves after that: hk-intel (depends on hk-discovery), ca-intel, ca-pit —
+  each needs its own commissioning decision. Standing follow-up: ≈2026-08-26
+  verify the CA board-ledger-era-empty warning self-cleared (ledger-era wave
+  entry); if it persists once gradable current-era rows exist, investigate —
+  never silence.
 ---
 
 # HK + Canada Prophet revamp

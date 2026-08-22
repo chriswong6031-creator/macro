@@ -1,0 +1,35 @@
+XPV2-SC-R3B.1 canonical/legacy hash smoke
+candidate sha256 fec05b058fbc9dbe29744ad015b7ee9cd9baa5cb85bbbde739daa8b97644cf70
+Canonical hashes = the router's own VIEWS list (si_workspace.js:17, matched by
+`VIEWS.indexOf(h)>=0` before the LEGACY_ANCHORS table is even consulted) — literally
+#overview #map #moving #money #explore #confluence, not the si-* forms.
+Legacy hashes = the 21-entry LEGACY_ANCHORS table (si_workspace.js:39-63; matches
+research/reference_integrity/mastermind-xpv2-sector-r3/routing_contract.md §2).
+
+CANONICAL #overview             -> active view = overview
+CANONICAL #map                  -> active view = map
+CANONICAL #moving               -> active view = moving
+CANONICAL #money                -> active view = money
+CANONICAL #explore              -> active view = explore
+CANONICAL #confluence           -> active view = confluence
+LEGACY     #actnow-section       -> active view = overview     (expected overview     OK), scroll-target #actnow-section present in DOM = True
+LEGACY     #regime               -> active view = overview     (expected overview     OK), scroll-target #regime present in DOM = True
+LEGACY     #grader               -> active view = overview     (expected overview     OK), scroll-target #grader present in DOM = True
+LEGACY     #si-map               -> active view = map          (expected map          OK), scroll-target #si-map present in DOM = True
+LEGACY     #rotmap-section       -> active view = map          (expected map          OK), scroll-target #rotmap-section present in DOM = True
+LEGACY     #sc-cyclemap          -> active view = map          (expected map          OK), scroll-target #sc-cyclemap present in DOM = True
+LEGACY     #board                -> active view = map          (expected map          OK), scroll-target #board present in DOM = True
+LEGACY     #si-movement          -> active view = moving       (expected moving       OK), scroll-target #si-movement present in DOM = True
+LEGACY     #rc-events-mount      -> active view = moving       (expected moving       OK), scroll-target #rc-events-mount present in DOM = True
+LEGACY     #rotation-app         -> active view = moving       (expected moving       OK), scroll-target #rotation-app present in DOM = True
+LEGACY     #si-money             -> active view = money        (expected money        OK), scroll-target #si-money present in DOM = True
+LEGACY     #internals-section    -> active view = money        (expected money        OK), scroll-target #internals-section present in DOM = True
+LEGACY     #scc-leadership       -> active view = money        (expected money        OK), scroll-target #scc-leadership present in DOM = True
+LEGACY     #explore-section      -> active view = explore      (expected explore      OK), scroll-target #explore-section present in DOM = True
+LEGACY     #table-section        -> active view = explore      (expected explore      OK), scroll-target #table-section present in DOM = True
+LEGACY     #chart-section        -> active view = explore      (expected explore      OK), scroll-target #chart-section present in DOM = True
+LEGACY     #forming-narratives   -> active view = explore      (expected explore      OK), scroll-target #forming-narratives present in DOM = True
+LEGACY     #tm-mount             -> active view = explore      (expected explore      OK), scroll-target #tm-mount present in DOM = True
+LEGACY     #confluence           -> active view = confluence   (expected confluence   OK), scroll-target #si-confluence present in DOM = True
+LEGACY     #sc-app               -> active view = confluence   (expected confluence   OK), scroll-target #sc-app present in DOM = True
+LEGACY     #sc-top               -> active view = confluence   (expected confluence   OK), scroll-target #sc-top present in DOM = False

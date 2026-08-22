@@ -37,11 +37,11 @@
     "status": "locked_minimums"
   },
   "family": "pss_cd1_correlation_dispersion_prospective",
-  "gate_open": true,
-  "generated_utc": "2026-08-22T02:31:38.030443+00:00",
+  "gate_open": false,
+  "generated_utc": "2026-08-22T15:08:54.343492+00:00",
   "ledger": {
     "advanced_today": 0,
-    "appended_today": 1,
+    "appended_today": 0,
     "crowding_hazard": 0,
     "earliest_action": "2026-08-04",
     "events": 14,
@@ -59,13 +59,7 @@
   "note": "Prospective common-factor concentration plus low-dispersion overlay inside future RH1 hazards. Operator research only.",
   "program_id": "PSS-CD1",
   "registration_ok": true,
-  "scan_census": {
-    "derived_events": 1,
-    "eligible_future_rh1_sources": 1,
-    "reasons": {
-      "group_mixed_diagnostic": 1
-    }
-  },
+  "scan_census": {},
   "schema": "personality_crowding_hazard.state/v1",
   "status": "prospective_accrual_only"
 }

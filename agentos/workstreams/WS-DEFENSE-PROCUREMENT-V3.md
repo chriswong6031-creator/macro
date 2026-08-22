@@ -143,14 +143,20 @@ waves:
     status: in_progress
     depends_on: [D4]
     next_action: >
-      Sol authorized D5R as research/architecture only. Freeze the owner
-      architecture, positive pilot, negative control (IRDM P00032 stays
-      program-null), temporal/correction semantics, experience composition,
-      and the exact D5 implementation handoff. No production schema/code.
-      Deliverables:
-      research/defense_intelligence/DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md
-      + DEFENSE_D5_PROGRAM_GRAPH_IMPLEMENTATION_HANDOFF.md + evidence
-      composition.
+      D5R core architecture merged on #6209 and PASSED Sol review (D5R.1
+      six-repair consistency close merged on #6219). D5R.2 is the FINAL
+      CONTRACT-REPRESENTABILITY SEAL (Sol 2026-08-22): seventeen-key
+      top-level skeleton with reference JSON, program_capability_links,
+      program_event_links (exact event-identity+hash pointer; census —
+      NO Virginia Block VI v2 event exists on main 7e00f874),
+      review_coverage with the four-state derivation law, milestone
+      date/window XOR preimage, logical-id + revision law, frozen dossier
+      bundle + five-key program_link shapes, fixtures A-H with computed
+      sha12 ids, adversarial representability review to YES. FINAL D5R
+      ACCEPTANCE still held by Sol. Owner adjudication and Virginia pilot
+      remain frozen — do not reopen. Handoffs:
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r1-docs-consistency.md,
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r2-representability-seal.md.
   - id: D5
     title: Program, mission, capability, and product graph (implementation)
     status: todo

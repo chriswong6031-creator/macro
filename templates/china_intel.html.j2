@@ -731,8 +731,27 @@
           {%- endif %}
         </div>
         {%- endfor %}
+        {#- P1-R3: positive evidence first, then — only when this company (or
+            the whole plane) also carries an open coverage exception — a
+            plain-word note that the list may be incomplete. Never falsifier/
+            refutation vocabulary, never a raw slug. #}
+        {%- if _v.coverage_exception %}
+        <div class="disc-reason">{{ t('A further visit filing could not be read — this list may be incomplete.','另有调研备案无法读取——此列表可能不完整。') }}</div>
+        {%- endif %}
       {%- elif _v.state == 'measured_no_event' %}
         <div class="disc-reason">{{ t('No investor-relations visit filings since coverage start','自覆盖开始以来无投资者关系调研备案') }}{% if _v.coverage_start %} ({{ _v.coverage_start }}){% endif %}.</div>
+      {%- elif _v.state == 'not_yet_available' %}
+        {#- P1-R3 (frozen spec §10/§11): a malformed source key created a
+            durable coverage exception for this company (scope=company) or,
+            when the excluded observation's company could not even be
+            identified, for the whole plane (scope=plane) — "no visits"
+            cannot be confirmed, but this is never presented as a refusal
+            or a falsifier. #}
+        {%- if _v.coverage_exception and _v.coverage_exception.scope == 'company' %}
+        <div class="disc-reason">{{ t('A visit filing was observed for this company but could not be read yet — “no visits” cannot be confirmed.','已观察到该公司的调研备案但尚无法读取——暂无法确认“无调研”。') }}</div>
+        {%- else %}
+        <div class="disc-reason">{{ t('Some visit filings could not be read this cycle and the affected companies are unknown — “no visits” cannot be confirmed.','本轮有调研备案无法读取且无法确定涉及哪些公司——暂无法确认“无调研”。') }}</div>
+        {%- endif %}
       {%- elif _v.state == 'no_coverage' %}
         <div class="disc-reason">{{ t('Visit records are not yet covered for this listing.','该股票的调研记录尚未纳入覆盖范围。') }}</div>
       {%- elif _v.state == 'stale' %}

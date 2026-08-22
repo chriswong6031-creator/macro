@@ -98,6 +98,19 @@ IDENTITY_RESOLUTION_COLUMNS: tuple[str, ...] = (
     "refusal_reason", "source_receipts", "computed_at", "engine_version",
 )
 
+#: Node lifecycle lineage (V4-D2B3) — a re-derived-per-correction SIDE-CAR, never a
+#: node-column rewrite, for exactly the same reason CAPABILITY_COLUMNS and
+#: IDENTITY_RESOLUTION_COLUMNS are side-cars: ``nodes.parquet`` is keep-first
+#: write-once (NODE_KEY=("node_id",)), so a retirement/merge could never be expressed
+#: as an in-place status flip without rewriting history. Instead a node's lifecycle is
+#: an APPEND-ONLY lineage of curated acts, keyed exactly like the other two side-cars
+#: (node_id, computed_at) with a latest-by-computed_at read collapse. See
+#: ``research/prophet_v4/d2/D2B3_FROZEN_CONTRACT_2026-08-21.md`` §2 (R-D2B3-1).
+NODE_LIFECYCLE_COLUMNS: tuple[str, ...] = (
+    "schema", "node_id", "status", "retire_date", "merged_into", "reason",
+    "evidence", "ratified_by", "computed_at", "engine_version",
+)
+
 #: Keep-first keys. Edges key on (edge_id, belief_time): a NEW belief about the same
 #: edge is a new row, a same-day re-run is a no-op.
 NODE_KEY: tuple[str, ...] = ("node_id",)
@@ -105,6 +118,7 @@ EDGE_KEY: tuple[str, ...] = ("edge_id", "belief_time")
 EVIDENCE_KEY: tuple[str, ...] = ("evidence_id",)
 CAPABILITY_KEY: tuple[str, ...] = ("node_id", "computed_at")
 IDENTITY_RESOLUTION_KEY: tuple[str, ...] = ("node_id", "computed_at")
+NODE_LIFECYCLE_KEY: tuple[str, ...] = ("node_id", "computed_at")
 
 #: The three exposure axes are measured in W2; W1b writes them as declared nulls so the
 #: columns exist (and the contract can pin them) without anyone mistaking a null for a
@@ -142,6 +156,10 @@ def capability_path() -> Path:
 
 def identity_resolution_path() -> Path:
     return store_dir() / "identity_resolution.parquet"
+
+
+def node_lifecycle_path() -> Path:
+    return store_dir() / "node_lifecycle.parquet"
 
 
 def probation_path() -> Path:
@@ -200,8 +218,57 @@ def _read(path: Path, columns: tuple[str, ...]) -> pd.DataFrame:
         return pd.DataFrame(columns=list(columns))
 
 
-def read_nodes() -> pd.DataFrame:
-    return _read(nodes_path(), NODE_COLUMNS)
+def read_node_lifecycle(*, latest: bool = True) -> pd.DataFrame:
+    """Node lifecycle lineage (V4-D2B3). ``latest`` collapses to the current view (max
+    ``computed_at`` per ``node_id``) — the exact ``read_capability``/
+    ``read_identity_resolution`` pattern.
+
+    Ties break on ``node_id`` — deterministic, never on the lifecycle VALUE (G0.11):
+    a status/retire_date tie broken on content would quietly turn a tie into a ratchet
+    in whichever direction sorted higher.
+    """
+    df = _read(node_lifecycle_path(), NODE_LIFECYCLE_COLUMNS)
+    if df.empty or not latest:
+        return df
+    ordered = df.sort_values(["node_id", "computed_at"], kind="stable")
+    return (ordered.drop_duplicates(subset=["node_id"], keep="last")
+                   .sort_values("node_id", kind="stable").reset_index(drop=True))
+
+
+#: Lifecycle statuses treated as "no longer an active company/entity" for consumers
+#: that want an active-only population from ``read_nodes(current=True)`` (R-D2B3-2).
+#: ``merged`` carries no target-merge machinery in D2B3 (no correction mints one), but
+#: is recognized per the frozen text ("retired (or merged)") so a future merge lineage
+#: needs no second overlay or second consumer filter.
+RETIRED_LIKE_STATUSES: frozenset[str] = frozenset({"retired", "merged"})
+
+
+def read_nodes(*, current: bool = False) -> pd.DataFrame:
+    """Node rows. ``current=False`` (default) returns the raw write-once table
+    byte-identically — every pre-existing consumer is unaffected (R-D2B3-2).
+
+    ``current=True`` overlays the latest ``node_lifecycle`` row per ``node_id`` onto
+    ``status``/``retire_date``/``merged_into``: a node whose latest lifecycle status is
+    ``retired`` or ``merged`` carries that status (and its retire_date/merged_into) in
+    the returned frame. Nothing is REMOVED from the frame — row count is unchanged —
+    only these three columns move, so a caller that wants an active-only population
+    must still filter on ``status`` itself (see ``scripts/theme_coverage_gaps.py``).
+    """
+    df = _read(nodes_path(), NODE_COLUMNS)
+    if not current or df.empty:
+        return df
+    lifecycle = read_node_lifecycle(latest=True)
+    if lifecycle.empty:
+        return df
+    overlay = lifecycle.set_index("node_id")[["status", "retire_date", "merged_into"]]
+    out = df.copy()
+    out = out.set_index("node_id", drop=False)
+    hit = out.index.intersection(overlay.index)
+    if len(hit):
+        out.loc[hit, "status"] = overlay.loc[hit, "status"]
+        out.loc[hit, "retire_date"] = overlay.loc[hit, "retire_date"]
+        out.loc[hit, "merged_into"] = overlay.loc[hit, "merged_into"]
+    return out.reset_index(drop=True)
 
 
 def read_evidence() -> pd.DataFrame:
@@ -337,6 +404,17 @@ def write_identity_resolution(rows: list[dict], *, lane: str | None = None,
         return 0
     return append_rows(identity_resolution_path(), rows, IDENTITY_RESOLUTION_COLUMNS,
                        IDENTITY_RESOLUTION_KEY)
+
+
+def write_node_lifecycle(rows: list[dict], *, lane: str | None = None,
+                         allow_backfill: bool = False) -> int:
+    """Append node lifecycle rows (V4-D2B3). Same lane gate as every other writer here —
+    the one-shot curated correction script is the sanctioned ``allow_backfill=True``
+    caller (never an environment default); the nightly bake never writes this table
+    (R-D2B3-5: it only READS the latest lifecycle view to refuse a re-mint, R-D2B3-4(b))."""
+    if not lane_ok(lane, "node_lifecycle append", allow_backfill=allow_backfill):
+        return 0
+    return append_rows(node_lifecycle_path(), rows, NODE_LIFECYCLE_COLUMNS, NODE_LIFECYCLE_KEY)
 
 
 def write_meta(meta: dict, *, lane: str | None = None,

@@ -1,0 +1,78 @@
+# W2C M0D v2 — SPY REST daily-bar sealed source intake.
+# Credentialed oneshot.  Observes GET /v2/aggs/ticker/SPY/range/1/day/{D}/{D}
+# during [04:00:00Z, 04:05:00Z) on D+1 (session D's seal window).
+# Credentials are LoadCredential-only from /etc/macro-market-memory-spy-rest/.
+# PrivateNetwork is NOT set — network access is required for REST calls.
+[Unit]
+Description=Seal SPY REST daily bar into private Market Memory source evidence
+After=local-fs.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+ExecStart=/opt/macro-api/.venv/bin/python -m scripts.ingest_market_memory_sources_spy \
+  --store-root /var/lib/macro-market-memory/state/sources-spy-rest-v1
+TimeoutStartSec=360
+Nice=10
+CPUWeight=20
+CPUQuota=50%
+MemoryHigh=384M
+MemoryMax=768M
+IOWeight=20
+UMask=0077
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# Credentials — loaded from dedicated path, never from /etc/macro-api.env
+LoadCredential=MASSIVE_API_KEY:/etc/macro-market-memory-spy-rest/MASSIVE_API_KEY
+LoadCredential=POLYGON_API_KEY:/etc/macro-market-memory-spy-rest/POLYGON_API_KEY
+ReadOnlyPaths=/opt/macro
+ReadWritePaths=/var/lib/macro-market-memory/state/sources-spy-rest-v1
+# CPI source, technicals-v1, experience-v1/v2 are inaccessible to this unit
+InaccessiblePaths=/var/lib/macro-market-memory/state/sources
+InaccessiblePaths=/var/lib/macro-market-memory/state/technicals-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/technicals-v2
+InaccessiblePaths=/var/lib/macro-market-memory/state/experience-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/experience-v2
+InaccessiblePaths=/var/lib/macro-market-memory-options
+InaccessiblePaths=/etc/macro-market-memory-options
+InaccessiblePaths=-/etc/macro-api.env
+InaccessiblePaths=-/var/lib/macro-api
+InaccessiblePaths=-/var/lib/macro-biocatalyst
+InaccessiblePaths=-/var/lib/macro-codex
+InaccessiblePaths=-/var/lib/macro-codex-2
+InaccessiblePaths=-/var/lib/macro-codex-3
+InaccessiblePaths=-/var/lib/macro-live
+InaccessiblePaths=-/etc/macro-admin.env
+InaccessiblePaths=-/etc/macro-biocatalyst.env
+InaccessiblePaths=-/etc/macro-biocatalyst-control.env
+InaccessiblePaths=-/etc/macro-biocatalyst-fixed-cohort.env
+InaccessiblePaths=-/etc/macro-biocatalyst-fixed-cohort
+InaccessiblePaths=-/etc/macro-live.env
+InaccessiblePaths=-/etc/macro-market-memory.env
+InaccessiblePaths=-/etc/macro-ollama.env
+InaccessiblePaths=-/etc/macro-sentinel.env
+InaccessiblePaths=-/etc/macro-user-backup.env
+InaccessiblePaths=-/etc/ssl/cf-origin.key
+
+[Install]
+WantedBy=multi-user.target

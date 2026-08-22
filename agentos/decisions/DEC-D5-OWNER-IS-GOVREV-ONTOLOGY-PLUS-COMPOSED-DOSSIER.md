@@ -13,7 +13,10 @@ answer: >
   quadruple known_at/valid_from/valid_to/evidence_refs) — and the user-facing
   Program Dossier is a composed read model
   (government_program_dossier.v1) joining, at read time: D5 ontology +
-  defense21 recipient identity + GovRev award events (canonical_award_identity)
+  defense21 recipient identity + GovRev award events (via the reviewed
+  program_event_links pointer relation, D5R.2 — exact event_id +
+  source-identity hash + canonical_award_identity agreement, zero copied
+  event truth)
   + the budget owner (projection_missing until it produces) + Stock Identity
   via the identity atlas + GMI economic relationships (reserved-null today,
   rendered not_asserted). No new global supergraph, no defense supplier graph,
@@ -30,10 +33,11 @@ rationale: >
   economic_propagation ownership census §2.5 already assigns
   program/mission/capability/product to government-revenue-foresight. The
   budget graph's program nodes are budget-exhibit-native (dod-program:* keys
-  closed at p1_line_item/rdte_program_element) and its artifact is
-  hard-disabled pending D6 — tenanting acquisition identity there inverts the
-  dependency and conflates exhibit-line identity with acquisition-program
-  identity. The estate has ratified the chosen two-artifact shape twice
+  closed at procurement_line_item/rdte_program_element) and its artifact is
+  hard-disabled pending D6 (its program-node kinds closed at
+  procurement_line_item/rdte_program_element) — tenanting acquisition
+  identity there inverts the dependency and conflates exhibit-line identity
+  with acquisition-program identity. The estate has ratified the chosen two-artifact shape twice
   (recipient graph + identity atlas; budget graph + workspace rails), and
   government_budget_edge.v1 already codifies the reviewed_documentary
   dual-evidence pattern D5 role assertions adopt.
@@ -67,8 +71,11 @@ decided_at: 2026-08-21
 ---
 
 Scope note: D5 role assertions are program-participation facts (procurement
-domain), not the census's missing customer/supplier economic object — no
-economic_weight field exists, and GMI W4 remains the owner of any future
+domain), not the census's missing customer/supplier economic object —
+economic_weight is REQUIRED and const null on every v1 role assertion (it
+names the absence of an earned economic share and may never be made
+non-null), and GMI W4 remains the owner of any future
 SUPPLIES/ENABLES/BOTTLENECK_OF economics, free to consume D5 records as an
-input ramp. D5 implementation itself remains unauthorized until Sol accepts
+input ramp. On any conflict, the architecture freeze document governs over
+this record. D5 implementation itself remains unauthorized until Sol accepts
 D5R and authorizes the build.

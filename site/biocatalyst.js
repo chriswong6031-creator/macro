@@ -1,7 +1,13 @@
 (function () {
   'use strict';
 
-  var MILESTONE_API = '/api/biocatalyst/v1/trials/milestones';
+  // Catalyst Radar (BioCatalyst P1-1) replaces the milestones mode data
+  // source; every live milestones-mode request goes through RADAR_API /
+  // RADAR_WINDOWS. The retired MILESTONE_API / MILESTONE_WINDOWS constants
+  // were deleted (dead code review verdict) rather than kept as an inert
+  // fossil -- activeApi()/activeWindow() never had a live path that could
+  // reach them.
+  var RADAR_API = '/api/biocatalyst/v1/catalyst-radar';
   var CHANGE_API = '/api/biocatalyst/v1/trials/change-tape';
   var PROSPECTIVE_API = '/api/biocatalyst/v1/trials/prospective-changes';
   var SCREEN_API = '/api/biocatalyst/v1/trials:screen';
@@ -11,8 +17,15 @@
   var TRIAL_ID = /^NCT\d{8}$/;
   var DATE_PARTS = /^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/;
   var WINDOW_VALUES = { '30': true, '90': true, '180': true, all: true };
-  var MILESTONE_WINDOWS = { '30': 'next_30d', '90': 'next_90d', '180': 'next_180d', all: 'all' };
-  var FIELD_VALUES = { primary_completion: true, completion: true };
+  // Catalyst Radar own horizon vocabulary (engine RADAR_HORIZONS keys):
+  // 180 / 365 / 730 / All, 365 active by default -- a 90-day default would
+  // render the known lawful-empty state for most trial cuts. Kept as a
+  // separate state/value space from the legacy window filter above so
+  // First-seen Tape unrelated 30/90/180/all vocabulary is untouched.
+  var RADAR_HORIZON_VALUES = { '180': true, '365': true, '730': true, all: true };
+  var RADAR_WINDOWS = { '180': 'next_180d', '365': 'next_365d', '730': 'next_730d', all: 'all' };
+  var DEFAULT_RADAR_HORIZON = '365';
+  var FIELD_VALUES = { primary_completion: true, completion: true, all: true };
   // The replay-verified tape is keyed by registry field class, not by the
   // legacy derived change-kind vocabulary.
   var CHANGE_KIND_VALUES = {
@@ -103,7 +116,7 @@
     accessLocked: false,
     returnFocus: null,
     mode: 'milestones',
-    filters: { field: 'primary_completion', change_kind: '', prospective_change_kind: '', window: '90', q: '', phase: '', status: '', condition: '', sponsor: '', intervention: '', study_type: '', pc_from: '', pc_to: '', review_state: 'all' },
+    filters: { field: 'primary_completion', change_kind: '', prospective_change_kind: '', window: '90', q: '', phase: '', status: '', condition: '', sponsor: '', intervention: '', study_type: '', pc_from: '', pc_to: '', review_state: 'all', horizon: DEFAULT_RADAR_HORIZON },
     facets: null,
     facetsToken: 0,
     facetsController: null,
@@ -209,6 +222,7 @@
   function isScreenMode() { return state.mode === 'screen'; }
   function isPeerMode() { return state.mode === 'peers'; }
   function isListMode() { return !isPeerMode(); }
+  function isMilestonesMode() { return state.mode === 'milestones'; }
 
   function dateParts(value) {
     var raw = clean(value), match = DATE_PARTS.exec(raw);
@@ -257,9 +271,11 @@
     return kind === 'primary_completion' || kind === 'completion' ? kind : '';
   }
   function milestoneKindLabel(kind) {
+    // Public wording law (BioCatalyst P1-1 §2): only "Primary completion" /
+    // "Study completion" may name a milestone kind front-facing.
     return kind === 'primary_completion'
       ? tr('Primary completion', '主要完成')
-      : tr('Completion', '完成');
+      : tr('Study completion', '研究完成');
   }
   function dateTypeLabel(type) {
     var labels = {
@@ -346,31 +362,37 @@
     if (isProspectiveMode()) state.filters.prospective_change_kind = activeChangeKindValues()[value] ? value : '';
     else state.filters.change_kind = activeChangeKindValues()[value] ? value : '';
   }
+  // Only milestones and prospective mode ever call activeApi()/activeWindow()
+  // for a page fetch (screen/peer/change build their own request elsewhere),
+  // so each has exactly two live branches -- no unreachable fallback.
   function activeApi() {
     if (isProspectiveMode()) return PROSPECTIVE_API;
     if (isScreenMode()) return SCREEN_API;
     if (isPeerMode()) return PEER_API;
-    return isChangeMode() ? CHANGE_API : MILESTONE_API;
+    if (isChangeMode()) return CHANGE_API;
+    return RADAR_API;
   }
-  function activeWindow() { return isProspectiveMode() ? PROSPECTIVE_WINDOWS[state.filters.window] : MILESTONE_WINDOWS[state.filters.window]; }
+  function activeWindow() {
+    return isProspectiveMode() ? PROSPECTIVE_WINDOWS[state.filters.window] : RADAR_WINDOWS[state.filters.horizon];
+  }
   function usesWindow() { return !isChangeMode() && !isScreenMode() && !isPeerMode(); }
   function activeNoun() {
     if (isProspectiveMode()) return tr('first-seen observations', '首次观测记录');
     if (isScreenMode()) return tr('matching trials', '匹配试验');
     if (isPeerMode()) return tr('compared trials', '对照试验');
-    return isChangeMode() ? tr('recorded field changes', '已记录字段变更') : tr('registry milestones', '登记里程碑');
+    return isChangeMode() ? tr('recorded field changes', '已记录字段变更') : tr('trial milestones', '试验里程碑');
   }
   function activeSingularNoun() {
     if (isProspectiveMode()) return tr('first-seen observation', '首次观测记录');
     if (isScreenMode()) return tr('matching trial', '匹配试验');
     if (isPeerMode()) return tr('compared trial', '对照试验');
-    return isChangeMode() ? tr('recorded field change', '已记录字段变更') : tr('registry milestone', '登记里程碑');
+    return isChangeMode() ? tr('recorded field change', '已记录字段变更') : tr('trial milestone', '试验里程碑');
   }
   function modeTitle() {
     if (isProspectiveMode()) return tr('First-seen Tape', '首次观测记录');
     if (isScreenMode()) return tr('Trial Screen', '试验筛选');
     if (isPeerMode()) return tr('Peer Matrix', '方案对照');
-    return isChangeMode() ? tr('Change Tape', '变更记录') : tr('Milestone monitor', '里程碑监测');
+    return isChangeMode() ? tr('Change Tape', '变更记录') : tr('Catalyst Radar — Trial Milestones', '催化雷达 — 试验里程碑');
   }
   function modeKicker() {
     if (isProspectiveMode()) return tr('Observed between successful polls', '成功轮询之间的观测');
@@ -378,7 +400,7 @@
     if (isPeerMode()) return tr('Exactly the trials you listed', '完全按你列出的试验');
     return isChangeMode() ? tr('Replayed from the record history', '按记录历史重放') : tr('Registry-recorded dates', '登记记录日期');
   }
-  function defaultFilters() { return { field: 'primary_completion', change_kind: '', prospective_change_kind: '', window: '90', q: '', phase: '', status: '', condition: '', sponsor: '', intervention: '', study_type: '', pc_from: '', pc_to: '', review_state: 'all' }; }
+  function defaultFilters() { return { field: 'all', change_kind: '', prospective_change_kind: '', window: '90', q: '', phase: '', status: '', condition: '', sponsor: '', intervention: '', study_type: '', pc_from: '', pc_to: '', review_state: 'all', horizon: DEFAULT_RADAR_HORIZON }; }
   function validAuthority(authority) {
     return !!authority && typeof authority === 'object' && authority.classification === 'source_fact' && authority.decision_authority === false &&
       Object.keys(authority).sort().join('|') === 'allowed_uses|classification|decision_authority|forbidden_uses' &&
@@ -390,7 +412,7 @@
     if (depth > 12 || value === null || typeof value === 'boolean') return depth <= 12;
     if (typeof value === 'number') return Number.isFinite(value);
     if (typeof value === 'string') return Array.from(value).length <= 12000;
-    if (Array.isArray(value)) return value.length <= 200 && value.every(function (item) { return safeJson(item, depth + 1); });
+    if (Array.isArray(value)) return value.length <= 512 && value.every(function (item) { return safeJson(item, depth + 1); });
     if (!value || typeof value !== 'object' || Object.keys(value).length > 100) return false;
     return Object.keys(value).every(function (key) { return Array.from(key).length <= 256 && safeJson(value[key], depth + 1); });
   }
@@ -402,22 +424,77 @@
       payload.coverage && typeof payload.coverage === 'object' && validAuthority(payload.authority);
   }
   function validTrial(trial) { return !!trial && typeof trial === 'object' && isTrialId(nctOf(trial)) && !!(clean(valueAt(trial, 'title')) || clean(valueAt(trial, 'brief_title'))); }
+  // Catalyst Radar milestone sub-block is total (§4/§7 of the frozen
+  // projection contract): every row carries either an honest precision plus
+  // both interval bounds, or an explicit unusable_reason with everything
+  // else null -- never a silently dropped or invented date.
+  function validCatalystRadarMilestone(milestone) {
+    var precision = clean(valueAt(milestone, 'precision')), reason = valueAt(milestone, 'unusable_reason');
+    if (reason != null) {
+      return clean(reason) === 'unparsable_source_date' && precision === '' &&
+        valueAt(milestone, 'interval_start') === null && valueAt(milestone, 'interval_end') === null;
+    }
+    return ['year', 'month', 'day'].indexOf(precision) >= 0 &&
+      partialDateMatchesPrecision(valueAt(milestone, 'date'), precision) &&
+      !!clean(valueAt(milestone, 'interval_start')) && !!clean(valueAt(milestone, 'interval_end'));
+  }
+  var CATALYST_RADAR_TIMING_STATES = { occurred: true, current: true, upcoming: true };
+  function validCatalystRadarTiming(timing, milestone) {
+    var timingState = clean(valueAt(timing, 'state')), days = valueAt(timing, 'days_to_milestone'), since = valueAt(timing, 'days_since_milestone');
+    if (clean(valueAt(milestone, 'unusable_reason'))) return timingState === '' && days === null && since === null;
+    if (!CATALYST_RADAR_TIMING_STATES[timingState]) return false;
+    if (timingState === 'occurred') return Number.isSafeInteger(since) && since >= 0 && days === null;
+    if (timingState === 'current') return days === null && since === null;
+    if (!days || typeof days !== 'object') return false;
+    if (clean(valueAt(milestone, 'precision')) === 'day') return Number.isSafeInteger(days.exact) && days.min === days.exact && days.max === days.exact;
+    return days.exact === null && Number.isSafeInteger(days.min) && Number.isSafeInteger(days.max) && days.min <= days.max;
+  }
+  var CATALYST_RADAR_ISSUER_STATES = { ticker_only: true, sponsor_name_absent: true, unresolved_sponsor: true, sponsor_map_unavailable: true };
+  function validCatalystRadarIssuer(issuer) {
+    return !!issuer && typeof issuer === 'object' && CATALYST_RADAR_ISSUER_STATES[clean(valueAt(issuer, 'state'))] === true &&
+      (clean(valueAt(issuer, 'state')) !== 'ticker_only' || !!clean(valueAt(issuer, 'ticker')));
+  }
+  var CATALYST_RADAR_REVISION_STATES = { history_not_collected: true, no_revisions_recorded: true, has_revisions: true };
+  var CATALYST_RADAR_REVISION_RELATIONS = { no_prior_recorded_value: true, supersedes_prior_recorded_value: true, clears_prior_recorded_value: true };
+  function validCatalystRadarLineageItem(item) {
+    if (!item || typeof item !== 'object' || Object.keys(item).sort().join('|') !== 'from|from_version|observed_at|predecessor_exact_operation_index|predecessor_source_version|relation|to|to_version') return false;
+    var from = valueAt(item, 'from'), to = valueAt(item, 'to'), fromVersion = valueAt(item, 'from_version'), toVersion = valueAt(item, 'to_version'), observedAt = valueAt(item, 'observed_at'), relation = valueAt(item, 'relation'), predecessorVersion = valueAt(item, 'predecessor_source_version'), predecessorIndex = valueAt(item, 'predecessor_exact_operation_index');
+    return (from === null || typeof from === 'string') && (to === null || typeof to === 'string') &&
+      (fromVersion === null || (Number.isSafeInteger(fromVersion) && fromVersion >= 1)) &&
+      (toVersion === null || (Number.isSafeInteger(toVersion) && toVersion >= 1)) &&
+      (observedAt === null || fullTimestamp(observedAt)) &&
+      (relation === null || CATALYST_RADAR_REVISION_RELATIONS[clean(relation)] === true) &&
+      (predecessorVersion === null || (Number.isSafeInteger(predecessorVersion) && predecessorVersion >= 1)) &&
+      (predecessorIndex === null || (Number.isSafeInteger(predecessorIndex) && predecessorIndex >= 0 && predecessorIndex < 4096));
+  }
+  function sameCatalystRadarLineageItem(left, right) {
+    return ['from', 'to', 'from_version', 'to_version', 'observed_at', 'relation', 'predecessor_source_version', 'predecessor_exact_operation_index'].every(function (key) { return valueAt(left, key) === valueAt(right, key); });
+  }
+  function validCatalystRadarRevision(revision) {
+    if (!revision || typeof revision !== 'object' || CATALYST_RADAR_REVISION_STATES[clean(valueAt(revision, 'state'))] !== true || !Array.isArray(valueAt(revision, 'lineage'))) return false;
+    var revisionState = clean(valueAt(revision, 'state')), count = valueAt(revision, 'count'), latest = valueAt(revision, 'latest'), lineage = valueAt(revision, 'lineage');
+    if (revisionState !== 'has_revisions') return count === 0 && latest === null && lineage.length === 0;
+    return Number.isSafeInteger(count) && count > 0 && count === lineage.length && lineage.every(validCatalystRadarLineageItem) && validCatalystRadarLineageItem(latest) && sameCatalystRadarLineageItem(latest, lineage[lineage.length - 1]);
+  }
   function validMilestone(item) {
-    var trial = valueAt(item, 'trial'), milestone = valueAt(item, 'registry_milestone'), evidence = valueAt(item, 'evidence');
-    var kind = milestoneKindOf(milestone), type = clean(valueAt(milestone, 'type')).toUpperCase(), precision = clean(valueAt(milestone, 'precision')).toLowerCase();
-    return !!item && typeof item === 'object' && validTrial(trial) && !!milestone && typeof milestone === 'object' &&
-      kind === state.filters.field && partialDateMatchesPrecision(valueAt(milestone, 'date'), precision) &&
-      (type === 'ACTUAL' || type === 'ESTIMATED' || type === 'UNKNOWN') &&
+    var trial = valueAt(item, 'trial'), milestone = valueAt(item, 'milestone'), timing = valueAt(item, 'timing'), evidence = valueAt(item, 'evidence'), sourceClocks = valueAt(evidence, 'source_clocks');
+    var kind = milestoneKindOf(item), nctId = clean(valueAt(item, 'nct_id'));
+    return !!item && typeof item === 'object' && !!trial && typeof trial === 'object' && isTrialId(nctId) &&
+      !!(clean(valueAt(trial, 'title')) || clean(valueAt(trial, 'brief_title'))) &&
+      !!milestone && typeof milestone === 'object' && kind && (state.filters.field === 'all' || kind === state.filters.field) &&
+      validCatalystRadarMilestone(milestone) && validCatalystRadarTiming(timing, milestone) &&
+      validCatalystRadarIssuer(valueAt(item, 'issuer')) && validCatalystRadarRevision(valueAt(item, 'revision')) &&
+      !!valueAt(item, 'trial_status') && typeof valueAt(item, 'trial_status') === 'object' &&
       !!evidence && typeof evidence === 'object' && clean(valueAt(evidence, 'provider')) === 'ClinicalTrials.gov' &&
-      clean(valueAt(evidence, 'record_id')) === nctOf(trial) && clean(valueAt(evidence, 'coverage')) === 'current_only';
+      clean(valueAt(evidence, 'record_id')) === nctId && !!sourceClocks && typeof sourceClocks === 'object';
   }
   function validEnvelope(payload) {
-    var pagination = valueAt(payload, 'pagination'), query = valueAt(payload, 'query'), window = valueAt(payload, 'effective_window');
-    return validMeta(payload) && Array.isArray(payload.milestones) && pagination && typeof pagination === 'object' &&
+    var pagination = valueAt(payload, 'pagination'), query = valueAt(payload, 'query'), horizon = valueAt(payload, 'effective_horizon'), radarCoverage = valueAt(valueAt(payload, 'coverage'), 'radar');
+    return validMeta(payload) && Array.isArray(payload.catalyst_radar) && pagination && typeof pagination === 'object' &&
       Number.isSafeInteger(pagination.limit) && pagination.limit === PAGE_LIMIT &&
       Number.isSafeInteger(pagination.total) && pagination.total >= 0 &&
       (pagination.next_cursor == null || (typeof pagination.next_cursor === 'string' && /^[A-Za-z0-9_-]{1,384}$/.test(pagination.next_cursor))) &&
-      query && typeof query === 'object' && window && typeof window === 'object';
+      query && typeof query === 'object' && horizon && typeof horizon === 'object' && radarCoverage && typeof radarCoverage === 'object';
   }
   function historyVersionUrl(id, version) { return 'https://clinicaltrials.gov/study/' + encodeURIComponent(id) + '?a=' + String(version) + '&tab=history'; }
   // Every ceiling this product may not raise, checked on every page. The named
@@ -556,10 +633,8 @@
   function queryMatchesCurrentFilters(query) {
     if (!query || typeof query !== 'object') return false;
     var expected = {
+      horizon: RADAR_WINDOWS[state.filters.horizon],
       milestone_kind: state.filters.field,
-      window: MILESTONE_WINDOWS[state.filters.window],
-      from_date: '',
-      to_date: '',
       q: state.filters.q,
       phase: state.filters.phase,
       status: state.filters.status,
@@ -587,18 +662,19 @@
     });
   }
   function effectiveWindowIsSane(window, apiWindow) {
+    // Radar effective_horizon shape: {horizon, horizon_days, anchor_date}
+    // -- the anchor is always the committed generation clock (§6 of the
+    // frozen projection contract), never a request-window civil range.
     if (!window || typeof window !== 'object') return false;
-    var from = clean(valueAt(window, 'from_date')), to = clean(valueAt(window, 'to_date')), anchor = clean(valueAt(window, 'anchor_date'));
-    if (apiWindow === 'all') {
-      return !anchor && (!from || fullDate(from)) && (!to || fullDate(to)) && (!from || !to || from <= to);
-    }
-    return fullDate(from) && fullDate(to) && fullDate(anchor) && anchor === from && from <= to;
+    var horizon = clean(valueAt(window, 'horizon')), horizonDays = valueAt(window, 'horizon_days'), anchor = clean(valueAt(window, 'anchor_date'));
+    if (horizon !== apiWindow || !fullDate(anchor)) return false;
+    return apiWindow === 'all' ? horizonDays === null : (Number.isSafeInteger(horizonDays) && horizonDays > 0);
   }
   function validateMilestoneEnvelope(payload) {
     if (!validEnvelope(payload)) throw new Error('Invalid milestone list contract');
     var query = valueAt(payload, 'query');
     if (!queryMatchesCurrentFilters(query)) throw new Error('Milestone query binding mismatch');
-    if (!effectiveWindowIsSane(valueAt(payload, 'effective_window'), clean(valueAt(query, 'window')))) throw new Error('Invalid effective registry window');
+    if (!effectiveWindowIsSane(valueAt(payload, 'effective_horizon'), clean(valueAt(query, 'horizon')))) throw new Error('Invalid effective registry window');
   }
   function changeIdentity(item) {
     var change = valueAt(item, 'change'), versions = valueAt(change, 'source_versions');
@@ -644,7 +720,11 @@
     if (loadedBefore && (!Number.isSafeInteger(previousTotal) || previousTotal !== total)) throw new Error('Prospective total changed during pagination');
   }
   function milestoneIdentity(item) {
-    return nctOf(valueAt(item, 'trial')) + '|' + milestoneKindOf(valueAt(item, 'registry_milestone')) + '|' + clean(valueAt(valueAt(item, 'registry_milestone'), 'date'));
+    // Catalyst Radar own CatalystEvent.event_id ("nct:<id>:<kind>") is
+    // already the engine own unique key for one trial, one milestone
+    // kind -- reuse it rather than re-deriving an identity from row fields.
+    var eventId = clean(valueAt(item, 'event_id'));
+    return eventId || (clean(valueAt(item, 'nct_id')) + '|' + clean(valueAt(item, 'kind')) + '|' + clean(valueAt(valueAt(item, 'milestone'), 'date')));
   }
   function screenIdentity(item) { return clean(valueAt(item, 'nct_id')); }
   function rowIdentity(item) {
@@ -652,7 +732,26 @@
     if (isScreenMode() || isPeerMode()) return screenIdentity(item);
     return isChangeMode() ? changeIdentity(item) : milestoneIdentity(item);
   }
-  function rowTrial(item) { return (isScreenMode() || isPeerMode()) ? item : valueAt(item, 'trial'); }
+  function rowTrial(item) {
+    if (isScreenMode() || isPeerMode()) return item;
+    var trial = valueAt(item, 'trial');
+    if (!isMilestonesMode() || !trial || typeof trial !== 'object') return trial;
+    // Catalyst Radar per-event trial block (engine _trial_block) is a
+    // narrower slice than the legacy milestones trial row: it carries no
+    // nct_id/status/sponsor of its own -- those live on the event itself
+    // (nct_id, trial_status, issuer). Adapt so the shared trial-shaped
+    // helpers (nctOf/statusOf/sponsorOf/rowClocks/braidRecords) keep working
+    // unmodified for radar rows.
+    var adapted = {}, key;
+    for (key in trial) if (Object.prototype.hasOwnProperty.call(trial, key)) adapted[key] = trial[key];
+    adapted.nct_id = valueAt(item, 'nct_id');
+    adapted.status = valueAt(valueAt(item, 'trial_status'), 'value');
+    adapted.sponsor = { name: valueAt(valueAt(item, 'issuer'), 'sponsor_name') };
+    var sourceClocks = valueAt(valueAt(item, 'evidence'), 'source_clocks');
+    adapted.updated_at = valueAt(sourceClocks, 'updated_at');
+    adapted.retrieved_at = valueAt(sourceClocks, 'retrieved_at');
+    return adapted;
+  }
   function selectedRow() {
     return state.rows.filter(function (item) { return state.selectedKey && rowIdentity(item) === state.selectedKey; })[0] ||
       state.rows.filter(function (item) { return nctOf(rowTrial(item)) === state.selectedId; })[0];
@@ -671,7 +770,7 @@
   }
   function validateMilestonePagination(payload, existingRows, requestedCursor, previousPayload) {
     var pagination = valueAt(payload, 'pagination'), previous = valueAt(previousPayload, 'pagination');
-    var pageSize = payload.milestones.length, loadedBefore = arr(existingRows).length, loadedAfter = loadedBefore + pageSize;
+    var pageSize = payload.catalyst_radar.length, loadedBefore = arr(existingRows).length, loadedAfter = loadedBefore + pageSize;
     var total = pagination.total, nextCursor = clean(pagination.next_cursor), previousTotal = valueAt(previous, 'total');
     if (pageSize > pagination.limit || loadedAfter > total) throw new Error('Invalid milestone page bounds');
     if (total > loadedBefore && pageSize === 0) throw new Error('Empty milestone page before total');
@@ -832,12 +931,15 @@
   }
 
   function readUrl() {
-    var params = new URLSearchParams(window.location.search), field = clean(params.get('field')), windowName = clean(params.get('window')), changeKind = clean(params.get('change_kind')), mode = clean(params.get('mode'));
+    var params = new URLSearchParams(window.location.search), field = clean(params.get('field')), windowName = clean(params.get('window')), horizonName = clean(params.get('horizon')), changeKind = clean(params.get('change_kind')), mode = clean(params.get('mode'));
     state.mode = MODE_VALUES[mode] ? mode : 'milestones';
-    state.filters.field = FIELD_VALUES[field] ? field : 'primary_completion';
+    // milestone_kind defaults to "all" only in radar mode (§3): an explicit
+    // ?field= always wins, and every other mode keeps its prior default.
+    state.filters.field = FIELD_VALUES[field] ? field : (state.mode === 'milestones' ? 'all' : 'primary_completion');
     state.filters.change_kind = state.mode === 'changes' && CHANGE_KIND_VALUES[changeKind] ? changeKind : '';
     state.filters.prospective_change_kind = state.mode === 'prospective' && PROSPECTIVE_CHANGE_KIND_VALUES[changeKind] ? changeKind : '';
     state.filters.window = WINDOW_VALUES[windowName] ? windowName : '90';
+    state.filters.horizon = RADAR_HORIZON_VALUES[horizonName] ? horizonName : DEFAULT_RADAR_HORIZON;
     state.filters.q = clean(params.get('q')).slice(0, 100);
     state.filters.phase = clean(params.get('phase')).slice(0, 40);
     state.filters.status = clean(params.get('status')).slice(0, 40);
@@ -860,6 +962,7 @@
     assign('field', state.filters.field, true);
     assign('change_kind', (isChangeMode() || isProspectiveMode()) ? activeChangeKind() : '', true);
     assign('window', state.filters.window, true);
+    if (isMilestonesMode() && state.filters.horizon !== DEFAULT_RADAR_HORIZON) params.set('horizon', state.filters.horizon); else params.delete('horizon');
     assign('q', state.filters.q, true);
     assign('phase', state.filters.phase, true);
     assign('status', state.filters.status, true);
@@ -891,7 +994,44 @@
     });
     ui.changeKind.value = activeChangeKind();
   }
+  // Catalyst Radar window control (§3): 180 / 365 / 730 / All, replacing
+  // the shared 30 / 90 / 180 / All vocabulary in place at runtime. The
+  // static SSR markup stays 30/90/180/all (tests/test_biocatalyst_page.py
+  // pins that shell) -- this repaints the same four buttons the moment the
+  // page mounts into its default (milestones) mode, and restores the
+  // original labels when another mode that uses the window control
+  // (First-seen Tape) becomes active. Mirrors the existing per-mode
+  // relabeling precedent in paintChangeKindOptions()/localizeControls().
+  var RADAR_WINDOW_OPTIONS = [
+    ['180', '180 days', '180天'],
+    ['365', '365 days', '365天'],
+    ['730', '730 days', '730天'],
+    ['all', 'All', '全部']
+  ];
+  function paintWindowOptions() {
+    ui.windowButtons.forEach(function (button, index) {
+      if (button.getAttribute('data-original-window') == null) {
+        button.setAttribute('data-original-window', button.getAttribute('data-window') || '');
+        button.setAttribute('data-original-label-en', button.getAttribute('data-label-en') || button.textContent);
+        button.setAttribute('data-original-label-zh', button.getAttribute('data-label-zh') || button.textContent);
+      }
+      if (isMilestonesMode()) {
+        var option = RADAR_WINDOW_OPTIONS[index];
+        if (!option) return;
+        button.setAttribute('data-window', option[0]);
+        button.setAttribute('data-label-en', option[1]);
+        button.setAttribute('data-label-zh', option[2]);
+        text(button, tr(option[1], option[2]));
+      } else {
+        button.setAttribute('data-window', button.getAttribute('data-original-window'));
+        button.setAttribute('data-label-en', button.getAttribute('data-original-label-en'));
+        button.setAttribute('data-label-zh', button.getAttribute('data-original-label-zh'));
+        text(button, tr(button.getAttribute('data-original-label-en'), button.getAttribute('data-original-label-zh')));
+      }
+    });
+  }
   function syncControls() {
+    paintWindowOptions();
     ui.field.value = state.filters.field;
     paintChangeKindOptions();
     ui.search.value = state.filters.q;
@@ -919,7 +1059,8 @@
       ? tr('NCT ID only', '仅限 NCT 编号')
       : (ui.search.getAttribute(lang() === 'zh' ? 'data-placeholder-zh' : 'data-placeholder-en') || '');
     ui.windowButtons.forEach(function (button) {
-      var active = button.getAttribute('data-window') === state.filters.window;
+      var currentWindowValue = isMilestonesMode() ? state.filters.horizon : state.filters.window;
+      var active = button.getAttribute('data-window') === currentWindowValue;
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-checked', active ? 'true' : 'false');
       button.tabIndex = active ? 0 : -1;
@@ -935,8 +1076,12 @@
     ui.changeKindControl.hidden = !(isChangeMode() || isProspectiveMode());
     text(ui.changeKindLabel, isProspectiveMode() ? tr('Observed field', '观测字段') : tr('Registry field', '登记字段'));
     ui.changeKind.setAttribute('aria-label', isProspectiveMode() ? tr('Observed field', '观测字段') : tr('Registry field', '登记字段'));
-    text(ui.windowLabel, isProspectiveMode() ? tr('Observation window', '观测窗口') : tr('Record window', '记录窗口'));
-    ui.windowControl.querySelector('.bci-window-options').setAttribute('aria-label', isProspectiveMode() ? tr('First-observed window', '首次观测窗口') : tr('Registry date window', '登记日期窗口'));
+    // NIT 13: the payload and subtitle both say "horizon" for the radar
+    // mode, so its own window-control legend/aria-label must say the same
+    // thing rather than the legacy "record window" copy First-seen Tape
+    // still uses.
+    text(ui.windowLabel, isProspectiveMode() ? tr('Observation window', '观测窗口') : (isMilestonesMode() ? tr('Horizon', '窗口范围') : tr('Record window', '记录窗口')));
+    ui.windowControl.querySelector('.bci-window-options').setAttribute('aria-label', isProspectiveMode() ? tr('First-observed window', '首次观测窗口') : (isMilestonesMode() ? tr('Trial milestone horizon', '试验里程碑窗口范围') : tr('Registry date window', '登记日期窗口')));
     text(ui.queueKicker, modeKicker());
     text(ui.queueTitle, modeTitle());
     text(ui.sourceNote, sourceNoteCopy());
@@ -1009,7 +1154,7 @@
       if (cursor) params.set('cursor', cursor);
       return CHANGE_API + '?' + params.toString();
     }
-    params.set('window', activeWindow());
+    if (isMilestonesMode()) params.set('horizon', activeWindow()); else params.set('window', activeWindow());
     if (isProspectiveMode()) {
       if (activeChangeKind()) params.set('change_kind', activeChangeKind());
     } else params.set('milestone_kind', state.filters.field);
@@ -1085,26 +1230,136 @@
     badge.setAttribute('aria-label', tr('Registry date type: ', '登记日期类型：') + dateTypeLabel(normalized));
     return badge;
   }
+  // MAJOR 14: a resolved ticker is not always the sponsor own listing --
+  // `parent_of_subsidiary_sponsor` means the ticker is the sponsor PARENT.
+  // Rendering a bare ticker chip for that row implies the trial belongs to
+  // the parent listed security with no qualification, the same class of
+  // error as guessing a ticker. `direct_issuer` needs no extra chrome.
+  function isParentIssuer(issuer) { return clean(valueAt(issuer, 'issuer_relationship')) === 'parent_of_subsidiary_sponsor'; }
+  // Catalyst Radar issuer chip (§3): a resolved ticker, or a typed
+  // plain-word unresolved state -- never a guessed ticker.
+  function issuerChip(issuer) {
+    var issuerState = clean(valueAt(issuer, 'state'));
+    if (issuerState === 'ticker_only') {
+      var ticker = clean(valueAt(issuer, 'ticker'));
+      if (ticker) {
+        var label = isParentIssuer(issuer) ? tr(ticker + ' (parent)', ticker + '（母公司）') : ticker;
+        var chip = el('span', 'bci-issuer-chip is-resolved' + (isParentIssuer(issuer) ? ' is-parent' : ''), label);
+        if (isParentIssuer(issuer)) chip.setAttribute('aria-label', tr(ticker + ' is the parent company of the sponsor, not the sponsor itself', ticker + ' 是申办方的母公司，并非申办方本身'));
+        return chip;
+      }
+    }
+    var labels = {
+      sponsor_name_absent: ['Sponsor not on record', '未记录申办方'],
+      unresolved_sponsor: ['Issuer not matched', '发行人未匹配'],
+      sponsor_map_unavailable: ['Issuer lookup unavailable', '发行人查询暂不可用']
+    };
+    var pair = labels[issuerState] || labels.sponsor_map_unavailable;
+    return el('span', 'bci-issuer-chip is-unresolved', tr(pair[0], pair[1]));
+  }
+  // The registry status string is preserved EXACTLY -- TERMINATED / WITHDRAWN
+  // / SUSPENDED are never relabeled and never rendered with the forbidden
+  // market word for a halted trial (§2 public wording law; §6a of the frozen
+  // projection contract: SUSPENDED is paused, not terminal). Only the chip
+  // visual tone follows activity.
+  function trialStatusChip(trialStatus) {
+    var value = clean(valueAt(trialStatus, 'value'));
+    if (!value) return null;
+    var activity = clean(valueAt(trialStatus, 'activity')) || 'active';
+    var chip = el('span', 'bci-status-chip is-' + activity, value);
+    if (activity === 'paused') chip.setAttribute('aria-label', tr('Paused, not terminal: ', '已暂停，非终止：') + value);
+    return chip;
+  }
+  function revisionChip(revision) {
+    if (clean(valueAt(revision, 'state')) !== 'has_revisions') return null;
+    return el('span', 'bci-revision-chip', tr('Date moved', '日期已变更'));
+  }
+  // Current-state honesty (MAJOR 6): a year/month-precision date that
+  // straddles the anchor is "sometime in that interval", not a fact the
+  // module may assert happened today -- state the interval, not certainty.
+  function currentWindowLabel(milestone) {
+    var start = clean(valueAt(milestone, 'interval_start')), end = clean(valueAt(milestone, 'interval_end'));
+    var interval = start && end ? (start === end ? start : (start + ' – ' + end)) : '';
+    return interval
+      ? tr('Scheduled window includes today (' + interval + ')', '计划窗口含今天（' + interval + '）')
+      : tr('Scheduled window includes today', '计划窗口含今天');
+  }
+  // Exact for day precision; an honest [min, max] range for month/year
+  // precision -- never a fabricated point estimate (§5 of the frozen
+  // projection contract).
+  function daysToMilestoneLabel(timing, milestone) {
+    var timingState = clean(valueAt(timing, 'state'));
+    if (timingState === 'occurred') {
+      var since = valueAt(timing, 'days_since_milestone');
+      if (!Number.isSafeInteger(since)) return tr('Not available', '暂不可用');
+      return since === 1 ? tr('1 day ago', '1 天前') : tr(since + ' days ago', since + ' 天前');
+    }
+    if (timingState === 'current') return currentWindowLabel(milestone);
+    var days = valueAt(timing, 'days_to_milestone');
+    if (!days || typeof days !== 'object') return tr('Not available', '暂不可用');
+    if (Number.isSafeInteger(days.exact)) return days.exact === 1 ? tr('1 day to milestone', '距里程碑 1 天') : tr(days.exact + ' days to milestone', '距里程碑 ' + days.exact + ' 天');
+    if (Number.isSafeInteger(days.min) && Number.isSafeInteger(days.max)) return tr(days.min + '–' + days.max + ' days to milestone', '距里程碑 ' + days.min + '–' + days.max + ' 天');
+    return tr('Not available', '暂不可用');
+  }
   function makeMilestoneRow(item, index) {
-    var trial = item.trial, milestone = item.registry_milestone, evidence = item.evidence, id = nctOf(trial), rowKey = milestoneIdentity(item), selected = rowKey === state.selectedKey, button = el('button', 'bci-trial' + (selected ? ' is-selected' : ''));
+    var trial = rowTrial(item), milestone = valueAt(item, 'milestone'), timing = valueAt(item, 'timing'), trialStatus = valueAt(item, 'trial_status'), issuer = valueAt(item, 'issuer'), revision = valueAt(item, 'revision'), evidence = valueAt(item, 'evidence');
+    var id = clean(valueAt(item, 'nct_id')), kind = milestoneKindOf(item), rowKey = milestoneIdentity(item), selected = rowKey === state.selectedKey, button = el('button', 'bci-trial bci-radar-card' + (selected ? ' is-selected' : ''));
     button.type = 'button'; button.setAttribute('role', 'option'); button.setAttribute('aria-selected', selected ? 'true' : 'false'); button.setAttribute('data-trial-id', id); button.setAttribute('data-row-key', rowKey); button.tabIndex = index === 0 ? 0 : -1;
-    var main = el('span', 'bci-trial-main'), line = el('span', 'bci-trial-topline'), kind = milestoneKindOf(milestone);
+    var main = el('span', 'bci-trial-main'), line = el('span', 'bci-trial-topline');
     line.appendChild(el('span', 'bci-trial-id', id));
     line.appendChild(el('span', 'bci-registry-kind', milestoneKindLabel(kind)));
-    if (statusOf(trial)) line.appendChild(el('span', 'bci-status-chip', statusOf(trial)));
+    var statusChip = trialStatusChip(trialStatus); if (statusChip) line.appendChild(statusChip);
+    var movedChip = revisionChip(revision); if (movedChip) line.appendChild(movedChip);
     main.appendChild(line); main.appendChild(el('span', 'bci-trial-title', titleOf(trial)));
     var meta = el('span', 'bci-trial-meta'), phaseText = phasesOf(trial).join(' · ');
-    if (phaseText) meta.appendChild(el('span', '', phaseText));
-    if (sponsorOf(trial)) meta.appendChild(el('span', '', sponsorOf(trial)));
+    if (phaseText) meta.appendChild(el('span', 'bci-phase-chip', phaseText));
+    meta.appendChild(issuerChip(issuer));
     if (conditionsOf(trial).length) meta.appendChild(el('span', '', conditionsOf(trial).slice(0, 2).join(' · ')));
     main.appendChild(meta); button.appendChild(main);
     var date = el('span', 'bci-trial-date');
     date.appendChild(el('strong', '', dateLabel(valueAt(milestone, 'date'), precisionOf(milestone))));
-    date.appendChild(typeBadge(dateTypeOf(milestone)));
+    date.appendChild(typeBadge(clean(valueAt(milestone, 'date_type'))));
     date.setAttribute('data-precision', precisionOf(milestone));
+    date.appendChild(el('span', 'bci-days-to-milestone', daysToMilestoneLabel(timing, milestone)));
     button.appendChild(date);
     button.addEventListener('click', function () { selectTrial(id, trial, evidence, true, button, rowKey); });
     return button;
+  }
+  // Segmentation (§3): occurred rows render under a visually separated
+  // "Reached" group after upcoming rows; current rows get their own honest
+  // group. The engine own row order (chronological, then unusable-last)
+  // already enforces user-job priority before pagination; the client only
+  // groups those ordered rows for display. Every returned row is rendered
+  // somewhere; an unparsable source date gets its own honest group rather
+  // than being hidden.
+  function radarTimingBucket(item) {
+    var timingState = clean(valueAt(valueAt(item, 'timing'), 'state'));
+    return timingState === 'occurred' || timingState === 'current' || timingState === 'upcoming' ? timingState : 'unusable';
+  }
+  function renderCatalystRadarGroups() {
+    var buckets = { upcoming: [], current: [], unusable: [], occurred: [] }, index = 0;
+    state.rows.forEach(function (item) { buckets[radarTimingBucket(item)].push(item); });
+    [
+      ['upcoming', null],
+      ['current', tr('Scheduled window includes today', '计划窗口含今天')],
+      ['unusable', tr('Needs source review', '需核对来源')],
+      ['occurred', tr('Reached', '已到达')]
+    ].forEach(function (entry) {
+      var key = entry[0], label = entry[1], items = buckets[key];
+      if (!items.length) return;
+      if (label) {
+        var heading = el('h3', 'bci-radar-group-title', label);
+        heading.id = 'bci-radar-group-' + key;
+        heading.setAttribute('role', 'presentation');
+        ui.queue.appendChild(heading);
+      }
+      items.forEach(function (item) {
+        var row = makeMilestoneRow(item, index);
+        if (label) row.setAttribute('aria-describedby', 'bci-radar-group-' + key);
+        ui.queue.appendChild(row);
+        index += 1;
+      });
+    });
   }
   function compactValue(value) {
     var rendered = historyValue(value);
@@ -1358,11 +1613,12 @@
       ui.queue.appendChild(emptyCard(emptyTitle(), emptyCopy(), '○'));
     } else if (isPeerMode()) {
       renderPeerMatrix();
+    } else if (isMilestonesMode()) {
+      renderCatalystRadarGroups();
     } else {
       state.rows.forEach(function (item, index) {
         ui.queue.appendChild(isProspectiveMode() ? makeProspectiveRow(item, index)
-          : (isScreenMode() ? makeScreenRow(item, index)
-            : (isChangeMode() ? makeChangeRow(item, index) : makeMilestoneRow(item, index))));
+          : (isScreenMode() ? makeScreenRow(item, index) : makeChangeRow(item, index)));
       });
     }
     ui.queueFooter.hidden = !state.nextCursor || state.accessLocked;
@@ -1374,7 +1630,7 @@
     if (isScreenMode()) return tr('No matching trials', '没有匹配的试验');
     if (isPeerMode()) return state.cohort.length ? tr('None of these are covered', '这些试验均未收录') : tr('List the trials to compare', '请列出要对照的试验');
     if (isChangeMode()) return tr('No recorded field changes', '暂无已记录字段变更');
-    return tr('No recorded dates', '暂无已记录日期');
+    return tr('No trial milestones', '暂无试验里程碑');
   }
   function emptyCopy() {
     if (isProspectiveMode()) return prospectiveEmptyCopy();
@@ -1383,7 +1639,7 @@
       ? tr('This workspace covers none of the trials you listed, so there is nothing to compare.', '本工作台未收录你列出的任何试验，因此无法对照。')
       : tr('Paste the NCT IDs you want side by side. This workspace never picks the comparison for you.', '粘贴你想并排查看的 NCT 编号。本工作台不会替你挑选对照对象。');
     if (isChangeMode()) return tr('No verified field change matches this filter set.', '在此筛选条件下没有已核验的字段变更。');
-    return tr('No registry-recorded primary completion or completion date matches this window and filter set.', '在此窗口和筛选条件下，没有匹配的主要完成或完成登记日期。');
+    return tr('No registry-recorded primary completion or study completion date matches this horizon and filter set.', '在此窗口和筛选条件下，没有匹配的主要完成或研究完成登记日期。');
   }
   function paintFrame() { ui.workspace.dataset.surface = state.mode; paintDecision(); paintBraid(); paintChips(); paintPanelFoot(); }
   function setSubtitle(payload) {
@@ -1410,7 +1666,35 @@
           : ''));
       return;
     }
-    if (typeof total !== 'number') { text(ui.subtitle, isProspectiveMode() ? tr('First observed by this current-record collector', '由当前记录采集器首次观测') : tr('Registry-recorded primary completion and completion dates', '登记记录的主要完成和完成日期')); return; }
+    if (typeof total !== 'number') { text(ui.subtitle, isProspectiveMode() ? tr('First observed by this current-record collector', '由当前记录采集器首次观测') : tr('Registry-recorded primary completion and study completion dates', '登记记录的主要完成和研究完成日期')); return; }
+    if (isMilestonesMode()) {
+      // Partial-coverage denominator, stated in plain words (§3): the
+      // decision-sentence banner stays a static message (STATE_PRECEDENCE
+      // regex contract), so the actual counts live here instead.
+      //
+      // MAJOR 2: the headline count must be events_in_horizon (upcoming-only),
+      // never pagination.total -- total also counts occurred/current rows the
+      // engine still returns on this page, so it overstates upcoming rows.
+      // MAJOR 3: half of a cohort events can legally be
+      // beyond_horizon and excluded from every rendered row; that must be
+      // stated in plain words, never silently omitted.
+      var radarCoverage = valueAt(valueAt(payload, 'coverage'), 'radar') || {};
+      var cohort = valueAt(radarCoverage, 'trials_in_cohort'), withEvents = valueAt(radarCoverage, 'trials_with_events');
+      var inHorizon = valueAt(radarCoverage, 'events_in_horizon'), reached = valueAt(radarCoverage, 'events_occurred'), beyond = valueAt(radarCoverage, 'events_beyond_horizon');
+      var mainCount = Number.isSafeInteger(inHorizon) ? inHorizon : total;
+      var headline = mainCount === 1 ? tr('1 upcoming trial milestone', '1 项即将到来的试验里程碑') : tr(mainCount + ' upcoming trial milestones', mainCount + ' 项即将到来的试验里程碑');
+      var reachedLabel = Number.isSafeInteger(reached) && reached > 0
+        ? tr(' · ' + reached + ' already reached', ' · 另有 ' + reached + ' 项已到达')
+        : '';
+      var beyondLabel = Number.isSafeInteger(beyond) && beyond > 0
+        ? tr(' · ' + beyond + ' beyond horizon', ' · ' + beyond + ' 项超出窗口')
+        : '';
+      var coverageLabel = Number.isSafeInteger(cohort) && Number.isSafeInteger(withEvents)
+        ? tr(' · Current cohort: ' + cohort + ' registered trials, ' + withEvents + ' with a recorded milestone date.', ' · 当前队列：' + cohort + ' 项已登记试验，其中 ' + withEvents + ' 项有已记录的里程碑日期。')
+        : '';
+      text(ui.subtitle, headline + reachedLabel + beyondLabel + coverageLabel);
+      return;
+    }
     var timeLabel = clean(valueAt(window, 'from_date')) && clean(valueAt(window, 'to_date'))
       ? (isProspectiveMode() ? tr('first observed in the selected window', '在所选窗口内首次观测') : tr('within the selected record window', '位于所选记录窗口内'))
       : (isProspectiveMode() ? tr('across the available observation range', '覆盖可用观测范围') : tr('across the available record range', '覆盖可用记录范围'));
@@ -1462,6 +1746,10 @@
     if (isScreenMode()) return state.rows.filter(function (row) { return ['overall_status', 'phases', 'sponsor', 'enrollment', 'primary_completion'].some(function (name) { return !observed(valueAt(row, name)); }); }).length;
     if (isPeerMode()) return arr(valueAt(state.payload, 'uncovered_nct_ids')).length;
     if (isChangeMode()) return valueAt(valueAt(state.payload, 'change_tape_coverage'), 'unavailable_trials') || 0;
+    if (isMilestonesMode()) {
+      var radarCoverage = valueAt(valueAt(state.payload, 'coverage'), 'radar') || {}, cohort = valueAt(radarCoverage, 'trials_in_cohort'), withEvents = valueAt(radarCoverage, 'trials_with_events');
+      return Number.isSafeInteger(cohort) && Number.isSafeInteger(withEvents) ? Math.max(cohort - withEvents, 0) : 0;
+    }
     return 0;
   }
   function reviewPendingCount() {
@@ -1494,7 +1782,8 @@
     if (healthState === 'stale') noteState(list, 'stale', knownAt, 'the newest registry update has not arrived yet.', '登记库最新一次更新尚未送达。');
     else if (state.restarted) noteState(list, 'stale', knownAt, 'the register moved while this page loaded.', '本页加载期间登记库已更新。');
     if (isChangeMode() && state.rows.length) noteState(list, 'historical', knownAt, 'these are superseded record versions.', '这些是已被取代的记录版本。');
-    if (partial) noteState(list, 'partial', knownAt, 'part of this set is not on the record.', '其中一部分未收录在记录中。');
+    if (partial && isMilestonesMode()) noteState(list, 'partial', knownAt, 'part of this cohort has no recorded milestone date.', '部分队列没有已记录的里程碑日期。');
+    else if (partial) noteState(list, 'partial', knownAt, 'part of this set is not on the record.', '其中一部分未收录在记录中。');
     if (state.hasLoaded && !state.rows.length && !state.accessLocked && !state.workspaceDown && !state.contractFailed && !state.displayFailed) {
       if (isProspectiveMode()) noteState(list, 'empty', knownAt, 'no first-seen observations yet.', '尚无首次观测记录。');
       else if (isScreenMode()) noteState(list, 'empty', knownAt, 'nothing matches what you asked for.', '没有内容符合你的条件。');
@@ -1533,7 +1822,7 @@
     if (isPeerMode()) parts.push(tr('This compares exactly the trials you listed. No peer is discovered for you.', '此处仅对照你列出的试验，不会替你发现同类试验。'));
     if (states.length > 1) parts.push(tr('Also on this page: ' + states.slice(1).map(stateLabel).join(' · '), '本页还包括：' + states.slice(1).map(stateLabel).join(' · ')));
     clearChildren(ui.panelFoot);
-    ui.panelFoot.appendChild(el('b', '', tr('One page, one receipt. ', '一页一凭证。')));
+    ui.panelFoot.appendChild(el('b', '', tr('Source evidence stays attached to every row. ', '每行均附来源证据。')));
     ui.panelFoot.appendChild(document.createTextNode(parts.join(' ')));
     ui.panelFoot.hidden = false;
   }
@@ -1919,6 +2208,73 @@
     section.appendChild(el('p', 'bci-detail-note', exact ? tr('These are the exact recorded JSON values. A registry edit is not a protocol change, business event, or assessed correction.', '这些是登记记录中的精确取值。登记修改不等于方案变更、业务事件或已评估的更正。') : tr('This older record does not carry exact value disclosure. No value is guessed.', '这条较早记录不含精确取值披露。不会猜测任何取值。')));
     return section;
   }
+  // Catalyst Radar own expand-tier drill-down (§3): reuses this one
+  // inspector drawer -- full revision lineage when present, source clocks,
+  // the sponsor line, the dossier link, and the evidence pointer.
+  function catalystRadarRevisionSection(revision) {
+    var section = el('section', 'bci-detail-section bci-radar-revision-section');
+    section.appendChild(el('h3', '', tr('Recorded date lineage', '记录日期沿革')));
+    var revisionState = clean(valueAt(revision, 'state'));
+    if (revisionState !== 'has_revisions') {
+      var copy = revisionState === 'no_revisions_recorded'
+        ? tr('No revision to this recorded date has been collected.', '未收集到该记录日期的任何变更。')
+        : tr('Revision history has not been collected for this record.', '尚未收集该记录的变更历史。');
+      section.appendChild(el('p', 'bci-detail-note', copy));
+      return section;
+    }
+    var lineage = arr(valueAt(revision, 'lineage')), revisionCount = valueAt(revision, 'count');
+    var countLabel = revisionCount === 1 ? tr('1 revision recorded', '已记录 1 次变更') : tr(revisionCount + ' revisions recorded', '已记录 ' + revisionCount + ' 次变更');
+    section.appendChild(el('p', 'bci-detail-note', tr(countLabel + ' · newest recorded change first', countLabel + ' · 最新记录变更在前')));
+    lineage.slice().reverse().forEach(function (item, index) {
+      var card = el('article', 'bci-endpoint'), changeNumber = lineage.length - index;
+      var from = clean(valueAt(item, 'from')) || tr('Not available', '暂无');
+      var to = clean(valueAt(item, 'to')) || tr('Not available', '暂无');
+      card.appendChild(el('strong', '', tr('Recorded date change ' + changeNumber, '记录日期变更 ' + changeNumber) + (index === 0 ? tr(' · newest', ' · 最新') : '')));
+      card.appendChild(el('p', '', tr('Recorded date: ', '记录日期：') + from + ' → ' + to));
+      var fromVersion = valueAt(item, 'from_version'), toVersion = valueAt(item, 'to_version');
+      card.appendChild(el('p', '', Number.isSafeInteger(fromVersion) && Number.isSafeInteger(toVersion)
+        ? tr('Record version ', '记录版本 ') + fromVersion + ' → ' + toVersion
+        : tr('Record versions: not available', '记录版本：暂无')));
+      card.appendChild(el('p', '', clean(valueAt(item, 'observed_at'))
+        ? tr('Observed at ', '观测于 ') + observationTimestampLabel(valueAt(item, 'observed_at'))
+        : tr('Observed time: not available', '观测时间：暂无')));
+      section.appendChild(card);
+    });
+    return section;
+  }
+  function catalystRadarSection(item) {
+    var section = el('section', 'bci-detail-section bci-radar-section');
+    section.appendChild(el('h3', '', tr('Trial milestone record', '试验里程碑记录')));
+    var milestone = valueAt(item, 'milestone'), timing = valueAt(item, 'timing'), trialStatus = valueAt(item, 'trial_status'), issuer = valueAt(item, 'issuer'), evidence = valueAt(item, 'evidence'), sourceClocks = valueAt(evidence, 'source_clocks');
+    var strip = el('div', 'bci-evidence-strip');
+    strip.appendChild(fact(tr('Milestone', '里程碑'), milestoneKindLabel(milestoneKindOf(item))));
+    strip.appendChild(fact(tr('Scheduled date', '计划日期'), dateLabel(valueAt(milestone, 'date'), precisionOf(milestone))));
+    strip.appendChild(fact(tr('Registry date type', '登记日期类型'), dateTypeLabel(clean(valueAt(milestone, 'date_type')).toUpperCase() || 'UNKNOWN')));
+    strip.appendChild(fact(tr('Days to milestone', '距里程碑天数'), daysToMilestoneLabel(timing, milestone)));
+    strip.appendChild(fact(tr('Registry status', '登记状态'), clean(valueAt(trialStatus, 'value')) || tr('Not recorded', '未记录')));
+    strip.appendChild(fact(tr('Sponsor on record', '记录中的申办方'), clean(valueAt(issuer, 'sponsor_name')) || tr('Not recorded', '未记录')));
+    // MAJOR 14: state the ticker relationship plainly -- a parent-company
+    // ticker is never presented as the sponsor own listing.
+    var tickerOnRecord = clean(valueAt(issuer, 'ticker'));
+    if (tickerOnRecord) {
+      strip.appendChild(fact(
+        tr('Ticker on record', '记录中的代码'),
+        isParentIssuer(issuer) ? tr(tickerOnRecord + ' — parent company, not the sponsor', tickerOnRecord + ' — 母公司，非申办方本身') : tickerOnRecord
+      ));
+    }
+    section.appendChild(strip);
+    var clocks = el('div', 'bci-evidence-strip');
+    clocks.appendChild(fact(tr('Source update', '来源更新'), clean(valueAt(sourceClocks, 'updated_at')) ? timestampLabel(clean(valueAt(sourceClocks, 'updated_at'))) : tr('Not recorded', '未记录')));
+    clocks.appendChild(fact(tr('Retrieved', '获取时间'), clean(valueAt(sourceClocks, 'retrieved_at')) ? timestampLabel(clean(valueAt(sourceClocks, 'retrieved_at'))) : tr('Not recorded', '未记录')));
+    section.appendChild(clocks);
+    if (clean(valueAt(evidence, 'url'))) {
+      var link = el('a', 'bci-detail-link', tr('Open ClinicalTrials.gov ↗', '打开 ClinicalTrials.gov ↗'));
+      link.href = clean(valueAt(evidence, 'url')); link.target = '_blank'; link.rel = 'noopener noreferrer';
+      section.appendChild(link);
+    }
+    section.appendChild(catalystRadarRevisionSection(valueAt(item, 'revision')));
+    return section;
+  }
   function showInspectorEmpty(title, copy) { text(ui.inspectorTitle, title); clearChildren(ui.inspectorBody); var empty = el('div', 'bci-inspector-empty'); empty.appendChild(el('span', 'bci-empty-orbit')); empty.appendChild(el('p', '', copy)); ui.inspectorBody.appendChild(empty); }
   function showDetail(detail, queueEvidence, queueItem) {
     text(ui.inspectorTitle, tr('Trial dossier', '试验档案')); clearChildren(ui.inspectorBody);
@@ -1935,6 +2291,7 @@
     if (isPeerMode() && valueAt(queueItem, 'field_evidence')) ui.inspectorBody.appendChild(locatorSection(valueAt(queueItem, 'field_evidence')));
     if (isChangeMode() && valueAt(queueItem, 'change')) ui.inspectorBody.appendChild(tapeVersionSection(valueAt(queueItem, 'change'), id));
     if (isProspectiveMode()) ui.inspectorBody.appendChild(prospectiveObservationSection(valueAt(queueItem, 'prospective_change')));
+    else if (isMilestonesMode() && queueItem) ui.inspectorBody.appendChild(catalystRadarSection(queueItem));
     else ui.inspectorBody.appendChild(historySection(valueAt(detail, 'history')));
   }
   function inspectorIsModal() { return ui.inspector.classList.contains('is-open') && window.matchMedia('(max-width: 1120px)').matches; }
@@ -1972,7 +2329,7 @@
     var returnFocus = state.returnFocus, returnTrialId = returnFocus && clean(returnFocus.getAttribute('data-trial-id')), returnRowKey = returnFocus && str(returnFocus.getAttribute('data-row-key'));
     ui.inspector.classList.remove('is-open'); document.body.classList.remove('bci-inspector-open'); ui.scrim.hidden = true; syncInspectorDialog();
     state.returnFocus = null; state.selectedId = ''; state.selectedKey = ''; state.selected = null; state.detail = null; state.evidenceCell = null; abort('detailController'); state.detailToken += 1;
-    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source receipt.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源凭证。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source evidence.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源证据。'));
     if (options.writeUrl !== false) writeUrl();
     if (options.render !== false) syncQueueSelection();
     if ((!returnFocus || !document.contains(returnFocus)) && returnRowKey) returnFocus = Array.prototype.slice.call(ui.queue.querySelectorAll('[data-row-key]')).filter(function (row) { return row.getAttribute('data-row-key') === returnRowKey; })[0];
@@ -2165,7 +2522,7 @@
         else if (isScreenMode()) { rows = validateScreenPage(payload.rows, existingRows); validateScreenPagination(payload, existingRows, cursor, append ? state.payload : null); }
         else if (isPeerMode()) { rows = validatePeerPage(payload.trials, existingRows); validatePeerPagination(payload, existingRows, cursor, append ? state.payload : null); }
         else if (isChangeMode()) { rows = validateChangePage(payload.change_tape, existingRows); validateChangePagination(payload, existingRows, cursor, append ? state.payload : null); }
-        else { rows = validateMilestonePage(payload.milestones, existingRows); validateMilestonePagination(payload, existingRows, cursor, append ? state.payload : null); }
+        else { rows = validateMilestonePage(payload.catalyst_radar, existingRows); validateMilestonePagination(payload, existingRows, cursor, append ? state.payload : null); }
       } catch (contractError) {
         state.contractFailed = true;
         throw markHydration(contractError, 'integrity_block', 200);
@@ -2213,6 +2570,11 @@
     closeInspector({ restoreFocus: false, writeUrl: false, render: false }); writeUrl(); loadMilestones({ replace: true });
   }
   function setWindow(value) {
+    if (isMilestonesMode()) {
+      if (!RADAR_HORIZON_VALUES[value] || state.filters.horizon === value) return;
+      state.filters.horizon = value; syncControls(); applyFilters();
+      return;
+    }
     if (!WINDOW_VALUES[value] || state.filters.window === value) return;
     state.filters.window = value; syncControls(); applyFilters();
   }
@@ -2237,7 +2599,7 @@
     state.selectedId = ''; state.selectedKey = ''; state.selected = null; state.detail = null; state.returnFocus = null;
     ui.inspector.classList.remove('is-open'); document.body.classList.remove('bci-inspector-open'); ui.scrim.hidden = true; syncInspectorDialog();
     syncControls(); localizeControls(); writeUrl();
-    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source receipt.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源凭证。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source evidence.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源证据。'));
     if (trigger && document.contains(trigger)) trigger.focus({ preventScroll: true });
     loadMilestones({ replace: true });
   }
@@ -2263,7 +2625,8 @@
     ui.windowButtons.forEach(function (button) { button.addEventListener('click', function () { setWindow(button.getAttribute('data-window')); }); });
     ui.windowControl.addEventListener('keydown', function (event) {
       if (['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].indexOf(event.key) < 0) return;
-      var active = ui.windowButtons.map(function (button) { return button.getAttribute('data-window'); }).indexOf(state.filters.window), direction = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1, target;
+      var currentWindowValue = isMilestonesMode() ? state.filters.horizon : state.filters.window;
+      var active = ui.windowButtons.map(function (button) { return button.getAttribute('data-window'); }).indexOf(currentWindowValue), direction = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1, target;
       if (event.key === 'Home') target = 0; else if (event.key === 'End') target = ui.windowButtons.length - 1; else target = (active + direction + ui.windowButtons.length) % ui.windowButtons.length;
       event.preventDefault(); ui.windowButtons[target].focus(); setWindow(ui.windowButtons[target].getAttribute('data-window'));
     });
@@ -2288,16 +2651,27 @@
       if (state.detail) { var activeRow = selectedRow(); showDetail(state.detail, activeRow && (valueAt(activeRow, 'evidence') || valueAt(activeRow, 'source')), activeRow); }
       else if (state.detailController && ui.inspector.classList.contains('is-open')) detailLoading();
     });
-    window.addEventListener('popstate', function () { abort('listController'); closeInspector({ restoreFocus: false, writeUrl: false, render: false }); readUrl(); syncControls(); loadMilestones({ replace: true }); });
+    // MAJOR 5, every path: readUrl() below can change state.mode (e.g. a
+    // back/forward navigation that crosses modes), and localizeControls()
+    // must re-run after syncControls() repaints the shared window buttons
+    // for the new mode, or their aria-label stays the PREVIOUS mode's text.
+    window.addEventListener('popstate', function () { abort('listController'); closeInspector({ restoreFocus: false, writeUrl: false, render: false }); readUrl(); syncControls(); localizeControls(); loadMilestones({ replace: true }); });
     window.addEventListener('resize', function () {
       syncInspectorDialog();
       if (isPeerMode() && state.rows.length && state.peerNarrow !== window.matchMedia('(max-width: 760px)').matches) renderQueue();
     });
   }
   function init() {
-    cacheUi(); readUrl(); localizeControls(); syncControls(); bindEvents();
+    // syncControls() must run before localizeControls(): paintWindowOptions()
+    // (invoked at the top of syncControls()) repaints the shared window
+    // buttons into the radar 180/365/730/All vocabulary, and
+    // localizeControls() is the sole writer of those buttons' aria-label,
+    // reading data-window/data-label-en/zh at call time. Reversed, the
+    // active "365" button announces as "90 days" for the whole first-load
+    // session (MAJOR 5).
+    cacheUi(); readUrl(); syncControls(); localizeControls(); bindEvents();
     writeUrl(); paintFrame();
-    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source receipt.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源凭证。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' to read the current trial record and its source evidence.', '选择一项' + activeSingularNoun() + '，查看当前试验记录及其来源证据。'));
     loadMilestones({ replace: true });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

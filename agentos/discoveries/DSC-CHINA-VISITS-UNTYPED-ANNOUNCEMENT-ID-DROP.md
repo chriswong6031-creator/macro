@@ -65,3 +65,43 @@ instrument still reading `ok`.
 Related: [[DSC:CHINA-VISITS-FIRST-CYCLE-ZERO-IS-BOOTSTRAP-NOT-QUIET]] — same
 plane, same lesson from the other direction (a zero that instruments reported as
 healthy was structural, not real).
+
+## REPAIRED BY P1-R2 (2026-08-22)
+
+Both boundaries named above are now typed, counted exclusions —
+DEC:CHINA-KEY-INTEGRITY-TYPED-EXCLUSION. `collectors/china_filings.py` gained
+`key_anomaly()` / `normalize_announcement_id()` / `partition_by_key_integrity()`
+(pure, owned by the natural-key module) and `write_filings()` now partitions
+`new_rows` on that predicate BEFORE the `drop_duplicates(subset=["announcementId"])`
+this claim describes — malformed rows are excluded and counted
+(`LAST_KEY_INTEGRITY`, folded into `LAST_RUN_OUTCOME`), never silently
+collapsed, and a pre-existing malformed row already in the accrued store is
+split off and written back verbatim rather than risk being swept into the
+keyed dedup. `collectors/china_visits.py`'s bare comprehension is replaced by
+`account_candidates()`, an explicit typed split using the SAME predicate
+(imported from china_filings, never re-derived), and `refresh()` now
+mechanically verifies `represented + typed_exclusions == eligible` as an
+explicit branch before trusting its own derivation — an accounting that does
+not add up refuses to write anything and degrades to `source_failure`
+instead. Any run with typed exclusions is typed `upstream_degraded` (the
+EXISTING health state, not a new fifth one — `engine/china_intel_hub.py`'s
+`_visit_block()` keys off that literal string, and the hub was read but not
+edited per the commission). The `collectors.china_filings` import that
+supplies the predicate is now itself fail-closed: an import failure degrades
+to `source_failure` rather than the pre-repair behavior of proceeding to
+derive blind. Reconciliation is now auditable directly from the collector's
+own receipts (`health.json`'s additive `candidate_accounting` field, written
+on both the clean and degraded paths) rather than only by cross-referencing
+the two stores at a specific commit, which was this claim's `so_what`.
+Verified via `tests/test_china_filings_collector.py::TestKeyIntegrityMutationGuard`
+and `tests/test_china_visits_collector.py::TestAccountingMutationGuard`
+(mutation guards proving the exclusion depends on the real predicate/
+accounting, not on the test's own logic). This closes the hole this record
+describes; the falsifier and `verified_at` above remain an accurate record
+of what was true when this discovery was first verified.
+
+Sequel: repairing this mechanism without designing its lifecycle introduced two
+new lifecycle defects — [[DSC:CHINA-VISITS-KEY-EXCLUSION-LATCH-AND-AGING-FORGETFULNESS]]
+— closed by P1-R3 (DEC:CHINA-COVERAGE-EXCEPTION-LEDGER). This record's own claim
+and falsifier are unaffected: the bare-comprehension drop it describes was real
+and #6229 did remove it.

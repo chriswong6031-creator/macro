@@ -172,7 +172,7 @@ def _as_query_dataset(dataset: FinancialPacketDataset) -> FinancialQueryDataset:
     )
 
 
-def _validate_packet_dataset(entity_id: str, dataset: FinancialPacketDataset) -> CanonicalEntityBinding:
+def validate_packet_dataset(entity_id: str, dataset: FinancialPacketDataset) -> CanonicalEntityBinding:
     if not isinstance(dataset, FinancialPacketDataset):
         raise FinancialQueryUnavailableError()
     if not isinstance(dataset.entity, EntityInput):
@@ -193,7 +193,7 @@ def _validate_packet_dataset(entity_id: str, dataset: FinancialPacketDataset) ->
     return binding
 
 
-def _packet_query_request(admitted: AdmittedFinancialRequest) -> PacketQueryRequest:
+def packet_query_request(admitted: AdmittedFinancialRequest) -> PacketQueryRequest:
     """Packet-level request contract. Fail closed as private 400, never 503."""
     try:
         return PacketQueryRequest(
@@ -256,13 +256,13 @@ def execute_financial_revisions(
     before admission and packet-request validation succeed.
     """
     admitted = admit_financial_request(body, request_schema=_REQUEST_SCHEMA)
-    query_request = _packet_query_request(admitted)
+    query_request = packet_query_request(admitted)
     if provider is None:
         if provider_factory is None:
             raise FinancialQueryUnavailableError()
         provider = provider_factory()
     dataset = provider.resolve(admitted.entity_id)
-    binding = _validate_packet_dataset(admitted.entity_id, dataset)
+    binding = validate_packet_dataset(admitted.entity_id, dataset)
     _refuse_unsupported_metrics(
         binding=binding,
         dataset=dataset,
@@ -324,4 +324,6 @@ __all__ = [
     "execute_financial_revisions",
     "fip1_packet_dataset",
     "packet_dataset_from_fixture",
+    "packet_query_request",
+    "validate_packet_dataset",
 ]

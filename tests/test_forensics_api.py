@@ -945,6 +945,7 @@ def test_production_openapi_mounts_every_attested_history_route() -> None:
     assert "/api/forensics/v1/attested-history/snapshots/{snapshot_id}/roots/{root_cell_id}" in paths
     assert "/api/forensics/v1/financial/query" in paths
     assert "/api/forensics/v1/financial/revisions" in paths
+    assert "/api/forensics/v1/financial/packet" in paths
 
 
 def test_financial_query_post_unauthenticated_returns_401_with_private_headers() -> None:
@@ -975,6 +976,20 @@ def test_financial_revisions_post_unauthenticated_returns_401_with_private_heade
     _assert_private_headers(response)
 
 
+def test_financial_packet_post_unauthenticated_returns_401_with_private_headers() -> None:
+    """POST /api/forensics/v1/financial/packet without auth returns 401 with private headers."""
+    import app.main as main_mod
+
+    client = TestClient(main_mod.app, raise_server_exceptions=False)
+    response = client.post(
+        "/api/forensics/v1/financial/packet",
+        content=b'{"schema":"fundamental_forensics.financial_packet_request/v1","entity_id":"x","policy":{"selection":"latest_known_as_of","source_snapshot_at":"2024-01-01T00:00:00Z","recorded_at":"2024-01-01T00:00:00Z"},"metric_ids":["revenue"],"periods":[{"kind":"duration","start":"2023-01-01","end":"2023-12-31","label":"FY2023"}]}',
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 401
+    _assert_private_headers(response)
+
+
 # Every paid route this router owns, in the form a client actually requests.
 # The private catch-all is deliberately include_in_schema=False, so the OpenAPI
 # assertion above can never see it: only a real request proves it is mounted.
@@ -987,6 +1002,7 @@ _MOUNTED_PAID_PATHS = (
     "/api/forensics/v1/attested-history/malformed/extra/segments",
     "/api/forensics/v1/financial/query",
     "/api/forensics/v1/financial/revisions",
+    "/api/forensics/v1/financial/packet",
 )
 
 
@@ -998,7 +1014,8 @@ def test_every_paid_route_is_mounted_on_the_assembled_production_app() -> None:
     with no startup failure and no log line.  Assert what production proves:
     unauthenticated requests reach the entitlement boundary (401) instead of
     falling through to the router's 404. Entitled routes: state, health,
-    the four attested-history receipt paths, FIF-2A query, and FIF-2B revisions.
+    the four attested-history receipt paths, FIF-2A query, FIF-2B revisions,
+    and FIF-2C packet.
     GET is registered on the financial POST-only routes so auth runs before a
     private 405.
     """

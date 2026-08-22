@@ -146,6 +146,12 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests
       - name: HK+CA Prophet shadow substrate — K1-K14 + standing clauses
         run: python -m pytest tests/test_board_shadow.py -q
+      # hk-discovery wave (WS:PROPHET-HK-CA-REVAMP): the FIRST real Lane-B
+      # registration against this substrate (K-D1..K-D9) — same tmp_path
+      # fixture discipline as the K1-K20 suite above, same venv (pandas/
+      # pyarrow only; no render deps needed for this module's own kills).
+      - name: HK discovery challenger — K-D1-K-D9 (hk_discovery_v1)
+        run: python -m pytest tests/test_hk_discovery_challenger.py -q
 
   board-contradictions:
     if: ${{ false }}
@@ -2138,6 +2144,8 @@ jobs:
           tests/test_fundamental_forensics_financial_query_api.py
           tests/test_fundamental_forensics_financial_revision_service.py
           tests/test_fundamental_forensics_financial_revision_api.py
+          tests/test_fundamental_forensics_financial_packet_service.py
+          tests/test_fundamental_forensics_financial_packet_api.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
           tests/test_fundamental_forensics_broad_sec.py
@@ -2174,6 +2182,7 @@ jobs:
           tests/test_p_mp1_shell_ladder_error_state.py
           tests/test_p_mp1_shell_css_comment_termination.py
           tests/test_p_mp1_shell_repair_round.py
+          tests/test_p0_prophet_candidate_board.py
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
@@ -6597,10 +6606,15 @@ jobs:
       - "tests/test_biocatalyst_hydration.py"
       - "tests/biocatalyst_hydration_harness.js"
       - "tests/test_biocatalyst_page.py"
+      - "tests/test_biocatalyst_catalyst_radar.py"
+      - "tests/test_biocatalyst_catalyst_radar_api.py"
       - "tests/test_biocatalyst_peer_api_contract.py"
       - "tests/test_biocatalyst_worker.py"
       - "templates/biocatalyst.js"
       - "site/biocatalyst.js"
+      - "templates/biocatalyst.html.j2"
+      - "templates/biocatalyst.css"
+      - "site/biocatalyst.css"
     # BioCatalyst's authenticated workbench and deployment-isolation boundary.
     # This is an intentionally bounded command, not part of a single aggregate
     # B1/B1b/B2 command: the legacy pack runner applies timeout-minutes per
@@ -6622,6 +6636,8 @@ jobs:
           tests/test_biocatalyst_peer_api_contract.py
           tests/test_biocatalyst_deploy.py
           tests/test_biocatalyst_page.py
+          tests/test_biocatalyst_catalyst_radar.py
+          tests/test_biocatalyst_catalyst_radar_api.py
           tests/test_biocatalyst_d0b_ui.py
           tests/test_biocatalyst_hydration.py -q
 
@@ -8521,6 +8537,13 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_theme_graph_materialize.py -q
       - name: theme graph — contract guard (incident fixtures + annotation shape)
         run: TZ=UTC python -m pytest tests/test_theme_graph_contracts.py -q
+      # V4-D2B3 — node lifecycle correction lineage: the append-only retirement
+      # side-car, the resurrection-proof bake suppression (R-A1's two-day survival
+      # tests), the §6 guard invariants, and the one-shot curated correction script
+      # (target discovery, ABX generality, idempotency, the Data OS non-interference
+      # fence). Split from the other theme-graph steps so a red names this contract.
+      - name: theme graph — V4-D2B3 node lifecycle correction lineage (hostile matrix)
+        run: TZ=UTC python -m pytest tests/test_theme_graph_lifecycle.py -q
       - name: theme graph — crosswalk v3 additive integrity
         run: TZ=UTC python -m pytest tests/test_theme_graph_crosswalk.py -q
       - name: theme graph — V4-D2A identity-resolution bridge (hostile fixtures, two-clock law, reproducibility)
@@ -11847,6 +11870,7 @@ jobs:
           tests/test_market_memory_pit.py
           tests/test_market_memory_sources.py
           tests/test_market_memory_source_deploy.py
+          tests/test_market_memory_m0d_v2.py
           tests/test_market_memory_identity.py
           tests/test_market_memory_identity_observation.py
           tests/test_market_memory_identity_store.py
