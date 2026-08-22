@@ -8527,6 +8527,13 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_theme_graph_materialize.py -q
       - name: theme graph — contract guard (incident fixtures + annotation shape)
         run: TZ=UTC python -m pytest tests/test_theme_graph_contracts.py -q
+      # V4-D2B3 — node lifecycle correction lineage: the append-only retirement
+      # side-car, the resurrection-proof bake suppression (R-A1's two-day survival
+      # tests), the §6 guard invariants, and the one-shot curated correction script
+      # (target discovery, ABX generality, idempotency, the Data OS non-interference
+      # fence). Split from the other theme-graph steps so a red names this contract.
+      - name: theme graph — V4-D2B3 node lifecycle correction lineage (hostile matrix)
+        run: TZ=UTC python -m pytest tests/test_theme_graph_lifecycle.py -q
       - name: theme graph — crosswalk v3 additive integrity
         run: TZ=UTC python -m pytest tests/test_theme_graph_crosswalk.py -q
       - name: theme graph — V4-D2A identity-resolution bridge (hostile fixtures, two-clock law, reproducibility)

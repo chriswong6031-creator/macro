@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-22T12:15:35.849424+00:00",
-  "count": 1615,
+  "generated_at": "2026-08-22T14:10:25.375475+00:00",
+  "count": 1621,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -740,6 +740,48 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qolep7b5yvv-794312",
+      "title": "Global PMI Monitor Manufacturing Employment Rises in Europe",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:03:12Z",
+      "summary_points": [
+        "**Euro Area Manufacturing Resilience vs US Contraction**: Euro area manufacturing PMI rose +0.9pt to 52.8 (vs.",
+        "US decline to 53.2), signaling divergent industrial health with Europe showing stronger momentum amid US stagnation.",
+        "**Inflation Dynamics Easing**: DM input/output price PMI fell (-1.5pt/-1.2pt), with forward-looking activity component cooling (orders-to-inventories ratio at 1.10), indicating potential inflation moderation and slowing growth momentum.",
+        "**Persistent Global Supply Chain Pressures**: Manufacturing supplier delivery times remain elevated (US at 42.1), sustaining bottlenecks and inflationary risks, with historical recession correlations underscoring fragility.",
+        "**US Services Strength vs Manufacturing Fragmentation**: US services PMI expanded (+2.2pt to 56.8) while manufacturing surveys showed mixed signals (Philly Fed at highest since 2021), highlighting sector divergence critical for allocation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6co6qsp9slz-37dcdc",
+      "title": "Situation Room Slower into HG Aug 21",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:03:10Z",
+      "summary_points": [
+        "**Asset Class Flow Dominance**: High yield ETFs drive 7.8% of YTD flows (vs equities' 1.3% and loans' 5.7%), signaling structural shift toward higher-risk credit assets over equities.",
+        "**Credit Allocation Trend**: High-grade flows now represent 27% of AUM (vs HY's 15%) as of Aug-19, reflecting fundamental shift toward higher-quality credit exposure.",
+        "**Equities & Loans Flow Shift**: Equities cumulative flows at -10% of AUM (vs loans' +8%) by Aug-19, indicating significant reallocation toward fixed income amid risk-off sentiment.",
+        "**Money Market Liquidity Stress**: Sharp negative spike in weekly net flows (≈-$160bn around 10-Jun-26) elevating short-term rate volatility and portfolio liquidity risk.",
+        "**HG Fund Flow Decoupling**: HG fund flows decoupled from returns since Oct-2024 (2M price return dropped -56bps while flows rose), indicating structural shift in investor behavior."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-k4bp2b4rso2-93feb1",
       "title": "Precious Comment Gold Renewed Elevated Call Option Demand Raises Volatility and Upside Price Risk",
       "institution": "Goldman Sachs",
@@ -776,6 +818,68 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-i60jxzhif2w-30b5e7",
+      "title": "North American Power & Utilities Utilities rewired How the sector works, earns and grows Aug 21",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:03:07Z",
+      "summary_points": [
+        "**Regulatory Rate Base Mechanics**: Rate base (approved investment minus deductions) dictates return eligibility; regulatory approval of capital investment is mandatory for earnings, with timing of approval directly impacting cash flow generation and valuation.",
+        "**Capital Allocation Process**: Customer demand forecasts and system capability assessments drive regulatory filings, determining future infrastructure investment timing/scale; \"planned investment\" ≠ \"authorized capital with recovery treatment\" due to separate approval requirements.",
+        "**Regulatory Timing Risk**: Spending before rate recovery creates earnings risk; delays increase external capital needs and financial instability, making timely cost recovery critical for utility valuations.",
+        "**Regulatory Framework Uniformity**: Standardized model (essential service, defined territory, continuous investment, cost recovery, authorized return) enables predictable cash flows across electric/gas/water utilities, reducing regulatory risk for equity investors.",
+        "**Demand → Capital Plan Pipeline**: Utilities translate customer demand into regulatory filings; this process is fundamental to understanding capital allocation and risk exposure in utility valuations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 51,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mvgglzfphkr-d054de",
+      "title": "Market Intelligence US Morning Update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:02:57Z",
+      "summary_points": [
+        "**Korea Exports & China Consumer Path**: Mid-month Korea exports rebound 3.1% (chip demand-driven), while China consumer data uncertainty shapes global trade flows and tech sector sentiment.",
+        "**US PMI Data Releases**: S&P Global US manufacturing/services PMI near consensus (53.9/53.9 vs prior 53.9/54.6) signals potential economic slowdown concerns.",
+        "**Japan Market Vulnerability**: Concentrated AI/BoJ policy stocks face momentum reversal risk amid structural fragility from cross-shareholding unwinding.",
+        "**G10 Consumer Spending Slowdown**: July 2026 data signals weakening demand, critical for equity valuations and sector rotation (e.g., consumer discretionary)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5cg2d9zt4w4-d0e0ec",
+      "title": "GS TWIG Notes This Week in Global Research August 21, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:02:54Z",
+      "summary_points": [
+        "**Fed Rate Outlook**: Sluggish growth (2H26 real spending 1-1.5%), weak labor market (5K/mo job growth, 40bp unemployment drop), low core inflation → no rate hikes; Fed transparency debate may amplify volatility.",
+        "**Germany Labor Market Tightening**: Rising real wages amid stagnant productivity, aging workforce + immigration controls driving 0.4% annual labor supply contraction (fundamentals, risk factor).",
+        "**Drug Innovation Catalysts**: MRNA/MRK melanoma vaccine trial success (FDA approval potential) and GLP-1s off-patent in Canada/Brazil (generic opportunity, Sandoz best positioned).",
+        "**Hedge Fund Positioning**: Mutual funds outperforming benchmarks (41% vs 37% avg), US equity long/short returns 10% post-July (flows, technicals).",
+        "**SEC Policy Shift**: Crypto Assets proposal could expand digital asset use into tokenization/DeFi, creating new use cases (policy, flow catalyst)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
@@ -879,6 +983,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5mh0jm3gdzp-2d60c1",
+      "title": "Asia Pacific Weekly Kickstart MXAPJ rose another 1 as HK China Offshore rebounded and Asian FX strengthened despite resumed...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T19:02:46Z",
+      "summary_points": [
+        "**MXAPJ Performance & Key Drivers**: MXAPJ rose +1.0% on HK/China offshore rebound, Asian FX strength, and resilient tech exports; US manufacturing beat, China July activity miss, Japan Q2 GDP disappointment.",
+        "**MSCI Rebalancing Flow Impact**: $42bn gross flows (Aug 31, 2026), Japan (+$2.2bn), India (+$1.5bn), Taiwan (+$0.7bn) inflows; Korea (-$1.1bn), Australia (-$0.7bn), ASEAN (-$0.7bn) outflows.",
+        "**Korea ETF Rebound vs Taiwan Outflows**: Korea leveraged ETF AUM rebounded to $25bn (1.8% market exposure); Taiwan leveraged ETF AUM near record $13bn with $1B profit-taking outflows.",
+        "**Earnings Beat/Miss Impact**: Beats (+5%+) drive +2.5% relative price return (vs.",
+        "5-yr avg), misses (-5%+) trigger -2.2% underperformance; Australia, China A, Taiwan show strongest beat gains (+6%)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 35,
       "language": "en",
       "needs_metadata": false
     },

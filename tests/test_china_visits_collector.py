@@ -712,3 +712,419 @@ class TestVisitBlockUpstreamDegraded:
         assert block["state"] == "ok"
         assert len(block["recent"]) == 1
         assert block["recent"][0]["title"] == "投资者关系活动记录表"
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 (2026-08-22, DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP) —
+# account_candidates: the pure accounting function that replaced the bare
+# comprehension `[_derive_row(f, ts) for f in candidates if f.get(...)]`.
+# --------------------------------------------------------------------------- #
+
+class TestAccountCandidates:
+    def test_valid_plus_missing_id_candidate(self):
+        candidates = [
+            _filing_row("A1", "000001", "投资者关系活动记录表", "2026-08-19T09:00:00+08:00"),
+            {**_filing_row("A2", "000002", "特定对象调研纪要", "2026-08-19T10:00:00+08:00"),
+             "announcementId": None},
+        ]
+        acc = cv.account_candidates(candidates, "2026-08-20T00:00:00+00:00", cf.key_anomaly)
+        assert acc["eligible"] == 2
+        assert acc["represented"] == 1
+        assert acc["typed_exclusions"] == 1
+        assert acc["exclusions_by_type"] == {"missing": 1}
+        assert acc["rows"][0]["announcement_id"] == "A1"
+
+    def test_multiple_missing_ids_prove_no_silent_collapse(self):
+        """At least 3 malformed candidates in one batch — typed_exclusions
+        must report 3, never 1."""
+        candidates = [
+            {**_filing_row(f"B{i}", f"00000{i}", "机构调研情况登记表",
+                            "2026-08-19T09:00:00+08:00"), "announcementId": ""}
+            for i in range(3)
+        ]
+        acc = cv.account_candidates(candidates, "2026-08-20T00:00:00+00:00", cf.key_anomaly)
+        assert acc["represented"] == 0
+        assert acc["typed_exclusions"] == 3
+        assert acc["exclusions_by_type"] == {"empty": 3}
+
+    def test_none_id_excluded(self):
+        candidates = [{**_filing_row("C1", "000001", "t", "2026-08-19T09:00:00+08:00"),
+                        "announcementId": None}]
+        acc = cv.account_candidates(candidates, "2026-08-20T00:00:00+00:00", cf.key_anomaly)
+        assert acc["typed_exclusions"] == 1
+        assert acc["exclusions_by_type"] == {"missing": 1}
+
+    def test_empty_string_id_excluded(self):
+        candidates = [{**_filing_row("C2", "000001", "t", "2026-08-19T09:00:00+08:00"),
+                        "announcementId": ""}]
+        acc = cv.account_candidates(candidates, "2026-08-20T00:00:00+00:00", cf.key_anomaly)
+        assert acc["exclusions_by_type"] == {"empty": 1}
+
+    def test_whitespace_ids_excluded(self):
+        candidates = [
+            {**_filing_row("C3", "000001", "t", "2026-08-19T09:00:00+08:00"),
+             "announcementId": " "},
+            {**_filing_row("C4", "000002", "t", "2026-08-19T09:00:00+08:00"),
+             "announcementId": "\t"},
+            {**_filing_row("C5", "000003", "t", "2026-08-19T09:00:00+08:00"),
+             "announcementId": "　"},
+        ]
+        acc = cv.account_candidates(candidates, "2026-08-20T00:00:00+00:00", cf.key_anomaly)
+        assert acc["exclusions_by_type"] == {"whitespace": 3}
+
+    def test_nan_ids_excluded(self):
+        candidates = [
+            {**_filing_row("C6", "000001", "t", "2026-08-19T09:00:00+08:00"),
+             "announcementId": float("nan")},
+            {**_filing_row("C7", "000002", "t", "2026-08-19T09:00:00+08:00"),
+             "announcementId": pd.NA},
+            {**_filing_row("C8", "000003", "t", "2026-08-19T09:00:00+08:00"),
+             "announcementId": pd.NaT},
+        ]
+        acc = cv.account_candidates(candidates, "2026-08-20T00:00:00+00:00", cf.key_anomaly)
+        assert acc["exclusions_by_type"] == {"nan": 3}
+
+    def test_valid_rows_preserved_beside_malformed_ones(self):
+        candidates = [
+            _filing_row("D1", "000001", "投资者关系活动记录表", "2026-08-19T09:00:00+08:00"),
+            {**_filing_row("D2", "000002", "t", "2026-08-19T09:00:00+08:00"),
+             "announcementId": ""},
+            _filing_row("D3", "000003", "特定对象调研纪要", "2026-08-19T10:00:00+08:00"),
+        ]
+        acc = cv.account_candidates(candidates, "2026-08-20T00:00:00+00:00", cf.key_anomaly)
+        assert acc["represented"] == 2
+        assert {r["announcement_id"] for r in acc["rows"]} == {"D1", "D3"}
+
+    def test_identity_recovery_string_format(self):
+        candidates = [{**_filing_row("E1", "600001", "顺网科技：投资者关系活动记录表",
+                                      "2026-08-19T09:00:00+08:00"),
+                       "announcementId": None}]
+        acc = cv.account_candidates(candidates, "2026-08-20T00:00:00+00:00", cf.key_anomaly)
+        assert acc["excluded_identities"] == [
+            "600001|2026-08-19T09:00:00+08:00|顺网科技：投资者关系活动记录表"
+        ]
+
+    def test_identity_list_capped_at_five(self):
+        candidates = [
+            {**_filing_row(f"F{i}", f"00000{i}", "t", "2026-08-19T09:00:00+08:00"),
+             "announcementId": ""}
+            for i in range(8)
+        ]
+        acc = cv.account_candidates(candidates, "2026-08-20T00:00:00+00:00", cf.key_anomaly)
+        assert acc["typed_exclusions"] == 8
+        assert len(acc["excluded_identities"]) == 5
+
+    def test_pure_no_io(self):
+        candidates = [_filing_row("G1", "000001", "t", "2026-08-19T09:00:00+08:00")]
+        cv.account_candidates(candidates, "2026-08-20T00:00:00+00:00", cf.key_anomaly)
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 — refresh(): mechanical identity check, typed exclusion end to end
+# --------------------------------------------------------------------------- #
+
+class TestRefreshKeyIntegrity:
+    def test_valid_plus_missing_candidate_typed_excluded(self):
+        cf.write_filings([_filing_row("H1", "000001", "投资者关系活动记录表",
+                                       "2026-08-19T09:00:00+08:00")])
+        # Seed a pre-existing malformed row DIRECTLY into the accrued filings
+        # store (bypassing write_filings' own exclusion) so china_visits must
+        # independently exclude it — proving the visits-side guard does not
+        # merely rely on the filings-side guard never letting one through.
+        existing = cf.load_filings()
+        bad = _filing_row("H2", "000002", "特定对象调研纪要", "2026-08-19T10:00:00+08:00")
+        bad["announcementId"] = None
+        seed = pd.concat([existing, pd.DataFrame([bad])], ignore_index=True)
+        seed.to_parquet(cf._store_path(), index=False)
+
+        s = cv.refresh()
+        assert s["status"] == "upstream_degraded"   # typed exclusion this run
+        assert s["n_represented"] == 1
+        assert s["n_excluded"] == 1
+        # The anomaly this plane OBSERVES from the committed store is "nan",
+        # never "missing". The conversion happens at pd.DataFrame CONSTRUCTION,
+        # NOT at the parquet round-trip: the key column is a pandas string
+        # dtype whose NA sentinel is nan, so a raw None is already nan before
+        # anything is written, and the round-trip is a no-op (pre-write and
+        # post-read values are identical — independently verified 2026-08-22
+        # after an earlier version of this comment blamed pyarrow). Consequence
+        # worth keeping in view: "missing" is unreachable at every
+        # frame-mediated boundary and can only fire on the raw-dict new_rows
+        # path, which is exactly what makes _parse_announcement's None default
+        # load-bearing there and nowhere else. A genuinely absent key never
+        # reaches the accrued store anyway, because write_filings() already
+        # excludes it — this is the SAME exclusion, independently proven at
+        # THIS boundary instead.
+        assert s["exclusions"] == {"nan": 1}
+        assert "H1" in set(cv.load_visits()["announcement_id"])
+        assert "H2" not in set(cv.load_visits()["announcement_id"])
+
+    def test_multiple_missing_ids_counted_not_collapsed(self):
+        """The counter (n_excluded / exclusions) must report 3, never 1."""
+        existing = cf.load_filings()
+        bad_rows = []
+        for i in range(3):
+            r = _filing_row(f"J{i}", f"00000{i}", "机构调研情况登记表",
+                             "2026-08-19T09:00:00+08:00")
+            r["announcementId"] = ""
+            bad_rows.append(r)
+        seed = pd.concat([existing, pd.DataFrame(bad_rows)], ignore_index=True)
+        seed.to_parquet(cf._store_path(), index=False)
+
+        s = cv.refresh()
+        assert s["n_excluded"] == 3
+        assert s["exclusions"] == {"empty": 3}
+        assert cv.load_visits().empty   # zero well-keyed candidates this run
+
+    def _seed_one_malformed(self, announcement_id):
+        """A single malformed candidate row, WITH a valid sibling row in the
+        same write — a lone all-null column lets pyarrow round-trip the
+        Python sentinel type-preserved (None survives as None), which is not
+        representative of a real accrued store where the column is object-
+        dtype-with-strings; a sibling forces the realistic, empirically
+        stable round-trip (verified: None/nan/pd.NA/pd.NaT all normalize to
+        float NaN when a real string shares the column)."""
+        sib = _filing_row("K0", "000099", "投资者关系活动记录表", "2026-08-18T09:00:00+08:00")
+        r = _filing_row("K1", "000001", "投资者关系活动记录表", "2026-08-19T09:00:00+08:00")
+        r["announcementId"] = announcement_id
+        pd.DataFrame([sib, r]).reindex(columns=list(cf._COLUMNS)).to_parquet(
+            cf._store_path(), index=False
+        )
+
+    def test_none_candidate_excluded(self):
+        self._seed_one_malformed(None)
+        s = cv.refresh()
+        assert s["n_excluded"] == 1
+        # See _seed_one_malformed's docstring: a committed-store round-trip
+        # normalizes a raw None to "nan", not "missing" — both are typed
+        # exclusions; "missing" itself is unit-covered pre-storage by
+        # TestAccountCandidates.test_none_id_excluded and
+        # tests/test_china_filings_collector.py::TestKeyAnomaly.
+        assert s["exclusions"] == {"nan": 1}
+        # only the valid sibling (K0) survives; K1 (malformed) excluded
+        assert set(cv.load_visits()["announcement_id"]) == {"K0"}
+
+    def test_empty_string_candidate_excluded(self):
+        self._seed_one_malformed("")
+        s = cv.refresh()
+        assert s["exclusions"] == {"empty": 1}
+        assert set(cv.load_visits()["announcement_id"]) == {"K0"}
+
+    def test_whitespace_candidates_excluded(self):
+        for bad in (" ", "\t", "　"):
+            self._seed_one_malformed(bad)
+            s = cv.refresh()
+            assert s["exclusions"] == {"whitespace": 1}, bad
+            assert set(cv.load_visits()["announcement_id"]) == {"K0"}
+
+    def test_nan_candidates_excluded(self):
+        for bad in (float("nan"), pd.NA, pd.NaT):
+            self._seed_one_malformed(bad)
+            s = cv.refresh()
+            assert s["n_excluded"] == 1, bad
+            assert s["exclusions"] == {"nan": 1}, bad
+            assert set(cv.load_visits()["announcement_id"]) == {"K0"}
+
+    def test_valid_rows_preserved_beside_malformed_ones_same_run(self):
+        """The good visit row IS written to visits.parquet in the SAME
+        degraded run as the malformed one."""
+        good = _filing_row("L1", "000001", "投资者关系活动记录表", "2026-08-19T09:00:00+08:00")
+        bad = _filing_row("L2", "000002", "特定对象调研纪要", "2026-08-19T10:00:00+08:00")
+        bad["announcementId"] = ""
+        pd.DataFrame([good, bad]).reindex(columns=list(cf._COLUMNS)).to_parquet(
+            cf._store_path(), index=False
+        )
+        s = cv.refresh()
+        assert s["status"] == "upstream_degraded"
+        assert "L1" in set(cv.load_visits()["announcement_id"])
+        assert "L2" not in set(cv.load_visits()["announcement_id"])
+
+    def test_lane_survives_and_health_goes_loud(self, capsys):
+        """refresh() returns without raising; health.status goes loud
+        ('upstream_degraded'), and the GitHub annotation line-starts."""
+        self._seed_one_malformed(None)
+        s = cv.refresh()   # must not raise
+        assert s["status"] == "upstream_degraded"
+        assert cv.read_health()["status"] == "upstream_degraded"
+        out = capsys.readouterr().out
+        lines = [ln for ln in out.splitlines() if ln.startswith("::")]
+        assert lines, f"no line-start GitHub annotation found: {out!r}"
+        assert "china-visits-malformed-announcement-id" in lines[0]
+
+    def test_health_carries_candidate_accounting_on_ok_path(self):
+        """P1-R2 §C.7: a CLEAN run's own health.json also carries the
+        arithmetic — auditable from the collector's own receipts."""
+        cf.write_filings([_filing_row("M1", "000001", "投资者关系活动记录表",
+                                       "2026-08-19T09:00:00+08:00")])
+        s = cv.refresh()
+        assert s["status"] == "ok"
+        acc = cv.read_health()["candidate_accounting"]
+        assert acc == {"eligible": 1, "represented_downstream": 1,
+                        "typed_exclusions": 0, "exclusions_by_type": {}}
+
+    def test_health_carries_candidate_accounting_on_degraded_path(self):
+        self._seed_one_malformed("")   # K0 (valid) + K1 (malformed) — see helper docstring
+        cv.refresh()
+        acc = cv.read_health()["candidate_accounting"]
+        assert acc == {"eligible": 2, "represented_downstream": 1,
+                        "typed_exclusions": 1, "exclusions_by_type": {"empty": 1}}
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 — measured absence cannot advance under typed exclusions
+# --------------------------------------------------------------------------- #
+
+class TestMeasuredAbsenceCannotAdvance:
+    def test_last_success_utc_frozen_and_coverage_start_unstamped(self):
+        cv._write_health("ok", "prior baseline run", success=True)
+        prior_last_success = cv.read_health()["last_success_utc"]
+        assert cv.read_coverage_start() is None
+
+        r = _filing_row("N1", "000001", "投资者关系活动记录表", "2026-08-19T09:00:00+08:00")
+        r["announcementId"] = None
+        pd.DataFrame([r]).reindex(columns=list(cf._COLUMNS)).to_parquet(
+            cf._store_path(), index=False
+        )
+        s = cv.refresh()
+        assert s["status"] == "upstream_degraded"
+        health = cv.read_health()
+        assert health["last_success_utc"] == prior_last_success   # frozen
+        assert cv.read_coverage_start() is None                   # never stamped
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 §C.1 — collectors.china_filings import failure fails CLOSED
+# --------------------------------------------------------------------------- #
+
+class TestImportFailureFailsClosed:
+    def test_import_failure_writes_source_failure_never_derives_blind(self, monkeypatch):
+        """Pre-P1-R2 this degraded to same_run_outcome=None and proceeded to
+        derive over the committed store. Now it must fail CLOSED: this plane
+        can no longer verify its own accounting without china_filings'
+        key_anomaly predicate.
+
+        refresh() does `from collectors import china_filings as _cf` — a
+        narrow, targeted __import__ patch is the only seam available for a
+        function-local import statement (collectors.china_filings is already
+        cached in sys.modules from this test module's own top-level import,
+        so removing the module or the package attribute would not force a
+        re-import failure)."""
+        cf.write_filings([_filing_row("O1", "000001", "投资者关系活动记录表",
+                                       "2026-08-19T09:00:00+08:00")])
+
+        import builtins
+        real_import = builtins.__import__
+
+        def _fake_dunder_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "collectors" and fromlist and "china_filings" in fromlist:
+                raise ImportError("simulated import failure")
+            return real_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", _fake_dunder_import)
+
+        s = cv.refresh()
+        assert s["status"] == "source_failure"
+        assert cv.load_visits().empty   # never derived
+        health = cv.read_health()
+        assert health["status"] == "source_failure"
+        assert "import failed" in health["detail"]
+        assert cv.read_coverage_start() is None
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 §C.6 — cause composition: both same-run-degraded AND typed exclusions
+# --------------------------------------------------------------------------- #
+
+class TestCauseComposition:
+    def test_both_causes_named_in_one_record(self):
+        cf.LAST_RUN_OUTCOME = {"ok": False, "errors": ["sse: simulated outage"],
+                                "per_exchange": {}, "at": "t0",
+                                "key_integrity": {"excluded_total": 0,
+                                                   "excluded_by_type": {},
+                                                   "preexisting_unkeyed": 0, "at": "t0"}}
+        r = _filing_row("P1", "000001", "投资者关系活动记录表", "2026-08-19T09:00:00+08:00")
+        r["announcementId"] = ""
+        pd.DataFrame([r]).reindex(columns=list(cf._COLUMNS)).to_parquet(
+            cf._store_path(), index=False
+        )
+        s = cv.refresh()
+        assert s["status"] == "upstream_degraded"
+        detail = cv.read_health()["detail"]
+        assert "DEGRADED same-run china_filings refresh" in detail
+        assert "excluded on malformed announcementId" in detail
+
+
+# --------------------------------------------------------------------------- #
+# P1-R2 §11b — MUTATION GUARD: under-reporting account_candidates refuses ok
+# --------------------------------------------------------------------------- #
+
+class TestAccountingMutationGuard:
+    def test_underreporting_account_candidates_refuses_clean_write(self, monkeypatch):
+        """MUTATION GUARD: if account_candidates under-reported (represented
+        + typed_exclusions < eligible), refresh() must refuse a clean 'ok',
+        write 'source_failure' instead, and store NOTHING — trusting an
+        accounting that doesn't add up is exactly the failure mode this
+        mechanical identity check exists to catch."""
+        cf.write_filings([_filing_row("Q1", "000001", "投资者关系活动记录表",
+                                       "2026-08-19T09:00:00+08:00")])
+
+        def _underreport(candidates, system_recorded_at, key_anomaly):
+            return {"eligible": len(candidates), "rows": [], "represented": 0,
+                    "typed_exclusions": 0, "exclusions_by_type": {},
+                    "excluded_identities": []}
+        monkeypatch.setattr(cv, "account_candidates", _underreport)
+
+        s = cv.refresh()
+        assert s["status"] == "source_failure"
+        assert cv.read_health()["status"] == "source_failure"
+        assert cv.load_visits().empty
+
+
+# --------------------------------------------------------------------------- #
+# T7 extension — P1-R2: hub state under a same-run typed-exclusion degrade
+# --------------------------------------------------------------------------- #
+
+class TestVisitBlockUpstreamDegradedP1R2(TestVisitBlockUpstreamDegraded):
+    """Extends TestVisitBlockUpstreamDegraded (T7) with the P1-R2 condition:
+    a run degraded by THIS plane's own typed exclusions (not just a same-run
+    china_filings failure) must ALSO freeze last_success_utc, leave
+    coverage_start unstamped, and read 'stale' (never 'measured_no_event')
+    for a covered ticker with no rows — proven end to end via a real
+    refresh(), not just a synthetic ctx dict."""
+
+    def test_typed_exclusion_degrade_reads_stale_end_to_end(self):
+        from engine.china_intel_hub import _load_visits_context, _visit_block
+
+        # Establish coverage_start via a genuine clean run FIRST — the hub's
+        # _visit_block() checks `if not coverage_start: return "no_coverage"`
+        # before it ever looks at health.status, so a real "stale" read
+        # requires a real prior successful run, not just a hand-written
+        # health.json (real-world: P1 has been live for days before a
+        # malformed key ever shows up).
+        cf.write_filings([_filing_row("R0", "000000", "投资者关系活动记录表",
+                                       "2026-08-18T09:00:00+08:00")])
+        s0 = cv.refresh()
+        assert s0["status"] == "ok"
+        prior_last_success = cv.read_health()["last_success_utc"]
+        coverage_start_before = cv.read_coverage_start()
+        assert coverage_start_before is not None
+
+        # Append a malformed candidate to the accrued store (not replace) —
+        # representative of a real accrued multi-row store.
+        existing = cf.load_filings()
+        bad = _filing_row("R1", "999999", "投资者关系活动记录表", "2026-08-19T09:00:00+08:00")
+        bad["announcementId"] = ""
+        seed = pd.concat([existing, pd.DataFrame([bad])], ignore_index=True)
+        seed.to_parquet(cf._store_path(), index=False)
+
+        s = cv.refresh()
+        assert s["status"] == "upstream_degraded"
+        assert cv.read_health()["last_success_utc"] == prior_last_success   # frozen
+        assert cv.read_coverage_start() == coverage_start_before             # unchanged
+
+        ctx = _load_visits_context()
+        # A covered ticker (any A-share code) with no rows for it.
+        block = _visit_block("000001.SZ", ctx)
+        assert block["state"] == "stale"
+        assert block["state"] != "measured_no_event"
+        assert block["state"] != "source_failure"

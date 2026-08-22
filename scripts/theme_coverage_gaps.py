@@ -236,7 +236,13 @@ def main(argv: list[str] | None = None) -> int:
         print("::notice title=theme coverage gaps::no instrument ids supplied — nothing "
               "to diagnose", flush=True)
         return 0
-    nodes = store.read_nodes()
+    # V4-D2B3 (§11 consumer decision): current=True — a retired/merged company is not
+    # an active identity any caller should be told is "covered" or "isolated"; it is
+    # simply not a coverage-gap candidate at all. Filtered out here (never inside
+    # store.read_nodes itself, which only OVERLAYS status — it never drops rows).
+    nodes = store.read_nodes(current=True)
+    if not nodes.empty and "status" in nodes.columns:
+        nodes = nodes[~nodes["status"].isin(store.RETIRED_LIKE_STATUSES)]
     edges = store.read_edges(latest_belief=True).to_dict("records")
     if not len(nodes) or not edges:
         print("::notice title=theme coverage gaps::theme graph store is empty — run "

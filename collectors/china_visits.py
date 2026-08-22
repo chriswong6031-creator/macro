@@ -55,6 +55,23 @@ run exactly as before — positive rows (real filings) are NEVER discarded on
 account of a degraded refresh — but the run is typed "upstream_degraded"
 instead of "ok", coverage_start is not stamped, and last_success_utc is not
 advanced, because a degraded run proves nothing about absence.
+
+P1-R2 announcement-id integrity (2026-08-22, DSC:CHINA-VISITS-UNTYPED-
+ANNOUNCEMENT-ID-DROP): the bare comprehension that used to build candidate
+rows dropped any row with a falsy announcementId silently — no typed
+exclusion, no counter, no health note, while n_candidates kept counting the
+pre-filter list. account_candidates() now performs that split explicitly and
+typed, using the SAME key_anomaly() predicate china_filings.py's own write
+path uses (imported from there, never re-derived here, so the two boundaries
+can never silently diverge); refresh() then MECHANICALLY VERIFIES
+`represented + typed_exclusions == eligible` before trusting the derivation,
+and the collectors.china_filings import block that supplies the predicate is
+now FAIL-CLOSED (an import failure degrades to source_failure instead of
+deriving blind). Any run with typed exclusions is typed "upstream_degraded"
+— reusing the existing health state rather than inventing a fifth, per
+_HEALTH_STATES' comment below — and both causes (a degraded same-run
+china_filings refresh, and this plane's own typed exclusions) are composed
+into ONE record's detail when both fire.
 """
 from __future__ import annotations
 
@@ -293,7 +310,17 @@ def _stamp_coverage_start_once(today_iso: str) -> None:
 #                       filing — but the run advances no absence evidence
 #                       (last_success_utc stays frozen, coverage_start is not
 #                       stamped) and the dossier must never read
-#                       measured_no_event from it.
+#                       measured_no_event from it. (P1-R2) ALSO producible
+#                       when this run's own account_candidates() typed-
+#                       excludes >=1 candidate on a malformed announcementId
+#                       — reused rather than a new fifth state, because
+#                       engine/china_intel_hub.py's _visit_block() diverts a
+#                       no-rows name away from measured_no_event on the
+#                       LITERAL status string "upstream_degraded" only; a new
+#                       state would fall through that check and render as a
+#                       clean measured absence — the exact silent conversion
+#                       this repair exists to prevent. When both causes fire
+#                       in the same run, one record's detail names BOTH.
 # Reserved, not producible by this collector build: rights_suppressed (rights
 # are settled — RIGHTS-0), low_extraction_confidence and contradicted (no LLM
 # extraction in this PR). not_yet_available / identity_unresolved /
@@ -314,10 +341,23 @@ def read_health() -> dict:
         return {"status": "no_coverage", "detail": f"health.json unreadable: {e}"}
 
 
-def _write_health(status: str, detail: str, *, success: bool) -> None:
+def _write_health(
+    status: str, detail: str, *, success: bool, accounting: dict | None = None,
+) -> None:
     """Persist the health record. `success` advances last_success_utc; a
     failed run keeps the PRIOR last_success_utc (health.status alone tells
-    the dossier the tape may currently be behind)."""
+    the dossier the tape may currently be behind).
+
+    `accounting` (P1-R2, optional, keyword-only): when present it is
+    persisted as an ADDITIVE `candidate_accounting` field —
+    `{"eligible": N, "represented_downstream": R, "typed_exclusions": X,
+    "exclusions_by_type": {...}}` — so a clean run's own receipt also
+    carries the arithmetic that used to be recoverable only by cross-
+    referencing the filings and visits stores directly (the `so_what` in
+    DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP). Existing fields and
+    their semantics are unchanged; omitting `accounting` (the default)
+    reproduces the pre-P1-R2 health.json shape exactly.
+    """
     assert status in _HEALTH_STATES, f"unknown health status {status!r}"
     now = datetime.now(timezone.utc).isoformat()
     prior = read_health()
@@ -327,6 +367,8 @@ def _write_health(status: str, detail: str, *, success: bool) -> None:
         "last_attempt_utc": now,
         "last_success_utc": now if success else prior.get("last_success_utc"),
     }
+    if accounting is not None:
+        doc["candidate_accounting"] = accounting
     try:
         _health_path().write_text(json.dumps(doc, indent=1))
     except Exception as e:  # noqa: BLE001
@@ -358,6 +400,64 @@ def _derive_row(filing: dict, system_recorded_at: str) -> dict:
     }
 
 
+def account_candidates(candidates: list[dict], system_recorded_at: str, key_anomaly) -> dict:
+    """Explicit, PURE accounting over eligible candidate filing rows (P1-R2).
+
+    Replaces the bare comprehension `[_derive_row(f, ts) for f in candidates
+    if f.get("announcementId")]` — untyped, uncounted, silent (DSC:
+    CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP) — with a typed split on the
+    SAME predicate china_filings.py's own write path uses (`key_anomaly`,
+    passed in rather than imported, so this stays a pure function callers can
+    stub for the mutation test in tests/test_china_visits_collector.py).
+
+    Returns:
+      eligible            — len(candidates), the pre-filter count.
+      rows                — derived china_visits rows for well-keyed candidates.
+      represented         — len(rows).
+      typed_exclusions    — count of malformed candidates excluded.
+      exclusions_by_type  — {anomaly: count} for the anomalies that fired.
+      excluded_identities — up to 5 human-recoverable identity strings for
+                             excluded rows, formatted "sec_code|publish_ts|
+                             title[:60]" because there is no announcementId
+                             to name them by. LOG / GitHub-annotation use
+                             ONLY — never a user-facing surface.
+
+    refresh() uses `represented + typed_exclusions == eligible` as its
+    mechanical accounting identity — this function is what makes that
+    identity meaningful rather than tautological.
+    """
+    rows: list[dict] = []
+    exclusions_by_type: dict[str, int] = {}
+    excluded_identities: list[str] = []
+    for f in candidates:
+        anomaly = key_anomaly(f.get("announcementId"))
+        if anomaly is None:
+            rows.append(_derive_row(f, system_recorded_at))
+        else:
+            exclusions_by_type[anomaly] = exclusions_by_type.get(anomaly, 0) + 1
+            if len(excluded_identities) < 5:
+                sec_code = f.get("sec_code", "")
+                publish_ts = f.get("publish_ts", "")
+                title = (f.get("title") or "")[:60]
+                excluded_identities.append(f"{sec_code}|{publish_ts}|{title}")
+    return {
+        "eligible": len(candidates),
+        "rows": rows,
+        "represented": len(rows),
+        "typed_exclusions": sum(exclusions_by_type.values()),
+        "exclusions_by_type": exclusions_by_type,
+        "excluded_identities": excluded_identities,
+    }
+
+
+def _zero_progress(status: str) -> dict:
+    """Canonical zero-progress sentinel shape (P1-R2 adds n_represented/
+    n_excluded/exclusions alongside the pre-existing status/n_candidates/
+    n_new fields — every refresh() return path now carries all six)."""
+    return {"status": status, "n_candidates": 0, "n_new": 0,
+            "n_represented": 0, "n_excluded": 0, "exclusions": {}}
+
+
 def refresh() -> dict:
     """Derive tonight's visit-tape delta from china_filings' own store.
 
@@ -376,6 +476,20 @@ def refresh() -> dict:
     from a genuinely empty one. This plane needs that distinction: only the
     latter is safe to treat as "0 candidates, healthy run" — the former must
     surface as source_failure so the dossier never renders it as a quiet tape.
+
+    P1-R2 (2026-08-22, DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP): the
+    bare comprehension that used to build `rows` from `candidates` dropped
+    any candidate with a falsy announcementId with no typed exclusion, no
+    counter, no health note — while n_candidates kept counting the
+    PRE-filter list, so a run that silently dropped k candidates printed the
+    exact same "N candidate row(s) this run, ok" shape as a run that dropped
+    none. account_candidates() below replaces the comprehension with an
+    explicit, typed split, and the `represented + typed_exclusions ==
+    eligible` check just after it is this plane's own mechanical proof that
+    its accounting has not silently diverged from what it derived — an
+    assert would be stripped under `python -O` and swallowed by the outer
+    except, so it is an explicit branch instead (the branch the mutation
+    test in tests/test_china_visits_collector.py kills).
     """
     system_recorded_at = datetime.now(timezone.utc).isoformat()
     today_iso = system_recorded_at[:10]
@@ -386,63 +500,130 @@ def refresh() -> dict:
             # THIS plane, just nothing to derive from yet. Coverage does not start.
             log.info("china_visits: china_filings store not present yet — 0-row night")
             _write_health("no_coverage", "china_filings store not present yet", success=False)
-            return {"status": "no_coverage", "n_candidates": 0, "n_new": 0}
+            return _zero_progress("no_coverage")
 
         try:
             filings = pd.read_parquet(filings_path)
         except Exception as e:  # noqa: BLE001
             log.error("china_visits: china_filings store unreadable: %s", e)
             _write_health("source_failure", f"filings store unreadable: {e}", success=False)
-            return {"status": "source_failure", "n_candidates": 0, "n_new": 0}
+            return _zero_progress("source_failure")
 
         # P1-R1 same-cycle derivation contract: when china_filings ran earlier
         # in THIS process (same cninfo host-group thread, china_filings then
         # china_visits — see scripts/collect.py _CONCURRENT_HOSTS), its
         # outcome names whether the store just read above is a clean
         # same-run refresh or a degraded one. Lazy import to avoid an import
-        # cycle; any failure to even read the flag degrades to None, which is
-        # the same as "china_filings did not run in this process" — the
-        # legitimate `--only china_visits` proof/debug path where this plane
-        # derives over whatever is already committed.
+        # cycle.
+        #
+        # P1-R2: this import is now ALSO the source of the key-integrity
+        # predicate (key_anomaly) this plane depends on to compute its own
+        # accounting identity below — so an import FAILURE here is no longer
+        # equivalent to "china_filings did not run in this process". It used
+        # to degrade to same_run_outcome=None and proceed (deriving blind);
+        # now it fails CLOSED: without the predicate this plane cannot
+        # verify its own accounting, so it must not derive at all. A
+        # SUCCESSFUL import with LAST_RUN_OUTCOME is None is UNCHANGED and
+        # still the legitimate `--only china_visits` committed-store
+        # proof/debug path.
         try:
             from collectors import china_filings as _cf  # noqa: PLC0415
-            same_run_outcome = _cf.LAST_RUN_OUTCOME
-        except Exception:  # noqa: BLE001 — must never sink this plane
-            same_run_outcome = None
+        except Exception as e:  # noqa: BLE001 — must never sink this plane
+            log.error("china_visits: collectors.china_filings import failed: %s", e)
+            _write_health("source_failure", f"china_filings import failed: {e}", success=False)
+            return _zero_progress("source_failure")
+        same_run_outcome = _cf.LAST_RUN_OUTCOME
 
         if filings is None or filings.empty or "category" not in filings.columns:
             candidates: list[dict] = []
         else:
             candidates = filings[filings["category"] == _CATEGORY].to_dict("records")
 
-        rows = [_derive_row(f, system_recorded_at) for f in candidates
-                if f.get("announcementId")]
-        n_new = write_visits(rows)
+        accounting = account_candidates(candidates, system_recorded_at, _cf.key_anomaly)
 
+        # Mechanical identity check — the branch the mutation test kills.
+        if accounting["represented"] + accounting["typed_exclusions"] != accounting["eligible"]:
+            detail = (
+                "candidate accounting mismatch: represented="
+                f"{accounting['represented']} + typed_exclusions="
+                f"{accounting['typed_exclusions']} != eligible={accounting['eligible']} "
+                "— refusing to trust this run's derivation"
+            )
+            log.error("china_visits: %s", detail)
+            _write_health("source_failure", detail, success=False)
+            return _zero_progress("source_failure")
+
+        if accounting["typed_exclusions"]:
+            log.error(
+                "china_visits: %d candidate row(s) excluded on malformed "
+                "announcementId (%s); identities: %s",
+                accounting["typed_exclusions"], accounting["exclusions_by_type"],
+                accounting["excluded_identities"],
+            )
+            # Bare print, NOT log.* — see collectors/china_filings.py's
+            # write_filings() for why (tests/test_gh_annotation_line_start.py).
+            print(
+                f"::warning title=china-visits-malformed-announcement-id::"
+                f"{accounting['typed_exclusions']} candidate row(s) excluded "
+                f"on malformed announcementId ({accounting['exclusions_by_type']})",
+                flush=True,
+            )
+
+        n_new = write_visits(accounting["rows"])
+        candidates_n = len(candidates)
+        accounting_receipt = {
+            "eligible": accounting["eligible"],
+            "represented_downstream": accounting["represented"],
+            "typed_exclusions": accounting["typed_exclusions"],
+            "exclusions_by_type": accounting["exclusions_by_type"],
+        }
+
+        # Cause composition (P1-R2 §C.6): a same-run china_filings refresh
+        # that was itself degraded, and this run's own typed exclusions, are
+        # TWO DISTINCT causes of "this run proves no absence" — when both
+        # fire, the single upstream_degraded record must name both, never
+        # let one cause's sentence stand in for the other.
+        causes: list[str] = []
         if same_run_outcome is not None and not same_run_outcome.get("ok"):
             errors = same_run_outcome.get("errors") or []
-            detail = (
+            causes.append(
                 "derived over a DEGRADED same-run china_filings refresh "
-                f"({'; '.join(errors)}) — this run contributes no absence evidence"
+                f"({'; '.join(errors)})"
             )
+        if accounting["typed_exclusions"]:
+            causes.append(
+                f"{accounting['typed_exclusions']} candidate row(s) this run "
+                f"excluded on malformed announcementId ({accounting['exclusions_by_type']})"
+            )
+
+        if causes:
+            detail = "; ".join(causes) + " — this run contributes no absence evidence"
             log.warning("china_visits: %s", detail)
-            _write_health("upstream_degraded", detail, success=False)
+            _write_health("upstream_degraded", detail, success=False,
+                          accounting=accounting_receipt)
             log.info("china_visits: %d candidate rows, %d net-new stored (upstream degraded)",
-                      len(candidates), n_new)
-            return {"status": "upstream_degraded", "n_candidates": len(candidates), "n_new": n_new}
+                      candidates_n, n_new)
+            return {"status": "upstream_degraded", "n_candidates": candidates_n, "n_new": n_new,
+                    "n_represented": accounting["represented"],
+                    "n_excluded": accounting["typed_exclusions"],
+                    "exclusions": accounting["exclusions_by_type"]}
 
         _stamp_coverage_start_once(today_iso)
-        _write_health("ok", f"{len(candidates)} candidate row(s) this run", success=True)
+        _write_health("ok", f"{candidates_n} candidate row(s) this run", success=True,
+                      accounting=accounting_receipt)
         log.info("china_visits: %d candidate rows, %d net-new stored",
-                 len(candidates), n_new)
-        return {"status": "ok", "n_candidates": len(candidates), "n_new": n_new}
+                 candidates_n, n_new)
+        return {"status": "ok", "n_candidates": candidates_n, "n_new": n_new,
+                "n_represented": accounting["represented"],
+                "n_excluded": accounting["typed_exclusions"],
+                "exclusions": accounting["exclusions_by_type"]}
     except Exception as e:  # noqa: BLE001 — must NEVER raise into the lane runner
         log.error("china_visits: refresh() failed unexpectedly: %s", e)
         try:
             _write_health("source_failure", f"unexpected refresh failure: {e}", success=False)
         except Exception:  # noqa: BLE001 — even the health write must not escalate this
             pass
-        return {"status": "source_failure", "n_candidates": 0, "n_new": 0}
+        return _zero_progress("source_failure")
 
 
 # ------------------------------------------------------------------ adapter --
