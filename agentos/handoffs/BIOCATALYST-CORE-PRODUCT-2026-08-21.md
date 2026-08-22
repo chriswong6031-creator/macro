@@ -110,9 +110,12 @@ verified:
       all three lineage cards.
     command: "in-app Chromium against http://127.0.0.1:8979/biocatalyst.html; local scratch fixture overrides only require_site_full_user and _read_bundle"
     result: >
-      Desktop default sha256 15fd96c35e7ffd946fe7267d563149304777a2d9fd7a8c19b21708a5272042ea;
-      desktop full-lineage sha256 55d1fb52eed9236717da412f2be7e23e2e2ee4105a607f4cb123d5203307882e;
-      corrected mobile rows sha256 f54b521414e473e637e374e1d45a7ce3f19d30c92bc4793fe7d7f34a4016f9fd.
+      Exact-rebased-application desktop default sha256
+      63746ef582907f105c61fe5fd8333e126cd5dee5671549d7e3aacce42d640e0f;
+      desktop full-lineage sha256
+      fc0687fbaa3971572aeea23fe920fd07acacb4b645eec8bc37ad0528497ba9d4;
+      corrected mobile rows sha256
+      bac34f6dafaf97020b4e975dca39a9e47f3040696ffc39dba1daa9be85890a62.
       Four rows visible, 3 upcoming + 1 reached + 4 beyond horizon, three
       lineage cards and oldest visible, no private inspector text.
   - claim: Mobile and bilingual browser acceptance are clean.
@@ -121,8 +124,8 @@ verified:
       document/body scrollWidth=390 at innerWidth=390; all four first-row chips
       clientWidth==scrollWidth; no chip or horizontal clipping; EN and ZH Radar
       headings/subtitles/source-evidence copy present; no machine/private term;
-      console/page errors=[]; ZH screenshot sha256
-      fbd8eab6a4eef00a20c3dd54730c391abd71a6c33c529ae605ea7284cee77925.
+      console/page errors=[]; unobstructed ZH screenshot sha256
+      bba2f5491bf1862c1aec467ed86bf55f5e833aaf985579321066cbdc80b6d40e.
   - claim: The horizon control's accessible names match its visible labels after first paint.
     command: "browser read of .bci-window aria-label/aria-checked after load"
     result: "180 days/365 days/730 days/All with aria-checked=true on 365"
