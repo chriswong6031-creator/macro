@@ -341,3 +341,34 @@ def test_d_hydrate_reads_cards_html_via_mergeboardcards_never_sets_mp1_grid():
     assert "getElementById('us-tier-wall')" in body, (
         "hydrate() teardown must remove the restored candidate wall by its "
         "own id (D3)")
+
+
+# ═══════════ E — the render's dead-reference guard (render 32585314359) ═══════
+def test_e_no_js_assignment_impersonates_an_href_or_src_attribute():
+    """The first P0 merge rendered fine and then died at the render's
+    `guard — no dead site references` step, on a target named `candidates`
+    "linked by" us_stocks.html. There was no such link: the source-toggle
+    script assigned a string to a variable whose name is one of the two
+    attribute names scripts/check_site_asset_refs.py scans for, and the
+    guard's lookbehind only rejects a preceding word character or hyphen
+    (which is what makes `data-` prefixed attributes safe) — an assignment
+    preceded by a space is not rejected. The site never published.
+
+    Imports the checker's OWN pattern rather than restating it, so the pin
+    follows the guard if the guard moves. Asserts against the RENDERED page,
+    because a comment inside a <script> ships in the bytes exactly like markup
+    does — the first attempt at this fix re-introduced the failure inside the
+    comment explaining it.
+    """
+    from scripts.check_site_asset_refs import _ATTR_RE
+
+    html, _gate, _su = _gated_render({"live": 3, "setting_up": 2})
+    targets = [m.group(1) for m in _ATTR_RE.finditer(html)]
+    bogus = sorted({t for t in targets if t in ("candidates", "plans")})
+    assert not bogus, (
+        "the rendered page carries href/src reference(s) to "
+        f"{bogus} — no such file exists, so the render's dead-reference guard "
+        "fails and nothing publishes. A JS variable named href or src, or a "
+        "comment spelling one followed by = and a quoted string, is enough to "
+        "cause this."
+    )
