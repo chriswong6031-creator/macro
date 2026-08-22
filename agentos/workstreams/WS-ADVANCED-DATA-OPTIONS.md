@@ -57,18 +57,22 @@ waves:
       workstream and must not block AD-1.
   - id: AD-1T0
     title: ThetaData canonical options source cutover (Chairman ruling 2026-08-22)
-    status: in_progress
+    status: done
     depends_on: [AD-1]
     next_action: >
-      Per the AD-1T0 directive: live ThetaData T1 census on the store-bearing
-      host (runtime, coverage, lawful S/D pair, contract identity), source/PIT
-      reconciliation, Fable contract-identity ruling, bounded producer-source
-      adapter (engine/options_intel_brief.py unchanged; v1.2 frozen; Q_flow
-      stays ABSENT; no legacy Polygon options inputs), then production proof
-      against the newest lawful ThetaData S/D pair (coverage >= 90%, receipt
-      closes over actual ThetaData bytes, board not STALE_SOURCE, served
-      Options Workspace verified). Success => AD-1 = PROVEN_LIVE; return to
-      Sol before AD-2.
+      Cutover DELIVERED 2026-08-22: producer consumes the canonical ThetaData
+      store via resolve_thetadata_store(); engine byte-unchanged; v1.2 frozen;
+      identity ruled on the source tuple (spec research/AD1T0_THETADATA_
+      CUTOVER_SPEC_2026-08-22.md); three adversarial review rounds, all
+      findings closed; committed artifact built on the m1 store (S=2026-08-19,
+      D=2026-08-20, receipt 637d0c60..., zero Polygon inputs). AD-1 stays
+      BUILT_NOT_PROVEN: the 0.90 coverage proof is structurally unreachable —
+      DSC:THETADATA-T1-SPINE-DAILY-REFRESH-IS-48-ROOTS (39/375 = 0.104 daily-
+      current). Diagnostic on the covered 39: 39/39 eligible, real boards —
+      the scoring pipeline is production-capable; the spine is the blocker.
+      Next: Sol decision on a spine-cadence wave (incremental refresh) +
+      store-host runner topology (RE-PIN RULE) / r2sync heal. Do not start
+      AD-2; do not shrink the universe.
   - id: AD-2
     title: Evidence Receipts, Nulls, Lifecycle, Corrections
     status: todo
