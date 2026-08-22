@@ -8,21 +8,22 @@ then requires the PR to be draft, disarmed, and unmerged. Waiting for that prohi
 merge is unsatisfiable and used to make Claude repeat ``SHIP LOOP BLOCKED`` until the
 generic ten-block escape ladder fired.
 
-This front-end is intentionally narrow and fail-closed. It only probes for a lawful
-hold after the existing guard has already reached one hold-candidate blocker:
-ordinary ``unmerged`` on a sanctioned ``claude/*`` branch, or ``unsafe_branch`` on
-Sol's ``sol/*`` authority namespace. It then requires the exact pushed head, a clean
-worktree, a draft PR whose title starts ``HOLD-FOR-SOL``, no ``merge-on-green`` label,
-no native auto-merge, recorded Sol authority and Sol release condition, and binding
-check evidence.
+This front-end is intentionally narrow and fail-closed. It probes only two shapes:
+an ordinary ``unmerged`` hold candidate on a sanctioned ``claude/*`` branch, or a
+local branch in Sol's ``sol/*`` authority namespace. The latter is recognized before
+the canonical guard emits its first ``unsafe_branch`` response, because even one
+false rename-oriented instruction can mutate the identity of an explicitly held PR.
+Normal non-Sol sessions pay only a local branch-name read and never spend GitHub quota
+unless the canonical guard has already reached ``unmerged``.
 
-A concluded-green candidate becomes ``SHIP LOOP PARKED``. For the special ``sol/*``
+A candidate must still prove the exact pushed head, a clean worktree, a draft PR whose
+title starts ``HOLD-FOR-SOL``, no ``merge-on-green`` label, no native auto-merge,
+recorded Sol authority and Sol release condition, and binding check evidence. A
+concluded-green candidate becomes ``SHIP LOOP PARKED``. For the special ``sol/*``
 case only, a valid hold whose checks are still pending or red is intercepted before
 the ordinary branch-law message: pending checks produce a non-terminal HOLD wait and
 red checks produce a HOLD repair block, both explicitly forbidding branch/PR identity
-mutation. This matters because telling a ratified hold that its branch is unsafe made
-agents try to rename the held branch, which closes/rekeys the PR instead of advancing
-the lawful hold. Every malformed/ambiguous hold and every non-``sol/*`` unsafe branch
+mutation. Every malformed/ambiguous hold and every non-``sol/*`` unsafe branch
 delegates byte-for-byte to the canonical guard. Ordinary branch, merge, CI, render,
 and live enforcement therefore remains unchanged.
 """
@@ -170,34 +171,29 @@ def _hold_probe(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | 
         return None
     root = Path(root)
     state = guard._load(guard._state_path(root, payload))
-    # Do not spend shared GitHub quota on every Stop. The ordinary guard must first
-    # reach a state that can be a lawful hold. ``unmerged`` is the sanctioned
-    # claude/* path; ``unsafe_branch`` is considered only for Sol's own sol/*
-    # authority namespace. Any other blocker still belongs entirely to the delegate.
     if not isinstance(state, dict):
         return None
     last_blocker = str(state.get("last_blocker") or "")
-    if last_blocker not in {"unmerged", "unsafe_branch"}:
-        return None
 
+    # Read the local branch before deciding whether GitHub deserves a probe. A Sol
+    # authority branch is the one case where waiting for a prior unsafe_branch is
+    # itself unsafe: the first false message can cause the worker to rename the held
+    # branch and GitHub closes/rekeys the PR. All other branches preserve the old
+    # quota rule and are eligible only after the canonical guard reaches unmerged.
     branch = _git(root, "branch", "--show-current")
-    if last_blocker == "unmerged":
-        if not branch.startswith("claude/"):
-            return None
-    elif not branch.startswith("sol/"):
-        # Preserve the branch-law incident repair: codex/*, claire/*, bare names,
-        # and every other unsafe delivery namespace remain unsafe even when a PR
-        # happens to contain hold-shaped prose. This exception is only for a
-        # ratified Sol authority branch that cannot be renamed without mutating
-        # the held PR's identity/state.
+    if branch.startswith("sol/"):
+        candidate_kind = "sol_authority"
+    elif last_blocker == "unmerged" and branch.startswith("claude/"):
+        candidate_kind = "ordinary_unmerged"
+    else:
         return None
 
     head = _git(root, "rev-parse", "HEAD")
     upstream = _git(root, "rev-parse", "--abbrev-ref", "@{upstream}")
     if int(_git(root, "rev-list", "--count", f"{upstream}..HEAD") or "0") != 0:
         return None
-    # The prior guard verdict proved the tree clean at that Stop. Recheck now so
-    # edits made after the block can never be laundered by the hold adapter.
+    # A Sol preflight can run before the delegate's first Stop verdict, so cleanliness
+    # must be proven here rather than inferred from prior state.
     if _git(root, "status", "--porcelain=v1", "--untracked-files=all"):
         return None
 
@@ -230,6 +226,7 @@ def _hold_probe(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | 
         "number": number,
         "branch": branch,
         "head": head,
+        "candidate_kind": candidate_kind,
         "source_blocker": last_blocker,
         "status": status,
         "red": red,
@@ -253,7 +250,7 @@ def _parked_hold(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] |
 
 def _hold_block(probe: dict[str, Any]) -> dict[str, str] | None:
     """Return the non-terminal block for a valid Sol authority hold, if any."""
-    if probe.get("source_blocker") != "unsafe_branch" or not str(probe.get("branch") or "").startswith("sol/"):
+    if probe.get("candidate_kind") != "sol_authority" or not str(probe.get("branch") or "").startswith("sol/"):
         return None
     status = probe.get("status")
     if status == "pending":
