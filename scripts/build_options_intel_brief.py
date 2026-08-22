@@ -129,6 +129,18 @@ _OI_MEMBERSHIP_FLOOR = 0.90    # plaus(s): n_oi(s) >= floor * n_eod(s)
 _EOD_PATHOLOGY_FLOOR = 0.25    # plaus(s): n_eod(s) >= floor * n_oi(s) (blocks 3-vs-400 thinness)
 _S_ROLE_BALANCE_FLOOR = 0.90   # S-role balance + X admission (unchanged 0.90 store-relative floor)
 
+# N4 carried (verify round 2, spec §C as amended 2026-08-22): the S-role demotion
+# loop below is CAPPED at this many demotions. An UNCAPPED loop empties F into a
+# causeless MIXED_VINTAGE blackout (present=0, cov=None) whenever imbalance is
+# SYSTEMIC -- every candidate session (including the newest) fails the S-role
+# balance check, a shape a 48-root eod spine can produce against a broader oi
+# tier (spec §H). At the cap, the loop stops and the newest still-plausible
+# session takes the S role AS-IS (unbalanced) -- graded INSUFFICIENT_COVERAGE
+# downstream, never a blackout. The cap targets the ordinary mid-capture
+# frontier tail (1-2 sessions); a systemic-imbalance store still gets a real,
+# gradeable S/D pair instead of no board at all.
+_S_ROLE_MAX_DEMOTIONS = 2
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Store resolution (§G off-host self-skip).
@@ -437,6 +449,16 @@ def _select_committed_sessions(candidate: list[str], n_eod: pd.Series,
     X is OI-only by construction, so there is no ``n_eod(X)`` to be symmetric
     against.
 
+    N4 carried (verify round 2): the demotion loop is CAPPED at
+    ``_S_ROLE_MAX_DEMOTIONS`` (2). An uncapped loop is unbounded — when EVERY
+    candidate session (including the newest) fails the S-role balance check
+    (a SYSTEMIC imbalance, not just a mid-capture tail), the old loop emptied
+    F entirely and produced a causeless MIXED_VINTAGE (present=0, cov=None)
+    blackout. At the cap, the loop stops and the newest remaining plausible
+    session takes the S role AS-IS — still unbalanced, but graded
+    INSUFFICIENT_COVERAGE downstream with real present/coverage numbers beats
+    a blackout every time. No store shape may black out the whole board.
+
     Returns ``(committed_sessions, F, decision_info)`` — ``committed_sessions =
     sorted(F ∪ {X if admitted})`` feeds the frozen ``select_settled_pair``; ``F``
     alone bounds what actually gets materialised (§C depth bound — X is OI-only
@@ -465,6 +487,12 @@ def _select_committed_sessions(candidate: list[str], n_eod: pd.Series,
     while F:
         s_max = max(F)
         if balanced_map[s_max]:
+            break
+        if len(demoted) >= _S_ROLE_MAX_DEMOTIONS:
+            # N4 carried (verify round 2): cap reached -- stop demoting and let
+            # the newest remaining plausible session take the S role AS-IS
+            # (still unbalanced). A systemic imbalance (every session fails
+            # balance) must never empty F into a blackout.
             break
         F.remove(s_max)
         demoted.append(s_max)
@@ -965,8 +993,10 @@ def _semantic_unchanged(existing_path: Path, new_payload: dict[str, Any]) -> boo
     """True iff a prior artifact exists with the same receipt_id AND identical payload
     once ``built_at_utc`` AND the diagnostic-only ``_run`` block are excluded (contract
     §7 — never churn git on a semantic no-op). ``_run`` carries the resolved store's
-    ABSOLUTE path (m5) and per-tier corrupt-file counts — neither is hashed into
-    ``receipt_id`` and neither should force a rewrite on a pure host/path migration."""
+    ABSOLUTE path (m5), per-tier corrupt-file counts, and (verify-round 2 should-fix)
+    the legible ``oi_baseline_absent`` exclusion entries — none of these are hashed
+    into ``receipt_id`` (that binding is the ``identity_root_exclusions`` receipt's
+    job) and none should force a rewrite on a pure host/path migration."""
     if not existing_path.exists():
         return False
     try:
@@ -1014,10 +1044,27 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
     }
     input_receipts: list[dict[str, Any]] = [store_receipt]
 
+    # Verify-round 2 SHOULD-FIX (spec §A #7): the `oi_baseline_absent` exclusion
+    # entries (root, reason, measured rate) are hashed into the
+    # `identity_root_exclusions` receipt below, but cryptographic binding alone
+    # doesn't serve the operator's diagnostic purpose -- they are ALSO surfaced
+    # here, legibly, in the unhashed `_run` block. Declared before `_run_block`
+    # (and populated later, in place) so every early-return call site below --
+    # which runs before any session is ever materialised -- sees a defined,
+    # empty container rather than an unbound name.
+    identity_root_exclusions: dict[str, list[dict[str, str]]] = {}
+
     def _run_block() -> dict[str, Any]:
+        oi_absent_entries = [
+            {"session": s, "root": e["root"], "reason": e["reason"], "rate": e.get("rate")}
+            for s, entries in sorted(identity_root_exclusions.items())
+            for e in entries
+            if e.get("reason") == "oi_baseline_absent"
+        ]
         return {
             "store_resolution": {"resolved_path": str(store), "source": source_tag},
             "corrupt_files_by_tier": dict(sorted(corrupt_files.items())),
+            "oi_baseline_absent_exclusions": oi_absent_entries,
         }
 
     # B2 — the canonical current universe, resolved ONCE (unchanged call signature —
@@ -1113,7 +1160,9 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
     load_sessions = [s for s in F if s <= S][-K_SESSIONS:]
 
     chains_by_session: dict[str, pd.DataFrame] = {}
-    identity_root_exclusions: dict[str, list[dict[str, str]]] = {}
+    # (declared + initialised to {} earlier, alongside `_run_block` — populated
+    # here via `_record_exclusions`, in place, so the closure's later reads
+    # observe the same dict.)
     rung_by_session: dict[str, dict[str, int]] = {}
     rung1_history: dict[str, dict[str, float]] = {}
     rung2_detail_by_session: dict[str, dict[str, dict[str, Any]]] = {}

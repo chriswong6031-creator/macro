@@ -24,6 +24,7 @@ import glob
 import hashlib
 import json
 import math
+import shutil
 import sys
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 from pathlib import Path
@@ -1721,6 +1722,47 @@ def test_ad1t0_1e_b1_oi_baseline_absent_at_historical_session_flows_into_receipt
     assert payload["eligibility"]["present"] == baseline["eligibility"]["present"]
 
 
+def test_ad1t0_1e2_should_fix_oi_baseline_absent_surfaced_legibly_in_run_block(tmp_path, monkeypatch):
+    """Verify-round 2 SHOULD-FIX (spec §A #7): the `oi_baseline_absent`
+    exclusion entries (root, reason, measured rate) are hashed into the
+    `identity_root_exclusions` receipt's sha256 (proven by test_ad1t0_1e above),
+    but cryptographic binding alone doesn't serve the operator's diagnostic
+    purpose -- they must ALSO be surfaced LEGIBLY (plain root/reason/rate, no
+    hash-cracking required) in the unhashed `_run` diagnostic block, alongside
+    `store_resolution`/`corrupt_files_by_tier`."""
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(20)]
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    baseline = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert baseline["_run"]["oi_baseline_absent_exclusions"] == [], \
+        "no exclusions yet -- the legible list must be empty, not missing"
+
+    target_root = symbols[0]
+    historical = sorted(s for s in sessions if s < S)[0]
+    fp = store / "oi" / target_root / f"{pd.Timestamp(historical).year}.parquet"
+    df = pd.read_parquet(fp)
+    df = df[df["date"] != pd.Timestamp(historical)]
+    df.to_parquet(fp)
+
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    run_entries = payload["_run"]["oi_baseline_absent_exclusions"]
+    assert run_entries, "the excluded root must appear LEGIBLY in the unhashed _run block"
+    hit = next(e for e in run_entries if e["root"] == target_root and e["session"] == historical)
+    assert hit["reason"] == "oi_baseline_absent"
+    assert hit["rate"] == pytest.approx(0.0, abs=1e-9), "zero-row case -- measured match rate is 0.0"
+
+    # The hashed receipt is unaffected by (indeed drives) the legible addition --
+    # `_run` itself is excluded from receipt hashing (assigned strictly AFTER
+    # `receipt_id` is computed), so a run that changes ONLY `_run`'s content
+    # must never move `receipt_id`.
+    payload_same_run_diff = dict(payload)
+    payload_same_run_diff["_run"] = dict(payload["_run"], oi_baseline_absent_exclusions=[])
+    out = tmp_path / "options_intel_brief.json"
+    producer.write_json_atomic(out, payload)
+    assert producer._semantic_unchanged(out, payload_same_run_diff), \
+        "a differing `_run.oi_baseline_absent_exclusions` alone must never break the §7 semantic no-op"
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # N3 (verify round BLOCKER, spec §A #7 as amended) — the root-PRESENCE guard
 # above (B1) missed PER-CONTRACT absence: a root with exactly ONE surviving oi
@@ -2029,71 +2071,179 @@ def test_ad1t0_2d2_n4_demoted_session_stays_x_eligible_and_s_never_moves():
     assert D == latest
 
 
-def test_ad1t0_2d3_n4_flip_eod_missing_3_of_20_produces_graded_insufficient_coverage():
-    """N4 flip-verify (reviewer's matrix, eod-missing 3-of-20 = 85%): under the
-    RETIRED symmetric ``full()`` floor, a store whose eod tier trails its oi
-    tier at EVERY session (a persistent structural divergence, not just the
-    tail) breaks calendar-ADJACENCY across the whole candidate window --
-    ``select_settled_pair`` can never find two consecutive committed sessions,
-    so the whole board goes MIXED_VINTAGE (present=0, cov=None) even though
-    17/20 = 85% coverage is a perfectly gradeable state. Fixture: 20 roots, 6
-    sessions, eod missing for 3 (fixed) roots on every session except the
-    newest (s6, fully balanced) -- a checkerboard-style adjacency break under
-    the old floor. New code: ``plaus()`` admits every session into F (0.25
-    floor), the S-role demotion loop stops IMMEDIATELY at the balanced newest
-    session (s6) -- no demotion even needed -- so F retains full adjacency and
-    ``select_settled_pair`` finds (s5, s6); s5 itself has only 17/20 = 85% of
-    the universe present in its OWN chain -> graded INSUFFICIENT_COVERAGE with
-    real present/coverage numbers, never a total blackout."""
+def _uncapped_demote_shadow(F: list[str], balanced_map: dict[str, bool]) -> tuple[list[str], list[str]]:
+    """Shadow reimplementation of the PRE-FIX (round-2) UNCAPPED S-role demotion
+    loop -- never imported, the module no longer carries this shape -- purely
+    to prove, by direct comparison, both (a) the regression the
+    ``_S_ROLE_MAX_DEMOTIONS`` cap closes (systemic imbalance empties F
+    entirely) and (b) the cap's NON-interference below/at the cap (identical
+    result to the capped loop when the natural stop arrives first)."""
+    F = list(F)
+    demoted: list[str] = []
+    while F:
+        s_max = max(F)
+        if balanced_map[s_max]:
+            break
+        F.remove(s_max)
+        demoted.append(s_max)
+    return F, demoted
+
+
+def test_ad1t0_2d3_n4_carried_systemic_imbalance_caps_demotion_at_2():
+    """N4 CARRIED (verify round 2, MUST-FIX): the round-2 fix's own demotion
+    loop was itself UNBOUNDED. When eod trails oi at EVERY session --
+    including the NEWEST -- (a SYSTEMIC imbalance, not just a mid-capture
+    tail -- the shape a 48-root eod spine can produce, spec §H), every
+    candidate fails the S-role balance check and the old loop demoted its way
+    to an EMPTY F: nothing left to take the S role -> the same causeless
+    MIXED_VINTAGE (present=0, cov=None) blackout N4 originally set out to fix.
+    The round-2 regression tests (this file's prior 2d3/2d4) dodged this by
+    keeping the newest session balanced, so the loop never even executed.
+
+    Fixture: 20 roots, 6 real NYSE sessions, eod 17-of-20 (85%) at EVERY
+    session including the newest -- the reviewer's matrix shape.
+    ``_S_ROLE_MAX_DEMOTIONS`` (2) caps the loop: it stops after exactly 2
+    demotions and lets the newest still-plausible session take the S role
+    AS-IS (still unbalanced) -- a REAL, gradeable S/D pair, never a blackout.
+    (The resulting board-level INSUFFICIENT_COVERAGE grading is proven
+    end-to-end in ``test_ad1t0_2d6`` below.)"""
     sessions = _real_sessions(6)
 
-    def _old_full(s: str, n_eod: pd.Series, n_oi: pd.Series) -> bool:
-        ne, no = int(n_eod.get(s, 0)), int(n_oi.get(s, 0))
-        return ne > 0 and no >= 0.90 * ne and ne >= 0.90 * no
-
-    # Reference: the RETIRED symmetric predicate, reimplemented inline (never
-    # imported -- the module no longer has it) purely to prove the shadow
-    # comparison. Sessions s1..s5 lopsided (17/20), s6 balanced (20/20).
-    n_eod = pd.Series({s: (17 if s != sessions[-1] else 20) for s in sessions})
+    # Systemic imbalance: EVERY session (including the newest) is 17-of-20.
+    n_eod = pd.Series({s: 17 for s in sessions})
     n_oi = pd.Series({s: 20 for s in sessions})
-    old_F = [s for s in sessions if _old_full(s, n_eod, n_oi)]
-    assert old_F == [sessions[-1]], "shadow check: only the balanced newest session passes the retired floor"
-    # Old X: next session after old_F's max is beyond this fixture -> never admitted.
-    old_committed = sorted(set(old_F))
-    old_S, old_D, _old_pending = brief.select_settled_pair(
-        old_committed, lambda d: _session_n_forward(d, 1))
-    assert (old_S, old_D) == (None, None), \
-        "shadow check: the retired predicate has no lawful adjacent pair at all -- MIXED_VINTAGE"
 
-    # New code (the actual module function).
-    committed, F, _decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
-    assert F == sessions, "plaus() must admit every session -- none is demoted (newest is already balanced)"
+    # Shadow check: the RETIRED uncapped loop empties F entirely -- the exact
+    # regression this fix closes.
+    balanced_map_shadow = {s: (17 >= 0.90 * 20) for s in sessions}   # False for every session
+    uncapped_F, uncapped_demoted = _uncapped_demote_shadow(list(sessions), balanced_map_shadow)
+    assert uncapped_F == [], "shadow check: the RETIRED uncapped loop empties F entirely (the N4-carried regression)"
+    assert len(uncapped_demoted) == 6
+
+    # New code (the actual module function) -- capped at 2.
+    committed, F, decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert F == sessions[:4], "the cap must stop after exactly 2 demotions, keeping the 4 oldest sessions in F"
+    demoted_count = len(sessions) - len(F)
+    assert demoted_count == 2, f"expected exactly 2 demotions at the cap, got {demoted_count}"
+    assert sessions[-1] not in F and sessions[-2] not in F, "the two newest (demoted) sessions must be OUT of F"
+    assert max(F) == sessions[3], "the newest STILL-PLAUSIBLE session (post-cap) must take the S role AS-IS"
+
     S, D, _pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
-    assert (S, D) == (sessions[-2], sessions[-1]), "a real lawful pair must be found, never MIXED_VINTAGE"
+    assert (S, D) == (sessions[3], sessions[4]), \
+        "a REAL, gradeable lawful pair must be found -- never (None, None) MIXED_VINTAGE"
+    assert S in decision["counts"] and decision["counts"][S] == (17, 20), \
+        "the S session's own counts must be REAL numbers (17/20 = graded coverage), never a blackout"
 
 
-def test_ad1t0_2d4_n4_flip_eod_missing_5_of_40_produces_graded_insufficient_coverage():
-    """N4 flip-verify (reviewer's matrix, eod-missing 5-of-40 = 87.5% ~= 88%) --
-    same construction as 2d3, scaled to 40 roots / 35 present, proving the flip
-    is not an artifact of the specific 20-root ratio."""
+def test_ad1t0_2d4_n4_carried_systemic_imbalance_caps_demotion_at_2_scaled():
+    """Same construction as 2d3, scaled to 40 roots / 35 present (87.5%),
+    proving the cap-at-2 behavior is not an artifact of the specific 20-root
+    ratio."""
+    sessions = _real_sessions(6)
+    n_eod = pd.Series({s: 35 for s in sessions})
+    n_oi = pd.Series({s: 40 for s in sessions})
+
+    balanced_map_shadow = {s: (35 >= 0.90 * 40) for s in sessions}   # False for every session
+    uncapped_F, uncapped_demoted = _uncapped_demote_shadow(list(sessions), balanced_map_shadow)
+    assert uncapped_F == []
+    assert len(uncapped_demoted) == 6
+
+    committed, F, decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert F == sessions[:4]
+    assert len(sessions) - len(F) == 2
+    assert max(F) == sessions[3]
+
+    S, D, _pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
+    assert (S, D) == (sessions[3], sessions[4])
+    assert decision["counts"][S] == (35, 40)
+
+
+def test_ad1t0_2d5_n4_carried_cap_does_not_interfere_below_or_at_threshold():
+    """N4 carried (MUST-FIX, cap non-interference): the ``_S_ROLE_MAX_DEMOTIONS``
+    cap must never CHANGE behavior for a store whose demotion count would have
+    stopped at or below the cap ANYWAY (the ordinary mid-capture-frontier
+    shapes, not the systemic-imbalance pathology 2d3/2d4 exercise). Two
+    sub-cases, each cross-checked against the uncapped shadow loop for an
+    IDENTICAL result:
+
+    (a) only-latest lopsided -- exactly 1 demotion (well under the cap).
+    (b) last-two lopsided -- exactly 2 demotions, but the loop stops because
+        the THIRD-newest session is naturally balanced, not because the cap
+        forced it -- the cap number and the natural stop coincide by
+        construction, which is exactly the case that could hide a
+        cap-truncation bug if the cap fired one iteration early."""
     sessions = _real_sessions(6)
 
-    def _old_full(s: str, n_eod: pd.Series, n_oi: pd.Series) -> bool:
-        ne, no = int(n_eod.get(s, 0)), int(n_oi.get(s, 0))
-        return ne > 0 and no >= 0.90 * ne and ne >= 0.90 * no
+    # (a) only-latest lopsided: 5 balanced (20/20) + 1 lopsided latest (17/20).
+    n_eod_a = pd.Series({s: 20 for s in sessions[:-1]} | {sessions[-1]: 17})
+    n_oi_a = pd.Series({s: 20 for s in sessions})
+    balanced_a = {s: (int(n_eod_a[s]) >= 0.90 * int(n_oi_a[s])) for s in sessions}
+    uncapped_F_a, uncapped_demoted_a = _uncapped_demote_shadow(list(sessions), balanced_a)
+    committed_a, F_a, _decision_a = producer._select_committed_sessions(sessions, n_eod_a, n_oi_a)
+    assert F_a == uncapped_F_a == sessions[:-1], "1 demotion (< cap) must match the uncapped loop exactly"
+    assert len(uncapped_demoted_a) == 1
+    S_a, D_a, _p_a = brief.select_settled_pair(committed_a, lambda d: _session_n_forward(d, 1))
+    assert (S_a, D_a) == (sessions[-2], sessions[-1])
 
-    n_eod = pd.Series({s: (35 if s != sessions[-1] else 40) for s in sessions})
-    n_oi = pd.Series({s: 40 for s in sessions})
-    old_F = [s for s in sessions if _old_full(s, n_eod, n_oi)]
-    assert old_F == [sessions[-1]]
-    old_S, old_D, _old_pending = brief.select_settled_pair(
-        sorted(set(old_F)), lambda d: _session_n_forward(d, 1))
-    assert (old_S, old_D) == (None, None)
+    # (b) last-two lopsided: 4 balanced (20/20) + 2 lopsided newest (17/20 each).
+    n_eod_b = pd.Series({s: 20 for s in sessions[:-2]} | {sessions[-2]: 17, sessions[-1]: 17})
+    n_oi_b = pd.Series({s: 20 for s in sessions})
+    balanced_b = {s: (int(n_eod_b[s]) >= 0.90 * int(n_oi_b[s])) for s in sessions}
+    uncapped_F_b, uncapped_demoted_b = _uncapped_demote_shadow(list(sessions), balanced_b)
+    committed_b, F_b, _decision_b = producer._select_committed_sessions(sessions, n_eod_b, n_oi_b)
+    assert F_b == uncapped_F_b == sessions[:-2], \
+        "2 demotions landing EXACTLY at the cap must still match the uncapped loop (natural stop, not truncation)"
+    assert len(uncapped_demoted_b) == 2
+    S_b, D_b, _p_b = brief.select_settled_pair(committed_b, lambda d: _session_n_forward(d, 1))
+    assert (S_b, D_b) == (sessions[-3], sessions[-2]), "a demoted session (last-two case) is naturally the X pick"
 
-    committed, F, _decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
-    assert F == sessions
-    S, D, _pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
-    assert (S, D) == (sessions[-2], sessions[-1])
+
+def test_ad1t0_2d6_n4_carried_systemic_imbalance_produces_graded_board_end_to_end(tmp_path, monkeypatch):
+    """N4 carried (MUST-FIX), end-to-end: a full ``producer.build()`` round-trip
+    over a synthetic ThetaData store whose eod tier trails its oi tier at
+    EVERY session (systemic imbalance, not just a mid-capture tail) must
+    produce a REAL, graded ``INSUFFICIENT_COVERAGE`` board -- present/coverage
+    numbers that are actual integers/floats, a real ``as_of_session`` /
+    ``oi_counted_date`` pair -- and must NEVER regress to the causeless
+    MIXED_VINTAGE (``board_reason == "MIXED_VINTAGE"``, ``as_of_session is
+    None``) blackout the uncapped round-2 loop would have produced.
+
+    Fixture: 20 letters-only roots, 14 real NYSE sessions (this file's usual
+    full-store fixture depth). 3 of the 20 roots NEVER print an eod row at
+    ALL across the whole store (oi/greeks intact) -- so every session in the
+    store reads 17-of-20 (85%) eod coverage, identically. Without the
+    ``_S_ROLE_MAX_DEMOTIONS`` cap, ALL 14 sessions fail the S-role balance
+    check and the old loop would empty F to nothing."""
+    sessions = _fake_repo_sessions(14)[0]
+    symbols = _alpha_names("SYM", 20)
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+
+    # Drop 3 roots' eod tier ENTIRELY (every year file, every session) -- oi and
+    # greeks stay intact for them, so n_oi(s) counts all 20 roots at every
+    # session while n_eod(s) counts only the remaining 17, at EVERY session.
+    dropped = symbols[-3:]
+    for sym in dropped:
+        eod_dir = store / "eod" / sym
+        if eod_dir.is_dir():
+            shutil.rmtree(eod_dir)
+
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    assert payload["board_reason"] != "MIXED_VINTAGE", \
+        "systemic 85% eod coverage must never black out the whole board"
+    assert payload["as_of_session"] is not None and payload["oi_counted_date"] is not None, \
+        "a real S/D pair must be selected -- never (None, None)"
+    assert payload["board_state"] == "INSUFFICIENT_COVERAGE", \
+        f"expected graded INSUFFICIENT_COVERAGE, got {payload['board_state']!r} ({payload['board_reason']!r})"
+    assert payload["eligibility"]["universe_count"] == 20
+    assert payload["eligibility"]["present"] == 17, "REAL present count (17-of-20), never 0"
+    assert payload["eligibility"]["source_coverage_pct"] == pytest.approx(17 / 20, abs=1e-4), \
+        "REAL coverage fraction, never None"
+
+    # Exactly 2 demotions occurred (the cap), verified via the session_presence
+    # receipt actually having fired (member_count > 0, real state).
+    pres = next(r for r in payload["input_receipts"] if r["logical_source"] == "session_presence")
+    assert pres["state"] == "ok" and pres["member_count"] > 0
 
 
 def _session_presence_sha(decision_info: dict[str, Any]) -> str:
