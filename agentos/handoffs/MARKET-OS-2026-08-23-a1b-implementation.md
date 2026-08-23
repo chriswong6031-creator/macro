@@ -75,6 +75,10 @@ changed:
     what: "Wires the A1B suite into the existing Portfolio CI owner job."
   - path: "tests/test_unsubscribe_page.py"
     what: "Updates the exact reviewed public-static asset fence for the three A1B files."
+  - path: "tests/test_caddy_hub_boundary.py"
+    what: >
+      Advances the pinned final safe-proxy line number by one after A1B expands the
+      reviewed Caddy cache-law comment; the proxy classification remains unchanged.
   - path: "agentos/workstreams/WS-MARKET-OS.md"
     what: >
       Advances A1B from eligible/todo to implementation-in-review while preserving
@@ -107,6 +111,15 @@ verified:
       python3 scripts/check_template_site_sync.py &&
       caddy validate --config app/deploy/Caddyfile
     result: "PASS — 94 pairs checked; Caddy reports Valid configuration."
+  - claim: "A1B preserves the pinned Caddy backend-proxy safety map"
+    command: >
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest
+      tests/test_caddy_hub_boundary.py -q
+    result: >
+      PASS — 18 tests. The first exact-head CI attempt correctly caught that A1B's
+      expanded cache-law comment moved the final SAFE_FIXED_REWRITE proxy from line
+      769 to 770; the expectation now pins the unchanged safe classification at its
+      actual shipped line.
   - claim: "The complete review interaction works in both art directions and viewport classes"
     command: "In-app browser against an isolated local site/ server; no Save action invoked"
     result: >
