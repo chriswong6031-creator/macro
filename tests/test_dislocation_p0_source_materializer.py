@@ -6,7 +6,10 @@ from pathlib import Path
 
 from collectors.sec_document_spine import SecFilingArchiveCollector
 from scripts.research.dislocation_p0_source_adapter import CanonicalSpineRef
-from scripts.research.dislocation_p0_source_materializer import materialize_current_p0_source_refs
+from scripts.research.dislocation_p0_source_adapter import read_source_packets
+from scripts.research.dislocation_p0_source_materializer import (
+    materialize_current_p0_source_refs, materialize_current_source_refs,
+)
 
 
 RECORDED = "2026-08-22T12:00:00Z"
@@ -105,4 +108,63 @@ def test_missing_matched_document_fails_closed_without_primary_fallback(tmp_path
     )
     assert result.refs == ()
     assert all(gap.code == "OWNER_FTS_DOCUMENT_NOT_IN_INDEX" for gap in result.gaps)
+    assert all(not any(url.endswith("/primary.htm") for url in session.urls) for session in sessions)
+
+
+def test_generic_primary_context_is_additive_and_reuses_match_receipt(tmp_path: Path) -> None:
+    selections = _selections()[:2]
+    class PrimarySession(_Session):
+        def get(self, url: str, **kwargs):
+            if url.endswith("/primary.htm"):
+                self.urls.append(url)
+                return _Response(url, b"canonical primary context")
+            return super().get(url, **kwargs)
+    sessions: list[PrimarySession] = []
+    def fetch(cik: str):
+        row = next(item for item in selections if item.cik == cik)
+        return _payload(cik, row.accession), {}
+    def factory(root: Path, agent: str):
+        session = PrimarySession(); sessions.append(session)
+        return SecFilingArchiveCollector(root, user_agent=agent, session=session)
+    materialized = materialize_current_source_refs(
+        archive_root=tmp_path, selections=selections, user_agent="P0 test@example.com",
+        fetch_submissions=fetch, collector_factory=factory, recorded_at=RECORDED,
+        required_packet_count=2, include_primary_context=True,
+        primary_context_required=True,
+    )
+    assert materialized.complete and len(materialized.refs) == 2
+    packets = read_source_packets(
+        archive_root=tmp_path, refs=materialized.refs, required_packet_count=2,
+        include_primary_context=True, primary_context_required=True,
+    )
+    assert packets.complete
+    assert all(packet.primary_context and packet.primary_context_source == b"canonical primary context" for packet in packets.packets)
+    assert all(len(packet.matched_documents) == 1 for packet in packets.packets)
+    assert all(any(url.endswith("/primary.htm") for url in session.urls) for session in sessions)
+
+
+def test_generic_primary_equal_to_match_reuses_existing_owner_receipt(tmp_path: Path) -> None:
+    selections = _selections()[:2]
+    sessions: list[_Session] = []
+    def fetch(cik: str):
+        row = next(item for item in selections if item.cik == cik)
+        payload = json.loads(_payload(cik, row.accession))
+        payload["filings"]["recent"]["primaryDocument"] = ["matched.htm"]
+        return json.dumps(payload).encode(), {}
+    def factory(root: Path, agent: str):
+        session = _Session(); sessions.append(session)
+        return SecFilingArchiveCollector(root, user_agent=agent, session=session)
+    materialized = materialize_current_source_refs(
+        archive_root=tmp_path, selections=selections, user_agent="P0 test@example.com",
+        fetch_submissions=fetch, collector_factory=factory, recorded_at=RECORDED,
+        required_packet_count=2, include_primary_context=True,
+        primary_context_required=True,
+    )
+    assert materialized.complete
+    packets = read_source_packets(
+        archive_root=tmp_path, refs=materialized.refs, required_packet_count=2,
+        include_primary_context=True, primary_context_required=True,
+    )
+    assert packets.complete
+    assert all(packet.primary_context_source == packet.source_documents[0] for packet in packets.packets)
     assert all(not any(url.endswith("/primary.htm") for url in session.urls) for session in sessions)

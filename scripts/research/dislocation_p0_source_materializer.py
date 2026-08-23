@@ -36,10 +36,11 @@ FetchSubmissions = Callable[[str], tuple[bytes, Mapping[str, str | None]]]
 class MaterializationResult:
     refs: tuple[CanonicalSpineRef, ...]
     gaps: tuple[OwnerCapabilityGap, ...]
+    required_packet_count: int = REQUIRED_PACKET_COUNT
 
     @property
     def complete(self) -> bool:
-        return len(self.refs) == REQUIRED_PACKET_COUNT and not self.gaps
+        return len(self.refs) == self.required_packet_count and not self.gaps
 
 
 def _gap(ref: CanonicalSpineRef, code: str, detail: str) -> OwnerCapabilityGap:
@@ -67,9 +68,42 @@ def materialize_current_p0_source_refs(
     No historical archive/top-up path exists here: a selection absent from the
     exact current Submissions response is an ``OWNER_CAPABILITY_GAP``.
     """
-    if len(selections) != REQUIRED_PACKET_COUNT or {item.slot for item in selections} != set(range(1, 21)):
-        gap = OwnerCapabilityGap(0, "", "", "EXACT_CARDINALITY_UNSATISFIED", "selections must be exactly slots 1..20")
-        return MaterializationResult((), (gap,))
+    return materialize_current_source_refs(
+        archive_root=archive_root, selections=selections, user_agent=user_agent,
+        fetch_submissions=fetch_submissions, collector_factory=collector_factory,
+        recorded_at=recorded_at, required_packet_count=REQUIRED_PACKET_COUNT,
+        include_primary_context=False, primary_context_required=False,
+    )
+
+
+def materialize_current_source_refs(
+    *,
+    archive_root: Path,
+    selections: Sequence[CanonicalSpineRef],
+    user_agent: str,
+    fetch_submissions: FetchSubmissions,
+    collector_factory: Callable[[Path, str], Any] | None = None,
+    recorded_at: str,
+    required_packet_count: int,
+    include_primary_context: bool = False,
+    primary_context_required: bool = False,
+) -> MaterializationResult:
+    """Materialize frozen current rows through the owner, without substitutions.
+
+    An optional primary context is additional to (never a replacement for) the
+    exact FTS document set.  If it is already an FTS match its receipt is
+    reused; otherwise the canonical owner fetches that one declared document.
+    """
+    if (
+        not isinstance(required_packet_count, int)
+        or isinstance(required_packet_count, bool)
+        or required_packet_count < 1
+        or primary_context_required and not include_primary_context
+        or len(selections) != required_packet_count
+        or {item.slot for item in selections} != set(range(1, required_packet_count + 1))
+    ):
+        gap = OwnerCapabilityGap(0, "", "", "EXACT_CARDINALITY_UNSATISFIED", f"selections must be exactly slots 1..{required_packet_count}")
+        return MaterializationResult((), (gap,), required_packet_count)
     factory = collector_factory or (lambda root, agent: SecFilingArchiveCollector(root, user_agent=agent))
     cached: dict[str, Mapping[str, Any]] = {}
     refs: list[CanonicalSpineRef] = []
@@ -174,6 +208,20 @@ def materialize_current_p0_source_refs(
                     resolution_failed = True
                     break
                 receipts[str(document["document_id"])] = receipt
+            if include_primary_context:
+                primary = [document for document in expanded["documents"] if document.get("role") == "primary"]
+                if len(primary) != 1:
+                    if primary_context_required:
+                        gaps.append(_gap(selection, "OWNER_PRIMARY_CONTEXT_UNAVAILABLE", "owner manifest has no unique declared primary document"))
+                        continue
+                elif str(primary[0]["document_id"]) not in receipts:
+                    primary_receipt = _receipt_dict(collector.fetch_document(primary[0]))
+                    if primary_receipt.get("status") != "retrieved":
+                        if primary_context_required:
+                            gaps.append(_gap(selection, "OWNER_PRIMARY_CONTEXT_UNAVAILABLE", "owner primary document is unavailable"))
+                            continue
+                    else:
+                        receipts[str(primary[0]["document_id"])] = primary_receipt
             if resolution_failed:
                 continue
             retained = with_document_retrievals(expanded, receipts)
@@ -188,5 +236,5 @@ def materialize_current_p0_source_refs(
             selection.allow_amendment_transition,
         ))
     if gaps:
-        return MaterializationResult((), tuple(sorted(gaps, key=lambda item: (item.slot, item.code, item.detail))))
-    return MaterializationResult(tuple(refs), ())
+        return MaterializationResult((), tuple(sorted(gaps, key=lambda item: (item.slot, item.code, item.detail))), required_packet_count)
+    return MaterializationResult(tuple(refs), (), required_packet_count)

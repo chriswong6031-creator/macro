@@ -12762,6 +12762,7 @@ jobs:
       - scripts/research/dislocation_p0_a1r_semantic_run.py
       - scripts/research/dislocation_p0_a1r_source_run.py
       - scripts/research/dislocation_p0_s1f_measurement.py
+      - scripts/research/dislocation_p0_s1f_owner_run.py
       - scripts/research/dislocation_p0_s1f_selection.py
       - scripts/research/dislocation_p0_s1f_triage.py
       - scripts/research/dislocation_p0_source_adapter.py
@@ -12781,6 +12782,7 @@ jobs:
       - tests/test_dislocation_p0_source_adapter.py
       - tests/test_dislocation_p0_source_materializer.py
       - tests/test_dislocation_p0_s1f.py
+      - tests/test_dislocation_p0_s1f_owner_run.py
       - research/dislocation_intelligence/**
     timeout-minutes: 8
     runs-on: ubuntu-latest
@@ -12806,4 +12808,5 @@ jobs:
           tests/test_dislocation_p0_source_adapter.py
           tests/test_dislocation_p0_source_materializer.py
           tests/test_dislocation_p0_s1f.py
+          tests/test_dislocation_p0_s1f_owner_run.py
           -q
