@@ -6,6 +6,9 @@
   "gold_sha256": "fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c",
   "taxonomy_version": "qa_topic.v1",
   "taxonomy_hash": "a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e",
+  "topic_consensus_state": "UNRESOLVED",
+  "topic_gold_status": "PASS_A_REFERENCE_ONLY",
+  "sol_review": 5001579080,
   "gold_correction": true,
   "blind_pass_b_path": "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_blind_pass_b.json",
   "blind_pass_b_sha256": "a2350969470e263abb99f2614b10c2fec568422e47c8b482b92e0a6a28ff47af",
@@ -21,7 +24,7 @@
   "pass_a": {
     "session": "E3-A original gold adjudication (2026-08-22T16:27:00Z)",
     "method": "operator_intro_go_ahead",
-    "note": "Original pre-inference Pass A. respondents[] used unique-speaker collapse. Boundaries, questioners, answer/question spans, and topics remain the Pass A source labeling.",
+    "note": "Original pre-inference Pass A. respondents[] used unique-speaker collapse. Boundaries, questioners, and answer/question spans remain the Pass A source labeling. Per-exchange topic sets in gold v2 are Pass-A reference labels only; they are not dual-adjudicator consensus.",
     "boundary_segments": [32, 42, 52, 63, 76, 84, 97],
     "questioners": [
       {"ordinal": 0, "name": "Amit Daryanani", "affiliation": "Evercore"},
@@ -67,7 +70,15 @@
       "role": "CEO",
       "source": "held transcript segment metadata, not external biography"
     },
-    "r1_pass_b_was_not_this": "E3-A R1 second pass was a post-model boundary/questioner rescan, not a complete pre-inference second adjudication. This Pass B replaces it."
+    "r1_pass_b_was_not_this": "E3-A R1 second pass was a post-model boundary/questioner rescan, not a complete pre-inference second adjudication. This Pass B replaces it.",
+    "packet_preserved_sha256": "a2350969470e263abb99f2614b10c2fec568422e47c8b482b92e0a6a28ff47af",
+    "packet_taxonomy_hash_field": "b2ae2508877ccda4dea911d52952c49f78b0dbc26049326d542ee77439cf9a14",
+    "packet_taxonomy_hash_status": "noncanonical_pass_local_members_digest",
+    "packet_taxonomy_hash_preimage_recipe": "sha256(json.dumps(sorted(members), separators=(\",\",\":\")))",
+    "packet_taxonomy_hash_is_not": "qa_topic.v1 taxonomy hash",
+    "canonical_taxonomy_hash": "a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e",
+    "canonical_taxonomy_preimage": "frozen schema/version/members canonical JSON",
+    "enum_membership_matches_canonical": true
   },
   "reconciliation": {
     "boundaries_agree": true,
@@ -82,9 +93,44 @@
       "analyst_question_segments_agree": true,
       "kept": "pass_a (operator intro remains first question_span so affiliation source and gold_boundary_segment stay load-bearing); not a source disagreement"
     },
+    "structural_adjudication": {
+      "status": "accepted",
+      "exchange_count": 7,
+      "operator_delimited_boundaries": [32, 42, 52, 63, 76, 84, 97],
+      "source_spans": "accepted",
+      "identities": "accepted",
+      "management_answer_turns": 26
+    },
     "topics": {
-      "kept": "pass_a",
-      "reason": "Both labelings are 1–3 qa_topic.v1 members and source-supported. Contract does not require expanding Pass A labels. Topics were not altered because of model output."
+      "consensus_state": "UNRESOLVED",
+      "gold_status": "PASS_A_REFERENCE_ONLY",
+      "exchanges_disagreeing": 7,
+      "pass_a_reference": [
+        ["costs_supply"],
+        ["product", "demand"],
+        ["costs_supply", "capacity"],
+        ["pricing", "demand"],
+        ["demand", "product"],
+        ["capital_allocation", "product"],
+        ["regulation", "costs_supply"]
+      ],
+      "pass_b": [
+        ["costs_supply", "demand", "pricing"],
+        ["product", "demand", "pricing"],
+        ["costs_supply", "demand", "capacity"],
+        ["pricing", "costs_supply", "demand"],
+        ["demand", "pricing", "product"],
+        ["capital_allocation", "capacity", "product"],
+        ["regulation", "product", "costs_supply"]
+      ],
+      "kept_in_gold_v2": "pass_a_as_reference_only",
+      "reason": "Pass A and blind Pass B disagree on every per-exchange topic set. That is not consensus gold. Gold v2 retains Pass A labels as PASS_A_REFERENCE_ONLY. Topics were not altered because of model output. Haiku mean Jaccard 0.722 on run 27e3e380f70658c1 is descriptive agreement against Pass-A reference labels only; it grants zero topic-model authority and is not a usefulness or promotion metric."
+    },
+    "haiku_topic_jaccard_27e3e380f70658c1": {
+      "value": 0.722,
+      "against": "PASS_A_REFERENCE_ONLY",
+      "authority": "none",
+      "not": ["usefulness_metric", "promotion_metric", "topic_model_authority"]
     },
     "respondents_law": "answer_turn",
     "respondents_adopted_from": "pass_b",

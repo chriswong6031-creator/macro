@@ -21,11 +21,11 @@ depends_on:
 decisions:
   - DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER
 next_action: >
-  E3-A R2 measured packet is on HOLD-FOR-SOL PR #6245. Gold is
-  aapl_fy2026_q3_qa_gold.v2 SHA
-  fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c.
-  Usefulness bar remains the frozen N=7 refusal. Full-transcript Qwen is
-  not promoted. Await Sol; do not merge #6245; do not start E3-B.
+  Sol review 5001579080 records-only landing amendment is on HOLD-FOR-SOL
+  PR #6245. Topic consensus is UNRESOLVED / PASS_A_REFERENCE_ONLY.
+  Return the exact final head to Sol. Do not merge until Sol verifies.
+  After #6245 lands, mark E3-A done as a completed calibration /
+  negative-method experiment. Do not start E3-A2 or E3-B before it lands.
 owns_paths:
   - research/earnings_intelligence/e3/**
 artifacts:
@@ -68,6 +68,10 @@ do_not_redo:
   - Do not collapse qa_exchange.v1 respondents[] to unique speakers.
   - Do not treat a validator rejection as an accepted-object hard-gate miss.
   - Do not rewrite AAPL historical gold when a later current-marker generation moves if source SHAs still match.
+  - Do not rewrite the pre-inference blind Pass B packet after inference.
+  - Do not treat blind-packet hash b2ae2508… as the qa_topic.v1 taxonomy hash.
+  - Do not treat Haiku topic Jaccard as usefulness, promotion, or topic-model authority.
+  - Do not start E3-A2 or E3-B before #6245 lands.
 waves:
   - id: E3-0
     title: Compiler architecture freeze
@@ -88,13 +92,13 @@ waves:
       - engine/company_intelligence/e3_shadow_compiler.py
       - tests/test_company_intelligence_event_compiler_e3a.py
     next_action: >
-      Measured E3-A R2 packet is on PR #6245 (HOLD-FOR-SOL / draft /
-      hold / do-not-merge). Gold v2 SHA
+      Sol review 5001579080 records-only amendment is on PR #6245
+      (HOLD-FOR-SOL / draft / hold / do-not-merge). Gold v2 SHA
       fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c
-      (v1 6b1100b1… superseded). Usefulness bar remains the frozen N=7
-      refusal. Full-transcript Qwen is not promoted. Haiku is
-      benchmark-only. Return to Sol. Do not start E3-B. Do not merge
-      #6245 until Sol releases the hold.
+      unchanged. Topic consensus UNRESOLVED / PASS_A_REFERENCE_ONLY.
+      Return exact final head to Sol. After #6245 lands, record E3-A
+      done as a completed calibration / negative-method experiment.
+      Do not start E3-A2 or E3-B before landing.
   - id: E3-B
     title: AAPL live Q&A into event_workspace.v1
     status: todo
@@ -114,4 +118,4 @@ waves:
 
 E3-0 landed on main at `22686d255eb047cf5bffc91a35984515acb3d466` (#6161; Sol review 5000425939). E0–E2 stay closed on `WS:EARNINGS-INTELLIGENCE-OS`. Canonical freeze: `research/earnings_intelligence/e3/E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md`. Owner is `coo-fable` (execution). Architecture authority is `DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER` `decided_by: sol`.
 
-E3-A R2 (2026-08-23) is the final landing repair on PR #6245. Gold is `aapl_fy2026_q3_qa_gold.v2` SHA `fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c`; v1 `6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761` is superseded calibration gold. Taxonomy remains `qa_topic.v1` / `a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e`. respondents[] is one element per management answer-turn (26 turns); exchange 0 keeps two Tim Cook turns split by analyst follow-up 38. Measured eval `run_id=27e3e380f70658c1` on git head `154ec6204e585c70a576a7cf249acc2b394aa69c`: Qwen `qwen3.5:9b` on the earnings-worker loopback returned `[]` (hard gates `NOT_EXERCISED`, cost_basis=local $0.00); Haiku `claude-haiku-4-5` benchmark-only produced 7 candidates / 6 accepted / 1 `invalid_schema_rejected` (topics_arity on exchange 0), boundary F1 0.857, questioner/affiliation 1.0, answer-turn respondent order 0.0, span replay 100% of 6 accepted, hard gates PASS. Full-transcript Qwen is not promoted. Usefulness bar remains the frozen N=7 refusal. **Return to Sol. E3-B stays locked. Do not merge #6245.**
+E3-A R2 (2026-08-23) is the final landing repair on PR #6245. Gold is `aapl_fy2026_q3_qa_gold.v2` SHA `fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c`; v1 `6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761` is superseded calibration gold. Canonical taxonomy remains `qa_topic.v1` / `a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e`. The immutable blind Pass B packet stores `b2ae2508877ccda4dea911d52952c49f78b0dbc26049326d542ee77439cf9a14` as a **noncanonical pass-local members digest**, not the qa_topic.v1 hash; enum membership matches. **Topic adjudication is UNRESOLVED / PASS_A_REFERENCE_ONLY** — Pass A and Pass B disagree on all 7 per-exchange topic sets; Haiku Jaccard 0.722 is descriptive against Pass-A reference labels only and grants zero topic-model authority. Structural adjudication is accepted: 7 Operator-delimited exchanges, exact source spans, identities, 26 management answer-turns. Measured eval `run_id=27e3e380f70658c1` on git head `154ec6204e585c70a576a7cf249acc2b394aa69c` is unchanged: Qwen `[]` (NOT_EXERCISED, local $0.00); Haiku benchmark-only. Sol review 5001579080. After #6245 lands, E3-A may be recorded done as a completed calibration / negative-method experiment. **E3-B stays locked. Do not start E3-A2 before #6245 lands. Return the exact final head to Sol.**
