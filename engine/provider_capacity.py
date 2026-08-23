@@ -225,11 +225,15 @@ def _dedupe_degraded(rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
     return [unique[key] for key in sorted(unique)]
 
 
-def _material_rows(repo_root: Path, paths: Sequence[str]) -> list[dict[str, str]]:
+def _material_rows(
+    repo_root: Path,
+    paths: Sequence[str],
+) -> tuple[list[dict[str, str]], dict[str, str]]:
     if not paths or len(paths) != len(set(paths)) or tuple(paths) != tuple(sorted(paths)):
         raise ProviderCapacityError("MATERIAL_SOURCE_ALLOWLIST_INVALID")
     root = repo_root.resolve(strict=True)
     rows: list[dict[str, str]] = []
+    blob_oids: dict[str, str] = {}
     for raw_path in paths:
         relative = Path(raw_path)
         if relative.is_absolute() or ".." in relative.parts or str(relative) != raw_path:
@@ -244,11 +248,16 @@ def _material_rows(repo_root: Path, paths: Sequence[str]) -> list[dict[str, str]
         if root not in resolved.parents or not resolved.is_file():
             raise ProviderCapacityError("MATERIAL_SOURCE_NON_REGULAR")
         try:
-            digest = hashlib.sha256(resolved.read_bytes()).hexdigest()
+            data = resolved.read_bytes()
         except OSError as exc:
             raise ProviderCapacityError("MATERIAL_SOURCE_UNREADABLE") from exc
-        rows.append({"path": raw_path, "sha256": digest})
-    return rows
+        rows.append({"path": raw_path, "sha256": hashlib.sha256(data).hexdigest()})
+        # This repository's 40-character commit contract is SHA-1.  Comparing
+        # local blob identities with the commit tree proves the same raw bytes
+        # without asking a blobless clone to fetch every committed blob.
+        blob_header = f"blob {len(data)}\0".encode("ascii")
+        blob_oids[raw_path] = hashlib.sha1(blob_header + data).hexdigest()
+    return rows, blob_oids
 
 
 def _git_bytes(repo_root: Path, *args: str) -> bytes:
@@ -265,27 +274,61 @@ def _git_bytes(repo_root: Path, *args: str) -> bytes:
     return proc.stdout
 
 
+def _committed_material_oids(
+    repo_root: Path,
+    commit: str,
+    paths: Sequence[str],
+) -> dict[str, str]:
+    """Read all material blob identities from one bounded tree query."""
+    raw = _git_bytes(
+        repo_root,
+        "ls-tree",
+        "-rz",
+        "--full-tree",
+        commit,
+        "--",
+        *paths,
+    )
+    result: dict[str, str] = {}
+    try:
+        for record in raw.split(b"\0"):
+            if not record:
+                continue
+            metadata, separator, raw_path = record.partition(b"\t")
+            mode, object_type, object_id = metadata.split(b" ")
+            path = raw_path.decode("utf-8", "strict")
+            if (
+                not separator
+                or object_type != b"blob"
+                or mode == b"120000"
+                or path not in paths
+                or path in result
+                or not re.fullmatch(rb"[0-9a-f]{40}", object_id)
+            ):
+                return {}
+            result[path] = object_id.decode("ascii")
+    except (UnicodeDecodeError, ValueError):
+        return {}
+    return result
+
+
 def material_source_receipt(repo_root: Path | None = None) -> MaterialSourceReceipt:
     """Compute executed-byte identity and exact-HEAD grounding.
 
     The source allowlist, reported commit and match bit are not caller supplied.
     """
     root = (repo_root or _repo_root()).resolve(strict=True)
-    rows = _material_rows(root, MATERIAL_SOURCE_PATHS)
+    rows, local_blob_oids = _material_rows(root, MATERIAL_SOURCE_PATHS)
     digest = hashlib.sha256(_canonical_bytes(rows)).hexdigest()
     commit = _git_bytes(root, "rev-parse", "HEAD").decode("ascii", "strict").strip()
     if not _SHA_RE.fullmatch(commit):
         raise ProviderCapacityError("REPOSITORY_IDENTITY_UNAVAILABLE")
 
-    matches = True
-    for row in rows:
-        try:
-            committed = _git_bytes(root, "show", f"{commit}:{row['path']}")
-        except ProviderCapacityError:
-            matches = False
-            continue
-        if hashlib.sha256(committed).hexdigest() != row["sha256"]:
-            matches = False
+    committed_blob_oids = _committed_material_oids(root, commit, MATERIAL_SOURCE_PATHS)
+    matches = (
+        set(committed_blob_oids) == set(MATERIAL_SOURCE_PATHS)
+        and committed_blob_oids == local_blob_oids
+    )
     return MaterialSourceReceipt(digest, commit, matches)
 
 
@@ -918,21 +961,17 @@ def snapshot_hash(document: Mapping[str, Any]) -> str:
     return _semantic_snapshot_hash(document)
 
 
-def build_snapshot(
+def _build_snapshot_from_observations(
     *,
-    repo_root: Path | None = None,
-    generated_at: datetime | None = None,
-    observations: Sequence[Mapping[str, Any]] | None = None,
+    repo_root: Path,
+    generated_at: datetime,
+    observations: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    """Build one complete strict snapshot without writing or provider calls."""
-    root = (repo_root or _repo_root()).resolve(strict=True)
-    now = (generated_at or datetime.now(timezone.utc)).astimezone(timezone.utc).replace(microsecond=0)
+    """Assemble a snapshot from source observations (private test seam)."""
+    root = repo_root.resolve(strict=True)
+    now = generated_at.astimezone(timezone.utc).replace(microsecond=0)
     receipt = material_source_receipt(root)
-    source_observations = (
-        list(observations)
-        if observations is not None
-        else collect_current_observations(repo_root=root, generated_at=now)
-    )
+    source_observations = list(observations)
 
     by_id: dict[str, Mapping[str, Any]] = {}
     for observation in source_observations:
@@ -1005,6 +1044,22 @@ def build_snapshot(
     document["snapshot_hash"] = _semantic_snapshot_hash(document)
     validate_snapshot(document)
     return document
+
+
+def build_snapshot(*, repo_root: Path | None = None) -> dict[str, Any]:
+    """Build one source-owned strict snapshot without writes or provider calls.
+
+    Current observations, generation time, source census, commit and grounding
+    are all producer-owned.  Callers may select only the repository root.
+    """
+    root = (repo_root or _repo_root()).resolve(strict=True)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    observations = collect_current_observations(repo_root=root, generated_at=now)
+    return _build_snapshot_from_observations(
+        repo_root=root,
+        generated_at=now,
+        observations=observations,
+    )
 
 
 def validate_snapshot(document: Mapping[str, Any], *, check_hash: bool = True) -> None:

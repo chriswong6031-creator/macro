@@ -54,6 +54,14 @@ _MAX_BYTES = 8 * 1024 * 1024
 
 _FALSE = {"", "0", "false", "no", "off"}
 
+# The legacy Claude OAuth rung predates capability IDs and therefore records
+# its configured environment-variable *name* in the health ledger.  Collapse
+# that known identifier at this secret-free source seam so downstream capacity
+# projection never needs to know or emit an auth variable name.
+_CAPACITY_CAP_ID_ALIASES = {
+    "CLAUDE_CODE_OAUTH_TOKEN": "claude_code_oauth",
+}
+
 _write_lock = threading.Lock()
 
 
@@ -313,10 +321,11 @@ def capacity_health_observations(
         ):
             corrupt = True
             continue
+        raw_cap_id = str(row.get("cap_id") or "") or None
         safe_rows.append({
             "ts": ts,
             "rung": str(row.get("rung") or "unknown"),
-            "cap_id": str(row.get("cap_id") or "") or None,
+            "cap_id": _CAPACITY_CAP_ID_ALIASES.get(raw_cap_id, raw_cap_id),
             "ok": bool(row.get("ok")),
             "error_class": str(row.get("error_class") or ""),
         })

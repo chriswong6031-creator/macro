@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 import copy
 import hashlib
+import inspect
 import json
 import os
 import shutil
@@ -17,6 +18,7 @@ import pytest
 
 from engine import codex_provider as cp
 from engine import provider_capacity as pc
+from engine import provider_health as ph
 from engine.neuralweb import key_pool
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -75,7 +77,7 @@ def grounded(monkeypatch):
 
 def _snapshot(monkeypatch, observations: list[dict] | None = None, **kwargs) -> dict:
     monkeypatch.setattr(pc, "material_source_receipt", lambda _root: GROUND)
-    return pc.build_snapshot(
+    return pc._build_snapshot_from_observations(
         repo_root=ROOT,
         generated_at=kwargs.pop("generated_at", NOW),
         observations=observations or _observations(),
@@ -122,6 +124,14 @@ def test_strict_closed_contract_and_reviewed_inventory(monkeypatch):
     extra["extra"] = True
     with pytest.raises(pc.ProviderCapacityError, match="TOP_LEVEL_SCHEMA_INVALID"):
         pc.validate_snapshot(extra)
+
+
+def test_public_builder_owns_time_and_source_observations():
+    assert tuple(inspect.signature(pc.build_snapshot).parameters) == ("repo_root",)
+    with pytest.raises(TypeError):
+        pc.build_snapshot(repo_root=ROOT, generated_at=NOW)  # type: ignore[call-arg]
+    with pytest.raises(TypeError):
+        pc.build_snapshot(repo_root=ROOT, observations=_observations())  # type: ignore[call-arg]
 
 
 def test_known_absent_and_disabled_slots_remain_distinct(monkeypatch):
@@ -345,6 +355,29 @@ def test_no_health_source_is_fully_unknown():
     assert "PROVIDER_HEALTH_UNKNOWN" in codes
 
 
+def test_legacy_claude_health_identifier_is_canonicalized_and_consumed(tmp_path):
+    ledger = tmp_path / "data" / "ai_costs" / "provider_health.jsonl"
+    ledger.parent.mkdir(parents=True)
+    ledger.write_text(
+        json.dumps({
+            "event": "attempt",
+            "ts": "2026-08-23T11:59:00Z",
+            "rung": "oauth",
+            "cap_id": "CLAUDE_CODE_OAUTH_TOKEN",
+            "ok": True,
+            "error_class": "",
+        }) + "\n",
+        encoding="utf-8",
+    )
+    source = ph.capacity_health_observations(root=tmp_path)
+    assert source["rows"][0]["cap_id"] == "claude_code_oauth"
+
+    health, codes = pc._health_from_sources(pc.SUPPORTED_SLOTS[0], source, NOW)
+    assert codes == []
+    assert health["state"] == "available"
+    assert health["evidence"] == "provider_reported"
+
+
 def test_invalid_numbers_and_impossible_absolute_quota_refuse(monkeypatch):
     document = _snapshot(monkeypatch)
     row = document["slots"][0]["quota_horizons"][0]
@@ -540,10 +573,31 @@ def test_unrelated_commit_changes_audit_not_semantic_producer(monkeypatch, tmp_p
 
     observations = _observations()
     monkeypatch.setattr(pc, "material_source_receipt", lambda _root: first)
-    one = pc.build_snapshot(repo_root=root, generated_at=NOW, observations=observations)
+    one = pc._build_snapshot_from_observations(
+        repo_root=root, generated_at=NOW, observations=observations,
+    )
     monkeypatch.setattr(pc, "material_source_receipt", lambda _root: second)
-    two = pc.build_snapshot(repo_root=root, generated_at=NOW, observations=observations)
+    two = pc._build_snapshot_from_observations(
+        repo_root=root, generated_at=NOW, observations=observations,
+    )
     assert one["snapshot_hash"] == two["snapshot_hash"]
+
+
+def test_material_grounding_uses_one_bounded_tree_query(monkeypatch, tmp_path):
+    root = _material_repo(tmp_path)
+    real_run = pc.subprocess.run
+    git_calls: list[tuple[str, ...]] = []
+
+    def recording_run(args, **kwargs):
+        git_calls.append(tuple(str(value) for value in args))
+        return real_run(args, **kwargs)
+
+    monkeypatch.setattr(pc.subprocess, "run", recording_run)
+    receipt = pc.material_source_receipt(root)
+    assert receipt.material_sources_match_commit is True
+    assert sum("ls-tree" in call for call in git_calls) == 1
+    assert not any("show" in call for call in git_calls)
+    assert len(git_calls) == 2
 
 
 def test_allowlist_change_changes_digest_without_caller_override(monkeypatch, tmp_path):
