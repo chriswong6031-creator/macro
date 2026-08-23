@@ -98,7 +98,17 @@ def concentration_effective_count(values: Iterable[Any]) -> dict[str, Any]:
             "top5_share": None,
             "dominated_gt_50pct": None,
         }
-    counts = Counter(clean)
+    try:
+        counts = Counter(clean)
+    except TypeError:
+        return {
+            "state": HOLD_INTEGRITY,
+            "n_rows": len(seq),
+            "n_missing": len(seq) - len(clean),
+            "n_groups": None,
+            "n_eff": None,
+            "reason": "concentration_group_values_must_be_hashable_scalars",
+        }
     n = len(clean)
     shares = sorted((count / n for count in counts.values()), reverse=True)
     return {
@@ -277,9 +287,14 @@ def expected_shortfall(
 
 
 def _ci_pair(ci: Sequence[float] | None) -> tuple[float, float] | None:
-    if ci is None or len(ci) != 2:
+    if ci is None:
         return None
-    lo, hi = _finite_float(ci[0]), _finite_float(ci[1])
+    try:
+        if len(ci) != 2:
+            return None
+        lo, hi = _finite_float(ci[0]), _finite_float(ci[1])
+    except (TypeError, IndexError):
+        return None
     if lo is None or hi is None or lo > hi:
         return None
     return lo, hi
@@ -411,6 +426,19 @@ def _column_or_unavailable(frame: pd.DataFrame, column: str) -> dict[str, Any]:
     }
 
 
+def _rank_positions(group: pd.DataFrame) -> tuple[pd.Series | None, str | None]:
+    """Validate one decision session's published rank positions before any top-K math."""
+    positions = pd.to_numeric(group["position"], errors="coerce")
+    if positions.isna().any():
+        return None, "rank_position_missing_or_non_numeric"
+    if ((positions < 0) | ((positions % 1) != 0)).any():
+        return None, "rank_position_must_be_nonnegative_integer"
+    positions = positions.astype(int)
+    if positions.duplicated().any():
+        return None, "duplicate_rank_position_within_decision_session"
+    return positions, None
+
+
 def _published_precision(frame: pd.DataFrame, k: int) -> dict[str, Any]:
     """Board top-K telemetry that never backfills a missing higher-slot outcome."""
     needed = {"as_of", "position", "excess_spy"}
@@ -426,9 +454,16 @@ def _published_precision(frame: pd.DataFrame, k: int) -> dict[str, Any]:
     capacity = 0
     sessions_total = 0
 
-    for _, group in frame.groupby("as_of", sort=True):
+    for as_of, group in frame.groupby("as_of", sort=True):
         sessions_total += 1
-        positions = pd.to_numeric(group["position"], errors="coerce")
+        positions, position_error = _rank_positions(group)
+        if position_error is not None or positions is None:
+            return {
+                "state": HOLD_INTEGRITY,
+                "k": k,
+                "reason": position_error,
+                "decision_session": str(as_of),
+            }
         top = group.loc[positions < k]
         outcomes = pd.to_numeric(top["excess_spy"], errors="coerce")
         graded = outcomes.dropna()
@@ -471,8 +506,22 @@ def _mean_session_spearman(frame: pd.DataFrame) -> dict[str, Any]:
         return {"state": UNAVAILABLE_FIELD, "missing_columns": sorted(needed - set(frame.columns))}
 
     values: list[float] = []
-    for _, group in frame.groupby("as_of", sort=True):
-        pair = group[["position", "excess_spy"]].apply(pd.to_numeric, errors="coerce").dropna()
+    partial_outcome_sessions = 0
+    for as_of, group in frame.groupby("as_of", sort=True):
+        positions, position_error = _rank_positions(group)
+        if position_error is not None or positions is None:
+            return {
+                "state": HOLD_INTEGRITY,
+                "n_sessions": 0,
+                "value": None,
+                "reason": position_error,
+                "decision_session": str(as_of),
+            }
+        outcomes = pd.to_numeric(group["excess_spy"], errors="coerce")
+        if outcomes.isna().any():
+            partial_outcome_sessions += 1
+            continue
+        pair = pd.DataFrame({"position": positions, "excess_spy": outcomes})
         if pair.shape[0] < 3 or pair["position"].nunique() < 2 or pair["excess_spy"].nunique() < 2:
             continue
         correlation = pair["position"].corr(pair["excess_spy"], method="spearman")
@@ -480,12 +529,20 @@ def _mean_session_spearman(frame: pd.DataFrame) -> dict[str, Any]:
             values.append(float(correlation))
 
     if not values:
-        return {"state": UNESTIMABLE, "n_sessions": 0, "value": None}
+        return {
+            "state": UNESTIMABLE,
+            "n_sessions": 0,
+            "value": None,
+            "partial_outcome_sessions_excluded": partial_outcome_sessions,
+            "survivor_rows_used": False,
+        }
     return {
         "state": DESCRIPTIVE_ONLY,
         "n_sessions": len(values),
         "value": _round(float(np.mean(values))),
-        "aggregation": "unweighted_mean_of_decision_session_spearman",
+        "aggregation": "unweighted_mean_of_complete_decision_session_spearman",
+        "partial_outcome_sessions_excluded": partial_outcome_sessions,
+        "survivor_rows_used": False,
         "orientation_note": "position is 0-based; negative means higher published slots did better",
     }
 
