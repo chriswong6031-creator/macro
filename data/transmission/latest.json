@@ -69,7 +69,7 @@
       "zh": "再通胀脉冲——盈亏平衡上行（油价/增长/财政）。对实物资产是顺风，对久期是逆风。同步指标。"
     },
     "costate": {
-      "oil_chg_20d_pct": -3.0,
+      "oil_chg_20d_pct": -2.5,
       "real10y_chg_20d_bp": -8.0,
       "nom10y_chg_20d_bp": 0.0,
       "hy_oas_z": -0.64,
@@ -1995,7 +1995,7 @@
     ]
   },
   "dollar_channel": {
-    "asof": "2026-08-21",
+    "asof": "2026-08-22",
     "usd_dir": "flat",
     "roc_pct": null,
     "state": {

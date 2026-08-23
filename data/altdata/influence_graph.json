@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-08-22T05:28:25.447625+00:00",
+  "generated_utc": "2026-08-23T04:39:53.943355+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -996,13 +996,12 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.95,
+      "alt_score": 4,
+      "alt_weighted": 1.6,
       "alt_channels": [
         "affiliation",
         "app_demand",
         "github_momentum",
-        "hf_model_momentum",
         "patent_cluster"
       ],
       "top_holder": {
@@ -1091,11 +1090,10 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.25,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
       "alt_channels": [
         "affiliation",
-        "analyst_upgrade_cluster",
         "app_demand"
       ],
       "top_holder": {
@@ -1202,12 +1200,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.85,
+      "alt_score": 4,
+      "alt_weighted": 1.55,
       "alt_channels": [
         "affiliation",
         "gov_grant",
-        "lobbying",
         "patent_cluster",
         "stocktwits_bull"
       ],
@@ -1230,10 +1227,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.1,
+      "alt_score": 4,
+      "alt_weighted": 1.4,
       "alt_channels": [
         "affiliation",
+        "lobbying",
         "patent_cluster",
         "special_situation"
       ],
@@ -1256,10 +1254,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.6,
+      "alt_score": 5,
+      "alt_weighted": 1.85,
       "alt_channels": [
         "affiliation",
+        "cnbc_pick",
         "insider_mspr",
         "patent_cluster",
         "stocktwits_bull"
@@ -1366,31 +1365,6 @@
         "owner": "VOYA INVESTMENT MANAGEMENT LLC",
         "title": "Institution",
         "shares": 198470000
-      }
-    },
-    {
-      "ticker": "COIN",
-      "actors": [
-        {
-          "actor": "Cathie Wood",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.65,
-      "alt_channels": [
-        "affiliation",
-        "stocktwits_bull"
-      ],
-      "top_holder": {
-        "owner": "LINDEN ADVISORS LP",
-        "title": "Institution",
-        "shares": 384176000
       }
     },
     {
@@ -1627,6 +1601,30 @@
         "affiliation"
       ],
       "top_holder": null
+    },
+    {
+      "ticker": "COIN",
+      "actors": [
+        {
+          "actor": "Cathie Wood",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": {
+        "owner": "LINDEN ADVISORS LP",
+        "title": "Institution",
+        "shares": 384176000
+      }
     },
     {
       "ticker": "MOH",

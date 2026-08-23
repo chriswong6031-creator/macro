@@ -55,8 +55,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "pct_above_50=57.7% (was 66.0% 10d ago)",
-      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=57.7%\uff0810\u65e5\u524d66.0%\uff09",
+      "detail_en": "pct_above_50=57.6% (was 66.0% 10d ago)",
+      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=57.6%\uff0810\u65e5\u524d66.0%\uff09",
       "source": "breadth"
     },
     {
@@ -66,8 +66,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "10d mean(nh-nl)=18.6 (was 22.0 10d ago)",
-      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=18.6\uff0810\u65e5\u524d22.0\uff09",
+      "detail_en": "10d mean(nh-nl)=18.6 (was 21.9 10d ago)",
+      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=18.6\uff0810\u65e5\u524d21.9\uff09",
       "source": "breadth"
     },
     {
@@ -323,5 +323,5 @@
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.84
+  "_timing_s": 2.9
 }

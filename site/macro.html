@@ -486,7 +486,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">2</span>
+                <span class="ct">1</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -503,18 +503,9 @@
                   
                   
                   
-                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Source &#39;massive_stock_day&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;massive_stock_day&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
-                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
-                  </a>
-                  
-                  
-                  
                   <a class="ms-sig sev-warn" data-ms-dlg="dlg-events" href="#dlg-events">
                     <div class="ms-sig-head"><span class="ms-sig-ico">📅</span><span class="ms-sig-title"><span class="l-en">Major event on deck — expect bigger swings either way</span><span class="l-zh">重大事件临近 — 双向波动或加大</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: GDP (BEA estimate) in 3 days — elevated two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：GDP 数据（3 天后）—— 预计升高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: GDP (BEA estimate) in 4 days — elevated two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：GDP 数据（4 天后）—— 预计升高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
                     <div class="ms-sig-what"><span class="l-en">A high-impact scheduled release (CPI, Fed decision, jobs report) lands in the coming sessions — the message says which and when. Moves around these prints are two-sided and often retraced — a volatility warning, not a directional call. Size positions for the noise; avoid forcing new trades right into the print.</span><span class="l-zh">未来数个交易日内将有高影响力的既定事件（CPI、美联储决议、就业报告）——具体是哪个、何时，见提示内容。事件前后的波动是双向的、常被回补 —这是波动性提示，并非方向判断。按噪声调整仓位，避免在数据公布前强行开新仓。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — a volatility window, not a direction call. Size for the noise.</span><span class="l-zh">背景 — 波动窗口而非方向判断。按噪声调整仓位。</span></div>
                   </a>
@@ -4751,15 +4742,15 @@
               <stop offset="100%" stop-color="var(--isle-policy)" stop-opacity="0"/>
             </linearGradient>
           </defs>
-          <path d="M0,32.0 L30,30.5 L60,22.5 L90,11.6 L120,0.0 L120,36 L0,36 Z" fill="url(#plSpkGrad)"/>
-          <polyline points="0,32.0 30,30.5 60,22.5 90,11.6 120,0.0" fill="none" stroke="var(--isle-policy)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+          <path d="M0,32.0 L30,30.6 L60,22.0 L90,11.4 L120,0.0 L120,36 L0,36 Z" fill="url(#plSpkGrad)"/>
+          <polyline points="0,32.0 30,30.6 60,22.0 90,11.4 120,0.0" fill="none" stroke="var(--isle-policy)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
         </svg>
         <div class="plf-spark-label">
           
-          <span class="l-en">Market prices ~2 hikes over the next 12m (funds 3.63% → 4.07%)</span>
+          <span class="l-en">Market prices ~2 hikes over the next 12m (funds 3.63% → 4.08%)</span>
           
           
-          <span class="l-zh">市场为未来12个月定价约加息2次（基金利率 3.63% → 4.07%）</span>
+          <span class="l-zh">市场为未来12个月定价约加息2次（基金利率 3.63% → 4.08%）</span>
           
           
         </div>
@@ -4809,9 +4800,11 @@
         
         <span class="mx5-ai-ticker-pill">SPY</span>
         
+        <span class="mx5-ai-ticker-pill">NVDA</span>
+        
         <span class="mx5-ai-ticker-pill">QQQ</span>
         
-        <span class="mx5-ai-ticker-pill">HD</span>
+        <span class="mx5-ai-ticker-pill">MU</span>
         
         <span class="mx5-ai-ticker-pill">USO</span>
         
@@ -4889,8 +4882,8 @@
               <span class="l-zh">重大事件临近 — 双向波动或加大</span>
             </div>
             <div class="mx5-alert-detail">
-              <span class="l-en">Event-risk window: GDP (BEA estimate) in 3 days — elevated two-sided volatility expected. Not a sell signal; size for th…</span>
-              <span class="l-zh">事件风险窗口：GDP 数据（3 天后）—— 预计升高的两面性波动。非卖出信号；按噪声调整仓位。</span>
+              <span class="l-en">Event-risk window: GDP (BEA estimate) in 4 days — elevated two-sided volatility expected. Not a sell signal; size for th…</span>
+              <span class="l-zh">事件风险窗口：GDP 数据（4 天后）—— 预计升高的两面性波动。非卖出信号；按噪声调整仓位。</span>
             </div>
           </div>
         </div>
@@ -4921,8 +4914,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 2 in feed</span>
-          <span class="l-zh">显示 1 / 2 条</span>
+          <span class="l-en">Showing 1 of 1 in feed</span>
+          <span class="l-zh">显示 1 / 1 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -5997,7 +5990,7 @@
 
   <div class="rrx-cyc rrx-cax">
     <span class="rrx-cyc-k"><span class="l-en">Markets syncing up</span><span class="l-zh">市场联动升温</span></span>
-    <span class="help">?<span class="tip"><span class="l-en">Absorption 55th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 55分位（5年）；集群：US、Commodities、Dollar</span></span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Absorption 54th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 54分位（5年）；集群：US、Commodities、Dollar</span></span></span>
   </div>
 
   <div class="rrx-trk">
@@ -6214,7 +6207,7 @@
               <div class="rlx-viz" style="--rlx-c:var(--isle-markets,#4d8ef5)">
                 <div class="rlx-bar-row" style="grid-template-columns:70px 1fr">
                   <span class="rlx-bar-lbl"><span class="l-en">vs 5-year range</span><span class="l-zh">相对5年区间</span></span>
-                  <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:55%"></span></span>
+                  <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:54%"></span></span>
                 </div>
                 <div class="rlx-viz-cap"><span class="l-en">Further right = markets moving more tightly together than usual.</span><span class="l-zh">越靠右，代表市场比平常联动得更紧。</span></div>
               </div>
@@ -6231,8 +6224,8 @@
                 <span class="rlx-chip dn">US</span><span class="rlx-chip dn">Commodities</span><span class="rlx-chip dn">Dollar</span>
               </div>
               <div class="lens-receipt">
-                <span class="l-en">55th pctile co-movement · 5-year window · display context, not a trigger</span>
-                <span class="l-zh">联动度 55 分位 · 5 年区间 · 展示背景，非触发</span>
+                <span class="l-en">54th pctile co-movement · 5-year window · display context, not a trigger</span>
+                <span class="l-zh">联动度 54 分位 · 5 年区间 · 展示背景，非触发</span>
               </div>
             </span>
           </div>
@@ -6947,44 +6940,44 @@
             </linearGradient>
           </defs>
           
-          <path class="fbm-chart-area" d="M50,99.1 L185.0,96.4 L320.0,81.6 L455.0,61.5 L590,40.1 L590,150 L50,150 Z" fill="url(#plxChartGrad)"/>
+          <path class="fbm-chart-area" d="M50,99.6 L185.0,96.9 L320.0,81.0 L455.0,61.1 L590,39.9 L590,150 L50,150 Z" fill="url(#plxChartGrad)"/>
           
-          <line x1="50" y1="100.4" x2="590" y2="100.4" stroke="rgba(255,255,255,.18)" stroke-width="1" stroke-dasharray="4,4"/>
+          <line x1="50" y1="100.9" x2="590" y2="100.9" stroke="rgba(255,255,255,.18)" stroke-width="1" stroke-dasharray="4,4"/>
           
-          <polyline class="fbm-chart-line" style="--dash:760" points="50,99.1 185.0,96.4 320.0,81.6 455.0,61.5 590,40.1" fill="none" stroke="var(--isle-policy)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-          
-          
-          
-          
-          <circle class="fbm-chart-node" cx="50" cy="99.1" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="50" y="91.1" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.63%</text>
-          
-          
-          
-          <circle class="fbm-chart-node" cx="185.0" cy="96.4" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="185.0" y="88.4" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.65%</text>
-          
-          
-          
-          <circle class="fbm-chart-node" cx="320.0" cy="81.6" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="320.0" y="73.6" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.76%</text>
-          
-          
-          
-          <circle class="fbm-chart-node" cx="455.0" cy="61.5" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="455.0" y="53.5" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.91%</text>
-          
-          
-          
-          <circle class="fbm-chart-node" cx="590" cy="40.1" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="590" y="32.1" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">4.07%</text>
+          <polyline class="fbm-chart-line" style="--dash:760" points="50,99.6 185.0,96.9 320.0,81.0 455.0,61.1 590,39.9" fill="none" stroke="var(--isle-policy)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
           
           
           
           
+          <circle class="fbm-chart-node" cx="50" cy="99.6" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="50" y="91.6" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.63%</text>
           
           
-          <polygon class="fbm-chart-diamond" points="455.0,70.3 461.0,76.3 455.0,82.3 449.0,76.3" fill="var(--warn,#f59e0b)" fill-opacity=".85"/>
+          
+          <circle class="fbm-chart-node" cx="185.0" cy="96.9" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="185.0" y="88.9" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.65%</text>
+          
+          
+          
+          <circle class="fbm-chart-node" cx="320.0" cy="81.0" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="320.0" y="73.0" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.77%</text>
+          
+          
+          
+          <circle class="fbm-chart-node" cx="455.0" cy="61.1" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="455.0" y="53.1" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.92%</text>
+          
+          
+          
+          <circle class="fbm-chart-node" cx="590" cy="39.9" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="590" y="31.9" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">4.08%</text>
+          
+          
+          
+          
+          
+          
+          <polygon class="fbm-chart-diamond" points="455.0,71.0 461.0,77.0 455.0,83.0 449.0,77.0" fill="var(--warn,#f59e0b)" fill-opacity=".85"/>
           
           
           
@@ -7025,19 +7018,19 @@
         
         <div class="plx-chart-caption">
           
-          <span class="l-en">At end-2026 the market implies 3.81% vs the Fed&#39;s 3.80% median dot (+1bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.57pp).</span>
+          <span class="l-en">At end-2026 the market implies 3.82% vs the Fed&#39;s 3.80% median dot (+2bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.57pp).</span>
           
           
           
-          <span class="l-zh">在end-2026，市场隐含 3.81% 对比美联储 3.80% 的中位点（+1基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.57个百分点）。</span>
+          <span class="l-zh">在end-2026，市场隐含 3.82% 对比美联储 3.80% 的中位点（+2基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.57个百分点）。</span>
           
           
           
           <span class="plx-chart-gap-chip"
-            data-tip-en="Fed dot at end-2026: 3.8%. Market: 3.81%. Gap 1bp."
-            data-tip-zh="美联储点图end-2026: 3.8%，市场定价: 3.81%，差距1bp。">
-            <span class="l-en">market ≈ the Fed (1bp at end-2026)</span>
-            <span class="l-zh">市场与美联储基本一致（1bp @ end-2026）</span>
+            data-tip-en="Fed dot at end-2026: 3.8%. Market: 3.82%. Gap 2bp."
+            data-tip-zh="美联储点图end-2026: 3.8%，市场定价: 3.82%，差距2bp。">
+            <span class="l-en">market ≈ the Fed (2bp at end-2026)</span>
+            <span class="l-zh">市场与美联储基本一致（2bp @ end-2026）</span>
           </span>
           
         </div>
@@ -7346,32 +7339,13 @@
                 <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.12);color:var(--mx5-warn-ink,#9c6212);border:1px solid rgba(245,158,11,.22);white-space:nowrap"><span class="l-en">Event</span><span class="l-zh">事件</span></span>
                 
               </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: GDP (BEA estimate) in 3 days — elevated two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：GDP 数据（3 天后）—— 预计升高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: GDP (BEA estimate) in 4 days — elevated two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：GDP 数据（4 天后）—— 预计升高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
             </div>
           </div>
           
         </div>
         
         
-        
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
-          
-          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
-            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
-                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
-                  <span style="font-size:11px;margin-right:3px">🔌</span>
-                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
-                </div>
-                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
-              </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;massive_stock_day&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;massive_stock_day&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-            </div>
-          </div>
-          
-        </div>
         
         
         
@@ -7384,10 +7358,10 @@
           
           
           
-          <a class="nbx-item" href="https://www.marketwatch.com/story/canada-announces-retaliatory-tariffs-on-u-s-goods-after-trade-talks-break-down-45081c2f?mod=mw_rss_topstories" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4635879-notable-analyst-calls-this-week-apple-merck-and-analog-devices-among-top-picks?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
-              <span class="nbx-title"><span class="l-en">Canada announces retaliatory tariffs on U.S. goods after trade talks break down</span><span class="l-zh">Canada announces retaliatory tariffs on U.S. goods after trade talks break down</span></span>
+              <span class="nbx-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
+              <span class="nbx-title"><span class="l-en">Notable analyst calls this week: Apple, Merck and Analog Devices among top picks</span><span class="l-zh">Notable analyst calls this week: Apple, Merck and Analog Devices among top picks</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7402,7 +7376,43 @@
           
           
           
-          <a class="nbx-item" href="https://www.npr.org/2026/08/22/nx-s1-5941703/the-u-s-canada-are-fighting-over-tariffs-how-is-that-affecting-small-businesses" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4635742-earnings-scoreboard-all-12-key-sp-500-reporting-firms-top-eps-estimates-11-deliver-yy-growth?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Earnings Scoreboard: All 12 key S&amp;P 500 reporting firms top EPS estimates; 11 deliver Y/Y growth</span><span class="l-zh">Earnings Scoreboard: All 12 key S&amp;P 500 reporting firms top EPS estimates; 11 deliver Y/Y growth</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 22</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.cnbc.com/2026/08/21/an-overlooked-ai-winner-taps-new-cfo-as-street-awaits-nvidia.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">An overlooked AI winner names a new CFO — plus, Nvidia&#39;s key earnings loom</span><span class="l-zh">An overlooked AI winner names a new CFO — plus, Nvidia&#39;s key earnings loom</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 21</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4636007-insider-trades-amd-micron-and-coca-cola-among-notable-names?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
               <span class="nbx-title"><span class="l-en">The U.S. &amp; Canada are fighting over tariffs. How is that affecting small businesses?</span><span class="l-zh">The U.S. &amp; Canada are fighting over tariffs. How is that affecting small businesses?</span></span>
@@ -7423,12 +7433,30 @@
           <a class="nbx-item" href="https://www.npr.org/2026/08/22/nx-s1-5941584/us-canada-tariffs" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
-              <span class="nbx-title"><span class="l-en">Hours after U.S. imposes tariffs, Canada says it&#39;ll strike back starting Sept. 8</span><span class="l-zh">Hours after U.S. imposes tariffs, Canada says it&#39;ll strike back starting Sept. 8</span></span>
+              <span class="nbx-title"><span class="l-en">U.S.-Canada trade talks collapse just before deadline for tariffs</span><span class="l-zh">U.S.-Canada trade talks collapse just before deadline for tariffs</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Aug 22</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/cellebrite-clbt-ceo-shift-guidance-211211480.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
+              <span class="nbx-title"><span class="l-en">Cellebrite (CLBT): CEO Shift and Guidance Cuts Contrast With Surging AI and FedRAMP Gains</span><span class="l-zh">Cellebrite (CLBT): CEO Shift and Guidance Cuts Contrast With Surging AI and FedRAMP Gains</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 21</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -7447,24 +7475,6 @@
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Aug 23</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/space-exploration-technologies-spcx-vs-191030423.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Space Exploration Technologies (SPCX) vs. NVIDIA Corporation (NVDA): SpaceX Beats on Revenue, But AI Spending Steals the Show</span><span class="l-zh">Space Exploration Technologies (SPCX) vs. NVIDIA Corporation (NVDA): SpaceX Beats on Revenue, But AI Spending Steals the Show</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 21</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -7528,10 +7538,46 @@
           
           
           
+          <a class="nbx-item" href="https://www.cnbc.com/2026/08/19/marvell-google-ai-chips.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nbx-title"><span class="l-en">Marvell&#39;s stock pops 10% on AI chip deal that lets Google buy up to $12.2 billion in shares</span><span class="l-zh">Marvell股价因AI芯片交易大涨10%，该交易允许谷歌购买至多122亿美元股份</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 19</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
           <a class="nbx-item" href="https://seekingalpha.com/news/4635957-key-deals-this-week-stripe-kkr-virtu-and-more?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
               <span class="nbx-title"><span class="l-en">Key deals this week: Stripe, KKR, Virtu and more</span><span class="l-zh">Key deals this week: Stripe, KKR, Virtu and more</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 22</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.investors.com/market-trend/stock-market-today/dow-jones-futures-market-rally-nvidia-crowdstrike-warsh/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Dow Jones Futures: Market Rally Repairs Some Damage; Nvidia Earnings Loom</span><span class="l-zh">Dow Jones Futures: Market Rally Repairs Some Damage; Nvidia Earnings Loom</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7555,24 +7601,6 @@
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Aug 19</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.cnbc.com/2026/08/20/walmart-wmt-q2-2027-earnings.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-              <span class="nbx-title"><span class="l-en">Walmart stock tumbles 9% after outlook disappoints Wall Street</span><span class="l-zh">Walmart stock tumbles 9% after outlook disappoints Wall Street</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 20</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8293,7 +8321,7 @@
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linejoin="round" points="0.0,24.69 5.42,24.72 10.85,23.31 16.27,25.11 21.69,25.11 27.12,22.32 32.54,23.16 37.97,25.68 43.39,17.76 48.81,25.8 54.24,23.04 59.66,19.17 65.08,19.2 70.51,19.2 75.93,27.36 81.36,27.0 86.78,25.83 92.2,23.88 97.63,21.18 103.05,23.25 108.47,15.51 113.9,21.09 119.32,23.88 124.75,14.37 130.17,3.0 135.59,16.98 141.02,13.11 146.44,20.25 151.86,15.54 157.29,18.15 162.71,18.81 168.14,21.15 173.56,19.47 178.98,12.54 184.41,18.24 189.83,25.95 195.25,24.93 200.68,23.31 206.1,25.86 211.53,20.13 216.95,15.51 222.37,3.0 227.8,18.81 233.22,25.44 238.64,25.95 244.07,3.0 249.49,16.62 254.92,19.44 260.34,21.72 265.76,14.55 271.19,18.63 276.61,13.53 282.03,16.65 287.46,13.74 292.88,15.3 298.31,19.26 303.73,23.55 309.15,3.0 314.58,22.32 320.0,21.18 "/>
+<polyline fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linejoin="round" points="0.0,24.69 5.42,24.72 10.85,23.31 16.27,25.11 21.69,25.11 27.12,22.32 32.54,23.16 37.97,25.68 43.39,17.76 48.81,25.8 54.24,23.04 59.66,19.17 65.08,19.2 70.51,19.2 75.93,27.36 81.36,27.0 86.78,25.83 92.2,23.88 97.63,21.18 103.05,23.25 108.47,15.51 113.9,21.09 119.32,23.88 124.75,14.37 130.17,3.0 135.59,16.98 141.02,13.11 146.44,20.25 151.86,15.54 157.29,18.15 162.71,18.81 168.14,21.15 173.56,19.47 178.98,12.54 184.41,18.24 189.83,25.95 195.25,24.93 200.68,23.31 206.1,25.86 211.53,20.13 216.95,15.69 222.37,3.0 227.8,18.81 233.22,25.44 238.64,25.95 244.07,3.0 249.49,16.62 254.92,19.44 260.34,21.72 265.76,14.55 271.19,18.63 276.61,13.53 282.03,16.65 287.46,13.74 292.88,15.3 298.31,19.26 303.73,23.55 309.15,3.0 314.58,22.32 320.0,21.18 "/>
 </svg>
 </div>
             </div>
@@ -8310,34 +8338,34 @@
         
         
         
-        <div class="mx5-dlg-factor-row fg-fear" style="--sg-c:#ef4444" data-rpop tabindex="0" role="button" aria-label="McClellan oscillator — sentiment gauge detail">
+        <div class="mx5-dlg-factor-row fg-neutral" style="--sg-c:#f59e0b" data-rpop tabindex="0" role="button" aria-label="McClellan oscillator — sentiment gauge detail">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">McClellan oscillator</span><span class="l-zh">麦克莱伦振荡器</span><span class="sg-hint" aria-hidden="true">i</span></div>
-            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #ef4444)">
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)">
               <span class="l-en">Slightly more falling than rising</span><span class="l-zh">下跌略多于上涨</span>
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:39.0%;background:var(--fg-col, #ef4444)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #ef4444)">39</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:40.0%;background:var(--fg-col, #f59e0b)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">40</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
               <span class="row-pop-name"><span class="l-en">McClellan oscillator</span><span class="l-zh">麦克莱伦振荡器</span></span>
-              <span class="row-pop-tag dn"><span class="l-en">Fear</span><span class="l-zh">恐慌</span></span>
+              <span class="row-pop-tag warn"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
             </div>
             <div class="row-pop-div"></div>
-            <div class="sg-pop-dialwrap"><div class="sg-dial" style="--sg-c:#ef4444">
+            <div class="sg-pop-dialwrap"><div class="sg-dial" style="--sg-c:#f59e0b">
 <svg viewBox="0 0 132 74" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">
 <path class="sg-dial-track" d="M14 64 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(-19.8 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(-18.0 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">39</div>
-<div class="sg-dial-cap">Fear</div>
+<div class="sg-dial-val">40</div>
+<div class="sg-dial-cap">Neutral</div>
 </div></div>
             <div class="sg-pop-expl">
               
@@ -8355,14 +8383,14 @@
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linejoin="round" points="0.0,15.81 5.42,19.17 10.85,21.42 16.27,20.85 21.69,23.07 27.12,16.62 32.54,17.58 37.97,21.45 43.39,14.76 48.81,19.35 54.24,15.54 59.66,8.76 65.08,9.66 70.51,9.99 75.93,20.88 81.36,20.01 86.78,19.05 92.2,17.43 97.63,13.92 103.05,11.94 108.47,9.48 113.9,11.97 119.32,15.3 124.75,13.59 130.17,9.3 135.59,12.33 141.02,11.97 146.44,20.94 151.86,18.33 157.29,13.89 162.71,13.92 168.14,17.7 173.56,18.21 178.98,12.3 184.41,19.41 189.83,24.09 195.25,24.72 200.68,24.57 206.1,25.86 211.53,19.92 216.95,16.05 222.37,11.16 227.8,16.44 233.22,19.95 238.64,21.6 244.07,16.77 249.49,11.4 254.92,13.17 260.34,17.22 265.76,13.77 271.19,16.11 276.61,15.63 282.03,16.05 287.46,13.14 292.88,14.04 298.31,21.57 303.73,22.92 309.15,20.97 314.58,25.53 320.0,21.18 "/>
+<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,15.81 5.42,19.17 10.85,21.42 16.27,20.85 21.69,23.07 27.12,16.62 32.54,17.58 37.97,21.45 43.39,14.76 48.81,19.35 54.24,15.54 59.66,8.76 65.08,9.66 70.51,9.99 75.93,20.88 81.36,20.01 86.78,19.05 92.2,17.43 97.63,13.92 103.05,11.94 108.47,9.48 113.9,11.97 119.32,15.3 124.75,13.59 130.17,9.3 135.59,12.33 141.02,11.97 146.44,20.94 151.86,18.33 157.29,13.89 162.71,13.92 168.14,17.7 173.56,18.21 178.98,12.3 184.41,19.41 189.83,24.09 195.25,24.72 200.68,24.63 206.1,25.89 211.53,19.95 216.95,16.08 222.37,11.22 227.8,16.47 233.22,19.98 238.64,21.6 244.07,16.8 249.49,11.4 254.92,13.2 260.34,17.22 265.76,13.77 271.19,16.11 276.61,15.63 282.03,16.05 287.46,13.14 292.88,14.04 298.31,21.54 303.73,22.89 309.15,20.97 314.58,25.5 320.0,21.09 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: -10.5 · 39/100 in its own history</span>
-              <span class="l-zh">读数：-10.5 · 历史百分位 39/100</span>
+              <span class="l-en">Reading: -10.1 · 40/100 in its own history</span>
+              <span class="l-zh">读数：-10.1 · 历史百分位 40/100</span>
             </div>
           </span>
         </div>
@@ -8690,8 +8718,8 @@
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:8.0%;background:var(--fg-col, #ef4444)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #ef4444)">8</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:7.0%;background:var(--fg-col, #ef4444)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #ef4444)">7</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
@@ -8705,10 +8733,10 @@
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(-75.6 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(-77.4 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">8</div>
+<div class="sg-dial-val">7</div>
 <div class="sg-dial-cap">Fear</div>
 </div></div>
             <div class="sg-pop-expl">
@@ -8727,14 +8755,14 @@
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linejoin="round" points="0.0,29.43 5.42,29.79 10.85,30.99 16.27,30.6 21.69,30.78 27.12,28.92 32.54,30.51 37.97,32.22 43.39,31.14 48.81,30.45 54.24,30.75 59.66,30.72 65.08,30.63 70.51,31.02 75.93,30.63 81.36,30.63 86.78,31.47 92.2,30.39 97.63,30.75 103.05,31.2 108.47,29.85 113.9,29.67 119.32,31.02 124.75,31.89 130.17,32.49 135.59,31.95 141.02,31.2 146.44,31.23 151.86,31.92 157.29,31.05 162.71,30.96 168.14,31.23 173.56,31.14 178.98,31.74 184.41,31.23 189.83,31.53 195.25,31.32 200.68,32.16 206.1,31.95 211.53,31.29 216.95,31.53 222.37,31.41 227.8,30.66 233.22,29.67 238.64,29.79 244.07,30.15 249.49,29.82 254.92,24.54 260.34,27.57 265.76,28.08 271.19,27.33 276.61,28.89 282.03,28.32 287.46,28.65 292.88,27.93 298.31,29.25 303.73,30.6 309.15,30.78 314.58,30.63 320.0,30.72 "/>
+<polyline fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linejoin="round" points="0.0,29.79 5.42,30.99 10.85,30.6 16.27,30.78 21.69,28.92 27.12,30.51 32.54,32.22 37.97,31.14 43.39,30.45 48.81,30.75 54.24,30.72 59.66,30.63 65.08,31.02 70.51,30.63 75.93,30.63 81.36,31.47 86.78,30.39 92.2,30.75 97.63,31.2 103.05,29.85 108.47,29.67 113.9,31.02 119.32,31.89 124.75,32.49 130.17,31.95 135.59,31.2 141.02,31.23 146.44,31.92 151.86,31.05 157.29,30.96 162.71,31.23 168.14,31.14 173.56,31.74 178.98,31.23 184.41,31.53 189.83,31.32 195.25,32.16 200.68,31.95 206.1,31.29 211.53,31.53 216.95,31.41 222.37,30.66 227.8,29.67 233.22,29.79 238.64,30.15 244.07,29.82 249.49,24.54 254.92,27.57 260.34,28.08 265.76,27.33 271.19,28.89 276.61,28.32 282.03,28.65 287.46,27.93 292.88,29.25 298.31,30.6 303.73,30.78 309.15,30.63 314.58,30.72 320.0,30.87 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: 143.2 · 8/100 in its own history</span>
-              <span class="l-zh">读数：143.2 · 历史百分位 8/100</span>
+              <span class="l-en">Reading: 143.9 · 7/100 in its own history</span>
+              <span class="l-zh">读数：143.9 · 历史百分位 7/100</span>
             </div>
           </span>
         </div>
@@ -9167,8 +9195,8 @@
           
           <div class="sg-split-row" data-vsb-bs="nonai">
             <span class="sg-split-lbl"><span class="l-en">Everyone else</span><span class="l-zh">其他个股</span></span>
-            <span class="sg-split-track"><span class="sg-split-fill non" style="width:62%"></span></span>
-            <span class="sg-split-val">62%</span>
+            <span class="sg-split-track"><span class="sg-split-fill non" style="width:61%"></span></span>
+            <span class="sg-split-val">61%</span>
           </div>
           
         </div>
@@ -11452,9 +11480,9 @@
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-08-23 01:07 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-08-23 04:33 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-08-23 01:07 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-08-23 04:33 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
@@ -11709,5 +11737,6 @@ window.__CHART_SWAP__ = {
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
 </body>
 </html>

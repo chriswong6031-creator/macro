@@ -1,0 +1,25 @@
+{
+  "issuer_id": "ISS:US-XNAS-AAPL",
+  "issuer_metadata": {
+    "cik": "0000320193",
+    "legal_name": "Apple Inc."
+  },
+  "securities": [
+    {
+      "security_id": "SEC:US-XNAS-AAPL-DUP",
+      "issuer_id": "ISS:US-XNAS-AAPL",
+      "issuer_state": "RESOLVED",
+      "listing_key": "US-XNAS-AAPL-DUP",
+      "security_state": "SUPERSEDED_DUPLICATE_MINT",
+      "superseded_by": "SEC:US-XNAS-AAPL"
+    },
+    {
+      "security_id": "SEC:US-XNAS-AAPL",
+      "issuer_id": "ISS:US-XNAS-AAPL",
+      "issuer_state": "RESOLVED",
+      "listing_key": "US-XNAS-AAPL",
+      "security_state": null,
+      "superseded_by": null
+    }
+  ]
+}

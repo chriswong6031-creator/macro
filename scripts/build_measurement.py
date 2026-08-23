@@ -1496,6 +1496,86 @@ ETF_POOLING_NOTE = {
 }
 
 
+def build_imce_prospective_projection() -> dict:
+    """IMCE A5B — compact registration/accrual/status projection.
+
+    Rebuildable purely from data/cycle_pattern/imce_prospective_observation_v1.jsonl
+    plus the registered contract constants (engine.cycle_pattern.imce_prospective).
+    STATUS/MEASUREMENT ONLY: registration state, activation timestamp, last
+    successful source cutoff, per-issuer observation counts, cohort/
+    named_subset/NOT_RECONSTRUCTABLE counts, source coverage, and the
+    literal statement outcomes = fenced / 0. No performance number of any
+    kind is computed or displayed here — authority is context_only.
+    """
+    empty = {
+        "available": False, "registered": True,
+        "registered_contract_hash": None, "roster": [],
+        "activation_started_at": None, "last_decision_cutoff": None,
+        "n_observations": 0, "n_corrections": 0,
+        "per_issuer_counts": {}, "label_counts": {}, "n_outcomes": 0,
+    }
+    try:
+        from engine.cycle_pattern.imce_prospective import (
+            REGISTERED_CONTRACT_HASH,
+            ROSTER,
+            load_rows,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("IMCE prospective projection unavailable — import failed (%s)", exc)
+        return empty
+
+    try:
+        rows = load_rows()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("IMCE prospective projection unavailable — load_rows failed (%s)", exc)
+        return empty
+
+    if not rows:
+        return {**empty, "available": True, "registered_contract_hash": REGISTERED_CONTRACT_HASH[:12],
+                "roster": list(ROSTER)}
+
+    activation_started_at = None
+    observations: list[dict] = []
+    n_corrections = 0
+    for row in rows:
+        kind = row.get("row_kind")
+        if kind == "activation":
+            activation_started_at = row.get("activation_started_at")
+        elif kind == "observation":
+            observations.append(row)
+        elif kind == "correction":
+            n_corrections += 1
+
+    per_issuer_counts: dict[str, int] = {t: 0 for t in ROSTER}
+    label_counts: dict[str, int] = {"cohort": 0, "named_subset": 0, "NOT_RECONSTRUCTABLE": 0}
+    last_cutoff = None
+    for obs in observations:
+        trig = obs.get("trigger") or {}
+        ticker = trig.get("ticker")
+        if ticker in per_issuer_counts:
+            per_issuer_counts[ticker] += 1
+        label = (obs.get("m_t") or {}).get("label")
+        if label in label_counts:
+            label_counts[label] += 1
+        cutoff = trig.get("decision_cutoff")
+        if cutoff and (last_cutoff is None or cutoff > last_cutoff):
+            last_cutoff = cutoff
+
+    return {
+        "available": True,
+        "registered": True,
+        "registered_contract_hash": REGISTERED_CONTRACT_HASH[:12],
+        "roster": list(ROSTER),
+        "activation_started_at": activation_started_at,
+        "last_decision_cutoff": last_cutoff,
+        "n_observations": len(observations),
+        "n_corrections": n_corrections,
+        "per_issuer_counts": per_issuer_counts,
+        "label_counts": label_counts,
+        "n_outcomes": 0,
+    }
+
+
 def _pct(v: float | None, decimals: int = 1) -> str:
     """Signed percent, or an em dash. A dash is a null; a 0.0% is a measurement."""
     if v is None:
@@ -1810,6 +1890,18 @@ def run() -> None:
         log.warning("ETF board windows unavailable — site/factordata/etf_board_track.json "
                     "missing (panel renders its collecting state)")
 
+    # 6i. IMCE A5B — registered prospective forward-capture accrual/status.
+    imce_prospective = build_imce_prospective_projection()
+    if imce_prospective.get("available"):
+        log.info(
+            "IMCE prospective: activated=%s n_observations=%d labels=%s",
+            bool(imce_prospective.get("activation_started_at")),
+            imce_prospective.get("n_observations", 0),
+            imce_prospective.get("label_counts"),
+        )
+    else:
+        log.warning("IMCE prospective projection unavailable")
+
     # 7. Grand total of PIT month-end stamps across all three engines (used in prose)
     n_stamps_grand_total = sum(
         eng.get("n_stamps_total", 0) for eng in engines if not eng.get("missing")
@@ -1844,6 +1936,9 @@ def run() -> None:
         "qledger_reliability": qledger_reliability,
         # ETF masterplan §3 W3 — forward windows, display tier, no authority
         "etf_board_windows": etf_board_windows,
+        # IMCE A5B — registered prospective forward-capture accrual/status.
+        # STATUS ONLY: outcomes = fenced / 0 (see build_imce_prospective_projection docstring).
+        "imce_prospective": imce_prospective,
         "consolidated_verdict": {
             "en": (
                 "Descriptive structure (confirmed turns, phase wheel, risk/vol clustering) has measurable substance. "
@@ -1900,6 +1995,8 @@ def run() -> None:
         qledger_reliability=qledger_reliability,
         # ETF board forward windows (ETF masterplan §3 W3)
         etf_board_windows=etf_board_windows,
+        # IMCE A5B — registered prospective forward-capture accrual/status
+        imce_prospective=imce_prospective,
         # Forward record (hero) — two integers and a flag, nothing else.
         seasonality_record=build_seasonality_forward_record(),
     )
