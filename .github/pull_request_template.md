@@ -1,21 +1,29 @@
+Workstream: REQUIRED
+Linear: REQUIRED
+Portfolio-Mode: REQUIRED
+Wave: REQUIRED
+Authority: REQUIRED
+Completion: REQUIRED
+
 <!--
 Mastermind-X tracked-work PR template.
+MAS28-V1-CONTRACT-SHA256: e78cbf00a952f7283a7e0f1e83eb4070c9049c1a445c9a035f9da8652dc6838c
+MAS28-V1-RULESET-SHA256: 41d5634a6ca6d4bbd993e728b73d839260452b24c891e556c59da52a184a1859
 
-This file is an authoring aid, not execution authority. Replace every placeholder,
-delete inapplicable guidance, and link the current canonical records. A PR may not
-self-authorize a successor wave.
--->
+This file is an authoring aid, not execution authority. Replace every REQUIRED
+value, delete inapplicable guidance, and link the current canonical records. A PR
+may not self-authorize a successor wave.
 
-Workstream: WS:<KEY> | NONE
-Linear: MAS-### | NONE
-Portfolio-Mode: tracked | maintenance_exception | workstream_creation | architecture_candidate
-Wave: <bounded wave ID or maintenance label>
-Authority: runtime | records | research | architecture | maintenance | production-proof
-Completion: merge-is-done | built-not-proven | production-proof-required | acceptance-required
+Canonical values:
+- Workstream: WS:<KEY> | NONE
+- Linear: MAS-### | NONE
+- Portfolio-Mode: tracked | maintenance_exception | creates_workstream | architecture_candidate
+- Wave: a non-empty bounded identifier
+- Authority: implementation | records | research | maintenance | proof | deploy | architecture_candidate
+- Completion: merge-is-done | built-not-proven | proof-required | acceptance-required | records-only
 
-<!--
 Use an exact canonical WS key—never fuzzy-match by title.
-Use Workstream: NONE only for a typed maintenance exception, workstream-creation
+Use Workstream: NONE only for a typed maintenance exception, `creates_workstream`
 PR, or unaccepted architecture candidate, and explain why.
 
 `Fixes/Closes MAS-###` is allowed only when Completion is `merge-is-done`.
