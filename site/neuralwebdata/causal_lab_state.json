@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.causal_lab_state.v1",
-  "asof": "2026-08-22T06:23:10Z",
+  "asof": "2026-08-23T05:49:56Z",
   "heartbeat": {
     "program": "CHF",
     "wave": "W3",
@@ -44,7 +44,7 @@
   "surprise_queue": {
     "size": 69,
     "stalest_source": "data/release_forecast/forward_ledger.jsonl",
-    "stalest_source_asof": "2026-08-21"
+    "stalest_source_asof": "2026-08-22"
   },
   "drift_events": [],
   "llm_lane": {

@@ -1,23 +1,23 @@
 {
   "schema": "thematic_desk.v1",
-  "as_of": "2026-08-22",
-  "scored_total": 118,
+  "as_of": "2026-08-23",
+  "scored_total": 121,
   "open": 124,
   "unscored_soft": 40,
   "overall": {
-    "n": 118,
-    "hits": 62,
+    "n": 121,
+    "hits": 65,
     "misses": 56,
-    "hit_rate": 0.525,
-    "dir_accuracy": 0.356
+    "hit_rate": 0.537,
+    "dir_accuracy": 0.364
   },
   "by_market": {
     "us": {
-      "n": 33,
-      "hits": 17,
+      "n": 35,
+      "hits": 19,
       "misses": 16,
-      "hit_rate": 0.515,
-      "dir_accuracy": 0.364
+      "hit_rate": 0.543,
+      "dir_accuracy": 0.4
     },
     "china": {
       "n": 42,
@@ -34,20 +34,20 @@
       "dir_accuracy": 0.833
     },
     "canada": {
-      "n": 37,
-      "hits": 23,
+      "n": 38,
+      "hits": 24,
       "misses": 14,
-      "hit_rate": 0.622,
-      "dir_accuracy": 0.324
+      "hit_rate": 0.632,
+      "dir_accuracy": 0.316
     }
   },
   "by_conviction": {
     "low": {
-      "n": 117,
-      "hits": 62,
+      "n": 120,
+      "hits": 65,
       "misses": 55,
-      "hit_rate": 0.53,
-      "dir_accuracy": 0.359
+      "hit_rate": 0.542,
+      "dir_accuracy": 0.367
     },
     "medium": {
       "n": 1,
@@ -64,7 +64,7 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "118 scored, hit-rate 0.525 (directional accuracy 0.356). Chance alone would land a hit-rate near 0.8605 (directional accuracy near 0.5125) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
+  "calibration_note": "121 scored, hit-rate 0.537 (directional accuracy 0.364). Chance alone would land a hit-rate near 0.8527 (directional accuracy near 0.513) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
   "recent": [
     {
       "id": "china-2026-07-10-1",
@@ -137,6 +137,16 @@
       "check_by": "2026-08-21"
     },
     {
+      "id": "canada-2026-07-24-2",
+      "market": "canada",
+      "subject": "Telecom",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0108,
+      "check_by": "2026-08-21"
+    },
+    {
       "id": "china-2026-07-24-2",
       "market": "china",
       "subject": "Innovative Pharma & CXO",
@@ -174,16 +184,6 @@
       "conviction": "low",
       "outcome": "miss",
       "realized": -0.0569,
-      "check_by": "2026-08-20"
-    },
-    {
-      "id": "china-2026-07-23-2",
-      "market": "china",
-      "subject": "Innovative Pharma & CXO",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": 0.0406,
       "check_by": "2026-08-20"
     }
   ]

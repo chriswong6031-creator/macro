@@ -1568,6 +1568,9 @@ jobs:
       - "engine/opex.py"
       - "engine/options_episode_coverage.py"
       - "engine/options_focused_quote.py"
+      # AD-1T1: topup_thetadata_day._source_coverage_gate() imports
+      # CONFIG["SOURCE_COVERAGE_GATE"] from here rather than a second literal.
+      - "engine/options_intel_brief.py"
       - "engine/options_issue_desk.py"
       - "engine/options_ivspread.py"
       - "engine/options_market_memory_context.py"
@@ -1767,6 +1770,7 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "ops/CHAIN_SNAPSHOTS_RUNBOOK.md"
       - "ops/LIVE_FLOW_RUNBOOK.md"
       - "ops/launchd/com.mastermind.chainsnapshots.plist"
@@ -1783,6 +1787,9 @@ jobs:
       - "scripts/__init__.py"
       - "scripts/audit_options_episode_outcome_coverage.py"
       - "scripts/audit_options_market_memory_context.py"
+      # AD-1T1: the T1 store's historical backfill driver — RF3/RF4 add a
+      # writer-lock/store-agreement check exercised by test_topup_thetadata_daily.py.
+      - "scripts/backfill_thetadata_eod.py"
       - "scripts/build_chain_heat.py"
       - "scripts/build_flow_archive.py"
       - "scripts/build_flow_enrich.py"
@@ -1801,12 +1808,16 @@ jobs:
       - "scripts/capture_market_memory_options_episodes.py"
       - "scripts/chain_snapshot_poller.py"
       - "scripts/ci/options_signal_nightly.sh"
+      - "scripts/launchd/theta_staleness_sentinel.sh"
       - "scripts/live_flow_poller.py"
       - "scripts/mirror_flow_idx.py"
+      - "scripts/publish_r2.py"
       - "scripts/mirror_terminal_context_r2.py"
       - "scripts/rerun_options_gates_thetadata.py"
       - "scripts/run_options_sparse_selector.py"
       - "scripts/research/momoedge_oracle_history_replay.py"
+      # AD-1T1: the T1 store's daily incremental maintainer + legacy top-up writer.
+      - "scripts/topup_thetadata_day.py"
       - "scripts/validate_options_ivspread.py"
       - "scripts/validate_options_skew.py"
       - "scripts/workflow_run_source.py"
@@ -1861,6 +1872,12 @@ jobs:
       - "tests/test_options_structure_intraday.py"
       - "tests/test_private_auth_dict.py"
       - "tests/test_thetadata_store.py"
+      # AD-1T1 (2026-08-22): full-universe incremental T1 daily maintainer —
+      # legacy characterization (F17), the --daily hostile suite, and the
+      # launchd scheduler suite.
+      - "tests/test_topup_thetadata_legacy.py"
+      - "tests/test_topup_thetadata_daily.py"
+      - "tests/test_topup_thetadata_scheduler.py"
     # Flow-Surface store: scripts/build_flow_surface materializes per-strike net-premium
     # grids + (Lane G) intraday dealer-exposure greek grids (gex/dex/vanna/charm) +
     # walls/coverage (grids[metric][levelIdx][timeIdx]) into the R2 snapshot store the
@@ -1929,6 +1946,8 @@ jobs:
         run: python -m pytest tests/test_flow_enrich.py tests/test_build_chain_heat.py -q
       - name: ThetaData PIT store (narrow OI projection, exact-date filter, cache bypass)
         run: python -m pytest tests/test_thetadata_store.py -q
+      - name: AD-1T1 ThetaData T1 daily incremental maintainer (legacy characterization, --daily hostile suite, launchd scheduler)
+        run: python -m pytest tests/test_topup_thetadata_legacy.py tests/test_topup_thetadata_daily.py tests/test_topup_thetadata_scheduler.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
         run: python -m pytest tests/test_intraday_greeks.py -q
       # OEU M-XP(b)+(c): the two payloads the Terminal / Options workspace fetch. Both are
@@ -2186,6 +2205,8 @@ jobs:
           tests/test_fundamental_forensics_financial_revision_api.py
           tests/test_fundamental_forensics_financial_packet_service.py
           tests/test_fundamental_forensics_financial_packet_api.py
+          tests/test_fundamental_forensics_financial_statement_service.py
+          tests/test_fundamental_forensics_financial_statement_api.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
           tests/test_fundamental_forensics_broad_sec.py
@@ -3334,7 +3355,7 @@ jobs:
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0 + W2)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_event_workspace.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -6591,6 +6612,7 @@ jobs:
       - "engine/sector_intelligence/**"
       - "engine/signal_foundry/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "research/DO_NOT_REBUILD.md"
       - "research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md"
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
@@ -7034,6 +7056,7 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "research/DO_NOT_REBUILD.md"
       # engine/htf_durability.py reads site/basketdata/fear_greed.json, and
       # engine/pick_lab/candidates.py reads site/flowleaders/leaders.json and
@@ -9323,7 +9346,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: neural-web cortex world-state consumers + the factor-contradiction plane
-        run: python -m pytest tests/test_build_active_build_map.py tests/test_build_cycle_pattern_state.py tests/test_factor_contradictions.py tests/test_nw_consumers_w3.py tests/test_nw_health_escalation.py tests/test_options_nw_wiring.py tests/test_til_nw_citizenship.py tests/test_world_state_special_sits.py tests/test_world_state_stage_analysis.py -q
+        run: python -m pytest tests/test_build_active_build_map.py tests/test_build_cycle_pattern_state.py tests/test_imce_prospective.py tests/test_factor_contradictions.py tests/test_nw_consumers_w3.py tests/test_nw_health_escalation.py tests/test_options_nw_wiring.py tests/test_til_nw_citizenship.py tests/test_world_state_special_sits.py tests/test_world_state_stage_analysis.py -q
       - name: three-repository advisory Active Build Map
         run: python -m pytest tests/test_project_active_build_map.py -q
       # Wired 2026-08-06: the CPI substrate that test_build_cycle_pattern_state.py (in
@@ -11746,6 +11769,7 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "research/DO_NOT_REBUILD.md"
       - "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md"
       - "scripts/__init__.py"

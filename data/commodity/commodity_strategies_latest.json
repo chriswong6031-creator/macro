@@ -6,33 +6,33 @@
     "copper",
     "oil"
   ],
-  "built": "2026-08-22 16:38 UTC",
+  "built": "2026-08-23 04:26 UTC",
   "cards": [
     {
       "key": "cm_gold_swap",
       "name": "Gold Trend Swap",
-      "cagr": 8.42,
+      "cagr": 8.41,
       "sharpe": 0.72,
       "maxdd": -34.1
     },
     {
       "key": "cm_gold_macro",
       "name": "Gold Macro Driver Model",
-      "cagr": 6.84,
+      "cagr": 6.82,
       "sharpe": 0.71,
       "maxdd": -25.5
     },
     {
       "key": "cm_silver_swap",
       "name": "Silver Trend Swap",
-      "cagr": 5.47,
+      "cagr": 5.48,
       "sharpe": 0.36,
       "maxdd": -75.9
     },
     {
       "key": "cm_silver_macro",
       "name": "Silver Macro + Industrial Model",
-      "cagr": 8.27,
+      "cagr": 8.28,
       "sharpe": 0.51,
       "maxdd": -54.6
     },
@@ -53,28 +53,28 @@
     {
       "key": "cm_oil_swap",
       "name": "Oil Trend Swap",
-      "cagr": 3.43,
+      "cagr": 3.44,
       "sharpe": 0.27,
       "maxdd": -44.4
     },
     {
       "key": "cm_oil_macro",
       "name": "Oil Macro Multifactor",
-      "cagr": 5.86,
+      "cagr": 5.87,
       "sharpe": 0.4,
       "maxdd": -43.5
     },
     {
       "key": "cm_gold_active",
       "name": "Gold Active (levered)",
-      "cagr": 12.35,
-      "sharpe": 0.77,
+      "cagr": 12.33,
+      "sharpe": 0.76,
       "maxdd": -33.4
     },
     {
       "key": "cm_silver_active",
       "name": "Silver Active (levered)",
-      "cagr": 16.16,
+      "cagr": 16.17,
       "sharpe": 0.68,
       "maxdd": -64.6
     },

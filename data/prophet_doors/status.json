@@ -1,5 +1,5 @@
 {
-  "appended": 7,
+  "appended": 0,
   "asof": "2026-08-21",
   "candidates": {
     "R": 2,
@@ -7,46 +7,27 @@
     "W": 35
   },
   "deduped": {
-    "R": 0,
-    "T": 1,
-    "W": 34
+    "R": 2,
+    "T": 5,
+    "W": 35
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "asof": "2026-08-21",
-      "consulted": true,
-      "n_keys": 27,
-      "n_themes": 18,
-      "ok": true,
-      "reason": null,
-      "source": "site/basketdata/foresight_cascade.json"
+      "consulted": false
     },
     "ignition": {
       "coil_min_sessions": 293,
-      "consulted": true,
-      "null_reasons": {
-        "ohlcv_absent": 7
-      },
+      "consulted": false,
+      "null_reasons": {},
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {
-        "Commodities Agriculture": {
-          "theme_thrust_frac": 0.1667,
-          "theme_thrust_reason": null,
-          "theme_thrust_state": "quiet"
-        },
-        "Crypto & Blockchain": {
-          "theme_thrust_frac": 0.1923,
-          "theme_thrust_reason": null,
-          "theme_thrust_state": "quiet"
-        }
-      },
+      "themes_read": {},
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 45,
-      "tickers_read": 52
+      "tickers_ok": 0,
+      "tickers_read": 0
     },
     "keys": [
       "relay_count_3d",
@@ -64,33 +45,17 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": true,
-      "high_lookback": 63,
-      "members_indexed": 170,
-      "n_covered": 87,
-      "reason": null,
-      "window_sessions": 21
+      "consulted": false
     },
     "turnover": {
-      "consulted": true,
-      "last_session": "2026-08-21",
-      "n_tickers": 1543,
-      "ok": true,
-      "reason": null,
-      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
-      "window_max": 60
+      "consulted": false
     }
   },
   "feature_source_w": {
     "atlas": {
-      "consulted": true,
-      "direction": "bull",
-      "grid": "W",
-      "horizon": "13w",
-      "n_asked": 1,
-      "n_covered": 1,
-      "reason": null,
-      "source": "engine.event_atlas.receipt"
+      "consulted": false,
+      "n_asked": 0,
+      "n_covered": 0
     },
     "enabled": true,
     "keys": [
@@ -111,19 +76,9 @@
     ]
   },
   "flag_tickers": {
-    "R": [
-      "DINO",
-      "TRU"
-    ],
-    "T": [
-      "FMC",
-      "HOOD",
-      "IBM",
-      "V"
-    ],
-    "W": [
-      "CCJ"
-    ]
+    "R": [],
+    "T": [],
+    "W": []
   },
   "n_universe": 1495,
   "overflow": {
@@ -131,8 +86,8 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-22 06:38:26",
-  "runtime_s": 126.9,
+  "run_utc": "2026-08-23 06:00:08",
+  "runtime_s": 119.4,
   "schema": "prophet_doors/v1",
   "theme_source": {
     "age_days": 0,
@@ -183,7 +138,7 @@
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 19.9,
+    "runtime_s": 23.6,
     "skipped": 5,
     "source": "baskets/membership.json",
     "state_turn": 98,

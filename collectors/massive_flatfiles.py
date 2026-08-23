@@ -214,13 +214,42 @@ def _error_code(exc: Exception) -> tuple[str, int | None]:
     return code, status
 
 
+def _object_listed(cl, key: str) -> bool | None:
+    """Whether ``key`` is a listed object with nonzero size.
+
+    ``True`` / ``False`` are observations.  ``None`` means the listing call itself
+    failed, so the caller must fail closed rather than treat the object as absent.
+    """
+    try:
+        listing = cl.list_objects_v2(Bucket=_bucket(), Prefix=key, MaxKeys=1)
+    except Exception:  # noqa: BLE001 — listing failure is not "absent"
+        return None
+    contents = listing.get("Contents") if isinstance(listing, dict) else None
+    if not isinstance(contents, list):
+        return False
+    for obj in contents:
+        if not isinstance(obj, dict):
+            continue
+        if obj.get("Key") != key:
+            continue
+        try:
+            size = int(obj.get("Size") or 0)
+        except (TypeError, ValueError):
+            size = 0
+        return size > 0
+    return False
+
+
 def probe_available(product: str = "minute", lookback: int = 6, *,
                     end_date: date | None = None) -> AvailabilityProbe:
     """Probe the newest readable object in a bounded window and preserve why none is.
 
-    A 403 is not the same thing as an unpublished 404, and neither is the same as
-    missing configuration.  The former implementation collapsed all three into
-    ``None``; the options-flow producer therefore reported success while frozen.
+    A 403 on a *listed* object is entitlement failure (the Options flat-file
+    regression: the key is visible, the ranged GET is forbidden).  A 403 on an
+    *unlisted* key is Massive's unpublished/not-yet-written shape — observed on
+    calendar-today stock day_aggs before LastModified — and must not abort the
+    lookback, or a readable prior session is reported as ``no_entitled_date``.
+    A 404 remains "not published".  Missing configuration is none of these.
     """
     if product not in PRODUCTS:
         raise ValueError(f"unknown product {product!r}")
@@ -234,14 +263,23 @@ def probe_available(product: str = "minute", lookback: int = 6, *,
     missing = 0
     for i in range(lookback + 1):
         d = (pd.Timestamp(end) - pd.Timedelta(days=i)).date()
+        key = _key(product, d)
         try:
-            cl.get_object(Bucket=_bucket(), Key=_key(product, d), Range="bytes=0-10")
+            cl.get_object(Bucket=_bucket(), Key=key, Range="bytes=0-10")
             return AvailabilityProbe(d, "available")
         except Exception as exc:  # noqa: BLE001 — classification is the contract
             code, status = _error_code(exc)
             if status == 403 or code in {"403", "AccessDenied", "Forbidden"}:
-                return AvailabilityProbe(None, "authorization_or_entitlement_failure",
-                                         f"HTTP {status or 403} {code}")
+                listed = _object_listed(cl, key)
+                if listed is not False:
+                    # Listed (or listing unknown): dataset grant failed. Do not
+                    # keep walking to an older readable day and call the product
+                    # available.
+                    return AvailabilityProbe(
+                        None, "authorization_or_entitlement_failure",
+                        f"HTTP {status or 403} {code}")
+                missing += 1
+                continue
             if status == 404 or code in {"404", "NoSuchKey", "NotFound"}:
                 missing += 1
                 continue

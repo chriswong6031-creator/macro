@@ -1,0 +1,257 @@
+{
+  "as_of": "2026-08-23",
+  "coverage": {
+    "end": "2026-08-22",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-12 to 2026-08-22; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-12"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-22",
+      "events": [
+        {
+          "date": "2026-08-22",
+          "id": "cev-research_vault-a45893b7bba7",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-fkwg03orkqd-7a785b",
+          "tickers": [],
+          "title": "Morgan Stanley: MS Savone Global Reflections 22 Aug 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-21",
+      "events": []
+    },
+    {
+      "date": "2026-08-20",
+      "events": []
+    },
+    {
+      "date": "2026-08-19",
+      "events": [
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-8d809004022b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-iufhbreqa5u-c4615f",
+          "tickers": [],
+          "title": "Goldman Sachs: GS Early Morning Research Recap Ratings and Target Price Changes August 19, 2026 as of 5 30 AM ET",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-18",
+      "events": [
+        {
+          "date": "2026-08-18",
+          "id": "cev-regime_flip-473ee143192e",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-18#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q1 Goldilocks → Q4 Growth-scare",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-18",
+          "id": "cev-research_vault-62df2f0b5d21",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-9vjczla6ost-b0629a",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence | Afternoon Briefing: Tech led Risk off;",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-18",
+          "id": "cev-research_vault-fee179a69bfa",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-4bsngk2htsd-550f52",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence Morning Briefing",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "events": [
+        {
+          "date": "2026-08-17",
+          "id": "cev-regime_flip-ad3dc732fc9d",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-17#regime_canada",
+          "tickers": [],
+          "title": "CANADA regime: Q2 Reflation → Q1 Goldilocks",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-0e79a325181d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bcfi5bg14vs-8d1ece",
+          "tickers": [],
+          "title": "S&T: MS Nick Savone Global Reflections 15 Aug 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-16",
+      "events": []
+    },
+    {
+      "date": "2026-08-14",
+      "events": []
+    },
+    {
+      "date": "2026-08-13",
+      "events": [
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-2f224a033fcb",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-i3beom5skfx-38d370",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intell | Morning Briefing Aug 13",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-7df46c597a12",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-97w8woj8a3k-626676",
+          "tickers": [],
+          "title": "Goldman Sachs: GS TMT SPEC SALES – Adyen topline good enough",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-a8943ef5539e",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bbr0h5reosm-8ac386",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence | Morning Briefing: Futs higher; APAC Tech improves; US Retail returns; CPI post mortem; Stay Bullish",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-d9c35d7bc86d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ecx3kynusdj-b16e59",
+          "tickers": [],
+          "title": "Citi: Citi The Point for Europe Thursday, 13 August 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-12",
+      "events": [
+        {
+          "date": "2026-08-12",
+          "id": "cev-research_vault-562e1385d93d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ai6opfy6d1l-be2ae3",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM CNY valuation",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-12",
+          "id": "cev-research_vault-61ad03ce752e",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-boes33d0lbk-28ec2e",
+          "tickers": [],
+          "title": "Goldman Sachs: US Daily July CPI Preview",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-12",
+          "id": "cev-research_vault-87b6d1433a10",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-mvqb01xt9ek-740700",
+          "tickers": [],
+          "title": "S&T: Duttenhoefer´s Daily Aug 12",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-12",
+          "id": "cev-research_vault-8fc8a390d1a7",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-5mtmklfxjxl-450fc6",
+          "tickers": [],
+          "title": "S&T: GS Peter Callahan US TMT Today",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-12",
+          "id": "cev-research_vault-96e6240ef893",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-dtezirmb711-b2da04",
+          "tickers": [],
+          "title": "Citadel: Global Market Intelligence | August Checklist",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-12",
+          "id": "cev-research_vault-a4d2fdee6cbc",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-mpicbjrjxou-16a699",
+          "tickers": [],
+          "title": "S&T: GS TMT SPEC SALES AI complex and semis benefit from Nvidia",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-12",
+          "id": "cev-research_vault-c530aff93f69",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-dfiw2jkx9is-1618ad",
+          "tickers": [],
+          "title": "TS Lombard: CPI NOISE AND FED INERTIA",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-12",
+          "id": "cev-research_vault-cf014e77db0d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-okprqsxthhv-4f19ce",
+          "tickers": [],
+          "title": "S&T: GS Tony Pasquariello Markets and Macro Aug 12",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-12",
+          "id": "cev-research_vault-dd31911d5eac",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-tcokvhuzse4-dc02a8",
+          "tickers": [],
+          "title": "Citi: The Point for Europe Wednesday, 12 August 2026",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-22T05:28:13.307282+00:00",
-  "as_of": "2026-08-22",
+  "generated_utc": "2026-08-23T04:39:41.215354+00:00",
+  "as_of": "2026-08-23",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -9,44 +9,24 @@
       "emoji": "\ud83d\udfe5",
       "label_en": "Donald Trump trades",
       "label_zh": "\u7279\u6717\u666e\u4ea4\u6613",
-      "rows": 888,
+      "rows": 890,
       "last_seen": "2026-07-01",
       "recent": [
         {
-          "Ticker": null,
-          "Company": "Ishares Tr Global 100",
-          "Transaction": "Purchase",
-          "Amount": "$500,001 - $1,000,000",
+          "Ticker": "GIS",
+          "Company": "General Mills Inc",
+          "Transaction": "Sale",
+          "Amount": "$15,001 - $50,000",
           "Filed": "2026-07-01",
           "Traded": "2026-05-05 00:00:00",
-          "ExcessReturn": null,
+          "ExcessReturn": "4.457782730227863",
           "_first_seen": "2026-07-02T06:15:26.390936+00:00"
         },
         {
           "Ticker": null,
-          "Company": "VANGUARD INTERMEDIATE-TERM CORPORATE BOND INDEX FUND",
+          "Company": "VANGUARD TOTAL STOCK MARKET INDEX FUND ETF SHARES",
           "Transaction": "Sale",
-          "Amount": "$100,001 - $250,000",
-          "Filed": "2026-07-01",
-          "Traded": "2026-05-14 00:00:00",
-          "ExcessReturn": null,
-          "_first_seen": "2026-07-23T00:08:45.110637+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "ISHARES INTERNATIONAL TREASURY BOND ETF",
-          "Transaction": "Sale",
-          "Amount": "$50,001 - $100,000",
-          "Filed": "2026-07-01",
-          "Traded": "2026-05-14 00:00:00",
-          "ExcessReturn": null,
-          "_first_seen": "2026-07-23T00:08:45.110637+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "ISHARES U.S. TREASURY",
-          "Transaction": "Sale",
-          "Amount": "$15,001 - $50,000",
+          "Amount": "$250,001 - $500,000",
           "Filed": "2026-07-01",
           "Traded": "2026-05-14 00:00:00",
           "ExcessReturn": null,
@@ -144,7 +124,7 @@
         },
         {
           "Ticker": null,
-          "Company": "VANGUARD EUROPEAN STOCK INDEX FUND ETF",
+          "Company": "VANGUARD INTERMEDIATE-TERM CORPORATE BOND INDEX FUND",
           "Transaction": "Sale",
           "Amount": "$100,001 - $250,000",
           "Filed": "2026-07-01",
@@ -154,19 +134,9 @@
         },
         {
           "Ticker": null,
-          "Company": "EQUITY LIFESTYLE PPTYS I REIT",
+          "Company": "VANGUARD EUROPEAN STOCK INDEX FUND ETF",
           "Transaction": "Sale",
-          "Amount": "$1,001 - $15,000",
-          "Filed": "2026-07-01",
-          "Traded": "2026-05-18 00:00:00",
-          "ExcessReturn": null,
-          "_first_seen": "2026-07-23T00:08:45.110637+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "VANGUARD TOTAL STOCK MARKET INDEX FUND ETF SHARES",
-          "Transaction": "Sale",
-          "Amount": "$250,001 - $500,000",
+          "Amount": "$100,001 - $250,000",
           "Filed": "2026-07-01",
           "Traded": "2026-05-14 00:00:00",
           "ExcessReturn": null,
@@ -179,6 +149,16 @@
           "Amount": "$1,001 - $15,000",
           "Filed": "2026-07-01",
           "Traded": "2026-05-15 00:00:00",
+          "ExcessReturn": null,
+          "_first_seen": "2026-07-23T00:08:45.110637+00:00"
+        },
+        {
+          "Ticker": null,
+          "Company": "RPM INTL INC",
+          "Transaction": "Purchase",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-07-01",
+          "Traded": "2026-05-18 00:00:00",
           "ExcessReturn": null,
           "_first_seen": "2026-07-23T00:08:45.110637+00:00"
         },
@@ -255,6 +235,26 @@
         {
           "Ticker": null,
           "Company": "OHIO ST PUB FACS COMMSN INFRA IMPT 2026A B/E 3.00 % Due Mar 1, 2034",
+          "Transaction": "Purchase",
+          "Amount": "$250,001 - $500,000",
+          "Filed": "2026-07-01",
+          "Traded": "2026-05-15 00:00:00",
+          "ExcessReturn": null,
+          "_first_seen": "2026-07-23T00:08:45.110637+00:00"
+        },
+        {
+          "Ticker": null,
+          "Company": "ROMEO MICH CMNTY SC 5% DUE 05/01/39",
+          "Transaction": "Purchase",
+          "Amount": "$500,001 - $1,000,000",
+          "Filed": "2026-07-01",
+          "Traded": "2026-05-15 00:00:00",
+          "ExcessReturn": null,
+          "_first_seen": "2026-07-23T00:08:45.110637+00:00"
+        },
+        {
+          "Ticker": null,
+          "Company": "WILLIAMSON CNTY TX RD BE 3.00 % Due Feb 15, 2035",
           "Transaction": "Purchase",
           "Amount": "$250,001 - $500,000",
           "Filed": "2026-07-01",
@@ -2022,483 +2022,483 @@
       "emoji": "\ud83d\udc54",
       "label_en": "Insider trading",
       "label_zh": "\u5185\u90e8\u4eba\u4ea4\u6613",
-      "rows": 59269,
-      "last_seen": "2026-08-21",
+      "rows": 59380,
+      "last_seen": "2026-08-22",
       "recent": [
         {
-          "Ticker": "ILMN",
-          "Date": "2026-08-21T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "133256.0",
-          "PricePerShare": "219.47",
-          "SharesOwnedFollowing": "1413734.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
+          "Ticker": "GCT",
           "Date": "2026-08-20T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "29805.0",
-          "PricePerShare": "212.83",
-          "SharesOwnedFollowing": "1893200.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
+          "Name": "Wu Lei",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "413942.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "700000.0",
+          "fileDate": "2026-08-22T01:44:01.000",
+          "officerTitle": "Chief Executive Officer",
           "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
         },
         {
-          "Ticker": "ILMN",
-          "Date": "2026-08-21T00:00:00.000",
-          "Name": "Meister Keith A.",
+          "Ticker": "GDRX",
+          "Date": "2026-08-20T00:00:00.000",
+          "Name": "FRANCISCO PARTNERS IV, L.P.",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "S",
-          "Shares": "13668.0",
-          "PricePerShare": "214.64",
-          "SharesOwnedFollowing": "1663969.0",
-          "fileDate": "2026-08-21T23:42:29.000",
+          "Shares": "233415.0",
+          "PricePerShare": "3.5205",
+          "SharesOwnedFollowing": "928169.0",
+          "fileDate": "2026-08-22T01:38:40.000",
           "officerTitle": null,
-          "isDirector": "True",
+          "isDirector": "False",
           "isOfficer": "False",
-          "isTenPercentOwner": "False",
+          "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
         },
         {
-          "Ticker": "ILMN",
-          "Date": "2026-08-21T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "3883.0",
-          "PricePerShare": "220.13",
-          "SharesOwnedFollowing": "1409851.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
-          "Date": "2026-08-21T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "8187.0",
-          "PricePerShare": "217.84",
-          "SharesOwnedFollowing": "1633815.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
-          "Date": "2026-08-21T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "12602.0",
-          "PricePerShare": "216.44",
-          "SharesOwnedFollowing": "1642002.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
-          "Date": "2026-08-21T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "86825.0",
-          "PricePerShare": "218.6",
-          "SharesOwnedFollowing": "1546990.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
-          "Date": "2026-08-21T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "9365.0",
-          "PricePerShare": "215.61",
-          "SharesOwnedFollowing": "1654604.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
+          "Ticker": "GDRX",
           "Date": "2026-08-19T00:00:00.000",
-          "Name": "Meister Keith A.",
+          "Name": "FRANCISCO PARTNERS IV, L.P.",
           "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "57544.0",
-          "PricePerShare": "203.16",
-          "SharesOwnedFollowing": "2011997.0",
-          "fileDate": "2026-08-21T23:42:29.000",
+          "TransactionCode": "J",
+          "Shares": "1142357.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "1361740.0",
+          "fileDate": "2026-08-22T01:38:40.000",
           "officerTitle": null,
-          "isDirector": "True",
+          "isDirector": "False",
           "isOfficer": "False",
-          "isTenPercentOwner": "False",
+          "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
         },
         {
-          "Ticker": "ILMN",
-          "Date": "2026-08-20T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "34009.0",
-          "PricePerShare": "211.9",
-          "SharesOwnedFollowing": "1923005.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
+          "Ticker": "GDRX",
           "Date": "2026-08-19T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "12813.0",
-          "PricePerShare": "205.0",
-          "SharesOwnedFollowing": "1994425.0",
-          "fileDate": "2026-08-21T23:42:29.000",
+          "Name": "FRANCISCO PARTNERS IV, L.P.",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "C",
+          "Shares": "4995903.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "4995903.0",
+          "fileDate": "2026-08-22T01:38:40.000",
           "officerTitle": null,
-          "isDirector": "True",
+          "isDirector": "False",
           "isOfficer": "False",
-          "isTenPercentOwner": "False",
+          "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
         },
         {
-          "Ticker": "ILMN",
-          "Date": "2026-08-20T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "21147.0",
-          "PricePerShare": "217.72",
-          "SharesOwnedFollowing": "1724228.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
-          "Date": "2026-08-20T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "18405.0",
-          "PricePerShare": "215.62",
-          "SharesOwnedFollowing": "1760638.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
+          "Ticker": "GDRX",
           "Date": "2026-08-21T00:00:00.000",
-          "Name": "Meister Keith A.",
+          "Name": "FRANCISCO PARTNERS IV, L.P.",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "S",
-          "Shares": "7151.0",
-          "PricePerShare": "211.54",
-          "SharesOwnedFollowing": "1697508.0",
-          "fileDate": "2026-08-21T23:42:29.000",
+          "Shares": "136379.0",
+          "PricePerShare": "3.4968",
+          "SharesOwnedFollowing": "777213.0",
+          "fileDate": "2026-08-22T01:38:40.000",
           "officerTitle": null,
-          "isDirector": "True",
+          "isDirector": "False",
           "isOfficer": "False",
-          "isTenPercentOwner": "False",
+          "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
         },
         {
-          "Ticker": "ILMN",
-          "Date": "2026-08-20T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "3563.0",
-          "PricePerShare": "208.55",
-          "SharesOwnedFollowing": "1989730.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
+          "Ticker": "GDRX",
           "Date": "2026-08-19T00:00:00.000",
-          "Name": "Meister Keith A.",
+          "Name": "FRANCISCO PARTNERS IV, L.P.",
           "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "19884.0",
-          "PricePerShare": "202.37",
-          "SharesOwnedFollowing": "2069541.0",
-          "fileDate": "2026-08-21T23:42:29.000",
+          "TransactionCode": "J",
+          "Shares": "3596648.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "1399255.0",
+          "fileDate": "2026-08-22T01:38:40.000",
           "officerTitle": null,
-          "isDirector": "True",
+          "isDirector": "False",
           "isOfficer": "False",
-          "isTenPercentOwner": "False",
+          "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
         },
         {
-          "Ticker": "ILMN",
+          "Ticker": "GDRX",
+          "Date": "2026-08-20T00:00:00.000",
+          "Name": "FRANCISCO PARTNERS IV, L.P.",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "213844.0",
+          "PricePerShare": "3.5205",
+          "SharesOwnedFollowing": "913592.0",
+          "fileDate": "2026-08-22T01:38:40.000",
+          "officerTitle": null,
+          "isDirector": "False",
+          "isOfficer": "False",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "GDRX",
           "Date": "2026-08-19T00:00:00.000",
-          "Name": "Meister Keith A.",
+          "Name": "FRANCISCO PARTNERS IV, L.P.",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "S",
-          "Shares": "4759.0",
-          "PricePerShare": "204.16",
-          "SharesOwnedFollowing": "2007238.0",
-          "fileDate": "2026-08-21T23:42:29.000",
+          "Shares": "237671.0",
+          "PricePerShare": "3.5299",
+          "SharesOwnedFollowing": "1161584.0",
+          "fileDate": "2026-08-22T01:38:40.000",
           "officerTitle": null,
-          "isDirector": "True",
+          "isDirector": "False",
           "isOfficer": "False",
-          "isTenPercentOwner": "False",
+          "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
         },
         {
-          "Ticker": "ILMN",
-          "Date": "2026-08-20T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "71939.0",
-          "PricePerShare": "213.36",
-          "SharesOwnedFollowing": "1821261.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
-          "Date": "2026-08-20T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "23638.0",
-          "PricePerShare": "210.66",
-          "SharesOwnedFollowing": "1957014.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
-          "Date": "2026-08-20T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "5693.0",
-          "PricePerShare": "218.46",
-          "SharesOwnedFollowing": "1718535.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
-          "Date": "2026-08-20T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "42218.0",
-          "PricePerShare": "214.57",
-          "SharesOwnedFollowing": "1779043.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
-          "Date": "2026-08-20T00:00:00.000",
-          "Name": "Meister Keith A.",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "15263.0",
-          "PricePerShare": "216.88",
-          "SharesOwnedFollowing": "1745375.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
-        },
-        {
-          "Ticker": "ILMN",
+          "Ticker": "GDRX",
           "Date": "2026-08-21T00:00:00.000",
-          "Name": "Meister Keith A.",
+          "Name": "FRANCISCO PARTNERS IV, L.P.",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "S",
-          "Shares": "6821.0",
-          "PricePerShare": "213.81",
-          "SharesOwnedFollowing": "1677637.0",
-          "fileDate": "2026-08-21T23:42:29.000",
+          "Shares": "138338.0",
+          "PricePerShare": "3.4968",
+          "SharesOwnedFollowing": "789831.0",
+          "fileDate": "2026-08-22T01:38:40.000",
           "officerTitle": null,
-          "isDirector": "True",
+          "isDirector": "False",
           "isOfficer": "False",
-          "isTenPercentOwner": "False",
+          "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
         },
         {
-          "Ticker": "ILMN",
+          "Ticker": "GDRX",
+          "Date": "2026-08-19T00:00:00.000",
+          "Name": "FRANCISCO PARTNERS IV, L.P.",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "C",
+          "Shares": "2504097.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "2504097.0",
+          "fileDate": "2026-08-22T01:38:40.000",
+          "officerTitle": null,
+          "isDirector": "False",
+          "isOfficer": "False",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "GDRX",
+          "Date": "2026-08-19T00:00:00.000",
+          "Name": "FRANCISCO PARTNERS IV, L.P.",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "234304.0",
+          "PricePerShare": "3.5299",
+          "SharesOwnedFollowing": "1127436.0",
+          "fileDate": "2026-08-22T01:38:40.000",
+          "officerTitle": null,
+          "isDirector": "False",
+          "isOfficer": "False",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "KRT",
           "Date": "2026-08-20T00:00:00.000",
-          "Name": "Meister Keith A.",
+          "Name": "Cheng Marvin",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "S",
-          "Shares": "9348.0",
-          "PricePerShare": "219.82",
-          "SharesOwnedFollowing": "1709187.0",
-          "fileDate": "2026-08-21T23:42:29.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
+          "Shares": "4500.0",
+          "PricePerShare": "47.33",
+          "SharesOwnedFollowing": "3000.0",
+          "fileDate": "2026-08-22T01:35:00.000",
+          "officerTitle": "VP-Manufacturing, Secy",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
         },
         {
-          "Ticker": "ILMN",
-          "Date": "2026-08-21T00:00:00.000",
-          "Name": "Meister Keith A.",
+          "Ticker": "ACMR",
+          "Date": "2026-08-20T00:00:00.000",
+          "Name": "McKechnie Mark",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "S",
-          "Shares": "4528.0",
-          "PricePerShare": "210.45",
-          "SharesOwnedFollowing": "1704659.0",
-          "fileDate": "2026-08-21T23:42:29.000",
+          "Shares": "11209.0",
+          "PricePerShare": "77.89",
+          "SharesOwnedFollowing": "900.0",
+          "fileDate": "2026-08-22T01:30:20.000",
+          "officerTitle": "See Remarks",
+          "isDirector": null,
+          "isOfficer": "True",
+          "isTenPercentOwner": null,
+          "isOther": null,
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "ACMR",
+          "Date": "2026-08-20T00:00:00.000",
+          "Name": "McKechnie Mark",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "30199.0",
+          "PricePerShare": "19.49",
+          "SharesOwnedFollowing": "31099.0",
+          "fileDate": "2026-08-22T01:30:20.000",
+          "officerTitle": "See Remarks",
+          "isDirector": null,
+          "isOfficer": "True",
+          "isTenPercentOwner": null,
+          "isOther": null,
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "ACMR",
+          "Date": "2026-08-20T00:00:00.000",
+          "Name": "McKechnie Mark",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "30365.0",
+          "PricePerShare": "77.45",
+          "SharesOwnedFollowing": "12109.0",
+          "fileDate": "2026-08-22T01:30:20.000",
+          "officerTitle": "See Remarks",
+          "isDirector": null,
+          "isOfficer": "True",
+          "isTenPercentOwner": null,
+          "isOther": null,
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "ACMR",
+          "Date": "2026-08-20T00:00:00.000",
+          "Name": "McKechnie Mark",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "13625.0",
+          "PricePerShare": "76.34",
+          "SharesOwnedFollowing": "42474.0",
+          "fileDate": "2026-08-22T01:30:20.000",
+          "officerTitle": "See Remarks",
+          "isDirector": null,
+          "isOfficer": "True",
+          "isTenPercentOwner": null,
+          "isOther": null,
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "ACMR",
+          "Date": "2026-08-20T00:00:00.000",
+          "Name": "McKechnie Mark",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "25000.0",
+          "PricePerShare": "13.89",
+          "SharesOwnedFollowing": "56099.0",
+          "fileDate": "2026-08-22T01:30:20.000",
+          "officerTitle": "See Remarks",
+          "isDirector": null,
+          "isOfficer": "True",
+          "isTenPercentOwner": null,
+          "isOther": null,
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:45:13.894",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "RIVN",
+          "Date": "2026-08-20T00:00:00.000",
+          "Name": "McDonough Claire",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "8023.0",
+          "PricePerShare": "16.0",
+          "SharesOwnedFollowing": "819178.0",
+          "fileDate": "2026-08-22T01:24:08.000",
+          "officerTitle": "Chief Financial Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:30:13.257",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "DVLT",
+          "Date": "2026-08-18T00:00:00.000",
+          "Name": "MOYER BRETT",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "26024.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "5560536.0",
+          "fileDate": "2026-08-22T01:23:24.000",
+          "officerTitle": "Chief Financial Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:30:13.257",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "NGTF",
+          "Date": "2026-05-15T00:00:00.000",
+          "Name": "STAUBER RONALD J",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "P",
+          "Shares": "5000.0",
+          "PricePerShare": "0.028",
+          "SharesOwnedFollowing": "5000.0",
+          "fileDate": "2026-08-22T01:13:55.000",
           "officerTitle": null,
           "isDirector": "True",
           "isOfficer": "False",
           "isTenPercentOwner": "False",
           "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-08-21T23:45:33.544",
-          "_first_seen": "2026-08-21T23:55:44.452554+00:00"
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:15:10.893",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "ROIV",
+          "Date": "2026-08-20T00:00:00.000",
+          "Name": "Sukhatme Mayukh",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "17519.0",
+          "PricePerShare": "37.3",
+          "SharesOwnedFollowing": "18630739.0",
+          "fileDate": "2026-08-22T01:00:32.000",
+          "officerTitle": "President & CIO",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": null,
+          "isOther": null,
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:15:10.893",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "ROIV",
+          "Date": "2026-08-19T00:00:00.000",
+          "Name": "Sukhatme Mayukh",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "172899.0",
+          "PricePerShare": "37.17",
+          "SharesOwnedFollowing": "18630739.0",
+          "fileDate": "2026-08-22T01:00:32.000",
+          "officerTitle": "President & CIO",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": null,
+          "isOther": null,
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:15:10.893",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "ROIV",
+          "Date": "2026-08-21T00:00:00.000",
+          "Name": "Sukhatme Mayukh",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "144756.0",
+          "PricePerShare": "3.85",
+          "SharesOwnedFollowing": "18775495.0",
+          "fileDate": "2026-08-22T01:00:32.000",
+          "officerTitle": "President & CIO",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": null,
+          "isOther": null,
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:15:10.893",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "ROIV",
+          "Date": "2026-08-21T00:00:00.000",
+          "Name": "Sukhatme Mayukh",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "144756.0",
+          "PricePerShare": "36.48",
+          "SharesOwnedFollowing": "18630739.0",
+          "fileDate": "2026-08-22T01:00:32.000",
+          "officerTitle": "President & CIO",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": null,
+          "isOther": null,
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:15:10.893",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
+        },
+        {
+          "Ticker": "ROIV",
+          "Date": "2026-08-20T00:00:00.000",
+          "Name": "Sukhatme Mayukh",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "17519.0",
+          "PricePerShare": "3.85",
+          "SharesOwnedFollowing": "18648258.0",
+          "fileDate": "2026-08-22T01:00:32.000",
+          "officerTitle": "President & CIO",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": null,
+          "isOther": null,
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-22T01:15:10.893",
+          "_first_seen": "2026-08-22T23:48:46.051345+00:00"
         }
       ]
     },
@@ -3224,9 +3224,90 @@
       "emoji": "\ud83d\udcfa",
       "label_en": "CNBC stock picks",
       "label_zh": "CNBC\u9009\u80a1",
-      "rows": 1429,
-      "last_seen": "2026-08-21",
+      "rows": 1438,
+      "last_seen": "2026-08-22",
       "recent": [
+        {
+          "Ticker": "BROS",
+          "Date": "2026-08-17T00:00:00.000",
+          "Notes": null,
+          "Direction": "Hold",
+          "Traders": "Jim Cramer",
+          "Upload_Time": "2026-08-22T19:19:52.000",
+          "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+        },
+        {
+          "Ticker": "SMCI",
+          "Date": "2026-08-17T00:00:00.000",
+          "Notes": null,
+          "Direction": "Not Recommending",
+          "Traders": "Jim Cramer",
+          "Upload_Time": "2026-08-22T19:19:24.000",
+          "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+        },
+        {
+          "Ticker": "ABNB",
+          "Date": "2026-08-17T00:00:00.000",
+          "Notes": null,
+          "Direction": "Start a Small Position",
+          "Traders": "Jim Cramer",
+          "Upload_Time": "2026-08-22T19:18:48.000",
+          "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+        },
+        {
+          "Ticker": "ABT",
+          "Date": "2026-08-17T00:00:00.000",
+          "Notes": null,
+          "Direction": "Bullish",
+          "Traders": "Jim Cramer",
+          "Upload_Time": "2026-08-22T19:17:30.000",
+          "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+        },
+        {
+          "Ticker": "MSFT",
+          "Date": "2026-08-17T00:00:00.000",
+          "Notes": null,
+          "Direction": "Trim",
+          "Traders": "Jim Cramer",
+          "Upload_Time": "2026-08-22T19:16:49.000",
+          "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+        },
+        {
+          "Ticker": "VRT",
+          "Date": "2026-08-17T00:00:00.000",
+          "Notes": null,
+          "Direction": "Bullish",
+          "Traders": "Jim Cramer",
+          "Upload_Time": "2026-08-22T19:16:30.000",
+          "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+        },
+        {
+          "Ticker": "HON",
+          "Date": "2026-08-17T00:00:00.000",
+          "Notes": null,
+          "Direction": "Buy on a Pullback",
+          "Traders": "Jim Cramer",
+          "Upload_Time": "2026-08-22T19:16:06.000",
+          "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+        },
+        {
+          "Ticker": "CSCO",
+          "Date": "2026-08-17T00:00:00.000",
+          "Notes": null,
+          "Direction": "Buy",
+          "Traders": "Jim Cramer",
+          "Upload_Time": "2026-08-22T19:15:01.000",
+          "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+        },
+        {
+          "Ticker": "MU",
+          "Date": "2026-08-17T00:00:00.000",
+          "Notes": null,
+          "Direction": "Buy",
+          "Traders": "Jim Cramer",
+          "Upload_Time": "2026-08-22T19:12:11.000",
+          "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+        },
         {
           "Ticker": "SMH",
           "Date": "2026-08-19T00:00:00.000",
@@ -3370,87 +3451,6 @@
           "Traders": "Kevin Simpson",
           "Upload_Time": "2026-08-21T14:48:18.000",
           "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-        },
-        {
-          "Ticker": "TGT",
-          "Date": "2026-08-19T00:00:00.000",
-          "Notes": null,
-          "Direction": "Final Trade",
-          "Traders": "Joe Terranova",
-          "Upload_Time": "2026-08-21T14:47:54.000",
-          "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-        },
-        {
-          "Ticker": "HOOD",
-          "Date": "2026-08-19T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Kevin Simpson",
-          "Upload_Time": "2026-08-21T14:47:33.000",
-          "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-        },
-        {
-          "Ticker": "HOOD",
-          "Date": "2026-08-19T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Bryn Talkington",
-          "Upload_Time": "2026-08-21T14:46:53.000",
-          "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-        },
-        {
-          "Ticker": "JPM",
-          "Date": "2026-08-19T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Kevin Simpson",
-          "Upload_Time": "2026-08-21T14:46:31.000",
-          "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-        },
-        {
-          "Ticker": "ANET",
-          "Date": "2026-08-19T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Joe Terranova",
-          "Upload_Time": "2026-08-21T14:46:03.000",
-          "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-        },
-        {
-          "Ticker": "AEM",
-          "Date": "2026-08-19T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Kevin Simpson",
-          "Upload_Time": "2026-08-21T14:45:33.000",
-          "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-        },
-        {
-          "Ticker": "TJX",
-          "Date": "2026-08-19T00:00:00.000",
-          "Notes": null,
-          "Direction": "Sell a Call Option",
-          "Traders": "Kevin Simpson",
-          "Upload_Time": "2026-08-21T14:45:13.000",
-          "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-        },
-        {
-          "Ticker": "MRK",
-          "Date": "2026-08-19T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Kevin Simpson",
-          "Upload_Time": "2026-08-21T14:44:51.000",
-          "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-        },
-        {
-          "Ticker": "IBM",
-          "Date": "2026-08-19T00:00:00.000",
-          "Notes": null,
-          "Direction": "Trim",
-          "Traders": "Kevin Simpson",
-          "Upload_Time": "2026-08-21T14:44:31.000",
-          "_first_seen": "2026-08-21T23:56:08.521955+00:00"
         }
       ]
     },
@@ -3458,183 +3458,183 @@
       "emoji": "\ud83e\udd8d",
       "label_en": "WallStreetBets",
       "label_zh": "WSB\u70ed\u5ea6",
-      "rows": 15350,
-      "last_seen": "2026-08-21",
+      "rows": 15657,
+      "last_seen": "2026-08-22",
       "recent": [
         {
           "Ticker": "VC",
           "Count": "1",
           "Sentiment": "0.1093",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "LIVE",
           "Count": "1",
           "Sentiment": "0.7359",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "ANET",
           "Count": "15",
           "Sentiment": "0.14191333333333336",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "OKLO",
           "Count": "21",
           "Sentiment": "-0.04873333333333334",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "EU",
           "Count": "9",
           "Sentiment": "0.06314444444444448",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "SE",
           "Count": "4",
           "Sentiment": "0.2897",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "EPS",
           "Count": "5",
           "Sentiment": "0.6384799999999999",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "SEDG",
           "Count": "6",
           "Sentiment": "-0.04284999999999999",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "GO",
           "Count": "6",
           "Sentiment": "-0.06998333333333333",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "FSLR",
           "Count": "2",
           "Sentiment": "0.2673",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "PR",
           "Count": "1",
           "Sentiment": "-0.34",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "BOIL",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "HR",
           "Count": "4",
           "Sentiment": "-0.030925000000000008",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "XLV",
           "Count": "1",
           "Sentiment": "-0.8074",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "TDOC",
           "Count": "2",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "HOOD",
           "Count": "19",
           "Sentiment": "-0.039557894736842104",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "DIS",
           "Count": "3",
           "Sentiment": "-0.11896666666666667",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "NKLA",
           "Count": "11",
           "Sentiment": "-0.02502727272727273",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "ETSY",
           "Count": "5",
           "Sentiment": "0.3463",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "BKSY",
           "Count": "6",
           "Sentiment": "0.16961666666666667",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "PPT",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "DJT",
           "Count": "6",
           "Sentiment": "-0.013500000000000007",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "AB",
           "Count": "1",
           "Sentiment": "-0.3182",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "WELL",
           "Count": "3",
           "Sentiment": "0.6257333333333333",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Ticker": "DATS",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-21T00:14:40.517880+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:48:55.662999+00:00",
+          "_collected": "2026-08-22"
         }
       ]
     },
@@ -4467,233 +4467,233 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 1922,
-      "last_seen": "2026-08-21",
+      "rows": 1952,
+      "last_seen": "2026-08-22",
       "recent": [
         {
-          "url": "https://www.quiverquant.com/news/Insider+Purchase%3A+Chief+Executive+Officer+of+%24NAKA+Buys+32%2C133+Shares",
-          "time": "2026-08-21 22:31:44",
-          "headline": "Insider Purchase: Chief Executive Officer of $NAKA Buys 32,133 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1843661/David-F-Bailey\">David F Bailey</a>, the Chief Executive Officer of <a href=\"https://www.quiverquant.com/stock/NAKA/\">$NAKA</a>, bought 32,133 shares of the comp\u2026",
-          "image": "https://www.quiverquant.com/images/naka_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
+          "url": "https://www.quiverquant.com/news/TUYA+Q2+2026+Earnings+Preview%3A+Recent+%24TUYA+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More",
+          "time": "2026-08-22 21:05:09",
+          "headline": "TUYA Q2 2026 Earnings Preview: Recent $TUYA Insider Trading, Hedge Fund Activity, and More",
+          "category": "earnings_automated",
+          "summary": "<p>TUYA (<a href=\"https://www.quiverquant.com/stock/TUYA/\">$TUYA</a>) is expected to release its quarterly earnings data on Monday, August 24th after market close, per Finnhub. Analysts are expecting revenue of $89,59\u2026",
+          "image": "https://www.quiverquant.com/images/tuya_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+CEO+and+Secretary+of+%24LIFE+Sells+24%2C564+Shares",
-          "time": "2026-08-21 22:31:44",
-          "headline": "Insider Sale: CEO and Secretary of $LIFE Sells 24,564 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/2089362/Peter-George-Colis\">Peter George Colis</a>, the CEO and Secretary of <a href=\"https://www.quiverquant.com/stock/LIFE/\">$LIFE</a>, sold 24,564 shares of the comp\u2026",
-          "image": "https://www.quiverquant.com/images/life_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+John+Larson+Statement+on+Newington+Officer-Involved+Shooting",
+          "time": "2026-08-22 18:20:08",
+          "headline": "Press Release: John Larson Statement on Newington Officer-Involved Shooting",
+          "category": "legislation_automated",
+          "summary": "<p>Larson condemns a Newington officer-involved shooting, urges transparent investigation, and wishes injured officers a speedy recovery.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: r\u2026",
+          "image": "https://www.quiverquant.com/images/L000557_congress.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+President+of+%24UPST+Sells+10%2C000+Shares",
-          "time": "2026-08-21 22:31:44",
-          "headline": "Insider Sale: President of $UPST Sells 10,000 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1832808/Sanjay-Datta\">Sanjay Datta</a>, the President of <a href=\"https://www.quiverquant.com/stock/UPST/\">$UPST</a>, sold 10,000 shares of the company on 08-19-2026 fo\u2026",
+          "url": "https://www.quiverquant.com/news/Applied+Digital+Stock+%28APLD%29+Opinions+on+AI+Data+Center+Developments",
+          "time": "2026-08-22 17:33:09",
+          "headline": "Applied Digital Stock (APLD) Opinions on AI Data Center Developments",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Infrastructure Focus:</strong> Recent social media chatter highlights Applied Digital's role in the expanding AI power landscape, with users noting its inclusion among firm\u2026",
+          "image": "https://www.quiverquant.com/images/apld_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/AEVEX+Stock+%28AVEX%29+Opinions+on+Acquisition+and+Legal+Challenges",
+          "time": "2026-08-22 17:33:09",
+          "headline": "AEVEX Stock (AVEX) Opinions on Acquisition and Legal Challenges",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Class Action Alert:</strong> Social media chatter has intensified around a recently filed securities class action against AEVEX Corp. targeting investors from its April 2026 I\u2026",
+          "image": "https://www.quiverquant.com/images/avex_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Apple+Stock+%28AAPL%29+Opinions+on+Market+Downgrade+and+AI+Developments",
+          "time": "2026-08-22 17:33:09",
+          "headline": "Apple Stock (AAPL) Opinions on Market Downgrade and AI Developments",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Spending Worries:</strong> Social media discussions emphasize Apple's need to accelerate investments in artificial intelligence infrastructure and partnerships after laggin\u2026",
+          "image": "https://www.quiverquant.com/images/aapl_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Upstart+Holdings+Stock+%28UPST%29+Opinions+on+Analyst+Ratings+and+Growth+Prospects",
+          "time": "2026-08-22 17:33:09",
+          "headline": "Upstart Holdings Stock (UPST) Opinions on Analyst Ratings and Growth Prospects",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Analyst Upgrades:</strong> Recent social media conversations center on Mizuho's decision to reiterate an outperform rating for Upstart with a $45 price target. Commentators no\u2026",
           "image": "https://www.quiverquant.com/images/upst_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/NEOGEN+CORP+%28%24NEOG%29+President+%26+CEO+2026+Pay+Revealed",
-          "time": "2026-08-21 22:25:07",
-          "headline": "NEOGEN CORP ($NEOG) President & CEO 2026 Pay Revealed",
-          "category": "insiders_automated",
-          "summary": "<p>We estimate that the President & CEO of NEOGEN CORP ($NEOG), Mike Nassif, received a compensation of <strong>$8,693,916</strong> in 2026.<p>These estimates are based on a new DEF14A filing, filed with the SEC on Au\u2026",
-          "image": "https://www.quiverquant.com/images/neog_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
+          "url": "https://www.quiverquant.com/news/Tapestry+Stock+%28TPR%29+Opinions+on+Recent+Earnings+Report",
+          "time": "2026-08-22 17:33:09",
+          "headline": "Tapestry Stock (TPR) Opinions on Recent Earnings Report",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Reaction:</strong> Tapestry delivered robust net sales growth of over 14 percent in its recent quarter, driven by strength in the Coach brand, even as guidance for th\u2026",
+          "image": "https://www.quiverquant.com/images/tpr_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Amata+Urges+Environmental+Impact+Study+for+Proposed+Deep-Sea+Mining+Near+American+Samoa",
-          "time": "2026-08-21 22:20:29",
-          "headline": "Press Release: Amata Urges Environmental Impact Study for Proposed Deep-Sea Mining Near American Samoa",
-          "category": "legislation_automated",
-          "summary": "<p>Congresswoman Amata urges an environmental review of proposed deep-sea mining near American Samoa, citing ecological and cultural concerns.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"col\u2026",
-          "image": "https://www.quiverquant.com/images/R000600_congress.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
+          "url": "https://www.quiverquant.com/news/Zoetis+Stock+%28ZTS%29+Opinions+on+Recent+Earnings+Guidance+Cuts",
+          "time": "2026-08-22 17:33:09",
+          "headline": "Zoetis Stock (ZTS) Opinions on Recent Earnings Guidance Cuts",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Guidance Cuts Impact:</strong> Zoetis shares have declined sharply following two downward revisions to 2026 earnings guidance amid softening demand in key U.S. companion anima\u2026",
+          "image": "https://www.quiverquant.com/images/zts_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Ro+Khanna+co-leads+Vatican+delegation%2C+discusses+AI+ethics+with+Pope+Leo+XIV",
-          "time": "2026-08-21 22:20:29",
-          "headline": "Press Release: Ro Khanna co-leads Vatican delegation, discusses AI ethics with Pope Leo XIV",
-          "category": "legislation_automated",
-          "summary": "<p>Khanna led a bipartisan Vatican delegation to discuss AI ethics, human dignity, China, and national security.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Khanna \u2026",
-          "image": "https://www.quiverquant.com/images/K000389_congress.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
+          "url": "https://www.quiverquant.com/news/Fervo+Energy+Stock+%28FRVO%29+Opinions+on+Geothermal+Sector+Developments",
+          "time": "2026-08-22 17:33:09",
+          "headline": "Fervo Energy Stock (FRVO) Opinions on Geothermal Sector Developments",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Geothermal momentum builds:</strong> Social media conversations spotlight Fervo Energy's role in advancing next-generation geothermal technology. Participants note growing int\u2026",
+          "image": "https://www.quiverquant.com/images/frvo_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Riley+M.+Moore+Presents+%241+Million+for+Parkersburg+Municipal+Services+Garage+Modernization",
-          "time": "2026-08-21 22:20:29",
-          "headline": "Press Release: Riley M. Moore Presents $1 Million for Parkersburg Municipal Services Garage Modernization",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Moore announced $1 million in federal funding for Parkersburg\u2019s municipal services garage modernization.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">\u2026",
-          "image": "https://www.quiverquant.com/images/M001235_congress.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Julie+Fedorchak+Criticizes+Temporary+Foreign+Beef+Import+Policy",
-          "time": "2026-08-21 22:20:29",
-          "headline": "Press Release: Julie Fedorchak Criticizes Temporary Foreign Beef Import Policy",
-          "category": "legislation_automated",
-          "summary": "<p>Fedorchak criticizes tariff-free foreign beef imports, arguing they could hurt ranchers and long-term U.S. cattle production.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,16\u2026",
-          "image": "https://www.quiverquant.com/images/F000482_congress.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Indiana+Delegation+Seeks+Disaster+Declaration+Support+for+August+Storms",
-          "time": "2026-08-21 22:20:29",
-          "headline": "Press Release: Indiana Delegation Seeks Disaster Declaration Support for August Storms",
-          "category": "legislation_automated",
-          "summary": "<p>Indiana lawmakers urged federal disaster aid for storm, tornado, and flood damage, highlighting deaths, displacement, and widespread infrastructure losses.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><s\u2026",
-          "image": "https://www.quiverquant.com/images/M001214_congress.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Sr.+VP+and+CFO+of+%24ROK+Sells+590+Shares",
-          "time": "2026-08-21 22:16:37",
-          "headline": "Insider Sale: Sr. VP and CFO of $ROK Sells 590 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Christian E Rothe, the Sr. VP and CFO of <a href=\"https://www.quiverquant.com/stock/ROK/\">$ROK</a>, sold 590 shares of the company on 08-20-2026 for an estimated <strong>$256,237</strong>. We received data on the t\u2026",
-          "image": "https://www.quiverquant.com/images/rok_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24MANE+Sells+690%2C601+Shares",
-          "time": "2026-08-21 22:16:37",
-          "headline": "Insider Sale: Director at $MANE Sells 690,601 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>CAPITAL, LLC MONTANOVA, a director at <a href=\"https://www.quiverquant.com/stock/MANE/\">$MANE</a>, sold 690,601 shares of the company on 08-19-2026 for an estimated <strong>$74,066,957</strong>. We received data on\u2026",
-          "image": "https://www.quiverquant.com/images/mane_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Ocean+Power+Technologies+Reports+Audit+Report+with+Going+Concern+Qualification+in+Fiscal+2026+Form+10-K",
-          "time": "2026-08-21 22:10:19",
-          "headline": "Ocean Power Technologies Reports Audit Report with Going Concern Qualification in Fiscal 2026 Form 10-K",
-          "category": "press_release_summary",
-          "summary": "<p>Ocean Power Technologies reports a going concern qualification in its latest financial statements, required by NYSE regulations.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Ocean Power Technologies, Inc\u2026",
-          "image": "https://www.quiverquant.com/images/optt_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+EVP+of+%24JILL+Sells+3%2C745+Shares",
-          "time": "2026-08-21 21:46:00",
-          "headline": "Insider Sale: EVP of $JILL Sells 3,745 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Mark W. Webb, the EVP of <a href=\"https://www.quiverquant.com/stock/JILL/\">$JILL</a>, sold 3,745 shares of the company on 08-19-2026 for an estimated <strong>$76,023</strong>. We received data on the trade from a r\u2026",
-          "image": "https://www.quiverquant.com/images/jill_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Executive+Officer+of+%24LYNX+Sells+186%2C752+Shares",
-          "time": "2026-08-21 21:46:00",
-          "headline": "Insider Sale: Chief Executive Officer of $LYNX Sells 186,752 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Brian Morrison, the Chief Executive Officer of <a href=\"https://www.quiverquant.com/stock/LYNX/\">$LYNX</a>, sold 186,752 shares of the company on 08-20-2026 for an estimated <strong>$3,072,070</strong>. We received\u2026",
-          "image": "https://www.quiverquant.com/images/lynx_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+EVP+Chief+Financial+Officer+of+%24EXTR+Sells+21%2C825+Shares",
-          "time": "2026-08-21 21:46:00",
-          "headline": "Insider Sale: EVP Chief Financial Officer of $EXTR Sells 21,825 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>KEVIN R RHODES, the EVP Chief Financial Officer of <a href=\"https://www.quiverquant.com/stock/EXTR/\">$EXTR</a>, sold 21,825 shares of the company on 08-21-2026 for an estimated <strong>$486,697</strong>. We receive\u2026",
-          "image": "https://www.quiverquant.com/images/extr_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24OMER+Sells+15%2C000+Shares",
-          "time": "2026-08-21 21:46:00",
-          "headline": "Insider Sale: Director at $OMER Sells 15,000 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Thomas J. Cable, a director at <a href=\"https://www.quiverquant.com/stock/OMER/\">$OMER</a>, sold 15,000 shares of the company on 08-20-2026 for an estimated <strong>$276,772</strong>. We received data on the trade \u2026",
-          "image": "https://www.quiverquant.com/images/omer_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Financial+Officer+of+%24NESR+Sells+13%2C570+Shares",
-          "time": "2026-08-21 21:32:15",
-          "headline": "Insider Sale: Chief Financial Officer of $NESR Sells 13,570 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/2104064/Stefan-Angeli\">Stefan Angeli</a>, the Chief Financial Officer of <a href=\"https://www.quiverquant.com/stock/NESR/\">$NESR</a>, sold 13,570 shares of the company \u2026",
-          "image": "https://www.quiverquant.com/images/nesr_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+EVP+%26+Chief+Financial+Officer+of+%24CXW+Sells+50%2C000+Shares",
-          "time": "2026-08-21 21:32:15",
-          "headline": "Insider Sale: EVP & Chief Financial Officer of $CXW Sells 50,000 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1244522/David-Garfinkle\">DAVID GARFINKLE</a>, the EVP & Chief Financial Officer of <a href=\"https://www.quiverquant.com/stock/CXW/\">$CXW</a>, sold 50,000 shares of the \u2026",
-          "image": "https://www.quiverquant.com/images/cxw_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+10%25+owner+at+%24GSHD+Sells+1%2C107+Shares",
-          "time": "2026-08-21 21:32:15",
-          "headline": "Insider Sale: 10% owner at $GSHD Sells 1,107 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Serena Jones, a 10% owner of <a href=\"https://www.quiverquant.com/stock/GSHD/\">$GSHD</a>, sold 1,107 shares of the company on 08-20-2026 for an estimated <strong>$77,346</strong>. We received data on the trade from\u2026",
-          "image": "https://www.quiverquant.com/images/gshd_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Purchase%3A+Director+at+%24FOSL+Buys+7%2C208+Shares",
-          "time": "2026-08-21 21:32:15",
-          "headline": "Insider Purchase: Director at $FOSL Buys 7,208 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Pamela J Edwards, a director at <a href=\"https://www.quiverquant.com/stock/FOSL/\">$FOSL</a>, bought 7,208 shares of the company on 08-20-2026 for an estimated <strong>$40,220</strong>. This trade was reported by Qu\u2026",
-          "image": "https://www.quiverquant.com/images/fosl_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Eldorado+Gold+rises+as+gold+rally+and+project+momentum+bolster+the+outlook",
-          "time": "2026-08-21 21:20:36",
-          "headline": "Eldorado Gold rises as gold rally and project momentum bolster the outlook",
+          "url": "https://www.quiverquant.com/news/%24NVDA+stock+fell+5%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$NVDA stock fell 5% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>Eldorado Gold (EGO) is up 7.0% today. Here is some analysis on what might have caused this price movement. </p><p><strong>Analysis:</strong> The move appears tied to a broader rally in gold and mining shares, while\u2026",
-          "image": "https://www.quiverquant.com/images/ego_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
+          "summary": "<p>$NVDA stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 5%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
+          "image": "https://www.quiverquant.com/images/nvda_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Five+Below+Gains+as+Bullish+Analyst+Calls+Add+to+Momentum+After+Strong+Q1",
-          "time": "2026-08-21 21:20:36",
-          "headline": "Five Below Gains as Bullish Analyst Calls Add to Momentum After Strong Q1",
+          "url": "https://www.quiverquant.com/news/%24ONDS+stock+fell+6%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$ONDS stock fell 6% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>Five Below (FIVE) is up 5.9% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver appears to be a wave of bullish analyst actions in Au\u2026",
-          "image": "https://www.quiverquant.com/images/five_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
+          "summary": "<p>$ONDS stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 6%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
+          "image": "https://www.quiverquant.com/images/onds_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Figure+Technology+Solutions+gains+as+investors+continue+to+digest+strong+quarterly+growth",
-          "time": "2026-08-21 21:20:36",
-          "headline": "Figure Technology Solutions gains as investors continue to digest strong quarterly growth",
+          "url": "https://www.quiverquant.com/news/%24TTD+stock+fell+7%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$TTD stock fell 7% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>Figure Technology Solutions (FIGR) is up 8.4% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver is continued momentum from the compa\u2026",
-          "image": "https://www.quiverquant.com/images/figr_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
+          "summary": "<p>$TTD stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 7%</strong> this week, according to our price data from Polygon.<p>It has be\u2026",
+          "image": "https://www.quiverquant.com/images/ttd_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Delek+US+Holdings+rallies+as+strong+refining+economics+and+recent+results+fuel+gains",
-          "time": "2026-08-21 21:20:36",
-          "headline": "Delek US Holdings rallies as strong refining economics and recent results fuel gains",
+          "url": "https://www.quiverquant.com/news/%24RKLB+stock+fell+10%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$RKLB stock fell 10% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>Delek US Holdings (DK) is up 11.6% today. Here is some analysis on what might have caused this price movement. ([ir.delekus.com](https://ir.delekus.com/overview/default.aspx?utm_source=openai))</p><p><strong>Analys\u2026",
-          "image": "https://www.quiverquant.com/images/dk_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
+          "summary": "<p>$RKLB stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 10%</strong> this week, according to our price data from Polygon.<p>It has \u2026",
+          "image": "https://www.quiverquant.com/images/rklb_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Liquidia+Slips+as+Post-Earnings+Selling+Continues",
-          "time": "2026-08-21 21:20:36",
-          "headline": "Liquidia Slips as Post-Earnings Selling Continues",
+          "url": "https://www.quiverquant.com/news/%24VST+stock+fell+9%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$VST stock fell 9% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>Liquidia Corporation (LQDA) is down 3.2% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver appears to be continued post-earnings sel\u2026",
-          "image": "https://www.quiverquant.com/images/lqda_rect_new.png",
-          "_first_seen": "2026-08-21T23:56:10.519932+00:00"
+          "summary": "<p>$VST stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 9%</strong> this week, according to our price data from Polygon.<p>It has be\u2026",
+          "image": "https://www.quiverquant.com/images/vst_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24OPEN+stock+fell+4%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$OPEN stock fell 4% this week. Here's what we see in our data.",
+          "category": "prices_automated",
+          "summary": "<p>$OPEN stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 4%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
+          "image": "https://www.quiverquant.com/images/open_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24LITE+stock+fell+7%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$LITE stock fell 7% this week. Here's what we see in our data.",
+          "category": "prices_automated",
+          "summary": "<p>$LITE stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 7%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
+          "image": "https://www.quiverquant.com/images/lite_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24APP+stock+fell+4%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$APP stock fell 4% this week. Here's what we see in our data.",
+          "category": "prices_automated",
+          "summary": "<p>$APP stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 4%</strong> this week, according to our price data from Polygon.<p>It has be\u2026",
+          "image": "https://www.quiverquant.com/images/app_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24ASTS+stock+fell+4%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$ASTS stock fell 4% this week. Here's what we see in our data.",
+          "category": "prices_automated",
+          "summary": "<p>$ASTS stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 4%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
+          "image": "https://www.quiverquant.com/images/asts_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24CBRS+stock+fell+11%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$CBRS stock fell 11% this week. Here's what we see in our data.",
+          "category": "prices_automated",
+          "summary": "<p>$CBRS stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 11%</strong> this week, according to our price data from Polygon.<p>It has \u2026",
+          "image": "https://www.quiverquant.com/images/cbrs_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24AVGO+stock+fell+7%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$AVGO stock fell 7% this week. Here's what we see in our data.",
+          "category": "prices_automated",
+          "summary": "<p>$AVGO stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 7%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
+          "image": "https://www.quiverquant.com/images/avgo_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24NGS+stock+fell+7%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$NGS stock fell 7% this week. Here's what we see in our data.",
+          "category": "prices_automated",
+          "summary": "<p>$NGS stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 7%</strong> this week, according to our price data from Polygon.<p>It has be\u2026",
+          "image": "https://www.quiverquant.com/images/ngs_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24USAR+stock+fell+4%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$USAR stock fell 4% this week. Here's what we see in our data.",
+          "category": "prices_automated",
+          "summary": "<p>$USAR stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 4%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
+          "image": "https://www.quiverquant.com/images/usar_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24BSX+stock+fell+3%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$BSX stock fell 3% this week. Here's what we see in our data.",
+          "category": "prices_automated",
+          "summary": "<p>$BSX stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 3%</strong> this week, according to our price data from Polygon.<p>It has be\u2026",
+          "image": "https://www.quiverquant.com/images/bsx_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24CRWV+stock+fell+17%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$CRWV stock fell 17% this week. Here's what we see in our data.",
+          "category": "prices_automated",
+          "summary": "<p>$CRWV stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 17%</strong> this week, according to our price data from Polygon.<p>It has \u2026",
+          "image": "https://www.quiverquant.com/images/crwv_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24C+stock+fell+6%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-22 16:38:09",
+          "headline": "$C stock fell 6% this week. Here's what we see in our data.",
+          "category": "prices_automated",
+          "summary": "<p>$C stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 6%</strong> this week, according to our price data from Polygon.<p>It has been\u2026",
+          "image": "https://www.quiverquant.com/images/c_rect_new.png",
+          "_first_seen": "2026-08-22T23:49:13.235907+00:00"
         }
       ]
     },
@@ -4701,183 +4701,183 @@
       "emoji": "\ud83d\udcc1",
       "label_en": "Congress holdings",
       "label_zh": "\u56fd\u4f1a\u6301\u4ed3",
-      "rows": 10350,
-      "last_seen": "2026-08-21",
+      "rows": 10557,
+      "last_seen": "2026-08-22",
       "recent": [
         {
           "Politician": "Zoe Lofgren",
           "Holdings": "{\"MMM\": -8000, \"BABA\": 0, \"CB\": 0, \"CMA\": 0, \"ECL\": -8000, \"TXN\": -8000, \"ACN\": 16000, \"ADBE\": 0, \"ALLY\": 16000, \"AMZN\": 0, \"AEP\": 0, \"AWK\": 0, \"AON\": 32000, \"AMAT\": 8000, \"ARCC\": 0, \"ASML\": 8000, \"T\": 0, \"AGR\": 0, \"B\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Kathy Manning",
           "Holdings": "{\"APD\": 40500, \"GOOGL\": -16000, \"GOOG\": -8000, \"AMGN\": -16000, \"AAPL\": -16000, \"CAT\": 8000, \"CNC\": 16000, \"CB\": 16000, \"CFG\": -8000, \"CME\": 8000, \"EL\": 8000, \"EXPD\": 8000, \"GIS\": 8000, \"HD\": 8000, \"INTC\": -40500, \"INT\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Greg Steube",
           "Holdings": "{\"SNV\": 56500}",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Greg Murphy",
           "Holdings": "{\"NYMX\": -75000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Greg Gianforte",
           "Holdings": "{\"ATLKY\": 92000, \"FMX\": 292500, \"OSW\": 553000, \"PEGA\": 742000, \"TSM\": -422500, \"YNDX\": -67500, \"CSGP\": -408000, \"GDDY\": 250000, \"NSRGY\": -315000, \"PRLB\": 0, \"RBA\": -183000, \"FIVE\": -75000, \"IAC\": 175000, \"IFF\": -10000\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Grace Meng",
           "Holdings": "{\"LHX\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Gilbert Cisneros",
           "Holdings": "{\"ADBE\": 40500, \"LNT\": 40000, \"AMZN\": 49000, \"AAPL\": 232000, \"CRNC\": 8000, \"CNS\": 0, \"CYRX\": 8000, \"EBS\": 32000, \"DAVA\": 32000, \"ERIC\": 65000, \"FIVE\": -24000, \"GDDY\": 122500, \"HELE\": -8000, \"INTU\": 0, \"IQV\": -64500, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Gerald E. Connolly",
           "Holdings": "{\"PG\": -8000, \"DIS\": -8000, \"D\": -49000, \"LDOS\": -64500, \"SAIC\": -24000, \"CI\": -16000, \"ERH\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Gary Palmer",
           "Holdings": "{\"ABBV\": 16000, \"AMZN\": 0, \"CTL\": 0, \"EL\": -8000, \"IDTI\": -16000, \"NTRS\": 0, \"REGN\": -8000, \"TJX\": 48000, \"GOOGL\": -8000, \"UHAL\": 16000, \"AMP\": 8000, \"AMGN\": 0, \"AAPL\": -8000, \"APTV\": 8000, \"ASND\": 8000, \"ASML\": 8000,\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Garret Graves",
           "Holdings": "{\"CRNC\": -8000, \"NUAN\": -8000, \"C\": -8000, \"DDD\": -8000, \"GOLD\": 8000, \"PSTH\": 8000, \"ABNB\": 16000, \"AMZN\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Frank Pallone Jr.",
           "Holdings": "{\"CVX\": -8000, \"C\": -8000, \"D\": -8000, \"PM\": -24000, \"EL\": -32500, \"GE\": -16000, \"TXN\": -32500, \"DIS\": -8000, \"MO\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Frank A. Lobiondo",
           "Holdings": "{\"BLK\": 8000, \"AAPL\": 16000, \"IBM\": -8000, \"QCOM\": -16000, \"GIS\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Feinstein, Dianne",
           "Holdings": "{\"ALLO\": -3000000, \"NVS\": 575000, \"GOOGL\": 400000, \"AMAT\": -175000, \"BA\": 25000, \"BAM\": 57500, \"CHTR\": 575000, \"CCI\": 275500, \"DHR\": -725000, \"DLR\": -350000, \"FDX\": -267500, \"FEYE\": -175000, \"INFO\": -575000, \"MSFT\": -\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Enzi, Michael B.",
           "Holdings": "{\"KEY\": -8000}",
           "Type": "Senator",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Elizabeth Fletcher",
           "Holdings": "{\"MMM\": -8000, \"ABT\": -8000, \"ACN\": -16000, \"ANTM\": 8000, \"BDX\": -24000, \"CACI\": 0, \"CCL\": 0, \"CERN\": -16000, \"CTSH\": -16000, \"COST\": -8000, \"DRI\": 0, \"DLTR\": -16000, \"ECL\": -8000, \"FDX\": 0, \"FISV\": -32000, \"HD\": -800\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Elaine Luria",
           "Holdings": "{\"BABA\": -625000, \"QS\": 8000, \"TSLA\": 8000, \"UBER\": 625000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Ed Perlmutter",
           "Holdings": "{\"BABA\": 0, \"AMZN\": 8000, \"COST\": 0, \"MSFT\": 0, \"NEM\": -8000, \"KR\": 0, \"BRK.B\": 8000, \"COIN\": 8000, \"GOOG\": 0, \"VZ\": 8000, \"AAPL\": -8000, \"GILD\": 0, \"KMI\": 0, \"HD\": -8000, \"WBA\": 0, \"SWK\": -48500, \"USB\": -81000, \"FB\":\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Ed Case",
           "Holdings": "{\"MRIN\": 8000, \"MO\": -75000, \"GE\": -8000, \"KMI\": -8000, \"MSFT\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Earl Blumenauer",
           "Holdings": "{\"ERJ\": 24000, \"F\": 16000, \"ICE\": 16000, \"NWN\": 37000, \"POR\": 8000, \"USB\": 0, \"DANOY\": 0, \"KR\": -8000, \"ALL\": 8000, \"AAPL\": 0, \"FDX\": 16000, \"GILD\": 16000, \"HHC\": -16000, \"TEL\": 16000, \"BRK.B\": 8000, \"CAT\": 8000, \"CBS\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Dwight Evans",
           "Holdings": "{\"APO\": 16000, \"HII\": -16000, \"KMI\": -8000, \"CG\": 16000, \"BABA\": 16000, \"GOOGL\": 16500, \"AMZN\": -48500, \"AEP\": 0, \"T\": 0, \"BRK.B\": -16000, \"DEO\": 8000, \"HASI\": -8000, \"INTC\": 0, \"TMO\": -8000, \"AWK\": 0, \"XOM\": 8000, \"N\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Duckworth, Tammy",
           "Holdings": "{\"DVMT\": -8000, \"BBL\": 0, \"DWDP\": -16000, \"ABT\": -8000, \"JNJ\": -8000, \"CC\": -8000, \"GME\": -8000, \"CAT\": -16000, \"POT\": -8000, \"MCD\": -8000, \"NEE\": -32500, \"VZ\": -32500, \"ITW\": -8000, \"DIS\": -8000, \"GS\": -8000, \"SOUHY\"\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Donna Shalala",
           "Holdings": "{\"TGNA\": -105500, \"AOS\": 8000, \"ABM\": -8000, \"AYI\": -16000, \"ADUS\": -8000, \"ADDYY\": 0, \"AMD\": 0, \"AGCO\": -8000, \"AAGIY\": -40500, \"ALK\": -16000, \"ALFVY\": -8000, \"ALLE\": 16000, \"AGN\": 0, \"AZSEY\": -32500, \"AIMC\": -8000, \u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr.",
           "Holdings": "{\"AAGIY\": -8000, \"CVS\": 8000, \"FVRR\": -8000, \"GH\": -8000, \"IXJ\": 8000, \"IYZ\": 8000, \"NDAQ\": 8000, \"NVS\": -8000, \"BBH\": 8000, \"VZ\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr",
           "Holdings": "{\"CONE\": -8000, \"DAIUF\": -8500, \"MSFT\": -24500, \"MSCI\": -32500, \"TDOC\": -16500, \"PEP\": 0, \"ASML\": 0, \"FLIR\": 24000, \"ACN\": 24000, \"GOOG\": -500, \"AMZN\": -24500, \"AAPL\": 40000, \"BRK.B\": 0, \"C\": -16500, \"CGNX\": 16000, \"C\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         },
         {
           "Politician": "Donald Sternoff  Beyer Jr",
           "Holdings": "{\"GOOG\": 8000, \"AAPL\": -16000, \"ASML\": 16000, \"BRK.B\": 24000, \"DAIUF\": -24000, \"ECL\": 0, \"FNV\": 8000, \"MSFT\": -16000, \"NEE\": -32500, \"REGN\": 24000, \"TDOC\": -32000, \"AAIGF\": 8000, \"EL\": 0, \"FVRR\": -8000, \"GS\": 56000, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-21T00:17:56.254059+00:00",
-          "_collected": "2026-08-21"
+          "_first_seen": "2026-08-22T23:49:13.855111+00:00",
+          "_collected": "2026-08-22"
         }
       ]
     },
@@ -5219,58 +5219,18 @@
       "emoji": "\ud83d\udcf1",
       "label_en": "App ratings",
       "label_zh": "\u5e94\u7528\u8bc4\u5206",
-      "rows": 127954,
-      "last_seen": "2026-08-21",
+      "rows": 129783,
+      "last_seen": "2026-08-22",
       "recent": [
         {
-          "Ticker": "TMO",
-          "App": "Aspire Member Program",
-          "Created": "2022-03-08",
-          "Publisher": "Thermo Fisher Scientific",
-          "Rating": "4.42856",
-          "Count": "189",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
-        },
-        {
-          "Ticker": "GIS",
-          "App": "Box Tops for Education\u2122",
-          "Created": "2016-09-07",
-          "Publisher": "General Mills Inc.",
-          "Rating": "4.6832",
-          "Count": "147608",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
-        },
-        {
-          "Ticker": "GILD",
-          "App": "HIV Answers",
-          "Created": "2014-04-23",
-          "Publisher": "Gilead Sciences, Inc.",
-          "Rating": "4.33333",
-          "Count": "3",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
-        },
-        {
-          "Ticker": "GILD",
-          "App": "Gilead Event App",
-          "Created": "2022-12-14",
-          "Publisher": "Gilead Sciences, Inc.",
+          "Ticker": "CDNS",
+          "App": "Cadence Events",
+          "Created": "2026-03-18",
+          "Publisher": "cadence design systems, inc",
           "Rating": "0.0",
           "Count": "0",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
-        },
-        {
-          "Ticker": "GIL",
-          "App": "Gildan Product Locator",
-          "Created": "2019-12-30",
-          "Publisher": "Gildan Activewear Inc",
-          "Rating": "4.72727",
-          "Count": "33",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GIGM",
@@ -5279,18 +5239,8 @@
           "Publisher": "Hoshin GigaMedia Center Inc., FunTown Branch.",
           "Rating": "3.5",
           "Count": "8",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
-        },
-        {
-          "Ticker": "GIGM",
-          "App": "TAIWAN MAHJONG HD",
-          "Created": "2011-03-26",
-          "Publisher": "Hoshin GigaMedia Center Inc., FunTown Branch.",
-          "Rating": "4.06667",
-          "Count": "60",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GH",
@@ -5299,8 +5249,8 @@
           "Publisher": "Guardant Health, Inc",
           "Rating": "2.8",
           "Count": "5",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5309,8 +5259,8 @@
           "Publisher": "Graco Inc.",
           "Rating": "4.33333",
           "Count": "6",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5319,8 +5269,8 @@
           "Publisher": "Graco Inc.",
           "Rating": "3.66667",
           "Count": "3",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5329,8 +5279,8 @@
           "Publisher": "Graco Inc.",
           "Rating": "4.7",
           "Count": "10",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GE",
@@ -5339,8 +5289,8 @@
           "Publisher": "Portland General Electric Company",
           "Rating": "4.17678",
           "Count": "577",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GE",
@@ -5349,8 +5299,8 @@
           "Publisher": "General Electric Credit Union",
           "Rating": "4.77881",
           "Count": "7338",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GDOT",
@@ -5359,18 +5309,18 @@
           "Publisher": "Green Dot Corporation",
           "Rating": "4.21394",
           "Count": "6824",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GDOT",
           "App": "Amazon Flex Debit Card",
           "Created": "2020-11-02",
           "Publisher": "Green Dot Corporation",
-          "Rating": "4.72086",
-          "Count": "11274",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Rating": "4.72068",
+          "Count": "11281",
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GDOT",
@@ -5379,8 +5329,8 @@
           "Publisher": "Green Dot Corporation",
           "Rating": "3.42667",
           "Count": "11939",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GDDY",
@@ -5389,8 +5339,8 @@
           "Publisher": "GoDaddy Mobile LLC",
           "Rating": "4.82796",
           "Count": "106705",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GCP",
@@ -5399,8 +5349,8 @@
           "Publisher": "GCP Applied Technologies Inc.",
           "Rating": "0.0",
           "Count": "0",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GCO",
@@ -5409,8 +5359,8 @@
           "Publisher": "Genesco Inc.",
           "Rating": "2.25",
           "Count": "8",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5419,8 +5369,8 @@
           "Publisher": "Gannett",
           "Rating": "4.53831",
           "Count": "4059",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5429,8 +5379,8 @@
           "Publisher": "Gannett",
           "Rating": "4.54566",
           "Count": "7228",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5439,8 +5389,8 @@
           "Publisher": "Gannett",
           "Rating": "4.34426",
           "Count": "5766",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5449,8 +5399,8 @@
           "Publisher": "Gannett",
           "Rating": "4.34712",
           "Count": "6600",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5459,8 +5409,8 @@
           "Publisher": "Gannett",
           "Rating": "4.57242",
           "Count": "12662",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         },
         {
           "Ticker": "GAIA",
@@ -5469,8 +5419,58 @@
           "Publisher": "Gaia Interactive Inc.",
           "Rating": "1.66391",
           "Count": "363",
-          "Time": "2026-08-21",
-          "_first_seen": "2026-08-21T23:56:16.924857+00:00"
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
+        },
+        {
+          "Ticker": "GAIA",
+          "App": "Gaia: Streaming Consciousness",
+          "Created": "2014-02-27",
+          "Publisher": "Gaia, Inc",
+          "Rating": "4.83029",
+          "Count": "139810",
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
+        },
+        {
+          "Ticker": "GABC",
+          "App": "German American Mobile Banking",
+          "Created": "2014-02-10",
+          "Publisher": "German American Bancorp, Inc.",
+          "Rating": "4.79174",
+          "Count": "9656",
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
+        },
+        {
+          "Ticker": "FWRD",
+          "App": "Forward Ten4",
+          "Created": "2020-08-24",
+          "Publisher": "Forward Air Corporation",
+          "Rating": "2.44444",
+          "Count": "18",
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
+        },
+        {
+          "Ticker": "FVRR",
+          "App": "Fiverr - Freelance Services",
+          "Created": "2011-12-11",
+          "Publisher": "Fiverr International Ltd.",
+          "Rating": "4.91695",
+          "Count": "570959",
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
+        },
+        {
+          "Ticker": "FUNC",
+          "App": "First United Mobile Banking",
+          "Created": "2012-04-10",
+          "Publisher": "First United Bank and Trust Company",
+          "Rating": "4.82367",
+          "Count": "431",
+          "Time": "2026-08-22",
+          "_first_seen": "2026-08-22T23:49:17.948314+00:00"
         }
       ]
     },
@@ -5478,183 +5478,183 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 250297,
-      "last_seen": "2026-08-21",
+      "rows": 255230,
+      "last_seen": "2026-08-22",
       "recent": [
         {
-          "ticker": "D",
-          "owner_name": "Allspring Global Investments Holdings, LLC",
+          "ticker": "DDOG",
+          "owner_name": "Engineers Gate Manager LP",
           "owner_title": "Institution",
-          "shares": "163961",
-          "_collected": "2026-08-21"
-        },
-        {
-          "ticker": "AVGO",
-          "owner_name": "AMERICAN CENTURY COMPANIES INC",
-          "owner_title": "Institution",
-          "shares": "7847715",
-          "_collected": "2026-08-21"
-        },
-        {
-          "ticker": "AVGO",
-          "owner_name": "National Pension Service",
-          "owner_title": "Institution",
-          "shares": "9612865",
-          "_collected": "2026-08-21"
-        },
-        {
-          "ticker": "AVGO",
-          "owner_name": "NORDEA INVESTMENT MANAGEMENT AB",
-          "owner_title": "Institution",
-          "shares": "9596088",
-          "_collected": "2026-08-21"
-        },
-        {
-          "ticker": "AVGO",
-          "owner_name": "VANGUARD ASSET MANAGEMENT, Ltd",
-          "owner_title": "Institution",
-          "shares": "9000720",
-          "_collected": "2026-08-21"
-        },
-        {
-          "ticker": "AVGO",
-          "owner_name": "PRINCIPAL FINANCIAL GROUP INC",
-          "owner_title": "Institution",
-          "shares": "8723896",
-          "_collected": "2026-08-21"
-        },
-        {
-          "ticker": "AVGO",
-          "owner_name": "ARROWSTREET CAPITAL, LIMITED PARTNERSHIP",
-          "owner_title": "Institution",
-          "shares": "8593712",
-          "_collected": "2026-08-21"
-        },
-        {
-          "ticker": "AVGO",
-          "owner_name": "RHUMBLINE ADVISERS",
-          "owner_title": "Institution",
-          "shares": "8151966",
-          "_collected": "2026-08-21"
-        },
-        {
-          "ticker": "AVGO",
-          "owner_name": "ENVESTNET ASSET MANAGEMENT INC",
-          "owner_title": "Institution",
-          "shares": "7893692",
-          "_collected": "2026-08-21"
-        },
-        {
-          "ticker": "AVGO",
-          "owner_name": "VOYA INVESTMENT MANAGEMENT LLC",
-          "owner_title": "Institution",
-          "shares": "7860666",
-          "_collected": "2026-08-21"
-        },
-        {
-          "ticker": "AVGO",
-          "owner_name": "Clearbridge Investments, LLC",
-          "owner_title": "Institution",
-          "shares": "7382405",
-          "_collected": "2026-08-21"
+          "shares": "169817",
+          "_collected": "2026-08-22"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "ALTAROCK PARTNERS LP",
+          "owner_name": "FAYEZ SAROFIM & CO",
           "owner_title": "Institution",
-          "shares": "5729972",
-          "_collected": "2026-08-21"
+          "shares": "8084635",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
+          "ticker": "AMZN",
+          "owner_name": "Ensign Peak Advisors, Inc",
+          "owner_title": "Institution",
+          "shares": "8837145",
+          "_collected": "2026-08-22"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "AVIVA PLC",
+          "owner_title": "Institution",
+          "shares": "8628566",
+          "_collected": "2026-08-22"
+        },
+        {
+          "ticker": "AMZN",
           "owner_name": "Pictet Asset Management Holding SA",
           "owner_title": "Institution",
-          "shares": "7345234",
-          "_collected": "2026-08-21"
+          "shares": "8560088",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "NATIONAL BANK OF CANADA /FI/",
+          "ticker": "AMZN",
+          "owner_name": "ACADIAN ASSET MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "7277531",
-          "_collected": "2026-08-21"
+          "shares": "8453619",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "CALIFORNIA STATE TEACHERS RETIREMENT SYSTEM",
+          "ticker": "AMZN",
+          "owner_name": "STIFEL FINANCIAL CORP",
           "owner_title": "Institution",
-          "shares": "6961668",
-          "_collected": "2026-08-21"
+          "shares": "8445681",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "DZ BANK AG Deutsche Zentral Genossenschafts Bank, Frankfurt am Main",
+          "ticker": "AMZN",
+          "owner_name": "CANADA LIFE ASSURANCE Co",
           "owner_title": "Institution",
-          "shares": "6960170",
-          "_collected": "2026-08-21"
+          "shares": "8345507",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "LPL Financial LLC",
+          "ticker": "AMZN",
+          "owner_name": "STATE BOARD OF ADMINISTRATION OF FLORIDA RETIREMENT SYSTEM",
           "owner_title": "Institution",
-          "shares": "6883612",
-          "_collected": "2026-08-21"
+          "shares": "8257584",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "BNP PARIBAS FINANCIAL MARKETS",
+          "ticker": "AMZN",
+          "owner_name": "ALKEON CAPITAL MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "6340950",
-          "_collected": "2026-08-21"
+          "shares": "7964931",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "TD ASSET MANAGEMENT INC",
+          "ticker": "AMZN",
+          "owner_name": "Korea Investment CORP",
           "owner_title": "Institution",
-          "shares": "5601668",
-          "_collected": "2026-08-21"
+          "shares": "6990711",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "BNP Paribas Asset Management Holding S.A.",
+          "ticker": "AMZN",
+          "owner_name": "DnB Asset Management AS",
           "owner_title": "Institution",
-          "shares": "5581853",
-          "_collected": "2026-08-21"
+          "shares": "7785587",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "CANADA PENSION PLAN INVESTMENT BOARD",
+          "ticker": "AMZN",
+          "owner_name": "CITADEL ADVISORS LLC",
           "owner_title": "Institution",
-          "shares": "9938067",
-          "_collected": "2026-08-21"
+          "shares": "7692857",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "Vanguard Global Advisers, LLC",
+          "ticker": "AMZN",
+          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
           "owner_title": "Institution",
-          "shares": "10214768",
-          "_collected": "2026-08-21"
+          "shares": "7539604",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "SCHRODER INVESTMENT MANAGEMENT GROUP",
+          "ticker": "AMZN",
+          "owner_name": "APG Asset Management N.V.",
           "owner_title": "Institution",
-          "shares": "10937682",
-          "_collected": "2026-08-21"
+          "shares": "7314985",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "Sumitomo Mitsui Trust Group, Inc.",
+          "ticker": "AMZN",
+          "owner_name": "LAZARD ASSET MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "11191795",
-          "_collected": "2026-08-21"
+          "shares": "7239349",
+          "_collected": "2026-08-22"
         },
         {
-          "ticker": "AVGO",
-          "owner_name": "RAYMOND JAMES FINANCIAL INC",
+          "ticker": "AMZN",
+          "owner_name": "WINDACRE PARTNERSHIP LLC",
           "owner_title": "Institution",
-          "shares": "16286649",
-          "_collected": "2026-08-21"
+          "shares": "7185100",
+          "_collected": "2026-08-22"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "1832 Asset Management L.P.",
+          "owner_title": "Institution",
+          "shares": "7183134",
+          "_collected": "2026-08-22"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "ROYAL LONDON ASSET MANAGEMENT LTD",
+          "owner_title": "Institution",
+          "shares": "8904735",
+          "_collected": "2026-08-22"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "AQR CAPITAL MANAGEMENT LLC",
+          "owner_title": "Institution",
+          "shares": "8922824",
+          "_collected": "2026-08-22"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "PRUDENTIAL FINANCIAL INC",
+          "owner_title": "Institution",
+          "shares": "8925205",
+          "_collected": "2026-08-22"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Universal- Beteiligungs- und Servicegesellschaft mbH",
+          "owner_title": "Institution",
+          "shares": "9065084",
+          "_collected": "2026-08-22"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "BESSEMER GROUP INC",
+          "owner_title": "Institution",
+          "shares": "10096298",
+          "_collected": "2026-08-22"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "CIBC Bancorp USA Inc.",
+          "owner_title": "Institution",
+          "shares": "10072292",
+          "_collected": "2026-08-22"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "VOYA INVESTMENT MANAGEMENT LLC",
+          "owner_title": "Institution",
+          "shares": "10066668",
+          "_collected": "2026-08-22"
         }
       ]
     },
@@ -6213,20 +6213,20 @@
         "top_agency": "Department of Homeland Security"
       },
       {
-        "ticker": "GD",
-        "total_usd": 79799821.0,
-        "contracts": 28,
-        "agencies": 8,
-        "accel_x": 4.39,
-        "top_agency": "Department of Homeland Security"
+        "ticker": "T",
+        "total_usd": 74503561.0,
+        "contracts": 7,
+        "agencies": 6,
+        "accel_x": 20.71,
+        "top_agency": "Department of Transportation"
       },
       {
-        "ticker": "T",
-        "total_usd": 76271857.0,
-        "contracts": 8,
-        "agencies": 6,
-        "accel_x": 41.69,
-        "top_agency": "Department of Transportation"
+        "ticker": "GD",
+        "total_usd": 66543360.0,
+        "contracts": 25,
+        "agencies": 7,
+        "accel_x": 2.12,
+        "top_agency": "Department of Homeland Security"
       },
       {
         "ticker": "TPC",
@@ -6238,19 +6238,11 @@
       },
       {
         "ticker": "ACM",
-        "total_usd": 59252836.0,
-        "contracts": 10,
+        "total_usd": 59180609.0,
+        "contracts": 9,
         "agencies": 5,
-        "accel_x": 3.44,
+        "accel_x": 3.42,
         "top_agency": "Department of Homeland Security"
-      },
-      {
-        "ticker": "TXT",
-        "total_usd": 53470752.0,
-        "contracts": 5,
-        "agencies": 4,
-        "accel_x": null,
-        "top_agency": "Department of the Interior"
       },
       {
         "ticker": "AMRK",
@@ -6270,35 +6262,19 @@
       },
       {
         "ticker": "CDW",
-        "total_usd": 21485182.0,
-        "contracts": 64,
+        "total_usd": 19101604.0,
+        "contracts": 59,
         "agencies": 6,
-        "accel_x": 0.68,
+        "accel_x": 0.56,
         "top_agency": "Department of Transportation"
       },
       {
         "ticker": "MCK",
-        "total_usd": 18675567.0,
-        "contracts": 129,
+        "total_usd": 18646383.0,
+        "contracts": 126,
         "agencies": 3,
-        "accel_x": 5.2,
+        "accel_x": 5.15,
         "top_agency": "Department of Justice"
-      },
-      {
-        "ticker": "BAH",
-        "total_usd": 16346967.0,
-        "contracts": 12,
-        "agencies": 6,
-        "accel_x": 9.88,
-        "top_agency": "Department of Health and Human Services"
-      },
-      {
-        "ticker": "F",
-        "total_usd": 16233362.0,
-        "contracts": 320,
-        "agencies": 1,
-        "accel_x": 1.14,
-        "top_agency": "General Services Administration"
       },
       {
         "ticker": "PSN",
@@ -6309,11 +6285,35 @@
         "top_agency": "Department of Energy"
       },
       {
-        "ticker": "IBM",
-        "total_usd": 15553044.0,
-        "contracts": 6,
-        "agencies": 5,
-        "accel_x": 1.77,
+        "ticker": "F",
+        "total_usd": 15580228.0,
+        "contracts": 309,
+        "agencies": 1,
+        "accel_x": 1.05,
+        "top_agency": "General Services Administration"
+      },
+      {
+        "ticker": "AXON",
+        "total_usd": 13983015.0,
+        "contracts": 14,
+        "agencies": 6,
+        "accel_x": 0.42,
+        "top_agency": "Department of Homeland Security"
+      },
+      {
+        "ticker": "BAH",
+        "total_usd": 13739584.0,
+        "contracts": 11,
+        "agencies": 6,
+        "accel_x": 3.22,
+        "top_agency": "Department of Health and Human Services"
+      },
+      {
+        "ticker": "GEO",
+        "total_usd": 12983184.0,
+        "contracts": 2,
+        "agencies": 1,
+        "accel_x": 0.33,
         "top_agency": "Department of Homeland Security"
       }
     ],
@@ -6399,63 +6399,63 @@
     "hf": [
       {
         "ticker": "AMZN",
-        "downloads_30d": 49073916.0,
-        "wow_pct": 7.8,
+        "downloads_30d": 48252988.0,
+        "wow_pct": 6.0,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "downloads_30d": 33506253.0,
-        "wow_pct": 3.2,
-        "hot": true
+        "downloads_30d": 33223336.0,
+        "wow_pct": 2.4,
+        "hot": false
       },
       {
         "ticker": "CRM",
-        "downloads_30d": 5522818.0,
-        "wow_pct": 0.2,
+        "downloads_30d": 5472830.0,
+        "wow_pct": -0.7,
         "hot": false
       },
       {
         "ticker": "NVDA",
-        "downloads_30d": 39649352.0,
-        "wow_pct": -1.2,
+        "downloads_30d": 39398919.0,
+        "wow_pct": -1.8,
         "hot": false
       },
       {
         "ticker": "BABA",
-        "downloads_30d": 207075966.0,
-        "wow_pct": -3.0,
+        "downloads_30d": 204954811.0,
+        "wow_pct": -4.0,
         "hot": false
       },
       {
         "ticker": "META",
-        "downloads_30d": 92192421.0,
-        "wow_pct": -3.0,
+        "downloads_30d": 91037836.0,
+        "wow_pct": -4.2,
         "hot": false
       },
       {
         "ticker": "AAPL",
-        "downloads_30d": 2432477.0,
-        "wow_pct": -3.3,
+        "downloads_30d": 2397621.0,
+        "wow_pct": -4.7,
         "hot": false
       },
       {
         "ticker": "GOOGL",
-        "downloads_30d": 264288836.0,
-        "wow_pct": -3.4,
+        "downloads_30d": 260789903.0,
+        "wow_pct": -4.7,
         "hot": false
       },
       {
         "ticker": "IBM",
-        "downloads_30d": 13089052.0,
-        "wow_pct": -12.8,
+        "downloads_30d": 12939059.0,
+        "wow_pct": -13.8,
         "hot": false
       }
     ],
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 21,
+        "count": 20,
         "items": "8.01"
       },
       {
@@ -6474,11 +6474,6 @@
         "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
-        "ticker": "QBTS",
-        "count": 6,
-        "items": "5.02, 7.01"
-      },
-      {
         "ticker": "BAX",
         "count": 5,
         "items": "1.01, 5.02, 7.01, 8.01"
@@ -6489,14 +6484,14 @@
         "items": "7.01, 8.01"
       },
       {
+        "ticker": "QBTS",
+        "count": 5,
+        "items": "5.02, 7.01"
+      },
+      {
         "ticker": "SWKS",
         "count": 5,
         "items": "1.01, 2.03, 8.01"
-      },
-      {
-        "ticker": "AXP",
-        "count": 4,
-        "items": "7.01, 8.01"
       },
       {
         "ticker": "CHTR",
@@ -6517,11 +6512,6 @@
         "ticker": "CTVA",
         "count": 4,
         "items": "1.01, 7.01, 8.01"
-      },
-      {
-        "ticker": "GLXY",
-        "count": 4,
-        "items": "1.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
         "ticker": "MOS",
@@ -6547,6 +6537,11 @@
         "ticker": "AVB",
         "count": 3,
         "items": "2.01, 5.02, 7.01, 8.01"
+      },
+      {
+        "ticker": "AXP",
+        "count": 3,
+        "items": "7.01, 8.01"
       },
       {
         "ticker": "BEN",
@@ -6577,6 +6572,11 @@
         "ticker": "ECHO",
         "count": 3,
         "items": "2.01, 5.02, 7.01, 8.01"
+      },
+      {
+        "ticker": "EXE",
+        "count": 3,
+        "items": "7.01, 8.01"
       }
     ],
     "special_situations": [
@@ -24821,6 +24821,17 @@
         "hot": true
       },
       {
+        "ticker": "V",
+        "net_up_30d": 24,
+        "breadth": 0.75,
+        "est_chg_30d": 0.73,
+        "n_analysts": 32,
+        "bull_ratio": 0.88,
+        "rising": true,
+        "revision_delta": 24,
+        "hot": true
+      },
+      {
         "ticker": "TXN",
         "net_up_30d": 23,
         "breadth": 1.0,
@@ -24948,17 +24959,6 @@
         "est_chg_30d": 0.5,
         "n_analysts": 23,
         "bull_ratio": 0.96,
-        "rising": true,
-        "revision_delta": 21,
-        "hot": true
-      },
-      {
-        "ticker": "GOOGL",
-        "net_up_30d": 21,
-        "breadth": 0.47,
-        "est_chg_30d": 0.61,
-        "n_analysts": 45,
-        "bull_ratio": 0.73,
         "rising": true,
         "revision_delta": 21,
         "hot": true
@@ -25325,17 +25325,31 @@
         "hot": true
       },
       {
-        "ticker": "PYPL",
-        "bull_ratio": 0.88,
+        "ticker": "XYZ",
+        "bull_ratio": 0.91,
         "messages": 30,
-        "watchers": 166301,
+        "watchers": 178804,
+        "hot": true
+      },
+      {
+        "ticker": "PYPL",
+        "bull_ratio": 0.69,
+        "messages": 30,
+        "watchers": 166308,
         "hot": true
       },
       {
         "ticker": "MARA",
-        "bull_ratio": 0.75,
+        "bull_ratio": 1.0,
+        "messages": 29,
+        "watchers": 158259,
+        "hot": true
+      },
+      {
+        "ticker": "SOFI",
+        "bull_ratio": 1.0,
         "messages": 30,
-        "watchers": 158150,
+        "watchers": 155758,
         "hot": true
       },
       {
@@ -25343,20 +25357,6 @@
         "bull_ratio": 1.0,
         "messages": 30,
         "watchers": 154882,
-        "hot": true
-      },
-      {
-        "ticker": "COIN",
-        "bull_ratio": 1.0,
-        "messages": 30,
-        "watchers": 138114,
-        "hot": true
-      },
-      {
-        "ticker": "NKE",
-        "bull_ratio": 0.88,
-        "messages": 30,
-        "watchers": 137302,
         "hot": true
       }
     ],
@@ -25622,20 +25622,32 @@
     "github": [
       {
         "ticker": "NET",
-        "stars": 15330,
-        "wow_pct": 0.8,
-        "hot": true
-      },
-      {
-        "ticker": "AMD",
-        "stars": 6813,
-        "wow_pct": 0.47,
+        "stars": 15339,
+        "wow_pct": 0.85,
         "hot": true
       },
       {
         "ticker": "NVDA",
-        "stars": 18200,
-        "wow_pct": 0.44,
+        "stars": 18242,
+        "wow_pct": 0.67,
+        "hot": true
+      },
+      {
+        "ticker": "AMD",
+        "stars": 6808,
+        "wow_pct": 0.4,
+        "hot": true
+      },
+      {
+        "ticker": "IBM",
+        "stars": 7731,
+        "wow_pct": 0.34,
+        "hot": true
+      },
+      {
+        "ticker": "MSFT",
+        "stars": 189275,
+        "wow_pct": 0.32,
         "hot": true
       },
       {
@@ -25645,44 +25657,32 @@
         "hot": true
       },
       {
-        "ticker": "IBM",
-        "stars": 7726,
+        "ticker": "DDOG",
+        "stars": 3711,
         "wow_pct": 0.27,
         "hot": true
       },
       {
-        "ticker": "DDOG",
-        "stars": 3710,
-        "wow_pct": 0.24,
-        "hot": true
-      },
-      {
-        "ticker": "MSFT",
-        "stars": 189113,
-        "wow_pct": 0.24,
-        "hot": true
-      },
-      {
         "ticker": "GOOGL",
-        "stars": 197210,
-        "wow_pct": 0.1,
+        "stars": 197330,
+        "wow_pct": 0.16,
         "hot": false
       },
       {
         "ticker": "META",
-        "stars": 247493,
-        "wow_pct": 0.1,
+        "stars": 247639,
+        "wow_pct": 0.16,
         "hot": false
       },
       {
         "ticker": "U",
-        "stars": 19644,
-        "wow_pct": 0.09,
+        "stars": 19645,
+        "wow_pct": 0.1,
         "hot": false
       },
       {
         "ticker": "PLTR",
-        "stars": 22002,
+        "stars": 22003,
         "wow_pct": 0.06,
         "hot": false
       },
@@ -25694,7 +25694,7 @@
       },
       {
         "ticker": "MDB",
-        "stars": 28502,
+        "stars": 28501,
         "wow_pct": 0.03,
         "hot": false
       },
@@ -25706,8 +25706,8 @@
       },
       {
         "ticker": "ESTC",
-        "stars": 77852,
-        "wow_pct": 0.0,
+        "stars": 77851,
+        "wow_pct": -0.0,
         "hot": false
       },
       {
@@ -25718,8 +25718,8 @@
       },
       {
         "ticker": "CRM",
-        "stars": 11261,
-        "wow_pct": -0.02,
+        "stars": 11262,
+        "wow_pct": -0.01,
         "hot": false
       }
     ],
@@ -25748,23 +25748,9 @@
       {
         "ticker": "VZ",
         "spend_usd": 3835000.0,
-        "filings": 17,
+        "filings": 16,
         "spike_x": null,
         "top_issue": "Telecommunications"
-      },
-      {
-        "ticker": "BMY",
-        "spend_usd": 3690000.0,
-        "filings": 10,
-        "spike_x": null,
-        "top_issue": "Pharmacy"
-      },
-      {
-        "ticker": "BA",
-        "spend_usd": 3330000.0,
-        "filings": 15,
-        "spike_x": null,
-        "top_issue": "Defense"
       },
       {
         "ticker": "MRK",
@@ -25802,13 +25788,6 @@
         "top_issue": "Health Issues"
       },
       {
-        "ticker": "UNH",
-        "spend_usd": 2610000.0,
-        "filings": 9,
-        "spike_x": null,
-        "top_issue": "Health Issues"
-      },
-      {
         "ticker": "GILD",
         "spend_usd": 2555000.0,
         "filings": 14,
@@ -25816,18 +25795,39 @@
         "top_issue": "Taxation/Internal Revenue Code"
       },
       {
-        "ticker": "PFE",
-        "spend_usd": 2500000.0,
-        "filings": 12,
-        "spike_x": null,
-        "top_issue": "Pharmacy"
-      },
-      {
         "ticker": "V",
         "spend_usd": 2360000.0,
-        "filings": 9,
+        "filings": 8,
         "spike_x": null,
-        "top_issue": "Banking"
+        "top_issue": "Financial Institutions/Investments/Securities"
+      },
+      {
+        "ticker": "QCOM",
+        "spend_usd": 2320000.0,
+        "filings": 10,
+        "spike_x": null,
+        "top_issue": "Copyright/Patent/Trademark"
+      },
+      {
+        "ticker": "CPNG",
+        "spend_usd": 2245000.0,
+        "filings": 7,
+        "spike_x": null,
+        "top_issue": "Economics/Economic Development"
+      },
+      {
+        "ticker": "HON",
+        "spend_usd": 2220000.0,
+        "filings": 11,
+        "spike_x": null,
+        "top_issue": "Defense"
+      },
+      {
+        "ticker": "TM",
+        "spend_usd": 2170500.0,
+        "filings": 5,
+        "spike_x": null,
+        "top_issue": "Transportation"
       }
     ],
     "offexchange": [
@@ -26127,10 +26127,10 @@
         {
           "ticker": "CRWV",
           "buy_usd": 0.0,
-          "sell_usd": 1211911370.0,
-          "net_usd": -1211911370.0,
+          "sell_usd": 1216772097.0,
+          "net_usd": -1216772097.0,
           "buyers": 0,
-          "sellers": 1001
+          "sellers": 1009
         },
         {
           "ticker": "BIRK",
@@ -26408,26 +26408,15 @@
     },
     "trump": [
       {
-        "ticker": "CRM",
-        "company": "SALESFORCE INC",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-07-01",
-        "traded": "2026-05-11 00:00:00",
-        "excess_return": -10.100415675834157
-      },
-      {
-        "ticker": "SRE",
-        "company": "SEMPRA",
+        "ticker": "GIS",
+        "company": "General Mills Inc",
         "side": "sell",
         "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
+        "est_usd": 32500.0,
+        "amount": "$15,001 - $50,000",
         "filed": "2026-07-01",
-        "traded": "2026-05-11 00:00:00",
-        "excess_return": -0.641051299155838
+        "traded": "2026-05-05 00:00:00",
+        "excess_return": 4.457782730227863
       },
       {
         "ticker": "NOW",
@@ -26639,26 +26628,26 @@
         "excess_return": -4.208321821156428
       },
       {
-        "ticker": "IP",
-        "company": "INTL PAPER COMPANY",
+        "ticker": "CRM",
+        "company": "SALESFORCE INC",
         "side": "buy",
         "transaction": "Purchase",
         "est_usd": 8000.0,
         "amount": "$1,001 - $15,000",
         "filed": "2026-07-01",
-        "traded": "2026-05-15 00:00:00",
-        "excess_return": 43.04605071365793
+        "traded": "2026-05-11 00:00:00",
+        "excess_return": -10.100415675834157
       },
       {
-        "ticker": "YUM",
-        "company": "YUM BRANDS INC",
+        "ticker": "ZTS",
+        "company": "ZOETIS INC",
         "side": "sell",
         "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
+        "est_usd": 32500.0,
+        "amount": "$15,001 - $50,000",
         "filed": "2026-07-01",
         "traded": "2026-05-11 00:00:00",
-        "excess_return": 2.335080623288774
+        "excess_return": 3.6609712150730416
       },
       {
         "ticker": "FORM",
@@ -26670,6 +26659,28 @@
         "filed": "2026-07-01",
         "traded": "2026-05-15 00:00:00",
         "excess_return": -10.860549306565076
+      },
+      {
+        "ticker": "PRGO",
+        "company": "PERRIGO CO PLC F",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 32500.0,
+        "amount": "$15,001 - $50,000",
+        "filed": "2026-07-01",
+        "traded": "2026-05-15 00:00:00",
+        "excess_return": -3.217597514964977
+      },
+      {
+        "ticker": "RDNT",
+        "company": "RADNET INC",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-07-01",
+        "traded": "2026-05-15 00:00:00",
+        "excess_return": 18.918230724590483
       }
     ],
     "corporate_donors": [
@@ -26869,6 +26880,87 @@
     ],
     "cnbc": [
       {
+        "Ticker": "BROS",
+        "Date": "2026-08-17T00:00:00.000",
+        "Notes": null,
+        "Direction": "Hold",
+        "Traders": "Jim Cramer",
+        "Upload_Time": "2026-08-22T19:19:52.000",
+        "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+      },
+      {
+        "Ticker": "SMCI",
+        "Date": "2026-08-17T00:00:00.000",
+        "Notes": null,
+        "Direction": "Not Recommending",
+        "Traders": "Jim Cramer",
+        "Upload_Time": "2026-08-22T19:19:24.000",
+        "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+      },
+      {
+        "Ticker": "ABNB",
+        "Date": "2026-08-17T00:00:00.000",
+        "Notes": null,
+        "Direction": "Start a Small Position",
+        "Traders": "Jim Cramer",
+        "Upload_Time": "2026-08-22T19:18:48.000",
+        "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+      },
+      {
+        "Ticker": "ABT",
+        "Date": "2026-08-17T00:00:00.000",
+        "Notes": null,
+        "Direction": "Bullish",
+        "Traders": "Jim Cramer",
+        "Upload_Time": "2026-08-22T19:17:30.000",
+        "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+      },
+      {
+        "Ticker": "MSFT",
+        "Date": "2026-08-17T00:00:00.000",
+        "Notes": null,
+        "Direction": "Trim",
+        "Traders": "Jim Cramer",
+        "Upload_Time": "2026-08-22T19:16:49.000",
+        "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+      },
+      {
+        "Ticker": "VRT",
+        "Date": "2026-08-17T00:00:00.000",
+        "Notes": null,
+        "Direction": "Bullish",
+        "Traders": "Jim Cramer",
+        "Upload_Time": "2026-08-22T19:16:30.000",
+        "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+      },
+      {
+        "Ticker": "HON",
+        "Date": "2026-08-17T00:00:00.000",
+        "Notes": null,
+        "Direction": "Buy on a Pullback",
+        "Traders": "Jim Cramer",
+        "Upload_Time": "2026-08-22T19:16:06.000",
+        "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+      },
+      {
+        "Ticker": "CSCO",
+        "Date": "2026-08-17T00:00:00.000",
+        "Notes": null,
+        "Direction": "Buy",
+        "Traders": "Jim Cramer",
+        "Upload_Time": "2026-08-22T19:15:01.000",
+        "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+      },
+      {
+        "Ticker": "MU",
+        "Date": "2026-08-17T00:00:00.000",
+        "Notes": null,
+        "Direction": "Buy",
+        "Traders": "Jim Cramer",
+        "Upload_Time": "2026-08-22T19:12:11.000",
+        "_first_seen": "2026-08-22T23:49:09.752896+00:00"
+      },
+      {
         "Ticker": "SMH",
         "Date": "2026-08-19T00:00:00.000",
         "Notes": null,
@@ -27011,133 +27103,52 @@
         "Traders": "Kevin Simpson",
         "Upload_Time": "2026-08-21T14:48:18.000",
         "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-      },
-      {
-        "Ticker": "TGT",
-        "Date": "2026-08-19T00:00:00.000",
-        "Notes": null,
-        "Direction": "Final Trade",
-        "Traders": "Joe Terranova",
-        "Upload_Time": "2026-08-21T14:47:54.000",
-        "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-      },
-      {
-        "Ticker": "HOOD",
-        "Date": "2026-08-19T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Kevin Simpson",
-        "Upload_Time": "2026-08-21T14:47:33.000",
-        "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-      },
-      {
-        "Ticker": "HOOD",
-        "Date": "2026-08-19T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Bryn Talkington",
-        "Upload_Time": "2026-08-21T14:46:53.000",
-        "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-      },
-      {
-        "Ticker": "JPM",
-        "Date": "2026-08-19T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Kevin Simpson",
-        "Upload_Time": "2026-08-21T14:46:31.000",
-        "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-      },
-      {
-        "Ticker": "ANET",
-        "Date": "2026-08-19T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Joe Terranova",
-        "Upload_Time": "2026-08-21T14:46:03.000",
-        "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-      },
-      {
-        "Ticker": "AEM",
-        "Date": "2026-08-19T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Kevin Simpson",
-        "Upload_Time": "2026-08-21T14:45:33.000",
-        "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-      },
-      {
-        "Ticker": "TJX",
-        "Date": "2026-08-19T00:00:00.000",
-        "Notes": null,
-        "Direction": "Sell a Call Option",
-        "Traders": "Kevin Simpson",
-        "Upload_Time": "2026-08-21T14:45:13.000",
-        "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-      },
-      {
-        "Ticker": "MRK",
-        "Date": "2026-08-19T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Kevin Simpson",
-        "Upload_Time": "2026-08-21T14:44:51.000",
-        "_first_seen": "2026-08-21T23:56:08.521955+00:00"
-      },
-      {
-        "Ticker": "IBM",
-        "Date": "2026-08-19T00:00:00.000",
-        "Notes": null,
-        "Direction": "Trim",
-        "Traders": "Kevin Simpson",
-        "Upload_Time": "2026-08-21T14:44:31.000",
-        "_first_seen": "2026-08-21T23:56:08.521955+00:00"
       }
     ],
     "app_ratings": [
       {
         "ticker": "UBER",
         "rating": 4.84,
-        "reviews": 30031803,
+        "reviews": 30041321,
         "apps": 6,
         "top_app": "Uber - Request a ride",
-        "review_velocity": 0.0007,
+        "review_velocity": 0.0003,
         "lean": "strong"
       },
       {
         "ticker": "GOOGL",
         "rating": 4.71,
-        "reviews": 26221784,
+        "reviews": 26228502,
         "apps": 5,
         "top_app": "Google Drive",
-        "review_velocity": 0.0009,
+        "review_velocity": 0.0003,
         "lean": "strong"
       },
       {
         "ticker": "MSFT",
         "rating": 4.77,
-        "reviews": 19986502,
+        "reviews": 19988683,
         "apps": 9,
         "top_app": "Microsoft Outlook",
-        "review_velocity": 0.0007,
+        "review_velocity": 0.0001,
         "lean": "strong"
       },
       {
         "ticker": "WMT",
         "rating": 4.82,
-        "reviews": 19022171,
+        "reviews": 19029913,
         "apps": 5,
         "top_app": "Walmart: Shopping & Savings",
-        "review_velocity": 0.001,
+        "review_velocity": 0.0004,
         "lean": "strong"
       },
       {
         "ticker": "LYFT",
         "rating": 4.91,
-        "reviews": 17916439,
+        "reviews": 17921414,
         "apps": 3,
         "top_app": "Lyft",
-        "review_velocity": 0.0006,
+        "review_velocity": 0.0003,
         "lean": "strong"
       },
       {
@@ -27146,25 +27157,25 @@
         "reviews": 8190519,
         "apps": 4,
         "top_app": "Starbucks",
-        "review_velocity": 0.0009,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
         "ticker": "ETSY",
         "rating": 4.92,
-        "reviews": 7297763,
+        "reviews": 7297813,
         "apps": 2,
         "top_app": "Etsy: Shop from Real People",
-        "review_velocity": 0.0003,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
         "ticker": "Z",
         "rating": 4.8,
-        "reviews": 7637154,
+        "reviews": 7637194,
         "apps": 4,
         "top_app": "Zillow Real Estate & Rentals",
-        "review_velocity": 0.0001,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -27173,16 +27184,16 @@
         "reviews": 7162292,
         "apps": 1,
         "top_app": "Southwest Airlines: Travel App",
-        "review_velocity": 0.0004,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
         "ticker": "SHOP",
         "rating": 4.81,
-        "reviews": 7149994,
+        "reviews": 7151956,
         "apps": 4,
         "top_app": "Shop: Track, Pay, Discover",
-        "review_velocity": 0.0006,
+        "review_velocity": 0.0003,
         "lean": "strong"
       },
       {
@@ -27200,7 +27211,7 @@
         "reviews": 7110233,
         "apps": 2,
         "top_app": "Netflix",
-        "review_velocity": 0.0015,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -27209,7 +27220,7 @@
         "reviews": 6017365,
         "apps": 1,
         "top_app": "The Roku App (Official)",
-        "review_velocity": 0.0015,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -27218,16 +27229,16 @@
         "reviews": 5744959,
         "apps": 1,
         "top_app": "Pinterest",
-        "review_velocity": 0.0004,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
         "ticker": "SNAP",
         "rating": 4.51,
-        "reviews": 5908478,
+        "reviews": 5909041,
         "apps": 1,
         "top_app": "Snapchat",
-        "review_velocity": 0.0003,
+        "review_velocity": 0.0001,
         "lean": "strong"
       }
     ],
@@ -27507,804 +27518,804 @@
     ],
     "congress_holdings": {
       "ICE": {
-        "position_usd": 2385675000.0,
-        "holders": 600
+        "position_usd": 2433388500.0,
+        "holders": 612
       },
       "MSFT": {
-        "position_usd": 1070325000.0,
-        "holders": 3450
+        "position_usd": 1091731500.0,
+        "holders": 3519
       },
       "AAPL": {
-        "position_usd": 888500000.0,
-        "holders": 3950
+        "position_usd": 906270000.0,
+        "holders": 4029
       },
       "AMZN": {
-        "position_usd": 495775000.0,
-        "holders": 2800
+        "position_usd": 505690500.0,
+        "holders": 2856
       },
       "SPY": {
-        "position_usd": 416775000.0,
-        "holders": 450
+        "position_usd": 425110500.0,
+        "holders": 459
       },
       "FB": {
-        "position_usd": 405625000.0,
-        "holders": 1750
+        "position_usd": 413737500.0,
+        "holders": 1785
       },
       "GOOGL": {
-        "position_usd": 264400000.0,
-        "holders": 1900
+        "position_usd": 269688000.0,
+        "holders": 1938
       },
       "V": {
-        "position_usd": 192400000.0,
-        "holders": 1650
+        "position_usd": 196248000.0,
+        "holders": 1683
       },
       "NFLX": {
-        "position_usd": 187325000.0,
-        "holders": 950
+        "position_usd": 191071500.0,
+        "holders": 969
       },
       "CHTR": {
-        "position_usd": 186575000.0,
-        "holders": 400
+        "position_usd": 190306500.0,
+        "holders": 408
       },
       "NVDA": {
-        "position_usd": 167850000.0,
-        "holders": 1400
+        "position_usd": 171207000.0,
+        "holders": 1428
       },
       "PYPL": {
-        "position_usd": 162475000.0,
-        "holders": 1200
+        "position_usd": 165724500.0,
+        "holders": 1224
       },
       "CRM": {
-        "position_usd": 158425000.0,
-        "holders": 850
+        "position_usd": 161593500.0,
+        "holders": 867
       },
       "DDOG": {
-        "position_usd": 151625000.0,
-        "holders": 100
+        "position_usd": 154657500.0,
+        "holders": 102
       },
       "XON": {
-        "position_usd": 150400000.0,
-        "holders": 150
+        "position_usd": 153408000.0,
+        "holders": 153
       },
       "BRP": {
-        "position_usd": 150400000.0,
-        "holders": 100
+        "position_usd": 153408000.0,
+        "holders": 102
       },
       "BXS": {
-        "position_usd": 150100000.0,
-        "holders": 150
+        "position_usd": 153102000.0,
+        "holders": 153
       },
       "ALLO": {
-        "position_usd": 150000000.0,
-        "holders": 50
+        "position_usd": 153000000.0,
+        "holders": 51
       },
       "XOM": {
-        "position_usd": 145175000.0,
-        "holders": 2000
+        "position_usd": 148078500.0,
+        "holders": 2040
       },
       "JPM": {
-        "position_usd": 133625000.0,
-        "holders": 2200
+        "position_usd": 136297500.0,
+        "holders": 2244
       },
       "JNJ": {
-        "position_usd": 133350000.0,
-        "holders": 2200
+        "position_usd": 136017000.0,
+        "holders": 2244
       },
       "TFX": {
-        "position_usd": 129900000.0,
-        "holders": 200
+        "position_usd": 132498000.0,
+        "holders": 204
       },
       "T": {
-        "position_usd": 125300000.0,
-        "holders": 2200
+        "position_usd": 127806000.0,
+        "holders": 2244
       },
       "DIS": {
-        "position_usd": 121150000.0,
-        "holders": 2350
+        "position_usd": 123573000.0,
+        "holders": 2397
       },
       "TRUP": {
-        "position_usd": 118750000.0,
-        "holders": 100
+        "position_usd": 121125000.0,
+        "holders": 102
       },
       "A": {
-        "position_usd": 117850000.0,
-        "holders": 250
+        "position_usd": 120207000.0,
+        "holders": 255
       },
       "ET": {
-        "position_usd": 115250000.0,
-        "holders": 500
+        "position_usd": 117555000.0,
+        "holders": 510
       },
       "AB": {
-        "position_usd": 112500000.0,
-        "holders": 50
+        "position_usd": 114750000.0,
+        "holders": 51
       },
       "MA": {
-        "position_usd": 112375000.0,
-        "holders": 1250
+        "position_usd": 114622500.0,
+        "holders": 1275
       },
       "LHCG": {
-        "position_usd": 103675000.0,
-        "holders": 250
+        "position_usd": 105748500.0,
+        "holders": 255
       },
       "VZ": {
-        "position_usd": 101675000.0,
-        "holders": 1650
+        "position_usd": 103708500.0,
+        "holders": 1683
       },
       "SHLX": {
-        "position_usd": 95025000.0,
-        "holders": 250
+        "position_usd": 96925500.0,
+        "holders": 255
       },
       "NEE": {
-        "position_usd": 92200000.0,
-        "holders": 1100
+        "position_usd": 94044000.0,
+        "holders": 1122
       },
       "FDX": {
-        "position_usd": 90975000.0,
-        "holders": 1150
+        "position_usd": 92794500.0,
+        "holders": 1173
       },
       "USAC": {
-        "position_usd": 89725000.0,
-        "holders": 100
+        "position_usd": 91519500.0,
+        "holders": 102
       },
       "LEN": {
-        "position_usd": 89150000.0,
-        "holders": 100
+        "position_usd": 90933000.0,
+        "holders": 102
       },
       "BABA": {
-        "position_usd": 88600000.0,
-        "holders": 1300
+        "position_usd": 90372000.0,
+        "holders": 1326
       },
       "CAPL": {
-        "position_usd": 87900000.0,
-        "holders": 150
+        "position_usd": 89658000.0,
+        "holders": 153
       },
       "WMT": {
-        "position_usd": 87800000.0,
-        "holders": 1700
+        "position_usd": 89556000.0,
+        "holders": 1734
       },
       "AM": {
-        "position_usd": 87650000.0,
-        "holders": 350
+        "position_usd": 89403000.0,
+        "holders": 357
       },
       "HD": {
-        "position_usd": 87325000.0,
-        "holders": 1600
+        "position_usd": 89071500.0,
+        "holders": 1632
       },
       "ENBL": {
-        "position_usd": 84800000.0,
-        "holders": 100
+        "position_usd": 86496000.0,
+        "holders": 102
       },
       "GE": {
-        "position_usd": 82000000.0,
-        "holders": 2050
+        "position_usd": 83640000.0,
+        "holders": 2091
       },
       "CVX": {
-        "position_usd": 79275000.0,
-        "holders": 1650
+        "position_usd": 80860500.0,
+        "holders": 1683
       },
       "TXN": {
-        "position_usd": 78725000.0,
-        "holders": 850
+        "position_usd": 80299500.0,
+        "holders": 867
       },
       "UNH": {
-        "position_usd": 77075000.0,
-        "holders": 1500
+        "position_usd": 78616500.0,
+        "holders": 1530
       },
       "UBS": {
-        "position_usd": 75800000.0,
-        "holders": 250
+        "position_usd": 77316000.0,
+        "holders": 255
       },
       "DFS": {
-        "position_usd": 75625000.0,
-        "holders": 550
+        "position_usd": 77137500.0,
+        "holders": 561
       },
       "RGC": {
-        "position_usd": 75400000.0,
-        "holders": 100
+        "position_usd": 76908000.0,
+        "holders": 102
       },
       "COST": {
-        "position_usd": 74600000.0,
-        "holders": 1600
+        "position_usd": 76092000.0,
+        "holders": 1632
       },
       "PG": {
-        "position_usd": 71975000.0,
-        "holders": 1650
+        "position_usd": 73414500.0,
+        "holders": 1683
       },
       "INFO": {
-        "position_usd": 70025000.0,
-        "holders": 350
+        "position_usd": 71425500.0,
+        "holders": 357
       },
       "LIN": {
-        "position_usd": 69675000.0,
-        "holders": 850
+        "position_usd": 71068500.0,
+        "holders": 867
       },
       "CRWD": {
-        "position_usd": 69575000.0,
-        "holders": 450
+        "position_usd": 70966500.0,
+        "holders": 459
       },
       "HON": {
-        "position_usd": 68725000.0,
-        "holders": 1000
+        "position_usd": 70099500.0,
+        "holders": 1020
       },
       "WFC": {
-        "position_usd": 68700000.0,
-        "holders": 1300
+        "position_usd": 70074000.0,
+        "holders": 1326
       },
       "BAYRY": {
-        "position_usd": 68275000.0,
-        "holders": 200
+        "position_usd": 69640500.0,
+        "holders": 204
       },
       "BAC": {
-        "position_usd": 67700000.0,
-        "holders": 1450
+        "position_usd": 69054000.0,
+        "holders": 1479
       },
       "ALK": {
-        "position_usd": 65325000.0,
-        "holders": 250
+        "position_usd": 66631500.0,
+        "holders": 255
       },
       "MCD": {
-        "position_usd": 65200000.0,
-        "holders": 1200
+        "position_usd": 66504000.0,
+        "holders": 1224
       },
       "SPG": {
-        "position_usd": 65075000.0,
-        "holders": 600
+        "position_usd": 66376500.0,
+        "holders": 612
       },
       "BRK.B": {
-        "position_usd": 63025000.0,
-        "holders": 1350
+        "position_usd": 64285500.0,
+        "holders": 1377
       },
       "SBUX": {
-        "position_usd": 62100000.0,
-        "holders": 1700
+        "position_usd": 63342000.0,
+        "holders": 1734
       },
       "PBFX": {
-        "position_usd": 60925000.0,
-        "holders": 100
+        "position_usd": 62143500.0,
+        "holders": 102
       },
       "LUV": {
-        "position_usd": 60600000.0,
-        "holders": 800
+        "position_usd": 61812000.0,
+        "holders": 816
       },
       "AMZA": {
-        "position_usd": 60000000.0,
-        "holders": 100
+        "position_usd": 61200000.0,
+        "holders": 102
       },
       "ACN": {
-        "position_usd": 59425000.0,
-        "holders": 1150
+        "position_usd": 60613500.0,
+        "holders": 1173
       },
       "FTAI": {
-        "position_usd": 59125000.0,
-        "holders": 50
+        "position_usd": 60307500.0,
+        "holders": 51
       },
       "INTC": {
-        "position_usd": 58175000.0,
-        "holders": 1850
+        "position_usd": 59338500.0,
+        "holders": 1887
       },
       "PODD": {
-        "position_usd": 57425000.0,
-        "holders": 200
+        "position_usd": 58573500.0,
+        "holders": 204
       },
       "EMR": {
-        "position_usd": 57225000.0,
-        "holders": 700
+        "position_usd": 58369500.0,
+        "holders": 714
       },
       "CSCO": {
-        "position_usd": 57200000.0,
-        "holders": 1550
+        "position_usd": 58344000.0,
+        "holders": 1581
       },
       "ZAYO": {
-        "position_usd": 57075000.0,
-        "holders": 150
+        "position_usd": 58216500.0,
+        "holders": 153
       },
       "CAT": {
-        "position_usd": 55325000.0,
-        "holders": 1300
+        "position_usd": 56431500.0,
+        "holders": 1326
       },
       "DHR": {
-        "position_usd": 55325000.0,
-        "holders": 1000
+        "position_usd": 56431500.0,
+        "holders": 1020
       },
       "WMB": {
-        "position_usd": 55250000.0,
-        "holders": 500
+        "position_usd": 56355000.0,
+        "holders": 510
       },
       "CEQP": {
-        "position_usd": 54300000.0,
-        "holders": 150
+        "position_usd": 55386000.0,
+        "holders": 153
       },
       "QCOM": {
-        "position_usd": 53950000.0,
-        "holders": 1500
+        "position_usd": 55029000.0,
+        "holders": 1530
       },
       "RCKY": {
-        "position_usd": 53750000.0,
-        "holders": 50
+        "position_usd": 54825000.0,
+        "holders": 51
       },
       "TSLA": {
-        "position_usd": 53150000.0,
-        "holders": 1150
+        "position_usd": 54213000.0,
+        "holders": 1173
       },
       "MMM": {
-        "position_usd": 52900000.0,
-        "holders": 1050
+        "position_usd": 53958000.0,
+        "holders": 1071
       },
       "RPM": {
-        "position_usd": 52725000.0,
-        "holders": 300
+        "position_usd": 53779500.0,
+        "holders": 306
       },
       "BKCC": {
-        "position_usd": 52500000.0,
-        "holders": 50
+        "position_usd": 53550000.0,
+        "holders": 51
       },
       "BMY": {
-        "position_usd": 52225000.0,
-        "holders": 900
+        "position_usd": 53269500.0,
+        "holders": 918
       },
       "ZBRA": {
-        "position_usd": 51625000.0,
-        "holders": 150
+        "position_usd": 52657500.0,
+        "holders": 153
       },
       "AJRD": {
-        "position_usd": 50400000.0,
-        "holders": 100
+        "position_usd": 51408000.0,
+        "holders": 102
       },
       "PEP": {
-        "position_usd": 50000000.0,
-        "holders": 1600
+        "position_usd": 51000000.0,
+        "holders": 1632
       },
       "ABBV": {
-        "position_usd": 49550000.0,
-        "holders": 1150
+        "position_usd": 50541000.0,
+        "holders": 1173
       },
       "PM": {
-        "position_usd": 49025000.0,
-        "holders": 700
+        "position_usd": 50005500.0,
+        "holders": 714
       },
       "TMO": {
-        "position_usd": 48675000.0,
-        "holders": 1050
+        "position_usd": 49648500.0,
+        "holders": 1071
       },
       "RTX": {
-        "position_usd": 48475000.0,
-        "holders": 500
+        "position_usd": 49444500.0,
+        "holders": 510
       },
       "IBM": {
-        "position_usd": 48400000.0,
-        "holders": 1300
+        "position_usd": 49368000.0,
+        "holders": 1326
       },
       "CB": {
-        "position_usd": 48300000.0,
-        "holders": 1000
+        "position_usd": 49266000.0,
+        "holders": 1020
       },
       "ADBE": {
-        "position_usd": 47875000.0,
-        "holders": 700
+        "position_usd": 48832500.0,
+        "holders": 714
       },
       "IHRT": {
-        "position_usd": 46625000.0,
-        "holders": 50
+        "position_usd": 47557500.0,
+        "holders": 51
       },
       "DGRO": {
-        "position_usd": 46450000.0,
-        "holders": 100
+        "position_usd": 47379000.0,
+        "holders": 102
       },
       "REZI": {
-        "position_usd": 46000000.0,
-        "holders": 350
+        "position_usd": 46920000.0,
+        "holders": 357
       },
       "VEEV": {
-        "position_usd": 45350000.0,
-        "holders": 200
+        "position_usd": 46257000.0,
+        "holders": 204
       },
       "UPS": {
-        "position_usd": 44475000.0,
-        "holders": 850
+        "position_usd": 45364500.0,
+        "holders": 867
       },
       "LLY": {
-        "position_usd": 44400000.0,
-        "holders": 600
+        "position_usd": 45288000.0,
+        "holders": 612
       },
       "CVS": {
-        "position_usd": 43725000.0,
-        "holders": 1500
+        "position_usd": 44599500.0,
+        "holders": 1530
       },
       "KO": {
-        "position_usd": 43200000.0,
-        "holders": 1400
+        "position_usd": 44064000.0,
+        "holders": 1428
       },
       "BIDU": {
-        "position_usd": 42500000.0,
-        "holders": 400
+        "position_usd": 43350000.0,
+        "holders": 408
       },
       "MCHP": {
-        "position_usd": 42325000.0,
-        "holders": 250
+        "position_usd": 43171500.0,
+        "holders": 255
       },
       "MIC": {
-        "position_usd": 42025000.0,
-        "holders": 150
+        "position_usd": 42865500.0,
+        "holders": 153
       },
       "NSRGY": {
-        "position_usd": 41975000.0,
-        "holders": 900
+        "position_usd": 42814500.0,
+        "holders": 918
       },
       "PXD": {
-        "position_usd": 41900000.0,
-        "holders": 300
+        "position_usd": 42738000.0,
+        "holders": 306
       },
       "ULTI": {
-        "position_usd": 41200000.0,
-        "holders": 100
+        "position_usd": 42024000.0,
+        "holders": 102
       },
       "LH": {
-        "position_usd": 40775000.0,
-        "holders": 250
+        "position_usd": 41590500.0,
+        "holders": 255
       },
       "UBER": {
-        "position_usd": 39825000.0,
-        "holders": 450
+        "position_usd": 40621500.0,
+        "holders": 459
       },
       "CTSH": {
-        "position_usd": 39575000.0,
-        "holders": 500
+        "position_usd": 40366500.0,
+        "holders": 510
       },
       "LOW": {
-        "position_usd": 38900000.0,
-        "holders": 1000
+        "position_usd": 39678000.0,
+        "holders": 1020
       },
       "NS": {
-        "position_usd": 38750000.0,
-        "holders": 100
+        "position_usd": 39525000.0,
+        "holders": 102
       },
       "PEGA": {
-        "position_usd": 38725000.0,
-        "holders": 100
+        "position_usd": 39499500.0,
+        "holders": 102
       },
       "HALO": {
-        "position_usd": 38700000.0,
-        "holders": 150
+        "position_usd": 39474000.0,
+        "holders": 153
       },
       "ROK": {
-        "position_usd": 38625000.0,
-        "holders": 300
+        "position_usd": 39397500.0,
+        "holders": 306
       },
       "TIP": {
-        "position_usd": 38600000.0,
-        "holders": 150
+        "position_usd": 39372000.0,
+        "holders": 153
       },
       "GOOG": {
-        "position_usd": 38375000.0,
-        "holders": 1350
+        "position_usd": 39142500.0,
+        "holders": 1377
       },
       "TSM": {
-        "position_usd": 38275000.0,
-        "holders": 800
+        "position_usd": 39040500.0,
+        "holders": 816
       },
       "ABT": {
-        "position_usd": 38200000.0,
-        "holders": 1100
+        "position_usd": 38964000.0,
+        "holders": 1122
       },
       "DD": {
-        "position_usd": 38000000.0,
-        "holders": 750
+        "position_usd": 38760000.0,
+        "holders": 765
       },
       "STT": {
-        "position_usd": 38000000.0,
-        "holders": 750
+        "position_usd": 38760000.0,
+        "holders": 765
       },
       "PFE": {
-        "position_usd": 37800000.0,
-        "holders": 1650
+        "position_usd": 38556000.0,
+        "holders": 1683
       },
       "TWOU": {
-        "position_usd": 37500000.0,
-        "holders": 50
+        "position_usd": 38250000.0,
+        "holders": 51
       },
       "RNR": {
-        "position_usd": 37500000.0,
-        "holders": 50
+        "position_usd": 38250000.0,
+        "holders": 51
       },
       "AMLP": {
-        "position_usd": 37500000.0,
-        "holders": 50
+        "position_usd": 38250000.0,
+        "holders": 51
       },
       "EFA": {
-        "position_usd": 37500000.0,
-        "holders": 50
+        "position_usd": 38250000.0,
+        "holders": 51
       },
       "NVS": {
-        "position_usd": 36875000.0,
-        "holders": 750
+        "position_usd": 37612500.0,
+        "holders": 765
       },
       "CL": {
-        "position_usd": 36700000.0,
-        "holders": 750
+        "position_usd": 37434000.0,
+        "holders": 765
       },
       "AMGN": {
-        "position_usd": 36575000.0,
-        "holders": 1050
+        "position_usd": 37306500.0,
+        "holders": 1071
       },
       "LMT": {
-        "position_usd": 36200000.0,
-        "holders": 950
+        "position_usd": 36924000.0,
+        "holders": 969
       },
       "DEO": {
-        "position_usd": 35500000.0,
-        "holders": 850
+        "position_usd": 36210000.0,
+        "holders": 867
       },
       "BA": {
-        "position_usd": 35150000.0,
-        "holders": 1300
+        "position_usd": 35853000.0,
+        "holders": 1326
       },
       "NGL": {
-        "position_usd": 35025000.0,
-        "holders": 150
+        "position_usd": 35725500.0,
+        "holders": 153
       },
       "XLE": {
-        "position_usd": 34900000.0,
-        "holders": 100
+        "position_usd": 35598000.0,
+        "holders": 102
       },
       "MO": {
-        "position_usd": 34800000.0,
-        "holders": 1050
+        "position_usd": 35496000.0,
+        "holders": 1071
       },
       "F": {
-        "position_usd": 34550000.0,
-        "holders": 1200
+        "position_usd": 35241000.0,
+        "holders": 1224
       },
       "IWN": {
-        "position_usd": 34100000.0,
-        "holders": 250
+        "position_usd": 34782000.0,
+        "holders": 255
       },
       "PAA": {
-        "position_usd": 34075000.0,
-        "holders": 250
+        "position_usd": 34756500.0,
+        "holders": 255
       },
       "ORCL": {
-        "position_usd": 33500000.0,
-        "holders": 700
+        "position_usd": 34170000.0,
+        "holders": 714
       },
       "TJX": {
-        "position_usd": 32925000.0,
-        "holders": 1300
+        "position_usd": 33583500.0,
+        "holders": 1326
       },
       "RMD": {
-        "position_usd": 32850000.0,
-        "holders": 250
+        "position_usd": 33507000.0,
+        "holders": 255
       },
       "AMAT": {
-        "position_usd": 32475000.0,
-        "holders": 700
+        "position_usd": 33124500.0,
+        "holders": 714
       },
       "NKE": {
-        "position_usd": 32450000.0,
-        "holders": 700
+        "position_usd": 33099000.0,
+        "holders": 714
       },
       "MDY": {
-        "position_usd": 32050000.0,
-        "holders": 100
+        "position_usd": 32691000.0,
+        "holders": 102
       },
       "VMC": {
-        "position_usd": 31900000.0,
-        "holders": 400
+        "position_usd": 32538000.0,
+        "holders": 408
       },
       "KHC": {
-        "position_usd": 31775000.0,
-        "holders": 950
+        "position_usd": 32410500.0,
+        "holders": 969
       },
       "TTWO": {
-        "position_usd": 31650000.0,
-        "holders": 100
+        "position_usd": 32283000.0,
+        "holders": 102
       },
       "EPD": {
-        "position_usd": 31350000.0,
-        "holders": 350
+        "position_usd": 31977000.0,
+        "holders": 357
       },
       "AMN": {
-        "position_usd": 31350000.0,
-        "holders": 100
+        "position_usd": 31977000.0,
+        "holders": 102
       },
       "VTV": {
-        "position_usd": 31250000.0,
-        "holders": 50
+        "position_usd": 31875000.0,
+        "holders": 51
       },
       "GLP": {
-        "position_usd": 31075000.0,
-        "holders": 100
+        "position_usd": 31696500.0,
+        "holders": 102
       },
       "MRK": {
-        "position_usd": 30950000.0,
-        "holders": 1350
+        "position_usd": 31569000.0,
+        "holders": 1377
       },
       "CCI": {
-        "position_usd": 30900000.0,
-        "holders": 800
+        "position_usd": 31518000.0,
+        "holders": 816
       },
       "PRU": {
-        "position_usd": 30675000.0,
-        "holders": 650
+        "position_usd": 31288500.0,
+        "holders": 663
       },
       "MDLZ": {
-        "position_usd": 30500000.0,
-        "holders": 700
+        "position_usd": 31110000.0,
+        "holders": 714
       },
       "DXCM": {
-        "position_usd": 30300000.0,
-        "holders": 400
+        "position_usd": 30906000.0,
+        "holders": 408
       },
       "IWD": {
-        "position_usd": 29650000.0,
-        "holders": 100
+        "position_usd": 30243000.0,
+        "holders": 102
       },
       "SQ": {
-        "position_usd": 29325000.0,
-        "holders": 600
+        "position_usd": 29911500.0,
+        "holders": 612
       },
       "HHC": {
-        "position_usd": 29050000.0,
-        "holders": 200
+        "position_usd": 29631000.0,
+        "holders": 204
       },
       "D": {
-        "position_usd": 28850000.0,
-        "holders": 850
+        "position_usd": 29427000.0,
+        "holders": 867
       },
       "ARNA": {
-        "position_usd": 28575000.0,
-        "holders": 150
+        "position_usd": 29146500.0,
+        "holders": 153
       },
       "DAL": {
-        "position_usd": 28550000.0,
-        "holders": 650
+        "position_usd": 29121000.0,
+        "holders": 663
       },
       "TTD": {
-        "position_usd": 28300000.0,
-        "holders": 150
+        "position_usd": 28866000.0,
+        "holders": 153
       },
       "DOCU": {
-        "position_usd": 28275000.0,
-        "holders": 200
+        "position_usd": 28840500.0,
+        "holders": 204
       },
       "CUTR": {
-        "position_usd": 27900000.0,
-        "holders": 50
+        "position_usd": 28458000.0,
+        "holders": 51
       },
       "KEYS": {
-        "position_usd": 27850000.0,
-        "holders": 250
+        "position_usd": 28407000.0,
+        "holders": 255
       },
       "C": {
-        "position_usd": 27675000.0,
-        "holders": 1000
+        "position_usd": 28228500.0,
+        "holders": 1020
       },
       "OSW": {
-        "position_usd": 27650000.0,
-        "holders": 100
+        "position_usd": 28203000.0,
+        "holders": 102
       },
       "TCEHY": {
-        "position_usd": 27600000.0,
-        "holders": 300
+        "position_usd": 28152000.0,
+        "holders": 306
       },
       "PNR": {
-        "position_usd": 27500000.0,
-        "holders": 150
+        "position_usd": 28050000.0,
+        "holders": 153
       },
       "CTL": {
-        "position_usd": 27425000.0,
-        "holders": 400
+        "position_usd": 27973500.0,
+        "holders": 408
       },
       "ADP": {
-        "position_usd": 27250000.0,
-        "holders": 450
+        "position_usd": 27795000.0,
+        "holders": 459
       },
       "TFC": {
-        "position_usd": 26800000.0,
-        "holders": 750
+        "position_usd": 27336000.0,
+        "holders": 765
       },
       "PGR": {
-        "position_usd": 26575000.0,
-        "holders": 650
+        "position_usd": 27106500.0,
+        "holders": 663
       },
       "IFNNY": {
-        "position_usd": 26125000.0,
-        "holders": 150
+        "position_usd": 26647500.0,
+        "holders": 153
       },
       "AVGO": {
-        "position_usd": 25775000.0,
-        "holders": 650
+        "position_usd": 26290500.0,
+        "holders": 663
       },
       "MSM": {
-        "position_usd": 25750000.0,
-        "holders": 150
+        "position_usd": 26265000.0,
+        "holders": 153
       },
       "SLB": {
-        "position_usd": 25675000.0,
-        "holders": 1450
+        "position_usd": 26188500.0,
+        "holders": 1479
       },
       "BRK-B": {
-        "position_usd": 25675000.0,
-        "holders": 250
+        "position_usd": 26188500.0,
+        "holders": 255
       },
       "IR": {
-        "position_usd": 25625000.0,
-        "holders": 350
+        "position_usd": 26137500.0,
+        "holders": 357
       },
       "AZO": {
-        "position_usd": 25550000.0,
-        "holders": 400
+        "position_usd": 26061000.0,
+        "holders": 408
       },
       "UNP": {
-        "position_usd": 25425000.0,
-        "holders": 850
+        "position_usd": 25933500.0,
+        "holders": 867
       },
       "BBVA": {
-        "position_usd": 25425000.0,
-        "holders": 200
+        "position_usd": 25933500.0,
+        "holders": 204
       },
       "CMCSA": {
-        "position_usd": 25325000.0,
-        "holders": 1350
+        "position_usd": 25831500.0,
+        "holders": 1377
       },
       "SU": {
-        "position_usd": 25175000.0,
-        "holders": 450
+        "position_usd": 25678500.0,
+        "holders": 459
       },
       "USB": {
-        "position_usd": 25000000.0,
-        "holders": 1050
+        "position_usd": 25500000.0,
+        "holders": 1071
       },
       "MIDD": {
-        "position_usd": 24925000.0,
-        "holders": 150
+        "position_usd": 25423500.0,
+        "holders": 153
       },
       "GS": {
-        "position_usd": 24475000.0,
-        "holders": 900
+        "position_usd": 24964500.0,
+        "holders": 918
       },
       "DG": {
-        "position_usd": 24250000.0,
-        "holders": 550
+        "position_usd": 24735000.0,
+        "holders": 561
       },
       "MPLX": {
-        "position_usd": 24225000.0,
-        "holders": 300
+        "position_usd": 24709500.0,
+        "holders": 306
       },
       "MS": {
-        "position_usd": 24175000.0,
-        "holders": 750
+        "position_usd": 24658500.0,
+        "holders": 765
       },
       "TDOC": {
-        "position_usd": 24075000.0,
-        "holders": 250
+        "position_usd": 24556500.0,
+        "holders": 255
       },
       "GLW": {
-        "position_usd": 23950000.0,
-        "holders": 300
+        "position_usd": 24429000.0,
+        "holders": 306
       },
       "RAND": {
-        "position_usd": 23925000.0,
-        "holders": 50
+        "position_usd": 24403500.0,
+        "holders": 51
       },
       "CSGP": {
-        "position_usd": 23575000.0,
-        "holders": 250
+        "position_usd": 24046500.0,
+        "holders": 255
       },
       "CME": {
-        "position_usd": 23500000.0,
-        "holders": 600
+        "position_usd": 23970000.0,
+        "holders": 612
       },
       "BP": {
-        "position_usd": 23400000.0,
-        "holders": 500
+        "position_usd": 23868000.0,
+        "holders": 510
       },
       "UTX": {
-        "position_usd": 23200000.0,
-        "holders": 1000
+        "position_usd": 23664000.0,
+        "holders": 1020
       },
       "OKE": {
-        "position_usd": 22975000.0,
-        "holders": 450
+        "position_usd": 23434500.0,
+        "holders": 459
       }
     },
     "flights": [
@@ -28518,168 +28529,168 @@
       {
         "ticker": "A",
         "next_date": "2026-08-26",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 1.48,
         "last_surprise_pct": 6.4
       },
       {
         "ticker": "CRM",
         "next_date": "2026-08-26",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 2.35,
         "last_surprise_pct": 32.6
       },
       {
         "ticker": "CRWD",
         "next_date": "2026-08-26",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.05,
         "last_surprise_pct": 33.3
       },
       {
         "ticker": "NVDA",
         "next_date": "2026-08-26",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 2.01,
         "last_surprise_pct": 10.0
       },
       {
         "ticker": "VEEV",
         "next_date": "2026-08-26",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 1.62,
         "last_surprise_pct": 2.6
       },
       {
         "ticker": "DG",
         "next_date": "2026-08-27",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": 2.0,
         "last_surprise_pct": 5.8
       },
       {
         "ticker": "WDAY",
         "next_date": "2026-08-27",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": 1.26,
         "last_surprise_pct": -3.4
       },
       {
         "ticker": "ESTC",
         "next_date": "2026-08-27",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": null,
         "last_surprise_pct": 88.9
       },
       {
         "ticker": "SAIC",
         "next_date": "2026-08-31",
-        "days_to": 9,
+        "days_to": 8,
         "eps_forecast": 2.25,
         "last_surprise_pct": 42.9
       },
       {
         "ticker": "ASO",
         "next_date": "2026-09-01",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 2.07,
         "last_surprise_pct": -3.6
       },
       {
         "ticker": "CRDO",
         "next_date": "2026-09-01",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 0.91,
         "last_surprise_pct": 19.5
       },
       {
         "ticker": "DELL",
         "next_date": "2026-09-01",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 4.63,
         "last_surprise_pct": 66.0
       },
       {
         "ticker": "MDB",
         "next_date": "2026-09-01",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 0.08,
         "last_surprise_pct": -50.0
       },
       {
         "ticker": "GTLB",
         "next_date": "2026-09-01",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": null,
         "last_surprise_pct": 66.7
       },
       {
         "ticker": "AVGO",
         "next_date": "2026-09-02",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": 2.83,
         "last_surprise_pct": 7.4
       },
       {
         "ticker": "HPE",
         "next_date": "2026-09-02",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": 0.81,
         "last_surprise_pct": 52.3
       },
       {
         "ticker": "AI",
         "next_date": "2026-09-02",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": null,
         "last_surprise_pct": 2.7
       },
       {
         "ticker": "SNOW",
         "next_date": "2026-09-02",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": null,
         "last_surprise_pct": -18.6
       },
       {
         "ticker": "DOCU",
         "next_date": "2026-09-03",
-        "days_to": 12,
+        "days_to": 11,
         "eps_forecast": 0.44,
         "last_surprise_pct": 18.4
       },
       {
         "ticker": "GIII",
         "next_date": "2026-09-03",
-        "days_to": 12,
+        "days_to": 11,
         "eps_forecast": 0.25,
         "last_surprise_pct": 30.0
       },
       {
         "ticker": "PATH",
         "next_date": "2026-09-03",
-        "days_to": 12,
+        "days_to": 11,
         "eps_forecast": 0.04,
         "last_surprise_pct": 50.0
       },
       {
         "ticker": "ORCL",
         "next_date": "2026-09-08",
-        "days_to": 17,
+        "days_to": 16,
         "eps_forecast": 1.4,
         "last_surprise_pct": 13.3
       },
       {
         "ticker": "GME",
         "next_date": "2026-09-08",
-        "days_to": 17,
+        "days_to": 16,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "ADBE",
         "next_date": "2026-09-10",
-        "days_to": 19,
+        "days_to": 18,
         "eps_forecast": 4.86,
         "last_surprise_pct": -3.4
       }
@@ -28785,7 +28796,7 @@
           "congress_cluster",
           "gov_contract_accel"
         ],
-        "why": "congress_cluster: 4 members net +5 \u00b7 gov_contract_accel: $76,271,857, 41.7x accel"
+        "why": "congress_cluster: 4 members net +5 \u00b7 gov_contract_accel: $74,503,561, 20.7x accel"
       },
       {
         "ticker": "AMD",
@@ -28798,7 +28809,7 @@
           "retail_buzz",
           "stocktwits_bull"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +31 revision delta \u00b7 github_momentum: +0.47% stars \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 5.02, 7.01) \u00b7 retail_buzz: 51 WSB mentions \u00b7 stocktwits_bull: 84% bull \u00b7 563,282 watching"
+        "why": "analyst_upgrade_cluster: net upgrades +31 revision delta \u00b7 github_momentum: +0.4% stars \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 5.02, 7.01) \u00b7 retail_buzz: 51 WSB mentions \u00b7 stocktwits_bull: 84% bull \u00b7 563,282 watching"
       },
       {
         "ticker": "AMZN",
@@ -28811,19 +28822,7 @@
           "lobbying",
           "special_situation"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +34 revision delta \u00b7 cnbc_pick: Kevin Simpson \u00b7 hf_model_momentum: +7.8% model downloads \u00b7 lobbying: $5,010,000 lobbied \u00b7 special_situation: Acquisitions"
-      },
-      {
-        "ticker": "MSFT",
-        "score": 4,
-        "weighted_score": 1.45,
-        "channel_list": [
-          "app_demand",
-          "github_momentum",
-          "hf_model_momentum",
-          "patent_cluster"
-        ],
-        "why": "app_demand: 4.77\u2605 \u00d7 19,986,502 reviews \u00b7 github_momentum: +0.24% stars \u00b7 hf_model_momentum: +3.2% model downloads \u00b7 patent_cluster: 318 grants, 38 IPC classes"
+        "why": "analyst_upgrade_cluster: net upgrades +34 revision delta \u00b7 cnbc_pick: Kevin Simpson \u00b7 hf_model_momentum: +6.0% model downloads \u00b7 lobbying: $5,010,000 lobbied \u00b7 special_situation: Acquisitions"
       },
       {
         "ticker": "INTC",
@@ -28861,49 +28860,16 @@
         "why": "13f_add: ONTARIO TEACHERS PENSION PLAN BOARD +$8,658,544,075 \u00b7 congress_cluster: 4 members net +8 \u00b7 special_situation: Acquisitions"
       },
       {
-        "ticker": "BA",
+        "ticker": "MU",
         "score": 4,
         "weighted_score": 1.35,
         "channel_list": [
-          "gov_grant",
-          "lobbying",
+          "cnbc_pick",
+          "insider_mspr",
           "patent_cluster",
           "stocktwits_bull"
         ],
-        "why": "gov_grant: $7,820,571 federal grant/loan \u00b7 lobbying: $3,330,000 lobbied \u00b7 patent_cluster: 161 grants, 72 IPC classes \u00b7 stocktwits_bull: 69% bull \u00b7 197,131 watching"
-      },
-      {
-        "ticker": "SRE",
-        "score": 3,
-        "weighted_score": 1.25,
-        "channel_list": [
-          "activist_13d",
-          "insider_mspr",
-          "trump"
-        ],
-        "why": "activist_13d: 13D activist campaign \u00b7 insider_mspr: MSPR 100.0 \u00b7 trump: SEMPRA"
-      },
-      {
-        "ticker": "TXT",
-        "score": 3,
-        "weighted_score": 1.2,
-        "channel_list": [
-          "gov_contract",
-          "insider_mspr",
-          "special_situation"
-        ],
-        "why": "gov_contract: $53,470,752 awarded \u00b7 insider_mspr: MSPR 60.7 \u00b7 special_situation: Spin-Offs"
-      },
-      {
-        "ticker": "PFE",
-        "score": 3,
-        "weighted_score": 1.2,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion",
-          "lobbying"
-        ],
-        "why": "clinical_phase3_start: 15 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: IBRANCE \u00b7 lobbying: $2,500,000 lobbied"
+        "why": "cnbc_pick: Jim Cramer \u00b7 insider_mspr: MSPR 100.0 \u00b7 patent_cluster: 288 grants, 24 IPC classes \u00b7 stocktwits_bull: 100% bull \u00b7 213,009 watching"
       },
       {
         "ticker": "BRK.B",
@@ -28926,28 +28892,6 @@
         "why": "insider_mspr: MSPR 71.3 \u00b7 unusual_options: 4.65\u00d7 vol/OI, call-skew"
       },
       {
-        "ticker": "IBM",
-        "score": 3,
-        "weighted_score": 1.15,
-        "channel_list": [
-          "github_momentum",
-          "gov_contract",
-          "patent_cluster"
-        ],
-        "why": "github_momentum: +0.27% stars \u00b7 gov_contract: $15,553,044 awarded \u00b7 patent_cluster: 477 grants, 50 IPC classes"
-      },
-      {
-        "ticker": "MU",
-        "score": 3,
-        "weighted_score": 1.1,
-        "channel_list": [
-          "insider_mspr",
-          "patent_cluster",
-          "stocktwits_bull"
-        ],
-        "why": "insider_mspr: MSPR 100.0 \u00b7 patent_cluster: 288 grants, 24 IPC classes \u00b7 stocktwits_bull: 100% bull \u00b7 213,009 watching"
-      },
-      {
         "ticker": "LUV",
         "score": 3,
         "weighted_score": 1.1,
@@ -28959,6 +28903,17 @@
         "why": "activist_13d: 13D activist campaign \u00b7 app_demand: 4.84\u2605 \u00d7 7,162,292 reviews \u00b7 trump: SOUTHWEST AIRLINES CO"
       },
       {
+        "ticker": "MSFT",
+        "score": 3,
+        "weighted_score": 1.1,
+        "channel_list": [
+          "app_demand",
+          "github_momentum",
+          "patent_cluster"
+        ],
+        "why": "app_demand: 4.77\u2605 \u00d7 19,988,683 reviews \u00b7 github_momentum: +0.32% stars \u00b7 patent_cluster: 318 grants, 38 IPC classes"
+      },
+      {
         "ticker": "ACM",
         "score": 2,
         "weighted_score": 1.1,
@@ -28966,7 +28921,7 @@
           "gov_contract_accel",
           "special_situation"
         ],
-        "why": "gov_contract_accel: $59,252,836, 3.4x accel \u00b7 special_situation: Strategic Reviews"
+        "why": "gov_contract_accel: $59,180,609, 3.4x accel \u00b7 special_situation: Strategic Reviews"
       },
       {
         "ticker": "MCK",
@@ -28976,7 +28931,18 @@
           "gov_contract_accel",
           "special_situation"
         ],
-        "why": "gov_contract_accel: $18,675,567, 5.2x accel \u00b7 special_situation: Divestitures"
+        "why": "gov_contract_accel: $18,646,383, 5.2x accel \u00b7 special_situation: Divestitures"
+      },
+      {
+        "ticker": "BA",
+        "score": 3,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "gov_grant",
+          "patent_cluster",
+          "stocktwits_bull"
+        ],
+        "why": "gov_grant: $7,820,571 federal grant/loan \u00b7 patent_cluster: 161 grants, 72 IPC classes \u00b7 stocktwits_bull: 69% bull \u00b7 197,131 watching"
       },
       {
         "ticker": "CEG",
@@ -29008,6 +28974,17 @@
           "trump"
         ],
         "why": "activist_13d: 13D activist campaign \u00b7 short_squeeze: 15.8d to cover, SI +0% \u00b7 trump: TEXAS PACIFIC LAND CORPORATION"
+      },
+      {
+        "ticker": "RDNT",
+        "score": 3,
+        "weighted_score": 1.0,
+        "channel_list": [
+          "short_squeeze",
+          "special_situation",
+          "trump"
+        ],
+        "why": "short_squeeze: 16.9d to cover, SI +4% \u00b7 special_situation: M&A / Divestitures \u00b7 trump: RADNET INC"
       },
       {
         "ticker": "MLM",
@@ -29050,6 +29027,37 @@
           "special_situation"
         ],
         "why": "analyst_upgrade_cluster: net upgrades +24 revision delta \u00b7 app_demand: 4.89\u2605 \u00d7 8,190,519 reviews \u00b7 special_situation: Strategic Reviews"
+      },
+      {
+        "ticker": "CAT",
+        "score": 2,
+        "weighted_score": 0.95,
+        "channel_list": [
+          "13f_add",
+          "insider_mspr"
+        ],
+        "why": "13f_add: Ascentis Wealth Management, LLC +$2,679,146,768 \u00b7 insider_mspr: MSPR 100.0"
+      },
+      {
+        "ticker": "QCOM",
+        "score": 3,
+        "weighted_score": 0.9,
+        "channel_list": [
+          "lobbying",
+          "patent_cluster",
+          "special_situation"
+        ],
+        "why": "lobbying: $2,320,000 lobbied \u00b7 patent_cluster: 791 grants, 43 IPC classes \u00b7 special_situation: Acquisitions"
+      },
+      {
+        "ticker": "NVS",
+        "score": 2,
+        "weighted_score": 0.9,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion"
+        ],
+        "why": "clinical_phase3_start: 8 new Phase-3, 4 halt(s) \u00b7 fda_label_expansion: PLUVICTO"
       }
     ]
   }

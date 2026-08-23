@@ -316,6 +316,9 @@ data/thetadata_eod/greeks/
 # Negation: keep the committed state + manifest files tracked even though the data subdirs above are excluded
 !data/thetadata_eod/_backfill_state.json
 !data/thetadata_eod/_manifest.json
+# AD-1T1 §B/F15: the crash-safe advisory writer flock — local coordination
+# state only, never committed and never uploaded to R2 (see publish_r2._uploadable).
+data/thetadata_eod/_writer.lock
 # (NOT R2) — not regenerable without re-scraping; critical H2a phase-0 evidence.
 # data/hk_shorts/ is intentionally NOT listed here; all files are committed.
 # ---- Slice G store decisions (2026-07-03) ------------------------------------
@@ -738,3 +741,7 @@ data/governance/.ceo_brief_last
 # redded the merge gate fleet-wide; ignoring the directory makes that
 # impossible at the plumbing instead of merely detected.
 data/qledger/control_evidence_clock_start/
+
+# E3-A eval shards. Bounded proof lives in the eval receipt, not the global ledger.
+/data/ai_costs/usage.d/e3a-pr6245-*.jsonl
+/research/earnings_intelligence/e3/gold/provider_health_*.jsonl

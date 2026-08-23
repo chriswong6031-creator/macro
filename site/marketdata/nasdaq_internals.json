@@ -1,12 +1,12 @@
 {
   "schema": "nasdaq_internals.v1",
-  "asof": "2026-08-22T05:01:01.890364+00:00",
+  "asof": "2026-08-23T04:11:25.725305+00:00",
   "benchmark": "QQQ",
-  "watermark_en": "Current Nasdaq-100 membership (as of 2026-08-22); historical composition approximated. Descriptive, display-only.",
-  "watermark_zh": "当前纳斯达克100成分股（截至 2026-08-22）；历史成分经近似处理。描述性展示，仅供参考。",
+  "watermark_en": "Current Nasdaq-100 membership (as of 2026-08-23); historical composition approximated. Descriptive, display-only.",
+  "watermark_zh": "当前纳斯达克100成分股（截至 2026-08-23）；历史成分经近似处理。描述性展示，仅供参考。",
   "ew_vs_qqq": {
-    "spread_20d": 4.6615,
-    "spread_60d": 4.8037,
+    "spread_20d": 4.6616,
+    "spread_60d": 4.8038,
     "pctile_1y": 79.45,
     "n_members": 55
   },
@@ -23,7 +23,7 @@
       "dispersion_20d": 9.8248,
       "state": "improving",
       "state_candidate": "improving",
-      "state_days": 4
+      "state_days": 5
     },
     {
       "id": "ai_capex_spenders",
@@ -37,7 +37,7 @@
       "dispersion_20d": 14.1398,
       "state": "lagging",
       "state_candidate": "lagging",
-      "state_days": 8
+      "state_days": 9
     },
     {
       "id": "edge_device",
@@ -51,21 +51,21 @@
       "dispersion_20d": 2.3351,
       "state": "lagging",
       "state_candidate": "lagging",
-      "state_days": 14
+      "state_days": 15
     },
     {
       "id": "software_enterprise",
       "label_en": "Enterprise Software",
       "label_zh": "企业软件",
       "n": 16,
-      "rs_20d": 17.8132,
-      "rs_60d": 18.6219,
-      "accel": 9.0347,
+      "rs_20d": 17.8136,
+      "rs_60d": 18.6223,
+      "accel": 9.0352,
       "breadth_above_50dma": 68.75,
-      "dispersion_20d": 14.7502,
+      "dispersion_20d": 14.75,
       "state": "leading",
       "state_candidate": "leading",
-      "state_days": 24
+      "state_days": 25
     },
     {
       "id": "cyber",
@@ -79,7 +79,7 @@
       "dispersion_20d": 11.8821,
       "state": "weakening",
       "state_candidate": "weakening",
-      "state_days": 9
+      "state_days": 10
     },
     {
       "id": "digital_services_media",
@@ -93,7 +93,7 @@
       "dispersion_20d": 14.6513,
       "state": "lagging",
       "state_candidate": "lagging",
-      "state_days": 8
+      "state_days": 9
     },
     {
       "id": "megacap_quality",
@@ -107,7 +107,7 @@
       "dispersion_20d": 12.0476,
       "state": "lagging",
       "state_candidate": "lagging",
-      "state_days": 9
+      "state_days": 10
     }
   ],
   "divergences": [

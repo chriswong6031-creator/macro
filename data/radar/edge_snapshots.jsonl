@@ -11141,3 +11141,7 @@
 {"date":"2026-08-21","kind":"ticker","subject":"META","ticker":"META","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
 {"date":"2026-08-21","kind":"ticker","subject":"CLSK","ticker":"CLSK","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
 {"date":"2026-08-21","kind":"ticker","subject":"MARA","ticker":"MARA","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
+{"date":"2026-08-21","kind":"ticker","subject":"PRGO","ticker":"PRGO","edge_score":77,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}
+{"date":"2026-08-21","kind":"ticker","subject":"COR","ticker":"COR","edge_score":41,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}
+{"date":"2026-08-21","kind":"ticker","subject":"V","ticker":"V","edge_score":27,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}
+{"date":"2026-08-21","kind":"ticker","subject":"SRE","ticker":"SRE","edge_score":1,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}

@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T02:17:22.814331+00:00",
-  "count": 1656,
+  "generated_at": "2026-08-23T06:21:14.606856+00:00",
+  "count": 1668,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -681,6 +681,185 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-iyrn0h4xdlf-25cbf9",
+      "title": "Should investors pay more attention to cash",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:49Z",
+      "summary_points": [
+        "**Cash Buffer Duration**: Maintain 2-5 year cash buffers to mitigate reinvestment risk and capture capital gains during adverse growth scenarios, with segmentation into everyday/core/investment categories.",
+        "**Fixed-Rate Instrument Strategy**: Lock in longer-term fixed-rate instruments to optimize liquidity and reduce exposure to interest rate volatility during market stress.",
+        "**Geopolitical Energy Shock**: Euro gas prices at 65.50/MWh (highest since Jan 2023) driven by US-Iran conflict, creating immediate inflationary pressure and necessitating strategic cash deployment.",
+        "**Inflation Data Trigger**: Euro 1-year inflation swap rate near one-month highs, signaling elevated inflation risk requiring proactive portfolio adjustments."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1iizyxnsaa9-79d888",
+      "title": "USDCAD",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:47Z",
+      "summary_points": [
+        "**USD CAD Near-Term Support, Medium-Term Decline**: Fed tightening expectations fading (markets pricing <25bps hikes by year-end) and BoC dovishness (weak Canada recovery, USMCA uncertainty) support near-term USD CAD; medium-term decline driven by fading Fed hawkishness, BoC caution, and USMCA trade tensions.",
+        "**Price Targets & Tactical Levels**: Year-end target 1.39, falling to 1.36 in 2027 (Fed rate cuts); sell above 1.40, strong support at 1.37.",
+        "**Critical Risks**: Canadian economy acceleration (CAD strength), unexpected Fed hikes, USMCA withdrawal, and global risk sentiment deterioration (pushing above 1.43)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zrplg4bl0zj-023299",
+      "title": "UBS Equity Preference List China Onshore Tech 2026 08 21",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:46Z",
+      "summary_points": [
+        "**Policy-Driven Semiconductor Catalyst**: China’s \"Digital China\" 2035 roadmap and $45bn National Integrated Circuit Fund accelerate semiconductor self-sufficiency, directly benefiting SOEs like CXMT (6.7% portfolio weight) amid US-China tech tensions.",
+        "**Portfolio Concentration Risk**: Heavy 6.7% weighting in semiconductors (7 of 12 holdings) amplifies exposure to US export controls, regulatory shifts, and DRAM cycle volatility (e.g., CXMT pricing uncertainty until 2H27).",
+        "**Sector Rating & Strategic Shift**: UBS rates China Onshore Tech \"Unattractive\" but adds CXMT/NAURA/SHENNA as \"Most Preferred\" due to policy tailwinds, while removing Shenzhen Inovance for weak 2H26 outlook.",
+        "**Key Risk Factor**: Geopolitical tensions (US sanctions, equipment access) threaten top holdings (e.g., AMEC, JIET Group), with talent shortages and wafer supply constraints limiting AI chip localization (CambriCon) and equipment growth (NAURA).",
+        "**Valuation Opportunity**: Multi-year policy support (semiconductor self-reliance, AI infrastructure) creates deep value for China tech firms, with hardware/semiconductor exposure trading below historical metrics despite sector risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fxyk7mqhdwo-a14890",
+      "title": "UBS Equity Preference List European Information Technology 2026 08 21",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:44Z",
+      "summary_points": [
+        "**ASML Dominance & Concentration Risk**: 57.0% portfolio weight in ASML (sole transistor shrink provider) creates severe single-stock concentration; Netherlands-centric holdings amplify country-specific exposure and regulatory execution constraints.",
+        "**Structural Growth Justifies Premium Valuation**: AI-driven semiconductor demand and cloud transition fuel 24% consensus EPS growth (2027); forward P/E of 28.2x (vs 15-yr avg 21x) deemed justified by Moore’s Law leadership and defensive software positioning.",
+        "**Critical Risk Factors**: AI disintermediation threatens software vendors (SAP, Capgemini); geopolitical volatility (supply chain, EU policies) and \"potential trading restrictions\" limit execution flexibility amid heavy semiconductor weighting.",
+        "**GAA Transition Catalyst & Sector Tailwinds**: ASM’s ALD/epitaxy expertise critical for FinFET-to-GAA shift (2nm node ramp); EU tech policies and AI data center power demand (Infineon) drive structural growth.",
+        "**UBS CIO Rating & Flow Implication**: 99.9% \"Most Preferred\" rating for European IT equities signals strong inflows; SAP/Adyen designated \"Most Preferred\" (active inflows) amid sector-wide momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lnq4vlevt0p-9368c0",
+      "title": "Consider capital preservation",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:44Z",
+      "summary_points": [
+        "**Capital Preservation Necessity**: Strategies limit losses while retaining upside, critical for low drawdown tolerance investors, near-term liquidity needs, and current interest rate environment viability.",
+        "**Low Volatility Advantage**: US/Eurozone low implied volatility reduces option costs, enhancing market participation; higher option prices can suppress participation rates.",
+        "**Asset Class Preference Framework**: Five-tier equity rating (Most Attractive to Least Attractive) guides allocation; driven by expected returns, House View scenarios, and analyst consensus, with tactical deviations permitted."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-akugcrauofb-703e74",
+      "title": "UBS Equity Preference List European Consumer Discretionary 2026 08 21",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:43Z",
+      "summary_points": [
+        "**Sector Valuation & Catalysts**: Near-cyclical low P/B valuations in European Consumer Discretionary, supported by end-demand stabilization (US policy, EU/China savings), cost control, and new product lines; top picks: Richemont, LVMH, Inditex.",
+        "**Currency & Liquidity Risk**: 72.5% EUR allocation with secondary CHF/GBP/SEK exposure, heightened liquidity risk during volatility due to UBS-identified trading restrictions.",
+        "**Jewelry Accessibility Shift**: Modest price increases and expanded entry/mid-price offerings (social media-driven desirability) boost accessibility for self-purchasing consumers, narrowing gap with luxury segments.",
+        "**Hermès China Vulnerability**: High-margin luxury resilience offset by critical exposure to China recovery delays, brand image erosion, and trade war/tariff impacts on supply chains.",
+        "**Sector Concentration Risk**: Retailers/apparel (H&M, Inditex, LVMH, Hermès) dominate at 46% weight, amplifying cyclical demand exposure and EU regulatory risks (e.g., sustainability mandates)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kebug8llueq-e90fca",
+      "title": "Position for market upside",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:41Z",
+      "summary_points": [
+        "**AI Capex Momentum**: Global AI investment to reach $1.2tr by 2027 (up from $900bn in 2026), driving earnings growth across semiconductors, software, power infrastructure, and industrials.",
+        "**Concentration Risk**: 40% of self-managed equity portfolios hold >10 stocks, necessitating reduced single-stock exposure and broader sector/region diversification while retaining innovation core.",
+        "**Beyond-Tech Growth Themes**: Prioritize industrials, financials, healthcare (oncology, cardio-metabolic, neurology), grid resilience, renewables, and critical minerals in Europe, Japan, India, China, and EM.",
+        "**Tactical Allocation Framework**: Five-tier equity rating system (collapsing to three tiers) critical for integrating equities with other asset classes and optimizing tactical positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ftzmvjvot3t-5f9eec",
+      "title": "Position for a commodity upcycle",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:38Z",
+      "summary_points": [
+        "**Geopolitical & structural catalysts**: US-Iran conflict heightens energy supply uncertainty, while AI infrastructure and electrification drive structural demand for industrial metals, supporting a commodity upcycle.",
+        "**Gold & energy exposure**: Gold’s August price surge (technical) and energy supply constraints (geopolitics) create opportunistic entry points for diversified commodity exposure amid inflation spillovers.",
+        "**Secular Demand Drivers**: Industrial metals (notably copper) exhibit price resilience due to electrification, energy transition, and AI infrastructure demand, overriding near-term growth concerns."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9gxwfv31xwd-e9d3f0",
+      "title": "Lock in yields",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:37Z",
+      "summary_points": [
+        "**Lock in yields via quality fixed income**: Recent bond market sell-off offers opportunity to lock attractive yields in short/medium-maturity quality bonds, with pricing reflecting over-tightening expectations that could reverse if economic data softens.",
+        "**Diversify income with equity and emerging market credit**: Amid geopolitical risks, select exposure to growth-sensitive segments like emerging market credit and high-yield debt to broaden income sources, avoiding overexposure to single credit segments.",
+        "**Corporate Fundamentals & Selectivity Imperative**: Balance sheets remain robust despite higher borrowing costs and economic uncertainty, but rising sector/issuer dispersion necessitates rigorous selectivity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-htxxpmh2sxx-c6d796",
       "title": "UBS Equity Preference List Taiwan 2026 08 21",
       "institution": "UBS",
@@ -698,6 +877,65 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fqgx9urzxzw-d6bbba",
+      "title": "How to diversify with alternatives",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:33Z",
+      "summary_points": [
+        "**Geopolitical Repositioning**: Credit stress and geopolitical uncertainty necessitate liquidity tolerance and selective diversification; equity hedge strategies (+9.5% HFR) remain top-performing amid elevated stock dispersion.",
+        "**Infrastructure Inflation Hedge**: Infrastructure assets provide resilient, inflation-linked returns superior to other yielding assets in volatility/inflation environments, offering robust diversification.",
+        "**Private Markets Diversification**: Private markets deliver critical portfolio diversification benefits amid stressed credit conditions and geopolitical headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9avnod1r8cb-8b8cdd",
+      "title": "UBS Equity Preference List Singapore 2026 08 21",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:30Z",
+      "summary_points": [
+        "**Singapore Equity Market Catalysts**: EQDP upsized to SGD 6.5bn (2023) confirms successful market reform execution; CPF Investment Scheme (2028) to provide liquidity support for Singaporean equities.",
+        "**Bank Sector Overexposure**: 61% weight in Banks (DBS, OCBC, UOB) creates significant interest rate sensitivity and regulatory risk exposure.",
+        "**DBS Group Holdings**: Structural ROE improvement (10-13% → 15-17%) driven by India wealth management; committed to raising dividends (yield >6%).",
+        "**CapitaLand REITs (CLAR/CICT)**: Defensive resilience via diversified portfolios (>200 properties), merger-driven growth (Ascendas-Singbridge >SGD 1bn assets), and organic retail/office recovery.",
+        "**Portfolio Adjustments**: Sembcorp removed (earnings miss, renewables volatility); Keppel/Keppel DC REIT weights increased (0.5% each) reflecting asset recycling conviction."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hgvmvj7e6h5-bed3b5",
+      "title": "Weekly viewpoints",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:29Z",
+      "summary_points": [
+        "**FEMO Earnings Momentum**: Global earnings growth outpaces revenue growth (eurozone earnings +20% annually, CHF 2B corporate tax surplus), with MSCI All Country World ex-US forward earnings at 36.9% (record high), driving market gains beyond tech.",
+        "**Geopolitical Infrastructure Shift**: Capital allocation shifts toward energy/data/cybersecurity due to \"new world disorder,\" evidenced by S&P 500 Energy Index +55.2% YTD and P/E compression (down 11.2%), reflecting structural resilience focus.",
+        "**AI-Security Megatrend**: Convergence of AI investment and security spending (govt-funded, 2.5-3.5% global GDP) creates sustained fiscal stimulus, directly supporting financial sector allocation and countering inflation narratives."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },

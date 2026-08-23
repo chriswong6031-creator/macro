@@ -288,12 +288,14 @@ waves:
       honestly open per R6.
   - id: A5A
     title: IMCE-A5A — event-workspace publication generalization (DHI/PHM/KBH/TOL results events through the existing event_workspace.v1 path; source truth only)
-    status: awaiting_ci
+    status: done
+    pr: 6270
     depends_on: [A4]
     next_action: >
-      BUILT — DRAFT PR open, pending the commissioning session's review and
-      merge (this record will not say "done" until that PR lands on
-      origin/main; update the status/commit hash then). Ran the registered
+      DONE — MERGED. PR #6270 landed as
+      5b8ca994de05345d3cea514c46c27611bfe496d1 (verified as this session's
+      origin/main ancestor pin via `git merge-base --is-ancestor`; A5B below
+      branches from this exact commit). Ran the registered
       homebuilder v0 experiment's SOURCE PLANE — nothing else —
       through the existing Company Intelligence event_workspace.v1 publication
       lane: no new source/event/document store, no new scheduler, no copied
@@ -333,6 +335,246 @@ waves:
       the diff — every new fixture/test is labelled historical/reconstruction.
       LEN/NVR are NOT added this wave (Sol: LEN outside v0; NVR separate
       stratum). Next gate: A5B (not yet scoped by this wave).
+  - id: A5B
+    title: IMCE-A5B — registered prospective forward capture (decision-time M_t/R_t/C_t observation ledger; zero outcome fields)
+    status: done
+    pr: 6281
+    depends_on: [A5A]
+    next_action: >
+      DONE — PR #6281 MERGED 9d14a3529d1c 2026-08-23T04:27:34Z (final head
+      84b0437cdbdc after sweeper update-branch; adjudicated content head
+      6018e67302ca; merge server-verified contained in origin/main), branched
+      from fresh origin/main pinned to the A5A merge SHA
+      5b8ca994de05345d3cea514c46c27611bfe496d1. Deployed classification:
+      BUILT_NOT_PROVEN (honest — activation_started_at stamps on the first
+      successful production nightly; no post-activation earnings event can
+      exist before it; PROVEN_LIVE requires a real DHI/PHM/KBH/TOL event with
+      source_available_at >= activation to flow source plane -> nightly
+      writer -> durable first observation -> measurement consumer).
+      One new bounded module
+      engine/cycle_pattern/imce_prospective.py (append-only JSONL,
+      activation/observation/correction row kinds, content-addressed
+      observation_id, first-observation-wins keying on
+      (event_id, decision_cutoff), activation-law fencing that also binds
+      contributing-issuer states — ENFORCED AT BOTH the builder script AND
+      (red-team M7 hardening, below) the module itself, independent of
+      caller discipline — an outcome-field blacklist assertion, and a
+      reconstruction/production write-path law enforced bidirectionally so
+      tests can never touch the production ledger). M_t's sign table, ≥2-
+      contributor pooling floor, tie handling, and label rule implement
+      research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md
+      VERBATIM and are UNCHANGED end to end (red-team-verified constant-exact
+      against the frozen doc; §2 lookup table, §3.1 ≥2-contributor pooling
+      floor with any tie typed MIXED, 4/4→cohort / 2-3→named_subset / <2→
+      NOT_RECONSTRUCTABLE label rule) — per-issuer CONTRIBUTOR ELIGIBILITY,
+      upstream of that verbatim arithmetic, gained two new gates in the
+      red-team fixes below (calendar-quarter pooling-key alignment;
+      denominator-convention conformance) — reusing A5A's own extracted facts
+      (fact_net_orders_current/prior_year, fact_cancellation_rate_current/
+      prior_year/denominator, plus TOL's beginning-quarter-backlog
+      sensitivity fact) — zero new threshold/model/issuer logic. TOL's §1b
+      mandatory sensitivity diagnostic is honestly NOT_RECONSTRUCTABLE this
+      wave (A5A's source plane extracts only the current-period backlog
+      figure, no prior-year comparator under that basis — a source-coverage
+      gap, never an imputed one). R_t reuses engine.htf_durability's
+      _biweekly_close + engine.technicals.macd_hist (classic 12/26/9),
+      PIT-bounded via engine.session_digest.session_window_et session-close
+      admissibility, reading the ticker's house-canonical plane via
+      engine.stock_identity.plane.primary_planes() (all four issuers resolve
+      to baskets_ohlcv_v1 — none are on the deeper stocks_tr_v1 plane — no
+      fallback across planes; the forbidden strings "2W-FRI"/"_resample_
+      weekly" are pinned absent by test). C_t captures Treasury CMT as an
+      honest typed absence (GO_LIMITED authorizes persistence but this repo
+      has no first-party Daily Treasury Par Yield Curve fetcher/store yet —
+      building one is new collector infrastructure, deferred rather than
+      improvised); PMMS held/never persisted, FRED/ALFRED/NAR excluded,
+      matching the registered contract's rights table exactly. Nightly
+      wiring: one step (build_cycle_pattern_imce_prospective) added to
+      daily.yml's cl_misc band via scripts/ci/daily_engine_regional_desk_builders.sh
+      (+ its ORDER string) and the matching config/dag.yml cl_misc block
+      ONLY (not render.yml's/engine-render.yml's separate cl_misc blocks,
+      which deliberately omit every other DAILY-ONLY forward-ledger writer
+      in this family) — verified by `pytest tests/test_dag_conformance.py`
+      (48 passed). The builder discovers candidate events via
+      engine.company_intelligence.events.canonical_event_id over a bounded
+      lookback window and reads them from the SAME public-origin R2 prefix
+      A5A already established. CORRECTED CLAIM (red-team N2 — the original
+      text here said "no second reader implementation," which the B3 fix
+      below made false): the builder's own
+      _raw_fetch_workspace/_load_workspace_with_disposition duplicates
+      scripts.refresh_event_workspaces.load_prior_workspace's base-URL
+      resolution and GET sequence on purpose, because that existing reader
+      is deliberately fail-soft for ITS OWN callers and cannot distinguish
+      a clean 404 from a network failure — exactly the distinction B3
+      requires. This is a real, named drift risk (two copies of one GET
+      sequence); the correct long-term fix is lifting a disposition-aware
+      fetch into refresh_event_workspaces.py itself, deliberately NOT done
+      in this PR (that file is A5A's, out of this build's scope). Consumer:
+      scripts/build_measurement.py gained build_imce_prospective_projection()
+      (registration state, activation timestamp, last decision cutoff,
+      per-issuer observation counts, cohort/named_subset/NOT_RECONSTRUCTABLE
+      counts, outcomes = fenced / 0 always) rendered as a new below-the-fold
+      subpanel in templates/measurement.html.j2 reusing the existing
+      Evidence-Gap panel's eg-* component set (no new visual language),
+      bilingual EN/ZH. No allowlist edit needed in
+      scripts/check_cycle_pattern_authority.py — both new files match its
+      existing scripts.build_cycle_pattern_/engine.cycle_pattern. prefixes.
+      New tests (tests/test_imce_prospective.py, 57 cases): activation
+      idempotence; first-observation-wins + duplicate no-op; correction
+      append with byte-exact original-packet immutability; activation-law
+      fencing + bidirectional reconstruction/production path enforcement;
+      the full order_softness lookup table + missing-never-zero +
+      no-state-carry-forward; the pooling floor/tie/label truth table; the
+      outcome-field blacklist over every declared token; PIT bar
+      admissibility against the REAL committed data/baskets/ohlcv/*.parquet
+      files (no network); the measurement projection rebuilding purely from
+      a reconstruction-mode ledger; and the cycle-pattern authority guard's
+      own selftest plus a direct scan of both new files. The production
+      ledger path is never created by this wave — this session verified
+      `data/cycle_pattern/imce_prospective_observation_v1.jsonl` does not
+      exist after the full test run; per frozen spec item 15 the file is
+      left for the first real nightly run to create (never pre-seeded empty
+      in git), because manufacturing even an empty pre-activation file risks
+      being read as a production timestamp before any real nightly has run.
+      Proof classification: BUILT_NOT_PROVEN, honestly — no real
+      post-activation earnings event can exist before the first post-merge
+      nightly; this wave does not backfill or manufacture one. Next gate:
+      whatever the commissioning session names after reviewing this draft
+      (a real post-activation observation is the natural A5B proof event).
+
+      RED-TEAM FIXES (same PR #6281, same branch — BLOCK verdict returned 3
+      blockers/4 majors/3 minors; M_t sign table/floor/tie/label logic
+      verified constant-exact and untouched by any fix below). B1: R_t
+      admissibility was daily-bar-only, so a truncated series could emit a
+      biweekly bar labelled by a FUTURE (not-yet-closed) period-end built
+      from a partial week — fixed by additionally filtering the biweekly
+      resample's own period-end dates through the same session-close
+      admissibility check; stamps last_biweekly_period_end; reproduced and
+      fixed against real DHI bars (Wed 2026-08-19 cutoff no longer admits
+      the 2026-08-21 period; sign flips + -> - exactly as the review
+      predicted once the period genuinely closes). B2: the outcome-field
+      blacklist was exact-match only — hardened to normalized-stem substring
+      matching (separator-stripped, lowercased) plus two added tokens
+      (fwd_ret, outcome); test-verified against forward_return_63d,
+      fwd_ret_21d, brier_score_90d, hit_rate_pct, p_value_two_sided,
+      sharpe_1y, forwardReturn, outcome, with an explicit no-false-positive
+      check against the real packet schema. B3: load_prior_workspace's own
+      fail-soft design (correct for ITS callers) meant the builder could not
+      tell a network failure from a genuine not-yet-published event —
+      addressed with an injectable-fetch classifier
+      (found/not_published/fetch_failed) mirroring load_prior_workspace's
+      own base-URL/manifest/workspace GET sequence without touching that
+      function or any other caller; ANY fetch_failed anywhere in a run now
+      defers every observation that run (no row written, activation not
+      stamped if this is the first run) — the roster is fixed and every
+      pooled read spans all four tickers, so one failure taints all of them
+      equally; the next nightly retries cleanly. M4: correction detection
+      keyed on exhibit sha256, which does not move on re-extraction, and an
+      8-K/A mints a new decision_cutoff, producing an unlinked second
+      observation instead of a correction — fixed at the module level
+      (append_observation now refuses a second observation for any event_id
+      that already has one, forcing the caller through append_correction)
+      plus a new packet_materially_differs() gate (generation_id change AND
+      a genuinely different derived per-issuer state — a cosmetic republish
+      is not material) that the builder uses to decide correction-worthy vs
+      no-op. M5: contributor snapshots had no recency bound at all — fixed
+      by implementing (mechanically, generically, from calendar_end alone)
+      the ACTUAL frozen calendar-quarter pooling key from
+      research/imce/IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md §4b ("Pooling
+      key (NEW) = calendar quarter by majority-month", verified
+      zero-collision across all six roster issuers) — NOTE: this is a more
+      precise, independently-verified, ALREADY-FROZEN source than the
+      review's own proposed "same-or-preceding-quarter" approximation, which
+      it therefore supersedes rather than contradicts; a misaligned
+      contributor is typed activation_law="stale_snapshot_outside_aligned_
+      quarter". M6: c_t leg observation_timestamp (and the R_t leg's new
+      read-time vintage stamp, added for item (i) below) sat inside the
+      hashed body, so two identical builds at different wall-clock times
+      minted different observation_ids — both keys are now stripped from
+      compute_observation_id()'s hashed body (never from the stored packet)
+      and a same-inputs-different-wall-time test proves identical ids. M7:
+      activation-law fencing lived only in the builder — append_observation
+      now independently rejects any packet whose decision_cutoff predates
+      the ledger's own activation row; every non-reconstruction write
+      (ensure_activation/append_observation/append_correction) now
+      additionally requires an explicit production=True, which only the
+      nightly's --production CLI flag (wired into cl_misc's brun call)
+      supplies — a bare invocation refuses every write; and the builder now
+      fetches candidates BEFORE calling ensure_activation, so a first run
+      whose manifest read fails never burns the activation clock. MIN8: TOL
+      sensitivity's prior-year value is now a REAL fact lookup
+      (fact_cancellation_rate_beginning_backlog_sensitivity_prior_year) —
+      honestly NOT_RECONSTRUCTABLE today because A5A does not yet emit that
+      fact_id, self-healing the day it does. MIN9: a new denominator-
+      convention conformance guard checks the captured
+      fact_cancellation_rate_denominator text against the construction
+      doc's §1 frozen per-issuer keywords, excluding the contributor on
+      mismatch. MIN10: pmms/fred_alfred/nar_series now carry the same full
+      C_t leg shape as treasury_cmt. Item (i): R_t's adjustment_basis no
+      longer implies a stable/frozen basis it cannot evidence — it now
+      states plainly that the plane back-adjusts at READ TIME, values are
+      not guaranteed stable across re-reads if a corporate action posts
+      retroactively, and sign stability holds only absent such an event;
+      `vintage` records the read-time timestamp, never a per-bar revision
+      vintage the plane does not itself carry. tests/test_imce_prospective.py
+      grew from 57 to 100 cases covering every fix above (including the
+      builder's fetch-disposition classifier and correction-routing logic,
+      via injectable stubs — still zero network). Re-verified after the
+      fixes: pytest tests/test_imce_prospective.py (100 passed);
+      tests/test_dag_conformance.py (48 passed, --production arg addition
+      does not disturb parsing); tests/test_issuer_profiles_a5a.py +
+      tests/test_build_cycle_pattern_state.py (no regression, combined
+      with the above: 186 passed); python3 scripts/agentos.py validate (0
+      errors); python3 scripts/check_cycle_pattern_authority.py (exit 0,
+      same pre-existing unrelated WARNs, 0 HARD). python3
+      scripts/check_contract_delta.py --base
+      5b8ca994de05345d3cea514c46c27611bfe496d1 FIRST caught a genuine
+      finding of its own (tests/test_imce_prospective.py "named by no run:
+      step in any workflow") — healed by adding the file to the existing
+      DISABLED (`if: ${{ false }}`) unrun-neuralweb-cortex job's
+      cycle_pattern pytest line in .github/ci/legacy-jobs.yml, next to its
+      closest sibling tests/test_build_cycle_pattern_state.py (that job's
+      sibling test_issuer_profiles_a5a.py lives in an identically-disabled
+      neural-web-core job — a pre-existing house pattern of "named but not
+      scheduled," satisfying audit_unrun_tests.py's naming contract without
+      inventing a new one); re-run after the heal: 0 introduced, 0
+      inherited. tests/test_ci_pack.py re-run clean after the
+      legacy-jobs.yml edit (no pack-weight/import-closure regression).
+
+      VERIFICATION-PASS RESIDUALS (same PR #6281, same branch — coordinator
+      APPROVED all 10 red-team findings fixed with zero regressions, then
+      named four small residuals, all closed in one commit). N1: the
+      blacklist alone was still stem-incomplete (bare "return_63d" passed);
+      per the reviewer's stronger requirement, added a frozen-schema
+      WHITELIST test asserting the exact key set of the packet's top level,
+      trigger, m_t, every per-issuer entry (+ TOL's sensitivity block), r_t
+      (+ every leg), c_t (+ every leg), and prophet_flags — any unexpected
+      key of ANY kind now fails loudly; the blacklist stays as unchanged
+      defence-in-depth (plus a trivial added "return" stem). N2: corrected
+      a false claim — the builder's fetch is NOT a reuse of
+      load_prior_workspace, it is a second, disposition-classifying
+      implementation that duplicates that function's GET sequence on
+      purpose (that reader cannot distinguish 404 from network error); both
+      the builder's own docstring and this record now name the drift risk
+      explicitly and point at lifting a shared implementation into
+      refresh_event_workspaces.py as future consolidation — deliberately
+      NOT done in this PR (out of scope, A5A's file). N3:
+      append_observation now RAISES on a same-(event_id, decision_cutoff)
+      collision whose derived content materially differs (via
+      packet_materially_differs) rather than silently trusting the key over
+      the content; a genuinely identical rebuild still no-ops. N4: the B3
+      all-or-nothing deferral now also emits a bare
+      print("::warning title=imce-prospective-deferred::...", flush=True)
+      alongside the existing log.warning, so it is visible in the Actions
+      summary — verified against tests/test_gh_annotation_line_start.py's
+      own conventions (scripts/ is a scanned, non-exempt directory).
+      tests/test_imce_prospective.py grew 100 -> 110 cases. Re-verified:
+      pytest tests/test_imce_prospective.py tests/test_gh_annotation_line_
+      start.py (114 passed); python3 scripts/agentos.py validate (0
+      errors); python3 scripts/check_contract_delta.py --base
+      5b8ca994de05345d3cea514c46c27611bfe496d1 (0 introduced, 0 inherited).
+      Production ledger path still never created by this session. PR stays
+      DRAFT pending the commissioning session's re-review.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's
@@ -353,13 +595,29 @@ next_action: >
   782b6e5703505af04ba21943b7d0a332853e286d and config_hash
   05b43f9119fd1fd357d3994bd652abbc3cdff3d8. The criteria commit strictly
   precedes all outcome access (attested in commit 0ae5c413471a); outcome
-  evaluation remains FENCED until boundary receipts exist (R6). Next
-  program priority per Sol: PROSPECTIVE OBSERVATION ACTIVATION — every
-  eligible future decision-time observation not captured from first
-  availability is permanently lost evidence; boundary receipting and
-  DHI/TOL historical archaeology are named future waves that must NOT
-  delay first-availability prospective capture. No issuer truth appended;
-  no runner built; awaiting Sol's next directive.
+  evaluation remains FENCED until boundary receipts exist (R6).
+  SOL'S FIFTH GATE (A5 — prospective observation activation) IS EXECUTED
+  (2026-08-22/23): A5A merged 5b8ca994de05 (PR #6270) and PROVEN LIVE —
+  the production company-intelligence lane published R2 generation
+  d7b994675fe59d0181643b8b carrying AAPL plus all four homebuilder
+  workspaces under correct fiscal identities, and the production reader
+  serves them (verified GET /api/event-workspace/DHI); A5B merged
+  9d14a3529d1c (PR #6281), classification BUILT_NOT_PROVEN — the forward
+  ledger data/cycle_pattern/imce_prospective_observation_v1.jsonl is
+  created by the first production nightly, whose successful run stamps
+  activation_started_at; PROVEN_LIVE awaits the first natural
+  post-activation DHI/PHM/KBH/TOL earnings event (next expected: KBH
+  FY2026 Q3, ~late Sep 2026). Outcomes remain FENCED — the observation
+  schema carries zero outcome fields by whitelist-tested construction.
+  Named source-coverage gaps riding to Sol: TOL §1b sensitivity
+  prior-year comparator not extracted by A5A (sensitivity diagnostic
+  NOT_RECONSTRUCTABLE until a source-plane extension); Treasury CMT
+  C_t leg typed-absent (GO_LIMITED permits persistence; no first-party
+  fetcher exists yet — natural next increment); workspace vintage
+  retrieval is latest-generation-only (re-extraction of a past event
+  rewrites the readable facts — correction records preserve what the
+  experiment knew, but as-of retrieval does not exist). No runner built;
+  no outcome computed; awaiting Sol's next directive.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."

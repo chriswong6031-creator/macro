@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.covariance_spine.v1",
-  "as_of": "2026-08-22",
+  "as_of": "2026-08-23",
   "display_only": true,
   "authority": "context",
   "descriptive_not_gauntleted": true,
@@ -19,8 +19,8 @@
       "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
-      "dominant_factor_pc_share": 0.5893,
-      "effective_factor_bets_pr": 2.5472,
+      "dominant_factor_pc_share": 0.5849,
+      "effective_factor_bets_pr": 2.5755,
       "n_factors_used": 7,
       "n_obs_used": 252,
       "caveat": "~3y history, annual fundamentals; descriptive only",
@@ -32,12 +32,12 @@
       "avg_corr": 0.06,
       "dominant_equity_pc_share": 0.1781,
       "effective_universe_bets_pr": 22.56,
-      "idio_dispersion_share": 0.7359
+      "idio_dispersion_share": 0.7358
     },
     "lobes": {
       "effective_independent_lobes": 1.0,
       "n_lobes_measurable": 1,
-      "n_lobes_total": 31,
+      "n_lobes_total": 32,
       "null_reference": {
         "null_median": 1.0,
         "null_p90": 1.0,
@@ -65,6 +65,7 @@
           "cn_importance_v0_pit": 10,
           "demand_chain": 1,
           "desk:ai_desk": 8,
+          "desk:policy_intent": 1,
           "desk:stock_desk": 8,
           "desk:thematic_desk": 6,
           "hk_board": 8,
@@ -107,6 +108,7 @@
       "cn_importance_v0_pit": 10,
       "demand_chain": 1,
       "desk:ai_desk": 8,
+      "desk:policy_intent": 1,
       "desk:stock_desk": 8,
       "desk:thematic_desk": 6,
       "hk_board": 8,

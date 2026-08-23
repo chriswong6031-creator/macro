@@ -1,35 +1,29 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-22T05:58:24+00:00",
-  "summary": "Context-only committee read: the measured tape remains risk-on, with healthy breadth, normalizing volatility, long-gamma absorption and systematic accounts adding. That does not constitute an all-clear. The confirmed US Q2/Reflation label is unsupported by current axes\u2014growth -0.067 and inflation +0.52 imply raw Q3, now pending for 5 of 7 confirmation sessions. Liquidity is contracting orderly, and credit remains the dominant rising scare at 63.4. The current WATCH tier is an early disagreement rather than a measured drawdown edge: its 21-session pullback incidence is 13.0% versus a 17.8% base rate. Factor evidence is immature: only 11 panel dates, history floor unmet, no Pair-G records, composite untradeable, and attention authority remains shadow. No signal, trade, ranking, sizing change, or escalation is originated here.",
+  "as_of": "2026-08-23T05:46:13+00:00",
+  "summary": "Context-only committee read: the measured tape remains risk-on with healthy breadth and normalizing volatility, but the macro label is internally unstable and credit is the principal unresolved watch. The confirmed US regime remains Q2 Reflation while its own axes read Q3, pending 5 of 7 confirmation sessions. Credit stress is the rising dominant radar component, yet the radar\u2019s measured 21-session pullback frequency is 13.0% versus a 17.8% base rate, so this is not a validated bearish edge or an all-clear. Liquidity is contracting in an orderly drain, while systematic flows are aligned adding and dealer gamma is long. Factor evidence is immature: only 10 panel dates, no Pair G records, no factor-attention history, and no tradeable composite. No signal, trade, ranking change, or escalation is originated here.",
   "what_fired": [
-    "Risk radar moved to WATCH with credit the dominant scare; credit sub-score remains elevated and de-escalation is ineligible.",
-    "Raw regime axes indicate Q3 while confirmed label remains Q2; Q3 confirmation is pending at 5 of 7 sessions.",
-    "One confluence contradiction identifies rising five-day OTM-put skew against open US buy-lane claims in BLDR, CIEN, ENTG, FORM, HEI, IREN, MGM and NNE; this is de-escalation context only.",
-    "China/HK remain Q4 with contracting liquidity; China also shows southbound outflow against hot turnover, consistent with a possible distribution conflict.",
-    "Four shadow attention items were recorded, each with a pre-committed falsifier. One conditional-regime hypothesis was registered for later evaluation."
+    "Four shadow attention items were recorded: the pending Q2-to-Q3 label transition; credit-versus-tape divergence; rising put-skew contradiction across nine US buy-lane names; and review of the open China-equities overweight thesis.",
+    "One metabolism hypothesis was registered for later testing: under risk-on breadth with credit-dominant radar deterioration, credit-sensitive relative performance may weaken before an index drawdown. Its pre-committed gate requires a median lead of at least 3 days across at least 20 comparable observations."
   ],
-  "contradictions_review": "The central contradiction is a resilient risk-on tape versus worsening credit context. Breadth is healthy and volatility calm, but credit is still the dominant rising scare; because the WATCH state's measured pullback rate is below base, this warrants observation rather than directional inference. The confirmed Q2 label also conflicts with its own current axes, which read raw Q3. Options show rising put skew against eight buy-lane names, but sector history does not support converting skew behavior into a bullish or bearish signal. Pair G is dormant because the factor panel has fewer than 60 dates, so absence of factor contradictions is absence of coverage, not agreement. The open master-brain China-overweight thesis conflicts with current China/HK Q4 regimes, contracting liquidity, weak-side HK peg and offshore outflow into hot turnover. Several other master-brain theses are past their check-by dates but remain open, which is an accountability/ledger-hygiene concern rather than evidence for their direction.",
+  "contradictions_review": "The confluence graph reports two current contradictions. First, 18 ticker-level demand-versus-supply divergences are reflected in the briefing; this is a note-level descriptive conflict. Second, nine buy-lane names have five-day-rising OTM-put skew as of 2026-08-13; this can only de-escalate confidence and is stale relative to the 2026-08-21 tape. Pair G factor contradictions are dormant because the panel has not reached 60 distinct dates. The broader macro tension is risk-on price/breadth and aligned systematic adding versus contracting liquidity, restrictive real yields, and rising credit-radar intensity. The risk radar itself remains below its measured pullback base rate and has no validated firing leg, limiting the interpretation to attention context. The open China-equities overweight thesis conflicts with current China/HK Q4 contracting-liquidity states, weak-side HK peg context, and southbound outflow into hot turnover; this deserves review, not a contrary position.",
   "decaying_families": [
-    "Radar family: Q2 five-day signed excess is negative (shrunken IC -0.004934) and 21-day Q2 signed excess is negative (-0.004565); all radar rows remain unarmed.",
-    "US-board family: Q2 five-day and ten-day signed excess are negative (shrunken IC -0.006167 and -0.004493); pooled out-of-sample results lose and the engine remains unarmed.",
-    "Desk families at 63 days are negative and unarmed: AI desk -0.010912 in Q2, stock desk -0.034652 in Q2, thematic desk -0.046260 in Q2.",
-    "Policy and White House families show negative signed excess with small samples and remain unarmed.",
-    "Alt-data has a positive short-horizon in-sample profile but loses pooled out of sample; its 21-day profile is slightly negative and remains unarmed.",
-    "Factor composite is non-tradeable; investment, low-vol, low-beta and composite have negative IC legs, while the live panel is too short for contradiction testing.",
-    "The spine query was capped at 200 rows and dominated by unsigned-MFE Canadian-board observations; those outcomes are context records and cannot establish directional reliability."
+    "Radar: Q2 five-day and 21-day signed-excess estimates are negative; the engine is unarmed despite large samples.",
+    "US board: Q2 five-day and ten-day signed-excess estimates are negative, and pooled out-of-sample performance loses; unarmed.",
+    "Policy and White House families: negative signed-excess estimates with limited or modest effective samples; unarmed.",
+    "AI, stock, and thematic desks: negative 63-day signed-excess estimates in Q2 and overall; all unarmed.",
+    "Factor composite: non-tradeable, with investment, low-volatility, low-beta, and composite legs carrying negative historical IC in a survivorship-biased scorecard."
   ],
   "deserves_operator": [
-    "US regime-label transition: resolve if raw Q3 completes 7 of 7 confirmation sessions, or clear if growth returns to non-negative before confirmation.",
-    "Credit versus tape disagreement: clear as benign only if credit_oas_roc stops climbing and the credit sub-score remains below 50 for five sessions; treat persistence as materially stronger only if a validated leg appears and measured 21-day pullback incidence rises above the 17.8% base rate.",
-    "Master-brain China-overweight thesis mb-2026-07-09-1: it currently conflicts with Q4 China/HK regimes, contracting liquidity, weak-side peg and southbound outflow; clear only if China transitions to Q1/Q2 and southbound flow normalizes above z=-1 while turnover stays supported.",
-    "US buy-lane options cohort: retain attention only while five-day OTM-put skew continues rising and the underlying buy-lane claim remains open; clear individual members after three consecutive observations without rising skew.",
-    "Review stale open master-brain theses whose check-by dates have passed, including semiconductor, Treasury, China, Bitcoin, high-yield and US-equity entries; score or retire through the governed human/script path.",
-    "Data-quality coverage: factor panel has only 11 dates, Pair G is dormant, options-flow history is immature with unrecoverable missing sessions, and several external sources failed. These gaps should constrain confidence in any apparent agreement."
+    "US regime label transition: verify whether raw Q3 completes 7 of 7 sessions while growth remains negative and inflation positive; otherwise resolve the attention item if growth returns non-negative before confirmation.",
+    "Credit-versus-tape divergence: retain attention only if the credit sub-score reaches 70 or HY OAS widens at least 25 bp while breadth remains above 65% over the 200-day average; remove if credit falls below 50 and HY OAS stays at or below 2.75% without a positive 20-day change.",
+    "Options contradiction: on the next refresh, resolve if at least 7 of 9 affected buy-lane names no longer show rising five-day put skew; retain only if at least 6 remain skew-rising and their median ten-day excess return is negative.",
+    "Master-brain China-equities overweight thesis mb-2026-07-09-1: review because current China/HK context conflicts with it. Resolve if China moves to Q1/Q2, southbound flow improves above -0.5 z, and the HK peg leaves weak-side; retain if China stays Q4 while southbound flow remains below -1 z or FXI underperforms SPY by 5% through the thesis window.",
+    "Ledger hygiene: multiple open master-brain theses are past their check-by dates but remain unscored, including semiconductor, Bitcoin, China, Treasury, credit, and US-equity theses. This is an accountability and decay issue, not evidence for a new view."
   ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-21",
+    "as_of": "2026-08-22",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -66,12 +60,12 @@
     "model_used": "claude-opus-4-8",
     "provider_attempts": [
       {
-        "provider": "codex",
-        "model": "gpt-5.6-sol",
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "auth",
+        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011CeK9jspVoGipcBJNwcoDj'}"
       },
       {
         "provider": "codex",
@@ -122,10 +116,10 @@
         "error_message": null
       }
     ],
-    "tool_call_batches": 6,
+    "tool_call_batches": 5,
     "individual_tool_calls": 10,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-22T05:44:18Z"
+    "context_as_of": "2026-08-23T04:54:34Z"
   }
 }

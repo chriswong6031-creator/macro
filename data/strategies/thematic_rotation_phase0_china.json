@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "china",
-  "generated_at": "2026-08-22T04:42:23.500251+00:00",
+  "generated_at": "2026-08-23T03:56:25.426307+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -95,13 +95,13 @@
         "cohorts": {
           "normal": {
             "mean_fwd_maxdd": -0.0954,
-            "p05_fwd_maxdd": -0.2455,
-            "n": 19013
+            "p05_fwd_maxdd": -0.2457,
+            "n": 19028
           },
           "stretched": {
             "mean_fwd_maxdd": -0.0974,
             "p05_fwd_maxdd": -0.221,
-            "n": 3630
+            "n": 3631
           },
           "parabolic": {
             "mean_fwd_maxdd": -0.1077,
@@ -109,7 +109,7 @@
             "n": 1900
           }
         },
-        "spearman_ez_vs_fwd_maxdd": -0.008
+        "spearman_ez_vs_fwd_maxdd": -0.007
       },
       "years": 8.7
     }
