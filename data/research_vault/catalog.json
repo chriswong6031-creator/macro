@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T22:10:11.275451+00:00",
-  "count": 1705,
+  "generated_at": "2026-08-23T23:10:10.639678+00:00",
+  "count": 1708,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -87,6 +87,26 @@
   ],
   "items": [
     {
+      "id": "marketdesk-4kzhonhjxzh-c31c33",
+      "title": "Bessents game of chicken with the bond vigilantes",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T21:46:10Z",
+      "summary_points": [
+        "**Treasury's Intervention Limits**: Doubled 10-30yr buybacks (up to $4bn) temporarily halted yield rises but yields rebounded, exposing unsustainable \"game of chicken\" with Fed; debt ceiling constraints (2027) limit Treasury's capacity, risking forced Fed intervention and credibility loss.",
+        "**Fundamental Yield Pressures**: Elevated inflation, AI-driven investment demand, and defense spending-driven deficits sustain yield pressures; Treasury’s shift to short-term debt is debt-ceiling constrained, amplifying market risk premiums.",
+        "**2027 Debt Ceiling Crisis**: Public debt nearing statutory limit (2027) with political hurdles (Democrats in House, GOP reluctance) preventing fiscal stabilization; unresolved fundamentals may force Fed to buy bonds, contradicting balance sheet reduction goals.",
+        "**Fed Intervention Risk**: Treasury’s exhaustion of intervention ammo (debt ceiling) could trigger unlimited Fed bond purchases, deepening fiscal space, disrupting market credibility, and escalating volatility amid oil supply disruptions and fiscal discipline erosion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-g6uqrtgtpmh-7a25a3",
       "title": "Week in Focus 24 28th August 2026 1",
       "institution": "Week Ahead",
@@ -148,6 +168,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-1dbuzpgkwhr-e10aed",
+      "title": "MS Japan Rates Strategy Fiscal Risk Keeps JGB Long End Under Pressure",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T17:13:21Z",
+      "summary_points": [
+        "**Fiscal Risk from FY2027 Budget**: METI’s JPY7.7T budget request (double 2023) signals fiscal deterioration beyond JPY3T last year, pressuring long-end JGBs despite Treasury buybacks; lack of revenue-side \"pay fors\" exacerbates debt cost risks.",
+        "**BoJ Hawkishness Constrains Inflation Premium**: Tighter financial conditions and BoJ policy limit room for inflation risk premium widening in JGB belly, suppressing yield upside despite fiscal stress.",
+        "**Geopolitical & Energy Volatility Pressures JGBs**: Middle East conflict-driven oil price spikes (geopolitics) combine with fiscal risks to keep long-end JGBs under pressure, with energy prices now a primary bear-steepening driver over fiscal concerns."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-64rlvdkdgeu-0aa6c6",
       "title": "MS Mike Wilson Weekly Warm up Broadening Persists Amid a Quality Rotation",
       "institution": "Morgan Stanley",
@@ -186,6 +225,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 25,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pyphlfz1gbr-2e9647",
+      "title": "Global Technology Semiconductor Capital Equipment Raising 2026 28 WFE estimates, driven by memory and foundry strength",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:45:09Z",
+      "summary_points": [
+        "**Raising 2026-28 WFE estimates**: Revised to $150/$218/$281B (+36%/+45%/+29% YoY) driven by memory (DRAM/NAND) and foundry strength, with DRAM (+45% YoY 2027) and Foundry ($58/$84/$109B) as primary engines.",
+        "**Key catalysts and risks**: TSMC N2 ramp, Samsung/SK Hynix CapEx hikes, SpaceX/Tesla Terafab demand, tight NAND supply (2027), and DRAM capacity constraints (2028) underpin bullish equipment stock outlook.",
+        "**WFE growth acceleration**: 45% 2026 growth (vs prior 32%), led by Foundry (+12% YoY) and DRAM (+3% YoY), with sustained 35% growth in 2028; NAND rebounds to +13% YoY 2028 after 2026 weakness.",
+        "**Application-specific drivers**: Leading-edge foundry ($150.3B 2026) and DRAM/HBM ($25.2B 2028) dominate growth, with Foundry and DRAM as primary growth engines through 2028."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
