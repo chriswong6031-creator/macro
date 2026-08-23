@@ -427,7 +427,7 @@ def is_linked_worktree(root: Path = ROOT) -> bool:
 # the occupied primary; a SessionStart/workspaceOpen hook that keyed only on
 # :func:`is_linked_worktree` would sparsify that 3.8 GiB tree on every Cursor
 # chat. Keep this tuple in step with ``config/worktree_gc.json`` roots plus the
-# Cursor/Grok in-repo worktree folders those harnesses mint.
+# Cursor/Grok/Warp in-repo worktree folders those harnesses mint.
 SESSION_WORKTREE_MARKERS: tuple[tuple[str, ...], ...] = (
     (".claude", "worktrees"),
     (".claire", "worktrees"),
@@ -435,6 +435,7 @@ SESSION_WORKTREE_MARKERS: tuple[tuple[str, ...], ...] = (
     (".codex-worktrees",),
     (".cursor", "worktrees"),
     (".grok", "worktrees"),
+    (".warp", "worktrees"),
 )
 
 
@@ -573,7 +574,7 @@ def apply_profile(root: Path = ROOT, exclude_dirs: list[str] | None = None) -> i
 def auto_profile(root: Path = ROOT, config_path: Path | None = None) -> int:
     """Apply the configured profile once to a newly created linked worktree.
 
-    This is the safe entry point for Codex/Cursor/Grok lifecycle automation.
+    This is the safe entry point for Codex/Cursor/Grok/Warp lifecycle automation.
     It deliberately skips the primary checkout, skips a linked checkout that
     is not under a session worktree root (the operator's designated local
     root is one of those), and preserves any sparse selection already present

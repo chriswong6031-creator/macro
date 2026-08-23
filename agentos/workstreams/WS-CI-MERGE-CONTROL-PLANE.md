@@ -21,27 +21,20 @@ discoveries:
 waves:
   - id: W-TRANSPORT
     title: Bounded changed-files transport across CI and self-mod fences
-    status: awaiting_ci
+    status: done
     pr: [5608, 6223]
     note: >
-      PR 5608 landed the cross-job contract: the changed-file list rides the
-      ci-changed-files artifact, its sha256 joins plan_hash_payload so
-      --expect-plan-sha pins it, children read CI_CHANGED_FILES_FILE, and the
-      CI_CHANGED_FILES_JSON env/output hops are deleted. FF PR 5898 fence run
-      32546500471 then exposed a second terminal copy: both same-repository and
-      fork self-mod live checks rebuilt the changed paths and complete commit
-      messages as shell variables and expanded them into checker argv, so the
-      process could die with E2BIG before policy evaluation. The bounded repair
-      in PR 6223 keeps the exact ancestry/range proof and moves both populations
-      to files, with only their paths crossing argv.
-      Evidence: DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING and
-      DSC:CI-SELF-MOD-FENCE-ARGV-BYPASSES-BOUNDED-TRANSPORT. This wave remains
-      awaiting exact-head proof that the checker process launches and emits
-      the intended policy verdict, then merged/current-main proof.
-    next_action: >
-      Sol/Fable reviews the bounded self-mod transport PR; after merge, rerun
-      fences on unchanged FF PR 5898 head 47d3b4b49e7191e72576ebc6e7495748ab1c8164
-      and confirm the required self-mod-fence reaches policy evaluation.
+      PR #5608 landed bounded planner-to-pack changed-file transport. PR #6223
+      merged as bc0a9cd896401fae7ec19a208b3a5017cc8d13a6 and moved both
+      same-repository and fork self-mod populations into files while
+      preserving exact ancestry/range proof. The original #5898 fences run
+      32546500471 failed before Python started with E2BIG. The authorized
+      tree-preserving #5898 refresh kept the reviewed tree, and fences run
+      32602516677 invoked the live checker through bounded file handles,
+      emitted the actual PASS policy verdict, and showed no E2BIG or exit 126.
+      #5898 then merged as 21f51a1ecfed778a738b048bd7e5efd30b1d9336;
+      current main contains both repairs. No policy weakening, parallel
+      transport, or separate runner path was introduced. W-TRANSPORT is done.
   - id: W-REWRITE
     title: Structural rewrite of planner/merge control plane
     status: in_progress
@@ -75,21 +68,20 @@ waves:
       complete W-REWRITE or any CI-speed/scoping wave.
   - id: W-PR-EVENT-CAUSALITY
     title: Candidate authority and lifecycle-event causality closure
-    status: awaiting_ci
+    status: done
+    pr: 6252
     note: >
-      PR #6223 exposed two control-plane defects without changing its subject:
-      ci-authority treated mutable same-ref base-tip equality as candidate
-      identity, and a delayed closed event shared semantic CI's concurrency group
-      and cancelled a later reopened proof. The repair candidate keeps the event
-      base SHA plus live base observations as receipt provenance, binds authority
-      to the exact PR/head/repositories/base ref/author/actor/file inventory/admin
-      permissions, and conditionally reacquires the bounded inventory when the
-      base advances across pagination. Semantic CI remains sole authority for the
-      exact synthetic merge and tested base. ci.yml now admits only opened,
-      synchronize, and reopened proof events; closed cannot enter the proof slot.
-      Awaiting exact-head old-authority, semantic, fence, and workflow proof plus
-      merged-main containment. Evidence:
-      DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY.
+      PR #6252 closed both causality races and merged as
+      27711c21665788bb9804b05b03a2587860679646. Candidate authority no
+      longer treats mutable same-ref live-base equality as candidate identity,
+      while semantic CI remains the sole exact synthetic-merge/base proof;
+      `closed` no longer enters the PR proof trigger or concurrency slot, so
+      only opened, synchronize, and reopened produce proof. Exact-head evidence
+      is semantic CI 32593286806, fences 32593286723, and ci-authority
+      32593286769, all successful on subject 004452e517ca277596008ab3623beca3f707fa33.
+      Current main contains the merge. No replacement cancellation service,
+      semantic-proof weakening, or Fundamental Forensics change was introduced.
+      Evidence: DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY.
   - id: W-GATE-SPLIT
     title: Merge gate tests code against fixtures; data receipts post-nightly
     status: in_progress
@@ -135,13 +127,11 @@ waves:
       the data-gated workflow-yaml job (data-health lane); owners' follow-up,
       deliberately not absorbed.
 next_action: >
-  First, prove W-PR-EVENT-CAUSALITY under the pre-existing authority system on
-  its exact candidate head: authority mutation battery, workflow lifecycle and
-  syntax checks, semantic ci-gate and contract-delta, fences, and active
-  ci-authority/main must all conclude green before normal merge; then prove
-  current main contains the repair. Do not use the candidate's proposed
-  authority semantics to justify its own landing. After that, verify
-  contract-delta appears and behaves on the next few ordinary PRs
+  W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
+  new CI-speed, runner, branch-protection, or cancellation-system proposal.
+  Continue W-GATE-SPLIT and W-CONTRACT-DELTA only under their existing evidence
+  gates; W-REWRITE remains separately commissioned. Verify contract-delta
+  appears and behaves on the next few ordinary PRs
   (inherited-immune, catches introduced closure/unwired defects); confirm
   the armed backlog fully drains post-breaker-open (21 -> 17 within an hour
   of the 19:06Z green). Then W3 at >=72h from the W2 merge (~08-22):

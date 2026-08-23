@@ -42,9 +42,17 @@ waves:
       production reproof passed with exact receipts, Macro-Terminal canonical
       agreement, durable cleanup to the sealed 13-row multiset, and unchanged
       Watchlists (agentos/handoffs/MARKET-OS-2026-08-22.md). Remaining before
-      status done: the separately authorized broader authenticated production
-      scenes and privacy inspection, followed by Sol review and acceptance. Do
-      not execute Scene 9 or begin A1B without separate authority, and do not
+      status done: PR #6257 proved that the existing authenticated owner-scoped
+      path preserves explicit row identity and semantic fields but production
+      rewrites created_at and updated_at. Under
+      DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS, those
+      two server-generated fields alone are excluded from A1A restoration
+      equality; the semantic-v2 row fingerprint plus a separate authoritative
+      ordered-id seal remain exact. Before any canonical evacuation, execute one
+      new temporary-row delete-and-restore proof under ordinary owner RLS, remove
+      the probe permanently, prove the 13-row semantic-v2 and ordered-id seals plus
+      both Watchlist seals unchanged, and return for fresh destructive authority.
+      Do not execute Scene 9 or begin A1B without separate authority, and do not
       mark A1A done before Sol accepts it.
   - id: A1B
     title: Portfolio Fast Start Import
@@ -89,6 +97,7 @@ waves:
 decisions:
   - "DEC:MARKET-OS-WATCHLIST-PORTFOLIO-SEPARATE-TRUTH-UNIFIED-EXPERIENCE"
   - "DEC:MARKET-OS-PORTFOLIO-TRUTH-PRECEDES-FAST-IMPORT"
+  - "DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS"
 discoveries:
   - "DSC:MARKET-OS-PASTE-FLOW-WRITES-WATCHLIST-NOT-PORTFOLIO"
   - "DSC:MARKET-OS-AUTHENTICATED-PORTFOLIO-FAILS-OPEN-TO-LOCAL"
@@ -113,6 +122,12 @@ landmines:
   - >-
     Terminal PR #429 changes large-Portfolio quote demand; Terminal consumer work must
     re-census its disposition before editing PortfolioView or quote-demand paths.
+  - >-
+    A1A semantic-v2 restoration excludes only created_at and updated_at because they
+    are server-generated metadata. Never broaden that exception to identity, owner,
+    semantic fields, multiplicity, Watchlists, Macro-Terminal agreement, or the
+    separately sealed ordered row-id sequence; the exception changes no product or
+    database semantics for either timestamp.
 do_not_redo:
   - Do not create another Portfolio, Watchlist, event, identity, risk, or brief store.
   - Do not merge Watchlist attention membership into Portfolio ownership semantics.
@@ -123,19 +138,27 @@ do_not_redo:
   - Do not let LLM output originate a signal, rank, gate, size, forecast probability, or trade decision.
   - Do not treat the six-tab Risk Center or giant inline drawers as the final flagship design.
   - Do not call infrastructure or green CI product completion without a real production user journey.
+  - Do not attempt to preserve created_at or updated_at during the bounded A1A restore; omit both and let production generate them.
+  - Do not delete a canonical Portfolio row before the new semantic-v2 temporary-row restoration proof passes and Sol grants fresh action-time authority.
 artifacts:
   - research/market_os/MASTERMIND_MARKET_OS_ARCHITECTURE_FREEZE_AND_A1A_COMMISSIONING_2026-08-20.md
   - agentos/handoffs/MARKET-OS-2026-08-20.md
   - agentos/handoffs/MARKET-OS-2026-08-21.md
   - agentos/handoffs/MARKET-OS-2026-08-22.md
+  - agentos/handoffs/MARKET-OS-2026-08-22-a1a-restoration-blocker.md
 next_action: >
   A1A engineering is merged and live (#6136, 2633380f800a). PD1 Terminal repair
   #456 is also merged/live at 3f85efeb19bd, and its bounded authenticated
   one-sentinel production reproof passed with durable cleanup and unchanged
-  Watchlists. Resume only the remaining separately authorized authenticated A1A
-  scenes and privacy inspection, then return the full packet for Sol's explicit
-  acceptance. Scene 9 remains excluded, and A1B plus every later dependent wave
-  remain blocked on Sol accepting A1A in production.
+  Watchlists. PR #6257 then proved the ordinary authenticated owner path preserves
+  explicit identity and semantic fields while rewriting only created_at and updated_at.
+  Apply DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS now:
+  execute exactly one new temporary-row semantic-v2 delete-and-restore proof, omit
+  both server timestamps on restore, permanently delete the probe, and prove the
+  canonical 13-row semantic-v2, ordered-id, and Watchlist seals unchanged. Return
+  that receipt for fresh destructive authorization before any canonical evacuation.
+  Scene 9 remains excluded, and A1B plus every later dependent wave remain blocked
+  on Sol accepting A1A in production.
 ---
 
 ## Current state

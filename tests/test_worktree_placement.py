@@ -145,6 +145,7 @@ def test_macro_local_root_pointing_elsewhere_is_ignored(clone: dict, monkeypatch
 @pytest.mark.parametrize("root", [
     ".claude/worktrees/", ".claire/worktrees/", ".codex/worktrees/",
     ".codex-worktrees/", ".cursor/worktrees/", ".grok/worktrees/",
+    ".warp/worktrees/",
 ])
 def test_every_fleet_root_is_climbed_out_of(root: str) -> None:
     owner = Path("/repo")

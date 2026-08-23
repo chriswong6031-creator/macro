@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
-  "as_of": "2026-08-22",
-  "generated_utc": "2026-08-22T20:52:00.000392+00:00",
+  "as_of": "2026-08-23",
+  "generated_utc": "2026-08-23T00:20:59.137713+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": "The strongest measured convergence is concentrated in AI/cloud demand, aerospace policy exposure, and selected event-driven situations, but several scores rely partly on affiliation or sentiment rather than hard capital-flow evidence. With no completed outcomes in the track record, conviction remains modest and only non-extended names qualify for accumulation.",
   "brain_present": true,
@@ -20,8 +20,8 @@
     "open": 15,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 89,
-  "n_broken": 26,
+  "n_signals": 88,
+  "n_broken": 27,
   "signals": [
     {
       "ticker": "MSFT",
@@ -462,36 +462,6 @@
       "clamped": null
     },
     {
-      "ticker": "PFE",
-      "signal_score": 41,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.2,
-      "convergence_score": 3,
-      "channels": [
-        "clinical_phase3_start",
-        "fda_label_expansion",
-        "lobbying"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 6.7,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -0.6,
-      "ret_20d": 14.4,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "TSLA",
       "signal_score": 41,
       "conviction": "high",
@@ -664,36 +634,6 @@
       "clamped": null
     },
     {
-      "ticker": "TXT",
-      "signal_score": 38,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.2,
-      "convergence_score": 3,
-      "channels": [
-        "gov_contract",
-        "insider_mspr",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": null,
-      "no_price_data": true,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": null,
-      "ret_20d": null,
-      "above_50dma": null,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "RTX",
       "signal_score": 38,
       "conviction": "medium",
@@ -841,36 +781,6 @@
       "ret_20d": 2.2,
       "above_50dma": true,
       "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "IBM",
-      "signal_score": 34,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.15,
-      "convergence_score": 3,
-      "channels": [
-        "github_momentum",
-        "gov_contract",
-        "patent_cluster"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -9.3,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -27.9,
-      "ret_20d": 10.8,
-      "above_50dma": false,
-      "entry_tier": "T1",
       "affiliations": [],
       "n_affiliated_actors": 0,
       "thesis": null,
@@ -1027,6 +937,35 @@
       "clamped": null
     },
     {
+      "ticker": "PFE",
+      "signal_score": 31,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.9,
+      "convergence_score": 2,
+      "channels": [
+        "clinical_phase3_start",
+        "fda_label_expansion"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 6.7,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -0.6,
+      "ret_20d": 14.4,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "IP",
       "signal_score": 31,
       "conviction": "medium",
@@ -1113,6 +1052,75 @@
       "second_order": [],
       "falsifier": null,
       "clamped": null
+    },
+    {
+      "ticker": "MSTR",
+      "signal_score": 30,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "material_8k"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -25.0,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -66.8,
+      "ret_20d": 30.1,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Michael Saylor",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        },
+        {
+          "actor": "Michael Saylor",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        }
+      ],
+      "n_affiliated_actors": 2,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "COR",
+      "signal_score": 30,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.75,
+      "convergence_score": 2,
+      "channels": [
+        "material_8k",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 17.0,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -14.6,
+      "ret_20d": 2.8,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
     }
   ],
   "broken_signals": [
@@ -1143,6 +1151,43 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "QCOM",
+      "signal_score": 39,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.4,
+      "convergence_score": 4,
+      "channels": [
+        "affiliation",
+        "lobbying",
+        "patent_cluster",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -33.2,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -35.7,
+      "ret_20d": -3.7,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Tommy Tuberville",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        }
+      ],
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -1289,42 +1334,6 @@
       "clamped": null
     },
     {
-      "ticker": "QCOM",
-      "signal_score": 29,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.1,
-      "convergence_score": 3,
-      "channels": [
-        "affiliation",
-        "patent_cluster",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -33.2,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -35.7,
-      "ret_20d": -3.7,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Tommy Tuberville",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        }
-      ],
-      "n_affiliated_actors": 1,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "CAT",
       "signal_score": 27,
       "conviction": "medium",
@@ -1375,6 +1384,35 @@
       "ret_20d": -1.9,
       "above_50dma": false,
       "entry_tier": "T2",
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "HON",
+      "signal_score": 23,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.85,
+      "convergence_score": 2,
+      "channels": [
+        "insider_mspr",
+        "lobbying"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -13.1,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -16.3,
+      "ret_20d": -10.9,
+      "above_50dma": false,
+      "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
       "thesis": null,

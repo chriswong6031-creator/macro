@@ -40,18 +40,16 @@ waves:
     title: Catalyst Radar — Trial Milestones first slice
     status: in_progress
     next_action: >
-      Review fixes implemented on the existing held PR #6191: exact RFC 6901
-      source-pointer attribution for both milestone date kinds; complete
-      bounded oldest-to-newest public lineage with a newest-first labelled UI;
-      current/upcoming/unusable/occurred server priority before pagination;
-      honest overlap-safe/source-evidence copy; and a real Chromium desktop,
-      mobile and EN/ZH pass. The browser pass found and closed a 390px chip
-      clipping defect. HOLD-FOR-SOL remains; no merge-on-green, merge, deploy,
-      P1-2, source/cadence/cohort or authority change is authorized. NEXT: Sol
-      reviews the final exact PR head recorded in the PR's final-review comment.
-      Only after approval may merge → deploy → real entitled production proof
-      occur. Handoff:
-      agentos/handoffs/BIOCATALYST-CORE-PRODUCT-2026-08-21.md.
+      Sol reviews the records-only P1-1 production-acceptance failure receipt.
+      The merged/deployed API, entitlement, safety, current generation, real
+      evidence inspector, three-entry lineage and exact 390px EN/ZH journey
+      passed, but both real desktop languages failed the no-clipping gate: each
+      Radar flex row stayed about 96px high while its live content required
+      116-150px, so metadata/date blocks escaped their row and collided with
+      the next row. P1-1 remains in_progress; PROVEN_LIVE_COHORT_LIMITED is not
+      claimed. Only Sol may authorize the bounded Radar-only desktop flex-size
+      repair described in the 2026-08-22 receipt. No runtime edit, P1-2,
+      source/cadence/cohort, soak or authority change is authorized.
 decisions:
   - "DEC:BIOCATALYST-P1-FIRST-VERTICAL-MILESTONE-RADAR"
   - "DEC:BIOCATALYST-PDUFA-TRUTH-IS-CORPORATE-DISCLOSURE-PLANE"
@@ -121,16 +119,20 @@ do_not_redo:
     terminal; a future milestone may be marked inactive because of trial
     status without inventing an event-cancellation fact.
   - >-
-    Do not present four-NCT-cohort production success as functional parity.
-    P1-1 acceptance over the current cohort is PROVEN_LIVE_COHORT_LIMITED;
-    the parity ledger stays PARTIAL until post-soak breadth exists.
+    Do not present healthy four-NCT API/mobile production evidence as P1-1
+    acceptance or functional parity while the desktop row-clipping blocker is
+    open. PROVEN_LIVE_COHORT_LIMITED is not claimed until a Sol-authorized
+    repair passes a new real production matrix; the parity ledger stays PARTIAL
+    even after that narrower gate eventually passes.
 artifacts:
   - research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md
   - research/BIOCATALYST_P1_CONTINUATION_HANDOFF_2026-08-20.md
+  - research/BIOCATALYST_P1_1_PRODUCTION_ACCEPTANCE_2026-08-22.md
 next_action: >
-  Sol reviews the final held head of PR #6191. Do not merge or deploy until Sol
-  releases HOLD-FOR-SOL; post-approval completion still requires normal merge,
-  deployment, and a real entitled production journey.
+  Sol reviews the records-only P1-1 production-acceptance failure receipt and
+  decides whether to authorize its bounded Radar-only desktop flex-size repair.
+  P1-1 stays in_progress; do not merge the held records PR, change runtime,
+  claim PROVEN_LIVE_COHORT_LIMITED, or start P1-2 before that ruling.
 ---
 
 ## Context

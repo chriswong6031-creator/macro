@@ -1,5 +1,5 @@
 {
- "asof": "2026-08-21",
+ "asof": "2026-08-22",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -37,7 +37,7 @@
     {
      "name": "AVB",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-20) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-21) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "ECHO",
@@ -47,7 +47,7 @@
     {
      "name": "EQR",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-20) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-21) but no current NASDAQ/NYSE listing"
     }
    ]
   },
@@ -474,7 +474,7 @@
     {
      "name": "MOV",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9962) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "MPAA",
@@ -494,7 +494,7 @@
     {
      "name": "MYE",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9985) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "MYGN",
@@ -514,7 +514,7 @@
     {
      "name": "NKTR",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9996) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "NP",
@@ -554,7 +554,7 @@
     {
      "name": "OSPN",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9999) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "OSUR",
@@ -594,7 +594,7 @@
     {
      "name": "RGP",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9967) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "RGR",
@@ -609,12 +609,12 @@
     {
      "name": "RILY",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9982) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "RMAX",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9982) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "RPT",
@@ -806,7 +806,7 @@
   "ticker_key_migrations": {
    "SATS": "ECHO"
   },
-  "ledger_rows": 59287
+  "ledger_rows": 59394
  },
  "grace_days": 30,
  "stale_calendar_days": 7,
@@ -843,12 +843,12 @@
    "delisted_printing": [
     {
      "ticker": "AVB",
-     "store_tip": "2026-08-20",
+     "store_tip": "2026-08-21",
      "acked": false
     },
     {
      "ticker": "EQR",
-     "store_tip": "2026-08-20",
+     "store_tip": "2026-08-21",
      "acked": false
     }
    ]
@@ -1082,8 +1082,8 @@
     {
      "ticker": "BBBY",
      "registry_last": "2023-05-19",
-     "store_tip": "2026-08-20",
-     "days_past_death": 1189,
+     "store_tip": "2026-08-21",
+     "days_past_death": 1190,
      "overlap": {
       "n_overlap": 2362,
       "ret_corr_full": 0.9305,
@@ -1874,11 +1874,11 @@
     },
     {
      "ticker": "MLAB",
-     "registry_last": "2025-09-22",
+     "registry_last": "2025-11-20",
      "store_tip": "2026-08-21",
-     "days_past_death": 333,
+     "days_past_death": 274,
      "overlap": {
-      "n_overlap": 1059,
+      "n_overlap": 1766,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -1900,14 +1900,14 @@
     },
     {
      "ticker": "MOV",
-     "registry_last": "2024-10-01",
+     "registry_last": "2024-11-29",
      "store_tip": "2026-08-21",
-     "days_past_death": 689,
+     "days_past_death": 630,
      "overlap": {
-      "n_overlap": 816,
-      "ret_corr_full": 0.9965,
-      "ret_corr_recent": 0.9962,
-      "min_ret_corr": 0.9962
+      "n_overlap": 1522,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
@@ -1952,24 +1952,24 @@
     },
     {
      "ticker": "MYE",
-     "registry_last": "2024-11-27",
+     "registry_last": "2025-01-24",
      "store_tip": "2026-08-21",
-     "days_past_death": 632,
+     "days_past_death": 574,
      "overlap": {
-      "n_overlap": 857,
-      "ret_corr_full": 0.9991,
-      "ret_corr_recent": 0.9985,
-      "min_ret_corr": 0.9985
+      "n_overlap": 1558,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
     {
      "ticker": "MYGN",
-     "registry_last": "2026-03-23",
+     "registry_last": "2026-05-21",
      "store_tip": "2026-08-21",
-     "days_past_death": 151,
+     "days_past_death": 92,
      "overlap": {
-      "n_overlap": 1184,
+      "n_overlap": 1890,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -1978,11 +1978,11 @@
     },
     {
      "ticker": "NBR",
-     "registry_last": "2025-03-24",
+     "registry_last": "2025-05-22",
      "store_tip": "2026-08-21",
-     "days_past_death": 515,
+     "days_past_death": 456,
      "overlap": {
-      "n_overlap": 934,
+      "n_overlap": 2865,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -2004,24 +2004,24 @@
     },
     {
      "ticker": "NKTR",
-     "registry_last": "2023-04-05",
+     "registry_last": "2023-06-02",
      "store_tip": "2026-08-21",
-     "days_past_death": 1234,
+     "days_past_death": 1176,
      "overlap": {
-      "n_overlap": 442,
-      "ret_corr_full": 0.9999,
-      "ret_corr_recent": 0.9996,
-      "min_ret_corr": 0.9996
+      "n_overlap": 1587,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
     {
      "ticker": "NTGR",
-     "registry_last": "2023-09-18",
+     "registry_last": "2023-11-16",
      "store_tip": "2026-08-21",
-     "days_past_death": 1068,
+     "days_past_death": 1009,
      "overlap": {
-      "n_overlap": 555,
+      "n_overlap": 1262,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -2043,11 +2043,11 @@
     },
     {
      "ticker": "OFIX",
-     "registry_last": "2023-12-18",
+     "registry_last": "2024-02-15",
      "store_tip": "2026-08-21",
-     "days_past_death": 977,
+     "days_past_death": 918,
      "overlap": {
-      "n_overlap": 619,
+      "n_overlap": 1323,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -2082,11 +2082,11 @@
     },
     {
      "ticker": "ORGO",
-     "registry_last": "2023-03-20",
+     "registry_last": "2023-05-18",
      "store_tip": "2026-08-21",
-     "days_past_death": 1250,
+     "days_past_death": 1191,
      "overlap": {
-      "n_overlap": 430,
+      "n_overlap": 771,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -2095,24 +2095,24 @@
     },
     {
      "ticker": "OSPN",
-     "registry_last": "2023-12-18",
+     "registry_last": "2024-02-15",
      "store_tip": "2026-08-21",
-     "days_past_death": 977,
+     "days_past_death": 918,
      "overlap": {
-      "n_overlap": 619,
-      "ret_corr_full": 0.9999,
+      "n_overlap": 1323,
+      "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
-      "min_ret_corr": 0.9999
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
     {
      "ticker": "OSUR",
-     "registry_last": "2024-06-24",
+     "registry_last": "2024-08-22",
      "store_tip": "2026-08-21",
-     "days_past_death": 788,
+     "days_past_death": 729,
      "overlap": {
-      "n_overlap": 747,
+      "n_overlap": 1453,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -2186,11 +2186,11 @@
     },
     {
      "ticker": "RGNX",
-     "registry_last": "2024-12-23",
+     "registry_last": "2025-02-20",
      "store_tip": "2026-08-21",
-     "days_past_death": 606,
+     "days_past_death": 547,
      "overlap": {
-      "n_overlap": 874,
+      "n_overlap": 1576,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -2199,14 +2199,14 @@
     },
     {
      "ticker": "RGP",
-     "registry_last": "2024-06-24",
+     "registry_last": "2024-08-22",
      "store_tip": "2026-08-21",
-     "days_past_death": 788,
+     "days_past_death": 729,
      "overlap": {
-      "n_overlap": 747,
-      "ret_corr_full": 0.9987,
-      "ret_corr_recent": 0.9967,
-      "min_ret_corr": 0.9967
+      "n_overlap": 1453,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
@@ -2225,27 +2225,27 @@
     },
     {
      "ticker": "RILY",
-     "registry_last": "2024-09-23",
+     "registry_last": "2024-11-21",
      "store_tip": "2026-08-21",
-     "days_past_death": 697,
+     "days_past_death": 638,
      "overlap": {
-      "n_overlap": 810,
-      "ret_corr_full": 0.9982,
+      "n_overlap": 1185,
+      "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
-      "min_ret_corr": 0.9982
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
     {
      "ticker": "RMAX",
-     "registry_last": "2023-09-18",
+     "registry_last": "2023-11-16",
      "store_tip": "2026-08-21",
-     "days_past_death": 1068,
+     "days_past_death": 1009,
      "overlap": {
-      "n_overlap": 555,
-      "ret_corr_full": 0.9984,
-      "ret_corr_recent": 0.9982,
-      "min_ret_corr": 0.9982
+      "n_overlap": 1262,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
