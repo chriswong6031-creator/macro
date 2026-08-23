@@ -107,7 +107,7 @@ verified:
     result: >
       Both historical pins are ancestors; the continuation merged current main and
       the remote PR lineage without rebase/reset/force. The reconciled base is
-      fa4c0683aff04a2bdf4092ca8200be599845800c. The post-first-candidate
+      a22bf70db5ee4794ee56caefbc4c355e894d5d40. The post-first-candidate
       owner-area deltas are #6308 in event_workspace_build.py, which leaves
       WORKSPACE_SCHEMA, WORKSPACE_KEYS, native identity/clocks, and
       read_event_workspace unchanged, and #6312's display-only government
@@ -196,7 +196,7 @@ verified:
   - claim: "The Agent OS packet remains valid as a knowledge-plane update."
     command: "python3 scripts/agentos.py validate"
     result: >
-      Agent OS validated 644 records with 0 errors and 19 unrelated existing
+      Agent OS validated 646 records with 0 errors and 30 unrelated existing
       phantom-path, stale-review, and active-but-complete warnings.
   - claim: "The new K1 suite has a valid binding hosted-CI owner."
     command: >

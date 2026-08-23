@@ -35,7 +35,7 @@ byte-identical. This distinction matters: current protected-repository state mov
 the protected Skillpack bytes did not. The Macro handoff pin
 `fb2375441f21b94201edc4ed6ac2c40f67274cde` also remains an ancestor, but is
 historical. The fourth candidate was reconciled against fresh Macro `origin/main`
-`fa4c0683aff04a2bdf4092ca8200be599845800c`. Since the first K1 candidate base,
+`a22bf70db5ee4794ee56caefbc4c355e894d5d40`. Since the first K1 candidate base,
 the first K1-owner-area mainline change was #6308 in
 `engine/company_intelligence/event_workspace_build.py`: it carries corrected
 lifecycle state forward and adds the filing form inside an existing workspace source
@@ -332,7 +332,7 @@ run on a main descendant of the merge under the merged authority.
 > The current protected Skillpack was loaded from Mastermind
 > `eb9910681a6db9f9675b25233c8865bb43325c32` (Skillpack tree remains byte-identical
 > to the commission pin); Macro was reconciled to
-> `fa4c0683aff04a2bdf4092ca8200be599845800c`. The physical-store flip condition is
+> `a22bf70db5ee4794ee56caefbc4c355e894d5d40`. The physical-store flip condition is
 > adverse: #6325 names B1/AAPL as a candidate but leaves it unauthorized, no product
 > PR commits the three-owner read, and no direct-reader requirement has failed. K1 therefore preserves
 > owner-bound accessors, copies no bodies, creates no store/index/control plane, and
