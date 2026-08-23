@@ -5,7 +5,13 @@ import json
 import pytest
 
 from scripts import prophet_flagship_voi_report as report_cli
-from engine.prophet_voi import HOLD_INTEGRITY, MEASURED, PROTECTED_OUTCOME
+from engine.prophet_voi import (
+    DESCRIPTIVE_ONLY,
+    HOLD_INTEGRITY,
+    MEASURED,
+    PROTECTED_OUTCOME,
+    UNAVAILABLE_FIELD,
+)
 
 
 def _clock() -> dict:
@@ -84,3 +90,35 @@ def test_metadata_only_cli_proves_protected_w3_and_clock_without_board(
     assert payload["qledger_evidence_clocks"]["state"] == MEASURED
     assert payload["qledger_evidence_clocks"]["outcome_files_opened"] is False
     assert payload["promotion"]["authorized"] is False
+
+
+def test_current_committed_metadata_path_is_safe_and_zero_authority(capsys) -> None:
+    assert report_cli.DEFAULT_W3_STATUS.is_file()
+    assert report_cli.DEFAULT_QLEDGER_CLOCK_DIR.is_dir()
+    rc = report_cli.main(["--no-board"])
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["promotion_authority"] is False
+    assert payload["writes_evaluation_store"] is False
+    assert payload["w3"]["outcome_files_opened"] is False
+    assert payload["qledger_evidence_clocks"]["outcome_files_opened"] is False
+    assert payload["qledger_evidence_clocks"]["registration_count"] >= 1
+    assert payload["promotion"]["authorized"] is False
+
+
+def test_current_committed_board_report_executes_without_upgrading_truth(capsys) -> None:
+    assert report_cli.DEFAULT_BOARD_LEDGER.is_file()
+    rc = report_cli.main([])
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["promotion_authority"] is False
+    assert payload["writes_evaluation_store"] is False
+    assert payload["promotion"]["authorized"] is False
+    board = payload["us_board"]
+    assert board["promotion_authority"] is False
+    if board["state"] == DESCRIPTIVE_ONLY:
+        assert board["source_grain"] == "(as_of,lane,ticker,horizon)"
+        assert board["first_eligible_surface"]["state"] == UNAVAILABLE_FIELD
+        assert board["first_presented_surface"]["state"] == UNAVAILABLE_FIELD
+        assert board["actionable_at_first_surface"]["state"] == UNAVAILABLE_FIELD
+        assert board["lead_vs_champion"]["state"] == UNAVAILABLE_FIELD
