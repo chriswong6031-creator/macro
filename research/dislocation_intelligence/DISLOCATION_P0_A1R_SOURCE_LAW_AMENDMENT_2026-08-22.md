@@ -31,6 +31,10 @@ The 3/3/3/3/3/3/2 result is the proportional largest-remainder allocation of twe
 over the eligible Turn-5 estate: six 48-target strata plus one 24-target stratum.
 Use ascending frozen selection-key order, retain all query edges, and choose the
 lexicographically smallest feasible packet set when several sets satisfy the margins.
+Uniqueness is the tuple exactly: the same CIK may appear more than once when the
+accessions differ, while the same `(CIK, accession)` may appear only once even when
+several FTS query edges reach it. A global unique-CIK constraint is not lawful P0-S0/S1
+selection law.
 Query-family is retrieval provenance only, never semantic classification or admission.
 No outcome-informed or semantic top-up is allowed.
 
@@ -61,6 +65,12 @@ read-through adapter. It creates no P0 filing, document, receipt, or issuer trut
 plane and does not modify `broad_sec_store.py`. PR #5898 remains an open held owner
 boundary, not authority for this work. Missing historical owner materialization is a
 typed owner-capability gap, not a local fallback or sample skew.
+
+The FTS hit identity is `(accession, filename)`. Every distinct filename retained on
+the selected filing's frozen query edges is materialized and replayed through the
+canonical archive owner. A filing's primary/cover document is not an equivalent
+substitute for an FTS-matched exhibit. A missing, ambiguous, cross-accession, or
+unreplayable matched archive member fails closed; it never falls back to the cover.
 
 After selection, use a fresh source-only proposal pass and a genuinely independent
 Fable/Opus audit of every packet. Adjudicate each disagreement before actual

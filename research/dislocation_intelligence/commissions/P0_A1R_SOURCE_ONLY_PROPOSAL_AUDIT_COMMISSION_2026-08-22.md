@@ -7,9 +7,11 @@ prices, outcomes, counterfactuals, scoring, ranking, or execution authority.
 
 ## Inputs and proposal pass
 
-The coordinator supplies exactly twenty packets with a unique `(cik, accession)`,
-canonical document id, canonical document SHA-256, and the byte payload used for
-review. Grok receives only those packets and returns a proposal for each packet.
+The coordinator supplies exactly twenty packets with a unique `(cik, accession)` and
+every canonical SEC document matched by that filing's frozen FTS query edges. Each
+document carries its canonical id, exact archive filename, SHA-256, and byte payload
+used for review. The primary/cover filing document may not replace an FTS-matched
+exhibit. Grok receives only those packets and returns a proposal for each packet.
 It may populate only these semantic fields:
 
 `event_family`, `affected_scope`, `adverse_information_state`,
@@ -37,8 +39,23 @@ disagreement must have an explicit terminal resolution before the packet set can
 Duplicate, amendment, pulse, mitigation, resolution, and episode relationships are
 explicit edges naming all linked packet IDs. Every edge carries replayable source
 evidence plus independent Fable/Opus audit role/verdict and terminal resolution.
-Economic episode count derives only from audited accepted/repaired `episode` edges,
-never from the number of accessions.
+
+An audited relationship is necessary but not sufficient for P0 episode admission.
+At least one linked packet must have a final audited semantic assertion, backed by an
+exact source span, with one of these controlled values in its corresponding field:
+
+- `adverse_information_state = P0_ADVERSE_INFORMATION`;
+- `structural_impairment_evidence = P0_STRUCTURAL_IMPAIRMENT_CONTROL`;
+- `mitigation_resolution_transition = P0_RESOLVED_BEFORE_DISCLOSURE_CONTROL`.
+
+For `ACCEPT`, final means the Grok proposal. For `REPAIR`, final means Opus's complete
+`final_semantic`. `REJECT` has no final semantic and cannot enter an episode. Typed
+states—including `UNKNOWN`, `UNAVAILABLE`, and `NOT_APPLICABLE`—never satisfy this
+admission rule. An ordinary dividend, offering, buyback, agreement, joint venture, or
+earnings announcement therefore cannot become a P0 episode merely because it is an
+economic event or because an episode relationship was proposed. Economic episode
+count derives only from resolved, independently audited `episode` edges whose linked
+final semantics pass this P0-eligibility rule, never from accession count.
 
 Run `scripts/research/dislocation_p0_a1r_semantic_contract.py` in-memory over the
 twenty source-byte packets and proposals. It returns only summaries/refusals/unknowns/

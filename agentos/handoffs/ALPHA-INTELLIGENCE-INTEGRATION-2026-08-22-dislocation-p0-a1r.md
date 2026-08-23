@@ -33,7 +33,8 @@ changed:
   - path: "research/dislocation_intelligence/DISLOCATION_P0_A1R_SOURCE_LAW_AMENDMENT_2026-08-22.md"
     what: >
       Freezes the 3/3/3/3/3/3/2 allocation, era/form constraints, lexicographically
-      smallest feasible selection rule, and source-only stop before P0-S2.
+      smallest feasible selection rule, unique `(CIK, accession)` identity, exact
+      FTS-matched-document materialization, and source-only stop before P0-S2.
   - path: "research/dislocation_intelligence/p0_a1/A1_QUARANTINE_AND_SALVAGE_LEDGER.json"
     what: >
       Retains the #6117 artifacts and classifies the 832ac draft and derivative
@@ -46,8 +47,10 @@ changed:
   - path: "scripts/research/dislocation_p0_source_adapter.py, dislocation_p0_source_materializer.py, and dislocation_p0_a1r_owner_run.py"
     what: >
       Bounded adapters consume SecForensicsCollector receipts and the canonical
-      sec_document_spine manifest/document collectors; no duplicate broad SEC store or
-      receipt plane was created.
+      sec_document_spine manifest/document collectors; all 27 exact FTS-matched archive
+      members are materialized with no filing-cover substitution or fallback; an offline
+      owner replay reproduces the twenty packets byte-identically; no duplicate broad SEC
+      store or receipt plane was created.
   - path: "scripts/research/dislocation_p0_a1r_evidence_catalog.py, dislocation_p0_a1r_semantic_contract.py, and dislocation_p0_a1r_semantic_run.py"
     what: >
       Builds source-only evidence-span catalogs; validates fresh Grok proposals and
@@ -57,8 +60,9 @@ changed:
   - path: "research/dislocation_intelligence/p0_a1r/A1R_*.json"
     what: >
       Commits the completed pool, exact-20, canonical packet, Grok, Opus, disagreement,
-      episode, firewall/access, attempt-history, and K-packet receipts. The K-packet SHA
-      is 9dec536bd23962fe5423ae804a71fda96575234e1cb533faf50cb14f273cad0e.
+      episode, firewall/access, invalidation, owner-replay, attempt-history, and K-packet
+      receipts. The corrected K-packet SHA is
+      665628e8d1d217b15239091ca6a4963a2196b3b36c4f850c18a85a0f8da8781e.
   - path: "tests/test_dislocation_p0_a1r*.py and tests/test_dislocation_p0_source_*.py"
     what: >
       Adds focused mutation-resistant gates for source law, deterministic selection,
@@ -75,7 +79,8 @@ verified:
       git fetch origin; git rev-parse HEAD; gh pr view 6068 --json state,mergeCommit;
       gh pr view 6117 --json state,headRefOid,mergeCommit
     result: >
-      pickup origin/main fe393bd73e541a37dc23262514e93d9d9056cec7;
+      current repair pickup origin/main a990d05df2505ae3929172d38c6e248d627fec4d
+      (initial A1R pickup fe393bd73e541a37dc23262514e93d9d9056cec7);
       #6068 MERGED as fab129e21335253c17a034ab7f6c0e57f77e5acd;
       #6117 head 33023552554fda56862fffc3384b68051b976d05 and MERGED as
       c1f8e352298d8e99f77c22c4c9660b82521e340c.
@@ -90,7 +95,9 @@ verified:
       146/146 logical cells complete; 0 incomplete; 277,549 unique candidates;
       universe SHA aca01d616b859a9e59381748b86cd65405eb3bf54b57a10b1d7faef32b51a733;
       complete-cell SHA b7e0c9a5f070473be7ed8fda887869878a210c21078faab2db9361111e4227e0;
-      exact-20 logical SHA f44f37d5f44b4c3eabb5098004afa4aed8c40a173404709084a82152741d36bf;
+      exact-20 logical SHA e436c6e87870468d0df0449c86cc9b69a9d23aa1396885fffdfcbfcf6398852e;
+      exact-20 file SHA 740454d9d229b28e71fe35c4eb599cb0d1912227c4c44448214e5159a3d13085;
+      uniqueness is `(CIK, accession)`, the selected packet identities are unchanged, and
       source selection reproduced byte-identically.
   - claim: "All twenty packets replay through canonical SEC source and document owners."
     command: >
@@ -100,27 +107,33 @@ verified:
       jq -e '.status == "COMPLETE" and .n == 20 and
       .firewall.official_sec_hosts == ["data.sec.gov", "www.sec.gov"] and
       ([.packets[] | select(.issuer.cik == null or .filing.accession == null or
-      .clocks.accepted_at == null or .primary_document.content_sha256 == null)] | length) == 0'
+      .clocks.accepted_at == null or (.matched_documents | length) == 0)] | length) == 0'
       research/dislocation_intelligence/p0_a1r/A1R_CANONICAL_SOURCE_PACKET_MANIFEST.json;
+      jq -e '.status == "COMPLETE_BYTE_IDENTICAL" and .packet_count == 20 and
+      .document_count == 27 and .network_access == "NONE" and
+      .frozen_manifest_sha256 == .replayed_manifest_sha256'
+      research/dislocation_intelligence/p0_a1r/A1R_CANONICAL_OWNER_REPLAY_PROOF.json;
       sha256sum research/dislocation_intelligence/p0_a1r/A1R_CANONICAL_SOURCE_PACKET_MANIFEST.json
     result: >
-      20 packets; exact CIK/accession/accepted_at and content hashes present;
-      model packet index SHA beee0cfacc9891742c361d3e9c1e65f719695561e42b58c3bd7e8ca6b2c204db;
-      logical manifest SHA a82394fdedf85de1104c602adab21ccd3532e769c245d796bdbd7c597d2e411c;
-      file SHA e4f92b48abc9b2c5dbd07e366c82189eca314a1bff3532841f2ea7f5bcc5ac25;
+      20 packets and 27 exact FTS-matched documents; exact CIK/accession/accepted_at and
+      content hashes present; no primary-document fallback; byte-identical offline replay;
+      model packet index SHA 1f6feded5bebe12f0eb09db8a6d0aeec107a98fd22dd34e3167bfa413f59c216;
+      logical manifest SHA 97c2d8f7d518a6ae7ec25f23cb6f796f201c601277647b0bee9e917eb1add667;
+      file SHA 03355ff15941750f3d26f3bbf5783c536cc16fefd47692296f1331e062216ea4;
+      replay-proof SHA 6222f5e0d145cb38a66206e5a42e2df8af8040d7041f88438760ad385a61ca0b;
       hosts restricted to data.sec.gov and www.sec.gov.
   - claim: "Fresh source-only Grok proposals and the independent Opus audit satisfy the semantic contract."
     command: >
       python3 scripts/research/dislocation_p0_a1r_semantic_run.py
-      --packet-index research/dislocation_intelligence/p0_a1r/work/owner_workspace/source_packets/packet_index.json
-      --source-root research/dislocation_intelligence/p0_a1r/work/owner_workspace/source_packets
+      --packet-index research/dislocation_intelligence/p0_a1r/work/proposal_workspace_v2/packet_index.json
+      --source-root research/dislocation_intelligence/p0_a1r/work/proposal_workspace_v2
       --source-manifest research/dislocation_intelligence/p0_a1r/A1R_CANONICAL_SOURCE_PACKET_MANIFEST.json
       --proposal research/dislocation_intelligence/p0_a1r/A1R_GROK_SOURCE_PROPOSALS.json
       --audit research/dislocation_intelligence/p0_a1r/A1R_OPUS_INDEPENDENT_AUDIT.json
     result: >
-      AUDIT_VALID; Grok SHA bf5f914a14a41b332ff0f0d914b4a8e2cad6d74843b47fc5f3df9a0837176bff;
-      Opus SHA b8173cf6a19486a996659d73e1f9d47dfe41cbb13ce855453dd6befb91fa79ef;
-      6 ACCEPT, 13 REPAIR, 1 REJECT; 41 resolved disagreements; 0 unresolved;
+      AUDIT_VALID; Grok SHA 98383da61ac11c072a1c0cc10a00218164fb95446c277cf4da212121250fbee2;
+      Opus SHA 7c01072dafa92e7f2c4e31723317351694e575f6947185b8112a29a12923a88a;
+      0 ACCEPT, 20 REPAIR, 0 REJECT; 21 resolved disagreements; 0 unresolved;
       exact evidence spans replay for every non-null semantic value.
   - claim: "Episode count is honest after audited relationship linkage."
     command: >
@@ -130,8 +143,9 @@ verified:
       unresolved:.audit_summary.unresolved_disagreement_count}'
       research/dislocation_intelligence/p0_a1r/A1R_K_PACKET_TO_SOL.json
     result: >
-      9 economic episodes from 9 accepted/repaired episode edges; the other 11 packets
-      are cover-only/non-event or rejected and do not masquerade as episode origins.
+      1 economic episode from 1 repaired episode edge; the other 19 packets are routine,
+      non-P0, unavailable, rights-blocked, or otherwise fail the corrected P0 admission
+      ontology and do not masquerade as episode origins.
   - claim: "The source and audit workspaces contain no mounted price, market, outcome, ranking, sizing, or execution directory."
     command: >
       find research/dislocation_intelligence/p0_a1r/work -type d
@@ -149,7 +163,7 @@ verified:
       tests/test_dislocation_p0_source_materializer.py -q;
       python3 scripts/agentos.py validate
     result: >
-      45 passed with 3 unrelated pytest temporary-directory cleanup warnings;
+      60 passed with 3 unrelated pytest temporary-directory cleanup warnings;
       Agent OS validated 532 records with 0 errors and 27 unrelated sparse/staleness warnings.
   - claim: "The complete existing Dislocation CI job owns and runs the A1R repair tests."
     command: >
@@ -163,15 +177,16 @@ verified:
       tests/test_dislocation_p0_source_materializer.py -q;
       python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml
       --pack-index 1 --pack-count 12 --validate-only;
-      python3 scripts/check_contract_delta.py --base ed84a0f549a5950cae681fa3f0a6acb4b48afa40
+      python3 scripts/check_contract_delta.py --base origin/main
     result: >
-      56 passed with the same 3 unrelated pytest temporary-directory cleanup warnings;
-      all 200 legacy jobs validated; contract-delta reported 0 introduced and 0 inherited.
+      71 passed with the same 3 unrelated pytest temporary-directory cleanup warnings;
+      all 200 legacy jobs validated; contract-delta reported 0 introduced and 0 inherited
+      at resolved merge base a990d05df250.
 unverified:
   - claim: "Sol accepts the audited P0-S0/S1 K-packet and releases the hold."
     what_would_verify: >
       Sol records an explicit acceptance of K-packet SHA
-      9dec536bd23962fe5423ae804a71fda96575234e1cb533faf50cb14f273cad0e
+      665628e8d1d217b15239091ca6a4963a2196b3b36c4f850c18a85a0f8da8781e
       against the exact held PR head and authorizes the next action.
   - claim: "P0-S2 or P0-R1 is authorized."
     what_would_verify: >
@@ -182,7 +197,7 @@ unresolved:
   - "The repaired draft PR must remain DRAFT / HOLD-FOR-SOL / do-not-merge until Sol accepts the exact head."
   - "The quarantined 832ac draft remains preserved but permanently inadmissible for P0-R1 unless a later explicit source-law decision supersedes this ruling."
 next_actions:
-  - "Sol reviews the exact held PR head, K-packet SHA 9dec536bd23962fe5423ae804a71fda96575234e1cb533faf50cb14f273cad0e, and the 41-row disagreement matrix."
+  - "Sol reviews the exact held PR head, K-packet SHA 665628e8d1d217b15239091ca6a4963a2196b3b36c4f850c18a85a0f8da8781e, and the 21-row disagreement matrix."
   - "If Sol accepts, Sol records the release condition explicitly; a fresh separately commissioned session—not this one—may then take the authorized next wave."
   - "Until that release, do not merge the draft PR, arm merge-on-green, begin P0-S2, consume the 313-row draft, or mount price/outcome data."
 do_not_redo:
@@ -208,8 +223,9 @@ discoveries:
 
 The independently useful capability now exists at P0-S0/S1 only: twenty
 deterministic price-blind packets flow through the canonical SEC source/document
-owners, carry fresh source-only Grok proposals, receive a separate all-twenty Opus
-audit with replayable spans, and return as an honest nine-episode K-packet. The
+owners with all 27 exact FTS-matched archive members, carry fresh source-only Grok
+proposals, receive a separate all-twenty Opus audit under the corrected episode
+ontology with replayable spans, and return as an honest one-episode K-packet. The
 Claude web account used for the independent audit was an attachment-only reviewer;
 it was not connected to GitHub or the repository and performed no delivery action.
 

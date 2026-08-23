@@ -424,8 +424,9 @@ def _plans() -> Iterable[dict[tuple[str, str, str], int]]:
 
 def _feasible(rows: list[dict[str, Any]], demand: Mapping[tuple[str, str, str], int], chosen: list[dict[str, Any]], index: Mapping[tuple[str, str, str], list[dict[str, Any]]] | None = None, rejected_keys: set[str] | None = None) -> bool:
     """Small deterministic DFS feasibility oracle (exactly twenty slots)."""
-    used_cik = {str(row["cik"]) for row in chosen}
-    used_accession = {str(row["accession"]) for row in chosen}
+    used_identities = {
+        (str(row["cik"]), str(row["accession"])) for row in chosen
+    }
     remaining = dict(demand)
     for row in chosen:
         slot = (str(row["family"]), str(row["era"]), str(row["form"]))
@@ -444,20 +445,28 @@ def _feasible(rows: list[dict[str, Any]], demand: Mapping[tuple[str, str, str], 
         return False
     slots.sort(key=lambda slot: (len(options[slot]), slot))
 
-    def visit(index: int) -> bool:
-        if index == len(slots):
-            return True
-        slot = slots[index]
+    # Feasibility is a 20-slot bipartite matching problem: demanded margin
+    # slots are on the left and canonical filing identities are on the right.
+    # This avoids an exponential search across the 277k-row completed pool and
+    # implements the frozen uniqueness law exactly.  A CIK may appear more than
+    # once when the accessions differ; only the pair is an occupied identity.
+    demanded_slots = list(enumerate(slots))
+    matched_slot_by_identity: dict[tuple[str, str], int] = {}
+
+    def augment(slot_index: int, visited: set[tuple[str, str]]) -> bool:
+        slot = demanded_slots[slot_index][1]
         for row in options[slot]:
-            cik, accession = str(row["cik"]), str(row["accession"])
-            if cik in used_cik or accession in used_accession:
+            identity = (str(row["cik"]), str(row["accession"]))
+            if identity in used_identities or identity in visited:
                 continue
-            used_cik.add(cik); used_accession.add(accession)
-            if visit(index + 1):
+            visited.add(identity)
+            occupied = matched_slot_by_identity.get(identity)
+            if occupied is None or augment(occupied, visited):
+                matched_slot_by_identity[identity] = slot_index
                 return True
-            used_cik.remove(cik); used_accession.remove(accession)
         return False
-    return visit(0)
+
+    return all(augment(slot_index, set()) for slot_index, _slot in demanded_slots)
 
 
 def _solve_plan(rows: list[dict[str, Any]], plan: Mapping[tuple[str, str, str], int]) -> list[dict[str, Any]] | None:
@@ -466,17 +475,17 @@ def _solve_plan(rows: list[dict[str, Any]], plan: Mapping[tuple[str, str, str], 
     index: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
     for row in rows:
         index.setdefault((str(row["family"]), str(row["era"]), str(row["form"])), []).append(row)
-    used_cik: set[str] = set()
-    used_accession: set[str] = set()
+    used_identities: set[tuple[str, str]] = set()
     for row in rows:
         trial = selected + [row]
         key = str(row["selection_key"])
-        if str(row["cik"]) in used_cik or str(row["accession"]) in used_accession:
+        identity = (str(row["cik"]), str(row["accession"]))
+        if identity in used_identities:
             rejected.add(key)
             continue
         if _feasible(rows, plan, trial, index, rejected):
             selected.append(row)
-            used_cik.add(str(row["cik"])); used_accession.add(str(row["accession"]))
+            used_identities.add(identity)
         else:
             rejected.add(key)
         if len(selected) == 20:
@@ -510,8 +519,14 @@ def exact20_manifest(rows: Iterable[Mapping[str, Any]], census: Mapping[str, Any
         **{field: row.get(field) for field in SOURCE_PACKET_FIELDS},
     } for row in selected]
     manifest = {
-        "schema": "mastermind.dislocation_p0.a1r_exact20_source_manifest.v1",
+        "schema": "mastermind.dislocation_p0.a1r_exact20_source_manifest.v2",
         "n": 20,
+        "selection_identity": ["cik", "accession"],
+        "supersedes": {
+            "reason": "GLOBAL_CIK_UNIQUENESS_WAS_STRICTER_THAN_FROZEN_SOURCE_LAW",
+            "manifest_sha256": "f44f37d5f44b4c3eabb5098004afa4aed8c40a173404709084a82152741d36bf",
+            "file_sha256": "2635a5c6787d5fd60be8f08177d699e65c9f83ab39bdfec4e616b11d4b3e45fa",
+        },
         "candidates": packets,
         "pool_sha256_by_family": complete_pool_hashes(pool),
         "logical_cell_complete_sha256": census["complete_sha256"],

@@ -11,8 +11,19 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
-from collectors.sec_document_spine import ArchiveStoreError, SecFilingArchiveCollector, retain_filing_manifest
-from engine.fundamental_forensics.sec_document_spine import build_filing_manifests
+from collectors.sec_document_spine import (
+    ArchiveStoreError,
+    SecFilingArchiveCollector,
+    read_archive_document,
+    retain_filing_manifest,
+)
+from engine.fundamental_forensics.sec_document_spine import (
+    archive_index_document,
+    build_filing_manifests,
+    documents_from_archive_index,
+    with_archive_documents,
+    with_document_retrievals,
+)
 from scripts.research.dislocation_p0_source_adapter import (
     CanonicalSpineRef, OwnerCapabilityGap, REQUIRED_PACKET_COUNT,
 )
@@ -33,6 +44,13 @@ class MaterializationResult:
 
 def _gap(ref: CanonicalSpineRef, code: str, detail: str) -> OwnerCapabilityGap:
     return OwnerCapabilityGap(ref.slot, ref.cik, ref.accession, code, detail)
+
+
+def _receipt_dict(receipt: Any) -> Mapping[str, Any]:
+    value = receipt.to_dict() if hasattr(receipt, "to_dict") else receipt
+    if not isinstance(value, Mapping):
+        raise ArchiveStoreError("canonical archive collector returned no receipt")
+    return value
 
 
 def materialize_current_p0_source_refs(
@@ -86,15 +104,87 @@ def materialize_current_p0_source_refs(
         if manifest["lineage"]["is_amendment"] and not selection.allow_amendment_transition:
             gaps.append(_gap(selection, "OWNER_AMENDMENT_ORIGIN_REFUSED", "amendment is not an origin"))
             continue
+        collector = factory(Path(archive_root), user_agent)
         try:
-            retained = factory(Path(archive_root), user_agent).fetch_primary_document(manifest)
+            index_document = archive_index_document(manifest)
+            index_receipt = _receipt_dict(collector.fetch_document(index_document))
+            if index_receipt.get("status") != "retrieved":
+                gaps.append(_gap(
+                    selection,
+                    "OWNER_ARCHIVE_INDEX_UNAVAILABLE",
+                    "canonical archive index is unavailable",
+                ))
+                continue
+            index_payload = json.loads(
+                read_archive_document(Path(archive_root), index_receipt)
+            )
+            if not isinstance(index_payload, Mapping):
+                raise ValueError("canonical archive index is not an object")
+            inventory = documents_from_archive_index(manifest, index_payload)
+            documents_by_name = {
+                str(document["document_name"]): dict(document)
+                for document in inventory
+            }
+            documents_by_name[index_document["document_name"]] = index_document
+            expanded = with_archive_documents(
+                manifest, documents_by_name.values()
+            )
+        except (ArchiveStoreError, OSError, ValueError) as exc:
+            gaps.append(_gap(selection, "OWNER_ARCHIVE_INDEX_UNAVAILABLE", str(exc)))
+            continue
+        resolved: list[Mapping[str, Any]] = []
+        resolution_failed = False
+        for name in selection.expected_document_names:
+            matches = [
+                document
+                for document in expanded["documents"]
+                if document["document_name"] == name
+            ]
+            if not matches:
+                gaps.append(_gap(
+                    selection,
+                    "OWNER_FTS_DOCUMENT_NOT_IN_INDEX",
+                    f"exact FTS document is absent from canonical index: {name}",
+                ))
+                resolution_failed = True
+                break
+            if len(matches) != 1:
+                gaps.append(_gap(
+                    selection,
+                    "OWNER_FTS_DOCUMENT_AMBIGUOUS",
+                    f"exact FTS document resolves more than once: {name}",
+                ))
+                resolution_failed = True
+                break
+            resolved.append(matches[0])
+        if resolution_failed:
+            continue
+        receipts: dict[str, Mapping[str, Any]] = {
+            str(index_document["document_id"]): index_receipt
+        }
+        try:
+            for document in resolved:
+                receipt = _receipt_dict(collector.fetch_document(document))
+                if receipt.get("status") != "retrieved":
+                    gaps.append(_gap(
+                        selection,
+                        "OWNER_FTS_DOCUMENT_MISSING_404",
+                        f"exact FTS document is unavailable: {document['document_name']}",
+                    ))
+                    resolution_failed = True
+                    break
+                receipts[str(document["document_id"])] = receipt
+            if resolution_failed:
+                continue
+            retained = with_document_retrievals(expanded, receipts)
             key, _stored, _minted = retain_filing_manifest(Path(archive_root), retained)
         except (ArchiveStoreError, OSError, ValueError) as exc:
-            gaps.append(_gap(selection, "OWNER_CAPABILITY_GAP", str(exc)))
+            gaps.append(_gap(selection, "OWNER_FTS_DOCUMENT_UNREPLAYABLE", str(exc)))
             continue
         refs.append(CanonicalSpineRef(
             selection.slot, selection.cik, selection.accession,
-            selection.expected_base_form, selection.expected_filed_on, key,
+            selection.expected_base_form, selection.expected_filed_on,
+            selection.expected_document_names, key,
             selection.allow_amendment_transition,
         ))
     if gaps:

@@ -82,23 +82,100 @@ def evidence_segments(
     return output
 
 
+def _source_path(root: Path, value: Any) -> Path:
+    if not isinstance(value, str) or not value:
+        raise ValueError("matched document source_path missing")
+    candidate = (root / value).resolve()
+    try:
+        candidate.relative_to(root.resolve())
+    except ValueError as exc:
+        raise ValueError("matched document source_path escapes packet root") from exc
+    return candidate
+
+
+def _packet_documents(
+    packet: Mapping[str, Any], root: Path
+) -> tuple[list[dict[str, Any]], list[bytes]]:
+    """Load every exact FTS-matched document and reject any ambiguous mapping."""
+    documents = packet.get("documents")
+    if not isinstance(documents, list) or not documents:
+        raise ValueError(f"packet matched documents missing: {packet.get('packet_id')}")
+    seen_ids: set[str] = set()
+    seen_names: set[str] = set()
+    seen_hashes: set[str] = set()
+    seen_paths: set[str] = set()
+    normalized: list[dict[str, Any]] = []
+    source_bytes: list[bytes] = []
+    for document in documents:
+        if not isinstance(document, Mapping):
+            raise ValueError(f"packet matched document invalid: {packet.get('packet_id')}")
+        document_id = document.get("document_id")
+        document_name = document.get("document_name")
+        document_sha256 = document.get("document_sha256")
+        byte_length = document.get("byte_length")
+        source_path = document.get("source_path")
+        if (
+            not isinstance(document_id, str)
+            or not document_id
+            or not isinstance(document_name, str)
+            or not document_name
+            or not isinstance(document_sha256, str)
+            or len(document_sha256) != 64
+            or not isinstance(byte_length, int)
+            or byte_length < 0
+        ):
+            raise ValueError(f"packet matched document identity invalid: {packet.get('packet_id')}")
+        if (
+            document_id in seen_ids
+            or document_name in seen_names
+            or document_sha256 in seen_hashes
+            or source_path in seen_paths
+        ):
+            raise ValueError(f"packet matched document duplicate: {packet.get('packet_id')}")
+        source = _source_path(root, source_path).read_bytes()
+        if len(source) != byte_length:
+            raise ValueError(f"packet matched document length mismatch: {packet.get('packet_id')}")
+        if sha256(source).hexdigest() != document_sha256:
+            raise ValueError(f"packet matched document hash mismatch: {packet.get('packet_id')}")
+        seen_ids.add(document_id)
+        seen_names.add(document_name)
+        seen_hashes.add(document_sha256)
+        seen_paths.add(str(source_path))
+        normalized.append({
+            "document_id": document_id,
+            "document_name": document_name,
+            "document_sha256": document_sha256,
+            "byte_length": byte_length,
+            "source_path": source_path,
+        })
+        source_bytes.append(source)
+    return normalized, source_bytes
+
+
 def build_catalog(packet_index: Mapping[str, Any], root: Path) -> dict[str, Any]:
+    if packet_index.get("schema") != "mastermind.dislocation_p0.a1r_model_packet_index.v2":
+        raise ValueError("model packet index schema mismatch")
     packets: list[dict[str, Any]] = []
     for packet in packet_index.get("packets") or []:
-        source_path = Path(root) / str(packet["source_path"])
-        source = source_path.read_bytes()
+        if not isinstance(packet, Mapping):
+            raise ValueError("model packet index row invalid")
+        documents, sources = _packet_documents(packet, root)
+        segments: list[dict[str, Any]] = []
+        for document, source in zip(documents, sources):
+            segments.extend(evidence_segments(
+                packet_id=str(packet["packet_id"]),
+                document_sha256=str(document["document_sha256"]),
+                source=source,
+            ))
         packets.append({
             **dict(packet),
-            "segments": evidence_segments(
-                packet_id=str(packet["packet_id"]),
-                document_sha256=str(packet["document_sha256"]),
-                source=source,
-            ),
+            "documents": documents,
+            "segments": segments,
         })
     if len(packets) != 20:
         raise ValueError(f"evidence catalog requires exactly twenty packets; got {len(packets)}")
     return {
-        "schema": "mastermind.dislocation_p0.a1r_evidence_catalog.v1",
+        "schema": "mastermind.dislocation_p0.a1r_evidence_catalog.v2",
         "packets": packets,
     }
 

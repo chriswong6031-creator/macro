@@ -33,9 +33,9 @@ from scripts.research.dislocation_p0_a1r_semantic_contract import (  # noqa: E40
 )
 
 
-PROPOSAL_SCHEMA = "mastermind.dislocation_p0.a1r_grok_proposals.v1"
-AUDIT_SCHEMA = "mastermind.dislocation_p0.a1r_opus_audit.v1"
-K_PACKET_SCHEMA = "mastermind.dislocation_p0.a1r_k_packet.v1"
+PROPOSAL_SCHEMA = "mastermind.dislocation_p0.a1r_grok_proposals.v2"
+AUDIT_SCHEMA = "mastermind.dislocation_p0.a1r_opus_audit.v2"
+K_PACKET_SCHEMA = "mastermind.dislocation_p0.a1r_k_packet.v2"
 
 
 class SemanticRunBlocked(RuntimeError):
@@ -65,9 +65,85 @@ def _write_json(path: Path, value: Any) -> None:
     temporary.replace(path)
 
 
+def _source_path(root: Path, value: Any) -> Path:
+    if not isinstance(value, str) or not value:
+        raise SemanticRunBlocked("matched document source_path missing")
+    candidate = (root / value).resolve()
+    try:
+        candidate.relative_to(root.resolve())
+    except ValueError as exc:
+        raise SemanticRunBlocked("matched document source_path escapes source root") from exc
+    return candidate
+
+
+def _load_packet_documents(
+    row: Mapping[str, Any], source_root: Path
+) -> tuple[list[dict[str, Any]], dict[str, bytes]]:
+    """Load all and only the FTS-matched document receipts for one packet."""
+    documents = row.get("documents")
+    packet_id = row.get("packet_id")
+    if not isinstance(documents, list) or not documents:
+        raise SemanticRunBlocked(f"matched documents missing: {packet_id}")
+    seen_ids: set[str] = set()
+    seen_names: set[str] = set()
+    seen_hashes: set[str] = set()
+    seen_paths: set[str] = set()
+    normalized: list[dict[str, Any]] = []
+    source_documents: dict[str, bytes] = {}
+    for document in documents:
+        if not isinstance(document, Mapping):
+            raise SemanticRunBlocked(f"matched document invalid: {packet_id}")
+        document_id = document.get("document_id")
+        document_name = document.get("document_name")
+        document_sha256 = document.get("document_sha256")
+        byte_length = document.get("byte_length")
+        source_path = document.get("source_path")
+        if (
+            not isinstance(document_id, str)
+            or not document_id
+            or not isinstance(document_name, str)
+            or not document_name
+            or not isinstance(document_sha256, str)
+            or len(document_sha256) != 64
+            or not isinstance(byte_length, int)
+            or byte_length < 0
+        ):
+            raise SemanticRunBlocked(f"matched document identity invalid: {packet_id}")
+        if (
+            document_id in seen_ids
+            or document_name in seen_names
+            or document_sha256 in seen_hashes
+            or source_path in seen_paths
+        ):
+            raise SemanticRunBlocked(f"matched document duplicate: {packet_id}")
+        try:
+            source = _source_path(source_root, source_path).read_bytes()
+        except OSError as exc:
+            raise SemanticRunBlocked(
+                f"matched document unavailable: {packet_id}:{document_id}"
+            ) from exc
+        if len(source) != byte_length:
+            raise SemanticRunBlocked(f"matched document length mismatch: {packet_id}:{document_id}")
+        if sha256(source).hexdigest() != document_sha256:
+            raise SemanticRunBlocked(f"matched document hash mismatch: {packet_id}:{document_id}")
+        seen_ids.add(document_id)
+        seen_names.add(document_name)
+        seen_hashes.add(document_sha256)
+        seen_paths.add(str(source_path))
+        normalized.append({
+            "document_id": document_id,
+            "document_name": document_name,
+            "document_sha256": document_sha256,
+            "byte_length": byte_length,
+            "source_path": source_path,
+        })
+        source_documents[document_sha256] = source
+    return normalized, source_documents
+
+
 def load_packets(packet_index_path: Path, source_root: Path) -> list[dict[str, Any]]:
     index = _read_json(packet_index_path)
-    if index.get("schema") != "mastermind.dislocation_p0.a1r_model_packet_index.v1":
+    if index.get("schema") != "mastermind.dislocation_p0.a1r_model_packet_index.v2":
         raise SemanticRunBlocked("model packet index schema mismatch")
     rows = index.get("packets")
     if not isinstance(rows, list) or len(rows) != REQUIRED_PACKET_COUNT:
@@ -78,13 +154,11 @@ def load_packets(packet_index_path: Path, source_root: Path) -> list[dict[str, A
     for row in rows:
         if not isinstance(row, Mapping):
             raise SemanticRunBlocked("model packet index row is not an object")
-        source_path = Path(source_root) / str(row.get("source_path") or "")
-        source = source_path.read_bytes()
-        if len(source) != row.get("byte_length"):
-            raise SemanticRunBlocked(f"source length mismatch: {row.get('packet_id')}")
-        if sha256(source).hexdigest() != row.get("document_sha256"):
-            raise SemanticRunBlocked(f"source hash mismatch: {row.get('packet_id')}")
-        packets.append(dict(row) | {"source_bytes": source})
+        documents, source_documents = _load_packet_documents(row, source_root)
+        packets.append(dict(row) | {
+            "documents": documents,
+            "source_documents": source_documents,
+        })
     if [int(row["slot"]) for row in packets] != list(range(1, 21)):
         raise SemanticRunBlocked("model packet slots are not the frozen 1..20 order")
     if len({str(row["packet_id"]) for row in packets}) != REQUIRED_PACKET_COUNT:
@@ -99,7 +173,7 @@ def validate_source_manifest_binding(
     """Bind the model packet index to the exact canonical-owner manifest."""
     if (
         source_manifest.get("schema")
-        != "mastermind.dislocation_p0.a1r_canonical_source_packets.v1"
+        != "mastermind.dislocation_p0.a1r_canonical_source_packets.v2"
         or source_manifest.get("status") != "COMPLETE"
         or source_manifest.get("n") != REQUIRED_PACKET_COUNT
     ):
@@ -119,11 +193,51 @@ def validate_source_manifest_binding(
         issuer = row.get("issuer")
         filing = row.get("filing")
         clocks = row.get("clocks")
-        document = row.get("primary_document")
-        if not all(isinstance(value, Mapping) for value in (issuer, filing, clocks, document)):
+        documents = row.get("matched_documents")
+        if (
+            not all(isinstance(value, Mapping) for value in (issuer, filing, clocks))
+            or not isinstance(documents, list)
+            or not documents
+        ):
             raise SemanticRunBlocked("canonical source manifest packet projection missing")
-        document_id = str(document.get("document_id") or "")
         slot = row.get("slot")
+        if not isinstance(slot, int):
+            raise SemanticRunBlocked("canonical source manifest slot missing")
+        expected_documents: list[dict[str, Any]] = []
+        seen_ids: set[str] = set()
+        seen_names: set[str] = set()
+        seen_hashes: set[str] = set()
+        for document in documents:
+            if not isinstance(document, Mapping):
+                raise SemanticRunBlocked("canonical source manifest matched document invalid")
+            document_id = document.get("document_id")
+            document_name = document.get("document_name")
+            document_sha256 = document.get("content_sha256")
+            byte_length = document.get("byte_length")
+            if (
+                not isinstance(document_id, str)
+                or not document_id
+                or not isinstance(document_name, str)
+                or not document_name
+                or not isinstance(document_sha256, str)
+                or len(document_sha256) != 64
+                or not isinstance(byte_length, int)
+                or byte_length < 0
+                or document_id in seen_ids
+                or document_name in seen_names
+                or document_sha256 in seen_hashes
+            ):
+                raise SemanticRunBlocked("canonical source manifest matched document identity invalid")
+            seen_ids.add(document_id)
+            seen_names.add(document_name)
+            seen_hashes.add(document_sha256)
+            expected_documents.append({
+                "document_id": document_id,
+                "document_name": document_name,
+                "document_sha256": document_sha256,
+                "byte_length": byte_length,
+                "source_path": f"packets/{slot:02d}_{document_id}.source",
+            })
         expected.append({
             "slot": slot,
             "packet_id": row.get("packet_id"),
@@ -131,12 +245,7 @@ def validate_source_manifest_binding(
             "accession": filing.get("accession"),
             "accepted_at": clocks.get("accepted_at"),
             "filed_on": clocks.get("filed_on"),
-            "document_id": document_id,
-            "document_sha256": document.get("content_sha256"),
-            "byte_length": document.get("byte_length"),
-            "source_path": f"packets/{int(slot):02d}_{document_id}.source"
-            if isinstance(slot, int)
-            else None,
+            "documents": expected_documents,
         })
     actual = [
         {
@@ -148,10 +257,7 @@ def validate_source_manifest_binding(
                 "accession",
                 "accepted_at",
                 "filed_on",
-                "document_id",
-                "document_sha256",
-                "byte_length",
-                "source_path",
+                "documents",
             )
         }
         for row in packets
@@ -220,27 +326,48 @@ def build_audit_input(
         slot = int(packet["slot"])
         catalog = _read_json(Path(catalog_root) / f"{slot:02d}_evidence.json")
         catalog_packet = catalog.get("packet")
+        expected_documents = packet.get("documents")
         if not isinstance(catalog_packet, Mapping) or (
             catalog_packet.get("packet_id") != packet["packet_id"]
-            or catalog_packet.get("document_sha256") != packet["document_sha256"]
+            or catalog_packet.get("documents") != expected_documents
         ):
             raise SemanticRunBlocked(f"evidence catalog identity mismatch: slot {slot}")
-        try:
-            source_utf8 = packet["source_bytes"].decode("utf-8")
-        except UnicodeDecodeError as exc:
-            raise SemanticRunBlocked(
-                f"audit transport requires UTF-8 SEC bytes: {packet['packet_id']}"
-            ) from exc
+        source_documents = packet.get("source_documents")
+        if not isinstance(expected_documents, list) or not isinstance(source_documents, Mapping):
+            raise SemanticRunBlocked(f"packet document transport missing: {packet['packet_id']}")
+        source_utf8_documents: list[dict[str, Any]] = []
+        for document in expected_documents:
+            if not isinstance(document, Mapping):
+                raise SemanticRunBlocked(f"packet document transport invalid: {packet['packet_id']}")
+            document_sha256 = document.get("document_sha256")
+            source = source_documents.get(document_sha256)
+            if not isinstance(document_sha256, str) or not isinstance(source, bytes):
+                raise SemanticRunBlocked(f"packet document bytes missing: {packet['packet_id']}")
+            try:
+                source_utf8 = source.decode("utf-8")
+            except UnicodeDecodeError as exc:
+                raise SemanticRunBlocked(
+                    f"audit transport requires UTF-8 SEC bytes: {packet['packet_id']}:{document.get('document_id')}"
+                ) from exc
+            source_utf8_documents.append(dict(document) | {"source_utf8": source_utf8})
+        segments = catalog_packet.get("segments")
+        if not isinstance(segments, list):
+            raise SemanticRunBlocked(f"evidence catalog segments missing: slot {slot}")
+        allowed_hashes = {str(document["document_sha256"]) for document in expected_documents}
+        for segment in segments:
+            evidence = segment.get("evidence") if isinstance(segment, Mapping) else None
+            if not isinstance(evidence, Mapping) or evidence.get("document_sha256") not in allowed_hashes:
+                raise SemanticRunBlocked(f"evidence catalog document crosswire: slot {slot}")
         rows.append({
             "packet": {
-                key: value for key, value in packet.items() if key != "source_bytes"
+                key: value for key, value in packet.items() if key != "source_documents"
             },
-            "source_utf8": source_utf8,
-            "evidence_catalog": catalog_packet.get("segments") or [],
+            "source_utf8_documents": source_utf8_documents,
+            "evidence_catalog": segments,
             "grok_proposal": proposal_by_id[str(packet["packet_id"])],
         })
     return {
-        "schema": "mastermind.dislocation_p0.a1r_opus_audit_input.v1",
+        "schema": "mastermind.dislocation_p0.a1r_opus_audit_input.v2",
         "source_manifest_sha256": proposal_bundle["source_manifest_sha256"],
         "proposal_bundle_sha256": None,
         "packets": rows,
@@ -325,7 +452,7 @@ def finalize_audit(
         if isinstance(item, Mapping)
     ]
     matrix = {
-        "schema": "mastermind.dislocation_p0.a1r_disagreement_matrix.v1",
+        "schema": "mastermind.dislocation_p0.a1r_disagreement_matrix.v2",
         "source_manifest_sha256": source_manifest_sha256,
         "proposal_bundle_sha256": proposal_bundle_sha256,
         "items": disagreements,
@@ -359,6 +486,7 @@ def build_k_packet(
     audit_summary: Mapping[str, Any],
     proposal_summary: Mapping[str, Any],
     audit_bundle: Mapping[str, Any],
+    matched_document_count: int,
 ) -> dict[str, Any]:
     packet = {
         "schema": K_PACKET_SCHEMA,
@@ -370,6 +498,12 @@ def build_k_packet(
             "allocation": [3, 3, 3, 3, 3, 3, 2],
             "logical_query_cells_complete": 146,
             "selection_price_blind": True,
+            "selection_identity": "(CIK, accession)",
+            "same_cik_different_accession_allowed": True,
+            "duplicate_cik_accession_forbidden": True,
+            "exact_fts_matched_document_transport": True,
+            "matched_document_count": matched_document_count,
+            "primary_document_fallback": False,
         },
         "quarantine": {
             "draft_canonical_json_sha256": "832ac650cf18bd31b593fbb0214d9f3ac1b85ccdda6d417e12e5d81a35b76d32",
@@ -466,7 +600,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 _write_json(args.disagreement_out, matrix)
             if args.relationship_out is not None:
                 _write_json(args.relationship_out, {
-                    "schema": "mastermind.dislocation_p0.a1r_episode_linkage.v1",
+                    "schema": "mastermind.dislocation_p0.a1r_episode_linkage.v2",
                     "source_manifest_sha256": source_manifest_sha256,
                     "proposal_bundle_sha256": output["proposal_bundle_sha256"],
                     "audit_bundle_sha256": output["audit_bundle_sha256"],
@@ -483,6 +617,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                     audit_summary=audit_summary,
                     proposal_summary=proposal_summary,
                     audit_bundle=audit,
+                    matched_document_count=sum(
+                        len(row.get("documents") or []) for row in packets
+                    ),
                 )
                 _write_json(args.k_packet_out, k_packet)
         print(canonical_json(output))

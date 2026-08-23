@@ -86,7 +86,8 @@ def test_exact20_allocation_margins_and_byte_identical_serialization() -> None:
     assert manifest["n"] == 20
     packets = manifest["candidates"]
     assert [row["selection_key"] for row in packets] == sorted(row["selection_key"] for row in packets)
-    assert len({row["cik"] for row in packets}) == len({row["accession"] for row in packets}) == 20
+    assert len({(row["cik"], row["accession"]) for row in packets}) == 20
+    assert manifest["selection_identity"] == ["cik", "accession"]
     for family in FAMILIES:
         family_rows = [row for row in packets if row["family"] == family]
         if family.endswith("RESOLVED_BEFORE_DISCLOSURE_CONTROL"):
@@ -100,17 +101,21 @@ def test_exact20_allocation_margins_and_byte_identical_serialization() -> None:
     assert manifest_bytes(manifest) == manifest_bytes(exact20_manifest(deepcopy(rows), census))
 
 
-def test_lexicographic_feasibility_skips_early_cik_conflict() -> None:
+def test_same_cik_with_different_accession_is_allowed() -> None:
     rows = _feasible_rows()
-    # The first physical row would consume the only CIK required by external's
-    # sole development 6-K packet; the solver must skip it and use the later
-    # physical replacement rather than break feasibility.
+    physical = rows[0]
     external_dev = next(row for row in rows if row["family"] == "EXTERNAL_HUMAN_INTERRUPTION" and row["era"] == "development")
-    rows[0]["cik"] = external_dev["cik"]
-    rows[0]["selection_key"] = selection_key(family=rows[0]["family"], era=rows[0]["era"], base=rows[0]["form"], cik=rows[0]["cik"], accession=rows[0]["accession"])
-    rows.append(_row("PHYSICAL_MECHANICAL_INTERRUPTION", "modern", "8-K", "f" * 64))
+    physical["cik"] = external_dev["cik"]
+    physical["selection_key"] = selection_key(
+        family=physical["family"], era=physical["era"], base=physical["form"],
+        cik=physical["cik"], accession=physical["accession"],
+    )
     selected = solve_exact20(rows, _census())
-    assert rows[0]["selection_key"] not in {row["selection_key"] for row in selected}
+    identities = {(row["cik"], row["accession"]) for row in selected}
+    assert (physical["cik"], physical["accession"]) in identities
+    assert (external_dev["cik"], external_dev["accession"]) in identities
+    assert physical["cik"] == external_dev["cik"]
+    assert physical["accession"] != external_dev["accession"]
 
 
 def test_query_edges_are_merged_sorted_and_incomplete_edge_is_excluded() -> None:

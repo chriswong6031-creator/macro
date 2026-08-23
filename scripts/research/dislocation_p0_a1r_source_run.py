@@ -343,22 +343,134 @@ def execute_source_run(
     }
 
 
+def execute_selection_rerun(
+    *,
+    completed_universe_path: Path,
+    completion_receipt_path: Path,
+    selection_path: Path,
+) -> dict[str, Any]:
+    """Rerun only the deterministic exact-20 step over the frozen complete pool.
+
+    The 146-cell source plane is already complete and immutable.  A selection-law
+    repair must not re-fetch SEC or rewrite the multi-gigabyte cache; it verifies
+    the committed complete-universe and cell receipts, then mints a new selection
+    and completion-receipt version while retaining the superseded hashes.
+    """
+    completed_universe_path = Path(completed_universe_path)
+    completion_receipt_path = Path(completion_receipt_path)
+    selection_path = Path(selection_path)
+    prior_completion_file_sha256 = file_sha256(completion_receipt_path)
+    prior_selection_file_sha256 = file_sha256(selection_path)
+    completion = json.loads(completion_receipt_path.read_text(encoding="utf-8"))
+    universe = json.loads(completed_universe_path.read_text(encoding="utf-8"))
+    if not isinstance(completion, dict) or completion.get("status") != "COMPLETE":
+        raise SourceRunBlocked("selection-only rerun requires a complete source receipt")
+    if not isinstance(universe, list):
+        raise SourceRunBlocked("complete candidate universe must be an array")
+    universe_receipt = completion.get("candidate_universe")
+    if not isinstance(universe_receipt, Mapping) or (
+        universe_receipt.get("raw_sha256") != file_sha256(completed_universe_path)
+        or universe_receipt.get("count") != len(universe)
+    ):
+        raise SourceRunBlocked("complete candidate universe does not bind its receipt")
+    query_receipt = completion.get("query_ledger")
+    cell_receipts = (
+        query_receipt.get("cell_receipts")
+        if isinstance(query_receipt, Mapping)
+        else None
+    )
+    if not isinstance(cell_receipts, list):
+        raise SourceRunBlocked("complete source receipt lacks logical-cell receipts")
+    census = logical_cell_census(build_query_ledger(), cell_receipts)
+    if (
+        query_receipt.get("complete_cells") != 146
+        or query_receipt.get("complete_cell_sha256") != census["complete_sha256"]
+    ):
+        raise SourceRunBlocked("logical-cell completion receipt does not replay")
+
+    manifest_one = exact20_manifest(universe, census)
+    manifest_two = exact20_manifest(universe, census)
+    first_bytes, second_bytes = manifest_bytes(manifest_one), manifest_bytes(manifest_two)
+    if first_bytes != second_bytes:
+        raise SourceRunBlocked("exact-twenty manifest changed on identical-input rerun")
+    prior_exact = completion.get("exact_twenty")
+    if not isinstance(prior_exact, Mapping):
+        raise SourceRunBlocked("prior exact-twenty receipt is absent")
+    completion["schema"] = "mastermind.dislocation_p0.a1r_source_completion_receipt.v2"
+    completion["selection_law_repair"] = {
+        "uniqueness": ["cik", "accession"],
+        "reason": "GLOBAL_CIK_UNIQUENESS_WAS_STRICTER_THAN_FROZEN_SOURCE_LAW",
+        "superseded_completion_file_sha256": prior_completion_file_sha256,
+        "superseded_selection_manifest_sha256": prior_exact.get("manifest_sha256"),
+        "superseded_selection_file_sha256": prior_selection_file_sha256,
+        "source_cache_rewritten": False,
+        "network_accessed": False,
+    }
+    completion["exact_twenty"] = {
+        "manifest_sha256": manifest_one["manifest_sha256"],
+        "file_sha256": sha256(first_bytes).hexdigest(),
+        "byte_identical_rerun": True,
+    }
+    if forbidden_market_fields(completion):
+        raise SourceRunBlocked("selection-only receipt contains forbidden fields")
+    write_canonical_json(completion_receipt_path, completion)
+    selection_path.write_bytes(first_bytes)
+    if selection_path.read_bytes() != second_bytes:
+        raise SourceRunBlocked("written manifest does not reproduce the second run")
+    return {
+        "status": "COMPLETE",
+        "mode": "SELECTION_ONLY",
+        "candidate_universe_sha256": universe_receipt["raw_sha256"],
+        "candidate_count": len(universe),
+        "query_cells_complete": census["complete"],
+        "manifest_sha256": manifest_one["manifest_sha256"],
+        "manifest_file_sha256": file_sha256(selection_path),
+        "selection_changed": prior_exact.get("manifest_sha256")
+        != manifest_one["manifest_sha256"],
+        "source_cache_rewritten": False,
+        "network_accessed": False,
+    }
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--historical-cache", type=Path, required=True)
-    parser.add_argument("--workspace", type=Path, required=True)
-    parser.add_argument("--public-out", type=Path, required=True)
+    parser.add_argument("--historical-cache", type=Path)
+    parser.add_argument("--workspace", type=Path)
+    parser.add_argument("--public-out", type=Path)
+    parser.add_argument("--selection-only", action="store_true")
+    parser.add_argument("--completed-universe", type=Path)
+    parser.add_argument("--completion-receipt", type=Path)
+    parser.add_argument("--selection-output", type=Path)
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     try:
-        result = execute_source_run(
-            historical_cache_path=args.historical_cache,
-            workspace=args.workspace,
-            public_out=args.public_out,
-        )
+        if args.selection_only:
+            if not all(
+                (args.completed_universe, args.completion_receipt, args.selection_output)
+            ):
+                raise SourceRunBlocked(
+                    "--selection-only requires --completed-universe, "
+                    "--completion-receipt, and --selection-output"
+                )
+            result = execute_selection_rerun(
+                completed_universe_path=args.completed_universe,
+                completion_receipt_path=args.completion_receipt,
+                selection_path=args.selection_output,
+            )
+        else:
+            if not all((args.historical_cache, args.workspace, args.public_out)):
+                raise SourceRunBlocked(
+                    "source completion requires --historical-cache, --workspace, "
+                    "and --public-out"
+                )
+            result = execute_source_run(
+                historical_cache_path=args.historical_cache,
+                workspace=args.workspace,
+                public_out=args.public_out,
+            )
     except Exception as exc:  # noqa: BLE001 - CLI emits one named blocker.
         print(canonical_json({"status": "BLOCKED", "blocker": type(exc).__name__, "detail": str(exc)}))
         return 1

@@ -11,6 +11,7 @@ from scripts.research.dislocation_p0_a1r_semantic_run import (
     SemanticRunBlocked,
     build_audit_input,
     finalize_audit,
+    load_packets,
     validate_source_manifest_binding,
     validate_proposal_bundle,
 )
@@ -22,7 +23,22 @@ MANIFEST_SHA = "a" * 64
 def _packets() -> list[dict]:
     rows = []
     for index in range(20):
-        source = f"packet {index} source episode".encode()
+        sources = [f"packet {index} matched source episode".encode()]
+        if index == 0:
+            sources.insert(0, b"packet 0 separate matched exhibit")
+        documents = []
+        source_documents = {}
+        for document_index, source in enumerate(sources):
+            digest = sha256(source).hexdigest()
+            document_id = f"doc-{index}-{document_index}"
+            documents.append({
+                "document_id": document_id,
+                "document_name": f"match-{index}-{document_index}.htm",
+                "document_sha256": digest,
+                "byte_length": len(source),
+                "source_path": f"packets/{index + 1:02d}_{document_id}.source",
+            })
+            source_documents[digest] = source
         rows.append({
             "slot": index + 1,
             "packet_id": f"p{index:02d}",
@@ -30,18 +46,15 @@ def _packets() -> list[dict]:
             "accession": f"{index:010d}-24-000001",
             "accepted_at": "2024-01-01T12:00:00.000000Z",
             "filed_on": "2024-01-01",
-            "document_id": f"doc-{index}",
-            "document_sha256": sha256(source).hexdigest(),
-            "byte_length": len(source),
-            "source_path": f"packets/{index + 1:02d}_doc-{index}.source",
-            "source_bytes": source,
+            "documents": documents,
+            "source_documents": source_documents,
         })
     return rows
 
 
 def _source_manifest(packets: list[dict]) -> dict:
     manifest = {
-        "schema": "mastermind.dislocation_p0.a1r_canonical_source_packets.v1",
+        "schema": "mastermind.dislocation_p0.a1r_canonical_source_packets.v2",
         "status": "COMPLETE",
         "n": 20,
         "packets": [
@@ -54,11 +67,15 @@ def _source_manifest(packets: list[dict]) -> dict:
                     "accepted_at": packet["accepted_at"],
                     "filed_on": packet["filed_on"],
                 },
-                "primary_document": {
-                    "document_id": packet["document_id"],
-                    "content_sha256": packet["document_sha256"],
-                    "byte_length": packet["byte_length"],
-                },
+                "matched_documents": [
+                    {
+                        "document_id": document["document_id"],
+                        "document_name": document["document_name"],
+                        "content_sha256": document["document_sha256"],
+                        "byte_length": document["byte_length"],
+                    }
+                    for document in packet["documents"]
+                ],
             }
             for packet in packets
         ],
@@ -70,21 +87,19 @@ def _source_manifest(packets: list[dict]) -> dict:
 
 
 def _evidence(packet: dict) -> dict:
+    document = packet["documents"][0]
+    source = packet["source_documents"][document["document_sha256"]]
     return {
-        "document_sha256": packet["document_sha256"],
+        "document_sha256": document["document_sha256"],
         "start": 0,
-        "end": len(packet["source_bytes"]),
-        "excerpt": packet["source_bytes"].decode(),
+        "end": len(source),
+        "excerpt": source.decode(),
     }
 
 
 def _proposal_bundle(packets: list[dict]) -> dict:
-    semantic = {
-        field: {"state": "UNKNOWN"}
-        for field in SEMANTIC_FIELDS
-    }
     return {
-        "schema": "mastermind.dislocation_p0.a1r_grok_proposals.v1",
+        "schema": "mastermind.dislocation_p0.a1r_grok_proposals.v2",
         "source_manifest_sha256": MANIFEST_SHA,
         "proposer": {
             "provider": "xAI",
@@ -96,7 +111,16 @@ def _proposal_bundle(packets: list[dict]) -> dict:
             {
                 "packet_id": packet["packet_id"],
                 "proposer_role": "GROK_SOURCE_ONLY",
-                "semantic": semantic,
+                "semantic": {
+                    **{
+                        field: {"state": "UNKNOWN"}
+                        for field in SEMANTIC_FIELDS
+                    },
+                    "adverse_information_state": {
+                        "value": "P0_ADVERSE_INFORMATION",
+                        "evidence": _evidence(packet),
+                    },
+                },
             }
             for packet in packets
         ],
@@ -106,7 +130,7 @@ def _proposal_bundle(packets: list[dict]) -> dict:
 
 def _audit_bundle(packets: list[dict], proposal_sha: str) -> dict:
     return {
-        "schema": "mastermind.dislocation_p0.a1r_opus_audit.v1",
+        "schema": "mastermind.dislocation_p0.a1r_opus_audit.v2",
         "source_manifest_sha256": MANIFEST_SHA,
         "proposal_bundle_sha256": proposal_sha,
         "auditor": {
@@ -167,7 +191,7 @@ def test_validates_exact_grok_bundle_and_complete_opus_episode_linkage() -> None
     )
     assert summary["economic_episode_count"] == 20
     assert summary["audit_verdicts"] == {"ACCEPT": 20}
-    assert summary["final_typed_states"] == {"UNKNOWN": 180}
+    assert summary["final_typed_states"] == {"UNKNOWN": 160}
     assert matrix["unresolved_count"] == 0
 
 
@@ -204,7 +228,7 @@ def test_builds_single_source_only_audit_transport(tmp_path) -> None:
             __import__("json").dumps({
                 "packet": {
                     "packet_id": packet["packet_id"],
-                    "document_sha256": packet["document_sha256"],
+                    "documents": packet["documents"],
                     "segments": [],
                 }
             }),
@@ -216,8 +240,59 @@ def test_builds_single_source_only_audit_transport(tmp_path) -> None:
         catalog_root=tmp_path,
     )
     assert len(transport["packets"]) == 20
-    assert transport["packets"][0]["source_utf8"] == "packet 0 source episode"
-    assert "source_bytes" not in transport["packets"][0]["packet"]
+    assert transport["packets"][0]["source_utf8_documents"] == [
+        packet | {"source_utf8": packets[0]["source_documents"][packet["document_sha256"]].decode()}
+        for packet in packets[0]["documents"]
+    ]
+    assert "source_documents" not in transport["packets"][0]["packet"]
+
+
+def test_load_packets_requires_every_exact_matched_document(tmp_path) -> None:
+    packets = _packets()
+    index_rows = []
+    for packet in packets:
+        index_rows.append({
+            key: value for key, value in packet.items()
+            if key != "source_documents"
+        })
+        for document in packet["documents"]:
+            target = tmp_path / document["source_path"]
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(packet["source_documents"][document["document_sha256"]])
+    index_path = tmp_path / "packet_index.json"
+    index_path.write_text(__import__("json").dumps({
+        "schema": "mastermind.dislocation_p0.a1r_model_packet_index.v2",
+        "packets": index_rows,
+    }), encoding="utf-8")
+    loaded = load_packets(index_path, tmp_path)
+    assert len(loaded[0]["source_documents"]) == 2
+    (tmp_path / packets[0]["documents"][1]["source_path"]).unlink()
+    with pytest.raises(SemanticRunBlocked, match="matched document unavailable"):
+        load_packets(index_path, tmp_path)
+
+
+def test_audit_transport_rejects_catalog_document_crosswire(tmp_path) -> None:
+    packets = _packets()
+    proposals = _proposal_bundle(packets)
+    for packet in packets:
+        (tmp_path / f"{packet['slot']:02d}_evidence.json").write_text(
+            __import__("json").dumps({
+                "packet": {
+                    "packet_id": packet["packet_id"],
+                    "documents": packet["documents"],
+                    "segments": [{
+                        "evidence": {"document_sha256": "not-a-matched-document"},
+                    }],
+                }
+            }),
+            encoding="utf-8",
+        )
+    with pytest.raises(SemanticRunBlocked, match="crosswire"):
+        build_audit_input(
+            packets=packets,
+            proposal_bundle=proposals,
+            catalog_root=tmp_path,
+        )
 
 
 def test_binds_model_packet_index_to_recomputed_canonical_manifest() -> None:
@@ -225,8 +300,8 @@ def test_binds_model_packet_index_to_recomputed_canonical_manifest() -> None:
     manifest = _source_manifest(packets)
     assert validate_source_manifest_binding(manifest, packets) == manifest["manifest_sha256"]
 
-    substituted = [dict(row) for row in packets]
-    substituted[0]["document_id"] = "doc-substituted"
+    substituted = deepcopy(packets)
+    substituted[0]["documents"][0]["document_id"] = "doc-substituted"
     with pytest.raises(SemanticRunBlocked, match="not bound"):
         validate_source_manifest_binding(manifest, substituted)
 

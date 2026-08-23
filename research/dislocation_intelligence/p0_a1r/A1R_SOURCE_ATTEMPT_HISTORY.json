@@ -1,5 +1,5 @@
 {
-  "schema": "mastermind.dislocation_p0.a1r_source_attempt_history.v1",
+  "schema": "mastermind.dislocation_p0.a1r_source_attempt_history.v2",
   "attempts": [
     {
       "attempt_id": "a1r-source-attempt-1",
@@ -67,7 +67,7 @@
     },
     {
       "attempt_id": "a1r-source-attempt-2",
-      "status": "COMPLETE_ACCEPTED_SOURCE_REPAIR",
+      "status": "SUPERSEDED_GLOBAL_UNIQUE_CIK_SELECTION_DEFECT",
       "network_scope": {
         "retry_policy": "five named failed leaves only; four aggregates rebuilt offline",
         "named_leaf_count": 5,
@@ -92,6 +92,45 @@
         "incomplete_records": 0,
         "candidate_universe_count": 277549,
         "selected_packets": 20,
+        "byte_identical_rerun": true
+      },
+      "admissibility": {
+        "acceptance_receipt": false,
+        "artifact": "A1R_QUERY_COMPLETION_AND_POOL_RECEIPT.json",
+        "reason": "Query completion and candidate-universe receipts remain valid, but the exact-twenty solver incorrectly required globally unique CIK rather than unique (CIK, accession)."
+      },
+      "firewall": {
+        "forbidden_dirs_present": [],
+        "official_sec_only": true,
+        "network_parent_aggregate_fetch": false
+      }
+    },
+    {
+      "attempt_id": "a1r-source-attempt-3",
+      "status": "COMPLETE_ACCEPTED_TUPLE_UNIQUENESS_REPAIR",
+      "network_scope": {
+        "retry_policy": "none; the completed 146-cell cache and frozen candidate universe were replayed without new FTS access",
+        "named_leaf_count": 0,
+        "access_event_count": 0,
+        "hosts_observed": []
+      },
+      "receipts": {
+        "candidate_universe_sha256": "aca01d616b859a9e59381748b86cd65405eb3bf54b57a10b1d7faef32b51a733",
+        "complete_cell_sha256": "b7e0c9a5f070473be7ed8fda887869878a210c21078faab2db9361111e4227e0",
+        "exact_twenty_manifest_sha256": "e436c6e87870468d0df0449c86cc9b69a9d23aa1396885fffdfcbfcf6398852e",
+        "exact_twenty_file_sha256": "740454d9d229b28e71fe35c4eb599cb0d1912227c4c44448214e5159a3d13085",
+        "query_completion_file_sha256": "447e378f98e0b5d7d036827eca5e1b405f0c480869f9056643e81e8bd2633611"
+      },
+      "completion": {
+        "logical_cells": 146,
+        "complete_cells": 146,
+        "incomplete_records": 0,
+        "candidate_universe_count": 277549,
+        "selected_packets": 20,
+        "unique_identity": "(CIK, accession)",
+        "same_cik_different_accession_allowed": true,
+        "duplicate_cik_accession_forbidden": true,
+        "selected_packet_ids_unchanged": true,
         "byte_identical_rerun": true
       },
       "admissibility": {

@@ -16,7 +16,7 @@ from typing import Any, Mapping, Sequence
 _ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_ROOT))
 
-from collectors.sec_document_spine import ArchiveStoreError, read_primary_document  # noqa: E402
+from collectors.sec_document_spine import ArchiveStoreError, read_archive_document  # noqa: E402
 from collectors.sec_document_spine import read_filing_manifest  # noqa: E402
 
 
@@ -33,6 +33,7 @@ class CanonicalSpineRef:
     accession: str
     expected_base_form: str
     expected_filed_on: str | None
+    expected_document_names: tuple[str, ...]
     manifest_storage_key: str | None
     allow_amendment_transition: bool = False
 
@@ -58,8 +59,8 @@ class CanonicalSourcePacket:
     filing: Mapping[str, Any]
     clocks: Mapping[str, Any]
     lineage: Mapping[str, Any]
-    primary_document: Mapping[str, Any]
-    source_bytes: bytes
+    matched_documents: tuple[Mapping[str, Any], ...]
+    source_documents: tuple[bytes, ...]
 
 
 @dataclass(frozen=True)
@@ -93,6 +94,16 @@ def _selection_gaps(refs: Sequence[CanonicalSpineRef]) -> list[OwnerCapabilityGa
         if filing in seen_filings:
             gaps.append(_gap(ref, "OWNER_PACKET_DUPLICATE", "duplicate CIK/accession selection"))
         seen_filings.add(filing)
+        if (
+            not ref.expected_document_names
+            or len(set(ref.expected_document_names)) != len(ref.expected_document_names)
+            or any(not isinstance(name, str) or not name for name in ref.expected_document_names)
+        ):
+            gaps.append(_gap(
+                ref,
+                "OWNER_FTS_EDGE_INVALID",
+                "selection must carry unique non-empty exact FTS document names",
+            ))
         if ref.manifest_storage_key is not None:
             if ref.manifest_storage_key in seen_keys:
                 gaps.append(_gap(ref, "OWNER_PACKET_DUPLICATE", "duplicate owner manifest reference"))
@@ -133,19 +144,44 @@ def _read_packet(archive_root: Path, ref: CanonicalSpineRef) -> CanonicalSourceP
         return _gap(ref, "OWNER_EXACT_ACCEPTANCE_ABSENT", "owner packet lacks SEC acceptance timestamp")
     if lineage["is_amendment"] and not ref.allow_amendment_transition:
         return _gap(ref, "OWNER_AMENDMENT_ORIGIN_REFUSED", "amendment is not an origin")
-    primary = next((doc for doc in manifest["documents"] if doc["role"] == "primary"), None)
-    if primary is None:
-        return _gap(ref, "OWNER_CAPABILITY_GAP", "owner manifest has no primary document")
-    if primary["availability"] == "declared":
-        return _gap(ref, "OWNER_PRIMARY_DECLARED", "owner primary document was never retained")
-    if primary["availability"] == "missing":
-        return _gap(ref, "OWNER_PRIMARY_MISSING_404", "owner recorded a canonical SEC 404")
-    if primary["availability"] != "stored" or len(primary["source_spans"]) != 1:
-        return _gap(ref, "OWNER_EVIDENCE_SPAN_MISSING", "stored primary lacks exactly one owner root span")
-    try:
-        source_bytes = read_primary_document(archive_root, manifest)
-    except ArchiveStoreError as exc:
-        return _gap(ref, "OWNER_PRIMARY_UNREPLAYABLE", str(exc))
+    documents_by_name: dict[str, list[Mapping[str, Any]]] = {}
+    for document in manifest["documents"]:
+        documents_by_name.setdefault(str(document.get("document_name") or ""), []).append(document)
+    matched: list[Mapping[str, Any]] = []
+    source_documents: list[bytes] = []
+    for name in ref.expected_document_names:
+        documents = documents_by_name.get(name, [])
+        if not documents:
+            return _gap(
+                ref,
+                "OWNER_FTS_DOCUMENT_NOT_IN_INDEX",
+                f"exact FTS document is absent from owner manifest: {name}",
+            )
+        if len(documents) != 1:
+            return _gap(
+                ref,
+                "OWNER_FTS_DOCUMENT_AMBIGUOUS",
+                f"exact FTS document resolves more than once: {name}",
+            )
+        document = documents[0]
+        if document["availability"] == "missing":
+            return _gap(
+                ref,
+                "OWNER_FTS_DOCUMENT_MISSING_404",
+                f"owner recorded a canonical SEC 404 for {name}",
+            )
+        if document["availability"] != "stored" or len(document["source_spans"]) != 1:
+            return _gap(
+                ref,
+                "OWNER_EVIDENCE_SPAN_MISSING",
+                f"stored FTS document lacks exactly one owner root span: {name}",
+            )
+        try:
+            source = read_archive_document(archive_root, document["retrieval"])
+        except ArchiveStoreError as exc:
+            return _gap(ref, "OWNER_FTS_DOCUMENT_UNREPLAYABLE", f"{name}: {exc}")
+        matched.append(document)
+        source_documents.append(source)
     return CanonicalSourcePacket(
         slot=ref.slot,
         manifest_storage_key=ref.manifest_storage_key,
@@ -155,8 +191,8 @@ def _read_packet(archive_root: Path, ref: CanonicalSpineRef) -> CanonicalSourceP
         filing=filing,
         clocks=clocks,
         lineage=lineage,
-        primary_document=primary,
-        source_bytes=source_bytes,
+        matched_documents=tuple(matched),
+        source_documents=tuple(source_documents),
     )
 
 

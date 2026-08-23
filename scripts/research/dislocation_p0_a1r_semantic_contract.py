@@ -17,6 +17,11 @@ PROPOSER_ROLE = "GROK_SOURCE_ONLY"
 AUDITOR_ROLE = "OPUS"
 SEMANTIC_ASSERTION_KEYS = frozenset({"state", "value", "evidence"})
 RELATIONSHIP_ASSERTION_KEYS = frozenset({"state", "value", "evidence", "note"})
+P0_EPISODE_ADMISSION_VALUES = {
+    "adverse_information_state": "P0_ADVERSE_INFORMATION",
+    "structural_impairment_evidence": "P0_STRUCTURAL_IMPAIRMENT_CONTROL",
+    "mitigation_resolution_transition": "P0_RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+}
 
 
 @dataclass(frozen=True)
@@ -55,15 +60,19 @@ def _forbidden(value: Any, path: str = "") -> str | None:
 
 
 def _evidence_issue(packet: Mapping[str, Any], evidence: Any) -> str | None:
-    source, expected = packet.get("source_bytes"), packet.get("document_sha256")
-    if not isinstance(source, bytes) or not isinstance(expected, str):
-        return "PACKET_SOURCE_UNAVAILABLE"
-    if sha256(source).hexdigest() != expected:
-        return "PACKET_HASH_MISMATCH"
     if not isinstance(evidence, Mapping):
         return "SPAN_EVIDENCE_MISSING"
-    if evidence.get("document_sha256") != expected:
+    expected = evidence.get("document_sha256")
+    if not isinstance(expected, str) or not expected:
         return "SPAN_HASH_MISMATCH"
+    source_documents = packet.get("source_documents")
+    if not isinstance(source_documents, Mapping):
+        return "PACKET_SOURCE_UNAVAILABLE"
+    source = source_documents.get(expected)
+    if not isinstance(source, bytes):
+        return "SPAN_DOCUMENT_UNKNOWN"
+    if sha256(source).hexdigest() != expected:
+        return "PACKET_HASH_MISMATCH"
     start, end, excerpt = evidence.get("start"), evidence.get("end"), evidence.get("excerpt")
     if not isinstance(start, int) or not isinstance(end, int) or start < 0 or end < start or end > len(source):
         return "SPAN_OFFSETS_INVALID"
@@ -210,7 +219,10 @@ def _validate_packets(
             or not packet_id
             or not cik
             or not accession
-            or not packet.get("document_id")
+            or (
+                not packet.get("document_id")
+                and not isinstance(packet.get("documents"), list)
+            )
         ):
             _refuse(refusals, "PACKET_IDENTITY_MISSING", str(packet_id))
             continue
@@ -219,18 +231,56 @@ def _validate_packets(
             _refuse(refusals, "PACKET_IDENTITY_DUPLICATE", packet_id)
         by_id[packet_id] = packet
         identities.add(identity)
-        issue = _evidence_issue(
-            packet,
-            {
-                "document_sha256": packet.get("document_sha256"),
-                "start": 0,
-                "end": 0,
-                "excerpt": "",
-            },
-        )
-        if issue in {"PACKET_SOURCE_UNAVAILABLE", "PACKET_HASH_MISMATCH"}:
-            _refuse(refusals, issue, packet_id)
+        source_documents = packet.get("source_documents")
+        documents = packet.get("documents")
+        if not isinstance(source_documents, Mapping) or not isinstance(documents, list) or not documents:
+            _refuse(refusals, "PACKET_SOURCE_UNAVAILABLE", packet_id)
+            continue
+        document_hashes: set[str] = set()
+        for document in documents:
+            document_sha256 = document.get("document_sha256") if isinstance(document, Mapping) else None
+            source = source_documents.get(document_sha256)
+            if (
+                not isinstance(document_sha256, str)
+                or document_sha256 in document_hashes
+                or not isinstance(source, bytes)
+                or sha256(source).hexdigest() != document_sha256
+            ):
+                _refuse(refusals, "PACKET_HASH_MISMATCH", packet_id)
+            document_hashes.add(str(document_sha256))
+        if set(source_documents) != document_hashes:
+            _refuse(refusals, "PACKET_DOCUMENT_INVENTORY_MISMATCH", packet_id)
     return by_id
+
+
+def _final_semantic(
+    packet_id: str,
+    proposal_by_id: Mapping[str, Mapping[str, Any]],
+    audit_by_id: Mapping[str, Mapping[str, Any]],
+) -> Mapping[str, Any] | None:
+    """Resolve only the independently audited terminal semantic payload."""
+    proposal = proposal_by_id.get(packet_id)
+    audit = audit_by_id.get(packet_id)
+    if not isinstance(proposal, Mapping) or not isinstance(audit, Mapping):
+        return None
+    if audit.get("verdict") == "ACCEPT":
+        semantic = proposal.get("semantic")
+    elif audit.get("verdict") == "REPAIR":
+        semantic = audit.get("final_semantic")
+    else:
+        return None
+    return semantic if isinstance(semantic, Mapping) else None
+
+
+def _is_p0_episode_eligible(semantic: Mapping[str, Any] | None) -> bool:
+    if semantic is None:
+        return False
+    return any(
+        isinstance(semantic.get(field), Mapping)
+        and semantic[field].get("value") == controlled_value
+        and isinstance(semantic[field].get("evidence"), Mapping)
+        for field, controlled_value in P0_EPISODE_ADMISSION_VALUES.items()
+    )
 
 
 def _validate_proposals(
@@ -346,6 +396,7 @@ def validate_p0_a1r_semantic_audit(packets: Sequence[Mapping[str, Any]], proposa
     episode_id_counts: Counter[str] = Counter()
     episode_membership: Counter[str] = Counter()
     for edge in relationships:
+        edge_valid = True
         kind, linked = edge.get("kind"), edge.get("packet_ids")
         if (
             kind not in RELATIONSHIPS
@@ -359,12 +410,14 @@ def validate_p0_a1r_semantic_audit(packets: Sequence[Mapping[str, Any]], proposa
         anchor = by_id[linked[0]]
         if issue := _evidence_issue(anchor, edge.get("evidence")):
             _refuse(refusals, issue, f"relationship:{kind}")
+            edge_valid = False
         linked_audits = [audit_by_id.get(str(packet_id)) for packet_id in linked]
         if any(
             audit is None or audit.get("verdict") not in {"ACCEPT", "REPAIR"}
             for audit in linked_audits
         ):
             _refuse(refusals, "RELATIONSHIP_PACKET_AUDIT_INVALID", f"{kind}:{linked}")
+            edge_valid = False
         for packet_id, audit in zip(linked, linked_audits):
             if audit is None:
                 continue
@@ -380,12 +433,14 @@ def validate_p0_a1r_semantic_audit(packets: Sequence[Mapping[str, Any]], proposa
                     "RELATIONSHIP_ASSESSMENT_NOT_AFFIRMATIVE",
                     f"{packet_id}:{kind}",
                 )
+                edge_valid = False
             if edge.get("auditor_role") != audit.get("auditor_role"):
                 _refuse(
                     refusals,
                     "RELATIONSHIP_AUDITOR_MISMATCH",
                     f"{packet_id}:{kind}",
                 )
+                edge_valid = False
         anchor_audit = linked_audits[0] if linked_audits else None
         if (
             edge.get("auditor_role") != AUDITOR_ROLE
@@ -394,13 +449,27 @@ def validate_p0_a1r_semantic_audit(packets: Sequence[Mapping[str, Any]], proposa
             or edge.get("audit_verdict") != anchor_audit.get("verdict")
         ):
             _refuse(refusals, "RELATIONSHIP_AUDIT_INVALID", f"{kind}:{linked}")
+            edge_valid = False
         if edge.get("resolution") not in {"RESOLVED", "NOT_APPLICABLE"}:
             _refuse(refusals, "RELATIONSHIP_UNRESOLVED", f"{kind}:{linked}")
+            edge_valid = False
         if kind == "episode" and edge.get("audit_verdict") in {"ACCEPT", "REPAIR"} and edge.get("resolution") == "RESOLVED":
+            if not any(
+                _is_p0_episode_eligible(
+                    _final_semantic(str(packet_id), proposal_by_id, audit_by_id)
+                )
+                for packet_id in linked
+            ):
+                _refuse(
+                    refusals,
+                    "EPISODE_P0_ELIGIBILITY_MISSING",
+                    str(linked),
+                )
+                edge_valid = False
             episode_id = edge.get("episode_id")
             if not isinstance(episode_id, str) or not episode_id:
                 _refuse(refusals, "EPISODE_ID_MISSING", str(linked))
-            else:
+            elif edge_valid:
                 episode_ids.add(episode_id)
                 episode_id_counts[episode_id] += 1
                 episode_membership.update(str(packet_id) for packet_id in linked)

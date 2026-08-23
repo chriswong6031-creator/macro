@@ -2,22 +2,35 @@ from __future__ import annotations
 
 from hashlib import sha256
 
+import pytest
+
 from scripts.research.dislocation_p0_a1r_semantic_contract import REQUIRED_PACKET_COUNT, validate_p0_a1r_proposals, validate_p0_a1r_semantic_audit
 
 
 def _packet(index: int) -> dict:
     source = f"packet {index}: outage occurred".encode()
-    return {"packet_id": f"p{index}", "cik": f"{index:010d}", "accession": f"{index:010d}-24-000001", "document_id": f"doc-{index}", "document_sha256": sha256(source).hexdigest(), "source_bytes": source}
+    document_sha256 = sha256(source).hexdigest()
+    return {
+        "packet_id": f"p{index}",
+        "cik": f"{index:010d}",
+        "accession": f"{index:010d}-24-000001",
+        "documents": [{
+            "document_id": f"doc-{index}",
+            "document_name": f"exhibit-{index}.htm",
+            "document_sha256": document_sha256,
+        }],
+        "source_documents": {document_sha256: source},
+    }
 
 
 def _evidence(packet: dict, excerpt: str = "outage occurred") -> dict:
-    source = packet["source_bytes"]
+    document_sha256, source = next(iter(packet["source_documents"].items()))
     start = source.index(excerpt.encode())
-    return {"document_sha256": packet["document_sha256"], "start": start, "end": start + len(excerpt), "excerpt": excerpt}
+    return {"document_sha256": document_sha256, "start": start, "end": start + len(excerpt), "excerpt": excerpt}
 
 
 def _proposal(packet: dict) -> dict:
-    return {"packet_id": packet["packet_id"], "proposer_role": "GROK_SOURCE_ONLY", "semantic": {"event_family": {"value": "CYBER_OR_IT_INTERRUPTION", "evidence": _evidence(packet)}, "affected_scope": {"state": "UNKNOWN"}, "adverse_information_state": {"state": "EXPLICIT_NONE", "evidence": _evidence(packet)}}}
+    return {"packet_id": packet["packet_id"], "proposer_role": "GROK_SOURCE_ONLY", "semantic": {"event_family": {"value": "CYBER_OR_IT_INTERRUPTION", "evidence": _evidence(packet)}, "affected_scope": {"state": "UNKNOWN"}, "adverse_information_state": {"value": "P0_ADVERSE_INFORMATION", "evidence": _evidence(packet)}}}
 
 
 def _audit(packet: dict) -> dict:
@@ -67,7 +80,7 @@ def test_accepts_exact_twenty_audited_source_only_packets_and_episode_edges() ->
     packets, proposals, audits, relationships = _valid_inputs()
     result = validate_p0_a1r_semantic_audit(packets, proposals, audits, relationships)
     assert result.ok
-    assert result.unknowns == {"EXPLICIT_NONE": REQUIRED_PACKET_COUNT, "UNKNOWN": REQUIRED_PACKET_COUNT}
+    assert result.unknowns == {"UNKNOWN": REQUIRED_PACKET_COUNT}
     assert result.episodes == tuple(sorted(f"episode-{index}" for index in range(20)))
 
 
@@ -76,9 +89,79 @@ def test_proposal_validation_never_requires_or_fabricates_audits() -> None:
     result = validate_p0_a1r_proposals(packets, proposals)
     assert result.ok
     assert result.typed_states == {
-        "EXPLICIT_NONE": REQUIRED_PACKET_COUNT,
         "UNKNOWN": REQUIRED_PACKET_COUNT,
     }
+
+
+@pytest.mark.parametrize("ordinary_event", ["DIVIDEND", "OFFERING", "BUYBACK"])
+def test_not_applicable_ordinary_corporate_event_cannot_generate_episode(
+    ordinary_event: str,
+) -> None:
+    packets, proposals, audits, relationships = _valid_inputs()
+    proposals[0]["semantic"]["event_family"] = {
+        "value": ordinary_event,
+        "evidence": _evidence(packets[0]),
+    }
+    proposals[0]["semantic"]["adverse_information_state"] = {
+        "state": "NOT_APPLICABLE"
+    }
+    result = validate_p0_a1r_semantic_audit(
+        packets, proposals, audits, relationships
+    )
+    assert "EPISODE_P0_ELIGIBILITY_MISSING" in {
+        row["code"] for row in result.refusals
+    }
+    assert "episode-0" not in result.episodes
+
+
+@pytest.mark.parametrize("typed_state", ["UNKNOWN", "UNAVAILABLE"])
+def test_unknown_or_unavailable_cannot_generate_episode(typed_state: str) -> None:
+    packets, proposals, audits, relationships = _valid_inputs()
+    proposals[0]["semantic"]["adverse_information_state"] = {
+        "state": typed_state
+    }
+    result = validate_p0_a1r_semantic_audit(
+        packets, proposals, audits, relationships
+    )
+    assert "EPISODE_P0_ELIGIBILITY_MISSING" in {
+        row["code"] for row in result.refusals
+    }
+    assert "episode-0" not in result.episodes
+
+
+def test_evidence_backed_adverse_or_control_state_can_generate_episode() -> None:
+    packets, proposals, audits, relationships = _valid_inputs()
+    proposals[0]["semantic"]["adverse_information_state"] = {
+        "value": "P0_ADVERSE_INFORMATION",
+        "evidence": _evidence(packets[0]),
+    }
+    result = validate_p0_a1r_semantic_audit(
+        packets, proposals, audits, relationships
+    )
+    assert result.ok
+    assert "episode-0" in result.episodes
+
+
+def test_rejected_packet_cannot_generate_episode() -> None:
+    packets, proposals, audits, relationships = _valid_inputs()
+    audits[0].update({
+        "verdict": "REJECT",
+        "typed_refusal": "UNAVAILABLE",
+        "disagreements": [{
+            "field": "adverse_information_state",
+            "proposal": "P0_ADVERSE_INFORMATION",
+            "audited": "UNAVAILABLE",
+            "resolution": "REJECT",
+            "rationale": "the source cannot support final admission",
+        }],
+    })
+    result = validate_p0_a1r_semantic_audit(
+        packets, proposals, audits, relationships
+    )
+    assert "RELATIONSHIP_PACKET_AUDIT_INVALID" in {
+        row["code"] for row in result.refusals
+    }
+    assert "episode-0" not in result.episodes
 
 
 def test_fails_closed_on_cardinality_span_and_unauthorized_semantic_field() -> None:
