@@ -107,7 +107,7 @@ verified:
     result: >
       Both historical pins are ancestors; the continuation merged current main and
       the remote PR lineage without rebase/reset/force. The reconciled base is
-      2ab19e6aa35fb2ad118af39106a8c3445d4606ad. The post-first-candidate
+      25b961651882360b4ef68d211447cf8330c023dc. The post-first-candidate
       owner-area deltas are #6308 in event_workspace_build.py, which leaves
       WORKSPACE_SCHEMA, WORKSPACE_KEYS, native identity/clocks, and
       read_event_workspace unchanged, and #6312's display-only government
