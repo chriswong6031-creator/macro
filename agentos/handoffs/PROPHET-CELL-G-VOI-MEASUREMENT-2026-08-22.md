@@ -16,7 +16,9 @@
 5. `research/prophet_fusion/W3_RACE_PREREG.md`
 6. `data/us_prophet_rank/w3/status.json` **status only until its owner gate opens**
 7. `engine/qledger_evidence_clock.py` + `data/qledger/evidence_clock_start/`
-8. `engine/prophet_voi.py` + `scripts/prophet_flagship_voi_report.py`
+8. `engine/prophet_voi.py`
+9. `engine/prophet_voi_eawc.py`
+10. `scripts/prophet_flagship_voi_report.py`
 
 Protected Skillpack used for this operation: `mastermindx-market-intelligence/Mastermind@e1101eb2c1f17d801d480ded497b3fc1bb0ef18b`, `mastermind.sol_skillpack.v1`, v1.0.0, bootstrap major 1.
 
@@ -91,13 +93,40 @@ The committed US board grade ledger can support already-lawful descriptive retur
 - R when initial risk is absent;
 - payoff-time / time-underwater when the path series is absent.
 
-Board `(as_of,lane,ticker,horizon)` observations are never relabelled as V4 episodes.
+Board `(as_of,lane,ticker,horizon)` observations are never relabelled as V4 episodes. The board ledger also spans explicit price-basis/correction eras, including the 2026-08-06 adjusted-price era boundary. Its pooled board telemetry is therefore **descriptive only**; basis/ranker provenance is surfaced and it cannot become confirmatory family evidence without a homogeneous preregistered cohort/ruler.
 
 ## First bounded implementation
 
 ### `engine/prophet_voi.py`
 
-Pure formulas and derived summaries only. Important terminal states are explicit: `MEASURED`, `NOT_MATURE`, `PROTECTED_OUTCOME`, `UNAVAILABLE_FIELD`, `UNESTIMABLE`, `NOT_APPLICABLE`, `DESCRIPTIVE_ONLY`, `HOLD_INTEGRITY`.
+Pure common metric/report primitives. Important terminal states are explicit: `MEASURED`, `NOT_MATURE`, `PROTECTED_OUTCOME`, `UNAVAILABLE_FIELD`, `UNESTIMABLE`, `NOT_APPLICABLE`, `DESCRIPTIVE_ONLY`, `HOLD_INTEGRITY`.
+
+It pins:
+
+- concentration-effective counts;
+- NDCG/precision/recall denominator law;
+- ES tail floor;
+- lead PASS/MIXED/FAIL classification;
+- fail-closed W3 status gating;
+- board coverage/refusal semantics;
+- per-session rather than pooled rank diagnostics;
+- native path basis and loud unavailable fields.
+
+### `engine/prophet_voi_eawc.py`
+
+Pure executable EAWC/path primitives that consume **owner-resolved** fields only. They never search the repository, reconstruct candidate identity, infer trading calendars, or read outcomes.
+
+Implemented and synthetic-tested:
+
+- paired `T_eligible` / `T_surface` lead using owner-resolved session ordinals, with challenger-only/champion-only/neither cells and **no one-sided lead imputation**;
+- early actionable capture recall with all registered positives in the denominator, including misses and blocked actionability;
+- first-surface actionability rate with missing/blocked actionability retained in the applicable denominator;
+- unusable-or-unknown guardrail where missing owner actionability is conservatively bad rather than favorable;
+- realized R requiring frozen initial invalidation/risk, never a retrospective stop;
+- strictly-forward time-to-payoff with right censoring for non-hits;
+- eventual-move-consumed fraction explicitly `DESCRIPTIVE_ONLY` because it uses an ex-post future-MFE denominator.
+
+Current V4/board truth still does not populate the first-surface inputs, so the report correctly refuses those current metrics even though the formulas themselves are executable.
 
 ### `scripts/prophet_flagship_voi_report.py`
 
@@ -111,7 +140,9 @@ There is no output writer and no promotion consumer.
 
 ### tests
 
-Synthetic tests pin formulas/denominators/refusals, and real-data smoke tests execute the report over the currently committed owner surfaces while asserting zero authority.
+- `tests/test_prophet_voi.py`: formulas, denominator law, W3 fail-closed gating, null/applicability behavior, board refusal behavior.
+- `tests/test_prophet_voi_eawc.py`: executable EAWC/lead/actionability/chase/R/censoring semantics.
+- `tests/test_prophet_flagship_voi_report.py`: source-pinning plus real committed metadata/board smoke tests that assert zero authority.
 
 ## Adversarial defects found and repaired during Sol review
 
@@ -120,9 +151,11 @@ These are important discoveries, not incidental code churn:
 1. **Top-K-only IDCG bug:** the first NDCG implementation built its ideal ranking from the presented top K, which could erase a better item below K and overstate quality. Repaired to use the full fixed candidate population; regression test added.
 2. **Arbitrary-path outcome-read hole:** an early CLI accepted `--w3-status <path>`. An operator could redirect it to outcome JSON and cause a read before schema rejection. All source-path overrides were removed; source pinning is now tested.
 3. **Pooled pseudo-N rank correlation:** an early board diagnostic pooled rows across dates. Replaced with one Spearman value per decision session and unweighted session aggregation; underpowered sessions refuse rather than pool.
-4. **Applicability-mask alignment defect:** the first by-design `NOT_APPLICABLE` exclusion could misalign Pandas indexes when enumerating missing reasons. Repaired and pinned with a `lane_not_stamped` denominator test.
+4. **Applicability-mask alignment defect:** the first by-design `NOT_APPLICABLE` exclusion could misalign Pandas indexes when enumerating missing reasons. Repaired with aligned indexes.
 5. **Board observation semantic inflation:** the early name `n_subject_episodes` was rejected because `(as_of,ticker)` rows are not canonical episodes. Renamed to `n_board_subject_observations`.
 6. **Outcome-missing top-K laundering:** published occupancy, outcome coverage and precision are separate. A missing #1 grade cannot promote #2 into P@1 or silently become a loss.
+7. **RAN-only null leaked into generic coverage law:** `lane_not_stamped` is a by-design null only for the RAN lane. The first generic exclusion could have hidden a malformed buy row carrying that reason. It is now excluded only when `lane == ran`; on buy/laggard it remains a missing applicable observation.
+8. **Law executable only on paper:** the first implementation had the lead gate classifier but not the EAWC subject-level primitives. Added pure owner-input EAWC functions so future V4/Cell F fields can be consumed without redefining denominators later.
 
 ## External method anchors
 
@@ -133,7 +166,9 @@ These are important discoveries, not incidental code churn:
 - Lipsitch, Tchetgen Tchetgen & Cohen: negative controls detect classes of bias but are not themselves positive causal proof.
 - Gneiting & Raftery: strictly proper scoring rules for honest probabilistic forecasts.
 - Holm: confirmatory family-wise multiplicity control.
-- Lan-DeMets / modern confidence-sequence methods: repeated looks require a design valid under sequential monitoring.
+- Howard, Ramdas, McAuliffe & Sekhon / Lan-DeMets: repeated looks require a time-uniform or preregistered spending design.
+- Kaplan & Meier: non-hitters stay in the censored risk set rather than being dropped from time-to-payoff analysis.
+- Hill (1973): inverse-concentration diversity can be interpreted as an effective number; Cell G uses this only as a concentration/scope diagnostic, not an inferential sample-size substitute.
 
 ## No-rebuild / no-authority boundary
 
@@ -149,5 +184,6 @@ No family receives predictive/rank authority from this PR. Existing Eval/Fusion 
 4. If green and collision-free, Sol may release the draft hold and merge this bounded zero-authority vertical under the Chairman’s explicit MAS-123 authorization.
 5. After merge, future Cells A/F/B and the V4 canonical episode/Availability owners may supply missing first-surface/economic-issuer/path fields. Cell G consumes those owner fields; it does not invent substitutes.
 6. W3 outcomes remain protected until the existing status gate opens. A future comparison adapter must bind the frozen Cell G law and then undergo a fresh reviewed change.
+7. Any future family experiment must register its exact version, claim type, population, clock, horizon/ruler, K/label, minimum effect, multiplicity family and look plan **before** the confirmatory clock/result read.
 
 **Current stop condition:** if exact-head CI is not green or the real-data smoke exposes a denominator/clock/authority defect, keep #6276 draft and repair only within this bounded measurement surface. Do not promote anything as a workaround.
