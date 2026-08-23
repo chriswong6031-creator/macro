@@ -91,11 +91,14 @@ log = logging.getLogger("topup_thetadata_day")
 
 TIERS = ("eod", "oi", "greeks")
 
-# AD1T1-FROZEN-BY-FABLE: production --workers default for `--daily`. The
-# 1/2/4/6 quiet-window benchmark ladder (spec §F) is in flight; Fable sets the
-# final value before the PR leaves draft review. Every call site and every
-# test reads this constant — never the literal.
-_DAILY_WORKERS_DEFAULT = 2
+# AD1T1-FROZEN-BY-FABLE: production --workers default for `--daily`, frozen
+# from the 2026-08-23 quiet-window benchmark ladder (spec §F): zero errors at
+# every W in 1/2/4/6, no concurrency knee through W=6, full-universe
+# steady-state projection 25.8/12.6/6.0/4.6 min. W=4 is the ruling: ~10x
+# headroom inside the 65-min deadline on a degraded-vendor day, and 4 of the
+# Terminal's 8 request slots left free for any concurrent consumer. Every
+# call site and every test reads this constant — never the literal.
+_DAILY_WORKERS_DEFAULT = 4
 
 _MAX_WORKERS = 6                 # hard vendor-safety cap (§A1) — Terminal ceiling is 8
 # (RF7, R3) 65 min — the plist's four fire points are >=70 min apart (§E), so

@@ -426,18 +426,35 @@ CENSUS-CONFIRMED live-m1 facts the runbook transition section must encode:
 
 ---
 
-## §F Concurrency (PENDING-BENCHMARK)
+## §F Concurrency (FROZEN 2026-08-23 from the quiet-window ladder)
 
-- Production `--workers` default: `PENDING-BENCHMARK` (chosen by Fable from
-  the 1/2/4/6 quiet-window ladder evidence; hard cap 6; must fit full
-  ~375-root steady-state refresh comfortably inside 16:10→18:30 ET without
-  Terminal degradation).
-- Selection criteria, in order: (1) no Terminal stall/health degradation at
-  the chosen count; (2) projected full-universe wall time ≤ ~90 min with
-  headroom; (3) per-request latency knee — prefer the lowest count meeting
-  (1)+(2).
-- If NO count ≤6 fits the envelope, that is a measured bottleneck returned to
-  Sol in the verdict — never hidden by filters or universe shrink (Sol §14).
+- **Production `--workers` default: 4** (`_DAILY_WORKERS_DEFAULT = 4`).
+- Ladder evidence (24-root stratified sample, live m1 Terminal, quiet window
+  00:30–00:34Z, S=2026-08-19/D=2026-08-20, zero errors in all 312 calls):
+
+  | W | 24-root wall | speedup | full-universe projection (stratum-corrected, 378 roots) |
+  |---|---|---|---|
+  | 1 | 122.9 s | 1.00× | ~25.8 min |
+  | 2 | 56.3 s | 2.18× | ~12.6 min |
+  | 4 | 28.5 s | 4.31× | ~6.0 min |
+  | 6 | 20.9 s | 5.89× | ~4.6 min |
+
+  Bootstrap (+OI[S]) adds ≈2.5 min at W=4 (≈8.5 min total). No concurrency
+  knee through W=6 (98% parallel efficiency; per-tier p95 stable or falling
+  with W); Terminal healthy throughout (RSS fell 941→799 MB; HTTP 200
+  before/after every config); drift re-run flat (no vendor caching
+  signature).
+- Ruling rationale: every count passed criteria (1) health and (2) envelope,
+  so the original "prefer the lowest count" tiebreak under-determines; the
+  deciding factors are (a) degraded-vendor-day robustness — W=4's ~6-min
+  steady state gives ~10× headroom inside the 65-min deadline vs ~2.5× at
+  W=1 — and (b) Terminal slot headroom — W=4 leaves 4 of 8 request slots
+  free (the collector's own headroom convention), where W=6 leaves 2 for no
+  practical gain. This refinement of criterion (3) is DISCLOSED to Sol in
+  the §18 packet.
+- The 65-min deadline (RF7) makes the benchmark load-bearing for steady-state
+  status: at W=4 a >10× systemic vendor slowdown is required before a session
+  stamps `partial` — and F2's fix makes that visible, never masked.
 
 ---
 
