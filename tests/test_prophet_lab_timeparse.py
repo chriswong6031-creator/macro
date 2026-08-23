@@ -416,3 +416,15 @@ def test_cell_g_eawc_rejects_malformed_actionability_state() -> None:
     )
     assert got["state"] == HOLD_INTEGRITY
     assert got["invalid_actionability_states"] == 1
+
+
+def test_cell_g_report_sources_are_repo_root_pinned_outside_working_directory(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    rc = voi_report.main(["--no-board"])
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["w3"]["outcome_files_opened"] is False
+    assert payload["w3"]["state"] == PROTECTED_OUTCOME
+    assert payload["qledger_evidence_clocks"]["registration_count"] >= 1
