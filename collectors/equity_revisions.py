@@ -53,12 +53,15 @@ import hashlib
 import json
 import logging
 import math
+import os
 from pathlib import Path
+import re
 from typing import Any, Callable
 
 import pandas as pd
 
 from lib import config
+from lib.nyse_calendar import session_date
 
 log = logging.getLogger("equity_revisions")
 _FRESH_DAYS = 6
@@ -163,17 +166,21 @@ def _frame_payload(frame: Any) -> list[dict[str, Any]]:
 
 def _safe_http_failure(exc: Exception) -> tuple[str, int | None, str, str]:
     """Classify provider errors without persisting provider bodies or exception text."""
-    text = str(exc).lower()
-    for code in (401, 403, 429):
-        if str(code) in text:
-            return f"http_{code}", code, "provider_http_error", f"http_status_{code}"
+    candidates = [getattr(exc, "status_code", None), getattr(getattr(exc, "response", None), "status_code", None)]
+    for candidate in candidates:
+        if candidate in (401, 403, 429):
+            return f"http_{candidate}", candidate, "provider_http_error", f"http_status_{candidate}"
+    match = re.search(r"(?<![0-9])(?:http(?:[ _-]?(?:status|code))?\s*[:=]?\s*)?(401|403|429)(?![0-9])", str(exc).lower())
+    if match:
+        code = int(match.group(1))
+        return f"http_{code}", code, "provider_http_error", f"http_status_{code}"
     return "error", None, "provider_exception", "provider_request_failed"
 
 
 def _field_value(frame: pd.DataFrame, horizon: object, observation_type: str, metric: str) -> tuple[float | None, str | None]:
     aliases = _FIELD_ALIASES.get(observation_type)
     if observation_type == "year_ago":
-        aliases = ("yearAgoEps", "yearAgoRevenue") if metric == "EPS" else ("yearAgoRevenue", "yearAgoEps")
+        aliases = ("yearAgoEps",) if metric == "EPS" else ("yearAgoRevenue",)
     assert aliases is not None
     columns = {_normalise_column(column): column for column in frame.columns}
     column = next((columns.get(_normalise_column(alias)) for alias in aliases if _normalise_column(alias) in columns), None)
@@ -181,6 +188,24 @@ def _field_value(frame: pd.DataFrame, horizon: object, observation_type: str, me
         return None, "NOT_APPLICABLE"
     value = _finite_number(frame.loc[horizon, column])
     return (value, None) if value is not None else (None, "UNESTIMABLE")
+
+
+def _market_session(system_observed_at: str) -> str | None:
+    """Use the existing NYSE owner; a calendar failure is an explicit null."""
+    try:
+        return session_date(_utc_timestamp(system_observed_at).to_pydatetime()).isoformat()
+    except Exception:  # noqa: BLE001 - a source receipt must not invent a session
+        return None
+
+
+def _default_collection_session_id(now: object | None = None, environ: dict[str, str] | None = None) -> str:
+    """Stable run identity, falling back to the unchanged hourly collection bucket."""
+    run_id = (os.environ if environ is None else environ).get("GITHUB_RUN_ID")
+    if run_id:
+        identity: tuple[str, str] = ("github_run", run_id)
+    else:
+        identity = ("hourly_bucket", _utc_timestamp(now).floor("h").isoformat())
+    return _canonical_sha256(("src-a1", _EXPECTATION_PROVIDER, identity))
 
 
 def _expectation_rows(
@@ -233,8 +258,7 @@ def _expectation_rows(
                     "source_published_at": None,
                     "provider_observed_at": provider_observed_at,
                     "system_observed_at": system_observed_at,
-                    # No new calendar owner is introduced merely to label this source row.
-                    "market_session": None,
+                    "market_session": _market_session(system_observed_at),
                     "missingness_reason": missingness,
                     "correction_state": "original",
                     "supersedes_observation_id": None,
@@ -308,10 +332,7 @@ def accrue_expectation_observations(
         requested_clock = _utc_timestamp(system_observed_at)
         if abs((now - requested_clock).total_seconds()) > 60:
             raise ValueError("SRC-A1 refuses a historical system_observed_at; current snapshots cannot be backfilled")
-        observed_at = _iso8601(requested_clock)
-    else:
-        observed_at = _iso8601(now)
-    session_id = collection_session_id or _canonical_sha256(("src-a1", _EXPECTATION_PROVIDER, observed_at))
+    session_id = collection_session_id or _default_collection_session_id(now)
     observations_path = out_dir / "expectation_observations.parquet"
     attempts_path = out_dir / "expectation_attempts.parquet"
     existing_observations = _read_parquet(observations_path, _OBSERVATION_COLUMNS)
@@ -330,13 +351,13 @@ def accrue_expectation_observations(
         accessor_errors: list[Exception] = []
         try:
             client = ticker_factory(ticker)
-            provider_observed_at = _iso8601()
             for record_class in ("earnings_estimate", "revenue_estimate"):
                 try:
                     frames[record_class] = getattr(client, record_class)
                 except Exception as exc:  # noqa: BLE001 - classified below without raw text
                     accessor_errors.append(exc)
                     frames[record_class] = None
+            provider_observed_at = _iso8601()
         except Exception as exc:  # noqa: BLE001 - provider construction/request failure
             completed_at = _iso8601()
             status, http_status, error_class, error_detail = _safe_http_failure(exc)
@@ -359,10 +380,11 @@ def accrue_expectation_observations(
         attempt_id = _canonical_sha256((session_id, _EXPECTATION_PROVIDER, ticker, payload_hash))
         if attempt_id in set(existing_attempts["attempt_id"].dropna().astype(str)):
             continue
+        system_observed_at = _iso8601()
         response_rows = _expectation_rows(
             ticker=ticker, collection_session_id=session_id, attempt_id=attempt_id,
             payload_hash=payload_hash, frames=frames, provider_observed_at=provider_observed_at,
-            system_observed_at=observed_at,
+            system_observed_at=system_observed_at,
         )
         _apply_lineage(response_rows, existing_observations)
         deduped_rows = [
@@ -398,7 +420,7 @@ def accrue_expectation_observations(
             "http_status": http_status,
             "latency_ms": int((pd.Timestamp.now(tz="UTC") - started).total_seconds() * 1000),
             "response_payload_hash": payload_hash, "safe_error_class": error_class,
-            "safe_error_detail": error_detail, "observation_count": len(deduped_rows),
+            "safe_error_detail": error_detail, "observation_count": len(response_rows),
         })
 
     if new_observations:

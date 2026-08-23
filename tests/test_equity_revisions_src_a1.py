@@ -100,7 +100,14 @@ def test_accrues_all_raw_horizons_eps_and_revenue_with_contract_schema(tmp_path:
     assert (observations["aggregation_level"] == "consensus_snapshot").all()
     assert observations["source_effective_at"].isna().all()
     assert observations["source_published_at"].isna().all()
-    assert (observations["provider_observed_at"] != observations["system_observed_at"]).all()
+    assert observations["market_session"].notna().all()
+    provider_clock = pd.to_datetime(observations["provider_observed_at"], utc=True)
+    system_clock = pd.to_datetime(observations["system_observed_at"], utc=True)
+    attempt_clock = pd.to_datetime(attempts.iloc[0]["attempted_at"], utc=True)
+    completed_clock = pd.to_datetime(attempts.iloc[0]["completed_at"], utc=True)
+    assert (attempt_clock <= provider_clock).all()
+    assert (provider_clock <= system_clock).all()
+    assert (system_clock <= completed_clock).all()
     assert attempts.iloc[0]["status"] == "success"
     assert attempts.iloc[0]["observation_count"] == 28
 
@@ -217,6 +224,49 @@ def test_partial_http_failure_keeps_429_as_operational_evidence(tmp_path: Path):
     assert attempt["safe_error_class"] == "provider_http_error"
     assert attempt["safe_error_detail"] == "http_status_429"
     assert "response body" not in " ".join(str(value) for value in attempt.tolist())
+
+
+def test_year_ago_never_crosses_eps_and_revenue_metric_boundaries(tmp_path: Path):
+    eps = _estimate_frame().drop(columns=["yearAgoEps"])
+    eps["yearAgoRevenue"] = [999.0, 999.0]
+    revenue = _revenue_frame().drop(columns=["yearAgoRevenue"])
+    revenue["yearAgoEps"] = [7.0, 8.0]
+    _run(tmp_path, "metric-boundary", _Ticker(earnings=eps, revenue=revenue))
+    rows = _observations(tmp_path)
+    for metric in ("EPS", "revenue"):
+        row = rows[(rows["metric"] == metric) & (rows["horizon_label_raw"] == "0q") & (rows["observation_type"] == "year_ago")].iloc[0]
+        assert pd.isna(row["value"])
+        assert row["missingness_reason"] == "NOT_APPLICABLE"
+
+
+def test_default_session_identity_is_stable_per_run_or_hourly_bucket():
+    env = {"GITHUB_RUN_ID": "12345", "GITHUB_RUN_ATTEMPT": "1"}
+    assert revisions._default_collection_session_id("2026-08-23T12:00:01Z", env) == revisions._default_collection_session_id("2026-08-23T12:59:59Z", {**env, "GITHUB_RUN_ATTEMPT": "2"})
+    assert revisions._default_collection_session_id("2026-08-23T12:00:01Z", {}) == revisions._default_collection_session_id("2026-08-23T12:59:59Z", {})
+    assert revisions._default_collection_session_id("2026-08-23T12:00:01Z", {}) != revisions._default_collection_session_id("2026-08-23T13:00:00Z", {})
+
+
+def test_orphaned_observations_repair_the_attempt_receipt_without_duplicates(tmp_path: Path):
+    _run(tmp_path, "crash-session")
+    original = _observations(tmp_path).copy(deep=True)
+    (tmp_path / "expectation_attempts.parquet").unlink()
+    result = _run(tmp_path, "crash-session")
+    repaired = _attempts(tmp_path)
+    pd.testing.assert_frame_equal(original.fillna("<absent>"), _observations(tmp_path).fillna("<absent>"), check_dtype=False)
+    assert result == {"attempts": 1, "observations": 0}
+    assert repaired.iloc[0]["observation_count"] == len(original)
+
+
+def test_market_session_uses_the_existing_nyse_calendar_and_fails_closed(monkeypatch):
+    assert revisions._market_session("2026-07-06T14:00:00Z") == "2026-07-06"
+    assert revisions._market_session("2026-07-04T14:00:00Z") == "2026-07-02"
+    monkeypatch.setattr(revisions, "session_date", lambda _: (_ for _ in ()).throw(RuntimeError("owner unavailable")))
+    assert revisions._market_session("2026-07-06T14:00:00Z") is None
+
+
+def test_http_status_parser_rejects_incidental_digit_substrings():
+    status, code, error_class, detail = revisions._safe_http_failure(RuntimeError("provider item 1429 retained"))
+    assert (status, code, error_class, detail) == ("error", None, "provider_exception", "provider_request_failed")
 
 
 @pytest.mark.parametrize("status", [401, 403, 429])

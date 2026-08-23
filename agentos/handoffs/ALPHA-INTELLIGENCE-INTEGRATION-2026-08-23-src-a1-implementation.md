@@ -25,7 +25,8 @@ changed:
 verified:
   - claim: The source contract has focused hermetic behavioral proof.
     command: python3 -m pytest -q tests/test_equity_revisions_src_a1.py
-    result: 13 passed.
+    result: 18 passed after the review-required clock, session, metric-boundary,
+      crash-repair, calendar, and HTTP-token mutation cases were added.
   - claim: The collector remains syntactically valid and the patch has no whitespace errors.
     command: python3 -m py_compile collectors/equity_revisions.py && git diff --check
     result: passed.
