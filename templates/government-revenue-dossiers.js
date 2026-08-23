@@ -908,7 +908,11 @@
     function copyEconomicsGap(){return tr('No reviewed economic exposure — participation is not a revenue share','无已复核经济敞口——参与关系不代表收入份额')}
     function copyContractTypeGap(){return tr('Contract type: available once an event is reviewed against this program','合同类型:待事件与该项目完成复核关联后提供')}
     function copyGaoGap(){return tr('GAO/DOT&E assessment: not yet on file','GAO/DOT&E 评估:暂未收录')}
-    function copySharedScope(){return tr('Supplier scope shared across three programs','供应范围横跨三个项目')}
+    // Count-free (MEDIUM-6 repair): the row shape carries only a bool
+    // (`shared_scope`), never a program count, so the copy must never name
+    // a specific number -- a second shared-scope supplier spanning two or
+    // five programs would otherwise render a fabricated "three".
+    function copySharedScope(){return tr('Supplier scope shared across programs','供应范围横跨多个项目')}
     function copyHistorical(){return tr('historical only','仅历史记录')}
     function copyIssuerNotAsserted(){return tr('Issuer path: not asserted','发行人路径:未认定')}
     function copyParticipationLimitation(){return tr('Companies on this rail participate in the same program; no commercial relationship between them is asserted.','本栏公司参与同一项目;不主张它们之间存在任何商业关系。')}
@@ -920,8 +924,6 @@
     function copyMilestonesReviewedEmpty(){return tr('Reviewed — no upcoming milestone on file','已复核——暂无即将到来的里程碑')}
     function copyBudget(stateName){return stateName==='projection_missing'?tr('Budget request rail unavailable — no budget projection exists yet (planned for a later wave)','预算请求栏不可用——预算投影尚未建立(规划于后续阶段)'):tr('Budget source unavailable','预算来源不可用')}
     function copyEconomicRelationships(){return tr('No reviewed economic-relationship data','无已复核的经济关系数据')}
-    // D3 idiom (cycle_app.js) reused verbatim for a corrected/superseded row.
-    function copyReadBeingUpdated(){return tr('New data — read being updated','新数据 — 解读更新中')}
     // House "windows, not certainties" idiom (vector.html.j2), reused verbatim.
     function copyWindowsNotCertainties(){return tr('Windows, not certainties. The watch window is re-drawn nightly as the evidence changes.','这是观察窗口，不是确定预测。证据变化时，窗口会在每晚重新绘制。')}
     var QUESTIONS=function(){return[
@@ -996,7 +998,25 @@
       var out='<p class="inspect-value"><strong>'+esc(text(pi.name))+'</strong></p>';
       if(meta)out+='<p class="inspect-value">'+esc(meta)+'</p>';
       out+='<p class="inspect-value">'+esc(pi.latest_platform_name?tr('Latest block in the reviewed record: ','已核验记录中的最新型别：')+text(pi.latest_platform_name):tr('No platform/block variant is yet in the reviewed record.','已核验记录中尚无型别/批次变体。'))+'</p>';
-      if(Number(pi.program_revision)>1)out+='<div class="dossier-status"><span><b>'+esc(copyReadBeingUpdated())+'</b></span></div>';
+      // LOW-2 repair: NO "read being updated" chip is rendered here. It was
+      // gated on `program_revision > 1`, which LATCHES FOREVER -- revision
+      // never decreases, so a pure rename from years ago would render the
+      // transient D3 chip permanently. D3's own chip (cycle_app.js
+      // firedBannerHTML) is gated on an engine-maintained boolean latch
+      // (`tw.state==='FIRED' && tw.latched`), not a client-side recency
+      // window -- there is no time-based mechanism in D3 to mirror. The
+      // frozen `government_program_dossier.v1` program_identity rail shape
+      // (freeze SS4) carries no `known_at`/succession timestamp of any
+      // kind, so the reviewer's fallback (`program_revision > 1 AND the
+      // resolved revision's known_at within 14 days of the bundle as_of`)
+      // cannot be computed client-side without an engine/schema change,
+      // which is out of this packet's scope. `bundle.generated_at` is not
+      // a substitute: it refreshes every nightly build regardless of
+      // whether this row's revision actually changed, so gating on it
+      // would still effectively latch (or worse, fabricate recency).
+      // Removed rather than ship either the original bug or a fabricated
+      // proxy; a correct implementation needs a revision-scoped `known_at`
+      // added to the rail by a future engine packet.
       return out;
     }
     function sectionWhy(d){

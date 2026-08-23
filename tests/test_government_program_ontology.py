@@ -436,6 +436,49 @@ def _program_dossier_factory_source() -> str:
     return js_source[start:end]
 
 
+def test_dossier_module_shared_scope_copy_is_count_free():
+    """MEDIUM-6 repair: `shared_scope` on a participants row is a bool, never
+    a program count, so the rendered chip must never name a specific number
+    of programs -- a second shared-scope supplier spanning two or five
+    programs would otherwise render a fabricated "three"."""
+    factory_source = _program_dossier_factory_source()
+    assert "Supplier scope shared across programs" in factory_source
+    assert "供应范围横跨多个项目" in factory_source
+    # The old count-bearing pilot-specific string must not survive.
+    assert "Supplier scope shared across three programs" not in factory_source
+    assert "供应范围横跨三个项目" not in factory_source
+    assert re.search(r"Supplier scope shared across \w+ programs", factory_source) is None
+
+
+def test_dossier_module_no_latching_corrected_event_chip_on_program_revision():
+    """LOW-2 repair: the D5 program_identity rail carries no known_at/
+    succession timestamp (freeze SS4 rail shape), so a "read being updated"
+    chip gated only on `program_revision > 1` would latch forever -- revision
+    never decreases, so even a decade-old rename would render the transient
+    D3 chip permanently. The chip is removed rather than shipped broken or
+    approximated from an unrelated timestamp (`bundle.generated_at` refreshes
+    every nightly build regardless of whether this row's revision changed).
+    Pin the removal at the render-law level: no revision-1 dossier and no
+    old (or any) revision-2+ dossier ever renders the D3 "read being updated"
+    idiom from this module, because the module contains no such trigger."""
+    factory_source = _program_dossier_factory_source()
+    # Check for the D3 idiom as a RENDERED string literal (quoted), not as
+    # explanatory prose in this module's own code comments (which legitimately
+    # discuss why the idiom was removed).
+    assert "'New data — read being updated'" not in factory_source
+    assert "'新数据 — 解读更新中'" not in factory_source
+    assert "copyReadBeingUpdated" not in factory_source
+    # program_revision is read only for the inspector-tier technical-id line
+    # (a plain value dump), never as a chip-rendering conditional. Strip `//`
+    # line comments first (this test's own docstring/comments legitimately
+    # discuss "program_revision > 1" as the REMOVED, no-longer-live pattern).
+    code_only = "\n".join(
+        line.split("//", 1)[0] for line in factory_source.splitlines()
+        if "://" not in line  # keep lines with a URL-shaped literal intact
+    )
+    assert re.search(r"program_revision\s*[><]", code_only) is None
+
+
 def test_t5_template_never_labels_a_request_amount_as_obligation_en_zh():
     """T5 render-law (freeze SS8 item 5): a render/template test, not an
     artifact-field test. The D5 `mode=programs` surface never sums or
