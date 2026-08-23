@@ -650,20 +650,27 @@ methods exclude LLM-originated truth. These waves cannot:
 The front-end product and Mastermind/Neural Web projection consume a later issuer-context
 artifact. They do not read raw evidence or invent a second calculation path.
 
-## Wave 2A observed-filing-state projection
+## Wave 2A/2B observed-filing-state projection and retrieval capacity
 
-The bounded collector retains its 200-filing ceiling and derives three operational
-classes after ordinary eligibility and parking: `LIVE_TAIL` is the latest five
-policy-current completed SEC index sessions, `RECOVERY` is a latest-open
+The bounded collector derives three operational classes after ordinary
+eligibility and parking: `LIVE_TAIL` is the latest five policy-current completed
+SEC index sessions, `RECOVERY` is a latest-open
 `storage_deferred`, `transient_error`, or `stored_parser_deferred` attempt inside
 the latest 20 completed sessions, and `HISTORICAL_BACKFILL` is the remaining
-eligible debt. Their fixed reserves are 160/20/20 with deterministic spill in
-that class order to the same recipient order excluding the donor. Existing lane
-rotation runs once inside each final class allocation. LIVE_TAIL is
-newest-session first inside each lane, with current-run arrival as the
-same-session tie-break; recovery and historical work retain oldest-first debt
-service. Work class is scheduling metadata on retrieval observations and never
-enters source, evidence, event, or projection identity.
+eligible debt. W2A introduced 160/20/20 inside the then-unchanged 200 ceiling;
+its natural proof exposed admitted LIVE arrivals above effective capacity. W2B
+qualifies the existing carrier and makes the reservation map the one canonical
+capacity source: `LIVE_TAIL=500`, `RECOVERY=20`, and
+`HISTORICAL_BACKFILL=20`, with the global 540 ceiling derived from their sum.
+Unused slots retain W2A's deterministic spill in class order to the same
+recipient order excluding the donor. Existing lane rotation runs once inside
+each final class allocation. LIVE_TAIL remains newest-session first inside each
+lane, with current-run arrival as the same-session tie-break; recovery and
+historical work retain oldest-first debt service. Work class is scheduling
+metadata on retrieval observations and never enters source,
+evidence, event, or projection identity. The carrier qualification and its
+200-to-540 bounded runtime projection are frozen in
+`research/CAPITAL_STRUCTURE_W2B_CAPACITY_QUALIFICATION_2026-08-23.md`.
 
 `scripts/build_capital_structure_projection.py` runs after the offline event and
 document-term compilers and the generation-bound ingestion-health calculation. It
