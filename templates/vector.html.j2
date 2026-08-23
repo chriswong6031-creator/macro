@@ -109,7 +109,6 @@ a{color:var(--ink-link, var(--link))}
 .risk-context{text-align:right;color:var(--muted);font-size:11px}
 .risk-context b{display:block;color:var(--text);font:760 20px/1.1 var(--num);font-variant-numeric:tabular-nums}
 .exposure-rail{position:relative;height:10px;margin:14px 0 5px;border-radius:6px;background:var(--panel2);overflow:visible}
-.exposure-rail .band{position:absolute;top:0;height:100%;border-radius:6px;background:var(--tone,var(--muted));opacity:.82}
 .exposure-rail .model{position:absolute;top:-4px;width:2px;height:18px;background:var(--text)}
 .exposure-scale{display:flex;justify-content:space-between;color:var(--muted);font-size:9.5px}
 .level-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
@@ -314,11 +313,12 @@ a{color:var(--ink-link, var(--link))}
     </div>
   </section>
 
-  {% set gate_on = gate and gate.active %}
-  {% set rec_ok = rec and rec.ok and not rec.suppressed_by_blackout %}
-  {% set rt = rec.tone if rec_ok else 'neutral' %}
-  {% set L = rec.levels if rec and rec.ok else {} %}
-  <section class="shelf {{ tone_class(rt) }}" data-shelf="S2" data-verdict>
+  {% set decision_ok = decision and decision.status == 'ok' and decision.integrity.ok and decision.final %}
+  {% set action_code = decision.final.action_code if decision_ok else none %}
+  {% set decision_tone = 'bull' if action_code == 'INCREASE_EXPOSURE' else ('bear' if action_code in ['REDUCE_EXPOSURE','STAY_OUT'] else 'neutral') %}
+  {% set target_pct = decision.final.exposure_pct if decision_ok else none %}
+  {% set L = decision.advisory.levels if decision and decision.advisory and decision.advisory.levels else {} %}
+  <section class="shelf {{ tone_class(decision_tone) }}" data-shelf="S2" data-verdict data-decision-schema="{{ decision.schema }}" data-decision-status="{{ decision.status }}"{% if decision_ok %} data-decision-exposure="{{ target_pct }}"{% endif %}>
     <div class="shelf-inner">
       <div class="shelf-head"><span class="shelf-kicker">S2</span><h2 class="shelf-title">{{ t('What To Do','该怎么做') }}</h2><span class="shelf-sub">{{ t('one action · one sizing source','一个行动 · 一个仓位来源') }}</span></div>
     </div>
@@ -326,34 +326,32 @@ a{color:var(--ink-link, var(--link))}
       <div class="decision-main">
         <div class="decision-eyebrow">{{ t('Current action','当前行动') }}</div>
         <div class="decision-action">
-          {% if gate_on %}{{ t('WAIT IN CASH','持币等待') }}
-          {% elif rec_ok %}{{ t(rec.action, rec.action_zh) }}
-          {% else %}{{ t('HOLD POSITION','维持仓位') }}{% endif %}
+          {% if decision_ok %}{{ t(decision.final.action_en, decision.final.action_zh) }}
+          {% else %}{{ t('DECISION TEMPORARILY UNAVAILABLE','决策暂不可用') }}{% endif %}
         </div>
         <div class="decision-basis">
-          {% if gate_on %}<b>{{ t('Timing model active.','择时模型生效。') }}</b> {{ t('The final allocation remains in cash until the standing window releases.','最终配置保持现金，直至既定窗口解除。') }}
-          {% elif rec_ok %}<b>{{ t({'HIGH':'Higher confidence','MODERATE':'Moderate confidence','LOW':'Lower confidence'}.get(rec.conviction,rec.conviction), {'HIGH':'较高把握','MODERATE':'中等把握','LOW':'把握较低'}.get(rec.conviction,rec.conviction)) }}</b> · {{ t(rec.basis_en,rec.basis_zh) }}
-          {% else %}{{ t('The decision layer is updating; do not change size from this page.','决策层正在更新；不要仅凭此页调整仓位。') }}{% endif %}
+          {% if action_code == 'SET_EXPOSURE' %}<b>{{ t('First available model target.','首次可用模型目标。') }}</b> {{ t('No prior exposure was assumed.','未假设此前仓位。') }}
+          {% elif action_code == 'INCREASE_EXPOSURE' %}<b>{{ t('Final allocation increased.','最终配置上调。') }}</b> {{ t('Change from the prior model target:','较上一模型目标变化：') }} +{{ "%.1f"|format(decision.final.change_pp) }} {{ t('percentage points.','个百分点。') }}
+          {% elif action_code == 'REDUCE_EXPOSURE' %}<b>{{ t('Final allocation reduced.','最终配置下调。') }}</b> {{ t('Change from the prior model target:','较上一模型目标变化：') }} {{ "%.1f"|format(decision.final.change_pp) }} {{ t('percentage points.','个百分点。') }}
+          {% elif decision_ok %}<b>{{ t('No material allocation change.','配置无显著变化。') }}</b> {{ t('The final target remains','最终目标维持在') }} {{ target_pct }}% BTC.
+          {% else %}{{ t('No allocation action is published until the final model exposure passes integrity checks.','最终模型仓位通过完整性检查前，不发布任何配置行动。') }}{% endif %}
         </div>
       </div>
       <div class="decision-detail">
-        {% set elo = 0 if gate_on else (rec.exposure_lo if rec_ok else alloc_pct) %}
-        {% set ehi = 0 if gate_on else (rec.exposure_hi if rec_ok else alloc_pct) %}
         <div class="exposure-top">
-          <div><div class="decision-eyebrow">{{ t('Target BTC exposure','目标 BTC 仓位') }}</div><div class="exposure-band">{{ elo }}–{{ ehi }}%</div></div>
+          <div><div class="decision-eyebrow">{{ t('Final BTC exposure','最终 BTC 仓位') }}</div><div class="exposure-band">{% if decision_ok %}{{ target_pct }}%{% else %}—{% endif %}</div></div>
           <div class="risk-context">{{ t('Risk level','风险程度') }}<b>{{ risk_index }}/100</b>{{ t(risk_label, '低风险' if risk_on else '高风险') }}</div>
         </div>
         <div class="exposure-rail">
-          <i class="band" style="left:{{ elo }}%;width:{{ [ehi-elo,1]|max }}%"></i>
-          <i class="model" style="left:{{ alloc_pct }}%" data-tip-en="Final model exposure" data-tip-zh="最终模型仓位"></i>
+          {% if decision_ok %}<i class="model" style="left:{{ target_pct }}%" data-tip-en="Final model exposure" data-tip-zh="最终模型仓位"></i>{% endif %}
         </div>
-        <div class="exposure-scale"><span>0% {{ t('cash','现金') }}</span><span>{{ t('final model','最终模型') }} {{ alloc_pct }}%</span><span>100% BTC</span></div>
+        <div class="exposure-scale"><span>0% {{ t('cash','现金') }}</span><span>{% if decision_ok %}{{ t('final model','最终模型') }} {{ target_pct }}%{% else %}{{ t('unavailable','暂不可用') }}{% endif %}</span><span>100% BTC</span></div>
         <div class="level-grid">
           <div class="level"><span class="k">{{ t('Accumulate zone','累积区间') }}</span><b>{% if L.accumulate_lo and L.accumulate_hi %}${{ "{:,.0f}".format(L.accumulate_lo) }}–${{ "{:,.0f}".format(L.accumulate_hi) }}{% else %}—{% endif %}</b></div>
           <div class="level"><span class="k">{{ t(L.invalid_label_en if L.invalid_label_en else 'Level that changes the read',L.invalid_label_zh if L.invalid_label_zh else '改变判断的价位') }}</span><b>{% if L.invalidation %}${{ "{:,.0f}".format(L.invalidation) }}{% else %}—{% endif %}</b></div>
           <div class="level"><span class="k">{{ t('Typical 90-day range','90 天常见区间') }}</span><b>{% if L.downside_90 and L.upside_90 %}${{ "{:,.0f}".format(L.downside_90) }}–${{ "{:,.0f}".format(L.upside_90) }}{% else %}—{% endif %}</b></div>
         </div>
-        <div class="decision-foot">{{ t('Direction can remain uncertain even when sizing is clear. The final exposure is the engine output after all standing gates.','即使方向不确定，仓位仍可明确。最终仓位是所有既定规则生效后的引擎输出。') }}</div>
+        <div class="decision-foot">{{ t('The action and target come from the same final model allocation. Risk levels remain supporting context.','行动与目标均来自同一最终模型配置；风险读数仅作辅助参考。') }}</div>
       </div>
     </div>
   </section>

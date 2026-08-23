@@ -1,0 +1,503 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/btc_decision.schema.json",
+  "title": "Bitcoin DecisionState",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "as_of",
+    "generated_at",
+    "status",
+    "authority",
+    "raw_model",
+    "override",
+    "final",
+    "advisory",
+    "receipts",
+    "integrity"
+  ],
+  "properties": {
+    "schema": {
+      "const": "btc.decision/v1"
+    },
+    "as_of": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "unavailable"
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "program",
+        "allocation_source",
+        "raw_allocation_source",
+        "action_method",
+        "authority_class"
+      ],
+      "properties": {
+        "program": {
+          "const": "crypto-intelligence"
+        },
+        "allocation_source": {
+          "const": "signals.alloc_optimal"
+        },
+        "raw_allocation_source": {
+          "const": "signals.alloc_optimal_raw"
+        },
+        "action_method": {
+          "const": "deterministic_projection"
+        },
+        "authority_class": {
+          "const": "decision_bearing"
+        }
+      }
+    },
+    "raw_model": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "stance_en",
+        "stance_zh",
+        "master_score",
+        "exposure",
+        "exposure_pct"
+      ],
+      "properties": {
+        "stance_en": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stance_zh": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "master_score": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "exposure": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "exposure_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "override": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "active",
+        "override_id",
+        "released",
+        "release_frac",
+        "raw_exposure_pct",
+        "final_exposure_pct",
+        "difference_pp"
+      ],
+      "properties": {
+        "active": {
+          "type": "boolean"
+        },
+        "override_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "released": {
+          "type": "boolean"
+        },
+        "release_frac": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "raw_exposure_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "final_exposure_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "difference_pp": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "final": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "exposure",
+        "exposure_pct",
+        "previous_exposure_pct",
+        "change_pp",
+        "action_code",
+        "action_en",
+        "action_zh"
+      ],
+      "properties": {
+        "exposure": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "exposure_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "previous_exposure_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "change_pp": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -100,
+          "maximum": 100
+        },
+        "action_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "SET_EXPOSURE",
+            "INCREASE_EXPOSURE",
+            "REDUCE_EXPOSURE",
+            "HOLD_EXPOSURE",
+            "STAY_OUT",
+            null
+          ]
+        },
+        "action_en": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "action_zh": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "advisory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "levels",
+        "rationale",
+        "key_risk_en",
+        "key_risk_zh",
+        "horizon_en",
+        "horizon_zh",
+        "authority_class",
+        "source",
+        "available"
+      ],
+      "properties": {
+        "levels": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "rationale": {
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "key_risk_en": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "key_risk_zh": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "horizon_en": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "horizon_zh": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "authority_class": {
+          "const": "context_only"
+        },
+        "source": {
+          "const": "engine.btc_recommend"
+        },
+        "available": {
+          "type": "boolean"
+        }
+      }
+    },
+    "receipts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kelly_risk_budget_pct",
+        "continuous_momentum",
+        "categorical_momentum",
+        "risk_index",
+        "risk_regime",
+        "valuation_state",
+        "market_extreme",
+        "authority_class"
+      ],
+      "properties": {
+        "kelly_risk_budget_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "continuous_momentum": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "categorical_momentum": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "risk_index": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "risk_regime": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "valuation_state": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "market_extreme": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "authority_class": {
+          "const": "context_only"
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ok",
+        "checks",
+        "errors"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "checks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "ok"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "as_of"
+        ],
+        "properties": {
+          "as_of": {
+            "type": "string"
+          },
+          "integrity": {
+            "properties": {
+              "ok": {
+                "const": true
+              }
+            }
+          },
+          "final": {
+            "type": "object",
+            "properties": {
+              "exposure": {
+                "type": "number"
+              },
+              "exposure_pct": {
+                "type": "number"
+              },
+              "action_code": {
+                "enum": [
+                  "SET_EXPOSURE",
+                  "INCREASE_EXPOSURE",
+                  "REDUCE_EXPOSURE",
+                  "HOLD_EXPOSURE",
+                  "STAY_OUT"
+                ]
+              },
+              "action_en": {
+                "type": "string",
+                "minLength": 1
+              },
+              "action_zh": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unavailable"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "integrity": {
+            "properties": {
+              "ok": {
+                "const": false
+              }
+            }
+          },
+          "final": {
+            "if": {
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "action_code": {
+                  "type": "null"
+                },
+                "action_en": {
+                  "type": "null"
+                },
+                "action_zh": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
