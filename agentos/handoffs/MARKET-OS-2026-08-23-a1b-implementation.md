@@ -169,7 +169,8 @@ do_not_redo:
   - "Do not add a second Portfolio, identity, retry/outbox, or local/cloud persistence plane."
   - "Do not edit Terminal merely to create implementation symmetry; it is the unchanged independent consumer for A1B."
   - "Do not call A1B complete because local tests, browser QA, or CI are green."
-prs: []
+prs:
+  - 6335
 decisions:
   - DEC:MARKET-OS-WATCHLIST-PORTFOLIO-SEPARATE-TRUTH-UNIFIED-EXPERIENCE
   - DEC:MARKET-OS-PORTFOLIO-TRUTH-PRECEDES-FAST-IMPORT
