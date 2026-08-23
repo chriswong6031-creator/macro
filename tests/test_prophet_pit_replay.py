@@ -979,6 +979,36 @@ class TestVerifyCollisionsAheadOfIdempotence:
         assert proc.returncode == 0, proc.stdout + proc.stderr
         assert "no new collisions" in proc.stdout
 
+    def test_zero_mint_execute_receipt_has_vacuous_collision_set(self, tmp_path):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        _git(repo, "remote", "add", "origin", str(repo))
+
+        session = "2026-08-14"
+        pit_dir = repo / ppr.PIT_RECEIPTS_RELDIR
+        pit_dir.mkdir(parents=True)
+        (pit_dir / f"us-{session}-deadbeef.json").write_text(
+            json.dumps({
+                "schema": "pit_replay.receipt/v1",
+                "market": "us",
+                "session": session,
+                "dry_run": False,
+                "counts": {"minted": 0},
+            }),
+            encoding="utf-8",
+        )
+
+        proc = subprocess.run(
+            [sys.executable, "-m", "scripts.prophet_pit_replay",
+             "--market", "us", "--session", session, "--verify-collisions",
+             "--repo", str(repo)],
+            cwd=_REPO, capture_output=True, text=True,
+        )
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        assert "re-verified zero minted plans" in proc.stdout
+        assert "the minted set is empty" in proc.stdout
+
 
 # ---------------------------------------------------------------------------
 # F2a/F12 — every vintage subprocess's environment

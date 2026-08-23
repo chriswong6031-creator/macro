@@ -3085,6 +3085,56 @@ def main(argv: list[str] | None = None) -> int:
         candidates = sorted(receipts_dir.glob(f"replay-{args.session}-*.json")) \
             if receipts_dir.exists() else []
         if not candidates:
+            # A lawful execute can mint zero plans after the live-wins and chronology
+            # gates disposition every eligible row.  That run deliberately writes no
+            # origination receipt (there is nothing to originate), but it still writes
+            # the content-addressed harness receipt and pending ledger row.  The
+            # collision set is then vacuously empty; still call verify_collisions() so
+            # origin/main is freshly fetched and the pre-merge proof names its exact
+            # commit.  Require exactly one real execute receipt for this session so a
+            # dry-run preview, malformed file, or duplicate execution cannot bypass the
+            # fail-closed missing-origination-receipt guard.
+            pit_receipts_dir = repo / PIT_RECEIPTS_RELDIR
+            zero_mint_receipts: list[Path] = []
+            if pit_receipts_dir.exists():
+                for receipt_path in sorted(
+                    pit_receipts_dir.glob(f"{args.market}-{args.session}-*.json")
+                ):
+                    try:
+                        receipt_doc = json.loads(receipt_path.read_text(encoding="utf-8"))
+                    except Exception:  # noqa: BLE001 - malformed means not admissible
+                        continue
+                    if (
+                        receipt_doc.get("schema") == "pit_replay.receipt/v1"
+                        and receipt_doc.get("market") == args.market
+                        and receipt_doc.get("session") == args.session
+                        and receipt_doc.get("dry_run") is False
+                        and (receipt_doc.get("counts") or {}).get("minted") == 0
+                    ):
+                        zero_mint_receipts.append(receipt_path)
+            if len(zero_mint_receipts) == 1:
+                try:
+                    report = verify_collisions(
+                        repo, market=args.market, session=args.session, minted_keys={}
+                    )
+                except PitReplayRefused as exc:
+                    print(f"::error title=prophet-pit-replay-refused::{exc}", flush=True)
+                    return 2
+                print(
+                    "re-verified zero minted plans against "
+                    f"{report['against']} @ {report['against_commit'][:12]} "
+                    f"from {zero_mint_receipts[0].relative_to(repo)}"
+                )
+                print("no new collisions — the minted set is empty")
+                return 0
+            if len(zero_mint_receipts) > 1:
+                print(
+                    "::error title=prophet-pit-replay-refused::multiple zero-mint "
+                    f"execute receipts found for ({args.market}, {args.session}) — "
+                    "execution identity is ambiguous; do not merge",
+                    flush=True,
+                )
+                return 2
             print("::error title=prophet-pit-replay-refused::no origination receipt "
                  f"found for ({args.market}, {args.session}) — run --execute first",
                  flush=True)
