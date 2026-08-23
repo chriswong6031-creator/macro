@@ -1763,6 +1763,7 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "ops/CHAIN_SNAPSHOTS_RUNBOOK.md"
       - "ops/LIVE_FLOW_RUNBOOK.md"
       - "ops/launchd/com.mastermind.chainsnapshots.plist"
@@ -6585,6 +6586,7 @@ jobs:
       - "engine/sector_intelligence/**"
       - "engine/signal_foundry/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "research/DO_NOT_REBUILD.md"
       - "research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md"
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
@@ -7024,6 +7026,7 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "research/DO_NOT_REBUILD.md"
       # engine/htf_durability.py reads site/basketdata/fear_greed.json, and
       # engine/pick_lab/candidates.py reads site/flowleaders/leaders.json and
@@ -11732,6 +11735,7 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "research/DO_NOT_REBUILD.md"
       - "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md"
       - "scripts/__init__.py"

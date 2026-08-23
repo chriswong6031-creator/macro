@@ -8,10 +8,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 import time
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.fundamental_forensics.statement_graph import mint_fixture_recorded_at
 

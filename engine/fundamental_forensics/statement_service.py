@@ -13,8 +13,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from lib.dataos.identity import IssuerMaster
-
 from .financial_intelligence_packet import load_core_registry
 from .query_service import (
     MAX_REQUEST_BYTES,
@@ -132,14 +130,20 @@ def _load_issuer_metadata(repo_root: Path, entity_id: str) -> dict[str, str]:
 def bind_canonical_identity(
     entity_id: str,
     *,
-    issuer_master: IssuerMaster,
+    issuer_master: Any,
     issuer_metadata: dict[str, str],
 ) -> dict[str, str]:
     """Resolve issuer→security through IssuerMaster only.
 
     Raw issuer/security tables may supply metadata after that canonical
     membership is known. FIF must not independently pick among securities.
+    IssuerMaster is imported here so API module load does not pull Data OS
+    identity into unrelated job import closures.
     """
+    from lib.dataos.identity import IssuerMaster
+
+    if not isinstance(issuer_master, IssuerMaster):
+        raise FinancialQueryUnavailableError()
     securities = issuer_master.securities_of_issuer(entity_id)
     if len(securities) != 1:
         raise FinancialQueryAdmissionError(400, "unknown entity")
@@ -163,9 +167,11 @@ def _bind_data_os_issuer(
     repo_root: Path,
     entity_id: str,
     *,
-    issuer_master: IssuerMaster | None = None,
+    issuer_master: Any | None = None,
     issuer_metadata: dict[str, str] | None = None,
 ) -> dict[str, str]:
+    from lib.dataos.identity import IssuerMaster
+
     if issuer_master is None:
         issuer_master = IssuerMaster.from_records(_load_security_records(repo_root))
     if issuer_metadata is None:
@@ -183,7 +189,7 @@ def execute_financial_statements(
     repo_root: Path,
     provider: FinancialStatementProvider | None = None,
     provider_factory: Callable[[], FinancialStatementProvider] | None = None,
-    issuer_master: IssuerMaster | None = None,
+    issuer_master: Any | None = None,
     issuer_metadata: dict[str, str] | None = None,
 ) -> FinancialStatementResult:
     admitted = admit_statement_request(body)
