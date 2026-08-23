@@ -50,6 +50,21 @@ def _ordinal(value: Any) -> int | None:
     return x
 
 
+def _is_bool(value: Any) -> bool:
+    return isinstance(value, (bool, np.bool_))
+
+
+def _invalid_bool_count(values: Sequence[Any], *, allow_none: bool) -> int:
+    return sum(
+        not (_is_bool(value) or (allow_none and value is None))
+        for value in values
+    )
+
+
+def _is_true(value: Any) -> bool:
+    return _is_bool(value) and bool(value)
+
+
 def paired_surface_lead_sessions(
     *,
     challenger_first_session: Sequence[int | None],
@@ -144,6 +159,18 @@ def early_actionable_capture_recall(
     therefore unavailable rather than treating unknown outcomes as losses.
     """
     n = _aligned(positive_label, surfaced, actionable_at_first_surface)
+    invalid_labels = _invalid_bool_count(positive_label, allow_none=True)
+    invalid_surface = _invalid_bool_count(surfaced, allow_none=True)
+    invalid_actionability = _invalid_bool_count(actionable_at_first_surface, allow_none=True)
+    if invalid_labels or invalid_surface or invalid_actionability:
+        return {
+            "state": HOLD_INTEGRITY,
+            "reference_subjects": n,
+            "reason": "eawc_owner_states_must_be_boolean_or_null",
+            "invalid_positive_labels": invalid_labels,
+            "invalid_surface_states": invalid_surface,
+            "invalid_actionability_states": invalid_actionability,
+        }
     if any(label is None for label in positive_label):
         return {
             "state": UNAVAILABLE_FIELD,
@@ -151,7 +178,7 @@ def early_actionable_capture_recall(
             "reason": "positive_label_missing_in_reference_population",
         }
 
-    positives = [index for index, label in enumerate(positive_label) if bool(label)]
+    positives = [index for index, label in enumerate(positive_label) if _is_true(label)]
     denominator = len(positives)
     if denominator == 0:
         return {
@@ -167,10 +194,10 @@ def early_actionable_capture_recall(
     missing_or_blocked_actionability = 0
     surfaced_not_actionable = 0
     for index in positives:
-        if surfaced[index] is not True:
+        if not _is_true(surfaced[index]):
             missed_surface += 1
             continue
-        if actionable_at_first_surface[index] is True:
+        if _is_true(actionable_at_first_surface[index]):
             captured_actionable += 1
         elif actionable_at_first_surface[index] is None:
             missing_or_blocked_actionability += 1
@@ -201,7 +228,18 @@ def first_surface_actionability_rate(
     actionable. By-design non-applicable subjects are excluded explicitly by the caller.
     """
     n = _aligned(applicable_first_surface, actionable)
-    denominator = sum(bool(value) for value in applicable_first_surface)
+    invalid_applicability = _invalid_bool_count(applicable_first_surface, allow_none=False)
+    invalid_actionability = _invalid_bool_count(actionable, allow_none=True)
+    if invalid_applicability or invalid_actionability:
+        return {
+            "state": HOLD_INTEGRITY,
+            "reference_subjects": n,
+            "reason": "first_surface_owner_states_have_invalid_type",
+            "invalid_applicability_states": invalid_applicability,
+            "invalid_actionability_states": invalid_actionability,
+        }
+
+    denominator = sum(_is_true(value) for value in applicable_first_surface)
     if denominator == 0:
         return {
             "state": NOT_APPLICABLE,
@@ -214,9 +252,9 @@ def first_surface_actionability_rate(
     missing_or_blocked = 0
     explicit_not_actionable = 0
     for applicable, status in zip(applicable_first_surface, actionable):
-        if not applicable:
+        if not _is_true(applicable):
             continue
-        if status is True:
+        if _is_true(status):
             numerator += 1
         elif status is None:
             missing_or_blocked += 1
@@ -248,7 +286,18 @@ def unusable_or_unknown_at_first_surface_rate(
     the more permissive descriptive ex-post "move consumed" diagnostic.
     """
     n = _aligned(applicable_first_surface, chased_or_closed)
-    denominator = sum(bool(value) for value in applicable_first_surface)
+    invalid_applicability = _invalid_bool_count(applicable_first_surface, allow_none=False)
+    invalid_chase = _invalid_bool_count(chased_or_closed, allow_none=True)
+    if invalid_applicability or invalid_chase:
+        return {
+            "state": HOLD_INTEGRITY,
+            "reference_subjects": n,
+            "reason": "first_surface_chase_states_have_invalid_type",
+            "invalid_applicability_states": invalid_applicability,
+            "invalid_chase_states": invalid_chase,
+        }
+
+    denominator = sum(_is_true(value) for value in applicable_first_surface)
     if denominator == 0:
         return {
             "state": NOT_APPLICABLE,
@@ -260,9 +309,9 @@ def unusable_or_unknown_at_first_surface_rate(
     chased = 0
     unknown = 0
     for applicable, state in zip(applicable_first_surface, chased_or_closed):
-        if not applicable:
+        if not _is_true(applicable):
             continue
-        if state is True:
+        if _is_true(state):
             chased += 1
         elif state is None:
             unknown += 1
