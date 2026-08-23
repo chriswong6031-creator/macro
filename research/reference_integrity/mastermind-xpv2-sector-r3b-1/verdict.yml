@@ -25,6 +25,10 @@
 # WITHDRAWN as falsified by MAC1-003; DA1-02 -> B2-12, PRC1R-001 -> B2-13,
 # MAC1-002 -> B2-14, candidate-owned DA1-03 portion -> B2-15 (upheld, no longer
 # fully overridden); conditions below are the FINAL eleven-item closure set.
+# CORRECTED AGAIN 2026-08-23 (freeze-blocking RIG audit): blocking_findings now holds
+# EXACTLY VTC1-001 upheld_revise; all other surviving majors/minors travel as the
+# eleven conditions; falsified/upstream records live in overrides. Successor closure
+# set = 12 rows (1 blocker + 11 conditions).
 schema: mastermind.rig_verdict.v1
 reference_id: mastermind-xpv2-sector-r3b-1
 
@@ -47,8 +51,7 @@ packet:                      # all eight answers required, non-empty (RIG S7)
     residues: the three .r3-cols legends are aria-hidden AND display:none below 641px, so
     the very label R3B1-13 restored reaches no mobile user and 16 of 18 .r3-fig figures
     have no accessible name at any width (VTC1-001, the sole BLOCK); treemap group labels
-    overlap at 320/390 (VTC1-002); 503 heatmap tiles present 17px targets on touch widths
-    (VTC1-003/MAC1-003); and the R3B1-06 carve-out survives on a premise the Data seat
+    overlap at 320/390 (VTC1-002); and the R3B1-06 carve-out survives on a premise the Data seat
     proved false (DA1-01).
   disappeared: >
     Nothing producer-backed disappeared this cycle. The disappearance class is conditional:
@@ -90,66 +93,19 @@ packet:                      # all eight answers required, non-empty (RIG S7)
     and 16 figures reach assistive technology as naked numbers. A reference cannot become
     migration law while its numbers are unnamed on the primary consumer viewport.
 
-blocking_findings:           # every surviving durable-receipt finding, adjudicated by id.
-  # upheld_revise rows + all conditions below become the successor's open items (RIG S13.1).
+blocking_findings:           # EXACTLY the surviving blocker-severity finding (RIG S7).
+  # FREEZE-BLOCKING CORRECTION 2026-08-23: --mandate labels every upheld_revise row
+  # kind:blocker, so listing PWC critic majors/minors here relabels them blockers --
+  # forbidden by Sol S3 ("Do not falsely relabel critic majors/minors as blocker-severity
+  # findings"). Only VTC1-001 is a surviving critic BLOCK. Every other surviving DA/MAC/
+  # PRC/Visual major/minor travels as a structured revision condition below (finding ->
+  # condition): DA1-01 -> B2-01; VTC1-001(+MAC1-001, PRC1R-002) -> B2-05; VTC1-002 ->
+  # B2-06; VTC1-004 -> B2-08; VTC1-005 -> B2-09; VTC1-006 -> B2-10; VTC1-007 -> B2-11;
+  # DA1-02 -> B2-12; PRC1R-001 -> B2-13; MAC1-002 -> B2-14; DA1-03 (candidate portion) ->
+  # B2-15. Falsified/upstream matters are permanent records in overrides below.
   - finding: VTC1-001
     resolution: upheld_revise
-    note: "BLOCKER (sole basis of the Visual/Taste BLOCK): .r3-cols legends aria-hidden + display:none <=640 kill the R3B1-13 label on mobile; 16/18 .r3-fig lack accessible names at any width. Fix = B2-05."
-  - finding: VTC1-002
-    resolution: upheld_revise
-    note: "Treemap sector-group labels overlap at 320/390 (overlapX=17px); painted-width gate covers tickers only. Fix = B2-06."
-  - finding: VTC1-003
-    resolution: overridden
-    note: "FALSIFIED by the durable Mobile seat's own measurement (MAC1-003: 17px boxes at ~40.6px vertical pitch, one target per row -- WCAG 2.2 SC 2.5.8 spacing exception satisfied). Old B2-07 WITHDRAWN (Sol handoff S4); do not inflate or disable the links/tiles."
-  - finding: VTC1-004
-    resolution: upheld_revise
-    note: "Rank-scope note orphaned 1075px below the rank column it explains. Fix = B2-08."
-  - finding: VTC1-005
-    resolution: upheld_revise
-    note: "RECENTLY WRONG (LOGGED) rows bind reserved up-green ink. Fix = B2-09."
-  - finding: VTC1-006
-    resolution: upheld_revise
-    note: "Five-segment horizontal ramp survives into the vertical mobile stack where it maps to nothing. Fix = B2-10."
-  - finding: VTC1-007
-    resolution: upheld_revise
-    note: "Overview headline receipt anchors to line 1 of a wrapped sentence. Fix = B2-11."
-  - finding: DA1-01
-    resolution: upheld_revise
-    note: "One producer field under two customer names; the R3B1-06 carve-out premise is FALSE (DA seat condition C1 -- Sol now rules: Strength / 强度 everywhere for theme_intel.themes[].score). Fix = B2-01 with producer-path->label uniqueness guard."
-  - finding: DA1-02
-    resolution: upheld_revise
-    note: "One customer word 'thin' over two contradicting producer paths on one Confluence screen (coverage.n_thin gate-drops vs in-table reliability=low). Sol-canonical fix = B2-12: chip renamed 'Low confidence / 低置信度'; the 48-row omission sentence unchanged; guard forbids the two paths collapsing to one term."
-  - finding: MAC1-001
-    resolution: upheld_revise
-    note: "Two numeric board columns have no accessible label at any width and no visible label below 641px -- same defect class as VTC1-001. Fix = B2-05."
-  - finding: MAC1-002
-    resolution: upheld_revise
-    note: "ZH 收起 control 39.0px inline axis (language-conditional; sole sub-44 control in 3,624 vs the house 44px floor). Fix = B2-14 (min-width:44px or symmetric padding; re-measure ZH at 320/390/820)."
-  - finding: PRC1R-001
-    resolution: upheld_revise
-    note: "R3B1-02 receipt button drives #r3-receipt with aria-expanded but no aria-controls. Fix = B2-13 (add aria-controls + a guard that every control owning the shared panel's expanded state names the same target)."
-  - finding: PRC1R-002
-    resolution: upheld_revise
-    note: "Conviction header display:none <=640px -- the commissioned label reaches sighted mobile users nowhere. Same closure as VTC1-001 (B2-05)."
-  - finding: DA1-03
-    resolution: upheld_revise
-    note: "SPLIT per Sol handoff: the CANDIDATE-OWNED portion (the payload's own is_context_only:true / proven 5d-only qualification dropped beside the track-record badge) is upheld -> B2-15 (paint 'Context only - evidence proven at 5d - never sizes decisions' + ZH twin; 21d figures stay labelled 21d and separate). The PRODUCTION 'Validated' badge/21d pairing remains an upstream/R3C owner repair."
-  - finding: DA1-04
-    resolution: overridden
-    note: "Tri-valent 'validated' token across one reference -- producer/design-system naming debt; R3C record."
-  - finding: DA1-05
-    resolution: overridden
-    note: "'All subsectors 65' false universal is production's own string; R3C production-repair record."
-  - finding: PRC1R-U01
-    resolution: overridden
-    note: "'Conviction' names two different producer quantities with differing ZH twins -- upstream producer naming debt, already in the R3C draft (R3B.1 Lane A GAP-4)."
-  - finding: PRC1R-U02
-    resolution: overridden
-    note: "Producer-emitted English-only strings untranslated in ZH -- upstream category_zh/reco_why class, carried R3C dependency."
-  - finding: MAC1-003
-    resolution: overridden
-    note: "The seat's own receipt records the spacing-exception pass (SC 2.5.8); observation, not defect. Old B2-07 WITHDRAWN (Sol handoff S4)."
-
+    note: "BLOCKER (sole basis of the Visual/Taste BLOCK): .r3-cols legends aria-hidden + display:none <=640 kill the R3B1-13 label on mobile; 16/18 .r3-fig lack accessible names at any width. Fix = B2-05 (which also closes the same-mechanism majors MAC1-001 and PRC1R-002)."
 overrides:                   # permanent record for every overridden row above
   - {finding: VTC1-003, justification: "Falsified by MAC1-003 measurement (SC 2.5.8 spacing exception satisfied); old B2-07 withdrawn.", authority: "Sol FINAL CONTINUATION HANDOFF 2026-08-23, S4"}
   - {finding: MAC1-003, justification: "The seat own receipt records the spacing-exception pass; observation, not defect.", authority: "Sol FINAL CONTINUATION HANDOFF 2026-08-23, S4"}
