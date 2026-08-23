@@ -909,7 +909,7 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-23T09:37:14.885976+00:00",
+      "last_poll": "2026-08-23T09:57:41.296714+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
       "since": "2026-08-23T09:00:09+00:00"
     },
@@ -921,7 +921,7 @@
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1787477837.9084606
+      "last_poll_ts": 1787479063.29569
     },
     "twitterapiio": {
       "cursors": {
@@ -990,65 +990,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-23T09:37:14Z",
+  "updated_at": "2026-08-23T09:57:41Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1787477836.123639
+      "last_poll_ts": 1787479062.432458
     },
     "bls_news": {
       "etag": "\"07aaf967531dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 14:01:40 GMT",
-      "last_poll_ts": 1787477836.0083036
+      "last_poll_ts": 1787479062.2989419
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1787477836.5542188
+      "last_poll_ts": 1787479062.498426
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1787477837.604847
+      "last_poll_ts": 1787479063.174578
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 09:32:19 GMT",
-      "last_poll_ts": 1787477837.7989337
+      "last_modified": "Sun, 23 Aug 2026 09:52:47 GMT",
+      "last_poll_ts": 1787479063.253733
     },
     "fed_press": {
       "etag": "W/\"53636b83de30dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 20 Aug 2026 20:00:13 GMT",
-      "last_poll_ts": 1787477835.9070299
+      "last_poll_ts": 1787479062.2498071
     },
     "forexlive_news": {
-      "etag": "W/\"WL3xSavDjBTqcYxDRY_Qkcxose4\"",
+      "etag": "W/\"4ngh0IkN1ww-whlmzgT1xwEjwPA\"",
       "fail_count": 0,
-      "last_poll_ts": 1787477837.3145812
+      "last_poll_ts": 1787479062.9718666
     },
     "investing_news": {
-      "etag": "W/\"123d-659b37509991a\"",
+      "etag": "W/\"123d-659b3be309637\"",
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 09:25:57 GMT",
-      "last_poll_ts": 1787477837.4593868
+      "last_modified": "Sun, 23 Aug 2026 09:46:25 GMT",
+      "last_poll_ts": 1787479063.093966
     },
     "marketwatch_top": {
-      "etag": "W/\"2114-e8WFNyyBF0f816OwSNcoFMr/ZFk\"",
+      "etag": "W/\"2114-gUusUwJClgWEB6cU0tVdCZu1ZFQ\"",
       "fail_count": 0,
-      "last_poll_ts": 1787477836.7642674
+      "last_poll_ts": 1787479062.5670035
     },
     "whitehouse_actions": {
       "etag": "\"393774828a07a184ce685a347792bc6c\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 21:35:04 GMT",
-      "last_poll_ts": 1787477836.4835267
+      "last_poll_ts": 1787479062.4776406
     },
     "zerohedge_feed": {
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 08:44:03 GMT",
-      "last_poll_ts": 1787477836.8314097
+      "last_modified": "Sun, 23 Aug 2026 09:54:23 GMT",
+      "last_poll_ts": 1787479062.7207417
     }
   },
   "wire_day_counts": {
