@@ -237,3 +237,64 @@ binding green checks, no `merge-on-green`, native auto-merge null, and a title,
 body, and comment naming Sol as the sole review/release authority. Production
 timing receipts are intentionally written to the PR comment after the final head
 exists. Once those facts are verified, stop; do not merge.
+
+## 4. Sol proof refresh after planner-manifest movement (2026-08-23)
+
+Sol reviewed implementation head
+`0cafd0777d8f876802e6d11f6be8e2ae33e00b98` and passed the W3 architecture,
+implementation boundary, fail-closed inventory semantics, oracle confinement,
+mutations, and measured latency mechanism. The release hold remained because
+main advanced after tested base
+`659e33daed36739b5614531ef3b65d3fbfc7c19d` and changed the direct planner input
+`.github/ci/legacy-jobs.yml`.
+
+The existing carrier was refreshed without changing any W3 implementation file.
+The six-path collision gate was empty before synchronization. The authoritative
+parity snapshot below is pinned to:
+
+- refreshed W3 carrier tree:
+  `dc0ea3ab2c3840e4424ccd46bd938d0d74990e30`;
+- merged current-main parent:
+  `1e7d9f5030fd7c7c06fb03f022857510c5d0f9ed`;
+- code-gate manifest population: 128 logical jobs;
+- exact tested-tree inventory: 77,613 tracked paths, NUL-payload SHA-256
+  `2520712631773dc37f8dd0470eec59d6d50725726c8650c1f26e1c46a417e4d1`.
+
+The real-repository full checkout and production sparse/oracle checkout each
+serialized the same eight complete `ci.pack_plan.v2` documents. Both canonical
+corpus files are 294,034 bytes and have SHA-256
+`397e425a02fe351f5d3c75264a11893e6e72481c888aedb2c8cf286fb7924ca6`;
+`cmp` returned zero. The case receipts are:
+
+| case | eligible / skipped | plan SHA-256 |
+|---|---:|---|
+| narrow test-only | 2 / 126 | `d0e5cf94d91838628d9d15289f5a85b36d9551111027bc41ecb4ac5af2522eda` |
+| ordinary product Python | 72 / 56 | `ea45641fa32bcdacfe65ceebf066df2bde686a9b27317b596e49e2808acb12bb` |
+| site asset | 77 / 51 | `2d67059783be102440b047b67e7e18b483bae9df49a0cdfb10b6edf775d3ffe0` |
+| ordered rename/copy pair | 78 / 50 | `caa0ac81686e9eb7e89b4f6ed74e47cf8e63f207bb17cffa80b1dbd34a49b79f` |
+| CI global invalidator | 128 / 0 | `d735f63aa35579c087a627a9e380d3c2829775fb0100c3c6e374ce6328cce6a0` |
+| omitted tracked literal owner | 2 / 126 | `e6978ae8ee3a2734e349186f86d8a51fdd4580c86ffbbb41dd78c0b9adb446b4` |
+| opaque data traversal | 80 / 48 | `fca0931e4193416fb84618db650e0f7e0e2c68eb8cf30020b02e6a17dd94ea45` |
+| passive narrative | 2 / 126 | `4e2d0b608ed7861ef5224324b609eb7e056858bd5f49ed1d371424089b67e055` |
+
+This equality covers every serialized field: changed-path bytes/order/digest,
+eligible and skipped order, scope summary/reason, matrix/nonempty packs, pack
+jobs and weights, semantic job/proof identities and execution digests,
+`authority_changed`, complete plan JSON, and `plan_sha256`. Full-tree wall time
+was 126.825 seconds and sparse/oracle wall time was 117.121 seconds; those are
+local parity-census measurements, not production `ci-plan` SLO claims.
+
+The focused fail-closed packet was rerun after synchronization:
+
+```text
+python3 -m pytest tests/test_ci_pack.py tests/test_ci_plan_workflow.py -q \
+  -k 'inventory or virtual_existence or depth_two_merge or sparse_profile or bounded_exact_tree or partial_clone_keeps_history or full_and_sparse'
+10 passed, 120 deselected, 3 unrelated temporary-cleanup warnings in 4.81s
+```
+
+The commit containing this addendum is the new production subject. Its exact SHA,
+synthetic merge/base identity, three same-head hosted timing job IDs, authoritative
+plan digest, and concluded binding-check packet are necessarily written to the
+existing PR #6286 receipt comment after that immutable subject exists. Embedding
+those future identifiers in their own commit would change the subject SHA and
+invalidate them. The draft `HOLD-FOR-SOL` barrier remains binding throughout.
