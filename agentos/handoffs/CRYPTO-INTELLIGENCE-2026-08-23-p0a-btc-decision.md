@@ -88,11 +88,12 @@ changed:
     what: >
       Updated this cold-stranger record with Sol's bounded return, exact
       initial current-main pickup cd42b890d1df, reconciliation merge
-      935ec982dcff, repair commit 667ea437021e, final no-collision current-main
-      refresh base 3d35ec5cd5ae, refreshed evidence, held state, release
-      condition and forbidden adjacent work. The final self-containing handoff
-      commit is identified by the exact PR head receipt, because a tracked file
-      cannot contain the hash of the commit that contains that file.
+      935ec982dcff, repair commit 667ea437021e, and final current-main merge
+      f792c107473d onto render pickup 0e8cd8f28edd. Refreshed evidence, held
+      state, release condition and forbidden adjacent work are recorded here.
+      The final self-containing handoff commit is identified by the exact PR
+      head receipt, because a tracked file cannot contain the hash of the
+      commit that contains that file.
   - path: agentos/workstreams/WS-CRYPTO-INTELLIGENCE.md
     what: >
       Registered the existing crypto-intelligence program's P0A/P0B boundary in
@@ -113,8 +114,8 @@ verified:
       new pytest suite unwired against the exact current-main pickup.
     command: >-
       python3 scripts/check_contract_delta.py --base
-      cd42b890d1df740f7fd5fddee6e582221360791b
-    result: "contract-delta: 0 introduced, 0 inherited (base cd42b890d1df)."
+      0e8cd8f28eddef51f3a0a3797c749baefedac208
+    result: "contract-delta: 0 introduced, 0 inherited (base 0e8cd8f28edd)."
   - claim: >
       The deterministic decision, BTC authority, Vector, asset and site-reference
       regression set passes in a full checkout on the refreshed branch.
@@ -145,15 +146,18 @@ verified:
     command: >-
       git show --no-patch --format='%H %P'
       935ec982dcffd4521074583140a7a15bb271fca3 &&
-      git show --no-patch --format='%H %P' HEAD
+      git show --no-patch --format='%H %P'
+      f792c107473dcd33b9c611db56558f29e4597600
     result: >
       Merge 935ec982dcff has parents 2a5e640ee616 and cd42b890d1df. The only
       conflict was derived site/vector.html; current-main generated truth was
       retained for the merge and Vector was regenerated afterward from repaired
-      source and stored data. A final pre-push census found origin/main at
-      3d35ec5cd5ae with no P0A-path collision; the final PR head is the normal
-      merge whose second parent is that exact refresh base. No ledger or parquet
-      mutation was carried from the disposable render worktree.
+      source and stored data. During the first exact-head CI run main rendered
+      again; merge f792c107473d has parents 602b0a1fe33c and 0e8cd8f28edd. Its
+      only conflict was again derived site/vector.html: latest-main generated
+      truth was retained for the merge, then Vector was regenerated from repaired
+      source and the exact latest stored data. No ledger or parquet mutation was
+      carried from either disposable render worktree.
   - claim: >
       A real stored-data Vector render publishes one final action and exact target,
       and does not publish the conflicting legacy action or target band.
@@ -204,10 +208,10 @@ verified:
       The browser evidence files are stable, named receipts in the PR.
     command: "shasum -a 256 verify_shots/p0a_btc_decision/*.png"
     result: >
-      desktop dark zh 70d5693a5f6d6dafa0c9a71a455bc06440964099eb1b78ec5481797fd309225c;
-      desktop light zh d49fb0831614ba5fe1da7b7225629ca8146324a484e540d09111681a1c2e7abe;
-      mobile dark zh e9b78dd6f2d26009137c0f6f2e650eeb5f7073e2e2a3196f431d42e5d4c52fae;
-      mobile light en 8d916db30739e7e1a1e513b265f7e79c4a8e6cc4212f99560746b3b50d75cf2f.
+      desktop dark zh 9e278c61aade8a78307e14c3fb0e6e9b928fb77029d3317c23913622ef396775;
+      desktop light zh 75f7b000077f6aaab5f22d76ccda4c221c1697e9c04d6ee983b59f43e425abaa;
+      mobile dark zh 64326755e329f4191ab9ac70155c210b3e984462858fa856d8bd166bab790bc6;
+      mobile light en 9c61075ae7248cb0d0c9579f1464b49ef6ff387d6e355784065c8f40c64ba05c.
 unverified:
   - claim: "Sol accepts the exact P0A implementation and authorizes release of the hold."
     what_would_verify: >
@@ -286,8 +290,9 @@ danger_areas:
 P0A was returned by Sol for two named integrity blockers and a current-main
 reconciliation. Both blockers are repaired on the same branch, the seven P0A
 commits were preserved through normal merge 935ec982dcff onto origin/main pickup
-cd42b890d1df, followed by a no-collision normal refresh to origin/main
-3d35ec5cd5ae, and the rebuilt product/evidence is green. Vector S2 has one action
+cd42b890d1df, followed by normal current-main merges through final render pickup
+0e8cd8f28edd at merge f792c107473d, and the rebuilt product/evidence is green.
+Vector S2 has one action
 and one exact target from the post-override final allocation; the current
 stored-data render says HOLD 100% BTC in both languages and contains no legacy
 defensive 0–10% instruction. It is still not Sol-accepted, merged, deployed or

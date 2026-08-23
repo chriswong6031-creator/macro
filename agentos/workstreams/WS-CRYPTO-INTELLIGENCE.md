@@ -22,10 +22,10 @@ waves:
       Repository-built on Draft HOLD-FOR-SOL PR #6294. Sol returned two bounded
       integrity blockers plus current-main reconciliation; both defects are
       repaired on the same branch, the seven P0A commits were preserved by a
-      normal merge onto origin/main pickup cd42b890d1df and a final no-collision
-      normal refresh to 3d35ec5cd5ae, and refreshed local product proof is
-      complete. P0A is not Sol-accepted, merged, deployed or live. The done
-      status describes the bounded build wave only.
+      normal merge onto origin/main pickup cd42b890d1df and subsequent normal
+      merges through final render pickup 0e8cd8f28edd at f792c107473d. Refreshed
+      local product proof is complete. P0A is not Sol-accepted, merged, deployed
+      or live. The done status describes the bounded build wave only.
   - id: P0B
     title: Crypto H5 authority closure
     status: todo
