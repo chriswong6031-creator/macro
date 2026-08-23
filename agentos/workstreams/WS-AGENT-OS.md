@@ -51,8 +51,23 @@ waves:
     depends_on: [W1, W2, W2B]
   - id: MAS28-W0
     title: "MAS-28 — canonical PR-linkage validator V1 records freeze"
-    status: in_progress
+    status: done
+    pr: 6317
     depends_on: [W3]
+  - id: MAS28-W0B
+    title: "MAS-28 — three-repository canonical PR-template authoring cutover"
+    status: done
+    pr: 6135
+    depends_on: [MAS28-W0]
+  - id: MAS28-W0R
+    title: "MAS-28 — R028 per-target evidence-identity reconciliation"
+    status: done
+    depends_on: [MAS28-W0B]
+  - id: MAS28-W1
+    title: "MAS-28 — pure report-only PR-linkage validator implementation"
+    status: in_progress
+    pr: 6328
+    depends_on: [MAS28-W0R]
 decisions:
   - DEC:AGENTOS-CXI-R12-OVERRULED
   - DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY
@@ -64,11 +79,13 @@ decisions:
   - DEC:AGENTOS-START-NEXT-VS-AGENDA
   - DEC:AGENTOS-NIGHTLY-IS-THE-ONLY-REGENERATOR
   - DEC:MAS28-PR-LINKAGE-VALIDATOR-V1-REPORT-ONLY
+  - DEC:MAS28-R028-TARGET-IDENTITY-RECONCILIATION
 discoveries:
   - DSC:GOVERNANCE-JSONL-NOT-TRACKED
   - DSC:EXECUTIVE-OS-NO-PROGRAM-ROW
   - DSC:CENSUS-POSTDATES-PHASE1B
   - DSC:MAS28-AUTHORING-GRAMMAR-DRIFT
+  - DSC:MAS28-R028-EVIDENCE-IDENTITY-COLLAPSE
 landmines:
   - "PROVISIONAL PARENT: project-active-build-control's registry row says it does_not_own 'Durable program truth', which is exactly what this workstream owns. No agent-os row exists (see DSC:EXECUTIVE-OS-NO-PROGRAM-ROW for the same gap). Minting one was reverted deliberately: config/mastermind_programs.yml and its generated docs/MASTERMIND_SYSTEM_MAP.md belong to the semantic-system-mapping workstream, which the commissioning brief marks ALREADY ASSIGNED, and editing the generated map conflicted with main within hours. The row is that owner's to add."
   - "Two execution control planes already exist. Anything that gates or dispatches belongs in Mastermind control_plane/ or the Macro hook layer — see invariant I1."
@@ -83,10 +100,11 @@ artifacts:
   - research/MASTERMIND_AGENT_OS_V1_IMPLEMENTATION_PLAN.md
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
 next_action: >
-  Land the MAS28-W0 records freeze, then reconcile Macro #6135 in place and the
-  Mastermind/Terminal authoring surfaces before implementing the pure MAS-28 core.
-  The pre-existing Agent OS Phase 4 remains eligible but is a separate high-blast-radius,
-  report-only hook wave and has not started.
+  Refresh W1 PR #6328 only after MAS28-W0R is merged: adopt the reconciled ruleset digest,
+  require exact `target` evidence for every R028 finding, propagate the new contract markers
+  to the Mastermind and Terminal templates in their own bounded carriers, and rerun the full
+  hostile/property/mutation/purity review. The pre-existing Agent OS Phase 4 remains eligible
+  but is a separate high-blast-radius, report-only hook wave and has not started.
 ---
 
 ## Context
