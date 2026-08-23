@@ -27,7 +27,7 @@ schema: mastermind.rig_proposal.v1
 reference_id: mastermind-xpv2-sector-r3b-2
 
 proposed_artifact:
-  frozen_sha: "PENDING_FREEZE_R3B2_CANDIDATE"   # replaced with the real 40-hex R3B.2 freeze commit (from git log -1 --format=%H) in the same edit that flips status draft -> in_review
+  frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"   # replaced with the real 40-hex R3B.2 freeze commit (from git log -1 --format=%H) in the same edit that flips status draft -> in_review
   paths:
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/BUILD_MANIFEST.json
