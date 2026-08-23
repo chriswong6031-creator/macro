@@ -470,10 +470,95 @@ def test_massive_probe_distinguishes_entitlement_from_absence(monkeypatch):
         def get_object(self, **_kwargs):
             raise Denied("forbidden")
 
+        def list_objects_v2(self, **kwargs):
+            key = kwargs["Prefix"]
+            return {"Contents": [{"Key": key, "Size": 1}]}
+
     monkeypatch.setattr(mf, "client", lambda: Fake())
     probe = mf.probe_available("minute", end_date=datetime.date(2026, 8, 19))
     assert probe.reason == "authorization_or_entitlement_failure"
     assert "403" in probe.detail
+
+
+def test_massive_probe_unlisted_403_does_not_hide_a_readable_prior_session(monkeypatch):
+    """Unpublished calendar-today stock_day keys 403 with an empty listing.
+
+    The three-night massive_stock_day freeze (Aug 21–23) was this shape: probe
+    aborted on today and never ranged-GET the already-published weekday object.
+    """
+    from collectors import massive_flatfiles as mf
+    import io
+
+    for key in ("MASSIVE_S3_ENDPOINT", "MASSIVE_S3_ACCESS_KEY_ID",
+                "MASSIVE_S3_SECRET_ACCESS_KEY"):
+        monkeypatch.setenv(key, "configured")
+
+    class Denied(Exception):
+        response = {"Error": {"Code": "403"},
+                    "ResponseMetadata": {"HTTPStatusCode": 403}}
+
+    class Missing(Exception):
+        response = {"Error": {"Code": "NoSuchKey"},
+                    "ResponseMetadata": {"HTTPStatusCode": 404}}
+
+    readable = "us_stocks_sip/day_aggs_v1/2026/08/2026-08-21.csv.gz"
+    today = "us_stocks_sip/day_aggs_v1/2026/08/2026-08-23.csv.gz"
+
+    class Fake:
+        def get_object(self, **kwargs):
+            key = kwargs["Key"]
+            if key == readable:
+                return {"Body": io.BytesIO(b"\x1f\x8bhello"),
+                        "ResponseMetadata": {"HTTPStatusCode": 206}}
+            if key == today:
+                raise Denied("unpublished today")
+            raise Missing("weekend")
+
+        def list_objects_v2(self, **kwargs):
+            key = kwargs["Prefix"]
+            if key == readable:
+                return {"Contents": [{"Key": key, "Size": 322582}]}
+            return {}
+
+    monkeypatch.setattr(mf, "client", lambda: Fake())
+    probe = mf.probe_available("stock_day", lookback=7,
+                               end_date=datetime.date(2026, 8, 23))
+    assert probe.reason == "available"
+    assert probe.available_date == datetime.date(2026, 8, 21)
+
+
+def test_massive_probe_listed_403_does_not_walk_to_older_readable(monkeypatch):
+    """Listed+403 is entitlement. An older readable day must not launder it."""
+    from collectors import massive_flatfiles as mf
+    import io
+
+    for key in ("MASSIVE_S3_ENDPOINT", "MASSIVE_S3_ACCESS_KEY_ID",
+                "MASSIVE_S3_SECRET_ACCESS_KEY"):
+        monkeypatch.setenv(key, "configured")
+
+    class Denied(Exception):
+        response = {"Error": {"Code": "Forbidden"},
+                    "ResponseMetadata": {"HTTPStatusCode": 403}}
+
+    newest = "us_options_opra/minute_aggs_v1/2026/08/2026-08-19.csv.gz"
+    older = "us_options_opra/minute_aggs_v1/2026/08/2026-08-18.csv.gz"
+
+    class Fake:
+        def get_object(self, **kwargs):
+            if kwargs["Key"] == older:
+                return {"Body": io.BytesIO(b"\x1f\x8bhello"),
+                        "ResponseMetadata": {"HTTPStatusCode": 206}}
+            raise Denied("listed but forbidden")
+
+        def list_objects_v2(self, **kwargs):
+            key = kwargs["Prefix"]
+            return {"Contents": [{"Key": key, "Size": 25_000_000}]}
+
+    monkeypatch.setattr(mf, "client", lambda: Fake())
+    probe = mf.probe_available("minute", lookback=7,
+                               end_date=datetime.date(2026, 8, 19))
+    assert probe.reason == "authorization_or_entitlement_failure"
+    assert probe.available_date is None
 
 
 def test_options_flow_target_absence_returns_degraded_without_writing(monkeypatch, tmp_path):
