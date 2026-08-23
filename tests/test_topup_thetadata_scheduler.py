@@ -158,12 +158,27 @@ def test_successful_run_then_immediate_reinvocation_is_cheap_noop(tmp_path, monk
             self.calls.append(("greeks", root, s))
             return pd.DataFrame({"date": [pd.Timestamp(s)], "strike": [1]})
 
+        def snapshot_open_interest(self, root):
+            # (K2) oi_D's frontier — the daily mode's own S/D day (D_MID,
+            # 2026-08-19 per `now_fn` below) rides in the "date" of `s` used
+            # elsewhere in this fake, so stamp the snapshot's source
+            # timestamp at that same session.
+            import pandas as pd
+            self.calls.append(("oi", root, _date(2026, 8, 19)))
+            ts = pd.Timestamp(2026, 8, 19, 6, 30)
+            return pd.DataFrame({
+                "root": [root], "expiration": [pd.Timestamp(2026, 8, 19)],
+                "strike": [1], "right": ["C"], "snapshot_ts": [ts],
+                "open_interest": [100],
+            })
+
     fake = _Fake()
     import collectors.thetadata as real_td
     monkeypatch.setattr(real_td, "reachable", fake.reachable)
     monkeypatch.setattr(real_td, "bulk_eod", fake.bulk_eod)
     monkeypatch.setattr(real_td, "bulk_open_interest", fake.bulk_open_interest)
     monkeypatch.setattr(real_td, "bulk_greeks", fake.bulk_greeks)
+    monkeypatch.setattr(real_td, "snapshot_open_interest", fake.snapshot_open_interest)
 
     now_fn = lambda: _dt(2026, 8, 19, 16, 30, tzinfo=topup.nyse_calendar.ET)
     rc1 = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False, now_fn=now_fn)

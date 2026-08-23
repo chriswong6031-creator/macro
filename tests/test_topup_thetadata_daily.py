@@ -64,15 +64,49 @@ def _wrong_date_df(day: date, other: date) -> pd.DataFrame:
     return pd.DataFrame({"date": [pd.Timestamp(other)], "strike": [1]})
 
 
+def _snapshot_vendor_df(root: str, day: date, n: int = 2) -> pd.DataFrame:
+    """Raw `snapshot_open_interest` vendor shape (K2): root, expiration,
+    strike, right, snapshot_ts, open_interest — snapshot_ts stamped inside
+    `day` (~06:30 ET OPRA print), NOT yet normalized to a `date` column
+    (that is `_snapshot_oi_frame`'s job)."""
+    ts = pd.Timestamp(day) + pd.Timedelta(hours=6, minutes=30)
+    return pd.DataFrame({
+        "root": [root] * n,
+        "expiration": [pd.Timestamp(day)] * n,
+        "strike": list(range(n)),
+        "right": ["C"] * n,
+        "snapshot_ts": [ts] * n,
+        "open_interest": [100] * n,
+    })
+
+
 class FakeTd:
-    """Fake vendor surface for the daily 4-cell ensure (§A4/§A5)."""
+    """Fake vendor surface for the daily 4-cell ensure (§A4/§A5).
+
+    `default_D` (K2) is the day the DEFAULT (unconfigured) snapshot response
+    is stamped with — `snapshot_open_interest(root)` takes no date argument
+    (matching the real vendor endpoint), so a test whose run's `D` is not
+    `D_MID` (the file's dominant fixture day) must pass its own `default_D`
+    explicitly for `snapshot_open_interest`'s default `complete` behavior to
+    land on the right day. `snapshot_plan` (keyed by root only, matching the
+    endpoint's own no-date signature) overrides the default per-root."""
 
     def __init__(self, plan: dict[tuple[str, str, date], object] | None = None,
-                reachable_sequence=None):
+                reachable_sequence=None,
+                snapshot_plan: dict[str, object] | None = None,
+                default_D: date | None = None):
         self.plan = plan or {}
+        self.snapshot_plan = snapshot_plan or {}
+        self.default_D = default_D if default_D is not None else D_MID
         self._reachable_seq = list(reachable_sequence) if reachable_sequence else None
         self._reachable_default = True
         self.calls: list[tuple] = []
+        # (K2) tracked SEPARATELY from `self.calls` — both `bulk_open_interest`
+        # and `snapshot_open_interest` tag their `self.calls` entry the same
+        # ("oi", root, day) shape (for call-count-assertion compatibility with
+        # the pre-K2 tests), so a test that must discriminate WHICH vendor
+        # method oi_D actually invoked needs its own list.
+        self.snapshot_calls: list[str] = []
         self.on_call = None
 
     def reachable(self) -> bool:
@@ -101,6 +135,19 @@ class FakeTd:
     def bulk_greeks(self, root, exp, start, end, order=3):
         return self._get("greeks", root, start)
 
+    def snapshot_open_interest(self, root):
+        # (K2) tagged "oi"/default_D so call-count assertions written
+        # against the old bulk_open_interest(root, 0, D, D) shape keep
+        # working unchanged.
+        self.calls.append(("oi", root, self.default_D))
+        self.snapshot_calls.append(root)
+        if self.on_call:
+            self.on_call("oi", root, self.default_D)
+        if root in self.snapshot_plan:
+            v = self.snapshot_plan[root]
+            return v(self.default_D) if callable(v) else v
+        return _snapshot_vendor_df(root, self.default_D)
+
 
 def _install_fake_td(monkeypatch, fake):
     import collectors.thetadata as real_td
@@ -108,6 +155,7 @@ def _install_fake_td(monkeypatch, fake):
     monkeypatch.setattr(real_td, "bulk_eod", fake.bulk_eod)
     monkeypatch.setattr(real_td, "bulk_open_interest", fake.bulk_open_interest)
     monkeypatch.setattr(real_td, "bulk_greeks", fake.bulk_greeks)
+    monkeypatch.setattr(real_td, "snapshot_open_interest", fake.snapshot_open_interest)
 
 
 def _wire_daily(monkeypatch, store, *, t1=None, ad=None):
@@ -388,25 +436,33 @@ def test_each_cell_independently_absent_is_fetched_singly(store, tier, attr, day
 
 
 def test_oi_d_absent_leaves_root_s_panel_complete_but_not_chain_next(store, monkeypatch):
-    plan = {("oi", "SPY", D_MID): _empty_df()}
-    fake = FakeTd(plan=plan)
+    fake = FakeTd(snapshot_plan={"SPY": _empty_df()})
     result = topup._ensure_daily_root(store, "SPY", S_MID, D_MID, fake)
     assert topup._s_panel_ok(result) is True
     assert result.cells["oi_D"] == "vendor_empty"
     assert not topup._panel_present(result.cells, "oi_D")
 
 
-def test_oi_d_absent_does_not_degrade_healthy(store, monkeypatch):
-    plan = {("oi", "SPY", D_MID): _empty_df(), ("oi", "QQQ", D_MID): _empty_df()}
+# ── K1 (Sol B1a) INVERTED: this test used to assert `healthy` here — the
+# frozen amendment (research/AD1T1_INCREMENTAL_CADENCE_SPEC_2026-08-22.md
+# §K1) makes this exact fixture the hostile family: OI[D] absent EVERYWHERE
+# must NEVER be healthy, no matter how complete the observational S-panel
+# is. `chain_next_ad_roots == 0` (the OI[D]-within-AD-universe count) stays
+# unaffected — it was already 0 in this fixture before the ruling.
+def test_oi_d_absent_everywhere_is_partial_never_healthy(store, monkeypatch):
+    snapshot_plan = {"SPY": _empty_df(), "QQQ": _empty_df()}
     _wire_daily(monkeypatch, store, t1=["SPY", "QQQ"], ad=["SPY", "QQQ"])
-    fake = FakeTd(plan=plan)
+    fake = FakeTd(snapshot_plan=snapshot_plan)
     _install_fake_td(monkeypatch, fake)
     rc = topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     receipt = _manifest(store)["daily_refresh"]
-    assert receipt["status"] == "healthy"
+    assert receipt["s_panel_coverage_pct"] == 1.0   # S-panel is perfect …
+    assert receipt["ad_ready_coverage_pct"] == 0.0   # … but AD-ready is zero
+    assert receipt["status"] == "partial"
+    assert receipt["status"] != "healthy"
     assert receipt["chain_next_ad_roots"] == 0
-    assert rc == 0
+    assert rc == 1
 
 
 def test_no_eod_d_or_greeks_d_request_ever(store):
@@ -418,7 +474,7 @@ def test_no_eod_d_or_greeks_d_request_ever(store):
 
 
 def test_dec_jan_year_boundary_cells_land_in_their_own_year(store):
-    fake = FakeTd()
+    fake = FakeTd(default_D=D_JAN)
     topup._ensure_daily_root(store, "SPY", S_DEC, D_JAN, fake)
     assert topup._has_day(store, "eod", "SPY", S_DEC)
     assert topup._has_day(store, "greeks", "SPY", S_DEC)
@@ -436,6 +492,89 @@ def test_stale_july_fresh_august_store_no_writes_outside_s_d_cells(store):
     out = pd.read_parquet(store / "eod" / "SPY" / "2026.parquet")
     dates_touched = set(pd.to_datetime(out["date"]).dt.date)
     assert dates_touched == {stale_day, S_MID}
+
+
+# ═══════════════ K2 (Sol B1b) OI[D] SNAPSHOT FRONTIER WRAPPER ══════════════
+class _StubSnapshotTd:
+    """Frozen-frame vendor stub for `_snapshot_oi_frame` unit tests — NO live
+    vendor calls, NO FakeTd machinery (this exercises the wrapper directly)."""
+
+    def __init__(self, frame):
+        self._frame = frame
+
+    def snapshot_open_interest(self, root):
+        return self._frame(root) if callable(self._frame) else self._frame
+
+
+def test_k2_snapshot_wrapper_none_is_fetch_failed(store):
+    state = topup._ensure_one_cell(
+        store, "oi", "SPY", D_MID,
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(None), "SPY", D_MID))
+    assert state == "fetch_failed"
+
+
+def test_k2_snapshot_wrapper_empty_is_vendor_empty(store):
+    state = topup._ensure_one_cell(
+        store, "oi", "SPY", D_MID,
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(_empty_df()), "SPY", D_MID))
+    assert state == "vendor_empty"
+
+
+def test_k2_snapshot_wrapper_d_stamped_rows_pass_through_and_complete(store):
+    raw = _snapshot_vendor_df("SPY", D_MID)
+    state = topup._ensure_one_cell(
+        store, "oi", "SPY", D_MID,
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(raw), "SPY", D_MID))
+    assert state == "complete"
+    assert topup._has_day(store, "oi", "SPY", D_MID)
+    stored = pd.read_parquet(store / "oi" / "SPY" / f"{D_MID.year}.parquet")
+    assert set(stored.columns) == {"root", "expiration", "strike", "right", "date",
+                                   "open_interest"}
+
+
+def test_k2_snapshot_wrapper_stale_stamped_only_is_date_unresolved(store):
+    stale_day = date(2026, 8, 17)
+    raw = _snapshot_vendor_df("SPY", stale_day)
+    state = topup._ensure_one_cell(
+        store, "oi", "SPY", D_MID,
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(raw), "SPY", D_MID))
+    assert state == "date_unresolved"
+    assert not topup._has_day(store, "oi", "SPY", D_MID)
+
+
+def test_k2_snapshot_wrapper_mixed_dates_keeps_only_d_rows_and_merges(store):
+    d_rows = _snapshot_vendor_df("SPY", D_MID, n=2)
+    stale_rows = _snapshot_vendor_df("SPY", date(2026, 8, 17), n=3)
+    mixed = pd.concat([d_rows, stale_rows], ignore_index=True)
+    state = topup._ensure_one_cell(
+        store, "oi", "SPY", D_MID,
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(mixed), "SPY", D_MID))
+    assert state == "complete"
+    stored = pd.read_parquet(store / "oi" / "SPY" / f"{D_MID.year}.parquet")
+    assert len(stored) == 2   # only the D-stamped rows landed — stale rows dropped
+    assert set(pd.to_datetime(stored["date"]).dt.date) == {D_MID}
+
+
+def test_k2_snapshot_wrapper_drops_snapshot_ts_and_selects_exact_schema(store):
+    raw = _snapshot_vendor_df("SPY", D_MID)
+    raw["junk_extra_column"] = "should not survive"
+    out = topup._snapshot_oi_frame(_StubSnapshotTd(raw), "SPY", D_MID)
+    assert list(out.columns) == ["root", "expiration", "strike", "right", "date",
+                                 "open_interest"]
+    assert "snapshot_ts" not in out.columns
+
+
+def test_k2_ensure_daily_root_oi_d_uses_snapshot_not_bulk_open_interest(store):
+    """Direct pin of the K2 call-site swap: `_ensure_daily_root`'s oi_D cell
+    must call `td.snapshot_open_interest`, never `td.bulk_open_interest`.
+    `snapshot_calls` is tracked separately from the legacy `calls` log
+    precisely so this test can tell the two vendor methods apart (both tag
+    `calls` identically for call-count-assertion compatibility)."""
+    fake = FakeTd()
+    topup._ensure_daily_root(store, "SPY", S_MID, D_MID, fake)
+    assert fake.snapshot_calls == ["SPY"]
+    oi_calls_for_d = [c for c in fake.calls if c == ("oi", "SPY", D_MID)]
+    assert len(oi_calls_for_d) == 1
 
 
 # ═════════════════════════ WRITER (§B/F9/F14) ═══════════════════════════════
@@ -752,7 +891,7 @@ def test_root_with_no_options_vendor_empty_run_continues(store, monkeypatch):
     plan = {(t, "ZZZZ", d): _empty_df()
            for t in ("eod", "oi", "greeks") for d in (S_MID, D_MID)}
     _wire_daily(monkeypatch, store, t1=["ZZZZ", "SPY"], ad=["SPY"])
-    fake = FakeTd(plan=plan)
+    fake = FakeTd(plan=plan, snapshot_plan={"ZZZZ": _empty_df()})
     _install_fake_td(monkeypatch, fake)
     rc = topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
@@ -760,7 +899,8 @@ def test_root_with_no_options_vendor_empty_run_continues(store, monkeypatch):
     assert receipt["status"] == "healthy"   # SPY alone clears the AD gate
     assert receipt["t1_universe_count"] == 2
     assert receipt["complete_t1_roots"] == 1   # ZZZZ never completes
-    assert receipt["complete_ad_roots"] == 1
+    assert receipt["s_panel_ad_roots"] == 1
+    assert receipt["ad_ready_roots"] == 1
 
 
 def test_f6_date_unresolved_distinct_from_vendor_empty(store):
@@ -953,7 +1093,7 @@ def test_rf2_deadline_exceeded_forces_partial_even_at_full_coverage(store, monke
     rc = topup._daily_main(workers=len(roots), deadline_min=0.00001, forced=False,
                            now_fn=lambda: _et(2026, 8, 19, 16, 30))
     receipt = _manifest(store)["daily_refresh"]
-    assert receipt["ad_coverage_pct"] == 1.0
+    assert receipt["ad_ready_coverage_pct"] == 1.0
     assert receipt["deadline_exceeded"] is True
     assert receipt["status"] == "partial"
     assert receipt["status"] != "healthy"
@@ -1030,13 +1170,20 @@ def test_receipt_threshold_imported_from_engine_flip(store, monkeypatch):
 
 
 def test_forced_stamps_forced_true(store, monkeypatch):
+    # Saturday 2026-08-22 forced -> D = last_session_on_or_before == the
+    # prior Friday (see test_forced_on_non_session_day_derives_last_session
+    # _on_or_before) — the fake's default_D must match, or its snapshot
+    # (D_MID by default) misclassifies oi_D as date_unresolved and this
+    # run would never reach `healthy`.
+    forced_d = nc.last_session_on_or_before(date(2026, 8, 22))
     _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
-    fake = FakeTd()
+    fake = FakeTd(default_D=forced_d)
     _install_fake_td(monkeypatch, fake)
     rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=True,
                            now_fn=lambda: _et(2026, 8, 22, 12, 0))   # Saturday
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["forced"] is True
+    assert receipt["status"] == "healthy"
     assert rc == 0
 
 
@@ -1090,7 +1237,7 @@ def test_daily_exit_code_quadruple_pinned(store, monkeypatch):
     # partial -> 1
     plan_partial = {("eod", "QQQ", date(2026, 8, 21)): None}
     _wire_daily(monkeypatch, store, t1=["SPY", "QQQ"], ad=["SPY", "QQQ"])
-    fake_partial = FakeTd(plan=plan_partial)
+    fake_partial = FakeTd(plan=plan_partial, default_D=D_MON)
     _install_fake_td(monkeypatch, fake_partial)
     rc_partial = topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
                                    now_fn=lambda: _et(2026, 8, 24, 16, 30))  # Mon
@@ -1170,7 +1317,8 @@ def test_sentinel_script_mentions_daily_refresh_and_session_date():
 
 
 def _run_sentinel(*, now_utc_iso: str, manifest_d: str, tmp_path,
-                  repo_root: str | None = None, cwd: str | None = None):
+                  repo_root: str | None = None, cwd: str | None = None,
+                  status: str = "healthy", forced: bool = False):
     """Invoke the REAL sentinel script (RF1, R3 — computed, not grep-only)
     with its test seams: SENTINEL_NOW_UTC overrides the wall clock, STORE
     points at a crafted tmp store, HEALTH_URL points at a closed port so the
@@ -1178,11 +1326,14 @@ def _run_sentinel(*, now_utc_iso: str, manifest_d: str, tmp_path,
     (N3) lets a test inject a broken REPO_ROOT to force the
     `from lib import nyse_calendar` import to fail; `cwd` closes the loophole
     where python's stdin-script sys.path[0] (the process cwd) would
-    otherwise still resolve `lib` regardless of REPO_ROOT."""
+    otherwise still resolve `lib` regardless of REPO_ROOT. `status`/`forced`
+    (K4, Sol B3) default to the normal production-healthy shape — a test
+    exercising the health/forced anchor conditions overrides one."""
     store = tmp_path / "store"
     (store / "greeks" / "SPY").mkdir(parents=True)
     (store / "_manifest.json").write_text(json.dumps(
-        {"daily_refresh": {"D": manifest_d, "S": "2026-08-18", "status": "healthy"}}))
+        {"daily_refresh": {"D": manifest_d, "S": "2026-08-18",
+                           "status": status, "forced": forced}}))
     pd.DataFrame({"date": [pd.Timestamp("2026-08-19")], "x": [1]}).to_parquet(
         store / "greeks" / "SPY" / "2026.parquet")
     env = {
@@ -1229,6 +1380,57 @@ def test_rf1_anchor_due_and_stale_alerts(tmp_path):
     assert verdict["daily_refresh_anchor_due"] is True
     assert verdict["level"] == "ALERT"
     assert any("daily_refresh.D stale" in r for r in verdict["reasons"])
+
+
+# ── K4 (Sol B3): the anchor validates HEALTH, not only freshness of D ──────
+def test_k4_current_d_partial_alerts(tmp_path):
+    verdict = _run_sentinel(now_utc_iso="2026-08-20T01:30:00+00:00",
+                            manifest_d="2026-08-19", status="partial", forced=False,
+                            tmp_path=tmp_path)
+    assert verdict["daily_refresh_anchor_due"] is True
+    assert verdict["level"] == "ALERT"
+    assert verdict["daily_refresh_status"] == "partial"
+    assert any("not healthy" in r for r in verdict["reasons"])
+
+
+def test_k4_current_d_failed_alerts(tmp_path):
+    verdict = _run_sentinel(now_utc_iso="2026-08-20T01:30:00+00:00",
+                            manifest_d="2026-08-19", status="failed", forced=False,
+                            tmp_path=tmp_path)
+    assert verdict["daily_refresh_anchor_due"] is True
+    assert verdict["level"] == "ALERT"
+    assert verdict["daily_refresh_status"] == "failed"
+    assert any("not healthy" in r for r in verdict["reasons"])
+
+
+def test_k4_current_d_healthy_forced_true_alerts(tmp_path):
+    """A `forced=true` diagnostic run is not a normal production-healthy
+    result — even with status=="healthy" and D current, it must still
+    ALERT."""
+    verdict = _run_sentinel(now_utc_iso="2026-08-20T01:30:00+00:00",
+                            manifest_d="2026-08-19", status="healthy", forced=True,
+                            tmp_path=tmp_path)
+    assert verdict["daily_refresh_anchor_due"] is True
+    assert verdict["level"] == "ALERT"
+    assert verdict["daily_refresh_forced"] is True
+    assert any("forced=True" in r for r in verdict["reasons"])
+
+
+def test_k4_current_d_healthy_unforced_no_anchor_alert(tmp_path):
+    """The one shape that satisfies the anchor: D current, status healthy,
+    forced exactly False — the anchor itself raises no reason (the fixture's
+    HEALTH_URL is deliberately unreachable per `_run_sentinel`'s docstring,
+    so the OVERALL level still ALERTs on the unrelated terminal-health
+    check — this test isolates the anchor's own contribution, not the
+    terminal check)."""
+    verdict = _run_sentinel(now_utc_iso="2026-08-20T01:30:00+00:00",
+                            manifest_d="2026-08-19", status="healthy", forced=False,
+                            tmp_path=tmp_path)
+    assert verdict["daily_refresh_anchor_due"] is True
+    assert verdict["daily_refresh_status"] == "healthy"
+    assert verdict["daily_refresh_forced"] is False
+    assert not any("K4 anchor" in r for r in verdict["reasons"])
+    assert not any("AD-1T1 F8 anchor" in r for r in verdict["reasons"])
 
 
 def test_n3_broken_calendar_import_alerts_regardless_of_anchor_due(tmp_path):
@@ -1305,6 +1507,48 @@ def test_terminal_unreachable_at_startup_aborts_failed(store, monkeypatch):
     assert receipt["terminal_health"] == "unreachable"
 
 
+# ═══════════════════ K1 (Sol B1a) AD-READY RECEIPT FIELDS ══════════════════
+def test_k1_receipt_new_fields_present_and_correct(store, monkeypatch):
+    roots = ["SPY", "QQQ", "AAPL"]
+    _wire_daily(monkeypatch, store, t1=roots, ad=roots)
+    fake = FakeTd()
+    _install_fake_td(monkeypatch, fake)
+    rc = topup._daily_main(workers=3, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
+                           now_fn=lambda: _et(2026, 8, 19, 16, 30))
+    receipt = _manifest(store)["daily_refresh"]
+    assert receipt["s_panel_ad_roots"] == 3
+    assert receipt["s_panel_coverage_pct"] == 1.0
+    assert receipt["ad_ready_roots"] == 3
+    assert receipt["ad_ready_coverage_pct"] == 1.0
+    assert receipt["oi_D_source"] == "snapshot_open_interest"
+    assert receipt["status"] == "healthy"
+    assert rc == 0
+    # K1 renamed these fields — the old names must not linger.
+    assert "complete_ad_roots" not in receipt
+    assert "ad_coverage_pct" not in receipt
+
+
+def test_k1_s_panel_high_ad_ready_low_is_partial_not_healthy(store, monkeypatch):
+    """The exact K1 discriminating fixture: 10 AD roots all clear the
+    S-panel (>=90%), but only 8/10 land OI[D] (80% < the 90% gate) — must be
+    `partial`, exit 1, even though the OLD (pre-K1) healthy law — keyed on
+    the S-panel alone — would have called this `healthy`."""
+    roots = [f"R{i}" for i in range(10)]
+    short_roots = roots[:2]
+    snapshot_plan = {r: _empty_df() for r in short_roots}
+    _wire_daily(monkeypatch, store, t1=roots, ad=roots)
+    fake = FakeTd(snapshot_plan=snapshot_plan)
+    _install_fake_td(monkeypatch, fake)
+    rc = topup._daily_main(workers=4, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
+                           now_fn=lambda: _et(2026, 8, 19, 16, 30))
+    receipt = _manifest(store)["daily_refresh"]
+    assert receipt["s_panel_coverage_pct"] == 1.0        # old law would be healthy here
+    assert receipt["ad_ready_coverage_pct"] == 0.8        # new gate: 8/10 < 0.90
+    assert receipt["status"] == "partial"
+    assert receipt["status"] != "healthy"
+    assert rc == 1
+
+
 # ═════════════════════════ RF3 (R3): backfill/daily store agreement ═══════
 def test_rf3_backfill_refuses_when_resolved_store_disagrees(tmp_path, monkeypatch):
     import scripts.backfill_thetadata_eod as bf
@@ -1338,6 +1582,52 @@ def test_rf3_backfill_permits_fresh_install_when_nothing_resolves(tmp_path, monk
 
     rc = bf.main()
     assert rc == 0   # dry-run proceeds normally past the agreement check
+
+
+# ── K3 (Sol B2): the store-agreement check fails CLOSED on resolver raise ──
+def test_k3_backfill_resolver_raises_fails_closed_zero_mutations(tmp_path, monkeypatch):
+    """A resolver RAISE (not a clean fresh-install `None`) is the case this
+    check exists to catch — canonical resolution is UNCERTAIN, not
+    confirmed absent. Must exit 1 with ZERO mutations, never warn-and-
+    proceed with `own_store`."""
+    import scripts.backfill_thetadata_eod as bf
+
+    own_store = tmp_path / "own_store"
+    monkeypatch.setattr(bf, "_store_dir", lambda: own_store)
+
+    def _boom(**kw):
+        raise RuntimeError("resolver blew up")
+
+    monkeypatch.setattr(bf, "resolve_thetadata_store", _boom)
+    import sys as _sys
+    monkeypatch.setattr(_sys, "argv", ["backfill_thetadata_eod.py"])
+    import collectors.thetadata as real_td
+    monkeypatch.setattr(real_td, "reachable", lambda: True)
+
+    rc = bf.main()
+    assert rc == 1
+    assert not own_store.exists()   # refused before touching its own store at all
+    assert not (own_store / "_backfill_state.json").exists()
+    assert not (own_store / "_manifest.json").exists()
+
+
+def test_k3_backfill_resolver_none_still_proceeds_fresh_install(tmp_path, monkeypatch):
+    """Converse pin: a clean `None` return (the resolver genuinely found
+    NOTHING anywhere) remains the explicit fresh-install exception — only a
+    RAISE fails closed, never a clean None."""
+    import scripts.backfill_thetadata_eod as bf
+
+    own_store = tmp_path / "own_store"
+    monkeypatch.setattr(bf, "_store_dir", lambda: own_store)
+    monkeypatch.setattr(bf, "resolve_thetadata_store", lambda **kw: None)
+    import sys as _sys
+    monkeypatch.setattr(_sys, "argv", ["backfill_thetadata_eod.py", "--dry-run"])
+    import collectors.thetadata as real_td
+    monkeypatch.setattr(real_td, "reachable", lambda: True)
+    monkeypatch.setattr(bf, "_resolve_universe", lambda extra_roots=None: ["SPY"])
+
+    rc = bf.main()
+    assert rc == 0
 
 
 # ═════════════════════════ HARDENING (R3): lock-open OSError ══════════════

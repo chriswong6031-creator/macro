@@ -151,13 +151,26 @@ if missing is not None:
 # from the greeks-staleness check above because a sleeping/missed host and a
 # healthy one look identical to launchd (calendar fires do not wake a
 # sleeping Mac and coalesce on wake).
+#
+# (K4, Sol B3) The anchor now validates HEALTH, not only freshness of D: a
+# current-D `partial`/`failed` receipt, or a `forced=true` diagnostic run,
+# ALERTs exactly like a stale D — only a normal production-healthy result
+# (D == expected AND status == "healthy" AND forced is exactly false)
+# satisfies the anchor. With K1, `healthy` now carries the >=90% AD-ready
+# settlement guarantee, so this anchor is the sentinel's proof that a real
+# S/D panel landed, not just that SOME run touched D today.
 daily_refresh_d = None
+daily_refresh_status = None
+daily_refresh_forced = None
 expected_session = None
 anchor_err = None
 try:
     with open(f"{store}/_manifest.json") as f:
         _manifest = json.load(f)
-    daily_refresh_d = (_manifest.get("daily_refresh") or {}).get("D")
+    _daily_refresh = _manifest.get("daily_refresh") or {}
+    daily_refresh_d = _daily_refresh.get("D")
+    daily_refresh_status = _daily_refresh.get("status")
+    daily_refresh_forced = _daily_refresh.get("forced")
 except Exception as e:
     anchor_err = f"manifest read failed: {type(e).__name__}: {e}"
 
@@ -207,6 +220,22 @@ elif anchor_due:
         reasons.append(
             f"daily_refresh.D stale: manifest={daily_refresh_d!r} "
             f"expected={expected_session!r} (AD-1T1 F8 anchor, after 20:00 ET)")
+    elif daily_refresh_status != "healthy":
+        # (K4, Sol B3) current-D but NOT a healthy result (partial/failed) —
+        # D matching today is necessary but no longer sufficient.
+        level = "ALERT"
+        reasons.append(
+            f"daily_refresh.D current ({daily_refresh_d!r}) but status="
+            f"{daily_refresh_status!r} (not healthy) (K4 anchor, after 20:00 ET)")
+    elif daily_refresh_forced is not False:
+        # (K4, Sol B3) `forced` must be exactly JSON `false` — a `true`
+        # diagnostic run (or a missing/non-boolean field) is not a normal
+        # production-healthy result and must not silently satisfy the
+        # anchor.
+        level = "ALERT"
+        reasons.append(
+            f"daily_refresh.D current and healthy but forced={daily_refresh_forced!r} "
+            f"(expected false) (K4 anchor, after 20:00 ET)")
 
 verdict = {
     "checked_at": now,
@@ -217,6 +246,8 @@ verdict = {
     "sessions_missing": missing,
     "due_today": due_today,
     "daily_refresh_d": daily_refresh_d,
+    "daily_refresh_status": daily_refresh_status,
+    "daily_refresh_forced": daily_refresh_forced,
     "daily_refresh_expected": expected_session,
     "daily_refresh_anchor_due": anchor_due,
     "daily_refresh_anchor_eval_failed": calendar_eval_failed,

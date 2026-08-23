@@ -394,6 +394,52 @@ def _ensure_one_cell(store: Path, tier: str, root: str, day: _date,
     return "complete"
 
 
+_SNAPSHOT_OI_COLUMNS = ["root", "expiration", "strike", "right", "date", "open_interest"]
+
+
+def _snapshot_oi_frame(td, root: str, D: _date) -> pd.DataFrame | None:
+    """(K2, Sol B1b) OI[D] frontier via `collectors.thetadata.snapshot_open_interest`
+    — replaces the current-day-unavailable `bulk_open_interest(root, 0, D, D)`
+    history call for `--daily` mode ONLY (`collectors/thetadata.py` itself is
+    NOT modified).
+
+    Fetch -> guard -> normalize; the result flows through the UNCHANGED
+    `_ensure_one_cell` classification:
+      - `None` (vendor unreachable/parse failure) -> stays `None` ->
+        `fetch_failed`.
+      - Empty frame -> stays empty -> `vendor_empty`.
+      - Else: derive `date = snapshot_ts.dt.normalize()` — the SAME vendor
+        `timestamp` clock `_normalize_oi_df` already uses for the store's
+        history-path `date` column — drop `snapshot_ts`, and select exactly
+        the store's OI schema (`root, expiration, strike, right, date,
+        open_interest`).
+
+    This wrapper does NOT itself filter rows by `date == D`: doing so here
+    would collapse a "vendor returned rows, but none for D" (stale snapshot,
+    e.g. a midnight-crossing cache reset) into an indistinguishable-from-
+    truly-empty frame, losing `_ensure_one_cell`'s existing
+    `date_unresolved` classification (rows_returned>0, rows_for_target_date
+    ==0). Instead every row's OWN derived date rides through unchanged, and
+    the EXISTING machinery does the scoping: `_ensure_one_cell` classifies
+    `date_unresolved` when zero rows carry `D`, and `_merge_day`'s existing
+    exact-date replacement writer keeps ONLY the `D`-dated rows when it
+    writes (`fresh["date"] == day_ts`) — so a stale/other-date row is still
+    NEVER written under `D` (the source-timestamp guard: stale rows are
+    absent from the store, never relabeled), it is only the classification
+    boundary that reads the un-pre-filtered frame.
+    """
+    df = td.snapshot_open_interest(root)
+    if df is None:
+        return None
+    if df.empty:
+        return df
+    out = df.copy()
+    out["date"] = pd.to_datetime(out["snapshot_ts"], errors="coerce").dt.normalize()
+    out = out.drop(columns=["snapshot_ts"])
+    available = [c for c in _SNAPSHOT_OI_COLUMNS if c in out.columns]
+    return out[available].reset_index(drop=True)
+
+
 def _ensure_daily_root(store: Path, root: str, S: _date, D: _date, td) -> RootResult:
     """Per-root ensure of the four §A4 cells, in the §A5 sequential order
     (eod[S] -> oi[S] -> oi[D] -> greeks[S]). (F11) ANY exception from vendor,
@@ -406,7 +452,7 @@ def _ensure_daily_root(store: Path, root: str, S: _date, D: _date, td) -> RootRe
         cells["oi_S"] = _ensure_one_cell(
             store, "oi", root, S, lambda: td.bulk_open_interest(root, 0, S, S))
         cells["oi_D"] = _ensure_one_cell(
-            store, "oi", root, D, lambda: td.bulk_open_interest(root, 0, D, D))
+            store, "oi", root, D, lambda: _snapshot_oi_frame(td, root, D))
         cells["greeks_S"] = _ensure_one_cell(
             store, "greeks", root, S, lambda: td.bulk_greeks(root, 0, S, S, order=3))
     except Exception as e:  # noqa: BLE001 — F11 catch-all
@@ -466,6 +512,13 @@ def _panel_present(cells: dict, key: str) -> bool:
 def _s_panel_ok(r: RootResult) -> bool:
     return (_panel_present(r.cells, "eod_S") and _panel_present(r.cells, "oi_S")
             and _panel_present(r.cells, "greeks_S"))
+
+
+def _ad_ready_ok(r: RootResult) -> bool:
+    """(K1, Sol B1a) AD-ready = all FOUR §A4 cells present (the S-panel PLUS
+    OI[D]) — the settlement print (`chain_next`) certifies an S/D panel, not
+    the S-panel alone."""
+    return _s_panel_ok(r) and _panel_present(r.cells, "oi_D")
 
 
 def _run_daily_pool(store: Path, t1_universe: list[str], td, *,
@@ -586,13 +639,21 @@ def _aggregate_daily(results: dict[str, RootResult], t1_universe: list[str],
     oi_D = sum(1 for r in results.values() if _panel_present(r.cells, "oi_D"))
 
     complete_t1_roots = sum(1 for r in results.values() if _s_panel_ok(r))
-    complete_ad_roots = sum(1 for root, r in results.items()
-                            if root in ad_set and _s_panel_ok(r))
+    # (K1, Sol B1a) Renamed from `complete_ad_roots` — observational S-panel
+    # count within the AD universe. Computation UNCHANGED (EOD[S] ∧
+    # Greeks[S] ∧ OI[S]); it is reported but no longer certifies `healthy`.
+    s_panel_ad_roots = sum(1 for root, r in results.items()
+                           if root in ad_set and _s_panel_ok(r))
     chain_next_ad_roots = sum(1 for root, r in results.items()
                               if root in ad_set and _panel_present(r.cells, "oi_D"))
+    # (K1, Sol B1a) NEW — AD-ready roots: all FOUR §A4 cells present
+    # (S-panel PLUS OI[D]). This is the gate `healthy` now certifies.
+    ad_ready_roots = sum(1 for root, r in results.items()
+                        if root in ad_set and _ad_ready_ok(r))
 
     ad_universe_count = len(ad_universe)
-    ad_coverage_pct = (complete_ad_roots / ad_universe_count) if ad_universe_count else 0.0
+    s_panel_coverage_pct = (s_panel_ad_roots / ad_universe_count) if ad_universe_count else 0.0
+    ad_ready_coverage_pct = (ad_ready_roots / ad_universe_count) if ad_universe_count else 0.0
 
     failure_counts: dict[str, int] = {}
     failure_examples: list[dict] = []
@@ -639,12 +700,16 @@ def _aggregate_daily(results: dict[str, RootResult], t1_universe: list[str],
         "oi_S_roots": oi_S,
         "oi_D_roots": oi_D,
         "complete_t1_roots": complete_t1_roots,
-        "complete_ad_roots": complete_ad_roots,
-        "ad_coverage_pct": ad_coverage_pct,
+        "s_panel_ad_roots": s_panel_ad_roots,
+        "s_panel_coverage_pct": s_panel_coverage_pct,
+        "ad_ready_roots": ad_ready_roots,
+        "ad_ready_coverage_pct": ad_ready_coverage_pct,
         "chain_next_ad_roots": chain_next_ad_roots,
         "failure_counts_by_reason": failure_counts,
         "failure_examples": failure_examples,
         "s_suspect_non_session": s_suspect_non_session,
+        # (K2) auditable observation path — constant in --daily.
+        "oi_D_source": "snapshot_open_interest",
     }
 
 
@@ -729,8 +794,10 @@ def _daily_main(*, workers: int, deadline_min: float, forced: bool,
                 "oi_S_roots": None,
                 "oi_D_roots": None,
                 "complete_t1_roots": None,
-                "complete_ad_roots": None,
-                "ad_coverage_pct": None,
+                "s_panel_ad_roots": None,
+                "s_panel_coverage_pct": None,
+                "ad_ready_roots": None,
+                "ad_ready_coverage_pct": None,
                 "chain_next_ad_roots": None,
                 "deadline_exceeded": False,
                 "stale_tmp_swept": 0,
@@ -738,6 +805,7 @@ def _daily_main(*, workers: int, deadline_min: float, forced: bool,
                 "failure_counts_by_reason": {},
                 "failure_examples": [],
                 "terminal_health": None,
+                "oi_D_source": None,
             }
             receipt.update(extra)
             _write_daily_receipt(store, receipt)
@@ -796,7 +864,14 @@ def _daily_main(*, workers: int, deadline_min: float, forced: bool,
             return 1
 
         gate = _source_coverage_gate()
-        healthy = agg["ad_coverage_pct"] >= gate
+        # (K1, Sol B1a) `healthy` now certifies the AD-READY split (S-panel
+        # PLUS OI[D]), not the S-panel alone. OI[D] absent everywhere ⇒
+        # ad_ready_coverage_pct == 0.0 ⇒ NEVER healthy, no matter how
+        # complete the observational S-panel is — the frozen AD source
+        # contract requires the settlement print (`chain_next`) to certify
+        # an S/D panel; `s_panel_coverage_pct` is reported but certifies
+        # nothing.
+        healthy = agg["ad_ready_coverage_pct"] >= gate
         # (RF2, R3) deadline_exceeded FORCES partial — a run that ran out of
         # wall-clock time is by definition unfinished, no matter how much
         # coverage the roots it DID reach happened to hit. Never let a
@@ -805,9 +880,9 @@ def _daily_main(*, workers: int, deadline_min: float, forced: bool,
         _finish(status, terminal_health="reachable",
                stale_tmp_swept=stale_tmp_swept,
                deadline_exceeded=deadline_exceeded, **agg)
-        log.info("topup daily: S=%s D=%s ad_coverage=%.1f%% status=%s "
+        log.info("topup daily: S=%s D=%s ad_ready_coverage=%.1f%% status=%s "
                 "deadline_exceeded=%s", ctx.S, ctx.D,
-                agg["ad_coverage_pct"] * 100, status, deadline_exceeded)
+                agg["ad_ready_coverage_pct"] * 100, status, deadline_exceeded)
         return 0 if status == "healthy" else 1
     finally:
         lock_cm.__exit__(None, None, None)

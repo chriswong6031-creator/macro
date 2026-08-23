@@ -561,9 +561,18 @@ def main() -> int:
         resolved = resolve_thetadata_store(
             required=False, purpose="backfill_thetadata_eod store agreement check")
     except Exception as e:  # noqa: BLE001 — resolution itself must not crash the check
-        log.warning("backfill: store-agreement resolver raised %s: %s — "
-                   "proceeding with own store %s", type(e).__name__, e, own_store)
-        resolved = None
+        # (K3, Sol B2) FAIL CLOSED. The previous warn-and-proceed minted a
+        # potential second store exactly when canonical resolution was
+        # UNCERTAIN (a raise, not a clean "nothing resolves anywhere" None) —
+        # the one case this check exists to catch. Zero mutations: this
+        # returns before `own_store` (or any state/manifest/parquet) is ever
+        # touched. A clean `None` return REMAINS the explicit fresh-install
+        # exception (proceed with `_store_dir()`) — only a RAISE fails
+        # closed.
+        log.error("backfill: store-agreement resolver raised %s: %s — "
+                 "refusing to proceed with own store %s while canonical "
+                 "resolution is uncertain (no mutation)", type(e).__name__, e, own_store)
+        return 1
     if resolved is not None and Path(resolved).resolve() != Path(own_store).resolve():
         log.error("backfill: resolve_thetadata_store() resolved %s, which "
                  "DISAGREES with this process's own store %s — refusing to "
