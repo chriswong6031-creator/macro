@@ -21,10 +21,12 @@ depends_on:
 decisions:
   - DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER
 next_action: >
-  E3-A2 deterministic source-native Q&A skeleton.
+  HOLD-FOR-SOL: E3-A2 draft PR. Do not merge. Do not mark E3-A2 done.
   Do not start E3-B.
 owns_paths:
   - research/earnings_intelligence/e3/**
+  - engine/company_intelligence/qa_reconstruction.py
+  - tests/test_company_intelligence_qa_reconstruction.py
 artifacts:
   - research/earnings_intelligence/e3/E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md
   - research/earnings_intelligence/e3/E3A_AAPL_SHADOW_EXTRACTION_HANDOFF_2026-08-20.md
@@ -36,6 +38,10 @@ artifacts:
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-22-e3a-r1.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-23-e3a-r2.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-23-e3a-landed.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-23-e3a2.md
+  - engine/company_intelligence/qa_reconstruction.py
+  - tests/test_company_intelligence_qa_reconstruction.py
+  - research/earnings_intelligence/e3/e3a2_aapl_fy2026_q3_reconstruction_receipt.json
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_eval_receipt.json
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_adjudication_receipt.json
@@ -72,6 +78,9 @@ do_not_redo:
   - Do not grant Haiku production authority.
   - Do not manufacture a numeric usefulness threshold from N=7.
   - Do not start E3-B. E3-B remains locked until E3-A2 is complete and Sol unlocks it.
+  - Do not treat E3-A2 structural reconstruction as qa_exchange.v1 publication authority.
+  - Do not copy Pass-A topic labels into deterministic reconstruction.
+  - Do not put AAPL names, tickers, or boundary indexes in qa_reconstruction.py.
 waves:
   - id: E3-0
     title: Compiler architecture freeze
@@ -103,14 +112,17 @@ waves:
       26 answer-turns. No numeric usefulness threshold manufactured.
   - id: E3-A2
     title: Deterministic source-native Q&A skeleton
-    status: todo
+    status: in_progress
     depends_on: [E3-A]
+    artifacts:
+      - engine/company_intelligence/qa_reconstruction.py
+      - tests/test_company_intelligence_qa_reconstruction.py
+      - research/earnings_intelligence/e3/e3a2_aapl_fy2026_q3_reconstruction_receipt.json
     next_action: >
-      Start only after this E3-A closeout is on main. Prove all 7 AAPL
-      exchanges, ordered question/answer spans, and 26 management
-      answer-turns mechanically from source with zero ticker-specific
-      literals. Topic labels remain non-authoritative; unavailable is
-      preferable to laundering unresolved semantics. Do not start E3-B.
+      Draft PR held for Sol. Local proof: 7 exchanges / 26 answer-turns /
+      exact AAPL structural gold parity; runtime has no gold import and
+      no AAPL literals. Topics remain UNRESOLVED / PASS_A_REFERENCE_ONLY.
+      Do not merge. Do not mark this wave done. Do not start E3-B.
   - id: E3-B
     title: AAPL live Q&A into event_workspace.v1
     status: todo
@@ -133,4 +145,6 @@ waves:
 
 E3-0 landed on main at `22686d255eb047cf5bffc91a35984515acb3d466` (#6161; Sol review 5000425939). E0–E2 stay closed on `WS:EARNINGS-INTELLIGENCE-OS`. Canonical freeze: `research/earnings_intelligence/e3/E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md`. Owner is `coo-fable` (execution). Architecture authority is `DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER` `decided_by: sol`.
 
-E3-A is done as a completed calibration / negative-method experiment. Immutable squash-merge SHA: `d919637f3680d3da25a904484749409b043f60e9` (#6245; Sol review 5001747968; accepted head `b403fba8e141e4a12083f97d104a851178f68051`; merged 2026-08-23T05:57:38Z). Gold is `aapl_fy2026_q3_qa_gold.v2` SHA `fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c`; v1 `6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761` is superseded calibration gold. Canonical taxonomy remains `qa_topic.v1` / `a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e`. The immutable blind Pass B packet stores `b2ae2508877ccda4dea911d52952c49f78b0dbc26049326d542ee77439cf9a14` as a **noncanonical pass-local members digest**, not the qa_topic.v1 hash; enum membership matches. **Topic adjudication is UNRESOLVED / PASS_A_REFERENCE_ONLY** — Pass A and Pass B disagree on all 7 per-exchange topic sets; Haiku Jaccard 0.722 is descriptive against Pass-A reference labels only and grants zero topic-model authority. Structural gold is accepted: 7 Operator-delimited exchanges, exact source spans, identities, 26 management answer-turns. Measured eval `run_id=27e3e380f70658c1`: Qwen `[]` (NOT_EXERCISED, local $0.00) — full-transcript Qwen structural extraction is **not promoted**; Haiku remains **benchmark-only**. No numeric usefulness threshold was manufactured. **E3-B stays locked.** One next action: E3-A2 deterministic source-native Q&A skeleton. Do not start E3-A2 until this closeout is on main. Do not start E3-B.
+E3-A is done as a completed calibration / negative-method experiment. Immutable squash-merge SHA: `d919637f3680d3da25a904484749409b043f60e9` (#6245; Sol review 5001747968; accepted head `b403fba8e141e4a12083f97d104a851178f68051`; merged 2026-08-23T05:57:38Z). Gold is `aapl_fy2026_q3_qa_gold.v2` SHA `fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c`; v1 `6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761` is superseded calibration gold. Canonical taxonomy remains `qa_topic.v1` / `a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e`. The immutable blind Pass B packet stores `b2ae2508877ccda4dea911d52952c49f78b0dbc26049326d542ee77439cf9a14` as a **noncanonical pass-local members digest**, not the qa_topic.v1 hash; enum membership matches. **Topic adjudication is UNRESOLVED / PASS_A_REFERENCE_ONLY** — Pass A and Pass B disagree on all 7 per-exchange topic sets; Haiku Jaccard 0.722 is descriptive against Pass-A reference labels only and grants zero topic-model authority. Structural gold is accepted: 7 Operator-delimited exchanges, exact source spans, identities, 26 management answer-turns. Measured eval `run_id=27e3e380f70658c1`: Qwen `[]` (NOT_EXERCISED, local $0.00) — full-transcript Qwen structural extraction is **not promoted**; Haiku remains **benchmark-only**. No numeric usefulness threshold was manufactured.
+
+E3-A2 is implemented on a held draft PR and is **not done**. Generic runtime `engine/company_intelligence/qa_reconstruction.py` reconstructs Operator-`go ahead` exchanges, question/answer spans, questioner identity, and management answer-turns from source segments only. Local AAPL oracle parity is 7 exchanges / 26 turns with exact spans and identities; topics are not copied. **E3-B stays locked.** Sol decides whether E3-A2 lands. Do not start E3-B.

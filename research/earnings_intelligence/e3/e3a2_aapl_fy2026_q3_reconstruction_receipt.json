@@ -1,0 +1,80 @@
+{
+  "schema": "e3a2_reconstruction_receipt.v1",
+  "git_head_at_proof": "bdd8dffc18cd079dbd25e869a6b9afb910d70b2c",
+  "reconstruction_module_sha256": "23eccda6c6bcea2c6831709b415264b67d553ddc28f41f47933d6e5bd5403f41",
+  "transcript_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+  "event_id": "evt_cik0000320193_2026q3_results",
+  "document_id": "tx:AAPL/2026Q3",
+  "qualifying_boundary_count": 7,
+  "qualifying_boundaries": [
+    32,
+    42,
+    52,
+    63,
+    76,
+    84,
+    97
+  ],
+  "exchange_count": 7,
+  "question_span_count": 32,
+  "answer_span_count": 36,
+  "answer_turn_count": 26,
+  "span_replay_count": 68,
+  "span_replay_ok": true,
+  "unclassified_segment_count": 0,
+  "structural_gold_parity": true,
+  "mutation_tests": {
+    "renamed_analyst": "pass",
+    "renamed_management": "pass",
+    "shifted_indexes": "pass",
+    "split_turns": "pass",
+    "operator_without_go_ahead": "pass",
+    "unexpected_speaker_refuses": "pass",
+    "intro_name_mismatch_refuses": "pass",
+    "corrupt_span_replay_fails": "pass",
+    "revision_scoped_ids": "pass",
+    "no_runtime_gold_or_hardcodes": "pass"
+  },
+  "model_calls": 0,
+  "workspace_written": false,
+  "r2_written": false,
+  "terminal_modified": false,
+  "topic_authority": "none",
+  "e3b_unlocked": false,
+  "gold_sha256": "fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c",
+  "gold_exchange_count": 7,
+  "exchange_0_turns": [
+    {
+      "name": "Kevan Parekh",
+      "role": "CFO",
+      "segment_indexes": [
+        34,
+        35
+      ]
+    },
+    {
+      "name": "Tim Cook",
+      "role": "CEO",
+      "segment_indexes": [
+        36,
+        37
+      ]
+    },
+    {
+      "name": "Tim Cook",
+      "role": "CEO",
+      "segment_indexes": [
+        39,
+        40
+      ]
+    }
+  ],
+  "identity_affiliation_parity": true,
+  "source_format_limitations": [
+    "Operator identity grammar covers 'question from NAME from/of AFFILIATION' and 'go to NAME of AFFILIATION'. Other vendor intro dialects may refuse rather than guess.",
+    "Analyst speech is inferred from empty role plus verified questioner name. A feed that labels analysts with a non-empty role would currently classify them as management.",
+    "Management is any non-Operator/non-IR role. That keeps COO/SVP/etc. visible, but a mislabeled moderator role would be treated as management.",
+    "Whole-segment spans only (start_byte=0, end_byte=utf-8 length). Intra-segment slicing is out of scope.",
+    "Topic labels remain unresolved; this receipt grants no topic or qa_exchange.v1 publication authority."
+  ]
+}
