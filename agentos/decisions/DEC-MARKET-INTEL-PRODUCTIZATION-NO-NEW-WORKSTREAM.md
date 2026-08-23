@@ -41,15 +41,16 @@ alternatives:
       authority; the product build is user-facing Market OS territory.
 evidence:
   - research/market_intelligence_productization/MASTERMIND_MARKET_INTELLIGENCE_PRODUCTIZATION_MASTERPLAN_2026-08-23.md
+  - "masterplan §1, verbatim: Do **not** create a third \"Market Intelligence Productization\" workstream."
   - research/market_intelligence_productization/MARKET_ONTOLOGY_AUTHENTICATED_P1_FINAL_SOL_ADJUDICATION_2026-08-23.md
   - research/market_intelligence_productization/MASTERMIND_MARKET_INTELLIGENCE_PRODUCTIZATION_PACKET_MANIFEST_2026-08-23.json
-  - "packet integrity: all 9 files byte-verified against manifest sha256/bytes on 2026-08-23 (ALL_VERIFIED)"
+  - "packet integrity: all 9 manifest-listed files byte-verified against manifest sha256/bytes on 2026-08-23 (ALL_VERIFIED; the manifest itself is the 10th file and is not self-hashed)"
 affects:
   - WS:MARKET-OS
   - WS:ALPHA-INTELLIGENCE-INTEGRATION
 confidence: high
 reversibility: easy
-decided_by: ceo-sol
+decided_by: chairman-packet-2026-08-23
 decided_at: 2026-08-23
 ---
 

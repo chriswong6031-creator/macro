@@ -41,11 +41,17 @@ verified:
   - claim: >
       The frozen K1 surface in #6319 contains zero occurrences of
       EvidenceRecipe, EvidenceBlock, evidence_recipe, evidence_block,
-      AUTHENTICATED_MO, "authenticated Market Ontology", or K1_K3_K5 in ANY of
-      the nine content files the PR changes (contracts/, lib/, research freeze
-      doc, agentos handoff, WS record, tests, fixture manifest).
-    command: for f in <all 9 non-fixture PR files>; do git show ead0076a:"$f" | grep -c -i -E "EvidenceRecipe|EvidenceBlock|evidence_recipe|evidence_block|AUTHENTICATED_MO|authenticated Market Ontology|K1_K3_K5"; done
-    result: "0 for all nine files"
+      AUTHENTICATED_MO, "authenticated Market Ontology", or K1_K3_K5 in ALL 18
+      files the PR changes (10 non-fixture files including
+      .github/ci/legacy-jobs.yml, plus 8 fixture JSONs). An independent opus
+      review re-ran the sweep over all 18 and additionally enumerated and
+      rejected every candidate equivalent-under-a-different-name (the
+      `projects` relation type, `derived_view` object class,
+      `secondary_subjects`, FIF packet bindings, replay envelope): no bounded
+      consumer projection and no versioned composition instruction exist under
+      any name.
+    command: for f in $(gh pr view 6319 --json files --jq '.files[].path'); do git show ead0076ad48d8a19ae8bc90123629e074a0732d4:"$f" | grep -c -i -E "EvidenceRecipe|EvidenceBlock|evidence_recipe|evidence_block|AUTHENTICATED_MO|authenticated Market Ontology|K1_K3_K5"; done
+    result: "0 for all 18 files (0/18), both passes"
   - claim: A1A records closeout is canonical on main (B1A dispatch gate 1 satisfied).
     command: gh pr view 6310 --json state,mergedAt,mergeCommit
     result: MERGED 2026-08-23T10:43:51Z, merge commit e743db23
