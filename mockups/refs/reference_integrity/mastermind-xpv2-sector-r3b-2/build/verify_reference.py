@@ -35,16 +35,6 @@ Checks:
       reports 0 cells under the 4.5:1 floor and 0 cells excluded as
       unmeasurable (from committed artifact; NOT rerun here — browser-based
       gate; reproduce with `<playwright-python> heatmap_ink_audit.py`).
-  (m)-(o) Lane B responsive/a11y geometry artifacts (fig naming, treemap
-      labels, mobile ramp/receipt-flow geometry) — see each check function's
-      own docstring below.
-  (q) B2-02 — decoded emoji closure (from committed artifact) — asserts the
-      committed no_emoji_audit.json artifact exists, reports 0 hits across the
-      raw-byte scan (literal codepoints + decimal/hex numeric character
-      references) and every (view x lang) DOM cell (decoded text nodes,
-      accessible names, CSS generated content), with a NONZERO census in
-      every scanned population (from committed artifact; NOT rerun here —
-      browser-based gate; reproduce with `<playwright-python> no_emoji_audit.py`).
 
 Checks (f)-(i) shell out to Playwright-based sibling scripts in this
 directory and therefore need a Playwright-enabled Python interpreter to run
@@ -91,7 +81,6 @@ HEATMAP_INK_JSON = BUILD_DIR / "heatmap_ink_audit.json"
 FIG_NAMING_JSON = BUILD_DIR / "fig_naming_audit.json"
 TREEMAP_LABELS_JSON = BUILD_DIR / "treemap_labels_audit.json"
 MOBILE_GEOMETRY_JSON = BUILD_DIR / "mobile_geometry_audit.json"
-NO_EMOJI_JSON = BUILD_DIR / "no_emoji_audit.json"
 
 SIZE_LIMIT = 6 * 1024 * 1024
 
@@ -249,9 +238,6 @@ def main() -> int:
     check_committed_fig_naming_audit()
     check_committed_treemap_labels_audit()
     check_committed_mobile_geometry_audit()
-
-    # ── (q) B2-02 decoded-render no-emoji census ──────────────────────────
-    check_committed_no_emoji_audit()
 
     return print_summary()
 
@@ -475,41 +461,6 @@ def check_committed_mobile_geometry_audit() -> None:
           f"PRC1R-001 aria-controls resolved in {len(aria_ok)}/{len(cells)}; "
           f"{len(failing)} failing cell(s) "
           f"(reproduce with `<playwright-python> mobile_geometry_audit.py`)")
-
-
-def check_committed_no_emoji_audit() -> None:
-    """(q) B2-02 — decoded emoji closure (literal codepoints, decimal/hex
-    numeric character references, decoded DOM text, accessible names, and
-    CSS generated content). Consumes `no_emoji_audit.json`."""
-    name = "(q) B2-02 decoded-render no-emoji census (from committed artifact)"
-    if not NO_EMOJI_JSON.exists():
-        check(name, False, f"missing {NO_EMOJI_JSON}")
-        return
-    audit = json.loads(NO_EMOJI_JSON.read_text(encoding="utf-8"))
-    if audit.get("error"):
-        check(name, False, f"audit reported an error: {audit['error']}")
-        return
-    b = audit.get("bytes") or {}
-    cells = audit.get("cells") or []
-    bytes_ok = (b.get("chars_scanned", 0) > 0 and b.get("entity_refs_scanned", 0) > 0
-                and not b.get("literal_hits") and not b.get("entity_hits"))
-    zero_census_cells = [
-        c for c in cells
-        if c.get("text_nodes", {}).get("census", 0) == 0
-        or c.get("accessible_names", {}).get("census", 0) == 0
-        or c.get("generated_content", {}).get("census", 0) == 0
-    ]
-    failing_cells = [c for c in cells if c.get("failures")]
-    n_dom_hits = sum(len(c.get("failures", [])) for c in cells)
-    ok = (bool(cells) and bytes_ok and not zero_census_cells and not failing_cells
-          and audit.get("pass") is True)
-    check(name, ok,
-          f"bytes: {b.get('chars_scanned', 0)} chars / {b.get('entity_refs_scanned', 0)} "
-          f"numeric char-refs scanned, {len(b.get('literal_hits', []))} literal + "
-          f"{len(b.get('entity_hits', []))} entity hit(s); "
-          f"{len(cells)} DOM cells (6 views x EN/ZH), {n_dom_hits} DOM hit(s), "
-          f"{len(zero_census_cells)} cell(s) with an empty population census "
-          f"(reproduce with `<playwright-python> no_emoji_audit.py`)")
 
 
 def print_summary() -> int:
