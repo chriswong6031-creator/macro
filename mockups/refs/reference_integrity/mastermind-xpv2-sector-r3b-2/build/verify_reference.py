@@ -35,6 +35,23 @@ Checks:
       flat-surface contrast method. This verifier REPORTS that axis and never
       converts UNMEASURED into PASS or FAIL; final legibility review is a
       human/appropriate-method task carried to R3C/design-system.
+  (p) B2-01 producer-path -> customer-label map (from committed
+      label_map_audit.json; NOT rerun here — browser-based gate). Asserts
+      `theme_intel.themes[].score` reads exactly Strength / 强度 on all six
+      painted sites (overview action-board legend + row captions, map
+      text-equivalent th, scatter tooltip, selected-object dt, vh caption),
+      and that the two genuinely-different Conviction producers
+      (`conviction.score`, `combined_score`) keep their own distinct labels.
+  (q) B2-12 `thin` vs reliability semantic-collision guard (from committed
+      thin_reliability_audit.json; NOT rerun here — browser-based gate).
+      Asserts the low-reliability chip reads Low confidence / 低置信度, the
+      R3B1-07 coverage sentence keeps its exact 48-omitted semantics, and
+      "thin"/"稀疏" is painted nowhere else on the Confluence view.
+  (r) B2-13 methodology-receipt aria-controls census (from committed
+      aria_receipt_audit.json; NOT rerun here — browser-based gate). Asserts
+      every [aria-expanded] control driving the shared #r3-receipt panel (the
+      [data-r3b1="02"] button + the three [data-r3b1="08"] siblings, exactly
+      4) names it via aria-controls="r3-receipt".
 
 Checks (f)-(i) shell out to Playwright-based sibling scripts in this
 directory and therefore need a Playwright-enabled Python interpreter to run
@@ -80,6 +97,9 @@ CONTRAST_AUDIT_JSON = LANE_CROPS_B / "contrast_audit.json"
 FIG_NAMING_JSON = BUILD_DIR / "fig_naming_audit.json"
 TREEMAP_LABELS_JSON = BUILD_DIR / "treemap_labels_audit.json"
 MOBILE_GEOMETRY_JSON = BUILD_DIR / "mobile_geometry_audit.json"
+LABEL_MAP_JSON = BUILD_DIR / "label_map_audit.json"
+THIN_RELIABILITY_JSON = BUILD_DIR / "thin_reliability_audit.json"
+ARIA_RECEIPT_JSON = BUILD_DIR / "aria_receipt_audit.json"
 
 SIZE_LIMIT = 6 * 1024 * 1024
 
@@ -237,6 +257,11 @@ def main() -> int:
     check_committed_fig_naming_audit()
     check_committed_treemap_labels_audit()
     check_committed_mobile_geometry_audit()
+
+    # ── (p)/(q)/(r) Lane G verification-hardening guards ─────────────────
+    check_committed_label_map_audit()
+    check_committed_thin_reliability_audit()
+    check_committed_aria_receipt_audit()
 
     return print_summary()
 
@@ -447,6 +472,78 @@ def check_committed_mobile_geometry_audit() -> None:
           f"PRC1R-001 aria-controls resolved in {len(aria_ok)}/{len(cells)}; "
           f"{len(failing)} failing cell(s) "
           f"(reproduce with `<playwright-python> mobile_geometry_audit.py`)")
+
+
+def check_committed_label_map_audit() -> None:
+    """(p) B2-01 — one producer measure, one customer term (from committed
+    label_map_audit.json). Consumes the artifact's own per-cell `failures`
+    list PLUS a re-derived census assertion, so an edit that quietly drops a
+    site out of the sweep (empty selector set) cannot pass by reporting zero
+    failures over nothing measured."""
+    name = "(p) B2-01 producer-path -> customer-label map (from committed artifact)"
+    audit = _load_audit(LABEL_MAP_JSON, name)
+    if audit is None:
+        return
+    cells = audit["cells"]
+    # every site census must be nonzero in every cell
+    zero_census = [
+        c for c in cells
+        if not c.get("legend") or not c.get("row_captions") or not c.get("texteq_th")
+        or not c.get("scatter_tooltip") or not c.get("selected_dt_site5") or not c.get("vh_caption")
+        or not c.get("trace_conviction") or not c.get("confluence_header") or not c.get("confluence_row_labels")
+    ]
+    failing = [c for c in cells if c["failures"]]
+    ok = bool(cells) and len(cells) >= 2 and not zero_census and not failing and audit.get("pass") is True
+    total_fails = sum(len(c["failures"]) for c in cells)
+    check(name, ok,
+          f"{len(cells)} cell(s) (en/zh), 8 sites/cell censused, "
+          f"{len(zero_census)} cell(s) with an empty-census site, "
+          f"{total_fails} failing assertion(s) "
+          f"(reproduce with `<playwright-python> label_map_audit.py`)")
+
+
+def check_committed_thin_reliability_audit() -> None:
+    """(q) B2-12 — `thin` vs reliability semantic-collision guard (from
+    committed thin_reliability_audit.json)."""
+    name = "(q) B2-12 thin/reliability semantic-collision guard (from committed artifact)"
+    audit = _load_audit(THIN_RELIABILITY_JSON, name)
+    if audit is None:
+        return
+    cells = audit["cells"]
+    zero_census = [c for c in cells if not (c.get("measure") or {}).get("chipCensus")]
+    failing = [c for c in cells if c["failures"]]
+    ok = bool(cells) and len(cells) >= 2 and not zero_census and not failing and audit.get("pass") is True
+    total_fails = sum(len(c["failures"]) for c in cells)
+    total_chips = sum((c.get("measure") or {}).get("chipCensus", 0) for c in cells)
+    check(name, ok,
+          f"{len(cells)} cell(s) (en/zh), {total_chips} reliability chip(s) censused, "
+          f"{len(zero_census)} cell(s) with zero chip census, "
+          f"{total_fails} failing assertion(s) "
+          f"(reproduce with `<playwright-python> thin_reliability_audit.py`)")
+
+
+def check_committed_aria_receipt_audit() -> None:
+    """(r) B2-13 — methodology-receipt aria-controls census (from committed
+    aria_receipt_audit.json)."""
+    name = "(r) B2-13 methodology-receipt aria-controls census (from committed artifact)"
+    audit = _load_audit(ARIA_RECEIPT_JSON, name)
+    if audit is None:
+        return
+    cells = audit["cells"]
+    zero_census = [c for c in cells if not (c.get("measure") or {}).get("census")]
+    wrong_shared = [c for c in cells
+                     if (c.get("measure") or {}).get("sharedCensus") != audit.get("expected_shared_panel_controls")]
+    failing = [c for c in cells if c["failures"]]
+    ok = (bool(cells) and len(cells) >= 2 and not zero_census and not wrong_shared
+          and not failing and audit.get("pass") is True)
+    total_fails = sum(len(c["failures"]) for c in cells)
+    check(name, ok,
+          f"{len(cells)} cell(s) (en/zh), expected "
+          f"{audit.get('expected_shared_panel_controls')} shared-panel control(s)/cell, "
+          f"{len(zero_census)} cell(s) with zero [aria-expanded] census, "
+          f"{len(wrong_shared)} cell(s) with wrong shared-panel count, "
+          f"{total_fails} failing assertion(s) "
+          f"(reproduce with `<playwright-python> aria_receipt_audit.py`)")
 
 
 def print_summary() -> int:

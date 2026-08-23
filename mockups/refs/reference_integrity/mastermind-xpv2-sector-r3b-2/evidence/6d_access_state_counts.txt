@@ -1,0 +1,6 @@
+# XPV2-SC-R3B.2 — gated / hydrated / ungated Act-Now access-state counts
+candidate sha256: ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8
+
+gated: 15 row(s) in #actnow, 4 sign-in disclosure line(s) (.pg-more), 1 basket-items line(s) (.pg-plus)
+hydrated: 44 row(s) in #actnow, 0 sign-in disclosure line(s) (.pg-more), 1 basket-items line(s) (.pg-plus)
+ungated: 44 row(s) in #actnow, 0 sign-in disclosure line(s) (.pg-more), 1 basket-items line(s) (.pg-plus)
