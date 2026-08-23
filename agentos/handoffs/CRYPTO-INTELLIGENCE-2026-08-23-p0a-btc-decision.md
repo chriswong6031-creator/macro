@@ -89,11 +89,12 @@ changed:
       Updated this cold-stranger record with Sol's bounded return, exact
       initial current-main pickup cd42b890d1df, reconciliation merge
       935ec982dcff, repair commit 667ea437021e, and final current-main merge
-      f792c107473d onto render pickup 0e8cd8f28edd. Refreshed evidence, held
-      state, release condition and forbidden adjacent work are recorded here.
-      The final self-containing handoff commit is identified by the exact PR
-      head receipt, because a tracked file cannot contain the hash of the
-      commit that contains that file.
+      f792c107473d onto render pickup 0e8cd8f28edd, followed by a cleanly
+      composing CI/White-House-only refresh to 21fab3521143 at the final PR
+      head. Refreshed evidence, held state, release condition and forbidden
+      adjacent work are recorded here. The final self-containing handoff commit
+      is identified by the exact PR head receipt, because a tracked file cannot
+      contain the hash of the commit that contains that file.
   - path: agentos/workstreams/WS-CRYPTO-INTELLIGENCE.md
     what: >
       Registered the existing crypto-intelligence program's P0A/P0B boundary in
@@ -114,8 +115,8 @@ verified:
       new pytest suite unwired against the exact current-main pickup.
     command: >-
       python3 scripts/check_contract_delta.py --base
-      0e8cd8f28eddef51f3a0a3797c749baefedac208
-    result: "contract-delta: 0 introduced, 0 inherited (base 0e8cd8f28edd)."
+      21fab35211433ab9bc4dafda3757d5aa30e11a3e
+    result: "contract-delta: 0 introduced, 0 inherited (base 21fab3521143)."
   - claim: >
       The deterministic decision, BTC authority, Vector, asset and site-reference
       regression set passes in a full checkout on the refreshed branch.
@@ -156,8 +157,11 @@ verified:
       again; merge f792c107473d has parents 602b0a1fe33c and 0e8cd8f28edd. Its
       only conflict was again derived site/vector.html: latest-main generated
       truth was retained for the merge, then Vector was regenerated from repaired
-      source and the exact latest stored data. No ledger or parquet mutation was
-      carried from either disposable render worktree.
+      source and the exact latest stored data. A final pre-push main movement
+      changed only White House data and Warp CI-manifest coverage; merge-tree
+      proved those manifest hunks compose with P0A, and the final PR head is the
+      normal merge whose second parent is 21fab3521143. No ledger or parquet
+      mutation was carried from either disposable render worktree.
   - claim: >
       A real stored-data Vector render publishes one final action and exact target,
       and does not publish the conflicting legacy action or target band.
@@ -291,8 +295,9 @@ P0A was returned by Sol for two named integrity blockers and a current-main
 reconciliation. Both blockers are repaired on the same branch, the seven P0A
 commits were preserved through normal merge 935ec982dcff onto origin/main pickup
 cd42b890d1df, followed by normal current-main merges through final render pickup
-0e8cd8f28edd at merge f792c107473d, and the rebuilt product/evidence is green.
-Vector S2 has one action
+0e8cd8f28edd at merge f792c107473d and a clean CI/White-House-only refresh to
+21fab3521143 at the final PR head. The rebuilt product/evidence is green. Vector
+S2 has one action
 and one exact target from the post-override final allocation; the current
 stored-data render says HOLD 100% BTC in both languages and contains no legacy
 defensive 0–10% instruction. It is still not Sol-accepted, merged, deployed or
