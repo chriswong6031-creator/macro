@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pandas as pd_module
 import pytest
 
 from engine.government_revenue import program_ontology as po
@@ -547,3 +548,404 @@ def test_reject_action_rows_recorded_in_ledger_without_being_admitted(tmp_path):
     assert report["rejected_count"] == 1
     published = json.loads(target.read_text(encoding="utf-8"))
     assert published["programs"] == []
+
+
+# ---------------------------------------------------------------------------
+# Adversarial review repair (2026-08-23, opus)
+# HIGH-1(b) -- conflict/override admission via the worksheet, with the two
+# curate-side SS5 cascade laws.
+# ---------------------------------------------------------------------------
+
+
+def test_high1b_curate_admits_conflict_and_override_rows(tmp_path):
+    # Uses program_capability_links (never event-verified) rather than
+    # program_event_links, so this test exercises ONLY the conflict/
+    # override admission routing -- not SS3.1b's separate event-identity
+    # verification, covered elsewhere.
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "high1b-admit-doc", claim_scopes=["program_identity", "capability_need", "program_capability_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog = b.program_row(evidence_refs=[ev["evidence_id"]])
+    cap = b.capability_row(evidence_refs=[ev["evidence_id"]])
+    link1 = b.program_capability_link_row(program_id=prog["id"], capability_id=cap["id"], evidence_refs=[ev["evidence_id"]])
+    link2 = b.program_capability_link_row(
+        program_id=prog["id"], capability_id=cap["id"], evidence_refs=[ev["evidence_id"]],
+        valid_from="2021-01-01T00:00:00+00:00",
+    )
+    # Only link1 is pre-seeded (a single current link is legal on its own);
+    # link2 + the conflict declaring them contested are admitted TOGETHER in
+    # the worksheet act below, so multiplicity is exempted from the moment
+    # link2 first exists.
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog]
+    graph["capabilities"] = [cap]
+    graph["program_capability_links"] = [link1]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    conflict = b.conflict_row(
+        scope="capability", subject_type="program", subject_id=prog["id"],
+        candidate_row_ids=[link1["link_id"], link2["link_id"]], evidence_refs=[ev["evidence_id"]],
+    )
+    worksheet_dict = b.worksheet(rows=[
+        {"action": "admit", "target_kind": "program_capability_link", "candidate_row": link2},
+        {"action": "admit", "target_kind": "conflict", "candidate_row": conflict},
+    ])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+    report = curate_mod.curate_worksheet(worksheet_path, target_path=target)
+    assert report["admitted_count"] == 2
+    published = json.loads(target.read_text(encoding="utf-8"))
+    assert len(published["conflicts"]) == 1
+
+    override = b.override_row(target_row_id=link2["link_id"], evidence_refs=[ev["evidence_id"]])
+    worksheet2 = b.worksheet(rows=[{
+        "action": "admit", "target_kind": "override", "candidate_row": override,
+    }])
+    worksheet2_path = tmp_path / "worksheet2.json"
+    worksheet2_path.write_text(json.dumps(worksheet2), encoding="utf-8")
+    report2 = curate_mod.curate_worksheet(worksheet2_path, target_path=target)
+    assert report2["admitted_count"] == 1
+    published2 = json.loads(target.read_text(encoding="utf-8"))
+    assert len(published2["overrides"]) == 1
+
+
+def test_high1b_curate_refuses_retirement_cascade_incomplete(tmp_path):
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "high1b-cascade-doc", claim_scopes=["program_identity", "role"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog = b.program_row(evidence_refs=[ev["evidence_id"]])
+    role = b.role_assertion_row(program_id=prog["id"], evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog]
+    graph["role_assertions"] = [role]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    retire_program = b.override_row(target_row_id=prog["id"], evidence_refs=[ev["evidence_id"]])
+    worksheet_dict = b.worksheet(rows=[{
+        "action": "admit", "target_kind": "override", "candidate_row": retire_program,
+    }])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+    report = curate_mod.curate_worksheet(worksheet_path, target_path=target)
+    assert report["admitted_count"] == 0
+    assert report["rejected"][0]["reason"] == "retirement_cascade_incomplete"
+    published = json.loads(target.read_text(encoding="utf-8"))
+    assert published["overrides"] == []
+
+
+def test_high1b_curate_admits_retirement_with_full_cascade(tmp_path):
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "high1b-fullcascade-doc", claim_scopes=["program_identity", "role"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog = b.program_row(evidence_refs=[ev["evidence_id"]])
+    role = b.role_assertion_row(program_id=prog["id"], evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog]
+    graph["role_assertions"] = [role]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    retire_program = b.override_row(target_row_id=prog["id"], evidence_refs=[ev["evidence_id"]])
+    retire_role = b.override_row(target_row_id=role["id"], evidence_refs=[ev["evidence_id"]])
+    worksheet_dict = b.worksheet(rows=[
+        {"action": "admit", "target_kind": "override", "candidate_row": retire_role},
+        {"action": "admit", "target_kind": "override", "candidate_row": retire_program},
+    ])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+    report = curate_mod.curate_worksheet(worksheet_path, target_path=target)
+    assert report["admitted_count"] == 2
+    assert report["rejected_count"] == 0
+    published = json.loads(target.read_text(encoding="utf-8"))
+    assert len(published["overrides"]) == 2
+
+
+def test_high1b_curate_refuses_conflict_resolution_incomplete(tmp_path):
+    """Retiring the conflicts row alone -- without also reducing the
+    subject to at most one current link -- must be refused."""
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "high1b-conflictres-doc", claim_scopes=["program_identity", "program_event_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog1 = b.program_row(id_="acq-program:res-one", evidence_refs=[ev["evidence_id"]])
+    prog2 = b.program_row(id_="acq-program:res-two", evidence_refs=[ev["evidence_id"]])
+    link1 = b.program_event_link_row(program_id=prog1["id"], event_id="govws-res-incomplete", evidence_refs=[ev["evidence_id"]])
+    link2 = b.program_event_link_row(program_id=prog2["id"], event_id="govws-res-incomplete", evidence_refs=[ev["evidence_id"]])
+    conflict = b.conflict_row(
+        scope="program_event_link", subject_type="award_event", subject_id="govws-res-incomplete",
+        candidate_row_ids=[link1["link_id"], link2["link_id"]], evidence_refs=[ev["evidence_id"]],
+    )
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog1, prog2]
+    graph["program_event_links"] = [link1, link2]
+    graph["conflicts"] = [conflict]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    clear_conflict_only = b.override_row(target_row_id=conflict["conflict_id"], evidence_refs=[ev["evidence_id"]])
+    worksheet_dict = b.worksheet(rows=[{
+        "action": "admit", "target_kind": "override", "candidate_row": clear_conflict_only,
+    }])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+    report = curate_mod.curate_worksheet(worksheet_path, target_path=target)
+    assert report["admitted_count"] == 0
+    assert report["rejected"][0]["reason"] == "conflict_resolution_incomplete"
+
+
+def test_high1b_curate_admits_lawful_conflict_clearing_same_act(tmp_path):
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "high1b-lawfulclear-doc", claim_scopes=["program_identity", "program_event_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    winner = b.program_row(id_="acq-program:clear-winner", evidence_refs=[ev["evidence_id"]])
+    loser = b.program_row(id_="acq-program:clear-loser", evidence_refs=[ev["evidence_id"]])
+    winner_link = b.program_event_link_row(program_id=winner["id"], event_id="govws-lawful-clear", evidence_refs=[ev["evidence_id"]])
+    loser_link = b.program_event_link_row(program_id=loser["id"], event_id="govws-lawful-clear", evidence_refs=[ev["evidence_id"]])
+    conflict = b.conflict_row(
+        scope="program_event_link", subject_type="award_event", subject_id="govws-lawful-clear",
+        candidate_row_ids=[winner_link["link_id"], loser_link["link_id"]], evidence_refs=[ev["evidence_id"]],
+    )
+    graph["evidence"] = [ev]
+    graph["programs"] = [winner, loser]
+    graph["program_event_links"] = [winner_link, loser_link]
+    graph["conflicts"] = [conflict]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    clear_link = b.override_row(target_row_id=loser_link["link_id"], evidence_refs=[ev["evidence_id"]])
+    clear_conflict = b.override_row(target_row_id=conflict["conflict_id"], evidence_refs=[ev["evidence_id"]])
+    worksheet_dict = b.worksheet(rows=[
+        {"action": "admit", "target_kind": "override", "candidate_row": clear_link},
+        {"action": "admit", "target_kind": "override", "candidate_row": clear_conflict},
+    ])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+    report = curate_mod.curate_worksheet(worksheet_path, target_path=target)
+    assert report["admitted_count"] == 2
+    assert report["rejected_count"] == 0
+
+
+# ---------------------------------------------------------------------------
+# LOW-3 -- curate wording deviations
+# ---------------------------------------------------------------------------
+
+
+def test_low3a_new_identity_refused_unconditionally_regardless_of_revision(tmp_path):
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "low3a-doc", claim_scopes=["program_identity"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    existing_rev1 = b.program_row(id_="acq-program:low3a", revision=1, evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [existing_rev1]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    # A revision-2 candidate wrongly disposed as new_identity, whose id
+    # already exists in the artifact -- must be refused regardless of the
+    # candidate's OWN revision number (the bug qualified this on revision==1).
+    smuggled_rev2 = b.program_row(
+        id_="acq-program:low3a", revision=2, known_at="2026-08-22T09:00:00+00:00",
+        evidence_refs=[ev["evidence_id"]], succession_reason="attribute_revision",
+    )
+    worksheet_dict = b.worksheet(rows=[{
+        "action": "admit", "target_kind": "program", "candidate_row": smuggled_rev2,
+        "identity_disposition": "new_identity",
+    }])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+    report = curate_mod.curate_worksheet(worksheet_path, target_path=target)
+    assert report["admitted_count"] == 0
+    assert report["rejected"][0]["reason"] == "worksheet_inconsistent"
+
+
+def test_low3b_curate_remints_graph_id_status_to_reviewed(tmp_path):
+    target = tmp_path / "program_ontology.json"
+    worksheet_dict = b.worksheet(rows=[])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+    report = curate_mod.curate_worksheet(
+        worksheet_path, target_path=target,
+        graph_id="program-ontology:candidate:2026-08-23:remint-test",
+        graph_known_at="2026-08-23T00:00:00+00:00", graph_effective_at="2026-08-23T00:00:00+00:00",
+    )
+    assert report["graph_id"] == "program-ontology:reviewed:2026-08-23:remint-test"
+    published = json.loads(target.read_text(encoding="utf-8"))
+    assert published["graph_id"] == "program-ontology:reviewed:2026-08-23:remint-test"
+
+
+def test_low3c_guard_output_path_refuses_wrong_filename(tmp_path):
+    with pytest.raises(ValueError):
+        curate_mod.guard_output_path(tmp_path / "not_the_right_name.json")
+    # The canonical FILENAME under a different root is still legal (test
+    # isolation, migration retargeting) -- only the name is the invariant.
+    assert curate_mod.guard_output_path(tmp_path / "program_ontology.json") == (tmp_path / "program_ontology.json").resolve()
+
+
+def test_low3d_worksheet_ref_is_repo_relative(tmp_path):
+    target = tmp_path / "program_ontology.json"
+    repo_root = Path(__file__).parents[1]
+    worksheet_dir = repo_root / "research" / "government_revenue"
+    worksheet_dir.mkdir(parents=True, exist_ok=True)
+    worksheet_path = worksheet_dir / "PROGRAM_ONTOLOGY_REVIEW_low3d_test.json"
+    ev = b.evidence_row(
+        "low3d-doc", claim_scopes=["program_identity"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog = b.program_row(evidence_refs=[ev["evidence_id"]])
+    worksheet_dict = b.worksheet(
+        coverage=[{"scope": "program_identity", "subject_type": "program", "subject_id": prog["id"]}],
+        rows=[
+            {"action": "admit", "target_kind": "evidence", "candidate_row": ev},
+            {"action": "admit", "target_kind": "program", "candidate_row": prog, "identity_disposition": "new_identity"},
+        ],
+    )
+    try:
+        worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+        report = curate_mod.curate_worksheet(
+            worksheet_path, target_path=target,
+            graph_id="program-ontology:reviewed:2026-08-23:low3d-test",
+            graph_known_at="2026-08-23T00:00:00+00:00", graph_effective_at="2026-08-23T00:00:00+00:00",
+        )
+        assert report["coverage_rows_minted"] == 1
+        published = json.loads(target.read_text(encoding="utf-8"))
+        worksheet_ref = published["review_coverage"][0]["worksheet_ref"]
+        assert worksheet_ref == "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_low3d_test.json"
+        assert not Path(worksheet_ref).is_absolute()
+    finally:
+        worksheet_path.unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------------------
+# MEDIUM-3 -- curate parquet fallback when the workspace event cap is engaged
+# ---------------------------------------------------------------------------
+
+
+def test_medium3_parquet_fallback_verifies_event_beyond_the_window(tmp_path):
+    from tests.test_government_revenue_award_events import _events, _snapshot
+
+    events = _events([_snapshot()])
+    assert events
+    live_event = events[0]
+    event_id = live_event["event_id"]
+
+    parquet_dir = tmp_path / "parquet"
+    parquet_dir.mkdir()
+    pd_module.DataFrame([_snapshot()]).to_parquet(parquet_dir / "award_event_snapshots.parquet")
+    pd_module.DataFrame([]).to_parquet(parquet_dir / "award_actions.parquet")
+
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "medium3-good-doc", claim_scopes=["program_identity", "program_event_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog = b.program_row(evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    source_identity = live_event["award_change"]["source_identity"]
+    link = b.program_event_link_row(
+        program_id=prog["id"], event_id=event_id, evidence_refs=[ev["evidence_id"]],
+        event_source_identity_id=source_identity["id"],
+        event_source_identity_content_sha256=source_identity["content_sha256"],
+        canonical_award_identity=po.canonical_award_identity_comparand(live_event["award_change"]),
+    )
+    worksheet_dict = b.worksheet(rows=[{
+        "action": "admit", "target_kind": "program_event_link", "candidate_row": link,
+    }])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+
+    # The event is absent from the (empty, capped) workspace window.
+    report = curate_mod.curate_worksheet(
+        worksheet_path, target_path=target, workspace_events={}, events_truncated=1, parquet_dir=parquet_dir,
+    )
+    assert report["admitted_count"] == 1
+    assert report["rejected_count"] == 0
+
+
+def test_medium3_parquet_fallback_identity_mismatch(tmp_path):
+    from tests.test_government_revenue_award_events import _events, _snapshot
+
+    events = _events([_snapshot()])
+    live_event = events[0]
+    event_id = live_event["event_id"]
+
+    parquet_dir = tmp_path / "parquet"
+    parquet_dir.mkdir()
+    pd_module.DataFrame([_snapshot()]).to_parquet(parquet_dir / "award_event_snapshots.parquet")
+    pd_module.DataFrame([]).to_parquet(parquet_dir / "award_actions.parquet")
+
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "medium3-mismatch-doc", claim_scopes=["program_identity", "program_event_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog = b.program_row(evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    link = b.program_event_link_row(
+        program_id=prog["id"], event_id=event_id, evidence_refs=[ev["evidence_id"]],
+        event_source_identity_id="action:WRONG-VALUE",
+        event_source_identity_content_sha256="f" * 64,
+        canonical_award_identity=po.canonical_award_identity_comparand(live_event["award_change"]),
+    )
+    worksheet_dict = b.worksheet(rows=[{
+        "action": "admit", "target_kind": "program_event_link", "candidate_row": link,
+    }])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+
+    report = curate_mod.curate_worksheet(
+        worksheet_path, target_path=target, workspace_events={}, events_truncated=1, parquet_dir=parquet_dir,
+    )
+    assert report["admitted_count"] == 0
+    assert report["rejected"][0]["reason"] == "event_identity_mismatch"
+
+
+def test_medium3_absent_everywhere_cap_engaged_still_event_not_found(tmp_path):
+    parquet_dir = tmp_path / "empty_parquet"
+    parquet_dir.mkdir()  # no parquet files at all
+
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "medium3-absent-doc", claim_scopes=["program_identity", "program_event_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog = b.program_row(evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    link = b.program_event_link_row(
+        program_id=prog["id"], event_id="govws-truly-nowhere", evidence_refs=[ev["evidence_id"]],
+    )
+    worksheet_dict = b.worksheet(rows=[{
+        "action": "admit", "target_kind": "program_event_link", "candidate_row": link,
+    }])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+
+    report = curate_mod.curate_worksheet(
+        worksheet_path, target_path=target, workspace_events={}, events_truncated=1, parquet_dir=parquet_dir,
+    )
+    assert report["admitted_count"] == 0
+    assert report["rejected"][0]["reason"] == "event_not_found"

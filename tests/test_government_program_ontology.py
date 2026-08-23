@@ -1015,14 +1015,66 @@ def test_t15e_claim_scope_coverage_missing_for_event_link():
     assert "claim_scope_coverage_missing" in error.errors
 
 
+def _t15b_graph_with_link(event_id: str):
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "t15b-load-doc", claim_scopes=["program_identity", "program_event_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog = b.program_row(evidence_refs=[ev["evidence_id"]])
+    link = b.program_event_link_row(
+        program_id=prog["id"], event_id=event_id, evidence_refs=[ev["evidence_id"]],
+        event_source_identity_id="action:live-example",
+        event_source_identity_content_sha256="e" * 64,
+        canonical_award_identity="generated:CONT_AWD_EXAMPLE",
+    )
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog]
+    graph["program_event_links"] = [link]
+    return graph
+
+
 def test_t15b_event_identity_mismatch_refused_at_load_when_event_present_in_window():
-    # A link whose recorded canonical_award_identity/source-identity disagrees
-    # with a "live" event still present in the loader's own reference window
-    # would be caught downstream by curate (scripts test); here we assert the
-    # link row shape itself is structurally comparable -- amount/date-free --
-    # per T15(d), and that the loader treats the link purely as declared.
-    link = b.program_event_link_row(canonical_award_identity="generated:DIFFERENT")
-    assert link["canonical_award_identity"] == "generated:DIFFERENT"
+    """Freeze SS3.1b load-time half: the loader re-verifies hash agreement
+    for every linked event STILL PRESENT in the supplied workspace mapping."""
+    event_id = "govws-load-mismatch"
+    graph = _t15b_graph_with_link(event_id)
+    live_event_disagreeing = {
+        "award_change": {
+            "generated_award_id": "CONT_AWD_EXAMPLE",
+            "source_identity": {"id": "action:WRONG", "content_sha256": "e" * 64},
+        },
+    }
+    with pytest.raises(po.OntologyInputError) as excinfo:
+        po.load_program_ontology_graph(graph, workspace_events={event_id: live_event_disagreeing})
+    assert "event_identity_mismatch" in excinfo.value.errors
+
+
+def test_t15b_event_absent_from_workspace_window_certifies_cleanly():
+    """Absence from the supplied workspace mapping is NOT a refusal -- the
+    event plane is append-only truth and aging out of a capped cache is not
+    evidence of nonexistence (freeze SS3.1b)."""
+    event_id = "govws-load-absent"
+    graph = _t15b_graph_with_link(event_id)
+    loaded = po.load_program_ontology_graph(graph, workspace_events={})
+    assert loaded is not None
+    # And omitting the parameter altogether (no workspace available) skips
+    # re-verification entirely rather than treating "no mapping" as a mismatch.
+    loaded_no_param = po.load_program_ontology_graph(graph)
+    assert loaded_no_param is not None
+
+
+def test_t15b_event_present_and_agreeing_certifies_cleanly():
+    event_id = "govws-load-agrees"
+    graph = _t15b_graph_with_link(event_id)
+    live_event_agreeing = {
+        "award_change": {
+            "generated_award_id": "CONT_AWD_EXAMPLE",
+            "source_identity": {"id": "action:live-example", "content_sha256": "e" * 64},
+        },
+    }
+    loaded = po.load_program_ontology_graph(graph, workspace_events={event_id: live_event_agreeing})
+    assert loaded is not None
 
 
 # ---------------------------------------------------------------------------
@@ -1550,3 +1602,270 @@ def test_committed_program_dossier_round_trips_its_own_content_id():
     # never re-encodes them.
     recanonicalized = json.dumps(bundle, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
     assert recanonicalized == raw
+
+
+# ---------------------------------------------------------------------------
+# Adversarial review repair (2026-08-23, opus) -- HIGH-1(a): every currency
+# computation must be retire-aware, not just the derivation layer's PIT
+# helpers. These are the reviewer's own probes, promoted to tests.
+# ---------------------------------------------------------------------------
+
+
+def test_high1a_retire_l1_admit_l2_program_event_link_loads_cleanly():
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "high1a-event-doc", claim_scopes=["program_identity", "program_event_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog1 = b.program_row(id_="acq-program:one", evidence_refs=[ev["evidence_id"]])
+    prog2 = b.program_row(id_="acq-program:two", evidence_refs=[ev["evidence_id"]])
+    l1 = b.program_event_link_row(program_id=prog1["id"], event_id="govws-shared", evidence_refs=[ev["evidence_id"]])
+    l2 = b.program_event_link_row(program_id=prog2["id"], event_id="govws-shared", evidence_refs=[ev["evidence_id"]])
+    retire_l1 = b.override_row(target_row_id=l1["link_id"], evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog1, prog2]
+    graph["program_event_links"] = [l1, l2]
+    graph["overrides"] = [retire_l1]
+    loaded = _load(graph)  # must NOT refuse link_multiplicity_invalid
+    assert {row["link_id"] for row in loaded["program_event_links"]} == {l1["link_id"], l2["link_id"]}
+
+
+def test_high1a_retire_capability_link_admit_new_loads_cleanly():
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "high1a-cap-doc", claim_scopes=["program_identity", "capability_need", "program_capability_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog = b.program_row(evidence_refs=[ev["evidence_id"]])
+    cap1 = b.capability_row(id_="acq-capability:one", evidence_refs=[ev["evidence_id"]])
+    cap2 = b.capability_row(id_="acq-capability:two", evidence_refs=[ev["evidence_id"]])
+    link1 = b.program_capability_link_row(program_id=prog["id"], capability_id=cap1["id"], evidence_refs=[ev["evidence_id"]])
+    link2 = b.program_capability_link_row(
+        program_id=prog["id"], capability_id=cap2["id"], evidence_refs=[ev["evidence_id"]],
+        valid_from="2021-01-01T00:00:00+00:00",
+    )
+    retire_link1 = b.override_row(target_row_id=link1["link_id"], evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog]
+    graph["capabilities"] = [cap1, cap2]
+    graph["program_capability_links"] = [link1, link2]
+    graph["overrides"] = [retire_link1]
+    loaded = _load(graph)  # must NOT refuse link_multiplicity_invalid
+    assert {row["link_id"] for row in loaded["program_capability_links"]} == {link1["link_id"], link2["link_id"]}
+
+
+def test_high1a_link_multiplicity_invalid_without_conflict_row():
+    """Two current links, no conflicts row -> the certification defect the
+    exemption logic exists to still catch."""
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "high1a-nomult-doc", claim_scopes=["program_identity", "program_event_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    prog1 = b.program_row(id_="acq-program:one", evidence_refs=[ev["evidence_id"]])
+    prog2 = b.program_row(id_="acq-program:two", evidence_refs=[ev["evidence_id"]])
+    l1 = b.program_event_link_row(program_id=prog1["id"], event_id="govws-contested", evidence_refs=[ev["evidence_id"]])
+    l2 = b.program_event_link_row(program_id=prog2["id"], event_id="govws-contested", evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog1, prog2]
+    graph["program_event_links"] = [l1, l2]
+    error = _refused(graph)
+    assert "link_multiplicity_invalid" in error.errors
+
+
+def test_high1a_lawful_conflict_clearing_certifies_and_rails_rederive():
+    """The reviewer's third probe: retire the conflicts row + retire the
+    losing link in the SAME act -> certifies, and both the workspace
+    program_link derivation (SS3.1b) and the dossier awards rail (SS4)
+    re-derive `reviewed` for the surviving program, never staying stuck on
+    the pre-clearing `conflicted` state."""
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "high1a-clear-doc", claim_scopes=["program_identity", "program_event_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    winner_prog = b.program_row(id_="acq-program:winner", evidence_refs=[ev["evidence_id"]])
+    loser_prog = b.program_row(id_="acq-program:loser", evidence_refs=[ev["evidence_id"]])
+    winner_link = b.program_event_link_row(
+        program_id=winner_prog["id"], event_id="govws-cleared", evidence_refs=[ev["evidence_id"]],
+    )
+    loser_link = b.program_event_link_row(
+        program_id=loser_prog["id"], event_id="govws-cleared", evidence_refs=[ev["evidence_id"]],
+    )
+    conflict = b.conflict_row(
+        scope="program_event_link", subject_type="award_event", subject_id="govws-cleared",
+        candidate_row_ids=[winner_link["link_id"], loser_link["link_id"]], evidence_refs=[ev["evidence_id"]],
+    )
+    clear_link = b.override_row(target_row_id=loser_link["link_id"], evidence_refs=[ev["evidence_id"]])
+    clear_conflict = b.override_row(target_row_id=conflict["conflict_id"], evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [winner_prog, loser_prog]
+    graph["program_event_links"] = [winner_link, loser_link]
+    graph["conflicts"] = [conflict]
+    graph["overrides"] = [clear_link, clear_conflict]
+    loaded = _load(graph)  # lawful clearing certifies
+
+    at_cut = po.analysis_as_of("2026-08-22")
+    program_link = po.derive_workspace_program_link(
+        loaded, event_id="govws-cleared", analysis_as_of=at_cut, graph_id=loaded["graph_id"],
+    )
+    assert program_link["state"] == "reviewed"
+    assert program_link["program_id"] == "acq-program:winner"
+
+    winner_rail = pd._awards_rail(loaded, winner_prog["id"], analysis_as_of=at_cut, workspace=None)
+    assert winner_rail["link_state"] == "reviewed"
+    loser_rail = pd._awards_rail(loaded, loser_prog["id"], analysis_as_of=at_cut, workspace=None)
+    assert loser_rail["link_state"] == "not_reviewed"
+
+
+# ---------------------------------------------------------------------------
+# HIGH-2 -- logical duplicate detection must run BEFORE dict collapse
+# ---------------------------------------------------------------------------
+
+
+def test_high2_two_program_rows_same_id_revision_differing_bytes_refused():
+    """The reviewer's exact probe: two acq-program:example revision-1 rows
+    named Alpha/Beta must never both certify."""
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "high2-doc", claim_scopes=["program_identity"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    alpha = b.program_row(id_="acq-program:example", revision=1, name="Alpha", evidence_refs=[ev["evidence_id"]])
+    beta = b.program_row(id_="acq-program:example", revision=1, name="Beta", evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [alpha, beta]
+    error = _refused(graph)
+    assert "duplicate_identity_conflict" in error.errors
+
+
+def test_high2_byte_identical_logical_row_resubmission_dedupes_idempotently():
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "high2-idem-doc", claim_scopes=["capability_need"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    cap = b.capability_row(evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["capabilities"] = [cap, dict(cap)]  # byte-identical duplicate
+    loaded = _load(graph)
+    assert len(loaded["capabilities"]) == 2  # the artifact may still carry both rows...
+    assert loaded["capabilities"][0] == loaded["capabilities"][1]  # ...but they are byte-identical, never flagged
+
+
+def test_t14d_logical_kind_duplicate_vs_attribute_revision():
+    """T14(d)'s logical-kind half: an in-place variant (same id+revision,
+    differing bytes) refuses; the legal form -- a fresh revision -- is
+    accepted."""
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "t14d-logical-doc", claim_scopes=["program_identity"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    original = b.program_row(id_="acq-program:x", revision=1, name="Original", evidence_refs=[ev["evidence_id"]])
+    in_place_variant = b.program_row(id_="acq-program:x", revision=1, name="Mutated", evidence_refs=[ev["evidence_id"]])
+    graph["evidence"] = [ev]
+    graph["programs"] = [original, in_place_variant]
+    error = _refused(graph)
+    assert "duplicate_identity_conflict" in error.errors
+
+    legal_successor = b.program_row(
+        id_="acq-program:x", revision=2, name="Mutated", known_at="2026-08-22T09:00:00+00:00",
+        evidence_refs=[ev["evidence_id"]], succession_reason="attribute_revision",
+    )
+    graph2 = b.empty_graph()
+    graph2["evidence"] = [ev]
+    graph2["programs"] = [original, legal_successor]
+    loaded = _load(graph2)
+    assert {row["id"] for row in loaded["programs"]} == {"acq-program:x"}
+
+
+# ---------------------------------------------------------------------------
+# MEDIUM-1 -- awards rail withholds attribution under any non-reviewed state
+# ---------------------------------------------------------------------------
+
+
+def test_medium1_awards_rail_empty_arrays_under_conflicted_link_state():
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "medium1-doc", claim_scopes=["program_identity", "program_event_link"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    winner_prog = b.program_row(id_="acq-program:m1-winner", evidence_refs=[ev["evidence_id"]])
+    loser_prog = b.program_row(id_="acq-program:m1-loser", evidence_refs=[ev["evidence_id"]])
+    winner_link = b.program_event_link_row(
+        program_id=winner_prog["id"], event_id="govws-m1-contested", evidence_refs=[ev["evidence_id"]],
+    )
+    loser_link = b.program_event_link_row(
+        program_id=loser_prog["id"], event_id="govws-m1-contested", evidence_refs=[ev["evidence_id"]],
+    )
+    conflict = b.conflict_row(
+        scope="program_event_link", subject_type="award_event", subject_id="govws-m1-contested",
+        candidate_row_ids=[winner_link["link_id"], loser_link["link_id"]], evidence_refs=[ev["evidence_id"]],
+    )
+    graph["evidence"] = [ev]
+    graph["programs"] = [winner_prog, loser_prog]
+    graph["program_event_links"] = [winner_link, loser_link]
+    graph["conflicts"] = [conflict]
+    loaded = _load(graph)
+
+    at_cut = po.analysis_as_of("2026-08-22")
+    rail = pd._awards_rail(loaded, winner_prog["id"], analysis_as_of=at_cut, workspace=None)
+    assert rail["link_state"] == "conflicted"
+    assert rail["program_event_link_ids"] == []
+    assert rail["event_ids"] == []
+
+
+# ---------------------------------------------------------------------------
+# MEDIUM-2 -- overlap predicate is strict (half-open [from, to)), not
+# inclusive -- a row starting exactly when another ends does NOT overlap it.
+# ---------------------------------------------------------------------------
+
+
+def test_medium2_platform_reference_invalid_on_touching_boundary():
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "medium2-platform-doc", claim_scopes=["program_identity", "role"],
+        known_at="2019-01-01T00:00:00+00:00", retrieved_at="2019-01-01T00:00:00+00:00",
+    )
+    prog = b.program_row(evidence_refs=[ev["evidence_id"]])
+    platform = b.platform_row(
+        program_id=prog["id"], evidence_refs=[ev["evidence_id"]],
+        valid_from="2020-01-01T00:00:00+00:00", valid_to="2021-01-01T00:00:00+00:00",
+    )
+    # The role starts EXACTLY when the platform's validity ends -- touching,
+    # not overlapping, under the frozen half-open [from, to) definition.
+    role = b.role_assertion_row(
+        program_id=prog["id"], platform_id=platform["id"], evidence_refs=[ev["evidence_id"]],
+        valid_from="2021-01-01T00:00:00+00:00",
+    )
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog]
+    graph["platforms"] = [platform]
+    graph["role_assertions"] = [role]
+    error = _refused(graph)
+    assert "platform_reference_invalid" in error.errors
+
+
+def test_medium2_temporal_incompatible_on_touching_boundary():
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "medium2-cap-doc", claim_scopes=["program_capability_link"],
+        known_at="2019-01-01T00:00:00+00:00", retrieved_at="2019-01-01T00:00:00+00:00",
+    )
+    prog = b.program_row(
+        evidence_refs=[ev["evidence_id"]],
+        valid_from="2020-01-01T00:00:00+00:00", valid_to="2021-01-01T00:00:00+00:00",
+    )
+    cap = b.capability_row(evidence_refs=[ev["evidence_id"]])
+    # Link starts EXACTLY when the program's validity ends -- touching only.
+    link = b.program_capability_link_row(
+        program_id=prog["id"], capability_id=cap["id"], evidence_refs=[ev["evidence_id"]],
+        valid_from="2021-01-01T00:00:00+00:00",
+    )
+    graph["evidence"] = [ev]
+    graph["programs"] = [prog]
+    graph["capabilities"] = [cap]
+    graph["program_capability_links"] = [link]
+    error = _refused(graph)
+    assert "temporal_incompatible" in error.errors
