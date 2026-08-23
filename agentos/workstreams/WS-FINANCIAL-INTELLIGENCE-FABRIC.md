@@ -42,9 +42,13 @@ owns_paths:
   - tests/test_fundamental_forensics_financial_statement_service.py
   - tests/test_fundamental_forensics_financial_statement_api.py
   - tests/fixtures/fundamental_forensics/aapl_10k_2025/
+  - tests/fixtures/fundamental_forensics/aapl_10q_2026q3/
   - research/financial_intelligence_fabric/FIF_3A1_REUSE_MAP.md
+  - research/financial_intelligence_fabric/FIF_3A2_REUSE_MAP.md
+  - research/financial_intelligence_fabric/FIF_3A2_AAPL_GOLDEN_REVIEW.md
   - contracts/statement_cell.v1.md
   - scripts/capture_fif3a1_aapl_package.py
+  - scripts/capture_fif3a2_aapl_package.py
 depends_on: []
 discoveries:
   - DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY
@@ -54,6 +58,7 @@ discoveries:
   - DSC:AAPL-PRODUCT-SERVICE-HYPERCUBE-PRECEDES-LINE-ITEMS
   - DSC:AAPL-CF-BEGINNING-CASH-IS-INSTANT-IN-DURATION-COLUMNS
   - DSC:AAPL-CF-CASH-CONCEPT-OCCURS-TWICE
+  - DSC:AAPL-Q3-DURATION-FAMILIES-SHARE-END-DATE
 decisions:
   - DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE
   - DEC:FIF-1R-HERMETIC-PACKET-CONTRACT
@@ -72,15 +77,18 @@ decisions:
   - DEC:FIF-3A1-PRESENTATION-OCCURRENCES-ARE-NOT-COLLAPSED
   - DEC:FIF-3A1-AUTHORITY-IS-CONTEXT-ONLY-OBJECT
   - DEC:FIF-3A1-ACCEPTED-GOLDEN-ON-MAIN
+  - DEC:FIF-3A2-REUSE-MAP
+  - DEC:FIF-3A2-COLUMNS-BIND-COMPLETE-PERIOD
+  - DEC:FIF-3A2-RELATED-EVENT-REF-OMITS-GENERATION
 next_action: >
   FIF-1 is DONE / FROZEN. FIF-2 is DONE / FIXTURE_PROVEN SERVICE
   SUBSTRATE (DEC:FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3). FIF-2A/B/C remain
-  ACCEPTED / FIXTURE_PROVEN / ON_MAIN. A dedicated FIF-2D fixture-only
-  trace route is rejected; company statements moved into FIF-3. FIF-3 is
-  IN_PROGRESS. FIF-3A1 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN
-  (accepted head 80d3da1e2ce6, merge 4ef15259f027, PR #6268). Do not
-  reopen FIF-2A/2B/2C or FIF-3A1. Do not call FIF-3 done. Do not claim
-  production issuer coverage. Do not start the next AAPL slice.
+  ACCEPTED / FIXTURE_PROVEN / ON_MAIN. FIF-3 is IN_PROGRESS. FIF-3A1 is
+  ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN. FIF-3A2 is BUILT_NOT_ACCEPTED
+  (AAPL FY2026 Q3 10-Q accession 0000320193-26-000020 plus stable
+  related_event_ref to evt_cik0000320193_2026q3_results). Do not reopen
+  FIF-2A/2B/2C or FIF-3A1. Do not call FIF-3 done. Do not claim production
+  issuer coverage. Do not start FIF-3A3 or another issuer.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -100,6 +108,11 @@ landmines:
   - >
     Cash-flow beginning cash is an instant fact in duration columns.
     See DSC:AAPL-CF-BEGINNING-CASH-IS-INSTANT-IN-DURATION-COLUMNS.
+  - >
+    Apple FY2026 Q3 10-Q operations has four duration columns whose end
+    dates are shared by 3M and 9M families. Bind by complete period.
+    See DSC:AAPL-Q3-DURATION-FAMILIES-SHARE-END-DATE and
+    DEC:FIF-3A2-COLUMNS-BIND-COMPLETE-PERIOD.
   - >
     PR #5799 owns Earnings Intelligence E0/E1/E2 documents. FIF must not edit them.
   - >
@@ -140,7 +153,8 @@ do_not_redo:
   - Do not recast an iXBRL-sourced cell as calculated merely because a calc arc exists.
   - FIF-3A1 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN (DEC:FIF-3A1-ACCEPTED-GOLDEN-ON-MAIN); do not reopen accepted AAPL composition, mapping, duplicate, presentation-occurrence, or authority laws, and do not add FIF-3A1 hardening.
   - Do not call FIF-3 done; the golden five-issuer slice is still IN_PROGRESS.
-  - Do not start the next AAPL slice from this closeout.
+  - FIF-3A2 is BUILT_NOT_ACCEPTED pending Sol; do not add FIF-3A2 hardening beyond this wave and do not start FIF-3A3 or another issuer.
+  - Do not mint generation_id as financial-statement truth; related_event_ref is a stable event_id plus distinct SEC accessions.
   - Do not rewrite source-native SEC/XBRL identity to mint a Mastermind issuer ID.
   - Do not use the live full-registry digest as historical packet identity.
 waves:
@@ -172,12 +186,12 @@ waves:
     depends_on: [FIF-2]
     pr: [6268]
     next_action: >
-      FIF-3A1 AAPL as-reported primary statements, accession
-      0000320193-25-000079, issuer ISS:US-XNAS-AAPL, is ACCEPTED /
-      GOLDEN FIXTURE PROVEN / ON_MAIN via PR #6268 (accepted head
-      80d3da1e2ce6, merge 4ef15259f027). FIF-3 itself is not done. Do
-      not add SNOW/CAT/BAC/GOOGL. Do not start the next AAPL slice.
-      Production attested issuer service remains NOT_BUILT.
+      FIF-3A1 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN via PR #6268.
+      FIF-3A2 AAPL FY2026 Q3 10-Q accession 0000320193-26-000020 plus
+      related_event_ref to evt_cik0000320193_2026q3_results is
+      BUILT_NOT_ACCEPTED pending Sol. FIF-3 itself is not done. Do not
+      add SNOW/CAT/BAC/GOOGL. Do not start FIF-3A3. Production attested
+      issuer service remains NOT_BUILT.
   - id: FIF-4
     title: Filing Forensics V2 product MVP
     status: todo

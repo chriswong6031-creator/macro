@@ -403,6 +403,7 @@ def test_execute_is_deterministic_and_pinned() -> None:
         "production_issuer_service": False,
     }
     assert "authority" not in first.envelope["delivery"]
+    assert "related_event_ref" not in first.envelope
     assert "now" not in json.dumps(first.envelope)
 
 
@@ -834,6 +835,11 @@ def test_capture_process_mints_fixture_recorded_at() -> None:
     capture = (ROOT / "scripts" / "capture_fif3a1_aapl_package.py").read_text(encoding="utf-8")
     assert "mint_fixture_recorded_at" in capture
     assert "hand-edit" not in capture.lower()
+    capture_q3 = (ROOT / "scripts" / "capture_fif3a2_aapl_package.py").read_text(encoding="utf-8")
+    assert "mint_fixture_recorded_at" in capture_q3
+    assert "hand-edit" not in capture_q3.lower()
+    assert "0000320193-26-000020" in capture_q3
+    assert "generation_id" not in capture_q3
 
 
 def test_calculation_relationships_are_role_local() -> None:
@@ -875,3 +881,220 @@ def test_calculation_relationships_are_role_local() -> None:
 """
     with pytest.raises(StatementGraphError, match="xlink:role"):
         parse_calculations(missing_role)
+
+
+_Q3_ACCESSION = "0000320193-26-000020"
+_Q3_INDEX_SHA = "3e5dde4c0403da2358df715608c679d66223c8d716a75fe1136d9257ba812fdc"
+_Q3_PRIMARY_SHA = "4ad5bea67cedfa7542d623900355cc8d143ef95c1acc135a597f2eedabdb9177"
+_Q3_RESPONSE_SHA = "b98602a299996ff7ea58b842364031547df795d1458b51134eef0e37159b7918"
+_Q3_RESPONSE_BYTES = 190019
+_Q3_WITNESS_SHA = "6727f5eb1815b2b6b580f69caa76fd644ad6fc651c6b7082f9045459f72f370c"
+_Q3_WITNESS_BYTES = 364
+_Q3_FIXTURE_RECORDED_AT = "2026-08-23T07:02:13Z"
+_Q3_ACCEPTED_AT = "2026-07-31T10:01:02.000Z"
+_Q3_EVENT_ID = "evt_cik0000320193_2026q3_results"
+_Q3_8K_ACCESSION = "0000320193-26-000018"
+
+
+def test_q3_package_manifest_digest_and_member_counts() -> None:
+    package = load_golden_aapl_package(ROOT, accession=_Q3_ACCESSION)
+    assert package.manifest["index_sha256"] == _Q3_INDEX_SHA
+    assert package.manifest["member_count"] == 65
+    assert package.manifest["retained_count"] == 6
+    assert package.manifest["form"] == "10-Q"
+    assert package.manifest["accession"] == _Q3_ACCESSION
+    assert package.manifest["primary_document"] == "aapl-20260627.htm"
+    stored = [item for item in package.manifest["members"] if item["state"] == "stored"]
+    skipped = [item for item in package.manifest["members"] if item["state"] == "not_requested"]
+    assert len(stored) == 6
+    assert len(skipped) == 59
+    assert {item["name"] for item in stored} == {
+        "aapl-20260627.htm",
+        "aapl-20260627.xsd",
+        "aapl-20260627_pre.xml",
+        "aapl-20260627_cal.xml",
+        "aapl-20260627_def.xml",
+        "aapl-20260627_lab.xml",
+    }
+    primary = next(item for item in stored if item["name"] == "aapl-20260627.htm")
+    assert primary["content_sha256"] == _Q3_PRIMARY_SHA
+    witness = package.manifest["acceptance_witness"]
+    assert witness["content_sha256"] == _Q3_WITNESS_SHA
+    assert witness["byte_length"] == _Q3_WITNESS_BYTES
+    assert package.manifest["source_accepted_at"] == _Q3_ACCEPTED_AT
+    assert package.manifest["fixture_recorded_at"] == _Q3_FIXTURE_RECORDED_AT
+    witness_bytes = (
+        ROOT / "tests" / "fixtures" / "fundamental_forensics" / "aapl_10q_2026q3" / "sec_submissions_witness.json"
+    ).read_bytes()
+    assert hashlib.sha256(witness_bytes).hexdigest() == _Q3_WITNESS_SHA
+
+
+def test_q3_reconstruct_preserves_quarterly_duration_families() -> None:
+    tree = reconstruct_primary_statements(
+        package=load_golden_aapl_package(ROOT, accession=_Q3_ACCESSION),
+        registry=load_core_registry(ROOT),
+    )
+    by_type = {item["statement_type"]: item for item in tree["statements"]}
+    assert set(by_type) == {"income_statement", "balance_sheet", "cash_flow"}
+    assert by_type["income_statement"]["row_count"] == 24
+    assert by_type["balance_sheet"]["row_count"] == 36
+    assert by_type["cash_flow"]["row_count"] == 35
+    income = by_type["income_statement"]
+    assert income["title"] == "CONDENSED CONSOLIDATED STATEMENTS OF OPERATIONS (Unaudited)"
+    assert [col["start"] for col in income["columns"]] == [
+        "2026-03-29",
+        "2025-03-30",
+        "2025-09-28",
+        "2024-09-29",
+    ]
+    assert [col["end"] for col in income["columns"]] == [
+        "2026-06-27",
+        "2025-06-28",
+        "2026-06-27",
+        "2025-06-28",
+    ]
+    starts = {(col["start"], col["end"]) for col in income["columns"]}
+    assert len(starts) == 4
+    assert income["columns"][0]["end"] == income["columns"][2]["end"] == "2026-06-27"
+    assert income["columns"][0]["start"] != income["columns"][2]["start"]
+    assert [col["end"] for col in by_type["balance_sheet"]["columns"]] == ["2026-06-27", "2025-09-27"]
+    assert [col["start"] for col in by_type["cash_flow"]["columns"]] == ["2025-09-28", "2024-09-29"]
+    labels = [row["as_reported_label"] for row in income["rows"]]
+    assert labels[:4] == ["Net sales:", "Products", "Services", "Total net sales"]
+    assert "Three Months Ended" not in labels
+    assert "Nine Months Ended" not in labels
+
+
+def test_q3_direct_facts_reverse_to_source_spans() -> None:
+    package = load_golden_aapl_package(ROOT, accession=_Q3_ACCESSION)
+    tree = reconstruct_primary_statements(package=package, registry=load_core_registry(ROOT))
+    sales = _row(tree, "income_statement", "Total net sales")
+    q_cell = sales["cells"][0]
+    ytd_cell = sales["cells"][2]
+    assert q_cell["value"] == "109417000000"
+    assert ytd_cell["value"] == "364357000000"
+    assert q_cell["period"]["start"] == "2026-03-29"
+    assert ytd_cell["period"]["start"] == "2025-09-28"
+    assert q_cell["direct_or_calculated"] == ytd_cell["direct_or_calculated"] == "direct"
+    frag = package.members["aapl-20260627.htm"][
+        q_cell["source_receipt"]["source_span"]["start"] : q_cell["source_receipt"]["source_span"]["end"]
+    ].decode("utf-8")
+    assert "109,417" in frag
+    assert "RevenueFromContractWithCustomerExcludingAssessedTax" in frag
+    assets = _row(tree, "balance_sheet", "Total assets")
+    assert assets["cells"][0]["value"] == "383266000000"
+    assets_frag = package.members["aapl-20260627.htm"][
+        assets["cells"][0]["source_receipt"]["source_span"]["start"] : assets["cells"][0]["source_receipt"]["source_span"]["end"]
+    ].decode("utf-8")
+    assert "383,266" in assets_frag
+    cfo = _row(tree, "cash_flow", "Cash generated by operating activities")
+    assert cfo["cells"][0]["value"] == "116996000000"
+    assert cfo["cells"][0]["period"]["start"] == "2025-09-28"
+    cfo_frag = package.members["aapl-20260627.htm"][
+        cfo["cells"][0]["source_receipt"]["source_span"]["start"] : cfo["cells"][0]["source_receipt"]["source_span"]["end"]
+    ].decode("utf-8")
+    assert "116,996" in cfo_frag
+    begin = next(row for row in tree["statements"][2]["rows"] if "beginning balances" in row["as_reported_label"])
+    end = next(row for row in tree["statements"][2]["rows"] if "ending balances" in row["as_reported_label"])
+    assert begin["concept"] == end["concept"]
+    assert begin["order"] < end["order"]
+    assert begin["cells"][0]["value"] != end["cells"][0]["value"]
+
+
+def test_q3_products_remain_unmapped_under_consolidated_only() -> None:
+    tree = reconstruct_primary_statements(
+        package=load_golden_aapl_package(ROOT, accession=_Q3_ACCESSION),
+        registry=load_core_registry(ROOT),
+    )
+    statement = next(item for item in tree["statements"] if item["statement_type"] == "income_statement")
+    products = next(
+        row
+        for row in statement["rows"]
+        if row["as_reported_label"] == "Products"
+        and "RevenueFromContractWithCustomerExcludingAssessedTax" in (row["concept"] or "")
+    )
+    total = _row(tree, "income_statement", "Total net sales")
+    assert products["mapping_state"] == "unmapped"
+    assert products["standardized_metric_id"] is None
+    assert products["cells"][0]["value"] == "78678000000"
+    assert any("ProductMember" in (item.get("member_qname") or "") for item in products["cells"][0]["dimensions"])
+    assert total["mapping_state"] == "mapped"
+    assert total["standardized_metric_id"] == "revenue"
+    assert total["cells"][0]["dimensions"] == []
+
+
+def test_q3_execute_pins_response_and_related_event_ref() -> None:
+    result = _execute(_statement_body(accession=_Q3_ACCESSION))
+    assert result.sha256 == _Q3_RESPONSE_SHA
+    assert len(result.body) == _Q3_RESPONSE_BYTES
+    assert hashlib.sha256(result.body).hexdigest() == _Q3_RESPONSE_SHA
+    assert result.envelope["filing"]["accession"] == _Q3_ACCESSION
+    assert result.envelope["filing"]["form"] == "10-Q"
+    assert result.envelope["filing"]["source_accepted_at"] == _Q3_ACCEPTED_AT
+    assert result.envelope["authority"] == {"class": "context_only", "display_only": True}
+    assert result.envelope["delivery"] == {
+        "kind": "committed_golden_fixture",
+        "attested": False,
+        "production_issuer_service": False,
+    }
+    ref = result.envelope["related_event_ref"]
+    assert ref["event_id"] == _Q3_EVENT_ID
+    assert ref["plane"] == "company_intelligence/event_workspaces"
+    assert ref["relation"] == "same_fiscal_results_period"
+    assert ref["source_filing_distinction"] == {
+        "earnings_release_8k_accession": _Q3_8K_ACCESSION,
+        "periodic_report_accession": _Q3_ACCESSION,
+    }
+    assert "generation_id" not in ref
+    dumped = json.dumps(result.envelope)
+    assert "qa_exchanges" not in dumped
+    assert "guidance" not in dumped
+    a1 = _execute()
+    assert a1.sha256 == _RESPONSE_SHA
+    assert "related_event_ref" not in a1.envelope
+
+
+def test_q3_results_eight_k_is_not_the_ten_q() -> None:
+    with pytest.raises(FinancialQueryAdmissionError) as exc:
+        _execute(_statement_body(accession=_Q3_8K_ACCESSION))
+    assert exc.value.status_code == 400
+    assert exc.value.detail == "unknown filing"
+
+
+def test_q3_no_request_time_network_or_attested_write(monkeypatch) -> None:
+    def _boom(*_args, **_kwargs):
+        raise AssertionError("FIF-3A2 requested the network")
+
+    monkeypatch.setattr("urllib.request.urlopen", _boom)
+    writes: list[str] = []
+    original = Path.write_bytes
+
+    def _track(self: Path, data: bytes) -> int:
+        writes.append(str(self))
+        return original(self, data)
+
+    monkeypatch.setattr(Path, "write_bytes", _track)
+    result = _execute(_statement_body(accession=_Q3_ACCESSION))
+    assert result.sha256 == _Q3_RESPONSE_SHA
+    assert writes == []
+
+
+def test_canonical_earnings_event_currently_resolves() -> None:
+    from engine.company_intelligence.event_workspace import FLAGSHIP_EVENT_ID
+    from engine.neuralweb.company_intelligence_reader import read_event_workspace
+
+    assert FLAGSHIP_EVENT_ID == _Q3_EVENT_ID
+    payload = read_event_workspace({"event_id": _Q3_EVENT_ID})
+    assert payload.get("available") is True
+    assert payload.get("event_id") == _Q3_EVENT_ID
+    workspace = payload.get("workspace") or {}
+    sources = workspace.get("sources") or []
+    accessions = {
+        ((item.get("filing_key") or {}).get("accession"))
+        for item in sources
+        if isinstance(item, dict)
+    }
+    assert _Q3_8K_ACCESSION in accessions
+    assert _Q3_ACCESSION not in accessions
+    assert workspace.get("event_id") == _Q3_EVENT_ID
+    assert payload.get("is_context_only") is True
