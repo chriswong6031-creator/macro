@@ -509,14 +509,14 @@ class _StubSnapshotTd:
 def test_k2_snapshot_wrapper_none_is_fetch_failed(store):
     state = topup._ensure_one_cell(
         store, "oi", "SPY", D_MID,
-        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(None), "SPY", D_MID))
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(None), "SPY"))
     assert state == "fetch_failed"
 
 
 def test_k2_snapshot_wrapper_empty_is_vendor_empty(store):
     state = topup._ensure_one_cell(
         store, "oi", "SPY", D_MID,
-        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(_empty_df()), "SPY", D_MID))
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(_empty_df()), "SPY"))
     assert state == "vendor_empty"
 
 
@@ -524,7 +524,7 @@ def test_k2_snapshot_wrapper_d_stamped_rows_pass_through_and_complete(store):
     raw = _snapshot_vendor_df("SPY", D_MID)
     state = topup._ensure_one_cell(
         store, "oi", "SPY", D_MID,
-        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(raw), "SPY", D_MID))
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(raw), "SPY"))
     assert state == "complete"
     assert topup._has_day(store, "oi", "SPY", D_MID)
     stored = pd.read_parquet(store / "oi" / "SPY" / f"{D_MID.year}.parquet")
@@ -537,7 +537,7 @@ def test_k2_snapshot_wrapper_stale_stamped_only_is_date_unresolved(store):
     raw = _snapshot_vendor_df("SPY", stale_day)
     state = topup._ensure_one_cell(
         store, "oi", "SPY", D_MID,
-        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(raw), "SPY", D_MID))
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(raw), "SPY"))
     assert state == "date_unresolved"
     assert not topup._has_day(store, "oi", "SPY", D_MID)
 
@@ -548,7 +548,7 @@ def test_k2_snapshot_wrapper_mixed_dates_keeps_only_d_rows_and_merges(store):
     mixed = pd.concat([d_rows, stale_rows], ignore_index=True)
     state = topup._ensure_one_cell(
         store, "oi", "SPY", D_MID,
-        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(mixed), "SPY", D_MID))
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(mixed), "SPY"))
     assert state == "complete"
     stored = pd.read_parquet(store / "oi" / "SPY" / f"{D_MID.year}.parquet")
     assert len(stored) == 2   # only the D-stamped rows landed — stale rows dropped
@@ -558,10 +558,53 @@ def test_k2_snapshot_wrapper_mixed_dates_keeps_only_d_rows_and_merges(store):
 def test_k2_snapshot_wrapper_drops_snapshot_ts_and_selects_exact_schema(store):
     raw = _snapshot_vendor_df("SPY", D_MID)
     raw["junk_extra_column"] = "should not survive"
-    out = topup._snapshot_oi_frame(_StubSnapshotTd(raw), "SPY", D_MID)
+    out = topup._snapshot_oi_frame(_StubSnapshotTd(raw), "SPY")
     assert list(out.columns) == ["root", "expiration", "strike", "right", "date",
                                  "open_interest"]
     assert "snapshot_ts" not in out.columns
+
+
+# ── K6 MAJOR-2: dedup runs AFTER snapshot_ts is dropped ─────────────────────
+def test_k6_major2_snapshot_wrapper_dedups_rows_differing_only_in_snapshot_ts(store):
+    """Two vendor rows identical on every OTHER column (same contract, same
+    OI) but stamped with different per-contract `snapshot_ts` values must
+    collapse to exactly ONE stored row — upstream `_normalize_snapshot_df`
+    dedupes while `snapshot_ts` still differs per-contract, so duplicate v3
+    rows survive that pass unless this wrapper re-dedupes AFTER dropping
+    `snapshot_ts` (same ordering law as `_normalize_oi_df`)."""
+    ts_a = pd.Timestamp(D_MID) + pd.Timedelta(hours=6, minutes=30, seconds=0)
+    ts_b = pd.Timestamp(D_MID) + pd.Timedelta(hours=6, minutes=30, seconds=1)
+    raw = pd.DataFrame({
+        "root": ["SPY", "SPY"],
+        "expiration": [pd.Timestamp(D_MID), pd.Timestamp(D_MID)],
+        "strike": [100, 100],
+        "right": ["C", "C"],
+        "snapshot_ts": [ts_a, ts_b],
+        "open_interest": [500, 500],
+    })
+    state = topup._ensure_one_cell(
+        store, "oi", "SPY", D_MID,
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(raw), "SPY"))
+    assert state == "complete"
+    stored = pd.read_parquet(store / "oi" / "SPY" / f"{D_MID.year}.parquet")
+    assert len(stored) == 1   # duplicate rows (differing only pre-drop by snapshot_ts) collapse
+
+
+# ── K6 NOTE-3: an OI[D] cell must never classify complete without OI ────────
+def test_k6_note3_snapshot_frame_missing_open_interest_column_is_fetch_failed(store):
+    raw = pd.DataFrame({
+        "root": ["SPY"],
+        "expiration": [pd.Timestamp(D_MID)],
+        "strike": [100],
+        "right": ["C"],
+        "snapshot_ts": [pd.Timestamp(D_MID) + pd.Timedelta(hours=6, minutes=30)],
+        # no "open_interest" column — malformed vendor response
+    })
+    state = topup._ensure_one_cell(
+        store, "oi", "SPY", D_MID,
+        lambda: topup._snapshot_oi_frame(_StubSnapshotTd(raw), "SPY"))
+    assert state == "fetch_failed"
+    assert not topup._has_day(store, "oi", "SPY", D_MID)
 
 
 def test_k2_ensure_daily_root_oi_d_uses_snapshot_not_bulk_open_interest(store):
@@ -1549,6 +1592,41 @@ def test_k1_s_panel_high_ad_ready_low_is_partial_not_healthy(store, monkeypatch)
     assert rc == 1
 
 
+# ── K6 NOTE-1: auditable oi_D_source stamps only on an actual vendor attempt ─
+def test_k6_note1_oi_d_source_null_when_all_oi_d_already_present(store, monkeypatch):
+    """A same-day rerun where every cell (including oi_D) is already
+    satisfied makes ZERO vendor calls at all — `oi_D_source` must not be
+    falsely attributed to the snapshot endpoint it never touched this run."""
+    for cell_tier, day in (("eod", S_MID), ("oi", S_MID), ("oi", D_MID), ("greeks", S_MID)):
+        topup._merge_day(store, cell_tier, "SPY", day, _df(day))
+    _wire_daily(monkeypatch, store, t1=["SPY"], ad=["SPY"])
+    fake = FakeTd()
+    _install_fake_td(monkeypatch, fake)
+    rc = topup._daily_main(workers=1, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
+                           now_fn=lambda: _et(2026, 8, 19, 16, 30))
+    assert rc == 0
+    assert fake.snapshot_calls == []
+    receipt = _manifest(store)["daily_refresh"]
+    assert receipt["oi_D_source"] is None
+
+
+def test_k6_note1_oi_d_source_stamped_when_any_oi_d_vendor_attempt(store, monkeypatch):
+    """SPY's oi_D is already satisfied (no vendor attempt); QQQ's oi_D is
+    genuinely fetched and comes back vendor_empty — still counted as an
+    ATTEMPT per the spec's `{complete, vendor_empty, date_unresolved,
+    fetch_failed}` attempt set, so ONE root attempting is enough to stamp
+    the path even though the other root made zero vendor calls."""
+    topup._merge_day(store, "oi", "SPY", D_MID, _df(D_MID))
+    _wire_daily(monkeypatch, store, t1=["SPY", "QQQ"], ad=["SPY", "QQQ"])
+    fake = FakeTd(snapshot_plan={"QQQ": _empty_df()})
+    _install_fake_td(monkeypatch, fake)
+    topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
+                      now_fn=lambda: _et(2026, 8, 19, 16, 30))
+    assert fake.snapshot_calls == ["QQQ"]   # SPY's oi_D never called the vendor
+    receipt = _manifest(store)["daily_refresh"]
+    assert receipt["oi_D_source"] == "snapshot_open_interest"
+
+
 # ═════════════════════════ RF3 (R3): backfill/daily store agreement ═══════
 def test_rf3_backfill_refuses_when_resolved_store_disagrees(tmp_path, monkeypatch):
     import scripts.backfill_thetadata_eod as bf
@@ -1589,11 +1667,19 @@ def test_k3_backfill_resolver_raises_fails_closed_zero_mutations(tmp_path, monke
     """A resolver RAISE (not a clean fresh-install `None`) is the case this
     check exists to catch — canonical resolution is UNCERTAIN, not
     confirmed absent. Must exit 1 with ZERO mutations, never warn-and-
-    proceed with `own_store`."""
-    import scripts.backfill_thetadata_eod as bf
+    proceed with `own_store`.
 
-    own_store = tmp_path / "own_store"
-    monkeypatch.setattr(bf, "_store_dir", lambda: own_store)
+    (K6 MAJOR-1 repair.) This uses the REAL `_store_dir()` — not a stubbed
+    non-mkdir lambda, which would pin a property production code doesn't
+    have — seamed only at the path SOURCE `_store_dir()` actually reads
+    (`lib.config.data_dir()`). Because `_store_dir()` itself `mkdir`s, the
+    only way to prove zero mutations is to diff a full recursive listing of
+    the tmp root before and after, not to check a single path's existence.
+    """
+    import scripts.backfill_thetadata_eod as bf
+    from lib import config
+
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
 
     def _boom(**kw):
         raise RuntimeError("resolver blew up")
@@ -1604,11 +1690,15 @@ def test_k3_backfill_resolver_raises_fails_closed_zero_mutations(tmp_path, monke
     import collectors.thetadata as real_td
     monkeypatch.setattr(real_td, "reachable", lambda: True)
 
+    before = sorted(str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*"))
+    assert before == []   # tmp_path starts empty
+
     rc = bf.main()
+
+    after = sorted(str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*"))
     assert rc == 1
-    assert not own_store.exists()   # refused before touching its own store at all
-    assert not (own_store / "_backfill_state.json").exists()
-    assert not (own_store / "_manifest.json").exists()
+    assert after == []   # NOTHING created anywhere under the tmp root — not
+                          # even the `thetadata_eod` dir `_store_dir()` mkdirs
 
 
 def test_k3_backfill_resolver_none_still_proceeds_fresh_install(tmp_path, monkeypatch):

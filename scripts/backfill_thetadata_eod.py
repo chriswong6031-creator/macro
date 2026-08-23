@@ -556,23 +556,25 @@ def main() -> int:
     # via the canonical resolver and refuse on disagreement; a fresh install
     # where NOTHING resolves anywhere is the one exception (permits this
     # process's own _store_dir() to be the first content).
-    own_store = _store_dir()
     try:
         resolved = resolve_thetadata_store(
             required=False, purpose="backfill_thetadata_eod store agreement check")
     except Exception as e:  # noqa: BLE001 — resolution itself must not crash the check
-        # (K3, Sol B2) FAIL CLOSED. The previous warn-and-proceed minted a
-        # potential second store exactly when canonical resolution was
-        # UNCERTAIN (a raise, not a clean "nothing resolves anywhere" None) —
-        # the one case this check exists to catch. Zero mutations: this
-        # returns before `own_store` (or any state/manifest/parquet) is ever
-        # touched. A clean `None` return REMAINS the explicit fresh-install
-        # exception (proceed with `_store_dir()`) — only a RAISE fails
-        # closed.
+        # (K3, Sol B2; repaired K6 MAJOR-1) FAIL CLOSED. The previous
+        # warn-and-proceed minted a potential second store exactly when
+        # canonical resolution was UNCERTAIN (a raise, not a clean "nothing
+        # resolves anywhere" None) — the one case this check exists to catch.
+        # Zero mutations: `own_store = _store_dir()` (which mkdirs) is not
+        # computed until AFTER this except branch returns, so a resolver
+        # raise touches no store path — not `own_store`, not any
+        # state/manifest/parquet. A clean `None` return REMAINS the explicit
+        # fresh-install exception (proceed with `_store_dir()`) — only a
+        # RAISE fails closed.
         log.error("backfill: store-agreement resolver raised %s: %s — "
-                 "refusing to proceed with own store %s while canonical "
-                 "resolution is uncertain (no mutation)", type(e).__name__, e, own_store)
+                 "refusing to proceed while canonical resolution is uncertain "
+                 "(no mutation)", type(e).__name__, e)
         return 1
+    own_store = _store_dir()
     if resolved is not None and Path(resolved).resolve() != Path(own_store).resolve():
         log.error("backfill: resolve_thetadata_store() resolved %s, which "
                  "DISAGREES with this process's own store %s — refusing to "

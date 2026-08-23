@@ -397,7 +397,7 @@ def _ensure_one_cell(store: Path, tier: str, root: str, day: _date,
 _SNAPSHOT_OI_COLUMNS = ["root", "expiration", "strike", "right", "date", "open_interest"]
 
 
-def _snapshot_oi_frame(td, root: str, D: _date) -> pd.DataFrame | None:
+def _snapshot_oi_frame(td, root: str) -> pd.DataFrame | None:
     """(K2, Sol B1b) OI[D] frontier via `collectors.thetadata.snapshot_open_interest`
     — replaces the current-day-unavailable `bulk_open_interest(root, 0, D, D)`
     history call for `--daily` mode ONLY (`collectors/thetadata.py` itself is
@@ -414,10 +414,11 @@ def _snapshot_oi_frame(td, root: str, D: _date) -> pd.DataFrame | None:
         the store's OI schema (`root, expiration, strike, right, date,
         open_interest`).
 
-    This wrapper does NOT itself filter rows by `date == D`: doing so here
-    would collapse a "vendor returned rows, but none for D" (stale snapshot,
-    e.g. a midnight-crossing cache reset) into an indistinguishable-from-
-    truly-empty frame, losing `_ensure_one_cell`'s existing
+    This wrapper does NOT itself filter rows by `date == D` (post-
+    adjudication it never date-filters at all, hence no `D` parameter): doing
+    so here would collapse a "vendor returned rows, but none for D" (stale
+    snapshot, e.g. a midnight-crossing cache reset) into an indistinguishable-
+    from-truly-empty frame, losing `_ensure_one_cell`'s existing
     `date_unresolved` classification (rows_returned>0, rows_for_target_date
     ==0). Instead every row's OWN derived date rides through unchanged, and
     the EXISTING machinery does the scoping: `_ensure_one_cell` classifies
@@ -427,6 +428,19 @@ def _snapshot_oi_frame(td, root: str, D: _date) -> pd.DataFrame | None:
     NEVER written under `D` (the source-timestamp guard: stale rows are
     absent from the store, never relabeled), it is only the classification
     boundary that reads the un-pre-filtered frame.
+
+    (K6 NOTE-3) A vendor frame lacking `open_interest` after normalization
+    (malformed response) returns `None` -> `fetch_failed` rather than ever
+    classifying `complete` without the OI column — stricter than the history
+    path's permissive column selection, deliberate for this new endpoint.
+
+    (K6 MAJOR-2) `.drop_duplicates()` runs AFTER the final column selection
+    — same ordering law as the collectors' `_normalize_oi_df`: dedup must
+    cover exactly the columns actually written. `snapshot_ts` differs
+    per-contract even when every OTHER column is identical, so deduping
+    before dropping it would never collapse anything; deduping after it is
+    dropped is what prevents `_merge_day` from writing duplicate rows and
+    double-counting OI in the health-certifying cell.
     """
     df = td.snapshot_open_interest(root)
     if df is None:
@@ -436,8 +450,13 @@ def _snapshot_oi_frame(td, root: str, D: _date) -> pd.DataFrame | None:
     out = df.copy()
     out["date"] = pd.to_datetime(out["snapshot_ts"], errors="coerce").dt.normalize()
     out = out.drop(columns=["snapshot_ts"])
+    if "open_interest" not in out.columns:
+        log.warning("topup daily: %s snapshot_open_interest response missing "
+                   "'open_interest' column after normalization — treating as "
+                   "fetch_failed", root)
+        return None
     available = [c for c in _SNAPSHOT_OI_COLUMNS if c in out.columns]
-    return out[available].reset_index(drop=True)
+    return out[available].drop_duplicates().reset_index(drop=True)
 
 
 def _ensure_daily_root(store: Path, root: str, S: _date, D: _date, td) -> RootResult:
@@ -452,7 +471,7 @@ def _ensure_daily_root(store: Path, root: str, S: _date, D: _date, td) -> RootRe
         cells["oi_S"] = _ensure_one_cell(
             store, "oi", root, S, lambda: td.bulk_open_interest(root, 0, S, S))
         cells["oi_D"] = _ensure_one_cell(
-            store, "oi", root, D, lambda: _snapshot_oi_frame(td, root, D))
+            store, "oi", root, D, lambda: _snapshot_oi_frame(td, root))
         cells["greeks_S"] = _ensure_one_cell(
             store, "greeks", root, S, lambda: td.bulk_greeks(root, 0, S, S, order=3))
     except Exception as e:  # noqa: BLE001 — F11 catch-all
@@ -692,6 +711,16 @@ def _aggregate_daily(results: dict[str, RootResult], t1_universe: list[str],
                              and (eod_s_vendor_empty / eod_s_attempted
                                   > _S_SUSPECT_VENDOR_EMPTY_FRACTION))
 
+    # (K6 NOTE-1) Stamp the auditable observation path only when at least one
+    # root's oi_D cell had an actual VENDOR ATTEMPT this run — a cell state
+    # not in {absent (never reached / missing from `cells`), already_present}
+    # — so a run where every oi_D cell was already satisfied (no vendor call
+    # made) is not falsely attributed to the snapshot endpoint.
+    oi_d_vendor_attempted = any(
+        r.cells.get("oi_D") not in (None, "already_present")
+        for r in results.values())
+    oi_D_source = "snapshot_open_interest" if oi_d_vendor_attempted else None
+
     return {
         "t1_universe_count": len(t1_universe),
         "ad_universe_count": ad_universe_count,
@@ -708,8 +737,11 @@ def _aggregate_daily(results: dict[str, RootResult], t1_universe: list[str],
         "failure_counts_by_reason": failure_counts,
         "failure_examples": failure_examples,
         "s_suspect_non_session": s_suspect_non_session,
-        # (K2) auditable observation path — constant in --daily.
-        "oi_D_source": "snapshot_open_interest",
+        # (K2, repaired K6 NOTE-1) auditable observation path — stamped only
+        # when this run actually made a vendor attempt on ≥1 oi_D cell; else
+        # `None` (no run ever falsely attributed to the endpoint it didn't
+        # use).
+        "oi_D_source": oi_D_source,
     }
 
 
