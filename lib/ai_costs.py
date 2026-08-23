@@ -75,6 +75,7 @@ _LANE_LOBE_EXACT: dict[str, str] = {
     "foresight-analyst": "Altdata",
     "earnings_qual": "Qual", "extraction-drift": "Qual",
     "qual-extraction": "Qual",
+    "earnings_event_compiler": "Qual",
     "commodity-news": "News", "news-llm": "News", "catalyst-tone": "News",
     "china-news": "News", "macro-news": "News", "china-news-intel": "News",
     "news-translate": "News",
