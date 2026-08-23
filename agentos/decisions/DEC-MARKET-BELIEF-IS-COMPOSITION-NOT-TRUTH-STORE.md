@@ -7,12 +7,13 @@ question: >
 answer: >
   No. Market Belief is a product/research composition over canonical owner-native
   expectation, surprise, positioning and incorporation objects. Common catalyst
-  expectation semantics route to the MAS-119 owner federation; family-specific
-  response/incorporation science routes to MAS-118 / Alpha-E; MAS-122 D5 may transport
-  accepted evidence later but does not compute it. No universal Market-Belief database,
-  expectation score, gap score or fair-value object is authorized.
+  expectation semantics must reconcile through the existing Catalyst Federation owner
+  route when its Cell C/MAS-119 lane runs; family-specific response/incorporation science
+  stays on the Alpha-E owner route, with MAS-118 as the current research carrier. MAS-122
+  D5 may transport accepted evidence later but does not compute it. No universal
+  Market-Belief database, expectation score, gap score or fair-value object is authorized.
 rationale: >
-  The estate already separates specialist source truth, Catalyst Federation's
+  The estate already separates specialist source truth, Catalyst Federation's proposed
   EventFact/ExpectationBaseline/Surprise/Materiality semantics, Alpha-E/MAS-118
   incorporation research, FIF financial semantics and Prophet transport/evaluation.
   A new Market-Belief store would duplicate owners and falsely imply that analyst
