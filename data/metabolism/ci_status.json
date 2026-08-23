@@ -1,12 +1,12 @@
 {
-  "ts": "2026-08-23T21:07:03+00:00",
-  "main_sha": "571ef7e68d0baeac488ee6a602c46b8152f497ac",
+  "ts": "2026-08-23T22:54:09+00:00",
+  "main_sha": "7bdd6ebeaf602bbbd67b81836e31a861294e282d",
   "red_required": [
     {
       "name": "publish",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32666005986/job/97259358861"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32659941631/job/97244447263"
     },
     {
       "name": "engine-render-guards",
@@ -22,9 +22,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 40,
+  "consecutive_failures": 41,
   "sensed_shas": [
-    "571ef7e68d0baeac488ee6a602c46b8152f497ac",
+    "7bdd6ebeaf602bbbd67b81836e31a861294e282d",
     "4a14a56a0d97f551201c251e3a35a80d32c629b7"
   ],
   "heartbeat_degraded": false
