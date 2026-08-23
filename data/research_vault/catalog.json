@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T17:10:53.228908+00:00",
-  "count": 1700,
+  "generated_at": "2026-08-23T18:12:56.433457+00:00",
+  "count": 1703,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -87,6 +87,48 @@
   ],
   "items": [
     {
+      "id": "marketdesk-nbeniyipz2s-6bd58c",
+      "title": "MS AI Sovereignty Policy, Market, and Economic Implications",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T17:13:23Z",
+      "summary_points": [
+        "**US AI Sovereignty Policy & Market Impact**: $860B US federal AI infrastructure build-out (data centers, semiconductors) via de-risking policies creates market bifurcation; US model providers gain share if Chinese models restricted, non-China robotics OEMs face higher inference costs.",
+        "**AI Sovereignty Thematic Growth**: Sovereign AI infrastructure spending drives fastest-growing thematic cohort (3,800 coverage names) with premium valuations, favoring infrastructure providers (NVDA, AVGO), cloud (MSFT), and colocation DCs (EQIX).",
+        "**Geopolitical Fragmentation**: US/China prioritizing domestic AI capabilities (data centers, semiconductors) over global markets fragments tech landscapes; governments enforce tighter controls on tech flows (chips, cloud, models), expanding TAM for sovereign-focused infrastructure.",
+        "**Policy-Driven Tech Controls**: Governments prioritize national security over economic efficiency → increased demand for domestic infrastructure; key beneficiaries: data centers, cloud, semiconductors, telecom (e.g., US restrictions target advanced chips/cloud access, China enforces localization via cybersecurity/data controls).",
+        "**US-China Policy Divergence**: US restricts advanced chips/cloud access (Entity List, ICTS Rule), China mandates local model integration (regulatory approval, domestic data storage); creates bifurcation risk with critical impact on AI model/applications deployment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 73,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-64rlvdkdgeu-0aa6c6",
+      "title": "MS Mike Wilson Weekly Warm up Broadening Persists Amid a Quality Rotation",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T17:13:20Z",
+      "summary_points": [
+        "**Russell 3000 EPS Growth Acceleration**: Median EPS growth at 15% (strongest since 2021), with 87% S&P 500 companies beating Q2 EPS, signaling broad earnings recovery and index resilience.",
+        "**AI-Driven Earnings Dominance**: AI adopters outperform non-AI in EPS Y/Y growth (67% vs 43% in 2024), with unrealized gains skewing S&P 500 earnings (non-operating profit at 50% in 2024).",
+        "**Mag 7 Concentration Risk**: Mag 7 contributes 90% to S&P 500 earnings growth in 2027, while 2027 consensus growth for Mag 7 slows to 4% vs S&P 493’s 16%, highlighting overestimation risk.",
+        "**Tech Hardware Revisions Crisis**: Tech Hardware shows largest negative revisions (8Wk: -24%), signaling severe downside pressure and sector-wide risk.",
+        "**Free Cash Flow Premium**: S&P 500 stocks with upward EPS and FCF revisions outperformed by 1.6% post-reporting, confirming quality-driven outperformance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 31,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-kuwlcsctckn-43814b",
       "title": "South Korea Technology Korea WFE Substrate CCL Chip testing HBM Supply Chain Check reinforces our positive view on Samsung E...",
       "institution": "Goldman Sachs",
@@ -104,6 +146,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 25,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-156ooarazal-bc68bb",
+      "title": "GS Quinn Gold Futures Record 3 Weeks of Buying 23 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:44:08Z",
+      "summary_points": [
+        "**Gold Futures Record Buying & Treasury Curve Impact**: Speculators added $22.2bn in gold futures (93% net length, 10+ yr nominal max), triggering curve retracement (Gold +5.9%, US 2s30s -8bps); tactical unwind risk if Fed signals inflation fight at Jackson Hole.",
+        "**Inverse Correlation with 2s30s Spread**: Narrowing 2s30s spread correlates with elevated gold managed money longs (red line high), signaling risk-off positioning and Fed rate cut expectations amid economic uncertainty.",
+        "**Negative Skew as Critical Risk Factor**: Persistent negative skew (worsening normalized 25 delta skew) implies elevated tail risk; portfolio managers must adjust hedges for potential sharp downside moves despite declining volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
