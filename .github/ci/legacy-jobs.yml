@@ -12687,9 +12687,10 @@ jobs:
 
   dislocation-p0-a1-blind-harvest:
     scope: exclusive
-    # P0-A1 price-blind harvest primitives (Turn-5 lexicon, query ledger,
-    # firewall, quota walk). WITHOUT THIS JOB tests/test_dislocation_p0_a1_blind_harvest.py
-    # is a new pytest suite named by no run: step — contract-delta reds it.
+    # P0-A1 price-blind harvest and A1R source-integrity primitives (Turn-5
+    # lexicon/query ledger, canonical SEC-owner adapters, source-only semantic
+    # contracts, firewall, quota walk). Every focused suite stays named by the
+    # run step below so contract-delta cannot admit an unowned repair test.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
     gate: code
     paths:
@@ -12697,7 +12698,28 @@ jobs:
       - .github/workflows/ci.yml
       - scripts/research/dislocation_p0_a1_harvest.py
       - scripts/research/dislocation_p0_a1_lib.py
+      - scripts/research/dislocation_p0_a1r.py
+      - scripts/research/dislocation_p0_a1r_evidence_catalog.py
+      - scripts/research/dislocation_p0_a1r_owner_run.py
+      - scripts/research/dislocation_p0_a1r_semantic_contract.py
+      - scripts/research/dislocation_p0_a1r_semantic_run.py
+      - scripts/research/dislocation_p0_a1r_source_run.py
+      - scripts/research/dislocation_p0_source_adapter.py
+      - scripts/research/dislocation_p0_source_materializer.py
+      - collectors/edgar_forensics.py
+      - collectors/sec_document_spine.py
+      - engine/fundamental_forensics/models.py
+      - engine/fundamental_forensics/sec_document_spine.py
+      - lib/__init__.py
+      - lib/config.py
       - tests/test_dislocation_p0_a1_blind_harvest.py
+      - tests/test_dislocation_p0_a1r_evidence_catalog.py
+      - tests/test_dislocation_p0_a1r_owner_run.py
+      - tests/test_dislocation_p0_a1r_selection.py
+      - tests/test_dislocation_p0_a1r_semantic_contract.py
+      - tests/test_dislocation_p0_a1r_semantic_run.py
+      - tests/test_dislocation_p0_source_adapter.py
+      - tests/test_dislocation_p0_source_materializer.py
       - research/dislocation_intelligence/**
     timeout-minutes: 8
     runs-on: ubuntu-latest
@@ -12706,7 +12728,20 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: install minimal deps
-        run: pip install pytest
-      - name: Dislocation P0-A1 price-blind harvest primitives
-        run: python -m pytest tests/test_dislocation_p0_a1_blind_harvest.py -q
+      - name: install source-owner test deps
+        # The bounded A1R adapters import the canonical raw SEC owner, whose
+        # module boundary declares pandas/requests/PyYAML even though these
+        # focused tests never perform a network call.
+        run: pip install pytest pandas requests pyyaml
+      - name: Dislocation P0-A1 price-blind source-integrity primitives
+        run: >-
+          python -m pytest
+          tests/test_dislocation_p0_a1_blind_harvest.py
+          tests/test_dislocation_p0_a1r_evidence_catalog.py
+          tests/test_dislocation_p0_a1r_owner_run.py
+          tests/test_dislocation_p0_a1r_selection.py
+          tests/test_dislocation_p0_a1r_semantic_contract.py
+          tests/test_dislocation_p0_a1r_semantic_run.py
+          tests/test_dislocation_p0_source_adapter.py
+          tests/test_dislocation_p0_source_materializer.py
+          -q

@@ -82,15 +82,6 @@ changed:
       The LAST_KEY_INTEGRITY canonical-shape pin grows the two new keys. This
       is a deliberate shape change, not a relaxation — the pin exists so a
       consumer-visible shape can never drift silently.
-  - path: scripts/agentos.py
-    what: >
-      UNRELATED MAIN-RED HEAL, carried here because `agentos validate` is a
-      hard-gating CI step and this PR touches agentos/. HANDOFF_MODEL gains
-      "sol": commit 3810cbf252ba landed the store's first Sol-authored handoff
-      with model: sol, which the enum rejected, so validate exited 1 on main.
-      Sol is the AI CEO seat, not a Claude/Codex model tier — forcing that
-      record into one of the existing values would falsify its provenance, so
-      the enum was widened rather than the record rewritten.
   - path: agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md
     what: >
       The p1r3 wave entry gains the P1-R3A crash-consistency completion (an
@@ -139,12 +130,14 @@ verified:
       collectors/china_visits.py checked out from origin/main — a sparse-
       checkout artifact (data/reference/security_master.parquet is not on
       disk), not this diff.
-  - claim: The agentos heal is real and the store validates.
+  - claim: >
+      The store validates at the merged head. (The `model: sol` enum red this
+      session originally carried a heal for was landed by a SIBLING as #6263
+      mid-flight; the merge took theirs, so scripts/agentos.py is NOT in this
+      PR's diff — see the closeout note below.)
     command: >
-      `python3 scripts/agentos.py validate` exited 1 before the change (naming
-      only agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-22-FLAGSHIP-
-      INTELLIGENCE-FANOUT.md, committed at 3810cbf252ba and untouched by this
-      session) and exits 0 after — 542 records, 0 errors, 27 warnings.
+      `python3 scripts/agentos.py validate --root agentos` -> 0 error(s).
+      Pass `--root agentos` explicitly when validating from a worktree.
   - claim: transport_ok is still measured before any key-integrity error.
     command: >
       `grep -n "transport_ok = not errors" collectors/china_filings.py` -> 925;
@@ -255,7 +248,7 @@ danger_areas:
       whole China filings tape. If CNInfo ever starts emitting malformed ids
       at volume, revisit DEC:CHINA-COVERAGE-EXCEPTION-LEDGER §"What would
       reopen this" before this fence, not after.
-prs: [6242]
+prs: [6269]
 decisions: ["DEC:CHINA-COVERAGE-EXCEPTION-LEDGER", "DEC:CHINA-KEY-INTEGRITY-TYPED-EXCLUSION"]
 discoveries: ["DSC:CHINA-VISITS-KEY-EXCLUSION-LATCH-AND-AGING-FORGETFULNESS",
               "DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP"]
@@ -293,3 +286,51 @@ them. `collectors/china_visits.py` `persist_boundary_exceptions()` — the singl
 reused entry point. `tests/test_china_visits_collector.py`
 `TestP1R3ACrashConsistencyFence::test_item10_mutation_committing_before_the_exception_is_killed`
 — the guard that keeps the order from silently inverting again.
+
+## Closeout — Sol FINAL CODE ADJUDICATION: PASS (2026-08-23)
+
+**Merged lineage.** This session's PR is **#6269**, squash
+**`0bcfef045517bcaae23271b1218f37c59bcaa864`**, merged 2026-08-22T22:21:16Z from
+head `c7bd320b1cbc`, verified an ancestor of `origin/main`. Its predecessor
+#6242 (squash `4e9735088638`) is the P1-R3 wave this one amends — context, not
+this session's PR. The frontmatter originally carried `prs: [6242]`, copied from
+the previous handoff; corrected at closeout on Sol's instruction.
+
+**Second stale pointer, found while making that correction.** The `changed:`
+list also carried an entry for `scripts/agentos.py`. That heal (widening
+`HANDOFF_MODEL` to admit `model: sol`) was written here, but a sibling landed the
+identical fix as **#6263** while this branch was in flight; the merge conflict
+was resolved in favour of theirs, so the file is **not** in #6269's 8-file diff.
+A `changed:` entry naming a file the PR did not touch is exactly the
+"sends the next session hunting" failure the store's own phantom-path check
+exists to prevent, so the entry and its `verified:` claim were removed rather
+than left standing. Generalizable: **when a merge conflict is resolved by taking
+the sibling's side, the handoff's `changed:` list is now wrong and must be
+re-derived from the merged diff, not from what the session wrote.**
+
+**Sol's residual rulings — all three open questions are now CLOSED, no code:**
+
+1. *Unreadable accrued-filings-store + loss past the re-pull window* — ruled a
+   broader `china_filings` OUTAGE-RECOVERY concern, **not** another P1
+   malformed-key persistence path. No change now. Do not add a second
+   persistence site to "fix" it.
+2. *`china_visits` import failure blocking the commit* — **fail-closed BY
+   DESIGN**, retained. Do **not** duplicate the P1-relevance law into
+   `china_filings` to narrow it.
+3. *Scoped coverage exceptions have no TTL / expiry / operator-clear* — retained
+   deliberately. They stay open until deterministic reconciliation, or until a
+   future explicitly evidence-backed adjudication mechanism exists. Do not build
+   a prune, a TTL, or an operator lever without that mechanism.
+
+**No further P1 implementation repair is authorized.** The only remaining gate is
+the first natural post-#6269 Asia-close with healthy CNInfo transport, capturing:
+checkout contains `0bcfef045517…`; clean SSE **and** SZSE transport;
+`china_filings → china_visits` same-cycle order; `key_integrity_known=true`;
+boundary-persistence receipt clean/inert on the zero-exception common path;
+candidate accounting balances; coverage-exception ledger readable; visit health
+clean and `last_success_utc` advancing; production dossier still correct.
+
+Another 504 is valid failure-state evidence but is **not** the final clean-path
+receipt. **Do not rerun the lane and do not manufacture data** — the receipt
+waits on the upstream. L0/P1B/P2/R1/R2 stay untouched until Sol receives it.
+

@@ -493,6 +493,67 @@ def test_dhi_cancellation_current_equal_prior_synthetic_never_collides() -> None
     _verify_all_spans(facts, bound=bound)
 
 
+@pytest.mark.parametrize(
+    ("clause", "expect_present"),
+    [
+        # Positive control (red-team MINOR-3): the EXACT literal wording
+        # Sol's ruling requires, from the SAME template as the approximate
+        # cases below -- the only delta is the equality wording itself.
+        # This makes the approximate cases path-discriminating: if the
+        # paragraph lookup or receipt-minting broke instead of the regex
+        # correctly rejecting loose language, this control would fail too.
+        ("16%, consistent with the prior year quarter", True),
+        ("16%, approximately in line with the prior year quarter", False),
+        ("16%, similar to a year ago", False),
+    ],
+)
+def test_dhi_cancellation_equality_ruling_control_vs_approximate_language(
+    clause: str, expect_present: bool,
+) -> None:
+    """IMCE A5C item 8 (Sol's equality ruling), PINNED behavior, not changed
+    here: the explicit-equality treatment at issuer_profiles.py:621-663 only
+    fires on the LITERAL clause ", consistent with the prior year quarter"
+    (``_DHI_CANCELLATION_CONSISTENT_RE``). Approximate/similar language --
+    "approximately in line with the prior year quarter", "similar to a year
+    ago" -- matches neither ``_DHI_CANCELLATION_COMPARED_RE`` nor
+    ``_DHI_CANCELLATION_CONSISTENT_RE``, so it must NEVER produce a present
+    prior-year fact by loosely pattern-matching "close enough" language --
+    it is typed absence, same as any other unrecognized clause shape. Red-
+    team MINOR-3: the positive control case (exact "consistent with the
+    prior year quarter" wording) shares the SAME body template as the two
+    approximate cases -- a dead/broken paragraph lookup would fail the
+    control too, so an approximate case passing is not vacuous."""
+    synthetic_body = (
+        "<html><body><p>Net sales orders totaled 10,000 homes with an order value of $2.0 billion. "
+        f"The Company's cancellation rate (cancelled sales orders divided by gross sales orders) for "
+        f"the quarter was {clause}.</p></body></html>"
+    )
+    bound = bind_release_document(
+        cik="882184", accession=DHI_ACCESSION, body=synthetic_body, form="8-K",
+        filing_date=DHI_REPORT_DATE, acceptance_datetime=f"{DHI_REPORT_DATE}T16:05:00.000Z",
+        report_date=DHI_REPORT_DATE, exhibit_url="https://example/dhi.htm",
+    )
+    fiscal_period = FiscalPeriod(year=2026, quarter=3, calendar_end=date(2026, 6, 30))
+    facts = dhi_profile().extract_release_facts(
+        bound=bound, document_id="doc:dhi-equality-ruling-synthetic", event_id="evt_x", fiscal_period=fiscal_period,
+    )
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    prior_fact = by_id["fact_cancellation_rate_prior_year"]
+    if expect_present:
+        assert "typed_absence" not in prior_fact
+        assert prior_fact["value"] == 16.0
+        assert (
+            "prior-year value stated by explicit equality with the current-quarter figure"
+            in prior_fact["basis"]
+        )
+        assert "consistent with the prior year quarter" in prior_fact["source_span"]["display_excerpt"]
+    else:
+        assert "typed_absence" in prior_fact
+        assert "value" not in prior_fact
+        assert prior_fact["typed_absence"]["reason"] == "no_span_addressable_evidence"
+    _verify_all_spans(facts, bound=bound)
+
+
 def test_dhi_q1_shaped_synthetic_net_orders_table_with_no_ytd_column() -> None:
     """NEW-A regression, DHI: a SYNTHETIC Q1-shaped NET SALES ORDERS table
     (modeled on DHI's own real table structure, but with only a "Three
@@ -662,7 +723,11 @@ def test_tol_historical_release_facts_replay_including_backlog_sensitivity() -> 
 
     TOL's primary convention is signed contracts in the quarter; the
     beginning-quarter-backlog cancellation measure is a MANDATORY sensitivity
-    fact carried alongside it (frozen spec item 4(vi))."""
+    fact carried alongside it (frozen spec item 4(vi)), and — per IMCE A5C
+    item 7 — the SAME row's prior-year cell is also extracted as its own
+    fact (fact_cancellation_rate_beginning_backlog_sensitivity_prior_year),
+    the fact_id engine/cycle_pattern/imce_prospective.py:161 has been looking
+    up since A5A (self-healing, consumption side untouched here)."""
     bound = _bound(TOL_EXHIBIT, cik="794170", accession=TOL_ACCESSION, filing_date=TOL_REPORT_DATE, report_date=TOL_REPORT_DATE)
     fiscal_period = FiscalPeriod(year=2026, quarter=3, calendar_end=date(2026, 7, 31))
     facts = tol_profile().extract_release_facts(
@@ -677,13 +742,57 @@ def test_tol_historical_release_facts_replay_including_backlog_sensitivity() -> 
         "fact_cancellation_rate_prior_year",
         "fact_cancellation_rate_denominator",
         "fact_cancellation_rate_beginning_backlog_sensitivity",
+        "fact_cancellation_rate_beginning_backlog_sensitivity_prior_year",
     }
     assert by_id["fact_net_orders_current"]["value"] == 2508
     assert by_id["fact_net_orders_prior_year"]["value"] == 2388
     assert by_id["fact_cancellation_rate_current"]["value"] == 5.4
     assert by_id["fact_cancellation_rate_prior_year"]["value"] == 7.5
+    # F3/spec-item-3 substitution guard: BOTH sensitivity values replay from
+    # their OWN cells in the real fixture row (byte ~40138) -- current==2.6,
+    # prior_year==3.2. A bug that silently copied the current cell's value
+    # (or the primary denominator row) into the prior-year fact would leave
+    # this 3.2 assertion the only thing standing between "looks extracted"
+    # and "quietly wrong forever" (mutation-kill discriminator).
     assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["value"] == 2.6
     assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["metric"] == "cancellation_rate_sensitivity"
+    assert "typed_absence" not in by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]
+    assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]["value"] == 3.2
+    assert (
+        by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]["metric"]
+        == "cancellation_rate_sensitivity"
+    )
+    assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]["period"] == "prior_year_same_quarter"
+    # Spec item 2: the SAME verbatim basis string as the current-quarter
+    # sensitivity fact (the row's own label, not a paraphrase).
+    assert (
+        by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]["basis"]
+        == by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["basis"]
+        == "Quarterly Cancellations as a Percentage of Beginning-Quarter Backlog"
+    )
+    # F3/spec-item-3: the current and prior-year sensitivity facts' receipts
+    # are DISJOINT byte spans, and both are disjoint from
+    # fact_cancellation_rate_prior_year's span (the signed-contracts row, a
+    # different row entirely) -- proving the prior-year sensitivity value is
+    # not a byte-identical copy of either.
+    sensitivity_current_span = by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["source_span"]
+    sensitivity_prior_span = by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]["source_span"]
+    signed_contracts_prior_span = by_id["fact_cancellation_rate_prior_year"]["source_span"]
+
+    def _byte_range(span: dict) -> tuple[int, int]:
+        locator = span["locator"]
+        return locator["span_start_byte"], locator["span_end_byte"]
+
+    def _disjoint(a: tuple[int, int], b: tuple[int, int]) -> bool:
+        return a[1] <= b[0] or b[1] <= a[0]
+
+    current_range = _byte_range(sensitivity_current_span)
+    prior_range = _byte_range(sensitivity_prior_span)
+    signed_range = _byte_range(signed_contracts_prior_span)
+    assert sensitivity_current_span["span_id"] != sensitivity_prior_span["span_id"]
+    assert _disjoint(current_range, prior_range)
+    assert _disjoint(prior_range, signed_range)
+    assert _disjoint(current_range, signed_range)
     # F4: the denominator fact's VALUE is the row's own verbatim label text —
     # never a code-authored paraphrase receipted against an unrelated numeric
     # cell.
@@ -693,6 +802,124 @@ def test_tol_historical_release_facts_replay_including_backlog_sensitivity() -> 
     )
     denom_span = by_id["fact_cancellation_rate_denominator"]["source_span"]
     assert denom_span["display_excerpt"] == by_id["fact_cancellation_rate_denominator"]["value"]
+    _verify_all_spans(facts, bound=bound)
+
+
+def test_tol_backlog_sensitivity_prior_year_absent_when_cell_missing_current_still_present() -> None:
+    """A5C item 7 absence path: a synthetic TOL-shaped table whose backlog
+    row carries ONLY the current-quarter cell (no prior-year cell at all)
+    must leave the prior-year sensitivity fact TYPED ABSENT with its own
+    reason detail, while the current-quarter sensitivity fact is entirely
+    unaffected (no inference, no substitution -- frozen spec item 2)."""
+    synthetic_body = (
+        "<html><body>"
+        "<table>"
+        "<tr><td colspan=\"3\">Three Months Ended July 31,</td></tr>"
+        "<tr><td>Quarterly Cancellations as a Percentage of Beginning-Quarter Backlog</td>"
+        "<td>2.6</td><td>%</td></tr>"
+        "</table>"
+        "</body></html>"
+    )
+    bound = bind_release_document(
+        cik="794170", accession=TOL_ACCESSION, body=synthetic_body, form="8-K",
+        filing_date=TOL_REPORT_DATE, acceptance_datetime=f"{TOL_REPORT_DATE}T16:05:00.000Z",
+        report_date=TOL_REPORT_DATE, exhibit_url="https://example/tol.htm",
+    )
+    fiscal_period = FiscalPeriod(year=2026, quarter=3, calendar_end=date(2026, 7, 31))
+    facts = tol_profile().extract_release_facts(
+        bound=bound, document_id="doc:tol-synthetic-no-prior-cell", event_id="evt_x", fiscal_period=fiscal_period,
+    )
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    assert "typed_absence" not in by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]
+    assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["value"] == 2.6
+    prior_fact = by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]
+    assert "typed_absence" in prior_fact
+    assert "value" not in prior_fact
+    assert prior_fact["typed_absence"]["reason"] == "no_span_addressable_evidence"
+    assert prior_fact["typed_absence"]["schema"] == "typed_absence.v1"
+    _verify_all_spans(facts, bound=bound)
+
+
+@pytest.mark.parametrize("prior_cell_text", ["N/A", "(1)", "1,234", "—"])
+def test_tol_backlog_sensitivity_prior_year_unparseable_cell_is_typed_absence_not_a_crash(
+    prior_cell_text: str,
+) -> None:
+    """Red-team MAJOR-1: an unparseable prior-year cell ("N/A", "(1)", a
+    stray "1,234" thousands-separator shape, or an em-dash "—") must
+    NOT raise. Pre-fix, ``float(backlog_prior_value)`` was unguarded --
+    any of these four shapes would propagate a ValueError out of
+    ``extract_release_facts`` and kill the ENTIRE TOL workspace build on
+    the nightly path (pre-PR these shapes were harmless because the cell
+    was never read at all). Typed absence on its own terms; the
+    current-quarter fact (2.6, from cells[0], parsed by the PRE-EXISTING
+    unguarded idiom this PR does not touch) is entirely unaffected."""
+    synthetic_body = (
+        "<html><body>"
+        "<table>"
+        "<tr><td colspan=\"3\">Three Months Ended July 31,</td></tr>"
+        "<tr><td>Quarterly Cancellations as a Percentage of Beginning-Quarter Backlog</td>"
+        f"<td>2.6</td><td>%</td><td>{prior_cell_text}</td><td>%</td></tr>"
+        "</table>"
+        "</body></html>"
+    )
+    bound = bind_release_document(
+        cik="794170", accession=TOL_ACCESSION, body=synthetic_body, form="8-K",
+        filing_date=TOL_REPORT_DATE, acceptance_datetime=f"{TOL_REPORT_DATE}T16:05:00.000Z",
+        report_date=TOL_REPORT_DATE, exhibit_url="https://example/tol.htm",
+    )
+    fiscal_period = FiscalPeriod(year=2026, quarter=3, calendar_end=date(2026, 7, 31))
+    facts = tol_profile().extract_release_facts(
+        bound=bound, document_id="doc:tol-synthetic-unparseable-prior", event_id="evt_x",
+        fiscal_period=fiscal_period,
+    )
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    assert "typed_absence" not in by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]
+    assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["value"] == 2.6
+    prior_fact = by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]
+    assert "typed_absence" in prior_fact
+    assert "value" not in prior_fact
+    assert prior_fact["typed_absence"]["reason"] == "no_span_addressable_evidence"
+    assert prior_cell_text in prior_fact["typed_absence"]["detail"]
+    _verify_all_spans(facts, bound=bound)
+
+
+def test_tol_backlog_sensitivity_prior_year_absent_on_ambiguous_combined_period_row_shape() -> None:
+    """Red-team MINOR-2: ``cells[1]`` is positional with no shape guard on
+    the row. This exhibit's OWN document carries blocks combining "three
+    months" AND "nine months" columns; a future combined-period row with
+    >=3 numeric cells could otherwise let ``cells[1]`` silently bind to a
+    non-prior-year figure (e.g. a nine-month column) and mint a
+    byte-exact-but-WRONG receipt for the new prior-year fact. Any row
+    shape other than EXACTLY 2 numeric cells is typed absence for the new
+    fact -- never a guess. The current-quarter fact's PRE-EXISTING
+    ``if cells:`` (>=1) behavior is untouched and still fires (byte-
+    identical to pre-PR main)."""
+    synthetic_body = (
+        "<html><body>"
+        "<table>"
+        "<tr><td colspan=\"3\">Three Months Ended July 31,</td></tr>"
+        "<tr><td>Quarterly Cancellations as a Percentage of Beginning-Quarter Backlog</td>"
+        "<td>2.6</td><td>%</td><td>3.2</td><td>%</td><td>4.1</td><td>%</td></tr>"
+        "</table>"
+        "</body></html>"
+    )
+    bound = bind_release_document(
+        cik="794170", accession=TOL_ACCESSION, body=synthetic_body, form="8-K",
+        filing_date=TOL_REPORT_DATE, acceptance_datetime=f"{TOL_REPORT_DATE}T16:05:00.000Z",
+        report_date=TOL_REPORT_DATE, exhibit_url="https://example/tol.htm",
+    )
+    fiscal_period = FiscalPeriod(year=2026, quarter=3, calendar_end=date(2026, 7, 31))
+    facts = tol_profile().extract_release_facts(
+        bound=bound, document_id="doc:tol-synthetic-ambiguous-shape", event_id="evt_x",
+        fiscal_period=fiscal_period,
+    )
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    assert "typed_absence" not in by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]
+    assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["value"] == 2.6
+    prior_fact = by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]
+    assert "typed_absence" in prior_fact
+    assert "value" not in prior_fact
+    assert "ambiguous" in prior_fact["typed_absence"]["detail"].lower()
     _verify_all_spans(facts, bound=bound)
 
 
