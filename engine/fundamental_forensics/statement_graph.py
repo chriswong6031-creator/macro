@@ -647,22 +647,78 @@ def _cell_dimensions(context: Mapping[str, Any] | None) -> list[dict[str, Any]]:
     return out
 
 
-def _agreeing_occurrences(displayed: Mapping[str, Any], facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    siblings = [displayed]
-    left = "" if displayed.get("normalized_value") is None else str(displayed.get("normalized_value"))
-    for fact in facts:
-        if fact is displayed or fact.get("fact_id") == displayed.get("fact_id"):
-            continue
-        if fact.get("concept_qname") != displayed.get("concept_qname"):
-            continue
-        if fact.get("context_ref") != displayed.get("context_ref"):
-            continue
-        if bool(fact.get("nil")) != bool(displayed.get("nil")):
-            continue
-        right = "" if fact.get("normalized_value") is None else str(fact.get("normalized_value"))
-        if _values_agree(left, right):
-            siblings.append(fact)
+def _duplicate_identity_occurrences(
+    displayed: Mapping[str, Any], facts: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """All occurrences sharing concept/context/unit. Agreement is not pre-filtered."""
+    identity = (
+        displayed.get("concept_qname"),
+        displayed.get("context_ref"),
+        displayed.get("unit_ref"),
+    )
+    siblings = [
+        fact
+        for fact in facts
+        if (
+            fact.get("concept_qname"),
+            fact.get("context_ref"),
+            fact.get("unit_ref"),
+        )
+        == identity
+    ]
+    siblings.sort(
+        key=lambda fact: (
+            (fact.get("source_span") or {}).get("start", 0),
+            str(fact.get("fact_id") or ""),
+        )
+    )
     return siblings
+
+
+def _presentation_occurrences(presentation: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    by_concept: dict[str, list[dict[str, Any]]] = {}
+    for row in presentation:
+        if _is_abstract_concept(row["concept"]):
+            continue
+        by_concept.setdefault(row["concept"], []).append(row)
+    return by_concept
+
+
+def _select_presentation_row(
+    spec: Mapping[str, Any],
+    occurrences: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    if not occurrences:
+        return None
+    if len(occurrences) == 1:
+        return occurrences[0]
+    label = str(spec.get("label") or "").strip().lower()
+    if "beginning" in label:
+        start = [row for row in occurrences if row.get("preferred_label_role") == LABEL_PERIOD_START]
+        if start:
+            return start[0]
+    if "ending" in label:
+        end = [row for row in occurrences if row.get("preferred_label_role") == LABEL_PERIOD_END]
+        if end:
+            return end[0]
+    return occurrences[0]
+
+
+def _row_explicit_dimensions(
+    *,
+    value_facts: list[Mapping[str, Any]],
+    facts_by_id: Mapping[str, dict[str, Any]],
+    contexts: Mapping[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    for item in value_facts:
+        fact = facts_by_id.get(str(item.get("fact_id") or ""))
+        if fact is None:
+            continue
+        context = contexts.get(str(fact.get("context_ref") or ""))
+        dims = _cell_dimensions(context)
+        if dims:
+            return dims
+    return []
 
 
 def _empty_cell(*, column: Mapping[str, Any], quality_state: str) -> dict[str, Any]:
@@ -766,7 +822,12 @@ def _cell_from_facts(
     }
 
 
-def map_standardized_metric(concept: str, registry: Any) -> dict[str, Any]:
+def map_standardized_metric(
+    concept: str,
+    registry: Any,
+    *,
+    dimensions: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     local = _local_name(concept)
     prefix = concept.split(":", 1)[0] if ":" in concept else ""
     hits: list[str] = []
@@ -780,13 +841,36 @@ def map_standardized_metric(concept: str, registry: Any) -> dict[str, Any]:
                 hits.append(contract.metric_id)
     unique = sorted(set(hits))
     if len(unique) == 1:
+        metric_id = unique[0]
+        contract = None
+        metric_lookup = getattr(registry, "metric", None)
+        if callable(metric_lookup):
+            try:
+                contract = metric_lookup(metric_id)
+            except KeyError:
+                contract = None
+        if contract is None:
+            contract = next((item for item in iterable if getattr(item, "metric_id", None) == metric_id), None)
+        profile = getattr(contract, "dimensional_profile", None) if contract is not None else None
+        mode = getattr(profile, "mode", None)
+        if mode == "consolidated_only" and dimensions:
+            return {
+                "metric_id": None,
+                "mapping_state": "unmapped",
+                "mapping_receipt": {
+                    "taxonomy": prefix,
+                    "concept": local,
+                    "reason": "dimensional_profile",
+                    "mode": mode,
+                },
+            }
         return {
-            "metric_id": unique[0],
+            "metric_id": metric_id,
             "mapping_state": "mapped",
             "mapping_receipt": {
                 "taxonomy": prefix,
                 "concept": local,
-                "metric_id": unique[0],
+                "metric_id": metric_id,
             },
         }
     if len(unique) > 1:
@@ -833,7 +917,7 @@ def reconstruct_statement(
     lab = package.members["aapl-20250927_lab.xml"]
     cal = package.members["aapl-20250927_cal.xml"]
     presentation = parse_presentation_tree(pre, role_uri=role_uri)
-    by_concept = {row["concept"]: row for row in presentation if not _is_abstract_concept(row["concept"])}
+    by_concept = _presentation_occurrences(presentation)
     parse_labels(lab)
     calcs = parse_calculations(cal).get(role_uri) or {}
     facts = list(parsed_instance.get("facts") or [])
@@ -870,7 +954,7 @@ def reconstruct_statement(
         if value_facts:
             names = sorted({_prefixed_from_html_name(item.get("name")) for item in value_facts})
             concept = names[0]
-        presentation_row = by_concept.get(concept)
+        presentation_row = _select_presentation_row(spec, by_concept.get(concept) or [])
         preferred = presentation_row.get("preferred_label_role") if presentation_row else None
         path = list(presentation_row["presentation_path"]) if presentation_row else ([concept] if concept else [spec["label"]])
         first_fact = facts_by_id.get(str(value_facts[0].get("fact_id") or "")) if value_facts else None
@@ -880,22 +964,29 @@ def reconstruct_statement(
             member = dimensions[0].get("member_qname")
             if member and member not in path:
                 path = path + [str(member)]
-        mapping = map_standardized_metric(concept, registry) if concept else {
+        mapping_dimensions = _row_explicit_dimensions(
+            value_facts=value_facts,
+            facts_by_id=facts_by_id,
+            contexts=contexts,
+        )
+        mapping = map_standardized_metric(
+            concept,
+            registry,
+            dimensions=mapping_dimensions,
+        ) if concept else {
             "metric_id": None,
             "mapping_state": "unmapped",
             "mapping_receipt": None,
         }
         children = calcs.get(concept) if concept and not dimensions else None
         formula = None
-        calc_status = "direct"
         if children:
-            calc_status = "calculated"
             formula = [{"concept": child, "weight": weight} for child, weight in children]
         cells = []
         for index, column in enumerate(columns):
             html_fact = value_facts[index] if index < len(value_facts) else None
             parsed_fact = facts_by_id.get(str(html_fact.get("fact_id") or "")) if html_fact else None
-            selected = _agreeing_occurrences(parsed_fact, facts) if parsed_fact else []
+            selected = _duplicate_identity_occurrences(parsed_fact, facts) if parsed_fact else []
             cell = _cell_from_facts(
                 facts=selected,
                 column=column,
@@ -906,8 +997,6 @@ def reconstruct_statement(
                 contexts=contexts,
                 representative=parsed_fact,
             )
-            if not spec["abstract"] and cell["quality_state"] == "available":
-                cell["direct_or_calculated"] = calc_status
             cells.append(cell)
         out_rows.append(
             {
@@ -971,6 +1060,8 @@ def reconstruct_primary_statements(
 
 __all__ = [
     "GoldenFilingPackage",
+    "LABEL_PERIOD_END",
+    "LABEL_PERIOD_START",
     "PRIMARY_STATEMENT_ROLES",
     "STATEMENT_TITLES",
     "StatementGraphError",

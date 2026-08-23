@@ -15,7 +15,7 @@ from engine.fundamental_forensics.statement_service import GoldenAaplStatementPr
 ROOT = Path(__file__).resolve().parents[1]
 _PATH = "/api/forensics/v1/financial/statements"
 _SCHEMA = "fundamental_forensics.financial_statement_request/v1"
-_RESPONSE_SHA = "1a489e46698e99f83518f18def89c381a29f63960a979d9de82caa29bcc3198e"
+_RESPONSE_SHA = "25e5562e81cb80bd42d0feb544c212c4471e11736601aaee418a60981a457184"
 
 _EXPECTED_PRIVATE_HEADERS = {
     "cache-control": "private, no-store",
@@ -147,10 +147,14 @@ def test_paid_golden_aapl_returns_three_statement_trees(paid_client) -> None:
     )
     assert products["cells"][0]["value"] == "307003000000"
     assert products["cells"][0]["dimensions"]
+    assert products["standardized_metric_id"] is None
+    assert products["mapping_state"] == "unmapped"
+    assert sales["standardized_metric_id"] == "revenue"
+    assert payload["authority"] == {"class": "context_only", "display_only": True}
     assert payload["delivery"]["kind"] == "committed_golden_fixture"
     assert payload["delivery"]["attested"] is False
     assert payload["delivery"]["production_issuer_service"] is False
-    assert payload["delivery"]["authority"] == "context_display_only"
+    assert "authority" not in payload["delivery"]
     sga = next(
         row
         for row in by_type["income_statement"]["rows"]

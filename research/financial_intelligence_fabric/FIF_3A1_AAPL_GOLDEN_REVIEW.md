@@ -95,18 +95,38 @@ Re-human-reviewed against CONSOLIDATED STATEMENTS OF CASH FLOWS.
 
 ## Mapping coverage (this golden tree)
 
-Standardization is optional enrichment. Counts: IS mapped 17 / unmapped 7; BS mapped 14 / unmapped 21; CF mapped 8 / unmapped 27. SG&A, vendor non-trade receivables, other income/(expense), several cash-flow lines, and abstracts stay `unmapped`. Mapped examples: revenue (including dimensioned Products/Services), cost_of_revenue, gross_profit, diluted_earnings_per_share, accounts_receivable_net, cash_and_cash_equivalents, net_cash_from_operating_activities.
+Standardization is optional enrichment and respects the core catalog's
+`consolidated_only` dimensional profile. Dimensioned ProductMember/ServiceMember
+Net sales and Cost of sales rows keep as-reported value/concept/dimensions and
+stay `unmapped`. Undimensioned `Total net sales` maps to `revenue`; undimensioned
+`Total cost of sales` maps to `cost_of_revenue`. SG&A, vendor non-trade
+receivables, other income/(expense), several cash-flow lines, and abstracts stay
+`unmapped`. Mapped examples: revenue (undimensioned total only), cost_of_revenue
+(undimensioned total only), gross_profit, diluted_earnings_per_share,
+accounts_receivable_net, cash_and_cash_equivalents,
+net_cash_from_operating_activities. Counts: IS mapped 13 / unmapped 11; BS
+mapped 14 / unmapped 21; CF mapped 8 / unmapped 27.
 
 ## Ambiguity / failure behavior reviewed
 
-Disagreeing same-concept/same-period facts yield `quality_state=ambiguous` and null value, with competing fact ids. Agreeing duplicates keep `occurrence_count`. Canonical issuer is `ISS:US-XNAS-AAPL` via `IssuerMaster.securities_of_issuer`; a `SUPERSEDED_DUPLICATE_MINT` sibling is not selected. Source CIK remains `0000320193`. Requesting ticker `AAPL` or the CIK as `entity_id` is unknown-entity. Delivery is `committed_golden_fixture`, non-attested, `context_display_only`. This is not a production issuer service.
+Disagreeing same-concept/same-context/same-unit facts reach cell adjudication
+and yield `quality_state=ambiguous` and null value, with competing fact ids.
+Agreeing duplicates keep `occurrence_count`. Canonical issuer is
+`ISS:US-XNAS-AAPL` via `IssuerMaster.securities_of_issuer`; a
+`SUPERSEDED_DUPLICATE_MINT` sibling is not selected. Source CIK remains
+`0000320193`. Requesting ticker `AAPL` or the CIK as `entity_id` is
+unknown-entity. Top-level `authority` is `{"class":"context_only","display_only":true}`.
+Delivery is committed golden fixture, `attested=false`,
+`production_issuer_service=false`. This is not a production issuer service.
 
 ## Recorded discrepancies (not a generic segment engine)
 
 1. **Presentation hypercube prefix still exists in the linkbase.** It is no longer displayed. The HTML Net sales hierarchy is the reconstructed tree. Not a generic dimensional engine: only the three captured primary tables are composed this way.
 2. **Definition linkbase is retained and unused** beyond the facts/contexts already in the iXBRL parse. Product/Service dimensions appear because those cells are in the captured HTML table.
-3. **Agreeing duplicate iXBRL occurrences** (visible + hidden) collapse to a representative with `occurrence_count>1`. Values agree; this is not first-row-wins of a conflict.
+3. **Agreeing duplicate iXBRL occurrences** (visible + hidden) collapse to a representative with `occurrence_count>1`. Values agree; this is not first-row-wins of a conflict. Conflicting same-identity occurrences stay `ambiguous`.
 4. **Scale/display.** HTML millions vs reconstructed whole USD. Scale is on the cell; the value is not re-rounded for display.
-5. **Cash-flow beginning cash is an instant fact in a duration column.** Column periods come from duration contexts in the same table.
+5. **Cash-flow beginning cash is an instant fact in a duration column.** Column periods come from duration contexts in the same table. The cash concept occurs twice in the presentation tree: beginning row is `periodStartLabel`, ending row is `periodEndLabel`.
+6. **Dimensional Product/Service rows are as-reported, not consolidated metrics.** Core registry `consolidated_only` leaves those rows unmapped.
+7. **Reported cells stay `direct`.** `formula_dependencies` may expose the filing calculation network; that does not mean Mastermind calculated the iXBRL value.
 
 Prior review items 1 (hypercube displayed before Net sales) and 2 (share-count rows) are closed by the displayed-table composition.

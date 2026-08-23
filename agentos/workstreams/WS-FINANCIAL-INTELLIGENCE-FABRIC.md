@@ -53,6 +53,7 @@ discoveries:
   - DSC:AAPL-LABEL-RESOURCES-SHARE-XLINK-LABEL
   - DSC:AAPL-PRODUCT-SERVICE-HYPERCUBE-PRECEDES-LINE-ITEMS
   - DSC:AAPL-CF-BEGINNING-CASH-IS-INSTANT-IN-DURATION-COLUMNS
+  - DSC:AAPL-CF-CASH-CONCEPT-OCCURS-TWICE
 decisions:
   - DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE
   - DEC:FIF-1R-HERMETIC-PACKET-CONTRACT
@@ -66,6 +67,10 @@ decisions:
   - DEC:FIF-3A1-DISPLAYED-TABLE-IS-THE-COMPOSITION
   - DEC:FIF-3A1-PACKAGE-WITNESS-ADMISSION
   - DEC:FIF-3A1-CALC-NETWORKS-ARE-ROLE-LOCAL
+  - DEC:FIF-3A1-MAPPING-RESPECTS-DIMENSIONAL-PROFILE
+  - DEC:FIF-3A1-DUPLICATES-REACH-CELL-ADJUDICATION
+  - DEC:FIF-3A1-PRESENTATION-OCCURRENCES-ARE-NOT-COLLAPSED
+  - DEC:FIF-3A1-AUTHORITY-IS-CONTEXT-ONLY-OBJECT
 next_action: >
   FIF-1 is DONE / FROZEN. FIF-2 is DONE / FIXTURE_PROVEN SERVICE
   SUBSTRATE (DEC:FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3). FIF-2A/B/C remain
@@ -126,6 +131,11 @@ do_not_redo:
   - Do not build a generic segment/dimension engine from the AAPL Product/Service table.
   - Do not independently resolve issuer→security; use IssuerMaster.
   - Do not call this a production issuer service.
+  - Do not invent a second authority vocabulary; reuse {"class":"context_only","display_only":true}.
+  - Do not enrich dimensioned ProductMember/ServiceMember rows as consolidated revenue/cost_of_revenue.
+  - Do not collapse repeated presentation occurrences into one concept → row.
+  - Do not pre-filter duplicate facts to agreeing values before _cell_from_facts.
+  - Do not recast an iXBRL-sourced cell as calculated merely because a calc arc exists.
   - Do not rewrite source-native SEC/XBRL identity to mint a Mastermind issuer ID.
   - Do not use the live full-registry digest as historical packet identity.
 waves:

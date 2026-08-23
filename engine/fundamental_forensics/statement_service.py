@@ -255,6 +255,10 @@ def execute_financial_statements(
                 for item in package.manifest["members"]
             ],
         },
+        "authority": {
+            "class": "context_only",
+            "display_only": True,
+        },
         "statements": reconstructed["statements"],
         "coverage": {
             "parsed_document_kind": reconstructed["parsed_document_kind"],
@@ -265,7 +269,6 @@ def execute_financial_statements(
             "kind": "committed_golden_fixture",
             "attested": False,
             "production_issuer_service": False,
-            "authority": "context_display_only",
         },
     }
     body_out = canonical_json(envelope).encode("utf-8")
