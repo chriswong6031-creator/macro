@@ -98,7 +98,8 @@ list. CENSUS-CONFIRMED: `scripts.backfill_thetadata_eod._resolve_universe()`
 AD denominator stays `engine.options_universe.gex_symbols()` (375 today) and
 both are resolved at run time — never hard-coded. Index roots (SPX/SPXW) are
 in the T1 universe but NOT in `gex_symbols()`: they count toward
-`complete_t1_roots` only and are excluded from `ad_coverage_pct` by
+`complete_t1_roots` only and are excluded from `s_panel_coverage_pct` /
+`ad_ready_coverage_pct` by
 construction (analyst surface-5 note).
 
 ### A3. Session gate (Sol §7/§12; F3, F4, F12 amendments)
@@ -317,7 +318,8 @@ source=thetadata, mode=incremental_daily, S, D,
 started_at, finished_at, elapsed_sec, worker_count,
 t1_universe_count, ad_universe_count,
 eod_S_roots, greeks_S_roots, oi_S_roots, oi_D_roots,
-complete_t1_roots, complete_ad_roots, ad_coverage_pct,
+complete_t1_roots, s_panel_ad_roots, s_panel_coverage_pct,
+ad_ready_roots, ad_ready_coverage_pct, oi_D_source,
 chain_next_ad_roots,
 status ∈ {healthy, partial, failed},
 deadline_exceeded (bool), stale_tmp_swept (int),
@@ -326,20 +328,22 @@ failure_counts_by_reason, failure_examples (bounded ≤10),
 terminal_health, forced (bool)
 ```
 
-- (F1 — RETURNED TO SOL) **S-panel healthy split:** `complete_ad_roots` = AD
-  roots with the S-PANEL present (EOD[S] ∧ Greeks[S] ∧ OI[S] — the three
-  cells the vendor can always serve post-close-D), and `healthy` requires
-  `complete_ad_roots / ad_universe_count ≥ 0.90` on that panel.
-  `chain_next_ad_roots` (OI[D] present) is reported separately and does NOT
-  gate `healthy` — OI[D]'s same-evening availability is the F1 unknown, its
-  absence self-heals next session as OI[S'], and the AD producer's own
-  settled-pair selection (frozen engine) decides which pair is buildable.
-  This does not lower 0.90; it defines the numerator on the cells a lawful
-  evening run can guarantee. The threshold constant is imported from the
-  frozen engine's `SOURCE_COVERAGE_GATE` (`engine/options_intel_brief.py`),
-  never a second literal; `ad_universe_count` is resolved, never 375.
+- (F1 → **SUPERSEDED by Sol review B1 / §K1, 2026-08-23; repaired in place
+  per the same in-place law as B4**) **AD-ready healthy law:** `healthy`
+  requires `ad_ready_coverage_pct ≥ SOURCE_COVERAGE_GATE` where
+  `ad_ready_roots` = AD roots with ALL FOUR cells present (EOD[S] ∧
+  Greeks[S] ∧ OI[S] ∧ OI[D] — the frozen AD source contract needs the
+  settlement print to certify an S/D panel). `s_panel_ad_roots` /
+  `s_panel_coverage_pct` (EOD[S] ∧ Greeks[S] ∧ OI[S]) are reported as
+  OBSERVATIONAL fields and certify nothing; OI[D] absent everywhere ⇒
+  `partial`, never `healthy`. OI[D] is retrieved same-evening via the §K2
+  snapshot frontier (`oi_D_source`), so the old "same-evening availability
+  is unknowable" premise no longer holds. The threshold constant is imported
+  from the frozen engine's `SOURCE_COVERAGE_GATE`
+  (`engine/options_intel_brief.py`), never a second literal;
+  `ad_universe_count` is resolved, never 375.
 - `complete_t1_roots` counts the full T1 universe (incl. index roots);
-  `ad_coverage_pct` = S-panel AD coverage.
+  `s_panel_coverage_pct` = S-panel AD coverage (observational).
 - `failed` = run aborted before per-root work while HOLDING the lock (gate
   pass but terminal unreachable, universe resolution failed, or
   `terminal_lost_mid_run` per §C). A lock REFUSAL writes no receipt at all
@@ -347,14 +351,21 @@ terminal_health, forced (bool)
 - Receipt writes are atomic (tmp → replace) and happen even on `partial`.
   A gate no-op (non-session / pre-16:10) writes NO receipt (the absence of a
   session's receipt is itself the honest record; no fake healthy rows).
-- (F8) **Staleness anchor:** `daily_refresh.D` is the lane's liveness
-  record. The existing `com.macro.theta-staleness` sentinel
-  (`scripts/launchd/theta_staleness_sentinel.sh`) gains a check: ALERT when
-  `daily_refresh.D != nyse_calendar.session_date()` after 22:00 ET on a
-  session day (a sleeping/missed host is otherwise indistinguishable from a
-  healthy one, since launchd calendar fires do not wake a sleeping Mac and
-  coalesce on wake). The runbook install procedure asserts the host does not
-  sleep (`pmset -g`).
+- (F8, threshold RF1 20:00 ET; health conditions **superseded by Sol review
+  B3 / §K4, repaired in place**) **Staleness anchor:** `daily_refresh` is
+  the lane's liveness record. The existing `com.macro.theta-staleness`
+  sentinel (`scripts/launchd/theta_staleness_sentinel.sh`) ALERTs after
+  20:00 ET on a session day unless the receipt is a normal
+  production-healthy result: `daily_refresh.D ==
+  nyse_calendar.session_date()` AND `status == "healthy"` AND `forced` is
+  exactly false (a sleeping/missed host is otherwise indistinguishable from
+  a healthy one, since launchd calendar fires do not wake a sleeping Mac
+  and coalesce on wake — and with §K1, `healthy` carries the ≥90% AD-ready
+  settlement guarantee). The runbook install procedure asserts the host
+  does not sleep (`pmset -g`). Known consequence (review NOTE-4, reported
+  to Sol): the sentinel's 18:30 PT fire lands inside the 18:00 PT rung's
+  own 65-min run window, so a night that self-heals at ~18:35 PT can still
+  page once at 18:30 PT.
 
 ---
 
@@ -682,3 +693,48 @@ none authorized).
   D-stamped rows pass; stale-stamped only ⇒ `date_unresolved`; mixed keeps
   only D rows; empty ⇒ `vendor_empty`; `None` ⇒ `fetch_failed`.
 - K3/K4 families as specified above.
+
+### K6 Post-review repairs (targeted pass verdict: no BLOCKER, 2 MAJOR + 5 NOTE; adjudicated by Fable 2026-08-23)
+
+- **MAJOR-1 (K3 mutation-before-refusal):** `own_store = _store_dir()` ran
+  BEFORE the resolver try — and `_store_dir()` mkdirs, so a resolver raise
+  left a real empty `data/thetadata_eod` directory (EEXIST trap for the
+  ops-host symlink repair) while the code comment claimed zero mutations;
+  the shipped test stubbed `_store_dir` with a non-mkdir lambda and so
+  pinned a property production code did not have. REPAIR: compute
+  `own_store` only AFTER the resolver returns cleanly; the fail-closed
+  branch logs without touching any store path; the test uses the REAL
+  `_store_dir` (with `lib.config.data_dir` seamed to a tmp dir) and asserts
+  no directory is created.
+- **MAJOR-2 (K2 dedup divergence):** the wrapper dropped `snapshot_ts`
+  WITHOUT re-deduping — upstream `_normalize_snapshot_df` dedupes while the
+  per-contract `snapshot_ts` still differs, so v3 API duplicate rows
+  collapse to identical rows and `_merge_day` writes both, double-counting
+  OI in the health-certifying cell. REPAIR: `.drop_duplicates()` after
+  column selection (same ordering law as `_normalize_oi_df`: dedup covers
+  exactly the columns written). Regression test: two rows differing only in
+  `snapshot_ts` → one stored row.
+- **NOTE-1 (auditable `oi_D_source`):** constant stamping attributed the
+  snapshot path to runs that never used it. REPAIR: stamp
+  `"snapshot_open_interest"` only when ≥1 oi_D cell had a vendor attempt
+  this run (cell state not in {absent, already_present}); else `null`.
+- **NOTE-2:** the wrapper's dead `D` parameter is removed (post-adjudication
+  the wrapper never date-filters; the parameter was the residue of the
+  superseded prose).
+- **NOTE-3 (OI cell without OI):** a vendor frame lacking `open_interest`
+  after normalization returns `None` → `fetch_failed` (malformed vendor
+  response; an AD-ready OI[D] cell must never classify `complete` without
+  the OI column). Stricter than the history path's permissive selection —
+  deliberate for the new endpoint.
+- **NOTE-4:** sentinel fires once inside the 18:00 PT rung's window —
+  REPORTED to Sol in §D/F8 and the return packet; fire-time changes are an
+  install-time Sol decision, not a code repair this wave.
+- **NOTE-5:** §D's superseded S-panel law and stale 22:00 ET text repaired
+  in place (same in-place law as B4).
+- **Review GAP (recorded, not repairable offline):** no live receipt pins
+  the snapshot endpoint's timestamp format on THIS path; the operator
+  waived the pre-build live check (#2638 + vendor docs ruled sufficient)
+  and the §19 first scheduled production session is the measurement. If the
+  live `timestamp` ever parses tz-aware/unparseable, oi_D degrades to
+  `date_unresolved` → lane `partial` → sentinel pages: fail-visible, never
+  fabricated.
