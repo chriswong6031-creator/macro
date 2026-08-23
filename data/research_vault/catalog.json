@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T10:12:16.207164+00:00",
-  "count": 1679,
+  "generated_at": "2026-08-23T11:11:18.610829+00:00",
+  "count": 1682,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1218,6 +1218,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-eftcero5dbb-f6e239",
+      "title": "Emerging market equities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:32Z",
+      "summary_points": [
+        "**EM Equities Target & Earnings Momentum**: MSCI EM target 1,920 by June 2027; 40% of index exceeded earnings expectations, 43% beat estimates, 57% aggregate YoY growth; Taiwan upgraded to Attractive on AI demand/consolidation.",
+        "**Regional Opportunities & Risks**: China (Attractive) and Taiwan (upgraded) lead earnings momentum; Latin America offers diversification at 14% discount; key risks: sustained dollar strength, AI investment disruption, Brazil election uncertainty.",
+        "**Upside/Downside Targets**: Upside target MSCI EM 2,050 (2027) driven by China fiscal support, AI monetization, foreign inflows; downside target 1,300 (2027) from global weakness, geopolitical tensions, delayed AI monetization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-pwj5a7xohck-ed0149",
       "title": "Daily Asia",
       "institution": "UBS",
@@ -1229,6 +1248,47 @@
         "**UK Inflation Data**: CPI rose to 2.9% YoY (four-month high) post-13% energy cap, BoE forecasts inflation peaking at 3.2% later 2024, countering energy cost fears.",
         "**Fed Policy Focus**: July minutes prioritize inflation over intervention; rate hikes expected if inflation persists, with Treasury move timed ahead of 20-yr auction.",
         "**BoE Rate Path**: Hold rates at 3.75% until end-2026, then cut to 3.50% (Mar 2027) and 3.25% (June), with markets overpricing Eurozone tightening."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yh4gylftcps-4416c9",
+      "title": "High grade",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:30Z",
+      "summary_points": [
+        "**High-grade bonds (AA+)**: Low default risk, elevated yields ensure positive total returns amid geopolitical risks and high asset valuations.",
+        "**US Fed Hold & 2-5yr Opportunity**: Fed likely holds (cool inflation, contained tariffs); 2-5yr segment offers best risk-reward vs.",
+        "market pricing of hikes.",
+        "**Eurozone Fiscal Discipline**: ECB June hike performative (soft economy); fiscal discipline supports EUR bonds.",
+        "**UK Fiscal Policy Risk**: Burnham's plans under scrutiny; profligate spending could drive higher yields and increase political uncertainty."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-v57hj9bjpwv-c16b5f",
+      "title": "Global equities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:28Z",
+      "summary_points": [
+        "**Global Earnings Momentum**: 26% EPS growth this year (14% next) driven by robust earnings, AI adoption, and expansionary fiscal policies; outpacing price growth with MSCI AC World P/E near 10-year average (15% below Nov peak).",
+        "**AI Structural Investment**: 84% capex growth in AI infrastructure this year (33% next) amid hyperscaler monetization, creating a key structural trend despite tech sector competition risks.",
+        "**Geopolitical Risk Catalyst**: Strait of Hormuz reopening timing is critical; prolonged Middle East conflict risks energy disruptions and material global growth slowdown.",
+        "**Valuation-Driven Allocation**: \"Attractive\" tier prioritizes tech/cyclical sectors (consumer discretionary, banks) and structural themes (industrials, healthcare) where earnings growth outpaces price."
       ],
       "tags": [],
       "tickers": [],

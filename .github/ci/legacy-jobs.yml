@@ -3691,8 +3691,8 @@ jobs:
       # scripts/worktree_sparse.py + the WorktreeCreate hook, and the sibling
       # vacuous-refusal suite below already owns the R8 honesty rule. stdlib +
       # pytest; synthetic git repos under tmp_path, no data/ or site/ reads.
-      - name: sparse session-worktree profile (config ↔ fallback, husk detector, hook wiring)
-        run: python -m pytest tests/test_sparse_worktree_profile.py -q
+      - name: sparse session-worktree profile + Warp conversation-carrier lifecycle
+        run: python -m pytest tests/test_sparse_worktree_profile.py tests/test_warp_session_start_sparse.py -q
       # Same subject (scripts/worktree_sparse.py), same job, for the same reason
       # the step above exists: #5531 landed its suite named by no run: step and
       # pack-1 went red on every PR the moment it merged. This suite owns the
@@ -4901,6 +4901,7 @@ jobs:
       - tests/test_ship_loop_guard.py
       - tests/test_ship_loop_semantic.py
       - tests/test_sparse_worktree_profile.py
+      - tests/test_warp_session_start_sparse.py
       - tests/test_worktree_gc.py
       - tests/test_worktree_placement.py
     # F2 (Metabolism Phase 0 / R-AUT-5): self-modification fence.
@@ -4937,7 +4938,7 @@ jobs:
         # host that has hit runner ENOSPC twice. tests/test_worktree_gc.py ran in NO
         # workflow before this line; it is grandfathered-dark rather than waived, so
         # contract-delta never asked for it.
-        run: python -m pytest tests/test_ship_loop_guard.py tests/test_ship_loop_semantic.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py tests/test_worktree_gc.py tests/test_worktree_placement.py -q
+        run: python -m pytest tests/test_ship_loop_guard.py tests/test_ship_loop_semantic.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py tests/test_warp_session_start_sparse.py tests/test_worktree_gc.py tests/test_worktree_placement.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
           BRANCH="${{ github.head_ref }}"
