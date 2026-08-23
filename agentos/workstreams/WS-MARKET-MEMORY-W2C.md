@@ -58,17 +58,17 @@ waves:
       strict prospective activation. Do not mix D-class R2 coherence into this PR.
   - id: V1-CONTEXT-AUDIT-DECOUPLE
     title: Restore v1 owner replay by decoupling trusted context from Options audit
-    status: in_progress
+    status: done
+    pr: 6266
     next_action: >
-      Merge and deploy the trusted-context / Options-audit split. Do not start
-      experience oneshots by hand. Confirm macro-market-memory-experience.timer
-      is enabled/active/waiting with a future 04:30 UTC fire after canonical
-      updater owner replay. Options audit remains independently overdue.
+      Proven live at #6266 / e92238244f0a28ad642bca803de762ed63a18c37.
+      Trusted context completes independently. Do not recouple the Options
+      audit. v1 experience.timer still waits on technicals freshness, which
+      waits on massive_stock_day.
 next_action: >
-  Deploy DEC:W2C-V1-CONTEXT-OWNER-DECOUPLED-FROM-OPTIONS-AUDIT so canonical
-  macro-update can complete source → trusted-context → technicals →
-  w2c_reconcile_timer() and re-arm the v1 experience timer. Tuesday 2026-08-25
-  M0D v2 proof proceeds independently; if v1 is not restored, grade v2 as
+  Allow ordinary v1 technicals to consume public session 2026-08-21. Do not
+  start technicals or experience by hand. Tuesday 2026-08-25 M0D v2 proof
+  proceeds independently; if v1 is not restored by then, grade v2 as
   v1_control_unavailable. Do not implement Options Audit preregistration v2 here.
 decisions:
   - "DEC:W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE"
@@ -77,6 +77,7 @@ decisions:
   - "DEC:W2C-M0C-SOL-RATIFIED-REST-SUCCESSOR"
   - "DEC:W2C-M0D0-0400Z-SOURCE-SEAL-GO"
   - "DEC:W2C-V1-CONTEXT-OWNER-DECOUPLED-FROM-OPTIONS-AUDIT"
+  - "DEC:MASSIVE-PROBE-UNLISTED-403-IS-UNPUBLISHED"
 discoveries:
   - "DSC:MASSIVE-DAY-AGGS-LASTMODIFIED-FOLLOWS-0430Z"
   - "DSC:SPY-REST-UNADJUSTED-DAILY-MATCHES-FLATFILE-OHLC"
@@ -85,6 +86,7 @@ discoveries:
   - "DSC:W2C-V1-TRUSTED-CAPTURES-THREE-PER-WINDOW"
   - "DSC:W2C-M0D0-SPY-REST-FORMING-BAR-SEAL-STABLE"
   - "DSC:OPTIONS-CONTEXT-AUDIT-V1-TIMEOUT-PRECEDES-4096-REFUSAL"
+  - "DSC:MASSIVE-STOCK-DAY-UNPUBLISHED-TODAY-RETURNS-403"
 do_not_redo:
   - Do not treat a lawful in-window abstained row as missed, absent, or an M0A failure.
   - Do not reopen #5805 or the nested __case_v1 filename admit without a live journal reproducing the noncanonical-filename exception.
@@ -109,6 +111,7 @@ do_not_redo:
   - Do not re-run M0D-0 as a standing gate; the 2026-08-20 trajectory already passed.
   - Do not recouple the Options Context Audit into macro-market-memory-context.service or scripts/project_market_memory_context.py main().
   - Do not backdate activation_session or rush Monday 2026-08-24.
+  - Do not treat stock-day unpublished-today 403 as a Massive stock entitlement regression or flatten it to no_entitled_date.
 landmines:
   - Nested-path admission must round-trip artifact_relative_path. Any slash, mixed-case nested name, or hex that decodes to an uppercase ticker reopens traversal and identity-fold bugs.
   - Experience timer enabled-but-inactive is not armed. Armed means enabled plus active/waiting with a future NextElapse.
@@ -117,6 +120,7 @@ landmines:
   - Technicals Result=success with a lagged session is a different defect from technicals failing closed.
   - Session 2026-08-18 also lacked a trusted same-session pin; that is concurrent with, not a substitute for, the technical lag.
   - Massive stocks day_aggs LastModified lives in the 04:30Z band. The 22:30 UTC nightly cannot see session D.
+  - Unpublished calendar-today stock_day keys 403 with an empty listing. That is not a stock entitlement regression; listed+403 is the Options class. Flattening to no_entitled_date hid this for three nights.
   - 2026-08-19 ticker-count then publish-last tears delayed coherent 08-18 capture to 22:57Z; they did not delay the 08-19 S3 object past 04:45Z — that object was itself 04:54Z.
   - accrue_market_memory_spy_experience.py and _expected_registration_spec() are v1-hardcoded. Editing that dict in place changes v1's registration_id and rejects every sealed v1 row.
   - Single-ticker bar.t is midnight ET; session identity is the request date.
@@ -135,6 +139,7 @@ artifacts:
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-v2-slice.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-21-m0d0.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-22-v1-context-decouple.md
+  - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-23-source-liveness.md
   - agentos/decisions/DEC-W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE.md
   - agentos/decisions/DEC-W2C-M0C-V2-REST-SINGLE-TICKER-DAILY.md
   - agentos/decisions/DEC-W2C-M0C-V2-HYBRID-PRICE-ACTIVITY-SCOPE.md
