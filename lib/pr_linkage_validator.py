@@ -103,6 +103,10 @@ def _visible_lines(body: str) -> tuple[list[tuple[int, str]], list[str]]:
         raise ValidationError("INVALID_BODY_ENCODING")
     body = body.replace("\r\n", "\n")
     lines = body.split("\n")
+    if len(lines) > 10000:
+        raise ValidationError("RESOURCE_LIMIT:body_lines")
+    if any(len(line.encode("utf-8")) > 16384 for line in lines):
+        raise ValidationError("RESOURCE_LIMIT:line_bytes")
     visible: list[tuple[int, str]] = []
     fence: tuple[str, int] | None = None
     comment = False
@@ -114,18 +118,24 @@ def _visible_lines(body: str) -> tuple[list[tuple[int, str]], list[str]]:
                 comment = False
             continue
         if "<!--" in line:
-            if "-->" not in line[line.index("<!--") + 4:]:
+            start, end = line.index("<!--"), line.find("-->", line.index("<!--") + 4)
+            if end < 0:
                 comment = True
-            continue
-        marker = re.match(r" {0,3}(`{3,}|~{3,})", line)
+                continue
+            line = line[:start] + line[end + 3:]
+            stripped = line.lstrip(" "); indent = len(line) - len(stripped)
+            if not line:
+                continue
+        marker = re.match(r" {0,3}(`{3,}|~{3,})(?:[^`~].*)?$", line)
         if fence:
-            if marker and marker.group(1)[0] == fence[0] and len(marker.group(1)) >= fence[1]:
+            closer = re.fullmatch(r" {0,3}([`~]{3,})[ \t]*", line)
+            if closer and closer.group(1)[0] == fence[0] and len(closer.group(1)) >= fence[1]:
                 fence = None
             continue
         if marker:
             fence = (marker.group(1)[0], len(marker.group(1)))
             continue
-        if line.startswith(">") or indent >= 4:
+        if (indent <= 3 and stripped.startswith(">")) or indent >= 4:
             continue
         visible.append((n, line))
     if fence or comment:
@@ -137,11 +147,6 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
     if len(body.encode("utf-8")) > limits["body_bytes"]:
         raise ValidationError("RESOURCE_LIMIT:body_bytes")
     visible, defects = _visible_lines(body)
-    if len(body.replace("\r\n", "\n").split("\n")) > limits["body_lines"]:
-        raise ValidationError("RESOURCE_LIMIT:body_lines")
-    for _, line in visible:
-        if len(line.encode("utf-8")) > limits["line_bytes"]:
-            raise ValidationError("RESOURCE_LIMIT:line_bytes")
     zone: list[tuple[int, str]] = []
     for n, line in visible:
         if re.match(r" {0,3}##(?:[ \t]|$)", line):
@@ -186,7 +191,7 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
         if len([x for x in entries if x[0] in {n for n, _, _ in headers}]) > 1:
             locs[f] = [n for n, _ in entries]
     relationships: list[tuple[str, str, int]] = []
-    rel = re.compile(r" {0,3}(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|complete|completes|completed|implement|implements|implemented|ref|refs|reference|references|part of|contributes to|toward|towards|relates to|related to|skip|ignore) (MAS-[1-9][0-9]{0,8}(?:\s*,\s*MAS-[1-9][0-9]{0,8}|\s+and\s+MAS-[1-9][0-9]{0,8})*)\.?$", re.I | re.ASCII)
+    rel = re.compile(r" {0,3}(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|complete|completes|completed|implement|implements|implemented|ref|refs|reference|references|part of|contributes to|toward|towards|relates to|related to|skip|ignore) (MAS-[1-9][0-9]{0,8}(?: *, *MAS-[1-9][0-9]{0,8}| +and +MAS-[1-9][0-9]{0,8})*)\.?$", re.I | re.ASCII)
     for n, line in visible:
         m = rel.fullmatch(line)
         if m:
@@ -488,8 +493,9 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
             add("R037", {"paths":[text_digest(r.get("path","")) for r in paths.get("paths",[])],"workstream":ws})
     completion_rows: list[dict[str, Any]] = []
     if native["state"] in {"PARTIAL", "UNAVAILABLE"}:
+        if linear and linear != "NONE":
+            add("R054", {"linear":linear,"snapshot_state":native["state"]})
         for target in target_ids:
-            add("R054", {"linear":target,"snapshot_state":native["state"]})
             row = next((r for r in rows_by_target.get(target, []) if r.get("target_role") == "DECLARED"), None)
             completion_rows.append({"issue_id":target,"effect":"UNKNOWN","declared_completion":completion if target == linear else None,"stop_law":row.get("stop_law") if row else None,"consistency":"INDETERMINATE"})
     else:
@@ -534,11 +540,15 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
             findings.append(_finding(rules,"R060",{"component":component,"expected":canonical_digest(expected),"observed":canonical_digest(observed)}, component=component))
     # Visible closing claim is independently material even without an adapter native row.
     if completion in {"built-not-proven","proof-required","acceptance-required","records-only"}:
+        closing = []
         for target, kind, line in body_relationships:
             declared_row = next((r for r in rows_by_target.get(target, []) if r.get("target_role") == "DECLARED"), None)
             records_ok = completion == "records-only" and declared_row and declared_row.get("stop_law") == "RECORDS_ONLY" and ownership["state"] == "PRESENT" and all(r.get("resolution") == "EXACT" for r in ownership.get("resolutions", []))
             if target == linear and kind == "CLOSING" and not records_ok:
-                findings.append(_finding(rules,"R052",{"completion":completion,"linear":linear,"relationships":[canonical_digest({"issue":target,"kind":kind})]},field="RELATIONSHIP",line=line))
+                closing.append((line, canonical_digest({"issue":target,"kind":kind})))
+        if closing:
+            closing.sort(key=lambda x:(x[0], canonical_json(x[1])))
+            findings.append(_finding(rules,"R052",{"completion":completion,"linear":linear,"relationships":[x[1] for x in closing]},field="RELATIONSHIP",line=closing[0][0]))
     if linear and linear != "NONE" and lsnap["state"] == "PRESENT":
         declared_rows = [r for r in rows_by_target.get(linear, []) if r.get("target_role") == "DECLARED"]
         if completion == "merge-is-done" and declared_rows and declared_rows[0].get("stop_law") in {"PROOF","ACCEPTANCE"}:
@@ -554,11 +564,13 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     for f in findings:
         k=canonical_json(f)
         if k not in seen: kept.append(f); seen.add(k)
+    if len(kept) > manifest["limits"]["findings"]:
+        raise ValidationError("RESOURCE_LIMIT:findings")
     verdict = "REFUSE_METADATA" if any(f["severity"]=="ERROR" for f in kept) else ("PARTIAL" if any(f["severity"]=="PARTIAL" for f in kept) else ("WARN" if kept else "CONFORMANT"))
     completeness = "UNAVAILABLE" if author_state == "MISSING" else ("DEGRADED" if unresolved or any(f["severity"]=="PARTIAL" for f in kept) else "COMPLETE")
     completion_rows.sort(key=lambda r:(r["issue_id"],r["effect"],r["declared_completion"] or "",r["stop_law"] or "",r["consistency"]))
     semantic = {"ruleset_id":manifest["ruleset_id"],"ruleset_digest":digest(manifest),"enforcement":"REPORT_ONLY","declaration":{"workstream":ws,"linear":linear,"portfolio_mode":mode,"wave":wave,"authority":authority,"completion":completion,"authoring_state":author_state},"classification":classification,"verdict":verdict,"completeness":completeness,"completion_interpretation":completion_rows,"unresolved_observation_classes":unresolved,"findings":kept}
     receipt = observation["receipt"]
-    report = {"schema":REPORT_SCHEMA,"semantic":semantic,"semantic_hash":digest(semantic),"receipt":receipt,"human":{"summary":f"{classification}/{verdict}","remediations":sorted(set(f["remediation_code"] for f in kept))}}
+    report = {"schema":REPORT_SCHEMA,"semantic":semantic,"semantic_hash":digest(semantic),"receipt":json.loads(canonical_json(receipt)),"human":{"summary":f"{classification}/{verdict}","remediations":sorted(set(f["remediation_code"] for f in kept))}}
     validate_report(report)
     return report

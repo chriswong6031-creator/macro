@@ -49,3 +49,22 @@ def test_reversed_changed_path_order_is_rejected_not_semantically_reordered():
     o = clone(observation(VALID)); o["changed_paths"]["paths"] = [{"path":"z","change_type":"ADDED","old_path":None},{"path":"a","change_type":"ADDED","old_path":None}]
     o = finish(o)
     with pytest.raises(v.ValidationError): v.analyze(o, MANIFEST)
+
+
+def test_parser_fence_html_tab_and_inline_code_repros():
+    wrapped = VALID.replace("MAS28-W1", "`MAS28-W1`")
+    assert "R008" not in ids(observation(wrapped))
+    bad_tab = VALID + "\nFixes MAS-28\tand MAS-29"
+    assert "R052" not in ids(observation(bad_tab))
+    mixed = "<!-- guide -->note\n" + VALID
+    assert "R003" in ids(observation(mixed))
+    unclosed = "```\n" + VALID + "\n``` trailing"
+    assert "R003" in ids(observation(unclosed))
+
+
+def test_report_receipt_is_deep_copied_and_r054_is_one_aggregate():
+    o = clone(observation(VALID)); o["native_linkage"].update(state="PARTIAL", pagination_complete=False, diagnostics=["STALE"])
+    r = v.analyze(finish(o), MANIFEST)
+    assert len([f for f in r["semantic"]["findings"] if f["rule_id"] == "R054"]) == 1
+    o["receipt"]["repository"] = "mutated/repository"
+    assert r["receipt"]["repository"] != "mutated/repository"
