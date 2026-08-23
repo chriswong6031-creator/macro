@@ -575,6 +575,45 @@ waves:
       5b8ca994de05345d3cea514c46c27611bfe496d1 (0 introduced, 0 inherited).
       Production ledger path still never created by this session. PR stays
       DRAFT pending the commissioning session's re-review.
+  - id: A5C
+    title: >
+      IMCE-A5C item 7/8 — TOL beginning-quarter-backlog cancellation
+      sensitivity PRIOR-YEAR extraction + Sol equality-ruling pin
+    status: awaiting_ci
+    pr: PENDING
+    depends_on: [A5A]
+    next_action: >
+      DRAFT PR open, not merged; commissioning session adjudicates and
+      merges. Extraction-only, closes the named A5 gap: "TOL sensitivity
+      prior-year comparator not extracted by A5A" (this file's own
+      next_action above). engine/company_intelligence/issuer_profiles.py's
+      TOL beginning-quarter-backlog row (:1165-1230 post-change) now also
+      emits fact_cancellation_rate_beginning_backlog_sensitivity_prior_year
+      from the SAME row's prior-year cell (cells[1], the two-cell pattern
+      already proven for the adjacent signed-contracts row), receipted
+      byte-exact over its own span, period prior_year_same_quarter, basis
+      the row's own verbatim label shared with the current-quarter fact —
+      no inference, no substitution. The consumption side
+      (engine/cycle_pattern/imce_prospective.py:161's
+      TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID lookup, A5B's self-healing
+      _tol_sensitivity diagnostic) is UNTOUCHED — this PR does not modify
+      engine/cycle_pattern/** or tests/test_imce_prospective.py (owned by a
+      parallel PR). Sol's item-8 equality ruling at issuer_profiles.py:621-663
+      (DHI "X%, consistent with the prior year quarter" explicit-equality
+      treatment) is PINNED unchanged, with a new discriminating test proving
+      approximate/similar language ("approximately in line with the prior
+      year quarter", "similar to a year ago") yields typed absence, never a
+      substituted present fact. Real-fixture replay
+      (tests/fixtures/company_intelligence/tol_fy2026q3_ex99_1.htm,
+      accession 0000794170-26-000096) verifies current==2.6/prior_year==3.2
+      from disjoint byte spans, also disjoint from
+      fact_cancellation_rate_prior_year's span (signed-contracts row).
+      tests/test_issuer_profiles_a5a.py grew 24 -> 27 passing (python3 -m
+      pytest tests/test_issuer_profiles_a5a.py -q). Once merged, A5B's
+      _tol_sensitivity diagnostic self-heals to NOT_RECONSTRUCTABLE only
+      when d_orders is also unavailable -- no runtime/consumption code
+      change required, confirming the A5B design note at
+      engine/cycle_pattern/imce_prospective.py:158-161.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's
