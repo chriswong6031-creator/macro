@@ -86,6 +86,22 @@ unresolved:
   - "A1B is authorized to be commissioned next but is not built, started, or accepted by this closeout."
   - "RCTX-1 remains DELIVERED only until real pickup evidence appears; do not fail it over to another builder merely because Slack has no reply."
   - "The Portfolio still has no authenticated offline write outbox; A1A acceptance does not change that boundary."
+danger_areas:
+  - >
+    Do not interpret A1A acceptance as permission to reuse the existing Watchlist/ENTERED
+    paste path for Portfolio import; A1B must write only canonical portfolio_positions
+    under a separately proven stable-identity, atomic/idempotent contract.
+  - >
+    Do not broaden the semantic-v2 restoration exception beyond server-generated
+    created_at and updated_at; owner, ids, semantic fields, multiplicity, Watchlists,
+    product agreement, and ordered row IDs remain exact.
+  - >
+    Do not interpret Slack delivery of RCTX-1 as ACK or runtime claim, and do not fail
+    it over to another operator merely because no reply exists yet.
+  - >
+    A1B dispatch still requires a fresh live worktree/runtime collision census. The
+    committed Active Build Map is advisory and can be stale, and Terminal PR #429 is an
+    active collision risk if PortfolioView/quote-demand paths are touched.
 next_actions:
   - >
     PRIMARY: perform a fresh A1B collision/owner census against current Macro and
