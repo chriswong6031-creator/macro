@@ -27,6 +27,7 @@ from scripts.refresh_event_workspaces import (
     _parse_sgml_manifest,
     _PriorWorkspaceNotPublished,
     _select_exhibit_99_1,
+    discover_new_homebuilder_revisions,
     load_prior_workspace,
     load_prior_workspace_for_ticker,
     refresh,
@@ -217,6 +218,13 @@ def _refresh(tmp_path: Path, fake: _FakeR2, **kwargs):
             out_dir, dry_run=dry_run, s3=fake, bucket="bucket"
         ),
         dry_run=kwargs.get("dry_run", False),
+        # IMCE A5C: this file's universe is a fresh sandboxed nest with no
+        # real predecessor to fetch (and "No network." is this file's own
+        # law — see the homebuilder loaders above) — default to "no
+        # predecessor, no additional discovered revisions" unless a test
+        # explicitly wants to exercise the chain/discovery machinery.
+        current_marker_loader=kwargs.get("current_marker_loader", lambda: None),
+        homebuilder_discovery=kwargs.get("homebuilder_discovery", lambda ticker, **_kw: []),
     )
 
 
@@ -225,13 +233,24 @@ def _marker(tmp_path: Path) -> dict:
 
 
 def test_same_source_revisions_are_semantic_noop(tmp_path: Path) -> None:
+    """IMCE A5C two-clock law (C3, first-observation persistence): the
+    second refresh passes the FIRST cycle's own published AAPL workspace as
+    ``prior_workspace`` (mirroring test_source_sha_correction_advances_
+    generation_and_lifecycle below) so observed_at is correctly carried
+    forward rather than re-stamped at the second call's wall-clock 'now' —
+    an unchanged source revision must reproduce the IDENTICAL generation,
+    never a merely-content-equal one with a drifted first-observation clock.
+    """
     fake = _FakeR2()
     assert _refresh(tmp_path, fake) == 0
     first = _marker(tmp_path)
     first_puts = list(fake.puts)
     assert first_puts[-1][0] == WS_MARKER
     assert V1_MARKER not in [key for key, _ in first_puts]
-    assert _refresh(tmp_path, fake) == 0
+    first_aapl_prior = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / first["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert _refresh(tmp_path, fake, prior_workspace=first_aapl_prior) == 0
     second = _marker(tmp_path)
     assert first["generation_id"] == second["generation_id"]
     assert first["generated_at"] == ACCEPTANCE
@@ -756,3 +775,150 @@ def test_production_reader_observes_the_published_flagship(tmp_path: Path, monke
         assert result["event_id"] == FLAGSHIP_EVENT_ID
         assert result["authority"] == "context_only"
         assert result["receipt"]["generation_id"] == generation
+
+
+# ---------------------------------------------------------------------------
+# IMCE A5C discovery (frozen spec B) — ALL not-yet-represented qualifying
+# revisions, ascending SEC acceptance order, never only the newest.
+# ---------------------------------------------------------------------------
+
+_DHI_CIK = "0000882184"
+_DHI_EXHIBIT = FIXTURES / "dhi_fy2026q3_ex99_1.htm"
+_DHI_ORIGINAL_ACCESSION = "0000882184-26-000092"
+_DHI_AMENDMENT_ACCESSION = "0000882184-26-000093"
+_DHI_REPORT_DATE = "2026-07-21"
+
+
+def _dhi_archive_base(accession: str) -> str:
+    return f"https://www.sec.gov/Archives/edgar/data/{int(_DHI_CIK)}/{accession.replace('-', '')}"
+
+
+def test_discover_new_homebuilder_revisions_publishes_original_and_amendment_in_order() -> None:
+    """Mutation-kill (2): an original 8-K and its own 8-K/A amendment
+    discovered in ONE poll are BOTH resolved, ASCENDING by SEC acceptance
+    order — never only the newest (Sol item 3, "FORBIDDEN"). The amendment
+    chains onto the freshly-built original (B3): its own prior_source_sha256
+    is the original's sha, so it walks to lifecycle.state == "corrected"."""
+    original_exhibit = _DHI_EXHIBIT.read_text(encoding="utf-8")
+    amendment_exhibit = original_exhibit + "\n<!-- amendment restates a figure -->\n"
+    exhibit_name = "dhi-ex991.htm"
+
+    def http_get(url: str) -> tuple[int, bytes]:
+        if url == f"https://data.sec.gov/submissions/CIK{_DHI_CIK}.json":
+            return 200, json.dumps({
+                "cik": _DHI_CIK,
+                "filings": {"recent": {
+                    # Deliberately listed NEWEST FIRST (as EDGAR's own feed
+                    # order is not acceptance order) — discovery must still
+                    # process them ascending.
+                    "accessionNumber": [_DHI_AMENDMENT_ACCESSION, _DHI_ORIGINAL_ACCESSION],
+                    "filingDate": ["2026-07-22", "2026-07-21"],
+                    "acceptanceDateTime": ["2026-07-22T12:00:00.000Z", "2026-07-21T16:30:00.000Z"],
+                    "reportDate": [_DHI_REPORT_DATE, _DHI_REPORT_DATE],
+                    "form": ["8-K/A", "8-K"],
+                    "primaryDocument": ["a.htm", "b.htm"],
+                    "items": ["2.02", "2.02"],
+                }},
+            }).encode("utf-8")
+        for accession, body in (
+            (_DHI_ORIGINAL_ACCESSION, original_exhibit),
+            (_DHI_AMENDMENT_ACCESSION, amendment_exhibit),
+        ):
+            base = _dhi_archive_base(accession)
+            if url == f"{base}/{accession}-index-headers.html":
+                return 200, (
+                    "<HTML><BODY><PRE>&lt;DOCUMENT&gt;\n&lt;TYPE&gt;EX-99.1\n"
+                    f"&lt;FILENAME&gt;{exhibit_name}\n&lt;/DOCUMENT&gt;\n</PRE></BODY></HTML>"
+                ).encode("utf-8")
+            if url == f"{base}/{exhibit_name}":
+                return 200, body.encode("utf-8")
+        return 404, b""
+
+    def fetch_index(_base: str) -> dict:
+        return {
+            "schema": "mastermind.tx-index/v1", "symbols": {}, "revisions": {}, "dates": {},
+            "body_count": 0, "symbol_count": 0, "generated_at": "2026-01-01T00:00:00Z",
+        }
+
+    def fetch_body(_base: str, _ref) -> dict:  # pragma: no cover — never called (no transcript)
+        raise AssertionError("no transcript should be fetched in this test")
+
+    revisions = discover_new_homebuilder_revisions(
+        "DHI",
+        http_get=http_get,
+        fetch_index=fetch_index,
+        fetch_body_fn=fetch_body,
+        # B2: nothing represented yet in the chain -- both accessions are new.
+        chain_state_loader=lambda event_id: (frozenset(), None),
+    )
+    assert len(revisions) == 2
+    (event_id_1, payload_1), (event_id_2, payload_2) = revisions
+    assert event_id_1 == event_id_2  # same event, two revisions
+    # Ascending acceptance order: the ORIGINAL comes first.
+    accession_1 = payload_1["sources"][0]["filing_key"]["accession"]
+    accession_2 = payload_2["sources"][0]["filing_key"]["accession"]
+    assert accession_1 == _DHI_ORIGINAL_ACCESSION
+    assert accession_2 == _DHI_AMENDMENT_ACCESSION
+    # B3: the amendment chains onto the freshly-built original -- its
+    # source_sha256 differs (the exhibit bytes differ), so it correctly
+    # walks to "corrected".
+    assert payload_1["lifecycle"]["state"] == "complete"
+    assert payload_2["lifecycle"]["state"] == "corrected"
+
+
+def test_discover_new_homebuilder_revisions_skips_already_represented_accessions() -> None:
+    """B2: an accession already present in the chain history is never
+    reprocessed — only the amendment (genuinely new) is returned."""
+    original_exhibit = _DHI_EXHIBIT.read_text(encoding="utf-8")
+    amendment_exhibit = original_exhibit + "\n<!-- amendment restates a figure -->\n"
+    exhibit_name = "dhi-ex991.htm"
+
+    def http_get(url: str) -> tuple[int, bytes]:
+        if url == f"https://data.sec.gov/submissions/CIK{_DHI_CIK}.json":
+            return 200, json.dumps({
+                "cik": _DHI_CIK,
+                "filings": {"recent": {
+                    "accessionNumber": [_DHI_AMENDMENT_ACCESSION, _DHI_ORIGINAL_ACCESSION],
+                    "filingDate": ["2026-07-22", "2026-07-21"],
+                    "acceptanceDateTime": ["2026-07-22T12:00:00.000Z", "2026-07-21T16:30:00.000Z"],
+                    "reportDate": [_DHI_REPORT_DATE, _DHI_REPORT_DATE],
+                    "form": ["8-K/A", "8-K"],
+                    "primaryDocument": ["a.htm", "b.htm"],
+                    "items": ["2.02", "2.02"],
+                }},
+            }).encode("utf-8")
+        for accession, body in (
+            (_DHI_ORIGINAL_ACCESSION, original_exhibit),
+            (_DHI_AMENDMENT_ACCESSION, amendment_exhibit),
+        ):
+            base = _dhi_archive_base(accession)
+            if url == f"{base}/{accession}-index-headers.html":
+                return 200, (
+                    "<HTML><BODY><PRE>&lt;DOCUMENT&gt;\n&lt;TYPE&gt;EX-99.1\n"
+                    f"&lt;FILENAME&gt;{exhibit_name}\n&lt;/DOCUMENT&gt;\n</PRE></BODY></HTML>"
+                ).encode("utf-8")
+            if url == f"{base}/{exhibit_name}":
+                return 200, body.encode("utf-8")
+        return 404, b""
+
+    def fetch_index(_base: str) -> dict:
+        return {
+            "schema": "mastermind.tx-index/v1", "symbols": {}, "revisions": {}, "dates": {},
+            "body_count": 0, "symbol_count": 0, "generated_at": "2026-01-01T00:00:00Z",
+        }
+
+    def fetch_body(_base: str, _ref) -> dict:  # pragma: no cover
+        raise AssertionError("no transcript should be fetched in this test")
+
+    revisions = discover_new_homebuilder_revisions(
+        "DHI",
+        http_get=http_get,
+        fetch_index=fetch_index,
+        fetch_body_fn=fetch_body,
+        # The ORIGINAL accession is already represented; only the amendment
+        # is genuinely new.
+        chain_state_loader=lambda event_id: (frozenset({_DHI_ORIGINAL_ACCESSION}), None),
+    )
+    assert len(revisions) == 1
+    _event_id, payload = revisions[0]
+    assert payload["sources"][0]["filing_key"]["accession"] == _DHI_AMENDMENT_ACCESSION

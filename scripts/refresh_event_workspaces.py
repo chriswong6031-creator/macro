@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import calendar
 from datetime import date, datetime, timezone
+from hashlib import sha256
 from html import unescape as html_unescape
 import json
 import logging
@@ -46,14 +47,17 @@ from urllib.parse import urljoin
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine.company_intelligence.contracts import canonical_json_bytes
 from engine.company_intelligence.event_workspace import (
     AAPL_ACCESSION,
     AAPL_CALL_DATE,
     AAPL_CIK,
     FLAGSHIP_EVENT_ID,
     LIVE_NARRATIVE_ALIAS,
+    MANIFEST_SCHEMA_V2,
     apple_registry,
     flagship_fiscal_period,
+    preview_generation_identity,
     production_registry,
     write_workspace_generation,
 )
@@ -71,6 +75,7 @@ from engine.earnings_transcript_intake import (
     fetch_global_index,
     parse_global_index,
 )
+from engine.neuralweb import company_intelligence_reader as ci_reader
 # Import closure reaches engine.earnings_narrative via event_id_adapter / public_wire.
 from scripts.publish_company_intelligence_r2 import PUBLISH_CONFLICT, publish_event_workspaces
 
@@ -450,6 +455,20 @@ def prior_lifecycle_state(workspace: Mapping[str, Any] | None) -> str | None:
     return str(state) if state else None
 
 
+def prior_observed_at(workspace: Mapping[str, Any] | None) -> str | None:
+    """The prior published workspace's OWN ``lifecycle.observed_at``, or
+    ``None`` — IMCE A5C two-clock law, first-observation persistence (C3).
+    Paired with ``exhibit_source_sha256`` above and passed through to
+    ``build_event_workspace`` as ``prior_observed_at`` so an unchanged
+    source revision keeps its ORIGINAL first-observation timestamp forever;
+    ``build_event_workspace`` carries it forward only when the freshly
+    bound exhibit's source_sha256 matches ``prior_source_sha256`` exactly."""
+    if not isinstance(workspace, Mapping):
+        return None
+    observed = (workspace.get("lifecycle") or {}).get("observed_at")
+    return str(observed) if observed else None
+
+
 class PriorWorkspaceFetchFailed(RuntimeError):
     """The prior-workspace read failed for a reason OTHER than a clean
     not-yet-published 404 (NEW-1, Opus red-team verification round 2,
@@ -470,55 +489,27 @@ class PriorWorkspaceFetchFailed(RuntimeError):
     """
 
 
-class _PriorWorkspaceNotPublished(Exception):
-    """A clean 404 (manifest or workspace) or an absent-generation
-    manifest — the event genuinely has no prior publication yet. Distinct
-    from ``PriorWorkspaceFetchFailed`` above; caught internally by
-    ``load_prior_workspace`` and turned into a plain ``None`` return."""
+# IMCE A5C (frozen spec D1/D3): the marker/generation/workspace GET
+# sequence now lives ONCE, in engine.neuralweb.company_intelligence_reader
+# (load_current_workspace / WorkspaceChainNotPublished). This alias keeps
+# the exact pre-A5C exception identity (name AND raise sites) importable
+# from this module — every caller and test that constructs or catches
+# ``_PriorWorkspaceNotPublished`` keeps working unchanged; it IS the shared
+# reader's exception class, not a lookalike.
+_PriorWorkspaceNotPublished = ci_reader.WorkspaceChainNotPublished
 
 
 def _raw_load_prior_workspace(event_id: str, *, base_url: str | None = None) -> dict[str, Any]:
     """Fetch the last published workspace for *event_id* from the public
-    origin, mirroring
-    ``scripts.build_cycle_pattern_imce_prospective._raw_fetch_workspace``'s
-    own base-URL resolution and GET sequence (NEW-1, Opus red-team round 2,
-    2026-08-23).
-
-    Raises ``_PriorWorkspaceNotPublished`` on a clean 404 (manifest or
-    workspace) or an absent-generation manifest. Raises any OTHER exception
-    (network error, timeout, non-2xx, malformed JSON) on a genuine fetch
-    failure — never returns ``None`` on failure; disposition classification
-    is ``load_prior_workspace``'s job, exactly as the A5B builder's
-    ``_load_workspace_with_disposition`` classifies its own fetcher.
+    origin — a thin delegator to the ONE shared reader implementation
+    (``engine.neuralweb.company_intelligence_reader.load_current_workspace``,
+    frozen spec D1/D3). Raises ``_PriorWorkspaceNotPublished`` on a clean 404
+    (manifest or workspace) or an absent-generation manifest. Raises any
+    OTHER exception (network error, timeout, non-2xx, malformed JSON) on a
+    genuine fetch failure — never returns ``None`` on failure; disposition
+    classification is ``load_prior_workspace``'s job.
     """
-    import os
-
-    import requests
-
-    base = (base_url or os.environ.get("COMPANY_INTELLIGENCE_R2_BASE_URL", _DEFAULT_PUBLIC_ORIGIN)).strip().rstrip("/")
-    headers = {"Accept": "application/json", "User-Agent": "mastermind-event-workspaces/1"}
-
-    marker_resp = requests.get(f"{base}/event_workspaces/manifest.json", headers=headers, timeout=20)
-    if marker_resp.status_code == 404:
-        raise _PriorWorkspaceNotPublished(f"{event_id}: manifest 404")
-    marker_resp.raise_for_status()
-    marker = marker_resp.json()
-    generation_id = str((marker or {}).get("generation_id") or "")
-    if not generation_id:
-        raise _PriorWorkspaceNotPublished(f"{event_id}: manifest carries no generation_id")
-
-    workspace_resp = requests.get(
-        f"{base}/event_workspaces/generations/{generation_id}/workspaces/{event_id}.json",
-        headers=headers,
-        timeout=20,
-    )
-    if workspace_resp.status_code == 404:
-        raise _PriorWorkspaceNotPublished(f"{event_id}: workspace 404 in generation {generation_id}")
-    workspace_resp.raise_for_status()
-    payload = workspace_resp.json()
-    if not isinstance(payload, dict):
-        raise ValueError(f"{event_id}: workspace payload is not a dict")
-    return payload
+    return ci_reader.load_current_workspace(event_id, base_url=base_url)
 
 
 def load_prior_workspace(
@@ -605,15 +596,17 @@ def load_prior_workspace_for_ticker(ticker: str, *, base_url: str | None = None)
     of those as "nothing to carry" would erase a corrected event exactly
     like a genuine fetch failure would.
     """
+    # IMCE A5C (frozen spec D1/D3): the marker/generation-manifest scan now
+    # lives ONCE, in the shared reader
+    # (``engine.neuralweb.company_intelligence_reader.
+    # find_current_event_id_for_company``). This wrapper translates that
+    # function's typed ``WorkspaceChainIntegrityError`` — and any other
+    # genuine fetch failure — into this module's own
+    # ``PriorWorkspaceFetchFailed`` with the same line-start ``::warning``,
+    # preserving the exact NEW-6/NEW-7 anomaly discipline byte-for-byte.
     issuer = issuer_for_ticker(ticker)
     if issuer is None:
         return None
-    import os
-
-    import requests
-
-    base = (base_url or os.environ.get("COMPANY_INTELLIGENCE_R2_BASE_URL", _DEFAULT_PUBLIC_ORIGIN)).strip().rstrip("/")
-    headers = {"Accept": "application/json", "User-Agent": "mastermind-event-workspaces/1"}
 
     def _anomaly(detail: str) -> PriorWorkspaceFetchFailed:
         print(
@@ -624,64 +617,16 @@ def load_prior_workspace_for_ticker(ticker: str, *, base_url: str | None = None)
         return PriorWorkspaceFetchFailed(f"{ticker}: {detail}")
 
     try:
-        marker_resp = requests.get(f"{base}/event_workspaces/manifest.json", headers=headers, timeout=20)
-        if marker_resp.status_code == 404:
-            return None  # (i): genuinely no nest published yet
-        marker_resp.raise_for_status()
-        marker = marker_resp.json()
-        generation_id = str((marker or {}).get("generation_id") or "")
-        if not generation_id:
-            # NEW-6: a marker that parsed successfully but carries no
-            # generation_id is anomalous — the publish protocol never
-            # promotes a marker without one.
-            raise _anomaly("top-level marker carries no generation_id")
-        gen_resp = requests.get(
-            f"{base}/event_workspaces/generations/{generation_id}/manifest.json",
-            headers=headers, timeout=20,
+        matched_event_id = ci_reader.find_current_event_id_for_company(
+            issuer.company_id, base_url=base_url,
         )
-        if gen_resp.status_code == 404:
-            # NEW-6 (a): the marker names a generation whose OWN manifest is
-            # missing — anomalous (the publisher writes the generation
-            # manifest BEFORE promoting the marker to point at it).
-            raise _anomaly(f"generation {generation_id} manifest 404 despite a promoted marker")
-        gen_resp.raise_for_status()
-        gen_manifest = gen_resp.json()
-    except PriorWorkspaceFetchFailed:
-        raise
+    except ci_reader.WorkspaceChainIntegrityError as exc:
+        raise _anomaly(str(exc)) from exc
     except Exception as exc:  # noqa: BLE001 - every other failure is a genuine fetch failure, never silently absent
         raise _anomaly(f"current-generation read failed ({type(exc).__name__}: {exc})") from exc
 
-    if not isinstance(gen_manifest, Mapping):
-        # NEW-6 (b)
-        raise _anomaly(f"generation {generation_id} manifest payload is not an object")
-    files = gen_manifest.get("files")
-    if not isinstance(files, Mapping):
-        # NEW-6 (c)
-        raise _anomaly(f"generation {generation_id} manifest carries no usable 'files' map")
-
-    # NEW-7 (Opus red-team round 4, 2026-08-23): collect EVERY matching
-    # event_id and select the NEWEST fiscal period, not the first one
-    # encountered — `files` iterates in the manifest's own sorted-string
-    # key order, so a plain first-match would pick the LEXICOGRAPHICALLY
-    # SMALLEST (= OLDEST) event if the one-event-per-issuer invariant ever
-    # broke (e.g. a transient double-publish). Correct selection costs
-    # nothing here and removes a silent wrong-answer mode.
-    matches: list[tuple[tuple[int, int], str]] = []
-    for relative in files:
-        relative_text = str(relative)
-        if not relative_text.startswith("workspaces/") or not relative_text.endswith(".json"):
-            continue
-        candidate_event_id = relative_text[len("workspaces/"):-len(".json")]
-        try:
-            company_id, fiscal_period, _event_type = parse_canonical_event_id(candidate_event_id)
-        except Exception:  # noqa: BLE001 - a non-canonical file name is simply not a match
-            continue
-        if company_id == issuer.company_id:
-            matches.append(((fiscal_period.year, fiscal_period.quarter or 0), candidate_event_id))
-    if not matches:
-        return None  # (ii): well-formed files map, no entry for this issuer
-    matches.sort(key=lambda item: item[0])
-    matched_event_id = matches[-1][1]
+    if matched_event_id is None:
+        return None  # (i) no nest yet, or (ii) well-formed, no entry for this issuer
     return load_prior_workspace(matched_event_id, base_url=base_url)
 
 
@@ -829,6 +774,238 @@ def acquire_and_build_homebuilder_workspace(
     return event_id, payload
 
 
+# ---------------------------------------------------------------------------
+# IMCE A5C discovery (frozen spec B) — ALL not-yet-represented qualifying
+# revisions per issuer, ascending SEC acceptance order, chained through the
+# manifest chain (frozen spec A). The AAPL flagship keeps its own frozen-
+# accession replay path above UNCHANGED (B5) — this section is homebuilder-
+# only. Scope note (interpretation, named in the PR body): the discovery
+# WINDOW stays exactly what ``_select_newest_results_rows`` already reads
+# (SEC submissions.json's ``recent`` block) — this PR widens "take the
+# single newest" to "take every not-yet-represented row in that SAME
+# existing window", never adds a new unbounded backfill surface (no
+# ``files`` shard walk in discovery mode, unchanged from before this PR).
+# ---------------------------------------------------------------------------
+
+
+def _fetch_submissions_candidates(cik: str, *, http_get: HttpGet) -> list[dict[str, Any]]:
+    """Every qualifying Item-2.02 8-K/8-K/A row from SEC submissions.recent,
+    ASCENDING by acceptance_datetime (oldest first) — B1. Raises
+    ``RefreshError`` only on a hard SEC submissions access failure; an
+    individual row is never filtered here beyond the existing admission
+    test (``_select_newest_results_rows``)."""
+    cik_int = int(cik)
+    status, body = http_get(_SUBMISSIONS_URL.format(cik=cik_int))
+    if status != 200:
+        raise RefreshError(f"SEC submissions unavailable for CIK {cik}: HTTP {status}")
+    try:
+        submissions = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RefreshError(f"SEC submissions JSON invalid: {exc}") from exc
+    if not isinstance(submissions, dict):
+        raise RefreshError("SEC submissions filings block invalid")
+    descending = _select_newest_results_rows(submissions_rows(submissions, block="recent"))
+    return list(reversed(descending))
+
+
+def _resolve_exhibit_for_row(row: Mapping[str, Any], *, cik: str, http_get: HttpGet) -> dict[str, Any] | None:
+    """Resolve one candidate row's EX-99.1 exhibit body, or ``None`` (skip,
+    never fail — B4) if no usable exhibit is found for THIS row. A skip here
+    must never orphan a LATER row for the same or another event; the caller
+    simply continues to the next candidate."""
+    row_accession = str(row.get("accessionNumber") or "")
+    if not row_accession:
+        return None
+    cik_int = int(cik)
+    acc_nodash = row_accession.replace("-", "")
+    archive_base = f"{_ARCHIVES}/{cik_int}/{acc_nodash}"
+    time.sleep(_PACE_S)
+    header_status, header_body = http_get(f"{archive_base}/{row_accession}-index-headers.html")
+    if header_status != 200:
+        return None
+    filename = _select_exhibit_99_1(_parse_sgml_manifest(header_body.decode("utf-8", errors="replace")))
+    if not filename:
+        return None
+    exhibit_url = f"{archive_base}/{filename}"
+    time.sleep(_PACE_S)
+    exhibit_status, exhibit_body = http_get(exhibit_url)
+    if exhibit_status != 200 or not exhibit_body.strip():
+        return None
+    try:
+        exhibit_text = exhibit_body.decode("utf-8")
+    except UnicodeDecodeError:
+        exhibit_text = exhibit_body.decode("latin-1")
+    if not exhibit_text.strip():
+        return None
+    try:
+        acceptance = _iso_z(row.get("acceptanceDateTime"))
+    except RefreshError:
+        return None
+    return {
+        "cik": cik,
+        "accession": row_accession,
+        "form": row.get("form") or "",
+        "filing_date": row.get("filingDate") or "",
+        "acceptance_datetime": acceptance,
+        "report_date": row.get("reportDate") or "",
+        "exhibit_url": exhibit_url,
+        "exhibit_body": exhibit_text,
+        "items": row.get("items") or "",
+    }
+
+
+def _event_chain_state(
+    event_id: str, *, base_url: str | None = None,
+) -> tuple[frozenset[str], Mapping[str, Any] | None]:
+    """(accessions already represented in event_id's known chain history,
+    the LATEST known workspace body for event_id, or None) — ONE shared
+    reader chain walk (D1/D3/B2). A genuine chain-integrity failure or any
+    other read failure is NEVER treated as "nothing represented" — it is
+    re-raised as ``PriorWorkspaceFetchFailed`` so the caller's existing
+    abort-the-whole-refresh discipline applies uniformly."""
+    try:
+        revisions = ci_reader.read_event_source_revisions(event_id, base_url=base_url)
+    except Exception as exc:  # noqa: BLE001 - chain-state ambiguity must never read as "nothing represented"
+        print(
+            "::warning title=event-workspace-chain-read-failed::"
+            f"{event_id}: source-revision chain read failed ({type(exc).__name__}: {exc}) — "
+            "refusing to treat this as no-prior-revision-represented",
+            flush=True,
+        )
+        raise PriorWorkspaceFetchFailed(
+            f"{event_id}: chain read failed ({type(exc).__name__}: {exc})"
+        ) from exc
+
+    accessions: set[str] = set()
+    latest_ws: Mapping[str, Any] | None = None
+    for revision in revisions:  # oldest -> newest
+        ws = revision.get("workspace") if isinstance(revision.get("workspace"), Mapping) else {}
+        for source in ws.get("sources") or []:
+            if isinstance(source, Mapping) and source.get("kind") == "issuer_release":
+                accession = (source.get("filing_key") or {}).get("accession")
+                if accession:
+                    accessions.add(str(accession))
+        if ws:
+            latest_ws = ws
+    return frozenset(accessions), latest_ws
+
+
+def discover_new_homebuilder_revisions(
+    ticker: str,
+    *,
+    http_get: HttpGet = _http_get,
+    tx_index_url: str = DEFAULT_TX_INDEX_URL,
+    fetch_index: FetchIndex = fetch_global_index,
+    fetch_body_fn: FetchBody = fetch_body,
+    chain_state_loader: Callable[[str], tuple[frozenset[str], Mapping[str, Any] | None]] | None = None,
+    base_url: str | None = None,
+) -> list[tuple[str, dict[str, Any]]]:
+    """Every not-yet-represented qualifying source revision for *ticker*,
+    resolved and bound to its OWN ``event_workspace`` payload, ASCENDING by
+    SEC acceptance order (B1). An original + its own 8-K/A amendment
+    discovered in the SAME poll chain WITHIN this list itself — the
+    amendment is built atop the freshly-built original, not a stale network
+    read (B3).
+
+    Raises ``RefreshError`` on a hard SEC submissions access failure (fail-
+    soft — the caller's existing per-ticker carry-forward handles this).
+    Raises ``PriorWorkspaceFetchFailed`` straight through on a chain-read
+    failure (hard abort — never silently treated as "nothing represented").
+    A row lacking a usable EX-99.1, or whose exhibit disagrees with the
+    discovery-derived fiscal period (F1 cross-check), is skipped (skip !=
+    fail — B4) via a bare line-start ``::warning``, without orphaning any
+    later row.
+    """
+    issuer = issuer_for_ticker(ticker)
+    profile = profile_for_ticker(ticker)
+    if issuer is None or profile is None:
+        raise RefreshError(f"{ticker} has no registered A5A homebuilder identity/profile")
+
+    loader = chain_state_loader or (lambda event_id: _event_chain_state(event_id, base_url=base_url))
+    candidates = _fetch_submissions_candidates(issuer.cik, http_get=http_get)
+
+    state: dict[str, tuple[frozenset[str], Mapping[str, Any] | None]] = {}
+    results: list[tuple[str, dict[str, Any]]] = []
+
+    for row in candidates:
+        row_accession = str(row.get("accessionNumber") or "")
+        report_date = str(row.get("reportDate") or "")
+        if not row_accession or not report_date:
+            continue
+        try:
+            fiscal_period = fiscal_period_for_report_date(report_date, issuer.fiscal_year_end_month)
+        except Exception as exc:  # noqa: BLE001 - an unresolvable period is a per-row skip, not a refusal
+            print(
+                "::warning title=event-workspaces-discovery-skip::"
+                f"{ticker}: accession {row_accession} fiscal period unresolvable ({exc}); skipped",
+                flush=True,
+            )
+            continue
+        event_id = canonical_event_id(issuer.company_id, fiscal_period)
+
+        if event_id not in state:
+            state[event_id] = loader(event_id)
+        represented, latest_ws = state[event_id]
+
+        if row_accession in represented:
+            continue  # B2: already represented in the chain
+
+        resolved_row = _resolve_exhibit_for_row(row, cik=issuer.cik, http_get=http_get)
+        if resolved_row is None:
+            print(
+                "::warning title=event-workspaces-discovery-skip::"
+                f"{ticker}: accession {row_accession} skipped (no usable EX-99.1 exhibit)",
+                flush=True,
+            )
+            continue
+
+        stated_end = _stated_period_end(str(resolved_row["exhibit_body"]))
+        if stated_end != fiscal_period.calendar_end:
+            print(
+                "::warning title=event-workspaces-discovery-skip::"
+                f"{ticker}: accession {row_accession} computed fiscal quarter end "
+                f"{fiscal_period.calendar_end} does not match the exhibit's own stated "
+                f"period end ({stated_end!r}); skipped rather than minting a guessed identity",
+                flush=True,
+            )
+            continue
+
+        asof = date.fromisoformat(str(resolved_row["filing_date"]))
+        pair = f"{ticker}/{fiscal_period.year}Q{fiscal_period.quarter}"
+        transcript, transcript_sha256 = acquire_transcript_for(
+            pair, tx_index_url, fetch_index=fetch_index, fetch_body_fn=fetch_body_fn, required=False,
+        )
+        # C2: a genuinely NEW/not-yet-represented revision is a first
+        # observation — real wall-clock now, never the SEC acceptance clock.
+        now = datetime.now(timezone.utc)
+        payload = build_event_workspace(
+            registry=production_registry(),
+            ticker=ticker,
+            asof=asof,
+            fiscal_period=fiscal_period,
+            exhibit_body=str(resolved_row["exhibit_body"]),
+            filing={key: value for key, value in resolved_row.items() if key != "exhibit_body"},
+            transcript=transcript,
+            transcript_sha256=transcript_sha256,
+            observed_at=now,
+            source_available_at=resolved_row["acceptance_datetime"],
+            collector_rows=None,
+            wire_record_found=False,
+            prior_source_sha256=exhibit_source_sha256(latest_ws),
+            prior_lifecycle_state=prior_lifecycle_state(latest_ws),
+            prior_observed_at=prior_observed_at(latest_ws),
+            profile=profile,
+        )
+        if payload.get("event_id") != event_id:
+            raise RefreshError(f"{ticker} event_id drifted: {payload.get('event_id')}")
+        results.append((event_id, payload))
+        # B3: a LATER row for the SAME event this cycle (its own 8-K/A)
+        # chains onto the revision JUST built, not the stale pre-cycle read.
+        state[event_id] = (represented | {row_accession}, payload)
+
+    return results
+
+
 def refresh(
     work_dir: Path,
     *,
@@ -850,8 +1027,29 @@ def refresh(
     # normal event_id-keyed prior read above was never reached.
     homebuilder_carry_forward_loader: Callable[[str], Mapping[str, Any] | None] = load_prior_workspace_for_ticker,
     publish_generation: PublishFn = publish_event_workspaces,
+    # IMCE A5C (frozen spec A2/B3): resolves the CURRENT top-level
+    # event_workspaces marker (v1 or v2, or None on a genuinely fresh nest)
+    # so this cycle's generation(s) can chain onto it. Production default is
+    # the real R2 read; tests inject an explicit stub (a fresh sandboxed nest
+    # has no real predecessor to fetch — see tests/test_refresh_event_workspaces.py).
+    current_marker_loader: Callable[[], Mapping[str, Any] | None] = ci_reader.fetch_current_workspace_marker,
+    # IMCE A5C (frozen spec B): per-ticker discovery of ALL not-yet-
+    # represented qualifying revisions, ascending. Injectable for tests;
+    # production default is discover_new_homebuilder_revisions.
+    homebuilder_discovery: Callable[[str], list[tuple[str, dict[str, Any]]]] | None = None,
 ) -> int:
-    """Acquire sources → build → write sibling nest → publish marker-last."""
+    """Acquire sources → build → write sibling nest → publish marker-last.
+
+    IMCE A5C (frozen spec B/C): the AAPL flagship keeps its own frozen-
+    accession single-revision replay (B5) — unchanged shape, now stamped
+    with a real wall-clock ``observed_at`` and first-observation persistence
+    (C2/C3) like every other issuer. Each HOMEBUILDER ticker discovers EVERY
+    not-yet-represented qualifying revision this cycle (B1/B2), publishing
+    ONE nest generation per discovered revision, chained in ascending SEC
+    acceptance order (B3) — the common case (0 or 1 total new revision this
+    cycle across every issuer) collapses to exactly the same single
+    write+publish call as before A5C.
+    """
     del work_dir  # reserved so the job shares the v1 scratch parent without writing it
     filing = acquire_flagship_filing(http_get=http_get)
     transcript, transcript_sha256 = acquire_flagship_transcript(
@@ -884,6 +1082,9 @@ def refresh(
     else:
         prior = prior_workspace
     source_clock = filing["acceptance_datetime"]
+    # C2/C3: real wall-clock "now" for this build attempt; build_event_workspace
+    # carries prior_observed_at forward instead whenever the source is unchanged.
+    now = datetime.now(timezone.utc)
     payload = build_event_workspace(
         registry=apple_registry(),
         ticker="AAPL",
@@ -893,12 +1094,13 @@ def refresh(
         filing={key: value for key, value in filing.items() if key != "exhibit_body"},
         transcript=transcript,
         transcript_sha256=transcript_sha256,
-        observed_at=source_clock,
+        observed_at=now,
         source_available_at=source_clock,
         collector_rows=None,
         wire_record_found=False,
         prior_source_sha256=exhibit_source_sha256(prior),
         prior_lifecycle_state=prior_lifecycle_state(prior),
+        prior_observed_at=prior_observed_at(prior),
     )
     if payload.get("event_id") != FLAGSHIP_EVENT_ID:
         raise RefreshError(f"flagship event_id drifted: {payload.get('event_id')}")
@@ -999,10 +1201,113 @@ def refresh(
         workspaces[event_id] = hb_payload
 
     target = Path(out_dir) if out_dir is not None else Path("data/company_intelligence")
+
+    # IMCE A5C (frozen spec A2): resolve the predecessor generation this
+    # cycle's writes chain onto — the currently-published marker (v1 or v2),
+    # or None only for a genuine first-ever generation of the nest.
+    try:
+        current_marker = current_marker_loader()
+    except Exception as exc:  # noqa: BLE001 - a genuine failure to read the current marker must abort
+        raise RefreshError(f"failed to read the current event workspace marker: {exc}") from exc
+    original_current_generation_id = (
+        str(current_marker.get("generation_id") or "") or None if current_marker is not None else None
+    )
+    chain_previous_id = original_current_generation_id
+    chain_previous_sha = (
+        sha256(canonical_json_bytes(current_marker)).hexdigest()
+        if current_marker is not None and original_current_generation_id else None
+    )
+
+    # IMCE A5C discovery (frozen spec B1/B2/B3): for each homebuilder,
+    # publish every OTHER not-yet-represented qualifying revision (ascending
+    # SEC acceptance order) as its OWN chained nest generation, BEFORE the
+    # per-ticker acquisition loop above runs its (unchanged) "acquire the
+    # current/newest row" pass. Interpretation choice (named in the PR
+    # body): the two mechanisms may both touch the SAME newest row in one
+    # cycle — a harmless, idempotent, content-identical re-publish — rather
+    # than requiring the discovery pass to predict which row the unchanged
+    # acquisition path will independently select. Marker-promotion choice
+    # (B3): promote once PER generation (immediately after each write),
+    # never batched to the end — every intermediate immutable generation is
+    # therefore always fully uploaded before any later marker references it.
+    discover = homebuilder_discovery or discover_new_homebuilder_revisions
+    for ticker in HOMEBUILDER_TICKERS:
+        try:
+            new_revisions = discover(
+                ticker,
+                http_get=http_get,
+                tx_index_url=tx_index_url,
+                fetch_index=fetch_index,
+                fetch_body_fn=fetch_body_fn,
+            )
+        except PriorWorkspaceFetchFailed as exc:
+            # A genuine chain-integrity/network failure while discovering
+            # history must hard-abort — never silently treated as "nothing
+            # to discover" (mirrors the flagship/primary-loader discipline
+            # above).
+            raise RefreshError(
+                f"{ticker}: source-revision discovery failed — refusing to publish a nest that "
+                f"might silently drop a corrected event: {exc}"
+            ) from exc
+        except Exception as exc:  # noqa: BLE001 - SEC access failure during discovery is fail-soft
+            # The ticker's PRIMARY acquisition path below still gets its own
+            # attempt + carry-forward handling; discovery contributing zero
+            # EXTRA revisions this cycle is not itself a refusal.
+            log.info("%s: revision discovery unavailable this cycle (%s)", ticker, exc)
+            new_revisions = []
+
+        for event_id, hb_payload in new_revisions:
+            workspaces[event_id] = hb_payload
+            generation_dir = write_workspace_generation(
+                target,
+                dict(workspaces),
+                generated_at=source_clock,
+                previous_generation_id=chain_previous_id,
+                previous_manifest_sha256=chain_previous_sha,
+            )
+            print(
+                "event workspaces: validated "
+                f"events={sorted(workspaces)} generation={generation_dir.name} "
+                f"chained_revision={event_id}"
+            )
+            publish_rc = publish_generation(target, dry_run=dry_run)
+            if publish_rc == PUBLISH_CONFLICT:
+                print("event workspaces: sibling-marker promotion lost a safe compare-and-swap race")
+                return publish_rc
+            if publish_rc != 0:
+                raise RefreshError(f"event workspace publish failed with exit code {publish_rc}")
+            manifest_body = (target / "event_workspaces" / "manifest.json").read_bytes()
+            chain_previous_id = generation_dir.name
+            chain_previous_sha = sha256(manifest_body).hexdigest()
+
+    # Final combined write (IMCE A5C A4: preserve the semantic no-op). If NO
+    # discovery step advanced the chain this cycle (chain_previous_id is
+    # unchanged from the marker read above) AND the freshly-assembled
+    # workspaces content, hashed atop the CURRENT generation's OWN
+    # predecessor, reproduces that CURRENT generation_id exactly, this
+    # cycle's content is byte-identical to what is already published — reuse
+    # the SAME chain link (never advance) so the write/publish short-
+    # circuits before minting or PUTting anything new.
+    final_previous_id, final_previous_sha = chain_previous_id, chain_previous_sha
+    if (
+        chain_previous_id == original_current_generation_id
+        and current_marker is not None
+        and current_marker.get("schema") == MANIFEST_SCHEMA_V2
+    ):
+        candidate_previous_id = current_marker.get("previous_generation_id")
+        candidate_previous_sha = current_marker.get("previous_manifest_sha256")
+        candidate_id = preview_generation_identity(
+            workspaces, source_clock, previous_generation_id=candidate_previous_id,
+        )
+        if candidate_id == original_current_generation_id:
+            final_previous_id, final_previous_sha = candidate_previous_id, candidate_previous_sha
+
     generation_dir = write_workspace_generation(
         target,
         workspaces,
         generated_at=source_clock,
+        previous_generation_id=final_previous_id,
+        previous_manifest_sha256=final_previous_sha,
     )
     print(
         "event workspaces: validated "

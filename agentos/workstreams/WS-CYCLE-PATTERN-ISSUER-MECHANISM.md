@@ -975,6 +975,91 @@ waves:
       when d_orders is also unavailable -- no runtime/consumption code
       change required, confirming the A5B design note at
       engine/cycle_pattern/imce_prospective.py:158-161.
+  - id: A5C-chain
+    title: >
+      IMCE-A5C — prospective source-vintage integrity: manifest chain,
+      ascending discovery, two-clock law, ONE shared reader, earliest-
+      revision eligibility/replay/contributor laws (Sol A5C directive,
+      2026-08-23, items 1/3/4/5/6)
+    status: awaiting_ci
+    depends_on: [A5B, A5C-alpha, A5C]
+    next_action: >
+      DRAFT PR open (branch claude/imce-a5c-source-vintage-main, off fresh
+      origin/main containing both merge 2ee5c16724da/#6308 A5C-alpha and
+      merge 3d35ec5cd5ae/#6307 A5C-TOL); NOT merged/armed — the
+      commissioning session adjudicates and merges. This is the "honest
+      fix" both A5C-alpha (#6308) and A5C (#6307) named as still-pending:
+      the manifest/history chain that closes A5C-alpha's own named
+      residual gap (a replacement 8-K whose original was never published
+      still presented as first-ever-safe).
+      A. MANIFEST CHAIN: event_workspace_manifest.v2 (v1 stays the
+      backward-compatible chain ROOT) adds previous_generation_id +
+      previous_manifest_sha256 (engine/company_intelligence/
+      event_workspace.py); write_workspace_generation mints v2 going
+      forward and folds previous_generation_id into the content-address
+      hash (a content cycle A->B->A mints a distinct third generation) —
+      new preview_generation_identity() lets a caller decide, BEFORE
+      writing, whether a cycle reproduces the CURRENTLY published
+      generation (the semantic no-op, preserved) or genuinely chains
+      forward.
+      B. DISCOVERY: scripts/refresh_event_workspaces.py's
+      discover_new_homebuilder_revisions() finds EVERY not-yet-represented
+      qualifying 8-K/8-K/A per homebuilder (ascending SEC acceptance
+      order — "choosing only the newest filing is FORBIDDEN", Sol item 3)
+      and mints ONE chained generation per NEW revision, marker-promoted
+      immediately per generation. INTERPRETATION (named per the
+      commission): rather than replacing the pre-existing single-newest
+      acquire_and_build_homebuilder_workspace() call site (which
+      tests/test_issuer_profiles_a5a.py — 36 tests, NOT owned by this
+      PR — mocks directly), discovery runs as an ADDITIVE pre-step that
+      backfills any OTHER not-yet-represented (older) revision before the
+      unchanged single-newest path runs; both may harmlessly re-touch the
+      same newest row in one cycle (idempotent, content-identical). All 36
+      test_issuer_profiles_a5a.py tests pass UNCHANGED. Discovery's SEC
+      submissions WINDOW is unchanged from before this PR (no `files`
+      shard walk) — never a new backfill surface.
+      C. TWO-CLOCK LAW: source_available_at stays the SEC acceptance
+      clock; observed_at is now the REAL build-time wall-clock
+      (engine/company_intelligence/event_workspace_build.py gained
+      prior_observed_at — first-observation persistence, C3: an unchanged
+      source revision keeps its ORIGINAL observed_at forever).
+      D. ONE SHARED READER: engine/neuralweb/company_intelligence_reader.py
+      gained load_current_workspace / load_workspace_with_disposition
+      (three-way found/not_published/fetch_failed) / find_current_event_id_for_company
+      / read_event_source_revisions (verified predecessor chain walk,
+      bounded 500 hops, WorkspaceChainIntegrityError on any broken link,
+      dedupes consecutive carried-forward identical source_sha256).
+      scripts/refresh_event_workspaces.py's load_prior_workspace /
+      load_prior_workspace_for_ticker and
+      scripts/build_cycle_pattern_imce_prospective.py's
+      _load_workspace_with_disposition are now thin delegators (their
+      *NotPublished exception classes are ALIASES of the shared reader's
+      WorkspaceChainNotPublished, not lookalikes); _raw_fetch_workspace is
+      RETIRED (grep-proof test:
+      tests/test_company_intelligence_workspace_chain.py::test_raw_fetch_workspace_no_longer_exists_in_the_builder_module).
+      E/F/G in scripts/build_cycle_pattern_imce_prospective.py's run():
+      eligibility is decided by the EARLIEST known revision's
+      source_available_at, PERMANENTLY (a correction can never cross the
+      activation boundary either direction); the one immutable observation
+      mints from the earliest ELIGIBLE revision (decision_cutoff pinned to
+      ITS OWN clock); later materially-different revisions become ordered
+      corrections, cosmetic ones produce no noise; a contributor's state at
+      a trigger cutoff is the latest LAWFUL revision of the contributor's
+      OWN chain at-or-before that cutoff (G), never a later correction used
+      retrospectively. Zero new ledger schema fields (behavior only, per
+      the commission's census). TOL sweep: _tol_sensitivity's docstring
+      (imce_prospective.py) updated to reflect PR #6307's landed
+      extraction; new consumption flow-through test added.
+      Tests: 3 files touched (test_company_intelligence_event_workspace.py,
+      test_refresh_event_workspaces.py +4, test_imce_prospective.py +5)
+      plus 1 new file (test_company_intelligence_workspace_chain.py, 12
+      tests) — 278 passed / 2 skipped across the full touched-module run;
+      contract-delta 0 introduced (base 3aea4f76125e). CI wiring:
+      .github/ci/legacy-jobs.yml neural-web-core pytest line gained the new
+      test file; .github/workflows/company-intelligence.yml sparse-checkout
+      gained engine/neuralweb/__init__.py + company_intelligence_reader.py
+      (refresh_event_workspaces.py now imports it at module level; `requests`
+      was already an installed dep there — no new pip dependency).
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's
