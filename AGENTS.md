@@ -133,9 +133,15 @@ that believes the packet is wrong stops and escalates.
   Warp/Oz has no SessionStart or WorktreeCreate event. `.warp/hooks/session_start_sparse.py`
   plus `.agents/skills/macro-sparse-worktree` are the analog: a Warp session must
   run the mint itself (the skill auto-discovers), then `cd` to the printed
-  `WORKSPACE=` path. The hook converts only a linked session worktree; otherwise
-  it mints under `.warp/worktrees/<name>/` with `git worktree add --no-checkout`
-  and never writes `.session-worktree` into a git checkout.
+  `WORKSPACE=` path. The hook reuses only a carrier positively bound to the
+  current Warp conversation/task identity; terminal/session IDs are not proof.
+  Its branch/path use a SHA-256 digest of the complete identity, never the raw
+  value, and an identity-less start mints a collision-resistant carrier rather
+  than reusing `warp-session`. New carriers mint from freshly fetched
+  `origin/main` under `.warp/worktrees/<name>/` with `git worktree add
+  --no-checkout`; failed fetches and path/branch collisions fail closed without
+  taking over a foreign carrier. It never writes
+  `.session-worktree` into a git checkout.
   `auto` acts only on a linked worktree sitting under a session root
   (`.claude/worktrees/` and siblings — never the occupied primary, and never the
   operator's designated local root, which is itself a linked worktree), and preserves
