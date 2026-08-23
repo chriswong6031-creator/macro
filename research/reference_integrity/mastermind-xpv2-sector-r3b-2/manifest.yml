@@ -7,7 +7,7 @@
 # started as a byte-identical copy of the
 # frozen R3B.1 build (untouched rebuild = candidate sha256 fec05b058fbc9dbe29744ad015b7ee9c
 # d9baa5cb85bbbde739daa8b97644cf70 before any fix landed).
-# Authority pins at final continuation pickup: origin/main fe1225556ddb462299ab5569c3aee4f6380c1b58;
+# Authority pins at final guarded reconciliation: origin/main 5ebc7327fac75ee5312b2af09526bfcab790e9c9;
 # protected Sol Skillpack mastermindx-market-intelligence/Mastermind@db0bac5fe3f72348262d42c8bd26b836bda9f61d;
 # predecessor merge #6248/780cbcf6d2d2 verified ancestor of main.
 schema: mastermind.rig_manifest.v1

@@ -10,7 +10,7 @@ assembled `file://` candidate above; no rebuild during capture.
 **Visual packet:** 61 PNG files, each byte-hashed and state-described in
 `capture_manifest.json`.
 
-**Total evidence packet:** 75 files before the freeze/CI text receipts are added.
+**Total evidence packet:** 77 files, including this index and the final acceptance receipt.
 
 The orange `R3 REFERENCE HARNESS — not product UI` drawer is reference-only
 test chrome. It remains visible in ordinary full-view evidence and is hidden
@@ -78,6 +78,7 @@ receipt-bound `sc_flows` producer fragment remain upstream/R3C-only.
 | `LANG_PROBE.txt` | 7/7 document-language transitions green |
 | `contrast_audit.json` / `CONTRAST_TABLE.md` | 0 relevant AA failures, 0 sub-ramp text, 0 parser-suspect cells; excluded axes disclosed above |
 | `capture_manifest.json` | exhaustive 61-file screenshot hash and state ledger bound to candidate SHA-256 |
+| `FINAL_ACCEPTANCE.md` | exact current-main reconciliation, reference-only scope, guard/test summaries and known adverse/null results immediately before freeze |
 
 ## Withdrawn and upstream-only truth receipts
 
