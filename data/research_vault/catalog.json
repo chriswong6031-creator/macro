@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T02:17:22.814331+00:00",
-  "count": 1656,
+  "generated_at": "2026-08-23T03:40:15.110413+00:00",
+  "count": 1659,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -677,6 +677,66 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iyrn0h4xdlf-25cbf9",
+      "title": "Should investors pay more attention to cash",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:49Z",
+      "summary_points": [
+        "**Cash Buffer Duration**: Maintain 2-5 year cash buffers to mitigate reinvestment risk and capture capital gains during adverse growth scenarios, with segmentation into everyday/core/investment categories.",
+        "**Fixed-Rate Instrument Strategy**: Lock in longer-term fixed-rate instruments to optimize liquidity and reduce exposure to interest rate volatility during market stress.",
+        "**Geopolitical Energy Shock**: Euro gas prices at 65.50/MWh (highest since Jan 2023) driven by US-Iran conflict, creating immediate inflationary pressure and necessitating strategic cash deployment.",
+        "**Inflation Data Trigger**: Euro 1-year inflation swap rate near one-month highs, signaling elevated inflation risk requiring proactive portfolio adjustments."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1iizyxnsaa9-79d888",
+      "title": "USDCAD",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:47Z",
+      "summary_points": [
+        "**USD CAD Near-Term Support, Medium-Term Decline**: Fed tightening expectations fading (markets pricing <25bps hikes by year-end) and BoC dovishness (weak Canada recovery, USMCA uncertainty) support near-term USD CAD; medium-term decline driven by fading Fed hawkishness, BoC caution, and USMCA trade tensions.",
+        "**Price Targets & Tactical Levels**: Year-end target 1.39, falling to 1.36 in 2027 (Fed rate cuts); sell above 1.40, strong support at 1.37.",
+        "**Critical Risks**: Canadian economy acceleration (CAD strength), unexpected Fed hikes, USMCA withdrawal, and global risk sentiment deterioration (pushing above 1.43)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zrplg4bl0zj-023299",
+      "title": "UBS Equity Preference List China Onshore Tech 2026 08 21",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:46Z",
+      "summary_points": [
+        "**Policy-Driven Semiconductor Catalyst**: China’s \"Digital China\" 2035 roadmap and $45bn National Integrated Circuit Fund accelerate semiconductor self-sufficiency, directly benefiting SOEs like CXMT (6.7% portfolio weight) amid US-China tech tensions.",
+        "**Portfolio Concentration Risk**: Heavy 6.7% weighting in semiconductors (7 of 12 holdings) amplifies exposure to US export controls, regulatory shifts, and DRAM cycle volatility (e.g., CXMT pricing uncertainty until 2H27).",
+        "**Sector Rating & Strategic Shift**: UBS rates China Onshore Tech \"Unattractive\" but adds CXMT/NAURA/SHENNA as \"Most Preferred\" due to policy tailwinds, while removing Shenzhen Inovance for weak 2H26 outlook.",
+        "**Key Risk Factor**: Geopolitical tensions (US sanctions, equipment access) threaten top holdings (e.g., AMEC, JIET Group), with talent shortages and wafer supply constraints limiting AI chip localization (CambriCon) and equipment growth (NAURA).",
+        "**Valuation Opportunity**: Multi-year policy support (semiconductor self-reliance, AI infrastructure) creates deep value for China tech firms, with hardware/semiconductor exposure trading below historical metrics despite sector risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
       "language": "en",
       "needs_metadata": false
     },
