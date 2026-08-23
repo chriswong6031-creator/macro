@@ -158,10 +158,63 @@ def load_transcript_segments(root: Path) -> list[dict]:
     return tx["segments"]
 
 
+def classify_live_workspace_shas(
+    *,
+    available: bool,
+    generation_id: str,
+    workspace_sha: str,
+    release_sha: str,
+    transcript_sha: str,
+    note: str | None = None,
+) -> dict[str, Any]:
+    """Separate source-SHA calibration from current-marker identity.
+
+    A later current-marker generation must not rewrite historical gold.
+    Eval proceeds when source SHAs still match the frozen fixtures.
+    """
+    source_shas_match = (
+        release_sha == FROZEN_EXHIBIT_SHA
+        and transcript_sha == FROZEN_TRANSCRIPT_SHA
+    )
+    current_marker_is_calibration_generation = (
+        generation_id == PINNED_GENERATION_ID
+        and workspace_sha == PINNED_WORKSPACE_SHA
+    )
+    if not available:
+        status_note = note or "live workspace unavailable"
+    elif not source_shas_match:
+        status_note = note or "live workspace source SHA mismatch"
+    elif not current_marker_is_calibration_generation:
+        status_note = (
+            "current-marker generation moved; AAPL calibration remains bound "
+            f"to source SHAs and pinned generation {PINNED_GENERATION_ID}; "
+            "gold not rewritten"
+        )
+    else:
+        status_note = None
+    return {
+        "available": bool(available),
+        "generation_id": generation_id,
+        "workspace_sha256": workspace_sha,
+        "release_source_sha256": release_sha,
+        "transcript_source_sha256": transcript_sha,
+        "source_shas_match": source_shas_match,
+        "current_marker_is_calibration_generation": (
+            current_marker_is_calibration_generation
+        ),
+        "calibration_generation_id": PINNED_GENERATION_ID,
+        "calibration_workspace_sha256": PINNED_WORKSPACE_SHA,
+        "matches_frozen_fixtures": source_shas_match,
+        "assumed_from_handoff": False,
+        "note": status_note,
+    }
+
+
 def verify_live_workspace_shas() -> dict[str, Any]:
     """Read the live E2 workspace through the verified public reader.
 
-    Pins generation f709a0a6ec514282d5769e7d. Does not assume from the handoff.
+    Calibration is bound to the frozen source SHAs, not to whatever
+    generation the current marker now names. Does not assume from the handoff.
     """
     from engine.neuralweb import company_intelligence_reader as reader
 
@@ -173,30 +226,22 @@ def verify_live_workspace_shas() -> dict[str, Any]:
         for s in (workspace.get("sources") or [])
         if isinstance(s, dict)
     }
-    release_sha = str((sources.get("issuer_release") or {}).get("source_sha256") or "")
-    transcript_sha = str((sources.get("transcript") or {}).get("source_sha256") or "")
-    generation_id = str(workspace.get("generation_id") or receipt.get("generation_id") or "")
-    workspace_sha = str(receipt.get("workspace_sha256") or "")
-    match = (
-        result.get("available") is True
-        and generation_id == PINNED_GENERATION_ID
-        and workspace_sha == PINNED_WORKSPACE_SHA
-        and release_sha == FROZEN_EXHIBIT_SHA
-        and transcript_sha == FROZEN_TRANSCRIPT_SHA
+    classified = classify_live_workspace_shas(
+        available=bool(result.get("available")),
+        generation_id=str(
+            workspace.get("generation_id") or receipt.get("generation_id") or ""
+        ),
+        workspace_sha=str(receipt.get("workspace_sha256") or ""),
+        release_sha=str((sources.get("issuer_release") or {}).get("source_sha256") or ""),
+        transcript_sha=str((sources.get("transcript") or {}).get("source_sha256") or ""),
+        note=str(result.get("note") or "") or None,
     )
-    return {
-        "available": bool(result.get("available")),
-        "reader": "engine.neuralweb.company_intelligence_reader.read_event_workspace",
-        "generation_id": generation_id,
-        "workspace_sha256": workspace_sha,
-        "workspace_url": receipt.get("workspace_url"),
-        "marker_url": receipt.get("marker_url"),
-        "release_source_sha256": release_sha,
-        "transcript_source_sha256": transcript_sha,
-        "matches_frozen_fixtures": match,
-        "assumed_from_handoff": False,
-        "note": None if match else (result.get("note") or "live workspace SHA mismatch"),
-    }
+    classified["reader"] = (
+        "engine.neuralweb.company_intelligence_reader.read_event_workspace"
+    )
+    classified["workspace_url"] = receipt.get("workspace_url")
+    classified["marker_url"] = receipt.get("marker_url")
+    return classified
 
 
 # ── Stable segment_id ─────────────────────────────────────────────────────────
@@ -1205,7 +1250,7 @@ def run_e3a_eval(repo_root: Path | None = None) -> dict:
 
     sha_check = verify_fixture_shas(repo_root)
     live = verify_live_workspace_shas()
-    if not live.get("matches_frozen_fixtures"):
+    if not live.get("available") or not live.get("source_shas_match"):
         raise RuntimeError(
             "Live E2 workspace source SHAs do not equal frozen fixture SHAs. "
             f"live={live}"

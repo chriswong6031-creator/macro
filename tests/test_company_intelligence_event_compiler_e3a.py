@@ -691,6 +691,42 @@ def test_rejected_unsupported_is_not_accepted_unsupported(gold):
     assert score["hard_gates"]["status"] == "NOT_EXERCISED"
 
 
+def test_moved_current_marker_does_not_rewrite_calibration_gold():
+    """Later current-marker generations keep source-SHA calibration; gold stays frozen."""
+    from engine.company_intelligence.e3_shadow_compiler import (
+        FROZEN_EXHIBIT_SHA,
+        FROZEN_GOLD_SHA,
+        FROZEN_TRANSCRIPT_SHA,
+        PINNED_GENERATION_ID,
+        PINNED_WORKSPACE_SHA,
+        classify_live_workspace_shas,
+    )
+
+    moved = classify_live_workspace_shas(
+        available=True,
+        generation_id="d7b994675fe59d0181643b8b",
+        workspace_sha="d360e1017dea2bbec7d44c37f48cf0565eb4f663edc99f1af00ce1e38dd642c5",
+        release_sha=FROZEN_EXHIBIT_SHA,
+        transcript_sha=FROZEN_TRANSCRIPT_SHA,
+    )
+    assert moved["source_shas_match"] is True
+    assert moved["matches_frozen_fixtures"] is True
+    assert moved["current_marker_is_calibration_generation"] is False
+    assert moved["calibration_generation_id"] == PINNED_GENERATION_ID
+    assert moved["calibration_workspace_sha256"] == PINNED_WORKSPACE_SHA
+    assert hashlib.sha256(GOLD_PATH.read_bytes()).hexdigest() == FROZEN_GOLD_SHA
+
+    drifted = classify_live_workspace_shas(
+        available=True,
+        generation_id=PINNED_GENERATION_ID,
+        workspace_sha=PINNED_WORKSPACE_SHA,
+        release_sha="0" * 64,
+        transcript_sha=FROZEN_TRANSCRIPT_SHA,
+    )
+    assert drifted["source_shas_match"] is False
+    assert drifted["matches_frozen_fixtures"] is False
+
+
 def test_run_e3a_eval_hermetic_end_to_end(monkeypatch, tmp_path):
     """Full run_e3a_eval path through telemetry + receipt write.
 
@@ -701,15 +737,17 @@ def test_run_e3a_eval_hermetic_end_to_end(monkeypatch, tmp_path):
     live = {
         "available": True,
         "reader": "engine.neuralweb.company_intelligence_reader.read_event_workspace",
-        "generation_id": e3.PINNED_GENERATION_ID,
-        "workspace_sha256": e3.PINNED_WORKSPACE_SHA,
+        "generation_id": "later-current-marker",
+        "workspace_sha256": "0" * 64,
         "workspace_url": None,
         "marker_url": None,
         "release_source_sha256": e3.FROZEN_EXHIBIT_SHA,
         "transcript_source_sha256": e3.FROZEN_TRANSCRIPT_SHA,
+        "source_shas_match": True,
+        "current_marker_is_calibration_generation": False,
         "matches_frozen_fixtures": True,
         "assumed_from_handoff": False,
-        "note": None,
+        "note": "current-marker generation moved; gold not rewritten",
     }
     monkeypatch.setattr(e3, "verify_live_workspace_shas", lambda: live)
 
@@ -776,6 +814,8 @@ def test_run_e3a_eval_hermetic_end_to_end(monkeypatch, tmp_path):
     assert receipt["bindings"]["gold_sha256"] == hashlib.sha256(
         GOLD_PATH.read_bytes()
     ).hexdigest()
+    assert receipt["bindings"]["generation_id"] == e3.PINNED_GENERATION_ID
+    assert receipt["bindings"]["workspace_sha256"] == e3.PINNED_WORKSPACE_SHA
     proof = receipt["telemetry_proof"]
     assert proof["lane"] == "earnings_event_compiler"
     assert receipt["model_attempts"]["qwen"]["n_candidates"] == 0
