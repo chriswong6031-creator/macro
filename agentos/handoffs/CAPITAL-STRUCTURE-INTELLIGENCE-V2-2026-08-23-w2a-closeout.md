@@ -108,7 +108,7 @@ danger_areas:
   - "degraded_capacity is an accepted instrument verdict and an honest adverse production result, not a failed W2A chain."
   - "The one historical 404 became parked; do not count it as recovered or hide it inside retrieved totals."
   - "The overall daily can conclude independently of these two terminal-success jobs; do not cancel healthy downstream work to force a workflow verdict."
-prs: [6220]
+prs: [6220, 6282]
 decisions:
   - DEC:CS-V2-W2A-CLASS-RESERVES-AND-HORIZON-FRESHNESS
 discoveries:
