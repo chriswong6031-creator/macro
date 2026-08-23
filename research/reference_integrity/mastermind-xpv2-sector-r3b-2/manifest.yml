@@ -38,13 +38,16 @@ lineage:
     - mastermind-xpv2-sector-r3b
     - mastermind-xpv2-sector-r3b-1
   # Ordered oldest -> nearest (RIG S13); the closure obligation runs against the NEAREST,
-  # mastermind-xpv2-sector-r3b-1, whose verdict.yml (Sol REVISE, 2026-08-23) mints 14
-  # upheld_revise findings + 11 B2-* conditions = 25 open items this cycle's continuity.yml
-  # closes. The R3A substrate remains authority substrate, not a RIG predecessor.
+  # mastermind-xpv2-sector-r3b-1, whose verdict.yml (Sol REVISE as CORRECTED 2026-08-23)
+  # mints exactly ONE upheld_revise blocker (VTC1-001) + the FINAL eleven B2 conditions =
+  # 12 open items, all closed RESOLVED_BY_CHANGE in this cycle's continuity.yml. The R3A
+  # substrate remains authority substrate, not a RIG predecessor.
 
-reference_files:            # the successor reference artifact -- PLANNED paths, not yet frozen.
-  # PENDING_FREEZE_* placeholders are replaced with the real 40-hex commit SHA in the same
-  # edit that flips status: draft -> in_review.
+reference_files:            # the FROZEN successor reference artifact (stamped at freeze).
+  # frozen_sha names the freeze commit whose tree holds the final candidate bytes
+  # (candidate sha256 ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8);
+  # the stamping commit follows it. The four NEW critic receipts must bind artifact_sha
+  # to this value.
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
     frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/BUILD_MANIFEST.json
