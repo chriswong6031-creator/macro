@@ -325,16 +325,13 @@ a{color:var(--ink-link, var(--link))}
     <div class="decision-grid">
       <div class="decision-main">
         <div class="decision-eyebrow">{{ t('Current action','当前行动') }}</div>
-        <div class="decision-action">
-          {% if decision_ok %}{{ t(decision.final.action_en, decision.final.action_zh) }}
-          {% else %}{{ t('DECISION TEMPORARILY UNAVAILABLE','决策暂不可用') }}{% endif %}
-        </div>
+        <div class="decision-action">{% if decision_ok %}{{ t(decision.final.action_en, decision.final.action_zh) }}{% else %}{{ t('DECISION TEMPORARILY UNAVAILABLE','决策暂不可用') }}{% endif %}</div>
         <div class="decision-basis">
-          {% if action_code == 'SET_EXPOSURE' %}<b>{{ t('First available model target.','首次可用模型目标。') }}</b> {{ t('No prior exposure was assumed.','未假设此前仓位。') }}
-          {% elif action_code == 'INCREASE_EXPOSURE' %}<b>{{ t('Final allocation increased.','最终配置上调。') }}</b> {{ t('Change from the prior model target:','较上一模型目标变化：') }} +{{ "%.1f"|format(decision.final.change_pp) }} {{ t('percentage points.','个百分点。') }}
-          {% elif action_code == 'REDUCE_EXPOSURE' %}<b>{{ t('Final allocation reduced.','最终配置下调。') }}</b> {{ t('Change from the prior model target:','较上一模型目标变化：') }} {{ "%.1f"|format(decision.final.change_pp) }} {{ t('percentage points.','个百分点。') }}
-          {% elif decision_ok %}<b>{{ t('No material allocation change.','配置无显著变化。') }}</b> {{ t('The final target remains','最终目标维持在') }} {{ target_pct }}% BTC.
-          {% else %}{{ t('No allocation action is published until the final model exposure passes integrity checks.','最终模型仓位通过完整性检查前，不发布任何配置行动。') }}{% endif %}
+          {%- if action_code == 'SET_EXPOSURE' -%}<b>{{ t('First available model target.','首次可用模型目标。') }}</b> {{ t('No prior exposure was assumed.','未假设此前仓位。') }}
+          {%- elif action_code == 'INCREASE_EXPOSURE' -%}<b>{{ t('Final allocation increased.','最终配置上调。') }}</b> {{ t('Change from the prior model target:','较上一模型目标变化：') }} +{{ "%.1f"|format(decision.final.change_pp) }} {{ t('percentage points.','个百分点。') }}
+          {%- elif action_code == 'REDUCE_EXPOSURE' -%}<b>{{ t('Final allocation reduced.','最终配置下调。') }}</b> {{ t('Change from the prior model target:','较上一模型目标变化：') }} {{ "%.1f"|format(decision.final.change_pp) }} {{ t('percentage points.','个百分点。') }}
+          {%- elif decision_ok -%}<b>{{ t('No material allocation change.','配置无显著变化。') }}</b> {{ t('The final target remains','最终目标维持在') }} {{ target_pct }}% BTC.
+          {%- else -%}{{ t('No allocation action is published until the final model exposure passes integrity checks.','最终模型仓位通过完整性检查前，不发布任何配置行动。') }}{%- endif -%}
         </div>
       </div>
       <div class="decision-detail">
