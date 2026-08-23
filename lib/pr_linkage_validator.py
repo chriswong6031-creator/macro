@@ -172,6 +172,8 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
     locs: dict[str, list[int]] = {f: [] for f in FIELDS}
     if block:
         for n, field, val in block:
+            if len(val) >= 2 and val.startswith("`") and val.endswith("`") and val.count("`") == 2:
+                val = val[1:-1]
             if len(val.encode("utf-8")) > limits["value_bytes"]:
                 raise ValidationError("RESOURCE_LIMIT:value_bytes")
             values[field], locs[field] = val, [n]
@@ -377,7 +379,9 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     elif wave is not None and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", wave): add("R008", {"location":f"BODY:L{locs['Wave'][0]}:Wave","value":text_digest(wave)}, "Wave")
     mode, authority, completion = normalized["Portfolio-Mode"], normalized["Authority"], normalized["Completion"]
     canonical = mode in ENUMS["Portfolio-Mode"] and authority in ENUMS["Authority"] and completion in ENUMS["Completion"]
-    author_state = "CANONICAL" if canonical else ("LEGACY" if any(x in ALIASES for x in values.values() if isinstance(x,str)) else ("MISSING" if missing else "INVALID"))
+    # A receipt-authorized compatibility alias is analysed through its normalized
+    # value but remains visibly legacy; it can never masquerade as a V1 author.
+    author_state = "LEGACY" if any(x in ALIASES for x in values.values() if isinstance(x,str)) else ("CANONICAL" if canonical else ("MISSING" if missing else "INVALID"))
     classification = manifest["classification"]["mode_to_class"].get(mode, manifest["classification"]["legacy_class"] if author_state == "LEGACY" else "UNKNOWN")
     if canonical and linear == "NONE": add("R029", {"linear":"NONE","portfolio_mode":mode})
     agentos, lsnap, paths, ownership, native = (observation[x] for x in ("agentos","linear","changed_paths","path_ownership","native_linkage"))
@@ -412,6 +416,8 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
                     continue
                 declared = [r for r in rows if r.get("target_role") == "DECLARED"]
                 if target == linear and len(declared) != 1:
+                    add("R027", {"declared":linear,"roles":roles_by_target[target],"targets":[target]})
+                if target != linear and declared:
                     add("R027", {"declared":linear,"roles":roles_by_target[target],"targets":[target]})
                 for r in rows:
                     allowed = manifest["classification"]["mode_to_issue_types"].get(mode,[]) if r.get("target_role") == "DECLARED" else manifest["classification"]["target_role_to_issue_types"].get(r.get("target_role"),[])
@@ -452,7 +458,8 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         if agentos["state"] == "PRESENT" and ws:
             collisions = sorted(r.get("key") for r in agentos.get("workstreams", []) if r.get("key", "").upper() == ws.upper())
             if collisions: add("R038", {"collisions":collisions,"workstream":ws})
-        if paths["state"] == "PRESENT" and ws and not any(r.get("path") == f"agentos/workstreams/{ws}.md" and r.get("change_type") in {"ADDED","MODIFIED"} for r in paths.get("paths", [])):
+        record_name = ws.replace(":", "-") if isinstance(ws, str) else ""
+        if paths["state"] == "PRESENT" and ws and not any(r.get("path") == f"agentos/workstreams/{record_name}.md" and r.get("change_type") in {"ADDED","MODIFIED"} for r in paths.get("paths", [])):
             add("R037", {"paths":[text_digest(r.get("path","")) for r in paths.get("paths",[])],"workstream":ws})
     completion_rows: list[dict[str, Any]] = []
     if native["state"] in {"PARTIAL", "UNAVAILABLE"}:
@@ -501,10 +508,17 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         if observed != expected:
             findings.append(_finding(rules,"R060",{"component":component,"expected":canonical_digest(expected),"observed":canonical_digest(observed)}, component=component))
     # Visible closing claim is independently material even without an adapter native row.
-    if completion in {"built-not-proven","proof-required","acceptance-required"}:
+    if completion in {"built-not-proven","proof-required","acceptance-required","records-only"}:
         for target, kind, line in body_relationships:
-            if target == linear and kind == "CLOSING":
+            declared_row = next((r for r in rows_by_target.get(target, []) if r.get("target_role") == "DECLARED"), None)
+            records_ok = completion == "records-only" and declared_row and declared_row.get("stop_law") == "RECORDS_ONLY" and ownership["state"] == "PRESENT" and all(r.get("resolution") == "EXACT" for r in ownership.get("resolutions", []))
+            if target == linear and kind == "CLOSING" and not records_ok:
                 findings.append(_finding(rules,"R052",{"completion":completion,"linear":linear,"relationships":[canonical_digest({"issue":target,"kind":kind})]},field="RELATIONSHIP",line=line))
+    if linear and linear != "NONE" and lsnap["state"] == "PRESENT":
+        declared_rows = [r for r in rows_by_target.get(linear, []) if r.get("target_role") == "DECLARED"]
+        if completion == "merge-is-done" and declared_rows and declared_rows[0].get("stop_law") in {"PROOF","ACCEPTANCE"}:
+            if not any(f.get("rule_id") == "R053" for f in findings):
+                add("R053", {"completion":completion,"linear":linear,"stop_law":declared_rows[0]["stop_law"]})
     if linear and linear != "NONE" and not completion_rows:
         declared_rows = [r for r in lsnap.get("issues", []) if r.get("id") == linear and r.get("target_role") == "DECLARED"] if lsnap["state"] == "PRESENT" else []
         completion_rows.append({"issue_id":linear,"effect":"UNKNOWN","declared_completion":completion,"stop_law":declared_rows[0].get("stop_law") if declared_rows else None,"consistency":"INDETERMINATE"})

@@ -89,7 +89,9 @@ def write_atomic(target: pathlib.Path, payload: bytes) -> None:
         except Exception as exc:
             raise PhaseFailure("OUTPUT_TEMP_CREATE_FAILED") from exc
         try:
-            os.write(fd, payload); os.close(fd)
+            written = os.write(fd, payload)
+            if written != len(payload): raise OSError("short write")
+            os.close(fd)
         except Exception as exc:
             try: os.close(fd)
             except Exception: pass
@@ -130,10 +132,10 @@ def main(argv: list[str] | None = None) -> int:
         try:
             write_atomic(pathlib.Path(a.output), payload)
         except PhaseFailure as exc:
-            sys.stderr.buffer.write(core.canonical_json(envelope(exc.reason, raw, src)) + b"\n")
+            sys.stderr.buffer.write(core.canonical_json(envelope(exc.reason, raw, src)))
             return ROUTES[exc.reason][2]
     else:
-        (sys.stdout if status == 0 else sys.stderr).buffer.write(payload + b"\n")
+        (sys.stdout if status == 0 else sys.stderr).buffer.write(payload)
     return status
 
 
