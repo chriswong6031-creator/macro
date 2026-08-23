@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import tempfile
 from copy import deepcopy
@@ -56,6 +57,8 @@ _TARGET_KIND_TO_COLLECTION = {
     "milestone": "milestones",
     "program_capability_link": "program_capability_links",
     "program_event_link": "program_event_links",
+    "conflict": "conflicts",
+    "override": "overrides",
 }
 _COLLECTION_ID_KEY = {
     "programs": "id",
@@ -65,8 +68,13 @@ _COLLECTION_ID_KEY = {
     "milestones": "id",
     "program_capability_links": "link_id",
     "program_event_links": "link_id",
+    "conflicts": "conflict_id",
+    "overrides": "override_id",
 }
 _LOGICAL_TARGET_KINDS = {"program", "capability", "platform"}
+_GRAPH_ID_RE = re.compile(
+    r"^program-ontology:(candidate|reviewed):(\d{4}-\d{2}-\d{2}):([a-z0-9]+(?:-[a-z0-9]+)*)$"
+)
 
 
 class CurateError(ValueError):
@@ -210,8 +218,7 @@ def _identity_disposition_ok(
         if row_id not in existing_ids:
             return "rename_as_new_identity"
     elif disposition == "new_identity":
-        revision = candidate_row.get("revision")
-        if row_id in existing_ids and revision == 1:
+        if row_id in existing_ids:
             return "worksheet_inconsistent"
     elif disposition == "identity_break":
         if candidate_row.get("succession_reason") != "restructured" or not candidate_row.get("predecessor_id"):
@@ -223,33 +230,174 @@ def _identity_disposition_ok(
 
 def _verify_event_row(
     candidate_row: dict[str, Any], *, workspace_events: dict[str, dict[str, Any]],
+    fallback_events: dict[str, dict[str, Any]] | None = None,
 ) -> str | None:
-    """SS3.1b curate-time event verification. Returns an error code, or None."""
+    """SS3.1b curate-time event verification. Returns an error code, or None.
+
+    ``fallback_events`` (the parquet-rebuilt event set, only ever populated
+    by the caller when the workspace's cap is engaged) is consulted ONLY
+    when the event is absent from the capped ``workspace_events`` window --
+    the workspace's own copy, when present, is always authoritative.
+    """
     event_id = candidate_row.get("event_id")
     live_event = workspace_events.get(event_id)
+    if live_event is None and fallback_events:
+        live_event = fallback_events.get(event_id)
     if live_event is None:
         return "event_not_found"
-    award_change = live_event.get("award_change") or {}
-    source_identity = award_change.get("source_identity") or {}
-    if (
-        candidate_row.get("event_source_identity_id") != source_identity.get("id")
-        or candidate_row.get("event_source_identity_content_sha256") != source_identity.get("content_sha256")
-    ):
-        return "event_identity_mismatch"
-    generated_award_id = award_change.get("generated_award_id")
-    award_key = award_change.get("award_key")
-    piid = award_change.get("piid")
-    if generated_award_id:
-        comparand = "generated:" + str(generated_award_id).removeprefix("generated:")
-    elif award_key:
-        comparand = award_key
-    elif piid:
-        comparand = f"piid:{piid}"
-    else:
-        comparand = None
-    if candidate_row.get("canonical_award_identity") != comparand:
+    if not po.event_hash_agrees(candidate_row, live_event):
         return "event_identity_mismatch"
     return None
+
+
+def _logical_kind_of(trial: dict[str, Any], target_id: str) -> str | None:
+    if any(r.get("id") == target_id for r in trial.get("programs", [])):
+        return "program"
+    if any(r.get("id") == target_id for r in trial.get("capabilities", [])):
+        return "capability"
+    if any(r.get("id") == target_id for r in trial.get("platforms", [])):
+        return "platform"
+    return None
+
+
+def _referencing_rows_current(trial: dict[str, Any], kind: str, target_id: str) -> list[dict[str, Any]]:
+    """Every row still CURRENT in `trial` that references `target_id` as its
+    own program_id/capability_id/platform_id/variant_of (freeze SS5's
+    retirement-cascade enumeration)."""
+    retired = po.override_targets_of(trial.get("overrides") or [])
+    referencing: list[dict[str, Any]] = []
+    if kind == "program":
+        current_platform_ids = po.current_identities(
+            trial.get("platforms") or [], id_key="id", analysis_as_of=None, retired_ids=retired,
+        )
+        for row in trial.get("platforms") or []:
+            if row.get("program_id") == target_id and row.get("id") in current_platform_ids:
+                referencing.append(row)
+        for collection, id_key in (
+            ("role_assertions", "id"), ("milestones", "id"),
+            ("program_capability_links", "link_id"), ("program_event_links", "link_id"),
+        ):
+            current_rows = po.current_content_addressed_rows(
+                trial.get(collection) or [], id_key=id_key, analysis_as_of=None, retired_ids=retired,
+            )
+            referencing.extend(row for row in current_rows if row.get("program_id") == target_id)
+    elif kind == "capability":
+        current_links = po.current_content_addressed_rows(
+            trial.get("program_capability_links") or [], id_key="link_id", analysis_as_of=None, retired_ids=retired,
+        )
+        referencing.extend(row for row in current_links if row.get("capability_id") == target_id)
+    elif kind == "platform":
+        current_roles = po.current_content_addressed_rows(
+            trial.get("role_assertions") or [], id_key="id", analysis_as_of=None, retired_ids=retired,
+        )
+        referencing.extend(row for row in current_roles if row.get("platform_id") == target_id)
+        current_platform_ids = po.current_identities(
+            trial.get("platforms") or [], id_key="id", analysis_as_of=None, retired_ids=retired,
+        )
+        for row in trial.get("platforms") or []:
+            if row.get("variant_of") == target_id and row.get("id") in current_platform_ids:
+                referencing.append(row)
+    return referencing
+
+
+def _check_retirement_cascade(trial: dict[str, Any], target_row_id: str | None) -> bool:
+    """Freeze SS5: retiring a LOGICAL id is refused `retirement_cascade_incomplete`
+    unless the same act also retires/supersedes every current row referencing
+    that identity. Returns True (cascade complete / rule inapplicable) or False."""
+    if not target_row_id:
+        return True
+    kind = _logical_kind_of(trial, target_row_id)
+    if kind is None:
+        return True
+    return not _referencing_rows_current(trial, kind, target_row_id)
+
+
+def _check_conflict_resolution(trial: dict[str, Any], target_row_id: str | None) -> bool:
+    """Freeze SS5: retiring a `conflicts` row is refused
+    `conflict_resolution_incomplete` unless the post-act state restores the
+    invariant -- AT MOST ONE current link on the subject for the event/
+    capability axes. Returns True (restored / rule inapplicable) or False."""
+    if not target_row_id:
+        return True
+    conflict_row = next(
+        (row for row in trial.get("conflicts") or [] if row.get("conflict_id") == target_row_id), None,
+    )
+    if conflict_row is None:
+        return True
+    scope = conflict_row.get("scope")
+    subject_type = conflict_row.get("subject_type")
+    subject_id = conflict_row.get("subject_id")
+    retired = po.override_targets_of(trial.get("overrides") or [])
+    if scope == "program_event_link" and subject_type == "award_event":
+        current_rows = po.current_content_addressed_rows(
+            trial.get("program_event_links") or [], id_key="link_id", analysis_as_of=None, retired_ids=retired,
+        )
+        return sum(1 for row in current_rows if row.get("event_id") == subject_id) <= 1
+    if scope == "capability" and subject_type == "program":
+        current_rows = po.current_content_addressed_rows(
+            trial.get("program_capability_links") or [], id_key="link_id", analysis_as_of=None, retired_ids=retired,
+        )
+        return sum(1 for row in current_rows if row.get("program_id") == subject_id) <= 1
+    return True
+
+
+def _check_override_cascades(trial: dict[str, Any]) -> tuple[list[str], list[str]]:
+    """Run the two SS5 retire_row curate-side invariants over every
+    retire_row override in `trial`. Returns (error_codes, offending_ids)."""
+    errors: list[str] = []
+    offending: list[str] = []
+    for override_row in trial.get("overrides") or []:
+        if override_row.get("action") != "retire_row":
+            continue
+        target = override_row.get("target_row_id")
+        own_id = override_row.get("override_id")
+        if not _check_retirement_cascade(trial, target):
+            errors.append("retirement_cascade_incomplete")
+            offending.append(own_id)
+        if not _check_conflict_resolution(trial, target):
+            errors.append("conflict_resolution_incomplete")
+            offending.append(own_id)
+    return errors, offending
+
+
+def _load_parquet_fallback_events(
+    parquet_dir: Path, *, as_of: str,
+) -> dict[str, dict[str, Any]]:
+    """Freeze SS3.1b: the workspace's `government_procurement_event.v2`
+    collection is a DOCUMENTED capped window -- when the cap is engaged
+    (``events_truncated > 0``), an event absent from that window is not
+    evidence of nonexistence. Rebuilds the full award-change event set from
+    the uncapped raw parquet stores (the same builder the production
+    pipeline uses) so curate can still verify identity/hash agreement for an
+    event that aged out of the workspace's cache. Offline tooling only --
+    pandas/pyarrow are acceptable here, never in the loader.
+
+    Returns ``{}`` (never raises) when either parquet file is absent or
+    unreadable -- an empty fallback still correctly falls through to
+    ``event_not_found``, exactly like "absent everywhere".
+    """
+    try:
+        import pandas as pd
+
+        from engine.government_revenue.award_events import build_award_change_events
+    except ImportError:
+        return {}
+
+    snapshots_path = parquet_dir / "award_event_snapshots.parquet"
+    actions_path = parquet_dir / "award_actions.parquet"
+    try:
+        snapshots = pd.read_parquet(snapshots_path) if snapshots_path.exists() else pd.DataFrame()
+        actions = pd.read_parquet(actions_path) if actions_path.exists() else pd.DataFrame()
+    except (OSError, ValueError) as exc:
+        raise CurateError(f"parquet fallback stores are unreadable: {exc}") from exc
+    if snapshots.empty and actions.empty:
+        return {}
+    events = build_award_change_events(snapshots, actions, as_of=as_of, known_at=as_of)
+    return {
+        event.get("event_id"): event
+        for event in events
+        if isinstance(event, dict) and event.get("event_id")
+    }
 
 
 def curate_worksheet(
@@ -260,10 +408,19 @@ def curate_worksheet(
     graph_known_at: str | None = None,
     graph_effective_at: str | None = None,
     workspace_events: dict[str, dict[str, Any]] | None = None,
+    events_truncated: int = 0,
+    parquet_dir: Path | None = None,
     check_only: bool = False,
 ) -> dict[str, Any]:
     """Admit a worksheet pass. Returns a report: admitted / rejected /
     coverage rows minted, and whether the artifact was written."""
+    try:
+        worksheet_ref = str(worksheet_path.resolve().relative_to(_ROOT.resolve()))
+    except ValueError:
+        # Outside the repo (e.g. a tmp_path test fixture) -- fall back to the
+        # given path rather than shipping a machine-local absolute one in a
+        # published artifact; production worksheets always resolve above.
+        worksheet_ref = str(worksheet_path)
     worksheet_bytes = worksheet_path.read_bytes()
     worksheet_sha256 = sha256(worksheet_bytes).hexdigest()
     try:
@@ -284,9 +441,21 @@ def curate_worksheet(
     if not isinstance(coverage_declared, list) or not isinstance(rows, list):
         raise CurateError("review worksheet coverage/rows must be arrays")
 
+    # SS3.1b parquet fallback: only ever consulted when the workspace's own
+    # capped event window is engaged (events_truncated > 0) -- the cap is
+    # not evidence of nonexistence. Loaded once per act, never per row.
+    fallback_events: dict[str, dict[str, Any]] | None = None
+    if events_truncated > 0 and parquet_dir is not None:
+        fallback_events = _load_parquet_fallback_events(parquet_dir, as_of=reviewed_at)
+
+    guard_output_path(target_path)
     working = _load_base_graph(
         target_path, graph_id=graph_id, graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
     )
+    # freeze SS3.0: curate re-mints the graph_id's status segment to
+    # `reviewed` on every admission -- a `candidate`-status graph_id must
+    # never reach the canonical artifact.
+    working["graph_id"] = _reviewed_graph_id(working.get("graph_id"))
 
     admitted: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
@@ -358,7 +527,9 @@ def curate_worksheet(
             # SAME act (checked once the whole admit batch is known, below).
             pass
         if target_kind == "program_event_link":
-            error = _verify_event_row(candidate_row, workspace_events=workspace_events or {})
+            error = _verify_event_row(
+                candidate_row, workspace_events=workspace_events or {}, fallback_events=fallback_events,
+            )
             if error:
                 rejected.append({"row": row, "reason": error})
                 continue
@@ -390,6 +561,19 @@ def curate_worksheet(
         for candidate in remaining:
             trial[_TARGET_KIND_TO_COLLECTION[candidate["target_kind"]]].append(candidate["candidate_row"])
         try:
+            # Curate-only invariants the loader does not (and must not, per
+            # freeze SS3.2 -- these are ADMISSION-time laws) enforce: a
+            # retire_row on a logical id needs its cascade complete; a
+            # retire_row clearing a conflicts row needs the multiplicity
+            # invariant restored. Checked BEFORE the loader call: an
+            # incomplete conflict-resolution retirement also trips the
+            # loader's OWN generic link_multiplicity_invalid check (the
+            # conflict-exemption it grants stops applying to a conflict that
+            # is itself now retired) -- the freeze-named diagnosis here is
+            # strictly more specific and must win the attribution.
+            cascade_errors, cascade_offending = _check_override_cascades(trial)
+            if cascade_errors:
+                raise po.OntologyInputError(cascade_errors, cascade_offending)
             po.load_program_ontology_graph(trial)
         except po.OntologyInputError as exc:
             offending = set(exc.offending_rows)
@@ -439,7 +623,7 @@ def curate_worksheet(
             "subject_type": subject_type,
             "subject_id": subject_id,
             "known_at": reviewed_at,
-            "worksheet_ref": str(worksheet_path),
+            "worksheet_ref": worksheet_ref,
             "worksheet_sha256": worksheet_sha256,
             "admitted_count": admitted_count,
         }
@@ -497,13 +681,37 @@ def _covers(candidate: dict[str, Any], *, scope: str, subject_type: str, subject
 
 
 def guard_output_path(path: Path) -> Path:
-    """Refuse a destination that could be mistaken for the canonical artifact
-    from a script that has no business writing it (mirrors the recipient-
-    graph propose script's guard, freeze SS3.2's two-script pattern)."""
+    """Refuse a destination curate has no business writing.
+
+    Unlike the PROPOSE script's identically-named guard (which exists to
+    keep discovery output away from the canonical path), curate's whole job
+    IS writing the canonical program ontology -- so its guard runs the
+    opposite check: the destination must be named exactly like the
+    canonical artifact (``program_ontology.json``), refusing a stray/typo
+    ``--target`` that would silently publish a differently-named file. The
+    directory root is deliberately not pinned here (a caller may legitimately
+    retarget within a test/migration tree); the canonical FILENAME is the
+    invariant curate exists to protect.
+    """
     resolved = path.resolve()
-    if resolved == DEFAULT_TARGET.resolve():
-        return resolved
+    if resolved.name != DEFAULT_TARGET.name:
+        raise ValueError(
+            f"curate only writes a file named {DEFAULT_TARGET.name!r}; refusing {path}"
+        )
     return resolved
+
+
+def _reviewed_graph_id(graph_id: str) -> str:
+    """Re-mint the graph_id's status segment to `reviewed` on admission
+    (freeze SS3.0: "the propose script mints `candidate`, the curate script
+    re-mints `reviewed` on admission" -- a `candidate`-status graph_id must
+    never reach the canonical artifact). Idempotent on an already-`reviewed`
+    graph_id."""
+    match = _GRAPH_ID_RE.fullmatch(graph_id or "")
+    if not match:
+        raise CurateError(f"graph_id does not match the frozen grammar: {graph_id!r}")
+    _status, date_part, slug = match.groups()
+    return f"program-ontology:reviewed:{date_part}:{slug}"
 
 
 def main() -> int:
@@ -516,15 +724,24 @@ def main() -> int:
     parser.add_argument("--graph-known-at")
     parser.add_argument("--graph-effective-at")
     parser.add_argument("--workspace", type=Path, help="Path to workspace.json for event verification")
+    parser.add_argument(
+        "--parquet-dir", type=Path, default=None,
+        help="Directory holding award_event_snapshots.parquet/award_actions.parquet "
+        "(SS3.1b fallback when the workspace's event cap is engaged; defaults to "
+        "data/government_revenue/ next to --workspace's usual location)",
+    )
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
 
     workspace_events: dict[str, dict[str, Any]] = {}
+    events_truncated = 0
     if args.workspace and args.workspace.exists():
         workspace_data = json.loads(args.workspace.read_text(encoding="utf-8"))
         for event in workspace_data.get("events", []):
             if isinstance(event, dict) and event.get("event_id"):
                 workspace_events[event["event_id"]] = event
+        coverage = workspace_data.get("coverage") or {}
+        events_truncated = coverage.get("events_truncated") or 0
 
     report = curate_worksheet(
         args.worksheet,
@@ -533,6 +750,8 @@ def main() -> int:
         graph_known_at=args.graph_known_at,
         graph_effective_at=args.graph_effective_at,
         workspace_events=workspace_events,
+        events_truncated=events_truncated,
+        parquet_dir=args.parquet_dir or (_ROOT / "data" / "government_revenue"),
         check_only=args.check,
     )
     action = "validated" if args.check else "published"

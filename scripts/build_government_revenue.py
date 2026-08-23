@@ -893,12 +893,31 @@ def _write_program_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, Pa
     return canonical, site
 
 
-def _load_optional_canonical_program_ontology(root: Path) -> tuple[str, dict] | None:
+def _workspace_events_by_id(workspace: dict | None) -> dict[str, dict]:
+    events = (workspace or {}).get("events")
+    if not isinstance(events, list):
+        return {}
+    return {
+        event["event_id"]: event
+        for event in events
+        if isinstance(event, dict) and event.get("event_id")
+    }
+
+
+def _load_optional_canonical_program_ontology(
+    root: Path, *, workspace: dict | None = None,
+) -> tuple[str, dict] | None:
     """Read the curate-published D5 ontology, if one exists.
 
     This script never writes the canonical artifact (curate is the only
     producer, freeze SS3.2) -- it only mirrors verified bytes to the site
     twin when a certified canonical artifact exists.
+
+    ``workspace`` (freeze SS3.1b, load-time half), when supplied, re-
+    verifies source-identity/canonical-identity hash agreement for every
+    linked event still present in it -- a mismatch refuses the WHOLE
+    artifact's certification via `event_identity_mismatch`, exactly like
+    every other load-time law.
     """
     canonical = root / "data" / "government_revenue" / "program_ontology.json"
     if not canonical.exists():
@@ -908,7 +927,9 @@ def _load_optional_canonical_program_ontology(root: Path) -> tuple[str, dict] | 
         graph = json.loads(raw)
     except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
         raise ValueError("canonical D5 program ontology is invalid JSON") from exc
-    loaded = _d5_program_ontology.load_program_ontology_graph(graph)
+    loaded = _d5_program_ontology.load_program_ontology_graph(
+        graph, workspace_events=_workspace_events_by_id(workspace),
+    )
     return raw, loaded
 
 
@@ -1152,7 +1173,7 @@ def build(
     # a refused certification -- never a hard pipeline failure -- and compose
     # the typed unavailable forms instead (SS3.2/SS4).
     try:
-        preserved_ontology = _load_optional_canonical_program_ontology(root)
+        preserved_ontology = _load_optional_canonical_program_ontology(root, workspace=workspace)
     except (ValueError, _d5_program_ontology.OntologyInputError) as exc:
         log.warning("government revenue D5 program ontology failed certification: %s", exc)
         preserved_ontology = None
@@ -1321,7 +1342,9 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
         # corrupt state, not a degraded rail, so this raises rather than
         # silently skipping the twin the way an absent/uncertified artifact
         # degrades for a live composer.
-        _d5_program_ontology.load_program_ontology_graph(program_ontology_raw_obj)
+        _d5_program_ontology.load_program_ontology_graph(
+            program_ontology_raw_obj, workspace_events=_workspace_events_by_id(workspace),
+        )
         _write_program_ontology_site_twin(root, program_ontology_raw)
     program_dossier_path = canonical_dir / "program_dossier.json"
     if program_dossier_path.exists():

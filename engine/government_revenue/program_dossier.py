@@ -252,6 +252,11 @@ def _awards_rail(
     for conflict in po.visible_rows(graph.get("conflicts") or [], analysis_as_of):
         if conflict.get("scope") != "program_event_link":
             continue
+        # A conflict CLEARED via retire_row (freeze SS5) is visible-but-
+        # retired and must never block re-derivation -- the same currency
+        # law every other retire-aware check in this module already honors.
+        if conflict.get("conflict_id") in retired:
+            continue
         if conflict.get("subject_type") == "award_event" and conflict.get("subject_id") in cited_events:
             conflicted = True
             break
@@ -269,6 +274,16 @@ def _awards_rail(
             analysis_as_of=analysis_as_of,
         )
 
+    if link_state != "reviewed":
+        # SS4 non-reviewed payload law: for the awards rail the review-gated
+        # state is link_state alone -- every other payload key is null/empty
+        # when it is not "reviewed". Attribution stays withheld under a
+        # declared conflict (or any not_reviewed/reviewed_none state): the
+        # typed state IS the content, never a leaked pointer.
+        return {
+            "source_state": source_state, "link_state": link_state,
+            "program_event_link_ids": [], "event_ids": [],
+        }
     return {
         "source_state": source_state,
         "link_state": link_state,

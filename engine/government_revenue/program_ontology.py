@@ -505,11 +505,15 @@ def _check_claim_scope_coverage(
 def _intervals_overlap(
     a_from: datetime | None, a_to: datetime | None, b_from: datetime | None, b_to: datetime | None,
 ) -> bool:
+    """Freeze SS5 frozen temporal-compatibility definition (half-open
+    [from, to) intervals, STRICT inequality): ``a.valid_from <
+    (b.valid_to or +inf) AND b.valid_from < (a.valid_to or +inf)``. A row
+    starting exactly when the other ends does NOT overlap it."""
     if a_from is None or b_from is None:
         return True
     a_upper = a_to or datetime.max.replace(tzinfo=timezone.utc)
     b_upper = b_to or datetime.max.replace(tzinfo=timezone.utc)
-    return a_from <= b_upper and b_from <= a_upper
+    return a_from < b_upper and b_from < a_upper
 
 
 def _overlaps_any(
@@ -529,13 +533,57 @@ def _overlaps_any(
     return False
 
 
-def load_program_ontology_graph(raw: Mapping[str, Any] | None) -> dict[str, Any] | None:
+def canonical_award_identity_comparand(award_change: Mapping[str, Any]) -> str | None:
+    """Freeze SS3.1b's exact precedence over an event's own `award_change`
+    fields (mirrors `point_in_time.py:148-165`'s `canonical_award_identity`,
+    including the idempotent `removeprefix`): `generated:<id>` preferred,
+    else the raw `award_key`, else `piid:<id>`, else ``None``."""
+    generated_award_id = award_change.get("generated_award_id")
+    award_key = award_change.get("award_key")
+    piid = award_change.get("piid")
+    if generated_award_id:
+        return "generated:" + str(generated_award_id).removeprefix("generated:")
+    if award_key:
+        return award_key
+    if piid:
+        return f"piid:{piid}"
+    return None
+
+
+def _event_hash_agrees(row: Mapping[str, Any], live_event: Mapping[str, Any]) -> bool:
+    """SS3.1b hash-agreement check shared by the curate-time verifier and
+    this loader's load-time re-verification."""
+    award_change = live_event.get("award_change") or {}
+    source_identity = award_change.get("source_identity") or {}
+    if (
+        row.get("event_source_identity_id") != source_identity.get("id")
+        or row.get("event_source_identity_content_sha256") != source_identity.get("content_sha256")
+    ):
+        return False
+    return row.get("canonical_award_identity") == canonical_award_identity_comparand(award_change)
+
+
+def load_program_ontology_graph(
+    raw: Mapping[str, Any] | None,
+    *,
+    workspace_events: Mapping[str, Mapping[str, Any]] | None = None,
+) -> dict[str, Any] | None:
     """Validate and normalize a reviewed D5 program-ontology artifact.
 
     Returns ``None`` when ``raw`` is ``None`` (the artifact is simply absent
     -- not an error; freeze SS4's "ontology unavailable" form applies).
     Raises :class:`OntologyInputError` when the artifact is present but fails
     certification. Returns a deep-copied, validated dict otherwise.
+
+    ``workspace_events`` (freeze SS3.1b, load-time half): when supplied
+    (``{event_id: government_procurement_event.v2 row}``), every linked
+    event STILL PRESENT in it is re-verified for source-identity/canonical-
+    identity hash agreement; a mismatch refuses `event_identity_mismatch`.
+    An event absent from this mapping is NOT a refusal -- the event plane is
+    append-only truth and aging out of a capped window is not evidence of
+    nonexistence. Omitting the parameter entirely (``None``) skips this
+    re-verification altogether (a caller with no workspace available, e.g.
+    an isolated schema check).
     """
     if raw is None:
         return None
@@ -601,8 +649,7 @@ def load_program_ontology_graph(raw: Mapping[str, Any] | None) -> dict[str, Any]
                 ctx.err("ontology_row_shape_invalid", key)
         program_ids.add(row_id)
         if isinstance(revision, int) and not isinstance(revision, bool):
-            program_by_id_rev[(row_id, revision)] = row
-    _check_duplicates(program_by_id_rev, ctx)
+            _register_logical_row(program_by_id_rev, (row_id, revision), row, ctx=ctx, row_key=key)
 
     capability_ids: set[str] = set()
     capability_by_id_rev: dict[tuple[str, int], dict[str, Any]] = {}
@@ -623,8 +670,7 @@ def load_program_ontology_graph(raw: Mapping[str, Any] | None) -> dict[str, Any]
         _check_claim_scope_coverage("capabilities", scopes_union, ctx=ctx, row_id=key)
         capability_ids.add(row_id)
         if isinstance(revision, int) and not isinstance(revision, bool):
-            capability_by_id_rev[(row_id, revision)] = row
-    _check_duplicates(capability_by_id_rev, ctx)
+            _register_logical_row(capability_by_id_rev, (row_id, revision), row, ctx=ctx, row_key=key)
 
     platform_ids: set[str] = set()
     platform_by_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -658,8 +704,7 @@ def load_program_ontology_graph(raw: Mapping[str, Any] | None) -> dict[str, Any]
             platform_ids.add(row_id)
             platform_by_id[row_id].append(row)
         if isinstance(revision, int) and not isinstance(revision, bool):
-            platform_by_id_rev[(row_id, revision)] = row
-    _check_duplicates(platform_by_id_rev, ctx)
+            _register_logical_row(platform_by_id_rev, (row_id, revision), row, ctx=ctx, row_key=key)
     # Second pass: variant_of / program_id-consistency now the full platform
     # id set is known.
     for row in platforms:
@@ -858,6 +903,10 @@ def load_program_ontology_graph(raw: Mapping[str, Any] | None) -> dict[str, Any]
         if row_id in program_event_link_ids:
             ctx.err("duplicate_identity_conflict", key)
         program_event_link_ids.add(row_id)
+        if workspace_events is not None and event_id_value is not None:
+            live_event = workspace_events.get(event_id_value)
+            if live_event is not None and not _event_hash_agrees(row, live_event):
+                ctx.err("event_identity_mismatch", key)
         if row_id and _PROG_EVENT_ID.fullmatch(row_id) and valid_from is not None:
             try:
                 expected = program_event_link_id(
@@ -941,6 +990,17 @@ def load_program_ontology_graph(raw: Mapping[str, Any] | None) -> dict[str, Any]
         if row_id in conflict_ids:
             ctx.err("duplicate_identity_conflict", key)
         conflict_ids.add(row_id)
+        if row_id and _CONF_ID.fullmatch(row_id) and isinstance(candidates, list) and candidates:
+            try:
+                expected = conflict_id(
+                    scope=row.get("scope"), subject_type=row.get("subject_type"),
+                    subject_id=row.get("subject_id"), candidate_row_ids=candidates,
+                    known_at=row.get("known_at"),
+                )
+            except (TypeError, ValueError):
+                expected = None
+            if expected is not None and expected != row_id:
+                ctx.err("duplicate_identity_conflict", key)
 
     override_ids: set[str] = set()
     for row in overrides:
@@ -971,6 +1031,16 @@ def load_program_ontology_graph(raw: Mapping[str, Any] | None) -> dict[str, Any]
         if row_id in override_ids:
             ctx.err("duplicate_identity_conflict", key)
         override_ids.add(row_id)
+        if row_id and _OVR_ID.fullmatch(row_id):
+            try:
+                expected = override_id(
+                    action=action, target_row_id=target_row_id, subject_type=subject_type,
+                    subject_id=subject_id, known_at=row.get("known_at"),
+                )
+            except (TypeError, ValueError):
+                expected = None
+            if expected is not None and expected != row_id:
+                ctx.err("duplicate_identity_conflict", key)
 
     # Link multiplicity invariants (mirrors the curate-time invariant,
     # fail-closed against a hand-edited artifact -- freeze SS3.1). A subject
@@ -987,13 +1057,14 @@ def load_program_ontology_graph(raw: Mapping[str, Any] | None) -> dict[str, Any]
         if row.get("scope") == "program_event_link" and row.get("subject_type") == "award_event"
         and _text(row.get("conflict_id")) not in override_targets_of(overrides)
     }
+    retired_link_ids = override_targets_of(overrides)
     _check_link_multiplicity(
         program_capability_links, key_fn=lambda r: r.get("program_id"),
-        exempt_subjects=conflicted_capability_subjects, ctx=ctx,
+        exempt_subjects=conflicted_capability_subjects, retired_ids=retired_link_ids, ctx=ctx,
     )
     _check_link_multiplicity(
         program_event_links, key_fn=lambda r: r.get("event_id"),
-        exempt_subjects=conflicted_event_subjects, ctx=ctx,
+        exempt_subjects=conflicted_event_subjects, retired_ids=retired_link_ids, ctx=ctx,
     )
 
     ctx.raise_if_any()
@@ -1013,22 +1084,37 @@ def _row_evidence_scopes(
     return scopes
 
 
-def _check_duplicates(by_id_rev: Mapping[tuple[str, int], Mapping[str, Any]], ctx: _Ctx) -> None:
-    """Logical kinds are unique on (id, revision); this dict construction
-    already collapsed exact key collisions, so nothing further is needed
-    here beyond a placeholder for symmetry with content-addressed checks."""
-    return None
+def _register_logical_row(
+    by_id_rev: dict[tuple[str, int], dict[str, Any]], key: tuple[str, int],
+    row: dict[str, Any], *, ctx: _Ctx, row_key: str,
+) -> None:
+    """Logical kinds are unique on (id, revision) (freeze SS5): a byte-
+    identical resubmission dedupes idempotently; two rows sharing the key
+    with DIFFERING bytes refuse certification `duplicate_identity_conflict`.
+    Must run BEFORE any dict collapse -- collapsing first (a plain
+    ``dict[key] = row`` overwrite) makes the second row's bytes
+    unobservable and the check a permanent no-op."""
+    existing = by_id_rev.get(key)
+    if existing is not None and existing != row:
+        ctx.err("duplicate_identity_conflict", row_key)
+        return
+    by_id_rev[key] = row
 
 
 def _current_link_ids(
-    rows: Sequence[Mapping[str, Any]],
+    rows: Sequence[Mapping[str, Any]], *, retired_ids: set[str] = frozenset(),
 ) -> set[str]:
-    """A row is CURRENT (freeze SS5) iff no visible row names it in predecessor_id."""
+    """A row is CURRENT (freeze SS5) iff no visible row names it in
+    predecessor_id AND it is not targeted by a `retire_row` override.
+    Load-time structural check: certification has no `analysis_as_of` of its
+    own, so this reads every row/override the artifact carries (a load-time
+    certification is not itself point-in-time; PIT filtering is the
+    derivation layer's job, see `current_content_addressed_rows`)."""
     predecessors = {_text(r.get("predecessor_id")) for r in rows if r.get("predecessor_id")}
     id_key = "link_id" if rows and "link_id" in rows[0] else "id"
     return {
         _text(r.get(id_key)) for r in rows
-        if _text(r.get(id_key)) not in predecessors
+        if _text(r.get(id_key)) not in predecessors and _text(r.get(id_key)) not in retired_ids
     }
 
 
@@ -1044,11 +1130,12 @@ def override_targets_of(overrides: Sequence[Mapping[str, Any]]) -> set[str]:
 
 
 def _check_link_multiplicity(
-    rows: Sequence[Mapping[str, Any]], *, key_fn: Any, exempt_subjects: set[Any], ctx: _Ctx,
+    rows: Sequence[Mapping[str, Any]], *, key_fn: Any, exempt_subjects: set[Any],
+    retired_ids: set[str], ctx: _Ctx,
 ) -> None:
     if not rows:
         return
-    current_ids = _current_link_ids(rows)
+    current_ids = _current_link_ids(rows, retired_ids=retired_ids)
     by_subject: dict[str, list[str]] = defaultdict(list)
     id_key = "link_id"
     for row in rows:
@@ -1311,12 +1398,19 @@ strict_datetime = _strict_datetime
 full_date = _full_date
 
 
-def load_program_ontology_graph_or_none(raw: Mapping[str, Any] | None) -> dict[str, Any] | None:
+event_hash_agrees = _event_hash_agrees
+
+
+def load_program_ontology_graph_or_none(
+    raw: Mapping[str, Any] | None,
+    *,
+    workspace_events: Mapping[str, Mapping[str, Any]] | None = None,
+) -> dict[str, Any] | None:
     """Load, catching :class:`OntologyInputError` into `None` (freeze SS4:
     consumers treat absence and refused certification identically -- the
     typed unavailable form, never a crash)."""
     try:
-        return load_program_ontology_graph(raw)
+        return load_program_ontology_graph(raw, workspace_events=workspace_events)
     except OntologyInputError:
         return None
 
@@ -1359,4 +1453,6 @@ __all__ = [
     "analysis_as_of",
     "strict_datetime",
     "full_date",
+    "canonical_award_identity_comparand",
+    "event_hash_agrees",
 ]
