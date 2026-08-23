@@ -989,78 +989,107 @@ waves:
       fresh origin/main containing both merge 2ee5c16724da/#6308 A5C-alpha
       and merge 3d35ec5cd5ae/#6307 A5C-TOL); NOT merged/armed — the
       commissioning session adjudicates and merges. This is the "honest
-      fix" both A5C-alpha (#6308) and A5C (#6307) named as still-pending:
-      the manifest/history chain that closes A5C-alpha's own named
-      residual gap (a replacement 8-K whose original was never published
-      still presented as first-ever-safe).
+      fix" both A5C-alpha (#6308) and A5C (#6307) named as still-pending.
+      REVISED after an Opus red-team pass (2026-08-23, BLOCK: 3 blockers/
+      5 majors/6 minors/1 nit) found the FIRST-pass architecture broken in
+      three load-bearing ways, all now fixed on the same branch — the
+      SCOPE was explicitly amended mid-review to bring
+      tests/test_issuer_profiles_a5a.py into this PR's owned files (its
+      mocks previously drove the avoidance of the correct architecture).
+      BLOCKER-1 (eligibility): the builder now sorts revisions by
+      source_available_at BEFORE deciding eligibility (never trusts raw
+      chain order), and a packet-build failure on the would-be ANCHOR
+      revision now aborts the event for the night instead of falling
+      through to mint from a LATER revision.
+      BLOCKER-2/MAJOR-6/MINOR-9 (discovery architecture, REPLACED): the
+      FIRST pass ran discovery as an additive pre-step alongside the OLD
+      single-newest acquire_and_build_homebuilder_workspace() call site —
+      red-team found this mints a REDUNDANT, clock-drifted third
+      generation nightly (the two mechanisms independently rebuilding "the
+      newest" row with different observed_at stamps). Corrected: discovery
+      is now the SOLE per-ticker mechanism, yielding the full ascending
+      not-yet-represented list INCLUDING the newest; each revision chains
+      onto the one immediately before it (never a "latest chain state"
+      lookahead — fixes lineage); the running snapshot always ends each
+      ticker's slot at its own newest revision; and the closing write now
+      skips entirely when nothing changed since the last chained publish
+      this cycle (own regression test:
+      test_refresh_publishes_original_and_amendment_as_two_chained_generations
+      caught THIS EXACT redundant-generation bug during the fix).
+      tests/test_issuer_profiles_a5a.py's mocks were retargeted from
+      acquire_and_build_homebuilder_workspace to
+      discover_new_homebuilder_revisions — all 36 tests pass with every
+      existing assertion preserved (none weakened).
+      BLOCKER-3/MAJOR-4 (two-clock law): already correctly applied inside
+      discover_new_homebuilder_revisions from the first pass; the fix
+      round added the previously-missing tests (prior_observed_at
+      coverage, an injected-clock semantic-no-op proof replacing "two
+      calls landed in the same wall-clock second" luck, homebuilder-path
+      clock-separation assertions).
+      MAJOR-5: refresh()-level multi-generation tests added (original+
+      amendment as two chained generations; newest-already-represented
+      restores current state without a redundant write; mid-sequence
+      publish failure aborts before any out-of-order write, verified
+      against the FAKE R2's remote_manifest — the true published state —
+      not the local scratch file every attempt unconditionally overwrites).
+      MAJOR-7: the "second GET-sequence" claim was FALSE — unified onto
+      the model-facing reader's own _fetch_bytes (new allow_404 param) and
+      _public_base_url (new require_public_host param, off for the
+      producer/nightly path since its origin is trusted config, never
+      model input); the separate _raw_get/_resolve_workspace_base_url
+      stack is deleted.
+      MAJOR-8/MINOR-10: the chain walk now verifies each predecessor link
+      against the sha256 of the RAW FETCHED BYTES (never a
+      re-serialization) and REUSES that fetch as the next hop's own
+      manifest (halves manifest GETs from 2N to N); max_hops is
+      documented as configurable with a small-bound test.
+      MINOR-13/14: homebuilder_discovery's type hint corrected to
+      Callable[..., ...] (its real keyword-heavy signature); a discovery
+      WINDOW-gap heuristic warns (log-only) when the chain's newest known
+      revision predates the oldest row still visible in the SEC recent
+      block.
       A. MANIFEST CHAIN: event_workspace_manifest.v2 (v1 stays the
       backward-compatible chain ROOT) adds previous_generation_id +
-      previous_manifest_sha256 (engine/company_intelligence/
-      event_workspace.py); write_workspace_generation mints v2 going
+      previous_manifest_sha256; write_workspace_generation mints v2 going
       forward and folds previous_generation_id into the content-address
-      hash (a content cycle A->B->A mints a distinct third generation) —
-      new preview_generation_identity() lets a caller decide, BEFORE
+      hash; preview_generation_identity() lets a caller decide, BEFORE
       writing, whether a cycle reproduces the CURRENTLY published
-      generation (the semantic no-op, preserved) or genuinely chains
-      forward.
-      B. DISCOVERY: scripts/refresh_event_workspaces.py's
-      discover_new_homebuilder_revisions() finds EVERY not-yet-represented
-      qualifying 8-K/8-K/A per homebuilder (ascending SEC acceptance
-      order — "choosing only the newest filing is FORBIDDEN", Sol item 3)
-      and mints ONE chained generation per NEW revision, marker-promoted
-      immediately per generation. INTERPRETATION (named per the
-      commission): rather than replacing the pre-existing single-newest
-      acquire_and_build_homebuilder_workspace() call site (which
-      tests/test_issuer_profiles_a5a.py — 36 tests, NOT owned by this
-      PR — mocks directly), discovery runs as an ADDITIVE pre-step that
-      backfills any OTHER not-yet-represented (older) revision before the
-      unchanged single-newest path runs; both may harmlessly re-touch the
-      same newest row in one cycle (idempotent, content-identical). All 36
-      test_issuer_profiles_a5a.py tests pass UNCHANGED. Discovery's SEC
-      submissions WINDOW is unchanged from before this PR (no `files`
-      shard walk) — never a new backfill surface.
-      C. TWO-CLOCK LAW: source_available_at stays the SEC acceptance
-      clock; observed_at is now the REAL build-time wall-clock
-      (engine/company_intelligence/event_workspace_build.py gained
-      prior_observed_at — first-observation persistence, C3: an unchanged
-      source revision keeps its ORIGINAL observed_at forever).
-      D. ONE SHARED READER: engine/neuralweb/company_intelligence_reader.py
-      gained load_current_workspace / load_workspace_with_disposition
-      (three-way found/not_published/fetch_failed) / find_current_event_id_for_company
-      / read_event_source_revisions (verified predecessor chain walk,
-      bounded 500 hops, WorkspaceChainIntegrityError on any broken link,
-      dedupes consecutive carried-forward identical source_sha256).
-      scripts/refresh_event_workspaces.py's load_prior_workspace /
-      load_prior_workspace_for_ticker and
+      generation or genuinely chains forward.
+      D. ONE SHARED READER (home: engine/neuralweb/company_intelligence_reader.py):
+      load_current_workspace / load_workspace_with_disposition (three-way
+      found/not_published/fetch_failed) / find_current_event_id_for_company
+      / read_event_source_revisions. scripts/refresh_event_workspaces.py's
+      load_prior_workspace / load_prior_workspace_for_ticker and
       scripts/build_cycle_pattern_imce_prospective.py's
-      _load_workspace_with_disposition are now thin delegators (their
-      *NotPublished exception classes are ALIASES of the shared reader's
+      _load_workspace_with_disposition are thin delegators (their
+      *NotPublished exception classes are ALIASES of
       WorkspaceChainNotPublished, not lookalikes); _raw_fetch_workspace is
-      RETIRED (grep-proof test:
-      tests/test_company_intelligence_workspace_chain.py::test_raw_fetch_workspace_no_longer_exists_in_the_builder_module).
+      RETIRED (grep-proof test).
       E/F/G in scripts/build_cycle_pattern_imce_prospective.py's run():
-      eligibility is decided by the EARLIEST known revision's
-      source_available_at, PERMANENTLY (a correction can never cross the
-      activation boundary either direction); the one immutable observation
-      mints from the earliest ELIGIBLE revision (decision_cutoff pinned to
-      ITS OWN clock); later materially-different revisions become ordered
-      corrections, cosmetic ones produce no noise; a contributor's state at
-      a trigger cutoff is the latest LAWFUL revision of the contributor's
-      OWN chain at-or-before that cutoff (G), never a later correction used
-      retrospectively. Zero new ledger schema fields (behavior only, per
-      the commission's census). TOL sweep: _tol_sensitivity's docstring
-      (imce_prospective.py) updated to reflect PR #6307's landed
-      extraction; new consumption flow-through test added.
-      Tests: 3 files touched (test_company_intelligence_event_workspace.py,
-      test_refresh_event_workspaces.py +4, test_imce_prospective.py +5)
-      plus 1 new file (test_company_intelligence_workspace_chain.py, 12
-      tests) — 278 passed / 2 skipped across the full touched-module run;
-      contract-delta 0 introduced (base 3aea4f76125e). CI wiring:
-      .github/ci/legacy-jobs.yml neural-web-core pytest line gained the new
-      test file; .github/workflows/company-intelligence.yml sparse-checkout
-      gained engine/neuralweb/__init__.py + company_intelligence_reader.py
-      (refresh_event_workspaces.py now imports it at module level; `requests`
-      was already an installed dep there — no new pip dependency).
+      eligibility decided by the sorted-ascending EARLIEST known
+      revision's source_available_at, PERMANENTLY; the one immutable
+      observation mints from the earliest ELIGIBLE revision; later
+      materially-different revisions become ordered corrections, cosmetic
+      ones produce no noise; a contributor's state at a trigger cutoff is
+      the latest LAWFUL revision of the contributor's OWN chain
+      at-or-before that cutoff. Zero new ledger schema fields. TOL sweep:
+      _tol_sensitivity's docstring corrected; consumption flow-through
+      test added.
+      Tests (post-fix-round): test_company_intelligence_event_workspace.py
+      (unchanged), test_refresh_event_workspaces.py (+11: 4 original +
+      2 discovery-order + 3 MAJOR-5 refresh-level + 1 injected-clock +
+      homebuilder clock-separation assertions), test_imce_prospective.py
+      (+7: 5 original + BLOCKER-1 inverted-order probe + anchor-failure
+      probe), test_issuer_profiles_a5a.py (5 tests' mocks retargeted, all
+      36 green), new test_company_intelligence_workspace_chain.py (13
+      tests incl. max_hops bound + single-fetch-per-hop verification) —
+      289 passed / 2 skipped across the full touched-module run;
+      contract-delta 0 introduced; agentos validate 0 errors. CI wiring:
+      .github/ci/legacy-jobs.yml neural-web-core pytest line gained the
+      new test file; .github/workflows/company-intelligence.yml
+      sparse-checkout gained engine/neuralweb/__init__.py +
+      company_intelligence_reader.py (requests was already an installed
+      dep there — no new pip dependency).
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's

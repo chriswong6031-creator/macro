@@ -1139,16 +1139,16 @@ def test_refresh_is_fail_soft_per_homebuilder(tmp_path: Path, monkeypatch: pytes
         return aapl_transcript_payload
 
     skipped: list[str] = []
-    real_acquire = refresh_mod.acquire_and_build_homebuilder_workspace
+    real_discover = refresh_mod.discover_new_homebuilder_revisions
 
-    def spying_acquire(ticker: str, **kwargs):
+    def spying_discover(ticker: str, **kwargs):
         try:
-            return real_acquire(ticker, **kwargs)
+            return real_discover(ticker, **kwargs)
         except Exception:
             skipped.append(ticker)
             raise
 
-    monkeypatch.setattr(refresh_mod, "acquire_and_build_homebuilder_workspace", spying_acquire)
+    monkeypatch.setattr(refresh_mod, "discover_new_homebuilder_revisions", spying_discover)
 
     rc = refresh_mod.refresh(
         tmp_path,
@@ -1156,15 +1156,15 @@ def test_refresh_is_fail_soft_per_homebuilder(tmp_path: Path, monkeypatch: pytes
         http_get=http_get,
         fetch_index=fetch_index,
         fetch_body_fn=fetch_body,
-        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23): every
-        # homebuilder acquisition fails here by construction (fake SEC only
+        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23); the
+        # call site is now discovery (BLOCKER-2, 2026-08-23): every
+        # homebuilder discovery fails here by construction (fake SEC only
         # answers AAPL), so refresh() now attempts a carry-forward prior
         # lookup on each failure — the REAL default
         # (load_prior_workspace_for_ticker) would make a genuine network
-        # call against production R2. Explicit offline stubs (no prior)
-        # keep this test's "ALL FOUR are true skips, nothing to carry"
+        # call against production R2. An explicit offline stub (no prior)
+        # keeps this test's "ALL FOUR are true skips, nothing to carry"
         # premise intact and off the network.
-        homebuilder_prior_workspace_loader=lambda event_id: None,
         homebuilder_carry_forward_loader=lambda ticker: None,
         publish_generation=lambda out_dir, dry_run=False: 0,
     )
@@ -1235,22 +1235,22 @@ def test_refresh_publishes_a_successful_homebuilder_alongside_a_skipped_one(
 
     dhi_event_id = "evt_cik0000882184_2026q3_results"
     dhi_payload = _build_dhi_workspace(exhibit_body=DHI_EXHIBIT.read_text(encoding="utf-8"), prior_source_sha256=None)
-    real_acquire = refresh_mod.acquire_and_build_homebuilder_workspace
+    real_discover = refresh_mod.discover_new_homebuilder_revisions
 
-    def stubbed_acquire(ticker: str, **kwargs):
+    def stubbed_discover(ticker: str, **kwargs):
         if ticker == "DHI":
-            return dhi_event_id, dhi_payload
-        return real_acquire(ticker, **kwargs)
+            return [(dhi_event_id, dhi_payload)]
+        return real_discover(ticker, **kwargs)
 
-    monkeypatch.setattr(refresh_mod, "acquire_and_build_homebuilder_workspace", stubbed_acquire)
+    monkeypatch.setattr(refresh_mod, "discover_new_homebuilder_revisions", stubbed_discover)
 
     rc = refresh_mod.refresh(
         tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
-        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23): the
-        # three non-DHI tickers fail acquisition here (fake SEC only
-        # answers AAPL/DHI) — explicit offline stubs keep the carry-forward
-        # lookup off the network (see the sibling test above).
-        homebuilder_prior_workspace_loader=lambda event_id: None,
+        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23); the
+        # call site is now discovery (BLOCKER-2): the three non-DHI tickers
+        # fail discovery here (fake SEC only answers AAPL/DHI) — an
+        # explicit offline stub keeps the carry-forward lookup off the
+        # network (see the sibling test above).
         homebuilder_carry_forward_loader=lambda ticker: None,
         publish_generation=lambda out_dir, dry_run=False: 0,
     )
@@ -1351,33 +1351,32 @@ def _publish_dhi_corrected_cycle_1(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     import scripts.refresh_event_workspaces as refresh_mod
 
     http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected = _dhi_refresh_fixtures()
-    real_acquire = refresh_mod.acquire_and_build_homebuilder_workspace
+    real_discover = refresh_mod.discover_new_homebuilder_revisions
 
-    def stubbed_acquire_cycle1(ticker: str, **kwargs):
+    def stubbed_discover_cycle1(ticker: str, **kwargs):
         if ticker == "DHI":
-            return dhi_event_id, dhi_corrected
-        return real_acquire(ticker, **kwargs)
+            return [(dhi_event_id, dhi_corrected)]
+        return real_discover(ticker, **kwargs)
 
-    monkeypatch.setattr(refresh_mod, "acquire_and_build_homebuilder_workspace", stubbed_acquire_cycle1)
+    monkeypatch.setattr(refresh_mod, "discover_new_homebuilder_revisions", stubbed_discover_cycle1)
     rc1 = refresh_mod.refresh(
         tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
-        homebuilder_prior_workspace_loader=lambda event_id: None,
         homebuilder_carry_forward_loader=lambda ticker: None,
         publish_generation=lambda out_dir, dry_run=False: 0,
     )
     assert rc1 == 0
-    monkeypatch.setattr(refresh_mod, "acquire_and_build_homebuilder_workspace", real_acquire)
+    monkeypatch.setattr(refresh_mod, "discover_new_homebuilder_revisions", real_discover)
     marker1 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
     dhi_published_1 = jsonlib.loads(
         (tmp_path / "event_workspaces" / "generations" / marker1["generation_id"]
          / "workspaces" / f"{dhi_event_id}.json").read_text()
     )
     assert dhi_published_1["lifecycle"]["state"] == "corrected"
-    # (c): a never-published ticker with a failed acquisition is a true
+    # (c): a never-published ticker with a failed discovery is a true
     # skip — PHM/KBH/TOL are absent from cycle 1 (only AAPL + DHI present),
     # confirming case (c) alongside cases (a)/(b) exercised below.
     assert marker1["event_count"] == 2
-    return http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected, dhi_published_1, marker1["generation_id"], real_acquire
+    return http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected, dhi_published_1, marker1["generation_id"], real_discover
 
 
 def test_carry_forward_lookup_failure_aborts_the_whole_refresh_then_recovers(
@@ -1405,7 +1404,6 @@ def test_carry_forward_lookup_failure_aborts_the_whole_refresh_then_recovers(
     with pytest.raises(refresh_mod.RefreshError):
         refresh_mod.refresh(
             tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
-            homebuilder_prior_workspace_loader=lambda event_id: None,
             homebuilder_carry_forward_loader=failing_carry_forward,
             publish_generation=lambda out_dir, dry_run=False: 0,
         )
@@ -1419,7 +1417,6 @@ def test_carry_forward_lookup_failure_aborts_the_whole_refresh_then_recovers(
 
     rc3 = refresh_mod.refresh(
         tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
-        homebuilder_prior_workspace_loader=lambda event_id: None,
         homebuilder_carry_forward_loader=normal_carry_forward,
         publish_generation=lambda out_dir, dry_run=False: 0,
     )
@@ -1457,7 +1454,6 @@ def test_carry_forward_lookup_bare_exception_also_aborts(
     with pytest.raises(refresh_mod.RefreshError):
         refresh_mod.refresh(
             tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
-            homebuilder_prior_workspace_loader=lambda event_id: None,
             homebuilder_carry_forward_loader=bare_exception_carry_forward,
             publish_generation=lambda out_dir, dry_run=False: 0,
         )
@@ -1490,7 +1486,6 @@ def test_acquisition_failure_carries_forward_a_corrected_event_byte_identical(
 
     rc2 = refresh_mod.refresh(
         tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
-        homebuilder_prior_workspace_loader=lambda event_id: None,
         homebuilder_carry_forward_loader=carry_forward_succeeds,
         publish_generation=lambda out_dir, dry_run=False: 0,
     )
@@ -1510,17 +1505,19 @@ def test_acquisition_failure_carries_forward_a_corrected_event_byte_identical(
 
     assert _content(dhi_published_2) == _content(dhi_published_1), "carried-forward content must be unchanged"
 
-    # CYCLE 3: DHI acquisition succeeds again (same unchanged source) —
+    # CYCLE 3: DHI discovery "succeeds" again (same unchanged source, so it
+    # is expected to be already-represented and NOT re-returned by the
+    # real discovery path — this stub simulates the OLD accession still
+    # producing the same corrected content, e.g. via carry-forward) —
     # sticky-corrected (round 1/2) must still hold.
-    def stubbed_acquire_cycle3(ticker: str, **kwargs):
+    def stubbed_discover_cycle3(ticker: str, **kwargs):
         if ticker == "DHI":
-            return dhi_event_id, dhi_corrected
+            return [(dhi_event_id, dhi_corrected)]
         return real_acquire(ticker, **kwargs)
 
-    monkeypatch.setattr(refresh_mod, "acquire_and_build_homebuilder_workspace", stubbed_acquire_cycle3)
+    monkeypatch.setattr(refresh_mod, "discover_new_homebuilder_revisions", stubbed_discover_cycle3)
     rc3 = refresh_mod.refresh(
         tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
-        homebuilder_prior_workspace_loader=lambda event_id: None,
         homebuilder_carry_forward_loader=lambda ticker: None,
         publish_generation=lambda out_dir, dry_run=False: 0,
     )

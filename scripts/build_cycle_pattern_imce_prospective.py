@@ -355,11 +355,25 @@ def run(production: bool = False) -> dict:
                 # already proves at least one revision exists).
                 continue
 
-            earliest = revisions[0]
-            earliest_avail = earliest.get("source_available_at")
-            if not earliest_avail:
-                summary["errors"].append(f"{event_id}: earliest revision carries no source_available_at")
+            # BLOCKER-1 (Opus red-team, 2026-08-23): the chain walk's OWN
+            # return order (oldest -> newest) is a construction detail of
+            # read_event_source_revisions, not a guarantee this builder may
+            # lean on for a PERMANENT eligibility decision — a caller-
+            # injected or otherwise reordered revision list must not silently
+            # decide eligibility off revisions[0]. Sort by
+            # source_available_at FIRST; every downstream use (eligibility
+            # AND replay, F1) reads from this ONE sorted list, never the raw
+            # chain-order list again.
+            ordered = sorted(
+                (r for r in revisions if r.get("source_available_at")),
+                key=lambda r: parse_iso(r["source_available_at"]),
+            )
+            if not ordered:
+                summary["errors"].append(f"{event_id}: no revision carries a usable source_available_at")
                 continue
+
+            earliest = ordered[0]
+            earliest_avail = earliest["source_available_at"]
 
             # E1/E2/E3 (frozen spec): the EARLIEST known revision's
             # source_available_at decides eligibility, PERMANENTLY — a
@@ -406,13 +420,8 @@ def run(production: bool = False) -> dict:
                     if row_gen_is_newer:
                         last_recorded_packet = row
 
-            # F1: ascending source_available_at order (revisions is already
-            # oldest -> newest from the chain walk; re-sorting is defensive).
-            ordered = sorted(
-                (r for r in revisions if r.get("source_available_at")),
-                key=lambda r: parse_iso(r["source_available_at"]),
-            )
-
+            # F1: replay the SAME ascending-order list eligibility was
+            # decided from above — never re-derived here (BLOCKER-1).
             for revision in ordered:
                 gen_id = revision.get("generation_id")
                 decision_cutoff = revision.get("source_available_at")
@@ -445,6 +454,13 @@ def run(production: bool = False) -> dict:
                 except Exception as exc:  # noqa: BLE001
                     log.error("%s %s: packet build failed (%s)", trigger_ticker, event_id, exc)
                     summary["errors"].append(f"{event_id}: packet_build: {exc}")
+                    if anchor_observation_id is None:
+                        # BLOCKER-1: this WOULD have been the anchor (earliest
+                        # eligible) mint — a build failure here must never
+                        # let the loop fall through to mint from a LATER
+                        # revision instead. Abandon this event for tonight
+                        # (recorded above); the next nightly retries cleanly.
+                        break
                     continue
 
                 if anchor_observation_id is None:

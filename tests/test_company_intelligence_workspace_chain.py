@@ -6,12 +6,15 @@ ordered source revisions with consecutive-carry dedupe), and the D3
 retirement of the duplicate GET implementation in
 scripts/build_cycle_pattern_imce_prospective.py.
 
-No network: every fetch in this file is served by an in-process ``fake_get``
-stub keyed by exact URL, monkeypatched onto ``requests.get`` (the same
-pattern tests/test_refresh_event_workspaces.py already uses — the reader's
-new primitives use the identical plain ``requests.get(url, headers=...,
-timeout=...)`` call shape, not the hardened streaming ``_fetch_bytes`` path
-the model-facing reader functions use).
+No network: every fetch in this file is served by an in-process stub keyed
+by exact URL, monkeypatched onto ``reader._fetch_bytes`` — the SAME
+hardened fetch helper the model-facing reader functions use (MAJOR-7: there
+is only ONE fetch implementation in company_intelligence_reader.py; the
+producer-facing primitives this file exercises route through it via
+``_fetch_bytes``'s ``allow_404`` parameter, exactly like
+tests/test_company_intelligence_neural_reader.py's own
+``monkeypatch.setattr(reader, "_fetch_bytes", ...)`` pattern for the
+model-facing path).
 """
 from __future__ import annotations
 
@@ -98,36 +101,41 @@ def _mint(
     return generation_dir.name, manifest
 
 
-class _FakeResponse:
-    def __init__(self, *, status_code: int, payload: object = None):
-        self.status_code = status_code
-        self._payload = payload
+def _server(objects: dict[str, dict], *, marker_generation_id: str | None, fetch_calls: list[str] | None = None):
+    """objects: generation_id -> {"manifest": dict, "workspaces": {event_id: dict}}.
 
-    def raise_for_status(self) -> None:
-        if self.status_code >= 400 and self.status_code != 404:
-            raise RuntimeError(f"HTTP {self.status_code}")
+    Returns a stand-in for ``reader._fetch_bytes(url, *, limit, allow_404=False)``
+    — the ONE shared fetch helper (MAJOR-7) — resolving canonical JSON bytes
+    for each known object, or the ``allow_404``/raise contract on a miss.
+    *fetch_calls*, when supplied, records every URL fetched (MAJOR-8(a)
+    single-fetch-per-hop verification).
+    """
 
-    def json(self) -> object:
-        return self._payload
-
-
-def _server(objects: dict[str, dict], *, marker_generation_id: str | None):
-    """objects: generation_id -> {"manifest": dict, "workspaces": {event_id: dict}}."""
-
-    def fake_get(url: str, *, headers=None, timeout=None):
+    def fake_fetch_bytes(url: str, *, limit: int, allow_404: bool = False) -> bytes | None:
+        if fetch_calls is not None:
+            fetch_calls.append(url)
+        body: bytes | None = None
         if url == f"{BASE}/event_workspaces/manifest.json":
-            if marker_generation_id is None:
-                return _FakeResponse(status_code=404)
-            return _FakeResponse(status_code=200, payload=objects[marker_generation_id]["manifest"])
-        for generation_id, bundle in objects.items():
-            if url == f"{BASE}/event_workspaces/generations/{generation_id}/manifest.json":
-                return _FakeResponse(status_code=200, payload=bundle["manifest"])
-            for event_id, ws in bundle["workspaces"].items():
-                if url == f"{BASE}/event_workspaces/generations/{generation_id}/workspaces/{event_id}.json":
-                    return _FakeResponse(status_code=200, payload=ws)
-        return _FakeResponse(status_code=404)
+            if marker_generation_id is not None:
+                body = canonical_json_bytes(objects[marker_generation_id]["manifest"])
+        else:
+            for generation_id, bundle in objects.items():
+                if url == f"{BASE}/event_workspaces/generations/{generation_id}/manifest.json":
+                    body = canonical_json_bytes(bundle["manifest"])
+                    break
+                for event_id, ws in bundle["workspaces"].items():
+                    if url == f"{BASE}/event_workspaces/generations/{generation_id}/workspaces/{event_id}.json":
+                        body = canonical_json_bytes(ws)
+                        break
+                if body is not None:
+                    break
+        if body is None:
+            if allow_404:
+                return None
+            raise reader.CompanyIntelligenceReadError(f"404: {url}")
+        return body
 
-    return fake_get
+    return fake_fetch_bytes
 
 
 # ---------------------------------------------------------------------------
@@ -190,7 +198,7 @@ def test_v1_root_terminates_the_walk_and_is_readable(tmp_path: Path, monkeypatch
     del v1_manifest["previous_manifest_sha256"]
 
     objects = {gen_id: {"manifest": v1_manifest, "workspaces": {EVENT_ID: ws | {"generation_id": gen_id}}}}
-    monkeypatch.setattr("requests.get", _server(objects, marker_generation_id=gen_id))
+    monkeypatch.setattr(reader, "_fetch_bytes", _server(objects, marker_generation_id=gen_id))
 
     revisions = reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
     assert len(revisions) == 1
@@ -213,10 +221,16 @@ def test_chain_walk_returns_oldest_to_newest_across_v2_generations(tmp_path: Pat
         gen1: {"manifest": man1, "workspaces": {EVENT_ID: ws1 | {"generation_id": gen1}}},
         gen2: {"manifest": man2, "workspaces": {EVENT_ID: ws2 | {"generation_id": gen2}}},
     }
-    monkeypatch.setattr("requests.get", _server(objects, marker_generation_id=gen2))
+    fetch_calls: list[str] = []
+    monkeypatch.setattr(reader, "_fetch_bytes", _server(objects, marker_generation_id=gen2, fetch_calls=fetch_calls))
 
     revisions = reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
     assert [r["generation_id"] for r in revisions] == [gen1, gen2]
+    # MAJOR-8(a): the 2-generation chain costs exactly 2 manifest GETs (one
+    # per generation), never 4 (no re-fetch of a predecessor already
+    # fetched+verified as the next hop's own "current" manifest).
+    manifest_fetches = [url for url in fetch_calls if url.endswith("/manifest.json") and "/generations/" in url]
+    assert len(manifest_fetches) == 2
     assert [r["source_sha256"] for r in revisions] == ["a" * 64, "b" * 64]
     assert revisions[0]["source_available_at"] < revisions[1]["source_available_at"]
 
@@ -255,7 +269,7 @@ def test_carried_forward_generations_create_no_phantom_revision(tmp_path: Path, 
             "evt_cik0000000001_2026q1_results": other | {"generation_id": gen2},
         }},
     }
-    monkeypatch.setattr("requests.get", _server(objects, marker_generation_id=gen3))
+    monkeypatch.setattr(reader, "_fetch_bytes", _server(objects, marker_generation_id=gen3))
 
     revisions = reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
     # gen1 and gen2 both carry source_sha256="a"*64 for this event — deduped
@@ -271,7 +285,7 @@ def test_chain_link_to_a_nonexistent_generation_is_a_typed_hard_failure(tmp_path
         previous_generation_id="0" * 24, previous_manifest_sha256="f" * 64,
     )
     objects = {gen1: {"manifest": man1, "workspaces": {EVENT_ID: ws | {"generation_id": gen1}}}}
-    monkeypatch.setattr("requests.get", _server(objects, marker_generation_id=gen1))
+    monkeypatch.setattr(reader, "_fetch_bytes", _server(objects, marker_generation_id=gen1))
 
     with pytest.raises(reader.WorkspaceChainIntegrityError):
         reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
@@ -291,7 +305,7 @@ def test_chain_link_with_a_wrong_hash_is_a_typed_hard_failure(tmp_path: Path, mo
         gen1: {"manifest": man1, "workspaces": {EVENT_ID: ws1 | {"generation_id": gen1}}},
         gen2: {"manifest": man2, "workspaces": {EVENT_ID: ws2 | {"generation_id": gen2}}},
     }
-    monkeypatch.setattr("requests.get", _server(objects, marker_generation_id=gen2))
+    monkeypatch.setattr(reader, "_fetch_bytes", _server(objects, marker_generation_id=gen2))
 
     with pytest.raises(reader.WorkspaceChainIntegrityError):
         reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
@@ -301,13 +315,59 @@ def test_chain_walk_never_reads_a_generation_it_has_not_verified() -> None:
     """No candidate exists at all (clean 404 marker) -> empty history, never
     an exception — the FIRST-EVER discovery case must not be treated as a
     chain integrity failure."""
-    def fake_get(url, *, headers=None, timeout=None):
-        return _FakeResponse(status_code=404)
+    def fake_fetch_bytes(url: str, *, limit: int, allow_404: bool = False) -> bytes | None:
+        if allow_404:
+            return None
+        raise reader.CompanyIntelligenceReadError(f"404: {url}")
 
     import pytest as _pytest
     with _pytest.MonkeyPatch.context() as mp:
-        mp.setattr("requests.get", fake_get)
+        mp.setattr(reader, "_fetch_bytes", fake_fetch_bytes)
         assert reader.read_event_source_revisions(EVENT_ID, base_url=BASE) == []
+
+
+def test_max_hops_bound_is_a_typed_hard_failure_not_an_unbounded_walk(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """MAJOR-8(c): a 4-generation chain against an artificially tiny
+    max_hops=3 bound refuses with a typed integrity error rather than
+    walking further — the bound is genuinely enforced, not decorative."""
+    ws1 = _raw_workspace(source_available_at="2026-01-01T00:00:00Z", source_sha256="a" * 64)
+    ws2 = _raw_workspace(source_available_at="2026-02-01T00:00:00Z", source_sha256="b" * 64)
+    ws3 = _raw_workspace(source_available_at="2026-03-01T00:00:00Z", source_sha256="c" * 64)
+    ws4 = _raw_workspace(source_available_at="2026-04-01T00:00:00Z", source_sha256="d" * 64)
+
+    gen1, man1 = _mint(tmp_path, {EVENT_ID: ws1}, generated_at="2026-01-01T00:00:00Z")
+    gen1_sha = sha256(canonical_json_bytes(man1)).hexdigest()
+    gen2, man2 = _mint(
+        tmp_path, {EVENT_ID: ws2}, generated_at="2026-02-01T00:00:00Z",
+        previous_generation_id=gen1, previous_manifest_sha256=gen1_sha,
+    )
+    gen2_sha = sha256(canonical_json_bytes(man2)).hexdigest()
+    gen3, man3 = _mint(
+        tmp_path, {EVENT_ID: ws3}, generated_at="2026-03-01T00:00:00Z",
+        previous_generation_id=gen2, previous_manifest_sha256=gen2_sha,
+    )
+    gen3_sha = sha256(canonical_json_bytes(man3)).hexdigest()
+    gen4, man4 = _mint(
+        tmp_path, {EVENT_ID: ws4}, generated_at="2026-04-01T00:00:00Z",
+        previous_generation_id=gen3, previous_manifest_sha256=gen3_sha,
+    )
+
+    objects = {
+        gen1: {"manifest": man1, "workspaces": {EVENT_ID: ws1 | {"generation_id": gen1}}},
+        gen2: {"manifest": man2, "workspaces": {EVENT_ID: ws2 | {"generation_id": gen2}}},
+        gen3: {"manifest": man3, "workspaces": {EVENT_ID: ws3 | {"generation_id": gen3}}},
+        gen4: {"manifest": man4, "workspaces": {EVENT_ID: ws4 | {"generation_id": gen4}}},
+    }
+    monkeypatch.setattr(reader, "_fetch_bytes", _server(objects, marker_generation_id=gen4))
+
+    with pytest.raises(reader.WorkspaceChainIntegrityError):
+        reader.read_event_source_revisions(EVENT_ID, base_url=BASE, max_hops=3)
+
+    # A bound comfortably above the chain's real depth succeeds normally.
+    revisions = reader.read_event_source_revisions(EVENT_ID, base_url=BASE, max_hops=10)
+    assert len(revisions) == 4
 
 
 # ---------------------------------------------------------------------------

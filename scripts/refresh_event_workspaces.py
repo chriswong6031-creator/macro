@@ -925,6 +925,11 @@ def discover_new_homebuilder_revisions(
     candidates = _fetch_submissions_candidates(issuer.cik, http_get=http_get)
 
     state: dict[str, tuple[frozenset[str], Mapping[str, Any] | None]] = {}
+    # MINOR-14: the chain's own newest-known-revision snapshot BEFORE this
+    # cycle mutates `state` with anything freshly discovered — the gap
+    # heuristic below compares against what the chain ALREADY had, not what
+    # this run just added.
+    original_chain_latest: dict[str, Mapping[str, Any] | None] = {}
     results: list[tuple[str, dict[str, Any]]] = []
 
     for row in candidates:
@@ -945,6 +950,7 @@ def discover_new_homebuilder_revisions(
 
         if event_id not in state:
             state[event_id] = loader(event_id)
+            original_chain_latest[event_id] = state[event_id][1]
         represented, latest_ws = state[event_id]
 
         if row_accession in represented:
@@ -1003,6 +1009,34 @@ def discover_new_homebuilder_revisions(
         # chains onto the revision JUST built, not the stale pre-cycle read.
         state[event_id] = (represented | {row_accession}, payload)
 
+    # MINOR-14: discovery must not lose revisions SILENTLY. This SEC
+    # "recent" window is a ROLLING one (B1's own scope note) — if the
+    # chain's newest already-represented revision predates the OLDEST row
+    # still visible in this poll, a genuine intervening revision may have
+    # rolled off the window between nightly polls and is no longer
+    # discoverable through this mechanism at all. Log-only (ISO-8601 'Z'
+    # timestamps compare correctly as strings); never blocks publication of
+    # what WAS discovered this cycle.
+    if candidates:
+        oldest_visible_accepted = str(candidates[0].get("acceptanceDateTime") or "")
+        newest_chain_known: str | None = None
+        for latest_ws in original_chain_latest.values():
+            if not isinstance(latest_ws, Mapping):
+                continue
+            src = (latest_ws.get("lifecycle") or {}).get("source_available_at")
+            if src and (newest_chain_known is None or str(src) > newest_chain_known):
+                newest_chain_known = str(src)
+        if oldest_visible_accepted and newest_chain_known and newest_chain_known < oldest_visible_accepted:
+            print(
+                "::warning title=event-workspace-discovery-window::"
+                f"{ticker} chain gap may predate the submissions recent block "
+                f"(chain's newest known revision {newest_chain_known} precedes the oldest row "
+                f"still visible in this poll, {oldest_visible_accepted}) — an intervening "
+                "revision may have rolled off the SEC recent-filings window and would not be "
+                "discoverable through this mechanism",
+                flush=True,
+            )
+
     return results
 
 
@@ -1016,15 +1050,21 @@ def refresh(
     fetch_index: FetchIndex = fetch_global_index,
     fetch_body_fn: FetchBody = fetch_body,
     prior_workspace: PriorLoader | Mapping[str, Any] | None = None,
-    # NEW-4 fix (Opus red-team verification round 3, 2026-08-23): the
-    # homebuilder prior loader was hardcoded to load_prior_workspace at the
-    # per-ticker call site — unreachable by a test without monkeypatching
-    # the module-level name. Now a real parameter, mirroring the flagship's
-    # own prior_workspace injection point above.
-    homebuilder_prior_workspace_loader: Callable[[str], Mapping[str, Any] | None] = load_prior_workspace,
+    # BLOCKER-2/MAJOR-6/MINOR-9 (Opus red-team, 2026-08-23): the homebuilder
+    # acquisition call site is now SUBSUMED into discovery below —
+    # homebuilder_prior_workspace_loader / acquire_and_build_homebuilder_workspace
+    # are no longer part of refresh()'s own flow (the function still exists
+    # and is independently tested/testable — see
+    # tests/test_issuer_profiles_a5a.py's direct unit tests of it — but
+    # refresh() itself no longer calls it: a SECOND, clock-drifted
+    # rebuild of "the newest" row atop discovery's own chained publish was
+    # exactly the architecture MINOR-9/MAJOR-6 named as broken).
+    #
     # NEW-4: the ticker-scoped carry-forward lookup (load_prior_workspace_for_ticker
-    # by default) used ONLY when this cycle's acquisition/build fails and the
-    # normal event_id-keyed prior read above was never reached.
+    # by default), used whenever THIS cycle's discovery finds zero new
+    # revisions (SEC reachable, nothing new) or fails to reach SEC at all —
+    # either way the ticker's current published state must still be carried
+    # into the running snapshot.
     homebuilder_carry_forward_loader: Callable[[str], Mapping[str, Any] | None] = load_prior_workspace_for_ticker,
     publish_generation: PublishFn = publish_event_workspaces,
     # IMCE A5C (frozen spec A2/B3): resolves the CURRENT top-level
@@ -1034,21 +1074,29 @@ def refresh(
     # has no real predecessor to fetch — see tests/test_refresh_event_workspaces.py).
     current_marker_loader: Callable[[], Mapping[str, Any] | None] = ci_reader.fetch_current_workspace_marker,
     # IMCE A5C (frozen spec B): per-ticker discovery of ALL not-yet-
-    # represented qualifying revisions, ascending. Injectable for tests;
-    # production default is discover_new_homebuilder_revisions.
-    homebuilder_discovery: Callable[[str], list[tuple[str, dict[str, Any]]]] | None = None,
+    # represented qualifying revisions, ascending — including whatever
+    # would be "the newest" (MINOR-13: the real signature is keyword-heavy,
+    # never a bare Callable[[str], ...]). Injectable for tests; production
+    # default is discover_new_homebuilder_revisions.
+    homebuilder_discovery: Callable[..., list[tuple[str, dict[str, Any]]]] | None = None,
 ) -> int:
     """Acquire sources → build → write sibling nest → publish marker-last.
 
     IMCE A5C (frozen spec B/C): the AAPL flagship keeps its own frozen-
     accession single-revision replay (B5) — unchanged shape, now stamped
     with a real wall-clock ``observed_at`` and first-observation persistence
-    (C2/C3) like every other issuer. Each HOMEBUILDER ticker discovers EVERY
-    not-yet-represented qualifying revision this cycle (B1/B2), publishing
-    ONE nest generation per discovered revision, chained in ascending SEC
-    acceptance order (B3) — the common case (0 or 1 total new revision this
-    cycle across every issuer) collapses to exactly the same single
-    write+publish call as before A5C.
+    (C2/C3) like every other issuer. Each HOMEBUILDER ticker's discovery
+    yields EVERY not-yet-represented qualifying revision this cycle
+    (B1/B2) — including the newest, which is no longer separately
+    reacquired (BLOCKER-2) — publishing ONE nest generation per discovered
+    revision, chained in ascending SEC acceptance order (B3); each
+    revision's ``prior_*`` continuity comes from the revision immediately
+    BEFORE it in that SAME ascending list (never a "latest chain state"
+    lookahead — MINOR-9's lineage fix lives inside
+    ``discover_new_homebuilder_revisions`` itself). The common case (0 or 1
+    total new revision this cycle across every issuer) collapses to exactly
+    one write+publish call, and the running snapshot always ends each
+    ticker's slot at its OWN newest known revision (MAJOR-6).
     """
     del work_dir  # reserved so the job shares the v1 scratch parent without writing it
     filing = acquire_flagship_filing(http_get=http_get)
@@ -1149,57 +1197,6 @@ def refresh(
     # bounded retry on the prior-read GETs is a possible future reduction
     # of that already-small residual — deliberately NOT added in this PR.
     workspaces: dict[str, dict[str, Any]] = {FLAGSHIP_EVENT_ID: payload}
-    for ticker in HOMEBUILDER_TICKERS:
-        try:
-            event_id, hb_payload = acquire_and_build_homebuilder_workspace(
-                ticker,
-                http_get=http_get,
-                tx_index_url=tx_index_url,
-                fetch_index=fetch_index,
-                fetch_body_fn=fetch_body_fn,
-                prior_workspace_loader=homebuilder_prior_workspace_loader,
-            )
-        except PriorWorkspaceFetchFailed as exc:
-            # (b): the NORMAL-path prior read (after a successful
-            # acquisition) failed — cannot safely publish.
-            raise RefreshError(
-                f"{ticker}: prior workspace fetch failed — refusing to publish a nest that might "
-                f"silently drop a corrected event: {exc}"
-            ) from exc
-        except Exception as exc:  # noqa: BLE001 - acquisition/build failed; try to carry the prior forward before giving up
-            try:
-                carried_prior = homebuilder_carry_forward_loader(ticker)
-            except Exception as carry_exc:  # noqa: BLE001
-                # (b), extended (NIT fix, round 4): ANY exception from the
-                # carry-forward lookup — not only PriorWorkspaceFetchFailed
-                # — means we cannot confirm nothing is lost. Uniform with
-                # the flagship's own handler above (NEW-5): only an
-                # explicit clean None return may mean "nothing to carry."
-                raise RefreshError(
-                    f"{ticker}: acquisition failed AND the carry-forward prior lookup also failed — "
-                    f"refusing to publish a nest that might silently drop a corrected event: {carry_exc}"
-                ) from carry_exc
-            if carried_prior is not None:
-                # (a): carry the prior payload forward unchanged. Its own
-                # event_id field is authoritative for the workspaces key.
-                carried_event_id = str(carried_prior.get("event_id") or "")
-                if not carried_event_id:
-                    raise RefreshError(f"{ticker}: carried-forward prior workspace has no event_id") from exc
-                print(
-                    "::warning title=event-workspaces::"
-                    f"{ticker} acquisition failed, CARRIED FORWARD prior workspace unchanged "
-                    f"(class={type(exc).__name__}): {exc}",
-                    flush=True,
-                )
-                log.info("%s: acquisition failed, carried forward prior workspace unchanged (%s)", ticker, exc)
-                workspaces[carried_event_id] = dict(carried_prior)
-            else:
-                # (c): genuinely never published — true skip.
-                print(f"::warning title=event-workspaces::{ticker} skipped (no prior to carry): {exc}", flush=True)
-                log.info("%s event workspace skipped, no prior to carry (%s)", ticker, exc)
-            continue
-        workspaces[event_id] = hb_payload
-
     target = Path(out_dir) if out_dir is not None else Path("data/company_intelligence")
 
     # IMCE A5C (frozen spec A2): resolve the predecessor generation this
@@ -1217,19 +1214,26 @@ def refresh(
         sha256(canonical_json_bytes(current_marker)).hexdigest()
         if current_marker is not None and original_current_generation_id else None
     )
+    # MINOR-9/MAJOR-6 (Opus red-team, 2026-08-23): the LAST workspaces
+    # snapshot actually published this cycle, if any — the closing write
+    # below must semantic-no-op against THIS (the just-promoted generation),
+    # never mint a redundant third generation for byte-identical content
+    # that a per-ticker chained write already published.
+    last_published_snapshot: dict[str, dict[str, Any]] | None = None
 
-    # IMCE A5C discovery (frozen spec B1/B2/B3): for each homebuilder,
-    # publish every OTHER not-yet-represented qualifying revision (ascending
-    # SEC acceptance order) as its OWN chained nest generation, BEFORE the
-    # per-ticker acquisition loop above runs its (unchanged) "acquire the
-    # current/newest row" pass. Interpretation choice (named in the PR
-    # body): the two mechanisms may both touch the SAME newest row in one
-    # cycle — a harmless, idempotent, content-identical re-publish — rather
-    # than requiring the discovery pass to predict which row the unchanged
-    # acquisition path will independently select. Marker-promotion choice
-    # (B3): promote once PER generation (immediately after each write),
-    # never batched to the end — every intermediate immutable generation is
-    # therefore always fully uploaded before any later marker references it.
+    # IMCE A5C discovery (frozen spec B1/B2/B3; BLOCKER-2/MAJOR-6/MINOR-9
+    # architecture): for each homebuilder, discovery is the SOLE per-ticker
+    # mechanism — it yields EVERY not-yet-represented qualifying revision,
+    # ascending, INCLUDING whatever would be "the newest" row (there is no
+    # separate re-acquisition of "the current" afterward). Each revision is
+    # published as its OWN chained generation, in order, so the running
+    # snapshot's slot for this ticker always ends at its own newest known
+    # revision (MAJOR-6) with true predecessor lineage carried hop-to-hop
+    # inside discover_new_homebuilder_revisions itself (MINOR-9). Marker-
+    # promotion choice (B3): promote once PER generation (immediately after
+    # each write), never batched to the end — every intermediate immutable
+    # generation is therefore always fully uploaded before any later marker
+    # references it.
     discover = homebuilder_discovery or discover_new_homebuilder_revisions
     for ticker in HOMEBUILDER_TICKERS:
         try:
@@ -1243,18 +1247,57 @@ def refresh(
         except PriorWorkspaceFetchFailed as exc:
             # A genuine chain-integrity/network failure while discovering
             # history must hard-abort — never silently treated as "nothing
-            # to discover" (mirrors the flagship/primary-loader discipline
-            # above).
+            # to discover" (mirrors the flagship's own prior-fetch-failure
+            # discipline above).
             raise RefreshError(
                 f"{ticker}: source-revision discovery failed — refusing to publish a nest that "
                 f"might silently drop a corrected event: {exc}"
             ) from exc
-        except Exception as exc:  # noqa: BLE001 - SEC access failure during discovery is fail-soft
-            # The ticker's PRIMARY acquisition path below still gets its own
-            # attempt + carry-forward handling; discovery contributing zero
-            # EXTRA revisions this cycle is not itself a refusal.
-            log.info("%s: revision discovery unavailable this cycle (%s)", ticker, exc)
-            new_revisions = []
+        except Exception as exc:  # noqa: BLE001 - SEC access failure during discovery is fail-soft; try to carry the prior forward
+            try:
+                carried_prior = homebuilder_carry_forward_loader(ticker)
+            except Exception as carry_exc:  # noqa: BLE001
+                # ANY exception from the carry-forward lookup means we
+                # cannot confirm nothing is lost — uniform with the
+                # flagship's own handler above: only an explicit clean
+                # None return may mean "nothing to carry."
+                raise RefreshError(
+                    f"{ticker}: discovery failed AND the carry-forward prior lookup also failed — "
+                    f"refusing to publish a nest that might silently drop a corrected event: {carry_exc}"
+                ) from carry_exc
+            if carried_prior is not None:
+                carried_event_id = str(carried_prior.get("event_id") or "")
+                if not carried_event_id:
+                    raise RefreshError(f"{ticker}: carried-forward prior workspace has no event_id") from exc
+                print(
+                    "::warning title=event-workspaces::"
+                    f"{ticker} discovery failed, CARRIED FORWARD prior workspace unchanged "
+                    f"(class={type(exc).__name__}): {exc}",
+                    flush=True,
+                )
+                log.info("%s: discovery failed, carried forward prior workspace unchanged (%s)", ticker, exc)
+                workspaces[carried_event_id] = dict(carried_prior)
+            else:
+                print(f"::warning title=event-workspaces::{ticker} skipped (no prior to carry): {exc}", flush=True)
+                log.info("%s event workspace skipped, no prior to carry (%s)", ticker, exc)
+            continue
+
+        if not new_revisions:
+            # SEC reachable, genuinely nothing new this cycle — still carry
+            # the ticker's CURRENT published state into the running
+            # snapshot so it stays present in whatever gets written next.
+            try:
+                current_prior = homebuilder_carry_forward_loader(ticker)
+            except Exception as carry_exc:  # noqa: BLE001
+                raise RefreshError(
+                    f"{ticker}: carry-forward lookup for an unchanged ticker failed — refusing to "
+                    f"publish a nest that might silently drop a corrected event: {carry_exc}"
+                ) from carry_exc
+            if current_prior is not None:
+                current_event_id = str(current_prior.get("event_id") or "")
+                if current_event_id:
+                    workspaces[current_event_id] = dict(current_prior)
+            continue
 
         for event_id, hb_payload in new_revisions:
             workspaces[event_id] = hb_payload
@@ -1279,6 +1322,20 @@ def refresh(
             manifest_body = (target / "event_workspaces" / "manifest.json").read_bytes()
             chain_previous_id = generation_dir.name
             chain_previous_sha = sha256(manifest_body).hexdigest()
+            last_published_snapshot = dict(workspaces)
+
+    # MINOR-9/MAJOR-6: if the LAST thing published this cycle (a per-ticker
+    # chained write) already reflects the CURRENT, fully-assembled
+    # `workspaces` dict byte-for-byte, there is NOTHING left to write — a
+    # closing write here would mint a REDUNDANT generation for content a
+    # write above already published (same content, deeper chain link only).
+    if last_published_snapshot is not None and last_published_snapshot == workspaces:
+        print(
+            "event workspaces: validated "
+            f"events={sorted(workspaces)} generation={chain_previous_id} "
+            "source_clock=" + source_clock + " (closing write skipped: no change since the last chained publish)"
+        )
+        return 0
 
     # Final combined write (IMCE A5C A4: preserve the semantic no-op). If NO
     # discovery step advanced the chain this cycle (chain_previous_id is

@@ -120,9 +120,30 @@ def _require_public_hostname(host: str) -> None:
         raise CompanyIntelligenceReadError("Company Intelligence public origin must resolve only to public hosts")
 
 
-def _public_base_url() -> str:
-    """Resolve one operator-controlled HTTPS origin, never from tool input."""
-    raw = os.environ.get("COMPANY_INTELLIGENCE_R2_BASE_URL", _DEFAULT_BASE_URL).strip().rstrip("/")
+def _public_base_url(override: str | None = None, *, require_public_host: bool = True) -> str:
+    """Resolve one operator-controlled HTTPS origin — MAJOR-7: the ONE base-
+    URL resolver for both the model-facing reads above and the producer-
+    facing workspace-chain primitives below (never a second implementation).
+
+    *override* lets a producer caller (or a test) pin an explicit origin;
+    model-facing callers never pass it, always resolving from
+    ``COMPANY_INTELLIGENCE_R2_BASE_URL``/the hardcoded default.
+
+    *require_public_host* gates the live DNS/public-IP-only check
+    (:func:`_require_public_hostname`) — always True for the model-facing
+    path (its base can, in principle, come from operator env config read at
+    request time, so the SSRF-style guard stays load-bearing there).
+    Producer/nightly-builder callers (refresh/discovery/chain-walk — trusted
+    admin-side code, never model/tool input) pass ``require_public_host=
+    False``: their *override* is frequently a test-only, non-resolving
+    domain (``example.test``, RFC 2606), and the producer path already runs
+    inside a controlled CI/nightly context rather than serving live model
+    requests. HTTPS-scheme validation, no query/fragment/credentials, and
+    (inside ``_fetch_bytes``) redirect refusal + origin-pinning + a size
+    bound apply UNCONDITIONALLY either way — only the live-DNS check is
+    parameterized.
+    """
+    raw = (override or os.environ.get("COMPANY_INTELLIGENCE_R2_BASE_URL", _DEFAULT_BASE_URL)).strip().rstrip("/")
     parsed = urllib.parse.urlsplit(raw)
     if (
         parsed.scheme.lower() != "https"
@@ -134,7 +155,8 @@ def _public_base_url() -> str:
     ):
         raise CompanyIntelligenceReadError("Company Intelligence public origin is not a safe HTTPS URL")
     _scheme, host, _port = _origin_tuple(parsed)
-    _require_public_hostname(host)
+    if require_public_host:
+        _require_public_hostname(host)
     return raw
 
 
@@ -145,12 +167,18 @@ def _object_url(base_url: str, relative_path: str) -> str:
     return f"{base_url}/{urllib.parse.quote(relative_path, safe='/')}"
 
 
-def _fetch_bytes(url: str, *, limit: int) -> bytes:
+def _fetch_bytes(url: str, *, limit: int, allow_404: bool = False) -> bytes | None:
     """Fetch bounded bytes from R2 with a non-default user agent.
 
     The public R2 binding can reject Python's stock agent.  More importantly,
     the explicit bound prevents an unexpected object from becoming a chat-token
     or memory exhaustion vector.
+
+    *allow_404*: when True, a clean HTTP 404 returns ``None`` instead of
+    raising — MAJOR-7's unified fetch helper, used by the producer-facing
+    workspace-chain primitives (which must distinguish "genuinely not
+    published" from every other failure — the model-facing callers above
+    never pass this and keep raising on 404 exactly as before).
     """
     parsed_url = urllib.parse.urlsplit(url)
     expected_origin = _origin_tuple(parsed_url)
@@ -177,6 +205,8 @@ def _fetch_bytes(url: str, *, limit: int) -> bytes:
                 or _origin_tuple(response_url) != expected_origin
             ):
                 raise CompanyIntelligenceReadError("Company Intelligence public source redirected or changed host")
+            if allow_404 and int(getattr(response, "status_code", 0) or 0) == 404:
+                return None
             response.raise_for_status()
             content_length = response.headers.get("Content-Length")
             if content_length:
@@ -829,16 +859,17 @@ def clear_company_intelligence_cache() -> None:
 # load_prior_workspace / load_prior_workspace_for_ticker, and
 # scripts.build_cycle_pattern_imce_prospective._raw_fetch_workspace (whose
 # OWN docstring named itself a duplicate, authorized only as a stopgap).
-# Every one of those functions now delegates to the primitives below; no
-# second GET-sequence implementation remains anywhere in the repo.
+# Every one of those functions now delegates to the primitives below.
 #
-# These primitives deliberately use a PLAIN, unbounded ``requests.get`` (no
-# streaming/size-limit/redirect hardening) — the SAME style the nightly
-# builders already used pre-consolidation.  They are internal
-# producer/analyst-side reads (nightly builder <-> R2), never the
-# model-facing Brain surface (``read_event_workspace`` /
-# ``read_company_intelligence`` / ``read_current_event_workspace`` above,
-# which keep their existing ``_fetch_bytes``-hardened path unchanged).
+# MAJOR-7 (red-team, corrects an earlier draft's false claim): these
+# primitives are NOT a second GET-sequence implementation — they reuse the
+# SAME ``_object_url`` (safe path join) / ``_fetch_bytes`` (HTTPS-scheme
+# check, redirect refusal, origin pinning, size bound) / ``_json_object``
+# machinery the model-facing Brain surface above uses, via ``_fetch_bytes``'s
+# new ``allow_404`` parameter and ``_public_base_url``'s new
+# ``require_public_host`` parameter (see each docstring). There is ONE URL
+# builder, ONE nest-prefix constant pattern, and ONE fetch helper in this
+# module, full stop.
 # ---------------------------------------------------------------------------
 
 
@@ -860,40 +891,36 @@ class WorkspaceChainIntegrityError(RuntimeError):
 
 
 _WORKSPACE_NEST_PREFIX = "event_workspaces"
-# D2(c): a documented, finite bound on how many predecessor hops a chain
-# walk will follow before refusing — prevents an unbounded walk against a
-# malicious or corrupted chain. Generously above any realistic quarterly
-# cadence * multi-revision-per-quarter history for this dataset's lifetime.
+# D2(c): a documented, finite, CONFIGURABLE (via the max_hops parameter)
+# bound on how many predecessor hops a chain walk will follow before
+# refusing — prevents an unbounded walk against a malicious or corrupted
+# chain. MAJOR-8(b): with the semantic-no-op discipline (A4) the chain only
+# grows on a genuine CONTENT change, so real depth is on the order of tens
+# of generations by the first natural multi-quarter event, not hundreds;
+# 500 is generous headroom, not a sizing estimate. Chain compaction/
+# archival of very old generations is explicitly future work, not attempted
+# here.
 DEFAULT_MAX_CHAIN_HOPS = 500
 
 
-def _raw_get(url: str, *, timeout: float = 20.0):
-    """Plain GET — see the module note above for why this is deliberately
-    NOT the hardened ``_fetch_bytes`` path."""
-    import requests
-
-    headers = {"Accept": "application/json", "User-Agent": "mastermind-event-workspaces/1"}
-    return requests.get(url, headers=headers, timeout=timeout)
-
-
-def _resolve_workspace_base_url(base_url: str | None) -> str:
-    raw = (base_url or os.environ.get("COMPANY_INTELLIGENCE_R2_BASE_URL", _DEFAULT_BASE_URL)).strip()
-    return raw.rstrip("/")
+def _workspace_object_url(base_url: str, relative_path: str) -> str:
+    """Join a ``event_workspaces/``-relative path onto *base_url* through
+    the SAME safe joiner the model-facing path uses."""
+    return _object_url(base_url, f"{_WORKSPACE_NEST_PREFIX}/{relative_path}")
 
 
 def fetch_current_workspace_marker(*, base_url: str | None = None) -> dict[str, Any] | None:
     """The top-level ``event_workspaces/manifest.json`` marker, or ``None``
     on a clean 404 (no nest has ever been published). Raises on any other
     failure (network error, timeout, non-2xx, malformed JSON, non-object
-    body) — a genuine fetch failure must never be read as "no nest yet"."""
-    base = _resolve_workspace_base_url(base_url)
-    response = _raw_get(f"{base}/{_WORKSPACE_NEST_PREFIX}/manifest.json")
-    if response.status_code == 404:
+    body, unsafe origin) — a genuine fetch failure must never be read as
+    "no nest yet"."""
+    resolved = _public_base_url(base_url, require_public_host=False)
+    url = _workspace_object_url(resolved, "manifest.json")
+    body = _fetch_bytes(url, limit=_MAX_MANIFEST_BYTES, allow_404=True)
+    if body is None:
         return None
-    response.raise_for_status()
-    marker = response.json()
-    if not isinstance(marker, dict):
-        raise ValueError("event workspace marker is not a JSON object")
+    marker = _json_object(body, name="event workspace marker")
     return marker
 
 
@@ -902,18 +929,25 @@ def fetch_generation_manifest(generation_id: str, *, base_url: str | None = None
 
     Raises ``WorkspaceChainNotPublished`` on a clean 404. Raises any other
     exception (network error, timeout, non-2xx, malformed JSON, non-object
-    body) on a genuine fetch failure."""
-    base = _resolve_workspace_base_url(base_url)
-    response = _raw_get(
-        f"{base}/{_WORKSPACE_NEST_PREFIX}/generations/{generation_id}/manifest.json"
-    )
-    if response.status_code == 404:
+    body, unsafe origin) on a genuine fetch failure."""
+    return _fetch_generation_manifest_raw(generation_id, base_url=base_url)[1]
+
+
+def _fetch_generation_manifest_raw(
+    generation_id: str, *, base_url: str | None = None,
+) -> tuple[bytes, dict[str, Any]]:
+    """(raw_bytes, parsed_dict) for one generation's own manifest — MAJOR-8(a):
+    the RAW bytes are returned alongside the parsed object so a predecessor-
+    link verification (MINOR-10: hash the bytes actually fetched, never a
+    re-serialization) can reuse this SAME fetch as the next hop's own
+    "current" manifest, instead of a second GET for the same object."""
+    resolved = _public_base_url(base_url, require_public_host=False)
+    url = _workspace_object_url(resolved, f"generations/{generation_id}/manifest.json")
+    body = _fetch_bytes(url, limit=_MAX_MANIFEST_BYTES, allow_404=True)
+    if body is None:
         raise WorkspaceChainNotPublished(f"generation {generation_id} manifest 404")
-    response.raise_for_status()
-    manifest = response.json()
-    if not isinstance(manifest, dict):
-        raise ValueError(f"generation {generation_id} manifest is not a JSON object")
-    return manifest
+    manifest = _json_object(body, name=f"generation {generation_id} manifest")
+    return body, manifest
 
 
 def fetch_raw_workspace(event_id: str, generation_id: str, *, base_url: str | None = None) -> dict[str, Any]:
@@ -924,16 +958,12 @@ def fetch_raw_workspace(event_id: str, generation_id: str, *, base_url: str | No
 
     Raises ``WorkspaceChainNotPublished`` on a clean 404. Raises any other
     exception on a genuine fetch failure."""
-    base = _resolve_workspace_base_url(base_url)
-    response = _raw_get(
-        f"{base}/{_WORKSPACE_NEST_PREFIX}/generations/{generation_id}/workspaces/{event_id}.json"
-    )
-    if response.status_code == 404:
+    resolved = _public_base_url(base_url, require_public_host=False)
+    url = _workspace_object_url(resolved, f"generations/{generation_id}/workspaces/{event_id}.json")
+    body = _fetch_bytes(url, limit=_MAX_WORKSPACE_BYTES, allow_404=True)
+    if body is None:
         raise WorkspaceChainNotPublished(f"{event_id}: workspace 404 in generation {generation_id}")
-    response.raise_for_status()
-    payload = response.json()
-    if not isinstance(payload, dict):
-        raise ValueError(f"{event_id}: workspace payload is not a JSON object")
+    payload = _json_object(body, name=f"{event_id} workspace")
     return payload
 
 
@@ -1037,10 +1067,6 @@ def find_current_event_id_for_company(
     return matches[-1][1]
 
 
-def _canonical_manifest_bytes(manifest: Mapping[str, Any]) -> bytes:
-    return canonical_json_bytes(manifest)
-
-
 def _event_revision_from_generation(
     manifest: Mapping[str, Any], event_id: str, *, generation_id: str, base_url: str | None,
 ) -> dict[str, Any] | None:
@@ -1091,9 +1117,13 @@ def read_event_source_revisions(
     """
     if start_generation_id is not None:
         generation_id: str | None = start_generation_id
+        manifest_bytes: bytes | None = None
+        manifest: dict[str, Any] | None = None
     else:
         marker = fetch_current_workspace_marker(base_url=base_url)
         generation_id = str(marker["generation_id"]) if marker else None
+        manifest_bytes = None
+        manifest = None
 
     newest_first: list[dict[str, Any]] = []
     hops = 0
@@ -1104,12 +1134,19 @@ def read_event_source_revisions(
                 "without reaching a root — refusing an unbounded walk"
             )
         hops += 1
-        try:
-            manifest = fetch_generation_manifest(generation_id, base_url=base_url)
-        except WorkspaceChainNotPublished as exc:
-            raise WorkspaceChainIntegrityError(
-                f"{event_id}: chain link names generation {generation_id!r}, which does not exist"
-            ) from exc
+        if manifest is None:
+            # First iteration (fresh marker read, or a caller-supplied
+            # start_generation_id): fetch fresh. On every LATER iteration
+            # this generation's bytes were already fetched+hash-verified as
+            # the PREVIOUS hop's predecessor — reused below (MAJOR-8(a): no
+            # second fetch per hop).
+            try:
+                manifest_bytes, manifest = _fetch_generation_manifest_raw(generation_id, base_url=base_url)
+            except WorkspaceChainNotPublished as exc:
+                raise WorkspaceChainIntegrityError(
+                    f"{event_id}: chain link names generation {generation_id!r}, which does not exist"
+                ) from exc
+
         revision = _event_revision_from_generation(
             manifest, event_id, generation_id=generation_id, base_url=base_url,
         )
@@ -1142,20 +1179,28 @@ def read_event_source_revisions(
         previous_id = str(previous_id)
         expected_sha = str(manifest.get("previous_manifest_sha256") or "")
         try:
-            predecessor_manifest = fetch_generation_manifest(previous_id, base_url=base_url)
+            predecessor_bytes, predecessor_manifest = _fetch_generation_manifest_raw(previous_id, base_url=base_url)
         except WorkspaceChainNotPublished as exc:
             raise WorkspaceChainIntegrityError(
                 f"{event_id}: generation {generation_id} names predecessor {previous_id!r}, "
                 "which does not exist"
             ) from exc
-        actual_sha = sha256(_canonical_manifest_bytes(predecessor_manifest)).hexdigest()
+        # MINOR-10: verify against the sha256 of the RAW FETCHED BYTES of
+        # the predecessor manifest — never a re-serialization of the parsed
+        # dict, which would not catch a byte-level divergence that happens
+        # to parse identically.
+        actual_sha = sha256(predecessor_bytes).hexdigest()
         if actual_sha != expected_sha:
             raise WorkspaceChainIntegrityError(
                 f"{event_id}: generation {generation_id}'s previous_manifest_sha256 "
                 f"({expected_sha!r}) does not match predecessor {previous_id}'s actual "
                 f"manifest bytes ({actual_sha!r})"
             )
+        # MAJOR-8(a): the predecessor's bytes/manifest are ALREADY verified —
+        # reuse them as the NEXT loop iteration's "current" generation
+        # instead of re-fetching (halves manifest GETs from 2N to N).
         generation_id = previous_id
+        manifest_bytes, manifest = predecessor_bytes, predecessor_manifest
 
     newest_first.reverse()  # now oldest -> newest
     deduped: list[dict[str, Any]] = []

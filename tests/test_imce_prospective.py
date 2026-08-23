@@ -1625,6 +1625,91 @@ def test_e_post_activation_amendment_on_a_pre_activation_event_mints_nothing(mon
     assert sum(1 for r in m.load_rows(fake_prod) if r["row_kind"] in ("observation", "correction")) == 0
 
 
+def test_e_eligibility_survives_an_inverted_chain_order(monkeypatch, tmp_path):
+    """BLOCKER-1 (Opus red-team, 2026-08-23): the chain walk's own return
+    order is a construction detail, not something eligibility may lean on.
+    The revision-history STUB here deliberately returns [amendment,
+    original] — newest first, inverted from the real chain-walk contract —
+    and eligibility must STILL correctly identify the TRUE earliest
+    (original, pre-activation) and refuse. A mutant that reads
+    revisions[0] instead of the source_available_at-sorted list dies here
+    (revisions[0] would be the POST-activation amendment, which would
+    incorrectly mint)."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_e_inverted.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    original_ws = _mk_ws("KBH", cutoff="2019-06-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
+                          cancel_current=10.0, cancel_prior=12.0, generation_id="a" * 24)
+    amendment_ws = _mk_ws("KBH", cutoff="2026-05-01T00:00:00Z", net_orders_current=105, net_orders_prior=90,
+                           cancel_current=10.0, cancel_prior=12.0, generation_id="b" * 24, source_form="8-K/A")
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"KBH": {amendment_ws["event_id"]: "found"}, "DHI": {}, "PHM": {}, "TOL": {}}
+        found = {"DHI": [], "PHM": [], "KBH": [amendment_ws], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    # Deliberately INVERTED order: newest (amendment) first, oldest
+    # (original) second — the opposite of read_event_source_revisions's own
+    # oldest-first contract.
+    monkeypatch.setattr(
+        b, "_load_event_revision_history",
+        _stub_revision_history_ordered(original_ws["event_id"], amendment_ws, original_ws),
+    )
+    summary = b.run(production=True)
+    assert summary["errors"] == []
+    assert summary["n_observations_appended"] == 0
+    assert summary["n_observations_refused_unsafe_correction"] == 0
+    assert summary["n_corrections"] == 0
+    assert sum(1 for r in m.load_rows(fake_prod) if r["row_kind"] in ("observation", "correction")) == 0
+
+
+def test_f_packet_build_failure_on_the_anchor_revision_never_mints_from_a_later_one(monkeypatch, tmp_path):
+    """BLOCKER-1 (2nd fix): if the EARLIEST eligible revision's own packet
+    build fails, the loop must NEVER fall through and mint from a LATER
+    revision instead — the whole event is abandoned for this run (recorded
+    as an error), not silently re-anchored on a later cutoff."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_f_anchor_failure.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    # rev1 (earliest) carries NO fiscal_period.calendar_end -- this makes
+    # build_observation_packet raise (it requires calendar_end to compute
+    # the pooling key) so the "would-be anchor" mint fails. rev2 (later) is
+    # otherwise perfectly healthy and would happily mint if the loop
+    # incorrectly fell through to it.
+    rev1 = _mk_ws("PHM", cutoff="2026-03-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, generation_id="a" * 24, sha256hex="a" * 64)
+    rev1["fiscal_period"] = {**rev1["fiscal_period"], "calendar_end": None}
+    rev2 = _mk_ws("PHM", cutoff="2026-03-05T00:00:00Z", net_orders_current=105, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, generation_id="b" * 24, sha256hex="b" * 64)
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"PHM": {rev2["event_id"]: "found"}, "DHI": {}, "KBH": {}, "TOL": {}}
+        found = {"DHI": [], "PHM": [rev2], "KBH": [], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    monkeypatch.setattr(
+        b, "_load_event_revision_history",
+        _stub_revision_history_ordered(rev1["event_id"], rev1, rev2),
+    )
+    summary = b.run(production=True)
+    assert summary["n_observations_appended"] == 0
+    assert summary["n_corrections"] == 0
+    assert any("packet_build" in err for err in summary["errors"])
+    assert sum(1 for r in m.load_rows(fake_prod) if r["row_kind"] in ("observation", "correction")) == 0
+
+
 def test_e_post_activation_original_is_eligible_and_mints(monkeypatch, tmp_path):
     """Regression pair to the test above: when the EARLIEST revision itself
     is post-activation, the event is eligible and observes normally."""
