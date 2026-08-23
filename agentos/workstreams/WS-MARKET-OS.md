@@ -48,12 +48,18 @@ waves:
       DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS, those
       two server-generated fields alone are excluded from A1A restoration
       equality; the semantic-v2 row fingerprint plus a separate authoritative
-      ordered-id seal remain exact. Before any canonical evacuation, execute one
-      new temporary-row delete-and-restore proof under ordinary owner RLS, remove
-      the probe permanently, prove the 13-row semantic-v2 and ordered-id seals plus
-      both Watchlist seals unchanged, and return for fresh destructive authority.
-      Do not execute Scene 9 or begin A1B without separate authority, and do not
-      mark A1A done before Sol accepts it.
+      ordered-id seal remain exact. The mandatory one-row semantic-v2 production
+      probe passed on 2026-08-22 under ordinary authenticated owner RLS: the same
+      explicit row id, owner, and semantic fields restored exactly without either
+      timestamp input; only created_at and updated_at changed as expected; Macro
+      and Terminal reproduced the pre-delete order; and the probe was permanently
+      deleted. Immediate and delayed cleanup both returned the sealed 13-row
+      semantic-v2, ordered-id, duplicate-multiplicity, and independent Watchlist
+      seals exactly. Remaining before status done: return this receipt to Sol and
+      obtain fresh action-time authority before deleting any canonical row, then
+      execute the remaining authenticated matrix and exact cleanup. Do not execute
+      Scene 9 or begin A1B without separate authority, and do not mark A1A done
+      before Sol accepts it.
   - id: A1B
     title: Portfolio Fast Start Import
     status: todo
@@ -139,26 +145,32 @@ do_not_redo:
   - Do not treat the six-tab Risk Center or giant inline drawers as the final flagship design.
   - Do not call infrastructure or green CI product completion without a real production user journey.
   - Do not attempt to preserve created_at or updated_at during the bounded A1A restore; omit both and let production generate them.
-  - Do not delete a canonical Portfolio row before the new semantic-v2 temporary-row restoration proof passes and Sol grants fresh action-time authority.
+  - Do not repeat the passed semantic-v2 temporary-row restoration probe; its exact cleanup receipt is durable in the latest handoff.
+  - Do not delete a canonical Portfolio row before Sol grants fresh action-time authority for the remaining authenticated A1A matrix.
 artifacts:
   - research/market_os/MASTERMIND_MARKET_OS_ARCHITECTURE_FREEZE_AND_A1A_COMMISSIONING_2026-08-20.md
   - agentos/handoffs/MARKET-OS-2026-08-20.md
   - agentos/handoffs/MARKET-OS-2026-08-21.md
   - agentos/handoffs/MARKET-OS-2026-08-22.md
   - agentos/handoffs/MARKET-OS-2026-08-22-a1a-restoration-blocker.md
+  - agentos/handoffs/MARKET-OS-2026-08-22-a1a-restoration-v2-probe.md
 next_action: >
   A1A engineering is merged and live (#6136, 2633380f800a). PD1 Terminal repair
   #456 is also merged/live at 3f85efeb19bd, and its bounded authenticated
   one-sentinel production reproof passed with durable cleanup and unchanged
   Watchlists. PR #6257 then proved the ordinary authenticated owner path preserves
   explicit identity and semantic fields while rewriting only created_at and updated_at.
-  Apply DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS now:
-  execute exactly one new temporary-row semantic-v2 delete-and-restore proof, omit
-  both server timestamps on restore, permanently delete the probe, and prove the
-  canonical 13-row semantic-v2, ordered-id, and Watchlist seals unchanged. Return
-  that receipt for fresh destructive authorization before any canonical evacuation.
-  Scene 9 remains excluded, and A1B plus every later dependent wave remain blocked
-  on Sol accepting A1A in production.
+  DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS is now
+  production-proven by one controlled same-id temporary-row restoration under
+  ordinary authenticated owner RLS. The probe is durably absent, and immediate plus
+  delayed Macro-Terminal reads reproduce the sealed 13-row semantic-v2 multiset,
+  authoritative ordered-id sequence, duplicate multiplicity, and both independent
+  Watchlist baselines exactly. Return the privacy-safe receipt in
+  agentos/handoffs/MARKET-OS-2026-08-22-a1a-restoration-v2-probe.md to Sol and obtain
+  fresh action-time destructive authority before any canonical evacuation. After
+  authority, recapture the action-time seals and execute the remaining authenticated
+  A1A matrix with exact cleanup. Scene 9 remains excluded, and A1B plus every later
+  dependent wave remain blocked on Sol accepting A1A in production.
 ---
 
 ## Current state
