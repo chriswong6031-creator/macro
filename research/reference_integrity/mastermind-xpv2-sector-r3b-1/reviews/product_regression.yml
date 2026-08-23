@@ -1,0 +1,403 @@
+# Fresh independent Product Regression critic receipt — XPV2-SC-R3B.1
+# RE-RUN SEAT. A prior Product Regression receipt for this SHA existed only in chat and
+# could not be recovered. Per the governing commission's rule "rerun only that missing
+# critic; do not fabricate provenance", this seat re-derived every finding from scratch
+# against the frozen bytes. No attempt was made to guess or reproduce the lost receipt,
+# and nothing in this file is inherited from it.
+schema: mastermind.rig_review.v1
+reference_id: mastermind-xpv2-sector-r3b-1
+role: product_regression
+artifact_sha: 0667f800764bf210af6c1237ccf0b5f0a71b4af2
+
+reviewer:
+  identity: "claude-opus-5-product-regression-rerun-2026-08-23"
+  model: claude-opus-5
+  seat_type: re_run
+  independent_of_author: true
+  prior_r3b1_participation: false
+  prior_r3b_participation: false
+  notes: >
+    Fresh seat. No involvement in R3B.1 design, build, QA, orchestration or adjudication,
+    and none in the predecessor R3B cycle. The lost predecessor-SHA receipt was not read,
+    reconstructed or referenced. Findings below are this seat's own bytes; the orchestrator
+    neither wrote nor edited them.
+  inputs_used:
+    - frozen candidate bytes (rendered, not source-read alone)
+    - COMMISSION.md (fix packet R3B1-01..14, do-not-reopen list, acceptance list)
+    - manifest.yml (for the binding SHA pair only)
+    - build/ harness scripts, run read-only with all output redirected to scratch
+    - current production producer bytes (templates/, engine/) for attribution only
+    - the frozen predecessor candidate mastermind-xpv2-sector-r3b, as the regression baseline
+  not_opened_before_findings_were_fixed:
+    - ORCHESTRATOR_ADJUDICATIONS_R3B1.md (opened only afterwards, via INVENTORY_SOURCES.md,
+      solely to check whether the R3B1-13 label claim was producer-backed; the claim was then
+      independently falsified/confirmed against production bytes, not accepted on its word)
+    - reviews/visual_taste.yml
+    - R3C_HANDOFF_DRAFT.md
+
+candidate:
+  path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+  sha256: fec05b058fbc9dbe29744ad015b7ee9cd9baa5cb85bbbde739daa8b97644cf70
+  sha256_required: fec05b058fbc9dbe29744ad015b7ee9cd9baa5cb85bbbde739daa8b97644cf70
+  sha256_matches: true
+  freeze_commit: 0667f800764bf210af6c1237ccf0b5f0a71b4af2
+  freeze_commit_required: 0667f800764bf210af6c1237ccf0b5f0a71b4af2
+  freeze_commit_matches: true
+  verification_method: >
+    `shasum -a 256` on the working-tree file returned fec05b05…44cf70. `git rev-parse
+    0667f800…:<path>` resolved blob 95981ada55ef60423503ba2056814d55eb5ba03c, and
+    `git cat-file blob 95981ada… | shasum -a 256` returned the identical fec05b05…44cf70,
+    proving the required sha256 is the content of the required freeze commit and not merely
+    of whatever happens to sit in the checkout. `git rev-parse HEAD:<path>` resolves to the
+    same blob 95981ada…, so the bytes reviewed are the frozen bytes.
+  review_head: 369d8a3c59e942ab5dbb141235509006c402b130
+  candidate_bytes_untouched: true
+  production_bytes_untouched: true
+  build_dir_untouched: true
+
+harness:
+  interpreter: scratchpad/pwenv/bin/python (Playwright, Chromium 151.0.7922.34)
+  house_scripts_run_read_only:
+    - "inventory_check.py --json <scratch>/inventory.json   -> 26/26 passed"
+    - "mutation_suite.py --out <scratch>/MUT.md             -> 13/13 passed, 11 pairwise-distinct kills"
+    - "aria_id_audit.py --json <scratch>/aria.json          -> en+zh: 253 ids, 0 duplicated, 74/74 refs resolved"
+    - "lang_probe.py --out <scratch>/LANG_PROBE.txt         -> 7/7 PASS"
+  own_probes:
+    - probe1.py        # boot, dup-ids, href=#, six-view activation, aria-current
+    - probe_inv.py     # rendered-inventory regression diff, R3B vs R3B.1, all six views
+    - probe_zh2.py     # EN/ZH per-view innerText + leaf-level mixed-language scan
+    - probe_hash.py    # all 21 LEGACY_ANCHORS keys + three access states, both candidates
+    - probe_13b/c.py   # R3B1-13 label node geometry and .r3-vh/.r3-cols computed CSS
+    - probe_02b/c.py   # R3B1-02 explain panel, keyboard Enter and coarse-pointer tap at 390
+    - probe_final.py   # icon system, emoji scan, R3B1-08 controls, ?reffail=1 across six views
+  note: >
+    Every harness invocation was given an explicit --json/--out into this seat's scratch
+    directory. aria_id_audit.py, mutation_suite.py and lang_probe.py all default to writing
+    inside build/ (lane_crops_b/aria_id_audit.json, MUTATION_RESULTS.md,
+    lane_crops_b/LANG_PROBE.txt); those defaults were overridden, so build/ is byte-clean.
+
+verdict: PASS_WITH_CONDITIONS
+
+summary: >
+  Both required SHAs verified. All six views were rendered and exercised in EN and ZH at
+  1440 and 390. Every commissioned fix R3B1-01..14 that this seat can evaluate landed and is
+  observable in the rendered DOM, and a rendered-inventory diff against the frozen predecessor
+  found ZERO lost capability in any of the six views — no lost destination family, no lost id,
+  no lost control, no lost table or row. Routing, hash law, the three access states, the icon
+  system and dead-link law are all clean and unchanged from the predecessor. This seat charges
+  no blocker and no major. Two minor candidate-owned findings are recorded, one of which is a
+  confirmed overlap with the Visual/Taste seat and is NOT adjudicated here. Two further defects
+  observed in the rendered product are attributed to the upstream producer with production-byte
+  evidence, and are recorded as R3C/producer conditions rather than charged to the candidate.
+
+fix_packet_disposition:
+  - id: R3B1-01
+    state: LANDED
+    evidence: >
+      span.r3-ov-size[data-r3b1="01"] renders "positions sized to 81%" / "仓位缩至 81%",
+      258x20 at 1440, with a named receipt button "How position sizing is set" / "仓位如何设定"
+      whose data-tip-en reads "How it's set: volatility target 81% -> 81%". Absent from the
+      predecessor's overview innerText; present in the candidate's. mutation_suite kills it uniquely.
+  - id: R3B1-02
+    state: LANDED
+    evidence: >
+      p.r3-ov-caveat[data-r3b1="02"] carries button.r3-rcpt.r3-rcpt--named, 122x44 EN / 79x44 ZH,
+      accessible name "How this works" / "原理说明". Both commissioned clauses are present in one
+      receipt: "Shape read only — not a forecast." and "skips the most recent ~3 weeks by
+      construction" (ZH: "仅为形态读数，非预测。" / "设计上跳过最近约3周数据"). Activation was proven
+      twice, not assumed: keyboard Enter and a real coarse-pointer tap in a has_touch/is_mobile
+      390 context both make a real DOM node visible — div#r3-receipt.r3-tipbox, display:block,
+      360x99. Not a paragraph tooltip. See finding PRC1R-001 for the one shape inconsistency.
+  - id: R3B1-03
+    state: LANDED
+    evidence: >
+      p.r3-ov-mig[data-r3b1="03"] 536x21 inside the "MONEY IS ROTATING" state block renders
+      "Money is moving into Software and out of Semiconductors." / "资金正流入软件，流出半导体。"
+  - id: R3B1-04
+    state: LANDED
+    evidence: >
+      a.r3-more[data-r3b1="04"] href="allocation.html", 131x44, "Open the playbook" /
+      "打开操盘手册". The rendered-inventory diff shows allocation.html as a GAINED href family in
+      overview (predecessor: absent). Real destination, not a recorder-only href.
+  - id: R3B1-05
+    state: LANDED
+    evidence: >
+      Three nodes, all absent from the predecessor's rendered overview text:
+      [data-r3b1="05a"] "WAS #1 · -9.6% 20d" / "原第一 · -9.6% 20日";
+      [data-r3b1="05b"] "+11.5% 20d · CLIMBING FAST" / "+11.5% 20日 · 快速上行";
+      [data-r3b1="05c"] "· 49 themes · 15 categories" / "· 49 个主题 · 15 个分类"
+      (new id ov-ctx-count, the only id gained in overview).
+  - id: R3B1-06
+    state: LANDED
+    evidence: >
+      th.num[data-r3b1="06"] renders "Strength" / "强度" in the Map accessible table; the Map
+      also reads "Strength score". The independent action-board score was correctly NOT renamed —
+      the Overview act-now table header still reads "SCORE" / "评分". Note: Map innerText length is
+      byte-identical between predecessor and candidate (5037 -> 5037) because "Strength score" was
+      already the predecessor's Map wording; the R3B1-06 work is the explicit data-r3b1 pin plus
+      the ZH twin, not a visible Map rename. Recorded so a later reader does not mistake the
+      unchanged length for an unlanded fix.
+  - id: R3B1-07
+    state: LANDED
+    evidence: >
+      [data-r3b1="07"] EN: "65 of 113 subsectors have enough live data to time. 48 are too thin to
+      time and are omitted from the timed table." Native ZH twin: "113 个子行业中，65 个实时数据足够，
+      可用于计时。另有 48 个数据过于稀疏，无法计时，未列入下方计时表。" Semantics agree in both languages
+      (omitted from, not listed in) and agree with the rendered table, which enumerates 65/65.
+      Correctly NOT rendered for Baskets.
+  - id: R3B1-08
+    state: LANDED
+    evidence: >
+      Three Moving help controls, each 44px tall, each with a unique concept-naming accessible
+      name — "Rank fit — how this works", "Reliability — how this works", "Scorecard method —
+      how this works" — each aria-expanded="false" and each aria-controls="r3-receipt", a real
+      DOM node that resolves (aria_id_audit: 74/74 references resolved, 0 unresolved, in both
+      languages). Each carries both data-tip-en and data-tip-zh. Effective-target geometry and
+      dismiss behaviour are the Mobile/Accessibility seat's to rule on, not this seat's.
+  - id: R3B1-09
+    state: NOT_EVALUATED_BY_THIS_SEAT
+    reason: severe-zoom clipping is mobile/accessibility geometry, explicitly out of this seat's scope.
+  - id: R3B1-10
+    state: LANDED
+    evidence: >
+      Independently re-run: boot lang="en"/data-lang="en"; the artifact's own control -> lang="zh-CN"
+      data-lang="zh" with nav aria-label localized to "板块情报视图"; the pair survives activating all
+      six views, survives two hash repaints, survives REF.setLang('en') round-trip, survives a bare
+      external setAttribute('data-lang','zh'), and resets to en on reload. 7/7 PASS.
+  - id: R3B1-11
+    state: NOT_EVALUATED_BY_THIS_SEAT
+    reason: contrast/type measurement is accessibility geometry, out of this seat's scope.
+  - id: R3B1-12
+    state: LANDED
+    evidence: >
+      Measured twice by independent means. This seat's own probe: 247 elements carrying an id at
+      boot, 0 duplicated, 0 a[href="#"], 0 a[href=""] and 0 anchors missing href. aria_id_audit.py:
+      253 ids, 0 duplicated, in BOTH en and zh. The predecessor's 22 repeated id="ref-data" values
+      are gone.
+  - id: R3B1-13
+    state: LANDED_WITH_A_BREAKPOINT_GAP
+    evidence: >
+      The label is producer-verbatim, not invented — this seat falsified the possibility that the
+      candidate minted it. templates/subsectors.js:331 emits
+      L('Conviction', '综合把握') as the header for exactly this column, and the value is
+      combined_score from engine/subsector_confluence.py:347 ("stock cascade weight x subsector
+      buyability factor"). The candidate reproduces both the EN and the ZH string exactly. The
+      commissioned constraint holds: it is not called Score/Probability/Confidence/Strength.
+      Rendered: div.r3-cols[data-r3b1="13"] "STOCK | CONVICTION | WHY IT IS HERE", 1182x31 at 1440.
+      The gap is at <=640px — see PRC1R-002.
+  - id: R3B1-14
+    state: LANDED
+    evidence: >
+      Re-run independently: inventory_check.py 26/26 (15 D1 expected-production->candidate pins,
+      11 D2 candidate->allowed checks including 22/22 data-path blocks traced and 641 data-ref-nav
+      hrefs with 0 unmatched); mutation_suite.py 13/13 with all 11 mutations producing pairwise-
+      distinct failing-check sets. This seat additionally confirmed the guards are not vacuous by
+      reading their kill sets: each removal names its own check, e.g. removing the allocation
+      destination reds only the allocation checks.
+
+findings:
+  - id: PRC1R-001
+    severity: minor
+    attribution: candidate_owned
+    title: "R3B1-02's receipt button drives #r3-receipt with aria-expanded but no aria-controls, unlike the three R3B1-08 buttons that drive the same panel"
+    location: 'mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html — selector [data-r3b1="02"] button.r3-rcpt.r3-rcpt--named'
+    measurement: >
+      getAttribute('aria-expanded') = "false" before activation and "true" after keyboard Enter,
+      but getAttribute('aria-controls') = null. The panel it actually opens is div#r3-receipt
+      .r3-tipbox (display:block, 360x99, confirmed visible after both Enter and a 390 touch tap).
+      The three Moving controls commissioned under R3B1-08 open that SAME node and each DO carry
+      aria-controls="r3-receipt". So one shared disclosure target is wired two different ways
+      within one artifact.
+    why_it_matters: >
+      An aria-expanded with no aria-controls is not invalid ARIA, so aria_id_audit.py cannot see
+      it (it audits references that exist, not references that are missing) — this is a gap the
+      candidate's own hardened R3B1-14 guards are blind to by construction, which is the exact
+      failure class R3B1-14 was commissioned to end.
+    attribution_evidence: >
+      Candidate-owned: r3-rcpt/r3-tipbox is reference-local markup introduced by this cycle. No
+      production template emits data-r3b1 or r3-rcpt.
+    smallest_remedy: 'Add aria-controls="r3-receipt" to the [data-r3b1="02"] r3-rcpt button, matching the three R3B1-08 buttons. One attribute.'
+    overlap: Mobile/Accessibility seat may also reach this; not adjudicated here.
+
+  - id: PRC1R-002
+    severity: minor
+    attribution: candidate_owned
+    title: "The R3B1-13 Conviction header is display:none at <=640px, so the commissioned label reaches sighted mobile users nowhere"
+    location: 'div.r3-cols[data-r3b1="13"] in the Confluence view; CSS rule ".r3-cols" and its <=640px breakpoint'
+    measurement: >
+      At 1440: display:grid, 1182x31, aria-hidden="true", text "STOCK / CONVICTION / WHY IT IS HERE".
+      At 390: getComputedStyle(...).display = "none", 0x0. The only surviving carrier of the label at
+      390 is span.r3-vh, whose computed style is position:absolute; width:1px; height:1px;
+      clip:rect(0,0,0,0); clip-path:inset(50%) — a screen-reader-only node, 0x0 painted. So at 390 the
+      value 0.60 is rendered with no visible name; the fix is present only above the breakpoint.
+    why_it_matters: >
+      R3B1-13 was commissioned because a bare 0.xx with no label is unreadable. That condition is
+      still true at mobile widths.
+    attribution_evidence: >
+      Candidate-owned: .r3-cols, .r3-vh and the breakpoint are reference-local CSS authored by this
+      cycle. templates/subsectors.js:331 emits the label as a plain <th>, so the hiding is not inherited.
+    smallest_remedy: 'Under the <=640px rule, unhide the existing per-row span.r3-vh (or render an inline name before the number) so the mobile card carries the visible name. No new markup is required; the node already exists in every row.'
+    overlap: >
+      CONFIRMED overlap with the Visual/Taste seat, whose VTC1-001 charges the same node
+      (.r3-cols aria-hidden + hidden <=640px). Recorded here because "did the commissioned fix
+      land" is this seat's question; the severity ruling belongs to the adjudicator, and this
+      seat does not adjudicate it.
+
+upstream_producer_debt:
+  # Observed in the rendered product, evidenced against production bytes as producer-owned.
+  # Recorded, not charged to the candidate.
+  - id: PRC1R-U01
+    severity: minor
+    attribution: upstream_producer_owned
+    title: '"Conviction" now names two different quantities on one page, and its ZH twin differs between them'
+    measurement: >
+      templates/subsectors.js:331 -> L('Conviction', '综合把握') labels combined_score, a 0-1 value
+      (engine/subsector_confluence.py:347), rendered in the candidate's Confluence view as 0.60 / 0.54.
+      templates/sector_central.html.j2:3373 -> L('conviction', '信念') labels the 0-100 gated-confluence
+      score (engine/sector_central.py:19 and :43), and sector_central.html.j2:2365-2366 speak of
+      "信念标签". Both surfaces are composed onto the same six-view page, so one English word carries
+      two unrelated scales while Chinese readers get two different words (综合把握 vs 信念) for what
+      English presents as one concept.
+    attribution_evidence: >
+      Both strings are verbatim production producer bytes at the paths and line numbers above. The
+      candidate copied them; it did not mint either. The six-view composition that puts them on one
+      page is on the commission's do-not-reopen list, so it is not a candidate defect either.
+    smallest_remedy: 'Producer-side, in R3C: rename one of the two, or give the subsector picks column a qualified name. No candidate edit.'
+    disposition: R3C_or_producer_condition
+
+  - id: PRC1R-U02
+    severity: minor
+    attribution: upstream_producer_owned
+    title: "Producer-emitted English-only strings render untranslated in ZH mode"
+    measurement: >
+      A leaf-level scan of all six views in ZH mode found the Overview self-grader footnote rendering
+      wholly in English: "Basket grading accruing from 2026-07-02 (W3.8 freeze date). Pre-freeze basket
+      calls are not graded: the series before this date is permanently survivorship-contaminated
+      (D4-N3)." Confluence and Explore additionally render untranslated producer strings inside ZH
+      sentences — subsector names ("Auto Manufacturers", "Oil & Gas Midstream", "Computer Hardware"),
+      and sector names ("过热 · CONSUMER CYCLICAL · 3 只", "跨板块集群 · Consumer Discretionary + Health Care").
+    attribution_evidence: >
+      The grader footnote is assembled English-only by the producer at
+      engine/sector_central_grader.py:277-279 (f"Basket grading accruing from {freeze_start} (W3.8
+      freeze date). " ... "permanently survivorship-contaminated (D4-N3).") with no ZH twin in the
+      payload; a bilingual reference cannot mint one without inventing producer text. The subsector
+      and category strings are the commission's already-named "Upstream category_zh gap", listed under
+      R3C-only conditions.
+    smallest_remedy: 'Producer-side: emit note_zh alongside the grader note, and populate category_zh. No candidate edit.'
+    disposition: R3C_or_producer_condition
+
+regression_probe:
+  method: >
+    The frozen predecessor mastermind-xpv2-sector-r3b (sha256 19553267…c47dca) and the candidate were
+    rendered in two browser contexts under identical conditions (1440x1000, EN, gated) and each of the
+    six views was activated in turn. For every view this seat diffed the rendered href-destination
+    family histogram, the set of element ids, the set of button accessible names, table and tbody-row
+    counts, and innerText length. This is a rendered-DOM diff, not a source diff.
+  result: no_capability_lost_in_any_view
+  detail:
+    overview: 'href families LOST {} GAINED {allocation.html:1}; ids LOST [] GAINED [ov-ctx-count]; buttons LOST [] GAINED ["How position sizing is set","How this works"]; rows 0->0; innerText 2226->2436'
+    map: 'href families LOST {} GAINED {}; ids LOST [] GAINED []; buttons LOST [] GAINED []; tables 2 rows 21 -> 2/21; innerText 5037->5037'
+    moving: 'href families LOST {} GAINED {}; ids LOST [] GAINED []; buttons LOST ["?"] GAINED ["Rank fit — how this works","Reliability — how this works","Scorecard method — how this works"]; tables 1 rows 4 -> 1/4; innerText 4932->4944'
+    money: 'href families LOST {} GAINED {}; ids LOST [] GAINED []; buttons unchanged; tables 4 rows 530 -> 4/530; innerText 5001->5001'
+    explore: 'href families LOST {} GAINED {}; ids LOST [] GAINED []; buttons unchanged; tables 1 rows 17 -> 1/17; innerText 7143->7143'
+    confluence: 'href families LOST {} GAINED {}; ids LOST [] GAINED []; buttons unchanged; tables 1 rows 8 -> 1/8; innerText 1911->1985'
+  note: >
+    The single LOST button, the bare "?" in Moving, is not a loss: it is the very control R3B1-08
+    commissioned be replaced, and its three uniquely-named successors appear as GAINED in the same view.
+
+routing_and_hash_law:
+  canonical_six: all_ok
+  canonical_evidence: >
+    All six section.si-view[data-view] elements exist and all six .si-view-btn elements exist. For each
+    of #overview,#map,#moving,#money,#explore,#confluence exactly ONE view was left with
+    display!=='none' and aria-current="page" landed on exactly that view's button — verified per view,
+    not sampled.
+  legacy_21: all_ok
+  legacy_evidence: >
+    The legacy set was NOT guessed: it was extracted from the LEGACY_ANCHORS map embedded verbatim
+    from templates/si_workspace.js, giving exactly 21 keys. All 21 were driven on BOTH the predecessor
+    and the candidate. All 21 select the contracted view on the candidate, and every one behaves
+    identically to the predecessor — zero routing changes. #confluence and #sc-top select the correct
+    view while their scroll anchor does not resolve (getElementById false on both artifacts); that is
+    the pre-existing recorded seam (c) of the R3A routing contract, unchanged and not repaired, as the
+    commission requires.
+  dead_links: 'a[href="#"] = 0; a[href=""] = 0; anchors with no href = 0. No new dead link.'
+  destinations: >
+    641 data-ref-nav hrefs, 0 unmatched against the allowed families; every family has >=1 real
+    destination (basket/ 26, subsector 63, stock.html# 11, rotation/ 24, sector_cycles.html 12,
+    plans.html 1, allocation.html 1, terminal cross-repo 503).
+
+access_states:
+  probed: [gated, hydrated, ungated]
+  result: all_three_work_and_are_unchanged_from_the_predecessor
+  measurement: >
+    Measured on the #actnow board at 1440. gated: 23 data-ref-nav links WITH the sign-in teaser
+    ("sign in to see the full lane" / "登录后查看完整分组"). hydrated: 44 links, teaser absent.
+    ungated: 44 links, teaser absent. Byte-for-byte the same triple on the predecessor, so no
+    access-state regression. A fourth state was additionally exercised: loading with ?reffail=1
+    arms the fetch-failure path at parse time, and all six views still render non-blank
+    (overview 1867, map 5037, moving 561, money 2475, explore 1094, confluence 1985 chars) with
+    ZERO pageerror and ZERO console errors — the failure path degrades, it does not white-screen.
+
+icon_system:
+  result: sanctioned_no_violation
+  measurement: >
+    83 inline <svg> nodes, 0 <use href> / <use xlink:href> external sprite references, 0 <img> icons
+    in any view. A scan of every leaf node inside the six views for emoji/pictographic codepoints
+    (U+1F300-1FAFF, U+2600-27BF) returned no UI text hits; the only two matches are box-drawing
+    characters inside a CSS comment banner, not rendered UI.
+
+label_and_terminology_integrity:
+  en_zh_pairing: >
+    Every R3B1-restored string ships an EN and a ZH node (l-en/l-zh spans), and exactly one is
+    displayed per language — a leaf-level scan in ZH mode found no element rendering both languages
+    at once in any of the six views.
+  action_board_score_not_renamed: >
+    Confirmed as commissioned: the Overview act-now header remains "SCORE" / "评分" while the
+    context/Map score is "Strength" / "强度".
+  residual_mixed_language: attributed upstream — see PRC1R-U01 and PRC1R-U02.
+
+acceptance_list_checked_by_this_seat:
+  bidirectional_capability_inventory: PASS (26/26)
+  unique_kill_mutations: PASS (13/13, 11 pairwise-distinct)
+  duplicate_ids_zero: PASS (0 in en, 0 in zh)
+  accessible_explain_controls: PASS with PRC1R-001 noted
+  en_zh_document_language: PASS (7/7)
+  no_new_href_hash: PASS (0)
+  no_production_path_diff: PASS (git status shows no production path modified)
+  r3a_attack_suite_59_59: NOT_RERUN_BY_THIS_SEAT
+  successor_reference_verifier: NOT_RERUN_BY_THIS_SEAT
+  rig_checker: NOT_RERUN_BY_THIS_SEAT
+  deterministic_build_hash: NOT_RERUN_BY_THIS_SEAT
+  contrast_matrix: OUT_OF_SEAT_SCOPE
+  severe_zoom_matrix: OUT_OF_SEAT_SCOPE
+
+conditions:
+  - "PRC1R-001: add aria-controls=\"r3-receipt\" to the [data-r3b1=\"02\"] receipt button so the shared disclosure target is wired identically to the three R3B1-08 controls."
+  - "PRC1R-002: make the R3B1-13 Conviction label visible to sighted users at <=640px. Deferred to the adjudicator because the Visual/Taste seat charges the same node as VTC1-001; this seat does not adjudicate the overlap."
+  - "PRC1R-U01 and PRC1R-U02 are producer/R3C conditions and must not be repaired inside this reference — doing so would mint producer text the candidate is forbidden to invent."
+  - "R3B1-06's Map innerText is unchanged from the predecessor (5037 chars). A future seat must not read that as an unlanded fix; the landed artifact is the th.num[data-r3b1=\"06\"] pin plus the 强度 twin."
+
+limitations:
+  - "RE-RUN SEAT. The prior Product Regression receipt for this SHA existed only in chat and was unrecoverable. Nothing here reproduces it; agreement or disagreement with it is unknown and unknowable to this seat."
+  - "OUT OF SEAT SCOPE, evaluated by other seats: mobile/accessibility geometry (so R3B1-09 severe zoom and the 44x44 effective-target half of R3B1-08 were not ruled on), visual taste, and data/authority label provenance beyond the label-integrity checks recorded above."
+  - "R3B1-11 contrast was NOT measured by this seat; contrast_audit.py and zoom_sweep.py were not run. The receipt makes no claim about the contrast matrix or the zoom matrix."
+  - "Acceptance items R3A 59/59, verify_reference.py, the RIG checker and the deterministic rebuild hash were not re-run here: verify_reference.py rebuilds the artifact twice into a temp tree and re-runs the whole browser chain, which this seat judged out of proportion to a review-only pass whose four constituent browser gates (inventory, mutation, aria, lang) were each re-run individually and passed. A build-determinism regression is therefore NOT covered by this receipt."
+  - "Access states were exercised through REF.setAccessState, the artifact's own harness. Real anonymous HTTP 401/403 against production /premiumdata/ is a server property this artifact cannot execute and was not tested."
+  - "The regression baseline is the frozen predecessor artifact, not production. A capability that production has and BOTH references lack would not appear in the diff; this seat's D1 coverage of that class is only what inventory_check.py's 15 production-sourced pins assert."
+  - "Money heatmap tile geometry was read from 503 hrefs and computed styles, not from a scrolled visual crop of the tile layer."
+  - "Light mode was not separately measured. This seat's EN/ZH passes ran in the artifact's default theme; theme-conditional label breakage, if any, is uncovered here."
+
+evidence_paths:
+  note: >
+    All harness JSON, probe scripts and screenshots were written to this seat's scratch directory,
+    never inside mockups/ and never inside build/, per the commission.
+  scratch_dir: "<session-scratchpad>/prc2/"
+  artifacts:
+    - "prc2/inventory.json  (inventory_check.py, 26/26)"
+    - "prc2/MUT.md          (mutation_suite.py, 13/13)"
+    - "prc2/aria.json       (aria_id_audit.py, en+zh)"
+    - "prc2/LANG_PROBE.txt  (lang_probe.py, 7/7)"
+    - "prc2/inv_diff.json   (predecessor-vs-candidate rendered inventory, all six views)"
+    - "prc2/zh_text.json    (per-view EN and ZH innerText + mixed-language scan)"
+    - "prc2/shots/caveat_open_en.png, caveat_open_390.png, reffail_confluence.png"

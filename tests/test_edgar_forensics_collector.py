@@ -293,6 +293,81 @@ def test_collector_fetches_historical_submissions_without_moving_latest(tmp_path
     assert session.calls[-1][1]["allow_redirects"] is False
 
 
+def test_collector_retrieves_historical_submissions_exact_bytes_without_persistence(tmp_path):
+    source_name = "CIK0000320193-submissions-001.json"
+    expected_url = historical_submissions_url(320193, source_name)
+    body = b'{"accessionNumber":["0000320193-24-000001"]}'
+    session = _Session(
+        lambda url: _Response(
+            url,
+            body=body,
+            headers={"ETag": '"historic"', "Last-Modified": "Thu, 01 Aug 2024 00:00:00 GMT"},
+        )
+    )
+    collector = SecForensicsCollector(
+        tmp_path,
+        user_agent="MastermindX research@example.com",
+        min_interval_seconds=0.1,
+        session=session,
+    )
+
+    content, metadata = collector.retrieve_historical_submissions_file(
+        320193,
+        source_name,
+        max_response_bytes=len(body),
+    )
+
+    assert content == body
+    assert metadata == {
+        "url": expected_url,
+        "http_etag": '"historic"',
+        "http_last_modified": "Thu, 01 Aug 2024 00:00:00 GMT",
+    }
+    assert session.calls == [
+        (
+            expected_url,
+            {
+                "headers": {
+                    "User-Agent": "MastermindX research@example.com",
+                    "Accept-Encoding": "gzip, deflate",
+                },
+                "timeout": collector.timeout_seconds,
+                "stream": True,
+                "allow_redirects": False,
+            },
+        )
+    ]
+    assert session.responses[0].stream_chunk_sizes == [len(body) + 1]
+    assert session.responses[0].closed is True
+    assert list(tmp_path.rglob("*")) == []
+
+
+@pytest.mark.parametrize(
+    "cik,source_name",
+    [
+        (1, "CIK0000320193-submissions-001.json"),
+        (320193, "../CIK0000320193-submissions-001.json"),
+        (320193, "CIK0000320193-submissions-01.json"),
+    ],
+)
+def test_historical_retrieval_rejects_unbound_or_malformed_name_before_network(
+    tmp_path, cik, source_name
+):
+    session = _Session()
+    collector = SecForensicsCollector(
+        tmp_path,
+        user_agent="MastermindX research@example.com",
+        min_interval_seconds=0.1,
+        session=session,
+    )
+
+    with pytest.raises(ValueError, match="does not bind CIK"):
+        collector.retrieve_historical_submissions_file(cik, source_name)
+
+    assert session.calls == []
+    assert list(tmp_path.rglob("*")) == []
+
+
 def test_collector_rejects_oversize_stream_without_content_length(tmp_path):
     limit = 32
     session = _Session(
