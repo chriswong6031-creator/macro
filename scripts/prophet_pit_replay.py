@@ -2792,6 +2792,99 @@ def build_harness_receipt(*, market: str, session: str, entry: dict[str, Any],
     }
 
 
+_EXECUTION_RECEIPT_SHAPE: dict[str, type | tuple[type, ...]] = {
+    "schema": str,
+    "authority": str,
+    "masterplan": str,
+    "market": str,
+    "session": str,
+    "dry_run": bool,
+    "bake_slot_utc": str,
+    "vintage_sha": str,
+    "vintage_committed_utc": str,
+    "vintage_ancestry": str,
+    "live_price_source_commit": str,
+    "overlay_totals": dict,
+    "overlay_files": dict,
+    "skipped_identical": dict,
+    "aux_panel_source": (str, type(None)),
+    "fence": dict,
+    "control_through": str,
+    "harness_fidelity": dict,
+    "board_identity": dict,
+    "counts": dict,
+    "reconciliation": dict,
+    "wall_clock_exposure": dict,
+    "snapshot_capture": dict,
+    "ledger_capture": (dict, type(None)),
+    "env_pins": dict,
+    "residual_network": list,
+    "pinned_stores": dict,
+    "executed_at": str,
+    "executing_commit": str,
+}
+
+
+def _is_sha256_commit(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 40
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+def _is_admissible_zero_mint_execute_receipt(
+    receipt_path: Path, receipt_doc: Any, *, market: str, session: str,
+) -> bool:
+    """Authenticate the one zero-mint receipt allowed to stand in for origination.
+
+    The exception is deliberately narrower than ordinary receipt discovery: it
+    requires the complete execution-receipt shape emitted by
+    :func:`build_harness_receipt`, its success invariants, and the exact canonical
+    content-addressed filename.  A hand-authored marker, a dry-run preview, or a
+    renamed/tampered receipt therefore cannot turn the collision verifier into a
+    vacuous pass.
+    """
+    if not isinstance(receipt_doc, dict) or any(
+        key not in receipt_doc or not isinstance(receipt_doc[key], expected_type)
+        for key, expected_type in _EXECUTION_RECEIPT_SHAPE.items()
+    ):
+        return False
+    if (
+        receipt_doc["schema"] != "pit_replay.receipt/v1"
+        or receipt_doc["authority"] != DEC_AUTHORITY
+        or receipt_doc["masterplan"] != MASTERPLAN
+        or receipt_doc["market"] != market
+        or receipt_doc["session"] != session
+        or receipt_doc["dry_run"] is not False
+        or receipt_doc["vintage_ancestry"] != "ancestor_of_origin_main"
+        or not _is_sha256_commit(receipt_doc["vintage_sha"])
+        or not _is_sha256_commit(receipt_doc["live_price_source_commit"])
+        or not _is_sha256_commit(receipt_doc["executing_commit"])
+    ):
+        return False
+
+    counts = receipt_doc["counts"]
+    fidelity = receipt_doc["harness_fidelity"]
+    reconciliation = receipt_doc["reconciliation"]
+    fence = receipt_doc["fence"]
+    if (
+        type(counts.get("minted")) is not int
+        or counts["minted"] != 0
+        or fidelity.get("measured") is not True
+        or not (fidelity.get("passes_floor") is True or fidelity.get("waived") is True)
+        or receipt_doc["snapshot_capture"].get("ok") is not True
+        or fence.get("violations") != 0
+        or fence.get("unscannable_count") != 0
+        or (reconciliation.get("admission_identity") or {}).get("holds") is not True
+        or (reconciliation.get("disposition_identity") or {}).get("holds") is not True
+    ):
+        return False
+
+    digest = _canonical_sha256(receipt_doc)[:16]
+    return receipt_path.name == f"{market}-{session}-{digest}.json"
+
+
 def write_pit_artifacts(repo: Path, *, market: str, entry: dict[str, Any],
                         result: dict[str, Any], vintage_info: dict[str, Any],
                         executed_at: str, executing_commit: str | None) -> dict[str, Any]:
@@ -3104,12 +3197,9 @@ def main(argv: list[str] | None = None) -> int:
                         receipt_doc = json.loads(receipt_path.read_text(encoding="utf-8"))
                     except Exception:  # noqa: BLE001 - malformed means not admissible
                         continue
-                    if (
-                        receipt_doc.get("schema") == "pit_replay.receipt/v1"
-                        and receipt_doc.get("market") == args.market
-                        and receipt_doc.get("session") == args.session
-                        and receipt_doc.get("dry_run") is False
-                        and (receipt_doc.get("counts") or {}).get("minted") == 0
+                    if _is_admissible_zero_mint_execute_receipt(
+                        receipt_path, receipt_doc,
+                        market=args.market, session=args.session,
                     ):
                         zero_mint_receipts.append(receipt_path)
             if len(zero_mint_receipts) == 1:

@@ -935,6 +935,54 @@ class TestBuildBoardCacheCoherence:
 # ---------------------------------------------------------------------------
 
 class TestVerifyCollisionsAheadOfIdempotence:
+    @staticmethod
+    def _write_zero_mint_receipt(
+        repo: Path, session: str, *, dry_run: bool = False,
+        executing_commit: str = "3" * 40, canonical_name: bool = True,
+    ) -> Path:
+        receipt = ppr.build_harness_receipt(
+            market="us",
+            session=session,
+            entry={"env_pins": {}, "residual_network": [], "pinned_stores": {}},
+            vintage_info={
+                "slot_utc": f"{session}T22:30:00Z",
+                "sha": "1" * 40,
+                "committed_utc": f"{session}T15:00:00-07:00",
+                "ancestry": "ancestor_of_origin_main",
+            },
+            result={
+                "overlay": {
+                    "live_price_source_commit": "2" * 40,
+                    "totals": {"written": 1},
+                    "files": {},
+                    "skipped_identical": {},
+                    "fence": {"violations": 0, "unscannable_count": 0},
+                },
+                "control_through": "2026-08-13",
+                "fidelity": {
+                    "measured": True, "passes_floor": True, "waived": False,
+                },
+                "board_identity": {"as_of": session},
+                "counts": {"minted": 0},
+                "reconciliation": {
+                    "admission_identity": {"holds": True},
+                    "disposition_identity": {"holds": True},
+                },
+                "clock": {},
+                "snapshot_capture": {"ok": True, "row": {}},
+            },
+            executed_at=f"{session}T23:00:00+00:00",
+            executing_commit=executing_commit,
+            dry_run=dry_run,
+        )
+        pit_dir = repo / ppr.PIT_RECEIPTS_RELDIR
+        pit_dir.mkdir(parents=True, exist_ok=True)
+        digest = ppr._canonical_sha256(receipt)[:16]
+        suffix = digest if canonical_name else "not-the-body-digest"
+        path = pit_dir / f"us-{session}-{suffix}.json"
+        path.write_text(json.dumps(receipt), encoding="utf-8")
+        return path
+
     def test_execute_shaped_fixture_reaches_collision_logic_not_idempotence_refusal(
         self, tmp_path
     ):
@@ -986,18 +1034,7 @@ class TestVerifyCollisionsAheadOfIdempotence:
         _git(repo, "remote", "add", "origin", str(repo))
 
         session = "2026-08-14"
-        pit_dir = repo / ppr.PIT_RECEIPTS_RELDIR
-        pit_dir.mkdir(parents=True)
-        (pit_dir / f"us-{session}-deadbeef.json").write_text(
-            json.dumps({
-                "schema": "pit_replay.receipt/v1",
-                "market": "us",
-                "session": session,
-                "dry_run": False,
-                "counts": {"minted": 0},
-            }),
-            encoding="utf-8",
-        )
+        self._write_zero_mint_receipt(repo, session)
 
         proc = subprocess.run(
             [sys.executable, "-m", "scripts.prophet_pit_replay",
@@ -1008,6 +1045,82 @@ class TestVerifyCollisionsAheadOfIdempotence:
         assert proc.returncode == 0, proc.stdout + proc.stderr
         assert "re-verified zero minted plans" in proc.stdout
         assert "the minted set is empty" in proc.stdout
+
+    def test_minimal_hand_authored_zero_mint_marker_is_refused(self, tmp_path):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        _git(repo, "remote", "add", "origin", str(repo))
+        session = "2026-08-14"
+        receipt = {
+            "schema": "pit_replay.receipt/v1", "market": "us", "session": session,
+            "dry_run": False, "counts": {"minted": 0},
+        }
+        pit_dir = repo / ppr.PIT_RECEIPTS_RELDIR
+        pit_dir.mkdir(parents=True)
+        digest = ppr._canonical_sha256(receipt)[:16]
+        (pit_dir / f"us-{session}-{digest}.json").write_text(json.dumps(receipt))
+
+        proc = subprocess.run(
+            [sys.executable, "-m", "scripts.prophet_pit_replay",
+             "--market", "us", "--session", session, "--verify-collisions",
+             "--repo", str(repo)],
+            cwd=_REPO, capture_output=True, text=True,
+        )
+        assert proc.returncode == 2
+        assert "no origination receipt" in proc.stdout
+
+    def test_dry_run_zero_mint_receipt_is_refused(self, tmp_path):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        _git(repo, "remote", "add", "origin", str(repo))
+        session = "2026-08-14"
+        self._write_zero_mint_receipt(repo, session, dry_run=True)
+
+        proc = subprocess.run(
+            [sys.executable, "-m", "scripts.prophet_pit_replay",
+             "--market", "us", "--session", session, "--verify-collisions",
+             "--repo", str(repo)],
+            cwd=_REPO, capture_output=True, text=True,
+        )
+        assert proc.returncode == 2
+        assert "no origination receipt" in proc.stdout
+
+    def test_non_content_addressed_zero_mint_receipt_is_refused(self, tmp_path):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        _git(repo, "remote", "add", "origin", str(repo))
+        session = "2026-08-14"
+        self._write_zero_mint_receipt(repo, session, canonical_name=False)
+
+        proc = subprocess.run(
+            [sys.executable, "-m", "scripts.prophet_pit_replay",
+             "--market", "us", "--session", session, "--verify-collisions",
+             "--repo", str(repo)],
+            cwd=_REPO, capture_output=True, text=True,
+        )
+        assert proc.returncode == 2
+        assert "no origination receipt" in proc.stdout
+
+    def test_duplicate_zero_mint_execution_receipts_are_refused(self, tmp_path):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        _git(repo, "remote", "add", "origin", str(repo))
+        session = "2026-08-14"
+        self._write_zero_mint_receipt(repo, session, executing_commit="3" * 40)
+        self._write_zero_mint_receipt(repo, session, executing_commit="4" * 40)
+
+        proc = subprocess.run(
+            [sys.executable, "-m", "scripts.prophet_pit_replay",
+             "--market", "us", "--session", session, "--verify-collisions",
+             "--repo", str(repo)],
+            cwd=_REPO, capture_output=True, text=True,
+        )
+        assert proc.returncode == 2
+        assert "multiple zero-mint execute receipts" in proc.stdout
 
 
 # ---------------------------------------------------------------------------
