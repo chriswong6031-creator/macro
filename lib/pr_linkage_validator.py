@@ -110,21 +110,25 @@ def _visible_lines(body: str) -> tuple[list[tuple[int, str]], list[str]]:
     visible: list[tuple[int, str]] = []
     fence: tuple[str, int] | None = None
     comment = False
+    quote_pending = False
     for n, line in enumerate(lines, 1):
         stripped = line.lstrip(" ")
         indent = len(line) - len(stripped)
         if comment:
             if "-->" in line:
                 comment = False
+                quote_pending = False
             continue
         if "<!--" in line:
             start, end = line.index("<!--"), line.find("-->", line.index("<!--") + 4)
             if end < 0:
                 comment = True
+                quote_pending = False
                 continue
             line = line[:start] + line[end + 3:]
             stripped = line.lstrip(" "); indent = len(line) - len(stripped)
             if not line:
+                quote_pending = False
                 continue
         marker = re.match(r" {0,3}(`{3,}|~{3,})(?:[^`~].*)?$", line)
         if fence:
@@ -135,7 +139,15 @@ def _visible_lines(body: str) -> tuple[list[tuple[int, str]], list[str]]:
         if marker:
             fence = (marker.group(1)[0], len(marker.group(1)))
             continue
-        if (indent <= 3 and stripped.startswith(">")) or indent >= 4:
+        if indent <= 3 and stripped.startswith(">"):
+            quote_pending = True
+            continue
+        if quote_pending and line:
+            defects.append("LAZY_BLOCKQUOTE_CONTINUATION")
+            quote_pending = False
+        if not line:
+            quote_pending = False
+        if indent >= 4:
             continue
         visible.append((n, line))
     if fence or comment:
@@ -165,7 +177,7 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
         match = re.fullmatch(r"(Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion): (.*)", line)
         if match:
             headers.append((n, match.group(1), match.group(2)))
-        elif line and not re.fullmatch(r"(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|complete|completes|completed|implement|implements|implemented|ref|refs|reference|references|part of|contributes to|toward|towards|relates to|related to|skip|ignore) .+", line, re.I):
+        elif line and not re.fullmatch(r"(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|complete|completes|completed|implement|implements|implemented|ref|refs|reference|references|part of|contributes to|toward|towards|relates to|related to|skip|ignore) MAS-[1-9][0-9]{0,8}(?: *, *MAS-[1-9][0-9]{0,8}| +and +MAS-[1-9][0-9]{0,8})*\.?", line, re.I | re.ASCII):
             defects.append("NONPERMITTED_PREAMBLE")
     block = None
     for i in range(max(0, len(headers) - 5)):
@@ -295,9 +307,14 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
         if observation[name].get("basis") != base: raise ValidationError("INVALID_SNAPSHOT_STATE")
     cp = observation["changed_paths"]["paths"]
     if cp != sorted(cp, key=lambda r:(r.get("path", ""), r.get("change_type", ""), r.get("old_path") or "")) or len({(r.get("path"),r.get("change_type"),r.get("old_path")) for r in cp}) != len(cp): raise ValidationError("INVALID_SNAPSHOT_STATE")
+    resolutions = observation["path_ownership"].get("resolutions", [])
+    if resolutions != sorted(resolutions, key=lambda r: (r.get("path", ""), r.get("path_class", ""), r.get("owner_workstream", ""), r.get("resolution", ""))) or len({canonical_json(row) for row in resolutions}) != len(resolutions):
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
     native = observation["native_linkage"]
     if not isinstance(native.get("pagination_complete"), bool):
         raise ValidationError("INVALID_SNAPSHOT_STATE")
+    if len(native.get("relationships", [])) > manifest["limits"]["relationships"]:
+        raise ValidationError("RESOURCE_LIMIT:relationships")
     legal = manifest["native_reduction"]["legal_rows"]
     for row in native["relationships"]:
         if not isinstance(row, dict) or set(row) != {"issue_id","kind","source","state","completion_transition"}:
@@ -376,7 +393,8 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     if missing: add("R001", {"missing_fields": missing})
     for f in FIELDS:
         if len(locs[f]) > 1:
-            findings.append(_finding(rules, "R002", {"field":f,"locations":[f"BODY:L{x}:{f}" for x in locs[f]],"values":[canonical_digest(values[f] or "")]}, field=f, line=locs[f][1]))
+            duplicate_values = [value for n, field, value in _ if field == f and n in locs[f]]
+            findings.append(_finding(rules, "R002", {"field":f,"locations":[f"BODY:L{x}:{f}" for x in locs[f]],"values":sorted((canonical_digest(x) for x in duplicate_values), key=canonical_json)}, field=f, line=locs[f][1]))
     if defects: add("R003", {"location":"DECLARATION:BLOCK","reason":sorted(set(defects))[0]})
     normalized = dict(values)
     epoch = observation["authoring_epoch"]
@@ -459,8 +477,12 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
                     add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
     if linear and linear != "NONE":
         suppressed = {(r.get("issue_id"), r.get("source")) for r in native.get("relationships", []) if r.get("state") == "SUPPRESSED"}
+        native_sources = {r.get("issue_id"): r.get("source") for r in native.get("relationships", []) if r.get("state") == "PRESENT"}
         def competes(target: str, source: str) -> bool:
-            return target != linear and (target, source) not in suppressed and "DECLARED" in roles_by_target.get(target, [])
+            # The adapter may describe a native relation but cannot rewrite its
+            # source.  Suppression is source-specific by contract.
+            effective_source = native_sources.get(target, source) if source == "ADAPTER" else source
+            return target != linear and (target, effective_source) not in suppressed and "DECLARED" in roles_by_target.get(target, [])
         bad_branch = [x for x in branch_targets if competes(x, "BRANCH")]
         if bad_branch: add("R050", {"branch_targets":bad_branch,"declared":linear})
         competing = sorted({x for x in title_targets if competes(x, "TITLE")} | {x for x in body_targets if competes(x, "BODY")})

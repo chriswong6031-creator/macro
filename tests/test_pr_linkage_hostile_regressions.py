@@ -68,3 +68,27 @@ def test_report_receipt_is_deep_copied_and_r054_is_one_aggregate():
     assert len([f for f in r["semantic"]["findings"] if f["rule_id"] == "R054"]) == 1
     o["receipt"]["repository"] = "mutated/repository"
     assert r["receipt"]["repository"] != "mutated/repository"
+
+
+def test_lazy_quote_garbage_preamble_and_native_257_are_refused():
+    assert "R003" in ids(observation("> quoted\n" + VALID))
+    assert "R003" in ids(observation("Fixes garbage\n" + VALID))
+    o = clone(observation(VALID)); o["native_linkage"]["relationships"] = [{"issue_id":f"MAS-{i+1}","kind":"CLOSING","source":"BODY","state":"PRESENT","completion_transition":"ELIGIBLE"} for i in range(257)]
+    o = finish(o)
+    with pytest.raises(v.ValidationError, match="RESOURCE_LIMIT:relationships"): v.analyze(o, MANIFEST)
+
+
+def test_r002_keeps_every_duplicate_value_and_second_location():
+    o = clone(observation(VALID)); o["pull_request"]["body"] += "\nWorkstream: WS:OTHER"
+    f = next(x for x in v.analyze(finish(o), MANIFEST)["semantic"]["findings"] if x["rule_id"] == "R002")
+    assert f["location"] == "BODY:L7:Workstream" and len(f["evidence"]["values"]) == 2
+
+
+def test_reversed_ownership_rows_are_refused_before_semantic_hashing():
+    o = clone(observation(VALID))
+    o["path_ownership"]["resolutions"] = [
+        {"path":"z","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"RECORDS","allowed_authorities":["records"]},
+        {"path":"a","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"RECORDS","allowed_authorities":["records"]},
+    ]
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"):
+        v.analyze(finish(o), MANIFEST)

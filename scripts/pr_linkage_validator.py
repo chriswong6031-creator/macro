@@ -108,7 +108,7 @@ def write_atomic(target: pathlib.Path, payload: bytes) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("input", nargs="?", default="-"); ap.add_argument("--output"); ap.add_argument("--format", choices=("json","human","github"), default="json"); ap.add_argument("--source-sha")
-    a = ap.parse_args(argv); raw = None; src = source_sha(a.source_sha)
+    a = ap.parse_args(argv); raw = None; observation = None; manifest = None; src = source_sha(a.source_sha)
     try:
         raw = read_input(a.input)
         if len(raw) > 1048576: raise core.ValidationError("RESOURCE_LIMIT:observation_bytes")
@@ -125,6 +125,10 @@ def main(argv: list[str] | None = None) -> int:
             key = str(exc).split(":", 1)[1] if ":" in str(exc) else None
             limit = {"observation_bytes":1048576}.get(key)
             observed = len(raw) if raw is not None and key == "observation_bytes" else None
+            if isinstance(manifest, dict):
+                limit = manifest.get("limits", {}).get(key, limit)
+            if key == "relationships" and isinstance(observation, dict):
+                observed = len(observation.get("native_linkage", {}).get("relationships", []))
         payload = core.canonical_json(envelope(reason, raw, src, limit=limit, observed=observed)); status = ROUTES[reason][2]
     except PhaseFailure as exc:
         payload = core.canonical_json(envelope(exc.reason, raw, src)); status = ROUTES[exc.reason][2]

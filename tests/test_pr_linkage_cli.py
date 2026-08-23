@@ -32,3 +32,15 @@ def test_output_is_atomic_path_and_formats_are_nonblocking(tmp_path):
     assert not list(tmp_path.glob(".report.json.*"))
     p=invoke(tmp_path,validator.canonical_json(o),"--format","github"); assert p.returncode == 0
     assert b"::warning" in p.stdout
+
+
+def test_native_relationship_resource_receipt_has_exact_limit_and_observed(tmp_path):
+    o=observation(VALID)
+    o["native_linkage"]["relationships"]=[
+        {"issue_id":f"MAS-{n+1}","kind":"CLOSING","source":"BODY","state":"PRESENT","completion_transition":"ELIGIBLE"}
+        for n in range(257)
+    ]
+    o=validator.finalize_receipt(o, json.loads((ROOT/"config/pr_linkage_rules.v1.json").read_text()))
+    p=invoke(tmp_path,validator.canonical_json(o)); assert p.returncode == 2 and p.stdout == b""
+    error=json.loads(p.stderr)["error"]
+    assert error["reason_code"] == "RESOURCE_LIMIT" and error["limit"] == 256 and error["observed"] == 257
