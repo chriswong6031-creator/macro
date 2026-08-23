@@ -162,6 +162,8 @@ def test_paid_golden_aapl_returns_three_statement_trees(paid_client) -> None:
     )
     assert sga["mapping_state"] == "unmapped"
     assert "/api/forensics/v1/financial/trace" not in json.dumps(payload)
+    assert "related_event_ref" not in payload
+    assert "related_event_ref" not in payload
 
 
 def test_malformed_json_is_private_400_and_does_not_open_provider(paid_client, monkeypatch) -> None:
@@ -183,3 +185,50 @@ def test_non_post_is_private_405(paid_client, method: str) -> None:
     response = paid_client.request(method, _PATH)
     assert response.status_code == 405
     _assert_private_headers(response)
+
+
+_Q3_ACCESSION = "0000320193-26-000020"
+_Q3_RESPONSE_SHA = "b98602a299996ff7ea58b842364031547df795d1458b51134eef0e37159b7918"
+_Q3_EVENT_ID = "evt_cik0000320193_2026q3_results"
+_Q3_8K_ACCESSION = "0000320193-26-000018"
+
+
+def test_paid_q3_returns_quarterly_trees_and_event_ref(paid_client) -> None:
+    response = paid_client.post(
+        _PATH,
+        content=_body(accession=_Q3_ACCESSION),
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    assert response.headers.get("x-fif-response-sha256") == _Q3_RESPONSE_SHA
+    payload = response.json()
+    assert payload["filing"]["accession"] == _Q3_ACCESSION
+    assert payload["filing"]["form"] == "10-Q"
+    by_type = {item["statement_type"]: item for item in payload["statements"]}
+    assert by_type["income_statement"]["row_count"] == 24
+    assert by_type["balance_sheet"]["row_count"] == 36
+    assert by_type["cash_flow"]["row_count"] == 35
+    income = by_type["income_statement"]
+    assert len(income["columns"]) == 4
+    assert income["columns"][0]["end"] == income["columns"][2]["end"]
+    assert income["columns"][0]["start"] != income["columns"][2]["start"]
+    ref = payload["related_event_ref"]
+    assert ref["event_id"] == _Q3_EVENT_ID
+    assert ref["source_filing_distinction"]["earnings_release_8k_accession"] == _Q3_8K_ACCESSION
+    assert ref["source_filing_distinction"]["periodic_report_accession"] == _Q3_ACCESSION
+    assert "generation_id" not in ref
+    assert payload["authority"] == {"class": "context_only", "display_only": True}
+    assert payload["delivery"]["attested"] is False
+    assert payload["delivery"]["production_issuer_service"] is False
+    a1 = paid_client.post(_PATH, content=_body(), headers={"content-type": "application/json"})
+    assert a1.headers.get("x-fif-response-sha256") == _RESPONSE_SHA
+
+
+def test_paid_results_eight_k_is_unknown_filing(paid_client) -> None:
+    response = paid_client.post(
+        _PATH,
+        content=_body(accession=_Q3_8K_ACCESSION),
+        headers={"content-type": "application/json"},
+    )
+    _assert_error(response, 400, "unknown filing")

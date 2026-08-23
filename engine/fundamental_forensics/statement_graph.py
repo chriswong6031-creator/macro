@@ -1,8 +1,8 @@
-"""FIF-3A1 filing-native statement graph.
+"""FIF-3A1/3A2 filing-native statement graph.
 
 Walks presentation/calculation/label linkbases and joins them to the strict
-offline iXBRL parse. Displayed row/column composition for the golden AAPL
-10-K comes from the three captured primary HTML tables, not from raw
+offline iXBRL parse. Displayed row/column composition for the bounded AAPL
+golden filing set comes from the captured primary HTML tables, not from raw
 hypercube order. Deterministic. No network. No implicit now. No LLM.
 """
 from __future__ import annotations
@@ -49,6 +49,15 @@ _ABSTRACT_TOKENS = (
     "Table",
     "LineItems",
 )
+_PERIOD_BANNER_LABELS = frozenset(
+    {
+        "years ended",
+        "three months ended",
+        "six months ended",
+        "nine months ended",
+        "twelve months ended",
+    }
+)
 
 _PREFIXES = (
     "us-gaap_",
@@ -64,7 +73,14 @@ _PREFIXES = (
 _MAX_LINKBASE_BYTES = 8 * 1024 * 1024
 _MAX_ARCS = 20_000
 _FORBIDDEN_DECL = b"<!DOCTYPE", b"<!ENTITY"
-_GOLDEN_MEMBER_COUNT = 93
+GOLDEN_AAPL_FIXTURES: dict[str, str] = {
+    "0000320193-25-000079": "tests/fixtures/fundamental_forensics/aapl_10k_2025",
+    "0000320193-26-000020": "tests/fixtures/fundamental_forensics/aapl_10q_2026q3",
+}
+_DEFAULT_GOLDEN_ACCESSION = "0000320193-25-000079"
+_RELATED_EVENT_REF_KEYS = frozenset(
+    {"plane", "event_id", "relation", "source_filing_distinction"}
+)
 _DATE_RE = re.compile(
     r"(January|February|March|April|May|June|July|August|September|October|November|December)"
     r"\s+(\d{1,2}),\s*(\d{4})",
@@ -119,6 +135,45 @@ def _load_json_object(path: Path, *, name: str) -> dict[str, Any]:
     return parsed
 
 
+def _admit_statement_roles(manifest: Mapping[str, Any]) -> None:
+    extras = manifest.get("statement_roles")
+    if extras is None:
+        return
+    if not isinstance(extras, dict):
+        raise StatementGraphError("golden AAPL statement_roles are malformed")
+    for kind in ("income_statement", "balance_sheet", "cash_flow"):
+        spec = extras.get(kind)
+        if not isinstance(spec, dict):
+            raise StatementGraphError(f"golden AAPL statement role is missing: {kind}")
+        if not isinstance(spec.get("role_uri"), str) or not spec["role_uri"]:
+            raise StatementGraphError(f"golden AAPL statement role_uri is missing: {kind}")
+        if not isinstance(spec.get("title"), str) or not spec["title"]:
+            raise StatementGraphError(f"golden AAPL statement title is missing: {kind}")
+
+
+def _admit_related_event_ref(manifest: Mapping[str, Any]) -> None:
+    raw = manifest.get("related_event_ref")
+    if raw is None:
+        return
+    if not isinstance(raw, dict) or set(raw) != _RELATED_EVENT_REF_KEYS:
+        raise StatementGraphError("golden AAPL related_event_ref is not the stable reference")
+    if "generation_id" in raw:
+        raise StatementGraphError("golden AAPL related_event_ref must not mint generation identity")
+    if not all(isinstance(raw.get(key), str) and raw[key] for key in ("plane", "event_id", "relation")):
+        raise StatementGraphError("golden AAPL related_event_ref is not the stable reference")
+    distinction = raw.get("source_filing_distinction")
+    if not isinstance(distinction, dict):
+        raise StatementGraphError("golden AAPL related_event_ref is not the stable reference")
+    eight_k = distinction.get("earnings_release_8k_accession")
+    periodic = distinction.get("periodic_report_accession")
+    if not isinstance(eight_k, str) or not isinstance(periodic, str) or not eight_k or not periodic:
+        raise StatementGraphError("golden AAPL related_event_ref is not the stable reference")
+    if eight_k == periodic:
+        raise StatementGraphError("golden AAPL related_event_ref collapses distinct filings")
+    if periodic != manifest.get("accession"):
+        raise StatementGraphError("golden AAPL related_event_ref is not bound to this filing")
+
+
 def admit_golden_aapl_package(fixture: Path) -> GoldenFilingPackage:
     """Strictly admit the committed AAPL package. No network. No writes."""
     fixture = Path(fixture)
@@ -156,8 +211,11 @@ def admit_golden_aapl_package(fixture: Path) -> GoldenFilingPackage:
     missing = set(index_names) - set(manifest_names)
     if extra or missing:
         raise StatementGraphError("golden AAPL package inventory does not match the archive index")
-    if len(index_names) != _GOLDEN_MEMBER_COUNT or manifest.get("member_count") != _GOLDEN_MEMBER_COUNT:
-        raise StatementGraphError("golden AAPL package inventory count is not the committed 93")
+    committed = manifest.get("member_count")
+    if not isinstance(committed, int) or committed < 1 or len(index_names) != committed:
+        raise StatementGraphError("golden AAPL package inventory count does not match the committed index")
+    _admit_statement_roles(manifest)
+    _admit_related_event_ref(manifest)
 
     witness_meta = manifest.get("acceptance_witness")
     if not isinstance(witness_meta, dict) or not isinstance(witness_meta.get("path"), str):
@@ -211,10 +269,39 @@ def admit_golden_aapl_package(fixture: Path) -> GoldenFilingPackage:
     return GoldenFilingPackage(manifest=manifest, members=members)
 
 
-def load_golden_aapl_package(repo_root: Path) -> GoldenFilingPackage:
-    """Load and strictly admit the committed FIF-3A1 fixture. Performs no network I/O."""
-    fixture = Path(repo_root) / "tests" / "fixtures" / "fundamental_forensics" / "aapl_10k_2025"
-    return admit_golden_aapl_package(fixture)
+def load_golden_aapl_package(repo_root: Path, accession: str | None = None) -> GoldenFilingPackage:
+    """Load and strictly admit one committed AAPL golden fixture. Performs no network I/O."""
+    chosen = accession or _DEFAULT_GOLDEN_ACCESSION
+    relative = GOLDEN_AAPL_FIXTURES.get(chosen)
+    if relative is None:
+        raise StatementGraphError("unknown golden AAPL filing")
+    return admit_golden_aapl_package(Path(repo_root) / relative)
+
+
+def _stored_member(package: GoldenFilingPackage, role: str) -> bytes:
+    for item in package.manifest.get("members") or []:
+        if not isinstance(item, dict):
+            continue
+        if item.get("state") == "stored" and item.get("role") == role:
+            name = item.get("name")
+            if not isinstance(name, str) or name not in package.members:
+                raise StatementGraphError(f"golden AAPL stored {role} member is missing")
+            return package.members[name]
+    raise StatementGraphError(f"golden AAPL stored {role} member is missing")
+
+
+def _statement_identity(package: GoldenFilingPackage, statement_type: str) -> tuple[str, str, str]:
+    extras = package.manifest.get("statement_roles")
+    spec = extras.get(statement_type) if isinstance(extras, dict) else None
+    if isinstance(spec, dict) and spec.get("role_uri") and spec.get("title"):
+        title = str(spec["title"])
+        search = str(spec.get("title_search") or title)
+        return str(spec["role_uri"]), title, search
+    return (
+        PRIMARY_STATEMENT_ROLES[statement_type],
+        STATEMENT_TITLES[statement_type],
+        STATEMENT_TITLES[statement_type],
+    )
 
 
 def _parse_xml(content: bytes, *, name: str) -> ET.Element:
@@ -530,7 +617,7 @@ def parse_displayed_primary_table(html: str, *, title: str) -> dict[str, Any]:
         label = str(label_cell["text"]).strip() if label_cell else ""
         if not label and not any(cell["facts"] for cell in cells):
             continue
-        if label == "Years ended":
+        if label.strip().lower() in _PERIOD_BANNER_LABELS:
             continue
         value_facts: list[dict[str, Any]] = []
         seen_label = False
@@ -587,39 +674,73 @@ def _period_key(context: Mapping[str, Any]) -> tuple[str, str | None, str | None
     return ("duration", period.get("start_date"), period.get("end_date"))
 
 
+def _period_for_displayed_column(
+    *,
+    index: int,
+    iso: str,
+    prefer_kind: str,
+    displayed_rows: list[dict[str, Any]],
+    facts_by_id: Mapping[str, dict[str, Any]],
+    contexts: Mapping[str, dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Bind one displayed column from same-column facts of the preferred period kind."""
+    for spec in displayed_rows:
+        value_facts = spec.get("value_facts") or []
+        if index >= len(value_facts):
+            continue
+        html_fact = value_facts[index]
+        parsed = facts_by_id.get(str(html_fact.get("fact_id") or ""))
+        context_ref = (parsed or {}).get("context_ref") or html_fact.get("context_ref")
+        context = contexts.get(str(context_ref or ""))
+        if not context:
+            continue
+        period = context.get("period") or {}
+        if period.get("kind") != prefer_kind:
+            continue
+        if prefer_kind == "instant" and period.get("instant_date") == iso:
+            return period
+        if prefer_kind == "duration" and period.get("end_date") == iso and period.get("start_date"):
+            return period
+    return None
+
+
 def _columns_from_display(
     *,
     statement_type: str,
     iso_dates: list[str],
-    table_facts: list[dict[str, Any]],
+    displayed_rows: list[dict[str, Any]],
+    facts_by_id: Mapping[str, dict[str, Any]],
     contexts: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Columns are the dates printed on the captured table, bound to filing contexts."""
-    expected = 2 if statement_type == "balance_sheet" else 3
-    if len(iso_dates) != expected:
-        raise StatementGraphError("displayed statement column count does not match the filing table")
+    """Columns are the dates printed on the captured table, bound to complete filing periods."""
+    if len(iso_dates) < 2:
+        raise StatementGraphError("displayed statement columns are absent")
+    prefer_kind = "instant" if statement_type == "balance_sheet" else "duration"
     columns: list[dict[str, Any]] = []
-    for iso in iso_dates:
-        if statement_type == "balance_sheet":
-            matched = False
-            for fact in table_facts:
-                period = (contexts.get(fact.get("context_ref") or "") or {}).get("period") or {}
-                if period.get("kind") == "instant" and period.get("instant_date") == iso:
-                    matched = True
-                    break
-            if not matched:
+    seen: set[tuple[str, str | None, str]] = set()
+    for index, iso in enumerate(iso_dates):
+        period = _period_for_displayed_column(
+            index=index,
+            iso=iso,
+            prefer_kind=prefer_kind,
+            displayed_rows=displayed_rows,
+            facts_by_id=facts_by_id,
+            contexts=contexts,
+        )
+        if prefer_kind == "instant":
+            if not period:
                 raise StatementGraphError("displayed balance-sheet column is not bound to the filing date")
+            identity: tuple[str, str | None, str] = ("instant", None, iso)
             columns.append({"kind": "instant", "start": None, "end": iso, "label": iso})
-            continue
-        start = None
-        for fact in table_facts:
-            period = (contexts.get(fact.get("context_ref") or "") or {}).get("period") or {}
-            if period.get("kind") == "duration" and period.get("end_date") == iso and period.get("start_date"):
-                start = period.get("start_date")
-                break
-        if not start:
-            raise StatementGraphError("displayed duration column is not bound to the filing period")
-        columns.append({"kind": "duration", "start": start, "end": iso, "label": iso})
+        else:
+            if not period:
+                raise StatementGraphError("displayed duration column is not bound to the filing period")
+            start = str(period.get("start_date"))
+            identity = ("duration", start, iso)
+            columns.append({"kind": "duration", "start": start, "end": iso, "label": iso})
+        if identity in seen:
+            raise StatementGraphError("displayed statement columns collapse distinct filing periods")
+        seen.add(identity)
     return columns
 
 
@@ -911,11 +1032,10 @@ def reconstruct_statement(
     parsed_instance: Mapping[str, Any],
     registry: Any,
 ) -> dict[str, Any]:
-    role_uri = PRIMARY_STATEMENT_ROLES[statement_type]
-    title = STATEMENT_TITLES[statement_type]
-    pre = package.members["aapl-20250927_pre.xml"]
-    lab = package.members["aapl-20250927_lab.xml"]
-    cal = package.members["aapl-20250927_cal.xml"]
+    role_uri, title, title_search = _statement_identity(package, statement_type)
+    pre = _stored_member(package, "presentation")
+    lab = _stored_member(package, "label")
+    cal = _stored_member(package, "calculation")
     presentation = parse_presentation_tree(pre, role_uri=role_uri)
     by_concept = _presentation_occurrences(presentation)
     parse_labels(lab)
@@ -931,7 +1051,7 @@ def reconstruct_statement(
         if item.get("name") == primary and item.get("state") == "stored"
     )
     html = package.members[primary].decode("utf-8")
-    displayed = parse_displayed_primary_table(html, title=title)
+    displayed = parse_displayed_primary_table(html, title=title_search)
     table_facts: list[dict[str, Any]] = []
     for spec in displayed["rows"]:
         for item in spec["value_facts"]:
@@ -944,7 +1064,8 @@ def reconstruct_statement(
     columns = _columns_from_display(
         statement_type=statement_type,
         iso_dates=displayed["columns_iso"],
-        table_facts=table_facts,
+        displayed_rows=displayed["rows"],
+        facts_by_id=facts_by_id,
         contexts=contexts,
     )
     out_rows: list[dict[str, Any]] = []
@@ -1059,6 +1180,7 @@ def reconstruct_primary_statements(
 
 
 __all__ = [
+    "GOLDEN_AAPL_FIXTURES",
     "GoldenFilingPackage",
     "LABEL_PERIOD_END",
     "LABEL_PERIOD_START",
