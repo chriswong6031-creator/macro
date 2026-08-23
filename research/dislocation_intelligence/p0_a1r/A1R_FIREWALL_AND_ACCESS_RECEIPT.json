@@ -1,0 +1,98 @@
+{
+  "schema": "mastermind.dislocation_p0.a1r_firewall_and_access_receipt.v2",
+  "status": "PASS",
+  "source_acquisition": {
+    "fts": {
+      "hosts": [
+        "efts.sec.gov"
+      ],
+      "access_event_count": 332,
+      "banned_reads": [],
+      "receipt_file": "A1R_QUERY_COMPLETION_AND_POOL_RECEIPT.json",
+      "receipt_file_sha256": "447e378f98e0b5d7d036827eca5e1b405f0c480869f9056643e81e8bd2633611",
+      "logical_cells": 146,
+      "complete_cells": 146,
+      "incomplete_records": 0,
+      "candidate_universe_sha256": "aca01d616b859a9e59381748b86cd65405eb3bf54b57a10b1d7faef32b51a733",
+      "tuple_uniqueness_replay_network_access": "NONE"
+    },
+    "canonical_owner": {
+      "hosts": [
+        "data.sec.gov",
+        "www.sec.gov"
+      ],
+      "duplicate_p0_receipt_plane": false,
+      "receipt_file": "A1R_CANONICAL_SOURCE_PACKET_MANIFEST.json",
+      "receipt_file_sha256": "03355ff15941750f3d26f3bbf5783c536cc16fefd47692296f1331e062216ea4",
+      "manifest_sha256": "97c2d8f7d518a6ae7ec25f23cb6f796f201c601277647b0bee9e917eb1add667",
+      "packet_count": 20,
+      "exact_fts_matched_document_count": 27,
+      "primary_document_fallback": false,
+      "offline_replay_status": "COMPLETE_BYTE_IDENTICAL",
+      "offline_replay_proof_file": "A1R_CANONICAL_OWNER_REPLAY_PROOF.json",
+      "offline_replay_proof_sha256": "6222f5e0d145cb38a66206e5a42e2df8af8040d7041f88438760ad385a61ca0b"
+    },
+    "non_sec_source_hosts": []
+  },
+  "physical_workspace_firewall": {
+    "inspected_workspaces": [
+      "work/source_completion",
+      "work/owner_workspace_v2",
+      "work/owner_workspace_v2_replay",
+      "work/proposal_workspace_v2",
+      "work/audit_workspace_v2"
+    ],
+    "forbidden_directory_names": [
+      "price",
+      "prices",
+      "market",
+      "markets",
+      "outcome",
+      "outcomes",
+      "ranking",
+      "sizing",
+      "execution"
+    ],
+    "forbidden_directories_present": [],
+    "market_or_outcome_mounts_present": [],
+    "model_packet_index_sha256": "1f6feded5bebe12f0eb09db8a6d0aeec107a98fd22dd34e3167bfa413f59c216",
+    "audit_input_bundle_sha256": "7e1742b19d7857ef3b41378cbafbaed3c371ca193028b8b427666451285951ec"
+  },
+  "model_boundaries": {
+    "grok": {
+      "provider": "xAI",
+      "model": "grok-4.6",
+      "source_input": "twenty canonical packet bytes plus packet-local evidence catalogs",
+      "web_search_enabled": false,
+      "subagents_enabled": false,
+      "prices_or_outcomes_supplied": false,
+      "proposal_bundle_sha256": "98383da61ac11c072a1c0cc10a00218164fb95446c277cf4da212121250fbee2",
+      "outside_sources_used": false,
+      "provider_control_event": "NONE"
+    },
+    "opus": {
+      "provider": "Anthropic",
+      "bundle_model": "opus",
+      "observed_ui_model": "Opus 5 Max",
+      "channel": "authenticated Claude web chat",
+      "input": "one self-contained public-SEC audit bundle",
+      "github_or_repository_connection_required": false,
+      "github_or_repository_access_assumed": false,
+      "web_search_enabled": false,
+      "outside_sources_used": false,
+      "prices_or_outcomes_supplied": false,
+      "attachment_sandbox_file_commands_used": true,
+      "plugins_or_connectors_used": false,
+      "subagents_used": false,
+      "audit_bundle_sha256": "7c01072dafa92e7f2c4e31723317351694e575f6947185b8112a29a12923a88a",
+      "local_replay_status": "AUDIT_VALID"
+    }
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate_signal": false,
+    "can_escalate": false
+  }
+}
