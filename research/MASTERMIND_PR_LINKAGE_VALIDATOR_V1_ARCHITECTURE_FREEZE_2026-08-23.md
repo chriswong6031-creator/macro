@@ -727,7 +727,7 @@ the short predicate is normative and expands only the sections cited above.
 | `R022` | `AUTHORING_CUTOVER_RELATION_UNAVAILABLE` / semantic / partial | named alias with UNKNOWN/PARTIAL/UNAVAILABLE/CONTRADICTORY epoch; R022 only, no normalization | `epoch_state`, `receipt_digest` | `SUPPLY_CUTOVER_RECEIPT` |
 | `R026` | `LINEAR_TARGET_ROLE_UNAVAILABLE` / semantic / partial | Linear PRESENT but a required exact target row is absent or `target_role` is UNKNOWN | `required_targets`, `target_roles` | `SUPPLY_COMPLETE_LINEAR_TARGET_ROLES` |
 | `R027` | `LINEAR_TARGET_ROLE_MISMATCH` / semantic / error | after role availability, zero/multiple/mismatching DECLARED target or explicit incompatible nondeclared role | `declared`, `roles`, `targets` | `REPAIR_LINEAR_TARGET_ROLES` |
-| `R028` | `LINEAR_ISSUE_TYPE_MISMATCH` / semantic / error | present target role/type violates exact mode allowlist or proof/acceptance gate role-type law | `issue_type`, `portfolio_mode`, `target_role` | `REPAIR_LINEAR_ISSUE_TYPE` |
+| `R028` | `LINEAR_ISSUE_TYPE_MISMATCH` / semantic / error | present target role/type violates exact mode allowlist or proof/acceptance gate role-type law | `issue_type`, `portfolio_mode`, `target`, `target_role` | `REPAIR_LINEAR_ISSUE_TYPE` |
 | `R029` | `LINEAR_REQUIRED_FOR_MODE` / semantic / error | every canonical mode; Linear is `NONE` | `portfolio_mode`, `linear` | `SET_CONCRETE_LINEAR_ISSUE` |
 | `R030` | `WORKSTREAM_UNKNOWN` / semantic / error | Agent OS PRESENT; tracked or architecture-candidate concrete declared key absent (never creates-workstream) | `workstream` | `USE_EXISTING_WORKSTREAM` |
 | `R031` | `WORKSTREAM_REQUIRED_FOR_TRACKED` / semantic / error | tracked; Workstream is `NONE` | `portfolio_mode`, `workstream` | `SET_TRACKED_WORKSTREAM` |
@@ -1026,6 +1026,14 @@ independent canonical serializations before every implementation handoff.
   types; `maintenance_exception` accepts only `MAINTENANCE`; `creates_workstream` only
   `ROOT_RECOVERY`; `architecture_candidate` only `ARCHITECTURE`. `PROOF_GATE` and
   `ACCEPTANCE_GATE` roles additionally require their identically named issue type.
+- `R028` remains `PER_TARGET` at the fixed `SNAPSHOT:LINEAR` location. Its exact evidence keys
+  are `issue_type`, `portfolio_mode`, `target`, and `target_role`; `target` is the already-frozen
+  ATOM carrying the exact normalized `MAS-n` identity. This identity is load-bearing: without it,
+  two distinct targets with the same mode, issue type, and role produce byte-identical findings
+  and collapse under the unique-finding reduction. Adding `target` changes neither the 44-key
+  evidence vocabulary nor the 46-rule contract. After uniqueness, R028 rows follow the manifest's
+  canonical target ordering by numeric MAS integer (`MAS-2` before `MAS-10`), never lexical target
+  text; target therefore participates in semantic identity before the existing numeric sort.
 - `R030` applies only to `tracked` and `architecture_candidate` when `Workstream` is concrete;
   it never applies to `creates_workstream`. In creates-workstream, base absence is positive and
   `R038` owns exact or ASCII-casefold collisions.

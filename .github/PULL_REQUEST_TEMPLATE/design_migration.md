@@ -1,5 +1,26 @@
+Workstream: REQUIRED
+Linear: REQUIRED
+Portfolio-Mode: REQUIRED
+Wave: REQUIRED
+Authority: REQUIRED
+Completion: REQUIRED
+
 <!--
 NAMED template — opt-in only. It is NOT the repo default and must never become one.
+MAS28-V1-CONTRACT-SHA256: 9c57ad499fa34ee32f0ffeb9f2f5928f0515dba1609f984e5a20ce6576e7f75e
+MAS28-V1-RULESET-SHA256: 2e97ad7acd0aec77ef18dbd76a1b3f2bbf8b7d4585e938498615de1917aa71aa
+
+Replace every REQUIRED value before review. Canonical values:
+- Workstream: WS:<KEY> | NONE
+- Linear: MAS-### | NONE
+- Portfolio-Mode: tracked | maintenance_exception | creates_workstream | architecture_candidate
+- Wave: a non-empty bounded identifier
+- Authority: implementation | records | research | maintenance | proof | deploy | architecture_candidate
+- Completion: merge-is-done | built-not-proven | proof-required | acceptance-required | records-only
+
+`Fixes/Closes MAS-###` is permitted only for `Completion: merge-is-done`.
+Use `Refs MAS-###` or the issue URL for every other completion class.
+
 Use it for design-migration packet PRs:
   gh pr create --body-file .github/PULL_REQUEST_TEMPLATE/design_migration.md
   ...or append ?template=design_migration.md to the compare URL.

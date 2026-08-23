@@ -120,6 +120,7 @@ def build_event_workspace(
     wire_record_found: bool = False,
     prior_source_sha256: str | None = None,
     prior_lifecycle_state: str | None = None,
+    prior_observed_at: object | None = None,
     profile: IssuerProfile | None = None,
 ) -> dict[str, Any]:
     """Bind one issuer event from identity + 8-K exhibit + (if held) transcript.
@@ -148,15 +149,30 @@ def build_event_workspace(
     whose call is not held (e.g. a homebuilder absent from the Terminal tx
     index) — the workspace still publishes, with the transcript recorded as a
     typed absence rather than treated as a refusal.
+
+    IMCE A5C two-clock law (frozen spec C): ``source_available_at`` is the
+    SEC acceptance clock — unchanged, always the caller's *source_available_at*
+    verbatim.  ``observed_at`` is the ACTUAL time the system FIRST observed
+    THIS source revision — real wall-clock at build/fetch time, no longer
+    silently rewritten to equal ``source_available_at``.  *observed_at* (the
+    parameter) carries the caller's "now" for THIS build attempt;
+    *prior_observed_at* is the previously-published workspace's own
+    ``lifecycle.observed_at``.  When the newly bound exhibit's source hash is
+    UNCHANGED from *prior_source_sha256* AND *prior_observed_at* is
+    available, the published ``observed_at`` is the CARRIED-FORWARD prior
+    value, never the fresh "now" (C3, first-observation persistence — a
+    revision's observed_at is stamped once, at first observation, forever;
+    a carried-forward workspace's clocks are never re-stamped). Otherwise
+    (a genuinely new/changed revision, or no prior observed_at to carry) the
+    fresh *observed_at* is used, matching the pre-A5C default. Either way,
+    ``observed_at >= source_available_at`` remains mandatory (C4).
     """
     resolved = registry.resolve_ticker(ticker, asof=asof)
     if resolved is None:
         raise WorkspaceError(f"{ticker} maps to no issuer at {asof}")
     issuer = registry.get(resolved.company_id)
-    clock = _utc(observed_at, field_name="observed_at")
+    requested_clock = _utc(observed_at, field_name="observed_at")
     available = _utc(source_available_at, field_name="source_available_at")
-    if clock < available:
-        raise WorkspaceError("observed_at precedes source_available_at")
 
     accession = str(filing.get("accession") or "")
     cik = str(filing.get("cik") or issuer.cik)
@@ -170,6 +186,20 @@ def build_event_workspace(
         report_date=filing.get("report_date") or "",
         exhibit_url=str(filing.get("exhibit_url") or "") or None,
     )
+
+    if (
+        prior_source_sha256
+        and prior_observed_at is not None
+        and prior_source_sha256 == bound.revision.source_sha256
+    ):
+        # C3: an unchanged source revision keeps its ORIGINAL observed_at —
+        # wall-clock re-build time never advances it.
+        clock = _utc(prior_observed_at, field_name="prior_observed_at")
+    else:
+        clock = requested_clock
+    if clock < available:
+        raise WorkspaceError("observed_at precedes source_available_at")
+
     aliases = aliases_for(issuer.company_id, fiscal_period, issuer.tickers_at(asof))
     event_id = aliases.canonical_event_id
     has_transcript = transcript is not None

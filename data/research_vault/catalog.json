@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T12:16:09.081863+00:00",
-  "count": 1685,
+  "generated_at": "2026-08-23T19:14:15.309799+00:00",
+  "count": 1703,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -29,6 +29,7 @@
     "Deutsche Bank",
     "DoubleLine",
     "Dragon Capital",
+    "Eastspring",
     "Fidelity",
     "Franklin",
     "GMO",
@@ -85,6 +86,210 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-nbeniyipz2s-6bd58c",
+      "title": "MS AI Sovereignty Policy, Market, and Economic Implications",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T17:13:23Z",
+      "summary_points": [
+        "**US AI Sovereignty Policy & Market Impact**: $860B US federal AI infrastructure build-out (data centers, semiconductors) via de-risking policies creates market bifurcation; US model providers gain share if Chinese models restricted, non-China robotics OEMs face higher inference costs.",
+        "**AI Sovereignty Thematic Growth**: Sovereign AI infrastructure spending drives fastest-growing thematic cohort (3,800 coverage names) with premium valuations, favoring infrastructure providers (NVDA, AVGO), cloud (MSFT), and colocation DCs (EQIX).",
+        "**Geopolitical Fragmentation**: US/China prioritizing domestic AI capabilities (data centers, semiconductors) over global markets fragments tech landscapes; governments enforce tighter controls on tech flows (chips, cloud, models), expanding TAM for sovereign-focused infrastructure.",
+        "**Policy-Driven Tech Controls**: Governments prioritize national security over economic efficiency → increased demand for domestic infrastructure; key beneficiaries: data centers, cloud, semiconductors, telecom (e.g., US restrictions target advanced chips/cloud access, China enforces localization via cybersecurity/data controls).",
+        "**US-China Policy Divergence**: US restricts advanced chips/cloud access (Entity List, ICTS Rule), China mandates local model integration (regulatory approval, domestic data storage); creates bifurcation risk with critical impact on AI model/applications deployment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 73,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-64rlvdkdgeu-0aa6c6",
+      "title": "MS Mike Wilson Weekly Warm up Broadening Persists Amid a Quality Rotation",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T17:13:20Z",
+      "summary_points": [
+        "**Russell 3000 EPS Growth Acceleration**: Median EPS growth at 15% (strongest since 2021), with 87% S&P 500 companies beating Q2 EPS, signaling broad earnings recovery and index resilience.",
+        "**AI-Driven Earnings Dominance**: AI adopters outperform non-AI in EPS Y/Y growth (67% vs 43% in 2024), with unrealized gains skewing S&P 500 earnings (non-operating profit at 50% in 2024).",
+        "**Mag 7 Concentration Risk**: Mag 7 contributes 90% to S&P 500 earnings growth in 2027, while 2027 consensus growth for Mag 7 slows to 4% vs S&P 493’s 16%, highlighting overestimation risk.",
+        "**Tech Hardware Revisions Crisis**: Tech Hardware shows largest negative revisions (8Wk: -24%), signaling severe downside pressure and sector-wide risk.",
+        "**Free Cash Flow Premium**: S&P 500 stocks with upward EPS and FCF revisions outperformed by 1.6% post-reporting, confirming quality-driven outperformance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 31,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kuwlcsctckn-43814b",
+      "title": "South Korea Technology Korea WFE Substrate CCL Chip testing HBM Supply Chain Check reinforces our positive view on Samsung E...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:45:10Z",
+      "summary_points": [
+        "**HBM TAM Growth Catalyst**: HBM total addressable market growth at 67% and 108% YoY drives robust demand for Samsung, SK Hynix, and SEMCO, with expanding order backlogs across WFE, substrate/CCL, and chip testing sectors.",
+        "**Structural Supply-Demand Imbalance**: 2026E DRAM undersupply at 5.0% (expanding to 5.9% in 2027E) and NAND undersupply at 4.4% (vs.",
+        "2025E’s 4.2%) signal persistent demand outpacing supply, supporting capex growth and earnings.",
+        "**SEC Capex Surge & Profitability**: Korean front-end equipment firms project 59% YoY capex growth (2026) with Q2 2026 operating profit up 42% YoY, driven by 73% YoY WFE import surge and expanding order backlogs.",
+        "**Geopolitical Risk Exposure**: Korea-WFE exports to China declined 20% YTD (July), reflecting weakened demand due to China’s equipment localization policies, threatening supply chain resilience for exporters."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 25,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-156ooarazal-bc68bb",
+      "title": "GS Quinn Gold Futures Record 3 Weeks of Buying 23 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:44:08Z",
+      "summary_points": [
+        "**Gold Futures Record Buying & Treasury Curve Impact**: Speculators added $22.2bn in gold futures (93% net length, 10+ yr nominal max), triggering curve retracement (Gold +5.9%, US 2s30s -8bps); tactical unwind risk if Fed signals inflation fight at Jackson Hole.",
+        "**Inverse Correlation with 2s30s Spread**: Narrowing 2s30s spread correlates with elevated gold managed money longs (red line high), signaling risk-off positioning and Fed rate cut expectations amid economic uncertainty.",
+        "**Negative Skew as Critical Risk Factor**: Persistent negative skew (worsening normalized 25 delta skew) implies elevated tail risk; portfolio managers must adjust hedges for potential sharp downside moves despite declining volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rlxpmk7l1xh-e4ed78",
+      "title": "JPM Flows & Liquidity Are large enterprises spending $1.5tr on AI already",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T15:00:22Z",
+      "summary_points": [
+        "**AI Capex Cycle Viability**: Revenue acceleration in AI companies makes the capex cycle economically viable vs.",
+        "six months ago, shifting sustainability from capital intensity concerns to ecosystem revenue generation (model/cloud/neocloud providers).",
+        "**Retail Equity Flow Shift**: June 2026 retail share in US equity trading spiked (per SEC Rule 606), intensifying deleveraging in July; OTC venues (Virtu, Citadel) saw highest retail flow share since Oct 2025 peak.",
+        "**Yen Carry Trade Status**: No meaningful unwinding post-Japan MoF/US Treasury intervention (April 2025); foreign equity inflows stabilized at $160bn (mid-2026), yen borrowing peaked at $450bn (Q4 2024) and stabilized at $415bn (Q2 2026).",
+        "**S&P500 Direction Drivers**: Logistic regression confirms turnover (2.97, p=0.00), value (-3.47, p=0.00), and economic momentum (3.35, p=0.00) as key predictors of 6-month direction."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 31,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9apkizzne1f-04d9c6",
+      "title": "Fed On Hold",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-23T14:53:27Z",
+      "summary_points": [
+        "**Fed on Hold Thesis**: TCW urges Fed to maintain current rates, emphasizing strategic patience for fixed income management amid economic uncertainty.",
+        "**Fed on Hold Rationale**: Inflation driven by supply shocks (tariffs, AI, oil), not demand; labor cooling (falling job openings, flat/negative wage growth) and slowing growth (Real GDP, payroll) render rate hikes ineffective.",
+        "**Policy Restrictiveness & Supply Shocks**: Current Fed Funds rate (3.5-3.75%) exceeds neutral rate (3%), but economy not overheating; rate hikes counterproductive as unemployment must rise (4-6%) to offset supply shocks like tariffs/Iran war."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wvwffwoochk-149ec1",
+      "title": "Article selectivitytakesthelead ltr",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:53:05Z",
+      "summary_points": [
+        "**Fed Policy Misinterpretation**: Fed held rates but hawkish signal (3 votes for 25bps hike) interpreted as dovish, driving global rate selloff (U.S.",
+        "10-yr yield +27bps to 4.73%) and curve steepening (2s10s +15bps).",
+        "**EM Debt Risk Surge**: Brazil’s 1005bps spread over U.S.",
+        "10-yr yield (vs.",
+        "+44bps month change) signals extreme EM debt risk amid global yield pressures and geopolitical tensions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uxknxblgq7b-c40a26",
+      "title": "Factor narratives Quality under pressure but the investment case remains intact",
+      "institution": "Eastspring",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:51:54Z",
+      "summary_points": [
+        "**Quality Fundamentals Unchanged**: Underlying fundamentals (stable earnings, strong balance sheets, proven profitability) remain intact despite worst 60-year performance, preserving long-term investment case.",
+        "**Geopolitical & AI Momentum Shift**: Risk-on markets (e.g., Iran conflict, oil >$100) and speculative AI/semiconductor focus drove cyclical/higher-beta outperformance, causing quality underperformance from both sides.",
+        "**Valuation Asymmetry & Entry Point**: Quality’s pre-correction overvaluation implies rebound potential; expected outperformance in 2026 offers attractive entry amid broader market weakness.",
+        "**Convexity to Regime Change**: Quality acts as hedge against AI capex disappointment and credit deterioration, leveraging stronger profitability and lower leverage for resilience in downside scenarios."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xckjnt7knxj-a3da8e",
+      "title": "Investment bulletin weekly week 33",
+      "institution": "Eastspring",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:51:52Z",
+      "summary_points": [
+        "**US Inflation Moderation & Fed Policy Shift**: Core CPI (2.5% YoY) and core PPI (4.2% YoY) slowdown reduced Sept FOMC rate hike probability to 29%, steepening Treasury curve via term premium shift.",
+        "**AI Capex as Structural Portfolio Driver**: AI infrastructure spending revisions fuel S&P 500 earnings beat (4/5 companies) and shift allocations toward AI beneficiaries, underpinning Korea/Singapore/Malaysia Q2 GDP outperformance.",
+        "**Extreme Japan Yield Volatility Risk**: Japan 10Y yield 1Y change at 85.20% signals critical fixed-income volatility risk amid divergent equity flows.",
+        "**Divergent Equity Performance Confirms Capital Allocation**: S&P 500 +20.36% vs.",
+        "Nikkei 225 +61.11% highlights concentrated capital flow toward AI-exposed markets (Singapore, Japan, US, Taiwan, Korea) with strongest earnings revisions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wb1knxz4a9v-8a572e",
+      "title": "AOM Raising the Earnings Bar",
+      "institution": "Alger",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:50:56Z",
+      "summary_points": [
+        "**Earnings Momentum**: 2026 S&P 500 earnings estimates up 15% since Jan (vs.",
+        "historical -3% by July), AI-driven 25% growth projection—strongest non-recessionary earnings growth in decades, outpacing S&P 500’s 13% return through July 31, 2026.",
+        "**Valuation Support**: Forward P/E at 19.6x (down from 22x) with record 16.4% net profit margins aligns with historical P/E-margins relationship (target ~23x), indicating market reasonably priced by fundamentals.",
+        "**Margin-Driven Pricing**: High margins (16.4%) support valuation, with P/E ratio reflecting earnings growth rather than sentiment, reinforcing sustainable pricing levels."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-fkwg03orkqd-7a785b",
       "title": "MS Savone Global Reflections 22 Aug 2026",
@@ -1354,6 +1559,168 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-p5zp9ljlvxg-3b2451",
+      "title": "UK equities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:22Z",
+      "summary_points": [
+        "**UK Earnings Outlook**: 2024 earnings growth forecast raised to 16% (from 11%) driven by cyclical commodity strength; 2025 growth expected at 9% amid weaker commodity outlook.",
+        "**FTSE 100 Scenarios**: Upside target 12,300 (2027) fueled by global growth, commodity demand, weaker GBP (75-80% FTSE 100 revenue outside UK), and policy support; downside target 7,700 (2027) from Middle East disruption, trade wars, lower commodities (20% of earnings), higher yields, and stronger GBP.",
+        "**Sector Allocation**: Banks, industrials, consumer discretionary, and healthcare favored for structural/cyclical growth; European IT upgraded to Attractive."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7gabv21amty-f3105d",
+      "title": "China A-shares",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:20Z",
+      "summary_points": [
+        "**Macro Weakness**: Soft recovery with NBS PMI contraction, weak domestic demand, subdued inflation, and lackluster activity data; policymakers prioritize accelerating existing policies over broad stimulus.",
+        "**Dividend Yield Premium**: High-dividend A-shares offer 4.6% yield vs 1.7% CGB yield, outperformed broader market (13% vs -11% in July), driven by SOE reforms and stable cash flows.",
+        "**Policy Stance**: Moderately accommodative monetary policy with no major easing; fragile domestic demand backdrop necessitates defensive positioning via high-dividend stocks.",
+        "**Defensive Allocation**: High-dividend stocks provide stability amid geopolitical uncertainty and weak consumption/investment, maintaining \"Attractive\" rating for portfolio exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2k62h9i7t1s-10d0ae",
+      "title": "Investing in China (onshore)",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:17Z",
+      "summary_points": [
+        "**China's uneven recovery dynamics**: A-shares rebounded post-July correction but macro remains soft (weak demand, subdued inflation); policymakers favor growth/defensive segments (offshore equities, onshore high-dividend stocks, high-grade credit bonds).",
+        "**Asset allocation priorities**: CNY investors favor China CNY Credit Bond (High Grade) and A-share High Dividend Yield; China Gov't Bond Aggregate and 1-3yr bonds are unattractive.",
+        "**Platform businesses valuation**: Leading Chinese platforms offer strong fundamentals with double-digit EPS growth forecasts, 12-month forward P/E ~11x, and mid-teens total returns expected through June 2027.",
+        "**Critical risks**: Geopolitical tensions (Middle East conflict) and domestic inflation surprises threaten neutral view; July data shows slower demand recovery.",
+        "**Onshore high-grade credit bonds**: Attractive with spreads at 55-60 bps over CGBs, yields 1.85%-2.0%, supported by resilient demand (wealth mgmt, insurers) and PBoC liquidity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xfsqxcsi8x9-84fa73",
+      "title": "Asian bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:16Z",
+      "summary_points": [
+        "**Asian Credit Yield Advantage**: Asia IG credit yields >5% (1ppt+ vs US Treasuries), HY yields >7%—best global fixed-income performer; resilient to Middle East tensions and US policy headwinds despite volatility.",
+        "**Asia HY Credit Fundamentals**: Diversified index (no single market >20%), avg yield 7.4%, healthy rating migration, low default rate; key risk: Middle East conflict impacting oil-sensitive sectors/energy importers.",
+        "**China Recovery Catalyst**: Strong China rebound (tariff rollbacks), mainland/HK property recovery (housing sales support), dovish Fed action—compressing spreads and driving upside.",
+        "**Oil Price Downside Risk**: Sustained high oil prices compress corporate margins, raise USD funding costs for Chinese property, and drive restrictive rates—targeting 175bps spread widening."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zp5chclsuq1-4f0707",
+      "title": "Chinese government bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:15Z",
+      "summary_points": [
+        "**CGB Yield Outlook**: 10-year yield projected to decline to 1.65% by Dec-26, driven by weak domestic demand (July data) and PBoC liquidity operations, with limited near-term impact from policy shifts.",
+        "**PBoC Policy Risk**: Neutral stance maintained; PBoC sustains supportive measures but no imminent 7-day reverse repo rate cuts, constraining yield decline scope.",
+        "**Credit Risk Framework**: UBS categorizes CGBs into Very Low (<2% non-payment), Medium (2-20%), and High (≥20%) risk flags, directly reflecting default probability for fundamental evaluation.",
+        "**Sell Recommendation Threshold**: Triggered when adverse outcome risk (e.g., negative yield to maturity, imminent call below market) exceeds current valuation, signaling expected negative total returns.",
+        "**Risk Threshold Clarity**: BBB- marks the critical boundary between Investment Grade (AAA-BBB-) and Non-Investment Grade (BB+), directly dictating portfolio risk allocation and stress testing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qf6aomzb01s-cb2d47",
+      "title": "Investment grade",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:14Z",
+      "summary_points": [
+        "**IG Yield Attractiveness**: 5.1% USD/3.7% EUR yields with 50-70bps rise since year start; tight credit spreads amid strong demand for high-quality credit and solid fundamentals.",
+        "**Policy Rate Expectations**: Central banks cautious on hikes (40-60bps priced), but softening rhetoric in H2 as inflation trends lower; robust IG demand fueled by 34% YoY issuance growth (AI capex funding).",
+        "**Geopolitical Oil Risk**: Strait of Hormuz disruptions or infrastructure destruction could spike oil prices, forcing central banks to hike rates despite economic weakness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rv8dwge4xay-bd89ce",
+      "title": "Private debt",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:12Z",
+      "summary_points": [
+        "**AI Infrastructure Financing Theme**: Private lenders mobilized $500bn for AI infrastructure (NVIDIA/blue-chip asset managers), with GPU financing as key theme; sponsor-backed deals declined but healthcare/professional services led as resilient categories.",
+        "**Market Bifurcation & Return Outlook**: Upper-middle-market (senior-secured, sponsor-backed) shows resilience vs.",
+        "lower-middle-market stress; base-case returns at 5.4% (upside 7.6%, downside -13.0%) under UBS CIO scenarios.",
+        "**Fundraising Weakness & Capital Flow Pressure**: 1Q26 fundraising at 17% of 2025 total (30% below 2025), driven by anticipated rate cuts, tight spreads, and rising defaults in lower-middle-market vintages.",
+        "**Private Debt Risk Factors**: Critical structural risks include illiquidity, lack of control, limited disclosure, blind pool exposure, uncertain cash flows, and leverage usage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-svcdtndk19q-aaec16",
+      "title": "Hedge funds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:09Z",
+      "summary_points": [
+        "**Geopolitical & Energy Shock**: Middle East tensions triggered sharp energy price spikes, broadening global bond yields and pressuring tech stocks amid AI reassessment, while global equities remained flat—critical macro risk impacting multiple asset classes.",
+        "**Strategy Divergence**: Less directional strategies (equity market neutral, relative value) outperformed directional ones (equity hedge -1.8%, event driven -0.7%) due to market reversals, highlighting active risk management resilience during volatility.",
+        "**Equity Hedge Positioning Crisis**: Equity hedge strategies declined 1.8% amid momentum reversal, crowded tech positions, and alpha at second-worst monthly level since 2010; third-largest de-grossing episode led to US net leverage recovery to 58% by mid-August.",
+        "**Credit Selectivity Imperative**: Rising CMBS delinquencies (office) and distressed loan ratios necessitate strict selectivity in structured credit (ABS carry, CLOs positive), while discretionary macro underperformed due to developed market rate reversals.",
+        "**Critical Risk Exposure**: Illiquidity, lack of disclosure, and blind pool risk emerged as top portfolio threats amid stretched positioning, low credit spreads, and market reversals hindering trend-following strategies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },

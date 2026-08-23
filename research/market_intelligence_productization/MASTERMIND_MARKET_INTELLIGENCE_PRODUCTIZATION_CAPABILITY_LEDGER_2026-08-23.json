@@ -1,0 +1,147 @@
+{
+  "schema": "mastermind.market_intelligence_productization.capability_ledger.v0",
+  "generated_at": "2026-08-23",
+  "skillpack_pin": "mastermindx-market-intelligence/Mastermind@db0bac5fe3f72348262d42c8bd26b836bda9f61d",
+  "macro_pin": "mastermindx-market-intelligence/macro@fb2375441f21b94201edc4ed6ac2c40f67274cde",
+  "terminal_pin": "mastermindx-market-intelligence/mastermind-terminal@449439c690e93ba968185499af4041c2f512b659",
+  "rows": [
+    {
+      "capability": "Market OS product architecture",
+      "state": "SPEC_ONLY_FROZEN",
+      "canonical_owner": "WS:MARKET-OS",
+      "productization_ruling": "Use existing product owner; no new workstream"
+    },
+    {
+      "capability": "A1A Portfolio state authority",
+      "state": "PROVEN_LIVE_EVIDENCE_RECORDS_PR_OPEN",
+      "canonical_owner": "WS:MARKET-OS",
+      "productization_ruling": "Wait for #6310 canonical reconciliation"
+    },
+    {
+      "capability": "A1B Portfolio import",
+      "state": "NOT_BUILT",
+      "canonical_owner": "WS:MARKET-OS",
+      "productization_ruling": "Parallel after A1A; separate from B1"
+    },
+    {
+      "capability": "security_state.v1",
+      "state": "NOT_BUILT",
+      "canonical_owner": "WS:MARKET-OS B1",
+      "productization_ruling": "First product vertical"
+    },
+    {
+      "capability": "Buy Decision Packet v0",
+      "state": "PARTIAL_LEGACY_DISPLAY",
+      "canonical_owner": "engine/stock_dossier.py",
+      "productization_ruling": "Reuse display semantics only"
+    },
+    {
+      "capability": "K1 Evidence Foundation",
+      "state": "NOT_BUILT_NEXT",
+      "canonical_owner": "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+      "productization_ruling": "Immediate FABLE-A commission"
+    },
+    {
+      "capability": "K3 Opportunity Semantics",
+      "state": "NOT_BUILT",
+      "canonical_owner": "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+      "productization_ruling": "After/alongside K1 under c0 conditions"
+    },
+    {
+      "capability": "K5 OpportunityCase",
+      "state": "NOT_BUILT",
+      "canonical_owner": "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+      "productization_ruling": "Canonical episodic synthesis; later"
+    },
+    {
+      "capability": "Earnings event_workspace.v1",
+      "state": "PROVEN_LIVE",
+      "canonical_owner": "WS:EARNINGS-INTELLIGENCE-OS",
+      "productization_ruling": "Golden AAPL producer"
+    },
+    {
+      "capability": "Prophet C1 ranker",
+      "state": "PROVEN_LIVE_CONDITIONAL_AUTHORITY",
+      "canonical_owner": "WS:PROPHET-CONDITIONAL-FUSION",
+      "productization_ruling": "Read-only product input"
+    },
+    {
+      "capability": "Prophet V4 flagship",
+      "state": "PARTIAL_ACTIVE",
+      "canonical_owner": "WS:PROPHET-US-V4-RECOVERY",
+      "productization_ruling": "Avoid owned paths in B1"
+    },
+    {
+      "capability": "Live Entry Radar",
+      "state": "PARTIAL_LIVE",
+      "canonical_owner": "WS:LIVE-ENTRY-RADAR",
+      "productization_ruling": "Read-only input or typed unavailable"
+    },
+    {
+      "capability": "GMI Theme Graph",
+      "state": "PARTIAL",
+      "canonical_owner": "WS:GMI-THEME-GRAPH",
+      "productization_ruling": "No broad transmission dependency for B1"
+    },
+    {
+      "capability": "Stock Identity",
+      "state": "PARTIAL_W1_W2_DONE",
+      "canonical_owner": "WS:STOCK-IDENTITY",
+      "productization_ruling": "Analog product held"
+    },
+    {
+      "capability": "Dislocation Intelligence",
+      "state": "SOURCE_AUDIT_STAGE",
+      "canonical_owner": "Alpha Integration subprogram",
+      "productization_ruling": "No price/outcome authority"
+    },
+    {
+      "capability": "FIF",
+      "state": "FIXTURE_PROVEN_PARTIAL",
+      "canonical_owner": "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+      "productization_ruling": "Valuation later"
+    },
+    {
+      "capability": "Fundamental Forensics",
+      "state": "PARTIAL_FF1",
+      "canonical_owner": "WS:FUNDAMENTAL-FORENSICS",
+      "productization_ruling": "FF2 forbidden"
+    },
+    {
+      "capability": "Portfolio risk core",
+      "state": "SUBSTANTIAL_EXISTING",
+      "canonical_owner": "Portfolio Superintelligence",
+      "productization_ruling": "Reuse in D waves"
+    },
+    {
+      "capability": "Human InvestmentThesis/RMS",
+      "state": "NOT_BUILT",
+      "canonical_owner": "Future Market OS human research layer",
+      "productization_ruling": "After case identity and tenancy"
+    },
+    {
+      "capability": "ResearchStudy Workbench",
+      "state": "NOT_BUILT_PRODUCT",
+      "canonical_owner": "Evaluation OS + model owners",
+      "productization_ruling": "One-model later vertical"
+    },
+    {
+      "capability": "Historical Analog product",
+      "state": "NOT_BUILT_PRODUCT",
+      "canonical_owner": "Stock Identity + Outcome Spine",
+      "productization_ruling": "After PIT/episode gates"
+    },
+    {
+      "capability": "Desk tenancy",
+      "state": "NOT_BUILT",
+      "canonical_owner": "Market OS human workspace",
+      "productization_ruling": "Before team beta"
+    },
+    {
+      "capability": "External API",
+      "state": "NOT_BUILT",
+      "canonical_owner": "Delivery projection",
+      "productization_ruling": "After internal proof"
+    }
+  ]
+}
