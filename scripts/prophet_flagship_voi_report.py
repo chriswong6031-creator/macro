@@ -27,9 +27,11 @@ import pandas as pd
 
 from engine.prophet_voi import HOLD_INTEGRITY, MEASURED, UNAVAILABLE_FIELD, build_report
 
-DEFAULT_W3_STATUS = Path("data/us_prophet_rank/w3/status.json")
-DEFAULT_QLEDGER_CLOCK_DIR = Path("data/qledger/evidence_clock_start")
-DEFAULT_BOARD_LEDGER = Path("data/us_board_ledger/retro_grades.parquet")
+# Absolute repository-root pins are load-bearing. Relative paths would let the caller's
+# working directory silently substitute a lookalike data/... tree.
+DEFAULT_W3_STATUS = _ROOT / "data/us_prophet_rank/w3/status.json"
+DEFAULT_QLEDGER_CLOCK_DIR = _ROOT / "data/qledger/evidence_clock_start"
+DEFAULT_BOARD_LEDGER = _ROOT / "data/us_board_ledger/retro_grades.parquet"
 
 
 def _read_json(path: Path) -> dict[str, Any]:
