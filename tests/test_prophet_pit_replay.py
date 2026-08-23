@@ -1091,6 +1091,8 @@ class TestBuildBoardCacheCoherence:
 # ---------------------------------------------------------------------------
 
 class TestVerifyCollisionsAheadOfIdempotence:
+    _TEST_LEGACY_ROOT = ".pit-replay-test-legacy-augmentation-root.json"
+
     @staticmethod
     def _rewrite_provenance(path: Path, provenance: dict) -> Path:
         path.unlink()
@@ -1168,10 +1170,29 @@ class TestVerifyCollisionsAheadOfIdempotence:
 
     @staticmethod
     def _run_zero_mint_verifier(repo: Path, session: str) -> subprocess.CompletedProcess:
+        args = [
+            "--market", "us", "--session", session, "--verify-collisions",
+            "--repo", str(repo),
+        ]
+        marker = repo / TestVerifyCollisionsAheadOfIdempotence._TEST_LEGACY_ROOT
+        if marker.is_file():
+            # A subprocess keeps the CLI integration shape while the synthetic temp
+            # repository supplies its own immutable test root. Production code has no
+            # file/env override: only the checked-in root admits the real legacy run.
+            runner = (
+                "import json,sys\n"
+                "from pathlib import Path\n"
+                "import scripts.prophet_pit_replay as p\n"
+                "row=json.loads(Path(sys.argv[1]).read_text())\n"
+                "key=(row['market'],row['session'],row['receipt_sha256'])\n"
+                "p._LEGACY_AUGMENTATION_ROOTS={key:row['root']}\n"
+                "raise SystemExit(p.main(sys.argv[2:]))\n"
+            )
+            command = [sys.executable, "-c", runner, str(marker), *args]
+        else:
+            command = [sys.executable, "-m", "scripts.prophet_pit_replay", *args]
         return subprocess.run(
-            [sys.executable, "-m", "scripts.prophet_pit_replay",
-             "--market", "us", "--session", session, "--verify-collisions",
-             "--repo", str(repo)],
+            command,
             cwd=_REPO, capture_output=True, text=True,
         )
 
@@ -1203,6 +1224,8 @@ class TestVerifyCollisionsAheadOfIdempotence:
         raw_output = {
             "plans": [],
             "earnings_exposure": {},
+            "selection_era": "fixture-selection-era",
+            "thetadata_store": None,
             "intake": {
                 "buy_rows": 1, "admitted": 1, "duplicate_id_blocked": 0,
                 "reorigination_blocked": 0, "reorigination_blocked_keys": [],
@@ -1232,6 +1255,23 @@ class TestVerifyCollisionsAheadOfIdempotence:
         provenance_digest = ppr._canonical_sha256(provenance)[:16]
         provenance_path = provenance_dir / f"us-{session}-{provenance_digest}.json"
         provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+        receipt_binding = ppr._json_file_binding(repo, receipt_path)
+        test_root = {
+            "market": "us",
+            "session": session,
+            "receipt_sha256": receipt_binding["sha256"],
+            "root": {
+                "receipt": receipt_binding,
+                "pending_entry": ppr._json_file_binding(repo, pending_path),
+                "reconstruction": ppr._json_file_binding(
+                    repo, reconstruction_path
+                ),
+                "provenance": ppr._json_file_binding(repo, provenance_path),
+            },
+        }
+        (repo / cls._TEST_LEGACY_ROOT).write_text(
+            json.dumps(test_root), encoding="utf-8",
+        )
         return receipt_path, provenance_path, pending_path, reconstruction_path
 
     def test_execute_shaped_fixture_reaches_collision_logic_not_idempotence_refusal(
@@ -1434,6 +1474,25 @@ class TestVerifyCollisionsAheadOfIdempotence:
         assert proc.returncode == 0, proc.stdout + proc.stderr
         assert "re-verified zero minted plans" in proc.stdout
 
+    def test_committed_legacy_augmentation_matches_immutable_root(self):
+        receipt_path = (
+            _REPO / ppr.PIT_RECEIPTS_RELDIR
+            / "us-2026-08-14-a76ad8f34ad360cd.json"
+        )
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        receipt_sha = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+        key = ("us", "2026-08-14", receipt_sha)
+
+        root = ppr._legacy_augmentation_root(
+            repo=_REPO, receipt_path=receipt_path, receipt_doc=receipt,
+            market="us", session="2026-08-14",
+        )
+
+        assert root == ppr._LEGACY_AUGMENTATION_ROOTS[key]
+        assert ppr._is_admissible_zero_mint_execute_receipt(
+            _REPO, receipt_path, receipt, market="us", session="2026-08-14",
+        )
+
     def test_legacy_receipt_without_provenance_refuses(self, tmp_path):
         repo = _init_repo(tmp_path)
         _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
@@ -1454,7 +1513,12 @@ class TestVerifyCollisionsAheadOfIdempotence:
         [
             "receipt_sha", "baseline_commit", "baseline_ancestry",
             "baseline_plan_count", "baseline_valid_but_not_receipt",
-            "disposition_row", "disposition_count", "renamed", "duplicate",
+            "disposition_row", "disposition_count", "unknown_top_level",
+            "receipt_unknown_key", "pending_binding_unknown_key",
+            "baseline_unknown_key", "proof_unknown_key",
+            "reconstruction_unknown_key", "artifact_unknown_key",
+            "pinned_inputs_unknown_key", "legacy_execution_unknown_key",
+            "raw_whitespace", "renamed", "duplicate",
         ],
     )
     def test_legacy_provenance_mutations_refuse(self, tmp_path, mutation):
@@ -1491,6 +1555,24 @@ class TestVerifyCollisionsAheadOfIdempotence:
             )
         elif mutation == "disposition_count":
             provenance["disposition_proof"]["counts"]["minted"] = 1
+        elif mutation == "unknown_top_level":
+            provenance["ignored"] = "forged"
+        elif mutation == "receipt_unknown_key":
+            provenance["receipt"]["ignored"] = "forged"
+        elif mutation == "pending_binding_unknown_key":
+            provenance["pending_entry"]["ignored"] = "forged"
+        elif mutation == "baseline_unknown_key":
+            provenance["plans_baseline"]["ignored"] = "forged"
+        elif mutation == "proof_unknown_key":
+            provenance["disposition_proof"]["ignored"] = "forged"
+        elif mutation == "reconstruction_unknown_key":
+            provenance["reconstruction"]["ignored"] = "forged"
+        elif mutation == "artifact_unknown_key":
+            provenance["reconstruction"]["artifact"]["ignored"] = "forged"
+        elif mutation == "pinned_inputs_unknown_key":
+            provenance["reconstruction"]["pinned_inputs"]["ignored"] = "forged"
+        elif mutation == "legacy_execution_unknown_key":
+            provenance["reconstruction"]["legacy_execution"]["ignored"] = "forged"
         elif mutation == "duplicate":
             duplicate = provenance_path.with_name(
                 f"us-{session}-duplicate-provenance.json"
@@ -1505,7 +1587,10 @@ class TestVerifyCollisionsAheadOfIdempotence:
             provenance_path = provenance_path.with_name(
                 f"us-{session}-{ppr._canonical_sha256(provenance)[:16]}.json"
             )
-        provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+        provenance_bytes = json.dumps(provenance).encode("utf-8")
+        if mutation == "raw_whitespace":
+            provenance_bytes += b"\n"
+        provenance_path.write_bytes(provenance_bytes)
 
         proc = self._run_zero_mint_verifier(repo, session)
         assert proc.returncode == 2
@@ -1514,8 +1599,9 @@ class TestVerifyCollisionsAheadOfIdempotence:
     @pytest.mark.parametrize(
         "mutation",
         [
-            "raw_bytes", "row", "path", "vintage", "receipt_reference",
-            "duplicate_row", "missing",
+            "raw_bytes", "unknown_top_level", "row", "path",
+            "readdressed_path", "vintage", "receipt_reference", "duplicate_row",
+            "missing",
         ],
     )
     def test_pending_entry_mutations_refuse(self, tmp_path, mutation):
@@ -1531,14 +1617,23 @@ class TestVerifyCollisionsAheadOfIdempotence:
 
         if mutation == "raw_bytes":
             pending_path.write_bytes(pending_path.read_bytes() + b"\n")
+            provenance["pending_entry"] = ppr._json_file_binding(repo, pending_path)
+            provenance_path = self._rewrite_provenance(provenance_path, provenance)
         elif mutation == "path":
             provenance["pending_entry"]["path"] = "data/pit_replay/elsewhere.json"
+            provenance_path = self._rewrite_provenance(provenance_path, provenance)
+        elif mutation == "readdressed_path":
+            wrong_path = pending_path.with_name("readdressed-pending.json")
+            pending_path.replace(wrong_path)
+            provenance["pending_entry"] = ppr._json_file_binding(repo, wrong_path)
             provenance_path = self._rewrite_provenance(provenance_path, provenance)
         elif mutation == "missing":
             pending_path.unlink()
         else:
             pending = json.loads(pending_path.read_text(encoding="utf-8"))
-            if mutation == "row":
+            if mutation == "unknown_top_level":
+                pending["ignored"] = "forged"
+            elif mutation == "row":
                 pending["rows"][0] = {"mutated": True}
             elif mutation == "vintage":
                 pending["vintage_sha"] = "f" * 40
@@ -1559,7 +1654,8 @@ class TestVerifyCollisionsAheadOfIdempotence:
         [
             "semantic_reason", "semantic_category", "disposition_outer_rehash",
             "wall_clock_exposure", "malformed_raw_shape",
-            "legacy_exact_once_claim", "missing_artifact",
+            "raw_whitespace_readdress", "unknown_top_level_readdress",
+            "wrong_path_rebind", "legacy_exact_once_claim", "missing_artifact",
         ],
     )
     def test_reconstruction_semantic_mutations_refuse(self, tmp_path, mutation):
@@ -1575,7 +1671,7 @@ class TestVerifyCollisionsAheadOfIdempotence:
 
         if mutation in {
             "semantic_reason", "semantic_category", "wall_clock_exposure",
-            "malformed_raw_shape",
+            "malformed_raw_shape", "unknown_top_level_readdress",
         }:
             raw = json.loads(reconstruction_path.read_text(encoding="utf-8"))
             if mutation == "semantic_reason":
@@ -1589,8 +1685,10 @@ class TestVerifyCollisionsAheadOfIdempotence:
                     "measurable": True, "run_date": "2099-01-01",
                     "calendar_names": 1, "rows": [],
                 }
-            else:
+            elif mutation == "malformed_raw_shape":
                 raw["intake"] = "not-an-object"
+            else:
+                raw["ignored"] = "forged"
             reconstruction_path.unlink()
             raw_bytes = json.dumps(raw, sort_keys=True).encode("utf-8")
             raw_sha = hashlib.sha256(raw_bytes).hexdigest()
@@ -1599,6 +1697,27 @@ class TestVerifyCollisionsAheadOfIdempotence:
                 / f"us-{session}-{raw_sha[:16]}.json"
             )
             reconstruction_path.write_bytes(raw_bytes)
+            provenance["reconstruction"]["artifact"] = ppr._json_file_binding(
+                repo, reconstruction_path
+            )
+        elif mutation == "raw_whitespace_readdress":
+            raw_bytes = reconstruction_path.read_bytes() + b"\n"
+            reconstruction_path.unlink()
+            raw_sha = hashlib.sha256(raw_bytes).hexdigest()
+            reconstruction_path = (
+                repo / ppr.PIT_RECONSTRUCTIONS_RELDIR
+                / f"us-{session}-{raw_sha[:16]}.json"
+            )
+            reconstruction_path.write_bytes(raw_bytes)
+            provenance["reconstruction"]["artifact"] = ppr._json_file_binding(
+                repo, reconstruction_path
+            )
+        elif mutation == "wrong_path_rebind":
+            wrong_path = reconstruction_path.with_name(
+                f"us-{session}-wrong-path.json"
+            )
+            reconstruction_path.replace(wrong_path)
+            reconstruction_path = wrong_path
             provenance["reconstruction"]["artifact"] = ppr._json_file_binding(
                 repo, reconstruction_path
             )

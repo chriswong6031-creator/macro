@@ -3208,6 +3208,89 @@ _LEGACY_EXECUTION_LIMIT = {
 }
 
 
+# Evidence-identity allowlist for historical receipts completed before durable
+# operation-intent markers existed.  This is not an authority map and does not admit
+# future receipts: a future execute carries embedded baseline/disposition provenance
+# and follows the generic branch in ``_is_admissible_zero_mint_execute_receipt``.
+# The original receipt's raw digest is the lookup root; every additive byte identity
+# is closed beneath it so whitespace, ignored fields, or coherent readdress/rehash
+# cannot manufacture a second admissible augmentation for the historical run.
+_LEGACY_AUGMENTATION_ROOTS: dict[
+    tuple[str, str, str], dict[str, dict[str, str]],
+] = {
+    (
+        "us",
+        "2026-08-14",
+        "0e77f3dcfb31c404e5af1dc3503a92d8d2da261a9d81f75543a9deeffd332b9d",
+    ): {
+        "receipt": {
+            "path": "data/pit_replay/us-2026-08-14-a76ad8f34ad360cd.json",
+            "sha256": (
+                "0e77f3dcfb31c404e5af1dc3503a92d8d2da261a9d81f75543a9deeffd332b9d"
+            ),
+            "canonical_body_sha256": (
+                "a76ad8f34ad360cd6451d8a004074e711b1eda066051dd578d1c23dade53b9ac"
+            ),
+        },
+        "pending_entry": {
+            "path": "data/us_board_ledger/pending_replay/2026-08-14.json",
+            "sha256": (
+                "7abe2a7576a9016ac99731184c5ef4a116a4893cf014ffa2d76868cf76e740b4"
+            ),
+            "canonical_body_sha256": (
+                "df865f7d6121e5b1357570acb26cf539e55f7244d69c3d1d07705883bd6b8cca"
+            ),
+        },
+        "reconstruction": {
+            "path": (
+                "data/pit_replay/reconstructions/"
+                "us-2026-08-14-64fb7339a71ee8bb.json"
+            ),
+            "sha256": (
+                "64fb7339a71ee8bba8db746a9b02ef0936559ead658f1d5dca3e5467562465c3"
+            ),
+            "canonical_body_sha256": (
+                "ad051ac0c354fbce17d87a1d1c5d0a6695aaac6aa7b0ee45dca2f94d1743f6f7"
+            ),
+        },
+        "provenance": {
+            "path": (
+                "data/pit_replay/provenance/"
+                "us-2026-08-14-83d9d00bc4494b90.json"
+            ),
+            "sha256": (
+                "5d5de13b9dea009ba5c5b1c47c0bce10a3b1823b1eb28d825b2cabc72050e704"
+            ),
+            "canonical_body_sha256": (
+                "83d9d00bc4494b908da5943a3654ca5ee09a16631afb0bffa7eee2ccdbdb3959"
+            ),
+        },
+    },
+}
+
+_JSON_FILE_BINDING_KEYS = frozenset({"path", "sha256", "canonical_body_sha256"})
+_LEGACY_PENDING_DOC_KEYS = frozenset({
+    "schema", "market", "session", "harness_receipt", "rows", "produced_by",
+    "vintage_sha",
+})
+_LEGACY_RECONSTRUCTION_OUTPUT_KEYS = frozenset({
+    "plans", "intake", "selection_era", "thetadata_store", "duplicate_ids",
+    "earnings_exposure",
+})
+_LEGACY_PROVENANCE_KEYS = frozenset({
+    "schema", "market", "session", "receipt", "pending_entry", "plans_baseline",
+    "disposition_proof", "reconstruction",
+})
+_LEGACY_PLANS_BASELINE_KEYS = frozenset({"commit", "ancestry", "plan_count"})
+_LEGACY_DISPOSITION_PROOF_KEYS = frozenset({
+    "schema", "rows", "row_count", "rows_sha256", "counts",
+})
+
+
+def _has_exact_keys(value: Any, keys: frozenset[str]) -> bool:
+    return isinstance(value, dict) and frozenset(value) == keys
+
+
 def _read_json_object(path: Path) -> dict[str, Any] | None:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -3225,6 +3308,29 @@ def _json_file_binding(repo: Path, path: Path) -> dict[str, str]:
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "canonical_body_sha256": _canonical_sha256(body),
     }
+
+
+def _legacy_augmentation_root(
+    *, repo: Path, receipt_path: Path, receipt_doc: dict[str, Any],
+    market: str, session: str,
+) -> dict[str, dict[str, str]] | None:
+    """Resolve one historical augmentation from its immutable receipt bytes."""
+    try:
+        receipt_binding = _json_file_binding(repo, receipt_path)
+    except (OSError, PitReplayRefused, ValueError):
+        return None
+    root = _LEGACY_AUGMENTATION_ROOTS.get(
+        (market, session, receipt_binding["sha256"])
+    )
+    if not root:
+        return None
+    if (
+        receipt_doc.get("market") != market
+        or receipt_doc.get("session") != session
+        or receipt_binding != root.get("receipt")
+    ):
+        return None
+    return root
 
 
 def _expected_legacy_reconstruction(
@@ -3260,6 +3366,7 @@ def _expected_legacy_reconstruction(
 
 def _validate_pending_binding(
     *, repo: Path, receipt_path: Path, receipt_doc: dict[str, Any], value: Any,
+    rooted_binding: dict[str, str] | None = None,
 ) -> bool:
     market = receipt_doc["market"]
     session = receipt_doc["session"]
@@ -3276,11 +3383,14 @@ def _validate_pending_binding(
         return False
     if value != expected_binding:
         return False
+    if rooted_binding is not None and expected_binding != rooted_binding:
+        return False
     pending = _read_json_object(pending_path)
     rows = pending.get("rows") if pending else None
     snapshot = receipt_doc.get("snapshot_capture") or {}
     return bool(
         pending
+        and _has_exact_keys(pending, _LEGACY_PENDING_DOC_KEYS)
         and pending.get("schema") == PENDING_SCHEMA
         and pending.get("market") == market
         and pending.get("session") == session
@@ -3298,7 +3408,7 @@ def _recompute_legacy_disposition_proof(
     reconstruction_path: Path,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]] | None:
     originated = _read_json_object(reconstruction_path)
-    if originated is None:
+    if not _has_exact_keys(originated, _LEGACY_RECONSTRUCTION_OUTPUT_KEYS):
         return None
     try:
         baseline_plans = load_plans_at(repo, plans_baseline["commit"])
@@ -3375,18 +3485,27 @@ def _is_valid_legacy_receipt_provenance(
     repo: Path, receipt_path: Path, receipt_doc: dict[str, Any],
     *, market: str, session: str,
 ) -> bool:
+    root = _legacy_augmentation_root(
+        repo=repo, receipt_path=receipt_path, receipt_doc=receipt_doc,
+        market=market, session=session,
+    )
+    if root is None:
+        return False
     provenance_dir = repo / PIT_PROVENANCE_RELDIR
     candidates = sorted(provenance_dir.glob(f"{market}-{session}-*.json")) \
         if provenance_dir.exists() else []
-    if len(candidates) != 1:
+    provenance_path = repo / root["provenance"]["path"]
+    if candidates != [provenance_path]:
         return False
-    provenance_path = candidates[0]
     try:
-        provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    except Exception:  # noqa: BLE001 - malformed provenance is inadmissible
+        provenance_binding = _json_file_binding(repo, provenance_path)
+    except (OSError, PitReplayRefused, ValueError):
         return False
+    if provenance_binding != root["provenance"]:
+        return False
+    provenance = _read_json_object(provenance_path)
     if (
-        not isinstance(provenance, dict)
+        not _has_exact_keys(provenance, _LEGACY_PROVENANCE_KEYS)
         or provenance.get("schema") != "pit_replay.receipt_provenance/v1"
         or provenance.get("market") != market
         or provenance.get("session") != session
@@ -3397,7 +3516,8 @@ def _is_valid_legacy_receipt_provenance(
         return False
     receipt_binding = provenance.get("receipt")
     if (
-        not isinstance(receipt_binding, dict)
+        not _has_exact_keys(receipt_binding, _JSON_FILE_BINDING_KEYS)
+        or receipt_binding != root["receipt"]
         or receipt_binding.get("path") != str(receipt_path.relative_to(repo))
         or receipt_binding.get("sha256") != hashlib.sha256(
             receipt_path.read_bytes()
@@ -3408,18 +3528,26 @@ def _is_valid_legacy_receipt_provenance(
     ):
         return False
     plans_baseline = provenance.get("plans_baseline")
-    if not _is_valid_plans_baseline(repo, plans_baseline):
+    if (
+        not _has_exact_keys(plans_baseline, _LEGACY_PLANS_BASELINE_KEYS)
+        or not _is_valid_plans_baseline(repo, plans_baseline)
+    ):
         return False
     if not _validate_pending_binding(
         repo=repo, receipt_path=receipt_path, receipt_doc=receipt_doc,
         value=provenance.get("pending_entry"),
+        rooted_binding=root["pending_entry"],
     ):
         return False
     reconstruction = provenance.get("reconstruction")
     if not isinstance(reconstruction, dict):
         return False
     artifact = reconstruction.get("artifact")
-    if not isinstance(artifact, dict) or not isinstance(artifact.get("path"), str):
+    if (
+        not _has_exact_keys(artifact, _JSON_FILE_BINDING_KEYS)
+        or artifact != root["reconstruction"]
+        or not isinstance(artifact.get("path"), str)
+    ):
         return False
     reconstruction_path = repo / artifact["path"]
     try:
@@ -3439,7 +3567,11 @@ def _is_valid_legacy_receipt_provenance(
         return False
     proof, counts, reconciliation, wall_clock_exposure = rebuilt
     return (
-        provenance.get("disposition_proof") == proof
+        _has_exact_keys(
+            provenance.get("disposition_proof"),
+            _LEGACY_DISPOSITION_PROOF_KEYS,
+        )
+        and provenance.get("disposition_proof") == proof
         and receipt_doc.get("counts") == counts
         and receipt_doc.get("reconciliation") == reconciliation
         and receipt_doc.get("wall_clock_exposure") == wall_clock_exposure
