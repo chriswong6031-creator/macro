@@ -288,7 +288,7 @@ waves:
       honestly open per R6.
   - id: A5A
     title: IMCE-A5A — event-workspace publication generalization (DHI/PHM/KBH/TOL results events through the existing event_workspace.v1 path; source truth only)
-    status: built_not_merged
+    status: awaiting_ci
     depends_on: [A4]
     next_action: >
       BUILT — DRAFT PR open, pending the commissioning session's review and
