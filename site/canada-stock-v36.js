@@ -1,5 +1,5 @@
-/* Canada Stock Dashboard V3.6 — presentation-only composition.
-   SOL-STOCK-DASH-V36-CA-20260823
+/* Canada Stock Dashboard V3.6.1 — presentation-only composition.
+   SOL-STOCK-DASH-V361-CA-HIERARCHY-20260823
 
    This file owns no ranking, signal, quote, lifecycle, entitlement, or persistence
    semantics. It re-composes already-published Canada stock surfaces and reads the
@@ -178,7 +178,7 @@
     var html = '<span class="ca-v36-leading-k">' + bi("Leading now", "当前领先") + '</span>';
     if (th) html += '<button class="ca-v36-leading-btn" data-ca-lead-kind="theme" data-ca-lead-id="' + esc(th.id) + '"><small>' + bi("Theme", "主题") + '</small><span>' + bi(th.name.en, th.name.zh) + '</span></button>';
     if (sec) html += '<button class="ca-v36-leading-btn" data-ca-lead-kind="sector" data-ca-lead-id="' + esc(sec.id) + '"><small>' + bi("Sector", "板块") + '</small><span>' + bi(sec.name.en, sec.name.zh) + '</span></button>';
-    html += '<span class="ca-v36-leading-fresh">' + (fresh ? bi(fresh + " fresh Prophet signal" + (fresh === 1 ? "" : "s"), "Prophet 新信号 " + fresh + " 条") : bi("No fresh Prophet signals", "暂无 Prophet 新信号")) + '</span>';
+    if (fresh) html += '<span class="ca-v36-leading-fresh">' + bi(fresh + " fresh Prophet signal" + (fresh === 1 ? "" : "s"), "Prophet 新信号 " + fresh + " 条") + '</span>';
     host.innerHTML = html;
   }
 
@@ -290,8 +290,8 @@
     main.className = "ca-v36"; main.id = "ca-v36";
     main.innerHTML = '<header class="ca-v36-head"><h1>' + bi("Canada Stocks", "加拿大股票") + '</h1><span class="ca-v36-head-spacer"></span><span class="ca-v36-chip">' + bi("Screen · evidence accruing", "筛选 · 证据积累中") + '</span><span class="ca-v36-chip">' + bi("Board " + bd.en, "榜单 " + bd.zh) + '</span><span class="ca-v36-live"><span class="ca-v36-live-dot"></span><b>LIVE</b><span>·</span>' + bi(ld.en, ld.zh) + '</span></header>' +
       '<section class="ca-v36-leading" id="ca-v36-leading"></section>' +
-      '<section class="ca-v36-panel"><div class="ca-v36-sec-hd"><h2>' + bi("Theme & Sector Leadership", "主题与板块领先") + '</h2><span class="ca-v36-sec-spacer"></span><a class="ca-v36-link" href="baskets_canada.html">' + bi("Thematic Baskets", "主题篮子") + ' ↗</a></div><div class="ca-v36-lead-cols" id="ca-v36-lead-cols"></div><div class="ca-v36-expand-wrap"><button class="ca-v36-expand" id="ca-v36-expand" type="button">' + bi("Expand leadership", "展开领先排名") + ' ↗</button></div></section>' +
       '<section class="ca-v36-panel" id="ca-v36-prophet"><div class="ca-v36-sec-hd"><h2>Prophet</h2><span class="ca-v36-result" id="ca-v36-result"></span><span class="ca-v36-sec-spacer"></span><div class="ca-v36-controls"><button class="ca-v36-filter" id="ca-v36-filter" type="button"></button><span class="ca-v36-seg"><button type="button" data-ca-source="top" aria-selected="true">' + bi("Top Picks", "首选") + '</button><button type="button" data-ca-source="all" aria-selected="false">' + bi("All Candidates", "全部候选") + '</button></span><span class="ca-v36-seg"><button type="button" data-ca-view="grid" aria-selected="true">' + bi("Grid", "卡片") + '</button><button type="button" data-ca-view="table" aria-selected="false">' + bi("Table", "表格") + '</button></span></div></div><div class="ca-v36-card-grid" id="ca-v36-card-grid"><div class="ca-v36-empty" id="ca-v36-grid-empty" hidden>' + bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。") + '</div></div><div class="ca-v36-table" id="ca-v36-table" hidden></div></section>' +
+      '<section class="ca-v36-panel"><div class="ca-v36-sec-hd"><h2>' + bi("Theme & Sector Leadership", "主题与板块领先") + '</h2><span class="ca-v36-sec-spacer"></span><a class="ca-v36-link" href="baskets_canada.html">' + bi("Thematic Baskets", "主题篮子") + ' ↗</a></div><div class="ca-v36-lead-cols" id="ca-v36-lead-cols"></div><div class="ca-v36-expand-wrap"><button class="ca-v36-expand" id="ca-v36-expand" type="button">' + bi("Expand leadership", "展开领先排名") + ' ↗</button></div></section>' +
       '<section class="ca-v36-panel"><div class="ca-v36-tools"><b>' + bi("Research tools", "研究工具") + '</b><a class="ca-v36-tool" href="baskets_canada.html">' + bi("Thematic Baskets", "主题篮子") + ' ↗</a><a class="ca-v36-tool" href="canada.html">' + bi("Canada Macro", "加拿大宏观") + ' ↗</a></div></section>';
     nav.insertAdjacentElement("afterend", main);
     var grid = qs("#ca-v36-card-grid", main), empty = qs("#ca-v36-grid-empty", grid);
