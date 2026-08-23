@@ -878,6 +878,35 @@ def discover_new_homebuilder_revisions(
     fetch_body_fn: FetchBody = fetch_body,
     chain_state_loader: Callable[[str], list[dict[str, Any]]] | None = None,
     base_url: str | None = None,
+    # PRODUCTION INCIDENT FIX (verification round 4, 2026-08-23 — FROZEN,
+    # not open for redesign): Sol's law is "all newly observed qualifying
+    # accessions SINCE THE CANONICAL PRIOR GENERATION" — the temporal
+    # boundary this parameter implements was never wired before this fix,
+    # so "not yet represented in the chain" alone admitted ALL of history
+    # on first deploy. Production run 32652474368 (workflow_dispatch,
+    # 2026-08-23) crawled each of the four homebuilders' ENTIRE SEC
+    # "recent" submissions block back to 2010, resolving hundreds of
+    # accessions' filing indexes (index-headers.html + exhibit, ~0.5s
+    # each) before the job's 25-minute timeout killed it mid-step — it had
+    # already published ~170 backfilled historical events as chained
+    # generations (lawful, immutable history; never rewritten) by then.
+    # *discovery_boundary* is the newest ``source_available_at`` already
+    # represented across this ticker's issuer chain (the CALLER resolves
+    # this via the SAME carry-forward read it already performs to seed
+    # Phase 1's base snapshot — see refresh()'s Phase 1 loop — so this
+    # costs ZERO additional R2 GETs). A row whose acceptance_datetime is
+    # at-or-older than the boundary is OUTSIDE the discovery window BY LAW
+    # — filtered on the raw submissions row alone, before ANY per-
+    # accession HTTP fetch (index-headers/exhibit), and without a
+    # ``::warning`` (it is not a "skipped candidate", B4's skip!=fail
+    # discipline does not apply to it — it was never eligible to begin
+    # with). ``None`` means genuinely no represented event yet for this
+    # issuer (first-ever discovery) — see the current+prior-fiscal-year
+    # bound applied below instead of an unbounded scan.
+    discovery_boundary: str | None = None,
+    # Test seam for the first-ever-discovery bound below; production
+    # default is the real wall clock.
+    today: date | None = None,
 ) -> list[tuple[str, dict[str, Any]]]:
     """Every not-yet-represented qualifying source revision for *ticker*,
     resolved and bound to its OWN ``event_workspace`` payload, ASCENDING by
@@ -886,6 +915,17 @@ def discover_new_homebuilder_revisions(
     revision's ``prior_*`` taken from the nearest STRICTLY OLDER entry in
     its OWN event's timeline (MINOR-9) — never a stale "chain's overall
     newest" read, which would be wrong for a genuine backfill.
+
+    A row is admitted only if it is NEWER than *discovery_boundary* (the
+    canonical prior generation's own knowledge) — or, when *discovery_
+    boundary* is ``None`` (nothing represented yet for this issuer), only
+    if its derived fiscal period falls within the current or immediately
+    prior fiscal year (mirrors scripts/build_cycle_pattern_imce_
+    prospective.py's own bounded candidate lookback convention on the A5B
+    side — a mechanical/operational scan window, never a construction
+    choice; a missed poll is covered on the NEXT one regardless, since
+    events are content-addressed by (issuer, fiscal period), not by a
+    "latest" pointer).
 
     Raises ``RefreshError`` on a hard SEC submissions access failure (fail-
     soft — the caller's existing per-ticker carry-forward handles this).
@@ -904,16 +944,17 @@ def discover_new_homebuilder_revisions(
     loader = chain_state_loader or (lambda event_id: _event_known_revisions(event_id, base_url=base_url))
     candidates = _fetch_submissions_candidates(issuer.cik, http_get=http_get)
 
+    resolved_today = today if today is not None else datetime.now(timezone.utc).date()
+    # First-ever-discovery bound: current + immediately prior fiscal year,
+    # ALL quarters — same shape as _CANDIDATE_YEARS_BACK=1/_CANDIDATE_
+    # QUARTERS=(1,2,3,4) on the A5B side.
+    first_publish_years = {resolved_today.year - 1, resolved_today.year}
+
     # event_id -> its own known+newly-built timeline this cycle (mutated as
     # new revisions are built, so a LATER row for the same event this cycle
     # correctly sees everything built so far as a candidate predecessor —
     # B3/MINOR-9).
     timelines: dict[str, list[dict[str, Any]]] = {}
-    # MINOR-14: the chain's own newest-known-revision snapshot BEFORE this
-    # cycle mutates a timeline with anything freshly discovered — the gap
-    # heuristic below compares against what the chain ALREADY had, not what
-    # this run just added.
-    original_chain_latest: dict[str, Mapping[str, Any] | None] = {}
     results: list[tuple[str, dict[str, Any]]] = []
 
     for row in candidates:
@@ -921,6 +962,24 @@ def discover_new_homebuilder_revisions(
         report_date = str(row.get("reportDate") or "")
         if not row_accession or not report_date:
             continue
+
+        # PRODUCTION INCIDENT FIX: the temporal boundary, applied on the
+        # RAW submissions row, before any per-accession HTTP fetch and
+        # before even deriving the fiscal period. Out-of-window rows are
+        # not "skipped candidates" (no warning) — they were never eligible.
+        if discovery_boundary is not None:
+            try:
+                row_accepted_normalized = _iso_z(row.get("acceptanceDateTime"))
+            except RefreshError as exc:
+                print(
+                    "::warning title=event-workspaces-discovery-skip::"
+                    f"{ticker}: accession {row_accession} acceptanceDateTime unparseable ({exc}); skipped",
+                    flush=True,
+                )
+                continue
+            if row_accepted_normalized <= discovery_boundary:
+                continue  # outside the discovery window BY LAW -- not a fail, no warning
+
         try:
             fiscal_period = fiscal_period_for_report_date(report_date, issuer.fiscal_year_end_month)
         except Exception as exc:  # noqa: BLE001 - an unresolvable period is a per-row skip, not a refusal
@@ -930,13 +989,18 @@ def discover_new_homebuilder_revisions(
                 flush=True,
             )
             continue
+
+        if discovery_boundary is None and fiscal_period.year not in first_publish_years:
+            # First-ever discovery for this issuer: bounded to current +
+            # prior fiscal year, never the whole recent block (the exact
+            # incident this fix closes — unbounded admission on first
+            # deploy). Not a "skip" either -- outside the bound by law.
+            continue
+
         event_id = canonical_event_id(issuer.company_id, fiscal_period)
 
         if event_id not in timelines:
             timelines[event_id] = loader(event_id)
-            original_chain_latest[event_id] = (
-                timelines[event_id][-1].get("workspace") if timelines[event_id] else None
-            )
         timeline = timelines[event_id]
 
         represented_accessions = {
@@ -1035,19 +1099,15 @@ def discover_new_homebuilder_revisions(
             oldest_visible_accepted = _iso_z(candidates[0].get("acceptanceDateTime"))
         except RefreshError:
             oldest_visible_accepted = ""
-        newest_chain_known: str | None = None
-        for latest_ws in original_chain_latest.values():
-            if not isinstance(latest_ws, Mapping):
-                continue
-            src = (latest_ws.get("lifecycle") or {}).get("source_available_at")
-            if not src:
-                continue
-            try:
-                normalized_src = _iso_z(src)
-            except RefreshError:
-                continue
-            if newest_chain_known is None or normalized_src > newest_chain_known:
-                newest_chain_known = normalized_src
+        # PRODUCTION INCIDENT FIX (round 4): the chain's newest known
+        # revision IS discovery_boundary now — the caller already resolves
+        # it from the SAME carry-forward read, so this heuristic "naturally
+        # uses the same boundary" (frozen fix item 3) rather than
+        # re-deriving it from a per-event_id timeline walk that the
+        # boundary filter above may not even populate for a converged
+        # ticker. Already normalized by the caller (lifecycle.source_
+        # available_at is always stored via _iso()).
+        newest_chain_known = discovery_boundary
         if oldest_visible_accepted and newest_chain_known and newest_chain_known < oldest_visible_accepted:
             print(
                 "::warning title=event-workspace-discovery-window::"
@@ -1329,18 +1389,48 @@ def refresh(
     # by a missing carry-forward call.
     #
     # PHASE 1 (resolution only, zero writes): for every ticker, run
-    # discovery + carry-forward exactly as before, but instead of writing
-    # immediately: (a) seed `workspaces[event_id]` with the ticker's
-    # CURRENT published state via an UNCONDITIONAL carry-forward read
-    # (whether or not discovery ALSO found new revisions — see the
-    # Accepted-cost note above), and (b) collect each triggering ticker's
-    # own ascending new-revision sequence into `sequences` for Phase 2 to
-    # replay. Every abort surface (chain-read failure, carry-forward
-    # failure) fires HERE, before any write — a Phase 1 abort leaves the
-    # marker completely untouched, same as before.
+    # carry-forward THEN discovery, but instead of writing immediately:
+    # (a) seed `workspaces[event_id]` with the ticker's CURRENT published
+    # state via an UNCONDITIONAL carry-forward read (whether or not
+    # discovery ALSO found new revisions — see the Accepted-cost note
+    # above), and (b) collect each triggering ticker's own ascending
+    # new-revision sequence into `sequences` for Phase 2 to replay. Every
+    # abort surface (chain-read failure, carry-forward failure) fires
+    # HERE, before any write — a Phase 1 abort leaves the marker
+    # completely untouched, same as before.
+    #
+    # PRODUCTION INCIDENT FIX (verification round 4, 2026-08-23): carry-
+    # forward now runs BEFORE discover() (was AFTER) — reordered, not
+    # merely relabeled, because discover() needs the carry-forward read's
+    # OWN result as its discovery_boundary (Sol's law: "since the
+    # CANONICAL PRIOR GENERATION"). Computing the boundary from a SECOND,
+    # separate read would double the per-ticker R2 GET cost this exact
+    # ordering avoids; the carry-forward call itself is unchanged in
+    # shape, just moved earlier, so its own abort discipline (below) is
+    # unchanged.
     discover = homebuilder_discovery or discover_new_homebuilder_revisions
     sequences: dict[str, list[tuple[str, dict[str, Any]]]] = {}
     for ticker in HOMEBUILDER_TICKERS:
+        try:
+            current_prior = homebuilder_carry_forward_loader(ticker)
+        except Exception as carry_exc:  # noqa: BLE001
+            # ANY exception from the carry-forward lookup means we cannot
+            # confirm nothing is lost — uniform with the flagship's own
+            # handler above: only an explicit clean None return may mean
+            # "nothing to carry."
+            raise RefreshError(
+                f"{ticker}: carry-forward lookup for the Phase 1 base snapshot failed — refusing to "
+                f"publish a nest that might silently drop a corrected event: {carry_exc}"
+            ) from carry_exc
+        discovery_boundary: str | None = None
+        if current_prior is not None:
+            current_event_id = str(current_prior.get("event_id") or "")
+            if not current_event_id:
+                raise RefreshError(f"{ticker}: carried-forward prior workspace has no event_id")
+            workspaces[current_event_id] = dict(current_prior)
+            boundary_raw = (current_prior.get("lifecycle") or {}).get("source_available_at")
+            discovery_boundary = str(boundary_raw) if boundary_raw else None
+
         try:
             new_revisions = discover(
                 ticker,
@@ -1348,6 +1438,7 @@ def refresh(
                 tx_index_url=tx_index_url,
                 fetch_index=fetch_index,
                 fetch_body_fn=fetch_body_fn,
+                discovery_boundary=discovery_boundary,
             )
         except PriorWorkspaceFetchFailed as exc:
             # A genuine chain-integrity/network failure while discovering
@@ -1358,54 +1449,19 @@ def refresh(
                 f"{ticker}: source-revision discovery failed — refusing to publish a nest that "
                 f"might silently drop a corrected event: {exc}"
             ) from exc
-        except Exception as exc:  # noqa: BLE001 - SEC access failure during discovery is fail-soft; try to carry the prior forward
-            try:
-                carried_prior = homebuilder_carry_forward_loader(ticker)
-            except Exception as carry_exc:  # noqa: BLE001
-                # ANY exception from the carry-forward lookup means we
-                # cannot confirm nothing is lost — uniform with the
-                # flagship's own handler above: only an explicit clean
-                # None return may mean "nothing to carry."
-                raise RefreshError(
-                    f"{ticker}: discovery failed AND the carry-forward prior lookup also failed — "
-                    f"refusing to publish a nest that might silently drop a corrected event: {carry_exc}"
-                ) from carry_exc
-            if carried_prior is not None:
-                carried_event_id = str(carried_prior.get("event_id") or "")
-                if not carried_event_id:
-                    raise RefreshError(f"{ticker}: carried-forward prior workspace has no event_id") from exc
-                print(
-                    "::warning title=event-workspaces::"
-                    f"{ticker} discovery failed, CARRIED FORWARD prior workspace unchanged "
-                    f"(class={type(exc).__name__}): {exc}",
-                    flush=True,
-                )
-                log.info("%s: discovery failed, carried forward prior workspace unchanged (%s)", ticker, exc)
-                workspaces[carried_event_id] = dict(carried_prior)
-            else:
-                print(f"::warning title=event-workspaces::{ticker} skipped (no prior to carry): {exc}", flush=True)
-                log.info("%s event workspace skipped, no prior to carry (%s)", ticker, exc)
+        except Exception as exc:  # noqa: BLE001 - SEC access failure during discovery is fail-soft
+            # The carry-forward read above ALREADY seeded workspaces[...]
+            # (or correctly left this ticker's slot untouched when
+            # genuinely nothing was ever published) — reordering means
+            # there is nothing further to carry here, only to log.
+            print(
+                "::warning title=event-workspaces::"
+                f"{ticker} discovery failed; carry-forward state (if any) already applied "
+                f"(class={type(exc).__name__}): {exc}",
+                flush=True,
+            )
+            log.info("%s: discovery failed; carry-forward already applied above (%s)", ticker, exc)
             continue
-
-        # NEW-BLOCKER-16: this carry-forward read is UNCONDITIONAL — it
-        # runs whether new_revisions is empty OR non-empty, because a
-        # ticker WITH new revisions still needs its pre-cycle slot filled
-        # in `workspaces` in case an EARLIER-ordered ticker's Phase 2
-        # writes happen before this ticker's own Phase 2 turn. (When this
-        # ticker itself has new revisions, Phase 2 overwrites this seed
-        # before its own first write — the read is spent even so, to keep
-        # Phase 1's completeness guarantee independent of loop order.)
-        try:
-            current_prior = homebuilder_carry_forward_loader(ticker)
-        except Exception as carry_exc:  # noqa: BLE001
-            raise RefreshError(
-                f"{ticker}: carry-forward lookup for the Phase 1 base snapshot failed — refusing to "
-                f"publish a nest that might silently drop a corrected event: {carry_exc}"
-            ) from carry_exc
-        if current_prior is not None:
-            current_event_id = str(current_prior.get("event_id") or "")
-            if current_event_id:
-                workspaces[current_event_id] = dict(current_prior)
 
         if new_revisions:
             sequences[ticker] = new_revisions
