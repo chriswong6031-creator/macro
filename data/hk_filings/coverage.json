@@ -1,9 +1,9 @@
 {
-  "fetched_at": "2026-08-22T09:01:18.684012+00:00",
+  "fetched_at": "2026-08-23T08:51:26.432183+00:00",
   "n_events": 1891,
   "earliest": "2026-04-13",
   "latest": "2026-08-21",
-  "n_new": 117,
+  "n_new": 0,
   "by_category": {
     "interim_results": 610,
     "final_results": 594,
