@@ -2,11 +2,13 @@
 # FINAL SURGICAL CLOSURE cycle over the REVISE'd mastermind-xpv2-sector-r3b-1 reference.
 # Commission: COMMISSION.md in this directory (Sol + Chairman execution directive,
 # 2026-08-23). The R3B product architecture is FROZEN (immutable-architecture list); this
-# cycle implements exactly B2-01..B2-11. Build tree started as a byte-identical copy of the
+# cycle implements exactly B2-01/05/06/08/09/10/11/12/13/14/15. Old B2-02/03/04/07
+# were withdrawn or reclassified by the final Sol handoff and do not survive. Build tree
+# started as a byte-identical copy of the
 # frozen R3B.1 build (untouched rebuild = candidate sha256 fec05b058fbc9dbe29744ad015b7ee9c
 # d9baa5cb85bbbde739daa8b97644cf70 before any fix landed).
-# Authority pins at pickup: origin/main e4562f8b7662 (post 59fed333c063); protected Sol
-# Skillpack mastermindx-market-intelligence/Mastermind@e1101eb2c1f17d801d480ded497b3fc1bb0ef18b;
+# Authority pins at final continuation pickup: origin/main fe1225556ddb462299ab5569c3aee4f6380c1b58;
+# protected Sol Skillpack mastermindx-market-intelligence/Mastermind@db0bac5fe3f72348262d42c8bd26b836bda9f61d;
 # predecessor merge #6248/780cbcf6d2d2 verified ancestor of main.
 schema: mastermind.rig_manifest.v1
 reference_id: mastermind-xpv2-sector-r3b-2
@@ -32,9 +34,9 @@ lineage:
     - mastermind-xpv2-sector-r3b
     - mastermind-xpv2-sector-r3b-1
   # Ordered oldest -> nearest (RIG S13); the closure obligation runs against the NEAREST,
-  # mastermind-xpv2-sector-r3b-1, whose verdict.yml (Sol REVISE, 2026-08-23) mints 14
-  # upheld_revise findings + 11 B2-* conditions = 25 open items this cycle's continuity.yml
-  # closes. The R3A substrate remains authority substrate, not a RIG predecessor.
+  # mastermind-xpv2-sector-r3b-1, whose corrected verdict.yml (Sol REVISE,
+  # 2026-08-23) produces the machine-complete 12-row closure set recorded in
+  # continuity.yml. The R3A substrate remains authority substrate, not a RIG predecessor.
 
 reference_files:            # the successor reference artifact -- PLANNED paths, not yet frozen.
   # PENDING_FREEZE_* placeholders are replaced with the real 40-hex commit SHA in the same
@@ -45,10 +47,10 @@ reference_files:            # the successor reference artifact -- PLANNED paths,
     frozen_sha: "PENDING_FREEZE_R3B2_CANDIDATE"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/
     frozen_sha: "PENDING_FREEZE_R3B2_CANDIDATE"
-    note: "source directory -- byte-identical copy of the frozen R3B.1 build at cycle start (incl. its committed gate scripts); lanes A (authority/copy identity: B2-01/04/08/09), B (responsive/a11y geometry: B2-05/06/07/10/11), C (heatmap ink + measurement: B2-03), D (icon/decoded-output guard: B2-02) modify ONLY what a B2-* item requires"
+    note: "source directory -- byte-identical copy of frozen R3B.1 at cycle start, then bounded final-set changes only: B2-01/05/06/08/09/10/11/12/13/14/15 plus discriminating guards; withdrawn old B2-02/03/04/07 bytes reverted"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/
     frozen_sha: "PENDING_FREEZE_R3B2_CANDIDATE"
-    note: "fresh evidence matrix per COMMISSION.md Evidence matrix -- predecessor screenshots are stale for approval once the SHA changes; lands with the frozen successor"
+    note: "fresh 61-screenshot matrix plus hash-bound browser/programmatic receipts; exact file hashes in evidence/capture_manifest.json and evidence/EVIDENCE_INDEX.md; heatmap colour-field axis honestly UNMEASURED"
 
 files:
   baseline: baseline.yml

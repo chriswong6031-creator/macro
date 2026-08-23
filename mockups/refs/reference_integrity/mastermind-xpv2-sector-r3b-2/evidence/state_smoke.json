@@ -1,0 +1,493 @@
+{
+  "schema": "mastermind.xpv2.sector_r3b2.state_smoke.v1",
+  "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "candidate_sha256": "091bc578d18876ae1e9f922235ddac82d8d7519e0ceb579d7a92010a4915bd0b",
+  "hashes": {
+    "cells": [
+      {
+        "hash": "overview",
+        "expected_view": "overview",
+        "active_view": "overview",
+        "target_present": true,
+        "pass": true
+      },
+      {
+        "hash": "map",
+        "expected_view": "map",
+        "active_view": "map",
+        "target_present": true,
+        "pass": true
+      },
+      {
+        "hash": "moving",
+        "expected_view": "moving",
+        "active_view": "moving",
+        "target_present": true,
+        "pass": true
+      },
+      {
+        "hash": "money",
+        "expected_view": "money",
+        "active_view": "money",
+        "target_present": true,
+        "pass": true
+      },
+      {
+        "hash": "explore",
+        "expected_view": "explore",
+        "active_view": "explore",
+        "target_present": true,
+        "pass": true
+      },
+      {
+        "hash": "confluence",
+        "expected_view": "confluence",
+        "active_view": "confluence",
+        "target_present": true,
+        "pass": true
+      },
+      {
+        "hash": "actnow-section",
+        "expected_view": "overview",
+        "active_view": "overview",
+        "target": "actnow-section",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "regime",
+        "expected_view": "overview",
+        "active_view": "overview",
+        "target": "regime",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "grader",
+        "expected_view": "overview",
+        "active_view": "overview",
+        "target": "grader",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "si-map",
+        "expected_view": "map",
+        "active_view": "map",
+        "target": "si-map",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "rotmap-section",
+        "expected_view": "map",
+        "active_view": "map",
+        "target": "rotmap-section",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "sc-cyclemap",
+        "expected_view": "map",
+        "active_view": "map",
+        "target": "sc-cyclemap",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "board",
+        "expected_view": "map",
+        "active_view": "map",
+        "target": "board",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "si-movement",
+        "expected_view": "moving",
+        "active_view": "moving",
+        "target": "si-movement",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "rc-events-mount",
+        "expected_view": "moving",
+        "active_view": "moving",
+        "target": "rc-events-mount",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "rotation-app",
+        "expected_view": "moving",
+        "active_view": "moving",
+        "target": "rotation-app",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "si-money",
+        "expected_view": "money",
+        "active_view": "money",
+        "target": "si-money",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "internals-section",
+        "expected_view": "money",
+        "active_view": "money",
+        "target": "internals-section",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "scc-leadership",
+        "expected_view": "money",
+        "active_view": "money",
+        "target": "scc-leadership",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "explore-section",
+        "expected_view": "explore",
+        "active_view": "explore",
+        "target": "explore-section",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "table-section",
+        "expected_view": "explore",
+        "active_view": "explore",
+        "target": "table-section",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "chart-section",
+        "expected_view": "explore",
+        "active_view": "explore",
+        "target": "chart-section",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "forming-narratives",
+        "expected_view": "explore",
+        "active_view": "explore",
+        "target": "forming-narratives",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "tm-mount",
+        "expected_view": "explore",
+        "active_view": "explore",
+        "target": "tm-mount",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "confluence",
+        "expected_view": "confluence",
+        "active_view": "confluence",
+        "target": "si-confluence",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "sc-app",
+        "expected_view": "confluence",
+        "active_view": "confluence",
+        "target": "sc-app",
+        "target_present": true,
+        "documented_absent_target": false,
+        "pass": true
+      },
+      {
+        "hash": "sc-top",
+        "expected_view": "confluence",
+        "active_view": "confluence",
+        "target": "sc-top",
+        "target_present": false,
+        "documented_absent_target": true,
+        "pass": true
+      }
+    ],
+    "canonical_pass": 6,
+    "legacy_view_pass": 21,
+    "legacy_target_present": 20,
+    "documented_absent_target": "sc-top"
+  },
+  "access": {
+    "gated": {
+      "reference_rows": 15,
+      "hydrated_rows": 0,
+      "sign_in_disclosures": 4
+    },
+    "hydrated": {
+      "reference_rows": 15,
+      "hydrated_rows": 29,
+      "sign_in_disclosures": 0
+    },
+    "ungated": {
+      "reference_rows": 44,
+      "hydrated_rows": 0,
+      "sign_in_disclosures": 0
+    },
+    "pass": true
+  },
+  "confluence_universes": [
+    {
+      "key": "subsectors",
+      "count": 65,
+      "expected_count": 65,
+      "row_href_census": 8,
+      "expected_prefix": "subsector/",
+      "foreign_hrefs": [],
+      "pass": true
+    },
+    {
+      "key": "nasdaq",
+      "count": 12,
+      "expected_count": 12,
+      "row_href_census": 8,
+      "expected_prefix": "subsector_nasdaq/",
+      "foreign_hrefs": [],
+      "pass": true
+    },
+    {
+      "key": "russell",
+      "count": 93,
+      "expected_count": 93,
+      "row_href_census": 8,
+      "expected_prefix": "subsector_russell/",
+      "foreign_hrefs": [],
+      "pass": true
+    },
+    {
+      "key": "baskets",
+      "count": 49,
+      "expected_count": 49,
+      "row_href_census": 8,
+      "expected_prefix": "subsector/b-",
+      "foreign_hrefs": [],
+      "pass": true
+    }
+  ],
+  "decoded_emoji_census": {
+    "authority_status": "WITHDRAWN_DO_NOT_SCORE",
+    "cells": [
+      {
+        "view": "overview",
+        "emoji": [],
+        "emoji_count": 0
+      },
+      {
+        "view": "map",
+        "emoji": [],
+        "emoji_count": 0
+      },
+      {
+        "view": "moving",
+        "emoji": [
+          "📊"
+        ],
+        "emoji_count": 1
+      },
+      {
+        "view": "money",
+        "emoji": [],
+        "emoji_count": 0
+      },
+      {
+        "view": "explore",
+        "emoji": [],
+        "emoji_count": 0
+      },
+      {
+        "view": "confluence",
+        "emoji": [],
+        "emoji_count": 0
+      }
+    ],
+    "note": "Final handoff withdrew old B2-02; this is a truth receipt, not a gate."
+  },
+  "zh_language_of_parts_census": {
+    "authority_status": "UPSTREAM_R3C_ONLY_DO_NOT_SCORE",
+    "cells": [
+      {
+        "view": "overview",
+        "latin_word_count": 48,
+        "latin_sample": [
+          "HBM",
+          "AEM",
+          "EQX",
+          "PATH",
+          "PLTR",
+          "NOW",
+          "TEAM",
+          "PCOR",
+          "WDAY",
+          "SPY",
+          "Basket",
+          "grading",
+          "accruing",
+          "from",
+          "freeze",
+          "date",
+          "Pre",
+          "basket",
+          "calls",
+          "are"
+        ]
+      },
+      {
+        "view": "map",
+        "latin_word_count": 25,
+        "latin_sample": [
+          "HBM",
+          "Healthcare",
+          "GLP",
+          "XLK",
+          "XLC",
+          "XLY",
+          "XLF",
+          "XLI",
+          "XLB",
+          "XLE",
+          "XLV",
+          "XLP",
+          "XLU",
+          "XLRE"
+        ]
+      },
+      {
+        "view": "moving",
+        "latin_word_count": 18,
+        "latin_sample": [
+          "SPY",
+          "XLV",
+          "XLK",
+          "XLC",
+          "XLF",
+          "SaaS",
+          "Newey",
+          "West",
+          "Platforms",
+          "Hardware",
+          "Servers",
+          "Storage",
+          "Alt",
+          "Protein",
+          "App",
+          "Security",
+          "ThreatOps",
+          "Networking"
+        ]
+      },
+      {
+        "view": "money",
+        "latin_word_count": 116,
+        "latin_sample": [
+          "ETF",
+          "CBOE",
+          "VIX",
+          "contango",
+          "SPDR",
+          "XLF",
+          "Financials",
+          "XLV",
+          "Health",
+          "Care",
+          "XLY",
+          "Consumer",
+          "Discretionary",
+          "XLK",
+          "Technology",
+          "XLP",
+          "Staples",
+          "XLI",
+          "Industrials",
+          "XLRE"
+        ]
+      },
+      {
+        "view": "explore",
+        "latin_word_count": 145,
+        "latin_sample": [
+          "Software",
+          "Materials",
+          "Mining",
+          "Artificial",
+          "Intelligence",
+          "Industrials",
+          "Defense",
+          "Technology",
+          "Healthcare",
+          "Sectors",
+          "Energy",
+          "Power",
+          "Financials",
+          "Consumer",
+          "Cyclical",
+          "Defensive",
+          "Crypto",
+          "Digital",
+          "Assets",
+          "Semiconductors"
+        ]
+      },
+      {
+        "view": "confluence",
+        "latin_word_count": 21,
+        "latin_sample": [
+          "JNJ",
+          "DEFENSIVES",
+          "NVR",
+          "HOUSING",
+          "CHAIN",
+          "CONSUMER",
+          "STAPLES",
+          "EQUAL",
+          "WEIGHT",
+          "HBM",
+          "Semiconductors",
+          "Consumer",
+          "Cyclical",
+          "Financials",
+          "Technology",
+          "Sectors",
+          "Defensive",
+          "Hardware"
+        ]
+      }
+    ],
+    "note": "Producer note_zh/category_zh gaps remain upstream/R3C-only per final handoff."
+  },
+  "href_hash_count": 0,
+  "failed_check_ids": [],
+  "pass": true
+}

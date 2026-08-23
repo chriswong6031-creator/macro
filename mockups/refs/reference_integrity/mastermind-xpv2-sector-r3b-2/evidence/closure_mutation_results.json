@@ -1,0 +1,99 @@
+{
+  "schema": "mastermind.xpv2.sector_r3b2.closure_mutation_results.v1",
+  "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "candidate_sha256": "091bc578d18876ae1e9f922235ddac82d8d7519e0ceb579d7a92010a4915bd0b",
+  "baseline": {
+    "fig": true,
+    "closure": true
+  },
+  "mutations": [
+    {
+      "name": "b2_05_strength",
+      "guard": "fig",
+      "returncode": 1,
+      "got_red": true,
+      "failed_check_ids": [
+        "b2_05.strength.census",
+        "b2_05.strength.label",
+        "b2_05.strength.proof"
+      ]
+    },
+    {
+      "name": "b2_05_delta",
+      "guard": "fig",
+      "returncode": 1,
+      "got_red": true,
+      "failed_check_ids": [
+        "b2_05.delta.census",
+        "b2_05.delta.label",
+        "b2_05.delta.proof"
+      ]
+    },
+    {
+      "name": "b2_05_entry",
+      "guard": "fig",
+      "returncode": 1,
+      "got_red": true,
+      "failed_check_ids": [
+        "b2_05.entry.census",
+        "b2_05.entry.label",
+        "b2_05.entry.proof"
+      ]
+    },
+    {
+      "name": "b2_05_conviction",
+      "guard": "fig",
+      "returncode": 1,
+      "got_red": true,
+      "failed_check_ids": [
+        "b2_05.conviction.census",
+        "b2_05.conviction.label",
+        "b2_05.conviction.proof"
+      ]
+    },
+    {
+      "name": "b2_01_strength_term",
+      "guard": "closure",
+      "returncode": 1,
+      "got_red": true,
+      "failed_check_ids": [
+        "b2_01.one_path_one_term",
+        "b2_01.overview_header"
+      ]
+    },
+    {
+      "name": "b2_12_authority_term",
+      "guard": "closure",
+      "returncode": 1,
+      "got_red": true,
+      "failed_check_ids": [
+        "b2_12.distinct_authority_terms",
+        "b2_12.low_confidence_term"
+      ]
+    },
+    {
+      "name": "b2_13_shared_receipt",
+      "guard": "closure",
+      "returncode": 1,
+      "got_red": true,
+      "failed_check_ids": [
+        "b2_13.exact_shared_control_census",
+        "b2_13.overview_control"
+      ]
+    },
+    {
+      "name": "b2_15_context_scope",
+      "guard": "closure",
+      "returncode": 1,
+      "got_red": true,
+      "failed_check_ids": [
+        "b2_15.localized_clauses",
+        "b2_15.qualification_present",
+        "b2_15.visual_separation"
+      ]
+    }
+  ],
+  "pairwise_distinct": true,
+  "collisions": [],
+  "pass": true
+}

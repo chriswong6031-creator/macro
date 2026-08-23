@@ -340,6 +340,38 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
   [data-view="overview"] .r3-gr{ grid-template-columns:minmax(0,1fr); }
   [data-view="overview"] .r3-delta{ display:inline; margin-left:7px; }
 }
+/* ── B2-05 · SOL STRENGTHENING — the delta gets a VISIBLE name ────────────────
+   641–767 is unchanged: the legend still paints `STRENGTH` over its `<em>20d vs
+   market</em>`, `.r3-figlab` is still clipped, and the delta stays inline beside
+   its score. At 640 the legend goes, and with it both of those names — so this
+   block, which must sit AFTER the 767 rule to win the cascade at equal
+   specificity, turns the cell into TWO stat tiles instead of one number with a
+   footnote.
+
+   COMPOSITION — two labelled figures in one cell at 320. The caption sits OVER
+   its figure rather than inline before it. Inline would be one line shorter, but
+   `20d vs market +27.2%` is ~130px of the 288px a 320 viewport has left after
+   the row's padding, and that width is taken straight out of the name column —
+   where a primary name WRAPS and never ellipsizes (§9), so the saving would have
+   been paid back as three-line theme names. Stacked, the cell is ~85px wide, the
+   name keeps ~190px, and the row grows by one micro line instead.
+
+   The two figures are labelled but NOT peers: the score keeps --fs-md/700 on
+   --text, the delta keeps --fs-micro on its own direction ink, and each caption
+   is --muted at the same micro step — so the cell reads primary-figure,
+   secondary-figure, never two competing headlines.
+
+   `margin-top` is the only separation, and it is doing real work: a caption sits
+   1px above its own figure (shell `.r3-figlab`), so 9px between the tiles is a
+   9:1 proximity ratio and the four alternating lines can only group one way —
+   `STRENGTH/76`, then `20D VS MARKET/+27.2%`. Without it the middle pair reads
+   as plausibly as the outer ones and `76` acquires a second caption below it.
+   A rule between two lines of a 64px cell would be louder than either number. */
+@media (max-width:640px){
+  [data-view="overview"] .r3-delta{ display:block; margin-left:0; margin-top:9px; }
+  /* the caption keeps the muted rung; only the FIGURE carries direction ink. */
+  [data-view="overview"] .r3-delta .r3-figlab{ margin-bottom:0; }
+}
 @media (max-width:359px){
   [data-view="overview"] .r3-watch-cell > strong{ flex-wrap:wrap; }
 }
@@ -671,24 +703,36 @@ function rowHTML(r){
     var p20 = '';
     if(r.perf_20d_rel != null){
       var v = r.perf_20d_rel * 100;
-      /* B2-05 · the delta keeps a name at EVERY width, but never a VISIBLE one:
-         two captions over one 74px column would blow the density budget and set
-         the strength score competing with its own footnote. A signed percentage
-         is self-evident to the eye and anonymous to a screen reader, so the name
-         goes where only the screen reader needs it. MAC1-001's second column. */
-      p20 = '<span class="r3-delta ' + (v >= 0 ? 'up' : 'dn') + ' tnum">'
-          + '<span class="r3-vh">' + L('20d vs market', '20日对比市场') + ' </span>'
+      /* B2-05 · SOL STRENGTHENING. The earlier reading kept this name in `.r3-vh`
+         at every width, on the argument that a second painted caption over one
+         74px column breaches the density budget. That judgment is OVERRIDDEN:
+         below 640 the column is no longer 74px — it is `auto` — and the law is
+         that every figure whose visual header disappears gets a VISIBLE inline
+         mobile label, this one by name (`20d vs market +27.2%` /
+         `20日对比市场 +27.2%`). A signed percentage is self-evident only to a
+         reader who already knows what it is measured AGAINST; on a phone the
+         `<em>` that says so (the legend's second line, :791) is gone, and
+         "+27.2%" alone could as easily be the 20-day move itself.
+         The carrier is therefore `.r3-figlab`, not `.r3-vh` — ONE node with two
+         presentations (clipped above the breakpoint, painted below it), the same
+         mechanism the Strength score uses. The word is the legend's own; it is
+         never shortened, because an abbreviation here would change what the
+         number is measured against, and this system cuts no name. */
+      p20 = '<span class="r3-delta ' + (v >= 0 ? 'up' : 'dn') + ' tnum" data-r3b2="05">'
+          + '<span class="r3-figlab" data-fig-kind="delta">' + L('20d vs market', '20日对比市场') + '</span> '
           + (v >= 0 ? '+' : '') + v.toFixed(1) + '%</span>';
     }
     /* B2-05 · the label travels with the figure (shell.html `.r3-figlab`).
        The customer term is Lane A's B2-01 label for this exact producer path
-       (`theme_intel.themes[].score` -> Strength / 强度, header at :766), stated
+       (`theme_intel.themes[].score` -> Strength / 强度, header at :796), stated
        once per row so the mobile card carries the same word the desktop column
        header carries — never a second, softer synonym.
        An EMPTY cell gets no caption: sector rows carry no blended score
        (ledger #7), and a caption over nothing is a name for a value that does
-       not exist. */
-    if(sc || p20) fig = '<span class="r3-figlab" data-r3b2="05">' + L('Strength', '强度') + '</span>' + sc + p20;
+       not exist. Each figure now owns its OWN caption, so a row that carried a
+       delta but no score can no longer inherit the score's name. */
+    if(sc) fig = '<span class="r3-figlab" data-r3b2="05" data-fig-kind="strength">' + L('Strength', '强度') + '</span> ' + sc;
+    fig += p20;
   }
   /* WHY: theme rows carry the producer's own reason prose; sector rows carry the
      qualitative stat pair (ledger #7 — sector rows have no blended score). Both

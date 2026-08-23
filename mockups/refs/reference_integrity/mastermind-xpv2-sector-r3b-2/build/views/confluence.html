@@ -678,7 +678,7 @@ function groupRow(g){
        入场层级 — carried per row so the name survives the <=640 breakpoint that
        removes the legend. Absent tier renders as absence, uncaptioned. */
     + '<span class="r3-fig tnum">'
-    + (e.tier ? '<span class="r3-figlab" data-r3b2="05">' + L('Entry tier', '入场层级') + '</span>' + esc(e.tier) : '')
+    + (e.tier ? '<span class="r3-figlab" data-r3b2="05" data-fig-kind="entry">' + L('Entry tier', '入场层级') + '</span>' + esc(e.tier) : '')
     + '</span>'
     + '<span class="r3-why">' + why + '</span>'
     + '<span class="r3-chev" aria-hidden="true"></span></button>';
@@ -804,7 +804,7 @@ function paintPicks(){
          VTC-006's unlabelled 0.xx was fully reinstated at 390/320. The same node
          becomes `.r3-figlab`: identical AT behaviour above the breakpoint,
          painted caption below it. */
-      + '<span class="r3-fig tnum"><span class="r3-figlab" data-r3b2="05">'
+      + '<span class="r3-fig tnum"><span class="r3-figlab" data-r3b2="05" data-fig-kind="conviction">'
       + L('Conviction', '综合把握') + ' </span>'
       + (r.combined_score == null ? '' : r.combined_score.toFixed(2)) + '</span>'
       + '<span class="r3-why">' + L('Its tier', '个股层级') + ' ' + esc(r.stock_tier || '–')

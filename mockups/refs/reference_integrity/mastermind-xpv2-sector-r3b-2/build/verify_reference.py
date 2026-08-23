@@ -80,6 +80,9 @@ CONTRAST_AUDIT_JSON = LANE_CROPS_B / "contrast_audit.json"
 FIG_NAMING_JSON = BUILD_DIR / "fig_naming_audit.json"
 TREEMAP_LABELS_JSON = BUILD_DIR / "treemap_labels_audit.json"
 MOBILE_GEOMETRY_JSON = BUILD_DIR / "mobile_geometry_audit.json"
+CLOSURE_AUDIT_JSON = BUILD_DIR / "closure_audit.json"
+CLOSURE_MUTATION_JSON = BUILD_DIR / "closure_mutation_results.json"
+STATE_SMOKE_JSON = BUILD_DIR / "state_smoke.json"
 
 SIZE_LIMIT = 6 * 1024 * 1024
 
@@ -237,6 +240,9 @@ def main() -> int:
     check_committed_fig_naming_audit()
     check_committed_treemap_labels_audit()
     check_committed_mobile_geometry_audit()
+    check_committed_closure_audit()
+    check_committed_closure_mutations()
+    check_committed_state_smoke()
 
     return print_summary()
 
@@ -367,9 +373,10 @@ def check_committed_fig_naming_audit() -> None:
     proofs = [p for c in cells for p in c["proofs"]]
     proofs_failed = [p for p in proofs if not p["pass"]]
     failing = [c for c in cells if c["failures"]]
+    hash_bound = audit.get("candidate_sha256") == sha256_file(OUT_HTML_PATH)
     ok = (bool(cells) and expected > 0 and not census_bad and not unnamed
           and not naked and not doubled and bool(proofs) and not proofs_failed
-          and not failing and audit.get("pass") is True)
+          and not failing and audit.get("pass") is True and hash_bound)
     check(name, ok,
           f"{len(cells)} cells (1440/390/320 x EN/ZH, six views each), "
           f"census {expected}/cell, {unnamed} valued figure(s) with no accessible name, "
@@ -377,7 +384,7 @@ def check_committed_fig_naming_audit() -> None:
           f"<={audit.get('mobile_breakpoint_px')}px, {doubled} double-labelled above the "
           f"breakpoint, commissioned visible-label proofs "
           f"{len(proofs) - len(proofs_failed)}/{len(proofs)} passing, "
-          f"{len(failing)} failing cell(s) "
+          f"{len(failing)} failing cell(s), candidate hash bound={hash_bound} "
           f"(reproduce with `<playwright-python> fig_naming_audit.py`)")
 
 
@@ -447,6 +454,86 @@ def check_committed_mobile_geometry_audit() -> None:
           f"PRC1R-001 aria-controls resolved in {len(aria_ok)}/{len(cells)}; "
           f"{len(failing)} failing cell(s) "
           f"(reproduce with `<playwright-python> mobile_geometry_audit.py`)")
+
+
+def check_committed_closure_audit() -> None:
+    """(p) Rendered customer terms, producer-derived qualification scope and
+    shared receipt wiring for the final continuation."""
+    name = "(p) B2-01/B2-12/B2-13/B2-15 rendered closure semantics (from committed artifact)"
+    audit = _load_audit(CLOSURE_AUDIT_JSON, name)
+    if audit is None:
+        return
+    cells = audit["cells"]
+    checks = [c for cell in cells for c in cell.get("checks", [])]
+    failing = [c for c in checks if not c.get("pass")]
+    expected_ids = {
+        "b2_01.overview_header", "b2_01.overview_inline_census", "b2_01.map_header",
+        "b2_01.map_detail", "b2_01.map_tooltip", "b2_01.one_path_one_term",
+        "b2_12.coverage_fact", "b2_12.low_confidence_census",
+        "b2_12.low_confidence_term", "b2_12.distinct_authority_terms",
+        "b2_13.shared_target", "b2_13.overview_control", "b2_13.moving_controls",
+        "b2_13.exact_shared_control_census", "b2_15.producer_scope",
+        "b2_15.qualification_present", "b2_15.localized_clauses",
+        "b2_15.qualification_excludes_21d", "b2_15.explicit_21d_line",
+        "b2_15.visual_separation",
+    }
+    by_lang = {cell.get("lang"): {c.get("id") for c in cell.get("checks", [])} for cell in cells}
+    complete = set(by_lang) == {"en", "zh"} and all(ids == expected_ids for ids in by_lang.values())
+    hash_bound = audit.get("candidate_sha256") == sha256_file(OUT_HTML_PATH)
+    ok = (complete and not failing and audit.get("failed_check_ids") == []
+          and audit.get("pass") is True and hash_bound)
+    check(name, ok,
+          f"{len(checks)-len(failing)}/{len(checks)} checks pass across EN/ZH; "
+          f"complete id census={complete}; candidate hash bound={hash_bound} "
+          f"(reproduce with `<playwright-python> closure_audit.py`)")
+
+
+def check_committed_closure_mutations() -> None:
+    """(q) Every final-continuation guard is discriminating, not pre-true."""
+    name = "(q) R3B.2 closure unique-red mutation proof (from committed artifact)"
+    if not CLOSURE_MUTATION_JSON.exists():
+        check(name, False, f"missing {CLOSURE_MUTATION_JSON}")
+        return
+    audit = json.loads(CLOSURE_MUTATION_JSON.read_text(encoding="utf-8"))
+    rows = audit.get("mutations") or []
+    nonempty = [r for r in rows if r.get("got_red") and r.get("failed_check_ids")]
+    failing_sets = [frozenset(r.get("failed_check_ids") or []) for r in rows]
+    hash_bound = audit.get("candidate_sha256") == sha256_file(OUT_HTML_PATH)
+    baseline = audit.get("baseline") or {}
+    ok = (len(rows) == 8 and len(nonempty) == 8 and len(set(failing_sets)) == 8
+          and baseline == {"fig": True, "closure": True}
+          and audit.get("pairwise_distinct") is True and not audit.get("collisions")
+          and audit.get("pass") is True and hash_bound)
+    check(name, ok,
+          f"{len(nonempty)}/{len(rows)} mutations produced non-empty reds; "
+          f"distinct sets={len(set(failing_sets))}; baselines={baseline}; "
+          f"candidate hash bound={hash_bound} "
+          f"(reproduce with `<playwright-python> closure_mutation_suite.py`)")
+
+
+def check_committed_state_smoke() -> None:
+    """(r) Hash routing, access-state arithmetic and active-universe isolation."""
+    name = "(r) canonical/legacy hash + access + four-universe state smoke (from committed artifact)"
+    if not STATE_SMOKE_JSON.exists():
+        check(name, False, f"missing {STATE_SMOKE_JSON}")
+        return
+    audit = json.loads(STATE_SMOKE_JSON.read_text(encoding="utf-8"))
+    hashes = audit.get("hashes") or {}
+    universes = audit.get("confluence_universes") or []
+    hash_bound = audit.get("candidate_sha256") == sha256_file(OUT_HTML_PATH)
+    ok = (audit.get("pass") is True and audit.get("failed_check_ids") == []
+          and hashes.get("canonical_pass") == 6 and hashes.get("legacy_view_pass") == 21
+          and hashes.get("legacy_target_present") == 20
+          and (audit.get("access") or {}).get("pass") is True
+          and len(universes) == 4 and all(u.get("pass") for u in universes)
+          and audit.get("href_hash_count") == 0 and hash_bound)
+    check(name, ok,
+          f"canonical={hashes.get('canonical_pass')}/6, legacy views={hashes.get('legacy_view_pass')}/21, "
+          f"legacy targets={hashes.get('legacy_target_present')}/21 (#sc-top documented absent), "
+          f"access pass={(audit.get('access') or {}).get('pass')}, "
+          f"universes={sum(1 for u in universes if u.get('pass'))}/{len(universes)}, "
+          f"href=# count={audit.get('href_hash_count')}, candidate hash bound={hash_bound} "
+          f"(reproduce with `<playwright-python> state_smoke.py`)")
 
 
 def print_summary() -> int:

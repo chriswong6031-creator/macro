@@ -1,9 +1,9 @@
 # XPV2-SC-R3B.2 — EN/ZH copy ledger, Lane A (authority / copy identity)
 
 Commission: `research/reference_integrity/mastermind-xpv2-sector-r3b-2/COMMISSION.md`
-Fix packet items covered by this lane: **B2-01 · B2-04 · B2-08 · B2-09**, plus the
-orchestrator-adjudicated **DA1-02** chip re-label
-(`ORCHESTRATOR_ADJUDICATIONS_R3B2.md` §1 ruling 1).
+Final continuation items recorded here: **B2-01 · B2-05 · B2-08 · B2-09 ·
+B2-12 · B2-15**. B2-13/B2-14 change no customer words. Old B2-02/B2-03/B2-04/
+B2-07 are retained only as withdrawn history, per the final Sol handoff.
 
 This ledger records **every EN/ZH pair Lane A changed or minted in the R3B.2
 successor artifact**. It supplements — it does not replace —
@@ -107,16 +107,16 @@ gate. One customer word, two producer paths, and the two statements contradict:
 "48 are omitted as too thin", then 31 rows inside that very table stamped "Thin
 data".
 
-**Label chosen, and the one rejected.** The commission offered `Sparse history /
-历史数据较少` *if it matched the field*. It does not — `reliability` never reads a
-history length, only `n_priced` — so it was rejected as untrue to the producer.
-The label below names the member count instead. `read with caution /
-请谨慎解读` is kept verbatim: the stance is unchanged, only the reason is now
-correct.
+**Label chosen.** The commission offered `Sparse history / 历史数据较少` *if it
+matched the field*. It does not — `reliability` never reads a history length,
+only `n_priced` — so it was rejected as untrue to the producer. Sol's final
+canonical term is the authority-neutral `Low confidence / 低置信度`. No causal
+clause is appended: the exact producer contract remains in this ledger as the
+audit trail, while the customer label states only the governed confidence tier.
 
 | EN | ZH | site | provenance | note |
 |---|---|---|---|---|
-| `Low confidence` | `低置信度` | `build/views/confluence.html:646-647` — `relDot()`, `.r3-vh` accessible name beside the `.r3-thin` dot, marker `data-r3b2="da102"` | bound-from-production (recomposed), `templates/subsectors.js:58` | **CHANGED from `Thin data — read with caution` / `数据稀疏 — 请谨慎解读`.** The word "thin"/"稀疏" is now used by the coverage sentence alone. `live` matches the sentence's own `enough live data to time` / `实时数据足够`; `成分股` is this build's established ZH for members (`confluence.html:687`). |
+| `Low confidence` | `低置信度` | `build/views/confluence.html` — `relDot()`, `.r3-vh` accessible name beside the `.r3-thin` dot, marker `data-r3b2="12"` | authored-new canonical customer term, Sol final handoff B2-12 | **CHANGED from `Thin data — read with caution` / `数据稀疏 — 请谨慎解读`.** The word "thin"/"稀疏" is now used by the coverage sentence alone. No causal copy is painted. |
 
 **Kept, not reverted** (DA seat condition C2 explicitly asks for this): the
 promotion off production's EN-only `title=` to a bilingual accessible name, and
@@ -233,10 +233,9 @@ mirrored. No token was minted; `DESIGN_SYSTEM_SPEC.md:373` forbids one, and
 
 # Lane B (responsive / a11y geometry) — appended 2026-08-23
 
-Fix packet items covered by this lane: **B2-05 · B2-06 · B2-07 · B2-10 · B2-11**,
-plus the orchestrator-adjudicated in-lane a11y closures **PRC1R-001**
-(`aria-controls`) and **MAC1-002** (ZH `收起` target floor). Lane A's rows above
-are unchanged; nothing in this section rewrites them.
+Final fix packet items covered by this lane: **B2-05 · B2-06 · B2-10 · B2-11 ·
+B2-13 · B2-14**. Old B2-07 was withdrawn and reverted. Lane A's rows above are
+unchanged; nothing in this section rewrites them.
 
 **Lane B minted no new vocabulary.** Every pair below is a string this artifact
 already renders in a column legend, moved so that it also reaches the reader the
@@ -264,7 +263,7 @@ Receipts: `build/lane_crops_b2/` (crops + `B2_LANE_B_RECEIPT.txt`),
 | EN | ZH | site | provenance | note |
 |---|---|---|---|---|
 | `Strength` | `强度` | `build/views/overview.html:697` — `rowHTML()` per-row `.r3-figlab`, marker `data-r3b2="05"` | **relocated**, byte-identical to Lane A's B2-01 column header (now `overview.html:796`) | New SITE, not a new string. Asserted equal to the rendered header by `fig_naming_audit.py` (`label_mismatch` must be empty), so this producer path cannot acquire a second, softer synonym on the way to a phone. Rendered: `强度 76` / `STRENGTH 76` at 320 and 390. Values unchanged. |
-| `20d vs market` | `20日对比市场` | `build/views/overview.html:686` — `.r3-vh` inside `.r3-delta` | **relocated**, byte-identical to the same header's `<em>` second line | Visually hidden at EVERY width by design: two painted captions over one 74px column would breach the density budget and set the strength score competing with its own footnote. A signed percentage is self-evident to the eye and anonymous to a screen reader, so the name goes only where it is needed. Closes MAC1-001's second column. |
+| `20d vs market` | `20日对比市场` | `build/views/overview.html` — `.r3-figlab[data-fig-kind="delta"]` inside `.r3-delta` | **relocated**, byte-identical to the same header's `<em>` second line | Final B2-05 strengthening: clipped while the desktop legend is painted; visibly stacked with its own signed figure at ≤640, where the legend disappears. Rendered `20D VS MARKET +27.2%` / `20日对比市场 +27.2%` at 320/390. |
 | `Entry tier` | `入场层级` | `build/views/confluence.html:684` — `groupRow()` per-row `.r3-figlab`, marker `data-r3b2="05"` | **relocated**, byte-identical to the subsector list legend (`confluence.html:714`) | New site. An absent tier renders as absence and takes no caption. Closes MAC1-001's third column. |
 | `Conviction` | `综合把握` | `build/views/confluence.html:810` — `paintPicks()` per-row label | unchanged (R3B1-13) | **String untouched; carrier re-classed `.r3-vh` → `.r3-figlab`.** The pair was already correct and already per-row — it was simply never painted, at any width, so R3B1-13's commissioned label reached sighted mobile users nowhere (PRC1R-002) and VTC-006's bare `0.60` was fully reinstated at 390/320 (VTC1-001). Rendered visible at 320/390 in both languages over `0.60` and `0.54`. |
 
@@ -273,7 +272,7 @@ score (ledger #7); a caption over nothing is a name for a value that does not
 exist. `fig_naming_audit.py` counts them (4 per cell, asserted) rather than
 exempting them silently.
 
-## 7 · B2-06 / B2-07 / B2-10 / B2-11 / MAC1-002 / PRC1R-001 — no copy changed
+## 7 · B2-06 / B2-10 / B2-11 / B2-13 / B2-14 — no copy changed
 
 Recorded so a later seat does not go looking for rows that do not exist:
 
@@ -281,9 +280,6 @@ Recorded so a later seat does not go looking for rows that do not exist:
   and its aggregate before that. No string is rewritten, abbreviated or
   ellipsized — this system permits no cut on a primary name. Every dropped name
   remains, in full, in the mandatory accessible table in the same view.
-- **B2-07** re-orders the Money heat band below 641px and makes the tiles
-  non-interactive. `Read the map as a table` / `以表格阅读该图` and
-  `Browse the names` / `浏览个股` are unchanged in wording and in DOM order.
 - **B2-10** removes `.r3-spread` where the ledge stops being a five-track row.
   It carries no text of its own and is `aria-hidden="true"`; its accessible
   equivalent has always been the cells, which all remain on screen.
@@ -293,3 +289,27 @@ Recorded so a later seat does not go looking for rows that do not exist:
 - **MAC1-002** floors `.r3-textbtn` on the inline axis. `Show fewer` / `收起` is
   unchanged; only the box stopped being sized off the glyph count.
 - **PRC1R-001** adds `aria-controls="r3-receipt"`. No user-visible text.
+
+Old **B2-07** is withdrawn. The predecessor's naturally noninteractive treemap
+and its existing table/Browse hatches are measured and retained; no tile or DOM-
+order change from the superseded lane survives.
+
+## 8 · B2-15 — context-only / 5d qualification
+
+**Producer path:** `marketdata/index_leadership.json → track_record`.
+
+The qualification renders only when `is_context_only === true`. Its horizon is
+derived from the producer's `proven` map; on this fixture only `5` is true and
+`21` is false. The adjacent 21-day figures keep their own explicit line and
+label and are separated by a hairline.
+
+| EN | ZH | provenance | authority |
+|---|---|---|---|
+| `Context only` | `仅为背景` | authored-new reference qualification | describes `is_context_only:true`; does not alter the producer badge |
+| `evidence proven at 5d` | `仅 5 日周期有实测证据` | deterministic display projection from `proven` true keys | never hard-codes a 21d validation claim |
+| `never sizes decisions` | `从不用于仓位决策` | authored-new reference qualification | preserves the producer note's authority ceiling without translating the producer string itself |
+| `21d hit-rate:` | `21日命中率：` | unchanged label, relocated to its own line | explicitly outside the 5d qualification |
+
+Production's broader `Forward track record: Validated` badge/21d pairing remains
+an upstream/R3C owner repair. B2-15 does not rename or soften that production
+debt inside the reference.

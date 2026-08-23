@@ -1,0 +1,892 @@
+{
+  "schema": "mastermind.xpv2.sector_r3b2.capture_manifest.v1",
+  "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "candidate_sha256": "091bc578d18876ae1e9f922235ddac82d8d7519e0ceb579d7a92010a4915bd0b",
+  "capture_count": 61,
+  "screenshots": [
+    {
+      "file": "all6-confluence-1440-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "confluence",
+        "width": 1440,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "confluence",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 219704,
+      "sha256": "54328f037cba97f8119540417bc0fbb4a9cd3fd9b32b004ca49c31c49b108d28"
+    },
+    {
+      "file": "all6-confluence-1440-light-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "confluence",
+        "width": 1440,
+        "theme": "light",
+        "lang": "en",
+        "active_view": "confluence",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 220374,
+      "sha256": "6f518c1d863630ad8ae8528a9aabf782a27aeb83ada6898b3a2d3149b11edb42"
+    },
+    {
+      "file": "all6-confluence-390-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "confluence",
+        "width": 390,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "confluence",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 175503,
+      "sha256": "dd99901a747498b307756fd2547fcf6f03817bc7aa64452b51ff25c7f4857a04"
+    },
+    {
+      "file": "all6-confluence-390-dark-zh.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "confluence",
+        "width": 390,
+        "theme": "dark",
+        "lang": "zh",
+        "active_view": "confluence",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 182685,
+      "sha256": "c5d25028ee1b0e111d5fc853e52550f0b45772522538eb42f79b4c58296fb224"
+    },
+    {
+      "file": "all6-explore-1440-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "explore",
+        "width": 1440,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "explore",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 594355,
+      "sha256": "b9e81883d829b0ccdbe4b41a392638286d5888255826a0df674d83562e72b179"
+    },
+    {
+      "file": "all6-explore-1440-light-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "explore",
+        "width": 1440,
+        "theme": "light",
+        "lang": "en",
+        "active_view": "explore",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 599143,
+      "sha256": "c04df60dee9dbcf642ba8c441a9b3d09782443822592a4d310c1e402a8af8800"
+    },
+    {
+      "file": "all6-explore-390-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "explore",
+        "width": 390,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "explore",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 540376,
+      "sha256": "7b8f1783ad084d9471d17d4c121e5cf2a53cc06f61b9c98b5ddb99c6a6c90404"
+    },
+    {
+      "file": "all6-explore-390-dark-zh.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "explore",
+        "width": 390,
+        "theme": "dark",
+        "lang": "zh",
+        "active_view": "explore",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 541607,
+      "sha256": "da839fdd1ff6f0e87ca5c9bfcb875c121cfa17d16fe623d8cf948cf690c63006"
+    },
+    {
+      "file": "all6-map-1440-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "map",
+        "width": 1440,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "map",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 633377,
+      "sha256": "250a4b20939ec09e0a431e091c108558f783b3e3884867dbeacec851dc5e9d4b"
+    },
+    {
+      "file": "all6-map-1440-light-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "map",
+        "width": 1440,
+        "theme": "light",
+        "lang": "en",
+        "active_view": "map",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 628738,
+      "sha256": "6a0220c16703ed6e68a4be76202896cd66f7b2d7a864609232f74023b5709f3c"
+    },
+    {
+      "file": "all6-map-390-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "map",
+        "width": 390,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "map",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 378912,
+      "sha256": "858415a537bed1836f46ff3104d43af43f1e9e29a92d31538d553a61c1ac0340"
+    },
+    {
+      "file": "all6-map-390-dark-zh.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "map",
+        "width": 390,
+        "theme": "dark",
+        "lang": "zh",
+        "active_view": "map",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 363890,
+      "sha256": "e6ed148755e5c8eb79f1e731071fe1ba7408990a3adc002fa98eba551b33e5c6"
+    },
+    {
+      "file": "all6-money-1440-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "money",
+        "width": 1440,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "money",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 525339,
+      "sha256": "4a871fa73ad89164981e67e8c71477751d6886f7f8e7f442f550c59fcffafeb8"
+    },
+    {
+      "file": "all6-money-1440-light-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "money",
+        "width": 1440,
+        "theme": "light",
+        "lang": "en",
+        "active_view": "money",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 531529,
+      "sha256": "317b5777901b4787b4d85b273940ef661deb5deca2ecb73f444561e13891c1a0"
+    },
+    {
+      "file": "all6-money-390-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "money",
+        "width": 390,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "money",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 382454,
+      "sha256": "f4f3eb8c2577e086d8942c84fec873c51ccfcafe98ec1bdc1547a151f318a650"
+    },
+    {
+      "file": "all6-money-390-dark-zh.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "money",
+        "width": 390,
+        "theme": "dark",
+        "lang": "zh",
+        "active_view": "money",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 393457,
+      "sha256": "2ff1e66e5b1ce3f57f11b1e47f1ae96fac7c617d7f35f6e7985bfb9d5011d6c7"
+    },
+    {
+      "file": "all6-moving-1440-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "moving",
+        "width": 1440,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "moving",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 468200,
+      "sha256": "b1670d94fc88f64594c58845bf0fe28c018be36070e1d430753a9a65bb3f0410"
+    },
+    {
+      "file": "all6-moving-1440-light-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "moving",
+        "width": 1440,
+        "theme": "light",
+        "lang": "en",
+        "active_view": "moving",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 471678,
+      "sha256": "a3731dae0ba49b892cb62b146dd6cd3a3f8f84657c945cd3855b9847bd31e143"
+    },
+    {
+      "file": "all6-moving-390-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "moving",
+        "width": 390,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "moving",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 430854,
+      "sha256": "304f3ab5ded2dd635c6fad626e402b9e255ad6e43edadbe601fd3f515060354f"
+    },
+    {
+      "file": "all6-moving-390-dark-zh.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "moving",
+        "width": 390,
+        "theme": "dark",
+        "lang": "zh",
+        "active_view": "moving",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 409982,
+      "sha256": "2a058ee9980a45ee82f78c63e44ff3b794ff2952414a21cbc806bff8da482d73"
+    },
+    {
+      "file": "all6-overview-1440-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "overview",
+        "width": 1440,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "overview",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 240839,
+      "sha256": "80508a18ae2506c9b1bc859543cafca23727a60a22122235950487c700e6371b"
+    },
+    {
+      "file": "all6-overview-1440-light-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "overview",
+        "width": 1440,
+        "theme": "light",
+        "lang": "en",
+        "active_view": "overview",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 242706,
+      "sha256": "6a7e1161e79d8c00e40284b14dc3fffc63542e03ff1d88e2f7a8d1270aa4bfb9"
+    },
+    {
+      "file": "all6-overview-390-dark-en.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "overview",
+        "width": 390,
+        "theme": "dark",
+        "lang": "en",
+        "active_view": "overview",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 231175,
+      "sha256": "7013a555d0dbf8434306af6870301358232b4fc37e3de7bb1b5ca9142f2f7704"
+    },
+    {
+      "file": "all6-overview-390-dark-zh.png",
+      "kind": "all_six_matrix",
+      "state": {
+        "view": "overview",
+        "width": 390,
+        "theme": "dark",
+        "lang": "zh",
+        "active_view": "overview",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 235621,
+      "sha256": "cd3b715997cb756f64d6f728477a8a26ffa00d250bc5be1037a13bbcbb20ae4f"
+    },
+    {
+      "file": "b2-05-conviction-1440-dark-en.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "confluence",
+        "selector": "#cf-picks-band",
+        "physical_width": 1440,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "en",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 25661,
+      "sha256": "5597d05d11cf3484dca9475e0b8c1e81f2e399cfc70f8d3df60431b9035ab7b5"
+    },
+    {
+      "file": "b2-05-conviction-1440-dark-zh.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "confluence",
+        "selector": "#cf-picks-band",
+        "physical_width": 1440,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "zh",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 30883,
+      "sha256": "9c727a9edb27d650cbb169e6730b93ff821a28d964da6fffbe4e5733659a110e"
+    },
+    {
+      "file": "b2-05-conviction-320-dark-en.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "confluence",
+        "selector": "#cf-picks-band",
+        "physical_width": 320,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "en",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 23907,
+      "sha256": "d14c7560f07b0d7ce2beeca7eb1a4366122faa5c812d784b6b474228577c377e"
+    },
+    {
+      "file": "b2-05-conviction-320-dark-zh.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "confluence",
+        "selector": "#cf-picks-band",
+        "physical_width": 320,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "zh",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 28304,
+      "sha256": "861bcf42d93c41d321242e12d7bd9c7e8290afe506f7b86ad14aa4fc721ff7e0"
+    },
+    {
+      "file": "b2-05-conviction-390-dark-en.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "confluence",
+        "selector": "#cf-picks-band",
+        "physical_width": 390,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "en",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 25466,
+      "sha256": "13a92ea060ed417ac9389a4a12e20950840d7cd395d4bb3093722a88d921b2b2"
+    },
+    {
+      "file": "b2-05-conviction-390-dark-zh.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "confluence",
+        "selector": "#cf-picks-band",
+        "physical_width": 390,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "zh",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 29754,
+      "sha256": "f410909be02c9dc37ea3af7d236e77a979abbadaea90ca2907088ea662f843f8"
+    },
+    {
+      "file": "b2-05-overview-figures-320phys-zoom200-dark-zh.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "overview",
+        "selector": "#actnow-section",
+        "physical_width": 320,
+        "zoom": 2,
+        "theme": "dark",
+        "lang": "zh",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 113970,
+      "sha256": "970197f3ca392c19617683ca5b13cc0ba1b48d8fc2001e764e527f3c6e86a1b9"
+    },
+    {
+      "file": "b2-05-overview-figures-390-dark-en.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "overview",
+        "selector": "#actnow-section",
+        "physical_width": 390,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "en",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 54497,
+      "sha256": "f04fb443e0ae5011886452acdfd4dc7f13df53db079d0b41213e3473737902f2"
+    },
+    {
+      "file": "b2-05-overview-figures-390-dark-zh.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "overview",
+        "selector": "#actnow-section",
+        "physical_width": 390,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "zh",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 53213,
+      "sha256": "17bc21215f9f7a2d0645bebe4dc5476729ad210ae7157f530753aadb8f10b608"
+    },
+    {
+      "file": "b2-08-map-rank-scope-390-dark-en.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "map",
+        "selector": "[data-view='map'] th[data-r3b2='08']",
+        "physical_width": 390,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "en"
+      },
+      "bytes": 2264,
+      "sha256": "e6f8c95e2be98f016d513c59865aee1937a9cf57c81e0b5f82ae1a945355bb71"
+    },
+    {
+      "file": "b2-08-map-rank-scope-390-dark-zh.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "map",
+        "selector": "[data-view='map'] th[data-r3b2='08']",
+        "physical_width": 390,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "zh"
+      },
+      "bytes": 2289,
+      "sha256": "c94676d366b8c619f1accea508a7889d27dacd863b3f9b3d7b070dd2f0a777e9"
+    },
+    {
+      "file": "b2-09-moving-recent-wrong-1440-light-en.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "moving",
+        "selector": "[data-r3b2='09']",
+        "physical_width": 1440,
+        "zoom": 1,
+        "theme": "light",
+        "lang": "en",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 12837,
+      "sha256": "6bbc51b7e3d2dff259bbbd49cbe35241199b8efdf93bed8ffaf3893b942fdfc3"
+    },
+    {
+      "file": "b2-09-moving-recent-wrong-1440-light-zh.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "moving",
+        "selector": "[data-r3b2='09']",
+        "physical_width": 1440,
+        "zoom": 1,
+        "theme": "light",
+        "lang": "zh",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 12133,
+      "sha256": "d34df4b3094959fec8968ef6ab1668181955cf6892dfa5f79ce4678523c76cef"
+    },
+    {
+      "file": "b2-11-headline-receipt-320-dark-en.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "overview",
+        "selector": "[data-r3b2='11']",
+        "physical_width": 320,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "en",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 5440,
+      "sha256": "cdb178210843e67053d5538f7789f2d1939029fa15295d1b4745317a97ddd6eb"
+    },
+    {
+      "file": "b2-11-headline-receipt-320-dark-zh.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "overview",
+        "selector": "[data-r3b2='11']",
+        "physical_width": 320,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "zh",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 6185,
+      "sha256": "c85e29a26dbb3a7e7e72e589f2f1909154b088425d82a2d79608308da4eee7d4"
+    },
+    {
+      "file": "b2-11-headline-receipt-390-dark-en.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "overview",
+        "selector": "[data-r3b2='11']",
+        "physical_width": 390,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "en",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 5831,
+      "sha256": "31a1ac74972368f739deaf8a1b371fe7808e01c4daca0ddb9b16bbc2680209c1"
+    },
+    {
+      "file": "b2-11-headline-receipt-390-dark-zh.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "overview",
+        "selector": "[data-r3b2='11']",
+        "physical_width": 390,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "zh",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 6110,
+      "sha256": "ca9697af3838a1a59d244ae283aee63ae4ee634821334710e3b9ba00650da330"
+    },
+    {
+      "file": "b2-13-shared-receipt-control-390-dark-en.png",
+      "kind": "shared_receipt_control",
+      "state": {
+        "view": "overview",
+        "width": 390,
+        "lang": "en",
+        "aria_controls": "r3-receipt",
+        "target_present": true,
+        "target_visible_after_click": false,
+        "aria_expanded_after_click": "false"
+      },
+      "bytes": 2125,
+      "sha256": "ef492b831faf64a4906ca8cb19657f5450634a8a61cff5306ec1d32f12a3f986"
+    },
+    {
+      "file": "b2-15-money-context-1440-dark-en.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "money",
+        "selector": ".lead-foot",
+        "physical_width": 1440,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "en",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 13924,
+      "sha256": "0c03300211d242027dfda43e3d0f74383b3c24b803b087a3d3b1dcc60401f60e"
+    },
+    {
+      "file": "b2-15-money-context-1440-dark-zh.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "money",
+        "selector": ".lead-foot",
+        "physical_width": 1440,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "zh",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 14782,
+      "sha256": "cf0b7d51b4fc81a18f1ef71468a1bf1e339c9e0d881ac2ddf2b915d2b0a1a8a2"
+    },
+    {
+      "file": "b2-15-money-context-390-dark-en.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "money",
+        "selector": ".lead-foot",
+        "physical_width": 390,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "en",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 14441,
+      "sha256": "b5cd91013c9894ee1dc35c9a959b8dac072de290a7ed8e3e1a4e9eb2a28a5186"
+    },
+    {
+      "file": "b2-15-money-context-390-dark-zh.png",
+      "kind": "changed_state",
+      "state": {
+        "view": "money",
+        "selector": ".lead-foot",
+        "physical_width": 390,
+        "zoom": 1,
+        "theme": "dark",
+        "lang": "zh",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 14620,
+      "sha256": "452c286e7d9d7d3f91dffc28abc0d685ebcd37fda6871fd928b342591f77e044"
+    },
+    {
+      "file": "money-browse-names-320-dark-en.png",
+      "kind": "browse_list_escape_hatch",
+      "state": {
+        "view": "money",
+        "width": 320,
+        "lang": "en",
+        "rows": "asserted_nonzero_in_capture",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 1063882,
+      "sha256": "1f1560e65f68e166461bc7704bd3324cd997b83690444a462ba989a776132418"
+    },
+    {
+      "file": "money-browse-names-390-dark-zh.png",
+      "kind": "browse_list_escape_hatch",
+      "state": {
+        "view": "money",
+        "width": 390,
+        "lang": "zh",
+        "rows": "asserted_nonzero_in_capture",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 1129117,
+      "sha256": "0baa6576fcdb2ecf2ce4bffe4218c3b9fa65250e0c97021ca7292fd2342bf874"
+    },
+    {
+      "file": "money-heatmap-320-dark-en.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 320,
+        "theme": "dark",
+        "lang": "en",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 19488,
+      "sha256": "fa33e8b89ffb7e4737849a60aa247ca41cd3ff0399f66fd2182941c115ae9a49"
+    },
+    {
+      "file": "money-heatmap-320-dark-zh.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 320,
+        "theme": "dark",
+        "lang": "zh",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 21327,
+      "sha256": "f8a5e5a7fb1500f199e4d9e8c16f65bba6fe005c306cd4c433e655429aa5c4f6"
+    },
+    {
+      "file": "money-heatmap-320-light-en.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 320,
+        "theme": "light",
+        "lang": "en",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 19589,
+      "sha256": "bb338221e2a251fa26617506f6793a36d9d99458b706026ded31f79a81a0b74f"
+    },
+    {
+      "file": "money-heatmap-320-light-zh.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 320,
+        "theme": "light",
+        "lang": "zh",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 21327,
+      "sha256": "b89d2e4ddeb04ac61e97257ee2d25c80b96a6ff7cb2cdba0c0bec873cca7a679"
+    },
+    {
+      "file": "money-heatmap-390-dark-en.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 390,
+        "theme": "dark",
+        "lang": "en",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 22482,
+      "sha256": "25abc89954de2e48db5b57a6568c1e8646f505a551c7a44d6233e98d2ff2875e"
+    },
+    {
+      "file": "money-heatmap-390-dark-zh.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 390,
+        "theme": "dark",
+        "lang": "zh",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 24496,
+      "sha256": "0532659dcfacddc6bd6546893e8633e18c7fe909208f9211e496167666ab0df1"
+    },
+    {
+      "file": "money-heatmap-390-light-en.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 390,
+        "theme": "light",
+        "lang": "en",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 22516,
+      "sha256": "2fc3c3a807ddb5414fe952c45146cfa3cc858e40a018d0c106d27d577b0796e9"
+    },
+    {
+      "file": "money-heatmap-390-light-zh.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 390,
+        "theme": "light",
+        "lang": "zh",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 24558,
+      "sha256": "f1fd40c78c8b0bb8afce13492469bb1a7f905156702d3fe0551f5354c724bb49"
+    },
+    {
+      "file": "money-heatmap-820-dark-en.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 820,
+        "theme": "dark",
+        "lang": "en",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 38786,
+      "sha256": "8b0d6eb4063d1c9d17497c229abfa489300ce68efc0ca00cea8fc4e779d48359"
+    },
+    {
+      "file": "money-heatmap-820-dark-zh.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 820,
+        "theme": "dark",
+        "lang": "zh",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 44078,
+      "sha256": "d9cca35b53163e1b69599b8d6ad73a9efd2fdf1c5a389ead6df9db18536acaee"
+    },
+    {
+      "file": "money-heatmap-820-light-en.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 820,
+        "theme": "light",
+        "lang": "en",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 38671,
+      "sha256": "a27a07b85e18dadee5cf9ea067c83be34f7113ed842d8c076df49fda49a961c3"
+    },
+    {
+      "file": "money-heatmap-820-light-zh.png",
+      "kind": "heatmap_matrix_unmeasured_axis",
+      "state": {
+        "view": "money",
+        "width": 820,
+        "theme": "light",
+        "lang": "zh",
+        "tile_census": "asserted_nonzero_in_capture",
+        "contrast_axis": "UNMEASURED",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 44059,
+      "sha256": "a381e21e8855106103b886627e5140e7e368867d1d69bd976f855b5cba8e12bf"
+    },
+    {
+      "file": "moving-grader-note-390-dark-zh.png",
+      "kind": "grader_note_zh",
+      "state": {
+        "view": "moving",
+        "width": 390,
+        "lang": "zh",
+        "resumed_from_asserted_capture": true
+      },
+      "bytes": 9945,
+      "sha256": "fc0c7822fd2900fd4d4d0d99f0e421f213d9a0cf089defd46049d9db0748ca8c"
+    }
+  ],
+  "heatmap_colour_field_axis": "UNMEASURED",
+  "notes": []
+}

@@ -1,0 +1,371 @@
+{
+  "schema": "mastermind.xpv2.sector_r3b2.closure_audit.v1",
+  "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "candidate_sha256": "091bc578d18876ae1e9f922235ddac82d8d7519e0ceb579d7a92010a4915bd0b",
+  "cells": [
+    {
+      "lang": "en",
+      "measure": {
+        "lang": "en",
+        "b2_01": {
+          "overview_header": "Strength",
+          "overview_inline": [
+            "Strength",
+            "Strength",
+            "Strength",
+            "Strength",
+            "Strength",
+            "Strength",
+            "Strength",
+            "Strength",
+            "Strength",
+            "Strength",
+            "Strength"
+          ],
+          "map_header": "Strength",
+          "map_detail_terms": [
+            "Where it sits",
+            "Rank",
+            "Strength",
+            "20 days vs S&P",
+            "Rank move this week"
+          ],
+          "map_tip": "Big Pharma HealthcareLeading — strong & risingStrength 77 · 20d +11.5%"
+        },
+        "b2_12": {
+          "coverage": "65 of 113 subsectors have enough live data to time. 48 are too thin to time and are omitted from the timed table.",
+          "low_marker_census": 5,
+          "low_labels": [
+            "Low confidence",
+            "Low confidence",
+            "Low confidence",
+            "Low confidence",
+            "Low confidence"
+          ]
+        },
+        "b2_13": {
+          "target_present": true,
+          "target_id": "r3-receipt",
+          "overview_control_present": true,
+          "overview_aria_controls": "r3-receipt",
+          "moving_control_census": 3,
+          "all_target_control_census": 4,
+          "all_target_ids": [
+            "r3-receipt"
+          ]
+        },
+        "b2_15": {
+          "fixture": {
+            "is_context_only": true,
+            "proven": {
+              "5": true,
+              "10": false,
+              "21": false,
+              "63": false
+            }
+          },
+          "qualification_present": true,
+          "qualification_text": "Context onlyevidence proven at 5dnever sizes decisions",
+          "clauses": [
+            "Context only",
+            "evidence proven at 5d",
+            "never sizes decisions"
+          ],
+          "h21_present": true,
+          "h21_text": "21d hit-rate: running 46% (24), coiling 57% (7)",
+          "qualification_top": 2931.2,
+          "h21_top": 2959.2,
+          "h21_border_top_px": 1,
+          "h21_flex_basis": "100%"
+        }
+      },
+      "checks": [
+        {
+          "id": "b2_01.overview_header",
+          "pass": true,
+          "detail": "got='Strength', expected='Strength'"
+        },
+        {
+          "id": "b2_01.overview_inline_census",
+          "pass": true,
+          "detail": "census=11, labels=['Strength']"
+        },
+        {
+          "id": "b2_01.map_header",
+          "pass": true,
+          "detail": "got='Strength', expected='Strength'"
+        },
+        {
+          "id": "b2_01.map_detail",
+          "pass": true,
+          "detail": "terms=['Where it sits', 'Rank', 'Strength', '20 days vs S&P', 'Rank move this week']"
+        },
+        {
+          "id": "b2_01.map_tooltip",
+          "pass": true,
+          "detail": "tooltip='Big Pharma HealthcareLeading — strong & risingStrength 77 · 20d +11.5%'"
+        },
+        {
+          "id": "b2_01.one_path_one_term",
+          "pass": true,
+          "detail": "forbidden second term 'Score' absent=True"
+        },
+        {
+          "id": "b2_12.coverage_fact",
+          "pass": true,
+          "detail": "coverage='65 of 113 subsectors have enough live data to time. 48 are too thin to time and are omitted from the timed table.'"
+        },
+        {
+          "id": "b2_12.low_confidence_census",
+          "pass": true,
+          "detail": "markers=5, labels=5"
+        },
+        {
+          "id": "b2_12.low_confidence_term",
+          "pass": true,
+          "detail": "labels=['Low confidence']"
+        },
+        {
+          "id": "b2_12.distinct_authority_terms",
+          "pass": true,
+          "detail": "coverage omission and in-table reliability retain distinct terms"
+        },
+        {
+          "id": "b2_13.shared_target",
+          "pass": true,
+          "detail": "target_present=True, id='r3-receipt'"
+        },
+        {
+          "id": "b2_13.overview_control",
+          "pass": true,
+          "detail": "present=True, controls='r3-receipt'"
+        },
+        {
+          "id": "b2_13.moving_controls",
+          "pass": true,
+          "detail": "moving controls=3, expected=3"
+        },
+        {
+          "id": "b2_13.exact_shared_control_census",
+          "pass": true,
+          "detail": "all controls=4, targets=['r3-receipt']"
+        },
+        {
+          "id": "b2_15.producer_scope",
+          "pass": true,
+          "detail": "fixture={'is_context_only': True, 'proven': {'5': True, '10': False, '21': False, '63': False}}"
+        },
+        {
+          "id": "b2_15.qualification_present",
+          "pass": true,
+          "detail": "present=True"
+        },
+        {
+          "id": "b2_15.localized_clauses",
+          "pass": true,
+          "detail": "clauses=['Context only', 'evidence proven at 5d', 'never sizes decisions'], expected=['Context only', 'evidence proven at 5d', 'never sizes decisions']"
+        },
+        {
+          "id": "b2_15.qualification_excludes_21d",
+          "pass": true,
+          "detail": "qualification='Context onlyevidence proven at 5dnever sizes decisions'"
+        },
+        {
+          "id": "b2_15.explicit_21d_line",
+          "pass": true,
+          "detail": "h21='21d hit-rate: running 46% (24), coiling 57% (7)'"
+        },
+        {
+          "id": "b2_15.visual_separation",
+          "pass": true,
+          "detail": "qual_top=2931.2, h21_top=2959.2, border=1, flex_basis=100%"
+        }
+      ],
+      "failed_check_ids": [],
+      "pass": true
+    },
+    {
+      "lang": "zh",
+      "measure": {
+        "lang": "zh",
+        "b2_01": {
+          "overview_header": "强度",
+          "overview_inline": [
+            "强度",
+            "强度",
+            "强度",
+            "强度",
+            "强度",
+            "强度",
+            "强度",
+            "强度",
+            "强度",
+            "强度",
+            "强度"
+          ],
+          "map_header": "强度",
+          "map_detail_terms": [
+            "所处位置",
+            "排名",
+            "强度",
+            "20日相对标普",
+            "本周排名变化"
+          ],
+          "map_tip": "大型药企 Healthcare领先 — 强且上行强度 77 · 20日 +11.5%"
+        },
+        "b2_12": {
+          "coverage": "113 个子行业中，65 个实时数据足够，可用于计时。另有 48 个数据过于稀疏，无法计时，未列入下方计时表。",
+          "low_marker_census": 5,
+          "low_labels": [
+            "低置信度",
+            "低置信度",
+            "低置信度",
+            "低置信度",
+            "低置信度"
+          ]
+        },
+        "b2_13": {
+          "target_present": true,
+          "target_id": "r3-receipt",
+          "overview_control_present": true,
+          "overview_aria_controls": "r3-receipt",
+          "moving_control_census": 3,
+          "all_target_control_census": 4,
+          "all_target_ids": [
+            "r3-receipt"
+          ]
+        },
+        "b2_15": {
+          "fixture": {
+            "is_context_only": true,
+            "proven": {
+              "5": true,
+              "10": false,
+              "21": false,
+              "63": false
+            }
+          },
+          "qualification_present": true,
+          "qualification_text": "仅为背景仅 5 日周期有实测证据从不用于仓位决策",
+          "clauses": [
+            "仅为背景",
+            "仅 5 日周期有实测证据",
+            "从不用于仓位决策"
+          ],
+          "h21_present": true,
+          "h21_text": "21日命中率：running 46% (24), coiling 57% (7)",
+          "qualification_top": 2900,
+          "h21_top": 2928,
+          "h21_border_top_px": 1,
+          "h21_flex_basis": "100%"
+        }
+      },
+      "checks": [
+        {
+          "id": "b2_01.overview_header",
+          "pass": true,
+          "detail": "got='强度', expected='强度'"
+        },
+        {
+          "id": "b2_01.overview_inline_census",
+          "pass": true,
+          "detail": "census=11, labels=['强度']"
+        },
+        {
+          "id": "b2_01.map_header",
+          "pass": true,
+          "detail": "got='强度', expected='强度'"
+        },
+        {
+          "id": "b2_01.map_detail",
+          "pass": true,
+          "detail": "terms=['所处位置', '排名', '强度', '20日相对标普', '本周排名变化']"
+        },
+        {
+          "id": "b2_01.map_tooltip",
+          "pass": true,
+          "detail": "tooltip='大型药企 Healthcare领先 — 强且上行强度 77 · 20日 +11.5%'"
+        },
+        {
+          "id": "b2_01.one_path_one_term",
+          "pass": true,
+          "detail": "forbidden second term '评分' absent=True"
+        },
+        {
+          "id": "b2_12.coverage_fact",
+          "pass": true,
+          "detail": "coverage='113 个子行业中，65 个实时数据足够，可用于计时。另有 48 个数据过于稀疏，无法计时，未列入下方计时表。'"
+        },
+        {
+          "id": "b2_12.low_confidence_census",
+          "pass": true,
+          "detail": "markers=5, labels=5"
+        },
+        {
+          "id": "b2_12.low_confidence_term",
+          "pass": true,
+          "detail": "labels=['低置信度']"
+        },
+        {
+          "id": "b2_12.distinct_authority_terms",
+          "pass": true,
+          "detail": "coverage omission and in-table reliability retain distinct terms"
+        },
+        {
+          "id": "b2_13.shared_target",
+          "pass": true,
+          "detail": "target_present=True, id='r3-receipt'"
+        },
+        {
+          "id": "b2_13.overview_control",
+          "pass": true,
+          "detail": "present=True, controls='r3-receipt'"
+        },
+        {
+          "id": "b2_13.moving_controls",
+          "pass": true,
+          "detail": "moving controls=3, expected=3"
+        },
+        {
+          "id": "b2_13.exact_shared_control_census",
+          "pass": true,
+          "detail": "all controls=4, targets=['r3-receipt']"
+        },
+        {
+          "id": "b2_15.producer_scope",
+          "pass": true,
+          "detail": "fixture={'is_context_only': True, 'proven': {'5': True, '10': False, '21': False, '63': False}}"
+        },
+        {
+          "id": "b2_15.qualification_present",
+          "pass": true,
+          "detail": "present=True"
+        },
+        {
+          "id": "b2_15.localized_clauses",
+          "pass": true,
+          "detail": "clauses=['仅为背景', '仅 5 日周期有实测证据', '从不用于仓位决策'], expected=['仅为背景', '仅 5 日周期有实测证据', '从不用于仓位决策']"
+        },
+        {
+          "id": "b2_15.qualification_excludes_21d",
+          "pass": true,
+          "detail": "qualification='仅为背景仅 5 日周期有实测证据从不用于仓位决策'"
+        },
+        {
+          "id": "b2_15.explicit_21d_line",
+          "pass": true,
+          "detail": "h21='21日命中率：running 46% (24), coiling 57% (7)'"
+        },
+        {
+          "id": "b2_15.visual_separation",
+          "pass": true,
+          "detail": "qual_top=2900, h21_top=2928, border=1, flex_basis=100%"
+        }
+      ],
+      "failed_check_ids": [],
+      "pass": true
+    }
+  ],
+  "failed_check_ids": [],
+  "pass": true
+}

@@ -2,7 +2,7 @@
 # production baseline facts and 92-row capability inventory are unchanged (same R3A
 # ledger, same frozen fixture epoch 4c55fe433490adfd75fd901ef25f5793db2202db).
 # reference_id re-stamped; artifact paths/evidence re-pointed and frozen_sha re-stamped
-# at THIS cycle's freeze. B2-01..11 repairs are recorded in continuity.yml +
+# at THIS cycle's freeze. The final B2-01/05/06/08/09/10/11/12/13/14/15 repairs are recorded in continuity.yml +
 # ORCHESTRATOR_ADJUDICATIONS_R3B2.md, not as new dispositions (RETAIN capabilities).
 # CARRIED FORWARD from mastermind-xpv2-sector-r3b for the R3B.1 surgical cycle -- the
 # production baseline facts and capability inventory are unchanged (same R3A ledger, same

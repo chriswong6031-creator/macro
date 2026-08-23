@@ -1065,6 +1065,38 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
   [data-view="overview"] .r3-gr{ grid-template-columns:minmax(0,1fr); }
   [data-view="overview"] .r3-delta{ display:inline; margin-left:7px; }
 }
+/* ── B2-05 · SOL STRENGTHENING — the delta gets a VISIBLE name ────────────────
+   641–767 is unchanged: the legend still paints `STRENGTH` over its `<em>20d vs
+   market</em>`, `.r3-figlab` is still clipped, and the delta stays inline beside
+   its score. At 640 the legend goes, and with it both of those names — so this
+   block, which must sit AFTER the 767 rule to win the cascade at equal
+   specificity, turns the cell into TWO stat tiles instead of one number with a
+   footnote.
+
+   COMPOSITION — two labelled figures in one cell at 320. The caption sits OVER
+   its figure rather than inline before it. Inline would be one line shorter, but
+   `20d vs market +27.2%` is ~130px of the 288px a 320 viewport has left after
+   the row's padding, and that width is taken straight out of the name column —
+   where a primary name WRAPS and never ellipsizes (§9), so the saving would have
+   been paid back as three-line theme names. Stacked, the cell is ~85px wide, the
+   name keeps ~190px, and the row grows by one micro line instead.
+
+   The two figures are labelled but NOT peers: the score keeps --fs-md/700 on
+   --text, the delta keeps --fs-micro on its own direction ink, and each caption
+   is --muted at the same micro step — so the cell reads primary-figure,
+   secondary-figure, never two competing headlines.
+
+   `margin-top` is the only separation, and it is doing real work: a caption sits
+   1px above its own figure (shell `.r3-figlab`), so 9px between the tiles is a
+   9:1 proximity ratio and the four alternating lines can only group one way —
+   `STRENGTH/76`, then `20D VS MARKET/+27.2%`. Without it the middle pair reads
+   as plausibly as the outer ones and `76` acquires a second caption below it.
+   A rule between two lines of a 64px cell would be louder than either number. */
+@media (max-width:640px){
+  [data-view="overview"] .r3-delta{ display:block; margin-left:0; margin-top:9px; }
+  /* the caption keeps the muted rung; only the FIGURE carries direction ink. */
+  [data-view="overview"] .r3-delta .r3-figlab{ margin-bottom:0; }
+}
 @media (max-width:359px){
   [data-view="overview"] .r3-watch-cell > strong{ flex-wrap:wrap; }
 }
@@ -1396,24 +1428,36 @@ function rowHTML(r){
     var p20 = '';
     if(r.perf_20d_rel != null){
       var v = r.perf_20d_rel * 100;
-      /* B2-05 · the delta keeps a name at EVERY width, but never a VISIBLE one:
-         two captions over one 74px column would blow the density budget and set
-         the strength score competing with its own footnote. A signed percentage
-         is self-evident to the eye and anonymous to a screen reader, so the name
-         goes where only the screen reader needs it. MAC1-001's second column. */
-      p20 = '<span class="r3-delta ' + (v >= 0 ? 'up' : 'dn') + ' tnum">'
-          + '<span class="r3-vh">' + L('20d vs market', '20日对比市场') + ' </span>'
+      /* B2-05 · SOL STRENGTHENING. The earlier reading kept this name in `.r3-vh`
+         at every width, on the argument that a second painted caption over one
+         74px column breaches the density budget. That judgment is OVERRIDDEN:
+         below 640 the column is no longer 74px — it is `auto` — and the law is
+         that every figure whose visual header disappears gets a VISIBLE inline
+         mobile label, this one by name (`20d vs market +27.2%` /
+         `20日对比市场 +27.2%`). A signed percentage is self-evident only to a
+         reader who already knows what it is measured AGAINST; on a phone the
+         `<em>` that says so (the legend's second line, :791) is gone, and
+         "+27.2%" alone could as easily be the 20-day move itself.
+         The carrier is therefore `.r3-figlab`, not `.r3-vh` — ONE node with two
+         presentations (clipped above the breakpoint, painted below it), the same
+         mechanism the Strength score uses. The word is the legend's own; it is
+         never shortened, because an abbreviation here would change what the
+         number is measured against, and this system cuts no name. */
+      p20 = '<span class="r3-delta ' + (v >= 0 ? 'up' : 'dn') + ' tnum" data-r3b2="05">'
+          + '<span class="r3-figlab" data-fig-kind="delta">' + L('20d vs market', '20日对比市场') + '</span> '
           + (v >= 0 ? '+' : '') + v.toFixed(1) + '%</span>';
     }
     /* B2-05 · the label travels with the figure (shell.html `.r3-figlab`).
        The customer term is Lane A's B2-01 label for this exact producer path
-       (`theme_intel.themes[].score` -> Strength / 强度, header at :766), stated
+       (`theme_intel.themes[].score` -> Strength / 强度, header at :796), stated
        once per row so the mobile card carries the same word the desktop column
        header carries — never a second, softer synonym.
        An EMPTY cell gets no caption: sector rows carry no blended score
        (ledger #7), and a caption over nothing is a name for a value that does
-       not exist. */
-    if(sc || p20) fig = '<span class="r3-figlab" data-r3b2="05">' + L('Strength', '强度') + '</span>' + sc + p20;
+       not exist. Each figure now owns its OWN caption, so a row that carried a
+       delta but no score can no longer inherit the score's name. */
+    if(sc) fig = '<span class="r3-figlab" data-r3b2="05" data-fig-kind="strength">' + L('Strength', '强度') + '</span> ' + sc;
+    fig += p20;
   }
   /* WHY: theme rows carry the producer's own reason prose; sector rows carry the
      qualitative stat pair (ledger #7 — sector rows have no blended score). Both
@@ -4299,6 +4343,30 @@ html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(
    document overflow at 200% zoom / css320-390 — allow ONLY this instance to
    wrap; the badge wording is unchanged. */
 .si-view[data-view="money"] .lead-foot .r3-tag{ white-space:normal; min-width:0; max-width:100%; }
+/* ── B2-15 · the qualification that governs the badge ─────────────────────────
+   Register: this is a RECEIPT, not an alarm. It takes the footer's own micro
+   step and the --muted rung it already runs at — no hue, no fill, no icon, no
+   border. What makes it read as governing rather than as a fourth statistic is
+   position and weight: it sits immediately after the badge it qualifies, so at
+   any width where both fit it is literally beside it and everywhere else it
+   wraps directly beneath it; and it steps one weight up (600) against the
+   400-weight statistics around it, which is the smallest device in this system
+   that says "read this one".
+   `--text` rather than `--muted` for the same reason: the badge is at full ink,
+   and a qualification quieter than the claim it qualifies is a qualification
+   the reader is entitled to skip. Measured against `--panel2`-tinted footer:
+   this is the body rung, not a new one. */
+.si-view[data-view="money"] .lead-tr-qual{ min-width:0; font-weight:600; color:var(--text); }
+.si-view[data-view="money"] .lead-tr-cl + .lead-tr-cl::before{ content:"·";
+  margin:0 6px; font-weight:400; color:var(--muted); }
+/* the 21d statistics are the horizon the badge does NOT cover, so they get their
+   own line and a hairline of their own. `flex-basis:100%` is the separation —
+   the footer is a wrapping flex row, and without it the 21d numbers can land
+   beside the qualification at any width where both happen to fit, which is
+   exactly the adjacency this item exists to break. Their `21d` / `21日` label
+   is untouched and stays at the head of the line. */
+.si-view[data-view="money"] .lead-tr-h21{ flex:0 0 100%; min-width:0; margin-top:2px;
+  padding-top:7px; border-top:1px solid var(--line); }
 .si-view[data-view="money"] .mny-deeper{ margin-top:var(--sp-5); }
 
 /* ── responsive: the phone RECOMPOSES; no document overflow at 320 → 820 ─────── */
@@ -5124,11 +5192,50 @@ function renderLeadership(){
       /* :3458-3474 trackBox() — the SELF-GRADED sub-line. A calibration note, never a
          gate: it reports what the forward log has measured so far and nothing else. */
       var tr=d.track_record, trLine='';
+      /* ── B2-15 · the producer's OWN qualification, painted beside its badge ────
+         `marketdata/index_leadership.json → track_record` carries three fields the
+         badge line never surfaced: `is_context_only: true`, `note` ("Context-only —
+         informs the read, never sizes"), and a per-horizon `proven` map that is
+         `true` at 5d and `false` at 10 / 21 / 63. The badge word comes from
+         `verdict`; the statistics printed beside it are 21d. So the horizon that is
+         proven was never shown, and the horizon that is shown was never proven —
+         and the payload's own caveat reached the screen nowhere, on the one view
+         that already paints exactly that caveat for a weaker claim.
+
+         Every clause below is DERIVED, never asserted: the block renders only while
+         `is_context_only` is true, and the horizon it names is read out of `proven`
+         itself. Flip the flag and the qualification disappears; mark 21d proven and
+         the sentence says so. It does not translate or restate the producer's
+         English `note` (producer strings are upstream-owned, Sol §4) — it is
+         reference-authored copy in this build's own voice, with a native ZH twin.
+
+         What it must NOT do: it does not touch the badge. Production's `Validated`
+         wording and its 21d pairing are an R3C owner repair, and nothing here
+         claims the 21d horizon is validated — it says which horizon the evidence
+         actually reaches, and that the reading never sizes anything. */
+      function trQualHtml(t){
+        if(!t || t.is_context_only!==true) return '';
+        var pv=t.proven||{}, hs=[];
+        Object.keys(pv).forEach(function(h){ if(pv[h]===true) hs.push(h); });
+        hs.sort(function(a,b){ return (+a)-(+b); });
+        var ev = hs.length
+          ? L('evidence proven at '+hs.join(' / ')+'d', '仅 '+hs.join(' / ')+' 日周期有实测证据')
+          : L('no horizon has cleared the bar yet', '尚无周期达到实测证据');
+        /* three clauses, three elements. The interpuncts are drawn by CSS between
+           siblings, so the separator is never a word a screen reader has to read
+           and never a character the ZH twin has to own. */
+        return '<span class="lead-tr-qual" data-r3b2="15">'
+             + '<span class="lead-tr-cl">' + L('Context only', '仅为背景') + '</span>'
+             + '<span class="lead-tr-cl">' + ev + '</span>'
+             + '<span class="lead-tr-cl">' + L('never sizes decisions', '从不用于仓位决策') + '</span>'
+             + '</span>';
+      }
       if(tr){
         var vlab = tr.verdict==='validated'?['Validated','已验证']
                  : tr.verdict==='measuring'?['Measuring','测量中'] : ['Accruing','积累中'];
         var days=tr.n_days||0;
         trLine='<span class="r3-tag">'+L('Forward track record: '+vlab[0],'前瞻战绩：'+vlab[1])+'</span>'
+          +trQualHtml(tr)
           +'<span>'+L((tr.n_snapshots||0)+' calls logged over '+days+(days===1?' day':' days'),
                       (tr.n_snapshots||0)+' 条记录，历时 '+days+' 天')+'</span>';
         var h21=(tr.horizons||{})['21'], parts=[];
@@ -5138,9 +5245,13 @@ function renderLeadership(){
             if(bs[st]&&bs[st].hit_rate!=null)
               parts.push((st==='coiling_primed'?'coil✓':st)+' '+Math.round(bs[st].hit_rate*100)+'% ('+bs[st].n+')'); });
         }
+        /* B2-15 · the 21d figures take their OWN line, under a hairline, and keep
+           their explicit `21d` / `21日` label. The qualification above governs the
+           badge; these numbers are the horizon it does NOT cover, so they may not
+           sit on the same line as it and read as its evidence. */
         trLine += parts.length
-          ? '<span>'+L('21d hit-rate: ','21日命中率：')+esc(parts.join(', '))+'</span>'
-          : '<span>'+L('grades mature at 5 / 10 / 21 / 63d — measured, not asserted',
+          ? '<span class="lead-tr-h21">'+L('21d hit-rate: ','21日命中率：')+esc(parts.join(', '))+'</span>'
+          : '<span class="lead-tr-h21">'+L('grades mature at 5 / 10 / 21 / 63d — measured, not asserted',
                        '5 / 10 / 21 / 63 日后成熟评级——实测而非断言')+'</span>';
       }
 
@@ -7087,7 +7198,7 @@ function groupRow(g){
        入场层级 — carried per row so the name survives the <=640 breakpoint that
        removes the legend. Absent tier renders as absence, uncaptioned. */
     + '<span class="r3-fig tnum">'
-    + (e.tier ? '<span class="r3-figlab" data-r3b2="05">' + L('Entry tier', '入场层级') + '</span>' + esc(e.tier) : '')
+    + (e.tier ? '<span class="r3-figlab" data-r3b2="05" data-fig-kind="entry">' + L('Entry tier', '入场层级') + '</span>' + esc(e.tier) : '')
     + '</span>'
     + '<span class="r3-why">' + why + '</span>'
     + '<span class="r3-chev" aria-hidden="true"></span></button>';
@@ -7213,7 +7324,7 @@ function paintPicks(){
          VTC-006's unlabelled 0.xx was fully reinstated at 390/320. The same node
          becomes `.r3-figlab`: identical AT behaviour above the breakpoint,
          painted caption below it. */
-      + '<span class="r3-fig tnum"><span class="r3-figlab" data-r3b2="05">'
+      + '<span class="r3-fig tnum"><span class="r3-figlab" data-r3b2="05" data-fig-kind="conviction">'
       + L('Conviction', '综合把握') + ' </span>'
       + (r.combined_score == null ? '' : r.combined_score.toFixed(2)) + '</span>'
       + '<span class="r3-why">' + L('Its tier', '个股层级') + ' ' + esc(r.stock_tier || '–')

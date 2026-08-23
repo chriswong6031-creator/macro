@@ -2,14 +2,15 @@
 # production baseline facts and 92-row capability inventory are unchanged (same R3A
 # ledger, same frozen fixture epoch 4c55fe433490adfd75fd901ef25f5793db2202db).
 # reference_id re-stamped; artifact paths/evidence re-pointed and frozen_sha re-stamped
-# at THIS cycle's freeze. B2-01..11 repairs are recorded in continuity.yml +
+# at THIS cycle's freeze. The final B2-01/05/06/08/09/10/11/12/13/14/15 repairs are recorded in continuity.yml +
 # ORCHESTRATOR_ADJUDICATIONS_R3B2.md, not as new dispositions (RETAIN capabilities).
 # CARRIED FORWARD from mastermind-xpv2-sector-r3b for the R3B.1 surgical cycle -- the
 # production baseline facts and capability inventory are unchanged (same R3A ledger, same
 # frozen fixture epoch 4c55fe433490adfd75fd901ef25f5793db2202db). Predecessor evidence
 # paths under mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/ remain valid
 # committed bytes; at freeze the proposed_artifact paths and evidence screenshots were
-# re-pointed to THIS cycle's namespace (fresh 49-file matrix, evidence/EVIDENCE_INDEX.md)
+# re-pointed to THIS cycle's namespace (fresh 61-screenshot matrix plus machine receipts,
+# evidence/EVIDENCE_INDEX.md)
 # and frozen_sha stamped with the successor freeze commit. Capability dispositions are
 # unchanged (90 RETAIN + 2 BLOCKED_DATA); the R3B1-01..14 repairs are recorded in
 # continuity.yml + ORCHESTRATOR_ADJUDICATIONS_R3B1.md rather than as new dispositions,
@@ -31,13 +32,13 @@ proposed_artifact:
   paths:
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/BUILD_MANIFEST.json
-  screenshots:   # fresh successor evidence matrix (49 files + index); index: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/EVIDENCE_INDEX.md
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/overview-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/map-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/moving-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/money-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/explore-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/confluence-1440-dark-en.png
+  screenshots:   # representative all-six anchors; exhaustive 61-file/hash ledger: evidence/capture_manifest.json + EVIDENCE_INDEX.md
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-overview-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-map-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-moving-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-money-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-explore-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-confluence-1440-dark-en.png
 
 # EVERY baseline capability id appears exactly once. No implicit deletion (RIG S1/S5).
 dispositions:
