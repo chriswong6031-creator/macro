@@ -162,20 +162,26 @@ waves:
       agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r2-representability-seal.md.
   - id: D5
     title: Program, mission, capability, and product graph (implementation)
-    status: in_progress
+    status: done
     depends_on: [D5R]
     next_action: >
-      IN PROGRESS — Sol AUTHORIZED D5 implementation 2026-08-23 (receipt =
-      macro PR #6247 comment 5384728488). Mission: ship one independently
-      useful Virginia-class Program Dossier — reviewed
-      government_program_ontology.v1 → composed government_program_dossier.v1
-      → workspace program_link → real mode=programs GovRev surface →
-      entitled browser proof — with IRDM/P00032 as the live hostile null
-      (unresolved / not asserted) and D1-D4 truth unchanged. Source law:
-      research/defense_intelligence/DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md
-      then the implementation handoff, then D5 DECs, then reference
-      composition/fixtures. T1-T17 land as merge-gating gate: code tests.
-      No page-budget ratchet raise (296 KiB). D6+ remains UNAUTHORIZED.
+      DONE (Sol acceptance pending) — full vertical shipped on PR 6312:
+      frozen contracts, program_ontology.py loader + derivations,
+      propose/curate admission with the evidence + conflict/override
+      lifecycles, REAL Virginia pilot admitted (graph
+      program-ontology:reviewed:2026-08-23:virginia-pilot, 14 admitted /
+      1 rejected / 6 coverage rows, all evidence byte-receipted),
+      program_dossier composer (gpd1-dcacffc7799b8448285bc19e) + site
+      twins on BOTH build paths, workspace program_link (IRDM P00032
+      derives the exact reviewed_none hostile-null shape), mode=programs
+      surface EN/ZH within the 296 KiB ratchet, T1-T17 gate-code battery
+      (181 passed). Opus adversarial review: 0 blockers, 2 high / 6
+      medium / 4 low — all repaired with named regression tests.
+      Production proof (entitled live route + /api/health checkout +
+      render coverage) executed by the D5 session post-merge; receipt in
+      the session's final Sol report. Handoff:
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-23-d5-implementation.md.
+      D6+ remains UNAUTHORIZED.
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
