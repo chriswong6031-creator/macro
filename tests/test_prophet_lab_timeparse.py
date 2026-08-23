@@ -428,3 +428,57 @@ def test_cell_g_report_sources_are_repo_root_pinned_outside_working_directory(
     assert payload["w3"]["outcome_files_opened"] is False
     assert payload["w3"]["state"] == PROTECTED_OUTCOME
     assert payload["qledger_evidence_clocks"]["registration_count"] >= 1
+
+
+def test_cell_g_eawc_rejects_actionability_without_a_first_surface() -> None:
+    got = early_actionable_capture_recall(
+        positive_label=[True, True],
+        surfaced=[True, False],
+        actionable_at_first_surface=[True, False],
+    )
+    assert got["state"] == HOLD_INTEGRITY
+    assert got["reason"] == "actionability_present_without_first_surface"
+    assert got["contradictory_surface_actionability"] == 1
+
+
+def test_cell_g_board_duplicate_rank_positions_hold_instead_of_overfilling_k() -> None:
+    frame = _cell_g_board_fixture().iloc[:2].copy()
+    frame["position"] = [0, 0]
+    got = summarize_us_board_frame(frame, horizon=10, lane="buy")
+    top1 = got["ranking"]["precision_at_k"]["1"]
+    assert top1["state"] == HOLD_INTEGRITY
+    assert top1["reason"] == "duplicate_rank_position_within_decision_session"
+
+
+def test_cell_g_rank_correlation_excludes_partial_outcome_sessions_not_survivor_rows() -> None:
+    frame = pd.DataFrame([
+        {"as_of": "2026-07-03", "ticker": "AAA", "horizon": 10, "lane": "buy", "position": 0,
+         "excess_spy": 0.06},
+        {"as_of": "2026-07-03", "ticker": "BBB", "horizon": 10, "lane": "buy", "position": 1,
+         "excess_spy": 0.03},
+        {"as_of": "2026-07-03", "ticker": "CCC", "horizon": 10, "lane": "buy", "position": 2,
+         "excess_spy": -0.02},
+        {"as_of": "2026-07-03", "ticker": "DDD", "horizon": 10, "lane": "buy", "position": 3,
+         "excess_spy": None},
+    ])
+    got = summarize_us_board_frame(frame, horizon=10, lane="buy")
+    rank_ic = got["ranking"]["session_spearman_position_vs_excess"]
+    assert rank_ic["state"] == "UNESTIMABLE"
+    assert rank_ic["partial_outcome_sessions_excluded"] == 1
+    assert rank_ic["survivor_rows_used"] is False
+
+
+def test_cell_g_qledger_clock_rejects_coerced_horizon_metadata(tmp_path, monkeypatch) -> None:
+    clock = {
+        "claim_family": "demand_chain",
+        "declared_horizon_d": "126",
+        "first_prospective_registration_utc": "2026-08-19T08:10:37.995754+00:00",
+        "git_sha": "34899ec5235884e183be86088ab01f81e34a693f",
+        "horizon_unit": "trading_days",
+    }
+    (tmp_path / "demand_chain.json").write_text(json.dumps(clock), encoding="utf-8")
+    monkeypatch.setattr(voi_report, "DEFAULT_QLEDGER_CLOCK_DIR", tmp_path)
+    got = voi_report._qledger_clock_inventory()
+    assert got["state"] == HOLD_INTEGRITY
+    assert got["registration_count"] == 0
+    assert got["outcome_files_opened"] is False
