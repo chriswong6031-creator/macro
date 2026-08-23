@@ -106,6 +106,16 @@ verified:
       lineage through 6521bcf27a9a3aa630ededa296107e5a949daa9e were integrated by
       normal merge without rebase, reset, force, or overwrite. No new K1 PR or
       workstream was created.
+  - claim: The integrated candidate is reconciled to current Macro main without owner-source drift.
+    command: >
+      git fetch origin; git diff --name-status
+      a22bf70db5ee4794ee56caefbc4c355e894d5d40..origin/main; git merge --no-edit
+      origin/main; git merge-base --is-ancestor origin/main HEAD
+    result: >
+      Current Macro main is 3695178cef2a3b60a7762fcb1cdeccd81a0e66bd and is an
+      ancestor of the candidate. Its post-a22 movement is limited to CCR Agent OS,
+      press-wire cursor, and metabolism/immune receipt paths; no K1 owner contract,
+      accessor, schema, or clock source moved.
   - claim: Reference and authenticated product contracts pass their focused tests.
     command: >
       python3 -m pytest -q
@@ -135,6 +145,16 @@ verified:
     result: >
       Agent OS validated 646 records with 0 errors and 30 unrelated existing
       phantom-path, stale-review, and active-but-complete warnings.
+  - claim: The K1 suites retain a valid hosted CI owner on the current base.
+    command: >
+      python3 scripts/check_contract_delta.py --base origin/main; python3
+      scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --pack-index 5
+      --pack-count 12 --validate-only
+    result: >
+      Contract delta reports 0 introduced and 0 inherited findings against
+      3695178cef2a. All 202 legacy jobs validate; pack 5 selects 18 jobs including
+      signal-contract. The workflow edit is an explicit CI-authority addition and
+      does not create a new job.
   - claim: The direct four-owner fixture composition is measured and adverse to a store.
     command: >
       100-iteration perf_counter_ns harness loading the Earnings, FIF, Theme Graph,
