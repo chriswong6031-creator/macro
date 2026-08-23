@@ -25,7 +25,7 @@ def load(name):
 
 def envelope(route):
     error = {"code": route["error_code"], "component": route["component"], "reason_code": route["reason_code"], "limit": None, "observed": None}
-    return {"schema": "mastermind.pr_linkage_execution_error.v1", "enforcement": "REPORT_ONLY", "error": error, "execution_error_hash": validator.digest(error), "receipt": {"input_sha256": None, "source_sha": None, "producer": "test"}}
+    return {"schema": "mastermind.pr_linkage_execution_error.v1", "enforcement": "REPORT_ONLY", "error": error, "execution_error_hash": validator.digest(error), "receipt": {"input_sha256": None, "source_sha": None, "producer": "scripts/pr_linkage_validator.py"}}
 
 
 @pytest.mark.parametrize("name,value", [
@@ -43,6 +43,19 @@ def test_all_twenty_execution_routes_have_closed_schema_envelopes(route):
     result = envelope(route)
     jsonschema.Draft202012Validator(load("execution_error")).validate(result)
     assert result["execution_error_hash"] == validator.digest(result["error"])
+
+
+def test_schema_nested_boundary_mutations_are_closed():
+    observation_value = observation(VALID)
+    observation_value["native_linkage"]["relationships"].append({"issue_id":"MAS-29","kind":"CLOSING","source":"BODY","state":"PRESENT","completion_transition":"ELIGIBLE","extra":True})
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.Draft202012Validator(load("observation")).validate(observation_value)
+    error = envelope(MANIFEST["execution_error"]["routes"][0]); error["error"]["extra"] = True
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.Draft202012Validator(load("execution_error")).validate(error)
+    report_value = report(); report_value["semantic"]["declaration"]["extra"] = True
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.Draft202012Validator(load("report")).validate(report_value)
 
 
 def test_receipt_projection_covers_all_ten_frozen_components():

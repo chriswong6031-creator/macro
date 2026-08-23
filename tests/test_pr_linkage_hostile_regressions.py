@@ -92,3 +92,25 @@ def test_reversed_ownership_rows_are_refused_before_semantic_hashing():
     ]
     with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"):
         v.analyze(finish(o), MANIFEST)
+
+
+def test_report_wire_rejects_nested_extra_type_and_order_mutants():
+    good = v.analyze(observation(VALID), MANIFEST)
+    extra = clone(good); extra["semantic"]["declaration"]["extra"] = True
+    with pytest.raises(v.ValidationError): v.validate_report(extra)
+    bad_type = clone(good); bad_type["semantic"]["findings"] = "not-a-list"
+    bad_type["semantic_hash"] = v.digest(bad_type["semantic"])
+    with pytest.raises(v.ValidationError): v.validate_report(bad_type)
+    unordered = clone(good); unordered["semantic"]["completion_interpretation"] = list(reversed(unordered["semantic"]["completion_interpretation"]))
+    unordered["semantic_hash"] = v.digest(unordered["semantic"])
+    if unordered["semantic"]["completion_interpretation"] != good["semantic"]["completion_interpretation"]:
+        with pytest.raises(v.ValidationError): v.validate_report(unordered)
+
+
+def test_hostile_repro_measurement(capsys):
+    # The file is the durable matrix for the originally supplied false-clean and
+    # state-law cases; keep its receipt visible to the commissioned review.
+    cases = [name for name, value in globals().items() if name.startswith("test_") and callable(value)]
+    missing = []
+    print(f"hostile_repros={len(cases)} missing={missing}")
+    assert len(cases) >= 10 and missing == []

@@ -10,6 +10,8 @@ import argparse
 import hashlib
 import os
 import pathlib
+import re
+import subprocess
 import sys
 import tempfile
 
@@ -36,9 +38,23 @@ ROUTES = {
 }
 
 
+SHA_RE = re.compile(r"[0-9a-f]{40}")
+DEFAULT_LIMITS = {"observation_bytes": 1048576, "body_bytes": 262144,
+                  "body_lines": 10000, "line_bytes": 16384,
+                  "field_occurrences": 100, "value_bytes": 80,
+                  "relationships": 256, "changed_paths": 10000, "findings": 512}
+
+
 def source_sha(explicit: str | None) -> str | None:
-    import re
-    return explicit if explicit and re.fullmatch(r"[0-9a-f]{40}", explicit) else None
+    """Resolve only a validated explicit SHA or bounded read-only Git HEAD."""
+    if explicit is not None:
+        return explicit if SHA_RE.fullmatch(explicit) else None
+    try:
+        got = subprocess.run(("git", "rev-parse", "HEAD"), cwd=ROOT, check=True,
+                             capture_output=True, text=True, timeout=2).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return got if SHA_RE.fullmatch(got) else None
 
 
 def envelope(reason: str, raw: bytes | None, source: str | None, *, limit=None, observed=None):
@@ -52,6 +68,13 @@ def read_input(path: str) -> bytes:
         return sys.stdin.buffer.read() if path == "-" else pathlib.Path(path).read_bytes()
     except OSError as exc:
         raise PhaseFailure("INPUT_READ_FAILED") from exc
+
+
+def read_manifest() -> bytes:
+    try:
+        return (ROOT / "config/pr_linkage_rules.v1.json").read_bytes()
+    except OSError as exc:
+        raise PhaseFailure("PARSER_INTERNAL_ERROR") from exc
 
 
 def parse_input(raw: bytes):
@@ -89,8 +112,13 @@ def write_atomic(target: pathlib.Path, payload: bytes) -> None:
         except Exception as exc:
             raise PhaseFailure("OUTPUT_TEMP_CREATE_FAILED") from exc
         try:
-            written = os.write(fd, payload)
-            if written != len(payload): raise OSError("short write")
+            offset = 0
+            while offset < len(payload):
+                written = os.write(fd, payload[offset:])
+                if not isinstance(written, int) or written <= 0:
+                    raise OSError("short write")
+                offset += written
+            os.fsync(fd)
             os.close(fd)
         except Exception as exc:
             try: os.close(fd)
@@ -107,31 +135,42 @@ def write_atomic(target: pathlib.Path, payload: bytes) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(); ap.add_argument("input", nargs="?", default="-"); ap.add_argument("--output"); ap.add_argument("--format", choices=("json","human","github"), default="json"); ap.add_argument("--source-sha")
-    a = ap.parse_args(argv); raw = None; observation = None; manifest = None; src = source_sha(a.source_sha)
+    class TypedParser(argparse.ArgumentParser):
+        def error(self, _message): raise PhaseFailure("INPUT_READ_FAILED")
+    ap = TypedParser(add_help=False); ap.add_argument("input", nargs="?", default="-"); ap.add_argument("--output"); ap.add_argument("--format", choices=("json","human","github"), default="json"); ap.add_argument("--source-sha")
+    raw = None; observation = None; manifest = None; a = argparse.Namespace(output=None)
     try:
+        a = ap.parse_args(argv); src = source_sha(a.source_sha)
         raw = read_input(a.input)
-        if len(raw) > 1048576: raise core.ValidationError("RESOURCE_LIMIT:observation_bytes")
+        if len(raw) > DEFAULT_LIMITS["observation_bytes"]: raise core.ValidationError("RESOURCE_LIMIT:observation_bytes")
         observation = parse_input(raw)
-        manifest = parse_input((ROOT / "config/pr_linkage_rules.v1.json").read_bytes())
+        manifest = parse_input(read_manifest())
         report = evaluate(observation, manifest); payload = render(report, a.format)
         if payload != render(evaluate(observation, manifest), a.format): raise PhaseFailure("NONDETERMINISTIC_RESULT")
         status = 0
     except core.ValidationError as exc:
-        reason = str(exc).split(":", 1)[0]
+        reason = str(exc).split(":", 1)[0]; src = source_sha(None)
         if reason not in ROUTES: reason = "EVALUATOR_INTERNAL_ERROR"
         limit = observed = None
         if reason == "RESOURCE_LIMIT":
             key = str(exc).split(":", 1)[1] if ":" in str(exc) else None
-            limit = {"observation_bytes":1048576}.get(key)
+            limit = DEFAULT_LIMITS.get(key)
             observed = len(raw) if raw is not None and key == "observation_bytes" else None
             if isinstance(manifest, dict):
                 limit = manifest.get("limits", {}).get(key, limit)
             if key == "relationships" and isinstance(observation, dict):
                 observed = len(observation.get("native_linkage", {}).get("relationships", []))
+            if key == "changed_paths" and isinstance(observation, dict):
+                observed = len(observation.get("changed_paths", {}).get("paths", []))
+            if key == "body_bytes" and isinstance(observation, dict):
+                observed = len(str(observation.get("pull_request", {}).get("body", "")).encode("utf-8"))
+            if key == "body_lines" and isinstance(observation, dict):
+                observed = len(str(observation.get("pull_request", {}).get("body", "")).split("\n"))
+            if key == "line_bytes" and isinstance(observation, dict):
+                observed = max((len(x.encode("utf-8")) for x in str(observation.get("pull_request", {}).get("body", "")).split("\n")), default=0)
         payload = core.canonical_json(envelope(reason, raw, src, limit=limit, observed=observed)); status = ROUTES[reason][2]
     except PhaseFailure as exc:
-        payload = core.canonical_json(envelope(exc.reason, raw, src)); status = ROUTES[exc.reason][2]
+        payload = core.canonical_json(envelope(exc.reason, raw, source_sha(None))); status = ROUTES[exc.reason][2]
     if a.output:
         try:
             write_atomic(pathlib.Path(a.output), payload)

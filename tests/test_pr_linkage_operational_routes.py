@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -62,15 +63,31 @@ def test_internal_phase_routes_are_operational(monkeypatch, capsys, reason, seam
 
 
 @pytest.mark.parametrize("reason, seam", [
-    ("OUTPUT_TEMP_CREATE_FAILED", "mkstemp"), ("OUTPUT_WRITE_FAILED", "write"), ("OUTPUT_REPLACE_FAILED", "replace"),
+    ("OUTPUT_TEMP_CREATE_FAILED", "mkstemp"), ("OUTPUT_WRITE_FAILED", "write"), ("OUTPUT_WRITE_FAILED", "fsync"), ("OUTPUT_REPLACE_FAILED", "replace"),
 ])
 def test_atomic_output_failure_routes_are_operational(monkeypatch, capsys, tmp_path, reason, seam):
     src = tmp_path / "input.json"; src.write_bytes(core.canonical_json(observation(VALID)))
     if seam == "mkstemp": monkeypatch.setattr(cli.tempfile, seam, lambda **_: (_ for _ in ()).throw(OSError("temp")))
-    elif seam == "write": monkeypatch.setattr(cli.os, seam, lambda *_: (_ for _ in ()).throw(OSError("write")))
+    elif seam in {"write", "fsync"}: monkeypatch.setattr(cli.os, seam, lambda *_: (_ for _ in ()).throw(OSError("write")))
     else: monkeypatch.setattr(cli.os, seam, lambda *_: (_ for _ in ()).throw(OSError("replace")))
     assert_route(capsys, cli.main([str(src), "--output", str(tmp_path / "report.json")]), reason)
     assert not list(tmp_path.glob(".report.json.*"))
+
+
+def test_source_sha_fallback_is_bounded_validated_and_nullable(monkeypatch):
+    monkeypatch.setattr(cli.subprocess, "run", lambda *_, **__: subprocess.CompletedProcess([], 0, "a" * 40 + "\n", ""))
+    assert cli.source_sha(None) == "a" * 40
+    assert cli.source_sha("b" * 40) == "b" * 40
+    assert cli.source_sha("B" * 40) is None
+    monkeypatch.setattr(cli.subprocess, "run", lambda *_, **__: (_ for _ in ()).throw(OSError("no git")))
+    assert cli.source_sha(None) is None
+
+
+def test_manifest_and_invocation_failures_are_typed(monkeypatch, capsys):
+    assert_route(capsys, cli.main(["--unknown"]), "INPUT_READ_FAILED")
+    monkeypatch.setattr(cli, "read_input", lambda _: core.canonical_json(observation(VALID)))
+    monkeypatch.setattr(cli, "read_manifest", lambda: (_ for _ in ()).throw(cli.PhaseFailure("PARSER_INTERNAL_ERROR")))
+    assert_route(capsys, cli.main(["x"]), "PARSER_INTERNAL_ERROR")
 
 
 def test_operational_route_measurement(capsys):

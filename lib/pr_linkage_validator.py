@@ -230,13 +230,41 @@ def validate_report(report: dict[str, Any]) -> None:
     if not isinstance(report, dict) or set(report) != required or report.get("schema") != REPORT_SCHEMA:
         raise ValidationError("TYPE_MISMATCH")
     semantic = report["semantic"]
-    if not isinstance(semantic, dict) or report.get("semantic_hash") != digest(semantic):
+    semantic_keys = {"ruleset_id","ruleset_digest","enforcement","declaration","classification","verdict","completeness","completion_interpretation","unresolved_observation_classes","findings"}
+    if not isinstance(semantic, dict) or set(semantic) != semantic_keys or report.get("semantic_hash") != digest(semantic):
         raise ValidationError("TYPE_MISMATCH")
-    if semantic.get("enforcement") != "REPORT_ONLY" or semantic.get("verdict") not in {"CONFORMANT","WARN","PARTIAL","REFUSE_METADATA"}:
+    if semantic.get("ruleset_id") != RULESET_ID or not isinstance(semantic.get("ruleset_digest"), str) or not re.fullmatch(r"[0-9a-f]{64}", semantic["ruleset_digest"]) or semantic.get("enforcement") != "REPORT_ONLY" or semantic.get("verdict") not in {"CONFORMANT","WARN","PARTIAL","REFUSE_METADATA"} or semantic.get("classification") not in {"TRACKED","MAINTENANCE_EXCEPTION","CREATES_WORKSTREAM","ARCHITECTURE_CANDIDATE","UNCLASSIFIED_LEGACY","UNKNOWN"} or semantic.get("completeness") not in {"COMPLETE","DEGRADED","UNAVAILABLE"}:
         raise ValidationError("TYPE_MISMATCH")
-    for finding in semantic.get("findings", []):
-        if set(finding) != {"code","rule_id","severity","location","evidence","remediation_code"} or finding["rule_id"] not in FROZEN_RULE_IDS:
+    declaration = semantic.get("declaration")
+    if not isinstance(declaration, dict) or set(declaration) != {"workstream","linear","portfolio_mode","wave","authority","completion","authoring_state"} or declaration.get("authoring_state") not in {"CANONICAL","LEGACY","MISSING","INVALID"} or any(v is not None and not isinstance(v, str) for k,v in declaration.items() if k != "authoring_state"):
+        raise ValidationError("TYPE_MISMATCH")
+    rows = semantic.get("completion_interpretation")
+    if not isinstance(rows, list): raise ValidationError("TYPE_MISMATCH")
+    expected_rows = sorted(rows, key=lambda r:(r.get("issue_id", ""),r.get("effect", ""),r.get("declared_completion") or "",r.get("stop_law") or "",r.get("consistency", "")))
+    if rows != expected_rows or len({canonical_json(x) for x in rows}) != len(rows): raise ValidationError("TYPE_MISMATCH")
+    for row in rows:
+        if not isinstance(row, dict) or set(row) != {"issue_id","effect","declared_completion","stop_law","consistency"} or not isinstance(row.get("issue_id"), str) or not row["issue_id"] or row.get("effect") not in {"COMPLETION_CAPABLE","NON_CLOSING","NONE","AMBIGUOUS","UNKNOWN"} or row.get("consistency") not in {"MATCH","MISMATCH","INDETERMINATE"} or any(row[k] is not None and not isinstance(row[k], str) for k in ("declared_completion","stop_law")):
             raise ValidationError("TYPE_MISMATCH")
+    unresolved = semantic.get("unresolved_observation_classes")
+    if not isinstance(unresolved, list) or unresolved != sorted(set(unresolved)) or any(x not in {"AUTHORING_EPOCH","CHANGED_PATHS","AGENTOS","LINEAR","PATH_OWNERSHIP","NATIVE_LINKAGE"} for x in unresolved):
+        raise ValidationError("TYPE_MISMATCH")
+    findings = semantic.get("findings")
+    if not isinstance(findings, list) or len(findings) > 512: raise ValidationError("TYPE_MISMATCH")
+    sort_key = lambda x:(SEVERITY.get(x.get("severity"),99),x.get("code",""),x.get("rule_id",""),x.get("location",""),canonical_json(x.get("evidence",{})))
+    if findings != sorted(findings, key=sort_key) or len({canonical_json(x) for x in findings}) != len(findings): raise ValidationError("TYPE_MISMATCH")
+    for finding in findings:
+        if not isinstance(finding, dict) or set(finding) != {"code","rule_id","severity","location","evidence","remediation_code"} or finding["rule_id"] not in FROZEN_RULE_IDS or not isinstance(finding.get("code"), str) or not isinstance(finding.get("remediation_code"), str) or finding.get("severity") not in SEVERITY or not isinstance(finding.get("location"), str) or not isinstance(finding.get("evidence"), dict):
+            raise ValidationError("TYPE_MISMATCH")
+        for value in finding["evidence"].values():
+            values = value if isinstance(value, list) else [value]
+            if any(not (v is None or isinstance(v, str) or (isinstance(v, dict) and set(v) == {"prefix","sha256"} and isinstance(v["prefix"],str) and re.fullmatch(r"[0-9a-f]{64}", v["sha256"]))) for v in values): raise ValidationError("TYPE_MISMATCH")
+    receipt = report.get("receipt")
+    receipt_keys = {"repository","pr_number","base_sha","head_sha","source_sha","body_sha256","observation_sha256","cutover_receipt_sha256","ruleset_digest","snapshot_digests","producer"}
+    if not isinstance(receipt, dict) or set(receipt) != receipt_keys or not isinstance(receipt.get("repository"), str) or not isinstance(receipt.get("pr_number"), int) or receipt["pr_number"] < 1 or any(not isinstance(receipt.get(k),str) or not re.fullmatch(r"[0-9a-f]{40}",receipt[k]) for k in ("base_sha","head_sha","source_sha")) or any(not isinstance(receipt.get(k),str) or not re.fullmatch(r"[0-9a-f]{64}",receipt[k]) for k in ("body_sha256","observation_sha256","ruleset_digest")):
+        raise ValidationError("TYPE_MISMATCH")
+    human = report.get("human")
+    if not isinstance(human, dict) or set(human) != {"summary","remediations"} or not isinstance(human.get("summary"),str) or not isinstance(human.get("remediations"),list) or human["remediations"] != sorted(set(human["remediations"])) or any(not isinstance(x,str) for x in human["remediations"]):
+        raise ValidationError("TYPE_MISMATCH")
 
 
 def _location(rule: str, field: str | None = None, line: int | None = None, component: str | None = None) -> str:
@@ -306,8 +334,22 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     for name, base in (("agentos", "BASE"), ("path_ownership", "BASE_POLICY")):
         if observation[name].get("basis") != base: raise ValidationError("INVALID_SNAPSHOT_STATE")
     cp = observation["changed_paths"]["paths"]
+    for row in cp:
+        if not isinstance(row, dict) or set(row) != {"path","change_type","old_path"} or not isinstance(row.get("path"), str) or not row["path"] or row["path"].startswith("/") or "\\" in row["path"] or any(part in {"", ".", ".."} for part in row["path"].split("/")) or row.get("change_type") not in {"ADDED","MODIFIED","DELETED","RENAMED"} or (row["change_type"] == "RENAMED") != isinstance(row.get("old_path"), str):
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
     if cp != sorted(cp, key=lambda r:(r.get("path", ""), r.get("change_type", ""), r.get("old_path") or "")) or len({(r.get("path"),r.get("change_type"),r.get("old_path")) for r in cp}) != len(cp): raise ValidationError("INVALID_SNAPSHOT_STATE")
+    for row in observation["agentos"].get("workstreams", []):
+        if not isinstance(row, dict) or set(row) != {"key","waves"} or not isinstance(row.get("key"),str) or not re.fullmatch(r"WS:[A-Z0-9]+(?:-[A-Z0-9]+)*", row["key"]) or not isinstance(row.get("waves"),list) or row["waves"] != sorted(set(row["waves"])) or any(not isinstance(x,str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}",x) for x in row["waves"]):
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
+    issues = observation["linear"].get("issues", [])
+    for row in issues:
+        if not isinstance(row, dict) or set(row) != {"id","target_role","project_id","workstream_key","issue_type","stop_law"} or not isinstance(row.get("id"),str) or not re.fullmatch(r"MAS-[1-9][0-9]{0,8}",row["id"]) or row.get("target_role") not in {"DECLARED","SECONDARY","PARENT","PROOF_GATE","ACCEPTANCE_GATE","UNKNOWN"} or row.get("project_id") is not None and not isinstance(row["project_id"],str) or row.get("workstream_key") is not None and (not isinstance(row["workstream_key"],str) or not re.fullmatch(r"WS:[A-Z0-9]+(?:-[A-Z0-9]+)*",row["workstream_key"])) or not isinstance(row.get("issue_type"),str) or not isinstance(row.get("stop_law"),str):
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
+    if issues != sorted(issues, key=lambda r:(r["id"],r["target_role"],r["issue_type"],r["stop_law"])) or len({canonical_json(r) for r in issues}) != len(issues): raise ValidationError("INVALID_SNAPSHOT_STATE")
     resolutions = observation["path_ownership"].get("resolutions", [])
+    for row in resolutions:
+        if not isinstance(row,dict) or set(row) != {"path","role","resolution","owner_workstream","path_class","allowed_authorities"} or not isinstance(row.get("path"),str) or not row["path"] or row.get("role") not in {"CURRENT","OLD_RENAME_SOURCE"} or row.get("resolution") not in {"EXACT","UNOWNED","AMBIGUOUS"} or row.get("owner_workstream") is not None and not isinstance(row["owner_workstream"],str) or not isinstance(row.get("path_class"),str) or not isinstance(row.get("allowed_authorities"),list) or row["allowed_authorities"] != sorted(set(row["allowed_authorities"])) or any(x not in ENUMS["Authority"] for x in row["allowed_authorities"]):
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
     if resolutions != sorted(resolutions, key=lambda r: (r.get("path", ""), r.get("path_class", ""), r.get("owner_workstream", ""), r.get("resolution", ""))) or len({canonical_json(row) for row in resolutions}) != len(resolutions):
         raise ValidationError("INVALID_SNAPSHOT_STATE")
     native = observation["native_linkage"]
@@ -327,6 +369,8 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
         elif state in {"AMBIGUOUS","UNAVAILABLE"}: valid = native["state"] in {"PARTIAL","CONTRADICTORY"} and kind == "UNKNOWN" and source in {"BODY","BRANCH","TITLE","LINEAR_NATIVE","ADAPTER"} and transition == "UNKNOWN"
         if not valid or (native["state"] == "PRESENT" and state not in {"PRESENT","SUPPRESSED"}):
             raise ValidationError("INVALID_SNAPSHOT_STATE")
+    if native["relationships"] != sorted(native["relationships"], key=lambda r:(r["issue_id"],r["state"],r["kind"],r["source"],r["completion_transition"])) or len({canonical_json(r) for r in native["relationships"]}) != len(native["relationships"]):
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
     receipt = observation.get("receipt")
     receipt_keys = {"repository","pr_number","base_sha","head_sha","source_sha","body_sha256","observation_sha256","cutover_receipt_sha256","ruleset_digest","snapshot_digests","producer"}
     if not isinstance(receipt, dict) or set(receipt) != receipt_keys:
