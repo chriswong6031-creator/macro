@@ -17,14 +17,14 @@ changed:
       records raw EPS/revenue horizons, typed absence, four distinct clock fields,
       deterministic identities, same-session replay idempotency, later-session
       receipts, correction lineage, and bounded provider failure taxonomy.
-  - path: tests/test_equity_revisions_src_a1.py
+  - path: tests/test_equity_revisions_w2a.py
     what: >
       Hermetic source-contract proofs for all horizons and metrics, schema/order,
       idempotency, correction, typed absence, typed attempts, 401/403/429, safe
       diagnostics, fiscal rollover, backfill refusal, and legacy artifact parity.
 verified:
   - claim: The source contract has focused hermetic behavioral proof.
-    command: python3 -m pytest -q tests/test_equity_revisions_src_a1.py
+    command: python3 -m pytest -q tests/test_equity_revisions_w2a.py
     result: 18 passed after the review-required clock, session, metric-boundary,
       crash-repair, calendar, and HTTP-token mutation cases were added.
   - claim: The collector remains syntactically valid and the patch has no whitespace errors.
