@@ -21,9 +21,11 @@ depends_on:
 decisions:
   - DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER
 next_action: >
-  E3-A R1 measured packet is on HOLD-FOR-SOL PR #6245. Gold SHA
-  unchanged. Usefulness bar remains the frozen N=7 refusal. Await Sol;
-  do not merge #6245; do not start E3-B.
+  E3-A R2 measured packet is on HOLD-FOR-SOL PR #6245. Gold is
+  aapl_fy2026_q3_qa_gold.v2 SHA
+  fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c.
+  Usefulness bar remains the frozen N=7 refusal. Full-transcript Qwen is
+  not promoted. Await Sol; do not merge #6245; do not start E3-B.
 owns_paths:
   - research/earnings_intelligence/e3/**
 artifacts:
@@ -35,9 +37,11 @@ artifacts:
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-21.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-22.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-22-e3a-r1.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-23-e3a-r2.md
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_eval_receipt.json
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_adjudication_receipt.json
+  - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_blind_pass_b.json
 landmines:
   - WS:EARNINGS-INTELLIGENCE-OS is done; do not reopen E2-T1 or E2-D to make E3 look active.
   - Parent event_workspace.v1 WORKSPACE_KEYS are closed; a new top-level key is a schema bump Terminal exactKeys will fail.
@@ -60,6 +64,10 @@ do_not_redo:
   - Do not stamp generated_at or conference time as transcript source_available_at.
   - Do not mint a second earnings-intelligence program key.
   - Do not record this architecture decision as decided_by coo-fable.
+  - Do not tune Qwen's full-transcript prompt to rescue a measured [] result.
+  - Do not collapse qa_exchange.v1 respondents[] to unique speakers.
+  - Do not treat a validator rejection as an accepted-object hard-gate miss.
+  - Do not rewrite AAPL historical gold when a later current-marker generation moves if source SHAs still match.
 waves:
   - id: E3-0
     title: Compiler architecture freeze
@@ -76,14 +84,17 @@ waves:
       - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json
       - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_eval_receipt.json
       - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_adjudication_receipt.json
+      - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_blind_pass_b.json
       - engine/company_intelligence/e3_shadow_compiler.py
       - tests/test_company_intelligence_event_compiler_e3a.py
     next_action: >
-      Measured E3-A R1 packet is on PR #6245 (HOLD-FOR-SOL / draft /
-      hold / do-not-merge). Gold SHA unchanged
-      6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761.
-      Usefulness bar remains the frozen N=7 refusal. Return to Sol.
-      Do not start E3-B. Do not merge #6245 until Sol releases the hold.
+      Measured E3-A R2 packet is on PR #6245 (HOLD-FOR-SOL / draft /
+      hold / do-not-merge). Gold v2 SHA
+      fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c
+      (v1 6b1100b1… superseded). Usefulness bar remains the frozen N=7
+      refusal. Full-transcript Qwen is not promoted. Haiku is
+      benchmark-only. Return to Sol. Do not start E3-B. Do not merge
+      #6245 until Sol releases the hold.
   - id: E3-B
     title: AAPL live Q&A into event_workspace.v1
     status: todo
@@ -103,4 +114,4 @@ waves:
 
 E3-0 landed on main at `22686d255eb047cf5bffc91a35984515acb3d466` (#6161; Sol review 5000425939). E0–E2 stay closed on `WS:EARNINGS-INTELLIGENCE-OS`. Canonical freeze: `research/earnings_intelligence/e3/E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md`. Owner is `coo-fable` (execution). Architecture authority is `DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER` `decided_by: sol`.
 
-E3-A R1 (2026-08-22) repaired the evaluator and ran the real model eval on PR #6245. Gold SHA remains `6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761`. Taxonomy `qa_topic.v1` / `a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e` unchanged. Live E2 workspace `f709a0a6ec514282d5769e7d` was read through `read_event_workspace`; release and transcript source SHAs match the frozen fixtures (`assumed_from_handoff=false`). Qwen `qwen3.5:9b` on the earnings-worker loopback (`127.0.0.1:11435`, plist override) returned `[]` (hard gates `NOT_EXERCISED`). Comparator `claude-haiku-4-5` via existing `llm_auth` oauth produced 7 valid candidates; boundary P/R/F1 = 1.0; mean topic Jaccard 0.667; identity/role all 1.0 on matched exchanges; span replay 100% of 7 accepted. Usefulness bar remains the frozen N=7 refusal. **Return to Sol. E3-B stays locked. Do not merge #6245.**
+E3-A R2 (2026-08-23) is the final landing repair on PR #6245. Gold is `aapl_fy2026_q3_qa_gold.v2` SHA `fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c`; v1 `6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761` is superseded calibration gold. Taxonomy remains `qa_topic.v1` / `a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e`. respondents[] is one element per management answer-turn (26 turns); exchange 0 keeps two Tim Cook turns split by analyst follow-up 38. Measured eval `run_id=27e3e380f70658c1` on git head `154ec6204e585c70a576a7cf249acc2b394aa69c`: Qwen `qwen3.5:9b` on the earnings-worker loopback returned `[]` (hard gates `NOT_EXERCISED`, cost_basis=local $0.00); Haiku `claude-haiku-4-5` benchmark-only produced 7 candidates / 6 accepted / 1 `invalid_schema_rejected` (topics_arity on exchange 0), boundary F1 0.857, questioner/affiliation 1.0, answer-turn respondent order 0.0, span replay 100% of 6 accepted, hard gates PASS. Full-transcript Qwen is not promoted. Usefulness bar remains the frozen N=7 refusal. **Return to Sol. E3-B stays locked. Do not merge #6245.**
