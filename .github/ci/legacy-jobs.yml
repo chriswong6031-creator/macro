@@ -1485,6 +1485,7 @@ jobs:
     # 846 tracked / 127 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -6262,6 +6263,7 @@ jobs:
     # genuine import edges.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -6805,6 +6807,7 @@ jobs:
     # 846 tracked / 74 concrete.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -10684,9 +10687,20 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
+        run: pip install pytest pandas numpy pyarrow pyyaml jsonschema jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: brain gateway — lane routing, quota ledger, tool allowlist, SSE event order
         run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py -q
+      - name: W1-A typed datapoint registry — owners, PIT, rights, consumers, mutations, batching
+        run: >-
+          python -m pytest
+          tests/test_datapoint_registry.py
+          tests/test_quote_resolution.py
+          tests/test_intelligence_workspace_identity_market.py
+          tests/test_intelligence_workspace_owner_adapters.py
+          tests/test_intelligence_workspace_consumers.py
+          tests/test_intelligence_workspace_mutations.py
+          tests/test_intelligence_workspace_cli.py
+          tests/test_intelligence_workspace_performance.py -q
 
   unrun-macro-panels:
     # commodities / forex / rates / news / policy panels and their calibration guards.
@@ -11559,6 +11573,7 @@ jobs:
     # 846 tracked / 74 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
