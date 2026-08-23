@@ -577,10 +577,12 @@ waves:
       DRAFT pending the commissioning session's re-review.
   - id: A5C-alpha
     title: IMCE-A5C-alpha — fail-closed correction detection pending source-revision history (Sol A5C review item 1; Opus BLOCKER-1 hardened)
-    status: awaiting_ci
+    status: done
     pr: 6308
     depends_on: [A5B]
     next_action: >
+      MERGED 2026-08-23 as 2ee5c16724da (PR #6308) — closure record:
+      agentos/handoffs/CYCLE-PATTERN-ISSUER-MECHANISM-2026-08-23.md.
       Sol's A5C review (2026-08-23) named item 1: "no correction to a
       pre-activation event can ever enter the prospective cohort as a new
       observation" — until canonical source-revision history exists, A5B
@@ -931,12 +933,13 @@ waves:
     title: >
       IMCE-A5C item 7/8 — TOL beginning-quarter-backlog cancellation
       sensitivity PRIOR-YEAR extraction + Sol equality-ruling pin
-    status: awaiting_ci
+    status: done
     pr: 6307
     depends_on: [A5A]
     next_action: >
-      DRAFT PR #6307 open, not merged; commissioning session adjudicates and
-      merges. Extraction-only, closes the named A5 gap: "TOL sensitivity
+      MERGED 2026-08-23 as 3d35ec5cd5ae (PR #6307) — closure record:
+      agentos/handoffs/CYCLE-PATTERN-ISSUER-MECHANISM-2026-08-23.md.
+      Extraction-only, closes the named A5 gap: "TOL sensitivity
       prior-year comparator not extracted by A5A" (this file's own
       next_action above). engine/company_intelligence/issuer_profiles.py's
       TOL beginning-quarter-backlog block (:1162-1261 post-change) now also
@@ -981,14 +984,19 @@ waves:
       ascending discovery, two-clock law, ONE shared reader, earliest-
       revision eligibility/replay/contributor laws (Sol A5C directive,
       2026-08-23, items 1/3/4/5/6)
-    status: awaiting_ci
+    status: done
     pr: [6322, 6343]
     depends_on: [A5B, A5C-alpha, A5C]
     next_action: >
-      DRAFT PR #6322 open (branch claude/imce-a5c-source-vintage-main, off
+      MERGED — #6322 as 8c0608652652 (2026-08-23) and the production-
+      incident heal #6343 as 6fa417959bf9 (2026-08-23). Closure record:
+      agentos/handoffs/CYCLE-PATTERN-ISSUER-MECHANISM-2026-08-23.md; see
+      the top-level next_action's "SOL'S A5C DIRECTIVE IS EXECUTED" block
+      for the full production-proof receipts, the incident, and named
+      residuals.
+      PR #6322 (branch claude/imce-a5c-source-vintage-main, off
       fresh origin/main containing both merge 2ee5c16724da/#6308 A5C-alpha
-      and merge 3d35ec5cd5ae/#6307 A5C-TOL); NOT merged/armed — the
-      commissioning session adjudicates and merges. This is the "honest
+      and merge 3d35ec5cd5ae/#6307 A5C-TOL) was the "honest
       fix" both A5C-alpha (#6308) and A5C (#6307) named as still-pending.
       REVISED after an Opus red-team pass (2026-08-23, BLOCK: 3 blockers/
       5 majors/6 minors/1 nit) found the FIRST-pass architecture broken in
@@ -1297,6 +1305,81 @@ next_action: >
   rewrites the readable facts — correction records preserve what the
   experiment knew, but as-of retrieval does not exist). No runner built;
   no outcome computed; awaiting Sol's next directive.
+  SOL'S A5C DIRECTIVE IS EXECUTED (2026-08-23). Four merges close it: A5C
+  gamma (TOL sensitivity prior-year + equality-ruling pin) = PR #6307 ->
+  3d35ec5cd5ae; A5C-alpha alpha (fail-closed correction detection pending
+  source-revision history) = PR #6308 -> 2ee5c16724da; A5C-chain beta+
+  delta (manifest chain/discovery/two-clock/shared-reader honest fix,
+  plus the production-incident heal) = PR #6322 -> 8c0608652652 and PR
+  #6343 -> 6fa417959bf9.
+  PRODUCTION PROOF RECEIPTS: the healed dispatch (workflow_dispatch run
+  32657963256) completed SUCCESS in 8.5 minutes. The live top-level
+  marker is generation 6d56c84a3ac23b8954e59ee7, schema
+  event_workspace_manifest.v2, event_count 5, chaining onto
+  previous_generation_id 8351f6fa8df7507c0ff842d1 with its verified sha
+  receipt. All five tickers' latest reads were verified live on
+  www.mastermind-x.com: AAPL (2026Q3), DHI (2026Q3), PHM (2026Q2), KBH
+  (2026Q2), TOL (2026Q3). The live history walk was verified end-to-end
+  (DHI 2026Q3 gives exactly 1 revision, state complete, form 8-K,
+  receipts present, walk terminates at the v1 root) -- the SAME walk
+  whose pre-optimization cost was measured at 153s against the
+  post-incident chain, the number that motivated the
+  read_all_event_source_revisions shared-walk fix in #6343.
+  THE PRODUCTION INCIDENT, STATED HONESTLY: dispatch run 32652474368 (the
+  FIRST production run of #6322, before the delta heal) crawled each
+  homebuilder issuer's SEC "recent" submissions block back to 2010 under
+  the then-unbounded discovery admission rule, and published ~170
+  historical events before the job's 25-minute timeout killed it
+  mid-step. Those ~170 events are now immutable chain history -- never
+  rewritten -- and are HARMLESS: every one is pre-activation, so A5B's
+  own activation-cutoff law makes them permanently ineligible to ever
+  become an observation. The healed dispatch (32657963256, above)
+  converged back to a normal 5-event nest on its very next run,
+  confirming the delta fix.
+  NAMED RESIDUALS (delta red-team review, not closed by this directive,
+  not hidden): MINOR-1 -- the per-issuer discovery boundary can silently
+  exclude a genuine BETWEEN-QUARTERS amendment (an out-of-window
+  correction to an already-superseded fiscal period); this is
+  fail-closed (never a false admission) but currently silent -- a
+  ::warning is recommended future work, not yet added. MINOR-2 -- the
+  shared walk's own docstring overclaims its complexity: generation
+  MANIFESTS are fetched at O(hops) as documented, but per-event
+  WORKSPACE BODIES are still fetched only where present, so the true
+  cost is O(hops) manifests + O(revisions-found) workspace reads, not a
+  flat O(hops) for everything; the docstring should be corrected to say
+  so. MINOR-3 -- the None-boundary (genuine first-publish) branch's own
+  walk cost is UNBOUNDED in principle (bounded only by the
+  current+prior-fiscal-year row filter, not by a hop cap on that branch
+  specifically); unreachable in practice today (every current issuer
+  already has a represented event), but not structurally guaranteed
+  against a future issuer onboarding with zero prior history. Chain
+  COMPACTION remains declared future work -- the incident alone consumed
+  roughly 35% of the 500-hop DEFAULT_MAX_CHAIN_HOPS bound; the bound is
+  not yet at risk but is no longer purely theoretical headroom. The
+  REPLACEMENT-8-K residual named since wave alpha is UNCHANGED and still
+  open (a same-accession-form-class replacement filing is not
+  distinguished from a genuine correction).
+  A5B STATUS: BUILT_NOT_PROVEN. Activation is NOT yet stamped -- the
+  forward ledger data/cycle_pattern/imce_prospective_observation_v1.jsonl
+  is still absent from main as of 2026-08-23T18:40Z; it is created and
+  activation_started_at is stamped by the FIRST production nightly that
+  runs after this point. Sol's own promotion precondition for A5B (A5C
+  merged AND production-verified) is NOW SATISFIED by the four merges
+  and receipts above. Natural-event proof (a real post-activation
+  DHI/PHM/KBH/TOL earnings event actually observed) remains outstanding
+  -- next expected candidate is KBH FY2026 Q3, ~late September 2026.
+  TREASURY CMT FROZEN TEMPORAL LAW, restated for the next increment
+  (unchanged by this directive, binding on any future C_t leg work):
+  only the official rate/date pair from a first-party Treasury/CMT
+  source may be used; retrieved_at/first_seen_at must be the REAL
+  wall-clock ingestion time, never inferred; publication time is NEVER
+  inferred from the ~3:30PM ET methodology-implied release convention --
+  only a genuine observed retrieval timestamp counts; a decision cutoff
+  consumes only rows whose first_seen_at is at-or-before that cutoff
+  (never the official rate/date field for eligibility); Freddie Mac PMMS
+  stays HELD (not sourced); FRED/ALFRED remain EXCLUDED (no store/cache/
+  archive of FRED content per the standing FRED clause); NAR remains
+  PROHIBITED as a source.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."
