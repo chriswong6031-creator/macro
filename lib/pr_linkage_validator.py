@@ -253,6 +253,10 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
             add({"Portfolio-Mode":"R009","Authority":"R011","Completion":"R012"}[f], {"location":f"BODY:L{locs[f][0]}:{f}","value":text_digest(v)}, f)
             add("R020", {"epoch":epoch.get("relation","UNKNOWN"),"field":f,"value":text_digest(v)}, f)
     ws, linear, wave = values["Workstream"], values["Linear"], values["Wave"]
+    # Placeholders are a distinct frozen rule for every scalar, including identity fields.
+    for f, v in values.items():
+        if v is not None and (v.startswith("<") and v.endswith(">")) and not any(x["rule_id"] == "R004" and x["location"].endswith(":" + f) for x in findings):
+            add("R004", {"field":f,"location":f"BODY:L{locs[f][0]}:{f}","value":text_digest(v)}, f)
     if ws is not None and not re.fullmatch(r"(?:NONE|WS:[A-Z0-9]+(?:-[A-Z0-9]+)*)", ws): add("R005", {"location":f"BODY:L{locs['Workstream'][0]}:Workstream","value":text_digest(ws)}, "Workstream")
     if linear is not None and not re.fullmatch(r"(?:NONE|MAS-[1-9][0-9]{0,8})", linear): add("R006", {"location":f"BODY:L{locs['Linear'][0]}:Linear","value":text_digest(linear)}, "Linear")
     if wave == "": add("R007", {"location":f"BODY:L{locs['Wave'][0]}:Wave"}, "Wave")
