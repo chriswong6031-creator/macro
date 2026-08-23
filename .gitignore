@@ -738,3 +738,7 @@ data/governance/.ceo_brief_last
 # redded the merge gate fleet-wide; ignoring the directory makes that
 # impossible at the plumbing instead of merely detected.
 data/qledger/control_evidence_clock_start/
+
+# E3-A eval shards. Bounded proof lives in the eval receipt, not the global ledger.
+/data/ai_costs/usage.d/e3a-pr6245-*.jsonl
+/research/earnings_intelligence/e3/gold/provider_health_*.jsonl

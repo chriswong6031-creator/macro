@@ -1,80 +1,108 @@
 ---
 workstream: "WS:FINANCIAL-INTELLIGENCE-FABRIC"
-session: claude/fif-2c-acceptance-records
+session: claude/fif-3a1
 model: local
 ended_because: complete
-prs: [6235]
+prs: [6268]
 mission: >
-  Records-only closure after Sol PASS / ACCEPTED_FOR_LANDING of FIF-2C
-  and squash-merge of PR #6235. Repair durable program truth. Do not
-  touch product code. Do not start FIF-2D.
+  FIF-3A1 AAPL real as-reported statement vertical: Data OS identity,
+  bounded 10-K package, filing-native statement trees, authenticated
+  Forensics consumer, human golden review. Stop for Sol. Do not start
+  the next AAPL slice.
 state_before: >
-  Sol source-reviewed accepted head 27c04ca0750f6346670b26ae97b5ec3e0da1faac
-  as PASS / ACCEPTED_FOR_LANDING. Landing head
-  ba244971456738e0778dde6224d1f0fe25303cb2 integrated current-main
-  d62c0a7b3f38013648e45c5a12fcdd710d55483b. GitHub squash-merged PR #6235
-  as 2ba752ddd0302b50f27913df22bc12fb548754b9. AgentOS still said FIF-2C
-  BUILT_NOT_ACCEPTED pending Sol.
+  Sol observed main 67e6e59734d9. Pickup fast-forwarded through
+  bc0a9cd89640 to baf1a7070ce4. FIF-1 DONE/FROZEN. FIF-2A #5983, FIF-2B
+  #6157, FIF-2C #6235, records #6254 on main. FIF-2 still recorded as
+  in_progress until DEC:FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3. No
+  statement_cell.v1 implementation. No AAPL filing-package bytes in repo.
 changed:
+  - path: agentos/decisions/DEC-FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3.md
+    what: Narrow sequencing supersession; FIF-2 DONE/FIXTURE_PROVEN; statements move to FIF-3; FIF-2D rejected.
+  - path: agentos/decisions/DEC-FIF-3A1-REUSE-MAP.md
+    what: Frozen identity/package/XBRL reuse map before code.
+  - path: agentos/discoveries/DSC-AAPL-LABEL-RESOURCES-SHARE-XLINK-LABEL.md
+    what: Apple label resources share xlink:label across roles.
   - path: agentos/workstreams/WS-FINANCIAL-INTELLIGENCE-FABRIC.md
-    what: FIF-2C ACCEPTED / FIXTURE_PROVEN / ON_MAIN; FIF-2D UNLOCKED / NOT_STARTED.
-  - path: agentos/handoffs/FINANCIAL-INTELLIGENCE-FABRIC-2026-08-22.md
-    what: Acceptance/closure handoff for FIF-2C landing.
-decisions:
-  - DEC:FIF-1-V1-FROZEN
-  - DEC:FIF-REVISION-ROOT-PRIOR-REVISED
-  - DEC:FIF-PACKET-GOVERNANCE-IS-CUTOFF-VISIBLE
-  - DEC:FIF-ENTITY-ID-IS-NOT-CIK
-  - DEC:SOL-HOLD-IS-A-MERGE-BARRIER
-discoveries:
-  - DSC:REVIEW-HOLD-PROSE-IS-NOT-FAIL-CLOSED
-  - DSC:PR-HOLD-REQUIRES-NATIVE-AUTOMERGE-DISARM
+    what: FIF-2 done; FIF-3 in_progress; FIF-3A1 BUILT_NOT_ACCEPTED.
+  - path: engine/fundamental_forensics/statement_graph.py
+    what: Presentation/label/calculation walk and as-reported reconstruction.
+  - path: engine/fundamental_forensics/statement_service.py
+    what: Golden AAPL statement admission, Data OS bind, envelope.
+  - path: app/forensics.py
+    what: POST /api/forensics/v1/financial/statements on the existing private/auth boundary.
+  - path: tests/fixtures/fundamental_forensics/aapl_10k_2025/
+    what: Accession 0000320193-25-000079; 93 members; 6 stored XBRL members.
+  - path: tests/test_fundamental_forensics_financial_statement_service.py
+    what: Discriminating reconstruction, identity, ambiguity, predecessor, no-network proofs.
+  - path: tests/test_fundamental_forensics_financial_statement_api.py
+    what: Auth/private/405/golden HTTP proofs.
+  - path: contracts/statement_cell.v1.md
+    what: Minimal statement_cell.v1 / statement-tree contract.
+  - path: research/financial_intelligence_fabric/FIF_3A1_AAPL_GOLDEN_REVIEW.md
+    what: Human review vs captured AAPL 10-K primary document.
 verified:
-  - claim: GitHub reports PR #6235 MERGED with landing head ba2449714567 and merge commit 2ba752ddd030.
-    command: gh pr view 6235 --json state,mergedAt,mergeCommit,headRefOid
-    result: MERGED at 2026-08-22T19:27:18Z; headRefOid ba244971456738e0778dde6224d1f0fe25303cb2; mergeCommit 2ba752ddd0302b50f27913df22bc12fb548754b9
-  - claim: origin/main tip is the FIF-2C merge commit.
-    command: gh api repos/mastermindx-market-intelligence/macro/commits/main --jq .sha
-    result: 2ba752ddd0302b50f27913df22bc12fb548754b9
-  - claim: Merge commit contains the packet route, packet_service.py, and both FIF-2C tests in the Fundamental Forensics CI lane; frozen FIF-1 files are absent from the squash.
-    command: gh api repos/mastermindx-market-intelligence/macro/commits/2ba752ddd0302b50f27913df22bc12fb548754b9
-    result: files include app/forensics.py, packet_service.py, both packet test files, legacy-jobs.yml; frozen FIF-1 paths not in the commit file list
-  - claim: Production default packet provider remains UnavailableFinancialPacketProvider on the merge SHA.
-    command: gh api repos/mastermindx-market-intelligence/macro/contents/app/forensics.py?ref=2ba752ddd0302b50f27913df22bc12fb548754b9
-    result: _financial_packet_provider and UnavailableFinancialPacketProvider both present; POST /api/forensics/v1/financial/packet present
-  - claim: Exact-head hosted CI packs and fences concluded success on ba2449714567.
-    command: gh run view 32592379625 --json conclusion,headSha; gh run view 32592379634 --json conclusion,headSha
-    result: ci.yml success 32592379625; fences.yml success 32592379634; both headSha ba244971456738e0778dde6224d1f0fe25303cb2; merge-queue-pilot failure by design
-  - claim: Rich FIP1 HTTP packet identity is unchanged after current-main integration.
-    command: python3 execute_financial_packet rich FIP1 request
-    result: packet_id fip_49718dcaf4c6855592b6ba0a; content_sha256 49718dcaf4c6855592b6ba0a160851c608b4733b44f8ac9a6cf7d907df7565e5; X-FIF-Response-SHA256 310f6579ab0014e6af16a3341f005078eab3fdcc70ebe67ec83cf138b9e6c23a; 18270 bytes; direct_eq_http True
-unverified: []
+  - claim: Data OS binds CIK 0000320193 to ISS:US-XNAS-AAPL / SEC:US-XNAS-AAPL / US-XNAS-AAPL and not to the CIK as entity_id.
+    command: python3 pandas filter of data/reference/issuer_master.parquet and security_master.parquet for cik==0000320193 and issuer_id==ISS:US-XNAS-AAPL
+    result: one issuer row, one security row, issuer_id != cik
+  - claim: Golden package is accession 0000320193-25-000079 with index sha256 d61dde83df2dde7d63041e443321eab963b245e4c0090ba6240ce1711329de83, 93 members, 6 stored.
+    command: python3 -m pytest tests/test_fundamental_forensics_financial_statement_service.py::test_package_manifest_digest_and_member_counts
+    result: passed
+  - claim: Three statement trees reconstruct with filing-native titles and row counts 25/38/36.
+    command: python3 -m pytest tests/test_fundamental_forensics_financial_statement_service.py::test_reconstruct_three_primary_statements_filing_native
+    result: passed; roles apple.com CONSOLIDATEDSTATEMENTS OF OPERATIONS / BALANCESHEETS / CASHFLOWS
+  - claim: Net sales FY2025 416161000000 reverses to ix:nonFraction f-78 scale 6 context c-1 containing 416,161.
+    command: python3 -m pytest tests/test_fundamental_forensics_financial_statement_service.py::test_income_duration_reverses_to_aapl_xbrl_occurrence
+    result: passed
+  - claim: Accounts receivable instant 39777000000 reverses to ix:nonFraction f-163 containing 39,777.
+    command: python3 -m pytest tests/test_fundamental_forensics_financial_statement_service.py::test_balance_sheet_instant_reverses
+    result: passed
+  - claim: Cash-flow beginning 29943000000 and ending 35934000000 are the same concept distinguished by preferredLabel.
+    command: python3 -m pytest tests/test_fundamental_forensics_financial_statement_service.py::test_cash_flow_order_is_filing_native_and_splits_beginning_ending_cash
+    result: passed
+  - claim: SG&A stays unmapped and present at 27601000000.
+    command: python3 -m pytest tests/test_fundamental_forensics_financial_statement_service.py::test_unmapped_sga_row_survives
+    result: passed
+  - claim: Disagreeing duplicate facts are quality_state=ambiguous with null value.
+    command: python3 -m pytest tests/test_fundamental_forensics_financial_statement_service.py::test_duplicate_disagreeing_facts_are_ambiguous_not_first_row_wins
+    result: passed
+  - claim: Statement response SHA-256 is 853f2fd89e2dd2175152b089d0c80b2bc7777c103fefb5011433f0657057bda2 across repeated runs with no urllib and no Path.write_bytes.
+    command: python3 -m pytest tests/test_fundamental_forensics_financial_statement_service.py::test_execute_is_deterministic_and_pinned tests/test_fundamental_forensics_financial_statement_service.py::test_no_request_time_network_or_attested_write tests/test_fundamental_forensics_financial_statement_api.py
+    result: passed; paid POST 200 private no-store; anon 401; free 403; non-POST 405
+  - claim: FIF-2A five query hashes, rich FIP1 packet identity, and frozen FIF-1 paths remain unchanged.
+    command: python3 -m pytest tests/test_fundamental_forensics_financial_statement_service.py::test_fif2a_query_hashes_unchanged tests/test_fundamental_forensics_financial_statement_service.py::test_fif2b_and_fif2c_accepted_packet_behavior_unchanged tests/test_fundamental_forensics_financial_statement_service.py::test_frozen_fif1_paths_are_empty_diff tests/test_fundamental_forensics_financial_packet_service.py::test_fif2a_query_hashes_unchanged tests/test_fundamental_forensics_financial_packet_service.py::test_rich_packet_is_the_complete_research_artifact
+    result: passed; rich packet_id fip_49718dcaf4c6855592b6ba0a; content_sha256 49718dcaf4c6855592b6ba0a160851c608b4733b44f8ac9a6cf7d907df7565e5; X-FIF-Response-SHA256 310f6579ab0014e6af16a3341f005078eab3fdcc70ebe67ec83cf138b9e6c23a; 18270 bytes
+  - claim: AgentOS schema validate exits 0 on this worktree.
+    command: python3 scripts/agentos.py validate
+    result: 0 error(s), 16 warning(s) unrelated to FIF
+unverified:
+  - claim: Exact-head hosted ci.yml and fences.yml on the PR head
+    what_would_verify: gh run view after push; packs and fences SUCCESS on the exact SHA
+  - claim: Browser-rendered SEC HTML nesting of Products/Services under Net sales
+    what_would_verify: Visual inspection of the live SEC viewer; presentation-tree hypercube prefix is already recorded in FIF_3A1_AAPL_GOLDEN_REVIEW.md
 unresolved:
-  - FIF-2 remains in_progress. FIF-2D is UNLOCKED / NOT_STARTED.
-  - Production issuer packages remain FIF-3. Default packet provider returns 503.
-  - Merge-control fail-closed hold remains with its existing owner; not repaired here.
+  - FIF-3A1 is BUILT_NOT_ACCEPTED pending Sol. Production attested issuer service remains NOT_BUILT.
+  - Definition linkbase is retained and unused; reconstruction is undimensioned.
+  - Income-statement presentation includes hypercube/axis/member abstracts before line items.
 next_actions:
-  - A later session may start FIF-2D from the masterplan. Do not reopen FIF-2C.
-  - Do not claim production issuer packet coverage until FIF-3 wires admitted packages.
-  - Do not mix a sol-review-required control-plane build into FIF-2D.
+  - Sol source-reviews this PR. Do not merge until Sol releases the hold.
+  - Do not start the next AAPL slice, SNOW/CAT/BAC/GOOGL, FIF-2D, or production admission.
+  - Later AAPL event linkage must reuse Earnings Intelligence event_workspace.v1.
 do_not_redo:
-  - Do not reopen frozen financial_intelligence_packet.v1 or the 63/64 lineage bound.
-  - Do not wrap the HTTP packet body in a second envelope.
-  - Do not homogenize /financial/packet unsupported cells (HTTP 200) with FIF-2A/FIF-2B unsupported-metric 400.
-  - Do not reopen FIF-2C canonical packet identity, rich FIP1 hashes, or PIT proofs.
-  - Do not claim production issuer packet coverage.
-  - Do not claim FIF-2 complete.
+  - Do not mint mmx.issuer.aapl or treat ticker/CIK as canonical issuer identity.
+  - Do not build a dedicated /financial/trace endpoint.
+  - Do not reorder as-reported rows into the 50-metric registry.
+  - Do not call SEC, write R2, or mutate attested history on the HTTP path.
+  - Do not reopen frozen FIF-1 packet semantics or accepted FIF-2A/B/C hashes.
+  - Do not claim production issuer coverage.
 danger_areas:
+  - Apple label resources share one xlink:label across roles (DSC:AAPL-LABEL-RESOURCES-SHARE-XLINK-LABEL).
   - JSONResponse would re-serialize and break X-FIF-Response-SHA256.
-  - Canonical Mastermind entity_id and SEC CIK are different; never rewrite packet or raw ledger identity.
-  - HTTP response SHA and packet content_sha256 are different contracts.
-  - PR-body HOLD language is not a merge barrier in the live control plane; see DSC:REVIEW-HOLD-PROSE-IS-NOT-FAIL-CLOSED.
+  - GoldenAaplStatementProvider must share forensics_api.REPO with Data OS parquet reads.
+  - PR-body HOLD language is not a merge barrier; native auto-merge must stay null (DSC:REVIEW-HOLD-PROSE-IS-NOT-FAIL-CLOSED, DSC:PR-HOLD-REQUIRES-NATIVE-AUTOMERGE-DISARM).
 ---
 
-Sol PASS / ACCEPTED_FOR_LANDING for FIF-2C on accepted head 27c04ca0750f.
-Product on main via PR #6235 merge 2ba752ddd030. Route is POST
-/api/forensics/v1/financial/packet. 45 FIF-2C tests and 443 combined
-predecessor/kernel tests remain the accepted proof. Production default
-provider stays 503. FIF-1 remains DONE / FROZEN. FIF-2A and FIF-2B
-remain ACCEPTED / FIXTURE_PROVEN / ON_MAIN. FIF-2 is not done. FIF-2D
-is UNLOCKED / NOT_STARTED. This is not a production issuer service.
+FIF-3A1 built against golden AAPL FY2025 10-K accession
+0000320193-25-000079. Entitled POST /api/forensics/v1/financial/statements
+returns three as-reported primary statement trees with per-cell source
+spans. FIF-2 is DONE / FIXTURE_PROVEN. Production issuer service is not
+built. Stop for Sol. Do not start the next AAPL slice.

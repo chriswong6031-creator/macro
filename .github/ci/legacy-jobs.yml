@@ -1767,6 +1767,7 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "ops/CHAIN_SNAPSHOTS_RUNBOOK.md"
       - "ops/LIVE_FLOW_RUNBOOK.md"
       - "ops/launchd/com.mastermind.chainsnapshots.plist"
@@ -2186,6 +2187,8 @@ jobs:
           tests/test_fundamental_forensics_financial_revision_api.py
           tests/test_fundamental_forensics_financial_packet_service.py
           tests/test_fundamental_forensics_financial_packet_api.py
+          tests/test_fundamental_forensics_financial_statement_service.py
+          tests/test_fundamental_forensics_financial_statement_api.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
           tests/test_fundamental_forensics_broad_sec.py
@@ -3334,7 +3337,7 @@ jobs:
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0 + W2)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_event_workspace.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -6591,6 +6594,7 @@ jobs:
       - "engine/sector_intelligence/**"
       - "engine/signal_foundry/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "research/DO_NOT_REBUILD.md"
       - "research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md"
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
@@ -7034,6 +7038,7 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "research/DO_NOT_REBUILD.md"
       # engine/htf_durability.py reads site/basketdata/fear_greed.json, and
       # engine/pick_lab/candidates.py reads site/flowleaders/leaders.json and
@@ -11746,6 +11751,7 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "lib/*"
+      - "lib/dataos/identity.py"
       - "research/DO_NOT_REBUILD.md"
       - "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md"
       - "scripts/__init__.py"
