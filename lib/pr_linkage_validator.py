@@ -22,6 +22,10 @@ ENUMS = {"Portfolio-Mode": {"tracked", "maintenance_exception", "creates_workstr
          "Authority": {"implementation", "records", "research", "maintenance", "proof", "deploy", "architecture_candidate"},
          "Completion": {"merge-is-done", "built-not-proven", "proof-required", "acceptance-required", "records-only"}}
 SEVERITY = {"ERROR": 0, "PARTIAL": 1, "WARNING": 2, "NOTICE": 3}
+# This closed registry is intentionally explicit: implementation may never grow a hidden rule
+# outside the frozen manifest.  `analyze` verifies equality before semantic reduction.
+FROZEN_RULE_IDS = frozenset((
+ "R001","R002","R003","R004","R005","R006","R007","R008","R009","R010","R011","R012","R020","R021","R022","R026","R027","R028","R029","R030","R031","R032","R033","R034","R035","R036","R037","R038","R039","R040","R041","R042","R043","R044","R045","R046","R047","R050","R051","R052","R053","R054","R055","R056","R060","R061"))
 
 
 class ValidationError(ValueError):
@@ -189,23 +193,47 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
 
 
 def _rule_map(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    return {r["rule_id"]: r for r in manifest["rules"]}
+    out = {r["rule_id"]: r for r in manifest["rules"]}
+    if set(out) != FROZEN_RULE_IDS or len(out) != 46:
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
+    return out
 
 
-def _location(rule: str, field: str | None = None, line: int | None = None) -> str:
+def validate_report(report: dict[str, Any]) -> None:
+    """Closed report-wire validation for adapters and test fixtures."""
+    required = {"schema", "semantic", "semantic_hash", "receipt", "human"}
+    if not isinstance(report, dict) or set(report) != required or report.get("schema") != REPORT_SCHEMA:
+        raise ValidationError("TYPE_MISMATCH")
+    semantic = report["semantic"]
+    if not isinstance(semantic, dict) or report.get("semantic_hash") != digest(semantic):
+        raise ValidationError("TYPE_MISMATCH")
+    if semantic.get("enforcement") != "REPORT_ONLY" or semantic.get("verdict") not in {"CONFORMANT","WARN","PARTIAL","REFUSE_METADATA"}:
+        raise ValidationError("TYPE_MISMATCH")
+    for finding in semantic.get("findings", []):
+        if set(finding) != {"code","rule_id","severity","location","evidence","remediation_code"} or finding["rule_id"] not in FROZEN_RULE_IDS:
+            raise ValidationError("TYPE_MISMATCH")
+
+
+def _location(rule: str, field: str | None = None, line: int | None = None, component: str | None = None) -> str:
     if line and field:
         return f"BODY:L{line}:{field}"
-    if rule in {"R001", "R039", "R040", "R051"}:
+    if rule in {"R001", "R003", "R039", "R040", "R051"}:
         return "DECLARATION:BLOCK"
-    snap = {"R026":"LINEAR","R027":"LINEAR","R028":"LINEAR","R033":"AGENTOS","R034":"LINEAR","R035":"LINEAR","R036":"LINEAR","R037":"CHANGED_PATHS","R038":"AGENTOS","R041":"PATH_OWNERSHIP","R042":"PATH_OWNERSHIP","R043":"CHANGED_PATHS","R044":"PATH_OWNERSHIP","R045":"PATH_OWNERSHIP","R046":"PATH_OWNERSHIP","R047":"PATH_OWNERSHIP","R053":"LINEAR","R054":"NATIVE_LINKAGE","R055":"NATIVE_LINKAGE","R056":"NATIVE_LINKAGE","R061":"AGENTOS"}
-    if rule == "R060": return "RECEIPT:OBSERVATION"
+    declaration = {"R029": "Linear", "R030": "Workstream", "R031": "Workstream", "R032": "Workstream"}
+    if rule in declaration:
+        return "DECLARATION:" + declaration[rule]
+    snap = {"R026":"LINEAR","R027":"LINEAR","R028":"LINEAR","R033":"AGENTOS","R034":"LINEAR","R035":"LINEAR","R036":"LINEAR","R037":"CHANGED_PATHS","R038":"AGENTOS","R041":"PATH_OWNERSHIP","R042":"PATH_OWNERSHIP","R043":"CHANGED_PATHS","R044":"PATH_OWNERSHIP","R045":"PATH_OWNERSHIP","R046":"PATH_OWNERSHIP","R047":"PATH_OWNERSHIP","R053":"LINEAR","R054":"NATIVE_LINKAGE","R055":"NATIVE_LINKAGE","R056":"NATIVE_LINKAGE"}
+    if rule == "R060": return "RECEIPT:" + (component or "OBSERVATION")
+    if rule == "R061": return "SNAPSHOT:" + (component or "AGENTOS")
     if rule == "R050": return "BRANCH"
     return "SNAPSHOT:" + snap.get(rule, "AGENTOS")
 
 
-def _finding(rule_map: dict[str, dict[str, Any]], rule: str, evidence: dict[str, Any], *, field: str | None = None, line: int | None = None) -> dict[str, Any]:
+def _finding(rule_map: dict[str, dict[str, Any]], rule: str, evidence: dict[str, Any], *, field: str | None = None, line: int | None = None, component: str | None = None) -> dict[str, Any]:
     row = rule_map[rule]
-    return {"code": row["code"], "rule_id": rule, "severity": row["severity"], "location": _location(rule, field, line), "evidence": {k: evidence[k] for k in sorted(evidence)}, "remediation_code": row["remediation_code"]}
+    if set(evidence) != set(row["evidence_keys"]):
+        raise ValidationError("TYPE_MISMATCH")
+    return {"code": row["code"], "rule_id": rule, "severity": row["severity"], "location": _location(rule, field, line, component), "evidence": {k: evidence[k] for k in sorted(evidence)}, "remediation_code": row["remediation_code"]}
 
 
 def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None:
@@ -215,10 +243,85 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     if observation["schema"] != OBS_SCHEMA: raise ValidationError("TYPE_MISMATCH")
     if observation["ruleset_id"] != manifest["ruleset_id"]: raise ValidationError("UNSUPPORTED_RULESET_ID")
     if observation["ruleset_digest"] != digest(manifest): raise ValidationError("RULESET_DIGEST_MISMATCH")
+    if not isinstance(observation.get("repository"), dict) or set(observation["repository"]) != {"name"} or not isinstance(observation["repository"]["name"], str):
+        raise ValidationError("TYPE_MISMATCH")
+    pr = observation.get("pull_request")
+    if not isinstance(pr, dict) or set(pr) != {"number","title","body","branch","base_ref","head_ref"} or not isinstance(pr.get("number"), int) or pr["number"] < 1 or not all(isinstance(pr.get(k), str) for k in ("title","body","branch","base_ref","head_ref")):
+        raise ValidationError("TYPE_MISMATCH")
     for name in ("authoring_epoch","changed_paths","agentos","linear","path_ownership","native_linkage"):
         snap = observation[name]
-        if not isinstance(snap, dict) or snap.get("state") not in STATE or not isinstance(snap.get("diagnostics"), list):
+        if not isinstance(snap, dict) or snap.get("state") not in STATE or not isinstance(snap.get("diagnostics"), list) or any(not isinstance(x, str) for x in snap.get("diagnostics", [])) or snap["diagnostics"] != sorted(set(snap["diagnostics"])):
             raise ValidationError("INVALID_SNAPSHOT_STATE")
+    epoch = observation["authoring_epoch"]
+    epoch_keys = {"state","relation","default_ref","cutover_merge_sha","template_blobs","first_strict_pr_number","legacy_open_pr_numbers","receipt_ruleset_digest","cutover_receipt_sha256","diagnostics"}
+    if set(epoch) != epoch_keys or epoch.get("relation") not in {"PRE_CUTOVER","AT_OR_POST_CUTOVER","UNKNOWN"}:
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
+    if epoch["state"] == "PRESENT" and (epoch["relation"] == "UNKNOWN" or epoch.get("receipt_ruleset_digest") != observation["ruleset_digest"]):
+        raise ValidationError("EPOCH_RECEIPT_RULESET_MISMATCH")
+    payloads = {"changed_paths":"paths", "agentos":"workstreams", "linear":"issues", "path_ownership":"resolutions", "native_linkage":"relationships"}
+    for name, payload in payloads.items():
+        snap = observation[name]
+        if payload not in snap or not isinstance(snap[payload], list):
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
+        if snap["state"] in {"UNAVAILABLE", "NOT_APPLICABLE"} and snap[payload]:
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
+    native = observation["native_linkage"]
+    if not isinstance(native.get("pagination_complete"), bool):
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
+    legal = manifest["native_reduction"]["legal_rows"]
+    for row in native["relationships"]:
+        if not isinstance(row, dict) or set(row) != {"issue_id","kind","source","state","completion_transition"}:
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
+        state, kind, source, transition = row["state"], row["kind"], row["source"], row["completion_transition"]
+        valid = False
+        if state == "PRESENT" and kind == "AUTO_LINK": valid = source in {"BRANCH","TITLE"} and transition in {"ELIGIBLE","INELIGIBLE"}
+        elif state == "PRESENT" and kind in {"CLOSING","CONTRIBUTING","RELATION_ONLY"}: valid = source in {"BODY","LINEAR_NATIVE","ADAPTER"} and transition == ({"CLOSING":"ELIGIBLE","CONTRIBUTING":"INELIGIBLE","RELATION_ONLY":"INELIGIBLE"}[kind])
+        elif state == "SUPPRESSED": valid = kind == "SUPPRESSED" and source in {"BRANCH","TITLE"} and transition == "INELIGIBLE"
+        elif state in {"AMBIGUOUS","UNAVAILABLE"}: valid = native["state"] in {"PARTIAL","CONTRADICTORY"} and kind == "UNKNOWN" and source in {"BODY","BRANCH","TITLE","LINEAR_NATIVE","ADAPTER"} and transition == "UNKNOWN"
+        if not valid or (native["state"] == "PRESENT" and state not in {"PRESENT","SUPPRESSED"}):
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
+    receipt = observation.get("receipt")
+    receipt_keys = {"repository","pr_number","base_sha","head_sha","source_sha","body_sha256","observation_sha256","cutover_receipt_sha256","ruleset_digest","snapshot_digests","producer"}
+    if not isinstance(receipt, dict) or set(receipt) != receipt_keys:
+        raise ValidationError("TYPE_MISMATCH")
+
+
+def receipt_projection(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, str | None]:
+    """Return the closed, deterministic receipt values without mutating observation."""
+    receiptless = json.loads(canonical_json(observation))
+    receiptless["receipt"].pop("observation_sha256", None)
+    epoch = observation["authoring_epoch"]
+    cutover = None
+    if epoch.get("cutover_receipt_sha256") is not None:
+        cutover = epoch["cutover_receipt_sha256"]
+    return {
+        "OBSERVATION": digest(receiptless),
+        "BODY": hashlib.sha256(observation["pull_request"]["body"].encode("utf-8")).hexdigest(),
+        "CUTOVER": cutover,
+        "RULESET": digest(manifest),
+        "AUTHORING_EPOCH": digest(observation["authoring_epoch"]),
+        "CHANGED_PATHS": digest(observation["changed_paths"]),
+        "AGENTOS": digest(observation["agentos"]),
+        "LINEAR": digest(observation["linear"]),
+        "PATH_OWNERSHIP": digest(observation["path_ownership"]),
+        "NATIVE_LINKAGE": digest(observation["native_linkage"]),
+    }
+
+
+def finalize_receipt(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any]:
+    """Return a receipt-grounded deep copy for fixtures/adapters; the core remains pure."""
+    out = json.loads(canonical_json(observation))
+    expected = receipt_projection(out, manifest)
+    receipt = out["receipt"]
+    receipt["repository"] = out["repository"]["name"]
+    receipt["pr_number"] = out["pull_request"]["number"]
+    receipt["body_sha256"] = expected["BODY"]
+    receipt["cutover_receipt_sha256"] = expected["CUTOVER"]
+    receipt["ruleset_digest"] = expected["RULESET"]
+    receipt["snapshot_digests"] = {k.lower(): expected[k] for k in ("AUTHORING_EPOCH","CHANGED_PATHS","AGENTOS","LINEAR","PATH_OWNERSHIP","NATIVE_LINKAGE")}
+    # observation hash includes the complete receipt except itself; recompute once after all fields settle.
+    receipt["observation_sha256"] = receipt_projection(out, manifest)["OBSERVATION"]
+    return out
 
 
 def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any]:
@@ -232,15 +335,18 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     missing = [f for f in FIELDS if values[f] is None]
     if missing: add("R001", {"missing_fields": missing})
     for f in FIELDS:
-        if len(locs[f]) > 1: add("R002", {"field":f,"locations":[f"BODY:L{x}:{f}" for x in locs[f]],"values":[text_digest(values[f] or "")]}, f)
+        if len(locs[f]) > 1:
+            findings.append(_finding(rules, "R002", {"field":f,"locations":[f"BODY:L{x}:{f}" for x in locs[f]],"values":[canonical_digest(values[f] or "")]}, field=f, line=locs[f][1]))
     if defects: add("R003", {"location":"DECLARATION:BLOCK","reason":sorted(set(defects))[0]})
     normalized = dict(values)
     epoch = observation["authoring_epoch"]
-    for f in ("Portfolio-Mode","Authority","Completion"):
+    for f in FIELDS:
         v = values[f]
         if v is None: continue
         if v in {"", "TBD", "TODO"} or "|" in v or (v.startswith("<") and v.endswith(">")):
             add("R004", {"field":f,"location":f"BODY:L{locs[f][0]}:{f}","value":text_digest(v)}, f); continue
+        if f not in ENUMS:
+            continue
         if v in ALIASES:
             if epoch["state"] == "PRESENT" and epoch.get("relation") == "PRE_CUTOVER":
                 normalized[f] = ALIASES[v]; add("R021", {"alias":v,"canonical":ALIASES[v],"field":f,"receipt":canonical_digest(epoch)}, f)
@@ -267,7 +373,11 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     classification = manifest["classification"]["mode_to_class"].get(mode, manifest["classification"]["legacy_class"] if author_state == "LEGACY" else "UNKNOWN")
     if canonical and linear == "NONE": add("R029", {"linear":"NONE","portfolio_mode":mode})
     agentos, lsnap, paths, ownership, native = (observation[x] for x in ("agentos","linear","changed_paths","path_ownership","native_linkage"))
-    if mode in {"tracked","architecture_candidate","creates_workstream"} and agentos["state"] != "PRESENT": add("R033", {"snapshot_state":agentos["state"],"workstream":ws or "NONE"})
+    if (mode in {"tracked","creates_workstream"} or (mode == "architecture_candidate" and ws not in {None,"NONE"})) and agentos["state"] != "PRESENT": add("R033", {"snapshot_state":agentos["state"],"workstream":ws or "NONE"})
+    if mode == "tracked" and ws == "NONE": add("R031", {"portfolio_mode":mode,"workstream":ws})
+    if mode == "maintenance_exception" and ws != "NONE": add("R032", {"portfolio_mode":mode,"workstream":ws or "NONE"})
+    if agentos["state"] == "PRESENT" and ws and ws != "NONE" and mode in {"tracked","architecture_candidate"} and ws not in {r.get("key") for r in agentos.get("workstreams",[])}:
+        add("R030", {"workstream":ws})
     if linear and linear != "NONE":
         if lsnap["state"] != "PRESENT": add("R035", {"linear":linear,"snapshot_state":lsnap["state"]})
         else:
@@ -280,6 +390,18 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
                 for r in rows:
                     allowed = manifest["classification"]["mode_to_issue_types"].get(mode,[]) if r.get("target_role") == "DECLARED" else manifest["classification"]["target_role_to_issue_types"].get(r.get("target_role"),[])
                     if r.get("issue_type") not in allowed: add("R028", {"issue_type":r.get("issue_type","UNKNOWN"),"portfolio_mode":mode or "UNKNOWN","target_role":r.get("target_role","UNKNOWN")})
+                if mode in {"tracked","architecture_candidate"} and ws not in {None,"NONE"} and declared and declared[0].get("workstream_key") != ws:
+                    add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
+                if mode == "creates_workstream" and declared and declared[0].get("workstream_key") not in {None, ws}:
+                    add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
+    branch_targets = _issue_ids(observation["pull_request"].get("branch", ""))
+    title_targets = _issue_ids(observation["pull_request"].get("title", ""))
+    body_targets = sorted({issue for issue, _, _ in body_relationships})
+    if linear and linear != "NONE":
+        if branch_targets and any(x != linear for x in branch_targets): add("R050", {"branch_targets":branch_targets,"declared":linear})
+        competing = sorted({x for x in title_targets + body_targets if x != linear})
+        if competing: add("R051", {"body_targets":body_targets,"declared":linear,"title_targets":title_targets})
+        if len(set(branch_targets + title_targets + body_targets + [linear])) > 1: add("R039", {"declared":linear,"targets":sorted(set(branch_targets + title_targets + body_targets + [linear]))})
     if canonical and tuple([mode,authority,completion]) not in {tuple(x) for x in manifest["authority_completion_allowlist"]}: add("R040", {"authority":authority,"completion":completion,"portfolio_mode":mode})
     if paths["state"] != "PRESENT": add("R043", {"snapshot_state":paths["state"]})
     if ownership["state"] != "PRESENT": add("R042", {"paths":[],"snapshot_state":ownership["state"]})
@@ -289,14 +411,69 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         excluded = [r for r in rs if r.get("resolution") == "EXACT" and authority not in r.get("allowed_authorities",[])]
         if unowned: add("R047", {"paths":[text_digest(r.get("path","")) for r in unowned],"resolutions":[canonical_digest(r) for r in unowned]})
         if excluded: add("R041", {"authority":authority,"paths":[text_digest(r.get("path","")) for r in excluded],"resolutions":[canonical_digest(r) for r in excluded]})
-    if native["state"] != "PRESENT": add("R054", {"linear":linear or "NONE","snapshot_state":native["state"]})
+        if mode == "maintenance_exception":
+            bad = [r for r in rs if r.get("resolution") != "EXACT" or r.get("path_class") != "MAINTENANCE" or r.get("owner_workstream") != "NONE" or "maintenance" not in r.get("allowed_authorities", [])]
+            if bad: add("R044", {"authority":authority,"linear":linear or "NONE","paths":[text_digest(r.get("path","")) for r in bad]})
+        if mode == "architecture_candidate" and (authority in {"implementation","deploy"} or any(r.get("path_class") in {"IMPLEMENTATION","DEPLOY"} for r in rs)):
+            add("R045", {"authority":authority,"paths":[text_digest(r.get("path","")) for r in rs]})
+        if mode == "creates_workstream":
+            impl = [r for r in rs if r.get("path_class") in {"IMPLEMENTATION","DEPLOY"}]
+            if impl: add("R046", {"path_classes":sorted(set(r.get("path_class") for r in impl)),"paths":[text_digest(r.get("path","")) for r in impl]})
+    if mode == "creates_workstream":
+        if agentos["state"] == "PRESENT" and ws:
+            collisions = sorted(r.get("key") for r in agentos.get("workstreams", []) if r.get("key", "").upper() == ws.upper())
+            if collisions: add("R038", {"collisions":collisions,"workstream":ws})
+        if paths["state"] == "PRESENT" and ws and not any(r.get("path") == f"agentos/workstreams/{ws}.md" and r.get("change_type") in {"ADDED","MODIFIED"} for r in paths.get("paths", [])):
+            add("R037", {"paths":[text_digest(r.get("path","")) for r in paths.get("paths",[])],"workstream":ws})
+    completion_rows: list[dict[str, Any]] = []
+    if native["state"] in {"PARTIAL", "UNAVAILABLE"} and linear and linear != "NONE": add("R054", {"linear":linear,"snapshot_state":native["state"]})
+    elif linear and linear != "NONE":
+        rels = [r for r in native.get("relationships", []) if r.get("issue_id") == linear]
+        active = [r for r in rels if r.get("state") == "PRESENT"]
+        eligible = [r for r in active if r.get("completion_transition") == "ELIGIBLE"]
+        kinds = {r.get("kind") for r in active}
+        ambiguous = native["state"] == "CONTRADICTORY" or len({r.get("completion_transition") for r in active}) > 1
+        if ambiguous:
+            add("R055", {"diagnostics":native.get("diagnostics", []),"linear":linear,"relationships":[canonical_digest(r) for r in rels]})
+        effect = "AMBIGUOUS" if ambiguous else ("COMPLETION_CAPABLE" if eligible else ("NON_CLOSING" if active else "NONE"))
+        declared_rows = [r for r in lsnap.get("issues", []) if r.get("id") == linear and r.get("target_role") == "DECLARED"] if lsnap["state"] == "PRESENT" else []
+        stop_law = declared_rows[0].get("stop_law") if declared_rows else None
+        consistency = "INDETERMINATE" if native["state"] != "PRESENT" or ambiguous else ("MISMATCH" if ((completion == "merge-is-done" and effect != "COMPLETION_CAPABLE") or (completion in {"built-not-proven","proof-required","acceptance-required"} and effect == "COMPLETION_CAPABLE")) else "MATCH")
+        completion_rows.append({"issue_id":linear,"effect":effect,"declared_completion":completion,"stop_law":stop_law,"consistency":consistency})
+        if completion == "merge-is-done" and not eligible:
+            add("R056", {"completion":completion,"effect":"NONE" if not rels else "NON_CLOSING","stop_law":"UNKNOWN","target":linear,"target_role":"DECLARED"})
+        if completion in {"built-not-proven","proof-required","acceptance-required","records-only"} and eligible:
+            add("R056", {"completion":completion,"effect":"COMPLETION_CAPABLE","stop_law":"UNKNOWN","target":linear,"target_role":"DECLARED"})
+        if lsnap["state"] == "PRESENT":
+            if completion == "merge-is-done" and declared_rows and declared_rows[0].get("stop_law") in {"PROOF","ACCEPTANCE"}:
+                add("R053", {"completion":completion,"linear":linear,"stop_law":declared_rows[0]["stop_law"]})
     for sname, snap in (("AUTHORING_EPOCH",epoch),("CHANGED_PATHS",paths),("AGENTOS",agentos),("LINEAR",lsnap),("PATH_OWNERSHIP",ownership),("NATIVE_LINKAGE",native)):
-        if snap["state"] == "CONTRADICTORY": add("R061", {"diagnostics":snap.get("diagnostics",[]),"snapshot":sname})
+        if snap["state"] == "CONTRADICTORY": findings.append(_finding(rules, "R061", {"diagnostics":snap.get("diagnostics",[]),"snapshot":sname}, component=sname))
+    # Grounding mismatches are semantic (valid observation, refused metadata), not an exit-2 route.
+    receipt = observation["receipt"]
+    ground = receipt_projection(observation, manifest)
+    observed_ground = {
+        "OBSERVATION": receipt.get("observation_sha256"), "BODY": receipt.get("body_sha256"),
+        "CUTOVER": receipt.get("cutover_receipt_sha256"), "RULESET": receipt.get("ruleset_digest"),
+        "AUTHORING_EPOCH": receipt.get("snapshot_digests", {}).get("authoring_epoch"),
+        "CHANGED_PATHS": receipt.get("snapshot_digests", {}).get("changed_paths"),
+        "AGENTOS": receipt.get("snapshot_digests", {}).get("agentos"),
+        "LINEAR": receipt.get("snapshot_digests", {}).get("linear"),
+        "PATH_OWNERSHIP": receipt.get("snapshot_digests", {}).get("path_ownership"),
+        "NATIVE_LINKAGE": receipt.get("snapshot_digests", {}).get("native_linkage"),
+    }
+    for component, expected in ground.items():
+        observed = observed_ground[component]
+        if observed != expected:
+            findings.append(_finding(rules,"R060",{"component":component,"expected":canonical_digest(expected),"observed":canonical_digest(observed)}, component=component))
     # Visible closing claim is independently material even without an adapter native row.
     if completion in {"built-not-proven","proof-required","acceptance-required"}:
         for target, kind, line in body_relationships:
             if target == linear and kind == "CLOSING":
                 findings.append(_finding(rules,"R052",{"completion":completion,"linear":linear,"relationships":[canonical_digest({"issue":target,"kind":kind})]},field="RELATIONSHIP",line=line))
+    if linear and linear != "NONE" and not completion_rows:
+        declared_rows = [r for r in lsnap.get("issues", []) if r.get("id") == linear and r.get("target_role") == "DECLARED"] if lsnap["state"] == "PRESENT" else []
+        completion_rows.append({"issue_id":linear,"effect":"UNKNOWN","declared_completion":completion,"stop_law":declared_rows[0].get("stop_law") if declared_rows else None,"consistency":"INDETERMINATE"})
     unresolved = sorted(name for name, snap in (("AUTHORING_EPOCH",epoch),("CHANGED_PATHS",paths),("AGENTOS",agentos),("LINEAR",lsnap),("PATH_OWNERSHIP",ownership),("NATIVE_LINKAGE",native)) if snap["state"] in {"PARTIAL","UNAVAILABLE","CONTRADICTORY"})
     findings.sort(key=lambda x:(SEVERITY[x["severity"]],x["code"],x["rule_id"],x["location"],canonical_json(x["evidence"])))
     # deterministic semantic de-duplication
@@ -306,6 +483,9 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         if k not in seen: kept.append(f); seen.add(k)
     verdict = "REFUSE_METADATA" if any(f["severity"]=="ERROR" for f in kept) else ("PARTIAL" if any(f["severity"]=="PARTIAL" for f in kept) else ("WARN" if kept else "CONFORMANT"))
     completeness = "UNAVAILABLE" if author_state == "MISSING" else ("DEGRADED" if unresolved or any(f["severity"]=="PARTIAL" for f in kept) else "COMPLETE")
-    semantic = {"ruleset_id":manifest["ruleset_id"],"ruleset_digest":digest(manifest),"enforcement":"REPORT_ONLY","declaration":{"workstream":ws,"linear":linear,"portfolio_mode":mode,"wave":wave,"authority":authority,"completion":completion,"authoring_state":author_state},"classification":classification,"verdict":verdict,"completeness":completeness,"completion_interpretation":[],"unresolved_observation_classes":unresolved,"findings":kept}
+    completion_rows.sort(key=lambda r:(r["issue_id"],r["effect"],r["declared_completion"] or "",r["stop_law"] or "",r["consistency"]))
+    semantic = {"ruleset_id":manifest["ruleset_id"],"ruleset_digest":digest(manifest),"enforcement":"REPORT_ONLY","declaration":{"workstream":ws,"linear":linear,"portfolio_mode":mode,"wave":wave,"authority":authority,"completion":completion,"authoring_state":author_state},"classification":classification,"verdict":verdict,"completeness":completeness,"completion_interpretation":completion_rows,"unresolved_observation_classes":unresolved,"findings":kept}
     receipt = observation["receipt"]
-    return {"schema":REPORT_SCHEMA,"semantic":semantic,"semantic_hash":digest(semantic),"receipt":receipt,"human":{"summary":f"{classification}/{verdict}","remediations":sorted(set(f["remediation_code"] for f in kept))}}
+    report = {"schema":REPORT_SCHEMA,"semantic":semantic,"semantic_hash":digest(semantic),"receipt":receipt,"human":{"summary":f"{classification}/{verdict}","remediations":sorted(set(f["remediation_code"] for f in kept))}}
+    validate_report(report)
+    return report

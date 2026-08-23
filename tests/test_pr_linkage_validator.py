@@ -15,7 +15,7 @@ MANIFEST = json.loads((ROOT / "config/pr_linkage_rules.v1.json").read_text())
 def observation(body: str, *, epoch="AT_OR_POST_CUTOVER", native_state="PRESENT"):
     d = validator.digest(MANIFEST)
     def present(key, value): return {"state":"PRESENT","diagnostics":[],key:value}
-    return {"schema":validator.OBS_SCHEMA,"ruleset_id":validator.RULESET_ID,"ruleset_digest":d,
+    raw = {"schema":validator.OBS_SCHEMA,"ruleset_id":validator.RULESET_ID,"ruleset_digest":d,
       "repository":{"name":"owner/repository"},"pull_request":{"number":123,"title":"MAS-28","body":body,"branch":"mas-28","base_ref":"main","head_ref":"sha"},
       "authoring_epoch":{"state":"PRESENT","relation":epoch,"default_ref":"main","cutover_merge_sha":"a"*40,"template_blobs":[{"path":".github/pull_request_template.md","blob_sha":"b"*40}],"first_strict_pr_number":1,"legacy_open_pr_numbers":[],"receipt_ruleset_digest":d,"cutover_receipt_sha256":"c"*64,"diagnostics":[]},
       "changed_paths":present("paths",[]),"agentos":{"state":"PRESENT","basis":"BASE","workstreams":[{"key":"WS:AGENT-OS","waves":["MAS28-W1"]}],"diagnostics":[]},
@@ -23,6 +23,7 @@ def observation(body: str, *, epoch="AT_OR_POST_CUTOVER", native_state="PRESENT"
       "path_ownership":{"state":"PRESENT","basis":"BASE_POLICY","resolutions":[],"diagnostics":[]},
       "native_linkage":{"state":native_state,"pagination_complete":native_state=="PRESENT","relationships":[],"diagnostics":[]},
       "receipt":{"repository":"owner/repository","pr_number":123,"base_sha":"d"*40,"head_sha":"e"*40,"source_sha":"f"*40,"body_sha256":hashlib.sha256(body.encode()).hexdigest(),"observation_sha256":"0"*64,"cutover_receipt_sha256":"c"*64,"ruleset_digest":d,"snapshot_digests":{},"producer":"test"}}
+    return validator.finalize_receipt(raw, MANIFEST)
 
 
 VALID = "\n".join(("Workstream: WS:AGENT-OS","Linear: MAS-28","Portfolio-Mode: tracked","Wave: MAS28-W1","Authority: implementation","Completion: built-not-proven"))
