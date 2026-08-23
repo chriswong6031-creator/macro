@@ -116,7 +116,7 @@
     "evidence_id": "ev:49d99002d0a8",
     "evidence_class": "official_budget_exhibit",
     "sha256": "49d99002d0a89acc73ccb3d9b3fee81b9db2eff8946eae94c06c7648764498df",
-    "source_url": "https://www.secnav.navy.mil/fmc/fmb/",
+    "source_url": "https://www.secnav.navy.mil/fmc/fmb/Documents/11pres/SCN_BA2_BOOK.pdf",
     "retrieved_from_url": "https://www.globalsecurity.org/military/library/budget/fy2011/navy/fy11-scn.pdf",
     "retrieved_at": "2026-08-23T07:20:12+00:00",
     "known_at": "2026-08-23T07:20:12+00:00",
@@ -171,7 +171,7 @@
      },
      {
       "system": "p1_line_item",
-      "native_identifier": "Virginia Class Submarine",
+      "native_identifier": "Appropriation 1611N Shipbuilding and Conversion, Navy - BA-02 - line: Virginia Class Submarine (+ Advance Procurement sibling line)",
       "evidence_ref": "ev:49d99002d0a8"
      }
     ],
@@ -283,13 +283,13 @@
    "action": "admit",
    "target_kind": "role_assertion",
    "candidate_row": {
-    "id": "prog-role:11f019cb0e31",
+    "id": "prog-role:c9ba4a07ebb2",
     "revision": 1,
     "program_id": "acq-program:virginia-class-ssn",
     "platform_id": null,
     "entity_id": "legal:hii:huntington-ingalls-inc",
     "role": "teaming_partner",
-    "role_scope": "each Virginia-class boat is built jointly by GD/EB and HII/NNS; Newport News Shipbuilding is the delivery yard for six Block VI boats",
+    "role_scope": "each Virginia-class boat is built jointly by GD/EB and HII/NNS",
     "shared_scope": false,
     "single_document_dual_scope": false,
     "economic_weight": null,
@@ -326,7 +326,8 @@
      "ev:0c5a1e7e1772",
      "ev:5481be6c0caa"
     ]
-   }
+   },
+   "scope_statement": "Entity-attachment deciding sentence (BWXT release, 2025-02-19): the work \"will be performed at BWXT Nuclear Operations Group, Inc. locations\" - the role therefore attaches to the operating subsidiary, not the announcing parent BWX Technologies, Inc."
   },
   {
    "action": "admit",
