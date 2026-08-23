@@ -1,0 +1,258 @@
+{
+  "asset": "BTC-USD",
+  "authority": "research_only_no_promotion",
+  "caveat": "Single frozen asset/horizon comparison; no multiple-testing claim and no trading authority.",
+  "data_version": "glt_data:7de86d608602fe1c",
+  "factors": {
+    "monetary_impulse": {
+      "folds": [
+        {
+          "purge_weeks": 4,
+          "test_end": "2019-10-04",
+          "test_n": 52,
+          "test_start": "2018-10-12",
+          "train_end": "2018-09-07",
+          "train_n": 208,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2020-10-02",
+          "test_n": 52,
+          "test_start": "2019-10-11",
+          "train_end": "2019-09-06",
+          "train_n": 260,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2021-10-01",
+          "test_n": 52,
+          "test_start": "2020-10-09",
+          "train_end": "2020-09-04",
+          "train_n": 312,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2022-09-30",
+          "test_n": 52,
+          "test_start": "2021-10-08",
+          "train_end": "2021-09-03",
+          "train_n": 364,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2023-09-29",
+          "test_n": 52,
+          "test_start": "2022-10-07",
+          "train_end": "2022-09-02",
+          "train_n": 416,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2024-09-27",
+          "test_n": 52,
+          "test_start": "2023-10-06",
+          "train_end": "2023-09-01",
+          "train_n": 468,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2025-09-26",
+          "test_n": 52,
+          "test_start": "2024-10-04",
+          "train_end": "2024-08-30",
+          "train_n": 520,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2026-07-31",
+          "test_n": 44,
+          "test_start": "2025-10-03",
+          "train_end": "2025-08-29",
+          "train_n": 572,
+          "train_start": "2014-09-19"
+        }
+      ],
+      "oos_correlation": -0.0325,
+      "oos_directional_accuracy": 0.5368,
+      "oos_mse": 0.03381118,
+      "oos_n": 408
+    },
+    "monetary_stance": {
+      "folds": [
+        {
+          "purge_weeks": 4,
+          "test_end": "2019-10-04",
+          "test_n": 52,
+          "test_start": "2018-10-12",
+          "train_end": "2018-09-07",
+          "train_n": 208,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2020-10-02",
+          "test_n": 52,
+          "test_start": "2019-10-11",
+          "train_end": "2019-09-06",
+          "train_n": 260,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2021-10-01",
+          "test_n": 52,
+          "test_start": "2020-10-09",
+          "train_end": "2020-09-04",
+          "train_n": 312,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2022-09-30",
+          "test_n": 52,
+          "test_start": "2021-10-08",
+          "train_end": "2021-09-03",
+          "train_n": 364,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2023-09-29",
+          "test_n": 52,
+          "test_start": "2022-10-07",
+          "train_end": "2022-09-02",
+          "train_n": 416,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2024-09-27",
+          "test_n": 52,
+          "test_start": "2023-10-06",
+          "train_end": "2023-09-01",
+          "train_n": 468,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2025-09-26",
+          "test_n": 52,
+          "test_start": "2024-10-04",
+          "train_end": "2024-08-30",
+          "train_n": 520,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2026-07-31",
+          "test_n": 44,
+          "test_start": "2025-10-03",
+          "train_end": "2025-08-29",
+          "train_n": 572,
+          "train_start": "2014-09-19"
+        }
+      ],
+      "oos_correlation": 0.0646,
+      "oos_directional_accuracy": 0.4951,
+      "oos_mse": 0.03501354,
+      "oos_n": 408
+    },
+    "orthogonalised_impulse": {
+      "folds": [
+        {
+          "purge_weeks": 4,
+          "test_end": "2019-10-04",
+          "test_n": 52,
+          "test_start": "2018-10-12",
+          "train_end": "2018-09-07",
+          "train_n": 208,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2020-10-02",
+          "test_n": 52,
+          "test_start": "2019-10-11",
+          "train_end": "2019-09-06",
+          "train_n": 260,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2021-10-01",
+          "test_n": 52,
+          "test_start": "2020-10-09",
+          "train_end": "2020-09-04",
+          "train_n": 312,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2022-09-30",
+          "test_n": 52,
+          "test_start": "2021-10-08",
+          "train_end": "2021-09-03",
+          "train_n": 364,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2023-09-29",
+          "test_n": 52,
+          "test_start": "2022-10-07",
+          "train_end": "2022-09-02",
+          "train_n": 416,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2024-09-27",
+          "test_n": 52,
+          "test_start": "2023-10-06",
+          "train_end": "2023-09-01",
+          "train_n": 468,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2025-09-26",
+          "test_n": 52,
+          "test_start": "2024-10-04",
+          "train_end": "2024-08-30",
+          "train_n": 520,
+          "train_start": "2014-09-19"
+        },
+        {
+          "purge_weeks": 4,
+          "test_end": "2026-07-31",
+          "test_n": 44,
+          "test_start": "2025-10-03",
+          "train_end": "2025-08-29",
+          "train_n": 572,
+          "train_start": "2014-09-19"
+        }
+      ],
+      "oos_correlation": -0.1757,
+      "oos_directional_accuracy": 0.5368,
+      "oos_mse": 0.03403506,
+      "oos_n": 408
+    }
+  },
+  "frequency": "W-FRI",
+  "generated_at": "2026-08-23T06:46:58.038474+00:00",
+  "history_cutoff": "2026-08-21",
+  "initial_train_weeks": 208,
+  "model_version": "glt_state.v1",
+  "purge_weeks": 4,
+  "schema": "global_liquidity_transmission.factor_comparison.v1",
+  "source_snapshot_hash": "7de86d608602fe1c6944b69f5561a35b0e1fa863354fe8cfda1a5e5a9930e8d2",
+  "target": "forward_4w_log_return",
+  "test_weeks": 52
+}
