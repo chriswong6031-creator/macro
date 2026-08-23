@@ -34,15 +34,6 @@ SCHEMA_PATH = (
     / "reference.v1.schema.json"
 )
 
-AUTOMATIC_RELATIONS = frozenset({"exact_duplicate", "same_fact", "same_event"})
-NON_AUTOMATIC_RELATIONS = frozenset({
-    "corroborates",
-    "contradicts",
-    "shares_upstream",
-    "corrects",
-    "supersedes",
-    "projects",
-})
 CORRECTION_KINDS = frozenset({
     "amendment",
     "restatement",
@@ -65,7 +56,6 @@ CORRECTION_RELATION_KIND = {
     "withdrawal": "corrects",
     "superseding_generation": "supersedes",
 }
-_DETERMINISTIC_KEY_RE = re.compile(r"[a-z0-9][a-z0-9._:/=@+-]{0,1023}\Z")
 _NATIVE_IDENTITY_TEXT_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,1023}\Z")
 
 
@@ -414,21 +404,15 @@ def semantic_violations(
         if not isinstance(relation, Mapping):
             violations.append(f"relation_{index}_invalid")
             continue
-        relation_type = relation.get("type")
-        automatic = relation.get("automatic_effect") is True
+        automatic_effect = relation.get("automatic_effect")
         deterministic_key = relation.get("deterministic_key")
-        if automatic and relation_type not in AUTOMATIC_RELATIONS:
-            violations.append(f"relation_{index}_automatic_forbidden")
-        if relation_type in NON_AUTOMATIC_RELATIONS and automatic:
-            violations.append(f"relation_{index}_non_deterministic_effect")
-        if automatic and not isinstance(deterministic_key, str):
-            violations.append(f"relation_{index}_automatic_without_key")
-        if automatic and isinstance(deterministic_key, str) and not _DETERMINISTIC_KEY_RE.fullmatch(
-            deterministic_key
-        ):
-            violations.append(f"relation_{index}_deterministic_key_noncanonical")
-        if not automatic and deterministic_key is not None:
-            violations.append(f"relation_{index}_inactive_key_must_be_null")
+        # V1 has no frozen owner-native deterministic-lineage type.  Consequently
+        # even an apparently exact duplicate is declarative context only: an
+        # arbitrary caller-authored key must never acquire automatic effect.
+        if automatic_effect is not False:
+            violations.append(f"relation_{index}_automatic_effect_forbidden_v1")
+        if deterministic_key is not None:
+            violations.append(f"relation_{index}_deterministic_key_forbidden_v1")
         independence = relation.get("independence")
         if isinstance(independence, Mapping):
             for axis_name in (
@@ -508,8 +492,20 @@ def semantic_violations(
         if mode == "historical_replay":
             if not replay.get("code_revision") or not replay.get("input_digest"):
                 violations.append("historical_replay_missing_reproducibility")
+            if replay.get("vintage_state") == "unavailable":
+                violations.append("historical_replay_vintage_unavailable")
             if replay.get("vintage_state") == "current_rule_recomputation":
                 violations.append("recomputation_mislabeled_replay")
+            if owner_store == "fif.raw_occurrence":
+                for required_field in ("clocks.accepted_at", "clocks.recorded_at"):
+                    required_clock = clock_fields.get(required_field)
+                    if (
+                        not isinstance(required_clock, Mapping)
+                        or required_clock.get("value_state") != "known"
+                    ):
+                        violations.append(
+                            f"historical_replay_fif_clock_unknown:{required_field}"
+                        )
         if mode == "current_rule_recomputation" and replay.get("vintage_state") != mode:
             violations.append("recomputation_vintage_state_mismatch")
         if mode in {"historical_replay", "retrospective_research"}:

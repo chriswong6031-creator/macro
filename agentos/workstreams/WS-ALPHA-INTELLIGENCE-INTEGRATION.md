@@ -53,8 +53,12 @@ landmines:
     f4183edade53603fad7a97f702eb4c6e5eabff5d, #5898 merged as
     21f51a1ecfed778a738b048bd7e5efd30b1d9336, and #6285 merged as
     1e7d9f5030fd7c7c06fb03f022857510c5d0f9ed. Merge never implies unrelated
-    production acceptance; current FIF-3A2 #6302 remains DRAFT / HOLD-FOR-SOL and
-    K1 neither modifies nor routes around it."
+    production acceptance. FIF-3A2 #6302 subsequently merged as
+    e210a80d2bad56b351d90ef82ddaa4ec114887b9, and #6324 durably records Sol's
+    exact-head PASS as ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN. That decision
+    also keeps the production attested issuer service NOT_BUILT and FIF-3
+    IN_PROGRESS, so accepted golden/on-main is not production/live proof. K1
+    neither modifies nor routes around it."
   - "PR #5894 (V4-D2A GMI→Data OS bridge) MERGED 2026-08-18 — the theme-graph/
     identity occupation cleared by its own terms (c0 delta). Radar/Prophet-Lab
     surfaces are now the occupied territory: #5925/#5928/#5929 open post-#5924
@@ -72,9 +76,14 @@ landmines:
     rows were not bound to actual native wire/storage grain, native_schema and full
     clocks were not fail-closed, independence was overclaimed, correction relations
     were not set-equal to predecessors, and JSON-Schema plus semantic validation had
-    two consumer paths. The repaired candidate uses 14 source-backed rows, one
-    combined validator, declarative_unverified independence, and executed mutation
-    kills. K1 stays in_progress until a fresh exact-head review passes and Sol accepts."
+    two consumer paths. A second exact-head review of ead0076 requested changes for
+    source-backed clock completeness/classes, Earnings generation aliasing, a
+    non-reader Data OS row, FIF historical replay unknowns, and an unsafe automatic
+    relation escape. The current repaired candidate uses 13 source-backed rows, the
+    native Earnings parser, no Data OS pseudo-reader, one combined validator,
+    declarative_unverified independence, automatic_effect=false throughout v1, and
+    executed cutoff/replay mutation kills. K1 stays in_progress until a third fresh
+    exact-head review passes and Sol accepts."
   - "US G0 canonical copy is MERGED PR #5955 (research/earnings_intelligence/g0/,
     inside the Earnings owner's owns_paths); CN-G0 is MERGED PR #5943
     (research/alpha_intelligence/censuses/CN-G0/). The #5822->#5953 rival
@@ -121,7 +130,7 @@ waves:
     title: K1 Evidence Foundation — mesh contract freeze (FABLE-A)
     status: in_progress
     depends_on: [c0]
-    next_action: Sol accepts or returns exact amendments on the v1.0.0 contract-only packet; no dependent wave starts before that ruling.
+    next_action: A third fresh exact-head review rules on the repaired v1.0.0 contract-only packet; after reviewer PASS, Sol accepts or returns exact amendments. No dependent wave starts before Sol's ruling.
   - id: k2
     title: K2 Institutional Intelligence — manager ontology + intent contract (B), adapter pilots (C)
     status: todo
@@ -147,12 +156,13 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  Sol reviews the exact K1 Evidence Foundation v1.0.0 return packet at
-  research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md
-  and rules ACCEPT or names exact amendments. The physical-store flip condition
-  is adverse: no named committed >=3-owner single-query consumer exists, so owner
-  access remains owner-bound and no store/index was built. Do not start K2, K3, K4,
-  B1, K2-B, D5-EARNINGS, or any dependent wave before Sol accepts K1.
+  A third fresh exact-head reviewer rules on the repaired K1 Evidence Foundation
+  v1.0.0 return packet at
+  research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md.
+  After reviewer PASS, Sol rules ACCEPT or names exact amendments. The physical-store
+  flip condition is adverse: no named committed >=3-owner single-query consumer
+  exists, so owner access remains owner-bound and no store/index was built. Do not
+  start K2, K3, K4, B1, K2-B, D5-EARNINGS, or any dependent wave before Sol accepts K1.
 ---
 
 # Alpha Intelligence Expansion — integration workstream

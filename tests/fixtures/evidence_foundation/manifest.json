@@ -11,8 +11,8 @@
     {
       "file": "earnings_workspace_valid.json",
       "expected": "valid",
-      "size_bytes": 2978,
-      "sha256": "5469851367bc58e50cfb5ca61a3779f148ffa7cfa71ef46ba7a4f9825e8ded44",
+      "size_bytes": 2981,
+      "sha256": "abf73734e79f21277b68a0dd4cf6347012b28287b484b69d96e284be9a771589",
       "proves": "Earnings event_workspace immutable generation"
     },
     {
@@ -25,8 +25,8 @@
     {
       "file": "correction_append_valid.json",
       "expected": "valid",
-      "size_bytes": 3924,
-      "sha256": "0cf1cc5f042ed2bd24fef32a7b35c97ef5174aa8002d7e5dd898a491e09dfebd",
+      "size_bytes": 3927,
+      "sha256": "241550bbd082fab3dab321d4d071a90f505d2ef52ca38f437776d334bd6fa3fd",
       "proves": "append/supersede correction lineage"
     },
     {

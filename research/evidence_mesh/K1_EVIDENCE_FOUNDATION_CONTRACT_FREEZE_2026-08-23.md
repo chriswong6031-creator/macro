@@ -30,19 +30,27 @@ The protected Sol Skillpack was loaded atomically from the current protected
 The handoff's Mastermind pin is exactly current. The Macro handoff pin
 `fb2375441f21b94201edc4ed6ac2c40f67274cde` remains an ancestor, but is historical.
 The repaired candidate was reconciled against fresh Macro `origin/main`
-`0e38c48b38e7b2a10c55e3218f691bd83d8f4f65`. Since the first K1 candidate base,
+`7cc324f2e1c6425ac9710863b3aa4ca8ac20b7c4`. Since the first K1 candidate base,
 the first K1-owner-area mainline change was #6308 in
 `engine/company_intelligence/event_workspace_build.py`: it carries corrected
 lifecycle state forward and adds the filing form inside an existing workspace source
-row. It does not change `WORKSPACE_SCHEMA`, `WORKSPACE_KEYS`, native generation/event
-identity, the three registered workspace clocks, or `read_event_workspace`. #6312
+row. It does not change `WORKSPACE_SCHEMA`, `WORKSPACE_KEYS`, or the three native
+workspace clocks. #6312
 later added a display-only supplier-language annotation to the government award-event
 parser; it did not change `EVENT_CONTRACT`, native `event_id`, registered event clocks,
-or `_validated_award_events`. The remaining base movement through
-`0e38c48b38e7b2a10c55e3218f691bd83d8f4f65` touched render, press, records,
-Canada/public display, and marketing-publish surfaces rather than a registered K1
-owner contract. K1 did not start, modify, or extend D5; it only reconciled the
-already-merged owner source on its base.
+or `_validated_award_events`. #6302 then merged as
+`e210a80d2bad56b351d90ef82ddaa4ec114887b9`, adding the AAPL FY2026 Q3 10-Q and
+stable Earnings event reference on main. The later #6324 records closeout now
+classifies FIF-3A2 as `ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN` after Sol PASS /
+`ACCEPTED_FOR_LANDING` on exact product head
+`9598c5430c587b2ec9d1f84d3fa6e2d704808bcc`. Its decision also explicitly keeps
+the production attested issuer service `NOT_BUILT` and FIF-3 `IN_PROGRESS`; accepted
+golden-fixture/on-main status is not production/live proof. The remaining base movement
+through `7cc324f2e1c6425ac9710863b3aa4ca8ac20b7c4` touched Agent OS governance,
+Intelligence Workspace, render, press, records, Canada/public display, marketing
+publication, and research-vault data rather than changing a registered K1 owner
+contract. K1 did not start, modify, or extend D5; it only reconciled already-merged
+owner source on its base.
 
 The current Mastermind strategic state remains
 `mastermind.strategic_state.v1`, phase `PRE_REVENUE_MVP_CONVERGENCE`, with the
@@ -59,10 +67,11 @@ Historical stop prose in the c0 packet is no longer current PR state:
 | FIF-1R3 #5889 | merged 2026-08-19 | `f4183edade53603fad7a97f702eb4c6e5eabff5d` | `financial_intelligence_packet.v1` is accepted mainline contract/code; merge alone does not prove every later production wave |
 | FF-1P2R #5898 | merged 2026-08-22 | `21f51a1ecfed778a738b048bd7e5efd30b1d9336` | current-quarter EDGAR discovery landed; no inference of unrelated production readiness |
 | FF-1R #6285 | merged 2026-08-23 | `1e7d9f5030fd7c7c06fb03f022857510c5d0f9ed` | bounded July recovery is accepted mainline owner law |
-| FIF-3A2 #6302 | open draft `HOLD-FOR-SOL` | head `9598c5430c587b2ec9d1f84d3fa6e2d704808bcc` | later FIF production acceptance remains held; K1 did not modify, merge, or route around it |
+| FIF-3A2 #6302 + closeout #6324 | merged and Sol-accepted golden fixture 2026-08-23 | `e210a80d2bad56b351d90ef82ddaa4ec114887b9` (accepted product head `9598c5430c587b2ec9d1f84d3fa6e2d704808bcc`); decision `DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN` at `8c125a80bc8c` | `ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN`; production attested issuer service remains `NOT_BUILT`, FIF-3 remains `IN_PROGRESS`, and no production/live state is inferred |
 
-K1 therefore uses current owner contracts and fixtures. It does not describe a
-merge as production proof and does not consume or alter the held FIF-3A2 carrier.
+K1 therefore uses current owner contracts and fixtures. It distinguishes Sol's
+exact-head acceptance and on-main golden-fixture state from absent production/live
+service proof, and it does not extend FIF-3A2.
 
 ## 2. Physical-store flip-condition verdict
 
@@ -104,7 +113,7 @@ The contract version is `1.0.0`:
 
 - `.github/ci/legacy-jobs.yml` — binding run in the existing signal-contract lane
 - `contracts/evidence_foundation/reference.v1.schema.json` — closed JSON Schema wire
-- `contracts/evidence_foundation/vocabulary.v1.json` — 14 source-bound owner identity/schema/type/clock/accessor bindings
+- `contracts/evidence_foundation/vocabulary.v1.json` — 13 source-bound owner identity/schema/type/clock/accessor bindings
 - `contracts/evidence_foundation/README.md` — interoperability law
 - `lib/evidence_foundation.py` — the canonical combined JSON-Schema plus semantic fail-closed validator
 
@@ -152,7 +161,7 @@ Seven clock classes are frozen without renaming native fields:
 | `world_valid` | when the fact/state applies in the world |
 | `source_published` | when the owner source published/accepted it |
 | `knowable` | when it became lawfully available to the system |
-| `observed` | when the owner actually retrieved/first saw it |
+| `observed` | when the owner actually retrieved or observed it |
 | `system_recorded` | when the owner durably retained/registered it |
 | `belief_or_build` | the owner's belief, vintage, or build clock |
 | `review_due` | a future review/maturity deadline, never observation time |
@@ -170,17 +179,15 @@ means the owner returns a native collection and the full native key selects one 
 
 | Owner object | Native identity | Key clock bindings | Owner accessor |
 |---|---|---|---|
-| Data OS security master | `security_id` | `effective_at`, `ingested_at` | `IssuerMaster.issuer_of_security` (direct) |
 | Theme Graph evidence | `evidence_id` | published/effective/computed | `read_evidence` (collection) |
 | Theme Graph edge belief | `edge_id + belief_time` | valid/evidence/belief/computed | `read_edges` (collection; historical selection) |
 | FIF raw occurrence | `occurrence_id` | all five `TemporalClocks` fields | `RawFactLedger.by_id` (direct) |
 | FIF packet | `packet_id` | source/system cutoffs, governance, build | `validate_packet_semantics` (parser) |
-| Earnings workspace generation | `generation_id + event_id` | lifecycle available/observed, generated | `read_event_workspace` (direct, identity checked) |
+| Earnings workspace generation | `generation_id + event_id` | lifecycle available/observed, generated | `validate_event_workspace` (parser; native identity checked) |
 | Institutional 13F receipt | `filer_cik + accession + receipt_id` | report/accepted/retained | `RawEvidenceReceipt.from_json_bytes` (parser) |
-| Institutional 13F catalog generation | `report_period + generation_id` | report/source-cutoff/published | `load_catalog_generation` (direct) |
-| GovRev event v2 | `event_id` | effective/known/first-seen | `_validated_award_events` (collection) |
-| Bio current source snapshot | `nct_id + source_snapshot_id` | effective/published/retrieved/first-seen/valid/transaction | `validate_contract` (parser) |
-| Bio history source snapshot | `nct_id + source_version + source_snapshot_id` | submitted/QC/retrieved/transaction | `validate_contract` (parser) |
+| GovRev event v2 | `event_id` | effective/known/first-seen/last-seen | `_validated_award_events` (collection) |
+| Bio current source snapshot | `nct_id + source_snapshot_id` | effective/published/dataset/update/retrieved/first-seen/valid-from+to/transaction-from+to | `validate_contract` (parser) |
+| Bio history source snapshot | `nct_id + source_version + source_snapshot_id` | submitted/QC/retrieved/transaction-from+to | `validate_contract` (parser) |
 | TXI transition row | `chain + rev + episode_id + transition + hop + asof` | `asof` | `_read_ledger` (collection) |
 | QLedger stored claim | `claim_id` | asof/vector-asof/registration/review-due | `load_claims` (collection) |
 | Market Memory outcome | `outcome_record_id` | effective/available/known/observed/recorded | `load_record` (direct) |
@@ -191,23 +198,34 @@ replay harness were explicitly included in the archaeology. Derived heads such a
 the QLedger evidence-clock start and current Theme/TXI/workspace heads are excluded
 from owner objects.
 
+Data OS remains the canonical identity/join owner, but it is deliberately deferred
+as an Evidence Foundation owner row. `IssuerMaster` is explicitly no-I/O;
+`issuer_of_security` returns a scalar from a caller-constructed subset and is not a
+native `security_master.parquet` object reader. K1 found no honest row-returning
+storage API and will not misclassify that convenience lookup as a direct reader.
+Likewise, the public Earnings convenience reader follows the current marker and can
+alias generations; K1 binds the native `event_workspace.v1` parser until a real
+generation-aware reader exists.
+
 ### Relations, corrections, missingness, replay
 
 - Every relation carries separate source-independence, information-novelty, and
   economic/mechanism-independence axes. V1 records them only as
   `declarative_unverified`; it makes no detection or verification claim without
   typed deterministic owner lineage IDs.
-- Only `exact_duplicate`, `same_fact`, and `same_event` may have an automatic
-  effect, and only with a deterministic key.
+- V1 permits no automatic effect: every relation carries `automatic_effect=false`
+  and `deterministic_key=null` until a typed owner-native lineage key is frozen.
 - `corroborates`, `contradicts`, `shares_upstream`, `corrects`, `supersedes`, and
   `projects` never auto-net, rank, promote, or suppress.
 - Corrections append and name predecessor references. The `corrects`/`supersedes`
   relation target set must exactly equal the predecessor set, with the right relation
   kind and an honest native chronology-verification state. Predecessors never mutate.
 - Missingness is typed and can never be substituted with zero.
-- Every known replay cutoff is parsed even when unused. Historical replay refuses any
-  native clock beyond its class cutoff and treats same-day date/datetime comparisons
-  as ambiguous symmetrically. Current-rule recomputation is a separate mode.
+- Every known replay cutoff is parsed even when unused. Historical replay refuses an
+  unavailable vintage, requires known FIF accepted/recorded clocks, refuses any
+  native clock beyond its class cutoff, and treats same-day date/datetime comparisons
+  as ambiguous symmetrically. Current-rule recomputation remains the separate mode
+  already present in owner/source law; K1 invents no new replay mode.
 
 ## 4. Golden fixture packet
 
@@ -216,18 +234,20 @@ The manifest freezes eight byte-receipted fixtures:
 | Fixture | Verdict | Bytes | SHA-256 |
 |---|---:|---:|---|
 | `fif_packet_valid.json` | valid | 3168 | `d9657d3baa86ea1f60442b6e6a367e4831863aae01d1fc7510166dc312140861` |
-| `earnings_workspace_valid.json` | valid | 2978 | `5469851367bc58e50cfb5ca61a3779f148ffa7cfa71ef46ba7a4f9825e8ded44` |
+| `earnings_workspace_valid.json` | valid | 2981 | `abf73734e79f21277b68a0dd4cf6347012b28287b484b69d96e284be9a771589` |
 | `duplicate_corroboration_hostile.json` | invalid | 3667 | `f1731de02cbdec27aaab897a77215a4fdcdd5dbfb6879f64106b2b4fbcad652f` |
-| `correction_append_valid.json` | valid | 3924 | `0cf1cc5f042ed2bd24fef32a7b35c97ef5174aa8002d7e5dd898a491e09dfebd` |
+| `correction_append_valid.json` | valid | 3927 | `241550bbd082fab3dab321d4d071a90f505d2ef52ca38f437776d334bd6fa3fd` |
 | `replay_valid.json` | valid | 3509 | `ea4e1c05568c004b371dcb721ebc9cf512f420482e0f926406882fc157bd8614` |
 | `replay_lookahead_hostile.json` | invalid | 3415 | `4f24b366cad2f1344955b771adc8fe4614da9fe18cd66480c8ba4e05c0ee91b7` |
 | `typed_missingness_valid.json` | valid | 2808 | `cece49f53fc161f7a2dbd24d821fc38ca5bd5f4d0daa5140c79dc8ab246e3eaa` |
 | `authority_leak_hostile.json` | invalid | 2603 | `61f7ebbd0964657f8b3556e63a302619dcbe4cfb4dccfc620ca25896e151b765` |
 
 `tests/test_evidence_foundation_contract.py` uses only the combined validator for
-consumer verdicts. It proves source-bound schema/identity/accessor fields, one-pointer
-selection, all owner clocks exactly once, exact fixture bytes/hashes, native-schema
-and per-clock deletion kills, TXI collision resistance, declarative-only independence,
+consumer verdicts. It proves exact source-backed schema/identity/clock/accessor
+inventories, native Earnings parser identity, one-pointer selection, exact fixture
+bytes/hashes, native-schema and per-clock deletion kills, 13F/GovRev/Bio
+cutoff-inversion kills, FIF unknown-clock and unavailable-vintage replay kills, TXI
+collision resistance, declarative-only independence, v1 automatic-effect refusal,
 correction target equality, all-class invalid cutoffs, symmetric cross-grain ambiguity,
 typed missingness, body refusal, and zero authority. Its no-store proof enumerates the
 actual changed-file inventory and calls the sparse-worktree API only to observe omitted
@@ -245,12 +265,16 @@ python3 scripts/check_contract_delta.py --base origin/main
 python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --pack-index 5 --pack-count 12 --validate-only
 ```
 
-The repaired targeted fixture/contract suite concluded **32 passed**. The only warnings were
+The repaired targeted fixture/contract suite concluded **41 passed**. The only warnings were
 three unrelated pytest temporary-directory cleanup warnings outside this worktree.
-The owner-source regression selection (`Data OS`, Theme Graph, FIF, Earnings workspace,
-13F, government events, TXI, QLedger, and Market Memory) additionally concluded
-**483 passed, 3 skipped**; its remaining warnings were the same unrelated temporary-
-directory cleanup warnings plus one upstream Starlette deprecation warning.
+After restoring the full checkout required by the committed Bio fixtures, the
+owner-source regression selection (Data OS no-I/O negative control, Theme Graph,
+FIF, Earnings workspace, 13F, government events, Bio current/history, TXI, QLedger,
+and Market Memory) additionally concluded **569 passed, 1 skipped**. Its remaining
+warnings were three unrelated temporary-directory cleanup warnings plus one upstream
+Starlette deprecation warning. The preceding sparse run's Bio fixture misses are not
+counted as contract failures: all 72 were `FileNotFoundError` for intentionally omitted
+`data/` fixtures, and the identical selection passed after full materialization.
 
 ### Required CI-authority scope addition
 
@@ -272,11 +296,11 @@ run on a main descendant of the merge under the merged authority.
 > Sol, accept K1 / FABLE-A Evidence Foundation v1.0.0 as a contract-only freeze.
 > The current protected Skillpack was loaded from Mastermind
 > `db0bac5fe3f72348262d42c8bd26b836bda9f61d`; Macro was reconciled to
-> `0e38c48b38e7b2a10c55e3218f691bd83d8f4f65`. The physical-store flip condition is
+> `7cc324f2e1c6425ac9710863b3aa4ca8ac20b7c4`. The physical-store flip condition is
 > adverse: no named current PR or workstream commits to a one-query native-object
 > read across at least three owner stores for one subject. K1 therefore preserves
 > owner-bound accessors, copies no bodies, creates no store/index/control plane, and
-> freezes only the pointer schema, 14-owner vocabulary, combined fail-closed validator, and
+> freezes only the pointer schema, 13-owner vocabulary, combined fail-closed validator, and
 > eight exact-hash fixtures. All authority axes, including ENTRY_OPEN, are false.
 > Please rule ACCEPT or return exact K1 amendments. This packet does not authorize or
 > begin K2, K3, K4, B1, K2-B, or D5-EARNINGS.

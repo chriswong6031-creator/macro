@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_75d190c07a3c7a12a950e7c333b8e5e0d3f69625dea93a09df82bcc512d20c51",
+  "reference_id": "efr_648d599e77d5ec280bf3b70fe0c7a43f430b6e61b4689b3a895b2bbec5f11046",
   "object_class": "derived_view",
   "owner_store": "earnings.workspace_generation",
   "native_identity": {
@@ -45,9 +45,9 @@
   "provenance": {
     "pointer_only": true,
     "body_embedded": false,
-    "owner_reader": "engine.neuralweb.company_intelligence_reader.read_event_workspace",
+    "owner_reader": "engine.company_intelligence.event_workspace.validate_event_workspace",
     "pointer": "company_intelligence/event_workspaces/generations/fedcba9876543210fedcba98/workspaces/evt_cik0000320193_2026q3_results.json",
-    "owner_reader_kind": "direct"
+    "owner_reader_kind": "parser"
   },
   "relations": [
     {

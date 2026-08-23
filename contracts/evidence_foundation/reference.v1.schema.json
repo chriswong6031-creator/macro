@@ -251,22 +251,10 @@
             "projects"
           ]
         },
-        "automatic_effect": {"type": "boolean"},
-        "deterministic_key": {
-          "type": ["string", "null"],
-          "minLength": 1,
-          "maxLength": 1024,
-          "pattern": "^[a-z0-9][a-z0-9._:/=@+\\-]*$"
-        },
+        "automatic_effect": {"const": false},
+        "deterministic_key": {"type": "null"},
         "independence": {"$ref": "#/$defs/independence"}
-      },
-      "allOf": [
-        {
-          "if": {"properties": {"automatic_effect": {"const": true}}, "required": ["automatic_effect"]},
-          "then": {"properties": {"deterministic_key": {"type": "string"}}},
-          "else": {"properties": {"deterministic_key": {"type": "null"}}}
-        }
-      ]
+      }
     },
     "missingness": {
       "type": "object",

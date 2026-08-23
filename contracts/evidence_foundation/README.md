@@ -19,7 +19,7 @@ canonical bytes. K1 does not pretend a parser or materializer is a physical read
 - `vocabulary.v1.json` is the versioned owner/identity/clock binding table.
 - `lib/evidence_foundation.py` exports the one combined JSON-Schema plus semantic
   fail-closed validator. Its semantic pass enforces exact owner schema, identity type,
-  pointer and clock bindings, automatic-relation limits, append/supersede lineage,
+  pointer and clock bindings, v1 automatic-effect refusal, append/supersede lineage,
   and replay lookahead refusal.
 
 The schema and vocabulary version are both `1.0.0`. Evolution is additive within v1.
@@ -55,10 +55,10 @@ changing a native clock binding requires v2.
    typed deterministic lineage IDs, K1 neither detects nor certifies independence.
    Shared upstreams therefore cannot be promoted as independent corroboration merely
    because two projections differ.
-6. **Automatic effects are deterministic only.** Only `exact_duplicate`,
-   `same_fact`, and `same_event` may set `automatic_effect=true`, and then only with a
-   deterministic key. `corroborates`, `contradicts`, and `shares_upstream` coexist and
-   never net, weight, promote, or suppress automatically.
+6. **Automatic effects are unavailable in v1.** Every relation materializes
+   `automatic_effect=false` and `deterministic_key=null`. The contract has no frozen
+   typed owner-native deterministic-lineage key, so even an `exact_duplicate` label
+   cannot make an arbitrary caller-authored key suppress, net, rank, or promote.
 7. **Missingness is typed.** Absence never becomes numeric zero. `unsupported`,
    `stale`, `rights_blocked`, `unresolved_identity`, and the other closed reasons are
    actionable states, not values.
@@ -69,7 +69,9 @@ changing a native clock binding requires v2.
    clock ordering was verified or remains unverified. In-place mutation is forbidden.
 9. **Replay is honest.** Every known cutoff is parsed even when the reference carries
    no clock in that class. `historical_replay` carries typed cutoffs, code revision,
-   input digest, and vintage state. A clock beyond its same-class cutoff is refused;
+   input digest, and an available vintage state. FIF historical replay additionally
+   requires known native `accepted_at` and `recorded_at` clocks. A clock beyond its
+   same-class cutoff is refused;
    same-day date-versus-datetime comparisons are ambiguous in either direction unless
    a future contract supplies an explicit boundary. `current_rule_recomputation` is a
    different mode and may not be described as replay.
@@ -88,9 +90,12 @@ write clock would turn this pointer contract into a different observation-log ob
 
 The merged PIT replay harness maps without loss: session/effective ceiling to
 `world_valid`; source publication/acceptance to `source_published`; public/source
-availability to `knowable`; retrieval/first-seen to `observed`; retained/recorded to
+availability to `knowable`; retrieval to `observed`; retained/recorded to
 `system_recorded`; vintage commit/build belief to `belief_or_build`; and any review
-deadline to `review_due`. Unknown native clocks remain explicit unknown values.
+deadline to `review_due`. Native first-seen fields retain their owner meaning rather
+than sharing a global shortcut: GovRev and BioCatalyst first-seen are `knowable`.
+Unknown native clocks remain explicit unknown values, except where an owner replay
+contract explicitly requires them to be known.
 
 ## Physical-store decision
 

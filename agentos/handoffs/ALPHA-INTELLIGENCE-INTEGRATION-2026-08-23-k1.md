@@ -26,27 +26,32 @@ changed:
       no new job or workflow was created.
   - path: "contracts/evidence_foundation/README.md"
     what: >
-      Freezes the pointer-only law, owner-native identities and clocks, deterministic
-      relations, typed missingness, append/supersede corrections, honest replay,
-      explicit Synapse as-of bindings, and literal all-false authority.
+      Freezes the pointer-only law, owner-native identities and clocks, v1's
+      all-false automatic-relation boundary, typed missingness, append/supersede
+      corrections, honest replay, explicit Synapse as-of bindings, and literal
+      all-false authority.
   - path: "contracts/evidence_foundation/reference.v1.schema.json"
     what: >
       Defines the closed `evidence_foundation.reference.v1` wire at version 1.0.0;
       native bodies and any rank/gate/size/origination/entry authority are forbidden.
   - path: "contracts/evidence_foundation/vocabulary.v1.json"
     what: >
-      Binds 14 source-backed owner-native object families to exact native schemas,
+      Binds 13 source-backed owner-native object families to exact native schemas,
       identity fields and scalar types, object classes, subject keys, complete clock
       sets, honestly typed accessors, pointer templates, and existing Synapse
-      `asof_field` or explicit null. The nonexistent Earnings lifecycle object and
-      identity-aliased TXI episode grain are absent.
+      `asof_field` or explicit null. The Earnings row uses its native workspace
+      parser because the convenience reader aliases generations; the Data OS
+      IssuerMaster row is deferred because its scalar no-I/O lookup is not a native
+      object reader. The nonexistent Earnings lifecycle object and identity-aliased
+      TXI episode grain are absent.
   - path: "lib/evidence_foundation.py"
     what: >
       Adds the one combined JSON-Schema plus semantic fail-closed validator for
       deterministic reference identity, vocabulary integrity, exact native schema,
       identity type/pointer/clock binding, declarative-only relation independence,
       correction target equality, missingness, replay lookahead refusal, and zero
-      authority.
+      authority. Historical FIF replay rejects unknown accepted/recorded clocks and
+      unavailable vintages; v1 refuses every automatic effect and deterministic key.
   - path: "tests/fixtures/evidence_foundation/manifest.json and eight fixture JSON files"
     what: >
       Freezes exact bytes and SHA-256 receipts for FIF, Earnings, duplicate versus
@@ -55,10 +60,12 @@ changed:
   - path: "tests/test_evidence_foundation_contract.py"
     what: >
       Proves all fixture verdicts through the combined API, exact byte receipts,
-      current-source schema and accessor binding, one-pointer native-object selection,
-      native-schema and per-clock deletion kills, full TXI transition identity,
-      declarative-only independence, correction target equality, all-cutoff parsing,
-      symmetric cross-grain ambiguity, and changed-inventory no-store evidence.
+      exact source-backed owner-schema/identity/clock/accessor inventories, native
+      Earnings parser object identity, one-pointer native-object selection,
+      native-schema and per-clock deletion kills, 13F/GovRev/Bio cutoff-inversion
+      kills, FIF replay unknown/unavailable kills, full TXI transition identity,
+      declarative-only independence, correction target equality, automatic-effect
+      refusal, symmetric cross-grain ambiguity, and changed-inventory no-store evidence.
   - path: "research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md"
     what: >
       Records protected Skillpack provenance, current owner/PR reconciliation, the
@@ -86,14 +93,16 @@ verified:
       mastermind.sol_skillpack.v1; version 1.0.0; minimum bootstrap major 1;
       strict required check test and enforce_admins=true; every procedure blob is
       pinned in the K1 research packet.
-  - claim: "The historical Macro pin is an ancestor and the build base was reconciled by fast-forward only."
+  - claim: "The historical Macro pin and rejected PR head are ancestors, and the continuation was reconciled without rewriting either history."
     command: >
-      git merge-base --is-ancestor fb2375441f21b94201edc4ed6ac2c40f67274cde
-      0e38c48b38e7b2a10c55e3218f691bd83d8f4f65; git fetch origin main; git rebase
-      origin/main; git merge-base origin/main HEAD
+      git fetch origin; git merge --no-edit origin/main; git merge --no-edit
+      origin/claude/k1-evidence-foundation-20260823; git merge-base --is-ancestor
+      fb2375441f21b94201edc4ed6ac2c40f67274cde HEAD; git merge-base --is-ancestor
+      ead0076ad48d8a19ae8bc90123629e074a0732d4 HEAD; git merge-base origin/main HEAD
     result: >
-      The historical pin is an ancestor; the reconciled base is
-      0e38c48b38e7b2a10c55e3218f691bd83d8f4f65. The post-first-candidate
+      Both historical pins are ancestors; the continuation merged current main and
+      the remote PR lineage without rebase/reset/force. The reconciled base is
+      7cc324f2e1c6425ac9710863b3aa4ca8ac20b7c4. The post-first-candidate
       owner-area deltas are #6308 in event_workspace_build.py, which leaves
       WORKSPACE_SCHEMA, WORKSPACE_KEYS, native identity/clocks, and
       read_event_workspace unchanged, and #6312's display-only government
@@ -118,8 +127,13 @@ verified:
     result: >
       #5889 merged f4183edade53603fad7a97f702eb4c6e5eabff5d; #5898 merged
       21f51a1ecfed778a738b048bd7e5efd30b1d9336; #6285 merged
-      1e7d9f5030fd7c7c06fb03f022857510c5d0f9ed; #6302 remains open draft at
-      9598c5430c587b2ec9d1f84d3fa6e2d704808bcc under HOLD-FOR-SOL and was untouched.
+      1e7d9f5030fd7c7c06fb03f022857510c5d0f9ed; #6302 merged as
+      e210a80d2bad56b351d90ef82ddaa4ec114887b9 from
+      9598c5430c587b2ec9d1f84d3fa6e2d704808bcc. #6324 / decision
+      DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN durably records Sol PASS and classifies
+      FIF-3A2 ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN. The production attested
+      issuer service remains NOT_BUILT and FIF-3 remains IN_PROGRESS, so accepted
+      golden/on-main supplies no production/live proof.
   - claim: "The complete contract, fixture bytes, owner reader bindings, hostile cases, and sparse-safe no-store invariant pass."
     command: >
       python3 -m json.tool contracts/evidence_foundation/reference.v1.schema.json;
@@ -128,23 +142,29 @@ verified:
       tests/test_evidence_foundation_contract.py; python3 -m pytest -q
       tests/test_evidence_foundation_contract.py
     result: >
-      32 passed; exact size and SHA-256 matched for all eight fixtures; all 14 accessor
-      paths are callable on the current base; native-schema/clock omission, TXI alias,
-      unverified independence, correction target mismatch, invalid/all-class cutoff,
-      symmetric cross-grain, noncanonical key, authority, lookahead, and body-copy
-      mutations were refused. Three warnings were unrelated pytest temporary-directory
-      cleanup warnings outside the worktree.
+      41 passed; exact size and SHA-256 matched for all eight fixtures; all 13
+      accessor paths resolve against current source law; exact owner inventory,
+      native-schema/clock omission, 13F/GovRev/Bio cutoff inversion, FIF unknown/
+      unavailable replay, TXI alias, unverified independence, automatic-effect,
+      correction target mismatch, invalid/all-class cutoff, symmetric cross-grain,
+      noncanonical key, authority, lookahead, and body-copy mutations were refused.
+      Three warnings were unrelated pytest temporary-directory cleanup warnings
+      outside the worktree.
   - claim: "Current native owner regressions remain green on the reconciled base."
     command: >
       python3 -m pytest -q tests/test_dataos_identity.py
       tests/test_theme_graph_contracts.py tests/test_fundamental_forensics_raw_ledger.py
       tests/test_company_intelligence_event_workspace.py
       tests/test_institutional_13f_catalog.py tests/test_government_revenue_award_events.py
+      tests/test_biocatalyst_protocols.py tests/test_clinicaltrials_history.py
       tests/test_transmission_chains.py tests/test_qledger_evidence_clock.py
       tests/test_market_memory.py
     result: >
-      483 passed and 3 skipped. The four warnings were three unrelated pytest
-      temporary-directory cleanup warnings plus one upstream Starlette deprecation.
+      After `python3 scripts/worktree_sparse.py full` restored the committed Bio
+      fixtures, 569 passed and 1 skipped. The four warnings were three unrelated
+      pytest temporary-directory cleanup warnings plus one upstream Starlette
+      deprecation. The preceding sparse-only run's 72 Bio failures were all expected
+      missing-data-fixture artifacts and the identical selection passed in full.
   - claim: "K1 contains no physical store, native truth mirror, or authority-bearing consumer."
     command: >
       git diff --name-only origin/main...HEAD; git diff --name-only; git diff --cached
@@ -160,7 +180,7 @@ verified:
   - claim: "The Agent OS packet remains valid as a knowledge-plane update."
     command: "python3 scripts/agentos.py validate"
     result: >
-      Agent OS validated 626 records with 0 errors and 30 unrelated existing
+      Agent OS validated 631 records with 0 errors and 19 unrelated existing
       phantom-path, stale-review, and active-but-complete warnings.
   - claim: "The new K1 suite has a valid binding hosted-CI owner."
     command: >
@@ -184,10 +204,12 @@ unverified:
       at least three owner stores for one subject without importing owner engines, then
       passes a new Data OS persistence and Synapse registration adjudication.
 unresolved:
-  - "Sol acceptance of K1 v1.0.0 remains pending by design; this carrier returns the exact packet and stops."
+  - "A third fresh exact-head reviewer must PASS the repaired K1 candidate before it is returned to Sol."
+  - "Sol acceptance of K1 v1.0.0 remains pending by design; merge or green CI cannot substitute for it."
   - "The physical-store flip condition is adverse; there is no committed >=3-owner consumer."
 next_actions:
-  - "Sol reviews research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md and returns ACCEPT or exact amendments."
+  - "A third fresh reviewer inspects the pushed exact K1 head and returns PASS or exact amendments."
+  - "After reviewer PASS, Sol reviews research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md and returns ACCEPT or exact amendments."
   - "If Sol accepts, update the K1 wave to done in a separately authorized closeout; do not infer acceptance from merge or green CI."
   - "Do not start K2, K3, K4, B1, K2-B, D5-EARNINGS, or a physical Evidence Mesh under this carrier."
 do_not_redo:
@@ -195,7 +217,7 @@ do_not_redo:
   - "Do not reintroduce ticker_store_key, a universal entity id, or Stock Identity behavioral fingerprints as entity identities."
   - "Do not collapse world observations, derived views, system beliefs, forward claims, or instrument states into one evidence class."
   - "Do not describe current-rule recomputation as historical replay or zero-fill typed missingness."
-  - "Do not treat #5889/#5898/#6285 merge state as proof that held FIF-3A2 #6302 or any dependent wave is accepted/live."
+  - "Do not collapse #6302/#6324's accepted golden/on-main state into production/live service proof; the production attested issuer service remains NOT_BUILT."
 danger_areas:
   - "A new owner binding must preserve the exact native schema, identity fields/types, complete clock set, accessor kind, pointer, correction behavior, and Synapse as-of field; a plausible alias is not evidence."
   - "Source independence, information novelty, and mechanism independence are distinct but declarative/unverified in v1; two projections of one upstream are not verified independent corroboration."
@@ -208,10 +230,11 @@ discoveries: []
 
 # K1 Evidence Foundation cold-session return point
 
-K1 froze a pointer-only interoperability contract over fourteen source-backed owner
+K1 froze a pointer-only interoperability contract over thirteen source-backed owner
 object families. It proved eight exact-byte fixtures and current-base accessor/
 schema resolution while refusing the physical store because no named committed consumer
 satisfied the three-owner single-query gate. The contract has no ranking, gating,
 sizing, origination, or entry authority and copies no native bodies.
 
-Stop here. Sol reviews the exact K1 packet; this carrier starts no dependent wave.
+Stop here. A third exact-head reviewer rules first; after PASS, Sol reviews the exact
+K1 packet. This carrier starts no dependent wave.

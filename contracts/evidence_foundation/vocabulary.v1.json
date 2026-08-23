@@ -5,13 +5,6 @@
   "clock_classes": ["world_valid", "source_published", "knowable", "observed", "system_recorded", "belief_or_build", "review_due"],
   "subject_key_types": ["cik", "issuer_id", "security_id", "listing_key", "award_key", "notice_id", "nct", "theme_node", "chain_id", "claim_id", "accession", "mm_subject", "institutional_manager_cik", "cusip"],
   "owner_stores": {
-    "reference.security_master": {
-      "native_identity_fields": ["security_id"], "native_identity_types": {"security_id": "string"}, "native_schemas": ["reference.security_master"],
-      "object_classes": ["world_observation"], "subject_key_types": ["security_id", "issuer_id", "listing_key", "cik"],
-      "clock_bindings": {"effective_at": {"class": "world_valid", "grains": ["datetime"]}, "ingested_at": {"class": "system_recorded", "grains": ["datetime"]}},
-      "synapse_asof_field": null, "reader": "lib.dataos.identity.IssuerMaster.issuer_of_security", "reader_kind": "direct",
-      "pointer_template": "data/reference/security_master.parquet#security_id={security_id}"
-    },
     "theme_graph.evidence": {
       "native_identity_fields": ["evidence_id"], "native_identity_types": {"evidence_id": "string"}, "native_schemas": ["theme_graph.evidence.v1"],
       "object_classes": ["world_observation"], "subject_key_types": ["theme_node"],
@@ -44,13 +37,13 @@
       "native_identity_fields": ["generation_id", "event_id"], "native_identity_types": {"generation_id": "string", "event_id": "string"}, "native_schemas": ["event_workspace.v1"],
       "object_classes": ["derived_view"], "subject_key_types": ["cik"],
       "clock_bindings": {"lifecycle.source_available_at": {"class": "knowable", "grains": ["datetime"]}, "lifecycle.observed_at": {"class": "observed", "grains": ["datetime"]}, "generated_at": {"class": "belief_or_build", "grains": ["datetime"]}},
-      "synapse_asof_field": null, "reader": "engine.neuralweb.company_intelligence_reader.read_event_workspace", "reader_kind": "direct",
+      "synapse_asof_field": null, "reader": "engine.company_intelligence.event_workspace.validate_event_workspace", "reader_kind": "parser",
       "pointer_template": "company_intelligence/event_workspaces/generations/{generation_id}/workspaces/{event_id}.json"
     },
     "institutional_13f.raw_receipt": {
       "native_identity_fields": ["filer_cik", "accession", "receipt_id"], "native_identity_types": {"filer_cik": "string", "accession": "string", "receipt_id": "string"}, "native_schemas": ["institutional_13f.raw_evidence_receipt/v1"],
       "object_classes": ["world_observation"], "subject_key_types": ["institutional_manager_cik", "cik", "accession"],
-      "clock_bindings": {"clocks.report_period": {"class": "world_valid", "grains": ["date"]}, "clocks.accepted_at": {"class": "knowable", "grains": ["datetime"]}, "clocks.retained_at": {"class": "system_recorded", "grains": ["datetime"]}},
+      "clock_bindings": {"clocks.report_period": {"class": "world_valid", "grains": ["date"]}, "clocks.accepted_at": {"class": "source_published", "grains": ["datetime"]}, "clocks.retained_at": {"class": "system_recorded", "grains": ["datetime"]}},
       "synapse_asof_field": null, "reader": "engine.institutional_census.models.RawEvidenceReceipt.from_json_bytes", "reader_kind": "parser",
       "pointer_template": "institutional-13f/raw/{filer_cik}/{accession}/{receipt_id}.json"
     },
@@ -64,21 +57,21 @@
     "govrev.event.v2": {
       "native_identity_fields": ["event_id"], "native_identity_types": {"event_id": "string"}, "native_schemas": ["government_procurement_event.v2"],
       "object_classes": ["world_observation"], "subject_key_types": ["award_key", "notice_id", "cik"],
-      "clock_bindings": {"change.effective_at": {"class": "world_valid", "grains": ["date", "datetime"]}, "change.known_at": {"class": "knowable", "grains": ["datetime"]}, "change.first_seen_at": {"class": "observed", "grains": ["datetime"]}},
+      "clock_bindings": {"change.effective_at": {"class": "world_valid", "grains": ["date", "datetime"]}, "change.known_at": {"class": "knowable", "grains": ["datetime"]}, "change.first_seen_at": {"class": "knowable", "grains": ["datetime"]}, "change.last_seen_at": {"class": "knowable", "grains": ["datetime"]}},
       "synapse_asof_field": null, "reader": "engine.government_revenue.workspace._validated_award_events", "reader_kind": "collection",
       "pointer_template": "government-revenue://procurement-event/{event_id}"
     },
     "biocatalyst.current_source_snapshot": {
       "native_identity_fields": ["nct_id", "source_snapshot_id"], "native_identity_types": {"nct_id": "string", "source_snapshot_id": "string"}, "native_schemas": ["trial_source_snapshot.v1"],
       "object_classes": ["world_observation"], "subject_key_types": ["nct"],
-      "clock_bindings": {"source_effective_at": {"class": "world_valid", "grains": ["date", "datetime"]}, "source_published_at": {"class": "source_published", "grains": ["date", "datetime"]}, "retrieved_at": {"class": "observed", "grains": ["datetime"]}, "first_seen_at": {"class": "observed", "grains": ["datetime"]}, "valid_from": {"class": "world_valid", "grains": ["date", "datetime"]}, "transaction_from": {"class": "system_recorded", "grains": ["datetime"]}},
+      "clock_bindings": {"source_effective_at": {"class": "world_valid", "grains": ["date", "datetime"]}, "source_published_at": {"class": "source_published", "grains": ["date", "datetime"]}, "source_dataset_timestamp_raw": {"class": "source_published", "grains": ["datetime"]}, "source_last_update_posted_at": {"class": "source_published", "grains": ["date", "datetime"]}, "retrieved_at": {"class": "observed", "grains": ["datetime"]}, "first_seen_at": {"class": "knowable", "grains": ["datetime"]}, "valid_from": {"class": "world_valid", "grains": ["date", "datetime"]}, "valid_to": {"class": "world_valid", "grains": ["date", "datetime"]}, "transaction_from": {"class": "system_recorded", "grains": ["datetime"]}, "transaction_to": {"class": "system_recorded", "grains": ["datetime"]}},
       "synapse_asof_field": null, "reader": "engine.sector_intelligence.validate_contract", "reader_kind": "parser",
       "pointer_template": "biocatalyst-current://{nct_id}#source_snapshot_id={source_snapshot_id}"
     },
     "biocatalyst.history_source_snapshot": {
       "native_identity_fields": ["nct_id", "source_version", "source_snapshot_id"], "native_identity_types": {"nct_id": "string", "source_version": "integer", "source_snapshot_id": "string"}, "native_schemas": ["trial_history_source_snapshot.v1"],
       "object_classes": ["world_observation"], "subject_key_types": ["nct"],
-      "clock_bindings": {"source_submitted_at": {"class": "source_published", "grains": ["date", "datetime"]}, "source_last_update_submit_qc_at": {"class": "source_published", "grains": ["date", "datetime"]}, "retrieved_at": {"class": "observed", "grains": ["datetime"]}, "transaction_from": {"class": "system_recorded", "grains": ["datetime"]}},
+      "clock_bindings": {"source_submitted_at": {"class": "source_published", "grains": ["date"]}, "source_last_update_submit_qc_at": {"class": "source_published", "grains": ["date"]}, "retrieved_at": {"class": "observed", "grains": ["datetime"]}, "transaction_from": {"class": "system_recorded", "grains": ["datetime"]}, "transaction_to": {"class": "system_recorded", "grains": ["datetime"]}},
       "synapse_asof_field": null, "reader": "engine.sector_intelligence.validate_contract", "reader_kind": "parser",
       "pointer_template": "biocatalyst-history://{nct_id}/version/{source_version}#source_snapshot_id={source_snapshot_id}"
     },

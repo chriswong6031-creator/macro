@@ -29,6 +29,159 @@ VOCABULARY_PATH = CONTRACT_DIR / "vocabulary.v1.json"
 MANIFEST_PATH = FIXTURE_DIR / "manifest.json"
 
 
+EXPECTED_OWNER_BINDINGS = {
+    "theme_graph.evidence": {
+        "identity": ("evidence_id",),
+        "clocks": {
+            "published_at": ("source_published", ("date",)),
+            "effective_at": ("world_valid", ("date",)),
+            "computed_at": ("belief_or_build", ("datetime",)),
+        },
+        "reader": ("engine.theme_graph.store.read_evidence", "collection"),
+    },
+    "theme_graph.edge_belief": {
+        "identity": ("edge_id", "belief_time"),
+        "clocks": {
+            "valid_from": ("world_valid", ("date",)),
+            "valid_to": ("world_valid", ("date",)),
+            "evidence_time": ("source_published", ("date",)),
+            "belief_time": ("belief_or_build", ("date",)),
+            "computed_at": ("belief_or_build", ("datetime",)),
+        },
+        "reader": ("engine.theme_graph.store.read_edges", "collection"),
+    },
+    "fif.raw_occurrence": {
+        "identity": ("occurrence_id",),
+        "clocks": {
+            "clocks.accepted_at": ("source_published", ("datetime",)),
+            "clocks.recorded_at": ("system_recorded", ("datetime",)),
+            "clocks.mapping_available_at": ("knowable", ("datetime",)),
+            "clocks.computed_at": ("belief_or_build", ("datetime",)),
+            "clocks.published_at": ("belief_or_build", ("datetime",)),
+        },
+        "reader": ("engine.fundamental_forensics.raw_ledger.RawFactLedger.by_id", "direct"),
+    },
+    "fif.packet": {
+        "identity": ("packet_id",),
+        "clocks": {
+            "query.source_event_cutoff": ("source_published", ("datetime",)),
+            "query.system_recorded_cutoff": ("system_recorded", ("datetime",)),
+            "governance.governance_recorded_at": ("system_recorded", ("datetime",)),
+            "built_at": ("belief_or_build", ("datetime",)),
+        },
+        "reader": (
+            "engine.fundamental_forensics.financial_intelligence_packet.validate_packet_semantics",
+            "parser",
+        ),
+    },
+    "earnings.workspace_generation": {
+        "identity": ("generation_id", "event_id"),
+        "clocks": {
+            "lifecycle.source_available_at": ("knowable", ("datetime",)),
+            "lifecycle.observed_at": ("observed", ("datetime",)),
+            "generated_at": ("belief_or_build", ("datetime",)),
+        },
+        "reader": (
+            "engine.company_intelligence.event_workspace.validate_event_workspace",
+            "parser",
+        ),
+    },
+    "institutional_13f.raw_receipt": {
+        "identity": ("filer_cik", "accession", "receipt_id"),
+        "clocks": {
+            "clocks.report_period": ("world_valid", ("date",)),
+            "clocks.accepted_at": ("source_published", ("datetime",)),
+            "clocks.retained_at": ("system_recorded", ("datetime",)),
+        },
+        "reader": (
+            "engine.institutional_census.models.RawEvidenceReceipt.from_json_bytes",
+            "parser",
+        ),
+    },
+    "institutional_13f.catalog_generation": {
+        "identity": ("report_period", "generation_id"),
+        "clocks": {
+            "clocks.report_period": ("world_valid", ("date",)),
+            "clocks.source_cutoff_at": ("knowable", ("datetime",)),
+            "clocks.published_at": ("belief_or_build", ("datetime",)),
+        },
+        "reader": ("engine.institutional_census.catalog.load_catalog_generation", "direct"),
+    },
+    "govrev.event.v2": {
+        "identity": ("event_id",),
+        "clocks": {
+            "change.effective_at": ("world_valid", ("date", "datetime")),
+            "change.known_at": ("knowable", ("datetime",)),
+            "change.first_seen_at": ("knowable", ("datetime",)),
+            "change.last_seen_at": ("knowable", ("datetime",)),
+        },
+        "reader": ("engine.government_revenue.workspace._validated_award_events", "collection"),
+    },
+    "biocatalyst.current_source_snapshot": {
+        "identity": ("nct_id", "source_snapshot_id"),
+        "clocks": {
+            "source_effective_at": ("world_valid", ("date", "datetime")),
+            "source_published_at": ("source_published", ("date", "datetime")),
+            "source_dataset_timestamp_raw": ("source_published", ("datetime",)),
+            "source_last_update_posted_at": ("source_published", ("date", "datetime")),
+            "retrieved_at": ("observed", ("datetime",)),
+            "first_seen_at": ("knowable", ("datetime",)),
+            "valid_from": ("world_valid", ("date", "datetime")),
+            "valid_to": ("world_valid", ("date", "datetime")),
+            "transaction_from": ("system_recorded", ("datetime",)),
+            "transaction_to": ("system_recorded", ("datetime",)),
+        },
+        "reader": ("engine.sector_intelligence.validate_contract", "parser"),
+    },
+    "biocatalyst.history_source_snapshot": {
+        "identity": ("nct_id", "source_version", "source_snapshot_id"),
+        "clocks": {
+            "source_submitted_at": ("source_published", ("date",)),
+            "source_last_update_submit_qc_at": ("source_published", ("date",)),
+            "retrieved_at": ("observed", ("datetime",)),
+            "transaction_from": ("system_recorded", ("datetime",)),
+            "transaction_to": ("system_recorded", ("datetime",)),
+        },
+        "reader": ("engine.sector_intelligence.validate_contract", "parser"),
+    },
+    "txi.episode_transition": {
+        "identity": ("chain", "rev", "episode_id", "transition", "hop", "asof"),
+        "clocks": {"asof": ("belief_or_build", ("date",))},
+        "reader": ("engine.transmission_chains._read_ledger", "collection"),
+    },
+    "qledger.claim": {
+        "identity": ("claim_id",),
+        "clocks": {
+            "asof": ("belief_or_build", ("date",)),
+            "vector_asof": ("belief_or_build", ("date",)),
+            "timestamp": ("system_recorded", ("datetime",)),
+            "check_by": ("review_due", ("date",)),
+        },
+        "reader": ("engine.qledger.load_claims", "collection"),
+    },
+    "market_memory.outcome_record": {
+        "identity": ("outcome_record_id",),
+        "clocks": {
+            "effective_at": ("world_valid", ("datetime",)),
+            "source_available_at": ("knowable", ("datetime",)),
+            "known_at": ("knowable", ("datetime",)),
+            "observed_at": ("observed", ("datetime",)),
+            "recorded_at": ("system_recorded", ("datetime",)),
+        },
+        "reader": ("engine.neuralweb.market_memory_forward_store.load_record", "direct"),
+    },
+}
+
+
+def _expected_clock_bindings(
+    values: dict[str, tuple[str, tuple[str, ...]]],
+) -> dict[str, dict[str, object]]:
+    return {
+        field: {"class": clock_class, "grains": list(grains)}
+        for field, (clock_class, grains) in values.items()
+    }
+
+
 def _json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -143,7 +296,9 @@ def test_contract_and_vocabulary_are_frozen_v1(schema: dict, vocabulary: dict) -
     assert schema["properties"]["version"]["const"] == "1.0.0"
     assert vocabulary["schema"] == "evidence_foundation.vocabulary.v1"
     assert vocabulary["version"] == "1.0.0"
-    assert len(vocabulary["owner_stores"]) == 14
+    assert len(vocabulary["owner_stores"]) == 13
+    assert set(vocabulary["owner_stores"]) == set(EXPECTED_OWNER_BINDINGS)
+    assert "reference.security_master" not in vocabulary["owner_stores"]
     assert "earnings.company_event" not in vocabulary["owner_stores"]
     assert "txi.episode_transition" in vocabulary["owner_stores"]
     assert "ticker_store_key" not in vocabulary["subject_key_types"]
@@ -204,6 +359,18 @@ def test_every_owner_reader_symbol_is_callable_and_kind_is_honest(vocabulary: di
         assert owner["reader_kind"] in {"direct", "collection", "parser"}, name
     assert vocabulary["owner_stores"]["fif.packet"]["reader_kind"] == "parser"
     assert vocabulary["owner_stores"]["biocatalyst.current_source_snapshot"]["reader_kind"] == "parser"
+    assert vocabulary["owner_stores"]["earnings.workspace_generation"]["reader_kind"] == "parser"
+
+
+def test_dataos_security_master_is_deferred_without_a_native_row_reader(
+    vocabulary: dict,
+) -> None:
+    from lib.dataos.identity import IssuerMaster
+
+    assert "reference.security_master" not in vocabulary["owner_stores"]
+    assert "NO I/O" in (IssuerMaster.__doc__ or "")
+    assert IssuerMaster().issuer_of_security("SEC:US-XNAS-AAPL") is None
+    assert IssuerMaster().rows == ()
 
 
 def test_owner_vocabulary_is_bound_to_current_source_contracts(vocabulary: dict) -> None:
@@ -211,18 +378,34 @@ def test_owner_vocabulary_is_bound_to_current_source_contracts(vocabulary: dict)
     from engine.fundamental_forensics.financial_intelligence_packet import PACKET_SCHEMA
     from engine.fundamental_forensics.raw_ledger import RAW_LEDGER_SCHEMA, TemporalClocks
     from engine.government_revenue.workspace import EVENT_CONTRACT
-    from engine.institutional_census.models import CATALOG_MANIFEST_SCHEMA, RAW_RECEIPT_SCHEMA
+    from engine.institutional_census.models import (
+        CATALOG_MANIFEST_SCHEMA,
+        RAW_RECEIPT_SCHEMA,
+        CatalogClocks,
+        EvidenceClocks,
+    )
     from engine.neuralweb.market_memory_forward_store import _SCHEMA_BY_KIND
-    from engine.theme_graph.store import EDGE_KEY, EVIDENCE_KEY
-    from lib.dataos.registry import load_registry
+    from engine.theme_graph.store import EDGE_COLUMNS, EDGE_KEY, EVIDENCE_COLUMNS, EVIDENCE_KEY
 
     owners = vocabulary["owner_stores"]
-    security = load_registry().get("reference.security_master")
-    assert security is not None and security.grain == ("security_id",)
-    assert owners["reference.security_master"]["native_schemas"] == [security.dataset_id]
-    assert set(owners["reference.security_master"]["clock_bindings"]) <= set(security.schema)
+    govrev_schema = _json(
+        ROOT / "contracts/government_revenue/government_procurement_event.v2.schema.json"
+    )
+    assert set(owners) == set(EXPECTED_OWNER_BINDINGS)
+    for name, expected in EXPECTED_OWNER_BINDINGS.items():
+        owner = owners[name]
+        assert owner["native_identity_fields"] == list(expected["identity"]), name
+        assert owner["clock_bindings"] == _expected_clock_bindings(expected["clocks"]), name
+        assert (owner["reader"], owner["reader_kind"]) == expected["reader"], name
+
     assert owners["theme_graph.evidence"]["native_identity_fields"] == list(EVIDENCE_KEY)
     assert owners["theme_graph.edge_belief"]["native_identity_fields"] == list(EDGE_KEY)
+    assert set(owners["theme_graph.evidence"]["clock_bindings"]) == {
+        "published_at", "effective_at", "computed_at"
+    } <= set(EVIDENCE_COLUMNS)
+    assert set(owners["theme_graph.edge_belief"]["clock_bindings"]) == {
+        "valid_from", "valid_to", "evidence_time", "belief_time", "computed_at"
+    } <= set(EDGE_COLUMNS)
     assert owners["fif.raw_occurrence"]["native_schemas"] == [f"{RAW_LEDGER_SCHEMA}#RawFactOccurrence"]
     assert set(owners["fif.raw_occurrence"]["clock_bindings"]) == {
         f"clocks.{field}" for field in TemporalClocks.__dataclass_fields__
@@ -232,7 +415,18 @@ def test_owner_vocabulary_is_bound_to_current_source_contracts(vocabulary: dict)
     assert {"event_id", "generation_id", "generated_at", "lifecycle"} <= set(WORKSPACE_KEYS)
     assert owners["institutional_13f.raw_receipt"]["native_schemas"] == [RAW_RECEIPT_SCHEMA]
     assert owners["institutional_13f.catalog_generation"]["native_schemas"] == [CATALOG_MANIFEST_SCHEMA]
+    assert set(owners["institutional_13f.raw_receipt"]["clock_bindings"]) == {
+        f"clocks.{field}" for field in EvidenceClocks.__dataclass_fields__
+    }
+    assert set(owners["institutional_13f.catalog_generation"]["clock_bindings"]) == {
+        f"clocks.{field}" for field in CatalogClocks.__dataclass_fields__
+    }
     assert owners["govrev.event.v2"]["native_schemas"] == [EVENT_CONTRACT]
+    assert set(owners["govrev.event.v2"]["clock_bindings"]) == {
+        f"change.{field}"
+        for field in govrev_schema["$defs"]["change"]["required"]
+        if field.endswith("_at")
+    }
     assert owners["market_memory.outcome_record"]["native_schemas"] == [_SCHEMA_BY_KIND["outcome"]]
 
 
@@ -244,10 +438,22 @@ def test_biocatalyst_current_and_history_bind_real_wire_fields(vocabulary: dict)
     assert current["native_identity_fields"] == ["nct_id", "source_snapshot_id"]
     assert history["native_identity_fields"] == ["nct_id", "source_version", "source_snapshot_id"]
     assert history["native_identity_types"]["source_version"] == "integer"
-    assert set(current["native_identity_fields"]) <= set(current_schema["required"])
-    assert set(current["clock_bindings"]) <= set(current_schema["required"])
-    assert set(history["native_identity_fields"]) <= set(history_schema["required"])
-    assert set(history["clock_bindings"]) <= set(history_schema["required"])
+    current_clock_fields = set(EXPECTED_OWNER_BINDINGS["biocatalyst.current_source_snapshot"]["clocks"])
+    history_clock_fields = set(EXPECTED_OWNER_BINDINGS["biocatalyst.history_source_snapshot"]["clocks"])
+    current_source_clock_fields = {
+        field
+        for field in current_schema["required"]
+        if field.endswith(("_at", "_from", "_to", "_timestamp_raw"))
+    }
+    history_source_clock_fields = {
+        field
+        for field in history_schema["required"]
+        if field.endswith(("_at", "_from", "_to", "_timestamp_raw"))
+    }
+    assert set(current["native_identity_fields"]) == {"nct_id", "source_snapshot_id"}
+    assert set(current["clock_bindings"]) == current_clock_fields == current_source_clock_fields
+    assert set(history["native_identity_fields"]) == {"nct_id", "source_version", "source_snapshot_id"}
+    assert set(history["clock_bindings"]) == history_clock_fields == history_source_clock_fields
 
 
 def test_txi_full_native_key_prevents_episode_aliasing(vocabulary: dict) -> None:
@@ -263,13 +469,51 @@ def test_txi_full_native_key_prevents_episode_aliasing(vocabulary: dict) -> None
     assert [row for row in (row_a, row_b) if _ledger_key(row) == _ledger_key(row_a)] == [row_a]
 
 
-def test_earnings_pointer_selects_one_immutable_workspace(vocabulary: dict) -> None:
+def test_earnings_parser_proves_native_object_identity(vocabulary: dict) -> None:
+    from engine.company_intelligence.event_workspace import validate_event_workspace
+
     owner = vocabulary["owner_stores"]["earnings.workspace_generation"]
     first = {"generation_id": "a" * 24, "event_id": "evt_cik0000320193_2026q3_results"}
     second = {"generation_id": "b" * 24, "event_id": first["event_id"]}
     assert render_owner_pointer(owner, first) != render_owner_pointer(owner, second)
-    payload = _fixture("earnings_workspace_valid.json")
-    assert payload["provenance"]["pointer"] == render_owner_pointer(owner, payload["native_identity"])
+    reference = _fixture("earnings_workspace_valid.json")
+    native_identity = reference["native_identity"]
+    workspace = {
+        "schema": "event_workspace.v1",
+        "event_id": native_identity["event_id"],
+        "aliases": [],
+        "issuer": {},
+        "fiscal_period": {},
+        "lifecycle": {},
+        "completeness": {},
+        "facts": [],
+        "deltas": [],
+        "guidance": [],
+        "claims": [],
+        "sources": [],
+        "warnings": [],
+        "generation_id": native_identity["generation_id"],
+        "generated_at": "2026-07-30T20:31:00Z",
+        "authority": "context_only",
+        "prophet_flags": {
+            "may_rank": False,
+            "may_size": False,
+            "may_gate": False,
+            "prophet_authority": False,
+        },
+        "claim_citations_pending": False,
+        "qa_exchanges": [],
+    }
+    assert validate_event_workspace(workspace) is None
+    assert {
+        "generation_id": workspace["generation_id"],
+        "event_id": workspace["event_id"],
+    } == native_identity
+    assert reference["provenance"]["owner_reader"] == (
+        "engine.company_intelligence.event_workspace.validate_event_workspace"
+    )
+    assert reference["provenance"]["owner_reader_kind"] == "parser"
+    assert reference["provenance"]["pointer"] == render_owner_pointer(owner, native_identity)
 
 
 def test_fixture_manifest_is_complete_and_byte_receipted() -> None:
@@ -355,7 +599,7 @@ def _automatic_relation(reference: dict) -> dict:
         "target_reference_id": "efr_" + "1" * 64,
         "type": "exact_duplicate",
         "automatic_effect": True,
-        "deterministic_key": "owner:schema/native-id",
+        "deterministic_key": "x",
         "independence": {
             axis: {"state": "not_assessed", "assessment": "declarative_unverified", "basis": "dedup identity does not assert independent evidence"}
             for axis in ("source_independence", "information_novelty", "mechanism_independence")
@@ -364,13 +608,19 @@ def _automatic_relation(reference: dict) -> dict:
     return _with_id(reference)
 
 
-@pytest.mark.parametrize("key", ["", " ", "UPPER", " leading", "trailing "])
-def test_deterministic_key_rejects_empty_whitespace_and_noncanonical_text(key: str, vocabulary: dict) -> None:
+def test_v1_rejects_automatic_effect_even_for_exact_duplicate_with_arbitrary_key(
+    schema: dict, vocabulary: dict
+) -> None:
+    relation_schema = schema["$defs"]["relation"]["properties"]
+    assert relation_schema["automatic_effect"] == {"const": False}
+    assert relation_schema["deterministic_key"] == {"type": "null"}
     valid = _owner_reference("theme_graph.evidence", vocabulary["owner_stores"]["theme_graph.evidence"], vocabulary["clock_classes"])
     hostile = _automatic_relation(valid)
-    hostile["relations"][0]["deterministic_key"] = key
-    _with_id(hostile)
-    assert combined_violations(hostile, vocabulary=vocabulary)
+    violations = set(combined_violations(hostile, vocabulary=vocabulary))
+    assert "relation_0_automatic_effect_forbidden_v1" in violations
+    assert "relation_0_deterministic_key_forbidden_v1" in violations
+    assert any(code == "json_schema:relations.0.automatic_effect:const" for code in violations)
+    assert any(code == "json_schema:relations.0.deterministic_key:type" for code in violations)
 
 
 def test_correction_relations_equal_predecessors_with_the_right_kind(vocabulary: dict) -> None:
@@ -405,6 +655,126 @@ def test_replay_refuses_lookahead_and_distinguishes_recomputation(vocabulary: di
     mislabeled["replay"]["vintage_state"] = "current_rule_recomputation"
     _with_id(mislabeled)
     assert "recomputation_mislabeled_replay" in combined_violations(mislabeled, vocabulary=vocabulary)
+
+
+@pytest.mark.parametrize("field", ["clocks.accepted_at", "clocks.recorded_at"])
+def test_historical_fif_replay_rejects_unknown_required_clocks(
+    field: str, vocabulary: dict
+) -> None:
+    replay = _fixture("replay_valid.json")
+    clock = next(item for item in replay["clocks"] if item["field"] == field)
+    clock.update(value_state="unknown", value=None)
+    _with_id(replay)
+    assert (
+        f"historical_replay_fif_clock_unknown:{field}"
+        in combined_violations(replay, vocabulary=vocabulary)
+    )
+
+
+def test_historical_replay_rejects_unavailable_vintage(vocabulary: dict) -> None:
+    replay = _fixture("replay_valid.json")
+    replay["replay"]["vintage_state"] = "unavailable"
+    _with_id(replay)
+    assert "historical_replay_vintage_unavailable" in combined_violations(
+        replay, vocabulary=vocabulary
+    )
+
+
+@pytest.mark.parametrize(
+    ("owner_name", "field", "grain", "clock_value", "cutoff_value"),
+    [
+        (
+            "institutional_13f.raw_receipt",
+            "clocks.accepted_at",
+            "datetime",
+            "2026-08-02T00:00:00Z",
+            "2026-08-01T23:59:59Z",
+        ),
+        (
+            "govrev.event.v2",
+            "change.first_seen_at",
+            "datetime",
+            "2026-08-02T00:00:00Z",
+            "2026-08-01T23:59:59Z",
+        ),
+        (
+            "govrev.event.v2",
+            "change.last_seen_at",
+            "datetime",
+            "2026-08-02T00:00:00Z",
+            "2026-08-01T23:59:59Z",
+        ),
+        (
+            "biocatalyst.current_source_snapshot",
+            "first_seen_at",
+            "datetime",
+            "2026-08-02T00:00:00Z",
+            "2026-08-01T23:59:59Z",
+        ),
+        (
+            "biocatalyst.current_source_snapshot",
+            "source_dataset_timestamp_raw",
+            "datetime",
+            "2026-08-02T00:00:00Z",
+            "2026-08-01T23:59:59Z",
+        ),
+        (
+            "biocatalyst.current_source_snapshot",
+            "source_last_update_posted_at",
+            "date",
+            "2026-08-02",
+            "2026-08-01",
+        ),
+        (
+            "biocatalyst.current_source_snapshot",
+            "valid_to",
+            "date",
+            "2026-08-02",
+            "2026-08-01",
+        ),
+        (
+            "biocatalyst.current_source_snapshot",
+            "transaction_to",
+            "datetime",
+            "2026-08-02T00:00:00Z",
+            "2026-08-01T23:59:59Z",
+        ),
+        (
+            "biocatalyst.history_source_snapshot",
+            "transaction_to",
+            "datetime",
+            "2026-08-02T00:00:00Z",
+            "2026-08-01T23:59:59Z",
+        ),
+    ],
+)
+def test_source_backed_13f_govrev_and_biocatalyst_clocks_kill_cutoff_inversion(
+    owner_name: str,
+    field: str,
+    grain: str,
+    clock_value: str,
+    cutoff_value: str,
+    vocabulary: dict,
+) -> None:
+    owner = vocabulary["owner_stores"][owner_name]
+    reference = _owner_reference(owner_name, owner, vocabulary["clock_classes"])
+    clock = next(item for item in reference["clocks"] if item["field"] == field)
+    clock.update(value_state="known", value=clock_value, grain=grain)
+    reference["replay"].update(
+        mode="historical_replay",
+        code_revision="fixture-code",
+        input_digest="5" * 64,
+        vintage_state="owner_native",
+    )
+    reference["replay"]["cutoffs"][clock["class"]] = {
+        "state": "known",
+        "value": cutoff_value,
+        "grain": grain,
+    }
+    _with_id(reference)
+    assert f"replay_lookahead:{field}" in combined_violations(
+        reference, vocabulary=vocabulary
+    )
 
 
 @pytest.mark.parametrize("clock_class", ["world_valid", "source_published", "knowable", "observed", "system_recorded", "belief_or_build", "review_due"])
