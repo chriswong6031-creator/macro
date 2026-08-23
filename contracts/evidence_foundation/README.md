@@ -1,9 +1,10 @@
-# Evidence Foundation reference contract v1
+# Evidence Foundation contracts v1
 
-`evidence_foundation.reference.v1` is the smallest shared language for pointing at
-evidence already owned by another Macro intelligence system. It is a contract, not a
-store. There is no `data/evidence_mesh/`, index, writer, scheduler, catalog mirror, or
-cross-owner reader in K1.
+The K1 surface has three closed contracts: `EvidenceRef` points to one owner-native
+object; `EvidenceBlock` is a bounded consumer projection over one or more refs; and
+`EvidenceRecipe` is an ordered composition instruction for one named consumer job.
+They are contracts, not stores. There is no `data/evidence_mesh/`, index, writer,
+scheduler, catalog mirror, payload warehouse, or cross-owner reader in K1.
 
 The owner-native object remains truth. A reference carries only its immutable owner
 identity, typed subject, native clocks, pointer provenance, correction/replay
@@ -16,13 +17,17 @@ canonical bytes. K1 does not pretend a parser or materializer is a physical read
 ## Frozen files
 
 - `reference.v1.schema.json` is the closed wire shape.
+- `block.v1.schema.json` is the closed consumer-projection shape.
+- `recipe.v1.schema.json` is the closed, ordered composition-instruction shape.
 - `vocabulary.v1.json` is the versioned owner/identity/clock binding table.
 - `lib/evidence_foundation.py` exports the one combined JSON-Schema plus semantic
-  fail-closed validator. Its semantic pass enforces exact owner schema, identity
-  type and value grammar, coverage/replay capability, pointer and clock bindings,
-  v1 automatic-effect refusal, append/supersede lineage, and replay lookahead
-  refusal. Public validation always uses the validated repository vocabulary and
-  accepts no caller-supplied vocabulary authority.
+  fail-closed surface for refs, blocks, and recipes. Its semantic passes enforce exact
+  owner schema, identity type and source-backed value grammar, coverage/replay
+  capability, pointer and clock bindings, lossless block clocks, denominator receipts,
+  authority/object-class separation, correction recompilation, lawful identity joins,
+  ordered required/optional blocks, v1 automatic-effect refusal, append/supersede
+  lineage, and replay lookahead refusal. Public validation always uses the validated
+  repository vocabulary and accepts no caller-supplied vocabulary authority.
 
 The schema and vocabulary version are both `1.0.0`. Evolution is additive within v1.
 Renaming a field, repurposing an enum member, weakening all-false authority, or
@@ -51,8 +56,9 @@ changing a native clock binding requires v2.
    owner-native object is not registered. `null` is an adverse result, not permission
    to guess a replacement clock.
 4. **Pointers, not bodies.** `pointer_only` is true and `body_embedded` false.
-   `native_digest` uses an explicit `unknown` state and is never zero-filled or
-   guessed. `coverage_class` is exact per owner, not a caller-selected claim.
+   `native_digest`, coverage, freshness basis, rights, and authority class are explicit.
+   Unknown freshness/digest/rights stay unknown; none is zero-filled or guessed.
+   `coverage_class` is exact per owner, not a caller-selected claim.
 5. **Independence has three axes and v1 does not verify them.** Source independence,
    information novelty, and economic/mechanism independence are separately declared
    on every relation with `assessment=declarative_unverified`. Until an owner supplies
@@ -84,6 +90,56 @@ changing a native clock binding requires v2.
 10. **Authority defaults down.** Missing authority is interpreted as no authority,
     but wire producers must materialize every boolean. `can_rank`, `can_gate`,
     `can_size`, `can_originate`, and `can_open_entry` are all literal false.
+
+## EvidenceBlock
+
+An `EvidenceBlock` names a consumer/job, a supported claim or question, the exact
+reference IDs it projects, and the fact/deterministic/model/human class of the
+projection. Its clock summary is lossless: every owner-native clock field/value/grain
+is retained with its ref ID and `collapsed` is always false. Its denominator receipt
+names total, included, excluded, missing, stale, rights-blocked, and fallback counts;
+`complete` is illegal when any adverse count is non-zero.
+
+Dependence is separate from row count. A block may include two refs while counting one
+independent evidence leg when they share an upstream source. Conflict and correction
+states never net automatically. A corrected ref requires a new block ID plus a
+`recompiled` lineage receipt naming the prior block and invalidating reference; the
+predecessor block is not rewritten. Probability is illegal without derivation and
+calibration receipts. Permitted consumer classes and the all-false authority envelope
+are materialized on every block.
+
+## EvidenceRecipe
+
+An `EvidenceRecipe` orders required and optional block specs for one consumer output.
+Each spec freezes allowed owner stores, object classes, evidence class, reference
+cardinality, absence behavior, and output mappings. Identity joins must exactly match
+the owner-approved vocabulary. In particular, CIK-to-security/listing joins use only
+the Earnings `company_identity.v1` PIT alias; the dated symbol-directory plus
+`cik_map` route fails closed.
+
+The recipe freezes required refusal/degradation rules, deterministic dedup rules,
+non-automatic dependence relations, denominator/dominant-degradation laws,
+correction recompilation, confidence receipts, and no owner-payload copying.
+`compile_recipe()` operates only on caller-supplied owner-reader results and returns an
+in-memory `recipe_compilation_receipt.v1`; it persists no ref, block, owner payload, or
+consumer output.
+
+## AAPL golden composition
+
+`aapl_security_state_recipe_valid.json` composes four owner families for the bounded
+Market OS B1 candidate job: Earnings `event_workspace.v1` (required), a fixture-only
+FIF packet, Theme Graph evidence, and a QLedger forward claim. The QLedger leg remains
+model authority and cannot be presented as fact. The golden receipt is `PARTIAL` with
+dominant `unknown` freshness because K1 found no lawful owner freshness policy to
+invent. All four legs and all native clocks are present, no owner payload is copied,
+and no required block is absent.
+
+The measured local fixture-reader/validation composition baseline (Darwin arm64,
+Python 3.14.7, 100 iterations) was p50 164.737 ms, p95 174.757 ms, max 185.944 ms.
+This is a contract/fixture measurement, not a production owner-I/O SLA. No commission
+or current consumer names a latency requirement that it fails, and a pointer index
+would not cure the explicit unknown freshness policy. The K1 persistence verdict is
+therefore `NO_BUILD_DIRECT_READERS_SUFFICIENT`.
 
 ## Identity and deterministic reference id
 

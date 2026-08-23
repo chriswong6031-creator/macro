@@ -1,0 +1,136 @@
+{
+  "schema": "evidence_foundation.block.v1",
+  "version": "1.0.0",
+  "evidence_block_id": "ebl_6623852ab9e9565deefa8918e1dfd9b9a92ffd71b8cd61c4c25be16bd67f22e2",
+  "block_key": "shared_upstream_example",
+  "consumer": {
+    "workstream": "WS:MARKET-OS",
+    "job": "build security_state.v1 for AAPL",
+    "output_contract": "security_state.v1"
+  },
+  "supported_claim": {
+    "kind": "claim",
+    "text": "Two Theme Graph observations share one upstream earnings release and count as one independent evidence leg.",
+    "state": "partial"
+  },
+  "reference_ids": [
+    "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+    "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3"
+  ],
+  "owner_stores": [
+    "theme_graph.evidence"
+  ],
+  "object_classes": [
+    "world_observation"
+  ],
+  "evidence_class": "fact",
+  "clock_summary": {
+    "collapsed": false,
+    "entries": [
+      {
+      "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+        "class": "source_published",
+        "field": "published_at",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+        "class": "world_valid",
+        "field": "effective_at",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+        "class": "belief_or_build",
+        "field": "computed_at",
+        "value_state": "known",
+        "value": "2026-07-31T00:15:00Z",
+        "grain": "datetime"
+      },
+      {
+        "reference_id": "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3",
+        "class": "source_published",
+        "field": "published_at",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3",
+        "class": "world_valid",
+        "field": "effective_at",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3",
+        "class": "belief_or_build",
+        "field": "computed_at",
+        "value_state": "known",
+        "value": "2026-07-31T00:16:00Z",
+        "grain": "datetime"
+      }
+    ]
+  },
+  "coverage": {
+    "state": "unknown",
+    "total": 2,
+    "included": 2,
+    "excluded": 0,
+    "missing": 0,
+    "stale": 0,
+    "rights_blocked": 0,
+    "fallback": 0,
+    "basis": "all requested owner-reader fixture rows reconcile by native reference identity; freshness remains owner-policy dependent",
+    "reconciliation_state": "reconciled"
+  },
+  "uncertainty": {
+    "state": "none",
+    "probability": null,
+    "derivation_ref": null,
+    "calibration_ref": null
+  },
+  "dependence": {
+    "state": "shared_upstream",
+    "independent_evidence_count": 1,
+    "groups": [
+      {
+        "kind": "shared_upstream",
+        "reference_ids": [
+          "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+          "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3"
+        ],
+        "deterministic_key": null
+      }
+    ]
+  },
+  "conflict_correction": {
+    "state": "none",
+    "reference_ids": []
+  },
+  "next_observable": {
+    "state": "unknown",
+    "description": null,
+    "owner_clock_field": null
+  },
+  "permitted_consumers": [
+    "security_state.v1"
+  ],
+  "lineage": {
+    "state": "original",
+    "predecessor_block_ids": [],
+    "invalidated_by_reference_ids": []
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}

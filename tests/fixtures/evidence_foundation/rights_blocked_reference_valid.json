@@ -1,73 +1,83 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_08adf1cb8a78da9eb427a80a32e544be5010db380cfb4ab2a4aad495f1d5abf1",
-  "object_class": "forward_claim",
-  "owner_store": "qledger.claim",
+  "reference_id": "efr_0d89e42910775ba8b7d9928abe67512152f4aa8f91f865642da061b4fa49a7c7",
+  "object_class": "derived_view",
+  "owner_store": "fif.packet",
   "native_identity": {
-    "claim_id": "0123456789abcdef"
+    "packet_id": "fip_666666666666666666666666"
   },
-  "native_schema": "data/qledger/claims.jsonl#stored_claim",
+  "native_schema": "financial_intelligence_packet.v1",
   "native_digest": {
-    "state": "unknown",
-    "sha256": null
+    "state": "known",
+    "sha256": "6666666666666666666666666666666666666666666666666666666666666666"
   },
-  "coverage_class": "prospective_only",
+  "coverage_class": "source_release_snapshot_only",
+  "freshness": {
+    "state": "unknown",
+    "clock_field": null,
+    "policy_id": null
+  },
+  "rights": {
+    "state": "rights_blocked",
+    "policy_id": "FIF_FIXTURE_ONLY"
+  },
+  "authority_class": "deterministic",
   "subject": {
-    "key_type": "claim_id",
-    "key": "0123456789abcdef"
+    "key_type": "issuer_id",
+    "key": "ISS:US-XNAS-AAPL"
   },
   "secondary_subjects": [],
   "clocks": [
     {
-      "class": "belief_or_build",
-      "field": "asof",
-      "value_state": "known",
-      "value": "2026-08-23",
-      "grain": "date"
-    },
-    {
-      "class": "belief_or_build",
-      "field": "vector_asof",
-      "value_state": "unknown",
-      "value": null,
-      "grain": "date"
-    },
-    {
-      "class": "system_recorded",
-      "field": "timestamp",
+      "class": "source_published",
+      "field": "query.source_event_cutoff",
       "value_state": "unknown",
       "value": null,
       "grain": "datetime"
     },
     {
-      "class": "review_due",
-      "field": "check_by",
+      "class": "system_recorded",
+      "field": "query.system_recorded_cutoff",
       "value_state": "unknown",
       "value": null,
-      "grain": "date"
+      "grain": "datetime"
+    },
+    {
+      "class": "system_recorded",
+      "field": "governance.governance_recorded_at",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "datetime"
+    },
+    {
+      "class": "belief_or_build",
+      "field": "built_at",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "datetime"
     }
   ],
   "provenance": {
     "pointer_only": true,
     "body_embedded": false,
-    "owner_reader": "engine.qledger.load_claims",
-    "pointer": "data/qledger/claims.jsonl#claim_id=0123456789abcdef",
-    "owner_reader_kind": "collection"
+    "owner_reader": "engine.fundamental_forensics.financial_intelligence_packet.validate_packet_semantics",
+    "owner_reader_kind": "parser",
+    "pointer": "financial-packet://packet_id=fip_666666666666666666666666"
   },
   "relations": [],
   "missingness": {
     "state": "absent",
-    "reason": "unsupported",
+    "reason": "rights_blocked",
     "zero_substituted": false
   },
   "correction": {
     "kind": "none",
     "predecessor_reference_ids": [],
     "clock_field": null,
+    "chronology_state": "not_applicable",
     "append_only": true,
-    "mutates_predecessor": false,
-    "chronology_state": "not_applicable"
+    "mutates_predecessor": false
   },
   "replay": {
     "mode": "live",
@@ -118,15 +128,5 @@
     "can_size": false,
     "can_originate": false,
     "can_open_entry": false
-  },
-  "freshness": {
-    "state": "unknown",
-    "clock_field": null,
-    "policy_id": null
-  },
-  "rights": {
-    "state": "unknown",
-    "policy_id": null
-  },
-  "authority_class": "model"
+  }
 }

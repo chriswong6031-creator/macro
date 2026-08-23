@@ -23,6 +23,7 @@ owns_paths:
   - lib/evidence_foundation.py
   - tests/fixtures/evidence_foundation/
   - tests/test_evidence_foundation_contract.py
+  - tests/test_evidence_foundation_product_contract.py
 depends_on:
   - WS:PROPHET-US-V4-RECOVERY
   - WS:PROPHET-CONDITIONAL-FUSION
@@ -40,6 +41,8 @@ artifacts:
   - research/alpha_intelligence/C0G_G0_SEAT_ADJUDICATION_2026-08-19.md
   - research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md
   - contracts/evidence_foundation/reference.v1.schema.json
+  - contracts/evidence_foundation/block.v1.schema.json
+  - contracts/evidence_foundation/recipe.v1.schema.json
   - contracts/evidence_foundation/vocabulary.v1.json
 landmines:
   - "Runtime authority of this workstream is NONE, permanently. It coordinates and
@@ -59,6 +62,10 @@ landmines:
     also keeps the production attested issuer service NOT_BUILT and FIF-3
     IN_PROGRESS, so accepted golden/on-main is not production/live proof. K1
     neither modifies nor routes around it."
+  - "The authenticated Market Ontology rider names a bounded future B1 AAPL
+    security_state.v1 job. K1 freezes and fixture-compiles its Ref/Block/Recipe
+    evidence composition only. It does not start B1A, create a shared evidence
+    store, copy owner payloads, or grant rank/gate/size/originate/entry authority."
   - "PR #5894 (V4-D2A GMI→Data OS bridge) MERGED 2026-08-18 — the theme-graph/
     identity occupation cleared by its own terms (c0 delta). Radar/Prophet-Lab
     surfaces are now the occupied territory: #5925/#5928/#5929 open post-#5924
@@ -136,7 +143,7 @@ waves:
     title: K1 Evidence Foundation — mesh contract freeze (FABLE-A)
     status: in_progress
     depends_on: [c0]
-    next_action: A fourth fresh exact-head review rules on the repaired v1.0.0 contract-only packet; after reviewer PASS, Sol accepts or returns exact amendments, including its explicit disposition of the #6325 authenticated-MO rider gap. No dependent wave starts before Sol's ruling.
+    next_action: A fresh exact-head review rules on the integrated authenticated-rider-complete v1.0.0 contract-only packet; after reviewer PASS, Sol accepts or returns exact amendments. No dependent wave starts before Sol's ruling.
   - id: k2
     title: K2 Institutional Intelligence — manager ontology + intent contract (B), adapter pilots (C)
     status: todo
@@ -162,15 +169,16 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  A fourth fresh exact-head reviewer rules on the repaired K1 Evidence Foundation
-  v1.0.0 return packet at
+  A fresh exact-head reviewer rules on the integrated authenticated-rider-complete K1
+  Evidence Foundation v1.0.0
+  return packet at
   research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md.
-  After reviewer PASS, Sol rules ACCEPT or names exact amendments. The physical-store
-  flip condition is adverse: #6325's B1/AAPL candidate is unauthorized, no product
-  PR commits the >=3-owner single-query, and no direct-reader requirement failed, so
-  owner access remains owner-bound and no store/index was built. Do not
-  start K2, K3, K4, K5, B1, K2-B, D5-EARNINGS, a K1-B rider completion, or any
-  dependent wave before Sol accepts K1.
+  After reviewer PASS, Sol rules ACCEPT or names exact amendments. The named
+  four-owner AAPL fixture
+  composition has no measured requirement failure that a pointer index cures, so
+  owner access remains owner-bound and no store/index was built. Do not start K2,
+  K3, K4, K5, B1A, K2-B, D5-EARNINGS, runtime, or any dependent wave before Sol
+  accepts K1.
 ---
 
 # Alpha Intelligence Expansion — integration workstream

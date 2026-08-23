@@ -15,6 +15,9 @@
     "native_schema",
     "native_digest",
     "coverage_class",
+    "freshness",
+    "rights",
+    "authority_class",
     "subject",
     "secondary_subjects",
     "clocks",
@@ -70,6 +73,11 @@
         "reconstruction",
         "partial"
       ]
+    },
+    "freshness": {"$ref": "#/$defs/freshness"},
+    "rights": {"$ref": "#/$defs/rights"},
+    "authority_class": {
+      "enum": ["fact", "deterministic", "model", "human"]
     },
     "subject": {"$ref": "#/$defs/subject"},
     "secondary_subjects": {
@@ -135,6 +143,47 @@
           }
         }
       ]
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "clock_field", "policy_id"],
+      "properties": {
+        "state": {"enum": ["native_clock_bound", "unknown", "not_applicable"]},
+        "clock_field": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,127}$"
+        },
+        "policy_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "native_clock_bound"}}},
+          "then": {"properties": {"clock_field": {"type": "string"}}},
+          "else": {"properties": {"clock_field": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"state": {"const": "not_applicable"}}},
+          "then": {"properties": {"policy_id": {"type": "null"}}}
+        }
+      ]
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "policy_id"],
+      "properties": {
+        "state": {"enum": ["permitted", "rights_blocked", "unknown"]},
+        "policy_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
     },
     "subject": {
       "type": "object",

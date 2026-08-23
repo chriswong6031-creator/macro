@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_5005cb5199e0f28ef60a22825f08f9e1c9af163637a96db8d672db0f334020da",
+  "reference_id": "efr_c5a06ef19581a414479a4fd68c9f47f1c76d7ddfedb432c037fab2ef34c4c2c8",
   "object_class": "world_observation",
   "owner_store": "fif.raw_occurrence",
   "native_identity": {
@@ -134,5 +134,15 @@
     "can_size": false,
     "can_originate": false,
     "can_open_entry": false
-  }
+  },
+  "freshness": {
+    "state": "unknown",
+    "clock_field": null,
+    "policy_id": null
+  },
+  "rights": {
+    "state": "permitted",
+    "policy_id": null
+  },
+  "authority_class": "fact"
 }

@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_06025b5c2bb4ac3ff0e59223458b1a8c9723e229a17c52af874d46d37b79ae99",
+  "reference_id": "efr_9dbcd76d0732eea2c84abe14cc645165d7966e47e84c024a92ade3d0bdda2a68",
   "object_class": "instrument_state",
   "owner_store": "txi.episode_transition",
   "native_identity": {
@@ -20,7 +20,7 @@
   "coverage_class": "prospective_only",
   "subject": {
     "key_type": "chain_id",
-    "key": "supply-chain@r1"
+    "key": "supply-chain"
   },
   "secondary_subjects": [],
   "clocks": [
@@ -102,5 +102,15 @@
     "can_size": false,
     "can_originate": false,
     "can_open_entry": true
-  }
+  },
+  "freshness": {
+    "state": "unknown",
+    "clock_field": null,
+    "policy_id": null
+  },
+  "rights": {
+    "state": "permitted",
+    "policy_id": null
+  },
+  "authority_class": "deterministic"
 }

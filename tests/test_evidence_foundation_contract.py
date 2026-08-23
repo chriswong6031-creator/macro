@@ -447,6 +447,15 @@ def _owner_reference(name: str, owner: dict, clock_classes: list[str]) -> dict:
         "native_schema": owner["native_schemas"][0],
         "native_digest": {"state": "unknown", "sha256": None},
         "coverage_class": owner["coverage_classes"][0],
+        "freshness": {"state": "unknown", "clock_field": None, "policy_id": None},
+        "rights": {"state": "permitted", "policy_id": None},
+        "authority_class": {
+            "world_observation": "fact",
+            "derived_view": "deterministic",
+            "system_belief": "model",
+            "forward_claim": "model",
+            "instrument_state": "deterministic",
+        }[owner["object_classes"][0]],
         "subject": {
             "key_type": subject_key_type,
             "key": VALID_SUBJECT_VALUES[subject_key_type],

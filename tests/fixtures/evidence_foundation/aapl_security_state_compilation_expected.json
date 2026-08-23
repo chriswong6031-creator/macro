@@ -1,0 +1,37 @@
+{
+  "schema": "evidence_foundation.recipe_compilation_receipt.v1",
+  "version": "1.0.0",
+  "recipe_id": "erp_06d5b69308a45fbfbda9a43389cb8a6a0a3d93a35f494f2a20c136ac1cc981f2",
+  "consumer": {
+    "workstream": "WS:MARKET-OS",
+    "job": "build security_state.v1 for AAPL",
+    "output_contract": "security_state.v1"
+  },
+  "state": "partial",
+  "dominant_degradation": "unknown",
+  "block_ids": [
+    "ebl_956ab221cc7f7b5ec38c81c005d6c32af5d07c37b98250184d2dffe45d09ef1d",
+    "ebl_c72d0e82e618be57675f82c6b0beacb04db9d03678e0b85100de24e585bf756a",
+    "ebl_6854d1873c3ca99324401f3df21ea5f05cde965e3d053a39d0fee4cd4e249d59",
+    "ebl_eb80b8270c2e64d0d34a2bac03b09ff2f3c150b5ed89e41251f9b7b5030db0c5"
+  ],
+  "missing_required_blocks": [],
+  "missing_optional_blocks": [],
+  "denominator": {
+    "total": 4,
+    "included": 4,
+    "excluded": 0,
+    "missing": 0,
+    "stale": 0,
+    "rights_blocked": 0,
+    "fallback": 0
+  },
+  "owner_payloads_persisted": false,
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}

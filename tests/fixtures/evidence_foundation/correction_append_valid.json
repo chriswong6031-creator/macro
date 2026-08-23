@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_648d599e77d5ec280bf3b70fe0c7a43f430b6e61b4689b3a895b2bbec5f11046",
+  "reference_id": "efr_44fc171d332b70ffcd723c236fb27fd8e7a0b906659e3f0ed9c507daaa7905a0",
   "object_class": "derived_view",
   "owner_store": "earnings.workspace_generation",
   "native_identity": {
@@ -138,5 +138,15 @@
     "can_size": false,
     "can_originate": false,
     "can_open_entry": false
-  }
+  },
+  "freshness": {
+    "state": "unknown",
+    "clock_field": null,
+    "policy_id": null
+  },
+  "rights": {
+    "state": "permitted",
+    "policy_id": null
+  },
+  "authority_class": "deterministic"
 }
