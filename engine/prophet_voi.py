@@ -1,20 +1,18 @@
 """Read-only Prophet flagship Value-of-Information measurement primitives.
 
-MAS-123 / Cell G.  This module deliberately owns *measurement formulas*, not evidence
-storage, promotion, rank influence, Availability, candidate identity, or outcome clocks.
+MAS-123 / Cell G. This module owns measurement formulas, not evidence storage,
+promotion, rank influence, Availability, candidate identity, or outcome clocks.
 
-The governing research law is:
+Governing law:
     research/prophet_v4/CELL_G_FLAGSHIP_VOI_MEASUREMENT_LAW_2026-08-22.md
 
 Hard boundaries
 ---------------
 * No function writes a file or mutates a ledger.
-* No function opens a protected race outcome.  W3 support is STATUS-ONLY.
+* No function opens a protected race outcome. W3 support is STATUS-ONLY.
 * Missing fields produce explicit measurement states; they are never backfilled.
-* Concentration-effective counts are diagnostics, never substituted into a t/binomial
-  distribution as a synthetic sample size.
-* All current US-board results produced here are DESCRIPTIVE_ONLY.  They are not a
-  prospective family-promotion read.
+* Concentration-effective counts are diagnostics, never inferential sample sizes.
+* Current US-board outputs here are DESCRIPTIVE_ONLY, never family-promotion reads.
 """
 from __future__ import annotations
 
@@ -47,10 +45,11 @@ MEASUREMENT_STATES = frozenset({
     HOLD_INTEGRITY,
 })
 
-# Source-specific adapter only.  This is explicitly *not* the final V4 Availability
+# Source-specific adapter only. This is explicitly NOT the final V4 Availability
 # vocabulary; it mirrors entry_signal's current "buyable now" semantics.
 ENTRY_SIGNAL_ACTIONABLE_NOW = frozenset({"buy_now", "partial"})
 BROAD_COVERAGE_FLOOR = 0.70
+BOARD_ENTRY_STATUS_NOT_APPLICABLE_REASONS = frozenset({"lane_not_stamped"})
 
 
 def _finite_float(value: Any) -> float | None:
@@ -66,15 +65,24 @@ def _round(value: Any, places: int = 6) -> float | None:
     return round(x, places) if x is not None else None
 
 
-def concentration_effective_count(values: Iterable[Any]) -> dict[str, Any]:
-    """Return Cell-G's concentration-effective-count diagnostic.
+def _missing_group(value: Any) -> bool:
+    if value is None:
+        return True
+    try:
+        marker = pd.isna(value)
+    except (TypeError, ValueError):
+        return False
+    return bool(marker) if isinstance(marker, (bool, np.bool_)) else False
 
-    N_eff(G) = 1 / sum_g p_g^2, where p_g is the share of non-null observations
-    carried by group g.  This is the effective number of equally represented groups
-    with the same concentration.  It is NOT an inferential degrees-of-freedom fix.
+
+def concentration_effective_count(values: Iterable[Any]) -> dict[str, Any]:
+    """Return Cell-G's inverse-HHI concentration diagnostic.
+
+    N_eff(G) = 1 / sum_g p_g^2. This is the number of equally represented groups
+    with the same concentration. It is NOT a degrees-of-freedom correction.
     """
     seq = list(values)
-    clean = [v for v in seq if v is not None and not (isinstance(v, float) and math.isnan(v))]
+    clean = [v for v in seq if not _missing_group(v)]
     if not clean:
         return {
             "state": UNESTIMABLE,
@@ -104,23 +112,35 @@ def concentration_effective_count(values: Iterable[Any]) -> dict[str, Any]:
 
 
 def ndcg_at_k(relevance: Sequence[int | float | None], k: int) -> dict[str, Any]:
-    """Exact Cell-G NDCG formula with loud no-relevant/null handling."""
+    """Cell-G NDCG@K over one fixed candidate population.
+
+    ``relevance`` is the FULL candidate list in the system's presented order. DCG
+    uses its first K items. IDCG sorts the FULL SAME candidate set and then takes K.
+    Building IDCG from only the presented top K is forbidden because it can make a
+    missed high-relevance item below K disappear from the denominator.
+    """
     if k <= 0:
         raise ValueError("k must be positive")
-    vals = list(relevance[:k])
-    if any(v is None for v in vals):
+    raw = list(relevance)
+    if any(v is None for v in raw):
         return {"state": UNAVAILABLE_FIELD, "value": None, "reason": "missing_relevance_grade"}
+
     gains: list[float] = []
-    for v in vals:
-        x = _finite_float(v)
-        if x is None or x < 0:
-            return {"state": HOLD_INTEGRITY, "value": None, "reason": "invalid_relevance_grade"}
+    for value in raw:
+        x = _finite_float(value)
+        if x is None or x < 0 or not float(x).is_integer():
+            return {
+                "state": HOLD_INTEGRITY,
+                "value": None,
+                "reason": "relevance_grade_must_be_nonnegative_integer",
+            }
         gains.append(x)
 
     def dcg(xs: Sequence[float]) -> float:
         return sum((2.0**rel - 1.0) / math.log2(rank + 2.0) for rank, rel in enumerate(xs))
 
-    ideal = sorted(gains, reverse=True)
+    presented = gains[:k]
+    ideal = sorted(gains, reverse=True)[:k]
     idcg = dcg(ideal)
     if idcg == 0.0:
         return {
@@ -128,13 +148,15 @@ def ndcg_at_k(relevance: Sequence[int | float | None], k: int) -> dict[str, Any]
             "value": None,
             "reason": "idcg_zero_no_relevant_items",
             "k": k,
-            "n_ranked": len(gains),
+            "n_candidates": len(gains),
+            "n_ranked": len(presented),
         }
     return {
         "state": MEASURED,
-        "value": round(dcg(gains) / idcg, 10),
+        "value": round(dcg(presented) / idcg, 10),
         "k": k,
-        "n_ranked": len(gains),
+        "n_candidates": len(gains),
+        "n_ranked": len(presented),
     }
 
 
@@ -146,10 +168,9 @@ def precision_recall_at_k(
 ) -> dict[str, Any]:
     """Precision/fill and recall for an already-frozen binary relevance label.
 
-    Missing labels in the presented top-K are not silently treated as negatives; the
-    metric is unavailable because the winner label itself is missing.  Recall requires
-    an explicit reference-population positive count so retrieval-changing experiments
-    cannot accidentally use their own surfaced set as the denominator.
+    Recall requires an explicit positive count from the independent reference
+    population, so retrieval-changing experiments cannot use their own surfaced set as
+    the denominator.
     """
     if k <= 0:
         raise ValueError("k must be positive")
@@ -159,28 +180,33 @@ def precision_recall_at_k(
     n_presented = len(top)
     n_positive = sum(bool(v) for v in top)
     precision = (n_positive / n_presented) if n_presented else None
-    fill = n_presented / k
     out: dict[str, Any] = {
         "state": MEASURED,
         "k": k,
         "n_presented": n_presented,
         "n_positive_topk": n_positive,
         "precision_presented": _round(precision),
-        "fill_at_k": _round(fill),
+        "fill_at_k": _round(n_presented / k),
     }
     if reference_positive_count is None:
-        out["recall"] = None
-        out["recall_state"] = UNAVAILABLE_FIELD
-        out["recall_reason"] = "reference_population_positive_count_required"
+        out.update({
+            "recall": None,
+            "recall_state": UNAVAILABLE_FIELD,
+            "recall_reason": "reference_population_positive_count_required",
+        })
     elif reference_positive_count < 0:
         raise ValueError("reference_positive_count must be non-negative")
     elif reference_positive_count == 0:
-        out["recall"] = None
-        out["recall_state"] = NOT_APPLICABLE
-        out["recall_reason"] = "reference_population_has_no_positive_items"
+        out.update({
+            "recall": None,
+            "recall_state": NOT_APPLICABLE,
+            "recall_reason": "reference_population_has_no_positive_items",
+        })
     else:
-        out["recall"] = _round(n_positive / reference_positive_count)
-        out["recall_state"] = MEASURED
+        out.update({
+            "recall": _round(n_positive / reference_positive_count),
+            "recall_state": MEASURED,
+        })
     return out
 
 
@@ -229,11 +255,7 @@ def classify_flagship_lead_gate(
     delta_actionable_ci: Sequence[float] | None,
     delta_unusable_ci: Sequence[float] | None,
 ) -> dict[str, Any]:
-    """Frozen zero-margin PASS/MIXED/FAIL classifier from Cell-G §14.
-
-    Positive lead/actionable is better.  Positive unusable is worse.  The caller owns
-    the dependence-aware CI construction; this function only applies the frozen law.
-    """
+    """Frozen zero-margin PASS/MIXED/FAIL classifier from Cell-G §14."""
     lead = _ci_pair(delta_lead_ci)
     action = _ci_pair(delta_actionable_ci)
     unusable = _ci_pair(delta_unusable_ci)
@@ -253,22 +275,52 @@ def classify_flagship_lead_gate(
     }
 
 
-def summarize_w3_status(status: Mapping[str, Any]) -> dict[str, Any]:
-    """STATUS-ONLY W3 projection.
+def _w3_integrity_error(status: Mapping[str, Any]) -> str | None:
+    if status.get("schema") != "us.prophet_w3_status/v1":
+        return "unexpected_or_missing_w3_status_schema"
+    try:
+        floor = int(status["honest_n_floor"])
+        matured = int(status["matured_h10_sessions"])
+    except (KeyError, TypeError, ValueError):
+        return "missing_or_invalid_w3_maturity_fields"
+    if floor <= 0 or matured < 0:
+        return "invalid_w3_maturity_floor_or_count"
+    structural = status.get("structural")
+    if not isinstance(structural, Mapping) or not isinstance(structural.get("outcome_blind"), bool):
+        return "missing_w3_structural_outcome_blind_gate"
+    if status.get("comparison_surface") is None:
+        return "missing_w3_comparison_surface_gate"
+    return None
 
-    Important: there is intentionally no outcome-loader parameter and no outcome path in
-    this module.  Maturity is decided from the owner-written status surface before any
-    comparative race adapter can exist.
+
+def summarize_w3_status(status: Mapping[str, Any]) -> dict[str, Any]:
+    """Fail-closed STATUS-ONLY W3 projection.
+
+    There is intentionally no outcome-loader parameter and no outcome path. Even after
+    the owner opens the maturity gate, v1 reports only that gate state; a future lawful
+    comparative adapter must be a separately reviewed change.
     """
-    floor = int(status.get("honest_n_floor") or 0)
-    matured = int(status.get("matured_h10_sessions") or 0)
-    structural = status.get("structural") if isinstance(status.get("structural"), Mapping) else {}
-    outcome_blind = bool(structural.get("outcome_blind", False))
+    integrity_error = _w3_integrity_error(status)
+    if integrity_error is not None:
+        return {
+            "schema": status.get("schema"),
+            "state": HOLD_INTEGRITY,
+            "gate_state": "CLOSED_INTEGRITY",
+            "promotion_authority": False,
+            "outcome_files_opened": False,
+            "reason": integrity_error,
+        }
+
+    floor = int(status["honest_n_floor"])
+    matured = int(status["matured_h10_sessions"])
+    structural = status["structural"]
+    outcome_blind = bool(structural["outcome_blind"])
     comparison_surface = status.get("comparison_surface")
     gate_closed = outcome_blind or matured < floor or comparison_surface == "forbidden"
     return {
         "schema": status.get("schema"),
-        "state": PROTECTED_OUTCOME if gate_closed else MEASURED,
+        "state": PROTECTED_OUTCOME if gate_closed else UNAVAILABLE_FIELD,
+        "gate_state": "CLOSED_PROTECTED" if gate_closed else "OPEN_OWNER_GATE_ADAPTER_ABSENT",
         "authority": status.get("authority"),
         "promotion_authority": False,
         "comparison_surface": comparison_surface,
@@ -284,7 +336,7 @@ def summarize_w3_status(status: Mapping[str, Any]) -> dict[str, Any]:
         "reason": (
             "protected until owner status opens the comparison gate"
             if gate_closed
-            else "owner maturity gate open; comparative outcome adapter is intentionally absent from v1"
+            else "owner maturity gate is open, but v1 has no comparative outcome adapter"
         ),
     }
 
@@ -314,34 +366,115 @@ def _column_or_unavailable(frame: pd.DataFrame, column: str) -> dict[str, Any]:
 
 
 def _published_precision(frame: pd.DataFrame, k: int) -> dict[str, Any]:
-    """US-board descriptive precision using published 0-based position, no backfill."""
+    """Board P@K telemetry without survivor promotion.
+
+    Published occupancy and outcome coverage are separate. A missing outcome does not
+    promote the row below it into top-K and does not get silently counted as a loss.
+    Precision is therefore explicitly labelled as gradable-only unless every presented
+    top-K row has a grade.
+    """
     needed = {"as_of", "position", "excess_spy"}
     if not needed.issubset(frame.columns):
         return {"state": UNAVAILABLE_FIELD, "missing_columns": sorted(needed - set(frame.columns))}
-    per_session: list[float] = []
+    if k <= 0:
+        raise ValueError("k must be positive")
+
+    session_precisions_complete: list[float] = []
+    gradable_hits = 0
     graded_top = 0
+    presented_top = 0
     capacity = 0
+    sessions_total = 0
     for _, group in frame.groupby("as_of", sort=True):
+        sessions_total += 1
         pos = pd.to_numeric(group["position"], errors="coerce")
         top = group[pos < k]
-        vals = pd.to_numeric(top["excess_spy"], errors="coerce").dropna()
+        vals = pd.to_numeric(top["excess_spy"], errors="coerce")
+        graded = vals.dropna()
         capacity += k
-        graded_top += int(vals.shape[0])
-        if not vals.empty:
-            per_session.append(float((vals > 0).mean()))
-    if not per_session:
-        return {"state": UNESTIMABLE, "k": k, "sessions": 0}
+        presented_top += int(top.shape[0])
+        graded_top += int(graded.shape[0])
+        gradable_hits += int((graded > 0).sum())
+        if len(top) and len(graded) == len(top):
+            session_precisions_complete.append(float((graded > 0).mean()))
+
+    if sessions_total == 0:
+        return {"state": UNESTIMABLE, "k": k, "sessions_total": 0}
+
+    all_presented_graded = presented_top > 0 and graded_top == presented_top
     return {
         "state": DESCRIPTIVE_ONLY,
         "label": "excess_spy_gt_0_existing_board_label",
         "basis": "published_rank_position_lt_k_no_survivor_backfill",
         "k": k,
-        "sessions": len(per_session),
-        "mean_session_precision": _round(float(np.mean(per_session))),
+        "sessions_total": sessions_total,
+        "sessions_fully_graded_topk": len(session_precisions_complete),
+        "mean_session_precision_fully_graded": (
+            _round(float(np.mean(session_precisions_complete))) if session_precisions_complete else None
+        ),
+        "precision_presented": (
+            _round(gradable_hits / presented_top) if all_presented_graded else None
+        ),
+        "precision_presented_state": MEASURED if all_presented_graded else UNAVAILABLE_FIELD,
+        "pooled_precision_gradable_only": _round(gradable_hits / graded_top) if graded_top else None,
+        "presented_topk_rows": presented_top,
         "graded_topk_rows": graded_top,
         "published_capacity_rows": capacity,
-        "fill_at_k": _round(graded_top / capacity) if capacity else None,
+        "fill_at_k": _round(presented_top / capacity) if capacity else None,
+        "outcome_coverage_within_presented": _round(graded_top / presented_top) if presented_top else None,
         "confirmatory": False,
+    }
+
+
+def _mean_session_spearman(frame: pd.DataFrame) -> dict[str, Any]:
+    needed = {"as_of", "position", "excess_spy"}
+    if not needed.issubset(frame.columns):
+        return {"state": UNAVAILABLE_FIELD, "missing_columns": sorted(needed - set(frame.columns))}
+    values: list[float] = []
+    for _, group in frame.groupby("as_of", sort=True):
+        pair = group[["position", "excess_spy"]].apply(pd.to_numeric, errors="coerce").dropna()
+        if pair.shape[0] < 3 or pair["position"].nunique() < 2 or pair["excess_spy"].nunique() < 2:
+            continue
+        corr = pair["position"].corr(pair["excess_spy"], method="spearman")
+        if pd.notna(corr):
+            values.append(float(corr))
+    if not values:
+        return {"state": UNESTIMABLE, "n_sessions": 0, "value": None}
+    return {
+        "state": DESCRIPTIVE_ONLY,
+        "n_sessions": len(values),
+        "value": _round(float(np.mean(values))),
+        "aggregation": "unweighted_mean_of_decision_session_spearman",
+        "orientation_note": "position is 0-based; negative means higher published slots did better",
+    }
+
+
+def _entry_status_coverage(frame: pd.DataFrame) -> dict[str, Any]:
+    if "entry_status" not in frame.columns:
+        return {"state": UNAVAILABLE_FIELD, "reason": "entry_status_not_present"}
+
+    reasons = (
+        frame["entry_status_reason"].fillna("undisclosed").astype(str)
+        if "entry_status_reason" in frame.columns
+        else pd.Series(["undisclosed"] * len(frame), index=frame.index)
+    )
+    not_applicable = frame["entry_status"].isna() & reasons.isin(BOARD_ENTRY_STATUS_NOT_APPLICABLE_REASONS)
+    applicable = frame[~not_applicable]
+    covered = int(applicable["entry_status"].notna().sum())
+    denominator = int(len(applicable))
+    coverage = covered / denominator if denominator else None
+    null_reasons = reasons[applicable["entry_status"].isna()]
+    return {
+        "state": DESCRIPTIVE_ONLY if denominator else NOT_APPLICABLE,
+        "source_contract": "entry_signal",
+        "all_rows": int(len(frame)),
+        "not_applicable_rows": int(not_applicable.sum()),
+        "applicable_rows": denominator,
+        "covered_rows": covered,
+        "coverage": _round(coverage),
+        "broad_coverage_floor": BROAD_COVERAGE_FLOOR,
+        "broad_claim_coverage_eligible": bool(coverage is not None and coverage >= BROAD_COVERAGE_FLOOR),
+        "null_reason_counts": {str(k): int(v) for k, v in null_reasons.value_counts().sort_index().items()},
     }
 
 
@@ -352,11 +485,11 @@ def summarize_us_board_frame(
     lane: str = "buy",
     k_values: Sequence[int] = (1, 3, 5, 10),
 ) -> dict[str, Any]:
-    """Summarize lawful matured US-board rows as DESCRIPTIVE_ONLY Cell-G telemetry.
+    """Summarize existing US-board truth as DESCRIPTIVE_ONLY Cell-G telemetry.
 
-    The board ledger does not supply canonical V4 episode first-surface timestamps or
-    economic-issuer identity at this grain today.  Those metrics are returned as loud
-    unavailable states rather than reverse engineered from ticker/as_of.
+    Board-date/ticker observations are NOT relabelled as V4 episodes. The ledger does
+    not carry canonical V4 first-surface timestamps or economic-issuer identity, so
+    those metrics remain loudly unavailable.
     """
     required = {"as_of", "ticker", "horizon", "lane"}
     missing_required = sorted(required - set(frame.columns))
@@ -378,36 +511,26 @@ def summarize_us_board_frame(
             "promotion_authority": False,
         }
 
-    # A row is outcome-mature for the benchmark-relative descriptive read only when the
-    # canonical board grader has already attached excess_spy.  Unmatured rows never get
-    # converted to zero and never shrink another metric's declared eligibility silently.
-    if "excess_spy" in sub.columns:
-        matured = sub[sub["excess_spy"].notna()].copy()
-    else:
-        matured = sub.iloc[0:0].copy()
-
+    matured = sub[sub["excess_spy"].notna()].copy() if "excess_spy" in sub.columns else sub.iloc[0:0].copy()
     result: dict[str, Any] = {
         "state": DESCRIPTIVE_ONLY,
         "source": "data/us_board_ledger/retro_grades.parquet",
         "source_grain": "(as_of,lane,ticker,horizon)",
-        "authority": "historical/forward board telemetry; not a Cell-G family promotion read",
+        "authority": "existing board telemetry; not a Cell-G family promotion read",
         "promotion_authority": False,
         "lane": lane,
         "horizon": horizon,
         "n_rows_at_lane_horizon": int(sub.shape[0]),
         "n_matured_excess_spy": int(matured.shape[0]),
-        "n_subject_episodes": int(matured[["as_of", "ticker"]].drop_duplicates().shape[0])
+        "n_board_subject_observations": int(matured[["as_of", "ticker"]].drop_duplicates().shape[0])
         if not matured.empty else 0,
         "decision_dates": concentration_effective_count(matured["as_of"].tolist()),
-        # Ticker is disclosed as a proxy only.  Cross-list/economic-issuer identity is a
-        # separate Cell-F/A1 concern and must not be fabricated here.
         "ticker_proxy_concentration": concentration_effective_count(matured["ticker"].tolist()),
+        "entry_status_coverage": _entry_status_coverage(sub),
     }
 
     if "economic_issuer_id" in matured.columns:
-        result["economic_issuer_concentration"] = concentration_effective_count(
-            matured["economic_issuer_id"].tolist()
-        )
+        result["economic_issuer_concentration"] = concentration_effective_count(matured["economic_issuer_id"].tolist())
     else:
         result["economic_issuer_concentration"] = {
             "state": UNAVAILABLE_FIELD,
@@ -420,34 +543,8 @@ def summarize_us_board_frame(
             else {"state": UNAVAILABLE_FIELD, "reason": f"{axis}_not_present"}
         )
 
-    # Coverage is measured on the full lane/horizon population, not only the rows with
-    # an entry_status.  Missing actionability cannot improve the coverage percentage.
-    if "entry_status" in sub.columns:
-        covered = int(sub["entry_status"].notna().sum())
-        coverage = covered / len(sub)
-        null_reasons: dict[str, int] = {}
-        if "entry_status_reason" in sub.columns:
-            nulls = sub[sub["entry_status"].isna()]["entry_status_reason"].fillna("undisclosed")
-            null_reasons = {str(k): int(v) for k, v in nulls.value_counts().sort_index().items()}
-        result["entry_status_coverage"] = {
-            "state": DESCRIPTIVE_ONLY,
-            "source_contract": "entry_signal",
-            "applicable_rows": int(len(sub)),
-            "covered_rows": covered,
-            "coverage": _round(coverage),
-            "broad_coverage_floor": BROAD_COVERAGE_FLOOR,
-            "broad_claim_coverage_eligible": bool(coverage >= BROAD_COVERAGE_FLOOR),
-            "null_reason_counts": null_reasons,
-        }
-    else:
-        result["entry_status_coverage"] = {
-            "state": UNAVAILABLE_FIELD,
-            "reason": "entry_status_not_present",
-        }
-
-    # Critical refusal: these rows are board-date observations, not canonical episode
-    # first surfaces.  Computing first-surface actionability or lead from them would be
-    # exactly the temporal collapse Cell G exists to prevent.
+    # These refusals are load-bearing: board rows are repeated observations, not
+    # canonical first-surface episodes.
     result["first_eligible_surface"] = {
         "state": UNAVAILABLE_FIELD,
         "reason": "canonical_episode_T_eligible_not_present",
@@ -472,33 +569,23 @@ def summarize_us_board_frame(
         return result
 
     result["benchmark_relative_return"] = _series_summary(matured["excess_spy"])
-
-    ranking: dict[str, Any] = {
+    result["ranking"] = {
         "state": DESCRIPTIVE_ONLY,
         "confirmatory": False,
         "ndcg_at_k": {
             "state": UNAVAILABLE_FIELD,
             "reason": "no_Cell-G_registered_graded_relevance_map_bound_to_this_read",
         },
-        "precision_at_k": {str(k): _published_precision(matured, k) for k in k_values},
+        "precision_at_k": {str(k): _published_precision(sub, k) for k in k_values},
         "recall_at_k": {
             "state": UNAVAILABLE_FIELD,
             "reason": "independent_reference_population_positive_denominator_not_bound",
         },
+        "session_spearman_position_vs_excess": _mean_session_spearman(sub),
     }
-    if {"position", "excess_spy"}.issubset(matured.columns):
-        pair = matured[["position", "excess_spy"]].apply(pd.to_numeric, errors="coerce").dropna()
-        if pair.shape[0] >= 3:
-            ranking["spearman_position_vs_excess"] = _round(
-                pair["position"].corr(pair["excess_spy"], method="spearman")
-            )
-            ranking["orientation_note"] = "position is 0-based; negative correlation means higher slots did better"
-        else:
-            ranking["spearman_position_vs_excess"] = None
-    result["ranking"] = ranking
 
     mfe_col = f"fwd_mfe_{horizon}"
-    path: dict[str, Any] = {
+    result["path"] = {
         "state": DESCRIPTIVE_ONLY,
         "confirmatory": False,
         "path_basis": "current US board canonical grader; strictly-forward next-bar fill",
@@ -516,7 +603,6 @@ def summarize_us_board_frame(
         "time_underwater": {"state": UNAVAILABLE_FIELD, "reason": "forward_path_series_not_present_in_grade_row"},
         "tail_loss_es10_excess_spy": expected_shortfall(matured["excess_spy"].tolist()),
     }
-    result["path"] = path
 
     result["field_support"] = {
         "entry_status": _column_or_unavailable(sub, "entry_status"),
@@ -526,18 +612,27 @@ def summarize_us_board_frame(
         "economic_issuer_id": _column_or_unavailable(sub, "economic_issuer_id"),
     }
     if "price_basis" in sub.columns:
-        result["price_basis_counts"] = {
+        basis_counts = {
             str(k): int(v) for k, v in sub["price_basis"].fillna("null").value_counts().sort_index().items()
         }
+        result["price_basis_counts"] = basis_counts
+        result["price_basis_mixed"] = len(basis_counts) > 1
+    else:
+        result["price_basis_mixed"] = None
     if "rank_by" in sub.columns:
         result["rank_by_values"] = sorted(str(v) for v in sub["rank_by"].dropna().unique())
 
     return result
 
 
-def build_report(*, w3_status: Mapping[str, Any], board_frame: pd.DataFrame | None = None,
-                 horizon: int = 10, lane: str = "buy") -> dict[str, Any]:
-    """Assemble the read-only report.  This function performs no I/O."""
+def build_report(
+    *,
+    w3_status: Mapping[str, Any],
+    board_frame: pd.DataFrame | None = None,
+    horizon: int = 10,
+    lane: str = "buy",
+) -> dict[str, Any]:
+    """Assemble the read-only report. This function performs no I/O."""
     return {
         "schema": REPORT_SCHEMA,
         "cell": "MAS-123 / Cell G",
@@ -548,7 +643,11 @@ def build_report(*, w3_status: Mapping[str, Any], board_frame: pd.DataFrame | No
         "us_board": (
             summarize_us_board_frame(board_frame, horizon=horizon, lane=lane)
             if board_frame is not None
-            else {"state": UNAVAILABLE_FIELD, "reason": "board_frame_not_supplied", "promotion_authority": False}
+            else {
+                "state": UNAVAILABLE_FIELD,
+                "reason": "board_frame_not_supplied",
+                "promotion_authority": False,
+            }
         ),
         "promotion": {
             "authorized": False,
