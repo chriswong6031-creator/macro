@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -42,6 +43,34 @@ def _read_json(path: Path) -> dict[str, Any]:
     return value
 
 
+def _strict_positive_int(value: Any, field: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ValueError(field)
+    return value
+
+
+def _strict_utc_timestamp(value: Any, field: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError(field)
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError(field) from exc
+    if parsed.tzinfo is None or parsed.utcoffset() != timedelta(0):
+        raise ValueError(field)
+    return value
+
+
+def _strict_git_sha(value: Any) -> str:
+    if not isinstance(value, str) or len(value) not in {40, 64}:
+        raise ValueError("git_sha")
+    try:
+        int(value, 16)
+    except ValueError as exc:
+        raise ValueError("git_sha") from exc
+    return value.lower()
+
+
 def _qledger_clock_inventory() -> dict[str, Any]:
     """Read only canonical evidence-clock metadata; never QLedger claims/grades."""
     root = DEFAULT_QLEDGER_CLOCK_DIR
@@ -60,22 +89,19 @@ def _qledger_clock_inventory() -> dict[str, Any]:
         try:
             row = _read_json(path)
             claim_family = row.get("claim_family")
-            horizon = int(row.get("declared_horizon_d"))
+            horizon = _strict_positive_int(row.get("declared_horizon_d"), "declared_horizon_d")
             unit = row.get("horizon_unit")
-            started = row.get("first_prospective_registration_utc")
-            git_sha = row.get("git_sha")
+            started = _strict_utc_timestamp(
+                row.get("first_prospective_registration_utc"),
+                "first_prospective_registration_utc",
+            )
+            git_sha = _strict_git_sha(row.get("git_sha"))
             if not isinstance(claim_family, str) or not claim_family:
                 raise ValueError("claim_family")
             if path.stem != claim_family:
                 raise ValueError("filename_claim_family_mismatch")
-            if horizon <= 0:
-                raise ValueError("declared_horizon_d")
             if unit not in {"trading_days", "calendar_days"}:
                 raise ValueError("horizon_unit")
-            if not isinstance(started, str) or not started:
-                raise ValueError("first_prospective_registration_utc")
-            if not isinstance(git_sha, str) or not git_sha:
-                raise ValueError("git_sha")
             registrations.append({
                 "claim_family": claim_family,
                 "declared_horizon_d": horizon,
