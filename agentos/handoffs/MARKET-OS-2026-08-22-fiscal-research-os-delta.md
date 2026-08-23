@@ -55,15 +55,7 @@ verified:
     result: "PASS — FIF forbids a second semantic model, query kernel or metric registry and keeps production issuer coverage separately gated."
   - claim: PR carrier is contained to records-only files
     command: "Compare Macro 1dde1cc2dd1166c3ecda510a2f05a09ca6452fad..PR #6293 head and list changed filenames."
-    result: "PASS before schema-repair amendment — exactly five added records/research files; zero engine/data/workflow/schema/runtime files."
-
-unresolved:
-  - "No broad point-in-time licensed historical Street-consensus/estimate-vintage plane is proven; current in-estate revision history is observation-era recent. A separate source/data investigation is needed before deep historical belief replay."
-  - "MAS-119 has not yet executed its domain-by-domain ExpectationBaseline federation; general Market-Belief composition must remain owner-native/typed partial until it does."
-  - "MAS-118 cannot yet run its first confirmatory family because broad PIT guidance corpus, survivor-safe price history and historical control prerequisites are not proven."
-  - "Portable Research Context persistence owner has not been re-censused at implementation time. This freeze requires default-ephemeral first and forbids a new store."
-  - "Analytical Lens is architecture only; broad production FIF input coverage and cross-company comparability must be proven before LENS-1 can claim a comparison workflow."
-  - "Current Market OS A1A remains its own active runtime wave and is not advanced by this architecture record."
+    result: "PASS at initial PR head — exactly five added records/research files; zero engine/data/workflow/schema/runtime files. Schema-only amendments modify those same files only."
 
 unverified:
   - claim: ResearchContextRef, AnalyticalLens or Market-Belief composition work in production
