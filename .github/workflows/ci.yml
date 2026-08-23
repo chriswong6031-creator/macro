@@ -4239,10 +4239,20 @@ on:
       - "scripts/build_security_master.py"
       - "data/reference/**"
       # Job: dislocation-p0-a1-blind-harvest (.github/ci/legacy-jobs.yml).
-      # Two-halves: the suite AND the primitives it imports.
+      # Two-halves: every source-only suite AND the primitives they import.
       - "tests/test_dislocation_p0_a1_blind_harvest.py"
+      - "tests/test_dislocation_p0_a1r_*.py"
+      - "tests/test_dislocation_p0_source_*.py"
       - "scripts/research/dislocation_p0_a1_harvest.py"
       - "scripts/research/dislocation_p0_a1_lib.py"
+      - "scripts/research/dislocation_p0_a1r*.py"
+      - "scripts/research/dislocation_p0_source_*.py"
+      - "collectors/edgar_forensics.py"
+      - "collectors/sec_document_spine.py"
+      - "engine/fundamental_forensics/models.py"
+      - "engine/fundamental_forensics/sec_document_spine.py"
+      - "lib/__init__.py"
+      - "lib/config.py"
       - "research/dislocation_intelligence/**"
   workflow_dispatch:
     inputs:
