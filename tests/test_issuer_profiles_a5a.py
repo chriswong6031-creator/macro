@@ -929,6 +929,16 @@ def test_refresh_is_fail_soft_per_homebuilder(tmp_path: Path, monkeypatch: pytes
         http_get=http_get,
         fetch_index=fetch_index,
         fetch_body_fn=fetch_body,
+        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23): every
+        # homebuilder acquisition fails here by construction (fake SEC only
+        # answers AAPL), so refresh() now attempts a carry-forward prior
+        # lookup on each failure — the REAL default
+        # (load_prior_workspace_for_ticker) would make a genuine network
+        # call against production R2. Explicit offline stubs (no prior)
+        # keep this test's "ALL FOUR are true skips, nothing to carry"
+        # premise intact and off the network.
+        homebuilder_prior_workspace_loader=lambda event_id: None,
+        homebuilder_carry_forward_loader=lambda ticker: None,
         publish_generation=lambda out_dir, dry_run=False: 0,
     )
     assert rc == 0
@@ -1009,6 +1019,12 @@ def test_refresh_publishes_a_successful_homebuilder_alongside_a_skipped_one(
 
     rc = refresh_mod.refresh(
         tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23): the
+        # three non-DHI tickers fail acquisition here (fake SEC only
+        # answers AAPL/DHI) — explicit offline stubs keep the carry-forward
+        # lookup off the network (see the sibling test above).
+        homebuilder_prior_workspace_loader=lambda event_id: None,
+        homebuilder_carry_forward_loader=lambda ticker: None,
         publish_generation=lambda out_dir, dry_run=False: 0,
     )
     assert rc == 0
@@ -1018,3 +1034,240 @@ def test_refresh_publishes_a_successful_homebuilder_alongside_a_skipped_one(
         f"workspaces/{FLAGSHIP_EVENT_ID}.json",
         f"workspaces/{dhi_event_id}.json",
     }
+
+
+# ---------------------------------------------------------------------------
+# NEW-4 (Opus red-team verification round 3, 2026-08-23): generations are
+# WHOLE-NEST snapshots — write_workspace_generation has no carry logic, so a
+# per-ticker skip DROPS the event from the published generation, and the
+# NEXT cycle's prior lookup 404s inside the CURRENT (this) generation — a
+# legitimate, successful "not published here" read, not a fetch failure
+# NEW-1 catches — silently erasing a sticky "corrected" state one hop later.
+# Fixed with a ticker-scoped carry-forward lookup
+# (load_prior_workspace_for_ticker) independent of whether THIS cycle's
+# fresh event_id was ever computed.
+# ---------------------------------------------------------------------------
+
+def _dhi_refresh_fixtures():
+    """Shared AAPL http_get/fetch_index/fetch_body + a corrected DHI
+    payload, reused by both NEW-4 falsifier tests below."""
+    import gzip
+    import json as jsonlib
+
+    from engine.company_intelligence.event_workspace import LIVE_NARRATIVE_ALIAS
+    from engine.earnings_transcript_intake import canonical_body_sha256
+
+    aapl_transcript_payload = jsonlib.loads(
+        gzip.decompress((FIXTURES / "aapl_fy2026_q3.json.gz").read_bytes()).decode("utf-8")
+    )
+    tx_sha = canonical_body_sha256(aapl_transcript_payload)
+    aapl_exhibit = AAPL_EXHIBIT.read_text(encoding="utf-8")
+    archive_base = f"https://www.sec.gov/Archives/edgar/data/{int(AAPL_CIK)}/{AAPL_ACCESSION.replace('-', '')}"
+    exhibit_name = "a8-kex991q3202606272026.htm"
+
+    def http_get(url: str):
+        if url == f"https://data.sec.gov/submissions/CIK{AAPL_CIK}.json":
+            return 200, jsonlib.dumps({
+                "cik": AAPL_CIK,
+                "filings": {"recent": {
+                    "accessionNumber": [AAPL_ACCESSION],
+                    "filingDate": ["2026-07-30"],
+                    "acceptanceDateTime": ["2026-07-30T16:30:00.000Z"],
+                    "reportDate": ["2026-06-27"],
+                    "form": ["8-K"],
+                    "primaryDocument": ["aapl-20260730.htm"],
+                    "items": ["2.02,9.01"],
+                }},
+            }).encode("utf-8")
+        if url == f"{archive_base}/{AAPL_ACCESSION}-index-headers.html":
+            return 200, (
+                "<HTML><BODY><PRE>&lt;DOCUMENT&gt;\n&lt;TYPE&gt;8-K\n"
+                "&lt;FILENAME&gt;aapl-20260730.htm\n&lt;/DOCUMENT&gt;\n"
+                f"&lt;DOCUMENT&gt;\n&lt;TYPE&gt;EX-99.1\n&lt;FILENAME&gt;{exhibit_name}\n"
+                "&lt;/DOCUMENT&gt;\n</PRE></BODY></HTML>"
+            ).encode("utf-8")
+        if url == f"{archive_base}/{exhibit_name}":
+            return 200, aapl_exhibit.encode("utf-8")
+        # Every homebuilder CIK's submissions call 404s: real acquisition
+        # for DHI/PHM/KBH/TOL always fails in these tests by construction.
+        return 404, b""
+
+    def fetch_index(_base: str) -> dict:
+        return {
+            "schema": "mastermind.tx-index/v1",
+            "symbols": {"AAPL": ["2026Q3"]},
+            "revisions": {LIVE_NARRATIVE_ALIAS: tx_sha},
+            "dates": {LIVE_NARRATIVE_ALIAS: "2026-07-30"},
+            "body_count": 1,
+            "symbol_count": 1,
+            "generated_at": "2026-08-16T23:51:18Z",
+        }
+
+    def fetch_body(_base: str, ref) -> dict:
+        return aapl_transcript_payload
+
+    dhi_event_id = "evt_cik0000882184_2026q3_results"
+    dhi_original = _build_dhi_workspace(exhibit_body=DHI_EXHIBIT.read_text(encoding="utf-8"), prior_source_sha256=None)
+    dhi_corrected = _build_dhi_workspace(
+        exhibit_body=DHI_EXHIBIT.read_text(encoding="utf-8") + "\n<!-- source correction -->\n",
+        prior_source_sha256=dhi_original["_source_sha256"],
+    )
+    assert dhi_corrected["lifecycle"]["state"] == "corrected"
+    return http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected
+
+
+def _publish_dhi_corrected_cycle_1(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """CYCLE 1 shared by both falsifier tests: DHI publishes already
+    "corrected"; PHM/KBH/TOL never published (true skip, no prior)."""
+    import json as jsonlib
+
+    import scripts.refresh_event_workspaces as refresh_mod
+
+    http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected = _dhi_refresh_fixtures()
+    real_acquire = refresh_mod.acquire_and_build_homebuilder_workspace
+
+    def stubbed_acquire_cycle1(ticker: str, **kwargs):
+        if ticker == "DHI":
+            return dhi_event_id, dhi_corrected
+        return real_acquire(ticker, **kwargs)
+
+    monkeypatch.setattr(refresh_mod, "acquire_and_build_homebuilder_workspace", stubbed_acquire_cycle1)
+    rc1 = refresh_mod.refresh(
+        tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        homebuilder_prior_workspace_loader=lambda event_id: None,
+        homebuilder_carry_forward_loader=lambda ticker: None,
+        publish_generation=lambda out_dir, dry_run=False: 0,
+    )
+    assert rc1 == 0
+    monkeypatch.setattr(refresh_mod, "acquire_and_build_homebuilder_workspace", real_acquire)
+    marker1 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    dhi_published_1 = jsonlib.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker1["generation_id"]
+         / "workspaces" / f"{dhi_event_id}.json").read_text()
+    )
+    assert dhi_published_1["lifecycle"]["state"] == "corrected"
+    # (c): a never-published ticker with a failed acquisition is a true
+    # skip — PHM/KBH/TOL are absent from cycle 1 (only AAPL + DHI present),
+    # confirming case (c) alongside cases (a)/(b) exercised below.
+    assert marker1["event_count"] == 2
+    return http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected, dhi_published_1, marker1["generation_id"], real_acquire
+
+
+def test_carry_forward_lookup_failure_aborts_the_whole_refresh_then_recovers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """NEW-4 NAMED FALSIFIER (1): the ticker-scoped carry-forward lookup
+    RAISES for DHI on cycle 2 (simulating a transient CDN blip on that
+    specific read, while DHI's real acquisition ALSO fails naturally) ->
+    cycle 2 publishes NOTHING (RefreshError, marker frozen at cycle 1's
+    generation). Cycle 3 behaves normally (the same loader now succeeds) ->
+    the generation still carries lifecycle.state "corrected" for DHI,
+    proving nothing was lost across the aborted cycle."""
+    import json as jsonlib
+
+    import scripts.refresh_event_workspaces as refresh_mod
+
+    (http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected,
+     dhi_published_1, gen1_id, real_acquire) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
+
+    def failing_carry_forward(ticker: str):
+        if ticker == "DHI":
+            raise refresh_mod.PriorWorkspaceFetchFailed("DHI: simulated transient CDN blip")
+        return None
+
+    with pytest.raises(refresh_mod.RefreshError):
+        refresh_mod.refresh(
+            tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+            homebuilder_prior_workspace_loader=lambda event_id: None,
+            homebuilder_carry_forward_loader=failing_carry_forward,
+            publish_generation=lambda out_dir, dry_run=False: 0,
+        )
+    marker2 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    assert marker2["generation_id"] == gen1_id, "marker must stay frozen at cycle 1's generation — nothing published"
+
+    def normal_carry_forward(ticker: str):
+        if ticker == "DHI":
+            return dhi_published_1
+        return None
+
+    rc3 = refresh_mod.refresh(
+        tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        homebuilder_prior_workspace_loader=lambda event_id: None,
+        homebuilder_carry_forward_loader=normal_carry_forward,
+        publish_generation=lambda out_dir, dry_run=False: 0,
+    )
+    assert rc3 == 0
+    marker3 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    dhi_published_3 = jsonlib.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker3["generation_id"]
+         / "workspaces" / f"{dhi_event_id}.json").read_text()
+    )
+    assert dhi_published_3["lifecycle"]["state"] == "corrected"
+
+
+def test_acquisition_failure_carries_forward_a_corrected_event_byte_identical(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """NEW-4 NAMED FALSIFIER (2): DHI's acquisition fails on cycle 2 (NOT
+    the prior read — the carry-forward lookup succeeds normally, returning
+    cycle 1's corrected payload). Cycle 2's generation still CONTAINS DHI,
+    carried forward, state "corrected", byte-content-identical to its prior
+    payload (module content, excluding generation_id/generated_at which
+    write_workspace_generation always re-stamps) — with a valid receipt in
+    the manifest's files map. Cycle 3 normal (DHI's acquisition succeeds
+    again with the SAME unchanged source) -> sticky-corrected still holds."""
+    import json as jsonlib
+
+    import scripts.refresh_event_workspaces as refresh_mod
+
+    (http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected,
+     dhi_published_1, gen1_id, real_acquire) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
+
+    def carry_forward_succeeds(ticker: str):
+        if ticker == "DHI":
+            return dhi_published_1
+        return None
+
+    rc2 = refresh_mod.refresh(
+        tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        homebuilder_prior_workspace_loader=lambda event_id: None,
+        homebuilder_carry_forward_loader=carry_forward_succeeds,
+        publish_generation=lambda out_dir, dry_run=False: 0,
+    )
+    assert rc2 == 0
+    marker2 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    assert f"workspaces/{dhi_event_id}.json" in marker2["files"]
+    receipt = marker2["files"][f"workspaces/{dhi_event_id}.json"]
+    assert receipt["bytes"] > 0 and len(receipt["sha256"]) == 64
+    dhi_published_2 = jsonlib.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker2["generation_id"]
+         / "workspaces" / f"{dhi_event_id}.json").read_text()
+    )
+    assert dhi_published_2["lifecycle"]["state"] == "corrected"
+
+    def _content(payload: dict) -> dict:
+        return {k: v for k, v in payload.items() if k not in ("generation_id", "generated_at")}
+
+    assert _content(dhi_published_2) == _content(dhi_published_1), "carried-forward content must be unchanged"
+
+    # CYCLE 3: DHI acquisition succeeds again (same unchanged source) —
+    # sticky-corrected (round 1/2) must still hold.
+    def stubbed_acquire_cycle3(ticker: str, **kwargs):
+        if ticker == "DHI":
+            return dhi_event_id, dhi_corrected
+        return real_acquire(ticker, **kwargs)
+
+    monkeypatch.setattr(refresh_mod, "acquire_and_build_homebuilder_workspace", stubbed_acquire_cycle3)
+    rc3 = refresh_mod.refresh(
+        tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        homebuilder_prior_workspace_loader=lambda event_id: None,
+        homebuilder_carry_forward_loader=lambda ticker: None,
+        publish_generation=lambda out_dir, dry_run=False: 0,
+    )
+    assert rc3 == 0
+    marker3 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    dhi_published_3 = jsonlib.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker3["generation_id"]
+         / "workspaces" / f"{dhi_event_id}.json").read_text()
+    )
+    assert dhi_published_3["lifecycle"]["state"] == "corrected"

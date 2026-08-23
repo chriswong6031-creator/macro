@@ -28,6 +28,7 @@ from scripts.refresh_event_workspaces import (
     _PriorWorkspaceNotPublished,
     _select_exhibit_99_1,
     load_prior_workspace,
+    load_prior_workspace_for_ticker,
     refresh,
 )
 
@@ -199,6 +200,19 @@ def _refresh(tmp_path: Path, fake: _FakeR2, **kwargs):
         fetch_index=fetch_index,
         fetch_body_fn=fetch_body,
         prior_workspace=kwargs.get("prior_workspace"),
+        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23): these
+        # tests are AAPL-flagship-focused and never stub homebuilder SEC
+        # responses at all, so every homebuilder acquisition fails here by
+        # construction — refresh() now looks up a carry-forward prior on
+        # every such failure, and the REAL default
+        # (load_prior_workspace_for_ticker) makes a genuine network call
+        # against production R2 ("No network." is this file's own law).
+        # Both homebuilder loaders default here to explicit offline stubs
+        # returning None (no prior — the pre-existing implicit behavior
+        # every test in this file already relies on); a test that wants to
+        # exercise carry-forward passes its own stub explicitly.
+        homebuilder_prior_workspace_loader=kwargs.get("homebuilder_prior_workspace_loader", lambda event_id: None),
+        homebuilder_carry_forward_loader=kwargs.get("homebuilder_carry_forward_loader", lambda ticker: None),
         publish_generation=lambda out_dir, dry_run=False: publish_event_workspaces(
             out_dir, dry_run=dry_run, s3=fake, bucket="bucket"
         ),
@@ -329,6 +343,85 @@ def test_load_prior_workspace_returns_none_on_clean_not_published(capsys) -> Non
 def test_load_prior_workspace_returns_the_workspace_on_a_hit() -> None:
     payload = {"event_id": "evt_x", "lifecycle": {"state": "complete"}}
     assert load_prior_workspace("evt_x", fetch=lambda eid: payload) == payload
+
+
+class _FakeRequestsResponse:
+    def __init__(self, *, status_code: int, payload: object = None):
+        self.status_code = status_code
+        self._payload = payload
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400 and self.status_code != 404:
+            raise RuntimeError(f"HTTP {self.status_code}")
+
+    def json(self) -> object:
+        return self._payload
+
+
+def test_load_prior_workspace_for_ticker_matches_by_company_id_scan(monkeypatch) -> None:
+    """NEW-4 (Opus red-team verification round 3, 2026-08-23): direct
+    unit-level proof that load_prior_workspace_for_ticker's own
+    generation-manifest scan works — it must find DHI's event via
+    parse_canonical_event_id's company_id, WITHOUT knowing this cycle's
+    fresh event_id at all, fetching only the ONE matching workspace body
+    (never the AAPL one), and return None for a ticker with no entry in
+    the current generation."""
+    base = "https://example.test/company_intelligence"
+    dhi_event_id = "evt_cik0000882184_2026q3_results"
+    aapl_event_id = FLAGSHIP_EVENT_ID
+    dhi_payload = {"event_id": dhi_event_id, "lifecycle": {"state": "corrected"}}
+    aapl_payload = {"event_id": aapl_event_id, "lifecycle": {"state": "complete"}}
+    gen_manifest = {
+        "files": {
+            f"workspaces/{aapl_event_id}.json": {"bytes": 10, "sha256": "a" * 64},
+            f"workspaces/{dhi_event_id}.json": {"bytes": 10, "sha256": "b" * 64},
+        },
+    }
+    fetched_workspace_urls: list[str] = []
+
+    def fake_get(url: str, *, headers=None, timeout=None):
+        if url == f"{base}/event_workspaces/manifest.json":
+            return _FakeRequestsResponse(status_code=200, payload={"generation_id": "GEN1"})
+        if url == f"{base}/event_workspaces/generations/GEN1/manifest.json":
+            return _FakeRequestsResponse(status_code=200, payload=gen_manifest)
+        if url == f"{base}/event_workspaces/generations/GEN1/workspaces/{dhi_event_id}.json":
+            fetched_workspace_urls.append(url)
+            return _FakeRequestsResponse(status_code=200, payload=dhi_payload)
+        if url == f"{base}/event_workspaces/generations/GEN1/workspaces/{aapl_event_id}.json":
+            fetched_workspace_urls.append(url)
+            return _FakeRequestsResponse(status_code=200, payload=aapl_payload)
+        raise AssertionError(f"unexpected URL: {url}")
+
+    monkeypatch.setattr("requests.get", fake_get)
+    result = load_prior_workspace_for_ticker("DHI", base_url=base)
+    assert result == dhi_payload
+    # Only DHI's own workspace body was ever fetched — never AAPL's, proving
+    # the scan reads the generation manifest's event_id list (cheap) and
+    # fetches ONLY the matched body (not every workspace in the generation).
+    assert fetched_workspace_urls == [f"{base}/event_workspaces/generations/GEN1/workspaces/{dhi_event_id}.json"]
+
+    # A ticker with no entry in the current generation returns None (never
+    # published yet, not a failure).
+    assert load_prior_workspace_for_ticker("PHM", base_url=base) is None
+
+
+def test_load_prior_workspace_for_ticker_raises_on_genuine_fetch_failure(monkeypatch, capsys) -> None:
+    def fake_get(url: str, *, headers=None, timeout=None):
+        raise TimeoutError("connection timed out")
+
+    monkeypatch.setattr("requests.get", fake_get)
+    with pytest.raises(PriorWorkspaceFetchFailed):
+        load_prior_workspace_for_ticker("DHI", base_url="https://example.test/company_intelligence")
+    out = capsys.readouterr().out
+    assert any(line.startswith("::warning title=event-workspace-prior-fetch-failed::") for line in out.splitlines())
+
+
+def test_load_prior_workspace_for_ticker_returns_none_when_no_generation_exists(monkeypatch) -> None:
+    def fake_get(url: str, *, headers=None, timeout=None):
+        return _FakeRequestsResponse(status_code=404)
+
+    monkeypatch.setattr("requests.get", fake_get)
+    assert load_prior_workspace_for_ticker("DHI", base_url="https://example.test/company_intelligence") is None
 
 
 def test_prior_fetch_failure_never_erases_a_corrected_lifecycle_state(tmp_path: Path, capsys) -> None:

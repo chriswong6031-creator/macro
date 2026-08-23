@@ -58,7 +58,7 @@ from engine.company_intelligence.event_workspace import (
     write_workspace_generation,
 )
 from engine.company_intelligence.event_workspace_build import build_event_workspace
-from engine.company_intelligence.events import FiscalPeriod, canonical_event_id
+from engine.company_intelligence.events import FiscalPeriod, canonical_event_id, parse_canonical_event_id
 from engine.company_intelligence.issuer_profiles import (
     HOMEBUILDER_TICKERS,
     issuer_for_ticker,
@@ -568,6 +568,82 @@ def load_prior_flagship_workspace() -> dict[str, Any] | None:
     return load_prior_workspace(FLAGSHIP_EVENT_ID)
 
 
+def load_prior_workspace_for_ticker(ticker: str, *, base_url: str | None = None) -> dict[str, Any] | None:
+    """The most recently published workspace belonging to *ticker*'s STATIC
+    issuer identity, read directly from the CURRENT generation's own
+    manifest — independent of whether THIS CYCLE's fresh acquisition ever
+    succeeds (NEW-4, Opus red-team verification round 3, 2026-08-23).
+
+    ``load_prior_workspace(event_id)`` needs THIS cycle's freshly discovered
+    event_id, which is only computable after a successful acquisition —
+    exactly the thing that may have just failed. This function instead
+    scans the current generation manifest's ``files`` map (event_ids only;
+    no workspace body is fetched for anything but the one match) for an
+    event_id whose ``parse_canonical_event_id`` company_id matches this
+    ticker's registered issuer identity — a STATIC, acquisition-independent
+    lookup. Returns ``None`` when genuinely never published (no generation
+    exists yet, or no event for this ticker is in the current one — first
+    publish, not a failure). Raises ``PriorWorkspaceFetchFailed`` on a
+    genuine fetch failure (network error, timeout, non-2xx, malformed
+    JSON) at any read here — the SAME disposition contract as
+    ``load_prior_workspace``, never silently absent.
+    """
+    issuer = issuer_for_ticker(ticker)
+    if issuer is None:
+        return None
+    import os
+
+    import requests
+
+    base = (base_url or os.environ.get("COMPANY_INTELLIGENCE_R2_BASE_URL", _DEFAULT_PUBLIC_ORIGIN)).strip().rstrip("/")
+    headers = {"Accept": "application/json", "User-Agent": "mastermind-event-workspaces/1"}
+    try:
+        marker_resp = requests.get(f"{base}/event_workspaces/manifest.json", headers=headers, timeout=20)
+        if marker_resp.status_code == 404:
+            return None
+        marker_resp.raise_for_status()
+        marker = marker_resp.json()
+        generation_id = str((marker or {}).get("generation_id") or "")
+        if not generation_id:
+            return None
+        gen_resp = requests.get(
+            f"{base}/event_workspaces/generations/{generation_id}/manifest.json",
+            headers=headers, timeout=20,
+        )
+        if gen_resp.status_code == 404:
+            return None
+        gen_resp.raise_for_status()
+        gen_manifest = gen_resp.json()
+    except Exception as exc:  # noqa: BLE001 - every other failure is a genuine fetch failure, never silently absent
+        print(
+            "::warning title=event-workspace-prior-fetch-failed::"
+            f"{ticker}: current-generation manifest fetch failed ({type(exc).__name__}: {exc}) — "
+            "refusing to treat this as no-prior-to-carry",
+            flush=True,
+        )
+        raise PriorWorkspaceFetchFailed(
+            f"{ticker}: current-generation manifest fetch failed ({type(exc).__name__}: {exc})"
+        ) from exc
+
+    files = (gen_manifest or {}).get("files") if isinstance(gen_manifest, Mapping) else None
+    matched_event_id: str | None = None
+    for relative in files or {}:
+        relative_text = str(relative)
+        if not relative_text.startswith("workspaces/") or not relative_text.endswith(".json"):
+            continue
+        candidate_event_id = relative_text[len("workspaces/"):-len(".json")]
+        try:
+            company_id, _fiscal_period, _event_type = parse_canonical_event_id(candidate_event_id)
+        except Exception:  # noqa: BLE001 - a non-canonical file name is simply not a match
+            continue
+        if company_id == issuer.company_id:
+            matched_event_id = candidate_event_id
+            break
+    if matched_event_id is None:
+        return None
+    return load_prior_workspace(matched_event_id, base_url=base_url)
+
+
 _STATED_PERIOD_END_RE = re.compile(
     r"(?:Three\s+Months\s+Ended|[Qq]uarter\s+ended)\s+([A-Za-z]+\s+\d{1,2},?\s*\d{4})"
 )
@@ -722,6 +798,16 @@ def refresh(
     fetch_index: FetchIndex = fetch_global_index,
     fetch_body_fn: FetchBody = fetch_body,
     prior_workspace: PriorLoader | Mapping[str, Any] | None = None,
+    # NEW-4 fix (Opus red-team verification round 3, 2026-08-23): the
+    # homebuilder prior loader was hardcoded to load_prior_workspace at the
+    # per-ticker call site — unreachable by a test without monkeypatching
+    # the module-level name. Now a real parameter, mirroring the flagship's
+    # own prior_workspace injection point above.
+    homebuilder_prior_workspace_loader: Callable[[str], Mapping[str, Any] | None] = load_prior_workspace,
+    # NEW-4: the ticker-scoped carry-forward lookup (load_prior_workspace_for_ticker
+    # by default) used ONLY when this cycle's acquisition/build fails and the
+    # normal event_id-keyed prior read above was never reached.
+    homebuilder_carry_forward_loader: Callable[[str], Mapping[str, Any] | None] = load_prior_workspace_for_ticker,
     publish_generation: PublishFn = publish_event_workspaces,
 ) -> int:
     """Acquire sources → build → write sibling nest → publish marker-last."""
@@ -736,22 +822,24 @@ def refresh(
     if callable(prior_workspace):
         try:
             prior = prior_workspace()
-        except PriorWorkspaceFetchFailed as exc:
-            # NEW-1 fix (Opus red-team round 2, 2026-08-23): a genuine fetch
-            # failure on the prior read must NEVER be silently treated as
-            # first-generation (see PriorWorkspaceFetchFailed's docstring —
-            # it would permanently erase a "corrected" lifecycle state).
-            # The flagship leg is ALREADY a hard, all-or-nothing failure for
-            # every other acquisition/build error (module docstring) — this
-            # raises RefreshError for the same reason, refusing the WHOLE
-            # refresh this cycle rather than minting a de-corrected
-            # flagship workspace. Chosen over "skip semantics" because the
-            # flagship has no per-issuer loop to skip within — refresh()
-            # produces exactly one flagship record, not N independent ones.
+        except Exception as exc:  # noqa: BLE001
+            # NEW-1 fix (round 2) + NEW-5 fix (round 3, Opus red-team
+            # verification, 2026-08-23): NO exception of ANY type may be
+            # silently read as "first generation" — only an EXPLICIT clean
+            # `None` return from prior_workspace() may mean that. Round 2
+            # fixed this specifically for PriorWorkspaceFetchFailed but left
+            # a generic `except Exception: prior = None` fallback for every
+            # OTHER exception type — a latent re-entry of the exact erasure
+            # bug this law exists to prevent, the moment any future loader
+            # raised something else. The flagship leg is ALREADY a hard,
+            # all-or-nothing failure for every other acquisition/build
+            # error (module docstring) — this raises RefreshError
+            # uniformly for the same reason, refusing the WHOLE refresh
+            # rather than guessing. Chosen over "skip semantics" because
+            # the flagship has no per-issuer loop to skip within —
+            # refresh() produces exactly one flagship record, not N
+            # independent ones.
             raise RefreshError(f"flagship prior workspace fetch failed: {exc}") from exc
-        except Exception as exc:  # noqa: BLE001 - a genuinely absent prior (first publish) stays fail-soft
-            log.info("prior event workspace unavailable (%s); treating as first generation", exc)
-            prior = None
     else:
         prior = prior_workspace
     source_clock = filing["acceptance_datetime"]
@@ -774,6 +862,35 @@ def refresh(
     if payload.get("event_id") != FLAGSHIP_EVENT_ID:
         raise RefreshError(f"flagship event_id drifted: {payload.get('event_id')}")
 
+    # NEW-4 fix (Opus red-team verification round 3, 2026-08-23): generations
+    # are WHOLE-NEST snapshots — write_workspace_generation has no carry
+    # logic, so an event silently omitted from `workspaces` here is simply
+    # ABSENT from this generation. The NEXT cycle's prior lookup for that
+    # SAME event_id then 404s against the CURRENT (this) generation — a
+    # legitimate, successful "not published in this generation" read, not a
+    # fetch failure NEW-1 catches — so prior_source_sha256/prior_lifecycle_state
+    # both resolve None and a "corrected" state silently erases one hop
+    # later, with the only ::warning ever fired describing a skip, not an
+    # erasure. Membership must therefore be MONOTONIC: an event that has
+    # ever been published must appear in EVERY subsequent generation. Three
+    # outcomes per ticker below implement that:
+    #   (a) acquisition/build failed but a prior IS readable (via the
+    #       ticker-scoped carry-forward lookup, independent of whether
+    #       THIS cycle's fresh event_id was ever computed) -> CARRY FORWARD
+    #       the prior payload unchanged into this generation.
+    #   (b) the carry-forward lookup ITSELF is unreadable -> ABORT the
+    #       whole refresh (RefreshError, nothing published, marker frozen)
+    #       — cannot rule out silently dropping a corrected event. Same
+    #       discipline as the flagship's own prior-fetch-failure handling
+    #       above; one issuer's CDN blip delaying ALL publication by one
+    #       cycle is the accepted cost. The NORMAL-path event_id-keyed
+    #       prior read inside acquire_and_build_homebuilder_workspace
+    #       (after a SUCCESSFUL acquisition) already raises
+    #       PriorWorkspaceFetchFailed uncaught (NEW-1) — caught here too,
+    #       same abort.
+    #   (c) genuinely never published (no prior found by either lookup)
+    #       and acquisition failed -> true skip, nothing to carry, and its
+    #       absence next cycle correctly reads as first-publish.
     workspaces: dict[str, dict[str, Any]] = {FLAGSHIP_EVENT_ID: payload}
     for ticker in HOMEBUILDER_TICKERS:
         try:
@@ -783,19 +900,43 @@ def refresh(
                 tx_index_url=tx_index_url,
                 fetch_index=fetch_index,
                 fetch_body_fn=fetch_body_fn,
-                prior_workspace_loader=load_prior_workspace,
+                prior_workspace_loader=homebuilder_prior_workspace_loader,
             )
-        # NEW-1 fix (Opus red-team round 2, 2026-08-23): a PriorWorkspaceFetchFailed
-        # from load_prior_workspace() (via acquire_and_build_homebuilder_workspace's
-        # own prior_workspace_loader(event_id) call, which does no local
-        # try/except of its own — see that function's docstring) lands here
-        # too, and this ALREADY-EXISTING fail-soft skip is exactly the
-        # "no publication for that event this run" semantics the fix
-        # requires: no rebuild is attempted at all this cycle for this
-        # ticker, the flagship and every other homebuilder are unaffected.
-        except Exception as exc:  # noqa: BLE001 - fail-soft: one issuer never blocks the flagship or its siblings
-            print(f"::warning title=event-workspaces::{ticker} skipped: {exc}", flush=True)
-            log.info("%s event workspace skipped (%s)", ticker, exc)
+        except PriorWorkspaceFetchFailed as exc:
+            # (b): the NORMAL-path prior read (after a successful
+            # acquisition) failed — cannot safely publish.
+            raise RefreshError(
+                f"{ticker}: prior workspace fetch failed — refusing to publish a nest that might "
+                f"silently drop a corrected event: {exc}"
+            ) from exc
+        except Exception as exc:  # noqa: BLE001 - acquisition/build failed; try to carry the prior forward before giving up
+            try:
+                carried_prior = homebuilder_carry_forward_loader(ticker)
+            except PriorWorkspaceFetchFailed as carry_exc:
+                # (b), extended: even the ticker-scoped carry-forward
+                # lookup is unreadable — cannot confirm nothing is lost.
+                raise RefreshError(
+                    f"{ticker}: acquisition failed AND the carry-forward prior lookup also failed — "
+                    f"refusing to publish a nest that might silently drop a corrected event: {carry_exc}"
+                ) from carry_exc
+            if carried_prior is not None:
+                # (a): carry the prior payload forward unchanged. Its own
+                # event_id field is authoritative for the workspaces key.
+                carried_event_id = str(carried_prior.get("event_id") or "")
+                if not carried_event_id:
+                    raise RefreshError(f"{ticker}: carried-forward prior workspace has no event_id") from exc
+                print(
+                    "::warning title=event-workspaces::"
+                    f"{ticker} acquisition failed, CARRIED FORWARD prior workspace unchanged "
+                    f"(class={type(exc).__name__}): {exc}",
+                    flush=True,
+                )
+                log.info("%s: acquisition failed, carried forward prior workspace unchanged (%s)", ticker, exc)
+                workspaces[carried_event_id] = dict(carried_prior)
+            else:
+                # (c): genuinely never published — true skip.
+                print(f"::warning title=event-workspaces::{ticker} skipped (no prior to carry): {exc}", flush=True)
+                log.info("%s event workspace skipped, no prior to carry (%s)", ticker, exc)
             continue
         workspaces[event_id] = hb_payload
 

@@ -641,7 +641,11 @@ waves:
       "results_released" (never a real events.py EVENT_STATES value) to
       "complete", fixture gained a source_form="8-K" default, all
       first-write call sites updated to pass both signals explicitly, plus
-      12 new A5C test functions (24 parametrized cases: empty-ledger
+      14 new A5C test functions (26 parametrized cases, verified via
+      `git diff origin/main -- tests/test_imce_prospective.py | grep -c
+      '^+def test_'` at this record's own final head — round-2's report
+      undercounted at "12" because it was measured before that round's
+      final 2 mutation-kill tests were added; empty-ledger
       refusal + line-start-pinned ::warning content assertion, sibling-
       event isolation, existing-observation correction regression,
       safe-state regression, a REAL builder happy-path run asserting
@@ -742,8 +746,90 @@ waves:
       fail-soft bug (flagship catching PriorWorkspaceFetchFailed the same
       way as a genuine first-publish) were manually mutation-verified this
       round to confirm the new tests actually kill them; reverted, suite
-      re-confirmed green after each. PR stays DRAFT pending the
-      commissioning session's re-review.
+      re-confirmed green after each.
+
+      VERIFICATION ROUND 3 (same PR #6308, same branch — Opus red-team,
+      2026-08-23: NEW-1/2/3 all confirmed FIXED by the verifier's own
+      falsifiers; one NEW BLOCKER + one MINOR + a NIT). NEW-4 (BLOCKER):
+      the homebuilder per-ticker skip DROPPED the event from the published
+      generation entirely — write_workspace_generation has no carry logic,
+      generations are WHOLE-NEST snapshots. The NEXT cycle's prior lookup
+      for that same event_id then 404s inside the CURRENT (post-skip)
+      generation — a legitimate, successful "not published in THIS
+      generation" read, not a fetch failure NEW-1 catches — so
+      prior_source_sha256/prior_lifecycle_state both resolved None and a
+      "corrected" state silently erased ONE HOP LATER, with the only
+      ::warning ever fired describing a skip, not an erasure. Applied to
+      EVERY per-ticker skip class (fetch_failed prior, SEC acquisition
+      failure, unusable EX-99.1, fiscal cross-check refusal), because the
+      sticky-corrected guarantee (round 2) rests on generation MEMBERSHIP,
+      which was not monotonic. Fixed by making membership monotonic: new
+      load_prior_workspace_for_ticker() scans the CURRENT generation's own
+      manifest.json "files" map (event_ids only — no workspace body is
+      fetched except the one match) for an event_id whose
+      parse_canonical_event_id company_id matches a ticker's STATIC
+      registered issuer identity — a lookup independent of whether THIS
+      cycle's fresh acquisition (and therefore its freshly-discovered
+      event_id) ever succeeds at all. refresh()'s homebuilder loop now
+      implements three outcomes per ticker: (a) acquisition/build failed
+      but the ticker-scoped carry-forward lookup finds a prior -> CARRY IT
+      FORWARD unchanged into this generation (warning says "CARRIED
+      FORWARD", names the failure class); (b) that carry-forward lookup
+      itself raises PriorWorkspaceFetchFailed (or the NORMAL-path
+      event_id-keyed prior read inside acquire_and_build_homebuilder_workspace
+      does, after a successful acquisition) -> ABORT THE WHOLE REFRESH
+      (RefreshError, marker frozen) — cannot rule out silently dropping a
+      corrected event; one issuer's CDN blip delaying ALL publication by
+      one cycle is the accepted cost, same discipline as the flagship's
+      own prior-fetch-failure handling; (c) genuinely never published (no
+      match in the current generation) and acquisition failed -> true
+      skip, nothing to carry, absence next cycle correctly reads as
+      first-publish. Both homebuilder loaders
+      (homebuilder_prior_workspace_loader, homebuilder_carry_forward_loader)
+      are now real refresh() parameters (previously hardcoded at the
+      per-ticker call site, unreachable by a test without monkeypatching
+      the module-level name). NEW-5 (MINOR): refresh()'s flagship prior-read
+      handler still fail-softed any non-PriorWorkspaceFetchFailed exception
+      into "treating as first generation" — a latent re-entry of the
+      erasure bug if a future loader ever raised a different type. Fixed:
+      the two except branches merged into one — NO exception of any type
+      may mean first-generation; only an EXPLICIT clean None return may.
+      NIT: WS record test-count for tests/test_imce_prospective.py
+      corrected 12 -> 14 (measured LAST, after all round-3 edits, via
+      `git diff origin/main -- tests/test_imce_prospective.py | grep -c
+      '^+def test_'` — round 2's "12" was itself measured before that
+      round's final 2 tests were added; 26 parametrized cases). New tests
+      this round, all offline (no real network — explicit
+      homebuilder_prior_workspace_loader/homebuilder_carry_forward_loader
+      stubs added everywhere refresh() is called in the existing suite,
+      since the REAL default (load_prior_workspace_for_ticker) would
+      otherwise make a genuine network call against production R2 the
+      moment any homebuilder's acquisition fails, which every
+      pre-existing AAPL-flagship-focused test does by construction — this
+      was caught by two tests in tests/test_issuer_profiles_a5a.py
+      actually reaching PRODUCTION R2 and pulling real published
+      PHM/KBH/TOL data before the offline stubs were added):
+      tests/test_issuer_profiles_a5a.py +2 (the two reviewer-named
+      falsifiers — carry-forward-lookup-failure-aborts-then-recovers, and
+      acquisition-failure-carries-forward-a-corrected-event-byte-identical
+      with a manifest-receipt assertion and a true-no-prior-skip check
+      folded in); tests/test_refresh_event_workspaces.py +3 (direct
+      unit-level load_prior_workspace_for_ticker coverage: company_id-scan
+      match + only-the-matched-body-fetched + no-match-returns-None, raises
+      on genuine fetch failure with line-start warning, returns None when
+      no generation exists yet). All new tests mutation-verified (reverting
+      the NEW-4 carry-forward branch to a plain skip fails both named
+      falsifiers; reverted after, suite re-confirmed green). Re-verified:
+      pytest tests/test_imce_prospective.py
+      tests/test_refresh_event_workspaces.py
+      tests/test_company_intelligence_event_workspace.py
+      tests/test_gh_annotation_line_start.py
+      tests/test_issuer_profiles_a5a.py tests/test_earnings_release_binding.py
+      (263 passed, 2 skipped, same sparse-worktree skips as before);
+      python3 scripts/check_contract_delta.py --base origin/main (0
+      introduced, 0 inherited); python3 scripts/agentos.py validate (0
+      errors, same 28 pre-existing unrelated warnings). PR stays DRAFT
+      pending the commissioning session's re-review.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's
