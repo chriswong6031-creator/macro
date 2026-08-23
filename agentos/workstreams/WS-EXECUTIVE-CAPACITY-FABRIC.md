@@ -26,16 +26,17 @@ waves:
     next_action: >
       Implement one no-write Macro vertical from existing key-pool/budget/provider state to
       `mastermind.provider_capacity.v1` and a real JSON/operator consumer, with exact unknown,
-      staleness, correction and secret-redline proof. Do not modify Executive placement.
+      staleness, correction, semantic-identity and secret-redline proof. Do not modify Executive placement.
   - id: CF2-F
-    title: Freeze Executive claim-time capacity evidence against landed schema v4
+    title: Freeze Executive claim-time capacity evidence and acquisition against landed schema v4
     status: todo
     depends_on: [CF1]
     next_action: >
       After the separately accepted Phase 1F-C schema-v4 implementation lands, freeze and
       independently review the smallest typed capacity-evidence extension to the existing
-      atomic JOB_CLAIMED receipt. Preserve the closed v4 placement snapshot byte-for-byte;
-      do not create another event/table or assume schema v5 by convenience.
+      atomic JOB_CLAIMED receipt plus the secret-free Provider Control acquisition seam.
+      Preserve the closed v4 placement snapshot byte-for-byte; do not create another event,
+      table, service or schema v5 by convenience.
   - id: CF2-I
     title: Executive capacity-aware placement using the reviewed claim receipt
     status: todo
@@ -85,6 +86,7 @@ artifacts:
   - agentos/decisions/DEC-EXECUTIVE-CAPACITY-FABRIC-OWNERSHIP-AND-CONTRACT.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_ARCHITECTURE_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_PLACEMENT_AMENDMENT_2026-08-22.md
+  - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_SEMANTIC_IDENTITY_AMENDMENT_2026-08-22.md
 landmines:
   - "Macro `shared-ai-provider-control` already owns provider availability, auth pools, cooling and quota state; do not create ProviderAccount/QuotaHorizon truth tables in Executive OS."
   - "`usage_snapshot()` display zeros are not proof of zero usage; no source observation means unknown unless a reviewed estimator with a real budget is configured."
@@ -102,6 +104,9 @@ landmines:
   - "Phase 1F-C owns schema v4. Capacity Fabric must not introduce another v4 migration or temporary v3 placement schema."
   - "Phase 1F-C freezes placement_snapshot_json to exactly worker_id/quota_class/provider/account_label/snapshot time. Capacity Fabric must not add quota, host, policy or reason fields to that object or change its digest definition."
   - "Capacity decision evidence belongs in the existing atomic claim receipt only after a fresh reviewed CF2-F source-law freeze; if that seam proves insufficient, return to Sol rather than inventing a second event/ledger or schema v5."
+  - "Whole-repository Macro commit identity is audit provenance only. High-churn unrelated repo commits must not change provider-capacity semantic snapshot_hash."
+  - "snapshot_hash and generated_at are distinct: later Executive claim evidence must bind both, because identical semantic contents can have different freshness."
+  - "CF1 stdout proves the contract, not the future Executive acquisition transport. CF2-F must freeze one secret-free bounded acquisition seam; Executive may not import floating Macro Python or read raw provider ledgers/secrets."
   - "Subscription headroom should reduce marginal API spend for routine eligible work, but policy may reserve scarce frontier capacity for critical/interactive work."
   - "Never expose auth tokens, cookies, API keys, raw auth files, provider-home contents, email/account PII, remote endpoint credentials or private host addresses in the capacity projection."
 do_not_redo:
@@ -111,6 +116,7 @@ do_not_redo:
   - "Do not put live quota/cooling state into Model Router policy files."
   - "Do not create a second router for provider capacity; evolve the existing stateless Model Router through RF1."
   - "Do not create one Executive Runtime/database/queue per Mac or use GitHub Actions/tmux/SSH as Executive lifecycle authority."
+  - "Do not create a long-lived capacity daemon/service merely to bridge Macro to Executive without a separate architecture ruling."
   - "Do not use LLM judgment to select a worker, waive an independence requirement, or interpret unknown quota as capacity."
   - "Do not widen Phase 1F-C placement_snapshot_json for Capacity Fabric."
   - "Do not disguise Alibaba/Z.AI/Grok/Cursor behind a `codex_home` field or copy Codex-only secret-canary semantics into the common harness contract."
