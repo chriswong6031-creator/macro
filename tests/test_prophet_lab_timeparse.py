@@ -379,3 +379,40 @@ def test_cell_g_real_committed_metadata_smoke_is_zero_authority(capsys) -> None:
     assert payload["writes_evaluation_store"] is False
     assert payload["w3"]["outcome_files_opened"] is False
     assert payload["promotion"]["authorized"] is False
+
+
+def test_cell_g_recall_refuses_impossible_reference_denominator() -> None:
+    got = precision_recall_at_k([True, True, False], 3, reference_positive_count=1)
+    assert got["state"] == HOLD_INTEGRITY
+    assert got["recall_state"] == HOLD_INTEGRITY
+    assert got["recall"] is None
+    assert got["recall_reason"] == "topk_positives_exceed_reference_population_positives"
+
+
+def test_cell_g_w3_status_rejects_malformed_count_without_crashing() -> None:
+    status = _cell_g_w3()
+    status["paired_sessions_accrued"] = "five"
+    got = summarize_w3_status(status)
+    assert got["state"] == HOLD_INTEGRITY
+    assert got["outcome_files_opened"] is False
+    assert got["reason"] == "missing_or_invalid_w3_count:paired_sessions_accrued"
+
+
+def test_cell_g_eawc_rejects_truthy_string_positive_label() -> None:
+    got = early_actionable_capture_recall(
+        positive_label=[True, "False"],
+        surfaced=[True, True],
+        actionable_at_first_surface=[True, True],
+    )
+    assert got["state"] == HOLD_INTEGRITY
+    assert got["invalid_positive_labels"] == 1
+
+
+def test_cell_g_eawc_rejects_malformed_actionability_state() -> None:
+    got = early_actionable_capture_recall(
+        positive_label=[True, True],
+        surfaced=[True, True],
+        actionable_at_first_surface=[True, "blocked"],
+    )
+    assert got["state"] == HOLD_INTEGRITY
+    assert got["invalid_actionability_states"] == 1
