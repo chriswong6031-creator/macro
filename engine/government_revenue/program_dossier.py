@@ -13,6 +13,7 @@ from collections import defaultdict
 from datetime import date, datetime, timezone
 from hashlib import sha256
 import json
+from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from . import program_ontology as po
@@ -435,6 +436,37 @@ def compose_program_dossier_bundle(
     return payload
 
 
+def _program_dossier_validator() -> Any:
+    from jsonschema import Draft202012Validator, FormatChecker
+
+    schema_path = (
+        Path(__file__).resolve().parents[2]
+        / "contracts" / "government_revenue" / "government_program_dossier.v1.schema.json"
+    )
+    return Draft202012Validator(
+        json.loads(schema_path.read_text(encoding="utf-8")), format_checker=FormatChecker(),
+    )
+
+
+def is_valid_program_dossier_payload(value: Any) -> bool:
+    """Validate a bundle against its schema plus its own content-id law.
+
+    Mirrors ``engine.government_revenue.dossiers.is_valid_dossier_payload`` --
+    the site-only render path uses this to verify committed canonical bytes
+    before mirroring them, never recomputing the bundle itself.
+    """
+    if not isinstance(value, Mapping):
+        return False
+    try:
+        if any(_program_dossier_validator().iter_errors(value)):
+            return False
+        if dossier_content_id(value) != value.get("content_id"):
+            return False
+    except (TypeError, ValueError, OSError):
+        return False
+    return True
+
+
 __all__ = [
     "CONTRACT",
     "SCHEMA_VERSION",
@@ -443,4 +475,5 @@ __all__ = [
     "ALLOCATION_LIMITATION",
     "dossier_content_id",
     "compose_program_dossier_bundle",
+    "is_valid_program_dossier_payload",
 ]

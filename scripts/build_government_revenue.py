@@ -536,6 +536,17 @@ def _validate_dossier_payload(payload: object) -> dict:
     return payload
 
 
+def _validate_program_dossier_payload(payload: object) -> dict:
+    """Reject a D5 program-dossier generation before either public twin is replaced."""
+    if (
+        not isinstance(payload, dict)
+        or payload.get("contract") != _d5_program_dossier.CONTRACT
+        or not _d5_program_dossier.is_valid_program_dossier_payload(payload)
+    ):
+        raise ValueError("D5 government revenue program dossier returned an invalid schema")
+    return payload
+
+
 def _prime_award_key_by_generated_id(dossier: dict) -> dict[str, str]:
     """Return the sole legal bridge from a source parent ID to a dossier key.
 
@@ -1288,6 +1299,41 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
         for name in ("idv_dossiers.json", "budget_program_graph.json", "identity_atlas.json")
     ):
         raise ValueError("canonical optional Government Revenue rail exists without a prime dossier")
+
+    # D5 Program/Mission/Capability/Product graph (freeze
+    # DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md). Independent of the D4
+    # dossier chain above: the composed bundle is a legitimate artifact even
+    # when no ontology has ever been admitted (freeze SS4's bundle-level
+    # unavailable form, dossiers: [] + ontology_graph_id: null), so neither
+    # file's presence requires the other's. A renderer never recomputes
+    # either -- it certifies/validates committed canonical bytes and mirrors
+    # them; pre-D5 historical checkouts (neither file present) skip quietly,
+    # same as the D4 chain above.
+    program_ontology_path = canonical_dir / "program_ontology.json"
+    if program_ontology_path.exists():
+        try:
+            program_ontology_raw = program_ontology_path.read_text(encoding="utf-8")
+            program_ontology_raw_obj = json.loads(program_ontology_raw)
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError("canonical D5 program ontology is invalid JSON") from exc
+        # Certify via the loader, same as every other consumer (freeze SS3.2)
+        # -- a refused certification on already-committed canonical bytes is
+        # corrupt state, not a degraded rail, so this raises rather than
+        # silently skipping the twin the way an absent/uncertified artifact
+        # degrades for a live composer.
+        _d5_program_ontology.load_program_ontology_graph(program_ontology_raw_obj)
+        _write_program_ontology_site_twin(root, program_ontology_raw)
+    program_dossier_path = canonical_dir / "program_dossier.json"
+    if program_dossier_path.exists():
+        try:
+            program_dossier_raw = program_dossier_path.read_text(encoding="utf-8")
+            program_dossier_bundle = _validate_program_dossier_payload(json.loads(program_dossier_raw))
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError("canonical D5 program dossier is invalid") from exc
+        if _canonical_json(program_dossier_bundle) != program_dossier_raw:
+            raise ValueError("canonical D5 program dossier bytes are non-canonical")
+        _write_program_dossier_twins(root, program_dossier_raw)
+
     candidate_projection = _candidate_projection(
         root,
         live_materialization=False,

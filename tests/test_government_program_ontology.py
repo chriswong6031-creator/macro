@@ -1343,3 +1343,167 @@ def test_build_government_revenue_composes_a_real_dossier_when_canonical_ontolog
     ontology_site_twin = tmp_path / "site" / "government-revenue-data" / "program-ontology.json"
     assert ontology_site_twin.exists()
     assert json.loads(ontology_site_twin.read_text()) == reference
+
+
+# ---------------------------------------------------------------------------
+# build_site_only must mirror the D5 twins too (production-wiring gap found
+# by the orchestrator, 2026-08-23): render.yml's shared lane runs
+# `--site-only`, which historically never wrote program_dossier.json /
+# program-ontology.json -- only the full build path did. A merge landing D5
+# canonical bytes would 404 the programs mode until the next full nightly.
+# ---------------------------------------------------------------------------
+
+
+def test_build_site_only_mirrors_both_d5_twins_byte_identical_when_canonical_exists(tmp_path):
+    """build_site_only, run AFTER a full build already produced canonical D5
+    bytes, must reproduce both site twins byte-identical -- without
+    recomputing build_payload (which is monkeypatched to explode if called)."""
+    from scripts import build_government_revenue
+
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    (templates / "government_revenue.html.j2").write_text(
+        "<title>Government Revenue</title><script>{{ payload_json|safe }}</script>",
+        encoding="utf-8",
+    )
+    ontology_dir = tmp_path / "data" / "government_revenue"
+    ontology_dir.mkdir(parents=True, exist_ok=True)
+    reference = _pilot_reference()
+    (ontology_dir / "program_ontology.json").write_text(json.dumps(reference), encoding="utf-8")
+
+    import pytest as _pytest
+    monkeypatch = _pytest.MonkeyPatch()
+    try:
+        monkeypatch.setattr(build_government_revenue, "build_payload", lambda **_kwargs: _minimal_government_revenue_payload())
+        build_government_revenue.build(tmp_path)
+    finally:
+        monkeypatch.undo()
+
+    canonical_ontology = ontology_dir / "program_ontology.json"
+    canonical_dossier = ontology_dir / "program_dossier.json"
+    assert canonical_ontology.exists() and canonical_dossier.exists()
+    canonical_ontology_bytes = canonical_ontology.read_bytes()
+    canonical_dossier_bytes = canonical_dossier.read_bytes()
+
+    site_ontology = tmp_path / "site" / "government-revenue-data" / "program-ontology.json"
+    site_dossier = tmp_path / "site" / "government-revenue-data" / "program-dossier.json"
+    site_ontology.unlink()
+    site_dossier.unlink()
+
+    monkeypatch2 = _pytest.MonkeyPatch()
+    try:
+        monkeypatch2.setattr(
+            build_government_revenue, "build_payload",
+            lambda **_kwargs: (_ for _ in ()).throw(AssertionError("site-only recalculated data")),
+        )
+        build_government_revenue.build_site_only(tmp_path)
+    finally:
+        monkeypatch2.undo()
+
+    assert site_ontology.exists() and site_ontology.read_bytes() == canonical_ontology_bytes
+    assert site_dossier.exists() and site_dossier.read_bytes() == canonical_dossier_bytes
+    # Canonical bytes themselves are untouched by a site-only pass.
+    assert canonical_ontology.read_bytes() == canonical_ontology_bytes
+    assert canonical_dossier.read_bytes() == canonical_dossier_bytes
+
+
+def test_build_site_only_skips_d5_twins_quietly_when_canonical_absent(tmp_path):
+    """A pre-D5 historical checkout (neither program_ontology.json nor
+    program_dossier.json ever committed) must still site-only-render
+    successfully, writing neither D5 twin -- never raising, never
+    fabricating a bundle."""
+    from scripts import build_government_revenue
+
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    (templates / "government_revenue.html.j2").write_text(
+        "<title>Government Revenue</title><script>{{ payload_json|safe }}</script>",
+        encoding="utf-8",
+    )
+
+    import pytest as _pytest
+    monkeypatch = _pytest.MonkeyPatch()
+    try:
+        monkeypatch.setattr(build_government_revenue, "build_payload", lambda **_kwargs: _minimal_government_revenue_payload())
+        build_government_revenue.build(tmp_path)
+    finally:
+        monkeypatch.undo()
+
+    data_dir = tmp_path / "data" / "government_revenue"
+    site_dir = tmp_path / "site" / "government-revenue-data"
+    # Simulate a checkout that predates D5 entirely: the full build path
+    # above unconditionally composes the empty/unavailable bundle form, so
+    # remove every trace of it to reach the TRUE pre-D5 absence state
+    # build_site_only must tolerate.
+    for path in (
+        data_dir / "program_ontology.json", data_dir / "program_dossier.json",
+        site_dir / "program-ontology.json", site_dir / "program-dossier.json",
+    ):
+        path.unlink(missing_ok=True)
+
+    monkeypatch2 = _pytest.MonkeyPatch()
+    try:
+        monkeypatch2.setattr(
+            build_government_revenue, "build_payload",
+            lambda **_kwargs: (_ for _ in ()).throw(AssertionError("site-only recalculated data")),
+        )
+        build_government_revenue.build_site_only(tmp_path)  # must not raise
+    finally:
+        monkeypatch2.undo()
+
+    assert not (data_dir / "program_ontology.json").exists()
+    assert not (data_dir / "program_dossier.json").exists()
+    assert not (site_dir / "program-ontology.json").exists()
+    assert not (site_dir / "program-dossier.json").exists()
+
+
+def test_build_site_only_raises_on_a_refused_canonical_ontology(tmp_path):
+    """A committed canonical ontology that fails certification is corrupt
+    state, not a degraded rail -- build_site_only must raise, matching every
+    other canonical-invalid case in that function, never silently skip."""
+    from scripts import build_government_revenue
+
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    (templates / "government_revenue.html.j2").write_text(
+        "<title>Government Revenue</title><script>{{ payload_json|safe }}</script>",
+        encoding="utf-8",
+    )
+    ontology_dir = tmp_path / "data" / "government_revenue"
+    ontology_dir.mkdir(parents=True, exist_ok=True)
+    (ontology_dir / "program_ontology.json").write_text(json.dumps(_pilot_reference()), encoding="utf-8")
+
+    import pytest as _pytest
+    monkeypatch = _pytest.MonkeyPatch()
+    try:
+        monkeypatch.setattr(build_government_revenue, "build_payload", lambda **_kwargs: _minimal_government_revenue_payload())
+        build_government_revenue.build(tmp_path)
+    finally:
+        monkeypatch.undo()
+
+    # Corrupt the committed canonical ontology bytes after the fact.
+    corrupted = json.loads((ontology_dir / "program_ontology.json").read_text())
+    corrupted["programs"][0]["phase"] = "not-a-real-phase"
+    (ontology_dir / "program_ontology.json").write_text(json.dumps(corrupted), encoding="utf-8")
+
+    with pytest.raises(po.OntologyInputError):
+        build_government_revenue.build_site_only(tmp_path)
+
+
+def test_committed_program_dossier_round_trips_its_own_content_id():
+    """The real checked-in canonical bundle recomputes byte-identically:
+    the content_id law (gpd1- + first 24 hex of SHA-256 over canonical JSON
+    with content_id/generated_at excluded) holds on the committed artifact,
+    not just on freshly composed ones."""
+    canonical_path = Path(__file__).parents[1] / "data" / "government_revenue" / "program_dossier.json"
+    if not canonical_path.exists():
+        pytest.skip("no committed D5 canonical dossier in this checkout")
+    raw = canonical_path.read_text(encoding="utf-8")
+    bundle = json.loads(raw)
+    assert pd.dossier_content_id(bundle) == bundle["content_id"]
+    assert pd.is_valid_program_dossier_payload(bundle)
+    # The committed bytes are themselves already the exact canonical
+    # serialization (sort_keys, compact separators) -- a site-only mirror
+    # never re-encodes them.
+    recanonicalized = json.dumps(bundle, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+    assert recanonicalized == raw
