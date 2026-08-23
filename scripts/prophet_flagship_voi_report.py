@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Emit the MAS-123 Cell-G flagship VOI report to stdout only.
 
-This CLI is intentionally incapable of writing an evaluation artifact. It has no W3
-outcome-path argument and no generic QLedger-result path argument. It reads only:
+The executable is deliberately source-pinned. Operators cannot redirect it to an
+arbitrary W3 JSON, QLedger result path, or parquet file. It reads only:
 
-1. the owner-written W3 status surface;
-2. the canonical QLedger evidence-clock metadata directory; and
-3. the already-existing US-board descriptive grade ledger, unless disabled.
+1. canonical ``data/us_prophet_rank/w3/status.json``;
+2. canonical ``data/qledger/evidence_clock_start/*.json`` metadata; and
+3. canonical ``data/us_board_ledger/retro_grades.parquet`` unless ``--no-board``.
 
-Current US-board grades remain DESCRIPTIVE_ONLY. No output from this CLI can promote a
-family or mutate Eval/Fusion authority.
+That source pin is part of the outcome-read gate: an immature W3 result file cannot be
+smuggled in through a generic CLI path and read before schema rejection. Current board
+telemetry remains DESCRIPTIVE_ONLY. This CLI has no writer and grants no authority.
 """
 from __future__ import annotations
 
@@ -97,8 +98,6 @@ def _args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Read-only Prophet flagship Value-of-Information report (MAS-123 Cell G)."
     )
-    parser.add_argument("--w3-status", type=Path, default=DEFAULT_W3_STATUS)
-    parser.add_argument("--board-ledger", type=Path, default=DEFAULT_BOARD_LEDGER)
     parser.add_argument("--horizon", type=int, default=10)
     parser.add_argument("--lane", default="buy")
     parser.add_argument(
@@ -112,7 +111,7 @@ def _args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     ns = _args(argv)
     try:
-        w3 = _read_json(ns.w3_status)
+        w3 = _read_json(DEFAULT_W3_STATUS)
     except Exception as exc:  # noqa: BLE001 -- report refusal; never invent a gate
         payload = {
             "schema": "prophet.flagship_voi_report/v1",
@@ -122,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
             "w3": {
                 "state": UNAVAILABLE_FIELD,
                 "reason": f"status_unreadable:{type(exc).__name__}",
-                "path": str(ns.w3_status),
+                "path": str(DEFAULT_W3_STATUS),
                 "outcome_files_opened": False,
             },
             "qledger_evidence_clocks": _qledger_clock_inventory(),
@@ -136,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
     board_error: str | None = None
     if not ns.no_board:
         try:
-            board = pd.read_parquet(ns.board_ledger)
+            board = pd.read_parquet(DEFAULT_BOARD_LEDGER)
         except Exception as exc:  # noqa: BLE001 -- missing descriptive source stays loud
             board_error = f"board_ledger_unreadable:{type(exc).__name__}"
 
@@ -146,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
         report["us_board"] = {
             "state": UNAVAILABLE_FIELD,
             "reason": board_error,
-            "path": str(ns.board_ledger),
+            "path": str(DEFAULT_BOARD_LEDGER),
             "promotion_authority": False,
         }
     json.dump(report, sys.stdout, indent=2, sort_keys=True, allow_nan=False)
