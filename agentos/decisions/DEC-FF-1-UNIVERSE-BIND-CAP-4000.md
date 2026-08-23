@@ -46,8 +46,15 @@ confidence: high
 reversibility: easy
 decided_by: ceo-sol
 decided_at: 2026-08-18
+superseded_by: DEC:FF-1-UNIVERSE-CENSUS-IS-PARQUET-DERIVED
 ---
 
 Sol accepted MAX_UNIVERSE_ISSUERS=4000 on 2026-08-18. Do not restore 2500, do
 not shrink the parquet, and do not start FF-2. July recovery stays stopped
 until this repair is on main and production commissioning resumes.
+
+The successor replaces this record in AgentOS because supersession is
+record-wide. Its only substantive rule change is removal of the frozen `2,837`
+premise; it explicitly carries forward the 4,000 bind cap, canonical-parquet
+universe, no-shrink rule, affected-issuer and Company Facts bounds, recovery
+limits, recovery commissioning boundary, and FF-2 prohibition.
