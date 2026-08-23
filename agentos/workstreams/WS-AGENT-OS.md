@@ -49,6 +49,10 @@ waves:
     title: "Phase 4 — hook auto-capture at ship-loop boundaries (report-only)"
     status: todo
     depends_on: [W1, W2, W2B]
+  - id: MAS28-W0
+    title: "MAS-28 — canonical PR-linkage validator V1 records freeze"
+    status: in_progress
+    depends_on: [W3]
 decisions:
   - DEC:AGENTOS-CXI-R12-OVERRULED
   - DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY
@@ -59,10 +63,12 @@ decisions:
   - DEC:AGENTOS-HOME-IS-MACRO
   - DEC:AGENTOS-START-NEXT-VS-AGENDA
   - DEC:AGENTOS-NIGHTLY-IS-THE-ONLY-REGENERATOR
+  - DEC:MAS28-PR-LINKAGE-VALIDATOR-V1-REPORT-ONLY
 discoveries:
   - DSC:GOVERNANCE-JSONL-NOT-TRACKED
   - DSC:EXECUTIVE-OS-NO-PROGRAM-ROW
   - DSC:CENSUS-POSTDATES-PHASE1B
+  - DSC:MAS28-AUTHORING-GRAMMAR-DRIFT
 landmines:
   - "PROVISIONAL PARENT: project-active-build-control's registry row says it does_not_own 'Durable program truth', which is exactly what this workstream owns. No agent-os row exists (see DSC:EXECUTIVE-OS-NO-PROGRAM-ROW for the same gap). Minting one was reverted deliberately: config/mastermind_programs.yml and its generated docs/MASTERMIND_SYSTEM_MAP.md belong to the semantic-system-mapping workstream, which the commissioning brief marks ALREADY ASSIGNED, and editing the generated map conflicted with main within hours. The row is that owner's to add."
   - "Two execution control planes already exist. Anything that gates or dispatches belongs in Mastermind control_plane/ or the Macro hook layer — see invariant I1."
@@ -77,9 +83,10 @@ artifacts:
   - research/MASTERMIND_AGENT_OS_V1_IMPLEMENTATION_PLAN.md
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
 next_action: >
-  Phase 4 is eligible but not started. Commission it as a separate high-blast-radius,
-  report-only hook wave; keep the readiness envelope graph-only and Mastermind's
-  improvement agenda as the sole ranked queue.
+  Land the MAS28-W0 records freeze, then reconcile Macro #6135 in place and the
+  Mastermind/Terminal authoring surfaces before implementing the pure MAS-28 core.
+  The pre-existing Agent OS Phase 4 remains eligible but is a separate high-blast-radius,
+  report-only hook wave and has not started.
 ---
 
 ## Context

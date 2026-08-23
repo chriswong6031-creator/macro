@@ -80,15 +80,18 @@ decisions:
   - DEC:FIF-3A2-REUSE-MAP
   - DEC:FIF-3A2-COLUMNS-BIND-COMPLETE-PERIOD
   - DEC:FIF-3A2-RELATED-EVENT-REF-OMITS-GENERATION
+  - DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN
 next_action: >
   FIF-1 is DONE / FROZEN. FIF-2 is DONE / FIXTURE_PROVEN SERVICE
   SUBSTRATE (DEC:FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3). FIF-2A/B/C remain
   ACCEPTED / FIXTURE_PROVEN / ON_MAIN. FIF-3 is IN_PROGRESS. FIF-3A1 is
-  ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN. FIF-3A2 is BUILT_NOT_ACCEPTED
-  (AAPL FY2026 Q3 10-Q accession 0000320193-26-000020 plus stable
-  related_event_ref to evt_cik0000320193_2026q3_results). Do not reopen
-  FIF-2A/2B/2C or FIF-3A1. Do not call FIF-3 done. Do not claim production
-  issuer coverage. Do not start FIF-3A3 or another issuer.
+  ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN. FIF-3A2 is ACCEPTED /
+  GOLDEN FIXTURE PROVEN / ON_MAIN (AAPL FY2026 Q3 10-Q accession
+  0000320193-26-000020 plus stable related_event_ref to
+  evt_cik0000320193_2026q3_results; PR #6302, accepted head 9598c543,
+  merge e210a80d2bad). Do not reopen FIF-2A/2B/2C, FIF-3A1, or FIF-3A2.
+  Do not call FIF-3 done. Do not claim production issuer coverage. Do
+  not start FIF-3A3 or another issuer.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -153,7 +156,9 @@ do_not_redo:
   - Do not recast an iXBRL-sourced cell as calculated merely because a calc arc exists.
   - FIF-3A1 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN (DEC:FIF-3A1-ACCEPTED-GOLDEN-ON-MAIN); do not reopen accepted AAPL composition, mapping, duplicate, presentation-occurrence, or authority laws, and do not add FIF-3A1 hardening.
   - Do not call FIF-3 done; the golden five-issuer slice is still IN_PROGRESS.
-  - FIF-3A2 is BUILT_NOT_ACCEPTED pending Sol; do not add FIF-3A2 hardening beyond this wave and do not start FIF-3A3 or another issuer.
+  - FIF-3A2 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN (DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN); do not reopen accepted Q3 composition, complete-period column law, related_event_ref, or SHA b98602a299996ff7ea58b842364031547df795d1458b51134eef0e37159b7918, and do not add FIF-3A2 hardening.
+  - Do not start FIF-3A3 or another issuer from this closeout.
+  - Do not label frozen FIF-1 packet_id fip_18e2f725f6ba20678d0612bb as FIF-2C; FIF-2C rich HTTP proof is fip_49718dcaf4c6855592b6ba0a / content 49718dcaf4c6855592b6ba0a160851c608b4733b44f8ac9a6cf7d907df7565e5 / response 310f6579ab0014e6af16a3341f005078eab3fdcc70ebe67ec83cf138b9e6c23a.
   - Do not mint generation_id as financial-statement truth; related_event_ref is a stable event_id plus distinct SEC accessions.
   - Do not rewrite source-native SEC/XBRL identity to mint a Mastermind issuer ID.
   - Do not use the live full-registry digest as historical packet identity.
@@ -184,12 +189,17 @@ waves:
     title: Golden five issuer vertical slice
     status: in_progress
     depends_on: [FIF-2]
-    pr: [6268]
+    pr: [6268, 6302]
     next_action: >
-      FIF-3A1 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN via PR #6268.
-      FIF-3A2 AAPL FY2026 Q3 10-Q accession 0000320193-26-000020 plus
-      related_event_ref to evt_cik0000320193_2026q3_results is
-      BUILT_NOT_ACCEPTED pending Sol. FIF-3 itself is not done. Do not
+      FIF-3A1 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN via PR #6268
+      (accepted head 80d3da1e2ce6, merge 4ef15259f027). FIF-3A2 AAPL
+      FY2026 Q3 10-Q accession 0000320193-26-000020 plus related_event_ref
+      to evt_cik0000320193_2026q3_results is ACCEPTED / GOLDEN FIXTURE
+      PROVEN / ON_MAIN via PR #6302 (accepted head 9598c5430c587b,
+      merge e210a80d2bad). SEC inventory 65 members / 6 retained;
+      response SHA b98602a299996ff7ea58b842364031547df795d1458b51134eef0e37159b7918
+      / 190019 bytes / rows 24/36/35; columns bind complete {kind,start,end};
+      event link has no generation_id. FIF-3 itself is not done. Do not
       add SNOW/CAT/BAC/GOOGL. Do not start FIF-3A3. Production attested
       issuer service remains NOT_BUILT.
   - id: FIF-4
@@ -295,8 +305,32 @@ exact product head `80d3da1e2ce6f028a526520139d039692a324610` as PASS
 Accepted response identity is SHA-256
 `25e5562e81cb80bd42d0feb544c212c4471e11736601aaee418a60981a457184`,
 196310 bytes, rows 24 / 35 / 35. FIF-3A1 is ACCEPTED / GOLDEN FIXTURE
-PROVEN / ON_MAIN (`DEC:FIF-3A1-ACCEPTED-GOLDEN-ON-MAIN`). This is not
-production coverage. Production attested issuer service remains
-NOT_BUILT. Do not create FIF-1R4. Do not reopen accepted packet,
-query, revision, or FIF-3A1 statement semantics. Do not call FIF-3
-done. Do not start the next AAPL slice.
+PROVEN / ON_MAIN (`DEC:FIF-3A1-ACCEPTED-GOLDEN-ON-MAIN`). FIF-3A2
+extends the same statements route to AAPL FY2026 Q3 10-Q accession
+`0000320193-26-000020` (period of report 2026-06-27, SEC acceptance
+`2026-07-31T10:01:02.000Z`). Sol source-reviewed exact product head
+`9598c5430c587b2ec9d1f84d3fa6e2d704808bcc` as PASS /
+ACCEPTED_FOR_LANDING. PR #6302 squash-merged as
+`e210a80d2bad56b351d90ef82ddaa4ec114887b9` on 2026-08-23T11:57:16Z.
+The captured package accounts for 65 SEC index members and retains 6
+(primary HTML plus xsd/pre/cal/def/lab). Accepted Q3 response identity
+is SHA-256
+`b98602a299996ff7ea58b842364031547df795d1458b51134eef0e37159b7918`,
+190019 bytes, rows 24 / 36 / 35. Operations columns bind complete
+`{kind,start,end}` so 3M and 9M families that share an end date stay
+distinct (`DEC:FIF-3A2-COLUMNS-BIND-COMPLETE-PERIOD`). Optional
+`related_event_ref` points at existing event_id
+`evt_cik0000320193_2026q3_results`, distinguishes results 8-K
+`0000320193-26-000018` from periodic 10-Q `0000320193-26-000020`,
+omits `generation_id`, copies no Earnings payload, and is absent on
+the A1 10-K (`DEC:FIF-3A2-RELATED-EVENT-REF-OMITS-GENERATION`).
+FIF-3A2 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN
+(`DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN`). Predecessor-label law: frozen
+FIF-1 golden packet_id is `fip_18e2f725f6ba20678d0612bb`; FIF-2C rich
+HTTP proof remains packet_id `fip_49718dcaf4c6855592b6ba0a`,
+content `49718dcaf4c6855592b6ba0a160851c608b4733b44f8ac9a6cf7d907df7565e5`,
+response `310f6579ab0014e6af16a3341f005078eab3fdcc70ebe67ec83cf138b9e6c23a`.
+This is not production coverage. Production attested issuer service
+remains NOT_BUILT. Do not create FIF-1R4. Do not reopen accepted
+packet, query, revision, FIF-3A1, or FIF-3A2 statement semantics. Do
+not call FIF-3 done. Do not start FIF-3A3.
