@@ -8,9 +8,9 @@ import json
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+ROOT = _ROOT
 
 from engine.global_liquidity_transmission import (  # noqa: E402
     build_contract,
