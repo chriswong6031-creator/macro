@@ -23,41 +23,43 @@ changed:
     what: >
       Added read-only common metric/report primitives, explicit terminal measurement states,
       full-population ranking denominators, concentration diagnostics and fail-closed W3/board
-      projections.
+      projections; malformed owner counts, impossible recall denominators, invalid rank positions
+      and partial-outcome survivor rank correlation now refuse instead of producing plausible output.
   - path: "engine/prophet_voi_eawc.py"
     what: >
       Added pure owner-input paired-lead, actionable-capture, first-surface actionability,
       unusable/unknown guardrail, initial-risk R, censored payoff-time and descriptive
-      move-consumption primitives with no repository I/O.
+      move-consumption primitives with strict owner-state typing and contradictory-state refusal.
   - path: "scripts/prophet_flagship_voi_report.py"
     what: >
-      Added a repo-root-safe, source-pinned, stdout-only zero-authority VOI projection with no
-      arbitrary input path, writer, promotion consumer or protected W3 comparative outcome loader.
+      Added an absolute repository-root-pinned, stdout-only zero-authority VOI projection with no
+      arbitrary input path, writer, promotion consumer or protected W3 comparative outcome loader;
+      QLedger evidence-clock metadata is validated without reading claims or grades.
   - path: "tests/test_prophet_lab_timeparse.py"
     what: >
-      Bound discriminating Cell G formula, denominator, refusal, W3-protection and committed
-      owner-metadata smoke tests into the existing canonical prophet-lab semantic CI suite instead
-      of creating a parallel workflow or retaining standalone unwired suites.
+      Bound discriminating Cell G formula, denominator, refusal, W3-protection, source-pin,
+      anti-survivor and committed owner-metadata smoke tests into the existing canonical prophet-lab
+      semantic CI suite instead of creating a parallel workflow or retaining standalone unwired suites.
   - path: "agentos/handoffs/PROPHET-CELL-G-VOI-MEASUREMENT-2026-08-22.md"
     what: >
-      Reconciled the durable handoff to the canonical Agent OS schema and the actual six-file
-      current branch state after the temporary standalone Cell G tests were retired.
+      Reconciled the durable handoff to the canonical Agent OS schema, actual six-file branch state,
+      anti-laundering defects found by Sol review, proof ceiling and exact continuation gate.
 verified:
   - command: "GitHub Actions fences run 32610722906 for fca7cafbda6bc5fd6520a71702b1bc80d73e6d89"
     result: >
-      Fences were green on the immediately preceding head. That receipt is intentionally not reused
-      for acceptance after this handoff-schema repair; the new exact head must run again.
-  - command: "GitHub PR #6276 branch/file reconciliation at fca7cafbda6bc5fd6520a71702b1bc80d73e6d89"
+      Fences were green on an earlier head. That receipt is intentionally not reused for final
+      acceptance; the final exact head must run again.
+  - command: "GitHub PR #6276 diff reconciliation before this durable refresh"
     result: >
-      PR remained draft and unmerged with six changed files; current durable/body state was inspected
-      before this correction.
+      PR remained draft and unmerged with exactly six changed files and no deletion of pre-existing
+      timeparse behavior; current implementation/test scope was inspected before this handoff refresh.
   - command: "scripts/agentos.py check_handoff source on macro/main"
     result: >
       Current validator requires workstream, session, model, mission, state_before, changed,
       verified, unresolved, next_actions, do_not_redo, danger_areas and ended_because, with
-      unverified present; this frontmatter now follows that contract.
+      unverified present; this frontmatter follows that contract.
 unverified:
-  - "Fresh exact-head ci and fences after this canonical Agent OS frontmatter repair."
+  - "Fresh exact-head ci and fences after this final durable handoff refresh."
   - >
       Full committed-board parquet execution in a runner with a parquet engine. Current canonical
       tests prove board formulas/refusals synthetically and exercise committed W3/QLedger owner
@@ -74,7 +76,7 @@ unresolved:
       Current board observations remain descriptive telemetry rather than canonical V4 episodes and
       cannot supply missing first-surface/actionability/economic-issuer/frozen-risk truth.
 next_actions:
-  - "Require fresh exact-head ci plus fences on PR #6276 after this commit and inspect every failure."
+  - "Require fresh exact-head ci plus fences on PR #6276 after this durable refresh and inspect every failure."
   - >
       If exact-head checks are green, reconcile current main and Eval/Fusion/QLedger/Prophet owner
       surfaces against the pickup and stop on any material collision.
@@ -92,8 +94,9 @@ do_not_redo:
   - "Do not change frozen metric thresholds, denominators, labels, horizons or look plans after results."
   - "Do not create a Cell G evaluation ledger, scoreboard, evidence clock or promotion registry."
 danger_areas:
-  - "No arbitrary source path may be reintroduced into the report CLI."
+  - "No arbitrary or working-directory-relative source path may be reintroduced into the report CLI."
   - "Board observations are descriptive and must not be renamed into V4 episodes."
+  - "Missing board outcomes must never be survivor-dropped into a rank metric."
   - "Effective N is a concentration/scope vector, not inferential sample size."
   - "Explanation/product value must not be used as alpha evidence."
   - "Positive precision bought by later surfacing fails flagship promotion when the frozen lead gate fails."
@@ -196,7 +199,7 @@ Live Entry Radar remains a separate system by `DEC:LER-SEPARATE-SYSTEM-NOT-PROPH
 ## Bounded implementation
 
 ### `engine/prophet_voi.py`
-Pure common metric/report primitives: terminal measurement states; effective-N diagnostics; NDCG/precision/recall denominator law; tail ES floor; lead PASS/MIXED/FAIL classifier; fail-closed W3 status; board coverage/refusal semantics; per-session rank diagnostics; path basis/refusal states.
+Pure common metric/report primitives: terminal measurement states; effective-N diagnostics; NDCG/precision/recall denominator law; tail ES floor; lead PASS/MIXED/FAIL classifier; fail-closed W3 status; board coverage/refusal semantics; complete-session rank diagnostics; path basis/refusal states.
 
 ### `engine/prophet_voi_eawc.py`
 Pure owner-input EAWC/path primitives, with no repository search or I/O:
@@ -209,12 +212,12 @@ Pure owner-input EAWC/path primitives, with no repository search or I/O:
 - ex-post move-consumed fraction explicitly descriptive because it uses future-MFE denominator.
 
 ### `scripts/prophet_flagship_voi_report.py`
-Stdout-only and source-pinned to canonical W3 status, QLedger evidence-clock metadata, and board ledger. No arbitrary input paths, output writer, or promotion consumer.
+Stdout-only and absolutely repository-root-pinned to canonical W3 status, QLedger evidence-clock metadata, and board ledger. No arbitrary input paths, output writer, or promotion consumer. QLedger metadata is validated strictly; it never reads claims or outcomes.
 
 ### Tests
-Cell G tests are now integrated into the existing canonical `tests/test_prophet_lab_timeparse.py` semantic suite. The temporary standalone `test_prophet_voi.py`, `test_prophet_voi_eawc.py`, and `test_prophet_flagship_voi_report.py` files were retired so Cell G does not create a second CI plane or leave unwired tests outside the owned job.
+Cell G tests are integrated into the existing canonical `tests/test_prophet_lab_timeparse.py` semantic suite. The temporary standalone `test_prophet_voi.py`, `test_prophet_voi_eawc.py`, and `test_prophet_flagship_voi_report.py` files were retired so Cell G does not create a second CI plane or leave unwired tests outside the owned job.
 
-The integrated suite pins formulas and refusals, verifies W3 status protection and CLI source pinning, exercises board semantics synthetically, and runs a committed owner-metadata `--no-board` smoke through current W3/QLedger state. A real committed-board parquet read remains unverified until a lawful runner has the required parquet engine; do not call that path `PROVEN_LIVE` yet.
+The integrated suite pins formulas and refusals, verifies W3 status protection and absolute source pinning even from another working directory, rejects malformed/contradictory owner states, impossible recall denominators, invalid rank positions and survivor-only rank correlation, exercises board semantics synthetically, and runs a committed owner-metadata `--no-board` smoke through current W3/QLedger state. A real committed-board parquet read remains unverified until a lawful runner has the required parquet engine; do not call that path `PROVEN_LIVE` yet.
 
 ## Adversarial defects found and repaired
 
@@ -226,7 +229,14 @@ The integrated suite pins formulas and refusals, verifies W3 status protection a
 6. Missing #1 outcome could distort P@K -> published occupancy, outcome coverage and precision separated; no survivor backfill.
 7. `lane_not_stamped` was treated as generic N/A -> excluded only on canonical RAN lane.
 8. Lead law existed only at classifier level -> pure EAWC subject-level primitives added.
-9. First exact-head semantic CI exposed three mechanical ownership defects: standalone tests were outside the canonical job, file-path CLI execution lacked a repository-root import pin, and this handoff used noncanonical frontmatter. The CLI import pin is fixed, tests are integrated into the existing prophet-lab semantic suite, and this commit repairs the handoff schema. A previous base-replay missing-blob error occurred only after base tests passed and must be classified separately if it recurs on the new exact head.
+9. First exact-head semantic CI exposed three mechanical ownership defects: standalone tests were outside the canonical job, file-path CLI execution lacked a repository-root import pin, and the handoff used noncanonical frontmatter -> all repaired without adding a second CI plane.
+10. A reference-positive denominator smaller than observed top-K positives could emit recall greater than 1 -> now `HOLD_INTEGRITY`.
+11. Malformed W3 count metadata could survive gate checks and crash on integer coercion -> all owner count fields are strict nonnegative integers and impossible matured>paired state is held.
+12. Truthy strings or contradictory first-surface/actionability states could silently become plausible EAWC output -> strict boolean/null typing and contradiction checks now hold.
+13. Relative `data/...` CLI constants let a caller's working directory substitute a lookalike W3/Qledger/board tree -> all canonical sources are absolute repo-root pins and an outside-CWD regression test kills the old behavior.
+14. Duplicate/negative/nonintegral rank positions could overfill top-K capacity -> rank-position integrity now fails closed before top-K math.
+15. Session Spearman could drop missing outcomes and compute on survivor rows -> any partial-outcome session is excluded whole and reports that exclusion; no survivor rows are used.
+16. QLedger evidence-clock horizons/timestamps/SHAs could be type-coerced or superficially accepted -> metadata validation is strict while remaining outcome-blind.
 
 ## No-rebuild / no-authority boundary
 
@@ -234,7 +244,7 @@ Do not create a Cell G result ledger, scoreboard, evidence clock, promotion regi
 
 ## Exact continuation
 
-1. Require fresh exact-head `ci` + `fences` on PR #6276 after this handoff-schema repair; stale-head receipts do not count.
+1. Require fresh exact-head `ci` + `fences` on PR #6276 after this durable refresh; stale-head receipts do not count.
 2. Inspect every failure and distinguish owned Cell G defects from independent infrastructure/base-replay faults before any retry.
 3. Reconcile fresh `main` and current Eval/Fusion/QLedger/Prophet owner paths immediately before any merge.
 4. Refresh protected Skillpack compatibility on the final reviewed head.
