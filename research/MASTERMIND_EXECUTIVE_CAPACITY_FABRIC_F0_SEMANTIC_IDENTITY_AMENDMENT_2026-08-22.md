@@ -7,7 +7,7 @@
 **Current protected Mastermind reviewed:** `e1101eb2c1f17d801d480ded497b3fc1bb0ef18b`  
 **Current Macro material-source review:** provider-control ownership and producer inputs remain materially unchanged from the F0 pickup through the current reconciliation; unrelated press-wire/data churn is explicitly non-semantic.
 
-This amendment corrects a load-bearing semantic-identity defect found during Sol's pre-merge adversarial review. It does not change provider-capacity ownership, quota evidence vocabularies, the closed Phase 1F-C placement object, RF1, HF1 or MH1.
+This amendment corrects load-bearing semantic-identity and cross-repo acquisition defects found during Sol's pre-merge adversarial review. It does not change provider-capacity ownership, quota evidence vocabularies, the closed Phase 1F-C placement object, RF1, HF1 or MH1.
 
 ---
 
@@ -133,7 +133,36 @@ In addition to the parent F0 CF1 packet, CF1 must prove:
 
 ---
 
-## 6. No change to ownership or later gates
+## 6. Cross-repo acquisition is a separate CF2-F gate
+
+CF1's real stdout/CLI consumer proves that the normalized contract is usable. It does **not** prove that the Executive service can later obtain the same snapshot safely.
+
+Current systems deliberately run under different principals and environments. The Executive service must not assume it can read Macro's raw ledgers, provider homes, secret-bearing environment, or capability-manifest secret refs merely because the repositories live on the same machine.
+
+Therefore CF1 does not freeze an Executive transport. Before CF2-I, CF2-F must review and freeze the smallest secret-free acquisition seam that preserves the Provider Control → Executive ownership boundary.
+
+Candidate families, in preference order if available at the time, are:
+
+1. an already-existing reviewed local Provider Control read endpoint that returns exactly `mastermind.provider_capacity.v1` and grants no mutation; or
+2. a bounded subprocess/executable contract that invokes the reviewed Macro producer under the appropriate provider-control principal/environment and returns only strict JSON stdout.
+
+Neither candidate is accepted merely by appearing in this document. CF2-F must verify the then-current estate and choose one.
+
+Hard rules:
+
+- Executive must not import floating Macro Python modules as the cross-repo contract;
+- Executive must not parse raw `key_ledger`, budget files, provider-home directories, auth files, environment secrets or provider responses itself;
+- do not add a long-lived capacity daemon, database, queue or second provider-control service just to make the bridge convenient unless a separate architecture ruling proves it necessary;
+- acquisition timeout/unavailability yields unavailable/unknown capacity optimization, never permission to read secret/raw provider state as a fallback;
+- the producer remains the authority for normalization/evidence classification; Executive validates the strict returned contract but does not reinterpret source rows;
+- the acquisition receipt used by CF2-F must bind at least the exact `snapshot_hash`, exact `generated_at`, producer contract identity/version, and non-semantic `audit.repository_commit` used for that historical decision;
+- if the acquisition principal/host cannot lawfully observe a configured slot, that slot is unavailable to that acquisition path; do not copy provider credentials across principals/hosts to make it visible.
+
+This keeps CF1 independently useful and no-write while preventing CF2 from quietly becoming a raw cross-repo provider-state reader.
+
+---
+
+## 7. No change to ownership or later gates
 
 This amendment changes no owner:
 
@@ -147,4 +176,4 @@ Agent OS / Control Room   -> organizational/product projection
 
 It also does not accelerate later waves. CF1 remains no-write and existing-provider-only. Phase 1F-C still owns schema v4. CF2-F remains mandatory before capacity-aware placement. RF1 and HF1 remain mandatory before heterogeneous providers share production routes, and MH1 remains mandatory before a second physical Mac becomes a real Executive execution host.
 
-This amendment supersedes only the parent F0 rules that made whole-repository commit identity semantic or implied `snapshot_hash` alone was sufficient freshness evidence for a future Executive claim.
+This amendment supersedes only the parent F0 rules that made whole-repository commit identity semantic, implied `snapshot_hash` alone was sufficient freshness evidence for a future Executive claim, or implied that CF1's local CLI proof automatically defined the later Executive acquisition transport.
