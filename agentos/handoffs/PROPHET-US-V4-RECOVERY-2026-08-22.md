@@ -1,205 +1,227 @@
 ---
 workstream: WS:PROPHET-US-V4-RECOVERY
-session: "Sol CEO — integrated Prophet flagship masterplan + ChatGPT-first R1 launch handoffs"
+session: "Sol CEO — integrated Prophet flagship masterplan + ChatGPT-first A-H launch hardening"
 model: sol
 ended_because: complete
 mission: >
   Convert the Chairman's Prophet flagship-intelligence fan-out into a durable,
-  nearly pre-integrated research masterplan and then make the first four R1 cells
-  launchable as ChatGPT-first, end-to-end CEO programs. Fresh Sol sessions should
-  spend their context proving, narrowing or killing Mastermind-specific hypotheses,
-  freeze bounded owner-compatible implementation verticals, and only then spend
-  coding-agent tokens on execution-heavy work. Preserve every canonical owner,
-  deterministic Availability separation, current blinded/forward evidence clocks,
-  and the V4/Fusion/Eval promotion architecture.
+  nearly pre-integrated research masterplan and make all eight cells recoverable as
+  ChatGPT-first CEO programs. Fresh Sol sessions should spend abundant ChatGPT reasoning
+  on research, architecture, falsification and bounded-wave design, then use coding-agent
+  tokens only after a current-owner-compatible vertical is low ambiguity. Preserve one
+  canonical owner per truth plane, deterministic Availability separation, current blind/
+  prospective evidence clocks and existing Fusion/Eval promotion law.
 state_before: >
-  MAS-116 and MAS-117..MAS-124 already existed as the research fan-out. The
-  flagship branch already contained the integrated masterplan, eight hardened cell
-  research handoffs, architecture freeze, external benchmark, source/moat ledger,
-  A1-A12 adversarial amendments, hypothesis/kill matrix, reference casebook,
-  executive docket, standard return template, READ FIRST map and R1 A/F/G/B
-  backbone prework. The remaining practical gap was dispatch: a fresh Chairman chat
-  could still read a conservative research-only Linear issue and either stop after
-  producing an essay or outsource unresolved architecture to expensive coding agents.
-  No dedicated end-to-end launch packet yet stated the Chairman's desired ChatGPT-
-  first resource policy, active-session authority handshake, research-to-build gate,
-  worker-delegation boundary, coding packet requirements and exact continuation law.
+  The integrated flagship masterplan, eight original hardened research packets, execution
+  constitution, ownership index, source/moat ledger, A1-A12 adversarial amendments,
+  hypothesis/kill matrix, casebook, executive docket and standard return template already
+  existed on draft #6264. R1 A/B/F/G also had backbone prework + ChatGPT-first end-to-end
+  launch handoffs and the Chairman reported launching those four into separate Sol CEO
+  chats. C/D/E/H still had strong research packets but not equivalent preliminary
+  contracts/experiments or end-to-end launch overlays, leaving more architecture to be
+  rediscovered by later sessions.
 changed:
-  - path: research/prophet_v4/PROPHET_FLAGSHIP_INTELLIGENCE_EXPANSION_MASTERPLAN_2026-08-22.md
+  - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_R2_R3_BACKBONE_PREWORK_2026-08-22.md
     what: >
-      Integrated flagship overlay remains the system-level intent: Prophet as an
-      Opportunity Inference Engine over truth→evidence→identity→economic exposure/
-      relationship→expectation/surprise/materiality→expected response→residual price
-      response→incorporation→fragility/crowding/priors→technical state→deterministic
-      Availability→priority→prospective learning. Empirical mechanisms remain hypotheses.
-  - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_ADVERSARIAL_REVIEW_AND_AMENDMENTS_2026-08-22.md
+      NEW second-wave starting architecture for C/D/E/H. C begins from a five-object
+      catalyst federation (fact, expectation, surprise, issuer materiality, downstream
+      incorporation) with an expectation-admissibility ladder and multidimensional
+      materiality. D begins continuous/hierarchical-first, with retrieval frozen before
+      outcomes, missingness-aware similarity, effective-N/OOD/counterexamples and broad
+      regime routing rejected. E separates structural fragility, path fragility,
+      crowding/positioning and coverage; every source preserves native observation,
+      heterogeneous clocks and optional interpretation. H begins from a follower
+      ProphetDecisionView and five-second decision hierarchy rather than upstream semantic
+      invention. All designs are PRELIMINARY_RULING / OPEN_TEST / REJECTED_STARTING_SHAPE /
+      CELL_MUST_RETURN, not proof or runtime authority.
+  - path: research/prophet_v4/flagship_cells/launch_handoffs/CELL_C_CATALYST_FEDERATION_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md
     what: >
-      A1-A12 remain binding: target-economic-issuer leave-out, fold-frozen priors,
-      pre-event price sensitivities, ex-price materiality, family-first calibration,
-      B-compute/F-transport/Fusion-influence, no hidden fragility veto, authority-matched
-      product copy, graph-cycle guards, source-root vs economic dependence, coverage
-      selection audits and contemporaneous-belief historical features.
-  - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_R1_BACKBONE_PREWORK_2026-08-22.md
+      NEW end-to-end Cell C packet. Freezes specialist-owner federation, expectation
+      baseline admissibility, native-unit surprise, ex-price multidimensional materiality,
+      domain-specific Earnings/Defense/Bio research agenda, reference/null/correction
+      cases, falsifiers and a translation-first first build. Explicitly preserves current
+      Earnings E3, BioCatalyst facts-only and Defense D5 gates. Includes active Chairman
+      launch prompt, coding-worker packet requirements and stop/escalation law.
+  - path: research/prophet_v4/flagship_cells/launch_handoffs/CELL_D_SPECIES_ANALOGUES_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md
     what: >
-      R1 preliminary A/F/G/B architecture remains the starting design, explicitly not
-      cell completion: multi-axis exposure and segment truth; ThemeState/transmission;
-      Context Vector REUSE-as-PIT-history + typed D5 envelope; EAWC/VOI metric family;
-      family-first incorporation calibration/baseline/correct-ignore design.
+      NEW end-to-end Cell D packet. Makes hard species a hypothesis, not a premise;
+      preserves Stock Identity W3-W6 gates and DNR:KILL-OUTCOME-AUDITION; defines
+      continuous/hierarchical representation ladder, PIT analogue eligibility, missing-
+      aware distance, frozen-retrieval-before-outcome law, effective N, OOD/no-match,
+      counterexample-first presentation and narrow mechanism-specific regime reopening.
+      Preferred first build is an existing-owner descriptive retrieval vertical, never a
+      new vector/memory store or probability/rank engine.
+  - path: research/prophet_v4/flagship_cells/launch_handoffs/CELL_E_FRAGILITY_CROWDING_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md
+    what: >
+      NEW end-to-end Cell E packet. Separates structural fragility, path fragility,
+      crowding/positioning and coverage; freezes Observation→Context→Interpretation shape;
+      preserves source-specific clocks for Capital/FIF/ThetaData/FINRA/13F/insiders;
+      prohibits missing=low risk, OI=direction, slow ownership=live flow and hidden
+      Availability vetoes; requires A11 coverage-selection studies. Preferred first build
+      is one production-ready source-owner component adapter + explicit uncovered control.
+  - path: research/prophet_v4/flagship_cells/launch_handoffs/CELL_H_FLAGSHIP_EXPERIENCE_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md
+    what: >
+      NEW end-to-end Cell H packet. Preserves accepted V4/MP-1 shell and Green=ENTRY_OPEN;
+      freezes a follower ProphetDecisionView, five-second hierarchy (Can I act? → Why now?
+      → independent evidence → pricedness if lawful → key risk/missingness), progressive
+      disclosure, evidence-root UX, authority-matched incorporation/risk/analogue/catalyst
+      copy, degraded/correction states, EN/ZH/mobile requirements and premium-entitlement
+      safety. Preferred first build is a read-model/reference contract before broad UI.
+  - path: research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_READ_FIRST_2026-08-22.md
+    what: >
+      UPDATED single cold-start front door. It now uses current hardening procedure pin,
+      routes A/B/F/G through R1 prework and C/D/E/H through R2/R3 prework, then original
+      hardened cell packet + ChatGPT-first launch overlay + standard return template.
+      It explicitly distinguishes initial research claim from later same-session bounded
+      implementation under active Chairman intent and current owner/permission gates.
+  - path: Linear MAS-116, MAS-119, MAS-120, MAS-121, MAS-124
+    what: >
+      Parent and C/D/E/H children now attach R2/R3 prework + corresponding ChatGPT-first
+      launch packets. Each child has an explicit required-prework/precedence comment. Parent
+      records the second-wave rulings. C/D/E/H remain Backlog/unassigned until the Chairman
+      launches them; attaching architecture does not start work.
   - path: research/prophet_v4/flagship_cells/launch_handoffs/CELL_A_THEME_INTELLIGENCE_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md
-    what: >
-      NEW end-to-end Cell A launch packet. Makes ChatGPT the primary research/product/
-      architecture substrate, requires current GMI/D2-D4 reconciliation, preserves the
-      W2 honest-null/ex-self precedents, pre-fills the multi-axis exposure/ThemeState/
-      typed-transmission design, defines one difficult issuer×theme segment-truth first
-      vertical, gives research phases/falsifiers/stop conditions, and permits the active
-      Chairman-launched Sol to implement or commission one bounded owner-routed vertical
-      after current gates are rechecked.
+    what: "Prior R1 launch packet remains controlling starting overlay for MAS-117."
   - path: research/prophet_v4/flagship_cells/launch_handoffs/CELL_B_EVIDENCE_PRICE_GAP_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md
-    what: >
-      NEW end-to-end Cell B launch packet. Keeps estimand/counterfactual/fold/horizon/
-      correct-ignore design in ChatGPT, preserves the current blinded Dislocation P0,
-      freezes family-first response objects and baseline hierarchy as starting design,
-      requires incremental value versus momentum/technical/evidence-only, and permits
-      only a zero-authority one-family measurement vertical after the research contract
-      and current owner gates are frozen.
+    what: "Prior R1 launch packet remains controlling starting overlay for MAS-118."
   - path: research/prophet_v4/flagship_cells/launch_handoffs/CELL_F_EVIDENCE_TRANSLATION_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md
-    what: >
-      NEW end-to-end Cell F launch packet. Treats semantic architecture as the hard job:
-      current Context Vector field-by-field reuse/supersession census, episode-scoped D5
-      family envelope, family vs semantic head vs Fusion member separation, typed
-      missingness, clocks/corrections, source-root + economic-dependence lineage, real
-      family reference objects, and a preferred one-family contract/consumer first PR.
+    what: "Prior R1 launch packet remains controlling starting overlay for MAS-122."
   - path: research/prophet_v4/flagship_cells/launch_handoffs/CELL_G_VALUE_OF_INFORMATION_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md
-    what: >
-      NEW end-to-end Cell G launch packet. Makes metric denominators, EAWC blocks,
-      same-tape LOFO/placebos, retrieval-vs-ranking separation, coverage/effective-N,
-      multiple-testing, lead-time preservation, promotion/demotion and claim-specific
-      authority CEO work first; coding is limited to frozen report/measurement verticals
-      and may not read protected outcomes early or create another scoreboard.
-  - path: Linear MAS-116, MAS-117, MAS-118, MAS-122, MAS-123
-    what: >
-      The four ChatGPT-first launch handoffs are attached to the parent and their
-      respective children. Parent comment records the operating model: fresh Chairman
-      chat supplies active explicit intent; ordinary/deep/high-effort ChatGPT reasoning
-      is used aggressively; coding workers receive bounded frozen work; original child
-      descriptions remain conservative research projections and do not grant blanket
-      runtime authority. All four children remain Backlog/unassigned until claimed.
+    what: "Prior R1 launch packet remains controlling starting overlay for MAS-123."
 verified:
-  - claim: "Current protected Sol procedure was reloaded after Skillpack master advanced."
-    command: "Read protected Mastermind master branch + INDEX + COLD_START + COMMISSION_WAVE + RECONCILE_STATE + CLOSEOUT from one SHA"
+  - claim: "Current protected Sol procedure was reloaded from one exact protected commit."
+    command: "Read Mastermind protected master INDEX + COLD_START + COMMISSION_WAVE + RECONCILE_STATE + CLOSEOUT"
     result: >
-      Protected mastermindx-market-intelligence/Mastermind master =
-      0f319c79a7b3373a96d4866412c734de12cbf701; INDEX schema
-      mastermind.sol_skillpack.v1, version 1.0.0, minimum bootstrap major 1;
-      COLD_START, COMMISSION_WAVE, RECONCILE_STATE and CLOSEOUT loaded from that same SHA.
-  - claim: "The current Macro pickup base was refreshed during launch hardening."
-    command: "Read current macro main branch"
+      mastermindx-market-intelligence/Mastermind@e1101eb2c1f17d801d480ded497b3fc1bb0ef18b;
+      mastermind.sol_skillpack.v1; version 1.0.0; minimum bootstrap major 1; all required
+      skills loaded from that same commit.
+  - claim: "Current Macro owner state was re-archaeologized before R2/R3 design."
+    command: "Read current Macro main and current Earnings/Bio/Defense/StockIdentity/MarketMemory/Options/Capital/FIF/V4 owner records"
     result: >
-      Observed Macro main = 21f51a1ecfed778a738b048bd7e5efd30b1d9336 at
-      2026-08-22T22:59:44Z. Main continues moving rapidly; every fresh cell must re-read it.
-  - claim: "Current canonical owners still support the four launch boundaries."
-    command: "Read current WS:GMI-THEME-GRAPH, WS:PROPHET-CONDITIONAL-FUSION, WS:EVAL-OS-MEASUREMENT-LAW, WS:ALPHA-INTELLIGENCE-INTEGRATION, WS:PROPHET-US-V4-RECOVERY"
+      Observed Macro main at hardening pin f6a16bc24b62b3655d2662dba2018d6e83ee2e18.
+      Earnings E3 remains compiler-not-scorer and E3-A is a tiny N=7 gold calibration;
+      BioCatalyst Trial Milestone Radar remains deterministic facts/context only and its
+      current P1-1 production acceptance is blocked by real desktop clipping; Defense D1-D4
+      are accepted while D5R/D5 remain separately gated; Stock Identity W3 estimability is
+      still a future gate; Market Memory retains strict prospective source-clock law;
+      Options is production-capable on covered ThetaData roots but broad daily-current
+      coverage remains sparse; Capital Structure W1 foundation is proven live with later
+      state waves gated; FIF broad issuer production truth is not universally live.
+  - claim: "R2/R3 external method anchors support the new semantic fences."
+    command: "Primary/official research: ClinicalTrials.gov definitions, SEC materiality/13F/Form4, USAspending, FINRA short interest, options/OI documentation plus analogue/routing literature"
     result: >
-      GMI owns graph/theme/transmission; Conditional Fusion owns cross-family influence
-      and current C1 rank path while higher rungs stay prospective; Eval OS owns rulers,
-      evidence clocks and promotion legality; Alpha Intelligence integration has runtime
-      authority NONE and coordinates existing owners; V4 remains the candidate/product/
-      Availability integration program. Some next_action prose is stale, so current state
-      must follow latest accepted PR/handoff evidence while ownership remains canonical.
-  - claim: "The four R1 cells are still unclaimed and the launch overlays are reachable from Linear."
-    command: "Read/update MAS-117, MAS-118, MAS-122, MAS-123 + MAS-116 attachments/comment"
+      Primary completion is final primary-outcome data collection, not readout; SEC
+      materiality guidance rejects pure numeric-threshold shortcuts; USAspending
+      distinguishes obligated/current/potential values; FINRA SI is a periodic position
+      snapshot with publication/revision clocks; 13F is quarter-end ownership with filing
+      lag; OI is outstanding contract count and not directional sentiment by itself.
+  - claim: "All C/D/E/H launch overlays and R2/R3 prework are reachable from Linear."
+    command: "Attach to MAS-116 and MAS-119/120/121/124; add required-prework comments"
     result: >
-      All four children remain Backlog/unassigned. Each child and the parent now link the
-      corresponding ChatGPT-first execution handoff. No issue state was advanced.
-  - claim: "The current research architecture branch remains a draft rather than production authority."
-    command: "Read PR #6264"
+      Each child links its end-to-end packet + shared R2/R3 prework. Parent links all five
+      new artifacts. Issue states were not advanced.
+  - claim: "The new READ FIRST path is deterministic for all eight cells."
+    command: "Update PROPHET_FLAGSHIP_READ_FIRST_2026-08-22.md"
     result: >
-      PR #6264 remains open/draft and had not merged at this closeout. Launch handoffs
-      therefore require claim-time reconciliation against accepted main/owner law.
-  - claim: "The ChatGPT-first handoffs preserve rather than weaken the research firewalls."
-    command: "Review launch packets against parent masterplan, A1-A12, current owner WS records and Skillpack commission law"
-    result: >
-      Every packet requires active Chairman launch intent, current owner/base reconciliation,
-      one bounded observable vertical before implementation, exact data/time/null/correction/
-      rights semantics, failure states, tests/proof, stop condition and continuation packet.
-      Predictive/rank authority remains gated through existing Eval/Fusion; Availability remains separate.
+      A/B/F/G route through R1; C/D/E/H route through R2/R3; every cell then reads original
+      hardened packet + launch overlay + standard return. Implementation requires active
+      Chairman intent and a satisfied current implementation entrance gate.
 unverified:
   - >
-    The four launch handoffs and this closeout are on the unmerged flagship branch. They
-    are durable research artifacts/dispatch inputs but are not accepted main until #6264
-    is reconciled/rebased/reviewed and lands.
+    The new R2/R3 files, launch overlays, READ FIRST edit and this closeout remain on draft
+    #6264's branch until reconciled/rebased/reviewed/merged.
   - >
-    Fresh exact-head CI/fences for the branch after these new documentation commits are
-    required. Earlier exact-head receipts do not prove this new head.
+    Fresh exact-head fences/CI/Agent OS validation are required after this final handoff
+    edit; older head receipts must not be reused.
   - >
-    No R1 research result, implementation, production proof or predictive promotion has
-    happened merely because the execution handoffs exist.
+    The Chairman reports A/B/F/G were launched into separate ChatGPT Sol CEO sessions and
+    are working. Their actual Linear claim/current branch/research state must be re-read
+    from canonical projections/returns by any coordinator; this handoff does not infer
+    execution progress from chat transport.
+  - >
+    C/D/E/H have not been launched merely because they are now launchable. They remain
+    Backlog/unassigned at the latest Linear mutations in this session.
+  - >
+    No flagship research hypothesis is predictively proven because these plans exist.
 unresolved:
   - >
-    #6264 must be reconciled/rebased onto then-current main before landing. Do not
-    duplicate source-law/schema fixes already merged to main while the branch was stale.
+    Draft #6264 has accumulated extensive additive research while Macro main moves rapidly.
+    Before landing it requires current-main reconciliation/rebase, duplicate/supersession
+    check, exact-head validation and adversarial review.
   - >
-    Cells C/D/E/H have not yet received equivalent ChatGPT-first end-to-end launch
-    hardening. The Chairman explicitly requested a subsequent hardening pass for those cells.
+    A/B/F/G research returns must eventually be integrated with C/D/E/H rather than letting
+    eight sessions independently freeze incompatible semantics. F/G should be especially
+    influential on common evidence/evaluation grammar.
   - >
-    Current V4/specialist production gates continue independently; a research launch does
-    not close D2/D3/D5/Fusion/Eval/Dislocation/other owner prerequisites.
+    Current specialist/V4 production gates continue independently; flagship research does
+    not authorize starting gated owner waves.
 next_actions:
   - >
-    Chairman may immediately launch fresh chats for MAS-117, MAS-118, MAS-122 and MAS-123
-    using the cell-specific copy-paste prompt embedded in each execution handoff. Each
-    receiving Sol must first reload current protected Skillpack/current main/current owner
-    truth, then claim only its cell.
+    Chairman may launch C/D/E when desired using the embedded cell-specific active prompt.
+    H may also research immediately, but its final semantic freeze remains a follower of
+    accepted upstream A-G contracts. Every session reloads current Skillpack/current main/
+    current owner truth before claiming.
   - >
-    In the next Sol hardening turn, create equivalent ChatGPT-first end-to-end launch
-    packets for MAS-119 (C Catalyst), MAS-120 (D Species/Analogues), MAS-121 (E Fragility/
-    Crowding) and MAS-124 (H Product Experience), including preliminary contracts/
-    experiments rather than only dispatch prose.
+    As A/B/F/G returns arrive, a coordinator Sol should perform cross-cell integration
+    adjudication: preserve shared F evidence semantics and G measurement law, then feed
+    accepted C/D/E contracts into H and current V4 owner routing. Do not let the first
+    returning cell become de facto system authority.
   - >
-    Separately reconcile/rebase #6264 and run exact-head validation/adversarial review
-    before merging the research architecture. Do not make cell research wait on unrelated
-    already-authorized production work unless a real dependency exists.
+    Reconcile/rebase #6264 onto then-current main; inspect all current-main changes that
+    touch research/prophet_v4 or Agent OS schema/owner law; resolve duplicates rather than
+    overwriting accepted work; run exact-head fences/CI/Agent OS validation and independent
+    adversarial review before merge.
+  - >
+    Already-authorized production work in V4/specialist owners may continue independently.
+    Do not pause it merely because flagship research is underway.
 do_not_redo:
-  - "Do not make a fresh Sol reconstruct the flagship system from old Linear summaries; start from the attached ChatGPT-first launch handoff + READ FIRST."
-  - "Do not outsource unresolved product thesis, owner boundaries, experiment design or promotion law to coding workers merely to save ChatGPT turns."
-  - "Do not treat a Linear research issue or a retrieved handoff as blanket mutation authority; the active Chairman launch message supplies explicit intent and current gates still apply."
-  - "Do not treat desired capabilities, institutional precedent, synthetic cases or R1 preliminary rulings as proof of alpha."
-  - "Do not rescue failed hypotheses with same-outcome retuning; use the kill matrix and register genuinely new hypotheses separately."
-  - "Do not violate A1-A12 anti-circularity/leakage controls."
-  - "Do not create a second graph, exact identity master, analogue memory, cross-family ranker, Eval store, evidence warehouse, catalyst engine, risk score or Availability state."
-  - "Do not replace Context Vector wholesale without Cell F proving why its PIT-history job should be retired."
-  - "Do not let Cell B contaminate current blinded Dislocation P0 or claim intrinsic fair value."
-  - "Do not let Cell F compute cross-family rank; D5 transports owner evidence and Conditional Fusion governs influence."
-  - "Do not let Cell G create a second scoreboard, change denominators after results or read protected outcome clocks early."
+  - "Do not reconstruct the flagship from short Linear summaries; start at READ FIRST."
+  - "Do not outsource unresolved CEO product/system/statistical design to coding workers to save ChatGPT turns."
+  - "Do not treat a launch packet, Linear issue or technical connector capability as perpetual mutation authority; current Chairman intent/current gates still bind."
+  - "Do not treat desired capabilities, source authority, institutional precedent, synthetic cases or prework as proof of alpha."
+  - "Do not rescue failed hypotheses by same-outcome retuning."
+  - "Do not violate A1-A12."
+  - "Do not create a second graph, identity master, analogue memory/vector store, catalyst truth engine, risk score, evidence warehouse, cross-family ranker, evaluation plane or Availability state."
+  - "Do not let Cell C equate schedule/event with outcome/surprise/materiality or infer materiality from target price."
+  - "Do not let Cell D outcome-audition species, neighbors, experts, distances or regimes; missingness is not similarity; small N does not yield probability."
+  - "Do not let Cell E equate OI with direction, slow ownership with live flow, missing with low risk, or risk with a hidden ENTRY_OPEN veto."
+  - "Do not let Cell H invent upstream semantic fields, client-side authority, score soup or premium public-data leakage to satisfy a mockup."
   - "Do not let intelligence directly modify deterministic ENTRY_OPEN."
   - "Do not create another suffixed 2026-08-22 Prophet V4 handoff; update this bare-dated record in place."
 danger_areas:
   - >
-    Main moves rapidly. Current owner records can retain correct ownership while carrying
-    stale operational next_action prose. Claim-time status must come from latest accepted
-    implementation/handoff/proof evidence, not a majority vote among documents.
+    Main moves rapidly and current owner records can retain correct ownership while stale
+    next_action prose lingers. Every claim and implementation entrance must refresh actual
+    latest accepted evidence rather than majority-vote documents.
   - >
-    The active launch prompt is intentionally important. Without a current Chairman message
-    assigning the cell end-to-end, the receiving Sol should remain research-only rather
-    than infer implementation permission from this retrieved file.
+    Cross-cell semantic collision becomes the dominant risk once all eight sessions run.
+    F owns translation grammar, G owns measurement law, domain owners retain truth, B owns
+    incorporation research and H consumes rather than invents.
   - >
-    The largest research risk remains sophisticated circularity/leakage that looks
-    economically plausible; A1-A12 stay binding.
+    Sophisticated leakage remains the largest scientific risk: target-self baselines,
+    future folds, final-corrected histories, post-event source availability, outcome-tuned
+    taxonomy/distance/regime and source-coverage selection can all create false intelligence.
   - >
-    The largest organizational risk is semantic duplication when a cell creates a new
-    owner because the existing canonical owner is inconvenient or incomplete.
+    Product completeness can create security failure if paid data exists in an anonymous/
+    public carrier despite visual gating. H must treat entitlement/publication boundary as
+    product correctness.
 ---
 
-# Prophet flagship closeout — R1 cells are now launchable
+# Prophet flagship closeout — all eight cells are now pre-hardened and launchable
 
-The program is now **almost pre-designed, deliberately not pre-proven, and operationally
-launchable in ChatGPT** for A/B/F/G.
+The flagship fan-out is no longer eight broad ideas. It is a shared system masterplan with
+source/rights law, anti-leakage amendments, hypothesis kill paths, standardized commission
+and return shapes, two backbone prework packets, and eight ChatGPT-first end-to-end launch
+overlays.
 
-The Chairman's preferred resource model is explicit: exploit inexpensive ChatGPT CEO
-reasoning for research, architecture, experiment design and review; spend external coding
-agent tokens only after a bounded vertical has become low-ambiguity execution work.
+R1 A/B/F/G are reported by the Chairman as already launched into separate Sol CEO chats.
+C/D/E/H are now equally pre-hardened and ready to launch when useful; H may research now
+but remains a follower for final semantic freeze.
 
-A fresh session should not stop merely because its research essay is finished. If the
-active Chairman launch prompt authorizes end-to-end ownership and current canonical gates
-permit it, that same Sol may freeze the next vertical and either implement it or commission
-a coding worker. The coding worker receives the contract; it does not rediscover the company.
+The operating economic law is intentional: **use abundant ChatGPT CEO reasoning until the
+ambiguity is gone; spend coding-agent tokens on bounded implementation and proof.**
+
+The architecture is deliberately **pre-designed, not pre-proven**. Individual hypotheses
+are expected to die if evidence does not support them. The flagship product thesis and
+single-owner system boundaries are not expected to drift merely because a worker finds a
+more convenient implementation.
