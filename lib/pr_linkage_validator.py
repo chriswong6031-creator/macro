@@ -98,8 +98,9 @@ def _issue_ids(text: str) -> list[str]:
 def _visible_lines(body: str) -> tuple[list[tuple[int, str]], list[str]]:
     """Return visible lines plus deterministic parse defects, Markdown-aware enough for V1."""
     defects: list[str] = []
-    if "\r" in body.replace("\r\n", "") or body.startswith("\ufeff"):
-        defects.append("INVALID_BODY_ENCODING")
+    forbidden = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u200b-\u200f\u202a-\u202e\u2060-\u206f]")
+    if "\r" in body.replace("\r\n", "") or body.startswith("\ufeff") or forbidden.search(body):
+        raise ValidationError("INVALID_BODY_ENCODING")
     body = body.replace("\r\n", "\n")
     lines = body.split("\n")
     visible: list[tuple[int, str]] = []
@@ -171,6 +172,8 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
     locs: dict[str, list[int]] = {f: [] for f in FIELDS}
     if block:
         for n, field, val in block:
+            if len(val.encode("utf-8")) > limits["value_bytes"]:
+                raise ValidationError("RESOURCE_LIMIT:value_bytes")
             values[field], locs[field] = val, [n]
     else:
         defects.append("NO_CONTIGUOUS_BLOCK")
@@ -189,7 +192,10 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
             kind = "CLOSING" if word in {"close","closes","closed","fix","fixes","fixed","resolve","resolves","resolved","complete","completes","completed","implement","implements","implemented"} else ("SUPPRESSED" if word in {"skip","ignore"} else ("RELATION_ONLY" if word in {"relates to","related to"} else "CONTRIBUTING"))
             for issue in _issue_ids(m.group(2)):
                 relationships.append((issue, kind, n))
-    return values, locs, headers, defects, sorted(set(relationships))
+    relationships = sorted(set(relationships))
+    if len(relationships) > limits["relationships"]:
+        raise ValidationError("RESOURCE_LIMIT:relationships")
+    return values, locs, headers, defects, relationships
 
 
 def _rule_map(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -265,6 +271,8 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
             raise ValidationError("INVALID_SNAPSHOT_STATE")
         if snap["state"] in {"UNAVAILABLE", "NOT_APPLICABLE"} and snap[payload]:
             raise ValidationError("INVALID_SNAPSHOT_STATE")
+    if len(observation["changed_paths"]["paths"]) > manifest["limits"]["changed_paths"]:
+        raise ValidationError("RESOURCE_LIMIT:changed_paths")
     native = observation["native_linkage"]
     if not isinstance(native.get("pagination_complete"), bool):
         raise ValidationError("INVALID_SNAPSHOT_STATE")

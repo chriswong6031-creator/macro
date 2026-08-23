@@ -59,3 +59,8 @@ def test_receipt_projection_covers_all_ten_frozen_components():
         matches = [f for f in validator.analyze(mutant, MANIFEST)["semantic"]["findings"] if f["rule_id"] == "R060" and f["evidence"]["component"] == component]
         assert len(matches) == 1
         assert matches[0]["location"] == "RECEIPT:" + component
+
+
+def test_schema_measurement(capsys):
+    print(f"schemas={len(SCHEMAS)} rules={len(MANIFEST['rules'])}")
+    assert len(SCHEMAS) == 4 and len(MANIFEST["rules"]) == 46
