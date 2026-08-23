@@ -183,22 +183,23 @@ verified:
       all 200 legacy jobs validated; contract-delta reported 0 introduced and 0 inherited
       at resolved merge base a990d05df250.
 unverified:
-  - claim: "Sol accepts the audited P0-S0/S1 K-packet and releases the hold."
+  - claim: "Sol completes final landing review of the current-main-reconciled PR head and releases the hold."
     what_would_verify: >
-      Sol records an explicit acceptance of K-packet SHA
-      665628e8d1d217b15239091ca6a4963a2196b3b36c4f850c18a85a0f8da8781e
-      against the exact held PR head and authorizes the next action.
+      Sol explicitly accepts the final reconciled PR #6258 head after exact-head
+      hosted CI, fences, authority, and collision proof. Sol has already accepted
+      the P0-S0/S1 K-packet semantically and architecturally at the pre-reconciliation
+      head 45723b127c28028c6e6a82cf93c041741171f5df.
   - claim: "P0-S2 or P0-R1 is authorized."
     what_would_verify: >
       A later explicit Sol commission after accepting this K-packet; this session stops
       before either wave and provides no price or outcome evidence.
 unresolved:
-  - "Sol acceptance of the K-packet remains pending by design."
-  - "The repaired draft PR must remain DRAFT / HOLD-FOR-SOL / do-not-merge until Sol accepts the exact head."
+  - "Sol final landing review of the current-main-reconciled exact head remains pending by design; semantic and architectural acceptance of K-packet SHA 665628e8d1d217b15239091ca6a4963a2196b3b36c4f850c18a85a0f8da8781e is complete."
+  - "The repaired draft PR must remain DRAFT / HOLD-FOR-SOL / do-not-merge until Sol explicitly releases the reconciled exact head."
   - "The quarantined 832ac draft remains preserved but permanently inadmissible for P0-R1 unless a later explicit source-law decision supersedes this ruling."
 next_actions:
-  - "Sol reviews the exact held PR head, K-packet SHA 665628e8d1d217b15239091ca6a4963a2196b3b36c4f850c18a85a0f8da8781e, and the 21-row disagreement matrix."
-  - "If Sol accepts, Sol records the release condition explicitly; a fresh separately commissioned session—not this one—may then take the authorized next wave."
+  - "Sol reviews the exact current-main-reconciled PR #6258 head and its hosted CI/fence/authority/collision receipts; the accepted K-packet remains SHA 665628e8d1d217b15239091ca6a4963a2196b3b36c4f850c18a85a0f8da8781e."
+  - "Only Sol may release or land the held PR. Sol will separately adjudicate whether P0-S2 or a new price-blind source-feasibility wave follows; this carrier begins neither."
   - "Until that release, do not merge the draft PR, arm merge-on-green, begin P0-S2, consume the 313-row draft, or mount price/outcome data."
 do_not_redo:
   - "Do not rerun or semantically repair all 313 #6117 rows; they are quarantined provenance, not P0-R1 input."
@@ -212,7 +213,7 @@ danger_areas:
   - "A typed null/refusal is not a positive semantic assertion; UNKNOWN, UNAVAILABLE, RIGHTS_BLOCKED, NOT_APPLICABLE, EXPLICIT_NONE, CORRECTED, and QUARANTINED must remain distinct."
   - "Acceptance clocks are exact SEC accepted_at values. filed_on and retrieval/recorded clocks must never be promoted into the primary decision clock."
   - "A relationship edge is admissible only when its packet is accepted/repaired and the independent audit affirmatively supports the exact relationship."
-  - "Green CI is not Sol acceptance, and a recorded hold binds every merge path."
+  - "Green CI and an unchanged accepted K-packet do not release the final landing hold; the recorded hold binds every merge path until Sol explicitly releases the reconciled head."
 decisions:
   - "DEC:DISLOCATION-P0-A1R-SOURCE-LAW-RECONCILIATION"
 discoveries:
@@ -230,3 +231,48 @@ Claude web account used for the independent audit was an attachment-only reviewe
 it was not connected to GitHub or the repository and performed no delivery action.
 
 Stop here. Sol is the only release authority.
+
+## Current-main reconciliation continuation — 2026-08-23
+
+Sol accepted the P0-S0/S1 K-packet semantically and architecturally on exact
+head `45723b127c28028c6e6a82cf93c041741171f5df`. The remaining gate is solely
+current-main integration proof. The existing branch was rebased, without a new
+carrier, from prior merge base
+`fe393bd73e541a37dc23262514e93d9d9056cec7` onto initial reconciliation pickup
+`fe0e2a3a755c9a8581c13c482785ed83684fb2d4`, refreshed onto
+`fc94d43ad4142e50ec808b2f1a8d6f922ff1fa7b` after landed commit
+`787787f93c8efaaf30b9cd3d32d9446596fa0925` changed the shared legacy CI-job
+registry, and finally rebased onto fresh `origin/main`
+`e6339b03227ae70bede94b15bd7269a9d6c7ec84`, which includes FF-1R merge
+`1e7d9f5030fd7c7c06fb03f022857510c5d0f9ed`. These refreshes change CI
+topology and add a compatible SEC-owner capability only; they do not change an
+accepted P0 selection, source, model, audit, linkage, or K-packet byte.
+
+`git range-diff` proved all seven carrier patches identical. Main's landed
+Fundamental Forensics change, PR #5898 / merge
+`21f51a1ecfed778a738b048bd7e5efd30b1d9336`, adds EDGAR full-master-index
+discovery but does not change the A1R-consumed `SecForensicsCollector.fetch`,
+`RetrievalReceipt`, or persistence contract. Both canonical document-spine
+owner files are byte-identical to the accepted base. FF-1R PR #6285 is now
+accepted mainline owner law at merge `1e7d9f5030fd7c7c06fb03f022857510c5d0f9ed`.
+Its only `SecForensicsCollector` delta is an additive, retrieval-only historical
+Submissions helper; it does not modify `RetrievalReceipt`, `persist_response`,
+`_fetch_url`, `fetch`, generic receipt sidecars, or document-spine contracts.
+Independent review returned `COMPATIBLE; no STOP`. Open PR #6286 still touches
+`ci.yml` but remains unmerged/non-authoritative and must be rechecked immediately
+before the return to Sol.
+
+The exact-20 logical SHA remains `e436c6e87870468d0df0449c86cc9b69a9d23aa1396885fffdfcbfcf6398852e`;
+the source-manifest logical SHA remains
+`97c2d8f7d518a6ae7ec25f23cb6f796f201c601277647b0bee9e917eb1add667`;
+the Grok, Opus, and K-packet file SHAs remain respectively
+`98383da61ac11c072a1c0cc10a00218164fb95446c277cf4da212121250fbee2`,
+`7c01072dafa92e7f2c4e31723317351694e575f6947185b8112a29a12923a88a`,
+and `665628e8d1d217b15239091ca6a4963a2196b3b36c4f850c18a85a0f8da8781e`.
+Offline replay under the reconciled tree remains
+`COMPLETE_BYTE_IDENTICAL`: 20 packets, 27 exact FTS-matched documents, model
+packet-index SHA
+`1f6feded5bebe12f0eb09db8a6d0aeec107a98fd22dd34e3167bfa413f59c216`,
+and network access `NONE`. No price, outcome, counterfactual, ranking, sizing,
+or execution path was mounted or read. No Grok or Opus rerun was required or
+performed because every accepted semantic input and hash remained unchanged.
