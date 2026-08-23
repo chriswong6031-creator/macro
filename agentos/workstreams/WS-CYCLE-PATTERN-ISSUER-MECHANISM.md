@@ -828,8 +828,79 @@ waves:
       (263 passed, 2 skipped, same sparse-worktree skips as before);
       python3 scripts/check_contract_delta.py --base origin/main (0
       introduced, 0 inherited); python3 scripts/agentos.py validate (0
-      errors, same 28 pre-existing unrelated warnings). PR stays DRAFT
-      pending the commissioning session's re-review.
+      errors, same 28 pre-existing unrelated warnings).
+
+      VERIFICATION ROUND 4 (same PR #6308, same branch — Opus red-team,
+      2026-08-23: NEW-4's mechanism confirmed FIXED by the verifier's own
+      probes; narrow, one-liner-class remainder — MAJOR + MAJOR + MINOR +
+      MINOR + a NIT). NEW-5-PIN: round 3's uniform flagship handler was
+      correct but UNPINNED — reverting it to the round-3 two-handler shape
+      (PriorWorkspaceFetchFailed -> abort, everything else -> fail-soft
+      None) left the full suite green. Fixed by adding ONE test: the
+      flagship's prior_workspace loader raises a bare RuntimeError
+      (deliberately NOT PriorWorkspaceFetchFailed) -> RefreshError, nothing
+      published — mutation-verified to kill the exact reversion. NEW-6:
+      load_prior_workspace_for_ticker concluded "nothing to carry" (None)
+      from THREE states that are provably ANOMALIES in a healthy nest,
+      since write_workspace_generation uploads every workspace object,
+      THEN the generation's own manifest.json, and only THEN promotes the
+      marker: (a) the named generation's own manifest.json 404ing despite
+      a promoted marker, (b) a non-Mapping generation-manifest payload, (c)
+      a generation manifest with no usable "files" key. All three (plus a
+      fourth found by the same principle: a top-level marker that parses
+      but carries no generation_id) now raise PriorWorkspaceFetchFailed
+      with the ::warning, exactly like a genuine network failure. None
+      remains ONLY for a clean top-level marker 404 (no nest yet) and a
+      well-formed files map with no entry for this issuer — pinned by an
+      8-case probe table (marker 404/network-error/no-generation_id,
+      gen-manifest 404/network-error/not-an-object/no-files-key,
+      well-formed-no-match). NEW-7: files iterates in the manifest's own
+      sorted-string key order, so the prior first-match loop would have
+      picked the LEXICOGRAPHICALLY SMALLEST (= OLDEST fiscal period) event
+      if the one-event-per-issuer invariant ever broke. Fixed: collect
+      every company_id match, select the one with the MAX (year, quarter)
+      — pinned by a test with two DHI events (Q2 sorting first as a
+      string, Q3 the true newest) asserting Q3 wins and Q2's body is never
+      even fetched; mutation-verified. NEW-8: the round-3 comment
+      overstated the invariant as blanket "membership must be monotonic".
+      Reworded to the true, narrower invariant: each ticker's MOST
+      RECENTLY PUBLISHED event is carried forward when this cycle cannot
+      rebuild it; a SUPERSEDED event legitimately drops out at quarterly
+      rollover and reads as not_published downstream from then on — that
+      is fail-closed and intentional, not a regression. NIT (same asymmetry
+      class as NEW-5): the carry-forward call site caught only
+      PriorWorkspaceFetchFailed, so any OTHER exception from a future
+      carry loader would have escaped refresh() raw. Made uniform with the
+      flagship handler: ANY exception from the carry-forward lookup now
+      aborts — pinned by a bare-RuntimeError test, mutation-verified.
+      Accepted-cost note recorded per the review's request (no code
+      change): the abort surface is now ~10 R2 GETs/cycle x ~8 cycles/day;
+      each abort costs exactly one 3h cycle with the marker frozen on the
+      last good generation; at realistic GET success rates that is on the
+      order of one delayed cycle per days-to-weeks, not per night; a
+      bounded retry on the prior-read GETs is a possible future reduction,
+      deliberately not added here. New tests this round:
+      tests/test_refresh_event_workspaces.py +3 test functions / +10 cases
+      (the NEW-5-PIN flagship bare-exception test, the 8-case NEW-6 probe
+      table as one parametrized function, the NEW-7 newest-wins test);
+      tests/test_issuer_profiles_a5a.py +1 (the NIT bare-exception
+      carry-forward test). WS-record test count for
+      tests/test_imce_prospective.py re-verified UNCHANGED at 14 (this
+      round touched no A5C test file) via `git diff origin/main --
+      tests/test_imce_prospective.py | grep -c '^+def test_'` at this
+      record's own final head. Re-verified: pytest
+      tests/test_imce_prospective.py tests/test_refresh_event_workspaces.py
+      tests/test_company_intelligence_event_workspace.py
+      tests/test_gh_annotation_line_start.py
+      tests/test_issuer_profiles_a5a.py tests/test_earnings_release_binding.py
+      (274 passed, 2 skipped, same sparse-worktree skips as before);
+      python3 scripts/check_contract_delta.py --base origin/main (0
+      introduced, 0 inherited); python3 scripts/agentos.py validate (0
+      errors, same 28 pre-existing unrelated warnings). Every new test this
+      round was mutation-verified against its named regression, then
+      reverted (repo left clean — confirmed via `git diff --stat` after
+      each revert). PR stays DRAFT pending the commissioning session's
+      re-review.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's

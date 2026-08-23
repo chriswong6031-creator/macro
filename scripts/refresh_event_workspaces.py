@@ -581,12 +581,29 @@ def load_prior_workspace_for_ticker(ticker: str, *, base_url: str | None = None)
     no workspace body is fetched for anything but the one match) for an
     event_id whose ``parse_canonical_event_id`` company_id matches this
     ticker's registered issuer identity — a STATIC, acquisition-independent
-    lookup. Returns ``None`` when genuinely never published (no generation
-    exists yet, or no event for this ticker is in the current one — first
-    publish, not a failure). Raises ``PriorWorkspaceFetchFailed`` on a
-    genuine fetch failure (network error, timeout, non-2xx, malformed
-    JSON) at any read here — the SAME disposition contract as
-    ``load_prior_workspace``, never silently absent.
+    lookup.
+
+    Returns ``None`` ONLY for: (i) the top-level marker is a clean 404 (no
+    nest has ever been published); (ii) the current generation's own
+    manifest is well-formed and simply carries no entry for this ticker's
+    issuer (never published, or already superseded off the generation at a
+    quarterly rollover — see the module docstring's monotonicity note).
+
+    NEW-6 (Opus red-team verification round 4, 2026-08-23): EVERY other
+    outcome is treated as an ANOMALY, not an absence, and raises
+    ``PriorWorkspaceFetchFailed`` — a genuine network/timeout/non-2xx/
+    malformed-JSON failure at any read here (unchanged from round 3), a
+    top-level marker that parses but carries no ``generation_id``, the
+    named generation's own ``manifest.json`` 404ing, that manifest's
+    payload not being an object, or that object carrying no usable
+    ``"files"`` map. ``write_workspace_generation`` uploads every workspace
+    object, THEN that generation's own ``manifest.json``, and only THEN
+    promotes the top-level marker to point at it — so once the top-level
+    marker names a ``generation_id``, that generation's manifest existing,
+    being an object, and carrying a ``"files"`` key are all GUARANTEED by
+    the publish protocol unless something is genuinely broken. Reading any
+    of those as "nothing to carry" would erase a corrected event exactly
+    like a genuine fetch failure would.
     """
     issuer = issuer_for_ticker(ticker)
     if issuer is None:
@@ -597,50 +614,74 @@ def load_prior_workspace_for_ticker(ticker: str, *, base_url: str | None = None)
 
     base = (base_url or os.environ.get("COMPANY_INTELLIGENCE_R2_BASE_URL", _DEFAULT_PUBLIC_ORIGIN)).strip().rstrip("/")
     headers = {"Accept": "application/json", "User-Agent": "mastermind-event-workspaces/1"}
+
+    def _anomaly(detail: str) -> PriorWorkspaceFetchFailed:
+        print(
+            "::warning title=event-workspace-prior-fetch-failed::"
+            f"{ticker}: {detail} — refusing to treat this as no-prior-to-carry",
+            flush=True,
+        )
+        return PriorWorkspaceFetchFailed(f"{ticker}: {detail}")
+
     try:
         marker_resp = requests.get(f"{base}/event_workspaces/manifest.json", headers=headers, timeout=20)
         if marker_resp.status_code == 404:
-            return None
+            return None  # (i): genuinely no nest published yet
         marker_resp.raise_for_status()
         marker = marker_resp.json()
         generation_id = str((marker or {}).get("generation_id") or "")
         if not generation_id:
-            return None
+            # NEW-6: a marker that parsed successfully but carries no
+            # generation_id is anomalous — the publish protocol never
+            # promotes a marker without one.
+            raise _anomaly("top-level marker carries no generation_id")
         gen_resp = requests.get(
             f"{base}/event_workspaces/generations/{generation_id}/manifest.json",
             headers=headers, timeout=20,
         )
         if gen_resp.status_code == 404:
-            return None
+            # NEW-6 (a): the marker names a generation whose OWN manifest is
+            # missing — anomalous (the publisher writes the generation
+            # manifest BEFORE promoting the marker to point at it).
+            raise _anomaly(f"generation {generation_id} manifest 404 despite a promoted marker")
         gen_resp.raise_for_status()
         gen_manifest = gen_resp.json()
+    except PriorWorkspaceFetchFailed:
+        raise
     except Exception as exc:  # noqa: BLE001 - every other failure is a genuine fetch failure, never silently absent
-        print(
-            "::warning title=event-workspace-prior-fetch-failed::"
-            f"{ticker}: current-generation manifest fetch failed ({type(exc).__name__}: {exc}) — "
-            "refusing to treat this as no-prior-to-carry",
-            flush=True,
-        )
-        raise PriorWorkspaceFetchFailed(
-            f"{ticker}: current-generation manifest fetch failed ({type(exc).__name__}: {exc})"
-        ) from exc
+        raise _anomaly(f"current-generation read failed ({type(exc).__name__}: {exc})") from exc
 
-    files = (gen_manifest or {}).get("files") if isinstance(gen_manifest, Mapping) else None
-    matched_event_id: str | None = None
-    for relative in files or {}:
+    if not isinstance(gen_manifest, Mapping):
+        # NEW-6 (b)
+        raise _anomaly(f"generation {generation_id} manifest payload is not an object")
+    files = gen_manifest.get("files")
+    if not isinstance(files, Mapping):
+        # NEW-6 (c)
+        raise _anomaly(f"generation {generation_id} manifest carries no usable 'files' map")
+
+    # NEW-7 (Opus red-team round 4, 2026-08-23): collect EVERY matching
+    # event_id and select the NEWEST fiscal period, not the first one
+    # encountered — `files` iterates in the manifest's own sorted-string
+    # key order, so a plain first-match would pick the LEXICOGRAPHICALLY
+    # SMALLEST (= OLDEST) event if the one-event-per-issuer invariant ever
+    # broke (e.g. a transient double-publish). Correct selection costs
+    # nothing here and removes a silent wrong-answer mode.
+    matches: list[tuple[tuple[int, int], str]] = []
+    for relative in files:
         relative_text = str(relative)
         if not relative_text.startswith("workspaces/") or not relative_text.endswith(".json"):
             continue
         candidate_event_id = relative_text[len("workspaces/"):-len(".json")]
         try:
-            company_id, _fiscal_period, _event_type = parse_canonical_event_id(candidate_event_id)
+            company_id, fiscal_period, _event_type = parse_canonical_event_id(candidate_event_id)
         except Exception:  # noqa: BLE001 - a non-canonical file name is simply not a match
             continue
         if company_id == issuer.company_id:
-            matched_event_id = candidate_event_id
-            break
-    if matched_event_id is None:
-        return None
+            matches.append(((fiscal_period.year, fiscal_period.quarter or 0), candidate_event_id))
+    if not matches:
+        return None  # (ii): well-formed files map, no entry for this issuer
+    matches.sort(key=lambda item: item[0])
+    matched_event_id = matches[-1][1]
     return load_prior_workspace(matched_event_id, base_url=base_url)
 
 
@@ -871,26 +912,40 @@ def refresh(
     # fetch failure NEW-1 catches — so prior_source_sha256/prior_lifecycle_state
     # both resolve None and a "corrected" state silently erases one hop
     # later, with the only ::warning ever fired describing a skip, not an
-    # erasure. Membership must therefore be MONOTONIC: an event that has
-    # ever been published must appear in EVERY subsequent generation. Three
-    # outcomes per ticker below implement that:
+    # erasure. NEW-8 (Opus red-team round 4, 2026-08-23 — the round-3
+    # wording above overstated it as a blanket "membership must be
+    # monotonic"): the true invariant is narrower — each ticker's MOST
+    # RECENTLY PUBLISHED event is carried forward whenever THIS cycle
+    # cannot rebuild it. A SUPERSEDED event (the prior quarter, once a
+    # newer one publishes) legitimately drops out of the generation at
+    # rollover and reads as not_published downstream from then on — that
+    # is fail-closed and intentional, not a regression of this fix. Three
+    # outcomes per ticker below implement the narrower invariant:
     #   (a) acquisition/build failed but a prior IS readable (via the
     #       ticker-scoped carry-forward lookup, independent of whether
     #       THIS cycle's fresh event_id was ever computed) -> CARRY FORWARD
     #       the prior payload unchanged into this generation.
-    #   (b) the carry-forward lookup ITSELF is unreadable -> ABORT the
-    #       whole refresh (RefreshError, nothing published, marker frozen)
-    #       — cannot rule out silently dropping a corrected event. Same
-    #       discipline as the flagship's own prior-fetch-failure handling
-    #       above; one issuer's CDN blip delaying ALL publication by one
-    #       cycle is the accepted cost. The NORMAL-path event_id-keyed
-    #       prior read inside acquire_and_build_homebuilder_workspace
-    #       (after a SUCCESSFUL acquisition) already raises
-    #       PriorWorkspaceFetchFailed uncaught (NEW-1) — caught here too,
-    #       same abort.
+    #   (b) the carry-forward lookup ITSELF fails for ANY reason -> ABORT
+    #       the whole refresh (RefreshError, nothing published, marker
+    #       frozen) — cannot rule out silently dropping a corrected event.
+    #       Same discipline as the flagship's own prior-fetch-failure
+    #       handling above; one issuer's CDN blip delaying ALL publication
+    #       by one cycle is the accepted cost. The NORMAL-path
+    #       event_id-keyed prior read inside
+    #       acquire_and_build_homebuilder_workspace (after a SUCCESSFUL
+    #       acquisition) already raises PriorWorkspaceFetchFailed uncaught
+    #       (NEW-1) — caught here too, same abort.
     #   (c) genuinely never published (no prior found by either lookup)
     #       and acquisition failed -> true skip, nothing to carry, and its
     #       absence next cycle correctly reads as first-publish.
+    #
+    # Accepted-cost note (no code change, requested for the record): this
+    # abort surface is now roughly 10 R2 GETs/cycle across ~8 cycles/day.
+    # Each abort costs exactly one 3h cycle with the marker frozen on the
+    # last good generation. At realistic GET success rates that is on the
+    # order of one delayed cycle per days-to-weeks, not per night. A
+    # bounded retry on the prior-read GETs is a possible future reduction
+    # of that already-small residual — deliberately NOT added in this PR.
     workspaces: dict[str, dict[str, Any]] = {FLAGSHIP_EVENT_ID: payload}
     for ticker in HOMEBUILDER_TICKERS:
         try:
@@ -912,9 +967,12 @@ def refresh(
         except Exception as exc:  # noqa: BLE001 - acquisition/build failed; try to carry the prior forward before giving up
             try:
                 carried_prior = homebuilder_carry_forward_loader(ticker)
-            except PriorWorkspaceFetchFailed as carry_exc:
-                # (b), extended: even the ticker-scoped carry-forward
-                # lookup is unreadable — cannot confirm nothing is lost.
+            except Exception as carry_exc:  # noqa: BLE001
+                # (b), extended (NIT fix, round 4): ANY exception from the
+                # carry-forward lookup — not only PriorWorkspaceFetchFailed
+                # — means we cannot confirm nothing is lost. Uniform with
+                # the flagship's own handler above (NEW-5): only an
+                # explicit clean None return may mean "nothing to carry."
                 raise RefreshError(
                     f"{ticker}: acquisition failed AND the carry-forward prior lookup also failed — "
                     f"refusing to publish a nest that might silently drop a corrected event: {carry_exc}"

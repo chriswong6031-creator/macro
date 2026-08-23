@@ -1205,6 +1205,39 @@ def test_carry_forward_lookup_failure_aborts_the_whole_refresh_then_recovers(
     assert dhi_published_3["lifecycle"]["state"] == "corrected"
 
 
+def test_carry_forward_lookup_bare_exception_also_aborts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """NIT (Opus red-team verification round 4, 2026-08-23 — same asymmetry
+    class as NEW-5-PIN): the carry-forward call site used to catch only
+    `except PriorWorkspaceFetchFailed`, so any OTHER exception from a
+    future carry loader would escape refresh() raw instead of becoming a
+    clean RefreshError. Fixed to be uniform with the flagship handler: ANY
+    exception from the carry-forward lookup aborts. This test uses a bare
+    RuntimeError (deliberately NOT PriorWorkspaceFetchFailed)."""
+    import json as jsonlib
+
+    import scripts.refresh_event_workspaces as refresh_mod
+
+    (http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected,
+     dhi_published_1, gen1_id, real_acquire) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
+
+    def bare_exception_carry_forward(ticker: str):
+        if ticker == "DHI":
+            raise RuntimeError("DHI: simulated non-PriorWorkspaceFetchFailed failure")
+        return None
+
+    with pytest.raises(refresh_mod.RefreshError):
+        refresh_mod.refresh(
+            tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+            homebuilder_prior_workspace_loader=lambda event_id: None,
+            homebuilder_carry_forward_loader=bare_exception_carry_forward,
+            publish_generation=lambda out_dir, dry_run=False: 0,
+        )
+    marker2 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    assert marker2["generation_id"] == gen1_id, "marker must stay frozen — nothing published this cycle"
+
+
 def test_acquisition_failure_carries_forward_a_corrected_event_byte_identical(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
