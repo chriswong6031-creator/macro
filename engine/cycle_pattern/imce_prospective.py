@@ -199,6 +199,9 @@ FORBIDDEN_OUTCOME_TOKENS: frozenset[str] = frozenset({
     "p_value", "pvalue", "p_val",
     "sharpe", "sharpe_ratio", "information_ratio", "alpha",
     "outcome",
+    "return",  # N1/N2 residual: catches a bare "return_63d"-shaped key too;
+               # the frozen-schema WHITELIST test below is the real backstop
+               # for anything this stem (or any other) still misses.
 })
 
 
@@ -469,6 +472,20 @@ def append_observation(
 
     exact_dup = find_observation(event_id, decision_cutoff, target)
     if exact_dup is not None:
+        # Red-team N3: an EXACT (event_id, decision_cutoff) match that also
+        # carries materially different derived content is NOT a safe no-op
+        # — a genuinely identical rebuild should never differ, so silently
+        # returning the stale row would hide either a bug or a race. Raise
+        # instead of asymmetrically trusting the key over the content.
+        if packet_materially_differs(exact_dup, packet, trigger.get("ticker")):
+            raise ProspectiveLedgerError(
+                f"an observation already exists for event_id={event_id!r} "
+                f"decision_cutoff={decision_cutoff!r} "
+                f"(observation_id={exact_dup.get('observation_id')!r}) whose derived "
+                f"state MATERIALLY DIFFERS from the packet just built — refusing a "
+                f"silent no-op over content that disagrees; this should never happen "
+                f"for a genuinely identical rebuild (N3 fix)"
+            )
         return exact_dup, False
 
     existing_any = find_observation_by_event_id(event_id, target)

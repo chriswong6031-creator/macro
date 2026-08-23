@@ -1,25 +1,40 @@
 """IMCE A5B nightly builder — data/cycle_pattern/imce_prospective_observation_v1.jsonl.
 
 Reads the published, R2-hosted ``event_workspace.v1`` objects for the four
-homebuilder issuers (DHI/PHM/KBH/TOL) via a fetch sequence that MIRRORS
-``scripts.refresh_event_workspaces.load_prior_workspace``'s own base-URL
-resolution and manifest+workspace GET calls (same public origin, no new
-store), and — after stamping/confirming activation — appends one immutable
-decision-time IMCE observation packet per qualifying post-activation
-earnings event through ``engine.cycle_pattern.imce_prospective``.
+homebuilder issuers (DHI/PHM/KBH/TOL), and — after stamping/confirming
+activation — appends one immutable decision-time IMCE observation packet
+per qualifying post-activation earnings event through
+``engine.cycle_pattern.imce_prospective``.
 
-Red-team B3 fix: unlike ``load_prior_workspace`` (deliberately fail-soft for
-ITS OWN callers — a flaky CDN must not block a source-identical no-op
-rebuild), THIS module's fetch classifies WHY a workspace is missing:
-``found`` / ``not_published`` (clean 404 — the event genuinely does not
-exist yet) / ``fetch_failed`` (network/timeout/non-2xx/malformed — we simply
-do not know). A prospective observation must never mint "the issuer had no
-event" out of "the network was down." On ANY fetch_failed anywhere in a run,
-EVERY observation this run is deferred (no row written, no activation
-stamped if this is the first run) — the roster is fixed and every
-observation pools over the same four tickers, so a failure on any one of
-them taints every pooled read equally; the next nightly retries cleanly
-since nothing was written.
+HONEST CLAIM (red-team N2 correction — an earlier draft of this docstring
+and the workstream record overstated this as "no second reader
+implementation", which was false the moment B3's fix landed): this module's
+``_raw_fetch_workspace``/``_load_workspace_with_disposition`` IS a second
+fetch implementation. It duplicates ``scripts.refresh_event_workspaces.
+load_prior_workspace``'s base-URL resolution and manifest+workspace GET
+sequence byte-for-byte, on purpose, because that existing reader is
+deliberately fail-soft FOR ITS OWN callers (a flaky CDN must never block a
+source-identical no-op rebuild) and therefore collapses "clean 404" and
+"network error" into the same ``None`` — exactly the ambiguity B3 requires
+this module to resolve (``found`` / ``not_published`` / ``fetch_failed``). A
+prospective observation must never mint "the issuer had no event" out of
+"the network was down." Two independent implementations of the SAME GET
+sequence is a real, named drift risk: if the R2 layout, headers, or
+base-URL resolution ever changes, both copies must be updated together, and
+nothing here enforces that. The correct long-term fix is to lift a
+disposition-aware fetch (or a ``raise_on_error``/mode parameter) INTO
+``scripts/refresh_event_workspaces.py`` itself, so there is one
+implementation with two calling conventions — deliberately NOT done in this
+PR (that file is A5A's, out of this build's scope; the red-team review
+authorized the duplication here rather than a cross-scope refactor). Future
+consolidation should retire ``_raw_fetch_workspace`` in favor of that
+lifted, shared implementation.
+
+On ANY fetch_failed anywhere in a run, EVERY observation this run is
+deferred (no row written, no activation stamped if this is the first run)
+— the roster is fixed and every observation pools over the same four
+tickers, so a failure on any one of them taints every pooled read equally;
+the next nightly retries cleanly since nothing was written.
 
 Fail-open, house pattern (cf. scripts/build_cycle_pattern_state.py) for
 everything EXCEPT the production-write gate itself: every input is guarded;
@@ -243,6 +258,18 @@ def run(production: bool = False) -> dict:
         for event_id, disposition in per_ticker.items() if disposition == "fetch_failed"
     ]
     if failed_ids:
+        # Red-team N4: a deferral this important must be visible in the
+        # Actions summary, not just the log — GitHub only parses "::" at
+        # column 0, so this MUST be a bare print (never log.*, which
+        # prefixes the line and makes GitHub silently drop it; flush=True
+        # is load-bearing because stdout is block-buffered when piped).
+        print(
+            "::warning title=imce-prospective-deferred::"
+            f"{len(failed_ids)} fetch_failed candidate(s), deferring ALL observations "
+            f"this run (a network failure must never be minted as source absence): "
+            f"{failed_ids}",
+            flush=True,
+        )
         log.warning(
             "imce_prospective: %d fetch_failed candidate(s) — deferring ALL observations "
             "this run (B3: a network failure must never be minted as source absence): %s",

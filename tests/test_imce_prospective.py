@@ -631,7 +631,7 @@ def test_outcome_blacklist_catches_every_bare_token(token):
 
 @pytest.mark.parametrize("key", [
     "forward_return_63d", "fwd_ret_21d", "brier_score_90d", "hit_rate_pct",
-    "p_value_two_sided", "sharpe_1y", "forwardReturn", "outcome",
+    "p_value_two_sided", "sharpe_1y", "forwardReturn", "outcome", "return_63d",
 ])
 def test_outcome_blacklist_b2_substring_stem_fix(key):
     """B2: the blacklist must catch decorated/camelCase variants, not just
@@ -665,6 +665,112 @@ def test_real_observation_packet_carries_zero_outcome_fields():
 
 def test_schema_version_string():
     assert m.SCHEMA == "imce.prospective_observation.v1"
+
+
+# ---------------------------------------------------------------------------
+# N1 — frozen-schema WHITELIST (stronger than the blacklist: an unexpected
+# key of ANY kind, outcome-shaped or not, must fail loudly and be added
+# deliberately). The blacklist above stays as defence-in-depth, unchanged.
+# ---------------------------------------------------------------------------
+
+_FROZEN_TOP_LEVEL_KEYS = frozenset({
+    "trigger", "activation_started_at", "m_t", "r_t", "c_t", "authority", "prophet_flags",
+})
+_FROZEN_TRIGGER_KEYS = frozenset({
+    "ticker", "company_id", "security_id", "event_id", "fiscal_period",
+    "event_workspace_generation_id", "source_document_sha256", "source_accession", "decision_cutoff",
+})
+_FROZEN_MT_KEYS = frozenset({
+    "construction_doc", "pooling_key_doc", "trigger_pooling_key", "roster", "per_issuer",
+    "label", "pooled_state", "named_subset_basis", "contributors", "n_contributors",
+})
+_FROZEN_PER_ISSUER_KEYS = frozenset({
+    "ticker", "contributor_eligible", "activation_law", "as_of_event_id", "as_of_decision_cutoff",
+    "pooling_key", "denominator_conforms", "facts", "d_orders", "d_cancel", "order_softness",
+})
+_FROZEN_TOL_SENSITIVITY_KEYS = frozenset({
+    "fact_id", "prior_year_fact_id", "current_value", "current_absence_reason", "basis",
+    "prior_year_value", "prior_year_absence_reason", "d_cancel_sensitivity",
+    "order_softness_sensitivity_basis", "agreement_with_primary_basis",
+})
+_FROZEN_RT_KEYS = frozenset({"construction_version", "legs"})
+_FROZEN_RT_LEG_KEYS = frozenset({
+    "ticker", "price_plane_id", "adjustment_basis", "vintage", "last_admissible_bar",
+    "last_biweekly_period_end", "construction_version", "sign", "macd_hist_value", "typed_absence",
+})
+_FROZEN_CT_TOP_KEYS = frozenset({"treasury_cmt", "pmms", "fred_alfred", "nar_series"})
+_FROZEN_CT_LEG_BASE_KEYS = frozenset({
+    "source", "value", "typed_absence", "pit_class", "source_timestamp", "observation_timestamp", "context_only",
+})
+_FROZEN_CT_LEG_EXTRA_KEYS = {
+    "treasury_cmt": frozenset({"rights_disposition"}),
+    "pmms": frozenset({"persisted", "status"}),
+    "fred_alfred": frozenset({"fetched", "status"}),
+    "nar_series": frozenset({"may_be_stored"}),
+}
+_FROZEN_PROPHET_FLAGS_KEYS = frozenset({"may_rank", "may_size", "may_gate", "prophet_authority"})
+
+
+def _whitelist_packet(with_tol_contributor: bool = True) -> dict:
+    dhi = _mk_ws("DHI", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                 cancel_current=10.0, cancel_prior=12.0, calendar_end="2026-06-30")
+    tol = _workspace(ticker="TOL", cik=CIKS["TOL"], year=2026, quarter=3,
+                      source_available_at="2026-04-25T20:00:00Z", calendar_end="2026-06-30",
+                      net_orders_current=30, net_orders_prior=28, cancel_current=5.0, cancel_prior=6.0)
+    return m.build_observation_packet(
+        trigger_ticker="DHI", trigger_workspace=dhi,
+        issuer_workspaces={"DHI": dhi, "PHM": None, "KBH": None, "TOL": tol if with_tol_contributor else None},
+        activation_started_at=ACTIVATION_TS,
+    )
+
+
+def test_n1_frozen_schema_whitelist_top_level_and_trigger_and_mt():
+    packet = _whitelist_packet()
+    assert set(packet.keys()) == _FROZEN_TOP_LEVEL_KEYS
+    assert set(packet["trigger"].keys()) == _FROZEN_TRIGGER_KEYS
+    assert set(packet["m_t"].keys()) == _FROZEN_MT_KEYS
+    assert set(packet["prophet_flags"].keys()) == _FROZEN_PROPHET_FLAGS_KEYS
+
+
+def test_n1_frozen_schema_whitelist_per_issuer_and_sensitivity():
+    packet = _whitelist_packet(with_tol_contributor=True)
+    per_issuer = packet["m_t"]["per_issuer"]
+    for ticker in m.ROSTER:
+        keys = set(per_issuer[ticker].keys())
+        if ticker == "TOL":
+            assert keys == _FROZEN_PER_ISSUER_KEYS | {"sensitivity"}, (ticker, keys)
+            assert set(per_issuer["TOL"]["sensitivity"].keys()) == _FROZEN_TOL_SENSITIVITY_KEYS
+        else:
+            assert keys == _FROZEN_PER_ISSUER_KEYS, (ticker, keys)
+
+
+def test_n1_frozen_schema_whitelist_rt_legs():
+    packet = _whitelist_packet()
+    assert set(packet["r_t"].keys()) == _FROZEN_RT_KEYS
+    for ticker in m.ROSTER:
+        leg = packet["r_t"]["legs"][ticker]
+        assert set(leg.keys()) == _FROZEN_RT_LEG_KEYS, (ticker, set(leg.keys()))
+
+
+def test_n1_frozen_schema_whitelist_ct_legs():
+    packet = _whitelist_packet()
+    assert set(packet["c_t"].keys()) == _FROZEN_CT_TOP_KEYS
+    for name, leg in packet["c_t"].items():
+        expected = _FROZEN_CT_LEG_BASE_KEYS | _FROZEN_CT_LEG_EXTRA_KEYS[name]
+        assert set(leg.keys()) == expected, (name, set(leg.keys()))
+
+
+def test_n1_frozen_schema_whitelist_facts_shape():
+    packet = _whitelist_packet()
+    for fact in packet["m_t"]["per_issuer"]["DHI"]["facts"].values():
+        assert set(fact.keys()) == {"value", "absence_reason"}
+
+
+def test_n1_frozen_schema_whitelist_catches_an_injected_outcome_key():
+    """Proves the whitelist actually fires — not just a green rubber stamp."""
+    packet = _whitelist_packet()
+    packet["r_t"]["legs"]["DHI"]["sneaky_forward_metric"] = 1.23
+    assert set(packet["r_t"]["legs"]["DHI"].keys()) != _FROZEN_RT_LEG_KEYS
 
 
 # ---------------------------------------------------------------------------
@@ -772,6 +878,57 @@ def test_m4_find_observation_by_event_id(tmp_path):
     assert found["observation_id"] == row["observation_id"]
     assert m.find_observation(packet["trigger"]["event_id"], "1999-01-01T00:00:00Z", p) is None
     assert m.find_observation_by_event_id("evt_cik0000000000_2026q1_results", p) is None
+
+
+# ---------------------------------------------------------------------------
+# N3 — append_observation on a SAME-(event_id, decision_cutoff) collision:
+# a genuinely identical rebuild stays a no-op; a materially different one
+# must RAISE, never silently trust the key over the content.
+# ---------------------------------------------------------------------------
+
+def test_n3_exact_key_identical_rebuild_stays_a_noop(tmp_path):
+    p = tmp_path / "recon_n3_noop.jsonl"
+    trig = _mk_ws("KBH", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, generation_id="a" * 24)
+    packet = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    row1, appended1 = m.append_observation(packet, path=p, reconstruction=True)
+    assert appended1 is True
+
+    # A second call with the byte-identical inputs (same trigger workspace,
+    # hence same event_id AND same decision_cutoff) — genuinely nothing
+    # changed, must stay a silent no-op.
+    row2, appended2 = m.append_observation(packet, path=p, reconstruction=True)
+    assert appended2 is False
+    assert row2["observation_id"] == row1["observation_id"]
+    assert sum(1 for r in m.load_rows(p) if r["row_kind"] == "observation") == 1
+
+
+def test_n3_exact_key_materially_different_rebuild_raises(tmp_path, monkeypatch):
+    p = tmp_path / "recon_n3_raise.jsonl"
+    trig = _mk_ws("KBH", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, generation_id="a" * 24)
+    packet1 = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    row1, appended1 = m.append_observation(packet1, path=p, reconstruction=True)
+    assert appended1 is True
+
+    # Force a SAME (event_id, decision_cutoff) key but a materially
+    # different derived per-issuer state, by monkeypatching
+    # packet_materially_differs to report True for this call — this is the
+    # anomalous shape (same key, different content) that should never arise
+    # from a genuine rebuild but must never be silently trusted if it does.
+    monkeypatch.setattr(m, "packet_materially_differs", lambda *a, **k: True)
+    with pytest.raises(m.ProspectiveLedgerError, match="MATERIALLY DIFFERS"):
+        m.append_observation(packet1, path=p, reconstruction=True)
+    # The original row is untouched — still exactly one observation.
+    assert sum(1 for r in m.load_rows(p) if r["row_kind"] == "observation") == 1
 
 
 def test_m4_packet_materially_differs_generation_gate():

@@ -390,9 +390,19 @@ waves:
       in this family) — verified by `pytest tests/test_dag_conformance.py`
       (48 passed). The builder discovers candidate events via
       engine.company_intelligence.events.canonical_event_id over a bounded
-      lookback window and reads them through the SAME public-origin reader
-      scripts.refresh_event_workspaces.load_prior_workspace A5A already
-      established — no new store, no second reader implementation. Consumer:
+      lookback window and reads them from the SAME public-origin R2 prefix
+      A5A already established. CORRECTED CLAIM (red-team N2 — the original
+      text here said "no second reader implementation," which the B3 fix
+      below made false): the builder's own
+      _raw_fetch_workspace/_load_workspace_with_disposition duplicates
+      scripts.refresh_event_workspaces.load_prior_workspace's base-URL
+      resolution and GET sequence on purpose, because that existing reader
+      is deliberately fail-soft for ITS OWN callers and cannot distinguish
+      a clean 404 from a network failure — exactly the distinction B3
+      requires. This is a real, named drift risk (two copies of one GET
+      sequence); the correct long-term fix is lifting a disposition-aware
+      fetch into refresh_event_workspaces.py itself, deliberately NOT done
+      in this PR (that file is A5A's, out of this build's scope). Consumer:
       scripts/build_measurement.py gained build_imce_prospective_projection()
       (registration state, activation timestamp, last decision cutoff,
       per-issuer observation counts, cohort/named_subset/NOT_RECONSTRUCTABLE
@@ -523,6 +533,39 @@ waves:
       inventing a new one); re-run after the heal: 0 introduced, 0
       inherited. tests/test_ci_pack.py re-run clean after the
       legacy-jobs.yml edit (no pack-weight/import-closure regression).
+
+      VERIFICATION-PASS RESIDUALS (same PR #6281, same branch — coordinator
+      APPROVED all 10 red-team findings fixed with zero regressions, then
+      named four small residuals, all closed in one commit). N1: the
+      blacklist alone was still stem-incomplete (bare "return_63d" passed);
+      per the reviewer's stronger requirement, added a frozen-schema
+      WHITELIST test asserting the exact key set of the packet's top level,
+      trigger, m_t, every per-issuer entry (+ TOL's sensitivity block), r_t
+      (+ every leg), c_t (+ every leg), and prophet_flags — any unexpected
+      key of ANY kind now fails loudly; the blacklist stays as unchanged
+      defence-in-depth (plus a trivial added "return" stem). N2: corrected
+      a false claim — the builder's fetch is NOT a reuse of
+      load_prior_workspace, it is a second, disposition-classifying
+      implementation that duplicates that function's GET sequence on
+      purpose (that reader cannot distinguish 404 from network error); both
+      the builder's own docstring and this record now name the drift risk
+      explicitly and point at lifting a shared implementation into
+      refresh_event_workspaces.py as future consolidation — deliberately
+      NOT done in this PR (out of scope, A5A's file). N3:
+      append_observation now RAISES on a same-(event_id, decision_cutoff)
+      collision whose derived content materially differs (via
+      packet_materially_differs) rather than silently trusting the key over
+      the content; a genuinely identical rebuild still no-ops. N4: the B3
+      all-or-nothing deferral now also emits a bare
+      print("::warning title=imce-prospective-deferred::...", flush=True)
+      alongside the existing log.warning, so it is visible in the Actions
+      summary — verified against tests/test_gh_annotation_line_start.py's
+      own conventions (scripts/ is a scanned, non-exempt directory).
+      tests/test_imce_prospective.py grew 100 -> 110 cases. Re-verified:
+      pytest tests/test_imce_prospective.py tests/test_gh_annotation_line_
+      start.py (114 passed); python3 scripts/agentos.py validate (0
+      errors); python3 scripts/check_contract_delta.py --base
+      5b8ca994de05345d3cea514c46c27611bfe496d1 (0 introduced, 0 inherited).
       Production ledger path still never created by this session. PR stays
       DRAFT pending the commissioning session's re-review.
 next_action: >
