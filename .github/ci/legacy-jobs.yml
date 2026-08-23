@@ -12761,6 +12761,9 @@ jobs:
       - scripts/research/dislocation_p0_a1r_semantic_contract.py
       - scripts/research/dislocation_p0_a1r_semantic_run.py
       - scripts/research/dislocation_p0_a1r_source_run.py
+      - scripts/research/dislocation_p0_s1f_measurement.py
+      - scripts/research/dislocation_p0_s1f_selection.py
+      - scripts/research/dislocation_p0_s1f_triage.py
       - scripts/research/dislocation_p0_source_adapter.py
       - scripts/research/dislocation_p0_source_materializer.py
       - collectors/edgar_forensics.py
@@ -12777,6 +12780,7 @@ jobs:
       - tests/test_dislocation_p0_a1r_semantic_run.py
       - tests/test_dislocation_p0_source_adapter.py
       - tests/test_dislocation_p0_source_materializer.py
+      - tests/test_dislocation_p0_s1f.py
       - research/dislocation_intelligence/**
     timeout-minutes: 8
     runs-on: ubuntu-latest
@@ -12789,7 +12793,7 @@ jobs:
         # The bounded A1R adapters import the canonical raw SEC owner, whose
         # module boundary declares pandas/requests/PyYAML even though these
         # focused tests never perform a network call.
-        run: pip install pytest pandas requests pyyaml
+        run: pip install pytest pandas requests pyyaml scipy
       - name: Dislocation P0-A1 price-blind source-integrity primitives
         run: >-
           python -m pytest
@@ -12801,4 +12805,5 @@ jobs:
           tests/test_dislocation_p0_a1r_semantic_run.py
           tests/test_dislocation_p0_source_adapter.py
           tests/test_dislocation_p0_source_materializer.py
+          tests/test_dislocation_p0_s1f.py
           -q
