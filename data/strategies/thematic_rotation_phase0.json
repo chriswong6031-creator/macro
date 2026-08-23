@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-08-22T04:42:18.435106+00:00",
+  "generated_at": "2026-08-23T03:56:21.069044+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -122,7 +122,7 @@
       "contaminated": true,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.4023,
+          "cagr": 0.4027,
           "sharpe": 1.78,
           "max_dd": -0.0967,
           "calmar": 4.16,
@@ -164,35 +164,35 @@
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0748,
-          "ic_t_hac": 1.647,
+          "mean_ic": 0.0744,
+          "ic_t_hac": 1.624,
           "hit": 0.6,
           "n_steps": 25
         },
         "3m": {
-          "mean_ic": 0.0842,
-          "ic_t_hac": 0.999,
+          "mean_ic": 0.0843,
+          "ic_t_hac": 1.0,
           "hit": 0.625,
           "n_steps": 8
         }
       },
       "tsmom_conditional": {
         "above_trend": {
-          "mean": 0.0308,
-          "std": 0.1167,
+          "mean": 0.0309,
+          "std": 0.1166,
           "sharpe": 0.92,
           "p05": -0.1426,
           "n": 1101
         },
         "below_trend": {
           "mean": 0.0293,
-          "std": 0.1084,
-          "sharpe": 0.93,
+          "std": 0.1085,
+          "sharpe": 0.94,
           "p05": -0.1137,
           "n": 712
         },
         "mean_diff_t": 0.29,
-        "mean_diff_p": 0.7697
+        "mean_diff_p": 0.7695
       },
       "extension_drawdown": {
         "fwd_days": 63,

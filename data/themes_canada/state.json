@@ -68,9 +68,9 @@
     "label": "deteriorating",
     "name": "Insurers",
     "name_zh": "\u4fdd\u9669",
-    "rank": 15,
+    "rank": 14,
     "reco": "avoid",
-    "score": 33
+    "score": 34
   },
   "ca_materials": {
     "label": "deteriorating",
@@ -108,7 +108,7 @@
     "label": "deteriorating",
     "name": "REITs",
     "name_zh": "\u623f\u5730\u4ea7\u4fe1\u6258",
-    "rank": 14,
+    "rank": 15,
     "reco": "avoid",
     "score": 34
   },

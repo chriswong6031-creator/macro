@@ -1,71 +1,76 @@
 {
   "schema": "index_leadership.track_record.v1",
-  "as_of": "2026-08-20",
-  "generated_at": "2026-08-22T04:16:38.778511+00:00",
+  "as_of": "2026-08-21",
+  "generated_at": "2026-08-23T03:29:04.475401+00:00",
   "is_context_only": true,
-  "n_snapshots": 378,
-  "n_days": 12,
+  "n_snapshots": 411,
+  "n_days": 13,
   "horizons": {
     "5": {
-      "n_matured": 260,
+      "n_matured": 263,
       "by_stage": {
         "running": {
-          "n": 231,
-          "mean_fwd_rel": -0.0006,
-          "hit_rate": 0.498
+          "n": 234,
+          "mean_fwd_rel": -0.0007,
+          "hit_rate": 0.5
         },
         "coiling": {
           "n": 13,
-          "mean_fwd_rel": -0.0002,
+          "mean_fwd_rel": -0.0004,
           "hit_rate": 0.615
         },
         "coiling_primed": {
           "n": 16,
-          "mean_fwd_rel": 0.0271,
+          "mean_fwd_rel": 0.0275,
           "hit_rate": 0.938
         }
       },
-      "running_ic": 0.2029,
-      "running_ic_t_hac": 3.322,
+      "running_ic": 0.2144,
+      "running_ic_t_hac": 3.335,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 215,
+      "n_matured": 218,
       "by_stage": {
         "running": {
-          "n": 196,
-          "mean_fwd_rel": 0.0004,
-          "hit_rate": 0.505
+          "n": 199,
+          "mean_fwd_rel": -0.0011,
+          "hit_rate": 0.492
         },
         "coiling": {
           "n": 10,
-          "mean_fwd_rel": -0.0234,
+          "mean_fwd_rel": -0.0239,
           "hit_rate": 0.1
         },
         "coiling_primed": {
           "n": 9,
-          "mean_fwd_rel": 0.0396,
+          "mean_fwd_rel": 0.0426,
           "hit_rate": 0.778
         }
       },
-      "running_ic": 0.1365,
+      "running_ic": 0.1129,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "21": {
-      "n_matured": 32,
+      "n_matured": 62,
       "by_stage": {
         "running": {
-          "n": 25,
-          "mean_fwd_rel": -0.0251,
-          "hit_rate": 0.44
+          "n": 53,
+          "mean_fwd_rel": -0.0012,
+          "hit_rate": 0.566
         },
         "coiling": {
-          "n": 7,
-          "mean_fwd_rel": -0.0198,
-          "hit_rate": 0.571
+          "n": 8,
+          "mean_fwd_rel": -0.0184,
+          "hit_rate": 0.625
+        },
+        "coiling_primed": {
+          "n": 1,
+          "mean_fwd_rel": -0.0195,
+          "hit_rate": 0.0
         }
       },
       "running_ic": null,
@@ -83,7 +88,7 @@
     }
   },
   "lead_time_d": 5,
-  "peak_ic": 0.2029,
+  "peak_ic": 0.2144,
   "proven": {
     "5": true,
     "10": false,
@@ -95,67 +100,67 @@
   "note": "Call-score IC is significant at the 5d horizon (measured). Context-only \u2014 informs the read, never sizes.",
   "recent_misses": [
     {
-      "date": "2026-06-30",
-      "id": "nasdaq:semiconductor-equipment-materials",
-      "name": "Semiconductor Equipment & Materials",
+      "date": "2026-07-31",
+      "id": "russell:information-technology-services",
+      "name": "Information Technology Services",
       "stage": "running",
-      "fwd_rel": -0.2173,
+      "fwd_rel": -0.0717,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-30",
-      "id": "baskets:semicap-equipment",
-      "name": "Semiconductor Equipment (WFE)",
+      "date": "2026-07-31",
+      "id": "russell:asset-management",
+      "name": "Asset Management",
       "stage": "running",
-      "fwd_rel": -0.2173,
+      "fwd_rel": -0.0643,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-30",
-      "id": "russell:building-products-equipment",
-      "name": "Building Products & Equipment",
+      "date": "2026-07-31",
+      "id": "subsectors:travel-services",
+      "name": "Travel Services",
       "stage": "running",
-      "fwd_rel": -0.1051,
+      "fwd_rel": -0.0557,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-30",
-      "id": "baskets:housing",
-      "name": "Housing Chain",
+      "date": "2026-07-31",
+      "id": "subsectors:aerospace-defense",
+      "name": "Aerospace & Defense",
       "stage": "running",
-      "fwd_rel": -0.0981,
+      "fwd_rel": -0.035,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-30",
-      "id": "subsectors:industrial-distribution",
-      "name": "Industrial Distribution",
+      "date": "2026-07-31",
+      "id": "baskets:us-sector-realestate",
+      "name": "Real Estate (Equal-Weight)",
       "stage": "running",
-      "fwd_rel": -0.0962,
+      "fwd_rel": -0.0323,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-30",
-      "id": "russell:telecom-services",
-      "name": "Telecom Services",
-      "stage": "coiling",
-      "fwd_rel": -0.0823,
+      "date": "2026-07-31",
+      "id": "russell:apparel-retail",
+      "name": "Apparel Retail",
+      "stage": "running",
+      "fwd_rel": -0.0223,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-30",
-      "id": "russell:specialty-industrial-machinery",
+      "date": "2026-07-31",
+      "id": "subsectors:specialty-industrial-machinery",
       "name": "Specialty Industrial Machinery",
-      "stage": "coiling",
-      "fwd_rel": -0.0791,
+      "stage": "coiling_primed",
+      "fwd_rel": -0.0195,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-30",
-      "id": "russell:packaging-containers",
-      "name": "Packaging & Containers",
+      "date": "2026-07-31",
+      "id": "russell:grocery-stores",
+      "name": "Grocery Stores",
       "stage": "running",
-      "fwd_rel": -0.0791,
+      "fwd_rel": -0.019,
       "horizon_d": 21
     }
   ],

@@ -1,19 +1,19 @@
 {
   "date": "2026-08-21",
   "class": "quiet",
-  "market_vol_ratio": 0.826,
-  "up_share": 0.627,
+  "market_vol_ratio": 0.906,
+  "up_share": 0.647,
   "basis": "updown",
   "n_megacap_rvol2": 1,
   "megacap_rvol": {
-    "WMT": 2.03,
-    "TSLA": 1.62,
-    "MRK": 1.4,
-    "COST": 1.22,
+    "WMT": 2.04,
+    "MRK": 1.96,
+    "TSLA": 1.65,
+    "COST": 1.33,
+    "JPM": 1.32,
+    "BAC": 1.22,
     "UNH": 1.18,
-    "BRK-B": 1.11,
-    "XOM": 1.03,
-    "ABBV": 1.01
+    "BRK-B": 1.11
   },
   "calendar": {
     "is_quarter_end": false,

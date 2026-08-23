@@ -1,8 +1,8 @@
 {
   "schema": "stage_context.v1",
-  "asof": "2026-08-22",
+  "asof": "2026-08-23",
   "data_session": "2026-08-21",
-  "built": "2026-08-22T04:41:21Z",
+  "built": "2026-08-23T03:55:25Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -15,17 +15,17 @@
     "target_week_source": "spy_benchmark",
     "spy_stage_week": "2026-08-21",
     "population_modal_week": "2026-08-21",
-    "current": 2712,
-    "stale": 29,
+    "current": 2713,
+    "stale": 28,
     "unknown": 0,
     "total": 2741,
-    "current_coverage_pct": 98.9,
+    "current_coverage_pct": 99.0,
     "data_session": "2026-08-21",
     "data_session_all": "2026-08-21",
     "week_histogram": [
       {
         "week": "2026-08-21",
-        "n": 2712
+        "n": 2713
       },
       {
         "week": "2026-07-10",
@@ -45,7 +45,7 @@
       },
       {
         "week": "2026-08-14",
-        "n": 4
+        "n": 3
       },
       {
         "week": "2026-07-03",
@@ -59,17 +59,17 @@
     "issues": []
   },
   "counts": {
-    "total": 2712,
+    "total": 2713,
     "stage1": 148,
     "stage2": 1534,
     "stage2_fresh": 340,
-    "stage3": 171,
+    "stage3": 172,
     "stage4": 859,
     "too_young": 349,
     "new_today": 32
   },
   "market": {
-    "pct_stage2": 56.6,
+    "pct_stage2": 56.5,
     "pct_stage4": 31.7,
     "weather": "advancing",
     "spy_stage": 2,
@@ -90,7 +90,7 @@
       "ma30_slope_pct5w": 2.799,
       "pct_vs_ma30": 13.18,
       "mansfield_rs": 2.36,
-      "vol_ratio": 0.58,
+      "vol_ratio": 0.59,
       "event": "pullback_resume",
       "gate_tier": "T2",
       "blackout": false,
@@ -139,7 +139,7 @@
       "ma30_slope_pct5w": 4.541,
       "pct_vs_ma30": 22.35,
       "mansfield_rs": 8.39,
-      "vol_ratio": 0.67,
+      "vol_ratio": 0.69,
       "event": "pullback_resume",
       "gate_tier": "T1",
       "blackout": false,
@@ -248,7 +248,7 @@
       "ma30_slope_pct5w": 1.253,
       "pct_vs_ma30": 12.89,
       "mansfield_rs": 1.21,
-      "vol_ratio": 0.96,
+      "vol_ratio": 0.97,
       "event": "pullback_resume",
       "gate_tier": "T1",
       "blackout": false,
@@ -491,7 +491,7 @@
       "ma30_slope_pct5w": 5.002,
       "pct_vs_ma30": 13.74,
       "mansfield_rs": 5.53,
-      "vol_ratio": 1.16,
+      "vol_ratio": 1.17,
       "event": null,
       "gate_tier": null,
       "blackout": false,
@@ -535,6 +535,64 @@
       "sata_change_1w": -1,
       "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": 72.7
+    },
+    {
+      "ticker": "WNC",
+      "company": "Wabash National Corp",
+      "sector": "Industrials",
+      "stage_source_asof": "2026-08-21",
+      "stage_week_end": "2026-08-21",
+      "stage_current": true,
+      "stage": 2,
+      "weeks_in_stage": 10,
+      "fresh": true,
+      "sga_score": 55,
+      "ma30_slope_pct5w": 5.356,
+      "pct_vs_ma30": 17.83,
+      "mansfield_rs": 11.82,
+      "vol_ratio": 1.24,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.375,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.5555555555555556,
+        "performance": 7.5,
+        "tone_word": "confident",
+        "tags": [
+          "market_recovery",
+          "pricing_power",
+          "margin_pressure",
+          "backlog_growth",
+          "liquidity_enhancement",
+          "trailers",
+          "commercial_vehicles",
+          "transportation_equipment",
+          "industrial_machinery",
+          "logistics",
+          "trucking",
+          "vehicle_parts",
+          "freight"
+        ],
+        "quarter": "Q2",
+        "summary": "We expect Q4 material margin to improve 200-300 basis points, backed by orders already in our backlog."
+      },
+      "why": [
+        "Early in its climb — 10 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 10 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 1.5591,
+      "atr_ext": 1.167,
+      "atr_pct_price": 0.12971,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 85.4
     },
     {
       "ticker": "WYFI",
@@ -623,9 +681,9 @@
         "上升初期 — 已上行 10 周",
         "已明显高于 30 周均线 — 可能需要回踩"
       ],
-      "atr_14w": 3.5055,
-      "atr_ext": 6.251,
-      "atr_pct_price": 0.09068,
+      "atr_14w": 3.5062,
+      "atr_ext": 6.25,
+      "atr_pct_price": 0.09069,
       "sata_score": 10,
       "sata_change_1w": 2,
       "stage_detailed": "2A_strong_breakout",
@@ -726,64 +784,6 @@
       "industry_percentile": 57.9
     },
     {
-      "ticker": "WNC",
-      "company": "Wabash National Corp",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-21",
-      "stage_week_end": "2026-08-21",
-      "stage_current": true,
-      "stage": 2,
-      "weeks_in_stage": 10,
-      "fresh": true,
-      "sga_score": 54,
-      "ma30_slope_pct5w": 5.356,
-      "pct_vs_ma30": 17.83,
-      "mansfield_rs": 11.82,
-      "vol_ratio": 1.23,
-      "event": null,
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.375,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.5555555555555556,
-        "performance": 7.5,
-        "tone_word": "confident",
-        "tags": [
-          "market_recovery",
-          "pricing_power",
-          "margin_pressure",
-          "backlog_growth",
-          "liquidity_enhancement",
-          "trailers",
-          "commercial_vehicles",
-          "transportation_equipment",
-          "industrial_machinery",
-          "logistics",
-          "trucking",
-          "vehicle_parts",
-          "freight"
-        ],
-        "quarter": "Q2",
-        "summary": "We expect Q4 material margin to improve 200-300 basis points, backed by orders already in our backlog."
-      },
-      "why": [
-        "Early in its climb — 10 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 10 周",
-        "已明显高于 30 周均线 — 可能需要回踩"
-      ],
-      "atr_14w": 1.5591,
-      "atr_ext": 1.167,
-      "atr_pct_price": 0.12971,
-      "sata_score": 7,
-      "sata_change_1w": 0,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 85.4
-    },
-    {
       "ticker": "PRDO",
       "company": "Perdoceo Education Corp.",
       "sector": "Consumer Discretionary",
@@ -797,7 +797,7 @@
       "ma30_slope_pct5w": 0.783,
       "pct_vs_ma30": -1.72,
       "mansfield_rs": -8.7,
-      "vol_ratio": 1.1,
+      "vol_ratio": 1.11,
       "event": null,
       "gate_tier": "T1",
       "blackout": false,
@@ -872,9 +872,9 @@
         "上升初期 — 已上行 7 周",
         "位于 30 周均线之上 — 趋势向好"
       ],
-      "atr_14w": 4.3671,
-      "atr_ext": 1.364,
-      "atr_pct_price": 0.08421,
+      "atr_14w": 4.3721,
+      "atr_ext": 1.363,
+      "atr_pct_price": 0.08431,
       "sata_score": 7,
       "sata_change_1w": 0,
       "stage_detailed": "2X_fallback_bullish",
@@ -1057,7 +1057,7 @@
       "ma30_slope_pct5w": 5.346,
       "pct_vs_ma30": 11.24,
       "mansfield_rs": 2.38,
-      "vol_ratio": 0.93,
+      "vol_ratio": 0.94,
       "event": null,
       "gate_tier": null,
       "blackout": false,
@@ -1152,7 +1152,7 @@
       "ma30_slope_pct5w": 8.541,
       "pct_vs_ma30": 32.96,
       "mansfield_rs": 19.99,
-      "vol_ratio": 1.68,
+      "vol_ratio": 1.69,
       "event": null,
       "gate_tier": null,
       "blackout": false,
@@ -1196,7 +1196,7 @@
       "ma30_slope_pct5w": 1.076,
       "pct_vs_ma30": 0.71,
       "mansfield_rs": -6.42,
-      "vol_ratio": 0.88,
+      "vol_ratio": 0.89,
       "event": "trendline_recapture",
       "gate_tier": "T2",
       "blackout": false,
@@ -1220,9 +1220,9 @@
         "位于 30 周均线之上 — 趋势向好",
         "其他多项验证同样给出强确认"
       ],
-      "atr_14w": 2.0315,
+      "atr_14w": 2.0324,
       "atr_ext": 0.136,
-      "atr_pct_price": 0.052,
+      "atr_pct_price": 0.05202,
       "sata_score": 4,
       "sata_change_1w": 0,
       "stage_detailed": "2X_catch_price_above_ma",
@@ -1291,7 +1291,7 @@
       "ma30_slope_pct5w": 4.107,
       "pct_vs_ma30": 24.24,
       "mansfield_rs": 13.17,
-      "vol_ratio": 2.05,
+      "vol_ratio": 2.06,
       "event": null,
       "gate_tier": null,
       "blackout": false,
@@ -1488,27 +1488,18 @@
       "arc_pos": 0.3625,
       "earnings": {
         "present": true,
-        "sentiment": 0.5555555555555556,
-        "performance": 6.25,
+        "sentiment": 0.5,
+        "performance": 7.8,
         "tone_word": "confident",
         "tags": [
-          "m&a_integration",
-          "fee_income",
-          "specialty_insurance",
-          "cyclical_headwinds",
-          "non-cyclical_growth",
-          "underwriting_discipline",
-          "property_market",
-          "property_casualty_insurance",
-          "reinsurance",
-          "lloyds_market",
-          "accident_and_health",
-          "surety",
-          "managing_general_agent",
-          "commercial_lines"
+          "beat_and_raise",
+          "margin_expansion",
+          "demand_acceleration",
+          "buyback_or_dividend",
+          "macro_sensitivity"
         ],
-        "quarter": "Q1",
-        "summary": "On the other side—the uncorrelated parts: iBot/1971, ag, and A&H—those are opportunities for us to drive outstanding growth and selectively expand margins."
+        "quarter": "Q2",
+        "summary": "Skyward Specialty reported Q2 FY26 diluted Operating EPS of $1.30 (up 46% YoY) and Managed Premiums growth of 18%, driven by strong performance in Accident & Health and Global Agriculture segments. The company repurchased approximately $10 million in shares during the quarter …"
       },
       "why": [
         "Early in its climb — 9 weeks up so far",
@@ -1664,6 +1655,55 @@
       "sata_score": 6,
       "sata_change_1w": 1,
       "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "GIC",
+      "company": "Global Industrial Co",
+      "sector": "Industrials",
+      "stage_source_asof": "2026-08-21",
+      "stage_week_end": "2026-08-21",
+      "stage_current": true,
+      "stage": 2,
+      "weeks_in_stage": 10,
+      "fresh": true,
+      "sga_score": 49,
+      "ma30_slope_pct5w": 4.149,
+      "pct_vs_ma30": 21.42,
+      "mansfield_rs": 12.45,
+      "vol_ratio": 1.32,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.375,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.8,
+        "performance": 8.0,
+        "tone_word": "confident",
+        "tags": [
+          "demand_acceleration",
+          "margin_contraction",
+          "new_product",
+          "buyback_or_dividend"
+        ],
+        "quarter": "Q2",
+        "summary": "Global Industrial reported Q2 FY2026 revenue of $386.6 million, with average daily sales up 9.3% YoY (third consecutive quarter of high single-digit ADS growth). Non-GAAP gross margin was 34.7% (more in line with historical performance, down from a record 37.1% that included F…"
+      },
+      "why": [
+        "Early in its climb — 10 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 10 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 2.1276,
+      "atr_ext": 3.271,
+      "atr_pct_price": 0.05393,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2A_strong_breakout",
       "industry_percentile": null
     },
     {
@@ -1859,7 +1899,7 @@
       "ma30_slope_pct5w": 10.845,
       "pct_vs_ma30": 94.28,
       "mansfield_rs": 82.21,
-      "vol_ratio": 1.37,
+      "vol_ratio": 1.38,
       "event": "pullback_resume",
       "gate_tier": null,
       "blackout": false,
@@ -1903,7 +1943,7 @@
       "ma30_slope_pct5w": 5.469,
       "pct_vs_ma30": 28.66,
       "mansfield_rs": 12.47,
-      "vol_ratio": 1.85,
+      "vol_ratio": 1.86,
       "event": null,
       "gate_tier": null,
       "blackout": false,
@@ -1950,7 +1990,7 @@
       "ma30_slope_pct5w": 2.945,
       "pct_vs_ma30": -2.79,
       "mansfield_rs": null,
-      "vol_ratio": 1.79,
+      "vol_ratio": 1.81,
       "event": null,
       "gate_tier": null,
       "blackout": false,
@@ -1999,7 +2039,7 @@
       "ma30_slope_pct5w": 3.368,
       "pct_vs_ma30": 7.21,
       "mansfield_rs": 2.28,
-      "vol_ratio": 1.08,
+      "vol_ratio": 1.1,
       "event": "pullback_resume",
       "gate_tier": null,
       "blackout": false,
@@ -2033,55 +2073,6 @@
       "sata_change_1w": 0,
       "stage_detailed": "2X_catch_price_above_ma",
       "industry_percentile": 68.4
-    },
-    {
-      "ticker": "GIC",
-      "company": "Global Industrial Co",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-21",
-      "stage_week_end": "2026-08-21",
-      "stage_current": true,
-      "stage": 2,
-      "weeks_in_stage": 10,
-      "fresh": true,
-      "sga_score": 48,
-      "ma30_slope_pct5w": 4.149,
-      "pct_vs_ma30": 21.42,
-      "mansfield_rs": 12.45,
-      "vol_ratio": 1.29,
-      "event": "pullback_resume",
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.375,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.8,
-        "performance": 8.0,
-        "tone_word": "confident",
-        "tags": [
-          "demand_acceleration",
-          "margin_contraction",
-          "new_product",
-          "buyback_or_dividend"
-        ],
-        "quarter": "Q2",
-        "summary": "Global Industrial reported Q2 FY2026 revenue of $386.6 million, with average daily sales up 9.3% YoY (third consecutive quarter of high single-digit ADS growth). Non-GAAP gross margin was 34.7% (more in line with historical performance, down from a record 37.1% that included F…"
-      },
-      "why": [
-        "Early in its climb — 10 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 10 周",
-        "已明显高于 30 周均线 — 可能需要回踩"
-      ],
-      "atr_14w": 2.1276,
-      "atr_ext": 3.271,
-      "atr_pct_price": 0.05393,
-      "sata_score": 8,
-      "sata_change_1w": 0,
-      "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": null
     },
     {
       "ticker": "SAFT",
@@ -2173,6 +2164,50 @@
       "sata_score": 6,
       "sata_change_1w": 2,
       "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "FNWD",
+      "company": "FNWD",
+      "sector": "Unknown",
+      "stage_source_asof": "2026-08-21",
+      "stage_week_end": "2026-08-21",
+      "stage_current": true,
+      "stage": 2,
+      "weeks_in_stage": 4,
+      "fresh": true,
+      "sga_score": 46,
+      "ma30_slope_pct5w": 4.165,
+      "pct_vs_ma30": 18.82,
+      "mansfield_rs": 10.84,
+      "vol_ratio": 1.1,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 4 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 4 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 2.7833,
+      "atr_ext": 2.475,
+      "atr_pct_price": 0.06398,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2A_strong_breakout",
       "industry_percentile": null
     },
     {
@@ -2326,9 +2361,9 @@
       "weeks_in_stage": 3,
       "fresh": true,
       "sga_score": 46,
-      "ma30_slope_pct5w": 8.371,
-      "pct_vs_ma30": -14.64,
-      "mansfield_rs": -48.41,
+      "ma30_slope_pct5w": 8.367,
+      "pct_vs_ma30": -14.74,
+      "mansfield_rs": -48.48,
       "vol_ratio": 0.29,
       "event": null,
       "gate_tier": null,
@@ -2352,8 +2387,8 @@
         "仍接近 30 周均线 — 尚未站稳"
       ],
       "atr_14w": 0.1199,
-      "atr_ext": -0.465,
-      "atr_pct_price": 0.36856,
+      "atr_ext": -0.469,
+      "atr_pct_price": 0.36901,
       "sata_score": 4,
       "sata_change_1w": -1,
       "stage_detailed": "2X_catch_price_above_ma",
@@ -2395,56 +2430,12 @@
         "上升初期 — 已上行 10 周",
         "位于 30 周均线之上 — 趋势向好"
       ],
-      "atr_14w": 1.5849,
-      "atr_ext": 1.411,
+      "atr_14w": 1.5847,
+      "atr_ext": 1.412,
       "atr_pct_price": 0.08065,
       "sata_score": 7,
       "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "FNWD",
-      "company": "FNWD",
-      "sector": "Unknown",
-      "stage_source_asof": "2026-08-21",
-      "stage_week_end": "2026-08-21",
-      "stage_current": true,
-      "stage": 2,
-      "weeks_in_stage": 4,
-      "fresh": true,
-      "sga_score": 45,
-      "ma30_slope_pct5w": 4.165,
-      "pct_vs_ma30": 18.82,
-      "mansfield_rs": 10.84,
-      "vol_ratio": 1.09,
-      "event": null,
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.3,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 4 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 4 周",
-        "已明显高于 30 周均线 — 可能需要回踩"
-      ],
-      "atr_14w": 2.7833,
-      "atr_ext": 2.475,
-      "atr_pct_price": 0.06398,
-      "sata_score": 8,
-      "sata_change_1w": 0,
-      "stage_detailed": "2A_strong_breakout",
       "industry_percentile": null
     },
     {
@@ -2461,7 +2452,7 @@
       "ma30_slope_pct5w": 3.077,
       "pct_vs_ma30": 25.24,
       "mansfield_rs": 17.81,
-      "vol_ratio": 1.83,
+      "vol_ratio": 1.84,
       "event": null,
       "gate_tier": null,
       "blackout": false,
@@ -2539,6 +2530,53 @@
       "industry_percentile": 71.4
     },
     {
+      "ticker": "HOV",
+      "company": "Hovnanian Enterprises Inc",
+      "sector": "Consumer Cyclical",
+      "stage_source_asof": "2026-08-21",
+      "stage_week_end": "2026-08-21",
+      "stage_current": true,
+      "stage": 2,
+      "weeks_in_stage": 8,
+      "fresh": true,
+      "sga_score": 45,
+      "ma30_slope_pct5w": 2.907,
+      "pct_vs_ma30": 9.61,
+      "mansfield_rs": -1.85,
+      "vol_ratio": 1.38,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.35,
+      "earnings": {
+        "present": true,
+        "sentiment": -0.2,
+        "performance": 5.8,
+        "tone_word": "cautious",
+        "tags": [
+          "beat_and_raise",
+          "margin_expansion"
+        ],
+        "quarter": "Q3",
+        "summary": "Total revenues of $706 million slightly beat the midpoint of guidance while gross margin expanded to 14.6%, also above the midpoint range. Adjusted pre-tax income missed expectations at a loss of $2 million due to lower-than-expected joint venture income, marking the first tim…"
+      },
+      "why": [
+        "Early in its climb — 8 weeks up so far",
+        "Trading above its 30-week line — the trend is with it"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 8 周",
+        "位于 30 周均线之上 — 趋势向好"
+      ],
+      "atr_14w": 16.7821,
+      "atr_ext": 0.687,
+      "atr_pct_price": 0.12771,
+      "sata_score": 5,
+      "sata_change_1w": -1,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
+    },
+    {
       "ticker": "OC",
       "company": "Owens Corning",
       "sector": "Industrials",
@@ -2552,7 +2590,7 @@
       "ma30_slope_pct5w": 4.141,
       "pct_vs_ma30": 16.99,
       "mansfield_rs": 7.7,
-      "vol_ratio": 0.67,
+      "vol_ratio": 0.69,
       "event": null,
       "gate_tier": null,
       "blackout": false,
@@ -2824,7 +2862,7 @@
       "ma30_slope_pct5w": 3.1,
       "pct_vs_ma30": 9.82,
       "mansfield_rs": 5.11,
-      "vol_ratio": 0.97,
+      "vol_ratio": 0.99,
       "event": "pullback_resume",
       "gate_tier": null,
       "blackout": false,
@@ -2954,50 +2992,6 @@
       "sata_change_1w": -1,
       "stage_detailed": "2A_strong_breakout",
       "industry_percentile": 96.1
-    },
-    {
-      "ticker": "HOV",
-      "company": "Hovnanian Enterprises Inc",
-      "sector": "Consumer Cyclical",
-      "stage_source_asof": "2026-08-21",
-      "stage_week_end": "2026-08-21",
-      "stage_current": true,
-      "stage": 2,
-      "weeks_in_stage": 8,
-      "fresh": true,
-      "sga_score": 44,
-      "ma30_slope_pct5w": 2.907,
-      "pct_vs_ma30": 9.61,
-      "mansfield_rs": -1.85,
-      "vol_ratio": 1.37,
-      "event": null,
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.35,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 8 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 8 周",
-        "位于 30 周均线之上 — 趋势向好"
-      ],
-      "atr_14w": 16.7821,
-      "atr_ext": 0.687,
-      "atr_pct_price": 0.12771,
-      "sata_score": 5,
-      "sata_change_1w": -1,
-      "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": null
     }
   ],
   "warnings_stage3": [
@@ -3113,12 +3107,12 @@
       "ticker": "PRTH",
       "company": "Priority Technology Holdings Inc",
       "weeks_in_stage": 1,
-      "sga_score": 13
+      "sga_score": 14
     },
     {
-      "ticker": "UMH",
-      "company": "UMH Properties Inc",
-      "weeks_in_stage": 8,
+      "ticker": "STRS",
+      "company": "Stratus Properties Inc",
+      "weeks_in_stage": 3,
       "sga_score": 13
     }
   ],
@@ -3191,8 +3185,8 @@
     },
     {
       "sector": "Consumer Cyclical",
-      "n": 100,
-      "pct_stage2": 51.0,
+      "n": 101,
+      "pct_stage2": 50.5,
       "trend": "down"
     },
     {
@@ -4430,6 +4424,10 @@
     "BBAI": [
       4,
       28
+    ],
+    "BBBY": [
+      4,
+      6
     ],
     "BBCP": [
       2,
@@ -12468,8 +12466,8 @@
       35
     ],
     "STRS": [
-      4,
-      1
+      3,
+      3
     ],
     "STRT": [
       2,
@@ -14483,7 +14481,7 @@
   },
   "prev_state": {
     "asof": "2026-08-21",
-    "stage_week": null,
+    "stage_week": "2026-08-21",
     "by_key": {
       "A": {
         "stage": 1,
@@ -39854,7 +39852,7 @@
       "event": null
     },
     "STRS": {
-      "stage": 4,
+      "stage": 3,
       "fresh": false,
       "event": null
     },

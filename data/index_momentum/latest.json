@@ -1397,17 +1397,17 @@
       "region": "INTL",
       "grids": {
         "1D": {
-          "macd": -2.677,
-          "signal": -3.904,
-          "hist": 1.226,
-          "hist_vel3": -0.512,
-          "k": 80.868,
-          "d": 88.246,
-          "depth_pctile": 32.738,
+          "macd": -2.031,
+          "signal": -3.279,
+          "hist": 1.248,
+          "hist_vel3": -0.434,
+          "k": 80.353,
+          "d": 82.536,
+          "depth_pctile": 36.587,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-20",
+          "as_of": "2026-08-21",
           "recent_events": [
             {
               "index": "^KS11",
@@ -1489,17 +1489,17 @@
           "recent_events": []
         },
         "W-FRI": {
-          "macd": -6.795,
-          "signal": -4.074,
-          "hist": -2.72,
-          "hist_vel3": 0.39,
-          "k": 6.459,
-          "d": 2.153,
-          "depth_pctile": 13.297,
-          "pctile_window_bars": 1474,
-          "pctile_window_days": 2064,
+          "macd": -7.441,
+          "signal": -5.197,
+          "hist": -2.245,
+          "hist_vel3": 0.999,
+          "k": 12.314,
+          "d": 6.258,
+          "depth_pctile": 11.593,
+          "pctile_window_bars": 1475,
+          "pctile_window_days": 2065,
           "fast_reclaim": false,
-          "as_of": "2026-08-14",
+          "as_of": "2026-08-21",
           "recent_events": []
         }
       }
@@ -1511,17 +1511,17 @@
       "region": "INTL",
       "grids": {
         "1D": {
-          "macd": -1.619,
-          "signal": -2.038,
-          "hist": 0.419,
-          "hist_vel3": -1.205,
-          "k": 49.382,
-          "d": 70.153,
-          "depth_pctile": 39.127,
+          "macd": -1.469,
+          "signal": -1.848,
+          "hist": 0.379,
+          "hist_vel3": -0.832,
+          "k": 38.642,
+          "d": 52.561,
+          "depth_pctile": 40.159,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-20",
+          "as_of": "2026-08-21",
           "recent_events": [
             {
               "index": "^TWII",
@@ -1579,17 +1579,17 @@
           "recent_events": []
         },
         "W-FRI": {
-          "macd": 0.045,
-          "signal": 1.819,
-          "hist": -1.774,
-          "hist_vel3": 0.475,
-          "k": 11.711,
-          "d": 7.121,
-          "depth_pctile": 45.582,
-          "pctile_window_bars": 1426,
-          "pctile_window_days": 1996,
+          "macd": -0.553,
+          "signal": 1.028,
+          "hist": -1.581,
+          "hist_vel3": 0.834,
+          "k": 16.315,
+          "d": 11.543,
+          "depth_pctile": 42.186,
+          "pctile_window_bars": 1427,
+          "pctile_window_days": 1998,
           "fast_reclaim": false,
-          "as_of": "2026-08-14",
+          "as_of": "2026-08-21",
           "recent_events": []
         }
       }
@@ -1605,5 +1605,5 @@
     "fresh_crossers": []
   },
   "n_roster": 13,
-  "_timing_s": 2.14
+  "_timing_s": 3.17
 }
