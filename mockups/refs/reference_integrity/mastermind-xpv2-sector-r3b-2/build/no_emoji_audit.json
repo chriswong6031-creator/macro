@@ -1,0 +1,653 @@
+{
+ "ranges": [
+  {
+   "name": "Misc Symbols and Pictographs",
+   "lo": "U+1F300",
+   "hi": "U+1F5FF"
+  },
+  {
+   "name": "Emoticons",
+   "lo": "U+1F600",
+   "hi": "U+1F64F"
+  },
+  {
+   "name": "Transport and Map Symbols",
+   "lo": "U+1F680",
+   "hi": "U+1F6FF"
+  },
+  {
+   "name": "Supplemental Symbols and Pictographs",
+   "lo": "U+1F900",
+   "hi": "U+1FAFF"
+  },
+  {
+   "name": "Miscellaneous Symbols",
+   "lo": "U+2600",
+   "hi": "U+26FF"
+  },
+  {
+   "name": "Dingbats",
+   "lo": "U+2700",
+   "hi": "U+27BF"
+  }
+ ],
+ "excluded_codepoints": {
+  "U+2713": {
+   "name": "CHECK MARK",
+   "reason": "views/moving.html .r3-tr-ok (aria-hidden, real .r3-vh alt) + views/money.html 'coil✓' hit-rate abbreviation — default TEXT presentation status glyph, not a colour pictograph"
+  },
+  "U+26A0": {
+   "name": "WARNING SIGN",
+   "reason": "views/confluence.html JS source comment only (~:969) documenting production's caution glyph was deliberately dropped from the candidate's .r3-callout rail — never emitted to rendered text, an accessible name, or generated content"
+  },
+  "U+2605": {
+   "name": "BLACK STAR",
+   "reason": "producer-owned sc_flows.html fragment (embedded byte-verbatim, explicit OUT OF SCOPE for this lane) — '★ Model 25%' / '&#9733;25%' rating-prefix glyph, default TEXT presentation"
+  }
+ },
+ "bytes": {
+  "chars_scanned": 5414676,
+  "entity_refs_scanned": 32,
+  "literal_hits": [],
+  "entity_hits": [],
+  "excluded_literal": [
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 321033,
+    "range": "Dingbats",
+    "context": "           parts.push((st==='coiling_primed'?'coil✓':st)+' '+Math.round(bs[st].hit_rate*100)+'% ('+b"
+   },
+   {
+    "codepoint": "U+26A0",
+    "char": "⚠",
+    "offset": 461501,
+    "range": "Miscellaneous Symbols",
+    "context": " the caution is production's own line (:360); its ⚠ is dropped for the          .r3-callout rail, wh"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4557636,
+    "range": "Dingbats",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4557676,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4561777,
+    "range": "Dingbats",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4561817,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4565898,
+    "range": "Dingbats",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4565938,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4570033,
+    "range": "Dingbats",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4570073,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4574175,
+    "range": "Dingbats",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4574215,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4578295,
+    "range": "Dingbats",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4578335,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4582414,
+    "range": "Dingbats",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4582454,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4586511,
+    "range": "Dingbats",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4586551,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   },
+   {
+    "codepoint": "U+2605",
+    "char": "★",
+    "offset": 4590830,
+    "range": "Miscellaneous Symbols",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">★ Model 25%</span><span class=\\\"l-zh\\\">★ 模型 25%</s"
+   },
+   {
+    "codepoint": "U+2605",
+    "char": "★",
+    "offset": 4590869,
+    "range": "Miscellaneous Symbols",
+    "context": "s=\\\"l-en\\\">★ Model 25%</span><span class=\\\"l-zh\\\">★ 模型 25%</span></span><span class=\\\"up\\\"><span cla"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4590931,
+    "range": "Dingbats",
+    "context": "an></span><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4590971,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   },
+   {
+    "codepoint": "U+2605",
+    "char": "★",
+    "offset": 4595212,
+    "range": "Miscellaneous Symbols",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">★ Model 25%</span><span class=\\\"l-zh\\\">★ 模型 25%</s"
+   },
+   {
+    "codepoint": "U+2605",
+    "char": "★",
+    "offset": 4595251,
+    "range": "Miscellaneous Symbols",
+    "context": "s=\\\"l-en\\\">★ Model 25%</span><span class=\\\"l-zh\\\">★ 模型 25%</span></span><span class=\\\"up\\\"><span cla"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4595313,
+    "range": "Dingbats",
+    "context": "an></span><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4595353,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4599407,
+    "range": "Dingbats",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4599447,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4603485,
+    "range": "Dingbats",
+    "context": "p-trust\\\"><span class=\\\"up\\\"><span class=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</sp"
+   },
+   {
+    "codepoint": "U+2713",
+    "char": "✓",
+    "offset": 4603525,
+    "range": "Dingbats",
+    "context": "=\\\"l-en\\\">✓ Risk check</span><span class=\\\"l-zh\\\">✓ 风险检查</span></span></span>\\n    </span>\\n  </div>"
+   }
+  ],
+  "excluded_entities": [
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 233291,
+    "range": "Dingbats",
+    "context": "(prov?' <span class=\"r3-tr-ok\" aria-hidden=\"true\">&#10003;</span>'               +'<span class=\"r3-v"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4556009,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4560138,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4564267,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4568392,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4572538,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4576662,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4580780,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4584882,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   },
+   {
+    "codepoint": "U+2605",
+    "raw": "&#9733;",
+    "offset": 4589022,
+    "range": "Miscellaneous Symbols",
+    "context": ".\\\" data-tip-zh=\\\"该主题在模型组合中的权重为 25%，并已通过趋势风险检查。\\\">&#9733;25%</span><span class=\\\"ai-val\\\" data-tip-e"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4589195,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   },
+   {
+    "codepoint": "U+2605",
+    "raw": "&#9733;",
+    "offset": 4593415,
+    "range": "Miscellaneous Symbols",
+    "context": ".\\\" data-tip-zh=\\\"该主题在模型组合中的权重为 25%，并已通过趋势风险检查。\\\">&#9733;25%</span><span class=\\\"ai-val\\\" data-tip-e"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4593588,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4597789,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   },
+   {
+    "codepoint": "U+2713",
+    "raw": "&#10003;",
+    "offset": 4601865,
+    "range": "Dingbats",
+    "context": "fade.\\\" data-tip-zh=\\\"风险检查通过 — 趋势仍然完整，尚未出现明显恶化。\\\">&#10003;</span><span class=\\\"act-row-score act-sco"
+   }
+  ],
+  "pass": true
+ },
+ "cells": [
+  {
+   "view": "overview",
+   "lang": "en",
+   "text_nodes": {
+    "census": 3887,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 6,
+    "vh_census": 80,
+    "census": 86,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 5,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  },
+  {
+   "view": "overview",
+   "lang": "zh",
+   "text_nodes": {
+    "census": 3889,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 6,
+    "vh_census": 80,
+    "census": 86,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 5,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  },
+  {
+   "view": "map",
+   "lang": "en",
+   "text_nodes": {
+    "census": 3887,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 6,
+    "vh_census": 80,
+    "census": 86,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 5,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  },
+  {
+   "view": "map",
+   "lang": "zh",
+   "text_nodes": {
+    "census": 3889,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 6,
+    "vh_census": 80,
+    "census": 86,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 5,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  },
+  {
+   "view": "moving",
+   "lang": "en",
+   "text_nodes": {
+    "census": 4203,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 9,
+    "vh_census": 82,
+    "census": 91,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 30,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  },
+  {
+   "view": "moving",
+   "lang": "zh",
+   "text_nodes": {
+    "census": 4205,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 9,
+    "vh_census": 82,
+    "census": 91,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 30,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  },
+  {
+   "view": "money",
+   "lang": "en",
+   "text_nodes": {
+    "census": 4010,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 6,
+    "vh_census": 80,
+    "census": 86,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 5,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  },
+  {
+   "view": "money",
+   "lang": "zh",
+   "text_nodes": {
+    "census": 4014,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 6,
+    "vh_census": 80,
+    "census": 86,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 5,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  },
+  {
+   "view": "explore",
+   "lang": "en",
+   "text_nodes": {
+    "census": 3898,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 6,
+    "vh_census": 80,
+    "census": 86,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 5,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  },
+  {
+   "view": "explore",
+   "lang": "zh",
+   "text_nodes": {
+    "census": 3900,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 6,
+    "vh_census": 80,
+    "census": 86,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 5,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  },
+  {
+   "view": "confluence",
+   "lang": "en",
+   "text_nodes": {
+    "census": 3887,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 6,
+    "vh_census": 80,
+    "census": 86,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 5,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  },
+  {
+   "view": "confluence",
+   "lang": "zh",
+   "text_nodes": {
+    "census": 3889,
+    "hits": [],
+    "excluded": []
+   },
+   "accessible_names": {
+    "aria_label_census": 6,
+    "vh_census": 80,
+    "census": 86,
+    "hits": [],
+    "excluded": []
+   },
+   "generated_content": {
+    "census": 5,
+    "hits": [],
+    "excluded": []
+   },
+   "failures": [],
+   "pass": true
+  }
+ ],
+ "pass": true
+}
