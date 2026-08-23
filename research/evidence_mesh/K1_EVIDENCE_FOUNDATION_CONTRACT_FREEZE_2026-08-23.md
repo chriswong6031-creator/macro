@@ -36,7 +36,7 @@ byte-identical. This distinction matters: current protected-repository state mov
 the protected Skillpack bytes did not. The Macro handoff pin
 `fb2375441f21b94201edc4ed6ac2c40f67274cde` also remains an ancestor, but is
 historical. The integrated candidate was reconciled against fresh Macro `origin/main`
-`3695178cef2a3b60a7762fcb1cdeccd81a0e66bd`. Since the first K1 candidate base,
+`f53f8e77b360ae0b1c413c2e9e666ebedfa30fa0`. Since the first K1 candidate base,
 the first K1-owner-area mainline change was #6308 in
 `engine/company_intelligence/event_workspace_build.py`: it carries corrected
 lifecycle state forward and adds the filing form inside an existing workspace source
@@ -52,7 +52,7 @@ classifies FIF-3A2 as `ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN` after Sol PAS
 `9598c5430c587b2ec9d1f84d3fa6e2d704808bcc`. Its decision also explicitly keeps
 the production attested issuer service `NOT_BUILT` and FIF-3 `IN_PROGRESS`; accepted
 golden-fixture/on-main status is not production/live proof. The remaining base movement
-through `3695178cef2a3b60a7762fcb1cdeccd81a0e66bd` touched Agent OS governance,
+through `f53f8e77b360ae0b1c413c2e9e666ebedfa30fa0` touched Agent OS governance,
 Intelligence Workspace, render, press, records, Canada/public display, marketing
 publication, and research-vault data rather than changing a registered K1 owner
 contract. K1 did not start, modify, or extend D5; it only reconciled already-merged
@@ -434,7 +434,7 @@ AAPL Security State golden vertical.**
 > The current protected Skillpack was loaded from Mastermind
 > `eb9910681a6db9f9675b25233c8865bb43325c32`; its `docs/sol_skills` tree and
 > procedure blobs remain byte-identical to the historical commission pin. Macro was
-> reconciled to `3695178cef2a3b60a7762fcb1cdeccd81a0e66bd` before final exact-head
+> reconciled to `f53f8e77b360ae0b1c413c2e9e666ebedfa30fa0` before final exact-head
 > reconciliation. The named
 > AAPL B1 job composes four owner-reader fixture legs through one ordered recipe; the
 > measured receipt is explicit `PARTIAL / unknown freshness`, with 4 included / 0
