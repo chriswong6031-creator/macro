@@ -36,9 +36,11 @@ deferred (no row written, no activation stamped if this is the first run)
 tickers, so a failure on any one of them taints every pooled read equally;
 the next nightly retries cleanly since nothing was written.
 
-A5C safety law (Sol A5C review, 2026-08-23, item 1): this builder reads each
-trigger workspace's OWN ``lifecycle.state`` and passes it through to
-``append_observation`` as ``trigger_lifecycle_state`` — it never decides
+A5C safety law (Sol A5C review, 2026-08-23, item 1; hardened by the Opus
+red-team BLOCKER-1 fix, same day): this builder reads each trigger
+workspace's OWN ``lifecycle.state`` AND its issuer_release source row
+``form``, and passes BOTH through to ``append_observation`` as
+``trigger_lifecycle_state``/``trigger_source_form`` — it never decides
 safety itself; ``engine.cycle_pattern.imce_prospective`` is the sole
 enforcement point (a builder-only check would be insufficient — see that
 module's docstring). A refusal there is PER-CANDIDATE only: it does not join
@@ -86,6 +88,20 @@ log = logging.getLogger("build_cycle_pattern_imce_prospective")
 # and first-observation-wins makes a rediscovered event idempotent.
 _CANDIDATE_YEARS_BACK = 1
 _CANDIDATE_QUARTERS = (1, 2, 3, 4)
+
+
+def _issuer_release_source_form(workspace: dict) -> str | None:
+    """The bound filing's own SEC-assigned form ("8-K"/"8-K/A") off the
+    workspace's issuer_release source row — A5C BLOCKER-1 (1c), the second
+    fail-closed signal alongside lifecycle.state (see
+    engine.cycle_pattern.imce_prospective.is_safe_original_source_form).
+    None if the row or field is absent (fails closed downstream, never
+    silently substituted for "8-K")."""
+    for source in workspace.get("sources") or []:
+        if isinstance(source, dict) and source.get("kind") == "issuer_release":
+            form = source.get("form")
+            return str(form) if form else None
+    return None
 
 
 class _NotPublished(Exception):
@@ -376,12 +392,17 @@ def run(production: bool = False) -> dict:
                 continue
 
             try:
-                # A5C (Sol, 2026-08-23, item 1): read this workspace's OWN
-                # lifecycle state and pass it through untouched — the engine
-                # module decides safety, this builder never does.
+                # A5C (Sol, 2026-08-23, item 1) + BLOCKER-1 hardening (Opus
+                # red-team, same day): read this workspace's OWN lifecycle
+                # state AND its issuer_release source-row form, and pass both
+                # through untouched — the engine module decides safety, this
+                # builder never does.
                 trigger_lifecycle_state = (trigger_ws.get("lifecycle") or {}).get("state")
+                trigger_source_form = _issuer_release_source_form(trigger_ws)
                 _row, appended = append_observation(
-                    packet, production=True, trigger_lifecycle_state=trigger_lifecycle_state,
+                    packet, production=True,
+                    trigger_lifecycle_state=trigger_lifecycle_state,
+                    trigger_source_form=trigger_source_form,
                 )
                 if appended:
                     summary["n_observations_appended"] += 1

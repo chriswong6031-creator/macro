@@ -576,7 +576,7 @@ waves:
       Production ledger path still never created by this session. PR stays
       DRAFT pending the commissioning session's re-review.
   - id: A5C-alpha
-    title: IMCE-A5C-alpha — fail-closed correction detection pending source-revision history (Sol A5C review item 1)
+    title: IMCE-A5C-alpha — fail-closed correction detection pending source-revision history (Sol A5C review item 1; Opus BLOCKER-1 hardened)
     status: awaiting_ci
     pr: 6308
     depends_on: [A5B]
@@ -586,55 +586,85 @@ waves:
       observation" — until canonical source-revision history exists, A5B
       must fail closed rather than mint an observation from a corrected
       event_workspace when no prior observation exists for that event_id.
-      Activation may exist; unsafe observation creation may not. PR #6308
-      (branch claude/imce-a5c-safety-law, off fresh origin/main) implements
-      the interim AND PERMANENT backstop for chain-unresolvable cases (the
-      lawful earliest-revision eligibility path via the manifest/history
-      chain is a separate future PR, out of this one's scope).
-      engine/cycle_pattern/imce_prospective.py: append_observation gains an
-      explicit trigger_lifecycle_state parameter (never inferred from the
-      packet — zero ledger schema change; the frozen N1 whitelist tests
-      pass with unchanged key sets). SAFE_ORIGINAL_LIFECYCLE_STATES =
-      frozenset({"complete"}) — the ONLY published lifecycle.state
-      build_event_workspace ever emits WITHOUT having applied a "corrected"
-      transition (engine/company_intelligence/event_workspace_build.py:
-      169-196); every other value, including "corrected" itself and any
-      unknown/future state, is unsafe by construction (events.py's
-      _TRANSITIONS graph lets "corrected" advance to "derived_ready"/
-      "superseded"/itself, so a state further down that graph cannot be
-      trusted as never-corrected just because its current string is no
-      longer literally "corrected"). A first-ever write for an event_id
-      whose trigger is unsafe is refused: no row of any kind appended, no
-      exception raised, a bare print("::warning title=imce-prospective-
-      unsafe-correction::...", flush=True) logged (line-start, never a
-      logger — repo's GitHub-annotation law), and the builder's
-      per-candidate loop continues normally. Does NOT join failed_ids
-      (no whole-night deferral), does NOT stamp/unstamp activation, is
-      naturally idempotent (nothing written, nothing to undo) — no new row
-      kind. A corrected revision for an event_id that ALREADY has a prior
-      observation is unaffected — still routes through append_correction
-      exactly as before. scripts/build_cycle_pattern_imce_prospective.py
-      reads each trigger workspace's own lifecycle.state and passes it
-      straight through (engine module is the sole enforcement point);
-      refusals counted separately in
-      summary["n_observations_refused_unsafe_correction"].
-      tests/test_imce_prospective.py: the fixture's placeholder default
-      lifecycle state "results_released" (never a real value in events.py's
-      EVENT_STATES vocabulary) corrected to the real production
-      safe-original value "complete"; 8 pre-existing first-write call sites
-      updated to pass trigger_lifecycle_state="complete" explicitly; 10 new
-      A5C tests (refusal-with-empty-ledger + ::warning capture via capsys,
-      sibling-event isolation, correction-with-existing-observation
-      regression, safe-state regression, no-deferral/no-activation-block at
-      the builder level, idempotence across reruns, unknown/future-state
-      fail-closed vocabulary parametrized over 8 values, frozen-schema-
-      whitelist non-disturbance). Verified: pytest
-      tests/test_imce_prospective.py (124 passed, 2 skipped —
+      PR #6308 (branch claude/imce-a5c-safety-law, off fresh origin/main)
+      is an INTERIM guard built on TWO durable safety signals, not a
+      permanent backstop — the honest fix requires the manifest/history
+      chain (a separate future PR); a named residual gap survives this PR
+      (below). FIRST PASS shipped a single signal (workspace
+      lifecycle.state); an Opus red-team pass (2026-08-23, BLOCK: 1
+      blocker/2 majors/3 minors) found that signal TRANSIENT — the only
+      producer (event_workspace_build.py's prior_source_sha256 check) fires
+      once, then the NEXT unchanged-source republish (~3h later) silently
+      walks the state back to "complete", so the exact mint Sol forbade
+      proceeded silently in ~7/8 corrections (measured window ~1
+      generation of 24). FIX ROUND (same PR, same branch, commission-widened
+      scope to include engine/company_intelligence — the original "no
+      engine/company_intelligence file" scope line is explicitly overridden
+      for this fix only): (1a) STICKY CORRECTED STATE —
+      scripts/refresh_event_workspaces.py now reads the prior workspace's
+      own lifecycle.state (new prior_lifecycle_state() helper) and passes
+      it into build_event_workspace, which — when the source sha is
+      UNCHANGED but the prior state was already "corrected" — re-applies
+      the corrected transition (corrected -> corrected is a legal
+      self-transition per events.py's _TRANSITIONS) instead of re-deriving
+      "complete" from scratch; sha-changed behavior is byte-for-byte
+      unchanged. (1b) FORM IN THE SOURCE ROW — the bound filing's own
+      SEC-assigned form ("8-K"/"8-K/A", already bound but previously
+      dropped) now travels into the issuer_release source row
+      (event_workspace_build.py); cross-repo preflight (grepped
+      charting-app's origin/master canonical eventWorkspace.ts /
+      eventWorkspacePresent.ts) confirmed neither macro's
+      validate_event_workspace nor Terminal's normalizeSource() exact-keys
+      nested source rows — both are permissive pickers, so the new key is
+      safe on both sides. (1c) A5B GATE ON BOTH SIGNALS —
+      engine/cycle_pattern/imce_prospective.py gains
+      is_safe_original_source_form() (form == "8-K" EXACTLY; missing/
+      other/None is unsafe) alongside is_safe_original_lifecycle_state();
+      append_observation now takes trigger_lifecycle_state AND
+      trigger_source_form and refuses unless BOTH are safe — still zero
+      ledger schema change (both travel as function parameters; the frozen
+      N1 whitelist tests pass with unchanged key sets), still per-candidate
+      only (does not join failed_ids, does not stamp/unstamp activation).
+      MAJOR-2 fix: the ::warning line now reports the OBSERVED
+      lifecycle_state and source_form verbatim (via !r), never an asserted
+      "corrected revision" diagnosis that could misdescribe a missing field
+      or a genuinely novel state. NAMED RESIDUAL GAP (not closed by this
+      PR): a replacement NON-amendment 8-K whose original was never
+      published at all still presents as a first-ever "complete"/"8-K"
+      revision to BOTH signals — only the manifest/history chain closes
+      that. Tests: tests/test_company_intelligence_event_workspace.py +3
+      (sticky-corrected regression, non-corrected-state regression, form
+      field regression); tests/test_refresh_event_workspaces.py +1
+      (end-to-end sticky-corrected + byte-stable semantic-no-op across a
+      three-refresh sequence); tests/test_imce_prospective.py — fixture
+      default lifecycle_state corrected from the placeholder
+      "results_released" (never a real events.py EVENT_STATES value) to
+      "complete", fixture gained a source_form="8-K" default, all
+      first-write call sites updated to pass both signals explicitly, plus
+      13 new A5C test functions (24 parametrized cases: empty-ledger
+      refusal + line-start-pinned ::warning content assertion, sibling-
+      event isolation, existing-observation correction regression,
+      safe-state regression, a REAL builder happy-path run asserting
+      n_observations_appended==1 on disk (MAJOR-3 — the earlier suite only
+      ever asserted ==0, so a builder key-read bug could have silently
+      refused every candidate forever and stayed green), no-deferral/
+      no-activation-block, idempotence across reruns, unknown/future
+      lifecycle-state fail-closed vocabulary parametrized over 8 values
+      with source_form pinned safe, missing/wrong source-form fail-closed
+      parametrized over 6 values with lifecycle_state pinned safe,
+      SAFE_ORIGINAL_LIFECYCLE_STATES <= the real EVENT_STATES vocabulary
+      (MINOR-6), frozen-schema-whitelist non-disturbance). Verified: pytest
+      tests/test_imce_prospective.py tests/test_refresh_event_workspaces.py
+      tests/test_company_intelligence_event_workspace.py
+      tests/test_gh_annotation_line_start.py (188 passed, 2 skipped —
       needs_full_checkout price-leg tests, expected in this sparse
-      worktree); pytest tests/test_gh_annotation_line_start.py (4 passed);
-      python3 scripts/check_contract_delta.py --base origin/main (0
-      introduced, 0 inherited). DRAFT PR — commissioning session
-      adjudicates and merges; not marked ready, merge-on-green not armed.
+      worktree); python3 scripts/check_cycle_pattern_authority.py's own
+      pytest-level selftest + no-hard-findings tests pass (2 passed; the
+      standalone CLI's HARD "zero rows" finding is a sparse-worktree
+      artifact — data/ is not checked out here — not a regression);
+      python3 scripts/agentos.py validate (0 errors, same 28 pre-existing
+      unrelated warnings). DRAFT PR — commissioning session adjudicates and
+      merges; not marked ready, merge-on-green not armed.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's

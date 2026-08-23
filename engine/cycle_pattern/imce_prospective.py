@@ -54,10 +54,11 @@ Row kinds (append-only JSONL, one JSON object per line, never rewritten):
     a DIFFERENT decision_cutoff (e.g. an 8-K/A source correction) is
     REFUSED by append_observation — it must route through append_correction.
     A FIRST-EVER attempt whose triggering workspace is itself a correction
-    (or an unrecognized lifecycle state) is also REFUSED, log-only, with NO
-    row of any kind appended (A5C safety law — see
-    ``SAFE_ORIGINAL_LIFECYCLE_STATES`` / ``append_observation``'s
-    ``trigger_lifecycle_state`` parameter below).
+    (or an unrecognized lifecycle state, or a non-"8-K" SEC form) is also
+    REFUSED, log-only, with NO row of any kind appended (A5C safety law —
+    see ``SAFE_ORIGINAL_LIFECYCLE_STATES`` / ``is_safe_original_source_form``
+    / ``append_observation``'s ``trigger_lifecycle_state`` and
+    ``trigger_source_form`` parameters below).
   * ``correction``   — a linked supersession record referencing the
     superseded ``observation_id`` when a source correction (a new workspace
     revision for the same event) is observed. The original packet is NEVER
@@ -78,15 +79,29 @@ A5C safety law (Sol A5C review, 2026-08-23, item 1): "no correction to a
 pre-activation event can ever enter the prospective cohort as a new
 observation." Until canonical source-revision history exists, a first-ever
 write for an ``event_id`` whose triggering workspace is a CORRECTION (or
-carries an unrecognized/future lifecycle state — see
-``SAFE_ORIGINAL_LIFECYCLE_STATES`` below) is REFUSED rather than minted:
-activation may exist and other candidates proceed normally, but this one
-event_id gets no observation row until a genuinely safe-original revision
-(or the future manifest/history-chain eligibility path) is seen. The refusal
-is log-only (a bare ``::warning`` line) — it never writes a row of any kind,
-never stamps/unstamps activation, and is naturally idempotent (nothing was
-written, so nothing needs to be undone). See ``append_observation``'s
-``trigger_lifecycle_state`` parameter for the enforcement itself.
+carries an unrecognized/future lifecycle state, or a non-"8-K" SEC form —
+see ``SAFE_ORIGINAL_LIFECYCLE_STATES`` / ``is_safe_original_source_form``
+below) is REFUSED rather than minted: activation may exist and other
+candidates proceed normally, but this one event_id gets no observation row
+until a genuinely safe-original revision (or the future manifest/history-
+chain eligibility path) is seen. The refusal is log-only (a bare
+``::warning`` line reporting what was SEEN, never a guessed diagnosis) — it
+never writes a row of any kind, never stamps/unstamps activation, and is
+naturally idempotent (nothing was written, so nothing needs to be undone).
+Two independent signals are checked (Opus red-team BLOCKER-1 hardening,
+2026-08-23): lifecycle.state alone only fires when a PRIOR published
+workspace exists to compare against — closed for OUR OWN sha-tracked
+corrections by making the "corrected" state STICKY across an unchanged-
+source republish (engine/company_intelligence/event_workspace_build.py's
+``prior_lifecycle_state`` parameter), but a replacement 8-K/A whose
+original was never published at all still presents as a first-ever
+"complete" state either way; the SEC's own issuer_release source-row
+``form`` closes part of that residual gap for free (an "8-K/A" is visible
+from the FIRST observed revision, prior workspace or not). The remaining
+gap (a NON-amendment replacement 8-K whose original was never published)
+is a NAMED residual, closed only by the future manifest/history chain. See
+``append_observation``'s ``trigger_lifecycle_state``/``trigger_source_form``
+parameters for the enforcement itself.
 
 Two additional per-issuer contributor-eligibility gates (red-team M5/MIN9,
 layered UPSTREAM of the verbatim §2/§3.1 math, which is otherwise untouched):
@@ -183,6 +198,28 @@ def is_safe_original_lifecycle_state(state: object) -> bool:
     any unrecognized/future state string all return False — fail-closed by
     construction, never by an exception a caller could forget to catch."""
     return isinstance(state, str) and state in SAFE_ORIGINAL_LIFECYCLE_STATES
+
+
+#: A5C BLOCKER-1 (1c) — the lifecycle-state signal alone is a NECESSARY but
+#: not (until the manifest/history chain lands) SUFFICIENT safety signal:
+#: the state signal is now durable within our OWN sha-comparison lineage
+#: (build_event_workspace's sticky-corrected fix, engine/company_intelligence/
+#: event_workspace_build.py), but it only fires when a PRIOR published
+#: workspace exists to compare against. A second, independent signal closes
+#: part of that gap for free: the SEC's own form on the bound filing
+#: (issuer_release source row "form", engine/company_intelligence/
+#: event_workspace_build.py:339-350) is "8-K/A" the moment EDGAR itself
+#: marks a filing as an amendment — true even on the FIRST-ever observed
+#: revision of an event, with no prior workspace to compare against at all.
+#: Requiring form == "8-K" EXACTLY (not merely "not 8-K/A") is deliberately
+#: the stricter reading: a missing/blank/unrecognized form is unsafe too,
+#: consistent with the fail-closed vocabulary above and self-healing within
+#: one 3h publish cycle once the field is populated everywhere.
+def is_safe_original_source_form(form: object) -> bool:
+    """True only when the bound filing's own SEC-assigned form is EXACTLY
+    "8-K" (never "8-K/A", never missing/blank/unrecognized) — fail-closed,
+    mirroring ``is_safe_original_lifecycle_state`` above."""
+    return form == "8-K"
 
 
 AUTHORITY = "context_only"
@@ -495,7 +532,7 @@ def compute_observation_id(packet: dict, *, prefix: str = "obs") -> str:
 
 def append_observation(
     packet: dict, *, path: Path | None = None, reconstruction: bool = False, production: bool = False,
-    trigger_lifecycle_state: str | None = None,
+    trigger_lifecycle_state: str | None = None, trigger_source_form: str | None = None,
 ) -> tuple[dict | None, bool]:
     """Append one observation packet.
 
@@ -511,26 +548,37 @@ def append_observation(
     activation_started_at is refused, independent of any upstream fencing
     the caller may or may not have done.
 
-    A5C safety law (Sol A5C review, 2026-08-23, item 1): *trigger_lifecycle_state*
-    is the triggering event_workspace's OWN ``lifecycle.state`` string at the
-    time of this call — the caller (the nightly builder) must read it
-    straight off the workspace and pass it through; this function never
-    infers it from the packet, which does not (and must not) carry it as a
-    stored key. When this call is about to mint a genuinely FIRST observation
-    for event_id (no exact-duplicate, no existing observation of any kind —
-    see ``existing_any`` below) AND ``trigger_lifecycle_state`` is not a
-    known safe-original state (``is_safe_original_lifecycle_state``), the
-    write is REFUSED: no row of any kind is appended, no exception is
-    raised, activation is left untouched, and the caller's per-candidate
-    loop is expected to continue with the next one. The refusal is
-    log-only — a bare ``::warning`` line, never a logger call (this repo's
-    "GitHub annotations must start the line" law) — and returns
-    ``(None, False)``, distinguishable from an exact-duplicate no-op (which
-    always returns the existing row, never ``None``, alongside
+    A5C safety law (Sol A5C review, 2026-08-23, item 1; hardened by the
+    Opus red-team BLOCKER-1 fix on the same day): *trigger_lifecycle_state*
+    and *trigger_source_form* are the triggering event_workspace's OWN
+    ``lifecycle.state`` string and issuer_release source row ``form`` string
+    at the time of this call — the caller (the nightly builder) must read
+    both straight off the workspace and pass them through; this function
+    never infers either from the packet, which does not (and must not)
+    carry them as stored keys. When this call is about to mint a genuinely
+    FIRST observation for event_id (no exact-duplicate, no existing
+    observation of any kind — see ``existing_any`` below) AND EITHER signal
+    is unsafe (``is_safe_original_lifecycle_state`` is False, OR
+    ``is_safe_original_source_form`` is False), the write is REFUSED: no row
+    of any kind is appended, no exception is raised, activation is left
+    untouched, and the caller's per-candidate loop is expected to continue
+    with the next one. Two independent signals are required because
+    lifecycle.state alone is a NECESSARY but not (until the manifest/history
+    chain lands) SUFFICIENT signal: it only fires when a prior published
+    workspace exists to compare against, while the SEC's own form is
+    "8-K/A" from the very first observed revision of an amended event, prior
+    workspace or not. The refusal is log-only — a bare ``::warning`` line
+    reporting what was SEEN (never a guessed diagnosis), and never a logger
+    call (this repo's "GitHub annotations must start the line" law) — and
+    returns ``(None, False)``, distinguishable from an exact-duplicate no-op
+    (which always returns the existing row, never ``None``, alongside
     ``appended=False``). A corrected revision for an event_id that ALREADY
     has a prior observation is UNAFFECTED by this law — it still routes
     through the existing_any branch below into ``append_correction()``,
-    exactly as before.
+    exactly as before. KNOWN RESIDUAL GAP (named, not closed here): a
+    replacement/amended 8-K whose ORIGINAL was never published at all still
+    presents as a first-ever "complete"/"8-K" revision to both signals —
+    closing that requires the manifest/history chain, a separate future PR.
 
     A non-reconstruction call additionally requires production=True (M7).
     """
@@ -579,19 +627,28 @@ def append_observation(
             f"route this through append_correction() (M4 fix)"
         )
 
-    if not is_safe_original_lifecycle_state(trigger_lifecycle_state):
-        # A5C safety law (Sol, 2026-08-23, item 1): this would be the FIRST
-        # observation ever recorded for event_id, and the triggering
-        # workspace is a correction (or an unrecognized/future state) — with
-        # no prior observation to anchor against and no source-revision
-        # history chain yet, we cannot know whether the ORIGINAL revision
-        # predated activation. Fail closed: log and refuse, never guess.
-        # Bare print, line-start "::warning" — never log.*, which prefixes
-        # the line and makes GitHub silently drop it (repo law); flush=True
-        # is load-bearing because stdout is block-buffered when piped in CI.
+    safe_state = is_safe_original_lifecycle_state(trigger_lifecycle_state)
+    safe_form = is_safe_original_source_form(trigger_source_form)
+    if not (safe_state and safe_form):
+        # A5C safety law (Sol, 2026-08-23, item 1) + BLOCKER-1 hardening
+        # (Opus red-team, same day): this would be the FIRST observation
+        # ever recorded for event_id, and at least one of the two safety
+        # signals says unsafe — with no prior observation to anchor against
+        # and no source-revision history chain yet, we cannot know whether
+        # the ORIGINAL revision predated activation. Fail closed: log and
+        # refuse, never guess. The message reports what was SEEN (both
+        # signals, verbatim via !r), never an asserted diagnosis — MAJOR-2
+        # fix: a missing/unknown state or form must not be narrated as "a
+        # correction" when it might instead be a missing field or a novel
+        # state this module has never seen. Bare print, line-start
+        # "::warning" — never log.*, which prefixes the line and makes
+        # GitHub silently drop it (repo law); flush=True is load-bearing
+        # because stdout is block-buffered when piped in CI.
         print(
             "::warning title=imce-prospective-unsafe-correction::"
-            f"{event_id} corrected revision with no prior observation; "
+            f"{event_id} unsafe trigger for first observation — "
+            f"lifecycle_state={trigger_lifecycle_state!r} (safe={safe_state}) "
+            f"source_form={trigger_source_form!r} (safe={safe_form}); "
             "fail-closed pending source-revision history",
             flush=True,
         )

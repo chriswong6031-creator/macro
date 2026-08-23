@@ -111,6 +111,7 @@ def _workspace(
     sha256hex: str = "d" * 64,
     facts_override: list[dict] | None = None,
     lifecycle_state: str = "complete",
+    source_form: str | None = "8-K",
 ) -> dict:
     if facts_override is not None:
         facts = facts_override
@@ -145,6 +146,7 @@ def _workspace(
         "sources": [{
             "kind": "issuer_release", "source_sha256": sha256hex,
             "filing_key": {"cik": cik, "accession": accession},
+            "form": source_form,
         }],
         "generation_id": generation_id,
     }
@@ -186,7 +188,7 @@ def test_first_observation_wins_and_duplicate_is_noop(tmp_path):
         activation_started_at=ACTIVATION_TS,
     )
     row1, appended1 = m.append_observation(
-        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete", trigger_source_form="8-K",
     )
     assert appended1 is True
     row2, appended2 = m.append_observation(packet, path=p, reconstruction=True)
@@ -210,7 +212,7 @@ def test_correction_append_never_rewrites_original(tmp_path):
         activation_started_at=ACTIVATION_TS,
     )
     row1, _ = m.append_observation(
-        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete", trigger_source_form="8-K",
     )
 
     original_bytes = p.read_bytes()
@@ -817,7 +819,7 @@ def test_observation_timestamp_survives_in_the_stored_row(tmp_path):
         activation_started_at=ACTIVATION_TS, now=datetime(2026, 4, 1, tzinfo=timezone.utc),
     )
     row, _ = m.append_observation(
-        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete", trigger_source_form="8-K",
     )
     assert row["c_t"]["treasury_cmt"]["observation_timestamp"] == "2026-04-01T00:00:00Z"
 
@@ -851,7 +853,7 @@ def test_m4_append_observation_refuses_second_observation_same_event_id(tmp_path
         activation_started_at=ACTIVATION_TS,
     )
     row1, appended1 = m.append_observation(
-        packet1, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+        packet1, path=p, reconstruction=True, trigger_lifecycle_state="complete", trigger_source_form="8-K",
     )
     assert appended1 is True
 
@@ -883,7 +885,7 @@ def test_m4_find_observation_by_event_id(tmp_path):
         activation_started_at=ACTIVATION_TS,
     )
     row, _ = m.append_observation(
-        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete", trigger_source_form="8-K",
     )
 
     # find_observation_by_event_id ignores decision_cutoff entirely — even a
@@ -911,7 +913,7 @@ def test_n3_exact_key_identical_rebuild_stays_a_noop(tmp_path):
         activation_started_at=ACTIVATION_TS,
     )
     row1, appended1 = m.append_observation(
-        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete", trigger_source_form="8-K",
     )
     assert appended1 is True
 
@@ -934,7 +936,7 @@ def test_n3_exact_key_materially_different_rebuild_raises(tmp_path, monkeypatch)
         activation_started_at=ACTIVATION_TS,
     )
     row1, appended1 = m.append_observation(
-        packet1, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+        packet1, path=p, reconstruction=True, trigger_lifecycle_state="complete", trigger_source_form="8-K",
     )
     assert appended1 is True
 
@@ -1093,7 +1095,10 @@ def test_measurement_projection_rebuilds_from_ledger(tmp_path, monkeypatch):
         issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
         activation_started_at="2026-01-01T00:00:00Z",
     )
-    m.append_observation(packet, path=p, reconstruction=True, trigger_lifecycle_state="complete")
+    m.append_observation(
+        packet, path=p, reconstruction=True,
+        trigger_lifecycle_state="complete", trigger_source_form="8-K",
+    )
 
     monkeypatch.setattr(m, "PRODUCTION_PATH", p)
     monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", p)
@@ -1158,7 +1163,11 @@ def test_a5c_safe_state_constant_is_exactly_complete():
 
 def test_a5c_corrected_workspace_with_empty_ledger_is_refused_not_appended(tmp_path, capsys):
     """(a): corrected workspace + empty ledger for that event -> NO
-    observation row appended, refusal logged."""
+    observation row appended, refusal logged. MAJOR-2/MINOR-4 (Opus
+    red-team, 2026-08-23): the warning line is pinned to start-of-line
+    (never buried mid-line) and must report the OBSERVED signals verbatim
+    (via !r), never an asserted diagnosis — here lifecycle_state="corrected"
+    and no source_form was passed (defaults to None, also unsafe)."""
     p = tmp_path / "recon_a5c_refuse.jsonl"
     trig = _mk_ws("DHI", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
                   cancel_current=10.0, cancel_prior=12.0, lifecycle_state="corrected")
@@ -1175,9 +1184,13 @@ def test_a5c_corrected_workspace_with_empty_ledger_is_refused_not_appended(tmp_p
     assert m.load_rows(p) == []
 
     out = capsys.readouterr().out
-    assert "::warning title=imce-prospective-unsafe-correction::" in out
-    assert packet["trigger"]["event_id"] in out
-    assert "fail-closed pending source-revision history" in out
+    lines = out.splitlines()
+    assert any(line.startswith("::warning title=imce-prospective-unsafe-correction::") for line in lines), out
+    warning_line = next(line for line in lines if line.startswith("::warning title=imce-prospective-unsafe-correction::"))
+    assert packet["trigger"]["event_id"] in warning_line
+    assert "lifecycle_state='corrected'" in warning_line
+    assert "source_form=None" in warning_line
+    assert "fail-closed pending source-revision history" in warning_line
 
 
 def test_a5c_sibling_events_unaffected_by_a_refusal(tmp_path):
@@ -1200,7 +1213,7 @@ def test_a5c_sibling_events_unaffected_by_a_refusal(tmp_path):
         activation_started_at=ACTIVATION_TS,
     )
     row, appended = m.append_observation(
-        safe_packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+        safe_packet, path=p, reconstruction=True, trigger_lifecycle_state="complete", trigger_source_form="8-K",
     )
     assert appended is True
     assert row is not None
@@ -1220,7 +1233,7 @@ def test_a5c_corrected_workspace_with_existing_prior_observation_still_corrects(
         activation_started_at=ACTIVATION_TS,
     )
     row1, appended1 = m.append_observation(
-        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete", trigger_source_form="8-K",
     )
     assert appended1 is True
 
@@ -1256,11 +1269,58 @@ def test_a5c_safe_original_state_mints_observation_as_before(tmp_path):
         activation_started_at=ACTIVATION_TS,
     )
     row, appended = m.append_observation(
-        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete", trigger_source_form="8-K",
     )
     assert appended is True
     assert row is not None
     assert sum(1 for r in m.load_rows(p) if r["row_kind"] == "observation") == 1
+
+
+def test_a5c_builder_happy_path_appends_a_real_observation(monkeypatch, tmp_path):
+    """MAJOR-3 (Opus red-team, 2026-08-23): the whole A5C test surface
+    previously only ever asserted n_observations_appended == 0 — a builder
+    bug that silently refused EVERY candidate forever (e.g. reading the
+    lifecycle/form off the wrong key) would leave the suite green. This
+    proves the SAFE path through the real builder: a production-mode run
+    against a workspace with lifecycle_state="complete" and
+    source_form="8-K" appends exactly one observation row to the temp
+    production path."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_a5c_happy.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    safe_ws = _mk_ws("TOL", cutoff="2026-05-01T20:00:00Z", net_orders_current=30, net_orders_prior=28,
+                      cancel_current=5.0, cancel_prior=6.0)  # default lifecycle_state="complete", form="8-K"
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"TOL": {safe_ws["event_id"]: "found"}, "DHI": {}, "PHM": {}, "KBH": {}}
+        found = {"DHI": [], "PHM": [], "KBH": [], "TOL": [safe_ws]}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    summary = b.run(production=True)
+    assert summary["errors"] == []
+    assert summary["n_observations_appended"] == 1
+    assert summary["n_observations_refused_unsafe_correction"] == 0
+    rows = m.load_rows(fake_prod)
+    assert sum(1 for r in rows if r["row_kind"] == "observation") == 1
+
+
+def test_a5c_safe_state_and_form_constants_stay_inside_the_real_event_vocabulary():
+    """MINOR-6 (Opus red-team, 2026-08-23): pins SAFE_ORIGINAL_LIFECYCLE_STATES
+    against the REAL production state vocabulary
+    (engine.company_intelligence.events.EVENT_STATES) so a fictional fixture
+    state (like the pre-fix "results_released" placeholder) can never
+    recur as the safe set's basis."""
+    from engine.company_intelligence.events import EVENT_STATES
+
+    assert "complete" in EVENT_STATES
+    assert m.SAFE_ORIGINAL_LIFECYCLE_STATES <= EVENT_STATES
 
 
 def test_a5c_refusal_does_not_defer_the_run_or_block_activation(monkeypatch, tmp_path):
@@ -1342,7 +1402,9 @@ def test_a5c_refusal_is_idempotent_across_reruns(monkeypatch, tmp_path):
 def test_a5c_unknown_or_future_lifecycle_state_is_treated_as_unsafe(tmp_path, unknown_state):
     """(f): fail-closed vocabulary — anything OTHER than the enumerated
     safe-original set is unsafe, including states this module has never
-    seen a production writer emit."""
+    seen a production writer emit. trigger_source_form is pinned SAFE
+    ("8-K") so the refusal is attributable purely to the state signal, not
+    incidentally to a second unsafe signal."""
     assert m.is_safe_original_lifecycle_state(unknown_state) is False
 
     p = tmp_path / "recon_a5c_unknown.jsonl"
@@ -1354,7 +1416,34 @@ def test_a5c_unknown_or_future_lifecycle_state_is_treated_as_unsafe(tmp_path, un
         activation_started_at=ACTIVATION_TS,
     )
     row, appended = m.append_observation(
-        packet, path=p, reconstruction=True, trigger_lifecycle_state=unknown_state,
+        packet, path=p, reconstruction=True,
+        trigger_lifecycle_state=unknown_state, trigger_source_form="8-K",
+    )
+    assert row is None
+    assert appended is False
+    assert m.load_rows(p) == []
+
+
+@pytest.mark.parametrize("unsafe_form", [None, "", "8-K/A", "10-Q", "6-K", "8-k"])
+def test_a5c_missing_or_wrong_source_form_is_treated_as_unsafe(tmp_path, unsafe_form):
+    """A5C BLOCKER-1 (1c, Opus red-team 2026-08-23): trigger_source_form
+    must be EXACTLY "8-K" — missing, blank, an actual amendment ("8-K/A"),
+    an unrelated form, or even a case variant, are all unsafe. Pinned SAFE
+    ("complete") lifecycle_state so the refusal is attributable purely to
+    the form signal."""
+    assert m.is_safe_original_source_form(unsafe_form) is False
+
+    p = tmp_path / "recon_a5c_unsafe_form.jsonl"
+    trig = _mk_ws("DHI", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0)
+    packet = m.build_observation_packet(
+        trigger_ticker="DHI", trigger_workspace=trig,
+        issuer_workspaces={"DHI": trig, "PHM": None, "KBH": None, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    row, appended = m.append_observation(
+        packet, path=p, reconstruction=True,
+        trigger_lifecycle_state="complete", trigger_source_form=unsafe_form,
     )
     assert row is None
     assert appended is False

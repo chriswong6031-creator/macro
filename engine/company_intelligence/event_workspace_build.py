@@ -119,12 +119,27 @@ def build_event_workspace(
     collector_rows: Sequence[Mapping[str, Any]] | None = None,
     wire_record_found: bool = False,
     prior_source_sha256: str | None = None,
+    prior_lifecycle_state: str | None = None,
     profile: IssuerProfile | None = None,
 ) -> dict[str, Any]:
     """Bind one issuer event from identity + 8-K exhibit + (if held) transcript.
 
     ``prior_source_sha256`` is the previously published exhibit hash.  A new
     hash on the same canonical event walks the lifecycle to ``corrected``.
+
+    ``prior_lifecycle_state`` is the previously published workspace's OWN
+    ``lifecycle.state`` (IMCE A5C BLOCKER-1 fix, Opus red-team 2026-08-23):
+    when the source hash is UNCHANGED but the prior generation was already
+    ``"corrected"``, the corrected transition is re-applied so the state
+    STAYS ``"corrected"`` rather than silently walking back to
+    ``"complete"``.  Without this, the very next unchanged-source rebuild
+    after a correction re-derives the event from scratch (started ->
+    complete) and never re-observes that a correction happened — so a
+    downstream consumer sampling once per period (like IMCE A5B/A5C) sees a
+    transient "corrected" that flips back to "complete" within one
+    publication cycle, in which the exact mint the A5C safety law forbids
+    could otherwise proceed. ``corrected -> corrected`` is a legal
+    self-transition (``events.py``'s ``_TRANSITIONS``).
 
     ``profile`` supplies the issuer-specific extraction seam (additional
     ``event_fact.v1`` entries from the release body, and transcript claims);
@@ -197,6 +212,21 @@ def build_event_workspace(
             source_available_at=available,
             effective_at=available,
             reason="source_sha256 changed; document revision restates the original",
+            document_ids=(bound.revision.document_id,),
+        )
+    elif prior_lifecycle_state == "corrected":
+        # A5C BLOCKER-1 fix (Opus red-team, 2026-08-23): sha UNCHANGED, but
+        # the prior generation was already corrected — re-apply the SAME
+        # corrected transition (binding the same document revision already
+        # bound above) so the published state stays "corrected" instead of
+        # silently re-deriving "complete" from scratch. See the docstring
+        # above for why this matters.
+        event = event.apply_transition(
+            "corrected",
+            observed_at=clock,
+            source_available_at=available,
+            effective_at=available,
+            reason="correction carried forward; source-revision history not yet published",
             document_ids=(bound.revision.document_id,),
         )
 
@@ -342,6 +372,15 @@ def build_event_workspace(
             "document_id": release_doc_id,
             "filing_key": {"cik": cik.zfill(10) if cik.isdigit() else cik, "accession": accession},
             "source_sha256": bound.revision.source_sha256,
+            # A5C BLOCKER-1 (1b) — the bound filing's own SEC-assigned FORM
+            # ("8-K" vs "8-K/A") was previously bound but dropped before
+            # publication; IMCE A5C's fail-closed observation gate needs it
+            # as a second durable safety signal (source rows are NOT
+            # exact-keyed by validate_event_workspace, and cross-repo
+            # preflight confirmed Terminal's normalizeSource() is a
+            # permissive picker that ignores unrecognized keys rather than
+            # rejecting them — this addition is safe on both sides).
+            "form": bound.revision.form,
             "url": filing.get("exhibit_url"),
             "receipt_state": "byte_replayed",
         },

@@ -408,6 +408,23 @@ def exhibit_source_sha256(workspace: Mapping[str, Any] | None) -> str | None:
     return None
 
 
+def prior_lifecycle_state(workspace: Mapping[str, Any] | None) -> str | None:
+    """The prior published workspace's OWN ``lifecycle.state``, or ``None``.
+
+    A5C BLOCKER-1 (Opus red-team, 2026-08-23): paired with
+    ``exhibit_source_sha256`` above and passed through to
+    ``build_event_workspace`` as ``prior_lifecycle_state`` so a
+    ``"corrected"`` state STAYS corrected on every later generation whose
+    source hash is unchanged — ``build_event_workspace`` re-applies the
+    corrected transition rather than silently walking back to
+    ``"complete"``, which is what let the exact mint the IMCE A5C safety
+    law forbids proceed within one 3-hour republish cycle."""
+    if not isinstance(workspace, Mapping):
+        return None
+    state = (workspace.get("lifecycle") or {}).get("state")
+    return str(state) if state else None
+
+
 def load_prior_workspace(event_id: str, *, base_url: str | None = None) -> dict[str, Any] | None:
     """Read the last published workspace for *event_id* from the public origin.
 
@@ -586,6 +603,7 @@ def acquire_and_build_homebuilder_workspace(
         collector_rows=None,
         wire_record_found=False,
         prior_source_sha256=exhibit_source_sha256(prior),
+        prior_lifecycle_state=prior_lifecycle_state(prior),
         profile=profile,
     )
     if payload.get("event_id") != event_id:
@@ -637,6 +655,7 @@ def refresh(
         collector_rows=None,
         wire_record_found=False,
         prior_source_sha256=exhibit_source_sha256(prior),
+        prior_lifecycle_state=prior_lifecycle_state(prior),
     )
     if payload.get("event_id") != FLAGSHIP_EVENT_ID:
         raise RefreshError(f"flagship event_id drifted: {payload.get('event_id')}")

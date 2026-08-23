@@ -241,6 +241,45 @@ def test_source_sha_correction_advances_generation_and_lifecycle(tmp_path: Path)
     assert fake.puts[-1][0] == WS_MARKER
 
 
+def test_corrected_lifecycle_state_is_sticky_across_an_unchanged_source_rebuild(tmp_path: Path) -> None:
+    """A5C BLOCKER-1 (Opus red-team, 2026-08-23): a corrected event must STAY
+    corrected in every later generation whose source hash is unchanged.
+    Before the fix, an unchanged-source rebuild after a correction silently
+    walked lifecycle.state back to "complete" (started -> complete only,
+    since prior_source_sha256 == the new sha) — a byte-different, spuriously
+    new generation that IMCE A5C's fail-closed gate would then read as
+    safe-original within one 3-hour republish cycle. After the fix, the
+    THIRD refresh (same mutated source as the correction, prior = the
+    corrected workspace) reproduces the corrected generation byte-for-byte:
+    same generation_id, lifecycle.state stays "corrected", zero new writes."""
+    fake = _FakeR2()
+    assert _refresh(tmp_path, fake) == 0
+    first = _marker(tmp_path)
+    prior = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / first["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    mutated = EXHIBIT.read_text(encoding="utf-8") + "\n<!-- source correction -->\n"
+    assert _refresh(tmp_path, fake, http_get=_http_get_factory(mutated), prior_workspace=prior) == 0
+    second = _marker(tmp_path)
+    assert second["generation_id"] != first["generation_id"]
+    second_workspace = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / second["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert second_workspace["lifecycle"]["state"] == "corrected"
+    puts_after_second = list(fake.puts)
+
+    # THIRD refresh: same (still-mutated) source, prior = the just-published
+    # corrected workspace. Before the fix this would re-derive "complete".
+    assert _refresh(tmp_path, fake, http_get=_http_get_factory(mutated), prior_workspace=second_workspace) == 0
+    third = _marker(tmp_path)
+    assert third["generation_id"] == second["generation_id"], "sticky-corrected rebuild must be byte-stable"
+    third_workspace = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / third["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert third_workspace["lifecycle"]["state"] == "corrected"
+    assert [key for key, _ in fake.puts[len(puts_after_second):]] == []
+
+
 def test_missing_transcript_hash_does_not_move_marker(tmp_path: Path) -> None:
     fake = _FakeR2()
     payload, tx_sha = _transcript()

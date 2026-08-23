@@ -59,7 +59,9 @@ def _collector_rows() -> list[dict]:
     return [json.loads(COLLECTOR.read_text(encoding="utf-8"))]
 
 
-def _build_flagship(*, exhibit_body: str | None = None, prior_sha: str | None = None) -> dict:
+def _build_flagship(
+    *, exhibit_body: str | None = None, prior_sha: str | None = None, prior_state: str | None = None,
+) -> dict:
     tx, tx_sha = _transcript()
     return build_event_workspace(
         registry=apple_registry(),
@@ -75,6 +77,7 @@ def _build_flagship(*, exhibit_body: str | None = None, prior_sha: str | None = 
         collector_rows=_collector_rows(),
         wire_record_found=False,
         prior_source_sha256=prior_sha,
+        prior_lifecycle_state=prior_state,
     )
 
 
@@ -253,6 +256,50 @@ def test_read_event_workspace_observes_generation_and_source_sha_correction(tmp_
     assert second["workspace"]["lifecycle"]["state"] == "corrected"
     assert second["workspace"]["generation_id"] != first_generation
     assert second["receipt"]["generation_id"] == second["workspace"]["generation_id"]
+
+
+def test_prior_lifecycle_state_corrected_is_sticky_when_sha_unchanged() -> None:
+    """A5C BLOCKER-1 (Opus red-team, 2026-08-23): sha unchanged from the
+    prior build, but prior_lifecycle_state="corrected" -> the rebuild stays
+    "corrected" instead of re-deriving "complete" from scratch."""
+    original = _build_flagship()
+    original_sha = original["_source_sha256"]
+    amended_body = EXHIBIT.read_text(encoding="utf-8") + "\n<!-- restatement -->\n"
+    corrected = _build_flagship(exhibit_body=amended_body, prior_sha=original_sha)
+    assert corrected["lifecycle"]["state"] == "corrected"
+    corrected_sha = corrected["_source_sha256"]
+
+    # Same (already-corrected) source rebuilt again: sha UNCHANGED relative
+    # to the prior generation, but prior_lifecycle_state == "corrected".
+    rebuilt = _build_flagship(exhibit_body=amended_body, prior_sha=corrected_sha, prior_state="corrected")
+    assert rebuilt["lifecycle"]["state"] == "corrected"
+    assert rebuilt["_source_sha256"] == corrected_sha
+
+    # Without the fix (prior_state=None, the pre-A5C default), the SAME
+    # unchanged-source rebuild derives from scratch and lands on "complete"
+    # — this is the regression the fix closes, pinned as a live contrast.
+    unfixed_would_be = _build_flagship(exhibit_body=amended_body, prior_sha=corrected_sha, prior_state=None)
+    assert unfixed_would_be["lifecycle"]["state"] == "complete"
+
+
+def test_prior_lifecycle_state_only_sticks_on_corrected_not_other_states() -> None:
+    """A "complete" (or any non-"corrected") prior_lifecycle_state must NOT
+    trigger the sticky re-transition — only an actual prior correction is
+    carried forward."""
+    original = _build_flagship()
+    original_sha = original["_source_sha256"]
+    rebuilt = _build_flagship(prior_sha=original_sha, prior_state="complete")
+    assert rebuilt["lifecycle"]["state"] == "complete"
+
+
+def test_issuer_release_source_row_carries_the_bound_filing_form() -> None:
+    """A5C BLOCKER-1 (1b): the bound filing's own SEC-assigned form travels
+    into the published issuer_release source row (previously dropped),
+    giving IMCE A5C a second durable safety signal alongside lifecycle.state."""
+    payload = _build_flagship()
+    release = next(source for source in payload["sources"] if source["kind"] == "issuer_release")
+    assert release["form"] == "8-K"
+    assert json.loads(FILING.read_text(encoding="utf-8"))["form"] == release["form"]
 
 
 def test_v1_teaser_reader_is_not_the_workspace_consumer(tmp_path, monkeypatch) -> None:
