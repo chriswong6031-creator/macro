@@ -11,7 +11,11 @@ from datetime import date, datetime, timezone
 from hashlib import sha256
 import json
 from pathlib import Path
+import re
+from string import Formatter
 from typing import Any
+
+from jsonschema import Draft202012Validator, FormatChecker, SchemaError
 
 
 SCHEMA = "evidence_foundation.reference.v1"
@@ -22,6 +26,12 @@ VOCABULARY_PATH = (
     / "contracts"
     / "evidence_foundation"
     / "vocabulary.v1.json"
+)
+SCHEMA_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "contracts"
+    / "evidence_foundation"
+    / "reference.v1.schema.json"
 )
 
 AUTOMATIC_RELATIONS = frozenset({"exact_duplicate", "same_fact", "same_event"})
@@ -47,6 +57,16 @@ ALL_FALSE_AUTHORITY = {
     "can_originate": False,
     "can_open_entry": False,
 }
+READER_KINDS = frozenset({"direct", "collection", "materializer", "parser"})
+CORRECTION_RELATION_KIND = {
+    "amendment": "corrects",
+    "restatement": "corrects",
+    "source_correction": "corrects",
+    "withdrawal": "corrects",
+    "superseding_generation": "supersedes",
+}
+_DETERMINISTIC_KEY_RE = re.compile(r"[a-z0-9][a-z0-9._:/=@+-]{0,1023}\Z")
+_NATIVE_IDENTITY_TEXT_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,1023}\Z")
 
 
 class EvidenceFoundationError(ValueError):
@@ -79,7 +99,7 @@ def compute_reference_id(reference: Mapping[str, Any]) -> str:
 
 
 def load_vocabulary(path: str | Path | None = None) -> dict[str, Any]:
-    """Load and minimally authenticate the frozen vocabulary file."""
+    """Load and fail-closed validate the frozen owner vocabulary."""
     target = Path(path) if path is not None else VOCABULARY_PATH
     try:
         payload = json.loads(target.read_text(encoding="utf-8"))
@@ -99,6 +119,27 @@ def load_vocabulary(path: str | Path | None = None) -> dict[str, Any]:
             "native_identity_fields"
         ]:
             raise EvidenceFoundationError(f"vocabulary_owner_identity_missing:{name}")
+        identity_fields = owner["native_identity_fields"]
+        if (
+            len(set(identity_fields)) != len(identity_fields)
+            or any(not isinstance(field, str) or not field for field in identity_fields)
+        ):
+            raise EvidenceFoundationError(f"vocabulary_owner_identity_invalid:{name}")
+        identity_types = owner.get("native_identity_types")
+        if (
+            not isinstance(identity_types, dict)
+            or set(identity_types) != set(identity_fields)
+            or any(value not in {"string", "integer"} for value in identity_types.values())
+        ):
+            raise EvidenceFoundationError(f"vocabulary_owner_identity_types_invalid:{name}")
+        native_schemas = owner.get("native_schemas")
+        if (
+            not isinstance(native_schemas, list)
+            or not native_schemas
+            or len(set(native_schemas)) != len(native_schemas)
+            or any(not isinstance(value, str) or not value for value in native_schemas)
+        ):
+            raise EvidenceFoundationError(f"vocabulary_owner_native_schemas_invalid:{name}")
         if not isinstance(owner.get("object_classes"), list) or not owner["object_classes"]:
             raise EvidenceFoundationError(f"vocabulary_owner_classes_missing:{name}")
         if not isinstance(owner.get("subject_key_types"), list) or not owner[
@@ -108,6 +149,20 @@ def load_vocabulary(path: str | Path | None = None) -> dict[str, Any]:
         bindings = owner.get("clock_bindings")
         if not isinstance(bindings, dict) or not bindings:
             raise EvidenceFoundationError(f"vocabulary_owner_clocks_missing:{name}")
+        for field, binding in bindings.items():
+            if (
+                not isinstance(field, str)
+                or not isinstance(binding, dict)
+                or set(binding) != {"class", "grains"}
+                or binding.get("class") not in payload.get("clock_classes", ())
+                or not isinstance(binding.get("grains"), list)
+                or not binding["grains"]
+                or len(set(binding["grains"])) != len(binding["grains"])
+                or any(grain not in {"date", "datetime"} for grain in binding["grains"])
+            ):
+                raise EvidenceFoundationError(
+                    f"vocabulary_owner_clock_binding_invalid:{name}:{field}"
+                )
         if "synapse_asof_field" not in owner:
             raise EvidenceFoundationError(f"vocabulary_synapse_asof_unspecified:{name}")
         synapse_asof = owner["synapse_asof_field"]
@@ -117,7 +172,55 @@ def load_vocabulary(path: str | Path | None = None) -> dict[str, Any]:
             raise EvidenceFoundationError(f"vocabulary_synapse_asof_unbound:{name}")
         if not isinstance(owner.get("reader"), str) or not owner["reader"]:
             raise EvidenceFoundationError(f"vocabulary_owner_reader_missing:{name}")
+        if owner.get("reader_kind") not in READER_KINDS:
+            raise EvidenceFoundationError(f"vocabulary_owner_reader_kind_invalid:{name}")
+        template = owner.get("pointer_template")
+        if not isinstance(template, str) or not template:
+            raise EvidenceFoundationError(f"vocabulary_owner_pointer_template_missing:{name}")
+        try:
+            placeholders = [
+                field_name
+                for _, field_name, _, _ in Formatter().parse(template)
+                if field_name is not None
+            ]
+        except ValueError as exc:
+            raise EvidenceFoundationError(
+                f"vocabulary_owner_pointer_template_invalid:{name}"
+            ) from exc
+        if len(placeholders) != len(set(placeholders)) or set(placeholders) != set(
+            identity_fields
+        ):
+            raise EvidenceFoundationError(
+                f"vocabulary_owner_pointer_identity_mismatch:{name}"
+            )
     return payload
+
+
+def render_owner_pointer(owner: Mapping[str, Any], identity: Mapping[str, Any]) -> str:
+    """Render the one canonical pointer for an exact owner-native identity."""
+    template = owner.get("pointer_template")
+    fields = owner.get("native_identity_fields")
+    if not isinstance(template, str) or not isinstance(fields, list):
+        raise EvidenceFoundationError("owner_pointer_contract_invalid")
+    if set(identity) != set(fields):
+        raise EvidenceFoundationError("owner_pointer_identity_fields_mismatch")
+    for field in fields:
+        value = identity[field]
+        if isinstance(value, bool):
+            raise EvidenceFoundationError("owner_pointer_identity_value_invalid")
+        if isinstance(value, int):
+            if value < 0:
+                raise EvidenceFoundationError("owner_pointer_identity_value_invalid")
+            continue
+        if not isinstance(value, str) or not _NATIVE_IDENTITY_TEXT_RE.fullmatch(value):
+            raise EvidenceFoundationError("owner_pointer_identity_value_invalid")
+    try:
+        pointer = template.format(**identity)
+    except (KeyError, ValueError) as exc:
+        raise EvidenceFoundationError("owner_pointer_render_failed") from exc
+    if not pointer or pointer != pointer.strip():
+        raise EvidenceFoundationError("owner_pointer_render_invalid")
+    return pointer
 
 
 def _parse_clock(value: object, grain: object) -> date | datetime | None:
@@ -153,6 +256,8 @@ def _beyond_cutoff(clock: Mapping[str, Any], cutoff: Mapping[str, Any]) -> bool 
                 return None
             return value > ceiling.date()
     if isinstance(value, datetime) and isinstance(ceiling, date):
+        if value.date() == ceiling:
+            return None
         return value.date() > ceiling
     return None
 
@@ -190,8 +295,21 @@ def semantic_violations(
     if isinstance(native_identity, Mapping) and isinstance(expected_identity_fields, list):
         if set(native_identity) != set(expected_identity_fields):
             violations.append("native_identity_fields_mismatch")
+        expected_identity_types = owner.get("native_identity_types")
+        if isinstance(expected_identity_types, Mapping):
+            for field, expected_type in expected_identity_types.items():
+                value = native_identity.get(field)
+                if expected_type == "string" and not isinstance(value, str):
+                    violations.append(f"native_identity_type_mismatch:{field}")
+                if expected_type == "integer" and (
+                    isinstance(value, bool) or not isinstance(value, int)
+                ):
+                    violations.append(f"native_identity_type_mismatch:{field}")
     else:
         violations.append("native_identity_invalid")
+
+    if reference.get("native_schema") not in set(owner.get("native_schemas") or []):
+        violations.append("native_schema_not_owned")
 
     if reference.get("object_class") not in set(owner.get("object_classes") or []):
         violations.append("object_class_not_owned")
@@ -215,6 +333,16 @@ def semantic_violations(
             violations.append("provenance_not_pointer_only")
         if provenance.get("owner_reader") != owner.get("reader"):
             violations.append("owner_reader_mismatch")
+        if provenance.get("owner_reader_kind") != owner.get("reader_kind"):
+            violations.append("owner_reader_kind_mismatch")
+        if isinstance(native_identity, Mapping):
+            try:
+                expected_pointer = render_owner_pointer(owner, native_identity)
+            except EvidenceFoundationError:
+                expected_pointer = None
+                violations.append("owner_pointer_identity_invalid")
+            if provenance.get("pointer") != expected_pointer:
+                violations.append("owner_pointer_mismatch")
 
     bindings = owner.get("clock_bindings") if isinstance(owner, Mapping) else {}
     bindings = bindings if isinstance(bindings, Mapping) else {}
@@ -234,14 +362,22 @@ def semantic_violations(
         if field in clock_fields:
             violations.append(f"clock_field_duplicate:{field}")
         clock_fields[field] = clock
-        if bindings.get(field) != clock.get("class"):
+        binding = bindings.get(field)
+        if not isinstance(binding, Mapping):
+            violations.append(f"clock_field_unknown:{field}")
+            binding = {}
+        if binding.get("class") != clock.get("class"):
             violations.append(f"clock_binding_mismatch:{field}")
+        if clock.get("grain") not in set(binding.get("grains") or []):
+            violations.append(f"clock_grain_mismatch:{field}")
         if clock.get("value_state") == "known" and _parse_clock(
             clock.get("value"), clock.get("grain")
         ) is None:
             violations.append(f"clock_value_invalid:{field}")
         if clock.get("value_state") == "unknown" and clock.get("value") is not None:
             violations.append(f"clock_unknown_has_value:{field}")
+    for field in sorted(set(bindings) - set(clock_fields)):
+        violations.append(f"clock_field_missing:{field}")
 
     correction = reference.get("correction")
     if not isinstance(correction, Mapping):
@@ -251,16 +387,22 @@ def semantic_violations(
         predecessors = correction.get("predecessor_reference_ids")
         predecessors = predecessors if isinstance(predecessors, list) else []
         clock_field = correction.get("clock_field")
+        chronology_state = correction.get("chronology_state")
         if correction.get("append_only") is not True or correction.get("mutates_predecessor") is not False:
             violations.append("correction_not_append_only")
         if kind == "none":
-            if predecessors or clock_field is not None:
+            if predecessors or clock_field is not None or chronology_state != "not_applicable":
                 violations.append("correction_none_has_lineage")
         elif kind in CORRECTION_KINDS:
             if not predecessors:
                 violations.append("correction_missing_predecessor")
             if clock_field not in clock_fields:
                 violations.append("correction_clock_unbound")
+            if chronology_state not in {
+                "owner_clock_order_verified",
+                "owner_clock_order_not_verified",
+            }:
+                violations.append("correction_chronology_unstated")
         else:
             violations.append("correction_kind_unknown")
 
@@ -281,13 +423,58 @@ def semantic_violations(
             violations.append(f"relation_{index}_non_deterministic_effect")
         if automatic and not isinstance(deterministic_key, str):
             violations.append(f"relation_{index}_automatic_without_key")
-        if relation_type in AUTOMATIC_RELATIONS and automatic is False and deterministic_key is not None:
+        if automatic and isinstance(deterministic_key, str) and not _DETERMINISTIC_KEY_RE.fullmatch(
+            deterministic_key
+        ):
+            violations.append(f"relation_{index}_deterministic_key_noncanonical")
+        if not automatic and deterministic_key is not None:
             violations.append(f"relation_{index}_inactive_key_must_be_null")
         independence = relation.get("independence")
-        if relation_type == "shares_upstream" and isinstance(independence, Mapping):
-            source_axis = independence.get("source_independence")
-            if isinstance(source_axis, Mapping) and source_axis.get("state") == "independent":
-                violations.append(f"relation_{index}_false_source_independence")
+        if isinstance(independence, Mapping):
+            for axis_name in (
+                "source_independence",
+                "information_novelty",
+                "mechanism_independence",
+            ):
+                axis = independence.get(axis_name)
+                if not isinstance(axis, Mapping) or axis.get("assessment") != "declarative_unverified":
+                    violations.append(
+                        f"relation_{index}_independence_not_declarative:{axis_name}"
+                    )
+
+    if isinstance(correction, Mapping):
+        kind = correction.get("kind")
+        predecessors = correction.get("predecessor_reference_ids")
+        predecessor_values = predecessors if isinstance(predecessors, list) else []
+        predecessor_set = {
+            value for value in predecessor_values if isinstance(value, str)
+        }
+        expected_relation_kind = CORRECTION_RELATION_KIND.get(kind)
+        correction_relations = [
+            relation
+            for relation in relations
+            if isinstance(relation, Mapping)
+            and relation.get("type") in {"corrects", "supersedes"}
+        ]
+        if expected_relation_kind is None:
+            if correction_relations:
+                violations.append("correction_none_has_relation")
+        else:
+            target_values = [
+                relation.get("target_reference_id") for relation in correction_relations
+            ]
+            target_set = {value for value in target_values if isinstance(value, str)}
+            if any(
+                relation.get("type") != expected_relation_kind
+                for relation in correction_relations
+            ):
+                violations.append("correction_relation_wrong_kind")
+            if len(target_values) != len(target_set):
+                violations.append("correction_relation_duplicate_target")
+            if predecessor_set - target_set:
+                violations.append("correction_relation_missing_target")
+            if target_set - predecessor_set:
+                violations.append("correction_relation_extra_target")
 
     missingness = reference.get("missingness")
     if not isinstance(missingness, Mapping):
@@ -305,6 +492,19 @@ def semantic_violations(
         violations.append("replay_invalid")
     else:
         mode = replay.get("mode")
+        cutoffs = replay.get("cutoffs")
+        cutoffs = cutoffs if isinstance(cutoffs, Mapping) else {}
+        for clock_class in vocab.get("clock_classes") or ():
+            cutoff = cutoffs.get(clock_class)
+            if not isinstance(cutoff, Mapping):
+                violations.append(f"replay_cutoff_missing:{clock_class}")
+                continue
+            if cutoff.get("state") == "known" and _parse_clock(
+                cutoff.get("value"), cutoff.get("grain")
+            ) is None:
+                violations.append(f"replay_cutoff_invalid:{clock_class}")
+            if cutoff.get("state") == "unknown" and cutoff.get("value") is not None:
+                violations.append(f"replay_cutoff_unknown_has_value:{clock_class}")
         if mode == "historical_replay":
             if not replay.get("code_revision") or not replay.get("input_digest"):
                 violations.append("historical_replay_missing_reproducibility")
@@ -313,8 +513,6 @@ def semantic_violations(
         if mode == "current_rule_recomputation" and replay.get("vintage_state") != mode:
             violations.append("recomputation_vintage_state_mismatch")
         if mode in {"historical_replay", "retrospective_research"}:
-            cutoffs = replay.get("cutoffs")
-            cutoffs = cutoffs if isinstance(cutoffs, Mapping) else {}
             for field, clock in clock_fields.items():
                 if clock.get("value_state") != "known":
                     continue
@@ -340,13 +538,67 @@ def semantic_violations(
     return tuple(dict.fromkeys(violations))
 
 
+def _schema_violations(reference: Mapping[str, Any]) -> tuple[str, ...]:
+    try:
+        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+    except (
+        OSError,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        SchemaError,
+        TypeError,
+        ValueError,
+    ) as exc:
+        raise EvidenceFoundationError("reference_schema_unreadable") from exc
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    codes: list[str] = []
+    for error in sorted(
+        validator.iter_errors(reference),
+        key=lambda item: tuple(str(part) for part in item.absolute_path),
+    ):
+        path = ".".join(str(part) for part in error.absolute_path) or "$"
+        codes.append(f"json_schema:{path}:{error.validator}")
+    return tuple(dict.fromkeys(codes))
+
+
+def combined_violations(
+    reference: Mapping[str, Any],
+    *,
+    vocabulary: Mapping[str, Any] | None = None,
+) -> tuple[str, ...]:
+    """Return JSON-Schema and semantic violations through one fail-closed API."""
+    if not isinstance(reference, Mapping):
+        return ("reference_not_mapping",)
+    return tuple(
+        dict.fromkeys(
+            (*_schema_violations(reference), *semantic_violations(reference, vocabulary=vocabulary))
+        )
+    )
+
+
+def validate_reference(
+    reference: Mapping[str, Any],
+    *,
+    vocabulary: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Validate the entire v1 contract and return a defensive JSON copy."""
+    violations = combined_violations(reference, vocabulary=vocabulary)
+    if violations:
+        raise EvidenceFoundationError(";".join(violations))
+    try:
+        return json.loads(json.dumps(reference, allow_nan=False))
+    except (TypeError, ValueError) as exc:  # defensive; canonical identity already checks this
+        raise EvidenceFoundationError("reference_not_canonical_json") from exc
+
+
 def assert_semantically_valid(
     reference: Mapping[str, Any],
     *,
     vocabulary: Mapping[str, Any] | None = None,
 ) -> None:
-    """Raise one stable error containing every semantic violation."""
-    violations = semantic_violations(reference, vocabulary=vocabulary)
+    """Backward-compatible alias for the combined fail-closed validator."""
+    violations = combined_violations(reference, vocabulary=vocabulary)
     if violations:
         raise EvidenceFoundationError(";".join(violations))
 
@@ -357,10 +609,14 @@ __all__ = [
     "SCHEMA",
     "VERSION",
     "VOCABULARY_PATH",
+    "SCHEMA_PATH",
     "assert_semantically_valid",
     "canonical_json_bytes",
+    "combined_violations",
     "compute_reference_id",
     "load_vocabulary",
     "reference_identity_payload",
+    "render_owner_pointer",
     "semantic_violations",
+    "validate_reference",
 ]

@@ -68,6 +68,13 @@ landmines:
     needs a cross-store pointer index over >=3 owner_stores for one subject
     (A0_MINIMAL_EVIDENCE_MESH_RECOMMENDATION.md §8 flip condition). FABLE-A
     freezes contracts; it does not build the store until that condition is met."
+  - "K1 exact-head review rejected the first candidate because several vocabulary
+    rows were not bound to actual native wire/storage grain, native_schema and full
+    clocks were not fail-closed, independence was overclaimed, correction relations
+    were not set-equal to predecessors, and JSON-Schema plus semantic validation had
+    two consumer paths. The repaired candidate uses 14 source-backed rows, one
+    combined validator, declarative_unverified independence, and executed mutation
+    kills. K1 stays in_progress until a fresh exact-head review passes and Sol accepts."
   - "US G0 canonical copy is MERGED PR #5955 (research/earnings_intelligence/g0/,
     inside the Earnings owner's owns_paths); CN-G0 is MERGED PR #5943
     (research/alpha_intelligence/censuses/CN-G0/). The #5822->#5953 rival
@@ -144,7 +151,7 @@ next_action: >
   research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md
   and rules ACCEPT or names exact amendments. The physical-store flip condition
   is adverse: no named committed >=3-owner single-query consumer exists, so owner
-  readers remain direct and no store/index was built. Do not start K2, K3, K4,
+  access remains owner-bound and no store/index was built. Do not start K2, K3, K4,
   B1, K2-B, D5-EARNINGS, or any dependent wave before Sol accepts K1.
 ---
 

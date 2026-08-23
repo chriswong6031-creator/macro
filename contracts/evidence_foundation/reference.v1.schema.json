@@ -44,7 +44,17 @@
       "minProperties": 1,
       "maxProperties": 8,
       "propertyNames": {"pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,63}$"},
-      "additionalProperties": {"type": "string", "minLength": 1, "maxLength": 1024}
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+\\-]*$"
+          },
+          {"type": "integer", "minimum": 0}
+        ]
+      }
     },
     "native_schema": {"type": "string", "minLength": 1, "maxLength": 256},
     "native_digest": {"$ref": "#/$defs/nativeDigest"},
@@ -193,20 +203,22 @@
     "provenance": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["pointer_only", "body_embedded", "owner_reader", "pointer"],
+      "required": ["pointer_only", "body_embedded", "owner_reader", "owner_reader_kind", "pointer"],
       "properties": {
         "pointer_only": {"const": true},
         "body_embedded": {"const": false},
         "owner_reader": {"type": "string", "minLength": 1, "maxLength": 512},
+        "owner_reader_kind": {"enum": ["direct", "collection", "materializer", "parser"]},
         "pointer": {"type": "string", "minLength": 1, "maxLength": 4096}
       }
     },
     "axis": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["state", "basis"],
+      "required": ["state", "assessment", "basis"],
       "properties": {
         "state": {"enum": ["independent", "shared", "unknown", "not_assessed"]},
+        "assessment": {"const": "declarative_unverified"},
         "basis": {"type": "string", "minLength": 1, "maxLength": 1024}
       }
     },
@@ -240,9 +252,21 @@
           ]
         },
         "automatic_effect": {"type": "boolean"},
-        "deterministic_key": {"type": ["string", "null"], "maxLength": 1024},
+        "deterministic_key": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[a-z0-9][a-z0-9._:/=@+\\-]*$"
+        },
         "independence": {"$ref": "#/$defs/independence"}
-      }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"automatic_effect": {"const": true}}, "required": ["automatic_effect"]},
+          "then": {"properties": {"deterministic_key": {"type": "string"}}},
+          "else": {"properties": {"deterministic_key": {"type": "null"}}}
+        }
+      ]
     },
     "missingness": {
       "type": "object",
@@ -283,7 +307,7 @@
     "correction": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["kind", "predecessor_reference_ids", "clock_field", "append_only", "mutates_predecessor"],
+      "required": ["kind", "predecessor_reference_ids", "clock_field", "chronology_state", "append_only", "mutates_predecessor"],
       "properties": {
         "kind": {
           "enum": [
@@ -302,9 +326,29 @@
           "items": {"type": "string", "pattern": "^efr_[a-f0-9]{64}$"}
         },
         "clock_field": {"type": ["string", "null"], "maxLength": 128},
+        "chronology_state": {
+          "enum": [
+            "not_applicable",
+            "owner_clock_order_verified",
+            "owner_clock_order_not_verified"
+          ]
+        },
         "append_only": {"const": true},
         "mutates_predecessor": {"const": false}
-      }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "none"}}, "required": ["kind"]},
+          "then": {"properties": {"chronology_state": {"const": "not_applicable"}}},
+          "else": {
+            "properties": {
+              "chronology_state": {
+                "enum": ["owner_clock_order_verified", "owner_clock_order_not_verified"]
+              }
+            }
+          }
+        }
+      ]
     },
     "cutoff": {
       "type": "object",

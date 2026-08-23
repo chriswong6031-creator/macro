@@ -1,6 +1,6 @@
 # K1 Evidence Foundation contract freeze — 2026-08-23
 
-Status: **CONTRACT FROZEN; PHYSICAL STORE REFUSED; SOL ACCEPTANCE REQUESTED**
+Status: **REPAIRED CANDIDATE; PHYSICAL STORE REFUSED; FRESH REVIEW PENDING**
 
 This is the K1 / FABLE-A return packet. It freezes a shared pointer vocabulary over
 owner-native evidence without creating a new truth store, reader plane, index,
@@ -29,11 +29,20 @@ The protected Sol Skillpack was loaded atomically from the current protected
 
 The handoff's Mastermind pin is exactly current. The Macro handoff pin
 `fb2375441f21b94201edc4ed6ac2c40f67274cde` remains an ancestor, but is historical.
-K1 was reconciled and built from fresh Macro `origin/main`
-`21fab35211433ab9bc4dafda3757d5aa30e11a3e`. The only K1-owner-area change between
-the historical pin and that base is an additive issuer-profile change in
-`engine/company_intelligence/issuer_profiles.py`; it does not alter the frozen
-Evidence Foundation identities, clocks, or readers.
+The repaired candidate was reconciled against fresh Macro `origin/main`
+`0e38c48b38e7b2a10c55e3218f691bd83d8f4f65`. Since the first K1 candidate base,
+the first K1-owner-area mainline change was #6308 in
+`engine/company_intelligence/event_workspace_build.py`: it carries corrected
+lifecycle state forward and adds the filing form inside an existing workspace source
+row. It does not change `WORKSPACE_SCHEMA`, `WORKSPACE_KEYS`, native generation/event
+identity, the three registered workspace clocks, or `read_event_workspace`. #6312
+later added a display-only supplier-language annotation to the government award-event
+parser; it did not change `EVENT_CONTRACT`, native `event_id`, registered event clocks,
+or `_validated_award_events`. The remaining base movement through
+`0e38c48b38e7b2a10c55e3218f691bd83d8f4f65` touched render, press, records,
+Canada/public display, and marketing-publish surfaces rather than a registered K1
+owner contract. K1 did not start, modify, or extend D5; it only reconciled the
+already-merged owner source on its base.
 
 The current Mastermind strategic state remains
 `mastermind.strategic_state.v1`, phase `PRE_REVENUE_MVP_CONVERGENCE`, with the
@@ -95,9 +104,9 @@ The contract version is `1.0.0`:
 
 - `.github/ci/legacy-jobs.yml` — binding run in the existing signal-contract lane
 - `contracts/evidence_foundation/reference.v1.schema.json` — closed JSON Schema wire
-- `contracts/evidence_foundation/vocabulary.v1.json` — 17 owner identity/clock/reader bindings
+- `contracts/evidence_foundation/vocabulary.v1.json` — 14 source-bound owner identity/schema/type/clock/accessor bindings
 - `contracts/evidence_foundation/README.md` — interoperability law
-- `lib/evidence_foundation.py` — deterministic identity and semantic validator
+- `lib/evidence_foundation.py` — the canonical combined JSON-Schema plus semantic fail-closed validator
 
 The reference is a pointer only. Its deterministic `reference_id` is `efr_` plus
 SHA-256 over canonical JSON of the complete object excluding only `reference_id`.
@@ -155,25 +164,26 @@ clocks.
 
 ### Owner adoption inventory
 
-| Owner object | Native identity | Key clock bindings | Direct reader |
+The access column is intentionally typed. `parser` means the owner contract validates
+caller-held canonical bytes; it is not represented as a store reader. `collection`
+means the owner returns a native collection and the full native key selects one row.
+
+| Owner object | Native identity | Key clock bindings | Owner accessor |
 |---|---|---|---|
-| Data OS security master | `security_id` | `effective_at`, `ingested_at` | `lib.dataos.identity.IssuerMaster` |
-| Theme Graph evidence | `evidence_id` | `published_at`, `effective_at`, `computed_at` | `engine.theme_graph.store.read_evidence` |
-| Theme Graph edge belief | `edge_id + belief_time` | `valid_*`, `evidence_time`, `belief_time`, `computed_at` | `engine.theme_graph.store.read_edges` |
-| FIF raw occurrence | `occurrence_id` | `clocks.accepted_at`, `clocks.recorded_at` | `BitemporalMetricQueryEngine.query_matrix` |
-| FIF packet | `packet_id` | source/system cutoffs, governance, build | `build_financial_intelligence_packet_from_repo` |
-| Earnings event | `event_id` | lifecycle effective/available/observed | `CompanyEvent` |
-| Earnings workspace generation | `generation_id + event_id` | lifecycle available/observed, generated | `read_event_workspace` |
-| Institutional 13F receipt | `receipt_id` | report/accepted/retained | `RawEvidenceReceipt` |
-| Institutional 13F catalog generation | `generation_id` | report/source-cutoff/published | `load_catalog_generation` |
-| GovRev event v2 | `event_id` | `change.effective_at`, `change.known_at`, `change.first_seen_at` | `_validated_award_events` |
-| Bio current source snapshot | `source_snapshot_id` | effective/published/retrieved/first-seen | `read_validated_generation` |
-| Bio history source snapshot | `source_snapshot_id` | submitted/retrieved/transaction | `read_validated_generation` |
-| Bio change fact | `change_fact_id` | `transaction_from` | `read_validated_generation` |
-| Bio outcome | `outcome_id` | effective/known/observed | `read_validated_generation` |
-| TXI episode | `episode_id` | `asof` | `_read_ledger` |
-| QLedger claim | `claim_id` | asof/vector-asof/registration/review-due | `load_claims` |
-| Market Memory outcome | `outcome_record_id` | effective/available/known/observed/recorded | `load_record` |
+| Data OS security master | `security_id` | `effective_at`, `ingested_at` | `IssuerMaster.issuer_of_security` (direct) |
+| Theme Graph evidence | `evidence_id` | published/effective/computed | `read_evidence` (collection) |
+| Theme Graph edge belief | `edge_id + belief_time` | valid/evidence/belief/computed | `read_edges` (collection; historical selection) |
+| FIF raw occurrence | `occurrence_id` | all five `TemporalClocks` fields | `RawFactLedger.by_id` (direct) |
+| FIF packet | `packet_id` | source/system cutoffs, governance, build | `validate_packet_semantics` (parser) |
+| Earnings workspace generation | `generation_id + event_id` | lifecycle available/observed, generated | `read_event_workspace` (direct, identity checked) |
+| Institutional 13F receipt | `filer_cik + accession + receipt_id` | report/accepted/retained | `RawEvidenceReceipt.from_json_bytes` (parser) |
+| Institutional 13F catalog generation | `report_period + generation_id` | report/source-cutoff/published | `load_catalog_generation` (direct) |
+| GovRev event v2 | `event_id` | effective/known/first-seen | `_validated_award_events` (collection) |
+| Bio current source snapshot | `nct_id + source_snapshot_id` | effective/published/retrieved/first-seen/valid/transaction | `validate_contract` (parser) |
+| Bio history source snapshot | `nct_id + source_version + source_snapshot_id` | submitted/QC/retrieved/transaction | `validate_contract` (parser) |
+| TXI transition row | `chain + rev + episode_id + transition + hop + asof` | `asof` | `_read_ledger` (collection) |
+| QLedger stored claim | `claim_id` | asof/vector-asof/registration/review-due | `load_claims` (collection) |
+| Market Memory outcome | `outcome_record_id` | effective/available/known/observed/recorded | `load_record` (direct) |
 
 The institutional census dedup precedent, Fundamental Forensics
 `KnowledgeClock`/`VintagePolicy`, QLedger evidence-clock separation, and merged PIT
@@ -184,15 +194,20 @@ from owner objects.
 ### Relations, corrections, missingness, replay
 
 - Every relation carries separate source-independence, information-novelty, and
-  economic/mechanism-independence axes.
+  economic/mechanism-independence axes. V1 records them only as
+  `declarative_unverified`; it makes no detection or verification claim without
+  typed deterministic owner lineage IDs.
 - Only `exact_duplicate`, `same_fact`, and `same_event` may have an automatic
   effect, and only with a deterministic key.
 - `corroborates`, `contradicts`, `shares_upstream`, `corrects`, `supersedes`, and
   `projects` never auto-net, rank, promote, or suppress.
-- Corrections append and name predecessor references. Predecessors never mutate.
+- Corrections append and name predecessor references. The `corrects`/`supersedes`
+  relation target set must exactly equal the predecessor set, with the right relation
+  kind and an honest native chronology-verification state. Predecessors never mutate.
 - Missingness is typed and can never be substituted with zero.
-- Historical replay binds a cutoff for every clock class and refuses any native
-  clock beyond its class cutoff. Current-rule recomputation is a separate mode.
+- Every known replay cutoff is parsed even when unused. Historical replay refuses any
+  native clock beyond its class cutoff and treats same-day date/datetime comparisons
+  as ambiguous symmetrically. Current-rule recomputation is a separate mode.
 
 ## 4. Golden fixture packet
 
@@ -200,22 +215,23 @@ The manifest freezes eight byte-receipted fixtures:
 
 | Fixture | Verdict | Bytes | SHA-256 |
 |---|---:|---:|---|
-| `fif_packet_valid.json` | valid | 2639 | `edda10ade34664c0506483798a314b0cbc534563178c24800bfc76acd3e172a4` |
-| `earnings_workspace_valid.json` | valid | 2481 | `3f1beff0cd9fe03a6b2a3a66750c40fcbac7a1c00ce87078132ea1adeba81bf3` |
-| `duplicate_corroboration_hostile.json` | invalid | 2897 | `abd9eaf4119b42217529becba4484ea78913b6ae6e638c677bb9ebfea876652c` |
-| `correction_append_valid.json` | valid | 3183 | `24db3f2617f7ffafce17266339dd54897382a630d5f56e4ad4848b7e6637d004` |
-| `replay_valid.json` | valid | 2515 | `f83a02112dcc0171a57717dbc0899202315c028cef9214b6516a3ff1ba8b52ae` |
-| `replay_lookahead_hostile.json` | invalid | 2431 | `e911a93cbc1c7a476d9e217f52a718245e582ee4b3d08255fa4fd0ffa5571a16` |
-| `typed_missingness_valid.json` | valid | 1899 | `40070b3895bf06d9394760a95908655f7f854c2c3faefce82c595ac932564d10` |
-| `authority_leak_hostile.json` | invalid | 1947 | `1f62ce979d2743734e53cbd1492551a0bfb8b9b0f3b9378cc1bf9f9f90d41e50` |
+| `fif_packet_valid.json` | valid | 3168 | `d9657d3baa86ea1f60442b6e6a367e4831863aae01d1fc7510166dc312140861` |
+| `earnings_workspace_valid.json` | valid | 2978 | `5469851367bc58e50cfb5ca61a3779f148ffa7cfa71ef46ba7a4f9825e8ded44` |
+| `duplicate_corroboration_hostile.json` | invalid | 3667 | `f1731de02cbdec27aaab897a77215a4fdcdd5dbfb6879f64106b2b4fbcad652f` |
+| `correction_append_valid.json` | valid | 3924 | `0cf1cc5f042ed2bd24fef32a7b35c97ef5174aa8002d7e5dd898a491e09dfebd` |
+| `replay_valid.json` | valid | 3509 | `ea4e1c05568c004b371dcb721ebc9cf512f420482e0f926406882fc157bd8614` |
+| `replay_lookahead_hostile.json` | invalid | 3415 | `4f24b366cad2f1344955b771adc8fe4614da9fe18cd66480c8ba4e05c0ee91b7` |
+| `typed_missingness_valid.json` | valid | 2808 | `cece49f53fc161f7a2dbd24d821fc38ca5bd5f4d0daa5140c79dc8ab246e3eaa` |
+| `authority_leak_hostile.json` | invalid | 2603 | `61f7ebbd0964657f8b3556e63a302619dcbe4cfb4dccfc620ca25896e151b765` |
 
-`tests/test_evidence_foundation_contract.py` validates schema, semantic verdict,
-deterministic ids, exact fixture bytes/hashes, owner identities and clocks, every
-owner reader symbol on current base, Synapse `asof_field` fail-closed behavior,
-pointer-only provenance, append/supersede corrections, replay/lookahead refusal,
-typed missingness, and zero authority. Its no-store proof enumerates tracked and
-untracked Git paths, so it remains valid in a sparse worktree and does not infer
-absence from omitted `data/` or `site/` directories.
+`tests/test_evidence_foundation_contract.py` uses only the combined validator for
+consumer verdicts. It proves source-bound schema/identity/accessor fields, one-pointer
+selection, all owner clocks exactly once, exact fixture bytes/hashes, native-schema
+and per-clock deletion kills, TXI collision resistance, declarative-only independence,
+correction target equality, all-class invalid cutoffs, symmetric cross-grain ambiguity,
+typed missingness, body refusal, and zero authority. Its no-store proof enumerates the
+actual changed-file inventory and calls the sparse-worktree API only to observe omitted
+trees; it never infers absence from `Path.exists()`.
 
 ## 5. Validation commands
 
@@ -229,8 +245,12 @@ python3 scripts/check_contract_delta.py --base origin/main
 python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --pack-index 5 --pack-count 12 --validate-only
 ```
 
-The targeted fixture/contract suite concluded **15 passed**. The only warnings were
+The repaired targeted fixture/contract suite concluded **32 passed**. The only warnings were
 three unrelated pytest temporary-directory cleanup warnings outside this worktree.
+The owner-source regression selection (`Data OS`, Theme Graph, FIF, Earnings workspace,
+13F, government events, TXI, QLedger, and Market Memory) additionally concluded
+**483 passed, 3 skipped**; its remaining warnings were the same unrelated temporary-
+directory cleanup warnings plus one upstream Starlette deprecation warning.
 
 ### Required CI-authority scope addition
 
@@ -241,7 +261,7 @@ hosted `run:` owner. K1 therefore added one step to the existing `signal-contrac
 required delivery-scope addition, not evidence-plane expansion.
 
 After wiring, contract-delta reports `0 introduced, 0 inherited`. The current
-12-pack plan places `signal-contract` in pack 5; pack validation reports 201 valid
+12-pack plan places `signal-contract` in pack 5; pack validation reports 202 valid
 legacy jobs and 18 jobs in pack 5. Because `.github/ci/**` is CI authority,
 semantic evidence will carry `authority_changed=true`: merge requires concluded
 exact-head checks, and final delivery additionally requires a successful `ci.yml`
@@ -252,11 +272,11 @@ run on a main descendant of the merge under the merged authority.
 > Sol, accept K1 / FABLE-A Evidence Foundation v1.0.0 as a contract-only freeze.
 > The current protected Skillpack was loaded from Mastermind
 > `db0bac5fe3f72348262d42c8bd26b836bda9f61d`; Macro was reconciled to
-> `21fab35211433ab9bc4dafda3757d5aa30e11a3e`. The physical-store flip condition is
+> `0e38c48b38e7b2a10c55e3218f691bd83d8f4f65`. The physical-store flip condition is
 > adverse: no named current PR or workstream commits to a one-query native-object
 > read across at least three owner stores for one subject. K1 therefore preserves
-> direct owner readers, copies no bodies, creates no store/index/control plane, and
-> freezes only the pointer schema, 17-owner vocabulary, semantic validator, and
+> owner-bound accessors, copies no bodies, creates no store/index/control plane, and
+> freezes only the pointer schema, 14-owner vocabulary, combined fail-closed validator, and
 > eight exact-hash fixtures. All authority axes, including ENTRY_OPEN, are false.
 > Please rule ACCEPT or return exact K1 amendments. This packet does not authorize or
 > begin K2, K3, K4, B1, K2-B, or D5-EARNINGS.
