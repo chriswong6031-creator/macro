@@ -4,57 +4,57 @@
     {
       "file": "fif_packet_valid.json",
       "expected": "valid",
-      "size_bytes": 3168,
-      "sha256": "d9657d3baa86ea1f60442b6e6a367e4831863aae01d1fc7510166dc312140861",
+      "size_bytes": 3366,
+      "sha256": "67fbc793f042506b288740b23e38cc3eab193d2376d77d22e6ef0465de3e29ce",
       "proves": "FIF financial packet pointer"
     },
     {
       "file": "earnings_workspace_valid.json",
       "expected": "valid",
-      "size_bytes": 2981,
-      "sha256": "abf73734e79f21277b68a0dd4cf6347012b28287b484b69d96e284be9a771589",
+      "size_bytes": 3179,
+      "sha256": "f2a8a41eec0761610c1ccf287d69bdfef38ec2043fd5f2e194b8228758cad27b",
       "proves": "Earnings event_workspace immutable generation"
     },
     {
       "file": "duplicate_corroboration_hostile.json",
       "expected": "invalid",
-      "size_bytes": 3667,
-      "sha256": "f1731de02cbdec27aaab897a77215a4fdcdd5dbfb6879f64106b2b4fbcad652f",
+      "size_bytes": 3856,
+      "sha256": "f73c7db6f3ec777bcd8d60d4a84db0610b6e7f6bcd37c749f87db9185058fb6b",
       "proves": "corroboration cannot auto-net or fake source independence"
     },
     {
       "file": "correction_append_valid.json",
       "expected": "valid",
-      "size_bytes": 3927,
-      "sha256": "241550bbd082fab3dab321d4d071a90f505d2ef52ca38f437776d334bd6fa3fd",
+      "size_bytes": 4125,
+      "sha256": "e31fbcf92de08f0a8b4f695c642c81569bae06ffad566a5facd9b28836ab25cb",
       "proves": "append/supersede correction lineage"
     },
     {
       "file": "replay_valid.json",
       "expected": "valid",
-      "size_bytes": 3509,
-      "sha256": "ea4e1c05568c004b371dcb721ebc9cf512f420482e0f926406882fc157bd8614",
+      "size_bytes": 3698,
+      "sha256": "a208c66b18169c467c937dc65026f27da9a206158d7af49e665a0ba98b6cd94e",
       "proves": "historical replay with typed cutoffs and reproducibility"
     },
     {
       "file": "replay_lookahead_hostile.json",
       "expected": "invalid",
-      "size_bytes": 3415,
-      "sha256": "4f24b366cad2f1344955b771adc8fe4614da9fe18cd66480c8ba4e05c0ee91b7",
+      "size_bytes": 3604,
+      "sha256": "cc98158d5b2416a9084d120d3303ebb7dc5b9208cccf05070691dd53e4a69ea5",
       "proves": "source clock beyond replay cutoff is refused"
     },
     {
       "file": "typed_missingness_valid.json",
       "expected": "valid",
-      "size_bytes": 2808,
-      "sha256": "cece49f53fc161f7a2dbd24d821fc38ca5bd5f4d0daa5140c79dc8ab246e3eaa",
+      "size_bytes": 2996,
+      "sha256": "8c2d26c24e526361075064610e964427ac5419db57c309982184281278390e71",
       "proves": "unsupported is typed and never zero-filled"
     },
     {
       "file": "authority_leak_hostile.json",
       "expected": "invalid",
-      "size_bytes": 2603,
-      "sha256": "61f7ebbd0964657f8b3556e63a302619dcbe4cfb4dccfc620ca25896e151b765",
+      "size_bytes": 2801,
+      "sha256": "4fd116ff881e62e14694395a5fa296da649cde598a27ca157b0735c25fe65e44",
       "proves": "ENTRY_OPEN and every authority axis remain false"
     }
   ]

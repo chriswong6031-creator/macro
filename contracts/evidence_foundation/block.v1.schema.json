@@ -1,0 +1,300 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/evidence_foundation/block.v1.schema.json",
+  "title": "Evidence Foundation consumer evidence block v1",
+  "description": "A bounded consumer projection over owner-native references. It may state a supported claim or question, but it is not an owner truth store and may not embed owner payloads.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "version",
+    "evidence_block_id",
+    "block_key",
+    "consumer",
+    "supported_claim",
+    "reference_ids",
+    "owner_stores",
+    "object_classes",
+    "evidence_class",
+    "clock_summary",
+    "coverage",
+    "uncertainty",
+    "dependence",
+    "conflict_correction",
+    "next_observable",
+    "permitted_consumers",
+    "lineage",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "evidence_foundation.block.v1"},
+    "version": {"const": "1.0.0"},
+    "evidence_block_id": {"type": "string", "pattern": "^ebl_[a-f0-9]{64}$"},
+    "block_key": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,127}$"},
+    "consumer": {"$ref": "#/$defs/consumer"},
+    "supported_claim": {"$ref": "#/$defs/supportedClaim"},
+    "reference_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/referenceId"}
+    },
+    "owner_stores": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    },
+    "object_classes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/objectClass"}
+    },
+    "evidence_class": {"enum": ["fact", "deterministic", "model", "human"]},
+    "clock_summary": {"$ref": "#/$defs/clockSummary"},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "uncertainty": {"$ref": "#/$defs/uncertainty"},
+    "dependence": {"$ref": "#/$defs/dependence"},
+    "conflict_correction": {"$ref": "#/$defs/conflictCorrection"},
+    "next_observable": {"$ref": "#/$defs/nextObservable"},
+    "permitted_consumers": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    },
+    "lineage": {"$ref": "#/$defs/lineage"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "referenceId": {"type": "string", "pattern": "^efr_[a-f0-9]{64}$"},
+    "blockId": {"type": "string", "pattern": "^ebl_[a-f0-9]{64}$"},
+    "objectClass": {
+      "enum": [
+        "world_observation",
+        "derived_view",
+        "system_belief",
+        "forward_claim",
+        "instrument_state"
+      ]
+    },
+    "clockClass": {
+      "enum": [
+        "world_valid",
+        "source_published",
+        "knowable",
+        "observed",
+        "system_recorded",
+        "belief_or_build",
+        "review_due"
+      ]
+    },
+    "consumer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workstream", "job", "output_contract"],
+      "properties": {
+        "workstream": {"type": "string", "pattern": "^WS:[A-Z][A-Z0-9-]*$"},
+        "job": {"type": "string", "minLength": 1, "maxLength": 256},
+        "output_contract": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "supportedClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "text", "state"],
+      "properties": {
+        "kind": {"enum": ["claim", "question"]},
+        "text": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "state": {
+          "enum": [
+            "supported",
+            "partial",
+            "unavailable",
+            "rights_blocked",
+            "stale",
+            "conflicted",
+            "corrected"
+          ]
+        }
+      }
+    },
+    "clockEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference_id", "class", "field", "value_state", "value", "grain"],
+      "properties": {
+        "reference_id": {"$ref": "#/$defs/referenceId"},
+        "class": {"$ref": "#/$defs/clockClass"},
+        "field": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,127}$"},
+        "value_state": {"enum": ["known", "unknown"]},
+        "value": {"type": ["string", "null"]},
+        "grain": {"enum": ["date", "datetime"]}
+      }
+    },
+    "clockSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collapsed", "entries"],
+      "properties": {
+        "collapsed": {"const": false},
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 512,
+          "items": {"$ref": "#/$defs/clockEntry"}
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "total",
+        "included",
+        "excluded",
+        "missing",
+        "stale",
+        "rights_blocked",
+        "fallback",
+        "basis",
+        "reconciliation_state"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "complete",
+            "partial",
+            "unavailable",
+            "rights_blocked",
+            "stale",
+            "conflicted",
+            "corrected",
+            "unknown"
+          ]
+        },
+        "total": {"type": "integer", "minimum": 0},
+        "included": {"type": "integer", "minimum": 0},
+        "excluded": {"type": "integer", "minimum": 0},
+        "missing": {"type": "integer", "minimum": 0},
+        "stale": {"type": "integer", "minimum": 0},
+        "rights_blocked": {"type": "integer", "minimum": 0},
+        "fallback": {"type": "integer", "minimum": 0},
+        "basis": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "reconciliation_state": {"enum": ["reconciled", "unreconciled", "not_applicable"]}
+      }
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "probability", "derivation_ref", "calibration_ref"],
+      "properties": {
+        "state": {"enum": ["none", "unknown", "display_only", "uncalibrated", "calibrated"]},
+        "probability": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "derivation_ref": {"type": ["string", "null"], "maxLength": 512},
+        "calibration_ref": {"type": ["string", "null"], "maxLength": 512}
+      }
+    },
+    "dependenceGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "reference_ids", "deterministic_key"],
+      "properties": {
+        "kind": {"enum": ["exact_duplicate", "same_fact", "same_event", "shared_upstream"]},
+        "reference_ids": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/referenceId"}
+        },
+        "deterministic_key": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[a-z0-9][a-z0-9._:/=@+\\-]*$"
+        }
+      }
+    },
+    "dependence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "independent_evidence_count", "groups"],
+      "properties": {
+        "state": {"enum": ["independent", "shared_upstream", "mixed", "unknown"]},
+        "independent_evidence_count": {"type": ["integer", "null"], "minimum": 0},
+        "groups": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {"$ref": "#/$defs/dependenceGroup"}
+        }
+      }
+    },
+    "conflictCorrection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "reference_ids"],
+      "properties": {
+        "state": {"enum": ["none", "conflicted", "corrected", "mixed", "unknown"]},
+        "reference_ids": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/referenceId"}
+        }
+      }
+    },
+    "nextObservable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "description", "owner_clock_field"],
+      "properties": {
+        "state": {"enum": ["known", "unknown", "not_applicable"]},
+        "description": {"type": ["string", "null"], "minLength": 1, "maxLength": 1024},
+        "owner_clock_field": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,127}$"
+        }
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "predecessor_block_ids", "invalidated_by_reference_ids"],
+      "properties": {
+        "state": {"enum": ["original", "recompiled", "invalidated"]},
+        "predecessor_block_ids": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/blockId"}
+        },
+        "invalidated_by_reference_ids": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/referenceId"}
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["can_rank", "can_gate", "can_size", "can_originate", "can_open_entry"],
+      "properties": {
+        "can_rank": {"const": false},
+        "can_gate": {"const": false},
+        "can_size": {"const": false},
+        "can_originate": {"const": false},
+        "can_open_entry": {"const": false}
+      }
+    }
+  }
+}
+

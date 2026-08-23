@@ -1,73 +1,76 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_08adf1cb8a78da9eb427a80a32e544be5010db380cfb4ab2a4aad495f1d5abf1",
-  "object_class": "forward_claim",
-  "owner_store": "qledger.claim",
+  "reference_id": "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8",
+  "object_class": "world_observation",
+  "owner_store": "theme_graph.evidence",
   "native_identity": {
-    "claim_id": "0123456789abcdef"
+    "evidence_id": "tge_aapl_2026q3_earnings_01"
   },
-  "native_schema": "data/qledger/claims.jsonl#stored_claim",
+  "native_schema": "theme_graph.evidence.v1",
   "native_digest": {
-    "state": "unknown",
-    "sha256": null
+    "state": "known",
+    "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
   },
-  "coverage_class": "prospective_only",
+  "coverage_class": "append_only_bitemporal",
+  "freshness": {
+    "state": "native_clock_bound",
+    "clock_field": "computed_at",
+    "policy_id": null
+  },
+  "rights": {
+    "state": "permitted",
+    "policy_id": null
+  },
+  "authority_class": "fact",
   "subject": {
-    "key_type": "claim_id",
-    "key": "0123456789abcdef"
+    "key_type": "theme_node",
+    "key": "issuer:ISS:US-XNAS-AAPL#2026-01-01"
   },
   "secondary_subjects": [],
   "clocks": [
     {
-      "class": "belief_or_build",
-      "field": "asof",
+      "class": "source_published",
+      "field": "published_at",
       "value_state": "known",
-      "value": "2026-08-23",
+      "value": "2026-07-30",
+      "grain": "date"
+    },
+    {
+      "class": "world_valid",
+      "field": "effective_at",
+      "value_state": "known",
+      "value": "2026-07-30",
       "grain": "date"
     },
     {
       "class": "belief_or_build",
-      "field": "vector_asof",
-      "value_state": "unknown",
-      "value": null,
-      "grain": "date"
-    },
-    {
-      "class": "system_recorded",
-      "field": "timestamp",
-      "value_state": "unknown",
-      "value": null,
+      "field": "computed_at",
+      "value_state": "known",
+      "value": "2026-07-31T00:15:00Z",
       "grain": "datetime"
-    },
-    {
-      "class": "review_due",
-      "field": "check_by",
-      "value_state": "unknown",
-      "value": null,
-      "grain": "date"
     }
   ],
   "provenance": {
     "pointer_only": true,
     "body_embedded": false,
-    "owner_reader": "engine.qledger.load_claims",
-    "pointer": "data/qledger/claims.jsonl#claim_id=0123456789abcdef",
-    "owner_reader_kind": "collection"
+    "owner_reader": "engine.theme_graph.store.read_evidence",
+    "owner_reader_kind": "collection",
+    "pointer": "data/theme_graph/evidence.parquet#evidence_id=tge_aapl_2026q3_earnings_01"
   },
   "relations": [],
   "missingness": {
-    "state": "absent",
-    "reason": "unsupported",
+    "state": "present",
+    "reason": null,
     "zero_substituted": false
   },
   "correction": {
     "kind": "none",
     "predecessor_reference_ids": [],
     "clock_field": null,
+    "chronology_state": "not_applicable",
     "append_only": true,
-    "mutates_predecessor": false,
-    "chronology_state": "not_applicable"
+    "mutates_predecessor": false
   },
   "replay": {
     "mode": "live",
@@ -118,15 +121,5 @@
     "can_size": false,
     "can_originate": false,
     "can_open_entry": false
-  },
-  "freshness": {
-    "state": "unknown",
-    "clock_field": null,
-    "policy_id": null
-  },
-  "rights": {
-    "state": "unknown",
-    "policy_id": null
-  },
-  "authority_class": "model"
+  }
 }

@@ -1,0 +1,138 @@
+{
+  "schema": "evidence_foundation.product_fixture_manifest.v1",
+  "version": "1.0.0",
+  "fixtures": [
+    {
+      "file": "theme_graph_evidence_valid.json",
+      "kind": "reference",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3025,
+      "sha256": "f7bd8dd8ab018b7dc40e20dabfed792fb1486cdc1035914acafc3dce2b93a47b"
+    },
+    {
+      "file": "theme_graph_shared_upstream_valid.json",
+      "kind": "reference",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3906,
+      "sha256": "c99f6d5efb93ca17f7f39250efa6a1f468e7dd5857053d09c0035e05ddf4d9a5"
+    },
+    {
+      "file": "qledger_claim_valid.json",
+      "kind": "reference",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3118,
+      "sha256": "def3c8c9f04a48431c9025a267c4d480b9ad54282292fa7df2bba1f16b148fbe"
+    },
+    {
+      "file": "rights_blocked_reference_valid.json",
+      "kind": "reference",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3221,
+      "sha256": "bf073630f3ce8c16cc76cfb8265fca41e3359e262b02d1cd44871602d377cd17"
+    },
+    {
+      "file": "aapl_earnings_change_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 2784,
+      "sha256": "2e9a8da2afea0fb1d8a38a209dfdc3e77fa5853919fd78dbd5aab661b69ff416"
+    },
+    {
+      "file": "aapl_fundamental_context_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3072,
+      "sha256": "cc8bc4d19f1fb4a798fe5257c848cb26b5f63fd8123fe37b4991f06e1d4ff177"
+    },
+    {
+      "file": "aapl_theme_context_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 2718,
+      "sha256": "62acb488a993edbc2e508791da88a8bb685ac43bf2bab783a7417a6953f34abb"
+    },
+    {
+      "file": "aapl_forward_context_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3041,
+      "sha256": "94d298147e773deb4633cd96be6301c0590b92833300991b25e5e6073b0ef504"
+    },
+    {
+      "file": "shared_upstream_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3945,
+      "sha256": "af4104d5f04ae2640aa715cd855a27470834c8fc2815709a980af9a85a424a3d"
+    },
+    {
+      "file": "conflicting_observations_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 4085,
+      "sha256": "43d5a39c44c922fe56a01d746465c3dbd798c15c56b18f11f869ac26bd3e785f"
+    },
+    {
+      "file": "rights_blocked_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3042,
+      "sha256": "2b9c34994a0890e4a7a7d9c3a89f55ac8bbad243f3b5b45cf186e5486f0e9698"
+    },
+    {
+      "file": "corrected_context_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3053,
+      "sha256": "3c90c07a6157c110c2bfd66632f2b3e0c278582173dcf73e36bcc96aa376672b"
+    },
+    {
+      "file": "belief_as_fact_block_hostile.json",
+      "kind": "block",
+      "expected": "invalid",
+      "expected_violations": [
+        "block_evidence_class_masquerade"
+      ],
+      "size_bytes": 3040,
+      "sha256": "ac705754196099b643d6ee8329dc9e3ea4144215ce1fc9e11a172dcc72ddb552"
+    },
+    {
+      "file": "aapl_security_state_recipe_valid.json",
+      "kind": "recipe",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 5050,
+      "sha256": "77b71bfd1440b8072766c16d2bfeccb2c8994f7d92ee639af20cac263acb9ee9"
+    },
+    {
+      "file": "forbidden_cik_join_recipe_hostile.json",
+      "kind": "recipe",
+      "expected": "invalid",
+      "expected_violations": [
+        "recipe_identity_join_forbidden:0"
+      ],
+      "size_bytes": 5019,
+      "sha256": "cbfddeb7ec8fd190919f539b5197acbe31db27810b039c9365aefcf33297711e"
+    },
+    {
+      "file": "aapl_security_state_compilation_expected.json",
+      "kind": "receipt",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 1111,
+      "sha256": "0f8df473f64f56ab1c9b50f3828b018b586a4e96b4a59dbed0cf4b64841ca9b4"
+    }
+  ]
+}

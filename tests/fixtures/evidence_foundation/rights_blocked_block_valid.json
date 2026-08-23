@@ -1,0 +1,110 @@
+{
+  "schema": "evidence_foundation.block.v1",
+  "version": "1.0.0",
+  "evidence_block_id": "ebl_41d3bfe8164276b9dabc55d2a98d5638214f48382d28c196f6a5a4c587fc1612",
+  "block_key": "rights_blocked_example",
+  "consumer": {
+    "workstream": "WS:MARKET-OS",
+    "job": "build security_state.v1 for AAPL",
+    "output_contract": "security_state.v1"
+  },
+  "supported_claim": {
+    "kind": "claim",
+    "text": "The requested owner object is rights blocked; no empty or neutral value is substituted.",
+    "state": "rights_blocked"
+  },
+  "reference_ids": [
+    "efr_e660d284ac1db7e88e33f2cb6b4178140470621e43eadd13e107835098444ad9"
+  ],
+  "owner_stores": [
+    "fif.packet"
+  ],
+  "object_classes": [
+    "derived_view"
+  ],
+  "evidence_class": "deterministic",
+  "clock_summary": {
+    "collapsed": false,
+    "entries": [
+      {
+        "reference_id": "efr_e660d284ac1db7e88e33f2cb6b4178140470621e43eadd13e107835098444ad9",
+        "class": "source_published",
+        "field": "query.source_event_cutoff",
+        "value_state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      },
+      {
+        "reference_id": "efr_e660d284ac1db7e88e33f2cb6b4178140470621e43eadd13e107835098444ad9",
+        "class": "system_recorded",
+        "field": "query.system_recorded_cutoff",
+        "value_state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      },
+      {
+        "reference_id": "efr_e660d284ac1db7e88e33f2cb6b4178140470621e43eadd13e107835098444ad9",
+        "class": "system_recorded",
+        "field": "governance.governance_recorded_at",
+        "value_state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      },
+      {
+        "reference_id": "efr_e660d284ac1db7e88e33f2cb6b4178140470621e43eadd13e107835098444ad9",
+        "class": "belief_or_build",
+        "field": "built_at",
+        "value_state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      }
+    ]
+  },
+  "coverage": {
+    "state": "rights_blocked",
+    "total": 1,
+    "included": 0,
+    "excluded": 1,
+    "missing": 1,
+    "stale": 0,
+    "rights_blocked": 1,
+    "fallback": 0,
+    "basis": "all requested owner-reader fixture rows reconcile by native reference identity; freshness remains owner-policy dependent",
+    "reconciliation_state": "reconciled"
+  },
+  "uncertainty": {
+    "state": "none",
+    "probability": null,
+    "derivation_ref": null,
+    "calibration_ref": null
+  },
+  "dependence": {
+    "state": "independent",
+    "independent_evidence_count": 0,
+    "groups": []
+  },
+  "conflict_correction": {
+    "state": "none",
+    "reference_ids": []
+  },
+  "next_observable": {
+    "state": "unknown",
+    "description": null,
+    "owner_clock_field": null
+  },
+  "permitted_consumers": [
+    "security_state.v1"
+  ],
+  "lineage": {
+    "state": "original",
+    "predecessor_block_ids": [],
+    "invalidated_by_reference_ids": []
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}

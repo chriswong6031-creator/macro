@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_50457d3a24004e3709a10d10fe300207dc9d9fb2093a1ab0c1c60a01f9bc96e4",
+  "reference_id": "efr_6a2446d73809ac59b7095a38fff801eae00b9305cee0234fce8596f85df350e4",
   "object_class": "instrument_state",
   "owner_store": "txi.episode_transition",
   "native_identity": {
@@ -102,5 +102,15 @@
     "can_size": false,
     "can_originate": false,
     "can_open_entry": true
-  }
+  },
+  "freshness": {
+    "state": "unknown",
+    "clock_field": null,
+    "policy_id": null
+  },
+  "rights": {
+    "state": "permitted",
+    "policy_id": null
+  },
+  "authority_class": "deterministic"
 }

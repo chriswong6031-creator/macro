@@ -1,8 +1,9 @@
-"""Semantic validator for the pointer-only Evidence Foundation contract.
+"""Semantic validators for the contract-only Evidence Foundation surface.
 
-This module creates no store and performs no owner read.  It validates one
-``evidence_foundation.reference.v1`` value against the frozen owner vocabulary;
-the owner-native reader remains the only path to the referenced truth.
+This module creates no store and performs no owner read.  It validates
+``EvidenceRef``, ``EvidenceBlock``, and ``EvidenceRecipe`` values and can compile
+an in-memory recipe receipt from caller-supplied owner-reader results.  The
+owner-native reader remains the only path to the referenced truth.
 """
 from __future__ import annotations
 
@@ -19,6 +20,9 @@ from jsonschema import Draft202012Validator, FormatChecker, SchemaError
 
 
 SCHEMA = "evidence_foundation.reference.v1"
+BLOCK_SCHEMA = "evidence_foundation.block.v1"
+RECIPE_SCHEMA = "evidence_foundation.recipe.v1"
+COMPILATION_RECEIPT_SCHEMA = "evidence_foundation.recipe_compilation_receipt.v1"
 VERSION = "1.0.0"
 VOCABULARY_SCHEMA = "evidence_foundation.vocabulary.v1"
 VOCABULARY_PATH = (
@@ -32,6 +36,18 @@ SCHEMA_PATH = (
     / "contracts"
     / "evidence_foundation"
     / "reference.v1.schema.json"
+)
+BLOCK_SCHEMA_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "contracts"
+    / "evidence_foundation"
+    / "block.v1.schema.json"
+)
+RECIPE_SCHEMA_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "contracts"
+    / "evidence_foundation"
+    / "recipe.v1.schema.json"
 )
 
 CORRECTION_KINDS = frozenset({
@@ -57,6 +73,25 @@ CORRECTION_RELATION_KIND = {
     "superseding_generation": "supersedes",
 }
 _NATIVE_IDENTITY_TEXT_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,1023}\Z")
+_AUTHORITY_CLASS_BY_OBJECT_CLASS = {
+    "world_observation": frozenset({"fact"}),
+    "derived_view": frozenset({"deterministic", "model", "human"}),
+    "system_belief": frozenset({"deterministic", "model"}),
+    "forward_claim": frozenset({"model", "human"}),
+    "instrument_state": frozenset({"deterministic"}),
+}
+_REQUIRED_RECIPE_RULES = frozenset({
+    "REQUIRED_BLOCK_ABSENT",
+    "OPTIONAL_BLOCK_ABSENT",
+    "IDENTITY_UNRESOLVED",
+    "RIGHTS_BLOCKED",
+    "CONFLICTED_REQUIRED_BLOCK",
+})
+_DETERMINISTIC_DEPENDENCE_KINDS = frozenset({
+    "exact_duplicate",
+    "same_fact",
+    "same_event",
+})
 
 
 class EvidenceFoundationError(ValueError):
@@ -86,6 +121,21 @@ def compute_reference_id(reference: Mapping[str, Any]) -> str:
     """Return ``efr_<sha256>`` without adding a run/write clock."""
     digest = sha256(canonical_json_bytes(reference_identity_payload(reference))).hexdigest()
     return f"efr_{digest}"
+
+
+def _content_identity(value: Mapping[str, Any], *, field: str, prefix: str) -> str:
+    payload = {str(key): item for key, item in value.items() if key != field}
+    return f"{prefix}{sha256(canonical_json_bytes(payload)).hexdigest()}"
+
+
+def compute_block_id(block: Mapping[str, Any]) -> str:
+    """Return the deterministic identity of one bounded consumer projection."""
+    return _content_identity(block, field="evidence_block_id", prefix="ebl_")
+
+
+def compute_recipe_id(recipe: Mapping[str, Any]) -> str:
+    """Return the deterministic identity of one versioned composition recipe."""
+    return _content_identity(recipe, field="recipe_id", prefix="erp_")
 
 
 def load_vocabulary(path: str | Path | None = None) -> dict[str, Any]:
@@ -303,6 +353,11 @@ def semantic_violations(
 
     if reference.get("object_class") not in set(owner.get("object_classes") or []):
         violations.append("object_class_not_owned")
+    allowed_authority_classes = _AUTHORITY_CLASS_BY_OBJECT_CLASS.get(
+        reference.get("object_class"), frozenset()
+    )
+    if reference.get("authority_class") not in allowed_authority_classes:
+        violations.append("authority_class_masquerade")
 
     allowed_subjects = set(owner.get("subject_key_types") or [])
     subjects = [reference.get("subject")]
@@ -368,6 +423,19 @@ def semantic_violations(
             violations.append(f"clock_unknown_has_value:{field}")
     for field in sorted(set(bindings) - set(clock_fields)):
         violations.append(f"clock_field_missing:{field}")
+
+    freshness = reference.get("freshness")
+    if not isinstance(freshness, Mapping):
+        violations.append("freshness_invalid")
+    else:
+        state = freshness.get("state")
+        field = freshness.get("clock_field")
+        if state == "native_clock_bound" and field not in clock_fields:
+            violations.append("freshness_clock_unbound")
+        if state != "native_clock_bound" and field is not None:
+            violations.append("freshness_nonbound_has_clock")
+        if state == "not_applicable" and freshness.get("policy_id") is not None:
+            violations.append("freshness_not_applicable_has_policy")
 
     correction = reference.get("correction")
     if not isinstance(correction, Mapping):
@@ -471,6 +539,19 @@ def semantic_violations(
         if missingness.get("state") == "absent" and missingness.get("reason") is None:
             violations.append("absent_missing_reason")
 
+    rights = reference.get("rights")
+    if not isinstance(rights, Mapping):
+        violations.append("rights_invalid")
+    else:
+        rights_blocked = rights.get("state") == "rights_blocked"
+        missingness_rights = (
+            isinstance(missingness, Mapping)
+            and missingness.get("state") == "absent"
+            and missingness.get("reason") == "rights_blocked"
+        )
+        if rights_blocked != missingness_rights:
+            violations.append("rights_missingness_mismatch")
+
     replay = reference.get("replay")
     if not isinstance(replay, Mapping):
         violations.append("replay_invalid")
@@ -534,9 +615,11 @@ def semantic_violations(
     return tuple(dict.fromkeys(violations))
 
 
-def _schema_violations(reference: Mapping[str, Any]) -> tuple[str, ...]:
+def _contract_schema_violations(
+    value: Mapping[str, Any], *, path: Path, label: str
+) -> tuple[str, ...]:
     try:
-        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+        schema = json.loads(path.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(schema)
     except (
         OSError,
@@ -546,16 +629,477 @@ def _schema_violations(reference: Mapping[str, Any]) -> tuple[str, ...]:
         TypeError,
         ValueError,
     ) as exc:
-        raise EvidenceFoundationError("reference_schema_unreadable") from exc
+        raise EvidenceFoundationError(f"{label}_schema_unreadable") from exc
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     codes: list[str] = []
     for error in sorted(
-        validator.iter_errors(reference),
+        validator.iter_errors(value),
         key=lambda item: tuple(str(part) for part in item.absolute_path),
     ):
         path = ".".join(str(part) for part in error.absolute_path) or "$"
         codes.append(f"json_schema:{path}:{error.validator}")
     return tuple(dict.fromkeys(codes))
+
+
+def _schema_violations(reference: Mapping[str, Any]) -> tuple[str, ...]:
+    return _contract_schema_violations(
+        reference, path=SCHEMA_PATH, label="reference"
+    )
+
+
+def block_semantic_violations(
+    block: Mapping[str, Any],
+    *,
+    references: Mapping[str, Mapping[str, Any]],
+    vocabulary: Mapping[str, Any] | None = None,
+) -> tuple[str, ...]:
+    """Return stable cross-reference violations for one ``EvidenceBlock``."""
+    vocab = dict(vocabulary) if vocabulary is not None else load_vocabulary()
+    violations: list[str] = []
+    if block.get("schema") != BLOCK_SCHEMA:
+        violations.append("block_schema_mismatch")
+    if block.get("version") != VERSION:
+        violations.append("block_version_mismatch")
+    try:
+        expected_id = compute_block_id(block)
+    except (TypeError, ValueError):
+        expected_id = None
+        violations.append("block_identity_not_canonical_json")
+    if block.get("evidence_block_id") != expected_id:
+        violations.append("block_id_mismatch")
+
+    reference_ids = block.get("reference_ids")
+    reference_ids = reference_ids if isinstance(reference_ids, list) else []
+    resolved: list[Mapping[str, Any]] = []
+    for reference_id in reference_ids:
+        reference = references.get(reference_id)
+        if not isinstance(reference, Mapping):
+            violations.append(f"block_reference_missing:{reference_id}")
+            continue
+        if combined_violations(reference, vocabulary=vocab):
+            violations.append(f"block_reference_invalid:{reference_id}")
+        resolved.append(reference)
+
+    expected_owners = {str(reference.get("owner_store")) for reference in resolved}
+    expected_classes = {str(reference.get("object_class")) for reference in resolved}
+    if set(block.get("owner_stores") or ()) != expected_owners:
+        violations.append("block_owner_stores_mismatch")
+    if set(block.get("object_classes") or ()) != expected_classes:
+        violations.append("block_object_classes_mismatch")
+
+    evidence_class = block.get("evidence_class")
+    reference_authority_classes = {
+        reference.get("authority_class") for reference in resolved
+    }
+    allowed_by_block = {
+        "fact": frozenset({"fact"}),
+        "deterministic": frozenset({"fact", "deterministic"}),
+        "model": frozenset({"fact", "deterministic", "model"}),
+        "human": frozenset({"fact", "deterministic", "human"}),
+    }
+    if not reference_authority_classes <= allowed_by_block.get(evidence_class, frozenset()):
+        violations.append("block_evidence_class_masquerade")
+    if evidence_class in {"deterministic", "model", "human"} and resolved:
+        if evidence_class not in reference_authority_classes:
+            violations.append("block_evidence_class_without_authoritative_leg")
+
+    expected_clocks: list[str] = []
+    for reference in resolved:
+        reference_id = reference.get("reference_id")
+        for clock in reference.get("clocks") or ():
+            if isinstance(clock, Mapping):
+                expected_clocks.append(
+                    json.dumps(
+                        {"reference_id": reference_id, **dict(clock)},
+                        sort_keys=True,
+                        separators=(",", ":"),
+                        allow_nan=False,
+                    )
+                )
+    summary = block.get("clock_summary")
+    actual_clocks: list[str] = []
+    if not isinstance(summary, Mapping) or summary.get("collapsed") is not False:
+        violations.append("block_clock_summary_collapsed_or_missing")
+    else:
+        for entry in summary.get("entries") or ():
+            if isinstance(entry, Mapping):
+                actual_clocks.append(
+                    json.dumps(dict(entry), sort_keys=True, separators=(",", ":"), allow_nan=False)
+                )
+    if sorted(actual_clocks) != sorted(expected_clocks):
+        violations.append("block_clock_summary_not_lossless")
+
+    coverage = block.get("coverage")
+    if not isinstance(coverage, Mapping):
+        violations.append("block_coverage_invalid")
+    else:
+        total = coverage.get("total")
+        included = coverage.get("included")
+        excluded = coverage.get("excluded")
+        if total != len(reference_ids):
+            violations.append("block_denominator_total_mismatch")
+        if not all(isinstance(value, int) and not isinstance(value, bool) for value in (total, included, excluded)):
+            violations.append("block_denominator_invalid")
+        elif included + excluded != total:
+            violations.append("block_denominator_not_reconciled")
+        adverse_counts = [
+            coverage.get(name)
+            for name in ("missing", "stale", "rights_blocked", "fallback")
+        ]
+        if coverage.get("state") == "complete" and (
+            excluded != 0 or any(value != 0 for value in adverse_counts)
+        ):
+            violations.append("block_complete_with_degradation")
+        rights_count = sum(
+            1 for reference in resolved if reference.get("rights", {}).get("state") == "rights_blocked"
+        )
+        if coverage.get("rights_blocked") != rights_count:
+            violations.append("block_rights_denominator_mismatch")
+        if rights_count and coverage.get("state") not in {"rights_blocked", "partial", "unavailable"}:
+            violations.append("block_rights_not_dominant")
+        supported_state_for_coverage = {
+            "complete": "supported",
+            "partial": "partial",
+            "unknown": "partial",
+            "unavailable": "unavailable",
+            "rights_blocked": "rights_blocked",
+            "stale": "stale",
+            "conflicted": "conflicted",
+            "corrected": "corrected",
+        }
+        supported_claim = block.get("supported_claim")
+        expected_supported_state = supported_state_for_coverage.get(coverage.get("state"))
+        if (
+            not isinstance(supported_claim, Mapping)
+            or supported_claim.get("state") != expected_supported_state
+        ):
+            violations.append("block_supported_claim_coverage_mismatch")
+
+    dependence = block.get("dependence")
+    if not isinstance(dependence, Mapping):
+        violations.append("block_dependence_invalid")
+    else:
+        independent_count = dependence.get("independent_evidence_count")
+        included = coverage.get("included") if isinstance(coverage, Mapping) else None
+        if isinstance(independent_count, int) and isinstance(included, int) and independent_count > included:
+            violations.append("block_independence_exceeds_included")
+        groups = dependence.get("groups") or ()
+        if dependence.get("state") in {"shared_upstream", "mixed"} and not groups:
+            violations.append("block_dependence_group_missing")
+        for index, group in enumerate(groups):
+            if not isinstance(group, Mapping):
+                continue
+            group_ids = set(group.get("reference_ids") or ())
+            if not group_ids <= set(reference_ids):
+                violations.append(f"block_dependence_group_external:{index}")
+            if group.get("kind") == "shared_upstream" and group.get("deterministic_key") is not None:
+                violations.append(f"block_shared_upstream_key_must_be_null:{index}")
+            if group.get("kind") == "shared_upstream":
+                has_shared_upstream_relation = any(
+                    isinstance(relation, Mapping)
+                    and relation.get("type") == "shares_upstream"
+                    and str(reference.get("reference_id")) in group_ids
+                    and relation.get("target_reference_id") in group_ids
+                    for reference in resolved
+                    for relation in reference.get("relations") or ()
+                )
+                if not has_shared_upstream_relation:
+                    violations.append(f"block_shared_upstream_relation_missing:{index}")
+            if group.get("kind") in _DETERMINISTIC_DEPENDENCE_KINDS and not group.get("deterministic_key"):
+                violations.append(f"block_deterministic_group_key_missing:{index}")
+
+    conflict = block.get("conflict_correction")
+    lineage = block.get("lineage")
+    corrected_ids = {
+        str(reference.get("reference_id"))
+        for reference in resolved
+        if reference.get("correction", {}).get("kind") != "none"
+    }
+    if not isinstance(conflict, Mapping):
+        violations.append("block_conflict_correction_invalid")
+    else:
+        cited = set(conflict.get("reference_ids") or ())
+        if not cited <= set(reference_ids):
+            violations.append("block_conflict_reference_external")
+        if corrected_ids and (
+            conflict.get("state") not in {"corrected", "mixed"} or not corrected_ids <= cited
+        ):
+            violations.append("block_correction_not_propagated")
+    if not isinstance(lineage, Mapping):
+        violations.append("block_lineage_invalid")
+    elif corrected_ids and (
+        lineage.get("state") != "recompiled"
+        or not corrected_ids <= set(lineage.get("invalidated_by_reference_ids") or ())
+        or not lineage.get("predecessor_block_ids")
+    ):
+        violations.append("block_correction_missing_recompile_receipt")
+
+    uncertainty = block.get("uncertainty")
+    if not isinstance(uncertainty, Mapping):
+        violations.append("block_uncertainty_invalid")
+    else:
+        probability = uncertainty.get("probability")
+        if uncertainty.get("state") == "calibrated":
+            if probability is None or not uncertainty.get("derivation_ref") or not uncertainty.get("calibration_ref"):
+                violations.append("block_calibrated_probability_missing_receipt")
+        elif probability is not None:
+            violations.append("block_probability_without_calibration")
+
+    next_observable = block.get("next_observable")
+    if not isinstance(next_observable, Mapping):
+        violations.append("block_next_observable_invalid")
+    elif next_observable.get("state") == "known" and not next_observable.get("description"):
+        violations.append("block_next_observable_missing_description")
+    elif next_observable.get("state") != "known" and (
+        next_observable.get("description") is not None
+        or next_observable.get("owner_clock_field") is not None
+    ):
+        violations.append("block_next_observable_nonknown_has_value")
+
+    if block.get("authority") != ALL_FALSE_AUTHORITY:
+        violations.append("block_authority_leak")
+    return tuple(dict.fromkeys(violations))
+
+
+def combined_block_violations(
+    block: Mapping[str, Any],
+    *,
+    references: Mapping[str, Mapping[str, Any]],
+    vocabulary: Mapping[str, Any] | None = None,
+) -> tuple[str, ...]:
+    if not isinstance(block, Mapping):
+        return ("block_not_mapping",)
+    return tuple(dict.fromkeys((
+        *_contract_schema_violations(block, path=BLOCK_SCHEMA_PATH, label="block"),
+        *block_semantic_violations(block, references=references, vocabulary=vocabulary),
+    )))
+
+
+def validate_block(
+    block: Mapping[str, Any],
+    *,
+    references: Mapping[str, Mapping[str, Any]],
+    vocabulary: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    violations = combined_block_violations(
+        block, references=references, vocabulary=vocabulary
+    )
+    if violations:
+        raise EvidenceFoundationError(";".join(violations))
+    return json.loads(json.dumps(block, allow_nan=False))
+
+
+def recipe_semantic_violations(
+    recipe: Mapping[str, Any],
+    *,
+    vocabulary: Mapping[str, Any] | None = None,
+) -> tuple[str, ...]:
+    """Return stable violations for one ordered consumer composition recipe."""
+    vocab = dict(vocabulary) if vocabulary is not None else load_vocabulary()
+    violations: list[str] = []
+    if recipe.get("schema") != RECIPE_SCHEMA:
+        violations.append("recipe_schema_mismatch")
+    if recipe.get("version") != VERSION:
+        violations.append("recipe_version_mismatch")
+    try:
+        expected_id = compute_recipe_id(recipe)
+    except (TypeError, ValueError):
+        expected_id = None
+        violations.append("recipe_identity_not_canonical_json")
+    if recipe.get("recipe_id") != expected_id:
+        violations.append("recipe_id_mismatch")
+
+    owners = vocab.get("owner_stores") or {}
+    subject_types = set(vocab.get("subject_key_types") or ())
+    if not set(recipe.get("subject_key_types") or ()) <= subject_types:
+        violations.append("recipe_subject_key_unknown")
+
+    specs = recipe.get("block_specs")
+    specs = specs if isinstance(specs, list) else []
+    keys = [spec.get("block_key") for spec in specs if isinstance(spec, Mapping)]
+    orders = [spec.get("order") for spec in specs if isinstance(spec, Mapping)]
+    if len(keys) != len(set(keys)):
+        violations.append("recipe_block_key_duplicate")
+    if len(orders) != len(set(orders)) or sorted(orders) != list(range(1, len(orders) + 1)):
+        violations.append("recipe_block_order_invalid")
+    for index, spec in enumerate(specs):
+        if not isinstance(spec, Mapping):
+            continue
+        minimum = spec.get("minimum_references")
+        maximum = spec.get("maximum_references")
+        if isinstance(minimum, int) and isinstance(maximum, int) and minimum > maximum:
+            violations.append(f"recipe_block_bounds_invalid:{index}")
+        if spec.get("requirement") == "required" and spec.get("on_absent") != "refuse":
+            violations.append(f"recipe_required_block_not_fail_closed:{index}")
+        if spec.get("requirement") == "optional" and spec.get("on_absent") == "refuse":
+            violations.append(f"recipe_optional_block_refuses:{index}")
+        allowed_owners = spec.get("allowed_owner_stores") or ()
+        allowed_classes = set(spec.get("allowed_object_classes") or ())
+        for owner_name in allowed_owners:
+            owner = owners.get(owner_name)
+            if not isinstance(owner, Mapping):
+                violations.append(f"recipe_owner_unknown:{owner_name}")
+            elif not allowed_classes <= set(owner.get("object_classes") or ()):
+                violations.append(f"recipe_owner_class_not_bound:{owner_name}")
+
+    allowed_joins = {
+        (row.get("from"), row.get("to"), row.get("only_via"))
+        for row in vocab.get("identity_join_rules") or ()
+        if isinstance(row, Mapping)
+    }
+    for index, join in enumerate(recipe.get("identity_joins") or ()):
+        if isinstance(join, Mapping) and (
+            join.get("from"), join.get("to"), join.get("only_via")
+        ) not in allowed_joins:
+            violations.append(f"recipe_identity_join_forbidden:{index}")
+
+    output_fields: set[str] = set()
+    block_keys = set(keys)
+    for index, mapping in enumerate(recipe.get("output_mappings") or ()):
+        if not isinstance(mapping, Mapping):
+            continue
+        output_field = mapping.get("output_field")
+        if output_field in output_fields:
+            violations.append(f"recipe_output_field_duplicate:{output_field}")
+        output_fields.add(output_field)
+        if mapping.get("block_key") not in block_keys:
+            violations.append(f"recipe_output_block_unknown:{index}")
+
+    rule_codes = {
+        rule.get("code") for rule in recipe.get("refusal_degradation_rules") or ()
+        if isinstance(rule, Mapping)
+    }
+    for missing in sorted(_REQUIRED_RECIPE_RULES - rule_codes):
+        violations.append(f"recipe_required_rule_missing:{missing}")
+    if recipe.get("authority") != ALL_FALSE_AUTHORITY:
+        violations.append("recipe_authority_leak")
+    return tuple(dict.fromkeys(violations))
+
+
+def combined_recipe_violations(
+    recipe: Mapping[str, Any],
+    *,
+    vocabulary: Mapping[str, Any] | None = None,
+) -> tuple[str, ...]:
+    if not isinstance(recipe, Mapping):
+        return ("recipe_not_mapping",)
+    return tuple(dict.fromkeys((
+        *_contract_schema_violations(recipe, path=RECIPE_SCHEMA_PATH, label="recipe"),
+        *recipe_semantic_violations(recipe, vocabulary=vocabulary),
+    )))
+
+
+def validate_recipe(
+    recipe: Mapping[str, Any],
+    *,
+    vocabulary: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    violations = combined_recipe_violations(recipe, vocabulary=vocabulary)
+    if violations:
+        raise EvidenceFoundationError(";".join(violations))
+    return json.loads(json.dumps(recipe, allow_nan=False))
+
+
+def compile_recipe(
+    recipe: Mapping[str, Any],
+    *,
+    blocks: list[Mapping[str, Any]],
+    references: Mapping[str, Mapping[str, Any]],
+    vocabulary: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Compile a deterministic in-memory receipt; persist no owner fact or block."""
+    vocab = dict(vocabulary) if vocabulary is not None else load_vocabulary()
+    validated_recipe = validate_recipe(recipe, vocabulary=vocab)
+    validated_blocks: dict[str, dict[str, Any]] = {}
+    for block in blocks:
+        validated = validate_block(block, references=references, vocabulary=vocab)
+        key = validated["block_key"]
+        if key in validated_blocks:
+            raise EvidenceFoundationError(f"compile_block_key_duplicate:{key}")
+        validated_blocks[key] = validated
+
+    recipe_block_keys = {spec["block_key"] for spec in validated_recipe["block_specs"]}
+    for key in sorted(set(validated_blocks) - recipe_block_keys):
+        raise EvidenceFoundationError(f"compile_block_not_in_recipe:{key}")
+
+    ordered_ids: list[str] = []
+    missing_required: list[str] = []
+    missing_optional: list[str] = []
+    adverse_states: list[str] = []
+    denominator = {
+        key: 0 for key in (
+            "total", "included", "excluded", "missing", "stale", "rights_blocked", "fallback"
+        )
+    }
+    for spec in sorted(validated_recipe["block_specs"], key=lambda item: item["order"]):
+        key = spec["block_key"]
+        block = validated_blocks.get(key)
+        if block is None:
+            minimum = spec["minimum_references"]
+            denominator["total"] += minimum
+            denominator["excluded"] += minimum
+            denominator["missing"] += minimum
+            if spec["requirement"] == "required":
+                missing_required.append(key)
+            else:
+                missing_optional.append(key)
+            continue
+        if block["consumer"] != validated_recipe["consumer"]:
+            raise EvidenceFoundationError(f"compile_consumer_mismatch:{key}")
+        if block["evidence_class"] != spec["evidence_class"]:
+            raise EvidenceFoundationError(f"compile_evidence_class_mismatch:{key}")
+        if not set(block["owner_stores"]) <= set(spec["allowed_owner_stores"]):
+            raise EvidenceFoundationError(f"compile_owner_not_allowed:{key}")
+        if not set(block["object_classes"]) <= set(spec["allowed_object_classes"]):
+            raise EvidenceFoundationError(f"compile_object_class_not_allowed:{key}")
+        count = len(block["reference_ids"])
+        if not spec["minimum_references"] <= count <= spec["maximum_references"]:
+            raise EvidenceFoundationError(f"compile_reference_count_out_of_bounds:{key}")
+        if validated_recipe["consumer"]["output_contract"] not in block["permitted_consumers"]:
+            raise EvidenceFoundationError(f"compile_consumer_not_permitted:{key}")
+        ordered_ids.append(block["evidence_block_id"])
+        for field in denominator:
+            denominator[field] += block["coverage"][field]
+        if block["coverage"]["state"] != "complete":
+            adverse_states.append(block["coverage"]["state"])
+
+    if missing_required:
+        state = "refused"
+        dominant = "required_block_absent"
+    elif any(
+        validated_blocks[key]["coverage"]["state"] == "conflicted"
+        for key in validated_blocks
+        if key in {spec["block_key"] for spec in validated_recipe["block_specs"] if spec["requirement"] == "required"}
+    ):
+        state = "conflicted"
+        dominant = "conflicted"
+    elif missing_optional or adverse_states:
+        state = "partial"
+        severity = [
+            "rights_blocked", "unavailable", "conflicted", "stale", "partial", "unknown", "corrected"
+        ]
+        dominant = next((name for name in severity if name in adverse_states), "optional_block_absent")
+    elif any(block["conflict_correction"]["state"] in {"corrected", "mixed"} for block in validated_blocks.values()):
+        state = "corrected"
+        dominant = "corrected"
+    else:
+        state = "complete"
+        dominant = "none"
+
+    return {
+        "schema": COMPILATION_RECEIPT_SCHEMA,
+        "version": VERSION,
+        "recipe_id": validated_recipe["recipe_id"],
+        "consumer": validated_recipe["consumer"],
+        "state": state,
+        "dominant_degradation": dominant,
+        "block_ids": ordered_ids,
+        "missing_required_blocks": missing_required,
+        "missing_optional_blocks": missing_optional,
+        "denominator": denominator,
+        "owner_payloads_persisted": False,
+        "authority": dict(ALL_FALSE_AUTHORITY),
+    }
 
 
 def combined_violations(
@@ -601,18 +1145,32 @@ def assert_semantically_valid(
 
 __all__ = [
     "ALL_FALSE_AUTHORITY",
+    "BLOCK_SCHEMA",
+    "BLOCK_SCHEMA_PATH",
+    "COMPILATION_RECEIPT_SCHEMA",
     "EvidenceFoundationError",
+    "RECIPE_SCHEMA",
+    "RECIPE_SCHEMA_PATH",
     "SCHEMA",
     "VERSION",
     "VOCABULARY_PATH",
     "SCHEMA_PATH",
     "assert_semantically_valid",
     "canonical_json_bytes",
+    "block_semantic_violations",
+    "combined_block_violations",
+    "combined_recipe_violations",
     "combined_violations",
+    "compile_recipe",
+    "compute_block_id",
+    "compute_recipe_id",
     "compute_reference_id",
     "load_vocabulary",
     "reference_identity_payload",
     "render_owner_pointer",
     "semantic_violations",
+    "recipe_semantic_violations",
+    "validate_block",
+    "validate_recipe",
     "validate_reference",
 ]

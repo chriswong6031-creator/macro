@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_2f2d340ef8bb551bab9d0871f111bf1f398e54606ef8be5e5cc3591d61cb0bb7",
+  "reference_id": "efr_6da9808a66cb090df04c75c3902192ac1b747d99daf968a5d7c703c7c4c22be1",
   "object_class": "derived_view",
   "owner_store": "fif.packet",
   "native_identity": {
@@ -123,5 +123,15 @@
     "can_size": false,
     "can_originate": false,
     "can_open_entry": false
-  }
+  },
+  "freshness": {
+    "state": "unknown",
+    "clock_field": null,
+    "policy_id": null
+  },
+  "rights": {
+    "state": "permitted",
+    "policy_id": null
+  },
+  "authority_class": "deterministic"
 }

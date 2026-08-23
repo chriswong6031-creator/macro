@@ -1,0 +1,102 @@
+{
+  "schema": "evidence_foundation.block.v1",
+  "version": "1.0.0",
+  "evidence_block_id": "ebl_844812bd9754d6301c24762ebbb1980526ba2007b8c1bb9e9a16374cb1caa1f8",
+  "block_key": "theme_context",
+  "consumer": {
+    "workstream": "WS:MARKET-OS",
+    "job": "build security_state.v1 for AAPL",
+    "output_contract": "security_state.v1"
+  },
+  "supported_claim": {
+    "kind": "claim",
+    "text": "The AAPL thematic relation leg is backed by owner-native Theme Graph evidence.",
+    "state": "partial"
+  },
+  "reference_ids": [
+    "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8"
+  ],
+  "owner_stores": [
+    "theme_graph.evidence"
+  ],
+  "object_classes": [
+    "world_observation"
+  ],
+  "evidence_class": "fact",
+  "clock_summary": {
+    "collapsed": false,
+    "entries": [
+      {
+        "reference_id": "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8",
+        "class": "source_published",
+        "field": "published_at",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8",
+        "class": "world_valid",
+        "field": "effective_at",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8",
+        "class": "belief_or_build",
+        "field": "computed_at",
+        "value_state": "known",
+        "value": "2026-07-31T00:15:00Z",
+        "grain": "datetime"
+      }
+    ]
+  },
+  "coverage": {
+    "state": "unknown",
+    "total": 1,
+    "included": 1,
+    "excluded": 0,
+    "missing": 0,
+    "stale": 0,
+    "rights_blocked": 0,
+    "fallback": 0,
+    "basis": "all requested owner-reader fixture rows reconcile by native reference identity; freshness remains owner-policy dependent",
+    "reconciliation_state": "reconciled"
+  },
+  "uncertainty": {
+    "state": "none",
+    "probability": null,
+    "derivation_ref": null,
+    "calibration_ref": null
+  },
+  "dependence": {
+    "state": "independent",
+    "independent_evidence_count": 1,
+    "groups": []
+  },
+  "conflict_correction": {
+    "state": "none",
+    "reference_ids": []
+  },
+  "next_observable": {
+    "state": "unknown",
+    "description": null,
+    "owner_clock_field": null
+  },
+  "permitted_consumers": [
+    "security_state.v1"
+  ],
+  "lineage": {
+    "state": "original",
+    "predecessor_block_ids": [],
+    "invalidated_by_reference_ids": []
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}

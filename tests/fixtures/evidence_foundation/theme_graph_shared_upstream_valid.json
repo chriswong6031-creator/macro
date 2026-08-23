@@ -1,21 +1,31 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_24e8d8b745c46823005f5c59833c8fda7ccab191927a1bdab48719d60066782f",
+  "reference_id": "efr_56957fb414554ef22a68140c426189b0497da5584021767be52e0cb91c047b85",
   "object_class": "world_observation",
   "owner_store": "theme_graph.evidence",
   "native_identity": {
-    "evidence_id": "ev:sec-transcript-projection-b"
+    "evidence_id": "tge_aapl_2026q3_earnings_wire_02"
   },
   "native_schema": "theme_graph.evidence.v1",
   "native_digest": {
     "state": "known",
-    "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
   },
   "coverage_class": "append_only_bitemporal",
+  "freshness": {
+    "state": "native_clock_bound",
+    "clock_field": "computed_at",
+    "policy_id": null
+  },
+  "rights": {
+    "state": "permitted",
+    "policy_id": null
+  },
+  "authority_class": "fact",
   "subject": {
     "key_type": "theme_node",
-    "key": "theme:ai-infrastructure"
+    "key": "issuer:ISS:US-XNAS-AAPL#2026-01-01"
   },
   "secondary_subjects": [],
   "clocks": [
@@ -29,15 +39,15 @@
     {
       "class": "world_valid",
       "field": "effective_at",
-      "value_state": "unknown",
-      "value": null,
+      "value_state": "known",
+      "value": "2026-07-30",
       "grain": "date"
     },
     {
       "class": "belief_or_build",
       "field": "computed_at",
       "value_state": "known",
-      "value": "2026-08-23T12:00:00Z",
+      "value": "2026-07-31T00:16:00Z",
       "grain": "datetime"
     }
   ],
@@ -45,30 +55,30 @@
     "pointer_only": true,
     "body_embedded": false,
     "owner_reader": "engine.theme_graph.store.read_evidence",
-    "pointer": "data/theme_graph/evidence.parquet#evidence_id=ev:sec-transcript-projection-b",
-    "owner_reader_kind": "collection"
+    "owner_reader_kind": "collection",
+    "pointer": "data/theme_graph/evidence.parquet#evidence_id=tge_aapl_2026q3_earnings_wire_02"
   },
   "relations": [
     {
-      "target_reference_id": "efr_1111111111111111111111111111111111111111111111111111111111111111",
-      "type": "corroborates",
+      "target_reference_id": "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8",
+      "type": "shares_upstream",
       "automatic_effect": false,
       "deterministic_key": null,
       "independence": {
         "source_independence": {
-          "state": "independent",
-          "basis": "hostile unbound assertion: same upstream is claimed independent without typed lineage proof",
-          "assessment": "verified"
+          "state": "shared",
+          "assessment": "declarative_unverified",
+          "basis": "two owner observations cite the same upstream earnings release"
         },
         "information_novelty": {
           "state": "shared",
-          "basis": "same sentence and source bytes",
-          "assessment": "declarative_unverified"
+          "assessment": "declarative_unverified",
+          "basis": "two owner observations cite the same upstream earnings release"
         },
         "mechanism_independence": {
-          "state": "not_assessed",
-          "basis": "no separate economic mechanism was measured",
-          "assessment": "declarative_unverified"
+          "state": "unknown",
+          "assessment": "declarative_unverified",
+          "basis": "two owner observations cite the same upstream earnings release"
         }
       }
     }
@@ -82,9 +92,9 @@
     "kind": "none",
     "predecessor_reference_ids": [],
     "clock_field": null,
+    "chronology_state": "not_applicable",
     "append_only": true,
-    "mutates_predecessor": false,
-    "chronology_state": "not_applicable"
+    "mutates_predecessor": false
   },
   "replay": {
     "mode": "live",
@@ -102,27 +112,27 @@
       "knowable": {
         "state": "unknown",
         "value": null,
-        "grain": "datetime"
+        "grain": "date"
       },
       "observed": {
         "state": "unknown",
         "value": null,
-        "grain": "datetime"
+        "grain": "date"
       },
       "system_recorded": {
         "state": "unknown",
         "value": null,
-        "grain": "datetime"
+        "grain": "date"
       },
       "belief_or_build": {
         "state": "unknown",
         "value": null,
-        "grain": "datetime"
+        "grain": "date"
       },
       "review_due": {
         "state": "unknown",
         "value": null,
-        "grain": "datetime"
+        "grain": "date"
       }
     },
     "code_revision": null,
@@ -135,15 +145,5 @@
     "can_size": false,
     "can_originate": false,
     "can_open_entry": false
-  },
-  "freshness": {
-    "state": "unknown",
-    "clock_field": null,
-    "policy_id": null
-  },
-  "rights": {
-    "state": "permitted",
-    "policy_id": null
-  },
-  "authority_class": "fact"
+  }
 }

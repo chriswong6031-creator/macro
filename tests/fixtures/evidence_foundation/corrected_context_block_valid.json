@@ -1,0 +1,108 @@
+{
+  "schema": "evidence_foundation.block.v1",
+  "version": "1.0.0",
+  "evidence_block_id": "ebl_2789a3f534b5af1e58b9509b7ca4c37054279ec09f1af678be3f900c11b78f31",
+  "block_key": "corrected_example",
+  "consumer": {
+    "workstream": "WS:MARKET-OS",
+    "job": "build security_state.v1 for AAPL",
+    "output_contract": "security_state.v1"
+  },
+  "supported_claim": {
+    "kind": "claim",
+    "text": "The corrected owner belief recompiles the consumer block and preserves the predecessor receipt.",
+    "state": "corrected"
+  },
+  "reference_ids": [
+    "efr_44fc171d332b70ffcd723c236fb27fd8e7a0b906659e3f0ed9c507daaa7905a0"
+  ],
+  "owner_stores": [
+    "earnings.workspace_generation"
+  ],
+  "object_classes": [
+    "derived_view"
+  ],
+  "evidence_class": "deterministic",
+  "clock_summary": {
+    "collapsed": false,
+    "entries": [
+      {
+        "reference_id": "efr_44fc171d332b70ffcd723c236fb27fd8e7a0b906659e3f0ed9c507daaa7905a0",
+        "class": "knowable",
+        "field": "lifecycle.source_available_at",
+        "value_state": "known",
+        "value": "2026-08-01T15:00:00Z",
+        "grain": "datetime"
+      },
+      {
+        "reference_id": "efr_44fc171d332b70ffcd723c236fb27fd8e7a0b906659e3f0ed9c507daaa7905a0",
+        "class": "observed",
+        "field": "lifecycle.observed_at",
+        "value_state": "known",
+        "value": "2026-08-01T15:01:00Z",
+        "grain": "datetime"
+      },
+      {
+        "reference_id": "efr_44fc171d332b70ffcd723c236fb27fd8e7a0b906659e3f0ed9c507daaa7905a0",
+        "class": "belief_or_build",
+        "field": "generated_at",
+        "value_state": "known",
+        "value": "2026-08-01T15:02:00Z",
+        "grain": "datetime"
+      }
+    ]
+  },
+  "coverage": {
+    "state": "corrected",
+    "total": 1,
+    "included": 1,
+    "excluded": 0,
+    "missing": 0,
+    "stale": 0,
+    "rights_blocked": 0,
+    "fallback": 0,
+    "basis": "all requested owner-reader fixture rows reconcile by native reference identity; freshness remains owner-policy dependent",
+    "reconciliation_state": "reconciled"
+  },
+  "uncertainty": {
+    "state": "none",
+    "probability": null,
+    "derivation_ref": null,
+    "calibration_ref": null
+  },
+  "dependence": {
+    "state": "independent",
+    "independent_evidence_count": 1,
+    "groups": []
+  },
+  "conflict_correction": {
+    "state": "corrected",
+    "reference_ids": [
+      "efr_44fc171d332b70ffcd723c236fb27fd8e7a0b906659e3f0ed9c507daaa7905a0"
+    ]
+  },
+  "next_observable": {
+    "state": "unknown",
+    "description": null,
+    "owner_clock_field": null
+  },
+  "permitted_consumers": [
+    "security_state.v1"
+  ],
+  "lineage": {
+    "state": "recompiled",
+    "predecessor_block_ids": [
+      "ebl_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ],
+    "invalidated_by_reference_ids": [
+      "efr_44fc171d332b70ffcd723c236fb27fd8e7a0b906659e3f0ed9c507daaa7905a0"
+    ]
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "schema": "evidence_foundation.block.v1",
+  "version": "1.0.0",
+  "evidence_block_id": "ebl_b654fe02b8eebea2654288f5cc1ef5ae38da0f567130291f47151b0608be5ab1",
+  "block_key": "conflict_example",
+  "consumer": {
+    "workstream": "WS:MARKET-OS",
+    "job": "build security_state.v1 for AAPL",
+    "output_contract": "security_state.v1"
+  },
+  "supported_claim": {
+    "kind": "claim",
+    "text": "The two owner observations are retained as conflicted; neither is silently netted.",
+    "state": "conflicted"
+  },
+  "reference_ids": [
+    "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8",
+    "efr_56957fb414554ef22a68140c426189b0497da5584021767be52e0cb91c047b85"
+  ],
+  "owner_stores": [
+    "theme_graph.evidence"
+  ],
+  "object_classes": [
+    "world_observation"
+  ],
+  "evidence_class": "fact",
+  "clock_summary": {
+    "collapsed": false,
+    "entries": [
+      {
+        "reference_id": "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8",
+        "class": "source_published",
+        "field": "published_at",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8",
+        "class": "world_valid",
+        "field": "effective_at",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8",
+        "class": "belief_or_build",
+        "field": "computed_at",
+        "value_state": "known",
+        "value": "2026-07-31T00:15:00Z",
+        "grain": "datetime"
+      },
+      {
+        "reference_id": "efr_56957fb414554ef22a68140c426189b0497da5584021767be52e0cb91c047b85",
+        "class": "source_published",
+        "field": "published_at",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_56957fb414554ef22a68140c426189b0497da5584021767be52e0cb91c047b85",
+        "class": "world_valid",
+        "field": "effective_at",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_56957fb414554ef22a68140c426189b0497da5584021767be52e0cb91c047b85",
+        "class": "belief_or_build",
+        "field": "computed_at",
+        "value_state": "known",
+        "value": "2026-07-31T00:16:00Z",
+        "grain": "datetime"
+      }
+    ]
+  },
+  "coverage": {
+    "state": "conflicted",
+    "total": 2,
+    "included": 2,
+    "excluded": 0,
+    "missing": 0,
+    "stale": 0,
+    "rights_blocked": 0,
+    "fallback": 0,
+    "basis": "all requested owner-reader fixture rows reconcile by native reference identity; freshness remains owner-policy dependent",
+    "reconciliation_state": "reconciled"
+  },
+  "uncertainty": {
+    "state": "none",
+    "probability": null,
+    "derivation_ref": null,
+    "calibration_ref": null
+  },
+  "dependence": {
+    "state": "shared_upstream",
+    "independent_evidence_count": 1,
+    "groups": [
+      {
+        "kind": "shared_upstream",
+        "reference_ids": [
+          "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8",
+          "efr_56957fb414554ef22a68140c426189b0497da5584021767be52e0cb91c047b85"
+        ],
+        "deterministic_key": null
+      }
+    ]
+  },
+  "conflict_correction": {
+    "state": "conflicted",
+    "reference_ids": [
+      "efr_4488556b498d6c54869d50afcc2caa52943fc3c240f61a27e4431079e52515c8",
+      "efr_56957fb414554ef22a68140c426189b0497da5584021767be52e0cb91c047b85"
+    ]
+  },
+  "next_observable": {
+    "state": "unknown",
+    "description": null,
+    "owner_clock_field": null
+  },
+  "permitted_consumers": [
+    "security_state.v1"
+  ],
+  "lineage": {
+    "state": "original",
+    "predecessor_block_ids": [],
+    "invalidated_by_reference_ids": []
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}
