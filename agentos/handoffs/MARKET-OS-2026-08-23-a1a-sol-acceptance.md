@@ -71,7 +71,7 @@ verified:
       Watchlists, Macro-Terminal agreement, and ordered row IDs remain exact.
   - claim: "No higher-priority current Market OS authority contradicts A1A acceptance"
     command: >
-      Read current Macro main cd42b890d1df740f7fd5fddee6e582221360791b,
+      Read and merge current Macro main fb2375441f21b94201edc4ed6ac2c40f67274cde,
       WS:MARKET-OS, final matrix, current open PR census, and merged #6125
     result: >
       PASS — current WS says the sole remaining A1A gate is Sol acceptance; #6125
