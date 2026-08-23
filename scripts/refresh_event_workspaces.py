@@ -1075,13 +1075,16 @@ def refresh(
     prior_workspace: PriorLoader | Mapping[str, Any] | None = None,
     # BLOCKER-2/MAJOR-6/MINOR-9 (Opus red-team, 2026-08-23): the homebuilder
     # acquisition call site is now SUBSUMED into discovery below —
-    # homebuilder_prior_workspace_loader / acquire_and_build_homebuilder_workspace
-    # are no longer part of refresh()'s own flow (the function still exists
-    # and is independently tested/testable — see
-    # tests/test_issuer_profiles_a5a.py's direct unit tests of it — but
-    # refresh() itself no longer calls it: a SECOND, clock-drifted
-    # rebuild of "the newest" row atop discovery's own chained publish was
-    # exactly the architecture MINOR-9/MAJOR-6 named as broken).
+    # homebuilder_prior_workspace_loader is no longer part of refresh()'s
+    # own flow. NIT-25 (verification round 3, 2026-08-23): the OLD
+    # single-newest acquire_and_build_homebuilder_workspace() this comment
+    # used to describe as "still exists, independently testable" is now
+    # DELETED entirely (NEW-NIT-21/MINOR-17, round 2) — its own direct unit
+    # test at tests/test_issuer_profiles_a5a.py was retargeted to
+    # discover_new_homebuilder_revisions in the same round. A SECOND,
+    # clock-drifted rebuild of "the newest" row atop discovery's own
+    # chained publish was exactly the architecture MINOR-9/MAJOR-6 named as
+    # broken.
     #
     # NEW-4: the ticker-scoped carry-forward lookup (load_prior_workspace_for_ticker
     # by default), used whenever THIS cycle's discovery finds zero new
@@ -1135,7 +1138,14 @@ def refresh(
     that simply hadn't been visited yet. The common case (0 or 1 total new
     revision this cycle across every issuer) collapses Phase 2 to exactly
     one write+publish call, and the running snapshot always ends each
-    ticker's slot at its OWN newest known revision (MAJOR-6).
+    ticker's slot at its OWN newest known revision (MAJOR-6). NIT-24
+    (verification round 3, 2026-08-23): at a fiscal-quarter rollover, ONE
+    cycle's discovery can legitimately publish TWO events for the same
+    issuer at once (a late prior-quarter amendment alongside the fresh new
+    quarter's original) — this is safe and self-clearing, never a special
+    case here, because ``find_current_event_id_for_company``'s own double-
+    match tie-break always resolves to the NEWEST fiscal period on every
+    later carry-forward read.
     """
     del work_dir  # reserved so the job shares the v1 scratch parent without writing it
     filing = acquire_flagship_filing(http_get=http_get)
@@ -1219,37 +1229,59 @@ def refresh(
     #       frozen) — cannot rule out silently dropping a corrected event.
     #       Same discipline as the flagship's own prior-fetch-failure
     #       handling above; one issuer's CDN blip delaying ALL publication
-    #       by one cycle is the accepted cost. The NORMAL-path
-    #       event_id-keyed prior read inside
-    #       acquire_and_build_homebuilder_workspace (after a SUCCESSFUL
-    #       acquisition) already raises PriorWorkspaceFetchFailed uncaught
-    #       (NEW-1) — caught here too, same abort.
+    #       by one cycle is the accepted cost. NIT-25 (verification round 3,
+    #       2026-08-23): this used to also name the deleted
+    #       acquire_and_build_homebuilder_workspace's own prior read as
+    #       sharing this discipline — that function is gone (round 2). The
+    #       real NORMAL-path event_id-keyed prior read today lives inside
+    #       discover_new_homebuilder_revisions itself, via
+    #       _event_known_revisions (which re-raises any genuine chain-read
+    #       failure as PriorWorkspaceFetchFailed, never silently "nothing
+    #       represented") — that path is caught by the PriorWorkspaceFetchFailed
+    #       handler around the discover(...) call below, same abort
+    #       discipline.
     #   (c) genuinely never published (no prior found by either lookup)
     #       and acquisition failed -> true skip, nothing to carry, and its
     #       absence next cycle correctly reads as first-publish.
     #
-    # Accepted-cost note (NEW-MAJOR-17, Opus red-team verification round 2,
-    # 2026-08-23 — supersedes the round-1 note this replaces, which
-    # predated the two-phase split below and undercounted its GETs): the
-    # two-phase design pays ONE homebuilder_carry_forward_loader GET per
-    # ticker (4 GETs/cycle, HOMEBUILDER_TICKERS) UNCONDITIONALLY in Phase 1
-    # — whether or not that ticker's own discovery found a new revision —
-    # to guarantee the base snapshot is complete before Phase 2 writes
-    # anything (this is exactly what closes NEW-BLOCKER-16: a triggering
-    # ticker's first write must never publish a nest that is silently
-    # missing a ticker Phase 1 simply hadn't reached yet). A quiet cycle
-    # (zero new revisions anywhere) now costs those 4 carry-forward GETs
-    # plus each ticker's own discovery GET (one SEC submissions call each)
-    # plus the flagship's fixed GETs — a real, deliberate increase over the
-    # single-pass code this replaces, paid once per cycle regardless of how
-    # many revisions Phase 2 later replays (Phase 1 runs exactly once). The
-    # abort-surface discipline is otherwise unchanged in shape: any one
-    # ticker's failed carry-forward read still aborts the WHOLE cycle
-    # (RefreshError, marker frozen on the last good generation) rather than
-    # risk silently dropping a corrected event, and one issuer's CDN blip
-    # delaying the whole cycle remains the accepted cost. A bounded retry
-    # on these reads is a possible future reduction — deliberately NOT
-    # added in this PR.
+    # Accepted-cost note (MINOR-22, Opus red-team verification round 3,
+    # 2026-08-23 — supersedes the round-2 note this replaces, which
+    # undercounted the real R2 GET volume by roughly 4x): the two-phase
+    # design pays ONE homebuilder_carry_forward_loader call per ticker
+    # UNCONDITIONALLY in Phase 1 — whether or not that ticker's own
+    # discovery found a new revision — to guarantee the base snapshot is
+    # complete before Phase 2 writes anything (this is exactly what closes
+    # NEW-BLOCKER-16: a triggering ticker's first write must never publish
+    # a nest that is silently missing a ticker Phase 1 simply hadn't
+    # reached yet). That ONE call is NOT one GET: load_prior_workspace_for_
+    # ticker is find_current_event_id_for_company (marker + generation
+    # manifest = 2 GETs) followed by load_prior_workspace (marker +
+    # workspace object = 2 GETs) = 4 R2 GETs PER TICKER, 16/cycle across
+    # HOMEBUILDER_TICKERS. Add the top-level marker read for chain bookkeeping
+    # (current_marker_loader, 1 GET) and the flagship's own prior read
+    # (load_prior_flagship_workspace = load_prior_workspace = marker +
+    # workspace, 2 GETs): a QUIET cycle (zero new revisions anywhere) costs
+    # roughly 19 R2 GETs on top of those, NOT ~4-10. On top of THAT, each
+    # ticker's own discovery performs a FULL read_event_source_revisions
+    # chain walk (1 marker + N generation manifests + M workspace objects,
+    # growing with that event's own chain length) for every distinct
+    # candidate event_id seen in the SEC "recent" window this cycle — the
+    # chain-state loader call happens the FIRST time an event_id is seen
+    # among candidates, BEFORE the already-represented check, so this walk
+    # fires even when nothing about that ticker is new. On a quiet cycle
+    # with one candidate event per ticker that is 4 additional chain walks,
+    # each growing with how many generations that event has accumulated —
+    # this is the real, dominant, and UNBOUNDED-with-chain-length cost, not
+    # a fixed small constant. Both costs are paid once per cycle regardless
+    # of how many revisions Phase 2 later replays (Phase 1 runs exactly
+    # once). The abort-surface discipline is otherwise unchanged in shape:
+    # any one ticker's failed carry-forward read still aborts the WHOLE
+    # cycle (RefreshError, marker frozen on the last good generation)
+    # rather than risk silently dropping a corrected event, and one
+    # issuer's CDN blip delaying the whole cycle remains the accepted cost.
+    # A bounded retry on these reads, and/or a chain-walk cache keyed by
+    # event_id within one cycle, are possible future reductions —
+    # deliberately NOT added in this PR.
     workspaces: dict[str, dict[str, Any]] = {FLAGSHIP_EVENT_ID: payload}
     target = Path(out_dir) if out_dir is not None else Path("data/company_intelligence")
 

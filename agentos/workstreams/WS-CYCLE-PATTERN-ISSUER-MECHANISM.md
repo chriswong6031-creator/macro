@@ -1165,6 +1165,54 @@ waves:
       +1 BLOCKER-16 test). Still a DRAFT PR — never marked ready, armed
       merge-on-green, or merged; the commissioning session owns
       integration/merge.
+      ROUND 3 (Opus red-team verification, 2026-08-23) — APPROVE, no
+      blockers/majors, one closing micro-round before the commissioning
+      session merges. MINOR-22: the accepted-cost comment above refresh()'s
+      per-ticker loop understated the quiet-cycle R2 GET volume ~4x —
+      corrected: load_prior_workspace_for_ticker is find_current_event_id_
+      for_company (marker + generation manifest = 2 GETs) + load_prior_
+      workspace (marker + workspace object = 2 GETs) = 4 GETs/ticker, 16/
+      cycle across HOMEBUILDER_TICKERS; plus the top-level marker read (1)
+      and the flagship's own prior read (2) = ~19 R2 GETs on a quiet cycle,
+      not ~4-10 — PLUS each ticker's discovery performing a FULL
+      read_event_source_revisions chain walk (1 marker + N generation
+      manifests + M workspaces, growing with that event's own chain
+      length) for every distinct candidate event_id, which fires even when
+      nothing is new (the chain-state loader call happens on first sight
+      of an event_id among candidates, before the already-represented
+      check) — 4 such walks on a quiet cycle with one candidate event per
+      ticker, unbounded with chain length; this is the real, dominant
+      cost, not a fixed small constant. MINOR-23: added a refresh()-level
+      test (test_refresh_chains_onto_the_marker_raw_bytes_hash_not_a_
+      reserialization) injecting current_marker_loader returning a
+      deliberately non-canonical (raw_bytes, parsed) pair and asserting
+      the minted generation's previous_manifest_sha256 ==
+      sha256(raw_bytes) and != sha256(canonical_json_bytes(parsed)) —
+      proven mutant kill: temporarily reverted the target line to hash
+      canonical_json_bytes(current_marker) again, confirmed the new test
+      FAILS (assertion mismatch on the two sha256 values), restored the
+      fix, confirmed it passes. NIT-24: refresh()'s docstring gained one
+      sentence documenting that a fiscal-quarter rollover can legitimately
+      publish two events for one issuer in a single cycle, and why that is
+      safe and self-clearing (find_current_event_id_for_company's own
+      documented double-match tie-break always resolves to the newest
+      fiscal period on the next carry-forward read — no special-case code
+      needed). NIT-25: fixed two stale comments that still described the
+      round-2-deleted acquire_and_build_homebuilder_workspace as existing/
+      independently-testable or as sharing this discipline; both now
+      correctly describe the current architecture
+      (discover_new_homebuilder_revisions / _event_known_revisions).
+      FINAL VERIFICATION at the round-3 head: six touched-module test
+      files together = 291 passed, 2 skipped (28.17s);
+      tests/test_gh_annotation_line_start.py run SEPARATELY = 4 passed
+      (6.50s); combined seven-suite total = 295 passed, 2 skipped, 0
+      failed. test_refresh_event_workspaces.py alone: 37 passed (was 36 —
+      +1 MINOR-23 test). contract-delta --base origin/main = 0 introduced,
+      0 inherited (base 3695178cef2a). agentos validate = 0 errors (29
+      pre-existing warnings,
+      unchanged). Still a DRAFT PR — never marked ready, armed
+      merge-on-green, or merged; the commissioning session owns
+      integration/merge.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's

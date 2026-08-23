@@ -1118,6 +1118,54 @@ def test_refresh_every_write_contains_every_resolved_ticker_before_any_write(tmp
     }
 
 
+def test_refresh_chains_onto_the_marker_raw_bytes_hash_not_a_reserialization(tmp_path: Path) -> None:
+    """MINOR-23 (Opus red-team verification round 3, 2026-08-23): pins the
+    NEW-MINOR-18 raw-bytes producer hash at the refresh()-level seam, not
+    merely inside the reader primitive. current_marker_loader injects a
+    (raw_bytes, parsed) pair whose raw_bytes is deliberately NOT
+    canonical_json_bytes(parsed) — different whitespace/key order, exactly
+    the kind of byte-for-byte divergence a real R2 object can carry
+    relative to any local re-serialization of its own parsed contents.
+    refresh()'s minted generation must chain onto sha256(raw_bytes) — never
+    sha256(canonical_json_bytes(parsed))."""
+    from engine.company_intelligence.contracts import canonical_json_bytes
+    from engine.company_intelligence.event_workspace import MANIFEST_SCHEMA_V2
+
+    fake = _FakeR2()
+    parsed_marker = {
+        "schema": MANIFEST_SCHEMA_V2,
+        # An arbitrary, non-content-derived id: guarantees this cycle's
+        # freshly-built AAPL payload can never coincidentally reproduce it
+        # as a semantic no-op, so the closing write's no-op branch never
+        # fires and chain_previous_sha (this test's actual target) is what
+        # ends up in the minted manifest.
+        "generation_id": "f" * 24,
+        "generated_at": "2026-07-01T00:00:00Z",
+        "authority": "context_only", "status": "ready", "event_count": 0, "files": {},
+        "previous_generation_id": None, "previous_manifest_sha256": None,
+    }
+    non_canonical_raw_bytes = (
+        b'{\n  "generation_id": "' + b"f" * 24 + b'",\n  "schema": "' + MANIFEST_SCHEMA_V2.encode() + b'",\n'
+        b'  "generated_at": "2026-07-01T00:00:00Z", "authority": "context_only", "status": "ready",\n'
+        b'  "event_count": 0, "files": {}, "previous_generation_id": null, "previous_manifest_sha256": null\n}\n'
+    )
+    canonical_bytes_of_parsed = canonical_json_bytes(parsed_marker)
+    assert non_canonical_raw_bytes != canonical_bytes_of_parsed, "fixture must actually diverge from the canonical form"
+
+    assert _refresh(
+        tmp_path, fake,
+        current_marker_loader=lambda: (non_canonical_raw_bytes, parsed_marker),
+    ) == 0
+    marker = _marker(tmp_path)
+    minted_manifest = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker["generation_id"] / "manifest.json")
+        .read_text(encoding="utf-8")
+    )
+    assert minted_manifest["previous_generation_id"] == "f" * 24
+    assert minted_manifest["previous_manifest_sha256"] == sha256(non_canonical_raw_bytes).hexdigest()
+    assert minted_manifest["previous_manifest_sha256"] != sha256(canonical_bytes_of_parsed).hexdigest()
+
+
 def test_refresh_newest_already_represented_restores_current_state_without_a_new_write(tmp_path: Path) -> None:
     """B2 at the refresh() level: when discovery finds nothing new for a
     ticker, its CURRENT published state is still carried into the running
