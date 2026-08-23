@@ -982,11 +982,12 @@ waves:
       revision eligibility/replay/contributor laws (Sol A5C directive,
       2026-08-23, items 1/3/4/5/6)
     status: awaiting_ci
+    pr: 6322
     depends_on: [A5B, A5C-alpha, A5C]
     next_action: >
-      DRAFT PR open (branch claude/imce-a5c-source-vintage-main, off fresh
-      origin/main containing both merge 2ee5c16724da/#6308 A5C-alpha and
-      merge 3d35ec5cd5ae/#6307 A5C-TOL); NOT merged/armed — the
+      DRAFT PR #6322 open (branch claude/imce-a5c-source-vintage-main, off
+      fresh origin/main containing both merge 2ee5c16724da/#6308 A5C-alpha
+      and merge 3d35ec5cd5ae/#6307 A5C-TOL); NOT merged/armed — the
       commissioning session adjudicates and merges. This is the "honest
       fix" both A5C-alpha (#6308) and A5C (#6307) named as still-pending:
       the manifest/history chain that closes A5C-alpha's own named
