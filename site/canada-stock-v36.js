@@ -3,8 +3,8 @@
 
    This file owns no ranking, signal, quote, lifecycle, entitlement, or persistence
    semantics. It re-composes already-published Canada stock surfaces and reads the
-   existing Canada thematic-basket artifact. If anything required is unavailable,
-   the legacy page remains visible and functional. */
+   existing Canada thematic-basket and sector-pulse artifacts. If anything required
+   is unavailable, the legacy page remains visible and functional. */
 (function () {
   "use strict";
 
@@ -106,13 +106,18 @@
     return { en: th.reco_en || ({enter:"Enter",accumulate:"Accumulate",hold:"Hold",trim:"Trim",avoid:"Avoid"}[reco] || reco || "Neutral"),
       zh: th.reco_zh || ({enter:"入场",accumulate:"加仓",hold:"持有",trim:"减仓",avoid:"回避"}[reco] || reco || "中性") };
   }
-  function collectThemes(payload) {
-    var intel = payload && payload.theme_intel || {}, themes = Array.isArray(intel.themes) ? intel.themes.slice() : [];
-    var basketMap = Object.create(null), baskets = payload && payload.baskets || [];
+  function collectThemes(basketPayload, pulsePayload) {
+    var ranked = pulsePayload && Array.isArray(pulsePayload.themes) ? pulsePayload.themes.slice() : [];
+    if (!ranked.length) {
+      var embedded = basketPayload && basketPayload.theme_intel || {};
+      ranked = Array.isArray(embedded.themes) ? embedded.themes.slice() : [];
+    }
+    var basketMap = Object.create(null), baskets = basketPayload && basketPayload.baskets || [];
     if (Array.isArray(baskets)) baskets.forEach(function (b) { if (b && b.id) basketMap[b.id] = b; });
     else if (baskets && typeof baskets === "object") Object.keys(baskets).forEach(function (k) { basketMap[k] = baskets[k]; });
-    themes.sort(function (a, b) { return (a.rank || 9999) - (b.rank || 9999); });
-    return themes.map(function (th, idx) {
+    /* Rank is owner-published by sector_pulse/theme_intel. The page never re-scores. */
+    ranked.sort(function (a, b) { return (a.rank || 9999) - (b.rank || 9999); });
+    return ranked.map(function (th, idx) {
       var basket = basketMap[th.id] || {};
       /* Current Canada basket artifacts publish member identity as `symbol`.
          `ticker` remains accepted for older/alternate regional producers. */
@@ -305,15 +310,30 @@
     setView(state.view); observeTable(); return true;
   }
 
+  function getJson(url) {
+    return fetch(url, { credentials: "same-origin" }).then(function (r) { if (!r.ok) throw new Error(url + " unavailable"); return r.json(); });
+  }
   function start() {
     if (!document.body.classList.contains("page-canada")) return;
     var payload = parseRows(); if (!payload || !state.rows.length) return;
     state.cards = collectCards(); if (!state.cards.length) return;
     state.sectors = collectSectors();
-    var done = false, timer = setTimeout(function () { if (!done) { done = true; buildShell(payload); } }, 1200);
-    fetch("canadabasketdata/baskets.json", { credentials: "same-origin" }).then(function (r) { if (!r.ok) throw new Error("theme artifact unavailable"); return r.json(); }).then(function (data) {
-      if (done) return; done = true; clearTimeout(timer); state.themes = collectThemes(data); buildShell(payload);
-    }).catch(function () { if (!done) { done = true; clearTimeout(timer); buildShell(payload); } });
+
+    /* The old page stays visible during this bounded read. `sector_pulse_canada`
+       is the current published theme rank/reco owner; baskets.json owns members.
+       No client-side score or rank is computed. */
+    var done = false, timer = setTimeout(function () { if (!done) { done = true; buildShell(payload); } }, 2500);
+    Promise.all([
+      getJson("canadabasketdata/baskets.json"),
+      getJson("canadabasketdata/sector_pulse_canada.json").catch(function () { return null; })
+    ]).then(function (parts) {
+      if (done) return;
+      done = true; clearTimeout(timer);
+      state.themes = collectThemes(parts[0], parts[1]);
+      buildShell(payload);
+    }).catch(function () {
+      if (!done) { done = true; clearTimeout(timer); buildShell(payload); }
+    });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
