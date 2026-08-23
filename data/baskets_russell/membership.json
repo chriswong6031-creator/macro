@@ -4,7 +4,7 @@
  "index": "Russell-2000",
  "benchmark": "IWM",
  "benchmark_label": "Russell-2000 (IWM)",
- "as_of": "2026-08-22",
+ "as_of": "2026-08-23",
  "source": "finviz idx_rut (1889 names); sub-industry subsectors + sector amalgamations",
  "subsectors": {
   "advertising-agencies": {
@@ -78,16 +78,16 @@
      "name": "Archer Aviation Inc"
     },
     {
-     "ticker": "LUNR",
-     "name": "Intuitive Machines Inc"
-    },
-    {
      "ticker": "FLY",
      "name": "Firefly Aerospace Inc"
     },
     {
      "ticker": "ATRO",
      "name": "Astronics Corp"
+    },
+    {
+     "ticker": "LUNR",
+     "name": "Intuitive Machines Inc"
     },
     {
      "ticker": "RDW",
@@ -1124,12 +1124,12 @@
      "name": "Unity Bancorp Inc"
     },
     {
-     "ticker": "NPB",
-     "name": "Northpointe Bancshares Inc"
-    },
-    {
      "ticker": "CBNK",
      "name": "Capital Bancorp Inc"
+    },
+    {
+     "ticker": "NPB",
+     "name": "Northpointe Bancshares Inc"
     },
     {
      "ticker": "GCBC",
@@ -2218,6 +2218,10 @@
      "name": "Agenus Inc"
     },
     {
+     "ticker": "ZNTL",
+     "name": "Zentalis Pharmaceuticals Inc"
+    },
+    {
      "ticker": "DMAC",
      "name": "DiaMedica Therapeutics Inc"
     },
@@ -2292,10 +2296,6 @@
     {
      "ticker": "ELDN",
      "name": "Eledon Pharmaceuticals Inc"
-    },
-    {
-     "ticker": "ZNTL",
-     "name": "Zentalis Pharmaceuticals Inc"
     },
     {
      "ticker": "LCTX",
@@ -2810,16 +2810,16 @@
      "name": "Otter Tail Corp"
     },
     {
+     "ticker": "FBYD",
+     "name": "Falcon's Beyond Global Inc"
+    },
+    {
      "ticker": "DLX",
      "name": "Deluxe Corp"
     },
     {
      "ticker": "TTI",
      "name": "Tetra Technologies Inc"
-    },
-    {
-     "ticker": "FBYD",
-     "name": "Falcon's Beyond Global Inc"
     },
     {
      "ticker": "CODI",
@@ -5166,16 +5166,16 @@
      "name": "Select Water Solutions Inc"
     },
     {
-     "ticker": "FLOC",
-     "name": "Flowco Holdings Inc"
-    },
-    {
      "ticker": "INVX",
      "name": "Innovex International Inc"
     },
     {
      "ticker": "XPRO",
      "name": "Expro Ltd"
+    },
+    {
+     "ticker": "FLOC",
+     "name": "Flowco Holdings Inc"
     },
     {
      "ticker": "NEXT",
@@ -6974,16 +6974,16 @@
      "name": "Bakkt Inc"
     },
     {
-     "ticker": "RPAY",
-     "name": "Repay Holdings Corp"
-    },
-    {
      "ticker": "PSFE",
      "name": "Paysafe Limited"
     },
     {
      "ticker": "TLS",
      "name": "Telos Corp"
+    },
+    {
+     "ticker": "RPAY",
+     "name": "Repay Holdings Corp"
     },
     {
      "ticker": "PDYN",
@@ -8130,10 +8130,6 @@
      "name": "Sphere Entertainment Co"
     },
     {
-     "ticker": "RUM",
-     "name": "RUM Group Inc"
-    },
-    {
      "ticker": "CNK",
      "name": "Cinemark Holdings Inc"
     },
@@ -8142,16 +8138,20 @@
      "name": "Madison Square Garden Entertainment Corp"
     },
     {
+     "ticker": "RUM",
+     "name": "RUM Group Inc"
+    },
+    {
      "ticker": "TDS",
      "name": "Telephone And Data Systems Inc"
     },
     {
-     "ticker": "BATRA",
-     "name": "Atlanta Braves Holdings Inc"
-    },
-    {
      "ticker": "MGNI",
      "name": "Magnite Inc"
+    },
+    {
+     "ticker": "BATRA",
+     "name": "Atlanta Braves Holdings Inc"
     },
     {
      "ticker": "BATRK",
@@ -8440,10 +8440,6 @@
      "name": "Rush Enterprises Inc"
     },
     {
-     "ticker": "RSI",
-     "name": "Rush Street Interactive Inc"
-    },
-    {
      "ticker": "ZGN",
      "name": "Ermenegildo Zegna NV"
     },
@@ -8566,6 +8562,10 @@
     {
      "ticker": "GRBK",
      "name": "Green Brick Partners Inc"
+    },
+    {
+     "ticker": "RSI",
+     "name": "Rush Street Interactive Inc"
     },
     {
      "ticker": "HOG",
@@ -9608,16 +9608,16 @@
      "name": "Dorian LPG Ltd"
     },
     {
-     "ticker": "FLOC",
-     "name": "Flowco Holdings Inc"
-    },
-    {
      "ticker": "INVX",
      "name": "Innovex International Inc"
     },
     {
      "ticker": "XPRO",
      "name": "Expro Ltd"
+    },
+    {
+     "ticker": "FLOC",
+     "name": "Flowco Holdings Inc"
     },
     {
      "ticker": "NEXT",
@@ -10650,12 +10650,12 @@
      "name": "PRA Group Inc"
     },
     {
-     "ticker": "VEL",
-     "name": "Velocity Financial Inc"
-    },
-    {
      "ticker": "DGICA",
      "name": "Donegal Group Inc"
+    },
+    {
+     "ticker": "VEL",
+     "name": "Velocity Financial Inc"
     },
     {
      "ticker": "AROW",
@@ -10730,12 +10730,12 @@
      "name": "Unity Bancorp Inc"
     },
     {
-     "ticker": "NPB",
-     "name": "Northpointe Bancshares Inc"
-    },
-    {
      "ticker": "CBNK",
      "name": "Capital Bancorp Inc"
+    },
+    {
+     "ticker": "NPB",
+     "name": "Northpointe Bancshares Inc"
     },
     {
      "ticker": "OPFI",
@@ -12528,6 +12528,10 @@
      "name": "Agenus Inc"
     },
     {
+     "ticker": "ZNTL",
+     "name": "Zentalis Pharmaceuticals Inc"
+    },
+    {
      "ticker": "DMAC",
      "name": "DiaMedica Therapeutics Inc"
     },
@@ -12634,10 +12638,6 @@
     {
      "ticker": "ELDN",
      "name": "Eledon Pharmaceuticals Inc"
-    },
-    {
-     "ticker": "ZNTL",
-     "name": "Zentalis Pharmaceuticals Inc"
     },
     {
      "ticker": "LCTX",
@@ -12796,12 +12796,12 @@
      "name": "MediWound Ltd"
     },
     {
-     "ticker": "LFMD",
-     "name": "LifeMD Inc"
-    },
-    {
      "ticker": "OKUR",
      "name": "OnKure Therapeutics Inc"
+    },
+    {
+     "ticker": "LFMD",
+     "name": "LifeMD Inc"
     },
     {
      "ticker": "UNCY",
@@ -13034,10 +13034,6 @@
      "name": "Ceco Environmental Corp"
     },
     {
-     "ticker": "LUNR",
-     "name": "Intuitive Machines Inc"
-    },
-    {
      "ticker": "FLY",
      "name": "Firefly Aerospace Inc"
     },
@@ -13096,6 +13092,10 @@
     {
      "ticker": "TNET",
      "name": "TriNet Group Inc"
+    },
+    {
+     "ticker": "LUNR",
+     "name": "Intuitive Machines Inc"
     },
     {
      "ticker": "PLUG",
@@ -13342,6 +13342,10 @@
      "name": "Willdan Group Inc"
     },
     {
+     "ticker": "FBYD",
+     "name": "Falcon's Beyond Global Inc"
+    },
+    {
      "ticker": "BW",
      "name": "Babcock & Wilcox Enterprises Inc"
     },
@@ -13404,10 +13408,6 @@
     {
      "ticker": "KFRC",
      "name": "Kforce Inc"
-    },
-    {
-     "ticker": "FBYD",
-     "name": "Falcon's Beyond Global Inc"
     },
     {
      "ticker": "NNE",
@@ -13610,12 +13610,12 @@
      "name": "Universal Logistics Holdings Inc"
     },
     {
-     "ticker": "CMDB",
-     "name": "Costamare Bulkers Holdings Ltd"
-    },
-    {
      "ticker": "WNC",
      "name": "Wabash National Corp"
+    },
+    {
+     "ticker": "CMDB",
+     "name": "Costamare Bulkers Holdings Ltd"
     },
     {
      "ticker": "TATT",
@@ -13782,12 +13782,12 @@
      "name": "PAMT Corp"
     },
     {
-     "ticker": "HQI",
-     "name": "HireQuest Inc"
-    },
-    {
      "ticker": "SIDU",
      "name": "Sidus Space Inc"
+    },
+    {
+     "ticker": "HQI",
+     "name": "HireQuest Inc"
     },
     {
      "ticker": "PPIH",
@@ -13864,12 +13864,12 @@
      "name": "Compass Inc"
     },
     {
-     "ticker": "CDP",
-     "name": "COPT Defense Properties"
-    },
-    {
      "ticker": "RHP",
      "name": "Ryman Hospitality Properties Inc"
+    },
+    {
+     "ticker": "CDP",
+     "name": "COPT Defense Properties"
     },
     {
      "ticker": "TRNO",
@@ -14846,16 +14846,16 @@
      "name": "Unusual Machines Inc"
     },
     {
+     "ticker": "WOLF",
+     "name": "Wolfspeed Inc"
+    },
+    {
      "ticker": "HLIT",
      "name": "Harmonic Inc"
     },
     {
      "ticker": "EFOR",
      "name": "Everforth Inc"
-    },
-    {
-     "ticker": "WOLF",
-     "name": "Wolfspeed Inc"
     },
     {
      "ticker": "CLVT",
@@ -14898,12 +14898,12 @@
      "name": "Red Violet Inc"
     },
     {
-     "ticker": "SCSC",
-     "name": "Scansource Inc"
-    },
-    {
      "ticker": "UPBD",
      "name": "Upbound Group Inc"
+    },
+    {
+     "ticker": "SCSC",
+     "name": "Scansource Inc"
     },
     {
      "ticker": "VYX",
@@ -15126,16 +15126,12 @@
      "name": "Blend Labs Inc"
     },
     {
-     "ticker": "RPAY",
-     "name": "Repay Holdings Corp"
+     "ticker": "PSFE",
+     "name": "Paysafe Limited"
     },
     {
      "ticker": "MPTI",
      "name": "M-tron Industries Inc"
-    },
-    {
-     "ticker": "PSFE",
-     "name": "Paysafe Limited"
     },
     {
      "ticker": "OPTX",
@@ -15144,6 +15140,10 @@
     {
      "ticker": "TLS",
      "name": "Telos Corp"
+    },
+    {
+     "ticker": "RPAY",
+     "name": "Repay Holdings Corp"
     },
     {
      "ticker": "DUOT",

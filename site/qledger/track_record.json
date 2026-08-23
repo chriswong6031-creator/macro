@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-22T14:22:54.470228+00:00",
+  "generated_at": "2026-08-23T00:31:14.378064+00:00",
   "grade_horizons": [
     5,
     21,
@@ -2139,7 +2139,7 @@
     }
   },
   "counts": {
-    "n_claims": 59076,
+    "n_claims": 59136,
     "n_grades": 79337,
     "n_placebo": 1046,
     "n_rejected": 15,
@@ -2153,7 +2153,7 @@
       "explicit_unit_v1:calendar_days:US": 29,
       "explicit_unit_v1:trading_days:CN": 208
     },
-    "n_claims_horizon_unit_declared": 12446,
+    "n_claims_horizon_unit_declared": 12506,
     "n_claims_unstamped_regime": 6281
   },
   "ladder_states": {
@@ -3306,12 +3306,12 @@
       },
       "21": {
         "eligible": false,
-        "reason": "Wilson CI lower bound 0.2984 <= 0.5 — the hit-rate interval does not clear a coin flip. AUTO-DEMOTE warranted. claim_family='radar' horizon=21d: rolling Wilson CI lower bound=0.2984 <= 0.5 (coin-flip null) at n_dates=33. Auto-demote one rung. Pinned as of 2026-08-22 (narrative_regime precedent).",
+        "reason": "Wilson CI lower bound 0.2984 <= 0.5 — the hit-rate interval does not clear a coin flip. AUTO-DEMOTE warranted. claim_family='radar' horizon=21d: rolling Wilson CI lower bound=0.2984 <= 0.5 (coin-flip null) at n_dates=33. Auto-demote one rung. Pinned as of 2026-08-23 (narrative_regime precedent).",
         "n_dates": 33,
         "wilson_ci_low": 0.298427,
         "current_state": "LEGACY_NOT_AUTHORITY_ELIGIBLE",
         "demote": true,
-        "pinned_reason": "claim_family='radar' horizon=21d: rolling Wilson CI lower bound=0.2984 <= 0.5 (coin-flip null) at n_dates=33. Auto-demote one rung. Pinned as of 2026-08-22 (narrative_regime precedent).",
+        "pinned_reason": "claim_family='radar' horizon=21d: rolling Wilson CI lower bound=0.2984 <= 0.5 (coin-flip null) at n_dates=33. Auto-demote one rung. Pinned as of 2026-08-23 (narrative_regime precedent).",
         "clock_basis": "legacy_calendar_unstamped",
         "clock_migration": false,
         "clock_prior_n_dates": {},
@@ -3660,7 +3660,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-08-22T14:23:39.785326+00:00",
+  "ladder_states_at": "2026-08-23T00:32:05.376210+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -5496,7 +5496,7 @@
         "ready": false,
         "approaching": true,
         "projected_ready_date": null,
-        "reason": "Wilson CI lower bound 0.2984 <= 0.5 — the hit-rate interval does not clear a coin flip. AUTO-DEMOTE warranted. claim_family='radar' horizon=21d: rolling Wilson CI lower bound=0.2984 <= 0.5 (coin-flip null) at n_dates=33. Auto-demote one rung. Pinned as of 2026-08-22 (narrative_regime precedent).",
+        "reason": "Wilson CI lower bound 0.2984 <= 0.5 — the hit-rate interval does not clear a coin flip. AUTO-DEMOTE warranted. claim_family='radar' horizon=21d: rolling Wilson CI lower bound=0.2984 <= 0.5 (coin-flip null) at n_dates=33. Auto-demote one rung. Pinned as of 2026-08-23 (narrative_regime precedent).",
         "clock_basis": "legacy_calendar_unstamped",
         "clock_migration": false,
         "clock_prior_n_dates": {},
@@ -6472,5 +6472,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-08-22T14:24:38.962589+00:00"
+  "promotion_readiness_at": "2026-08-23T00:33:08.520148+00:00"
 }

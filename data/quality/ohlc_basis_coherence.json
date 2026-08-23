@@ -3,7 +3,7 @@
     "breadth": {
       "status": "coherent",
       "split_tickers": 0,
-      "noise_tickers": 24,
+      "noise_tickers": 23,
       "findings": [
         {
           "ticker": "HON",
@@ -234,23 +234,13 @@
           "worst_excess": 0.000349,
           "worst_date": "2026-07-17",
           "inverted_bars": 0
-        },
-        {
-          "ticker": "SWK",
-          "verdict": "noise",
-          "bad_bars": 1,
-          "bars": 66,
-          "bad_share": 0.0152,
-          "worst_excess": 0.0001,
-          "worst_date": "2026-08-21",
-          "inverted_bars": 0
         }
       ]
     },
     "midcap_breadth": {
       "status": "coherent",
       "split_tickers": 0,
-      "noise_tickers": 11,
+      "noise_tickers": 10,
       "findings": [
         {
           "ticker": "SBRA",
@@ -351,23 +341,13 @@
           "worst_excess": 0.001963,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
-        },
-        {
-          "ticker": "WCC",
-          "verdict": "noise",
-          "bad_bars": 1,
-          "bars": 66,
-          "bad_share": 0.0152,
-          "worst_excess": 0.000258,
-          "worst_date": "2026-08-21",
-          "inverted_bars": 0
         }
       ]
     },
     "russell_breadth": {
       "status": "coherent",
       "split_tickers": 0,
-      "noise_tickers": 43,
+      "noise_tickers": 42,
       "findings": [
         {
           "ticker": "APC",
@@ -730,16 +710,6 @@
           "inverted_bars": 0
         },
         {
-          "ticker": "CWST",
-          "verdict": "noise",
-          "bad_bars": 1,
-          "bars": 524,
-          "bad_share": 0.0019,
-          "worst_excess": 0.001087,
-          "worst_date": "2026-08-21",
-          "inverted_bars": 0
-        },
-        {
           "ticker": "MPB",
           "verdict": "noise",
           "bad_bars": 1,
@@ -804,7 +774,7 @@
     "smallcap_breadth": {
       "status": "coherent",
       "split_tickers": 0,
-      "noise_tickers": 16,
+      "noise_tickers": 15,
       "findings": [
         {
           "ticker": "ABR",
@@ -937,16 +907,6 @@
           "inverted_bars": 0
         },
         {
-          "ticker": "CWST",
-          "verdict": "noise",
-          "bad_bars": 1,
-          "bars": 66,
-          "bad_share": 0.0152,
-          "worst_excess": 0.001087,
-          "worst_date": "2026-08-21",
-          "inverted_bars": 0
-        },
-        {
           "ticker": "SXT",
           "verdict": "noise",
           "bad_bars": 1,
@@ -971,5 +931,5 @@
   },
   "splits": 0,
   "status": "coherent",
-  "noise_tickers": 94
+  "noise_tickers": 90
 }

@@ -160,6 +160,22 @@ def apple_registry() -> IssuerRegistry:
     return IssuerRegistry([apple_issuer()])
 
 
+def production_registry() -> IssuerRegistry:
+    """``apple_registry()`` plus the four A5A homebuilders (DHI/PHM/KBH/TOL).
+
+    Identity for DHI/PHM/KBH/TOL lives in ``engine/company_intelligence/
+    issuer_profiles.py`` (CIKs sourced from ``data/edgar/ticker_cik_ledger.json``
+    at commit time; MIC and fiscal-year-end verified against each issuer's own
+    SEC submissions JSON — see that module's docstring for the receipts). The
+    import is deferred to the function body: ``issuer_profiles`` imports
+    private helpers from this module for its Apple transcript-claims profile,
+    so a module-level import here would cycle.
+    """
+    from .issuer_profiles import dhi_issuer, kbh_issuer, phm_issuer, tol_issuer
+
+    return IssuerRegistry([apple_issuer(), dhi_issuer(), phm_issuer(), kbh_issuer(), tol_issuer()])
+
+
 def flagship_fiscal_period() -> FiscalPeriod:
     return FiscalPeriod(year=2026, quarter=3, calendar_end=AAPL_PERIOD_END)
 

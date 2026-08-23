@@ -1,6 +1,6 @@
 {
 "filter":"idx_ndx",
-"as_of":"2026-08-22 00:30 UTC",
+"as_of":"2026-08-23 00:18 UTC",
 "n":102,
 "total_reported":102,
 "unmapped_industries":[],
@@ -22,20 +22,20 @@
 "market_cap_b":4514.71
 },
 {
-"ticker":"GOOGL",
-"company":"Alphabet Inc",
-"industry":"Internet Content & Information",
-"sector":"Communication Services",
-"country":"USA",
-"market_cap_b":4203.33
-},
-{
 "ticker":"GOOG",
 "company":"Alphabet Inc",
 "industry":"Internet Content & Information",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":4196.33
+"market_cap_b":4200.18
+},
+{
+"ticker":"GOOGL",
+"company":"Alphabet Inc",
+"industry":"Internet Content & Information",
+"sector":"Communication Services",
+"country":"USA",
+"market_cap_b":4200.18
 },
 {
 "ticker":"MSFT",
@@ -163,7 +163,7 @@
 "industry":"Semiconductor Equipment & Materials",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":390.88
+"market_cap_b":390.7
 },
 {
 "ticker":"NFLX",
