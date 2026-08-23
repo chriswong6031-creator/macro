@@ -9,6 +9,7 @@ from scripts.research.dislocation_p0_a1_lib import selection_key
 from scripts.research.dislocation_p0_s1f_measurement import exact_binomial_95, measure
 from scripts.research.dislocation_p0_s1f_selection import STRATA, SelectionBlocked, exact70_manifest, manifest_bytes, selection_margins_ok, solve_exact70, validate_candidates
 from scripts.research.dislocation_p0_s1f_triage import TriageBlocked, load_ruleset, triage_packet
+from scripts.research.dislocation_p0_s1f_runner import RunnerBlocked, _file_sha256, run
 
 
 def row(stratum, era, form, n, cik=None, accession=None):
@@ -165,3 +166,88 @@ def test_additive_primary_does_not_relabel_archive_only_match():
         items.append(dict(original, audit_verdict="REJECT", audited_episode_origin=False, audited_false_positive_mechanism="AUDITED_NO_EPISODE", shadow_disposition="DEFER", reviewed_documents=[{"exact_fts_matched":True,"canonical_owner_role":"archive","sha256":"a","byte_length":1},{"exact_fts_matched":False,"canonical_owner_role":"primary","sha256":"b","byte_length":1}]))
     report=measure(items)
     assert set(report["by_document_role"]) == {"ARCHIVE_ONLY"}
+
+
+def _write_json(path, value):
+    import json
+    path.write_text(json.dumps(value, sort_keys=True), encoding="utf-8")
+
+
+def _runner_fixture(tmp_path):
+    universe = tmp_path / "complete_candidate_universe.json"
+    _write_json(universe, rows70())
+    universe_sha256 = _file_sha256(universe)
+    design_ciks = [f"0000009{n:03d}" for n in range(20)]
+    design = tmp_path / "A1R_EXACT20_SOURCE_SELECTION.json"
+    _write_json(design, {
+        "manifest_sha256": "e436c6e87870468d0df0449c86cc9b69a9d23aa1396885fffdfcbfcf6398852e",
+        "candidates": [{"cik": cik} for cik in design_ciks],
+    })
+    completion = tmp_path / "A1R_QUERY_COMPLETION_AND_POOL_RECEIPT.json"
+    _write_json(completion, {
+        "status": "COMPLETE",
+        "query_ledger": {"logical_cells": 146, "complete_cells": 146, "complete_cell_sha256": "c" * 64},
+        "candidate_universe": {"count": 70, "raw_sha256": universe_sha256, "count_by_family": {}, "pool_sha256_by_family": {}},
+        "completed_cache": {"record_count": 70, "incomplete_records": 0, "raw_sha256": "d" * 64},
+    })
+    freeze = tmp_path / "S1F_PROSPECTIVE_FREEZE_RECEIPT.json"
+    _write_json(freeze, {
+        "status": "FROZEN_PROSPECTIVE",
+        "frozen_candidate_universe": {"candidate_universe_file_sha256": universe_sha256, "candidate_count": 70, "complete_cells": 146, "complete_cell_sha256": "c" * 64},
+        "a1r_immutable_design_evidence": {"exact20_selection_file_sha256": _file_sha256(design), "design_ciks": design_ciks},
+    })
+    return universe, freeze, completion, design, universe_sha256
+
+
+def test_runner_binds_completion_and_design_ciks_and_reruns_byte_identically(tmp_path):
+    universe, freeze, completion, design, universe_sha256 = _runner_fixture(tmp_path)
+    policy = __import__("pathlib").Path("research/dislocation_intelligence/p0_s1f/S1F_AUDIT_BATCH_POLICY.json")
+    output = tmp_path / "out"
+    kwargs = dict(
+        universe_path=universe, freeze_path=freeze, completion_path=completion,
+        design_manifest_path=design, policy_path=policy, output_dir=output,
+        expected_universe_sha256=universe_sha256, expected_universe_rows=70,
+        expected_complete_cells=146, expected_design_manifest_sha256=_file_sha256(design),
+    )
+    first = run(**kwargs)
+    first_bytes = {name: path.read_bytes() for name, path in first["outputs"].items()}
+    second = run(**kwargs)
+    assert {name: path.read_bytes() for name, path in second["outputs"].items()} == first_bytes
+    assert first["receipt"]["selection_count"] == first["receipt"]["selection_identity_count"] == 70
+    assert first["receipt"]["a1r_completion"]["complete_cells"] == 146
+    assert all(candidate["cik"] not in first["receipt"]["design_ciks_excluded"] for candidate in first["manifest"]["candidates"])
+    assert [len(batch["packets"]) for batch in first["batch_plan"]["batches"]] == [10] * 7
+
+
+def test_runner_fails_closed_when_146_of_146_completion_binding_is_broken(tmp_path):
+    import json
+    universe, freeze, completion, design, universe_sha256 = _runner_fixture(tmp_path)
+    damaged = json.loads(completion.read_text(encoding="utf-8"))
+    damaged["query_ledger"]["complete_cells"] = 145
+    _write_json(completion, damaged)
+    with pytest.raises(RunnerBlocked, match="S1F_A1R_COMPLETION_146_OF_146_REQUIRED"):
+        run(
+            universe_path=universe, freeze_path=freeze, completion_path=completion,
+            design_manifest_path=design,
+            policy_path=__import__("pathlib").Path("research/dislocation_intelligence/p0_s1f/S1F_AUDIT_BATCH_POLICY.json"),
+            output_dir=tmp_path / "blocked", expected_universe_sha256=universe_sha256,
+            expected_universe_rows=70, expected_complete_cells=146,
+            expected_design_manifest_sha256=_file_sha256(design),
+        )
+
+
+def test_runner_fails_closed_when_completed_cache_has_incomplete_records(tmp_path):
+    import json
+    universe, freeze, completion, design, universe_sha256 = _runner_fixture(tmp_path)
+    damaged = json.loads(completion.read_text(encoding="utf-8"))
+    damaged["completed_cache"]["incomplete_records"] = 1
+    _write_json(completion, damaged)
+    with pytest.raises(RunnerBlocked, match="S1F_A1R_COMPLETED_CACHE_INCOMPLETE"):
+        run(
+            universe_path=universe, freeze_path=freeze, completion_path=completion,
+            design_manifest_path=design,
+            policy_path=__import__("pathlib").Path("research/dislocation_intelligence/p0_s1f/S1F_AUDIT_BATCH_POLICY.json"),
+            output_dir=tmp_path / "blocked", expected_universe_sha256=universe_sha256,
+            expected_universe_rows=70, expected_complete_cells=146,
+            expected_design_manifest_sha256=_file_sha256(design),
+        )
