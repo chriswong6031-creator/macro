@@ -20,6 +20,24 @@
       "aborted_early": true,
       "decision": "nothing_captured",
       "health": "failed"
+    },
+    {
+      "capture_instant": "2026-08-23T00:25:48.663941+00:00",
+      "requested_underlyings": 375,
+      "attempted_underlyings": null,
+      "successful_underlyings": null,
+      "coverage_pct": null,
+      "failure_reasons": {},
+      "failure_examples": {},
+      "aborted_early": false,
+      "decision": "skipped_outside_lease",
+      "health": "absent",
+      "lease": {
+        "valid": false,
+        "resolved_session": "2026-08-21",
+        "lease_end_et": "2026-08-22T03:00:00-04:00",
+        "write_kind": "first_write"
+      }
     }
   ]
 }

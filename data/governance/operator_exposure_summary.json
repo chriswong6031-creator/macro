@@ -1,6 +1,6 @@
 {
   "schema": "operator_exposure_summary.v1",
-  "generated_at": "2026-08-22T14:24:41.484702+00:00",
+  "generated_at": "2026-08-23T00:33:13.401011+00:00",
   "window_days": 90,
   "n_rows_in_window": 382,
   "by_day": [
