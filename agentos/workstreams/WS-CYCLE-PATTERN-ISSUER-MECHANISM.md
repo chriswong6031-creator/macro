@@ -338,12 +338,13 @@ waves:
   - id: A5B
     title: IMCE-A5B — registered prospective forward capture (decision-time M_t/R_t/C_t observation ledger; zero outcome fields)
     status: awaiting_ci
+    pr: 6281
     depends_on: [A5A]
     next_action: >
-      BUILT — DRAFT PR open, branched from fresh origin/main pinned to the
-      A5A merge SHA 5b8ca994de05345d3cea514c46c27611bfe496d1 (this record
-      will not say "done" until that PR lands on origin/main; update
-      status/pr/commit hash then). One new bounded module
+      BUILT — DRAFT PR #6281 open, branched from fresh origin/main pinned to
+      the A5A merge SHA 5b8ca994de05345d3cea514c46c27611bfe496d1 (this
+      record will not say "done" until that PR lands on origin/main; update
+      status/commit hash then). One new bounded module
       engine/cycle_pattern/imce_prospective.py (append-only JSONL,
       activation/observation/correction row kinds, content-addressed
       observation_id, first-observation-wins keying on
