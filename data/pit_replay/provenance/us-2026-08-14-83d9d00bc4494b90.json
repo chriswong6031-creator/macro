@@ -464,6 +464,11 @@
     "schema": "pit_replay.us_disposition_proof/v1"
   },
   "market": "us",
+  "pending_entry": {
+    "canonical_body_sha256": "df865f7d6121e5b1357570acb26cf539e55f7244d69c3d1d07705883bd6b8cca",
+    "path": "data/us_board_ledger/pending_replay/2026-08-14.json",
+    "sha256": "7abe2a7576a9016ac99731184c5ef4a116a4893cf014ffa2d76868cf76e740b4"
+  },
   "plans_baseline": {
     "ancestry": "ancestor_of_origin_main",
     "commit": "e743db23c31a7d86e8276c1ea602acb79abac7a9",
@@ -475,83 +480,21 @@
     "sha256": "0e77f3dcfb31c404e5af1dc3503a92d8d2da261a9d81f75543a9deeffd332b9d"
   },
   "reconstruction": {
-    "identity_closure": {
-      "all_original_execution_identities_match": true,
-      "board_sha256": "4ecc6f5b4decafba89dc2b5adbdaefdc08f59f42f6df165bd1a078b2e78ada42",
-      "counts": {
-        "admitted": 52,
-        "buy_rows": 70,
-        "chronology_refused": 7,
-        "collided": 3,
-        "duplicate_id_blocked": 41,
-        "eligible_after_skips": 7,
-        "minted": 0,
-        "reorigination_blocked": 4,
-        "reorigination_blocked_rows": 4,
-        "still_refused": 1
-      },
-      "fence_state_digest": "eab382f73a39",
-      "reconciliation": {
-        "admission_identity": {
-          "holds": true,
-          "lhs": 52,
-          "rhs": 52,
-          "statement": "admitted == duplicate_id_blocked + reorigination_blocked_rows + eligible_after_skips"
-        },
-        "disposition_identity": {
-          "holds": true,
-          "lhs": 11,
-          "rhs": 11,
-          "statement": "eligible_after_skips + reorigination_blocked == minted + collided + chronology_refused + still_refused"
-        }
-      }
+    "artifact": {
+      "canonical_body_sha256": "ad051ac0c354fbce17d87a1d1c5d0a6695aaac6aa7b0ee45dca2f94d1743f6f7",
+      "path": "data/pit_replay/reconstructions/us-2026-08-14-64fb7339a71ee8bb.json",
+      "sha256": "64fb7339a71ee8bba8db746a9b02ef0936559ead658f1d5dca3e5467562465c3"
     },
     "legacy_execution": {
       "classification": "pre-operation-intent-marker legacy execution",
-      "contemporaneous_preflight": {
-        "absorbed_aug14_snapshot_count": 0,
-        "matching_plan_originations_count": 0,
-        "same_session_receipt_count": 0,
-        "target_pending_path_existed": false
-      },
-      "execute_argv": [
-        "python",
-        "-m",
-        "scripts.prophet_pit_replay",
-        "--market",
-        "us",
-        "--session",
-        "2026-08-14",
-        "--execute",
-        "--work-dir",
-        "/Users/chriswong/Documents/Cluade/a1r-replay-scratch-20260823",
-        "--aux-panel-source",
-        "/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/a1r-replay-settlement-20260823/data/russell_breadth"
-      ],
-      "operation_intent_marker": "not available in harness version executed",
-      "single_execute_invocation": {
-        "completed_utc": "2026-08-23T10:47:31Z",
-        "count": 1,
-        "executing_commit": "21fab35211433ab9bc4dafda3757d5aa30e11a3e",
-        "receipt_executed_at": "2026-08-23T10:44:12.303557+00:00",
-        "started_utc": "2026-08-23T10:44:10Z"
-      }
+      "exact_once_authentication": "unavailable",
+      "reason": "this settlement authenticates the receipt-bound effects and reconstructed dispositions, but the completed receipt predates durable operation-intent markers and cannot authenticate invocation cardinality after the fact"
     },
     "method": "non_effecting_pinned_replay_reconstruction",
     "pinned_inputs": {
-      "aux_panel_sha256": "5aa73bda0de45589327e0a83a0b9666fae73a15f3abd6715b513e7376fe16407",
       "live_price_source_commit": "e743db23c31a7d86e8276c1ea602acb79abac7a9",
       "plans_baseline_commit": "e743db23c31a7d86e8276c1ea602acb79abac7a9",
       "vintage_sha": "54af649d5e1af4955f1464879f3afdbbaa330e13"
-    },
-    "scratch_identity": {
-      "active_keys_count": 260,
-      "active_keys_match_baseline": true,
-      "existing_ids_count": 318,
-      "existing_ids_match_baseline": true,
-      "origination_input_sha256": "9a99d91c31d95d75ea397dc2d27f1f37240d9e0242d1711976329ea3f2ba4966",
-      "origination_output_sha256": "e5c05d64a463c7de88237c71ae6296a1ab7af4ff14745415c04542ff62ab5d79",
-      "snapshot_output_sha256": "94de0b2ba17c1f1a6733f6ebb3c1586fb330a3dc3b143ad059362ecf516724e8"
     }
   },
   "schema": "pit_replay.receipt_provenance/v1",

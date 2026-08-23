@@ -167,6 +167,7 @@ RECEIPTS_RELDIR = "data/prophet/origination_receipts"
 RECEIPT_SCHEMA = "prophet.origination_receipt/v1"
 PIT_RECEIPTS_RELDIR = "data/pit_replay"
 PIT_PROVENANCE_RELDIR = "data/pit_replay/provenance"
+PIT_RECONSTRUCTIONS_RELDIR = "data/pit_replay/reconstructions"
 PIT_ATTEMPTS_RELDIR = "data/pit_replay/attempts"
 PENDING_SCHEMA = "pit_replay.pending/v1"
 
@@ -2038,6 +2039,124 @@ def check_reconciliation(counts: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _derive_us_disposition_state(
+    *, originated: dict[str, Any], baseline_plans: dict[str, dict], session: str,
+) -> dict[str, Any]:
+    """Derive every US terminal disposition from raw vintage-runner output.
+
+    This is the single semantic derivation used by both a live replay and legacy
+    provenance validation.  The latter therefore does not trust a self-rehashed
+    reason/category list: it parses the committed non-effecting runner output, loads
+    the immutable plans baseline, and independently recomputes the exact rows.
+    """
+    intake = originated.get("intake") or {}
+    cutoff = collision_cutoff(session)
+    incumbents = live_plans_since(baseline_plans, cutoff)
+
+    survived: list[dict[str, Any]] = []
+    collided: list[dict[str, Any]] = []
+    for plan in originated.get("plans") or []:
+        if not isinstance(plan, dict):
+            raise PitReplayRefused("raw origination output contains a non-object plan")
+        key = plan_key_of(plan)
+        rivals = incumbents.get(key) or []
+        if rivals:
+            collided.append({
+                "ticker": plan.get("asset"), "plan_key": key,
+                "would_have_minted": plan.get("id"),
+                "reason": "live_origination_wins",
+                "live_plan_ids": sorted(str(r.get("id")) for r in rivals),
+                "live_recorded_at": sorted({
+                    str(plan_recorded_on(r)) for r in rivals
+                }),
+            })
+            continue
+        survived.append(plan)
+    # UNMARKED (DEC): no origination_mode / disclosure stamp of any kind.
+    minted = list(survived)
+
+    chronology_refused, still_refused = partition_chronology(
+        _refusal_rows_from_intake(intake)
+    )
+    for key in intake.get("reorigination_blocked_keys") or []:
+        normalised = str(key).strip().upper()
+        rivals = incumbents.get(normalised) or []
+        ticker = normalised.rsplit("-", 1)[0]
+        if rivals:
+            collided.append({
+                "ticker": ticker, "plan_key": normalised,
+                "would_have_minted": None,
+                "reason": "live_origination_wins_open_plan_block",
+                "live_plan_ids": sorted(str(r.get("id")) for r in rivals),
+                "live_recorded_at": sorted({
+                    str(plan_recorded_on(r)) for r in rivals
+                }),
+            })
+        else:
+            still_refused.append({
+                "ticker": ticker, "plan_id": None,
+                "reason": "engine_refusal:reorigination_blocked",
+                "detail": [f"an open plan on {normalised} predates this session; "
+                           "the bake would have blocked it too"],
+            })
+
+    minted.sort(key=lambda plan: str(plan.get("id")))
+    collided.sort(key=lambda row: (str(row.get("ticker")), str(row.get("reason"))))
+    chronology_refused.sort(key=lambda row: str(row.get("ticker")))
+    still_refused.sort(
+        key=lambda row: (str(row.get("ticker")), str(row.get("reason")))
+    )
+
+    duplicate_source = originated.get("duplicate_ids") or {}
+    on_main = [str(value) for value in (duplicate_source.get("on_main") or [])]
+    missing_on_main = sorted(set(on_main).difference(baseline_plans))
+    if missing_on_main:
+        raise PitReplayRefused(
+            "raw origination output declares duplicate ids absent from the pinned "
+            f"plans baseline: {', '.join(missing_on_main[:8])}"
+        )
+    duplicate_ids, duplicate_note = already_published_ids(
+        duplicate_source, expected=intake.get("duplicate_id_blocked")
+    )
+    if duplicate_note and duplicate_note.startswith("not enumerated:"):
+        raise PitReplayRefused(duplicate_note)
+    duplicate_live_wins = sorted(
+        ({
+            "plan_id": plan_id,
+            "ticker": (baseline_plans.get(plan_id) or {}).get("asset"),
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": plan_recorded_on(baseline_plans.get(plan_id) or {}),
+        } for plan_id in duplicate_ids
+         if (plan_recorded_on(baseline_plans.get(plan_id) or {}) or "") >= cutoff),
+        key=lambda row: str(row["plan_id"]),
+    )
+
+    counts = {
+        "buy_rows": intake.get("buy_rows"),
+        "admitted": intake.get("admitted"),
+        "duplicate_id_blocked": intake.get("duplicate_id_blocked"),
+        "reorigination_blocked": len(
+            intake.get("reorigination_blocked_keys") or []
+        ),
+        "reorigination_blocked_rows": intake.get("reorigination_blocked"),
+        "eligible_after_skips": intake.get("eligible_after_skips"),
+        "minted": len(minted), "collided": len(collided),
+        "chronology_refused": len(chronology_refused),
+        "still_refused": len(still_refused),
+    }
+    reconciliation = check_reconciliation(counts)
+    state = {
+        "minted": minted, "collided": collided,
+        "chronology_refused": chronology_refused,
+        "still_refused": still_refused, "counts": counts,
+        "reconciliation": reconciliation, "duplicate_ids": duplicate_ids,
+        "duplicate_note": duplicate_note,
+        "duplicate_live_wins": duplicate_live_wins,
+    }
+    state["disposition_proof"] = build_us_disposition_proof(state)
+    return state
+
+
 def _canonical_sha256(payload: Any) -> str:
     return hashlib.sha256(
         json.dumps(payload, sort_keys=True, separators=(",", ":"),
@@ -2764,77 +2883,10 @@ def run_pit_replay(
         intake = originated.get("intake") or {}
         clock = wall_clock_earnings_exposure(originated.get("earnings_exposure") or {},
                                              session)
-        cutoff = collision_cutoff(session)
-        incumbents = live_plans_since(baseline_plans, cutoff)
-
-        survived: list[dict[str, Any]] = []
-        collided: list[dict[str, Any]] = []
-        for plan in originated.get("plans") or []:
-            key = plan_key_of(plan)
-            rivals = incumbents.get(key) or []
-            if rivals:
-                collided.append({
-                    "ticker": plan.get("asset"), "plan_key": key,
-                    "would_have_minted": plan.get("id"),
-                    "reason": "live_origination_wins",
-                    "live_plan_ids": sorted(str(r.get("id")) for r in rivals),
-                    "live_recorded_at": sorted({str(plan_recorded_on(r)) for r in rivals}),
-                })
-                continue
-            survived.append(plan)
-        # UNMARKED (DEC): no origination_mode / disclosure stamp of any kind.
-        minted = list(survived)
-
-        chronology_refused, still_refused = partition_chronology(
-            _refusal_rows_from_intake(intake))
-        for key in intake.get("reorigination_blocked_keys") or []:
-            normalised = str(key).strip().upper()
-            rivals = incumbents.get(normalised) or []
-            ticker = normalised.rsplit("-", 1)[0]
-            if rivals:
-                collided.append({
-                    "ticker": ticker, "plan_key": normalised, "would_have_minted": None,
-                    "reason": "live_origination_wins_open_plan_block",
-                    "live_plan_ids": sorted(str(r.get("id")) for r in rivals),
-                    "live_recorded_at": sorted({str(plan_recorded_on(r)) for r in rivals}),
-                })
-            else:
-                still_refused.append({
-                    "ticker": ticker, "plan_id": None,
-                    "reason": "engine_refusal:reorigination_blocked",
-                    "detail": [f"an open plan on {normalised} predates this session; "
-                              "the bake would have blocked it too"],
-                })
-
-        minted.sort(key=lambda p: str(p.get("id")))
-        collided.sort(key=lambda row: (str(row.get("ticker")), str(row.get("reason"))))
-        chronology_refused.sort(key=lambda row: str(row.get("ticker")))
-        still_refused.sort(key=lambda row: (str(row.get("ticker")), str(row.get("reason"))))
-
-        duplicate_ids, duplicate_note = already_published_ids(
-            originated.get("duplicate_ids") or {},
-            expected=intake.get("duplicate_id_blocked"))
-        duplicate_live_wins = sorted(
-            ({"plan_id": plan_id,
-              "ticker": (baseline_plans.get(plan_id) or {}).get("asset"),
-              "reason": "live_origination_wins_duplicate_id",
-              "live_recorded_at": plan_recorded_on(baseline_plans.get(plan_id) or {})}
-             for plan_id in duplicate_ids
-             if (plan_recorded_on(baseline_plans.get(plan_id) or {}) or "") >= cutoff),
-            key=lambda row: str(row["plan_id"]))
-
-        counts = {
-            "buy_rows": intake.get("buy_rows"),
-            "admitted": intake.get("admitted"),
-            "duplicate_id_blocked": intake.get("duplicate_id_blocked"),
-            "reorigination_blocked": len(intake.get("reorigination_blocked_keys") or []),
-            "reorigination_blocked_rows": intake.get("reorigination_blocked"),
-            "eligible_after_skips": intake.get("eligible_after_skips"),
-            "minted": len(minted), "collided": len(collided),
-            "chronology_refused": len(chronology_refused),
-            "still_refused": len(still_refused),
-        }
-        reconciliation = check_reconciliation(counts)
+        disposition_state = _derive_us_disposition_state(
+            originated=originated, baseline_plans=baseline_plans, session=session,
+        )
+        minted = disposition_state["minted"]
         receipt_id = _receipt_id(market, session, identity["sha256"], baseline_sha, minted)
 
         # US ledger snapshot capture (masterplan §0.5) — runs INSIDE the vintage tree,
@@ -2842,13 +2894,15 @@ def run_pit_replay(
         snapshot_capture = capture_us_snapshot_row(vintage, session=session, work=work)
 
         result.update({
-            "minted": minted, "collided": collided,
-            "chronology_refused": chronology_refused, "still_refused": still_refused,
-            "counts": counts, "reconciliation": reconciliation, "clock": clock,
+            **{key: disposition_state[key] for key in (
+                "minted", "collided", "chronology_refused", "still_refused",
+                "counts", "reconciliation", "duplicate_ids", "duplicate_note",
+                "duplicate_live_wins",
+            )},
+            "clock": clock,
             "baseline_sha": baseline_sha, "baseline_ancestry": baseline_ancestry,
             "plans_baseline_count": len(baseline_plans),
-            "duplicate_ids": duplicate_ids, "duplicate_note": duplicate_note,
-            "duplicate_live_wins": duplicate_live_wins, "receipt_id": receipt_id,
+            "receipt_id": receipt_id,
             "intake": intake, "selection_era": originated.get("selection_era"),
             "snapshot_capture": snapshot_capture,
         })
@@ -3143,10 +3197,133 @@ def _is_valid_us_disposition_proof(
     return receipt_counts.get("admitted") == len(rows)
 
 
+_LEGACY_EXECUTION_LIMIT = {
+    "classification": "pre-operation-intent-marker legacy execution",
+    "exact_once_authentication": "unavailable",
+    "reason": (
+        "this settlement authenticates the receipt-bound effects and reconstructed "
+        "dispositions, but the completed receipt predates durable operation-intent "
+        "markers and cannot authenticate invocation cardinality after the fact"
+    ),
+}
+
+
+def _read_json_object(path: Path) -> dict[str, Any] | None:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _json_file_binding(repo: Path, path: Path) -> dict[str, str]:
+    body = _read_json_object(path)
+    if body is None:
+        raise PitReplayRefused(f"evidence artifact is not a JSON object: {path}")
+    return {
+        "path": str(path.relative_to(repo)),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "canonical_body_sha256": _canonical_sha256(body),
+    }
+
+
+def _expected_legacy_reconstruction(
+    *, repo: Path, receipt_doc: dict[str, Any],
+    plans_baseline: dict[str, Any], reconstruction_path: Path,
+) -> dict[str, Any]:
+    binding = _json_file_binding(repo, reconstruction_path)
+    market = receipt_doc["market"]
+    session = receipt_doc["session"]
+    if plans_baseline.get("commit") != receipt_doc.get("live_price_source_commit"):
+        raise PitReplayRefused(
+            "legacy plans baseline is not bound to the immutable receipt commit"
+        )
+    expected_path = (
+        f"{PIT_RECONSTRUCTIONS_RELDIR}/{market}-{session}-"
+        f"{binding['sha256'][:16]}.json"
+    )
+    if binding["path"] != expected_path:
+        raise PitReplayRefused(
+            "legacy reconstruction artifact is not at its raw-byte-addressed path"
+        )
+    return {
+        "method": "non_effecting_pinned_replay_reconstruction",
+        "artifact": binding,
+        "pinned_inputs": {
+            "vintage_sha": receipt_doc["vintage_sha"],
+            "live_price_source_commit": receipt_doc["live_price_source_commit"],
+            "plans_baseline_commit": plans_baseline["commit"],
+        },
+        "legacy_execution": dict(_LEGACY_EXECUTION_LIMIT),
+    }
+
+
+def _validate_pending_binding(
+    *, repo: Path, receipt_path: Path, receipt_doc: dict[str, Any], value: Any,
+) -> bool:
+    market = receipt_doc["market"]
+    session = receipt_doc["session"]
+    entry = MARKETS.get(market) or {}
+    pending_dir = entry.get("pending_dir")
+    if not pending_dir or not isinstance(value, dict):
+        return False
+    pending_path = repo / str(pending_dir) / f"{session}.json"
+    if not pending_path.is_file():
+        return False
+    try:
+        expected_binding = _json_file_binding(repo, pending_path)
+    except PitReplayRefused:
+        return False
+    if value != expected_binding:
+        return False
+    pending = _read_json_object(pending_path)
+    rows = pending.get("rows") if pending else None
+    snapshot = receipt_doc.get("snapshot_capture") or {}
+    return bool(
+        pending
+        and pending.get("schema") == PENDING_SCHEMA
+        and pending.get("market") == market
+        and pending.get("session") == session
+        and pending.get("vintage_sha") == receipt_doc.get("vintage_sha")
+        and pending.get("harness_receipt") == str(receipt_path.relative_to(repo))
+        and isinstance(rows, list)
+        and len(rows) == 1
+        and isinstance(snapshot.get("row"), dict)
+        and rows[0] == snapshot.get("row")
+    )
+
+
+def _recompute_legacy_disposition_proof(
+    *, repo: Path, receipt_doc: dict[str, Any], plans_baseline: dict[str, Any],
+    reconstruction_path: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]] | None:
+    originated = _read_json_object(reconstruction_path)
+    if originated is None:
+        return None
+    try:
+        baseline_plans = load_plans_at(repo, plans_baseline["commit"])
+        state = _derive_us_disposition_state(
+            originated=originated, baseline_plans=baseline_plans,
+            session=receipt_doc["session"],
+        )
+        clock = wall_clock_earnings_exposure(
+            originated.get("earnings_exposure") or {}, receipt_doc["session"],
+        )
+    except (
+        AttributeError, KeyError, PitReplayRefused, TypeError, UnicodeError,
+        ValueError, subprocess.CalledProcessError,
+    ):
+        return None
+    return (
+        state["disposition_proof"], state["counts"], state["reconciliation"],
+        clock,
+    )
+
+
 def build_legacy_receipt_provenance(
     *, repo: Path, receipt_path: Path, receipt_doc: dict[str, Any],
     plans_baseline: dict[str, Any], disposition_proof: dict[str, Any],
-    reconstruction: dict[str, Any],
+    pending_path: Path, reconstruction_path: Path,
 ) -> dict[str, Any]:
     """Build a deterministic additive envelope for a pre-M3 legacy receipt.
 
@@ -3154,6 +3331,27 @@ def build_legacy_receipt_provenance(
     bytes and supplies only evidence deterministically reconstructed from pinned
     execution inputs.  There is intentionally no generated-at clock in this schema.
     """
+    if not _is_valid_plans_baseline(repo, plans_baseline):
+        raise PitReplayRefused("legacy provenance plans baseline is not reproducible")
+    rebuilt = _recompute_legacy_disposition_proof(
+        repo=repo, receipt_doc=receipt_doc, plans_baseline=plans_baseline,
+        reconstruction_path=reconstruction_path,
+    )
+    if rebuilt is None or (
+        disposition_proof != rebuilt[0]
+        or receipt_doc.get("counts") != rebuilt[1]
+        or receipt_doc.get("reconciliation") != rebuilt[2]
+        or receipt_doc.get("wall_clock_exposure") != rebuilt[3]
+    ):
+        raise PitReplayRefused(
+            "legacy disposition proof does not reproduce from the raw artifact"
+        )
+    pending_binding = _json_file_binding(repo, pending_path)
+    if not _validate_pending_binding(
+        repo=repo, receipt_path=receipt_path, receipt_doc=receipt_doc,
+        value=pending_binding,
+    ):
+        raise PitReplayRefused("legacy pending entry does not bind to the receipt")
     return {
         "schema": "pit_replay.receipt_provenance/v1",
         "market": receipt_doc["market"],
@@ -3163,9 +3361,13 @@ def build_legacy_receipt_provenance(
             "sha256": hashlib.sha256(receipt_path.read_bytes()).hexdigest(),
             "canonical_body_sha256": _canonical_sha256(receipt_doc),
         },
+        "pending_entry": pending_binding,
         "plans_baseline": plans_baseline,
         "disposition_proof": disposition_proof,
-        "reconstruction": reconstruction,
+        "reconstruction": _expected_legacy_reconstruction(
+            repo=repo, receipt_doc=receipt_doc, plans_baseline=plans_baseline,
+            reconstruction_path=reconstruction_path,
+        ),
     }
 
 
@@ -3205,14 +3407,73 @@ def _is_valid_legacy_receipt_provenance(
         )
     ):
         return False
-    return (
-        _is_valid_plans_baseline(repo, provenance.get("plans_baseline"))
-        and _is_valid_us_disposition_proof(
-            provenance.get("disposition_proof"),
-            receipt_counts=receipt_doc["counts"],
+    plans_baseline = provenance.get("plans_baseline")
+    if not _is_valid_plans_baseline(repo, plans_baseline):
+        return False
+    if not _validate_pending_binding(
+        repo=repo, receipt_path=receipt_path, receipt_doc=receipt_doc,
+        value=provenance.get("pending_entry"),
+    ):
+        return False
+    reconstruction = provenance.get("reconstruction")
+    if not isinstance(reconstruction, dict):
+        return False
+    artifact = reconstruction.get("artifact")
+    if not isinstance(artifact, dict) or not isinstance(artifact.get("path"), str):
+        return False
+    reconstruction_path = repo / artifact["path"]
+    try:
+        expected_reconstruction = _expected_legacy_reconstruction(
+            repo=repo, receipt_doc=receipt_doc, plans_baseline=plans_baseline,
+            reconstruction_path=reconstruction_path,
         )
-        and isinstance(provenance.get("reconstruction"), dict)
+    except (OSError, PitReplayRefused, ValueError):
+        return False
+    if reconstruction != expected_reconstruction:
+        return False
+    rebuilt = _recompute_legacy_disposition_proof(
+        repo=repo, receipt_doc=receipt_doc, plans_baseline=plans_baseline,
+        reconstruction_path=reconstruction_path,
     )
+    if rebuilt is None:
+        return False
+    proof, counts, reconciliation, wall_clock_exposure = rebuilt
+    return (
+        provenance.get("disposition_proof") == proof
+        and receipt_doc.get("counts") == counts
+        and receipt_doc.get("reconciliation") == reconciliation
+        and receipt_doc.get("wall_clock_exposure") == wall_clock_exposure
+        and _is_valid_us_disposition_proof(
+            proof, receipt_counts=receipt_doc["counts"],
+        )
+    )
+
+
+def _pit_receipt_candidate_union(
+    repo: Path, *, market: str, session: str,
+) -> list[Path]:
+    """Every filename or parsed-body candidate for one replay identity.
+
+    Prefix candidates are included even when malformed or non-JSON.  Separately,
+    every root-level JSON object declaring the target market/session is included
+    regardless of filename, authority, mode, or schema.  Acceptance occurs only
+    after this union has exactly one member.
+    """
+    receipt_dir = repo / PIT_RECEIPTS_RELDIR
+    if not receipt_dir.is_dir():
+        return []
+    prefix = f"{market}-{session}-"
+    candidates: set[Path] = set()
+    entries = sorted(receipt_dir.iterdir(), key=lambda path: path.name)
+    for path in entries:
+        if path.name.startswith(prefix):
+            candidates.add(path)
+        if not path.is_file() or path.suffix.lower() != ".json":
+            continue
+        body = _read_json_object(path)
+        if body and body.get("market") == market and body.get("session") == session:
+            candidates.add(path)
+    return sorted(candidates, key=lambda path: path.name)
 
 
 def _is_admissible_zero_mint_execute_receipt(
@@ -3630,10 +3891,9 @@ def main(argv: list[str] | None = None) -> int:
             # commit.  Require exactly one real execute receipt for this session so a
             # dry-run preview, malformed file, or duplicate execution cannot bypass the
             # fail-closed missing-origination-receipt guard.
-            pit_receipts_dir = repo / PIT_RECEIPTS_RELDIR
-            matching_receipts = sorted(
-                pit_receipts_dir.glob(f"{args.market}-{args.session}-*.json")
-            ) if pit_receipts_dir.exists() else []
+            matching_receipts = _pit_receipt_candidate_union(
+                repo, market=args.market, session=args.session,
+            )
             if len(matching_receipts) > 1:
                 print(
                     "::error title=prophet-pit-replay-refused::multiple PIT replay "
