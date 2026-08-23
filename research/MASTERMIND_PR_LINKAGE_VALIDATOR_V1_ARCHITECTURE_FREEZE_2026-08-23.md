@@ -108,7 +108,8 @@ section 5. The canonical declaration has six and only six fields.
 
 ### 3.2 Receipt-bounded compatibility epoch
 
-Only these four historical aliases exist:
+Only these four historical aliases exist. The adjudicated precedence and the manifest's
+`compatibility.alias_resolution` are normative if any earlier prose is read differently:
 
 | Pre-cutover input | Canonical V1 value |
 |---|---|
@@ -121,13 +122,14 @@ The observation supplies a repository-specific authoring epoch relation. Canonic
 always attempted first, so an old PR repaired to V1 is canonical. Legacy parsing is available
 only to an immutable PR identity included in the cutover receipt's pre-cutover cohort:
 
-- `PRE_CUTOVER`: the repository/PR number is in the receipt's immutable pre-cutover cohort;
-  aliases normalize for analysis and emit `LEGACY_AUTHORING_ALIAS`.
+- `PRE_CUTOVER`: the repository/PR number is in the receipt's immutable pre-cutover cohort.
+  A named alias emits **only** `R021` for that field and normalizes for analysis.
 - `AT_OR_POST_CUTOVER`: the repository/PR number is at or after the receipt's first strict
-  PR number and is not one of the explicitly captured open pre-cutover PRs; aliases are invalid
-  and emit `AUTHORING_SCHEMA_VERSION_MISMATCH`.
-- `UNKNOWN`: the adapter cannot prove the relation; aliases cannot be guessed valid and the
-  result is partial with `AUTHORING_CUTOVER_RELATION_UNAVAILABLE`.
+  PR number and is not one of the explicitly captured open pre-cutover PRs. A named alias emits
+  `R020`, is not normalized, and remains invalid.
+- `UNKNOWN`, `PARTIAL`, `UNAVAILABLE`, and `CONTRADICTORY` authoring-epoch evidence cannot
+  authorize a named alias. It emits **only** `R022` for that alias field, does not normalize,
+  and does not also emit `R009`, `R011`, or `R012`.
 
 The cutover configuration binds repository name, default branch, canonical merge SHA, every
 selectable template path/blob SHA, first strict PR number, the exact set of then-open legacy PR
@@ -138,10 +140,11 @@ normalization is refused and `AUTHORING_CUTOVER_RELATION_UNAVAILABLE` makes the 
 W0B may freeze a repository's exact legacy cohort in its cutover receipt; content or clocks can
 never select that cohort.
 
-Other historical values such as `measurement_only`, `records_closeout`,
-`zero_trading_authority`, or `parked_hold_for_sol` are not aliases. They yield
-`UNCLASSIFIED_LEGACY` plus `AUTHORING_SCHEMA_VERSION_MISMATCH`; they never silently become a
-canonical class.
+Values outside the canonical enums and the four named aliases (including
+`measurement_only`, `records_closeout`,
+`zero_trading_authority`, or `parked_hold_for_sol`) are not aliases. They yield
+their ordinary invalid-field row (`R009`, `R011`, or `R012`, as applicable) **and** `R020`;
+they never silently become a canonical class.
 
 ## 4. Cross-field compatibility laws
 
@@ -410,6 +413,7 @@ parse the repository. `basis` is always `BASE`, including creates-workstream abs
   "state": "PRESENT|PARTIAL|UNAVAILABLE|NOT_APPLICABLE|CONTRADICTORY",
   "issues": [{
     "id": "MAS-1",
+    "target_role": "DECLARED|SECONDARY|PARENT|PROOF_GATE|ACCEPTANCE_GATE|UNKNOWN",
     "project_id": "string|null",
     "workstream_key": "WS:KEY|null",
     "issue_type": "DELIVERY|MAINTENANCE|ROOT_RECOVERY|ARCHITECTURE|PROOF_GATE|ACCEPTANCE_GATE|UNKNOWN",
@@ -419,9 +423,16 @@ parse the repository. `basis` is always `BASE`, including creates-workstream abs
 }
 ```
 
-Issues sort uniquely by ID. Duplicate IDs with different bindings/types/stop laws are
-contradictory. `UNKNOWN` values are evidence gaps, not wildcards. Current Linear status,
-timestamps, labels and prose may live in the external provenance receipt but are not rule inputs.
+Issues sort uniquely by `(id, target_role)`. `target_role` is closed:
+`DECLARED | SECONDARY | PARENT | PROOF_GATE | ACCEPTANCE_GATE | UNKNOWN`.
+Duplicate `(id, target_role)` rows with different bindings/types/stop laws are contradictory.
+`UNKNOWN` values are evidence gaps, not wildcards. `PRESENT` means a complete internally
+consistent capture, not that its rows already satisfy a declaration. Zero, multiple, or
+mismatching declaration roles are semantic facts evaluated by R027, rather than invalid input
+shape. Every nondeclared target has an explicit non-`DECLARED` role; it cannot be smuggled into a
+second declaration. `PROOF_GATE` and `ACCEPTANCE_GATE` target roles require the same respective
+`issue_type`; any incompatible role/effect pair is an error. Current Linear status, timestamps,
+labels and prose may live in the external provenance receipt but are not rule inputs.
 
 ### 6.6 Exact path-ownership snapshot
 
@@ -479,7 +490,21 @@ finding.
 }
 ```
 
-Relationships sort uniquely by `(issue_id, source, kind, state, completion_transition)`.
+Relationships sort uniquely by `(issue_id, source, kind, state, completion_transition)`. The
+exact tuple matrix is the manifest's `native_reduction.legal_rows`. Outer `UNAVAILABLE` and
+`NOT_APPLICABLE` require empty relationships. Outer `PRESENT` permits only CONCLUSIVE or
+SUPPRESSION rows: a CONCLUSIVE explicit row is `state=PRESENT`, source
+`BODY|LINEAR_NATIVE|ADAPTER`, kind `CLOSING|CONTRIBUTING|RELATION_ONLY`, with CLOSING ELIGIBLE
+and CONTRIBUTING/RELATION_ONLY INELIGIBLE; a CONCLUSIVE AUTO_LINK row is `state=PRESENT`, source
+BRANCH/TITLE, kind AUTO_LINK, and ELIGIBLE/INELIGIBLE transition; suppression is
+`state=SUPPRESSED`, source BRANCH/TITLE, kind SUPPRESSED, transition INELIGIBLE. `PRESENT` has
+no UNKNOWN kind/transition or AMBIGUOUS/UNAVAILABLE row. Outer `PARTIAL|CONTRADICTORY` may retain
+legal CONCLUSIVE/SUPPRESSION rows and may add DIAGNOSTIC rows with state AMBIGUOUS/UNAVAILABLE,
+kind UNKNOWN, any declared source, and transition UNKNOWN. Any other tuple is invalid observation
+state law (exit 2). A CONCLUSIVE row alone is active; suppression is keyed by `(issue_id, source)`
+and affects only matching AUTO_LINK. `PRESENT` empty evidence yields NONE and can never yield
+UNKNOWN from a row; outer PARTIAL yields UNKNOWN and CONTRADICTORY yields AMBIGUOUS before row
+effects.
 `PRESENT` requires `pagination_complete: true`, no cursor/error diagnostic, and then an empty
 relationship list proves none observed. `PARTIAL`/`UNAVAILABLE` use `false` and can never prove
 absence. `NOT_APPLICABLE` uses `false` with empty arrays. `CONTRADICTORY` retains conflicting
@@ -607,7 +632,7 @@ The V1 codes are:
 |---|---|
 | Header | `HEADER_MISSING`, `HEADER_DUPLICATE`, `HEADER_AUTHORITY_ZONE_INVALID`, `PLACEHOLDER_UNRESOLVED`, `WORKSTREAM_ID_INVALID`, `LINEAR_ID_INVALID`, `WAVE_EMPTY`, `WAVE_INVALID`, `PORTFOLIO_MODE_INVALID`, `PORTFOLIO_MODE_RESERVED`, `AUTHORITY_INVALID`, `COMPLETION_INVALID` |
 | Epoch | `AUTHORING_SCHEMA_VERSION_MISMATCH`, `LEGACY_AUTHORING_ALIAS`, `AUTHORING_CUTOVER_RELATION_UNAVAILABLE` |
-| Work identity | `LINEAR_REQUIRED_FOR_MODE`, `WORKSTREAM_UNKNOWN`, `WORKSTREAM_REQUIRED_FOR_TRACKED`, `WORKSTREAM_MUST_BE_NONE_FOR_EXCEPTION`, `AGENTOS_SNAPSHOT_UNAVAILABLE`, `LINEAR_ISSUE_UNKNOWN`, `LINEAR_SNAPSHOT_UNAVAILABLE`, `LINEAR_PROJECT_WORKSTREAM_MISMATCH`, `WORKSTREAM_CREATION_NO_WORKSTREAM_RECORD`, `WORKSTREAM_CREATION_KEY_COLLISION`, `MULTIPLE_PR_IDENTITIES` |
+| Work identity | `LINEAR_TARGET_ROLE_UNAVAILABLE`, `LINEAR_TARGET_ROLE_MISMATCH`, `LINEAR_ISSUE_TYPE_MISMATCH`, `LINEAR_REQUIRED_FOR_MODE`, `WORKSTREAM_UNKNOWN`, `WORKSTREAM_REQUIRED_FOR_TRACKED`, `WORKSTREAM_MUST_BE_NONE_FOR_EXCEPTION`, `AGENTOS_SNAPSHOT_UNAVAILABLE`, `LINEAR_ISSUE_UNKNOWN`, `LINEAR_SNAPSHOT_UNAVAILABLE`, `LINEAR_PROJECT_WORKSTREAM_MISMATCH`, `WORKSTREAM_CREATION_NO_WORKSTREAM_RECORD`, `WORKSTREAM_CREATION_KEY_COLLISION`, `MULTIPLE_PR_IDENTITIES` |
 | Authority/path | `AUTHORITY_COMPLETION_MISMATCH`, `AUTHORITY_PATH_MISMATCH`, `PATH_OWNERSHIP_SNAPSHOT_UNAVAILABLE`, `PATH_OWNERSHIP_UNMAPPED`, `CHANGED_PATHS_UNAVAILABLE`, `MAINTENANCE_EXCEPTION_UNBOUND`, `ARCHITECTURE_CANDIDATE_CLAIMS_AUTHORITY`, `WORKSTREAM_CREATION_HIDDEN_IMPLEMENTATION` |
 | Completion/native | `BRANCH_LINEAR_MISMATCH`, `TITLE_BODY_LINEAR_CONFLICT`, `CLOSING_KEYWORD_FOR_NON_MERGE_DONE`, `MERGE_DONE_WITH_EXPLICIT_PROOF_GATE`, `NATIVE_LINKAGE_SNAPSHOT_UNAVAILABLE`, `NATIVE_RELATIONSHIP_AMBIGUOUS`, `PORTFOLIO_LINKAGE_COMPLETION_MISMATCH` |
 | Grounding | `OBSERVATION_GROUNDING_MISMATCH`, `SNAPSHOT_CONTRADICTION` |
@@ -618,8 +643,9 @@ an uncoded ambiguity requires a W0/W1 contract amendment, not free-form text.
 
 ### 9.1 Canonical rule manifest and digest
 
-The implementation materializes one closed JSON-equivalent manifest with exactly these
-top-level keys:
+The implementation reads the sole canonical, tracked JSON manifest
+`config/pr_linkage_rules.v1.json`; it materializes no second policy source. That file has exactly
+18 top-level keys:
 
 ```text
 schema = mastermind.pr_linkage_rule_manifest.v1
@@ -627,18 +653,27 @@ ruleset_id = mastermind.pr_linkage_rules.v1
 observation_schema = mastermind.pr_linkage_observation.v1
 report_schema = mastermind.pr_linkage_report.v1
 execution_error_schema = mastermind.pr_linkage_execution_error.v1
-parser_contract = {encoding, authority_block, h2_boundary, ignored_markdown, relationship_scan}
+parser_contract = {encoding, authority_block, h2_boundary, ignored_markdown, relationship_scan,
+                   duplicate_object_members, field_occurrence_count, evidence_string}
 grammar = {ordered_fields, field_patterns, enum_values}
 limits = {observation_bytes, body_bytes, body_lines, line_bytes, value_bytes,
           changed_paths, relationships, findings, field_occurrences}
-compatibility = {aliases, receipt_schema, no_receipt_behavior}
-classification = {mode_to_class, legacy_class, invalid_class}
+compatibility = {aliases, alias_resolution, receipt_schema, no_receipt_behavior}
+classification = {mode_to_class, legacy_class, invalid_class, mode_to_issue_types,
+                  target_role_to_issue_types, declared_target_cardinality, join_coverage,
+                  linear_precedence}
 authority_completion_allowlist = [ordered tuples from section 4.5]
-path_reduction = {adapter_resolved_rows, coverage, rename_dual_path, authority_intersection}
-native_reduction = [ordered rules below]
+path_reduction = {adapter_resolved_rows, coverage, rename_dual_path, authority_intersection,
+                  maintenance_exception}
+native_reduction = {active, suppression, suppression_key, unknown_rows, order, illegal_cross_product,
+                    legal_rows, present_empty, present_row_unknown}
 rules = [closed ordered rule rows below]
 verdict_reduction = [ERROR, PARTIAL, WARNING_OR_NOTICE, CLEAN]
 enforcement = REPORT_ONLY
+execution_error = {components, reason_codes, routes, source_sha_resolution, transaction}
+finding_contract = {location_grammar, location_policy_by_rule, evidence_encodings,
+                    evidence_schema_by_key, per_finding_order, r060_component_enum,
+                    r060_identity_component, r061_snapshot_enum}
 ```
 
 There are no other policy inputs. In particular, Python source order, renderer wording,
@@ -661,11 +696,10 @@ Native effect reduction is per exact issue ID, in this order:
 7. anything else -> `UNKNOWN`.
 
 The on-disk manifest is serialized using the canonical JSON law in section 10. Its
-`ruleset_digest` is `sha256(canonical_manifest_bytes)`. The canonical manifest normally omits a
-digest field; if a transport envelope includes top-level `ruleset_digest`, that one key is removed
-before hashing and its value must equal the derived digest. Lists use the explicit order above;
-enum/set lists are unique lexicographic arrays; rule rows sort by `rule_id`. This is the only
-self-exclusion.
+`ruleset_digest` is `sha256(canonical_manifest_bytes)`. The canonical manifest has no digest
+field and no self-exclusion. A transport envelope is not the manifest: if one supplies a
+`ruleset_digest`, that external value must equal the derived installed digest. Lists use the
+explicit order above; enum/set lists are unique lexicographic arrays; rule rows sort by `rule_id`.
 
 ### 9.2 Closed rule rows
 
@@ -684,24 +718,27 @@ the short predicate is normative and expands only the sections cited above.
 | `R006` | `LINEAR_ID_INVALID` / semantic / error | all; value fails exact MAS/NONE grammar | `value`, `location` | `USE_EXACT_LINEAR_ID` |
 | `R007` | `WAVE_EMPTY` / semantic / error | all; wave empty after cosmetic wrapper rule | `location` | `SET_BOUNDED_WAVE` |
 | `R008` | `WAVE_INVALID` / semantic / error | all; wave fails exact pattern/length | `value`, `location` | `SET_BOUNDED_WAVE` |
-| `R009` | `PORTFOLIO_MODE_INVALID` / semantic / error | all; mode outside canonical enum/authorized alias | `value`, `location` | `SET_CANONICAL_PORTFOLIO_MODE` |
+| `R009` | `PORTFOLIO_MODE_INVALID` / semantic / error | except unknown/non-present epoch named-alias case (R022 only); mode outside canonical enum/authorized alias | `value`, `location` | `SET_CANONICAL_PORTFOLIO_MODE` |
 | `R010` | `PORTFOLIO_MODE_RESERVED` / semantic / error | all; authored `untracked_refused` | `value`, `location` | `REMOVE_RESERVED_MODE` |
-| `R011` | `AUTHORITY_INVALID` / semantic / error | all; authority outside canonical enum/authorized alias | `value`, `location` | `SET_CANONICAL_AUTHORITY` |
-| `R012` | `COMPLETION_INVALID` / semantic / error | all; completion outside canonical enum/authorized alias | `value`, `location` | `SET_CANONICAL_COMPLETION` |
-| `R020` | `AUTHORING_SCHEMA_VERSION_MISMATCH` / semantic / error | any epoch for a non-alias value, or at/post-cutover for a named alias | `field`, `value`, `epoch` | `MIGRATE_TO_V1` |
-| `R021` | `LEGACY_AUTHORING_ALIAS` / semantic / notice | present pre-cutover receipt; one of four aliases used | `field`, `alias`, `canonical`, `receipt` | `MIGRATE_TO_V1` |
-| `R022` | `AUTHORING_CUTOVER_RELATION_UNAVAILABLE` / semantic / partial | alias observed and receipt not present/consistent | `epoch_state`, `receipt_digest` | `SUPPLY_CUTOVER_RECEIPT` |
+| `R011` | `AUTHORITY_INVALID` / semantic / error | except unknown/non-present epoch named-alias case (R022 only); authority outside canonical enum/authorized alias | `value`, `location` | `SET_CANONICAL_AUTHORITY` |
+| `R012` | `COMPLETION_INVALID` / semantic / error | except unknown/non-present epoch named-alias case (R022 only); completion outside canonical enum/authorized alias | `value`, `location` | `SET_CANONICAL_COMPLETION` |
+| `R020` | `AUTHORING_SCHEMA_VERSION_MISMATCH` / semantic / error | non-alias historical value at any epoch, or named alias at/post-cutover; no normalization | `field`, `value`, `epoch` | `MIGRATE_TO_V1` |
+| `R021` | `LEGACY_AUTHORING_ALIAS` / semantic / notice | exactly one named alias with present PRE_CUTOVER receipt; R021 only for that field and normalize | `field`, `alias`, `canonical`, `receipt` | `MIGRATE_TO_V1` |
+| `R022` | `AUTHORING_CUTOVER_RELATION_UNAVAILABLE` / semantic / partial | named alias with UNKNOWN/PARTIAL/UNAVAILABLE/CONTRADICTORY epoch; R022 only, no normalization | `epoch_state`, `receipt_digest` | `SUPPLY_CUTOVER_RECEIPT` |
+| `R026` | `LINEAR_TARGET_ROLE_UNAVAILABLE` / semantic / partial | Linear PRESENT but a required exact target row is absent or `target_role` is UNKNOWN | `required_targets`, `target_roles` | `SUPPLY_COMPLETE_LINEAR_TARGET_ROLES` |
+| `R027` | `LINEAR_TARGET_ROLE_MISMATCH` / semantic / error | after role availability, zero/multiple/mismatching DECLARED target or explicit incompatible nondeclared role | `declared`, `roles`, `targets` | `REPAIR_LINEAR_TARGET_ROLES` |
+| `R028` | `LINEAR_ISSUE_TYPE_MISMATCH` / semantic / error | present target role/type violates exact mode allowlist or proof/acceptance gate role-type law | `issue_type`, `portfolio_mode`, `target_role` | `REPAIR_LINEAR_ISSUE_TYPE` |
 | `R029` | `LINEAR_REQUIRED_FOR_MODE` / semantic / error | every canonical mode; Linear is `NONE` | `portfolio_mode`, `linear` | `SET_CONCRETE_LINEAR_ISSUE` |
-| `R030` | `WORKSTREAM_UNKNOWN` / semantic / error | present Agent OS snapshot; declared exact key absent | `workstream` | `USE_EXISTING_WORKSTREAM` |
+| `R030` | `WORKSTREAM_UNKNOWN` / semantic / error | Agent OS PRESENT; tracked or architecture-candidate concrete declared key absent (never creates-workstream) | `workstream` | `USE_EXISTING_WORKSTREAM` |
 | `R031` | `WORKSTREAM_REQUIRED_FOR_TRACKED` / semantic / error | tracked; Workstream is `NONE` | `portfolio_mode`, `workstream` | `SET_TRACKED_WORKSTREAM` |
 | `R032` | `WORKSTREAM_MUST_BE_NONE_FOR_EXCEPTION` / semantic / error | maintenance exception; Workstream is not `NONE` | `portfolio_mode`, `workstream` | `SET_WORKSTREAM_NONE` |
 | `R033` | `AGENTOS_SNAPSHOT_UNAVAILABLE` / semantic / partial | mode/key rule needs Agent OS and state is not present | `snapshot_state`, `workstream` | `SUPPLY_AGENTOS_SNAPSHOT` |
 | `R034` | `LINEAR_ISSUE_UNKNOWN` / semantic / error | present Linear snapshot; declared concrete issue absent | `linear` | `USE_EXISTING_LINEAR_ISSUE` |
-| `R035` | `LINEAR_SNAPSHOT_UNAVAILABLE` / semantic / partial | concrete Linear rule and state is not present | `snapshot_state`, `linear` | `SUPPLY_LINEAR_SNAPSHOT` |
-| `R036` | `LINEAR_PROJECT_WORKSTREAM_MISMATCH` / semantic / error | present snapshots; issue binding conflicts with declared exact WS | `linear`, `declared_workstream`, `bound_workstream` | `REPAIR_LINEAR_BINDING` |
+| `R035` | `LINEAR_SNAPSHOT_UNAVAILABLE` / semantic / partial | any needed Linear snapshot is not PRESENT; R035 alone owns non-PRESENT snapshot need | `snapshot_state`, `linear` | `SUPPLY_LINEAR_SNAPSHOT` |
+| `R036` | `LINEAR_PROJECT_WORKSTREAM_MISMATCH` / semantic / error | tracked/concrete architecture require equality; creates allows null/equal but rejects differing non-null; NONE modes N/A | `linear`, `declared_workstream`, `bound_workstream` | `REPAIR_LINEAR_BINDING` |
 | `R037` | `WORKSTREAM_CREATION_NO_WORKSTREAM_RECORD` / semantic / error | creates-workstream; changed paths do not add/reconcile exact WS record | `workstream`, `paths` | `ADD_EXACT_WORKSTREAM_RECORD` |
 | `R038` | `WORKSTREAM_CREATION_KEY_COLLISION` / semantic / error | creates-workstream; base has exact/case-fold key collision | `workstream`, `collisions` | `CHOOSE_UNIQUE_WORKSTREAM_KEY` |
-| `R039` | `MULTIPLE_PR_IDENTITIES` / semantic / error | unsuppressed branch/title/body/native targets create incompatible exact identities | `declared`, `targets` | `RECONCILE_PR_IDENTITIES` |
+| `R039` | `MULTIPLE_PR_IDENTITIES` / semantic / error | incompatible unsuppressed declared-role identities; lawful secondary/parent/gate targets do not compete | `declared`, `targets` | `RECONCILE_PR_IDENTITIES` |
 | `R040` | `AUTHORITY_COMPLETION_MISMATCH` / semantic / error | canonical mode/authority/completion tuple absent from section-4.5 allowlist | `portfolio_mode`, `authority`, `completion` | `USE_ALLOWED_AUTHORITY_COMPLETION` |
 | `R041` | `AUTHORITY_PATH_MISMATCH` / semantic / error | present resolved path evidence excludes declared authority | `authority`, `paths`, `resolutions` | `RECONCILE_AUTHORITY_AND_PATHS` |
 | `R042` | `PATH_OWNERSHIP_SNAPSHOT_UNAVAILABLE` / semantic / partial | applicable path rule and ownership state not present | `snapshot_state`, `paths` | `SUPPLY_PATH_OWNERSHIP_SNAPSHOT` |
@@ -711,12 +748,12 @@ the short predicate is normative and expands only the sections cited above.
 | `R046` | `WORKSTREAM_CREATION_HIDDEN_IMPLEMENTATION` / semantic / error | creates-workstream changed paths include runtime/production implementation | `paths`, `path_classes` | `SPLIT_WORKSTREAM_CREATION_FROM_BUILD` |
 | `R047` | `PATH_OWNERSHIP_UNMAPPED` / semantic / partial | applicable path rule has one or more complete `UNOWNED` resolutions | `paths`, `resolutions` | `MAP_PATH_OWNERSHIP` |
 | `R050` | `BRANCH_LINEAR_MISMATCH` / semantic / error | unsuppressed branch issue differs from declared target | `declared`, `branch_targets` | `RECONCILE_BRANCH_IDENTITY` |
-| `R051` | `TITLE_BODY_LINEAR_CONFLICT` / semantic / error | visible title/body targets conflict with declaration/effects | `declared`, `title_targets`, `body_targets` | `RECONCILE_TEXT_IDENTITIES` |
+| `R051` | `TITLE_BODY_LINEAR_CONFLICT` / semantic / error | declared-role title/body conflict; lawful secondary/parent/gate reference is not a declaration | `declared`, `title_targets`, `body_targets` | `RECONCILE_TEXT_IDENTITIES` |
 | `R052` | `CLOSING_KEYWORD_FOR_NON_MERGE_DONE` / semantic / error | visible closing to declared issue with built-not-proven/proof-required/acceptance-required, or records-only when complete stop-law/path evidence disproves the section-4.5 records exception | `linear`, `completion`, `relationships` | `USE_NONCLOSING_RELATIONSHIP` |
 | `R053` | `MERGE_DONE_WITH_EXPLICIT_PROOF_GATE` / semantic / error | merge-is-done contradicts exact Linear stop law requiring later proof/acceptance | `linear`, `completion`, `stop_law` | `SET_NONFINAL_COMPLETION` |
 | `R054` | `NATIVE_LINKAGE_SNAPSHOT_UNAVAILABLE` / semantic / partial | applicable native rule and snapshot partial/unavailable | `snapshot_state`, `linear` | `SUPPLY_NATIVE_LINKAGE_SNAPSHOT` |
 | `R055` | `NATIVE_RELATIONSHIP_AMBIGUOUS` / semantic / partial | native reducer yields ambiguous/contradictory for a target | `linear`, `relationships`, `diagnostics` | `RECONCILE_NATIVE_RELATIONSHIP` |
-| `R056` | `PORTFOLIO_LINKAGE_COMPLETION_MISMATCH` / semantic / error | complete per-target native effect contradicts metadata/stop law after applying the section-4.5 records-only exception | `target`, `effect`, `completion`, `stop_law` | `REPAIR_COMPLETION_RELATIONSHIP` |
+| `R056` | `PORTFOLIO_LINKAGE_COMPLETION_MISMATCH` / semantic / error | role-aware complete per-target effect contradicts metadata/stop law after records-only exception | `target`, `effect`, `completion`, `stop_law`, `target_role` | `REPAIR_COMPLETION_RELATIONSHIP` |
 | `R060` | `OBSERVATION_GROUNDING_MISMATCH` / semantic / error | recomputed identity/body/snapshot/observation/ruleset digest differs | `component`, `expected`, `observed` | `REBUILD_IMMUTABLE_OBSERVATION` |
 | `R061` | `SNAPSHOT_CONTRADICTION` / semantic / partial | any well-shaped snapshot state is contradictory | `snapshot`, `diagnostics` | `RECAPTURE_CONSISTENT_SNAPSHOT` |
 
@@ -834,7 +871,7 @@ Input/invocation failures use a separate closed envelope, never
     "observed": "integer|null"
   },
   "execution_error_hash": "64hex",
-  "receipt": {"input_sha256": "64hex|null", "source_sha": "40hex", "producer": "string"}
+  "receipt": {"input_sha256": "64hex|null", "source_sha": "40hex|null", "producer": "string"}
 }
 ```
 
@@ -842,8 +879,9 @@ All keys are required and unknown keys rejected. The hash is SHA-256 of canonica
 Reason codes are stable machine tokens; mutable exception prose/stack traces are excluded and are
 never emitted in annotations. The CLI writes this canonical envelope to stderr when it cannot
 write the requested output path. Execution-error `source_sha` is the validator build/source Git
-SHA, not a value parsed from the invalid observation, so it remains available for `INVALID_JSON`;
-`input_sha256` is null only when no input bytes could be read.
+SHA, not a value parsed from the invalid observation, so it remains available for `INVALID_JSON`
+whenever adapter or checked-out source identity is available; it is null only where source
+identity is genuinely unavailable. `input_sha256` is null only when no input bytes could be read.
 
 Exit behavior:
 
@@ -958,3 +996,128 @@ At this freeze:
 The exact next action after W0 merges is: reconcile Macro #6135 in place to this grammar and
 cutover law while independently preparing the bounded Mastermind/Terminal authoring corrections;
 the pure W1 core may start only from the merged W0 law.
+
+## 16. Adjudicated W0 source-law repair (normative)
+
+This section and the tracked canonical manifest
+`config/pr_linkage_rules.v1.json` are the final W0 reconciliation. They supersede any older
+ambiguous wording in sections 3--15. The manifest is the single machine-readable expansion;
+this document remains the human source law. Its byte digest is the SHA-256 of the canonical JSON
+bytes of that file (no self-digest member and no transport envelope), and is reproduced by two
+independent canonical serializations before every implementation handoff.
+
+### 16.1 Identity, target roles, and cross-field reducers
+
+- Target roles are joined by exact issue ID from Linear rows for every header/body/title/branch/
+  native target. `UNKNOWN` target role is partial, never an incompatible declaration.
+- `R035` alone handles every needed Linear snapshot that is not `PRESENT`. `R026` is
+  `LINEAR_TARGET_ROLE_UNAVAILABLE` / PARTIAL only when Linear is `PRESENT` but a required target
+  row is absent or its `target_role` is `UNKNOWN`. `R027` is `LINEAR_TARGET_ROLE_MISMATCH` /
+  ERROR only after role availability is concrete: zero/multiple/mismatching `DECLARED` targets or
+  an explicitly incompatible nondeclared role. `R028` is `LINEAR_ISSUE_TYPE_MISMATCH` / ERROR:
+  target role and issue type are incompatible. Before `R029`, all three are evaluated
+  deterministically.
+- Exact precedence is: snapshot not PRESENT -> R035 alone; PRESENT with header Linear ID wholly
+  absent -> R034 ERROR alone; PRESENT with header ID role UNKNOWN -> R026 PARTIAL and R027/R028
+  indeterminate for that target; PRESENT with absent/UNKNOWN non-header body/title/branch/native
+  target -> R026 PARTIAL for that target; only PRESENT with complete concrete roles reaches R027
+  (zero/multiple/mismatching DECLARED) and R028. R027/R028 never fire for a target owned by R026.
+- The `R028` mode allowlists are exact: `tracked` accepts all six known non-`UNKNOWN` issue
+  types; `maintenance_exception` accepts only `MAINTENANCE`; `creates_workstream` only
+  `ROOT_RECOVERY`; `architecture_candidate` only `ARCHITECTURE`. `PROOF_GATE` and
+  `ACCEPTANCE_GATE` roles additionally require their identically named issue type.
+- `R030` applies only to `tracked` and `architecture_candidate` when `Workstream` is concrete;
+  it never applies to `creates_workstream`. In creates-workstream, base absence is positive and
+  `R038` owns exact or ASCII-casefold collisions.
+- `R036` is exact: tracked and concrete-workstream architecture candidates require equality of
+  header and declared-issue workstream; `NONE` modes are not applicable; creates-workstream
+  allows null/equal issue workstream and rejects a different non-null one.
+- `R039`, `R051`, and `R056` reduce declared identity by `target_role`: lawful
+  `SECONDARY`, `PARENT`, `PROOF_GATE`, and `ACCEPTANCE_GATE` references are not competing
+  declarations. An incompatible role/effect remains explicit through R027/R028/R056. Exactly
+  one `DECLARED` target matching concrete header Linear is required whenever Linear is PRESENT.
+
+### 16.2 Exact path and native reducers
+
+For `maintenance_exception`, changed paths and ownership must both be `PRESENT`; every
+`CURRENT` and `OLD_RENAME_SOURCE` row must be `EXACT`, class `MAINTENANCE`, allowed by
+`maintenance`, and owner `NONE`. Any `UNOWNED` row emits `R047` PARTIAL and `R044` ERROR;
+an ambiguous/missing row emits `R042` PARTIAL only unless another known row independently
+disproves the exception. An exact non-maintenance or owned row emits `R044` ERROR. Exact
+authority exclusion additionally emits `R041` ERROR. This reducer applies every changed path,
+including both rename endpoints; it never treats a partial path set as lawful maintenance proof.
+
+Native records use the legal matrix in section 6.7. An ACTIVE relationship means
+`state=PRESENT` and `kind!=SUPPRESSED`. A suppression means exactly
+`state=SUPPRESSED, kind=SUPPRESSED, source=BRANCH|TITLE, completion_transition=INELIGIBLE`.
+Ambiguous/unavailable records occur only under PARTIAL/CONTRADICTORY with transition UNKNOWN.
+Suppression is keyed by `(issue_id, source)` and affects only the matching `AUTO_LINK`.
+Illegal cross-products are invalid observation state law and exit 2. The manifest's native
+reducer uses those definitions, not an inferred “active versus suppressed” shorthand.
+
+### 16.3 Parse, finding, and execution closure
+
+- Duplicate JSON object members are rejected at every level with `INVALID_JSON` and reason
+  `DUPLICATE_OBJECT_MEMBER`; a permissive JSON loader is nonconforming.
+- The field-occurrence cap counts visible lexical occurrences of each recognized field label over
+  the whole newline-normalized body, excluding the same fenced/comment/blockquote/lazy-
+  continuation states ignored by the parser. Exactly 100 is valid; 101 exits 2 with the resource
+  limit envelope. The cap is independent of the six-line authority block.
+- `finding_contract.location_grammar` is the sole finding-location authority. A location is
+  exactly one of `DECLARATION:<Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK>`,
+  `BODY:L<positive decimal>:<Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP>`,
+  `TITLE`, `BRANCH`,
+  `SNAPSHOT:<AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE>`,
+  `RECEIPT:<OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|
+  PATH_OWNERSHIP|NATIVE_LINKAGE>`, or `RULESET`. Digest prefixes are the longest leading byte
+  slice no longer than 160 ending at a UTF-8 codepoint boundary: TEXT_DIGEST derives its prefix
+  and SHA-256 from original UTF-8 bytes; CANONICAL_DIGEST derives both from canonical JSON UTF-8
+  bytes. Digest wrappers deduplicate by canonical wrapper bytes then sort by `(sha256,prefix)` in
+  UTF-8 byte order. Evidence scalar strings are therefore
+  `{ "prefix": "up to 160 UTF-8 bytes", "sha256": "64hex" }`;
+  all other evidence values are closed JSON scalars/arrays listed by each rule row. No raw unbounded body
+  text enters a semantic finding.
+- `finding_contract.location_policy_by_rule` is the sole deterministic route from each of the 46
+  rule IDs to a location form. Its `evidence_schema_by_key` maps every one of the 44 frozen
+  evidence keys exactly once to a closed encoding category; unknown keys are invalid. Categories
+  are ATOM, ATOM_OR_NULL, ATOM_LIST, LOCATION, LOCATION_LIST, TEXT_DIGEST,
+  TEXT_DIGEST_LIST, CANONICAL_DIGEST, and CANONICAL_DIGEST_LIST. Arrays are unique and
+  canonically ordered. W1 must include golden finding-byte and semantic-hash tests.
+- Execution `component` is one of `INPUT|JSON|OBSERVATION|RULESET|PARSER|EVALUATOR|RENDERER|
+  OUTPUT|DETERMINISM`; reason codes are the closed manifest vocabulary
+  `INVALID_UTF8|INVALID_JSON|DUPLICATE_OBJECT_MEMBER|UNKNOWN_KEY|MISSING_KEY|TYPE_MISMATCH|
+  INVALID_SNAPSHOT_STATE|EPOCH_RECEIPT_RULESET_MISMATCH|INVALID_BODY_ENCODING|RESOURCE_LIMIT|
+  UNSUPPORTED_RULESET_ID|RULESET_DIGEST_MISMATCH|INPUT_READ_FAILED|PARSER_INTERNAL_ERROR|
+  EVALUATOR_INTERNAL_ERROR|RENDERER_INTERNAL_ERROR|OUTPUT_TEMP_CREATE_FAILED|
+  OUTPUT_WRITE_FAILED|OUTPUT_REPLACE_FAILED|NONDETERMINISTIC_RESULT`; the manifest route table
+  is the sole closed reason-to-envelope expansion.
+- `source_sha` resolves honestly in this order: an explicit validated 40-lowerhex adapter build
+  SHA wins; otherwise a bounded read-only `git rev-parse HEAD` from the validator repository root
+  must yield validated 40-lowerhex; otherwise it is null only where source identity is genuinely
+  unavailable. It is never copied from invalid input. This subprocess is CLI-adapter-only and is
+  never core, network, or mutation behavior. The execution-error schema therefore allows
+  `source_sha: 40hex|null`. The output transaction may create one same-directory temporary
+  sibling and commit with atomic `os.replace`; it performs no other filesystem mutation.
+- `execution_error.routes` is a closed table and the only execution mapping. Each route fixes
+  reason code, error code, component, exit and limit policy; non-resource routes have null limit
+  and observed values. Known-installed receipt digest mismatch remains R060/exit 0, never an
+  execution route. W1 must include exact execution-envelope byte goldens.
+
+### 16.4 Ruleset and output reconciliation
+
+The installed ruleset ID/digest is validated before semantic reduction. An unknown `ruleset_id`
+or a top-level digest that is not the installed manifest digest yields `UNSUPPORTED_RULESET`,
+execution exit 2. A known installed top-level ID/digest with a mismatching receipt digest emits
+`R060` in a semantic report and exits 0. A `PRESENT` authoring epoch whose receipt ruleset digest
+is inconsistent with the top-level installed digest is invalid snapshot state law and exits 2.
+These are deliberately distinct routes.
+
+The exact closed rule count is 46 (`R001`--`R012`, `R020`--`R022`, `R026`--`R061` as physically
+listed in the manifest, with intentional gaps). The code-family table, rule rows, schemas,
+digest law, W1 expected file list, and W1 test obligations are reconciled by the manifest. W1
+must ship `scripts/pr_linkage_validator.py`, one pure module, this config file, and tests for
+duplicate-key rejection, 100/101 lexical labels, all alias epochs, target roles, every legal and
+illegal native cross-product, maintenance rename reducers, ruleset routes, deterministic
+canonical bytes/hash, source-SHA fallback, zero network/mutation, and atomic output behavior.
+No workflow, House-Law row, CI-gate registration, comment bot, enforcement switch, network
+client, control plane, or second truth store is authorized by this repair.
