@@ -177,37 +177,61 @@ installation is a post-Sol-acceptance act, done by hand following the steps
 below** — the PR does not run `launchctl` itself (§I out of scope for the
 builder).
 
-**Current status:** `com.macro.thetadata-daily` — `installed_live_status: NOT_INSTALLED`
-pending Sol acceptance. Do not install, bootout, or bootstrap anything in
-this section until Sol has accepted the PR; the steps below are the
-documented procedure for whoever performs that install, not an instruction
-to this build.
+**Current status:** `com.macro.thetadata-daily` — `installed_live_status: INSTALLED`
+(verified 2026-08-23: `launchctl list` on m1 shows the label loaded, last
+exit status 0, alongside `com.macro.theta-terminal` and
+`com.macro.theta-staleness`).
 
-**Step 0 — refresh the ops-tree bytes to current main FIRST.** The live lane
-runs from a DETACHED worktree, not a synced main (measured 2026-08-22:
-`theta-ops-wt` HEAD was weeks behind, with newer bytes hand-copied on top for
-some files and `collectors/thetadata.py` left at an old revision missing the
-#5942 NA-parse fixes). Installing the new label on stale bytes ships the OLD
-writer under the NEW schedule. At minimum, refresh these files in
-`/Users/chriswong/theta-ops-wt/` to the merged AD-1T1 commit before
-bootstrapping:
+**Step 0 — refresh the ops-tree bytes to current main FIRST.** Installing a
+label on stale bytes ships the OLD writer under the NEW schedule. As of
+2026-08-23 the ops tree IS a synced clone of canonical main and refreshing is
+a normal git operation — the topology below replaced the dead setup measured
+2026-08-22 (HEAD weeks behind on a defunct fork remote, newer bytes
+hand-copied on top, `collectors/thetadata.py` missing the #5942 NA-parse
+fixes, merged bytes streamable only file-by-file over ssh).
+
+Remote topology (repointed 2026-08-23):
+
+- `origin` = `git@github.com:mastermindx-market-intelligence/macro.git`
+  (canonical). The former origin `chriswong6031-creator/macro.git` is DEAD —
+  its SSH credential returns `Permission denied (publickey)`; never repoint
+  back to it.
+- Auth is the repo-local `core.sshCommand` =
+  `ssh -i ~/.ssh/macro_dashboard_deploy -o IdentitiesOnly=yes` (deploy key,
+  authenticates as `mastermindx-market-intelligence/macro`). It is set in
+  `theta-ops-wt/.git/config`, so plain `git fetch origin` works with no env
+  vars.
+- The clone is SHALLOW (`.git/shallow` grafts): `git merge-base` /
+  `--is-ancestor` between old and new commits can fail with no output even
+  when ancestry is real — prove ancestry in a full-history checkout, not
+  here.
+- Every tracked `data/` index entry carries `--skip-worktree`: `data/` on
+  disk is deliberately frozen (July vintage plus the live
+  `data/thetadata_eod` symlink into `flow-ops-wt`) while the index tracks
+  main. `git status` stays clean without materializing ~48k data files.
+
+Refresh procedure (replaces the old per-file checkout list — refreshes the
+WHOLE tree except `data/`):
 
 ```bash
 cd /Users/chriswong/theta-ops-wt
-git fetch origin && git checkout origin/main -- \
-    collectors/thetadata.py \
-    scripts/topup_thetadata_day.py \
-    scripts/backfill_thetadata_eod.py \
-    lib/nyse_calendar.py \
-    scripts/launchd/theta_daily_refresh.sh \
-    scripts/launchd/com.macro.thetadata-daily.plist \
-    scripts/launchd/theta_staleness_sentinel.sh
-chmod +x scripts/launchd/theta_daily_refresh.sh
+git fetch origin                     # first full fetch was ~1.45M objects /
+                                     # ~8.6 GiB / ~30 min; run it nohup'd.
+                                     # Incremental fetches are cheap.
+git diff -z --name-only --diff-filter=D HEAD origin/main -- ":(exclude)data" \
+    > /tmp/theta_ops_deletions.zlist # files main deleted since last refresh
+git reset --mixed origin/main        # move branch+index; worktree untouched
+git checkout -- . ":(exclude)data"   # materialize main bytes, data/ excluded
+xargs -0 rm -f < /tmp/theta_ops_deletions.zlist
+git ls-files -z -- data/ | git update-index -z --skip-worktree --stdin
 ```
 
-(A full `git pull`/fast-forward of the ops worktree to main is preferable
-where the ops-tree divergence allows it — the file list above is the MINIMUM,
-not a ceiling.)
+NEVER `git reset --hard` and never `git checkout` anything under `data/` in
+this tree: main tracks files under `data/thetadata_eod/`, which is a SYMLINK
+into the canonical T1 store — a hard checkout would try to write through it.
+Do not `chmod +x scripts/launchd/theta_daily_refresh.sh` (an older revision
+of this step said to): the plist invokes it via `/bin/bash`, git tracks it
+`100644`, and the chmod just leaves a permanent mode-diff in status.
 
 **Step 1 — bootout the old label, then verify no orphan survives it.**
 `launchctl bootout` kills the wrapper shell but NOT necessarily a
