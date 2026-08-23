@@ -90,4 +90,33 @@ stayed dormant. Blocking check (l) wired committed-artifact style; verify 15/17 
 (j)/(k) awaiting Lane E); deterministic ×2 at 6a067faf14dc; R3A 59 passed; bin ordering
 visually unchanged (before/after crop pair); sc_flows untouched.
 
-(§4+ appended as further lane returns are adjudicated.)
+## §4 Lane B return — adjudicated ACCEPTED (commit 598144a05ac6)
+
+B2-05/06/07/10/11 + the two in-lane closures all landed, with the cycle's strongest
+evidence standard: every new blocking check was DISCRIMINATION-PROVEN — run against a
+deliberately reverted candidate, each reproduced its motivating critic finding by name
+(stripping .r3-figlab → VTC1-001 verbatim incl. "强度 76" proof failure; disabling header
+dropping → VTC1-002 verbatim down to the EN-only language split; restoring the -13px
+margin → VTC1-007 verbatim). The B2-05 mechanism — one .r3-figlab node per figure,
+visually hidden while the legend paints, a compact caption once <=640 removes it — closes
+VTC1-001/MAC1-001/PRC1R-002 as a MECHANISM rather than 16 patches, and makes
+"desktop composition unchanged" provable (double-label census 0 above the breakpoint).
+Audits: 108-figure census (18/cell, 4 valueless counted-not-exempted), 0 unnamed, 12/12
+visible-label proofs; treemap 5,928 tiles / 288 painted labels, 0 cross-owner overlaps,
+0 interactive elements inside the treemap at <=640 (escape hatches lifted above the map);
+ramp painted 2 / suppressed 8 cells; receipt flow 10/10 incl. 200% cells; MAC1-002 floor
+0/36 under 44px; PRC1R-001 10/10. verify 18/20 ((j)/(k) = Lane E), deterministic ×2 at
+1b4eca29857d, R3A 59, prior-lane markers all survive.
+
+Rulings on deviations — all UPHELD: (1) B2-11's true failing receipt is .r3-ov-season
+(measured x=-1 at 320 ZH), not the block-level How-this-works control — measurement
+outranks the commission's shorthand, and the marker sits on the element that was fixed;
+(2) the moving.html touch for MAC1-002 is required by the same source-order specificity
+trap Lane A(R3B.1) recorded — declaring the floor in both owning partials is the correct
+fix; (3) the shell.html edit is inside the commission's explicit allowance; (4) same-owner
+line-box contacts reported-not-charged is a disclosed scoping with the count emitted —
+honest, not an exclusion. Honest-gap note adopted for Lane E: recapture Lane C's
+heatmap_ink artifact at the freeze SHA (Lane B verified non-staleness at this head, but
+the freeze evidence should re-derive it).
+
+(§5+ appended as further lane returns are adjudicated.)
