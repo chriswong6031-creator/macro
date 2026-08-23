@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T06:21:14.606856+00:00",
-  "count": 1668,
+  "generated_at": "2026-08-23T07:23:58.585269+00:00",
+  "count": 1671,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -940,6 +940,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-upwzp7bcgkk-a45499",
+      "title": "Bond markets",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:28Z",
+      "summary_points": [
+        "**Bail-in Risk Concentration**: 5 issuers (Deutsche Bank, JPMorgan Chase, Bank of Nova Scotia, Morgan Stanley, Goldman Sachs) carry \"Senior (bail-in)\" designation, exposing portfolios to capital drawdowns during financial stress.",
+        "**Cross-Border Currency Baskets**: Target USD/EUR/CHF/GBP baskets for resilience, leveraging mispriced credit risk from home bias and avoiding FX complexity.",
+        "**ESG-Linked Yield Opportunities**: SLB/Green bonds (e.g., BP, Amazon, Enel) offer YTM 3.1–4.0% with regulatory alignment, amid 5 new sustainability-linked additions.",
+        "**Yield & Duration Profile**: YTM 4.8–6.2% (USD), coupons 4.0–6.5%, maturities clustered 2023–2025, enabling tactical yield capture amid rising rates.",
+        "**Critical Credit Deterioration**: Barry Callebaut’s \"Deteriorating\" outlook (1 issuer) signals immediate need for portfolio adjustment to mitigate credit risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 30,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-nrqxsf0pkcj-103e1b",
       "title": "Daily US",
       "institution": "UBS",
@@ -956,6 +977,45 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yy1pewjwhba-0858c7",
+      "title": "Invest in transformational innovation",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:26Z",
+      "summary_points": [
+        "**AI Market Growth & Concentration Risk**: $3.1T addressable market by 2030 (30% CAGR), but semiconductor supply bottlenecks create single-stock concentration risk.",
+        "**Energy/Infrastructure Investment Surge**: Global grid investment to rise from $500bn (2026) to $3T (2030) amid AI demand and geopolitical pressures.",
+        "**Longevity Market Catalysts**: Market to grow from $5.3T (2023) to $8.0T (2030); 2026 pivotal for obesity/oncology pipeline readouts and M&A.",
+        "**Portfolio Diversification Edge**: Longevity shows negative return correlation to \"AI\" portfolio and resilience to geopolitical risks via diversified healthcare supply chains."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-a6ms5lesl7a-b64af1",
+      "title": "Put cash to work",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:25Z",
+      "summary_points": [
+        "**Historical Outperformance**: US stocks outperformed cash in 97% of cases (1945–2026); diversified 60/40 portfolios consistently beat cash, with excess cash risking inflation erosion and low real returns.",
+        "**Optimal Cash Allocation**: Hold 2–5 years of net withdrawals as cash; deploy excess into diversified assets (stocks, bonds, alternatives) to avoid market timing and leverage historical outperformance.",
+        "**Reinvestment Risk Mitigation**: Prioritize longer-term fixed deposits/high-grade bonds over short-term rolling to counter reinvestment risk, aligning with Fed rate hold expectations and elevated yields."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },

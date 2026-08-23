@@ -258,3 +258,39 @@ Alternatives rejected for the ordering:
   repaired. The blast radius of failing closed is bounded — the fence is inert
   unless a malformed P1-relevant row is present, which has never occurred in
   54,078 accrued rows.
+
+## Sol residual rulings, 2026-08-23 — the three open questions are CLOSED
+
+P1-R3A merged as #6269 (squash `0bcfef045517bcaae23271b1218f37c59bcaa864`) and
+Sol's final code adjudication is **PASS**. The three residuals the P1-R3A PR
+named are ruled, and **no further P1 implementation repair is authorized**. Each
+is written here rather than only in the session handoff because each is a
+standing "do not build this" that a later session would otherwise re-derive as an
+obvious improvement.
+
+1. **The unreadable accrued-filings-store path stays as it is.** Losing an
+   observation because `filings.parquet` was unreadable past CNInfo's re-pull
+   window is a broader `china_filings` **outage-recovery** concern, not another
+   P1 malformed-key persistence path. Do NOT add a second persistence site at
+   the `_read_filings_strict() is None` abort — that would weaken the
+   single-fence property the ordering mutation guard pins, to solve a problem
+   that is not this ledger's.
+
+2. **The `china_visits` import failure stays fail-closed.** When the fence cannot
+   reach the ledger's owner it refuses the canonical commit even if no malformed
+   row was P1-relevant, because it cannot measure relevance without the owner.
+   That over-strictness is **by design** and retained. Do NOT duplicate the
+   P1-relevance law into `china_filings` to narrow it — two copies of that law
+   are free to drift, which is the failure P1-R2 exists to have closed.
+
+3. **Scoped coverage exceptions have no TTL, expiry, prune, or operator-clear.**
+   They remain open until deterministic reconciliation, or until a future
+   **explicitly evidence-backed adjudication mechanism** exists. An operator
+   lever is not that mechanism, and neither is an age threshold. Building either
+   without the mechanism is forbidden.
+
+What remains is a RECEIPT, not code: the first natural post-#6269 Asia-close with
+healthy CNInfo transport. Another SSE 504 is valid failure-state evidence but is
+not the clean-path receipt; the lane must not be rerun and data must not be
+manufactured to obtain one.
+
