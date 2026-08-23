@@ -227,7 +227,7 @@ verified:
       --check; targeted receipt scan for account identifiers, controlled tickers,
       bearer/JWT material, and other private fixture markers
     result: >
-      Agent OS validated 610 records with zero errors; the compiled context bundle
+      Agent OS validated the full current record set with zero errors; the compiled context bundle
       parsed as valid JSON; the records diff had no whitespace errors; and the
       privacy scan found no account identifier, controlled ticker, bearer/JWT token,
       or private fixture value. The 29 validation warnings were pre-existing advisory
