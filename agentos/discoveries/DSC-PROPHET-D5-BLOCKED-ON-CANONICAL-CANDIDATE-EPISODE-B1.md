@@ -1,15 +1,15 @@
 ---
 key: PROPHET-D5-BLOCKED-ON-CANONICAL-CANDIDATE-EPISODE-B1
 claim: >
-  At Macro main 9f373fd9553603192f495260b2100c16c177023b, the frozen V4
-  `prophet.candidate_episode/v1` exists only in research/architecture records; no
-  canonical runtime implementation was found. The existing Entry Radar runtime
-  episode `mastermind.live_entry_episode.v1` is not an alias: it is an operational,
-  re-derivable detector lifecycle whose episode ID hashes
-  (ticker, detector_id, variant, first_armed_at), whose state lives under an
+  Revalidated through Macro main 468e3f0257dac41b2e7e90771c3de87640e1c3ee on
+  2026-08-23: the frozen V4 `prophet.candidate_episode/v1` exists only in
+  research/architecture records; no canonical runtime implementation was found.
+  The existing Entry Radar runtime episode `mastermind.live_entry_episode.v1` is not
+  an alias: it is an operational, re-derivable detector lifecycle whose episode ID
+  hashes (ticker, detector_id, variant, first_armed_at), whose state lives under an
   injected live state directory, and whose module explicitly says it is not the
-  durable evidence store. Therefore Cell F cannot lawfully prove an
-  episode-scoped D5 vertical on real canonical V4 episodes until B1 lands.
+  durable evidence store. Therefore Cell F cannot lawfully prove an episode-scoped
+  D5 vertical on real canonical V4 episodes until B1 lands.
 falsifier: >
   A current-main implementation owned by WS:PROPHET-US-V4-RECOVERY that publishes
   and reads `prophet.candidate_episode/v1` on the canonical V4 identity/lifecycle,
@@ -24,12 +24,17 @@ so_what: >
   bounded Earnings event_workspace -> thin D5 adapter -> read-only Prophet Lab
   consumer vertical defined in the Cell F contract.
 kind: architecture
-verified_at: 2026-08-22
+verified_at: 2026-08-23
 verified_by: >
-  Current-main GitHub code search for candidate_episode/v1 and episode_id plus
-  direct inspection of research/prophet_v4/ARCHITECTURE_FREEZE.md,
-  agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md, and
-  engine/entry_radar/live_ledger.py at/through main 9f373fd9553603192f495260b2100c16c177023b.
+  GitHub code search for prophet.candidate_episode/v1 on current main returned only
+  research/architecture records; open-PR search for candidate episode B1 returned
+  #6275 itself and no competing B1 carrier. Direct owner-law inspection covered
+  research/prophet_v4/ARCHITECTURE_FREEZE.md,
+  research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md,
+  agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md, and the Entry Radar live-episode
+  contract. Main movement from the Cell F semantic-census pin through
+  468e3f0257dac41b2e7e90771c3de87640e1c3ee did not introduce a B1 implementation
+  or a D5 owner change.
 scope:
   - macro
   - research/prophet_v4
