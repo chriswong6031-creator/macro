@@ -19,9 +19,13 @@ waves:
     status: done
     pr: 6294
     note: >
-      Repository-built on a Draft HOLD-FOR-SOL PR. The implementation and local
-      product proof are complete, but P0A is not Sol-accepted, merged, deployed
-      or live. The done status describes the bounded build wave only.
+      Repository-built on Draft HOLD-FOR-SOL PR #6294. Sol returned two bounded
+      integrity blockers plus current-main reconciliation; both defects are
+      repaired on the same branch, the seven P0A commits were preserved by a
+      normal merge onto origin/main pickup cd42b890d1df and a final no-collision
+      normal refresh to 3d35ec5cd5ae, and refreshed local product proof is
+      complete. P0A is not Sol-accepted, merged, deployed or live. The done
+      status describes the bounded build wave only.
   - id: P0B
     title: Crypto H5 authority closure
     status: todo
@@ -29,9 +33,9 @@ waves:
     next_action: >
       Remain unstarted until Sol separately commissions P0B after reviewing P0A.
 next_action: >
-  Sol reviews Draft PR #6294 at its final exact head. Keep it Draft and
-  HOLD-FOR-SOL with merge-on-green absent and native auto-merge null; do not
-  start P0B, alerts or broader redesign.
+  Sol reviews the repaired/reconciled Draft PR #6294 at its final exact head.
+  Keep it Draft and HOLD-FOR-SOL with merge-on-green absent and native auto-merge
+  null; do not start P0B, alerts or broader redesign.
 owns_paths:
   - "engine/btc_decision.py"
   - "contracts/btc_decision.schema.json"
@@ -46,8 +50,11 @@ landmines:
     build_vector writes data ledgers before HTML; use a disposable full
     worktree for rendered evidence and carry only normalized page assets.
   - >
-    A raw/final allocation mismatch without an active named override is an
-    integrity failure, not permission to choose one output silently.
+    Economically meaningful raw/final allocation drift without an active named
+    override is an integrity failure; only representation jitter is tolerated.
+  - >
+    The most-recent non-null prior allocation is continuity authority. Invalid,
+    non-finite or out-of-range content fails closed instead of searching older rows.
 do_not_redo:
   - >
     Do not restore the retired midterm calendar veto or create a second
@@ -72,6 +79,7 @@ needs_ceo:
 ---
 
 P0A began from the Sol CEO directive to repair only Bitcoin Vector decision
-authority and stop for review. The durable implementation and exact evidence
-live in PR #6294 and the linked handoff; the workstream record grants no runtime
-or merge authority.
+authority and stop for review. Sol's bounded return was repaired on the same
+branch and PR, without starting P0B or changing the hold. The durable
+implementation and exact evidence live in PR #6294 and the linked handoff; the
+workstream record grants no runtime or merge authority.

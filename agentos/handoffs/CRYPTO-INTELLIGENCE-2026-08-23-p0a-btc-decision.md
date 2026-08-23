@@ -4,19 +4,24 @@ session: claude/p0a-btc-decision-authority
 model: codex
 ended_because: blocked
 mission: >
-  Build only P0A BTC Decision Authority Closure on a fresh Macro branch from
-  then-current origin/main. Make the final Vector action and target derive from
-  one authority, preserve the override seam and provenance receipts, prove the
-  rendered desktop/mobile product, and park a Draft PR for Sol. Do not start
+  Build and, after Sol's bounded return, repair only P0A BTC Decision Authority
+  Closure on the existing Macro branch and Draft PR #6294. Make the final Vector
+  action and target derive from one authority; refuse economically meaningful
+  raw/final drift and a corrupt most-recent prior allocation; reconcile the
+  branch with current origin/main by a normal merge; prove the rendered
+  desktop/mobile product; and re-park the same Draft PR for Sol. Do not start
   P0B, alerts, broader redesign, merge or deployment.
 state_before: >
   Vector's final sizing already came from signals.alloc_optimal after
   btc_overrides.apply(), but S2 still rendered action, tone and a target band
   from the independent legacy btc_recommend result. The Aug 21 evidence shape
   could therefore show a 100% final model allocation beside a defensive 0-10%
-  recommendation. The midterm calendar veto had already been retired by
-  DEC:BTC-MIDTERM-BLACKOUT-AUTHORITY-RETIRED; no open PR touched the P0A paths
-  at the start or final collision checks.
+  recommendation. The initial P0A implementation closed that display split but
+  Sol returned two integrity defects: a 0.4 percentage-point raw/final mismatch
+  could pass without an override, and a corrupt most-recent prior allocation
+  could be skipped in favor of an older valid row. The held branch also needed
+  a current-main reconciliation. The midterm calendar veto had already been
+  retired by DEC:BTC-MIDTERM-BLACKOUT-AUTHORITY-RETIRED.
 changed:
   - path: .github/ci/legacy-jobs.yml
     what: >
@@ -29,7 +34,11 @@ changed:
       Added the pure deterministic btc.decision/v1 builder. It derives action
       and exact target only from final alloc_optimal, exposes raw/final/override
       provenance, sanitizes advisory-only legacy fields, and fails closed on
-      missing or inconsistent authority inputs.
+      missing or inconsistent authority inputs. Sol-return repair
+      667ea437021e removes the economically meaningful raw/final tolerance
+      (retaining only 1e-12 representation jitter in allocation fractions) and
+      refuses an invalid or out-of-range most-recent non-null prior allocation
+      without searching farther back.
   - path: contracts/btc_decision.schema.json
     what: >
       Added the machine contract for valid ok and unavailable decision states,
@@ -40,7 +49,11 @@ changed:
       Added deterministic cases for the Aug 21 split-brain shape, Kelly zero,
       bearish legacy context, mismatch/override integrity, missing inputs,
       exact 10 percentage-point thresholds, JSON safety, schema validity,
-      bilingual numeric parity and the Vector consumer boundary.
+      bilingual numeric parity and the Vector consumer boundary. The Sol-return
+      matrix adds 0.4 percentage-point mismatch with and without an active named
+      override, floating-point representation jitter, and latest-prior values
+      1.20, -0.10, infinity and non-numeric corruption with schema-valid
+      unavailable receipts.
   - path: scripts/build_vector.py
     what: >
       Builds one DecisionState after the lawful override seam and passes only
@@ -55,9 +68,10 @@ changed:
       changing the established Vector component language.
   - path: site/vector.html
     what: >
-      Regenerated the paired product artifact from the refreshed main data and
-      source. Its decision marker reports btc.decision/v1, status ok and exact
-      final exposure 100 for the current stored-data render.
+      Regenerated the product artifact from current stored data after the normal
+      origin/main merge. Its decision marker reports btc.decision/v1, status ok
+      and exact final exposure 100; S2 says HOLD 100% BTC / 持有 100% BTC and
+      contains neither the retired veto nor a defensive 0-10% instruction.
   - path: site/assets/css/e7978af3.css
     what: >
       Added the content-addressed stylesheet emitted by the normal Vector
@@ -72,8 +86,13 @@ changed:
     what: "390px mobile light-theme English S2 authority proof."
   - path: agentos/handoffs/CRYPTO-INTELLIGENCE-2026-08-23-p0a-btc-decision.md
     what: >
-      Added this cold-stranger record of the exact P0A boundary, evidence,
-      held state, release condition and forbidden adjacent work.
+      Updated this cold-stranger record with Sol's bounded return, exact
+      initial current-main pickup cd42b890d1df, reconciliation merge
+      935ec982dcff, repair commit 667ea437021e, final no-collision current-main
+      refresh base 3d35ec5cd5ae, refreshed evidence, held state, release
+      condition and forbidden adjacent work. The final self-containing handoff
+      commit is identified by the exact PR head receipt, because a tracked file
+      cannot contain the hash of the commit that contains that file.
   - path: agentos/workstreams/WS-CRYPTO-INTELLIGENCE.md
     what: >
       Registered the existing crypto-intelligence program's P0A/P0B boundary in
@@ -88,14 +107,14 @@ verified:
       PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest -q
       tests/test_btc_decision.py tests/test_contract_delta.py
       tests/test_ci_pack.py tests/test_ci_plan_workflow.py
-    result: "167 passed; only three pytest temporary-directory cleanup warnings."
+    result: "174 passed; only three pytest temporary-directory cleanup warnings."
   - claim: >
       The repaired manifest introduces no unowned import closure and leaves no
-      new pytest suite unwired against the exact original PR base.
+      new pytest suite unwired against the exact current-main pickup.
     command: >-
       python3 scripts/check_contract_delta.py --base
-      468e3f0257dac41b2e7e90771c3de87640e1c3ee
-    result: "contract-delta: 0 introduced, 0 inherited (base 468e3f0257da)."
+      cd42b890d1df740f7fd5fddee6e582221360791b
+    result: "contract-delta: 0 introduced, 0 inherited (base cd42b890d1df)."
   - claim: >
       The deterministic decision, BTC authority, Vector, asset and site-reference
       regression set passes in a full checkout on the refreshed branch.
@@ -107,7 +126,34 @@ verified:
       tests/test_btc_strategy_shared.py tests/test_vector_timeline_gated.py
       tests/test_externalize_css.py tests/test_optimize_assets.py
       tests/test_check_site_asset_refs.py
-    result: "199 passed; only three pytest temporary-directory cleanup warnings."
+    result: "206 passed; only three pytest temporary-directory cleanup warnings."
+  - claim: >
+      Sol's raw/final and previous-allocation blockers fail closed while
+      preserving schema validity and the lawful named-override seam.
+    command: >-
+      PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest -q
+      tests/test_btc_decision.py
+    result: >
+      38 passed. Raw .500/final .504 without override is unavailable; the same
+      inputs with an active named override are allowed; 0.1+0.2 versus 0.3 is
+      tolerated as representation jitter; latest prior 1.20 and -0.10 are
+      unavailable with PREVIOUS_ALLOCATION_OUT_OF_RANGE and null action fields;
+      corrupt infinity/string priors are unavailable without older-row search.
+  - claim: >
+      The existing branch preserves its seven P0A commits and reconciles with
+      current origin/main by normal two-parent merges.
+    command: >-
+      git show --no-patch --format='%H %P'
+      935ec982dcffd4521074583140a7a15bb271fca3 &&
+      git show --no-patch --format='%H %P' HEAD
+    result: >
+      Merge 935ec982dcff has parents 2a5e640ee616 and cd42b890d1df. The only
+      conflict was derived site/vector.html; current-main generated truth was
+      retained for the merge and Vector was regenerated afterward from repaired
+      source and stored data. A final pre-push census found origin/main at
+      3d35ec5cd5ae with no P0A-path collision; the final PR head is the normal
+      merge whose second parent is that exact refresh base. No ledger or parquet
+      mutation was carried from the disposable render worktree.
   - claim: >
       A real stored-data Vector render publishes one final action and exact target,
       and does not publish the conflicting legacy action or target band.
@@ -117,11 +163,12 @@ verified:
       stop immediately after writing vector.html, run build_vector.main(), then
       assert the rendered S2 marker and text with a Python invariant script.
     result: >
-      P0A_VECTOR_RENDER_COMPLETE and P0A_RENDERED_INVARIANT_OK; schema
+      P0A_RETURN_VECTOR_RENDER_COMPLETE and rendered invariant OK; schema
       btc.decision/v1, status ok, final exposure 100, HOLD 100% BTC and
       持有 100% BTC present; STAY DEFENSIVE and 0–10% absent. Raw and final
       exposure were both 100%, override active false, Kelly receipt 10%,
-      continuous momentum +0.8821755, categorical momentum bull and risk 9.288.
+      current stored-data S2 action and target are consistent. The rendered
+      asset set references content-addressed CSS e7978af3.
   - claim: >
       The refreshed generated page carries every content-addressed dependency
       and does not break a plain-copy template/site pair.
@@ -141,9 +188,9 @@ verified:
       read page-origin warning/error logs.
     result: >
       Desktop and mobile both reported decision status ok and exposure 100;
-      document scrollWidth did not exceed clientWidth at either viewport; all
-      four proof images show the exact 100% action/target; browser warnings and
-      errors were empty.
+      all four proof images show the exact 100% action/target and coherent
+      desktop/mobile composition; every requested page asset returned 200;
+      browser warnings and errors were empty.
   - claim: >
       Legacy btc_recommend output can no longer set Vector S2 action, tone,
       target band, Kelly target, direction, basis or conviction.
@@ -157,10 +204,10 @@ verified:
       The browser evidence files are stable, named receipts in the PR.
     command: "shasum -a 256 verify_shots/p0a_btc_decision/*.png"
     result: >
-      desktop dark zh 958c2bd5959c99227918a87bd733c180d82cd11d9b4d598a9b7cbd627450fc83;
-      desktop light zh b5827f715916bd655bb63def4b4f57fbf7648bceb38ddfb6d0caa75dbbd295d5;
-      mobile dark zh d05c610c3ba23f6036997f07a497d6f7fbd1f94dab3c85e4f636b24bf7c868fc;
-      mobile light en 8a51a85732363a609c885a5538a57171af7bbb4ebeea63988802bed6443acd85.
+      desktop dark zh 70d5693a5f6d6dafa0c9a71a455bc06440964099eb1b78ec5481797fd309225c;
+      desktop light zh d49fb0831614ba5fe1da7b7225629ca8146324a484e540d09111681a1c2e7abe;
+      mobile dark zh e9b78dd6f2d26009137c0f6f2e650eeb5f7073e2e2a3196f431d42e5d4c52fae;
+      mobile light en 8d916db30739e7e1a1e513b265f7e79c4a8e6cc4212f99560746b3b50d75cf2f.
 unverified:
   - claim: "Sol accepts the exact P0A implementation and authorizes release of the hold."
     what_would_verify: >
@@ -215,9 +262,14 @@ danger_areas:
     before it writes the page. Repeat product renders in a disposable full
     worktree and copy only the normalized page/CSS output into the held branch.
   - >
-    The raw/final integrity gate intentionally fails closed when the values
-    differ without an active named override, or when an active override lacks
-    an identifier. Do not weaken that gate to keep a page superficially green.
+    The raw/final integrity gate intentionally fails closed on economically
+    meaningful drift without an active named override, or when an active
+    override lacks an identifier. Only 1e-12 allocation-fraction representation
+    jitter is allowed. Do not weaken that gate to keep a page superficially green.
+  - >
+    The prior-allocation reader skips nulls only. The most-recent non-null row
+    is authoritative for continuity: invalid, non-finite or out-of-range content
+    must fail closed and must never trigger a search for an older valid row.
   - >
     Generated vector.html must pass inline CSS externalization and asset
     stamping. Committing raw write_page output inlines the full stylesheet and
@@ -231,11 +283,15 @@ danger_areas:
 
 ## §0 State — what is true right now
 
-P0A is repository-built and proven on Draft PR #6294, but it is not accepted,
-merged, deployed or live. Vector S2 now has one action and one exact target from
-the post-override final allocation; the current stored-data render says HOLD
-100% BTC in both languages and contains no legacy defensive 0–10% instruction.
-The PR is intentionally PARKED / HOLD-FOR-SOL.
+P0A was returned by Sol for two named integrity blockers and a current-main
+reconciliation. Both blockers are repaired on the same branch, the seven P0A
+commits were preserved through normal merge 935ec982dcff onto origin/main pickup
+cd42b890d1df, followed by a no-collision normal refresh to origin/main
+3d35ec5cd5ae, and the rebuilt product/evidence is green. Vector S2 has one action
+and one exact target from the post-override final allocation; the current
+stored-data render says HOLD 100% BTC in both languages and contains no legacy
+defensive 0–10% instruction. It is still not Sol-accepted, merged, deployed or
+live. Draft PR #6294 is intentionally PARKED / HOLD-FOR-SOL.
 
 ## §1 What is LEFT — in order
 
@@ -253,7 +309,8 @@ proof run in the held branch would mix unrelated data churn into the repair.
 The generated page also needs the externalize-and-stamp post-pass; raw builder
 HTML is not the committed artifact shape. Finally, a raw/final mismatch without
 an active named override is an integrity failure, not a reason to choose whichever
-number makes the page look coherent.
+number makes the page look coherent. The most-recent non-null prior allocation
+also cannot be skipped when corrupt: continuity fails closed instead.
 
 ## §3 What was decided and found
 
