@@ -337,14 +337,21 @@ waves:
       stratum). Next gate: A5B (not yet scoped by this wave).
   - id: A5B
     title: IMCE-A5B — registered prospective forward capture (decision-time M_t/R_t/C_t observation ledger; zero outcome fields)
-    status: awaiting_ci
+    status: done
     pr: 6281
     depends_on: [A5A]
     next_action: >
-      BUILT — DRAFT PR #6281 open, branched from fresh origin/main pinned to
-      the A5A merge SHA 5b8ca994de05345d3cea514c46c27611bfe496d1 (this
-      record will not say "done" until that PR lands on origin/main; update
-      status/commit hash then). One new bounded module
+      DONE — PR #6281 MERGED 9d14a3529d1c 2026-08-23T04:27:34Z (final head
+      84b0437cdbdc after sweeper update-branch; adjudicated content head
+      6018e67302ca; merge server-verified contained in origin/main), branched
+      from fresh origin/main pinned to the A5A merge SHA
+      5b8ca994de05345d3cea514c46c27611bfe496d1. Deployed classification:
+      BUILT_NOT_PROVEN (honest — activation_started_at stamps on the first
+      successful production nightly; no post-activation earnings event can
+      exist before it; PROVEN_LIVE requires a real DHI/PHM/KBH/TOL event with
+      source_available_at >= activation to flow source plane -> nightly
+      writer -> durable first observation -> measurement consumer).
+      One new bounded module
       engine/cycle_pattern/imce_prospective.py (append-only JSONL,
       activation/observation/correction row kinds, content-addressed
       observation_id, first-observation-wins keying on
@@ -588,13 +595,29 @@ next_action: >
   782b6e5703505af04ba21943b7d0a332853e286d and config_hash
   05b43f9119fd1fd357d3994bd652abbc3cdff3d8. The criteria commit strictly
   precedes all outcome access (attested in commit 0ae5c413471a); outcome
-  evaluation remains FENCED until boundary receipts exist (R6). Next
-  program priority per Sol: PROSPECTIVE OBSERVATION ACTIVATION — every
-  eligible future decision-time observation not captured from first
-  availability is permanently lost evidence; boundary receipting and
-  DHI/TOL historical archaeology are named future waves that must NOT
-  delay first-availability prospective capture. No issuer truth appended;
-  no runner built; awaiting Sol's next directive.
+  evaluation remains FENCED until boundary receipts exist (R6).
+  SOL'S FIFTH GATE (A5 — prospective observation activation) IS EXECUTED
+  (2026-08-22/23): A5A merged 5b8ca994de05 (PR #6270) and PROVEN LIVE —
+  the production company-intelligence lane published R2 generation
+  d7b994675fe59d0181643b8b carrying AAPL plus all four homebuilder
+  workspaces under correct fiscal identities, and the production reader
+  serves them (verified GET /api/event-workspace/DHI); A5B merged
+  9d14a3529d1c (PR #6281), classification BUILT_NOT_PROVEN — the forward
+  ledger data/cycle_pattern/imce_prospective_observation_v1.jsonl is
+  created by the first production nightly, whose successful run stamps
+  activation_started_at; PROVEN_LIVE awaits the first natural
+  post-activation DHI/PHM/KBH/TOL earnings event (next expected: KBH
+  FY2026 Q3, ~late Sep 2026). Outcomes remain FENCED — the observation
+  schema carries zero outcome fields by whitelist-tested construction.
+  Named source-coverage gaps riding to Sol: TOL §1b sensitivity
+  prior-year comparator not extracted by A5A (sensitivity diagnostic
+  NOT_RECONSTRUCTABLE until a source-plane extension); Treasury CMT
+  C_t leg typed-absent (GO_LIMITED permits persistence; no first-party
+  fetcher exists yet — natural next increment); workspace vintage
+  retrieval is latest-generation-only (re-extraction of a past event
+  rewrites the readable facts — correction records preserve what the
+  experiment knew, but as-of retrieval does not exist). No runner built;
+  no outcome computed; awaiting Sol's next directive.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."
