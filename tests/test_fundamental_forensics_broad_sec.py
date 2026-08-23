@@ -15,8 +15,15 @@ import pandas as pd
 import pytest
 import requests
 
-from collectors.edgar_forensics import SecForensicsCollector, endpoint_url, full_master_index_url
+from collectors.edgar_forensics import (
+    SecForensicsCollector,
+    endpoint_url,
+    full_master_index_url,
+    historical_submissions_url,
+)
 from engine.fundamental_forensics.broad_sec_store import (
+    MAX_HISTORICAL_SUBMISSIONS_BYTES_PER_RUN,
+    MAX_SUBMISSIONS_BYTES,
     MAX_UNIVERSE_ISSUERS,
     UNIVERSE_RELATIVE_PATH,
     BroadSecError,
@@ -46,6 +53,9 @@ RUN_SCHEMA = json.loads(
 )
 MANIFEST_SCHEMA = json.loads(
     (ROOT / "contracts/fundamental_forensics_broad_sec_issuer_manifest.schema.json").read_text()
+)
+RECOVERY_PLAN_CONTRACT = json.loads(
+    (ROOT / "contracts/fundamental_forensics_broad_sec_recovery_plan.schema.json").read_text()
 )
 
 AAPL = ("AAPL", "0000320193")
@@ -199,12 +209,16 @@ class FakeSec:
     def __init__(self) -> None:
         self.submissions: dict[str, bytes] = {}
         self.facts: dict[str, bytes] = {}
+        self.historical_submissions: dict[tuple[str, str], bytes] = {}
         self.fail_submissions: dict[str, str] = {}
         self.fail_facts: dict[str, str] = {}
         self.fail_detail: dict[str, str] = {}
         self.bad_url_submissions: set[str] = set()
         self.submissions_fetches: list[str] = []
         self.facts_fetches: list[str] = []
+        self.facts_fetch_limits: list[int] = []
+        self.historical_fetches: list[tuple[str, str]] = []
+        self.historical_fetch_limits: list[int] = []
         self.index_zips: dict[tuple[int, int], bytes] = {}
         self.index_fetches: list[tuple[int, int]] = []
         self.index_headers: dict[str, str | None] = {}
@@ -233,11 +247,32 @@ class FakeSec:
         url = "https://example.invalid/not-sec" if cik in self.bad_url_submissions else endpoint_url(cik, "submissions")
         return self.submissions[cik], {"url": url}
 
-    def fetch_companyfacts(self, cik: str) -> tuple[bytes, dict[str, str | None]]:
+    def fetch_companyfacts(
+        self, cik: str, maximum_bytes: int
+    ) -> tuple[bytes, dict[str, str | None]]:
         self.facts_fetches.append(cik)
+        self.facts_fetch_limits.append(maximum_bytes)
         if cik in self.fail_facts:
             raise BroadSecError(self.fail_facts[cik], f"forced {self.fail_facts[cik]}")
-        return self.facts[cik], {"url": endpoint_url(cik, "companyfacts")}
+        body = self.facts[cik]
+        if len(body) > maximum_bytes:
+            raise BroadSecError("queue_overflow", "Company Facts byte budget exhausted")
+        return body, {"url": endpoint_url(cik, "companyfacts")}
+
+    def fetch_historical_submissions(
+        self, cik: str, source_name: str, maximum_bytes: int
+    ) -> tuple[bytes, dict[str, str | None]]:
+        self.historical_fetches.append((cik, source_name))
+        self.historical_fetch_limits.append(maximum_bytes)
+        body = self.historical_submissions[(cik, source_name)]
+        if len(body) > maximum_bytes:
+            raise BroadSecError(
+                "historical_submissions_budget_exhausted",
+                "historical Submissions byte budget exhausted",
+            )
+        return body, {
+            "url": historical_submissions_url(cik, source_name)
+        }
 
 
 def _poll(store, universe: Path, fake: FakeSec, clocks: PollClocks, *, repo_root: Path, now=None, **kwargs):
@@ -245,6 +280,7 @@ def _poll(store, universe: Path, fake: FakeSec, clocks: PollClocks, *, repo_root
         store=store,
         universe_path=universe,
         fetch_submissions=fake.fetch_submissions,
+        fetch_historical_submissions=fake.fetch_historical_submissions,
         fetch_companyfacts=fake.fetch_companyfacts,
         fetch_master_index=fake.fetch_master_index,
         clocks=clocks,
@@ -723,7 +759,7 @@ def test_cas_failure_does_not_move_complete_pointer(tmp_path: Path) -> None:
     assert store.get_bytes_strict(latest_complete_key()) == complete_before
 
 
-def test_recovery_window_predating_recent_submissions_is_reason_coded(tmp_path: Path) -> None:
+def test_recovery_rejects_non_ratified_anchor_before_network(tmp_path: Path) -> None:
     repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
     fake = FakeSec()
     fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-07-20", "0000320193-26-000010")])
@@ -737,7 +773,7 @@ def test_recovery_window_predating_recent_submissions_is_reason_coded(tmp_path: 
         mode="recovery",
     )
     assert result.exit_code == 1
-    assert result.receipt["reason_code"] == "recovery_plan_required"
+    assert result.receipt["reason_code"] == "recovery_plan_invalid"
     assert fake.index_fetches == []
     assert fake.submissions_fetches == []
     assert fake.facts_fetches == []
@@ -839,7 +875,7 @@ def test_five_xx_exhaustion_is_reason_coded(tmp_path: Path, monkeypatch: pytest.
 
     from engine.fundamental_forensics.broad_sec_store import classify_fetch_error, live_fetchers
 
-    fetch_submissions, _facts, _index = live_fetchers(
+    fetch_submissions, _historical, _facts, _index = live_fetchers(
         user_agent="MastermindX research@example.com",
         scratch_root=tmp_path / "scratch",
         submissions_session=Session(),
@@ -852,17 +888,82 @@ def test_five_xx_exhaustion_is_reason_coded(tmp_path: Path, monkeypatch: pytest.
     )
 
 
+def test_live_fetchers_push_remaining_run_budget_into_streaming_transports(
+    tmp_path: Path,
+) -> None:
+    from engine.fundamental_forensics.broad_sec_store import live_fetchers
+
+    class OversizeResponse:
+        def __init__(self, url: str, declared_bytes: int) -> None:
+            self.url = url
+            self.status_code = 200
+            self.headers = {"Content-Length": str(declared_bytes)}
+            self.iter_calls = 0
+            self.closed = False
+
+        @property
+        def content(self) -> bytes:
+            raise AssertionError("bounded collector must not read response.content")
+
+        def iter_content(self, *, chunk_size: int):
+            self.iter_calls += 1
+            yield b"x" * chunk_size
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def close(self) -> None:
+            self.closed = True
+
+    facts_response: OversizeResponse | None = None
+
+    def facts_fetcher(url: str, **_kwargs):
+        nonlocal facts_response
+        facts_response = OversizeResponse(url, 11)
+        return facts_response
+
+    class HistoricalSession:
+        def __init__(self) -> None:
+            self.response: OversizeResponse | None = None
+
+        def get(self, url: str, **_kwargs):
+            self.response = OversizeResponse(url, 11)
+            return self.response
+
+    historical_session = HistoricalSession()
+    _submissions, historical, facts, _index = live_fetchers(
+        user_agent="MastermindX research@example.com",
+        scratch_root=tmp_path / "scratch",
+        submissions_session=historical_session,
+        companyfacts_fetcher=facts_fetcher,
+    )
+
+    with pytest.raises(BroadSecError) as facts_err:
+        facts(AAPL[1], 10)
+    assert facts_err.value.reason_code == "queue_overflow"
+    assert facts_response is not None
+    assert facts_response.iter_calls == 0
+    assert facts_response.closed is True
+
+    with pytest.raises(BroadSecError) as historical_err:
+        historical(AAPL[1], _historical_name(AAPL[1]), 10)
+    assert historical_err.value.reason_code == "historical_submissions_budget_exhausted"
+    assert historical_session.response is not None
+    assert historical_session.response.iter_calls == 0
+    assert historical_session.response.closed is True
+
+
 def test_cli_incremental_refuses_recovery_from() -> None:
     assert broad_sec_main(["--mode", "incremental", "--recovery-from", POLL_1]) == 1
 
 
-def test_cli_recovery_mode_fails_closed_with_recovery_plan_required(capsys: pytest.CaptureFixture[str]) -> None:
-    code = broad_sec_main(["--mode", "recovery", "--recovery-from", RECOVERY_FROM])
-    captured = capsys.readouterr()
-    payload = json.loads(captured.out.strip().splitlines()[-1])
-    assert code == 1
-    assert payload["reason_code"] == "recovery_plan_required"
+def test_cli_recovery_requires_exact_ratified_anchor(capsys: pytest.CaptureFixture[str]) -> None:
     assert broad_sec_main(["--mode", "recovery"]) == 1
+    payload = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert payload["reason_code"] == "recovery_plan_invalid"
+    assert broad_sec_main(["--mode", "recovery", "--recovery-from", POLL_1]) == 1
+    payload = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert payload["reason_code"] == "recovery_plan_invalid"
 
 
 def test_broad_sec_suite_is_named_in_engine_render_guards() -> None:
@@ -987,7 +1088,9 @@ def test_companyfacts_byte_budget_stops_further_network_retrieval(tmp_path: Path
     assert result.exit_code == 1
     assert fake.facts_fetches[0] == AAPL[1]
     assert len(fake.facts_fetches) == 2
+    assert fake.facts_fetch_limits[:2] == [len(first_body) + 10, 10]
     assert result.receipt["coverage"]["companyfacts_fetched"] == 1
+    assert result.receipt["coverage"]["companyfacts_bytes_fetched"] == len(first_body)
     assert result.receipt["coverage"]["recovery_backlog"] >= 1
     # SPEC item 1: latest-complete must not advance when CF budget is exceeded.
     assert store.get_bytes_strict(latest_complete_key()) == complete_before
@@ -1161,7 +1264,12 @@ def test_production_cli_samples_clocks_after_issuer_io(
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
     monkeypatch.setattr(
         "scripts.run_fundamental_forensics_broad_sec.live_fetchers",
-        lambda **_kwargs: (fake.fetch_submissions, fake.fetch_companyfacts, fake.fetch_master_index),
+        lambda **_kwargs: (
+            fake.fetch_submissions,
+            fake.fetch_historical_submissions,
+            fake.fetch_companyfacts,
+            fake.fetch_master_index,
+        ),
     )
     monkeypatch.setattr(
         "scripts.run_fundamental_forensics_broad_sec.open_store",
@@ -1629,3 +1737,1119 @@ def test_compact_head_run_receipt_sha256_matches_stored_bytes(tmp_path: Path) ->
             f"head.run_receipt_sha256 mismatch for {pointer_key}: "
             f"expected {actual_sha}, got {head['run_receipt_sha256']}"
         )
+
+
+# ── FF-1R adversarial continuation contracts ─────────────────────────────────
+
+def _seed_ff1r_recovery_anchor(
+    tmp_path: Path,
+    *,
+    candidate_count: int,
+) -> tuple[Path, Path, LocalStore, FakeSec, list[str]]:
+    """Build a ratified P2R anchor whose immutable Q3 snapshot has FF-1R candidates.
+
+    The initial incremental baseline intentionally records the full discovery
+    snapshot without fetching issuer endpoints.  That is the production anchor
+    from which FF-1R must construct its own immutable plan; it avoids testing
+    a hand-built plan that could drift from the public poll path.
+    """
+    rows = [(f"R{ordinal:04d}", 100000 + ordinal) for ordinal in range(candidate_count)]
+    repo, universe, store = _layout(tmp_path, rows)
+    fake = FakeSec()
+    candidate_ciks = [f"{100000 + ordinal:010d}" for ordinal in range(candidate_count)]
+    fake.set_index(
+        [
+            _idx_row(cik, "10-Q", "2026-07-20", f"{cik}-26-000001")
+            for cik in candidate_ciks
+        ]
+    )
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    assert baseline.receipt["status"] == "complete"
+    assert store.get_bytes_strict(latest_complete_key()) is not None
+    return repo, universe, store, fake, candidate_ciks
+
+
+def _populate_ff1r_current_sources(fake: FakeSec, ciks: list[str]) -> None:
+    for cik in ciks:
+        filing = _filing(
+            f"{cik}-26-000001",
+            "10-Q",
+            accepted=ACCEPT_RECOVERY,
+            filed="2026-07-20",
+        )
+        fake.submissions[cik] = _submissions_bytes(cik, [filing])
+        fake.facts[cik] = _facts_bytes(cik, marker=cik)
+
+
+def _recovery_plan(store: LocalStore) -> dict:
+    """Read the immutable plan via its compact continuation head."""
+    head = _load_json(store, recovery_continuation_pointer_key())
+    return _load_gzip_json(store, head["plan_key"])
+
+
+def _historical_name(cik: str, ordinal: int = 1) -> str:
+    return f"CIK{cik}-submissions-{ordinal:03d}.json"
+
+
+def test_ff1r_2541_cik_plan_is_immutable_bounded_and_compact(tmp_path: Path) -> None:
+    """A 2,541-CIK recovery plan advances solely by its compact ordinal cursor."""
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=2541
+    )
+    _populate_ff1r_current_sources(fake, candidate_ciks[:128])
+    latest_complete_before = store.get_bytes_strict(latest_complete_key())
+    assert latest_complete_before is not None
+
+    first = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=64,
+    )
+    assert first.exit_code == 1
+    assert first.receipt["reason_code"] == "recovery_in_progress"
+    first_recovery = first.receipt["recovery"]
+    assert first_recovery is not None
+    assert first_recovery["candidate_cik_count"] == 2541
+    assert first_recovery["selected_ciks"] == candidate_ciks[:64]
+    assert first_recovery["selected_count"] == 64
+    assert first_recovery["submissions_fetched"] == 64
+    assert fake.submissions_fetches == candidate_ciks[:64]
+    assert fake.facts_fetches == candidate_ciks[:64]
+    assert store.get_bytes_strict(latest_complete_key()) == latest_complete_before
+
+    continuation_head = _load_json(store, recovery_continuation_pointer_key())
+    continuation = _load_gzip_json(store, continuation_head["object_key"])
+    assert continuation["next_ordinal"] == 64
+    assert continuation["completed_count"] == 64
+    assert continuation["candidate_cik_count"] == 2541
+    assert continuation["backlog_count"] == 2541 - 64
+    assert "pending_ciks" not in continuation
+    assert "completed_ciks" not in continuation
+    assert "pending_ciks" not in continuation_head
+    assert "completed_ciks" not in continuation_head
+
+    fake.submissions_fetches.clear()
+    fake.facts_fetches.clear()
+    fake.historical_fetches.clear()
+    second = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_3, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=64,
+    )
+    assert second.exit_code == 1
+    assert second.receipt["reason_code"] == "recovery_in_progress"
+    second_recovery = second.receipt["recovery"]
+    assert second_recovery is not None
+    assert second_recovery["tranche_start_ordinal"] == 64
+    assert second_recovery["selected_ciks"] == candidate_ciks[64:128]
+    assert second_recovery["selected_count"] <= 64
+    assert fake.submissions_fetches == candidate_ciks[64:128]
+    assert fake.facts_fetches == candidate_ciks[64:128]
+    assert not set(fake.submissions_fetches).intersection(candidate_ciks[:64])
+    assert fake.historical_fetches == []
+    assert store.get_bytes_strict(latest_complete_key()) == latest_complete_before
+
+
+def test_ff1r_failed_selected_cik_is_first_retry_and_not_consumed(tmp_path: Path) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=3
+    )
+    _populate_ff1r_current_sources(fake, candidate_ciks)
+    failed_cik = candidate_ciks[1]
+    fake.fail_submissions[failed_cik] = "sec_5xx_exhausted"
+
+    first = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=64,
+    )
+    assert first.exit_code == 1
+    assert first.receipt["reason_code"] == "sec_5xx_exhausted"
+    assert fake.submissions_fetches == candidate_ciks[:2]
+    assert candidate_ciks[2] not in fake.submissions_fetches
+    first_continuation = _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )
+    assert first_continuation["next_ordinal"] == 1
+    assert first_continuation["completed_count"] == 1
+
+    fake.fail_submissions.clear()
+    fake.submissions_fetches.clear()
+    fake.facts_fetches.clear()
+    retry = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_3, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=64,
+    )
+    assert retry.exit_code == 0
+    assert retry.receipt["status"] == "complete"
+    assert retry.receipt["recovery"]["tranche_start_ordinal"] == 1
+    assert retry.receipt["recovery"]["selected_ciks"] == candidate_ciks[1:]
+    assert fake.submissions_fetches == candidate_ciks[1:]
+    assert candidate_ciks[0] not in fake.submissions_fetches
+
+
+@pytest.mark.parametrize("mismatch", ("malformed", "digest", "universe", "index", "anchor"))
+def test_ff1r_continuation_mismatch_fails_before_network_or_store_mutation(
+    tmp_path: Path, mismatch: str
+) -> None:
+    """Every continuation binding is checked before a new FF-1R side effect."""
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=2
+    )
+    _populate_ff1r_current_sources(fake, candidate_ciks)
+    staged = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=1,
+    )
+    assert staged.exit_code == 1
+    assert staged.receipt["reason_code"] == "recovery_in_progress"
+
+    pointer_key = recovery_continuation_pointer_key()
+    pointer_versioned = store.get_bytes_strict_bounded_versioned(pointer_key, 128 * 1024)
+    assert pointer_versioned.data is not None and pointer_versioned.version is not None
+    pointer = json.loads(pointer_versioned.data)
+    if mismatch == "malformed":
+        pointer["schema"] = "not-a-recovery-continuation-head"
+    elif mismatch == "digest":
+        pointer["sha256"] = "0" * 64
+    elif mismatch == "universe":
+        pointer["universe_sha256"] = "0" * 64
+    else:
+        plan = _load_gzip_json(store, pointer["plan_key"])
+        if mismatch == "index":
+            plan["index"]["snapshot_sha256"] = "0" * 64
+        else:
+            plan["anchor_complete"]["run_receipt_sha256"] = "0" * 64
+        plan_raw = json.dumps(plan, sort_keys=True, separators=(",", ":")).encode() + b"\n"
+        plan_sha = sha256(plan_raw).hexdigest()
+        from engine.fundamental_forensics.broad_sec_store import recovery_plan_object_key
+
+        assert store.put_bytes_strict_conditional(
+            recovery_plan_object_key(plan_sha),
+            gzip.compress(plan_raw),
+            expected_version=None,
+            content_type="application/gzip",
+        )
+        pointer["plan_sha256"] = plan_sha
+        pointer["plan_key"] = recovery_plan_object_key(plan_sha)
+    assert store.put_bytes_strict_conditional(
+        pointer_key,
+        json.dumps(pointer, sort_keys=True, separators=(",", ":")).encode(),
+        expected_version=pointer_versioned.version,
+    )
+
+    fake.index_fetches.clear()
+    fake.submissions_fetches.clear()
+    fake.historical_fetches.clear()
+    fake.facts_fetches.clear()
+    bytes_before = {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)}
+    rejected = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_3, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert rejected.exit_code == 1
+    assert rejected.receipt["reason_code"] == "recovery_plan_invalid"
+    assert fake.index_fetches == []
+    assert fake.submissions_fetches == []
+    assert fake.historical_fetches == []
+    assert fake.facts_fetches == []
+    assert {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)} == bytes_before
+
+
+def test_ff1r_recovery_wiring_cannot_regress_to_all_pending_work_ciks_loop() -> None:
+    """Keep recovery routed through the ordinal selector, never a pending-set scan."""
+    import inspect
+
+    from engine.fundamental_forensics import broad_sec_store as store_module
+
+    public_path = inspect.getsource(store_module.run_broad_sec_poll)
+    recovery_path = inspect.getsource(store_module._run_recovery_poll)
+    assert public_path.index("return _run_recovery_poll(") < public_path.index(
+        '_progress(on_progress, "index_fetch"'
+    )
+    assert "continuation_pending" not in public_path
+    assert "work_ciks" not in recovery_path
+    assert "selected_ciks = candidate_ciks[cursor : cursor + max_affected_issuers]" in recovery_path
+    assert "for cik in selected_ciks:" in recovery_path
+
+
+def test_ff1r_plan_contract_and_selection_are_filing_chronology_then_cik_accession(
+    tmp_path: Path,
+) -> None:
+    """The durable plan is schema-valid and its first-seen CIK order is not universe order."""
+    rows = [("ZETA", 700000), ("ALPHA", 700001), ("MID", 700002)]
+    repo, universe, store = _layout(tmp_path, rows)
+    fake = FakeSec()
+    ordered_rows = [
+        _idx_row("0000700000", "10-Q", "2026-07-20", "0000700000-26-000005"),
+        _idx_row("0000700002", "10-Q", "2026-07-20", "0000700002-26-000001"),
+        _idx_row("0000700001", "10-Q", "2026-07-22", "0000700001-26-000002"),
+    ]
+    # Deliberately deliver master.idx rows in the reverse of the legal plan order.
+    fake.set_index(list(reversed(ordered_rows)))
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+
+    first_cik = "0000700000"
+    first_filing = _filing(
+        "0000700000-26-000005", "10-Q", accepted=ACCEPT_RECOVERY, filed="2026-07-20"
+    )
+    fake.submissions[first_cik] = _submissions_bytes(first_cik, [first_filing])
+    fake.facts[first_cik] = _facts_bytes(first_cik)
+    staged = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=1,
+    )
+    assert staged.receipt["reason_code"] == "recovery_in_progress"
+    plan = _recovery_plan(store)
+    jsonschema.validate(plan, RECOVERY_PLAN_CONTRACT)
+    assert [(row["filed_on"], row["cik"], row["accession"]) for row in plan["candidate_rows"]] == [
+        ("2026-07-20", "0000700000", "0000700000-26-000005"),
+        ("2026-07-20", "0000700002", "0000700002-26-000001"),
+        ("2026-07-22", "0000700001", "0000700001-26-000002"),
+    ]
+    assert plan["candidate_ciks"] == ["0000700000", "0000700002", "0000700001"]
+
+
+def test_ff1r_recovers_planned_accession_from_only_its_date_span_historical_shard(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    cik = candidate_ciks[0]
+    planned = _filing(f"{cik}-26-000001", "10-Q", accepted=ACCEPT_RECOVERY, filed="2026-07-20")
+    needed = _historical_name(cik, 1)
+    irrelevant = _historical_name(cik, 2)
+    fake.submissions[cik] = _submissions_bytes(
+        cik,
+        [],
+        files=[
+            {"name": needed, "filingFrom": "2026-07-01", "filingTo": "2026-07-31"},
+            {"name": irrelevant, "filingFrom": "2026-08-01", "filingTo": "2026-08-31"},
+        ],
+    )
+    fake.historical_submissions[(cik, needed)] = _submissions_bytes(cik, [planned])
+    fake.facts[cik] = _facts_bytes(cik, "historical")
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert result.exit_code == 0
+    assert fake.historical_fetches == [(cik, needed)]
+    assert fake.historical_fetch_limits == [
+        min(MAX_HISTORICAL_SUBMISSIONS_BYTES_PER_RUN, MAX_SUBMISSIONS_BYTES)
+    ]
+    assert irrelevant not in [name for _, name in fake.historical_fetches]
+    assert result.receipt["coverage"]["historical_submissions_fetched"] == 1
+    manifest = _load_json(store, _load_json(store, issuer_latest_key(cik))["manifest_key"])
+    assert planned["accession"] in manifest["cumulative_relevant_accessions"]
+    assert [component["source_name"] for component in manifest["submissions_components"] if component["source_kind"] == "historical"] == [needed]
+
+
+def test_ff1r_wrong_cik_historical_filename_fails_before_historical_or_facts_network(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    cik = candidate_ciks[0]
+    wrong_name = _historical_name("0000000001", 1)
+    fake.submissions[cik] = _submissions_bytes(
+        cik,
+        [],
+        files=[{"name": wrong_name, "filingFrom": "2026-07-01", "filingTo": "2026-07-31"}],
+    )
+    fake.facts[cik] = _facts_bytes(cik)
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "source_binding_failure"
+    assert fake.submissions_fetches == [cik]
+    assert fake.historical_fetches == []
+    assert fake.facts_fetches == []
+    continuation = _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )
+    assert continuation["next_ordinal"] == 0
+
+
+def test_ff1r_conflicting_recent_and_historical_duplicate_accession_fails_closed(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    cik = candidate_ciks[0]
+    target = _filing(f"{cik}-26-000001", "10-Q", accepted=ACCEPT_RECOVERY, filed="2026-07-20")
+    duplicate = _filing(f"{cik}-26-000009", "10-Q", accepted=ACCEPT_RECOVERY, filed="2026-07-20")
+    source = _historical_name(cik)
+    fake.submissions[cik] = _submissions_bytes(
+        cik,
+        [duplicate],
+        files=[{"name": source, "filingFrom": "2026-07-01", "filingTo": "2026-07-31"}],
+    )
+    # Same accession, contradictory SEC fact: it must not be resolved by choosing either source.
+    contradictory = _filing(
+        duplicate["accession"], "10-Q", accepted="2026-07-21T18:00:00Z", filed="2026-07-20"
+    )
+    fake.historical_submissions[(cik, source)] = _submissions_bytes(cik, [target, contradictory])
+    fake.facts[cik] = _facts_bytes(cik)
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "historical_submissions_conflict"
+    assert fake.historical_fetches == [(cik, source)]
+    assert fake.facts_fetches == []
+    assert _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )["next_ordinal"] == 0
+
+
+def test_ff1r_post_cutoff_historical_accession_is_withheld_and_not_consumed(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    cik = candidate_ciks[0]
+    target = _filing(
+        f"{cik}-26-000001", "10-Q", accepted="2026-08-18T00:00:00Z", filed="2026-07-20"
+    )
+    source = _historical_name(cik)
+    fake.submissions[cik] = _submissions_bytes(
+        cik,
+        [],
+        files=[{"name": source, "filingFrom": "2026-07-01", "filingTo": "2026-07-31"}],
+    )
+    fake.historical_submissions[(cik, source)] = _submissions_bytes(cik, [target])
+    fake.facts[cik] = _facts_bytes(cik)
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "edgar_index_event_not_causally_admitted"
+    assert fake.facts_fetches == []
+    assert _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )["next_ordinal"] == 0
+
+
+def test_ff1r_fractional_second_after_frozen_cutoff_is_exact_and_not_consumed(
+    tmp_path: Path,
+) -> None:
+    from engine.fundamental_forensics.broad_sec_store import parse_relevant_filings
+
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    cik = candidate_ciks[0]
+    fractional_after_cutoff = "2026-08-17T03:00:00.999Z"
+    target = _filing(
+        f"{cik}-26-000001",
+        "10-Q",
+        accepted=fractional_after_cutoff,
+        filed="2026-07-20",
+    )
+    payload = json.loads(_submissions_bytes(cik, [target]))
+    admitted, withheld, _historical_required = parse_relevant_filings(
+        payload,
+        cik=cik,
+        ticker="R0000",
+        selection_cutoff_at=POLL_1,
+        recovery_from=RECOVERY_FROM,
+    )
+    assert admitted == []
+    assert withheld[0]["acceptance_datetime"] == fractional_after_cutoff
+    assert withheld[0]["withheld_cause"] == "after_selection_cutoff"
+
+    fake.submissions[cik] = _submissions_bytes(cik, [target])
+    fake.facts[cik] = _facts_bytes(cik)
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "edgar_index_event_not_causally_admitted"
+    assert fake.facts_fetches == []
+    assert _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )["next_ordinal"] == 0
+
+
+def test_ff1r_companyfacts_budget_does_not_consume_cursor_and_retries_same_cik(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=2
+    )
+    _populate_ff1r_current_sources(fake, candidate_ciks)
+    too_small = len(fake.facts[candidate_ciks[0]]) - 1
+    blocked = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_companyfacts_bytes_per_run=too_small,
+    )
+    assert blocked.exit_code == 1
+    assert blocked.receipt["reason_code"] == "queue_overflow"
+    assert fake.facts_fetches == [candidate_ciks[0]]
+    assert _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )["next_ordinal"] == 0
+
+    fake.submissions_fetches.clear()
+    fake.facts_fetches.clear()
+    retry = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_3, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert retry.exit_code == 0
+    assert retry.receipt["recovery"]["tranche_start_ordinal"] == 0
+    assert retry.receipt["recovery"]["selected_ciks"] == candidate_ciks
+    assert fake.submissions_fetches == candidate_ciks
+    assert fake.facts_fetches == candidate_ciks
+
+
+def test_ff1r_final_composition_preserves_newer_incremental_manifest_and_source_clock(
+    tmp_path: Path,
+) -> None:
+    """A frozen July plan may finish after an incremental August observation, never replacing it."""
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=2
+    )
+    first_cik, later_cik = candidate_ciks
+    _populate_ff1r_current_sources(fake, [first_cik])
+    staged = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=1,
+    )
+    assert staged.receipt["reason_code"] == "recovery_in_progress"
+    frozen_plan_sha = staged.receipt["recovery"]["plan_sha256"]
+
+    july = _filing(f"{later_cik}-26-000001", "10-Q", accepted=ACCEPT_RECOVERY, filed="2026-07-20")
+    post_cutoff_accepted = "2026-08-17T04:30:00Z"
+    post_cutoff = _filing(
+        f"{later_cik}-26-000002",
+        "10-Q",
+        accepted=post_cutoff_accepted,
+        filed="2026-08-17",
+    )
+    fake.submissions[later_cik] = _submissions_bytes(later_cik, [july, post_cutoff])
+    fake.facts[later_cik] = _facts_bytes(later_cik, "newer-incremental")
+    fake.set_index(
+        [
+            _idx_row(first_cik, "10-Q", "2026-07-20", f"{first_cik}-26-000001"),
+            _idx_row(later_cik, "10-Q", "2026-07-20", july["accession"]),
+            _idx_row(later_cik, "10-Q", "2026-08-17", post_cutoff["accession"]),
+        ]
+    )
+    incremental = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo)
+    assert incremental.exit_code == 0
+    incremental_snapshot = incremental.receipt["index"]["snapshot_sha256"]
+    newer_manifest = _load_json(
+        store, _load_json(store, issuer_latest_key(later_cik))["manifest_key"]
+    )
+    assert post_cutoff["accession"] in newer_manifest["cumulative_relevant_accessions"]
+
+    completed = _poll(
+        store,
+        universe,
+        fake,
+        _clocks("2026-08-17T06:00:00Z", recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=1,
+    )
+    assert completed.exit_code == 0
+    assert completed.receipt["recovery"]["plan_sha256"] == frozen_plan_sha
+    final_head = _load_json(store, latest_complete_key())
+    final_receipt = _load_json(store, final_head["run_key"])
+    jsonschema.validate(final_receipt, RUN_SCHEMA)
+    assert final_receipt["index"]["snapshot_sha256"] == incremental_snapshot
+    assert final_receipt["selection_cutoff_at"] == incremental.receipt["selection_cutoff_at"]
+    assert final_receipt["latest_relevant_sec_accepted_at"] == post_cutoff_accepted
+    assert final_receipt["latest_relevant_sec_accepted_at"] <= final_receipt["selection_cutoff_at"]
+    assert final_receipt["recovery"]["selection_cutoff_at"] == POLL_1
+    assert final_receipt["recovery"]["selection_cutoff_at"] < post_cutoff_accepted
+    final_manifest = _load_json(store, _load_json(store, issuer_latest_key(later_cik))["manifest_key"])
+    assert post_cutoff["accession"] in final_manifest["cumulative_relevant_accessions"]
+    assert final_manifest["sec_accepted_at"] == post_cutoff_accepted
+
+
+def test_ff1r_resumed_composition_rejects_current_head_observation_not_bound_to_receipt(
+    tmp_path: Path,
+) -> None:
+    from engine.fundamental_forensics.broad_sec_store import canonical_json
+
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=2
+    )
+    first_cik, later_cik = candidate_ciks
+    _populate_ff1r_current_sources(fake, [first_cik])
+    staged = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=1,
+    )
+    assert staged.receipt["reason_code"] == "recovery_in_progress"
+
+    july = _filing(f"{later_cik}-26-000001", "10-Q", accepted=ACCEPT_RECOVERY, filed="2026-07-20")
+    post_cutoff = _filing(
+        f"{later_cik}-26-000002",
+        "10-Q",
+        accepted="2026-08-17T04:30:00Z",
+        filed="2026-08-17",
+    )
+    fake.submissions[later_cik] = _submissions_bytes(later_cik, [july, post_cutoff])
+    fake.facts[later_cik] = _facts_bytes(later_cik, "newer-incremental")
+    fake.set_index(
+        [
+            _idx_row(first_cik, "10-Q", "2026-07-20", f"{first_cik}-26-000001"),
+            _idx_row(later_cik, "10-Q", "2026-07-20", july["accession"]),
+            _idx_row(later_cik, "10-Q", "2026-08-17", post_cutoff["accession"]),
+        ]
+    )
+    incremental = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo)
+    assert incremental.exit_code == 0
+    current_head_key = latest_complete_key()
+    current_head_versioned = store.get_bytes_strict_bounded_versioned(
+        current_head_key, 128 * 1024
+    )
+    assert current_head_versioned.data is not None and current_head_versioned.version is not None
+    current_head = json.loads(current_head_versioned.data)
+    assert current_head["run_id"] != staged.receipt["recovery"]["anchor_complete"]["run_id"]
+
+    observation_key = current_head["observation_key"]
+    observation_versioned = store.get_bytes_strict_bounded_versioned(
+        observation_key, 16 * 1024 * 1024
+    )
+    assert observation_versioned.data is not None and observation_versioned.version is not None
+    observation = json.loads(gzip.decompress(observation_versioned.data))
+    forged_row = next(row for row in observation["issuers"] if row["cik"] == later_cik)
+    forged_row["outcome"] = "failed"
+    forged_raw = canonical_json(observation).encode("utf-8")
+    assert store.put_bytes_strict_conditional(
+        observation_key,
+        gzip.compress(forged_raw),
+        expected_version=observation_versioned.version,
+        content_type="application/gzip",
+    )
+    current_head["observation_sha256"] = sha256(forged_raw).hexdigest()
+    assert store.put_bytes_strict_conditional(
+        current_head_key,
+        json.dumps(current_head, sort_keys=True, separators=(",", ":")).encode(),
+        expected_version=current_head_versioned.version,
+    )
+
+    fake.index_fetches.clear()
+    fake.submissions_fetches.clear()
+    fake.historical_fetches.clear()
+    fake.facts_fetches.clear()
+    bytes_before = {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)}
+    rejected = _poll(
+        store,
+        universe,
+        fake,
+        _clocks("2026-08-17T06:00:00Z", recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=1,
+    )
+    assert rejected.exit_code == 1
+    assert rejected.receipt["reason_code"] == "store_readback_failure"
+    assert fake.index_fetches == []
+    assert fake.submissions_fetches == []
+    assert fake.historical_fetches == []
+    assert fake.facts_fetches == []
+    assert {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)} == bytes_before
+
+
+def test_ff1r_current_submissions_payload_cik_mismatch_fails_before_downstream_network(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    cik = candidate_ciks[0]
+    target = _filing(f"{cik}-26-000001", "10-Q", accepted=ACCEPT_RECOVERY, filed="2026-07-20")
+    payload = json.loads(_submissions_bytes(cik, [target]))
+    payload["cik"] = "0000000001"
+    fake.submissions[cik] = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    fake.facts[cik] = _facts_bytes(cik)
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "source_binding_failure"
+    assert fake.submissions_fetches == [cik]
+    assert fake.historical_fetches == []
+    assert fake.facts_fetches == []
+    assert store.get_bytes_strict(issuer_latest_key(cik)) is None
+    assert _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )["next_ordinal"] == 0
+
+
+def test_ff1r_same_day_pre_anchor_evidence_is_evaluable_negative_and_consumed(
+    tmp_path: Path,
+) -> None:
+    """The date-selected row predates the frozen instant, so it is not recovered or fact-fetched."""
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    accession = "0000320193-26-000071"
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-07-12", accession)])
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    pre_anchor = _filing(
+        accession,
+        "10-Q",
+        accepted="2026-07-12T11:23:14Z",
+        filed="2026-07-12",
+    )
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [pre_anchor])
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert result.exit_code == 0
+    assert result.receipt["reason_code"] == "complete"
+    assert result.receipt["recovery"]["completed_total"] == 1
+    assert result.receipt["change_summary"]["new_relevant_accessions"] == 0
+    assert result.receipt["coverage"]["companyfacts_fetched"] == 0
+    assert fake.facts_fetches == []
+
+
+def test_ff1r_amendment_candidate_plan_contract_and_causal_completion(tmp_path: Path) -> None:
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    amendment = _filing(
+        "0000320193-26-000099", "10-Q/A", accepted=ACCEPT_RECOVERY, filed="2026-07-20"
+    )
+    fake.set_index([_idx_row(AAPL[1], "10-Q/A", "2026-07-20", amendment["accession"])])
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [amendment])
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "amendment")
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert result.exit_code == 0
+    plan = _recovery_plan(store)
+    jsonschema.validate(plan, RECOVERY_PLAN_CONTRACT)
+    assert plan["candidate_rows"][0]["form"] == "10-Q/A"
+    assert result.receipt["change_summary"]["new_relevant_accessions"] == 1
+    assert fake.facts_fetches == [AAPL[1]]
+
+
+@pytest.mark.parametrize(
+    "forgery",
+    (
+        "body_recovery_from",
+        "body_selection_cutoff",
+        "body_universe_sha",
+        "body_index_snapshot",
+        "body_cursor_and_counts",
+        "body_future_cumulative_clock",
+        "body_last_receipt_binding",
+        "head_recovery_from",
+    ),
+)
+def test_ff1r_digest_consistent_forged_continuation_semantics_fail_before_network_or_mutation(
+    tmp_path: Path, forgery: str
+) -> None:
+    """A valid content hash cannot turn an unbound continuation into lawful recovery state."""
+    from engine.fundamental_forensics.broad_sec_store import (
+        canonical_json,
+        recovery_continuation_object_key,
+    )
+
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=2
+    )
+    _populate_ff1r_current_sources(fake, candidate_ciks)
+    staged = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=1,
+    )
+    assert staged.receipt["reason_code"] == "recovery_in_progress"
+
+    pointer_key = recovery_continuation_pointer_key()
+    versioned = store.get_bytes_strict_bounded_versioned(pointer_key, 128 * 1024)
+    assert versioned.data is not None and versioned.version is not None
+    pointer = json.loads(versioned.data)
+    body = _load_gzip_json(store, pointer["object_key"])
+    if forgery == "body_recovery_from":
+        body["recovery_from"] = "2026-07-12T11:23:14Z"
+    elif forgery == "body_selection_cutoff":
+        body["selection_cutoff_at"] = "2026-08-17T03:00:01Z"
+    elif forgery == "body_universe_sha":
+        body["universe_sha256"] = "0" * 64
+    elif forgery == "body_index_snapshot":
+        body["index_snapshot_sha256"] = "0" * 64
+    elif forgery == "body_cursor_and_counts":
+        body["next_ordinal"] = 0
+        body["completed_count"] = 0
+        body["backlog_count"] = body["candidate_cik_count"]
+    elif forgery == "body_future_cumulative_clock":
+        body["cumulative_sec_accepted_at"] = "2099-01-01T00:00:00Z"
+    elif forgery == "body_last_receipt_binding":
+        assert isinstance(body["last_successful_run_receipt"], dict)
+        body["last_successful_run_receipt"]["observation_sha256"] = "0" * 64
+    elif forgery == "head_recovery_from":
+        pointer["recovery_from"] = "2026-07-12T11:23:14Z"
+    else:  # pragma: no cover - parameter list is the test's security inventory.
+        raise AssertionError(forgery)
+
+    if forgery != "head_recovery_from":
+        raw = canonical_json(body).encode("utf-8")
+        digest = sha256(raw).hexdigest()
+        forged_key = recovery_continuation_object_key(digest)
+        assert store.put_bytes_strict_conditional(
+            forged_key,
+            gzip.compress(raw),
+            expected_version=None,
+            content_type="application/gzip",
+        )
+        pointer["object_key"] = forged_key
+        pointer["sha256"] = digest
+        if forgery == "body_cursor_and_counts":
+            pointer["completed_count"] = 0
+            pointer["backlog_count"] = body["candidate_cik_count"]
+    assert store.put_bytes_strict_conditional(
+        pointer_key,
+        json.dumps(pointer, sort_keys=True, separators=(",", ":")).encode(),
+        expected_version=versioned.version,
+    )
+
+    fake.index_fetches.clear()
+    fake.submissions_fetches.clear()
+    fake.historical_fetches.clear()
+    fake.facts_fetches.clear()
+    bytes_before = {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)}
+    rejected = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_3, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert rejected.exit_code == 1
+    assert rejected.receipt["reason_code"] == "recovery_plan_invalid"
+    assert fake.index_fetches == []
+    assert fake.submissions_fetches == []
+    assert fake.historical_fetches == []
+    assert fake.facts_fetches == []
+    assert {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)} == bytes_before
+
+
+def test_ff1r_no_progress_failure_continuation_is_valid_and_retries_same_cik(tmp_path: Path) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=2
+    )
+    failed_cik = candidate_ciks[0]
+    fake.fail_submissions[failed_cik] = "sec_5xx_exhausted"
+    failed = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=1,
+    )
+    assert failed.exit_code == 1
+    assert failed.receipt["reason_code"] == "sec_5xx_exhausted"
+    continuation = _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )
+    assert continuation["next_ordinal"] == 0
+    assert continuation["last_successful_run_receipt"] is None
+
+    fake.fail_submissions.clear()
+    _populate_ff1r_current_sources(fake, [failed_cik])
+    fake.submissions_fetches.clear()
+    fake.facts_fetches.clear()
+    retry = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_3, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=1,
+    )
+    assert retry.exit_code == 1
+    assert retry.receipt["reason_code"] == "recovery_in_progress"
+    assert retry.receipt["recovery"]["tranche_start_ordinal"] == 0
+    assert retry.receipt["recovery"]["selected_ciks"] == [failed_cik]
+    assert fake.submissions_fetches == [failed_cik]
+    assert fake.facts_fetches == [failed_cik]
+
+
+def test_ff1r_zero_candidate_completion_receipt_remains_retryable_after_final_cas_failure(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    fake.set_index([])
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    complete_before = store.get_bytes_strict(latest_complete_key())
+    assert complete_before is not None
+
+    class CompleteFailStore:
+        def __init__(self, wrapped) -> None:
+            self.wrapped = wrapped
+
+        def put_bytes_strict_conditional(
+            self,
+            key,
+            data,
+            *,
+            expected_version,
+            content_type="application/octet-stream",
+        ):
+            if key == latest_complete_key():
+                return False
+            return self.wrapped.put_bytes_strict_conditional(
+                key,
+                data,
+                expected_version=expected_version,
+                content_type=content_type,
+            )
+
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
+
+    fake.index_fetches.clear()
+    failed = _poll(
+        CompleteFailStore(store),
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert failed.exit_code == 1
+    assert failed.receipt["reason_code"] == "store_write_failure"
+    assert store.get_bytes_strict(latest_complete_key()) == complete_before
+    continuation = _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )
+    assert continuation["next_ordinal"] == 0
+    assert isinstance(continuation["last_successful_run_receipt"], dict)
+
+    retry = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_3, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert retry.exit_code == 0
+    assert retry.receipt["status"] == "complete"
+    assert retry.receipt["recovery"]["candidate_cik_count"] == 0
+    assert retry.receipt["recovery"]["backlog_count"] == 0
+    assert fake.index_fetches == []
+    assert fake.submissions_fetches == []
+    assert fake.historical_fetches == []
+    assert fake.facts_fetches == []
+
+
+def test_ff1r_noncanonical_alternate_universe_path_fails_before_network_or_prefix_mutation(
+    tmp_path: Path,
+) -> None:
+    repo, _canonical_universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    alternate = _write_universe(tmp_path / "alternate-fundamentals.parquet", [(AAPL[0], 320193)])
+    fake = FakeSec()
+    bytes_before = {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)}
+    result = _poll(
+        store,
+        alternate,
+        fake,
+        _clocks(POLL_1, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "recovery_plan_invalid"
+    assert fake.index_fetches == []
+    assert fake.submissions_fetches == []
+    assert fake.historical_fetches == []
+    assert fake.facts_fetches == []
+    assert {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)} == bytes_before
+
+
+def test_ff1r_canonical_universe_epoch_change_before_first_plan_fails_before_network_or_mutation(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    _write_universe(
+        universe,
+        [("R0000", int(candidate_ciks[0])), ("NEW", 999999)],
+    )
+    fake.index_fetches.clear()
+    fake.submissions_fetches.clear()
+    fake.historical_fetches.clear()
+    fake.facts_fetches.clear()
+    bytes_before = {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)}
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "recovery_plan_invalid"
+    assert fake.index_fetches == []
+    assert fake.submissions_fetches == []
+    assert fake.historical_fetches == []
+    assert fake.facts_fetches == []
+    assert {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)} == bytes_before
+
+
+def test_ff1r_forged_anchor_observation_binding_fails_before_network_or_prefix_mutation(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store, fake, _candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    pointer_key = latest_complete_key()
+    versioned = store.get_bytes_strict_bounded_versioned(pointer_key, 128 * 1024)
+    assert versioned.data is not None and versioned.version is not None
+    pointer = json.loads(versioned.data)
+    pointer["observation_key"] = f"{PREFIX}/issuer-observations/forged.json.gz"
+    pointer["observation_sha256"] = "0" * 64
+    assert store.put_bytes_strict_conditional(
+        pointer_key,
+        json.dumps(pointer, sort_keys=True, separators=(",", ":")).encode(),
+        expected_version=versioned.version,
+    )
+
+    fake.index_fetches.clear()
+    fake.submissions_fetches.clear()
+    fake.historical_fetches.clear()
+    fake.facts_fetches.clear()
+    bytes_before = {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)}
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "issuer_manifest_invalid"
+    assert fake.index_fetches == []
+    assert fake.submissions_fetches == []
+    assert fake.historical_fetches == []
+    assert fake.facts_fetches == []
+    assert {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)} == bytes_before
