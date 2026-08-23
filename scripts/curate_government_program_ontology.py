@@ -37,6 +37,17 @@ from engine.government_revenue import program_ontology as po  # noqa: E402
 
 DEFAULT_TARGET = _ROOT / "data" / "government_revenue" / "program_ontology.json"
 
+#: Evidence rows are their own worksheet target_kind (freeze SS3.1a) but are
+#: never a candidate for the generic per-collection admit loop: they carry no
+#: verification_state/identity_disposition, and their admission law is
+#: append-only-with-widening rather than "insert if the certified artifact
+#: accepts it".
+_EVIDENCE_TARGET_KIND = "evidence"
+_EVIDENCE_ROW_FIELDS = frozenset({
+    "evidence_id", "evidence_class", "sha256", "source_url", "retrieved_from_url",
+    "retrieved_at", "known_at", "claim_scopes", "pinned_issuer_host", "pinned_issuer_host_basis",
+})
+
 _TARGET_KIND_TO_COLLECTION = {
     "program": "programs",
     "capability": "capabilities",
@@ -150,6 +161,40 @@ def _row_dual_scope_predicate(row: dict[str, Any], evidence_by_id: dict[str, dic
     return True
 
 
+def _admit_evidence_row(working: dict[str, Any], candidate_row: dict[str, Any]) -> str | None:
+    """Apply one worksheet evidence admission (freeze SS3.1a). Mutates
+    ``working["evidence"]`` in place. Returns an error code on refusal, or
+    ``None`` on success (new row or a legal widening).
+
+    Evidence rows are append-only and keyed by ``evidence_id``: a document
+    never seen before mints a new row; a document already on file may only
+    be resubmitted to WIDEN its ``claim_scopes`` (set-union) -- every other
+    field, including ``retrieved_at``/``known_at``, must match byte-for-byte
+    (first receipt wins). Any other difference is refused
+    ``evidence_receipt_mismatch``, never silently merged or overwritten.
+    """
+    if not isinstance(candidate_row, dict) or set(candidate_row) - _EVIDENCE_ROW_FIELDS:
+        return "worksheet_inconsistent"
+    evidence_id = candidate_row.get("evidence_id")
+    if not evidence_id:
+        return "worksheet_inconsistent"
+    evidence_list = working.setdefault("evidence", [])
+    for index, existing in enumerate(evidence_list):
+        if existing.get("evidence_id") != evidence_id:
+            continue
+        stripped_existing = {k: v for k, v in existing.items() if k != "claim_scopes"}
+        stripped_candidate = {k: v for k, v in candidate_row.items() if k != "claim_scopes"}
+        if stripped_existing != stripped_candidate:
+            return "evidence_receipt_mismatch"
+        merged_scopes = sorted(set(existing.get("claim_scopes") or []) | set(candidate_row.get("claim_scopes") or []))
+        if merged_scopes == sorted(existing.get("claim_scopes") or []):
+            return None  # byte-identical resubmission -- dedupes idempotently
+        evidence_list[index] = {**existing, "claim_scopes": merged_scopes}
+        return None
+    evidence_list.append(dict(candidate_row))
+    return None
+
+
 def _identity_disposition_ok(
     disposition: str | None, target_kind: str, candidate_row: dict[str, Any], working: dict[str, Any],
 ) -> str | None:
@@ -242,21 +287,43 @@ def curate_worksheet(
     working = _load_base_graph(
         target_path, graph_id=graph_id, graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
     )
-    evidence_by_id = {row.get("evidence_id"): row for row in working.get("evidence", [])}
 
     admitted: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
     admit_candidates: list[dict[str, Any]] = []
 
+    # Evidence admissions/widenings apply FIRST, atomically with everything
+    # else in this act (freeze SS3.1's role_assertion clause: "within one
+    # curate act, evidence-row updates ... apply FIRST and row admissions
+    # are then predicated on the post-update scopes"). This is what makes a
+    # role/link admitted in the SAME act as its own supporting evidence see
+    # that evidence's claim_scopes when curate checks coverage/dual-scope.
+    evidence_admitted = 0
+    for row in rows:
+        if row.get("action") != "admit" or row.get("target_kind") != _EVIDENCE_TARGET_KIND:
+            continue
+        candidate_row = row.get("candidate_row")
+        if _forbidden_keys_present(candidate_row or {}):
+            rejected.append({"row": row, "reason": "forbidden_provenance_key_present"})
+            continue
+        error = _admit_evidence_row(working, candidate_row)
+        if error:
+            rejected.append({"row": row, "reason": error})
+        else:
+            evidence_admitted += 1
+    evidence_by_id = {row.get("evidence_id"): row for row in working.get("evidence", [])}
+
     for row in rows:
         action = row.get("action")
+        target_kind = row.get("target_kind")
+        if target_kind == _EVIDENCE_TARGET_KIND:
+            continue  # already handled above, whichever way it resolved
         if action == "reject":
             rejected.append({"row": row, "reason": row.get("rejection_reason") or "worksheet_rejected"})
             continue
         if action != "admit":
             rejected.append({"row": row, "reason": "worksheet_inconsistent"})
             continue
-        target_kind = row.get("target_kind")
         candidate_row = row.get("candidate_row")
         if target_kind not in _TARGET_KIND_TO_COLLECTION or not isinstance(candidate_row, dict):
             rejected.append({"row": row, "reason": "worksheet_inconsistent"})
@@ -391,7 +458,8 @@ def curate_worksheet(
 
     return {
         "graph_id": working.get("graph_id"),
-        "admitted_count": len(admitted),
+        "admitted_count": len(admitted) + evidence_admitted,
+        "evidence_admitted_count": evidence_admitted,
         "rejected_count": len(rejected),
         "rejected": rejected,
         "coverage_rows_minted": len(coverage_rows),

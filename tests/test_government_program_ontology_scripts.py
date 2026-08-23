@@ -352,6 +352,161 @@ def test_t15_curate_admits_a_matching_event_link(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Worksheet evidence admission (freeze SS3.1a) -- append-only-with-widening,
+# processed FIRST in the curate act so a same-act role/link/milestone sees
+# the evidence's post-update claim_scopes (2026-08-23 orchestrator defect
+# repair, verified against research/government_revenue/
+# PROGRAM_ONTOLOGY_REVIEW_2026-08-23_virginia_pilot.json).
+# ---------------------------------------------------------------------------
+
+
+def test_curate_admits_a_new_evidence_row(tmp_path):
+    target = _fresh_target(tmp_path)
+    ev = b.evidence_row(
+        "new-evidence-doc", claim_scopes=["program_identity"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    worksheet_dict = b.worksheet(rows=[{
+        "action": "admit", "target_kind": "evidence", "candidate_row": ev,
+    }])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+    report = curate_mod.curate_worksheet(worksheet_path, target_path=target)
+    assert report["evidence_admitted_count"] == 1
+    assert report["admitted_count"] == 1
+    published = json.loads(target.read_text(encoding="utf-8"))
+    assert published["evidence"] == [ev]
+
+
+def test_curate_widens_an_existing_evidence_rows_claim_scopes(tmp_path):
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "widen-doc", claim_scopes=["program_identity"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    graph["evidence"] = [ev]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    widened_candidate = {**ev, "claim_scopes": sorted({"program_identity", "role"})}
+    worksheet_dict = b.worksheet(rows=[{
+        "action": "admit", "target_kind": "evidence", "candidate_row": widened_candidate,
+    }])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+    report = curate_mod.curate_worksheet(worksheet_path, target_path=target)
+    assert report["evidence_admitted_count"] == 1
+    published = json.loads(target.read_text(encoding="utf-8"))
+    assert len(published["evidence"]) == 1
+    row = published["evidence"][0]
+    assert sorted(row["claim_scopes"]) == sorted({"program_identity", "role"})
+    # First receipt wins: every OTHER field stays byte-identical to the
+    # original stored row (retrieved_at/known_at never move on a widening).
+    assert row["known_at"] == ev["known_at"]
+    assert row["retrieved_at"] == ev["retrieved_at"]
+    assert row["sha256"] == ev["sha256"]
+
+
+def test_curate_refuses_evidence_receipt_mismatch_on_a_non_scope_field_change(tmp_path):
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    ev = b.evidence_row(
+        "mismatch-doc", claim_scopes=["program_identity"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    graph["evidence"] = [ev]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    mismatched = {**ev, "source_url": "https://www.defense.gov/a-different-page/"}
+    worksheet_dict = b.worksheet(rows=[{
+        "action": "admit", "target_kind": "evidence", "candidate_row": mismatched,
+    }])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+    report = curate_mod.curate_worksheet(worksheet_path, target_path=target)
+    assert report["evidence_admitted_count"] == 0
+    assert report["rejected"][0]["reason"] == "evidence_receipt_mismatch"
+    # The stored row is untouched by the refused candidate.
+    published = json.loads(target.read_text(encoding="utf-8"))
+    assert published["evidence"] == [ev]
+
+
+def test_curate_evidence_admitted_in_the_same_act_is_visible_to_a_dependent_role(tmp_path):
+    """The freeze SS3.1 ordering property: 'within one curate act, evidence-row
+    updates ... apply FIRST and row admissions are then predicated on the
+    post-update scopes.' A role_assertion admitted in the SAME act as the
+    evidence that supplies its program_identity+role coverage must see that
+    evidence -- not be refused claim_scope_coverage_missing/dual-scope for a
+    dependency that exists only earlier in this same worksheet."""
+    target = tmp_path / "program_ontology.json"
+    graph = b.empty_graph()
+    prog_ev = b.evidence_row(
+        "same-act-prog-doc", claim_scopes=["program_identity"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    graph["evidence"] = [prog_ev]
+    prog = b.program_row(evidence_refs=[prog_ev["evidence_id"]])
+    graph["programs"] = [prog]
+    target.write_text(json.dumps(graph), encoding="utf-8")
+
+    dual_ev = b.evidence_row(
+        "same-act-dual-doc", claim_scopes=["program_identity", "role"],
+        known_at="2020-01-01T00:00:00+00:00", retrieved_at="2020-01-01T00:00:00+00:00",
+    )
+    role = b.role_assertion_row(
+        program_id=prog["id"], single_document_dual_scope=True, evidence_refs=[dual_ev["evidence_id"]],
+    )
+    worksheet_dict = b.worksheet(rows=[
+        {"action": "admit", "target_kind": "evidence", "candidate_row": dual_ev},
+        {
+            "action": "admit", "target_kind": "role_assertion", "candidate_row": role,
+            "scope_statement": "The document names both facts in one sentence.",
+        },
+    ])
+    worksheet_path = tmp_path / "worksheet.json"
+    worksheet_path.write_text(json.dumps(worksheet_dict), encoding="utf-8")
+    report = curate_mod.curate_worksheet(worksheet_path, target_path=target)
+    assert report["evidence_admitted_count"] == 1
+    assert report["admitted_count"] == 2
+    assert report["rejected_count"] == 0
+    published = json.loads(target.read_text(encoding="utf-8"))
+    assert any(r["id"] == role["id"] for r in published["role_assertions"])
+
+
+def test_curate_pilot_worksheet_matches_the_ratified_acceptance_check(tmp_path):
+    """End-to-end regression pinning the 2026-08-23 orchestrator adjudication:
+    the real Virginia-class SSN pilot worksheet must admit 14, reject exactly
+    the one deliberate program_event_link reject row, and mint 6 coverage
+    rows -- never weakening any freeze law to get there."""
+    repo_root = Path(__file__).parents[1]
+    worksheet_path = repo_root / "research" / "government_revenue" / "PROGRAM_ONTOLOGY_REVIEW_2026-08-23_virginia_pilot.json"
+    if not worksheet_path.exists():
+        pytest.skip("pilot worksheet not present in this checkout")
+    workspace_path = repo_root / "data" / "government_revenue" / "workspace.json"
+    workspace_events: dict[str, dict] = {}
+    if workspace_path.exists():
+        workspace_data = json.loads(workspace_path.read_text(encoding="utf-8"))
+        for event in workspace_data.get("events", []):
+            if isinstance(event, dict) and event.get("event_id"):
+                workspace_events[event["event_id"]] = event
+
+    report = curate_mod.curate_worksheet(
+        worksheet_path,
+        target_path=tmp_path / "program_ontology.json",
+        graph_id="program-ontology:reviewed:2026-08-23:virginia-pilot",
+        graph_known_at="2026-08-23T07:50:00+00:00",
+        graph_effective_at="2026-08-23T07:50:00+00:00",
+        workspace_events=workspace_events,
+        check_only=True,
+    )
+    assert report["admitted_count"] == 14
+    assert report["rejected_count"] == 1
+    assert report["coverage_rows_minted"] == 6
+    assert report["rejected"][0]["row"]["action"] == "reject"
+    assert report["rejected"][0]["row"]["target_kind"] == "program_event_link"
+
+
+# ---------------------------------------------------------------------------
 # Orphan capability + rejection ledger + reject-action rows
 # ---------------------------------------------------------------------------
 
