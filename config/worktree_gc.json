@@ -15,6 +15,7 @@
     ".codex-worktrees",
     ".cursor/worktrees",
     ".grok/worktrees",
+    ".warp/worktrees",
     "~/.codex/worktrees"
   ]
 }

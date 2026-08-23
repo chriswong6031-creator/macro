@@ -130,6 +130,12 @@ that believes the packet is wrong stops and escalates.
   session already sits in one, and otherwise mints a sparse tree under
   `.grok/worktrees/<name>/` with `git worktree add --no-checkout` (Claude's
   pre-checkout shape) so an AionUi session never materializes the heavy trees.
+  Warp/Oz has no SessionStart or WorktreeCreate event. `.warp/hooks/session_start_sparse.py`
+  plus `.agents/skills/macro-sparse-worktree` are the analog: a Warp session must
+  run the mint itself (the skill auto-discovers), then `cd` to the printed
+  `WORKSPACE=` path. The hook converts only a linked session worktree; otherwise
+  it mints under `.warp/worktrees/<name>/` with `git worktree add --no-checkout`
+  and never writes `.session-worktree` into a git checkout.
   `auto` acts only on a linked worktree sitting under a session root
   (`.claude/worktrees/` and siblings — never the occupied primary, and never the
   operator's designated local root, which is itself a linked worktree), and preserves

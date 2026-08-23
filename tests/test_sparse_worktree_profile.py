@@ -46,6 +46,8 @@ CURSOR_HOOKS_PATH = ROOT / ".cursor" / "hooks.json"
 CURSOR_WORKTREES_PATH = ROOT / ".cursor" / "worktrees.json"
 GROK_HOOKS_PATH = ROOT / ".grok" / "hooks" / "sparse-worktree.json"
 GROK_SESSION_START_PATH = ROOT / ".grok" / "hooks" / "session_start_sparse.py"
+WARP_SESSION_START_PATH = ROOT / ".warp" / "hooks" / "session_start_sparse.py"
+WARP_SKILL_PATH = ROOT / ".agents" / "skills" / "macro-sparse-worktree" / "SKILL.md"
 
 
 def _load_hook():
@@ -58,6 +60,14 @@ def _load_hook():
 def _load_grok_hook():
     spec = importlib.util.spec_from_file_location(
         "session_start_sparse", GROK_SESSION_START_PATH)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_warp_hook():
+    spec = importlib.util.spec_from_file_location(
+        "warp_session_start_sparse", WARP_SESSION_START_PATH)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -433,6 +443,15 @@ def test_grok_session_start_applies_the_same_sparse_profile():
                for command in commands), commands
 
 
+def test_warp_session_start_script_and_skill_are_checked_in():
+    """Warp has no SessionStart event; the mint script + skill are the analog."""
+    assert WARP_SESSION_START_PATH.is_file(), WARP_SESSION_START_PATH
+    assert WARP_SKILL_PATH.is_file(), WARP_SKILL_PATH
+    skill = WARP_SKILL_PATH.read_text(encoding="utf-8")
+    assert ".warp/hooks/session_start_sparse.py" in skill
+    assert "WORKSPACE=" in skill
+
+
 def test_aionui_temp_predicate_matches_only_grok_temp_workspaces(tmp_path: Path):
     aion = tmp_path / ".aionui" / "conversations" / "users" / "u1" / "2026" / "08" / "18" / "grok-temp-abcd1234"
     aion.mkdir(parents=True)
@@ -500,6 +519,43 @@ def test_grok_session_start_hook_mints_from_an_aionui_temp(
     dest = synthetic_repo / ".grok" / "worktrees" / "grok-temp-hooktest"
     assert dest.is_dir()
     assert (temp / ".session-worktree").read_text(encoding="utf-8").strip() == str(dest)
+    assert WS.missing_dirs(dest) == ["data", "mockups", "site"]
+
+
+def test_warp_hook_mints_from_a_macro_host_without_writing_pointer(
+        synthetic_repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    hook = _load_warp_hook()
+    (synthetic_repo / ".git").mkdir(exist_ok=True)
+    monkeypatch.setattr(hook, "discover_donor", lambda cwd: synthetic_repo)
+    monkeypatch.setattr(hook, "is_macro_checkout", lambda root: True)
+    monkeypatch.setattr(hook, "_load_ws", lambda donor: WS)
+    monkeypatch.delenv("WARP_TERMINAL_SESSION_UUID", raising=False)
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps({"cwd": str(synthetic_repo)})))
+    assert hook.main() == 0
+    dest = synthetic_repo / ".warp" / "worktrees" / "warp-session"
+    assert dest.is_dir()
+    assert not (synthetic_repo / ".session-worktree").exists(), (
+        "a pointer inside a git checkout is dirt"
+    )
+    assert WS.missing_dirs(dest) == ["data", "mockups", "site"]
+
+
+def test_warp_hook_does_not_sparsify_the_operator_local_root(
+        synthetic_repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """macro-main is a linked worktree; Warp SessionStart must mint beside it."""
+    hook = _load_warp_hook()
+    linked = tmp_path / "macro-main-analog"
+    _git(synthetic_repo, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
+    monkeypatch.setattr(hook, "discover_donor", lambda cwd: linked)
+    monkeypatch.setattr(hook, "is_macro_checkout", lambda root: True)
+    monkeypatch.setattr(hook, "_load_ws", lambda donor: WS)
+    monkeypatch.delenv("WARP_TERMINAL_SESSION_UUID", raising=False)
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps({"cwd": str(linked)})))
+    assert hook.main() == 0
+    assert WS.is_sparse(linked) is False
+    assert (linked / "data" / "keep.txt").is_file()
+    dest = linked / ".warp" / "worktrees" / "warp-session"
+    assert dest.is_dir()
     assert WS.missing_dirs(dest) == ["data", "mockups", "site"]
 
 
