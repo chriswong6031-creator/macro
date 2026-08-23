@@ -19,6 +19,7 @@ discoveries:
   - DSC:FF-1-SEC-BULK-ARCHIVE-EXCEEDS-1GIB
   - DSC:FF-1-Q3-2026-MASTER-INDEX-CANARY
   - DSC:FF-1R-RECOVERY-PLAN-EPOCH-IS-FROZEN
+  - DSC:FF-1-IMMUTABLE-MANIFEST-IS-NOT-A-COMPACT-POINTER
 decisions:
   - DEC:FF-1-UNIVERSE-CENSUS-IS-PARQUET-DERIVED
   - DEC:FF-1-BROAD-DISCOVERY-USES-EDGAR-INDEXES
@@ -52,7 +53,7 @@ waves:
     title: Incremental Broad SEC Source Plane
     status: in_progress
     depends_on: [FF-0]
-    pr: [5820, 5864, 5898]
+    pr: [5820, 5864, 5898, 6285]
     next_action: >
       FF-1P2R is PROVEN_LIVE, but FF-1 remains PARTIAL / in progress. FF-1R
       recovery is a separately commissioned capability and previous-quarter
@@ -78,13 +79,17 @@ waves:
     title: July recovery engine
     status: in_progress
     depends_on: [FF-1P2R]
+    pr: 6285
     next_action: >
-      BUILT_NOT_PROVEN / HOLD-FOR-SOL. The commissioned engine freezes
-      recovery_from=2026-07-12T11:23:15Z plus the current sha-verified
-      latest-complete anchor, its index snapshot and relevant-set identity,
-      then advances a compact cursor through deterministic bounded tranches of
-      at most 64 CIKs. Complete review/CI before a Sol release; do not dispatch
-      recovery, previous-quarter reconciliation, or FF-2.
+      P1 TRANSPORT REPAIR ACTIVE / PRODUCTION RECOVERY FROZEN. PR #6285
+      merged as 1e7d9f5030fd7c7c06fb03f022857510c5d0f9ed. Its first
+      production tranche, run 32626273461, failed closed on valid 20,779-byte
+      ANGO evidence because the full immutable manifest was read through the
+      16 KiB compact-pointer envelope. The run is a fail-closed witness, not an
+      accepted recovery checkpoint. Preserve plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
+      cursor 0, completed total 0 and null last-successful recovery receipt.
+      Land the separately bounded manifest-transport repair under Sol review;
+      a corrective tranche-A retry requires a later explicit Sol release.
   - id: FF-2
     title: Broad workbench rebuild from the FF-1 source plane
     status: todo
@@ -116,6 +121,8 @@ landmines:
   - "Previous-quarter weekly reconciliation is SPEC_ONLY / NOT_BUILT. Current-quarter rebuilt-index corrections are implemented; FF-1 is not globally correction-safe yet."
   - "FF-1R freezes one recovery plan from the sha-verified latest-complete anchor and its EDGAR snapshot. A later current-quarter poll or mutable index must not change that plan. Every recovery tranche is at most 64 selected CIKs; historical Submissions shards are date-span-selected, bounded, and never an all-shard crawl."
   - "A partial FF-1R tranche may write immutable observations, receipts and its compact continuation, but never latest-complete. Only a backlog-zero final composition may advance latest-complete, and it must preserve newer current-incremental evidence."
+  - "POINTER_MAX_BYTES=16 KiB governs compact mutable heads and pointers only. Full immutable issuer manifests use their separately measured 128 KiB finite envelope in both recovery and incremental paths (DSC:FF-1-IMMUTABLE-MANIFEST-IS-NOT-A-COMPACT-POINTER)."
+  - "FF-1R run 32626273461 / run_382b4fbf26bb0fe3e298 is a fail-closed transport witness, not tranche progress: ANGO was refused at 20,779 > 16,384 before cursor movement. Do not label its retry tranche B."
 do_not_redo:
   - "Do not modify FF-0 (app/forensics.py, engine/fundamental_forensics/health.py, templates/fundamental_forensics*, site/fundamental_forensics*, scripts/build_fundamental_forensics.py)."
   - "Do not start FF-2: no workbench rebuild, detectors, findings publish, Prophet/Neural Web, attested-history, or Calcbench."
@@ -137,12 +144,17 @@ do_not_redo:
   - "Do not bootstrap from a sha-verified latest-complete that lacks a well-formed index block."
   - "Do not move the 03:15 UTC schedule merely because submissions.zip rebuilds around 03:00 ET. Q3 master.zip Last-Modified was 02:02 UTC."
   - "Do not make recovery chase a live index, materialize a full pending-CIK list in continuation, refetch already committed CIKs, or use all historical filings.files shards. FF-1R binds a frozen plan and advances its compact cursor only after an issuer outcome is durable."
+  - "Do not raise POINTER_MAX_BYTES to admit issuer manifests, rewrite existing immutable manifests, regenerate plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4, or advance the recovery cursor to bypass the ANGO refusal."
+  - "Do not retry FF-1R tranche A without a new explicit Sol production release. Run 32626273461 consumed no recovery cursor position; any later authorized operation starts again from cursor 0."
 next_action: >
   FF-1P2R current-quarter EDGAR-index discovery is PROVEN_LIVE. FF-1 remains
-  PARTIAL / in progress. FF-1R bounded July recovery is BUILT_NOT_PROVEN /
-  HOLD-FOR-SOL: finish exact-head review and CI, then await an explicit Sol
-  release before any production dispatch. Previous-quarter weekly
-  reconciliation is SPEC_ONLY / NOT_BUILT; FF-2 is FORBIDDEN / NOT_STARTED.
+  PARTIAL / in progress. PR #6285 merged, but its first FF-1R production
+  attempt is rejected as a recovery checkpoint and retained as the
+  fail-closed immutable-manifest transport witness. Complete the P1 bounded
+  transport repair while recovery remains frozen at plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4
+  and cursor 0. A corrective tranche-A retry requires a later explicit Sol
+  release. Previous-quarter reconciliation is SPEC_ONLY / NOT_BUILT; FF-2 is
+  FORBIDDEN / NOT_STARTED.
 ---
 
 ## Context
@@ -168,11 +180,18 @@ current-quarter index-driven discovery only
 2,841-name canonical baseline; Run B `32605564919` proved the quiet
 incremental path without issuer fanout. Before this successor, `mode=recovery`
 failed closed with `recovery_plan_required` before any SEC call or Research R2
-write. FF-1R (July recovery engine) is now locally built but not proven or production
-commissioned. It is bound to `recovery_from=2026-07-12T11:23:15Z`, freezes a
-sha-verified latest-complete/index-snapshot plan before issuer network access,
-and processes no more than 64 selected CIKs per tranche through a compact
-cursor. Historical shards are only date-span-selected and bounded. Partial
-tranches never advance latest-complete; final recovery composition preserves
-newer incremental evidence. Previous-quarter weekly reconciliation remains
-SPEC_ONLY / NOT_BUILT. Do not mark FF-1 done. FF-2 remains forbidden.
+write. PR #6285 merged as `1e7d9f5030fd7c7c06fb03f022857510c5d0f9ed`
+and commissioned the bounded July recovery engine. Production run
+`32626273461` / `run_382b4fbf26bb0fe3e298` selected 64 CIKs but failed
+closed on its first issuer, ANGO, because a valid 20,779-byte immutable
+manifest was read through the 16 KiB compact-pointer envelope. It made one
+current-Submissions request, zero Company Facts requests, and no recovery
+progress. Recovery is frozen at plan
+`e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4`,
+cursor 0, completed total 0 and null last-successful recovery receipt while
+the P1 manifest-transport repair is reviewed. The immutable manifest envelope
+is separate from the unchanged pointer envelope
+(`DSC:FF-1-IMMUTABLE-MANIFEST-IS-NOT-A-COMPACT-POINTER`). A later operation is
+a corrective tranche-A retry and requires a new explicit Sol release.
+Previous-quarter weekly reconciliation remains SPEC_ONLY / NOT_BUILT. Do not
+mark FF-1 done. FF-2 remains forbidden.

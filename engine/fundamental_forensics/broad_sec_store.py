@@ -31,6 +31,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from functools import lru_cache
 from hashlib import sha256
 from zoneinfo import ZoneInfo
 import gzip
@@ -41,6 +42,8 @@ import zipfile
 from pathlib import Path
 from typing import Any, Callable, Mapping, Protocol
 from urllib.parse import urlparse
+
+from jsonschema import Draft202012Validator
 
 from collectors.edgar_forensics import (
     SecResponseTooLarge,
@@ -73,6 +76,16 @@ RECOVERY_CONTINUATION_HEAD_SCHEMA = (
     "fundamental_forensics.broad_sec.recovery_continuation_head.v2"
 )
 POINTER_MAX_BYTES = 16 * 1024
+# Read-only production census 2026-08-23: 4,819 immutable issuer manifests,
+# maximum 43,665 bytes (817 >16 KiB; 51 >32 KiB; zero >64 KiB).  The accepted
+# envelope is the smallest power of two at least twice that maximum.  This is
+# deliberately separate from the compact mutable-pointer ceiling above.
+ISSUER_MANIFEST_MAX_BYTES = 128 * 1024
+ISSUER_MANIFEST_SCHEMA_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "contracts"
+    / "fundamental_forensics_broad_sec_issuer_manifest.schema.json"
+)
 # Bind fence for the canonical parquet, not a crawl target. Live
 # data/edgar/fundamentals.parquet measured 2837 unique issuers on 2026-08-18
 # (run 32097495749, universe_invalid at 2500). 4000 admits that census with
@@ -666,6 +679,31 @@ def issuer_source_identity(manifest: Mapping[str, Any]) -> str:
         "submissions_sha256": manifest["submissions_sha256"],
         "submissions_source_set_sha256": manifest.get("submissions_source_set_sha256"),
         "submissions_components": manifest.get("submissions_components") or [],
+        "companyfacts_sha256": manifest.get("companyfacts_sha256"),
+        "relevant_accessions": [
+            item["accession_number"] for item in manifest.get("relevant_filings", [])
+        ],
+        "cumulative_relevant_accessions": list(
+            manifest.get("cumulative_relevant_accessions") or []
+        ),
+        "previous_manifest_id": manifest.get("previous_manifest_id"),
+    }
+    return sha256(canonical_json(body).encode("utf-8")).hexdigest()
+
+
+def _legacy_issuer_source_identity(manifest: Mapping[str, Any]) -> str:
+    """Recompute the #5898 identity for immutable pre-FF-1R manifests.
+
+    #6285 added component-set provenance to newly written identities. Existing
+    immutable manifests cannot be rewritten, so the reader recognizes the old
+    identity only when both component fields are absent. New writes are never
+    permitted to select this compatibility formula.
+    """
+
+    body = {
+        "cik": manifest["cik"],
+        "ticker": manifest["ticker"],
+        "submissions_sha256": manifest["submissions_sha256"],
         "companyfacts_sha256": manifest.get("companyfacts_sha256"),
         "relevant_accessions": [
             item["accession_number"] for item in manifest.get("relevant_filings", [])
@@ -1957,6 +1995,449 @@ def _component_identity(components: list[dict[str, Any]]) -> str:
     return _sha_json(stable)
 
 
+def _validate_modern_manifest_components(manifest: Mapping[str, Any]) -> None:
+    """Prove the component set agrees with the manifest's current source body."""
+
+    components = manifest.get("submissions_components")
+    source_set_sha = manifest.get("submissions_source_set_sha256")
+    if (
+        not isinstance(components, list)
+        or not components
+        or len(components) > 1 + MAX_HISTORICAL_SUBMISSIONS_SHARDS_PER_ISSUER
+        or not isinstance(source_set_sha, str)
+        or re.fullmatch(r"[a-f0-9]{64}", source_set_sha) is None
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest component provenance is malformed",
+        )
+    if not all(isinstance(component, dict) for component in components):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest component is not an object",
+        )
+    typed_components = [dict(component) for component in components]
+    if _component_identity(typed_components) != source_set_sha:
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest component-set identity mismatch",
+        )
+    recent = [component for component in typed_components if component.get("source_kind") == "recent"]
+    historical = [
+        component for component in typed_components if component.get("source_kind") == "historical"
+    ]
+    if len(recent) != 1 or len(recent) + len(historical) != len(typed_components):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest must bind exactly one recent Submissions component",
+        )
+    if len(historical) > MAX_HISTORICAL_SUBMISSIONS_SHARDS_PER_ISSUER:
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest historical component bound exceeded",
+        )
+    cik = manifest.get("cik")
+    submissions_sha = manifest.get("submissions_sha256")
+    current = recent[0]
+    if (
+        not isinstance(cik, str)
+        or not isinstance(submissions_sha, str)
+        or re.fullmatch(r"[a-f0-9]{64}", submissions_sha) is None
+        or current.get("source_name") is not None
+        or current.get("sha256") != submissions_sha
+        or current.get("object_key") != object_key(submissions_sha)
+        or current.get("url") != endpoint_url(cik, "submissions")
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest recent component does not bind current Submissions",
+        )
+    for component in historical:
+        digest = component.get("sha256")
+        source_name = component.get("source_name")
+        if (
+            not isinstance(digest, str)
+            or re.fullmatch(r"[a-f0-9]{64}", digest) is None
+            or component.get("object_key") != object_key(digest)
+            or not isinstance(source_name, str)
+            or component.get("url") != historical_submissions_url(cik, source_name)
+        ):
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                "issuer manifest historical component binding is invalid",
+            )
+
+
+def _stored_issuer_source_identity(manifest: Mapping[str, Any]) -> str:
+    """Recompute one immutable manifest under its explicit stored identity era."""
+
+    has_components = "submissions_components" in manifest
+    has_source_set = "submissions_source_set_sha256" in manifest
+    if has_components != has_source_set:
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest mixes legacy and component identity fields",
+        )
+    if not has_components:
+        return _legacy_issuer_source_identity(manifest)
+    _validate_modern_manifest_components(manifest)
+    return issuer_source_identity(manifest)
+
+
+@lru_cache(maxsize=1)
+def _issuer_manifest_validator() -> Draft202012Validator:
+    try:
+        schema = json.loads(ISSUER_MANIFEST_SCHEMA_PATH.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        return Draft202012Validator(schema)
+    except Exception as exc:
+        raise BroadSecError(
+            "store_readback_failure",
+            "issuer manifest schema authority cannot be loaded",
+        ) from exc
+
+
+def _validate_issuer_manifest_payload(
+    payload: Mapping[str, Any],
+    *,
+    expected_cik: str,
+    expected_ticker: str,
+    expected_manifest_id: str,
+    expected_key: str,
+    allow_legacy: bool,
+) -> None:
+    """Validate one readable issuer-manifest body against its lookup context."""
+
+    try:
+        schema_errors = sorted(
+            _issuer_manifest_validator().iter_errors(dict(payload)),
+            key=lambda error: tuple(str(part) for part in error.absolute_path),
+        )
+    except BroadSecError:
+        raise
+    except Exception as exc:
+        raise BroadSecError(
+            "store_readback_failure",
+            "issuer manifest schema authority evaluation failed",
+        ) from exc
+    if schema_errors:
+        error = schema_errors[0]
+        location = ".".join(str(part) for part in error.absolute_path) or "<root>"
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            f"issuer manifest schema invalid at {location} ({error.validator})",
+        )
+
+    if (
+        payload.get("schema") != MANIFEST_SCHEMA
+        or payload.get("cik") != expected_cik
+        or payload.get("ticker") != expected_ticker
+        or payload.get("manifest_id") != expected_manifest_id
+        or expected_key != issuer_manifest_key(expected_cik, expected_manifest_id)
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest body does not bind its lookup identity",
+        )
+    has_components = "submissions_components" in payload
+    has_source_set = "submissions_source_set_sha256" in payload
+    if not allow_legacy and (not has_components or not has_source_set):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "new issuer manifest must use component-set identity",
+        )
+    submissions_sha = payload.get("submissions_sha256")
+    companyfacts_sha = payload.get("companyfacts_sha256")
+    if (
+        not isinstance(submissions_sha, str)
+        or re.fullmatch(r"[a-f0-9]{64}", submissions_sha) is None
+        or (
+            companyfacts_sha is not None
+            and (
+                not isinstance(companyfacts_sha, str)
+                or re.fullmatch(r"[a-f0-9]{64}", companyfacts_sha) is None
+            )
+        )
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest source identity is malformed",
+        )
+    cumulative = payload.get("cumulative_relevant_accessions")
+    relevant = payload.get("relevant_filings")
+    if (
+        not isinstance(cumulative, list)
+        or any(
+            not isinstance(accession, str) or _ACCESSION_RE.fullmatch(accession) is None
+            for accession in cumulative
+        )
+        or len(cumulative) != len(set(cumulative))
+        or not isinstance(relevant, list)
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest accession lineage is malformed",
+        )
+    cumulative_set = set(cumulative)
+    for row in relevant:
+        if (
+            not isinstance(row, dict)
+            or row.get("cik") != expected_cik
+            or row.get("ticker") != expected_ticker
+            or not isinstance(row.get("accession_number"), str)
+            or _ACCESSION_RE.fullmatch(row["accession_number"]) is None
+            or row["accession_number"] not in cumulative_set
+        ):
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                "issuer manifest filing identity is malformed",
+            )
+    previous_id = payload.get("previous_manifest_id")
+    if previous_id is not None and (
+        not isinstance(previous_id, str)
+        or re.fullmatch(r"[a-f0-9]{64}", previous_id) is None
+        or previous_id == expected_manifest_id
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest previous-manifest identity is malformed",
+        )
+    try:
+        computed = _stored_issuer_source_identity(payload)
+    except BroadSecError:
+        raise
+    except Exception as exc:
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest identity cannot be computed",
+        ) from exc
+    if computed != expected_manifest_id:
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest source identity mismatch",
+        )
+
+
+def _read_issuer_manifest_bytes(store: BroadSecStore, key: str) -> bytes | None:
+    try:
+        return store.get_bytes_strict_bounded(key, ISSUER_MANIFEST_MAX_BYTES)
+    except Exception as exc:
+        raise BroadSecError(
+            "store_readback_failure",
+            f"issuer manifest transport failed for {key}: {exc}",
+        ) from exc
+
+
+def _parse_issuer_manifest_bytes(
+    raw: bytes,
+    *,
+    expected_cik: str,
+    expected_ticker: str,
+    expected_manifest_id: str,
+    expected_key: str,
+    allow_legacy: bool,
+) -> dict[str, Any]:
+    try:
+        payload = json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise BroadSecError("issuer_manifest_invalid", f"{expected_key} is not JSON") from exc
+    if not isinstance(payload, dict):
+        raise BroadSecError("issuer_manifest_invalid", f"{expected_key} is not an object")
+    _validate_issuer_manifest_payload(
+        payload,
+        expected_cik=expected_cik,
+        expected_ticker=expected_ticker,
+        expected_manifest_id=expected_manifest_id,
+        expected_key=expected_key,
+        allow_legacy=allow_legacy,
+    )
+    return payload
+
+
+def _read_issuer_manifest(
+    store: BroadSecStore,
+    *,
+    pointer: Mapping[str, Any],
+    expected_cik: str,
+    expected_ticker: str,
+) -> dict[str, Any]:
+    """Read a full immutable issuer manifest through its own finite envelope."""
+
+    manifest_id = pointer.get("manifest_id")
+    manifest_ref = pointer.get("manifest_key")
+    if (
+        pointer.get("schema") != "fundamental_forensics.broad_sec.issuer_latest.v1"
+        or pointer.get("cik") != expected_cik
+        or pointer.get("ticker") != expected_ticker
+        or not isinstance(manifest_id, str)
+        or re.fullmatch(r"[a-f0-9]{64}", manifest_id) is None
+        or manifest_ref != issuer_manifest_key(expected_cik, manifest_id)
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            f"{expected_ticker} latest pointer does not bind its issuer manifest",
+        )
+    raw = _read_issuer_manifest_bytes(store, manifest_ref)
+    if raw is None:
+        raise BroadSecError(
+            "store_readback_failure",
+            f"{expected_ticker} immutable issuer manifest is missing: {manifest_ref}",
+        )
+    payload = _parse_issuer_manifest_bytes(
+        raw,
+        expected_cik=expected_cik,
+        expected_ticker=expected_ticker,
+        expected_manifest_id=manifest_id,
+        expected_key=manifest_ref,
+        allow_legacy=True,
+    )
+    if (
+        pointer.get("submissions_sha256") != payload.get("submissions_sha256")
+        or pointer.get("companyfacts_sha256") != payload.get("companyfacts_sha256")
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            f"{expected_ticker} pointer source identity disagrees with manifest body",
+        )
+
+    previous_id = payload.get("previous_manifest_id")
+    if isinstance(previous_id, str):
+        previous_key = issuer_manifest_key(expected_cik, previous_id)
+        previous_raw = _read_issuer_manifest_bytes(store, previous_key)
+        if previous_raw is None:
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                f"{expected_ticker} previous issuer manifest is missing: {previous_key}",
+            )
+        try:
+            previous_unchecked = json.loads(previous_raw)
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                f"{previous_key} is not JSON",
+            ) from exc
+        if not isinstance(previous_unchecked, dict) or not isinstance(
+            previous_unchecked.get("ticker"), str
+        ):
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                f"{previous_key} is not an issuer manifest object",
+            )
+        previous = _parse_issuer_manifest_bytes(
+            previous_raw,
+            expected_cik=expected_cik,
+            expected_ticker=previous_unchecked["ticker"],
+            expected_manifest_id=previous_id,
+            expected_key=previous_key,
+            allow_legacy=True,
+        )
+        prior_ledger = previous.get("cumulative_relevant_accessions")
+        current_ledger = payload.get("cumulative_relevant_accessions")
+        if not isinstance(prior_ledger, list) or current_ledger[: len(prior_ledger)] != prior_ledger:
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                f"{expected_ticker} previous issuer manifest lineage is not monotone",
+            )
+    return payload
+
+
+def _encode_issuer_manifest(manifest: Mapping[str, Any]) -> tuple[str, bytes]:
+    """Canonically encode a new manifest under the current finite contract."""
+
+    if "submissions_components" not in manifest or "submissions_source_set_sha256" not in manifest:
+        raise BroadSecError(
+            "store_write_failure",
+            "new issuer manifest is missing component-set identity",
+        )
+    try:
+        _validate_modern_manifest_components(manifest)
+        manifest_id = issuer_source_identity(manifest)
+        encoded_manifest = {**manifest, "manifest_id": manifest_id}
+        _validate_issuer_manifest_payload(
+            encoded_manifest,
+            expected_cik=str(manifest.get("cik")),
+            expected_ticker=str(manifest.get("ticker")),
+            expected_manifest_id=manifest_id,
+            expected_key=issuer_manifest_key(str(manifest.get("cik")), manifest_id),
+            allow_legacy=False,
+        )
+        encoded = canonical_json(encoded_manifest).encode("utf-8")
+    except BroadSecError as exc:
+        if exc.reason_code == "store_write_failure":
+            raise
+        raise BroadSecError("store_write_failure", exc.detail) from exc
+    except Exception as exc:
+        raise BroadSecError("store_write_failure", "issuer manifest cannot be encoded") from exc
+    if len(encoded) > ISSUER_MANIFEST_MAX_BYTES:
+        raise BroadSecError(
+            "store_write_failure",
+            f"issuer manifest exceeds {ISSUER_MANIFEST_MAX_BYTES} bytes",
+        )
+    return manifest_id, encoded
+
+
+def _put_issuer_manifest(store: BroadSecStore, key: str, data: bytes) -> None:
+    """Conditionally create one issuer manifest with bounded comparisons/readback."""
+
+    if len(data) > ISSUER_MANIFEST_MAX_BYTES:
+        raise BroadSecError(
+            "store_write_failure",
+            f"issuer manifest exceeds {ISSUER_MANIFEST_MAX_BYTES} bytes",
+        )
+    try:
+        decoded = json.loads(data)
+        if not isinstance(decoded, dict):
+            raise BroadSecError("issuer_manifest_invalid", "issuer manifest is not an object")
+        cik = decoded.get("cik")
+        ticker = decoded.get("ticker")
+        manifest_id = decoded.get("manifest_id")
+        if not all(isinstance(value, str) for value in (cik, ticker, manifest_id)):
+            raise BroadSecError("issuer_manifest_invalid", "issuer manifest identity is malformed")
+        _validate_issuer_manifest_payload(
+            decoded,
+            expected_cik=cik,
+            expected_ticker=ticker,
+            expected_manifest_id=manifest_id,
+            expected_key=key,
+            allow_legacy=False,
+        )
+    except BroadSecError as exc:
+        raise BroadSecError("store_write_failure", exc.detail) from exc
+    except Exception as exc:
+        raise BroadSecError("store_write_failure", "issuer manifest cannot be validated") from exc
+    try:
+        existing = store.get_bytes_strict_bounded(key, ISSUER_MANIFEST_MAX_BYTES)
+    except Exception as exc:
+        raise BroadSecError("store_readback_failure", str(exc)) from exc
+    if existing == data:
+        return
+    if existing is not None:
+        raise BroadSecError("store_write_failure", f"immutable key already holds different bytes: {key}")
+    try:
+        written = store.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=None,
+            content_type="application/json",
+        )
+    except Exception as exc:
+        raise BroadSecError("store_write_failure", str(exc)) from exc
+    if not written:
+        try:
+            raced = store.get_bytes_strict_bounded(key, ISSUER_MANIFEST_MAX_BYTES)
+        except Exception as exc:
+            raise BroadSecError("store_readback_failure", str(exc)) from exc
+        if raced == data:
+            return
+        raise BroadSecError("store_write_failure", f"conditional create rejected for {key}")
+    try:
+        readback = store.get_bytes_strict_bounded(key, ISSUER_MANIFEST_MAX_BYTES)
+    except Exception as exc:
+        raise BroadSecError("store_readback_failure", str(exc)) from exc
+    if readback != data:
+        raise BroadSecError("store_readback_failure", f"readback mismatch for {key}")
+
+
 def _load_observations(
     store: BroadSecStore,
     reference: Mapping[str, Any] | None,
@@ -2210,12 +2691,12 @@ def _run_recovery_poll(
             prior_pointer = _read_json(store, issuer_latest_key(cik), maximum_bytes=POINTER_MAX_BYTES)
             prior_manifest = None
             if prior_pointer is not None:
-                manifest_ref = prior_pointer.get("manifest_key")
-                if not isinstance(manifest_ref, str):
-                    raise BroadSecError("issuer_manifest_invalid", f"{issuer.ticker} latest pointer is invalid")
-                prior_manifest = _read_json(store, manifest_ref, maximum_bytes=POINTER_MAX_BYTES)
-                if prior_manifest is None:
-                    raise BroadSecError("issuer_manifest_invalid", f"{issuer.ticker} prior manifest is missing")
+                prior_manifest = _read_issuer_manifest(
+                    store,
+                    pointer=prior_pointer,
+                    expected_cik=cik,
+                    expected_ticker=issuer.ticker,
+                )
             prior_rows = [
                 dict(row)
                 for row in (prior_manifest.get("relevant_filings") if prior_manifest else []) or []
@@ -2509,10 +2990,9 @@ def _run_recovery_poll(
                         default=None,
                     ),
                 }
-                manifest_id = issuer_source_identity(manifest)
-                manifest["manifest_id"] = manifest_id
+                manifest_id, encoded_manifest = _encode_issuer_manifest(manifest)
                 manifest_ref = issuer_manifest_key(cik, manifest_id)
-                _put_immutable(store, manifest_ref, canonical_json(manifest).encode("utf-8"))
+                _put_issuer_manifest(store, manifest_ref, encoded_manifest)
                 _put_pointer_if_unchanged(
                     store,
                     issuer_latest_key(cik),
@@ -3049,12 +3529,12 @@ def run_broad_sec_poll(
             prior_pointer = _read_json(store, issuer_latest_key(issuer.cik), maximum_bytes=POINTER_MAX_BYTES)
             prior_manifest = None
             if prior_pointer is not None:
-                manifest_key = prior_pointer.get("manifest_key")
-                if not isinstance(manifest_key, str):
-                    raise BroadSecError("issuer_manifest_invalid", f"{issuer.ticker} latest pointer is missing manifest_key")
-                prior_manifest = _read_json(store, manifest_key, maximum_bytes=POINTER_MAX_BYTES)
-                if prior_manifest is None:
-                    raise BroadSecError("issuer_manifest_invalid", f"{issuer.ticker} prior manifest missing")
+                prior_manifest = _read_issuer_manifest(
+                    store,
+                    pointer=prior_pointer,
+                    expected_cik=issuer.cik,
+                    expected_ticker=issuer.ticker,
+                )
             prior_ledger = _prior_ledger(prior_manifest)
             current_accessions = [
                 item["accession_number"]
@@ -3467,11 +3947,9 @@ def run_broad_sec_poll(
         manifest["recorded_at"] = clocks.recorded_at
         if "as_of" in manifest:
             raise BroadSecError("source_binding_failure", "issuer manifest must not carry as_of")
-        manifest_id = issuer_source_identity(manifest)
-        manifest["manifest_id"] = manifest_id
-        encoded = canonical_json(manifest).encode("utf-8")
         try:
-            _put_immutable(store, issuer_manifest_key(issuer.cik, manifest_id), encoded)
+            manifest_id, encoded = _encode_issuer_manifest(manifest)
+            _put_issuer_manifest(store, issuer_manifest_key(issuer.cik, manifest_id), encoded)
             change_summary["manifests_admitted"] += 1
             pointer = {
                 "schema": "fundamental_forensics.broad_sec.issuer_latest.v1",
