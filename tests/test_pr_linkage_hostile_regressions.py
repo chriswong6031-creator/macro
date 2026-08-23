@@ -317,7 +317,8 @@ def test_report_validator_binds_location_evidence_cardinality_ruleset_receipt_an
         mutant = clone(report); mutate(mutant); mutant["semantic_hash"] = v.digest(mutant["semantic"])
         with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"): v.validate_report(mutant)
     supplied_mismatch = clone(report); supplied_mismatch["receipt"]["ruleset_digest"] = "0" * 64
-    v.validate_report(supplied_mismatch)
+    with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
+        v.validate_report(supplied_mismatch)
     mutant = clone(report); mutant["semantic"]["findings"].append(clone(mutant["semantic"]["findings"][0])); mutant["semantic"]["findings"][1]["evidence"]["reason"] = "OTHER"
     mutant["semantic"]["findings"].sort(key=lambda f:(v.SEVERITY[f["severity"]],f["code"],f["rule_id"],f["location"],v.canonical_json(f["evidence"])))
     mutant["semantic_hash"] = v.digest(mutant["semantic"])
@@ -477,11 +478,14 @@ def make_not_applicable(value: dict, snapshot: str) -> None:
 def test_normalized_mode_snapshot_applicability_is_closed_in_runtime_and_schema(portfolio, snapshot):
     value = mode_observation(portfolio)
     make_not_applicable(value, snapshot)
-    expected = portfolio == "architecture_candidate" and snapshot == "agentos"
+    expected = portfolio in {"maintenance_exception", "architecture_candidate"} and snapshot == "agentos"
     assert OBSERVATION_VALIDATOR.is_valid(value) is expected
     if expected:
         report = v.analyze(value, MANIFEST)
-        assert report["semantic"]["classification"] == "ARCHITECTURE_CANDIDATE"
+        assert report["semantic"]["classification"] == {
+            "maintenance_exception":"MAINTENANCE_EXCEPTION",
+            "architecture_candidate":"ARCHITECTURE_CANDIDATE",
+        }[portfolio]
         assert "R033" not in {finding["rule_id"] for finding in report["semantic"]["findings"]}
     else:
         with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"):
@@ -557,6 +561,239 @@ def test_all_finding_oneof_branches_reject_wrong_type_and_unknown_key_and_dynami
             assert not REPORT_VALIDATOR.is_valid(mutant), rule
             with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
                 v.validate_report(mutant)
+
+
+def test_latest_maintenance_support_and_agentos_applicability_are_exact_and_unspoofable():
+    maintenance = clone(observation(VALID)); mode(
+        maintenance, workstream="NONE", portfolio="maintenance_exception", authority="maintenance"
+    )
+    maintenance["linear"]["issues"][0].update(issue_type="MAINTENANCE", workstream_key=None)
+    report = v.analyze(finish(maintenance), MANIFEST)
+    assert "R044" in {finding["rule_id"] for finding in report["semantic"]["findings"]}
+    for state in ("NOT_APPLICABLE", "PARTIAL", "UNAVAILABLE"):
+        value = clone(maintenance)
+        value["agentos"].update(
+            state=state, workstreams=[], diagnostics=[] if state == "NOT_APPLICABLE" else ["NO_ACCESS"]
+        )
+        value = finish(value)
+        assert OBSERVATION_VALIDATOR.is_valid(value)
+        report = v.analyze(value, MANIFEST)
+        assert "AGENTOS" not in report["semantic"]["unresolved_observation_classes"]
+        assert "R033" not in {finding["rule_id"] for finding in report["semantic"]["findings"]}
+
+    tracked = clone(observation(VALID))
+    tracked["pull_request"]["body"] += "\n\nWorkstream: NONE\nLinear: MAS-28\nPortfolio-Mode: architecture_candidate"
+    make_not_applicable(tracked, "agentos")
+    tracked = finish(tracked)
+    assert not OBSERVATION_VALIDATOR.is_valid(tracked)
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"):
+        v.analyze(tracked, MANIFEST)
+
+
+def test_latest_three_aliases_emit_three_r022_rows_by_location_and_invalid_secondary_is_typed():
+    body = (VALID.replace("Portfolio-Mode: tracked", "Portfolio-Mode: workstream_creation")
+            .replace("Authority: implementation", "Authority: runtime")
+            .replace("Completion: built-not-proven", "Completion: production-proof-required"))
+    value = clone(observation(body))
+    value["authoring_epoch"] = {
+        "state":"UNAVAILABLE", "relation":"UNKNOWN", "default_ref":None, "cutover_merge_sha":None,
+        "template_blobs":[], "first_strict_pr_number":None, "legacy_open_pr_numbers":[],
+        "receipt_ruleset_digest":None, "cutover_receipt_sha256":None, "diagnostics":["NO_RECEIPT"],
+    }
+    report = v.analyze(finish(value), MANIFEST)
+    rows = [finding for finding in report["semantic"]["findings"] if finding["rule_id"] == "R022"]
+    assert [row["location"] for row in rows] == [
+        "BODY:L3:Portfolio-Mode", "BODY:L5:Authority", "BODY:L6:Completion",
+    ]
+
+    value = clone(observation(replace_field(VALID, "Completion", "bad value")))
+    value["linear"]["issues"].append({
+        "id":"MAS-99", "target_role":"SECONDARY", "project_id":None, "workstream_key":None,
+        "issue_type":"DELIVERY", "stop_law":"MERGE",
+    })
+    value["native_linkage"]["relationships"] = [{
+        "issue_id":"MAS-99", "kind":"CLOSING", "source":"BODY", "state":"PRESENT",
+        "completion_transition":"ELIGIBLE",
+    }]
+    report = v.analyze(finish(value), MANIFEST)
+    assert report["semantic"]["declaration"]["completion"] is None
+    assert all(row["declared_completion"] is None for row in report["semantic"]["completion_interpretation"])
+    assert "R056" not in {finding["rule_id"] for finding in report["semantic"]["findings"]}
+    assert all(None not in finding["evidence"].values() for finding in report["semantic"]["findings"])
+
+
+def test_latest_role_joins_and_r026_indeterminacy_are_prerequisite_scoped():
+    invalid_linear = clone(observation(replace_field(VALID, "Linear", "MAS-0")))
+    invalid_linear["linear"]["issues"] = [{
+        "id":"MAS-99", "target_role":"SECONDARY", "project_id":None, "workstream_key":None,
+        "issue_type":"DELIVERY", "stop_law":"MERGE",
+    }]
+    invalid_linear["native_linkage"]["relationships"] = [{
+        "issue_id":"MAS-99", "kind":"CONTRIBUTING", "source":"BODY", "state":"PRESENT",
+        "completion_transition":"INELIGIBLE",
+    }]
+    report = v.analyze(finish(invalid_linear), MANIFEST)
+    assert any(row["issue_id"] == "MAS-99" for row in report["semantic"]["completion_interpretation"])
+
+    invalid_mode = clone(observation(replace_field(VALID, "Portfolio-Mode", "bad value")))
+    invalid_mode["linear"]["issues"] = [{
+        "id":"MAS-28", "target_role":"PROOF_GATE", "project_id":None, "workstream_key":None,
+        "issue_type":"DELIVERY", "stop_law":"PROOF",
+    }]
+    assert "R028" in {finding["rule_id"] for finding in v.analyze(finish(invalid_mode), MANIFEST)["semantic"]["findings"]}
+
+    unknown = clone(observation(VALID))
+    unknown["linear"]["issues"].append({
+        "id":"MAS-28", "target_role":"UNKNOWN", "project_id":None, "workstream_key":None,
+        "issue_type":"UNKNOWN", "stop_law":"UNKNOWN",
+    })
+    found = {finding["rule_id"] for finding in v.analyze(finish(unknown), MANIFEST)["semantic"]["findings"]}
+    assert "R026" in found and not ({"R027", "R028", "R039", "R051", "R056"} & found)
+
+
+def test_latest_partial_path_rows_and_contradictory_native_keep_only_conclusive_findings():
+    for resolution, expected in (("AMBIGUOUS", {"R042"}), ("UNOWNED", {"R042", "R047"})):
+        value = clone(observation(
+            replace_field(replace_field(VALID, "Authority", "bad value"), "Completion", "bad value")
+        ))
+        value["changed_paths"]["paths"] = [{"path":"x", "change_type":"ADDED", "old_path":None}]
+        value["path_ownership"].update(state="PARTIAL", diagnostics=["STALE"], resolutions=[{
+            "path":"x", "role":"CURRENT", "resolution":resolution,
+            "owner_workstream":None if resolution == "AMBIGUOUS" else "NONE",
+            "path_class":"UNKNOWN", "allowed_authorities":[],
+        }])
+        report = v.analyze(finish(value), MANIFEST)
+        by_id = {finding["rule_id"]:finding for finding in report["semantic"]["findings"]}
+        assert expected <= set(by_id)
+        assert by_id["R042"]["evidence"]["paths"] == [v.text_digest("x")]
+
+    value = clone(observation(replace_field(VALID, "Completion", "merge-is-done")))
+    value["linear"]["issues"][0]["stop_law"] = "MERGE"
+    value["native_linkage"].update(state="CONTRADICTORY", pagination_complete=False,
+        diagnostics=["CONFLICT"], relationships=[
+            {"issue_id":"MAS-28", "kind":"AUTO_LINK", "source":"BRANCH", "state":"PRESENT", "completion_transition":"ELIGIBLE"},
+            {"issue_id":"MAS-28", "kind":"AUTO_LINK", "source":"TITLE", "state":"PRESENT", "completion_transition":"INELIGIBLE"},
+        ])
+    report = v.analyze(finish(value), MANIFEST)
+    found = {finding["rule_id"] for finding in report["semantic"]["findings"]}
+    assert {"R055", "R061"} <= found and "R056" not in found
+    assert report["semantic"]["completion_interpretation"][0]["effect"] == "AMBIGUOUS"
+    assert report["semantic"]["completion_interpretation"][0]["consistency"] == "INDETERMINATE"
+
+
+def test_latest_parser_resource_caps_smallest_line_and_unicode_json_boundaries():
+    for body in (
+        "Workstream: " + "x" * 81 + "\n" + VALID,
+        VALID + "\n## Later\nWorkstream: " + "x" * 81,
+        VALID.replace("Linear: MAS-28\n", "Linear: MAS-28\n\n") + "\nWorkstream: " + "x" * 81,
+    ):
+        with pytest.raises(v.ResourceLimitError) as caught:
+            v.parse_header(body, MANIFEST["limits"])
+        assert (caught.value.key, caught.value.limit, caught.value.observed) == ("value_bytes", 80, 81)
+    spliced = "\n".join(["Workstream: WS:AGENT-OS<!--x-->" for _ in range(101)])
+    with pytest.raises(v.ResourceLimitError) as caught:
+        v.parse_header(spliced, MANIFEST["limits"])
+    assert (caught.value.key, caught.value.limit, caught.value.observed) == ("field_occurrences", 100, 101)
+
+    body = VALID + "\n\nAuthority: implementation<!--x-->\n\nAuthority: implementation<!--x-->"
+    finding = next(row for row in v.analyze(observation(body), MANIFEST)["semantic"]["findings"] if row["rule_id"] == "R003")
+    assert finding["location"] == finding["evidence"]["location"] == "BODY:L8:Authority"
+    mixed = "note\n" + VALID.replace("Authority: implementation", "Authority: implementation<!--x-->")
+    finding = next(row for row in v.analyze(observation(mixed), MANIFEST)["semantic"]["findings"] if row["rule_id"] == "R003")
+    assert finding["location"] == "BODY:L6:Authority"
+    for suffix in (" ", "\t"):
+        report = v.analyze(observation(replace_field(VALID, "Authority", "implementation" + suffix)), MANIFEST)
+        finding = next(row for row in report["semantic"]["findings"] if row["rule_id"] == "R003")
+        assert finding["location"] == "BODY:L5:Authority"
+    report = v.analyze(observation(VALID.replace("Authority: implementation", "Authority:  implementation")), MANIFEST)
+    assert next(row for row in report["semantic"]["findings"] if row["rule_id"] == "R003")["location"] == "BODY:L5:Authority"
+
+    for raw in (b'{"x":NaN}', b'{"x":Infinity}', b'{"x":-Infinity}'):
+        with pytest.raises(v.ValidationError, match="INVALID_JSON"):
+            v.loads_strict(raw)
+    for scalar in ("\u061c", "\ufeff", "\u00ad", "\ufff9", "\u200b", "\u2066"):
+        value = clone(observation(VALID)); value["pull_request"]["body"] += scalar
+        with pytest.raises(v.ValidationError, match="INVALID_BODY_ENCODING"):
+            v.analyze(value, MANIFEST)
+    value = clone(observation(VALID)); value["pull_request"]["body"] += "\ud800"
+    decoded = v.loads_strict(json.dumps(value, ensure_ascii=True).encode("utf-8"))
+    with pytest.raises(v.ValidationError, match="INVALID_BODY_ENCODING"):
+        v.analyze(decoded, MANIFEST)
+
+
+def test_latest_r028_target_identity_is_numeric_per_target_and_collapses_same_target():
+    value = clone(observation(VALID)); value["pull_request"]["title"] = "MAS-10 MAS-2"
+    value["linear"]["issues"] = [
+        {"id":"MAS-2", "target_role":"PROOF_GATE", "project_id":None, "workstream_key":None, "issue_type":"DELIVERY", "stop_law":"PROOF"},
+        {"id":"MAS-10", "target_role":"PROOF_GATE", "project_id":None, "workstream_key":None, "issue_type":"DELIVERY", "stop_law":"PROOF"},
+        {"id":"MAS-28", "target_role":"DECLARED", "project_id":None, "workstream_key":"WS:AGENT-OS", "issue_type":"DELIVERY", "stop_law":"BUILT_NOT_PROVEN"},
+    ]
+    report = v.analyze(finish(value), MANIFEST)
+    rows = [finding for finding in report["semantic"]["findings"] if finding["rule_id"] == "R028"]
+    assert [row["evidence"]["target"] for row in rows] == ["MAS-2", "MAS-10"]
+    REPORT_VALIDATOR.validate(report)
+
+    one = clone(observation(VALID)); one["linear"]["issues"] = [
+        {"id":"MAS-28", "target_role":"DECLARED", "project_id":None, "workstream_key":"WS:AGENT-OS", "issue_type":"UNKNOWN", "stop_law":"BUILT_NOT_PROVEN"},
+        {"id":"MAS-28", "target_role":"PROOF_GATE", "project_id":None, "workstream_key":None, "issue_type":"DELIVERY", "stop_law":"PROOF"},
+    ]
+    report = v.analyze(finish(one), MANIFEST)
+    assert len([finding for finding in report["semantic"]["findings"] if finding["rule_id"] == "R028"]) == 1
+
+
+def test_latest_report_reachability_receipt_predicates_and_totality_reject_forgery():
+    clean = v.analyze(observation(VALID), MANIFEST)
+    forged = []
+    for rule in ("R001", "R005"):
+        mutant = clone(clean); mutant["semantic"]["findings"] = clone(v.analyze(case(rule), MANIFEST)["semantic"]["findings"])
+        mutant["semantic"].update(verdict="REFUSE_METADATA"); forged.append(finalize_report(mutant))
+    mutant = clone(v.analyze(case("R005"), MANIFEST)); mutant["semantic"]["declaration"]["workstream"] = "WS:AGENT-OS"; forged.append(finalize_report(mutant))
+    mutant = clone(v.analyze(case("R021"), MANIFEST)); row = next(x for x in mutant["semantic"]["findings"] if x["rule_id"] == "R021"); row["evidence"]["canonical"] = "proof"; forged.append(finalize_report(mutant))
+
+    mismatch = clone(v.analyze(case("R056"), MANIFEST)); mismatch["semantic"]["findings"] = [x for x in mismatch["semantic"]["findings"] if x["rule_id"] != "R056"]
+    mismatch["semantic"]["completion_interpretation"][0]["consistency"] = "MATCH"; mismatch["semantic"].update(verdict="CONFORMANT"); forged.append(finalize_report(mismatch))
+    mutant = clone(clean); mutant["semantic"]["completion_interpretation"][0]["consistency"] = "MISMATCH"; forged.append(finalize_report(mutant))
+    mutant = clone(v.analyze(case("R056"), MANIFEST)); next(x for x in mutant["semantic"]["findings"] if x["rule_id"] == "R056")["evidence"]["stop_law"] = "PROOF"; forged.append(finalize_report(mutant))
+    mutant = clone(clean); mutant["receipt"]["ruleset_digest"] = "0" * 64; forged.append(finalize_report(mutant))
+    mutant = clone(v.analyze(case("R060"), MANIFEST)); next(x for x in mutant["semantic"]["findings"] if x["rule_id"] == "R060")["evidence"]["observed"] = v.canonical_digest("forged"); forged.append(finalize_report(mutant))
+    mutant = clone(v.analyze(case("R040"), MANIFEST)); next(x for x in mutant["semantic"]["findings"] if x["rule_id"] == "R040")["evidence"]["authority"] = "deploy"; forged.append(finalize_report(mutant))
+    mutant = clone(v.analyze(case("R054"), MANIFEST)); next(x for x in mutant["semantic"]["findings"] if x["rule_id"] == "R054")["evidence"].update(linear="MAS-999", snapshot_state="PRESENT"); forged.append(finalize_report(mutant))
+    mutant = clone(v.analyze(case("R056"), MANIFEST)); next(x for x in mutant["semantic"]["findings"] if x["rule_id"] == "R056")["evidence"]["target"] = "MAS-999"; forged.append(finalize_report(mutant))
+    mutant = clone(v.analyze(case("R061"), MANIFEST)); row = next(x for x in mutant["semantic"]["findings"] if x["rule_id"] == "R061"); row["evidence"]["snapshot"] = "LINEAR"; row["location"] = "SNAPSHOT:LINEAR"; forged.append(finalize_report(mutant))
+    for mutant in forged:
+        with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
+            v.validate_report(mutant)
+
+    for rule in ("R002", "R003", "R004", "R020", "R021", "R060", "R061"):
+        mutant = clone(v.analyze(case(rule), MANIFEST)); row = next(x for x in mutant["semantic"]["findings"] if x["rule_id"] == rule)
+        row["location"] = "SNAPSHOT:LINEAR" if row["location"] == "SNAPSHOT:AGENTOS" else "SNAPSHOT:AGENTOS"
+        mutant = finalize_report(mutant)
+        with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
+            v.validate_report(mutant)
+    for rule, key in (("R060", "component"), ("R061", "snapshot")):
+        mutant = clone(v.analyze(case(rule), MANIFEST)); next(x for x in mutant["semantic"]["findings"] if x["rule_id"] == rule)["evidence"][key] = {}
+        mutant = finalize_report(mutant)
+        with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
+            v.validate_report(mutant)
+    mutant = clone(clean); mutant["semantic"]["completion_interpretation"] = ["not-an-object"]; mutant["semantic_hash"] = v.digest(mutant["semantic"])
+    with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
+        v.validate_report(mutant)
+
+
+def test_latest_authoring_epoch_contradiction_requires_retained_conflicting_facts():
+    identical = clone(observation(VALID)); identical["authoring_epoch"].update(state="CONTRADICTORY", diagnostics=["CLAIMED_CONFLICT"])
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"):
+        v.analyze(identical, MANIFEST)
+    partial = clone(observation(VALID)); partial["authoring_epoch"].update(
+        state="PARTIAL", diagnostics=["STALE"], receipt_ruleset_digest="0" * 64
+    )
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"):
+        v.analyze(partial, MANIFEST)
+    contradictory = clone(observation(VALID)); contradictory["authoring_epoch"].update(
+        state="CONTRADICTORY", diagnostics=["RULESET_CONFLICT"], receipt_ruleset_digest="0" * 64
+    )
+    report = v.analyze(contradictory, MANIFEST)
+    assert any(finding["rule_id"] == "R061" and finding["evidence"]["snapshot"] == "AUTHORING_EPOCH" for finding in report["semantic"]["findings"])
 
 
 @pytest.mark.parametrize("fmt", ["json", "human", "github"])

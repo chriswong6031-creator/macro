@@ -8,13 +8,14 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import unicodedata
 from dataclasses import dataclass
 from typing import Any
 
 OBS_SCHEMA = "mastermind.pr_linkage_observation.v1"
 REPORT_SCHEMA = "mastermind.pr_linkage_report.v1"
 RULESET_ID = "mastermind.pr_linkage_rules.v1"
-FROZEN_RULESET_DIGEST = "41d5634a6ca6d4bbd993e728b73d839260452b24c891e556c59da52a184a1859"
+FROZEN_RULESET_DIGEST = "2e97ad7acd0aec77ef18dbd76a1b3f2bbf8b7d4585e938498615de1917aa71aa"
 FIELDS = ("Workstream", "Linear", "Portfolio-Mode", "Wave", "Authority", "Completion")
 STATE = {"PRESENT", "PARTIAL", "UNAVAILABLE", "NOT_APPLICABLE", "CONTRADICTORY"}
 ALIASES_BY_FIELD = {
@@ -25,6 +26,21 @@ ALIASES_BY_FIELD = {
 ENUMS = {"Portfolio-Mode": {"tracked", "maintenance_exception", "creates_workstream", "architecture_candidate"},
          "Authority": {"implementation", "records", "research", "maintenance", "proof", "deploy", "architecture_candidate"},
          "Completion": {"merge-is-done", "built-not-proven", "proof-required", "acceptance-required", "records-only"}}
+_REPORT_AUTHORITY_COMPLETION_ALLOWLIST = frozenset({
+    ("tracked","implementation","merge-is-done"), ("tracked","implementation","built-not-proven"),
+    ("tracked","implementation","proof-required"), ("tracked","implementation","acceptance-required"),
+    ("tracked","records","records-only"), ("tracked","research","records-only"),
+    ("tracked","research","built-not-proven"), ("tracked","maintenance","merge-is-done"),
+    ("tracked","maintenance","built-not-proven"), ("tracked","maintenance","proof-required"),
+    ("tracked","proof","merge-is-done"), ("tracked","proof","built-not-proven"),
+    ("tracked","proof","acceptance-required"), ("tracked","deploy","merge-is-done"),
+    ("tracked","deploy","built-not-proven"), ("tracked","deploy","proof-required"),
+    ("tracked","deploy","acceptance-required"), ("maintenance_exception","maintenance","merge-is-done"),
+    ("maintenance_exception","maintenance","built-not-proven"), ("maintenance_exception","maintenance","proof-required"),
+    ("creates_workstream","records","records-only"), ("creates_workstream","research","records-only"),
+    ("architecture_candidate","architecture_candidate","records-only"),
+    ("architecture_candidate","records","records-only"), ("architecture_candidate","research","records-only"),
+})
 SEVERITY = {"ERROR": 0, "PARTIAL": 1, "WARNING": 2, "NOTICE": 3}
 # This closed registry is intentionally explicit: implementation may never grow a hidden rule
 # outside the frozen manifest.  `analyze` verifies equality before semantic reduction.
@@ -32,7 +48,7 @@ FROZEN_RULE_IDS = frozenset((
  "R001","R002","R003","R004","R005","R006","R007","R008","R009","R010","R011","R012","R020","R021","R022","R026","R027","R028","R029","R030","R031","R032","R033","R034","R035","R036","R037","R038","R039","R040","R041","R042","R043","R044","R045","R046","R047","R050","R051","R052","R053","R054","R055","R056","R060","R061"))
 FROZEN_FINDINGS = {
  "R001":("HEADER_MISSING","ERROR","ADD_CANONICAL_HEADER",("missing_fields",)),"R002":("HEADER_DUPLICATE","ERROR","REMOVE_DUPLICATE_FIELD",("field","locations","values")),"R003":("HEADER_AUTHORITY_ZONE_INVALID","ERROR","REPAIR_AUTHORITY_ZONE",("location","reason")),"R004":("PLACEHOLDER_UNRESOLVED","ERROR","REPLACE_PLACEHOLDER",("field","location","value")),"R005":("WORKSTREAM_ID_INVALID","ERROR","USE_EXACT_WORKSTREAM_ID",("location","value")),"R006":("LINEAR_ID_INVALID","ERROR","USE_EXACT_LINEAR_ID",("location","value")),"R007":("WAVE_EMPTY","ERROR","SET_BOUNDED_WAVE",("location",)),"R008":("WAVE_INVALID","ERROR","SET_BOUNDED_WAVE",("location","value")),"R009":("PORTFOLIO_MODE_INVALID","ERROR","SET_CANONICAL_PORTFOLIO_MODE",("location","value")),"R010":("PORTFOLIO_MODE_RESERVED","ERROR","REMOVE_RESERVED_MODE",("location","value")),"R011":("AUTHORITY_INVALID","ERROR","SET_CANONICAL_AUTHORITY",("location","value")),"R012":("COMPLETION_INVALID","ERROR","SET_CANONICAL_COMPLETION",("location","value")),
- "R020":("AUTHORING_SCHEMA_VERSION_MISMATCH","ERROR","MIGRATE_TO_V1",("epoch","field","value")),"R021":("LEGACY_AUTHORING_ALIAS","NOTICE","MIGRATE_TO_V1",("alias","canonical","field","receipt")),"R022":("AUTHORING_CUTOVER_RELATION_UNAVAILABLE","PARTIAL","SUPPLY_CUTOVER_RECEIPT",("epoch_state","receipt_digest")),"R026":("LINEAR_TARGET_ROLE_UNAVAILABLE","PARTIAL","SUPPLY_COMPLETE_LINEAR_TARGET_ROLES",("required_targets","target_roles")),"R027":("LINEAR_TARGET_ROLE_MISMATCH","ERROR","REPAIR_LINEAR_TARGET_ROLES",("declared","roles","targets")),"R028":("LINEAR_ISSUE_TYPE_MISMATCH","ERROR","REPAIR_LINEAR_ISSUE_TYPE",("issue_type","portfolio_mode","target_role")),"R029":("LINEAR_REQUIRED_FOR_MODE","ERROR","SET_CONCRETE_LINEAR_ISSUE",("linear","portfolio_mode")),"R030":("WORKSTREAM_UNKNOWN","ERROR","USE_EXISTING_WORKSTREAM",("workstream",)),"R031":("WORKSTREAM_REQUIRED_FOR_TRACKED","ERROR","SET_TRACKED_WORKSTREAM",("portfolio_mode","workstream")),"R032":("WORKSTREAM_MUST_BE_NONE_FOR_EXCEPTION","ERROR","SET_WORKSTREAM_NONE",("portfolio_mode","workstream")),"R033":("AGENTOS_SNAPSHOT_UNAVAILABLE","PARTIAL","SUPPLY_AGENTOS_SNAPSHOT",("snapshot_state","workstream")),"R034":("LINEAR_ISSUE_UNKNOWN","ERROR","USE_EXISTING_LINEAR_ISSUE",("linear",)),"R035":("LINEAR_SNAPSHOT_UNAVAILABLE","PARTIAL","SUPPLY_LINEAR_SNAPSHOT",("linear","snapshot_state")),"R036":("LINEAR_PROJECT_WORKSTREAM_MISMATCH","ERROR","REPAIR_LINEAR_BINDING",("bound_workstream","declared_workstream","linear")),"R037":("WORKSTREAM_CREATION_NO_WORKSTREAM_RECORD","ERROR","ADD_EXACT_WORKSTREAM_RECORD",("paths","workstream")),"R038":("WORKSTREAM_CREATION_KEY_COLLISION","ERROR","CHOOSE_UNIQUE_WORKSTREAM_KEY",("collisions","workstream")),"R039":("MULTIPLE_PR_IDENTITIES","ERROR","RECONCILE_PR_IDENTITIES",("declared","targets")),"R040":("AUTHORITY_COMPLETION_MISMATCH","ERROR","USE_ALLOWED_AUTHORITY_COMPLETION",("authority","completion","portfolio_mode")),
+ "R020":("AUTHORING_SCHEMA_VERSION_MISMATCH","ERROR","MIGRATE_TO_V1",("epoch","field","value")),"R021":("LEGACY_AUTHORING_ALIAS","NOTICE","MIGRATE_TO_V1",("alias","canonical","field","receipt")),"R022":("AUTHORING_CUTOVER_RELATION_UNAVAILABLE","PARTIAL","SUPPLY_CUTOVER_RECEIPT",("epoch_state","receipt_digest")),"R026":("LINEAR_TARGET_ROLE_UNAVAILABLE","PARTIAL","SUPPLY_COMPLETE_LINEAR_TARGET_ROLES",("required_targets","target_roles")),"R027":("LINEAR_TARGET_ROLE_MISMATCH","ERROR","REPAIR_LINEAR_TARGET_ROLES",("declared","roles","targets")),"R028":("LINEAR_ISSUE_TYPE_MISMATCH","ERROR","REPAIR_LINEAR_ISSUE_TYPE",("issue_type","portfolio_mode","target","target_role")),"R029":("LINEAR_REQUIRED_FOR_MODE","ERROR","SET_CONCRETE_LINEAR_ISSUE",("linear","portfolio_mode")),"R030":("WORKSTREAM_UNKNOWN","ERROR","USE_EXISTING_WORKSTREAM",("workstream",)),"R031":("WORKSTREAM_REQUIRED_FOR_TRACKED","ERROR","SET_TRACKED_WORKSTREAM",("portfolio_mode","workstream")),"R032":("WORKSTREAM_MUST_BE_NONE_FOR_EXCEPTION","ERROR","SET_WORKSTREAM_NONE",("portfolio_mode","workstream")),"R033":("AGENTOS_SNAPSHOT_UNAVAILABLE","PARTIAL","SUPPLY_AGENTOS_SNAPSHOT",("snapshot_state","workstream")),"R034":("LINEAR_ISSUE_UNKNOWN","ERROR","USE_EXISTING_LINEAR_ISSUE",("linear",)),"R035":("LINEAR_SNAPSHOT_UNAVAILABLE","PARTIAL","SUPPLY_LINEAR_SNAPSHOT",("linear","snapshot_state")),"R036":("LINEAR_PROJECT_WORKSTREAM_MISMATCH","ERROR","REPAIR_LINEAR_BINDING",("bound_workstream","declared_workstream","linear")),"R037":("WORKSTREAM_CREATION_NO_WORKSTREAM_RECORD","ERROR","ADD_EXACT_WORKSTREAM_RECORD",("paths","workstream")),"R038":("WORKSTREAM_CREATION_KEY_COLLISION","ERROR","CHOOSE_UNIQUE_WORKSTREAM_KEY",("collisions","workstream")),"R039":("MULTIPLE_PR_IDENTITIES","ERROR","RECONCILE_PR_IDENTITIES",("declared","targets")),"R040":("AUTHORITY_COMPLETION_MISMATCH","ERROR","USE_ALLOWED_AUTHORITY_COMPLETION",("authority","completion","portfolio_mode")),
  "R041":("AUTHORITY_PATH_MISMATCH","ERROR","RECONCILE_AUTHORITY_AND_PATHS",("authority","paths","resolutions")),"R042":("PATH_OWNERSHIP_SNAPSHOT_UNAVAILABLE","PARTIAL","SUPPLY_PATH_OWNERSHIP_SNAPSHOT",("paths","snapshot_state")),"R043":("CHANGED_PATHS_UNAVAILABLE","PARTIAL","SUPPLY_CHANGED_PATHS",("snapshot_state",)),"R044":("MAINTENANCE_EXCEPTION_UNBOUND","ERROR","BIND_MAINTENANCE_EXCEPTION",("authority","linear","paths")),"R045":("ARCHITECTURE_CANDIDATE_CLAIMS_AUTHORITY","ERROR","REMOVE_CANDIDATE_EXECUTION_AUTHORITY",("authority","paths")),"R046":("WORKSTREAM_CREATION_HIDDEN_IMPLEMENTATION","ERROR","SPLIT_WORKSTREAM_CREATION_FROM_BUILD",("path_classes","paths")),"R047":("PATH_OWNERSHIP_UNMAPPED","PARTIAL","MAP_PATH_OWNERSHIP",("paths","resolutions")),"R050":("BRANCH_LINEAR_MISMATCH","ERROR","RECONCILE_BRANCH_IDENTITY",("branch_targets","declared")),"R051":("TITLE_BODY_LINEAR_CONFLICT","ERROR","RECONCILE_TEXT_IDENTITIES",("body_targets","declared","title_targets")),"R052":("CLOSING_KEYWORD_FOR_NON_MERGE_DONE","ERROR","USE_NONCLOSING_RELATIONSHIP",("completion","linear","relationships")),"R053":("MERGE_DONE_WITH_EXPLICIT_PROOF_GATE","ERROR","SET_NONFINAL_COMPLETION",("completion","linear","stop_law")),"R054":("NATIVE_LINKAGE_SNAPSHOT_UNAVAILABLE","PARTIAL","SUPPLY_NATIVE_LINKAGE_SNAPSHOT",("linear","snapshot_state")),"R055":("NATIVE_RELATIONSHIP_AMBIGUOUS","PARTIAL","RECONCILE_NATIVE_RELATIONSHIP",("diagnostics","linear","relationships")),"R056":("PORTFOLIO_LINKAGE_COMPLETION_MISMATCH","ERROR","REPAIR_COMPLETION_RELATIONSHIP",("completion","effect","stop_law","target","target_role")),"R060":("OBSERVATION_GROUNDING_MISMATCH","ERROR","REBUILD_IMMUTABLE_OBSERVATION",("component","expected","observed")),"R061":("SNAPSHOT_CONTRADICTION","PARTIAL","RECAPTURE_CONSISTENT_SNAPSHOT",("diagnostics","snapshot")),
 }
 
@@ -112,7 +128,11 @@ def loads_strict(raw: bytes) -> Any:
     except UnicodeDecodeError as exc:
         raise ValidationError("INVALID_UTF8") from exc
     try:
-        return json.loads(text, object_pairs_hook=_strict_pairs)
+        return json.loads(
+            text,
+            object_pairs_hook=_strict_pairs,
+            parse_constant=lambda _value: (_ for _ in ()).throw(ValidationError("INVALID_JSON")),
+        )
     except ValidationError:
         raise
     except (ValueError, json.JSONDecodeError) as exc:
@@ -167,8 +187,16 @@ def _relationship_kind(word: str) -> str:
 def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, str]], list[str]]:
     """Return visible lines plus deterministic parse defects, Markdown-aware enough for V1."""
     defects: list[str] = []
-    forbidden = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u200b-\u200f\u202a-\u202e\u2060-\u206f]")
-    if "\r" in body.replace("\r\n", "") or body.startswith("\ufeff") or forbidden.search(body):
+    # V1 is deliberately hostile to invisible authoring.  Reject the complete
+    # Unicode control/format families (except the normalized line/tab
+    # separators) rather than chasing a partial list of bidi and zero-width
+    # code points.  Interlinear annotation controls are included defensively.
+    invalid_scalar = any(
+        (unicodedata.category(char) in {"Cc", "Cf", "Cs"} and char not in {"\n", "\t", "\r"})
+        or "\ufff9" <= char <= "\ufffb"
+        for char in body
+    )
+    if "\r" in body.replace("\r\n", "") or invalid_scalar:
         raise ValidationError("INVALID_BODY_ENCODING")
     body = body.replace("\r\n", "\n")
     lines = body.split("\n")
@@ -178,6 +206,7 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
     if max_line > limits["line_bytes"]:
         raise ResourceLimitError("line_bytes", limits["line_bytes"], max_line)
     visible: list[tuple[int, str]] = []
+    lexical_occurrences: dict[str, int] = {field: 0 for field in FIELDS}
     fence: tuple[str, int] | None = None
     comment = False
     quote_pending = False
@@ -208,6 +237,29 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
             fence = (opener.group(1)[0], len(opener.group(1)))
             continue
 
+        # Resource limits apply to every visible lexical field candidate, not
+        # merely to the six declarations eventually selected as canonical.
+        # Measure before HTML splice rejection so comment surgery cannot hide
+        # the 101st occurrence or an overlong value.
+        lexical = re.match(
+            r"^(Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion):(.*)$",
+            line,
+        )
+        if lexical:
+            field, tail = lexical.groups()
+            lexical_occurrences[field] += 1
+            if lexical_occurrences[field] > limits["field_occurrences"]:
+                raise ResourceLimitError(
+                    "field_occurrences", limits["field_occurrences"], lexical_occurrences[field]
+                )
+            lexical_value = tail[1:] if tail.startswith(" ") else tail
+            if (len(lexical_value) >= 2 and lexical_value.startswith("`")
+                    and lexical_value.endswith("`") and lexical_value.count("`") == 2):
+                lexical_value = lexical_value[1:-1]
+            value_bytes = len(lexical_value.encode("utf-8"))
+            if value_bytes > limits["value_bytes"]:
+                raise ResourceLimitError("value_bytes", limits["value_bytes"], value_bytes)
+
         # A comment that shares a physical line with a canonical declaration
         # must never be used as an invisible splice operator.  Full comment
         # lines remain inert, and a tail after a comment opened on an earlier
@@ -235,6 +287,17 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
                 defects.append(f"FIELD_COMMENT@{n}:{field_match.group(1)}")
                 quote_pending = False
                 continue
+        lexical_after = re.match(
+            r"^(Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion):(.*)$",
+            line,
+        )
+        if lexical_after:
+            field, tail = lexical_after.groups()
+            if (not tail.startswith(" ") or tail.startswith("  ") or tail.startswith("\t")
+                    or (line.endswith((" ", "\t")) and tail != " ")):
+                defects.append(f"FIELD_SYNTAX@{n}:{field}:WHITESPACE")
+                quote_pending = False
+                continue
         stripped = line.lstrip(" ")
         indent = len(line) - len(stripped)
         if not line:
@@ -257,8 +320,12 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
 
 
 def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | None], dict[str, list[int]], list[tuple[str, int]], list[str], list[tuple[str, str, int]]]:
-    if len(body.encode("utf-8")) > limits["body_bytes"]:
-        raise ResourceLimitError("body_bytes", limits["body_bytes"], len(body.encode("utf-8")))
+    try:
+        body_size = len(body.encode("utf-8"))
+    except UnicodeEncodeError as exc:
+        raise ValidationError("INVALID_BODY_ENCODING") from exc
+    if body_size > limits["body_bytes"]:
+        raise ResourceLimitError("body_bytes", limits["body_bytes"], body_size)
     visible, defects = _visible_lines(body, limits)
     zone: list[tuple[int, str]] = []
     for n, line in visible:
@@ -271,8 +338,6 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
         match = label_re.match(line)
         if match:
             occ[match.group(1)].append((n, line))
-            if len(occ[match.group(1)]) > limits["field_occurrences"]:
-                raise ResourceLimitError("field_occurrences", limits["field_occurrences"], len(occ[match.group(1)]))
     headers: list[tuple[int, str, str]] = []
     for n, line in zone:
         match = re.fullmatch(r"(Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion): (.*)", line)
@@ -293,8 +358,6 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
         for n, field, val in block:
             if len(val) >= 2 and val.startswith("`") and val.endswith("`") and val.count("`") == 2:
                 val = val[1:-1]
-            if len(val.encode("utf-8")) > limits["value_bytes"]:
-                raise ResourceLimitError("value_bytes", limits["value_bytes"], len(val.encode("utf-8")))
             values[field], locs[field] = val, [n]
     else:
         defects.append("NO_CONTIGUOUS_BLOCK")
@@ -338,6 +401,30 @@ def _normalized_applicability_identity(observation: dict[str, Any], manifest: di
         epoch = observation["authoring_epoch"]
         mode = alias if alias and epoch["state"] == "PRESENT" and epoch.get("relation") == "PRE_CUTOVER" else None
     return mode, workstream
+
+
+def _snapshot_applicable(
+    snapshot_class: str,
+    mode: str | None,
+    workstream: str | None,
+    manifest: dict[str, Any],
+) -> bool:
+    """Apply the frozen mode vocabulary to snapshot relevance.
+
+    All V1 classes require the five repository/Linear/native snapshots.  The
+    AgentOS inventory is irrelevant only for a manifest-known maintenance
+    exception, or for an architecture candidate that explicitly declares no
+    workstream.  Invalid declarations never manufacture an NA permission.
+    """
+    if snapshot_class != "AGENTOS":
+        return True
+    known_modes = set(manifest["classification"]["mode_to_class"])
+    if mode not in known_modes:
+        return True
+    return not (
+        mode == "maintenance_exception"
+        or (mode == "architecture_candidate" and workstream == "NONE")
+    )
 
 
 def _rule_map(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -415,7 +502,17 @@ def _finding_location_valid(finding: dict[str, Any]) -> bool:
                        "R009":"Portfolio-Mode","R010":"Portfolio-Mode","R011":"Authority",
                        "R012":"Completion"}
         field = fixed_field.get(rule, evidence.get("field"))
-        return field in FIELDS and bool(re.fullmatch(rf"BODY:L[1-9][0-9]*:{re.escape(field)}", location))
+        if field not in FIELDS or not re.fullmatch(rf"BODY:L[1-9][0-9]*:{re.escape(field)}", location):
+            return False
+        if rule == "R002":
+            locations = evidence.get("locations")
+            numeric_locations = sorted(
+                locations or [],
+                key=lambda item: int(re.search(r"BODY:L([1-9][0-9]*):", item).group(1))
+                if isinstance(item, str) and re.search(r"BODY:L([1-9][0-9]*):", item) else 10**18,
+            )
+            return len(numeric_locations) >= 2 and location == numeric_locations[1]
+        return True
     if rule == "R029": return location == "DECLARATION:Linear"
     if rule in {"R030","R031","R032"}: return location == "DECLARATION:Workstream"
     if rule == "R050": return location == "BRANCH"
@@ -425,7 +522,34 @@ def _finding_location_valid(finding: dict[str, Any]) -> bool:
     return location == _location(rule)
 
 
+def _finding_sort_key(finding: dict[str, Any]) -> tuple[Any, ...]:
+    """Frozen global order with numeric target order for per-target rows."""
+    target = finding.get("evidence", {}).get("target")
+    target_key = _mas_key(target) if finding.get("rule_id") == "R028" and isinstance(target, str) else (-1, "")
+    return (
+        SEVERITY.get(finding.get("severity"), 99),
+        finding.get("code", ""),
+        finding.get("rule_id", ""),
+        finding.get("location", ""),
+        target_key,
+        canonical_json(finding.get("evidence", {})),
+    )
+
+
 def validate_report(report: dict[str, Any]) -> None:
+    """Total closed report-wire validation for adapters and test fixtures."""
+    try:
+        _validate_report(report)
+    except ValidationError:
+        raise
+    except Exception as exc:
+        # Malformed untrusted reports are type failures, never evaluator
+        # internals.  This includes dictionaries in scalar evidence slots and
+        # non-object completion rows that would otherwise upset sort helpers.
+        raise ValidationError("TYPE_MISMATCH") from exc
+
+
+def _validate_report(report: dict[str, Any]) -> None:
     """Closed report-wire validation for adapters and test fixtures."""
     required = {"schema", "semantic", "semantic_hash", "receipt", "human"}
     if not isinstance(report, dict) or set(report) != required or report.get("schema") != REPORT_SCHEMA:
@@ -451,11 +575,11 @@ def validate_report(report: dict[str, Any]) -> None:
         raise ValidationError("TYPE_MISMATCH")
     rows = semantic.get("completion_interpretation")
     if not isinstance(rows, list): raise ValidationError("TYPE_MISMATCH")
-    expected_rows = sorted(rows, key=lambda r:(_mas_key(r.get("issue_id", "")),r.get("effect", ""),r.get("declared_completion") or "",r.get("stop_law") or "",r.get("consistency", "")))
-    if rows != expected_rows or len({canonical_json(x) for x in rows}) != len(rows): raise ValidationError("TYPE_MISMATCH")
     for row in rows:
         if not isinstance(row, dict) or set(row) != {"issue_id","effect","declared_completion","stop_law","consistency"} or not isinstance(row.get("issue_id"), str) or not re.fullmatch(r"MAS-[1-9][0-9]{0,8}", row["issue_id"]) or row.get("effect") not in {"COMPLETION_CAPABLE","NON_CLOSING","NONE","AMBIGUOUS","UNKNOWN"} or row.get("consistency") not in {"MATCH","MISMATCH","INDETERMINATE"} or row.get("declared_completion") is not None and (not isinstance(row["declared_completion"],str) or not row["declared_completion"] or len(row["declared_completion"].encode("utf-8")) > 80) or row.get("stop_law") not in {"MERGE","BUILT_NOT_PROVEN","PROOF","ACCEPTANCE","RECORDS_ONLY","UNKNOWN",None}:
             raise ValidationError("TYPE_MISMATCH")
+    expected_rows = sorted(rows, key=lambda r:(_mas_key(r["issue_id"]),r["effect"],r["declared_completion"] or "",r["stop_law"] or "",r["consistency"]))
+    if rows != expected_rows or len({canonical_json(x) for x in rows}) != len(rows): raise ValidationError("TYPE_MISMATCH")
     concrete_linear = declaration["linear"] if isinstance(declaration["linear"], str) and declaration["linear"] != "NONE" else None
     declared_rows = [row for row in rows if row["declared_completion"] is not None]
     if concrete_linear is not None and declaration["completion"] is not None:
@@ -478,8 +602,7 @@ def validate_report(report: dict[str, Any]) -> None:
            or not isinstance(finding.get("evidence"), dict)
            for finding in findings):
         raise ValidationError("TYPE_MISMATCH")
-    sort_key = lambda x:(SEVERITY.get(x.get("severity"),99),x.get("code",""),x.get("rule_id",""),x.get("location",""),canonical_json(x.get("evidence",{})))
-    if findings != sorted(findings, key=sort_key) or len({canonical_json(x) for x in findings}) != len(findings): raise ValidationError("TYPE_MISMATCH")
+    if findings != sorted(findings, key=_finding_sort_key) or len({canonical_json(x) for x in findings}) != len(findings): raise ValidationError("TYPE_MISMATCH")
     for finding in findings:
         if not isinstance(finding, dict) or set(finding) != {"code","rule_id","severity","location","evidence","remediation_code"} or finding["rule_id"] not in FROZEN_RULE_IDS or not isinstance(finding.get("code"), str) or not isinstance(finding.get("remediation_code"), str) or finding.get("severity") not in SEVERITY or not isinstance(finding.get("location"), str) or not isinstance(finding.get("evidence"), dict):
             raise ValidationError("TYPE_MISMATCH")
@@ -506,10 +629,14 @@ def validate_report(report: dict[str, Any]) -> None:
             or (authoring_state == "INVALID" and not (set(by_rule) & authoring_error_rules))):
         raise ValidationError("TYPE_MISMATCH")
     if any(len(by_rule.get(rule,[])) > 1 for rule in _ONE_FINDING_RULES): raise ValidationError("TYPE_MISMATCH")
-    for rule in ("R002","R004","R005","R006","R007","R008","R009","R010","R011","R012","R020","R021","R022"):
+    for rule in ("R002","R004","R005","R006","R007","R008","R009","R010","R011","R012","R020","R021"):
         rows_for_rule = by_rule.get(rule,[])
         if len({row["evidence"].get("field") for row in rows_for_rule}) != len(rows_for_rule): raise ValidationError("TYPE_MISMATCH")
-    for rule, key in (("R026","required_targets"),("R055","linear"),("R056","target"),("R060","component"),("R061","snapshot")):
+    # R022's frozen evidence intentionally omits ``field``; its PER_FIELD
+    # identity is the canonical location suffix.
+    if len({row["location"].rsplit(":", 1)[-1] for row in by_rule.get("R022", [])}) != len(by_rule.get("R022", [])):
+        raise ValidationError("TYPE_MISMATCH")
+    for rule, key in (("R026","required_targets"),("R028","target"),("R055","linear"),("R056","target"),("R060","component"),("R061","snapshot")):
         rows_for_rule = by_rule.get(rule,[])
         identities = [canonical_json(row["evidence"].get(key)) for row in rows_for_rule]
         if len(set(identities)) != len(identities): raise ValidationError("TYPE_MISMATCH")
@@ -530,6 +657,106 @@ def validate_report(report: dict[str, Any]) -> None:
     receipt = report.get("receipt")
     receipt_keys = {"observation_schema","repository","pr_number","base_sha","head_sha","source_sha","body_sha256","observation_sha256","cutover_receipt_sha256","ruleset_digest","snapshot_digests","producer"}
     if not isinstance(receipt, dict) or set(receipt) != receipt_keys or receipt.get("observation_schema") != OBS_SCHEMA or not isinstance(receipt.get("repository"), str) or not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+",receipt["repository"]) or not _positive_int(receipt.get("pr_number")) or any(not isinstance(receipt.get(k),str) or not re.fullmatch(r"[0-9a-f]{40}",receipt[k]) for k in ("base_sha","head_sha","source_sha")) or any(not isinstance(receipt.get(k),str) or not re.fullmatch(r"[0-9a-f]{64}",receipt[k]) for k in ("body_sha256","observation_sha256","ruleset_digest")) or receipt.get("cutover_receipt_sha256") is not None and (not isinstance(receipt["cutover_receipt_sha256"],str) or not re.fullmatch(r"[0-9a-f]{64}",receipt["cutover_receipt_sha256"])) or not isinstance(receipt.get("snapshot_digests"),dict) or set(receipt["snapshot_digests"]) != {"authoring_epoch","changed_paths","agentos","linear","path_ownership","native_linkage"} or any(not isinstance(value,str) or not re.fullmatch(r"[0-9a-f]{64}",value) for value in receipt["snapshot_digests"].values()) or not isinstance(receipt.get("producer"),str) or not receipt["producer"]:
+        raise ValidationError("TYPE_MISMATCH")
+
+    # Reachability and cross-bindings that JSON Schema cannot express.
+    canonical_forbidden = {"R001"} | {f"R{number:03d}" for number in range(4, 13)} | {"R020", "R021", "R022"}
+    if authoring_state == "CANONICAL" and set(by_rule) & canonical_forbidden:
+        raise ValidationError("TYPE_MISMATCH")
+    if "R001" in by_rule and authoring_state != "MISSING":
+        raise ValidationError("TYPE_MISMATCH")
+    field_to_declaration = {
+        "Workstream":"workstream", "Linear":"linear", "Portfolio-Mode":"portfolio_mode",
+        "Wave":"wave", "Authority":"authority", "Completion":"completion",
+    }
+    for rule in ("R004","R005","R006","R007","R008","R009","R010","R011","R012","R020","R022"):
+        for finding in by_rule.get(rule, []):
+            field = finding["location"].rsplit(":", 1)[-1]
+            key = field_to_declaration.get(field)
+            if key is None or declaration[key] is not None:
+                raise ValidationError("TYPE_MISMATCH")
+    for finding in by_rule.get("R021", []):
+        evidence = finding["evidence"]
+        field = evidence["field"]
+        key = field_to_declaration.get(field)
+        if (key is None or finding["location"].rsplit(":", 1)[-1] != field
+                or ALIASES_BY_FIELD.get(field, {}).get(evidence["alias"]) != evidence["canonical"]
+                or declaration[key] != evidence["canonical"]):
+            raise ValidationError("TYPE_MISMATCH")
+
+    declaration_tuple = (declaration["portfolio_mode"], declaration["authority"], declaration["completion"])
+    tuple_known = all(value is not None for value in declaration_tuple)
+    r040 = by_rule.get("R040", [])
+    tuple_disallowed = tuple_known and declaration_tuple not in _REPORT_AUTHORITY_COMPLETION_ALLOWLIST
+    if bool(r040) != tuple_disallowed:
+        raise ValidationError("TYPE_MISMATCH")
+    if r040 and r040[0]["evidence"] != {
+        "authority": declaration["authority"], "completion": declaration["completion"],
+        "portfolio_mode": declaration["portfolio_mode"],
+    }:
+        raise ValidationError("TYPE_MISMATCH")
+
+    rows_by_issue = {row["issue_id"]: row for row in rows}
+    r056_by_target = {finding["evidence"]["target"]: finding for finding in by_rule.get("R056", [])}
+    native_contradictory = any(
+        finding["evidence"]["snapshot"] == "NATIVE_LINKAGE" for finding in by_rule.get("R061", [])
+    )
+    for row in rows:
+        completion_value = row["declared_completion"]
+        expected_mismatch = False
+        if completion_value is not None and row["effect"] not in {"AMBIGUOUS", "UNKNOWN"}:
+            expected_mismatch = (
+                completion_value == "merge-is-done" and row["effect"] != "COMPLETION_CAPABLE"
+            ) or (
+                row["effect"] == "COMPLETION_CAPABLE"
+                and completion_value in {"built-not-proven", "proof-required", "acceptance-required"}
+            )
+        if native_contradictory:
+            expected_mismatch = False
+        has_r056 = row["issue_id"] in r056_by_target
+        if row["consistency"] == "MISMATCH" and not has_r056:
+            raise ValidationError("TYPE_MISMATCH")
+        if expected_mismatch and (row["consistency"] != "MISMATCH" or not has_r056):
+            raise ValidationError("TYPE_MISMATCH")
+        if has_r056:
+            finding = r056_by_target[row["issue_id"]]
+            evidence = finding["evidence"]
+            if (row["consistency"] != "MISMATCH" or native_contradictory
+                    or evidence["effect"] != row["effect"]
+                    or evidence["completion"] != declaration["completion"]
+                    or evidence["stop_law"] != (row["stop_law"] or "UNKNOWN")):
+                raise ValidationError("TYPE_MISMATCH")
+    if set(r056_by_target) - set(rows_by_issue):
+        raise ValidationError("TYPE_MISMATCH")
+
+    for finding in by_rule.get("R054", []):
+        evidence = finding["evidence"]
+        if (evidence["linear"] != declaration["linear"]
+                or evidence["snapshot_state"] not in {"PARTIAL", "UNAVAILABLE"}
+                or "NATIVE_LINKAGE" not in unresolved):
+            raise ValidationError("TYPE_MISMATCH")
+    for finding in by_rule.get("R061", []):
+        if finding["evidence"]["snapshot"] not in unresolved:
+            raise ValidationError("TYPE_MISMATCH")
+
+    receipt_component = {
+        "OBSERVATION": receipt["observation_sha256"], "BODY": receipt["body_sha256"],
+        "CUTOVER": receipt["cutover_receipt_sha256"], "RULESET": receipt["ruleset_digest"],
+        "AUTHORING_EPOCH": receipt["snapshot_digests"]["authoring_epoch"],
+        "CHANGED_PATHS": receipt["snapshot_digests"]["changed_paths"],
+        "AGENTOS": receipt["snapshot_digests"]["agentos"], "LINEAR": receipt["snapshot_digests"]["linear"],
+        "PATH_OWNERSHIP": receipt["snapshot_digests"]["path_ownership"],
+        "NATIVE_LINKAGE": receipt["snapshot_digests"]["native_linkage"],
+    }
+    r060_components = set()
+    for finding in by_rule.get("R060", []):
+        component = finding["evidence"]["component"]
+        r060_components.add(component)
+        if finding["evidence"]["observed"] != canonical_digest(receipt_component[component]):
+            raise ValidationError("TYPE_MISMATCH")
+        if component == "RULESET" and finding["evidence"]["expected"] != canonical_digest(FROZEN_RULESET_DIGEST):
+            raise ValidationError("TYPE_MISMATCH")
+    if receipt["ruleset_digest"] != FROZEN_RULESET_DIGEST and "RULESET" not in r060_components:
         raise ValidationError("TYPE_MISMATCH")
     human = report.get("human")
     expected_human = {"summary":f"{semantic['classification']}/{semantic['verdict']}","remediations":sorted({finding["remediation_code"] for finding in findings})}
@@ -644,6 +871,23 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
         if epoch["relation"] == "PRE_CUTOVER" and (pr["number"] not in epoch["legacy_open_pr_numbers"] or pr["number"] >= epoch["first_strict_pr_number"]): raise ValidationError("INVALID_SNAPSHOT_STATE")
         if epoch["relation"] == "AT_OR_POST_CUTOVER" and (pr["number"] < epoch["first_strict_pr_number"] or pr["number"] in epoch["legacy_open_pr_numbers"]): raise ValidationError("INVALID_SNAPSHOT_STATE")
         if epoch.get("cutover_receipt_sha256") != cutover_digest(observation): raise ValidationError("INVALID_SNAPSHOT_STATE")
+    # A CONTRADICTORY epoch must retain a machine-checkable conflict, not just a
+    # diagnostic asserting one.  Conversely, PARTIAL may omit facts but may not
+    # carry known-inconsistent retained facts; those belong to CONTRADICTORY.
+    epoch_conflict = False
+    if epoch.get("receipt_ruleset_digest") is not None:
+        epoch_conflict = epoch_conflict or epoch["receipt_ruleset_digest"] != observation["ruleset_digest"]
+    if epoch.get("cutover_receipt_sha256") is not None:
+        epoch_conflict = epoch_conflict or epoch["cutover_receipt_sha256"] != cutover_digest(observation)
+    first_strict = epoch.get("first_strict_pr_number")
+    if epoch.get("relation") == "PRE_CUTOVER" and _positive_int(first_strict):
+        epoch_conflict = epoch_conflict or pr["number"] not in epoch["legacy_open_pr_numbers"] or pr["number"] >= first_strict
+    if epoch.get("relation") == "AT_OR_POST_CUTOVER" and _positive_int(first_strict):
+        epoch_conflict = epoch_conflict or pr["number"] < first_strict or pr["number"] in epoch["legacy_open_pr_numbers"]
+    if epoch["state"] == "CONTRADICTORY" and not epoch_conflict:
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
+    if epoch["state"] == "PARTIAL" and epoch_conflict:
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
     payloads = {"changed_paths":"paths", "agentos":"workstreams", "linear":"issues", "path_ownership":"resolutions", "native_linkage":"relationships"}
     for name, payload in payloads.items():
         snap = observation[name]
@@ -762,7 +1006,7 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
         "NATIVE_LINKAGE": observation["native_linkage"],
     }
     for snapshot_class, snapshot in snapshots.items():
-        na_allowed = snapshot_class == "AGENTOS" and mode == "architecture_candidate" and workstream == "NONE"
+        na_allowed = not _snapshot_applicable(snapshot_class, mode, workstream, manifest)
         if snapshot["state"] == "NOT_APPLICABLE" and not na_allowed:
             raise ValidationError("INVALID_SNAPSHOT_STATE")
     receipt = observation.get("receipt")
@@ -835,7 +1079,13 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
             duplicate_values = [value for n, field, value in _ if field == f and n in locs[f]]
             findings.append(_finding(rules, "R002", {"field":f,"locations":sorted(f"BODY:L{x}:{f}" for x in locs[f]),"values":_digest_wrappers(canonical_digest(x) for x in duplicate_values)}, field=f, line=locs[f][1]))
     if defects:
-        defect = sorted(set(defects))[0]
+        # W0 selects the smallest physical line whenever a defect is
+        # line-addressable.  Lexical string order would incorrectly put L10
+        # before L8, so parse the structured prefix before selecting.
+        def defect_key(defect: str) -> tuple[int, int, bytes]:
+            match = re.match(r"(?:RELATIONSHIP|FIELD_COMMENT|FIELD_SYNTAX)@([1-9][0-9]*):", defect)
+            return (0, int(match.group(1)), defect.encode("utf-8")) if match else (1, 0, defect.encode("utf-8"))
+        defect = min(set(defects), key=defect_key)
         match = re.fullmatch(r"RELATIONSHIP@([1-9][0-9]*):(.+)", defect)
         if match:
             location = f"BODY:L{match.group(1)}:RELATIONSHIP"
@@ -843,6 +1093,9 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         elif (match := re.fullmatch(r"FIELD_COMMENT@([1-9][0-9]*):(.+)", defect)):
             location = f"BODY:L{match.group(1)}:{match.group(2)}"
             findings.append(_finding(rules, "R003", {"location":location,"reason":"COMMENT_SPLICE"}, field=match.group(2), line=int(match.group(1))))
+        elif (match := re.fullmatch(r"FIELD_SYNTAX@([1-9][0-9]*):([^:]+):(.+)", defect)):
+            location = f"BODY:L{match.group(1)}:{match.group(2)}"
+            findings.append(_finding(rules, "R003", {"location":location,"reason":match.group(3)}, field=match.group(2), line=int(match.group(1))))
         else:
             findings.append(_finding(rules, "R003", {"location":"DECLARATION:BLOCK","reason":defect.split(":", 1)[-1]}))
     normalized = dict(values)
@@ -926,42 +1179,44 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     rows_by_target: dict[str, list[dict[str, Any]]] = {}
     role_mismatch_targets: list[str] = []
     role_mismatch_roles: list[str] = []
-    if linear_exact:
-        if lsnap["state"] != "PRESENT":
-            add("R035", {"linear":linear,"snapshot_state":lsnap["state"]})
-        else:
-            for target in target_ids:
-                rows = [r for r in lsnap.get("issues",[]) if r.get("id") == target]
-                rows_by_target[target] = rows
-                roles_by_target[target] = sorted(r.get("target_role", "UNKNOWN") for r in rows)
-                if target == linear and not rows:
-                    add("R034", {"linear":linear})
-                    continue
-                if target != linear and (not rows or "UNKNOWN" in roles_by_target[target]):
-                    add("R026", {"required_targets":[target],"target_roles":roles_by_target[target] or ["UNKNOWN"]})
-                    continue
-                if target == linear and "UNKNOWN" in roles_by_target[target]:
-                    add("R026", {"required_targets":[target],"target_roles":roles_by_target[target]})
-                    continue
-                declared = [r for r in rows if r.get("target_role") == "DECLARED"]
-                if target == linear and len(declared) != 1:
-                    role_mismatch_targets.append(target); role_mismatch_roles.extend(roles_by_target[target])
-                if target != linear and declared:
-                    role_mismatch_targets.append(target); role_mismatch_roles.extend(roles_by_target[target])
-                invalid_type_rows = []
-                for r in rows:
-                    allowed = (manifest["classification"]["mode_to_issue_types"].get(mode,[])
-                               if r.get("target_role") == "DECLARED"
-                               else manifest["classification"]["target_role_to_issue_types"].get(r.get("target_role"),[]))
-                    if mode in manifest["classification"]["mode_to_class"] and r.get("issue_type") not in allowed:
-                        invalid_type_rows.append(r)
-                if invalid_type_rows:
-                    r = sorted(invalid_type_rows, key=lambda row:(row.get("target_role","UNKNOWN"),row.get("issue_type","UNKNOWN")))[0]
-                    add("R028", {"issue_type":r.get("issue_type","UNKNOWN"),"portfolio_mode":mode or "UNKNOWN","target_role":r.get("target_role","UNKNOWN")})
-                if target == linear and mode in {"tracked","architecture_candidate"} and ws not in {None,"NONE"} and declared and declared[0].get("workstream_key") != ws:
-                    add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
-                if target == linear and mode == "creates_workstream" and declared and declared[0].get("workstream_key") not in {None, ws}:
-                    add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
+    if linear_exact and lsnap["state"] != "PRESENT":
+        add("R035", {"linear":linear,"snapshot_state":lsnap["state"]})
+    if lsnap["state"] == "PRESENT":
+        for target in target_ids:
+            rows = [r for r in lsnap.get("issues",[]) if r.get("id") == target]
+            rows_by_target[target] = rows
+            roles_by_target[target] = sorted(r.get("target_role", "UNKNOWN") for r in rows)
+            if linear_exact and target == linear and not rows:
+                add("R034", {"linear":linear})
+                continue
+            # A missing row or UNKNOWN role owns the target through R026.  No
+            # role/type/identity reducer may guess past that indeterminacy.
+            if not rows or "UNKNOWN" in roles_by_target[target]:
+                add("R026", {"required_targets":[target],"target_roles":roles_by_target[target] or ["UNKNOWN"]})
+                continue
+            declared = [r for r in rows if r.get("target_role") == "DECLARED"]
+            if linear_exact and target == linear and len(declared) != 1:
+                role_mismatch_targets.append(target); role_mismatch_roles.extend(roles_by_target[target])
+            if linear_exact and target != linear and declared:
+                role_mismatch_targets.append(target); role_mismatch_roles.extend(roles_by_target[target])
+            invalid_type_rows = []
+            for row in rows:
+                role = row.get("target_role")
+                if role == "DECLARED":
+                    allowed = manifest["classification"]["mode_to_issue_types"].get(mode)
+                    determinate = allowed is not None
+                else:
+                    allowed = manifest["classification"]["target_role_to_issue_types"].get(role)
+                    determinate = isinstance(allowed, list)
+                if determinate and row.get("issue_type") not in allowed:
+                    invalid_type_rows.append(row)
+            if invalid_type_rows:
+                row = sorted(invalid_type_rows, key=lambda item:(item.get("target_role","UNKNOWN"),item.get("issue_type","UNKNOWN")))[0]
+                add("R028", {"issue_type":row.get("issue_type","UNKNOWN"),"portfolio_mode":mode or "UNKNOWN","target":target,"target_role":row.get("target_role","UNKNOWN")})
+            if linear_exact and target == linear and mode in {"tracked","architecture_candidate"} and ws not in {None,"NONE"} and declared and declared[0].get("workstream_key") != ws:
+                add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
+            if linear_exact and target == linear and mode == "creates_workstream" and declared and declared[0].get("workstream_key") not in {None, ws}:
+                add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
     if role_mismatch_targets:
         add("R027", {"declared":linear,"roles":sorted(set(role_mismatch_roles)),"targets":sorted(set(role_mismatch_targets), key=_mas_key)})
     if linear_exact:
@@ -977,24 +1232,33 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         if len(declared_targets) > 1: add("R039", {"declared":linear,"targets":declared_targets})
     if canonical and tuple([mode,authority,completion]) not in {tuple(x) for x in manifest["authority_completion_allowlist"]}: add("R040", {"authority":authority,"completion":completion,"portfolio_mode":mode})
     if paths["state"] != "PRESENT": add("R043", {"snapshot_state":paths["state"]})
+    rs = ownership.get("resolutions", [])
+    path_evidence_rows = sorted(
+        {row.get("path") for row in rs if isinstance(row.get("path"), str)}
+        | {row.get("path") for row in paths.get("paths", []) if isinstance(row.get("path"), str)},
+        key=lambda value: value.encode("utf-8"),
+    )
     if ownership["state"] != "PRESENT":
-        add("R042", {"paths":[],"snapshot_state":ownership["state"]})
+        add("R042", {"paths":_digest_wrappers(text_digest(value) for value in path_evidence_rows),"snapshot_state":ownership["state"]})
+        unowned = [row for row in rs if row.get("resolution") == "UNOWNED"]
+        if unowned:
+            add("R047", {"paths":_digest_wrappers(text_digest(row["path"]) for row in unowned),"resolutions":_digest_wrappers(canonical_digest(row) for row in unowned)})
         # Partial ownership may still contain conclusive negative evidence.  Do
         # not convert an observed UNOWNED/exact-nonmaintenance row into an
         # unknown merely because unrelated rows could not be captured.
-        if canonical and mode == "maintenance_exception":
+        if mode == "maintenance_exception" and authority is not None:
             known_bad = [r for r in ownership.get("resolutions", []) if r.get("resolution") == "UNOWNED" or (r.get("resolution") == "EXACT" and (r.get("path_class") != "MAINTENANCE" or r.get("owner_workstream") != "NONE" or "maintenance" not in r.get("allowed_authorities", [])))]
             if known_bad: add("R044", {"authority":authority,"linear":linear or "NONE","paths":_digest_wrappers(text_digest(r.get("path","")) for r in known_bad)})
-    elif canonical:
-        rs = ownership.get("resolutions",[])
+    else:
         unowned = [r for r in rs if r.get("resolution") == "UNOWNED"]
-        excluded = [r for r in rs if r.get("resolution") == "EXACT" and authority not in r.get("allowed_authorities",[])]
+        excluded = [r for r in rs if authority is not None and r.get("resolution") == "EXACT" and authority not in r.get("allowed_authorities",[])]
         if unowned: add("R047", {"paths":_digest_wrappers(text_digest(r.get("path","")) for r in unowned),"resolutions":_digest_wrappers(canonical_digest(r) for r in unowned)})
         if excluded: add("R041", {"authority":authority,"paths":_digest_wrappers(text_digest(r.get("path","")) for r in excluded),"resolutions":_digest_wrappers(canonical_digest(r) for r in excluded)})
-        if mode == "maintenance_exception":
+        if mode == "maintenance_exception" and authority is not None:
             bad = [r for r in rs if r.get("resolution") != "EXACT" or r.get("path_class") != "MAINTENANCE" or r.get("owner_workstream") != "NONE" or "maintenance" not in r.get("allowed_authorities", [])]
-            if bad: add("R044", {"authority":authority,"linear":linear or "NONE","paths":_digest_wrappers(text_digest(r.get("path","")) for r in bad)})
-        if mode == "architecture_candidate" and (authority in {"implementation","deploy"} or any(r.get("path_class") in {"IMPLEMENTATION","DEPLOY"} for r in rs)):
+            if bad or not paths.get("paths") or not rs:
+                add("R044", {"authority":authority,"linear":linear or "NONE","paths":_digest_wrappers(text_digest(r.get("path","")) for r in bad)})
+        if mode == "architecture_candidate" and authority is not None and (authority in {"implementation","deploy"} or any(r.get("path_class") in {"IMPLEMENTATION","DEPLOY"} for r in rs)):
             add("R045", {"authority":authority,"paths":_digest_wrappers(text_digest(r.get("path","")) for r in rs)})
         if mode == "creates_workstream":
             impl = [r for r in rs if r.get("path_class") in {"IMPLEMENTATION","DEPLOY"}]
@@ -1025,8 +1289,12 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
             stop_law = declared_row.get("stop_law") if declared_row else None
             declared_completion = completion if target == linear else None
             records_exception = target == linear and completion == "records-only" and stop_law == "RECORDS_ONLY" and ownership["state"] == "PRESENT" and bool(ownership.get("resolutions")) and all(r.get("resolution") == "EXACT" and r.get("path_class") == "RECORDS" and r.get("owner_workstream") in {"NONE", None} and "records" in r.get("allowed_authorities", []) for r in ownership.get("resolutions", []))
-            mismatch = (target == linear and completion == "merge-is-done" and effect != "COMPLETION_CAPABLE") or (effect == "COMPLETION_CAPABLE" and ((target != linear) or (completion in {"built-not-proven","proof-required","acceptance-required"}) or (completion == "records-only" and not records_exception)))
-            consistency = "INDETERMINATE" if ambiguous or native["state"] != "PRESENT" else ("MISMATCH" if mismatch else "MATCH")
+            role_indeterminate = not rows_by_target.get(target) or "UNKNOWN" in roles_by_target.get(target, [])
+            mismatch = (completion is not None and not ambiguous and not role_indeterminate and (
+                (target == linear and completion == "merge-is-done" and effect != "COMPLETION_CAPABLE")
+                or (effect == "COMPLETION_CAPABLE" and ((target != linear) or (completion in {"built-not-proven","proof-required","acceptance-required"}) or (completion == "records-only" and not records_exception)))
+            ))
+            consistency = "INDETERMINATE" if (completion is None or role_indeterminate or ambiguous or native["state"] != "PRESENT") else ("MISMATCH" if mismatch else "MATCH")
             completion_rows.append({"issue_id":target,"effect":effect,"declared_completion":declared_completion,"stop_law":stop_law,"consistency":consistency})
             if ambiguous:
                 add("R055", {"diagnostics":native.get("diagnostics", []),"linear":target,"relationships":_digest_wrappers(canonical_digest(r) for r in rels)})
@@ -1073,8 +1341,15 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     if linear_exact and not completion_rows:
         declared_rows = [r for r in lsnap.get("issues", []) if r.get("id") == linear and r.get("target_role") == "DECLARED"] if lsnap["state"] == "PRESENT" else []
         completion_rows.append({"issue_id":linear,"effect":"UNKNOWN","declared_completion":completion,"stop_law":declared_rows[0].get("stop_law") if declared_rows else None,"consistency":"INDETERMINATE"})
-    unresolved = sorted(name for name, snap in (("AUTHORING_EPOCH",epoch),("CHANGED_PATHS",paths),("AGENTOS",agentos),("LINEAR",lsnap),("PATH_OWNERSHIP",ownership),("NATIVE_LINKAGE",native)) if snap["state"] in {"PARTIAL","UNAVAILABLE","CONTRADICTORY"})
-    findings.sort(key=lambda x:(SEVERITY[x["severity"]],x["code"],x["rule_id"],x["location"],canonical_json(x["evidence"])))
+    unresolved = sorted(
+        name for name, snap in (
+            ("AUTHORING_EPOCH",epoch), ("CHANGED_PATHS",paths), ("AGENTOS",agentos),
+            ("LINEAR",lsnap), ("PATH_OWNERSHIP",ownership), ("NATIVE_LINKAGE",native),
+        )
+        if _snapshot_applicable(name, mode, ws, manifest)
+        and snap["state"] in {"PARTIAL","UNAVAILABLE","CONTRADICTORY"}
+    )
+    findings.sort(key=_finding_sort_key)
     # deterministic semantic de-duplication
     kept=[]; seen=set()
     for f in findings:

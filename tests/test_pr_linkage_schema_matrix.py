@@ -150,7 +150,7 @@ def test_schema_state_execution_and_report_cross_bindings_reject_direct_probes()
         value["semantic_hash"] = validator.digest(value["semantic"])
         assert not report_schema.is_valid(value)
     supplied_mismatch = json.loads(validator.canonical_json(base)); supplied_mismatch["receipt"]["ruleset_digest"] = "0" * 64
-    assert report_schema.is_valid(supplied_mismatch)
+    assert not report_schema.is_valid(supplied_mismatch)
 
 
 def test_ownership_resolution_full_cross_product_matches_runtime_and_schema(capsys):

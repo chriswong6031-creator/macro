@@ -1290,6 +1290,7 @@
         "evidence_keys": [
           "issue_type",
           "portfolio_mode",
+          "target",
           "target_role"
         ],
         "predicate": "mode issue-type allowlist or gate role/type mismatch",

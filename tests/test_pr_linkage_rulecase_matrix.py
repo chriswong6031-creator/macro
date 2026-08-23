@@ -45,7 +45,12 @@ def case(rule):
         body(o, Authority="Authority: runtime"); o["authoring_epoch"].update(relation="PRE_CUTOVER", first_strict_pr_number=124, legacy_open_pr_numbers=[123])
     elif rule == "R022":
         body(o, Authority="Authority: runtime")
-        o["authoring_epoch"].update(state="CONTRADICTORY", relation="UNKNOWN", diagnostics=["CONFLICTING_CUTOVER_RECEIPTS"])
+        o["authoring_epoch"] = {
+            "state":"UNAVAILABLE", "relation":"UNKNOWN", "default_ref":None,
+            "cutover_merge_sha":None, "template_blobs":[], "first_strict_pr_number":None,
+            "legacy_open_pr_numbers":[], "receipt_ruleset_digest":None,
+            "cutover_receipt_sha256":None, "diagnostics":["NO_RECEIPT"],
+        }
     elif rule == "R026": o["pull_request"]["title"] = "MAS-99"; o["linear"]["issues"].append({"id":"MAS-99","target_role":"UNKNOWN","project_id":None,"workstream_key":None,"issue_type":"UNKNOWN","stop_law":"UNKNOWN"})
     elif rule == "R027": o["linear"]["issues"][0]["target_role"] = "SECONDARY"
     elif rule == "R028": o["linear"]["issues"][0]["issue_type"] = "UNKNOWN"

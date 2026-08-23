@@ -38,7 +38,7 @@
           "const": "mastermind.pr_linkage_rules.v1"
         },
         "ruleset_digest": {
-          "const": "41d5634a6ca6d4bbd993e728b73d839260452b24c891e556c59da52a184a1859"
+          "const": "2e97ad7acd0aec77ef18dbd76a1b3f2bbf8b7d4585e938498615de1917aa71aa"
         },
         "enforcement": {
           "const": "REPORT_ONLY"
@@ -1246,6 +1246,7 @@
                     "required": [
                       "issue_type",
                       "portfolio_mode",
+                      "target",
                       "target_role"
                     ],
                     "properties": {
@@ -1256,6 +1257,10 @@
                       "portfolio_mode": {
                         "type": "string",
                         "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "target": {
+                        "type": "string",
+                        "pattern": "^MAS-[1-9][0-9]{0,8}$"
                       },
                       "target_role": {
                         "type": "string",
@@ -1572,13 +1577,13 @@
                       "snapshot_state"
                     ],
                     "properties": {
-                      "linear": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
-                      },
-                      "snapshot_state": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+        "linear": {
+          "type": "string",
+          "pattern": "^MAS-[1-9][0-9]{0,8}$"
+        },
+        "snapshot_state": {
+          "type": "string",
+          "enum": ["PARTIAL", "UNAVAILABLE", "CONTRADICTORY"]
                       }
                     }
                   },
@@ -2622,11 +2627,11 @@
                     "properties": {
                       "linear": {
                         "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        "pattern": "^MAS-[1-9][0-9]{0,8}$"
                       },
                       "snapshot_state": {
                         "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        "enum": ["PARTIAL", "UNAVAILABLE"]
                       }
                     }
                   },
@@ -2744,25 +2749,25 @@
                       "target_role"
                     ],
                     "properties": {
-                      "completion": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
-                      },
-                      "effect": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
-                      },
-                      "stop_law": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
-                      },
-                      "target": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
-                      },
-                      "target_role": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+        "completion": {
+          "type": "string",
+          "enum": ["merge-is-done", "built-not-proven", "proof-required", "acceptance-required", "records-only"]
+        },
+        "effect": {
+          "type": "string",
+          "enum": ["COMPLETION_CAPABLE", "NON_CLOSING", "NONE"]
+        },
+        "stop_law": {
+          "type": "string",
+          "enum": ["MERGE", "BUILT_NOT_PROVEN", "PROOF", "ACCEPTANCE", "RECORDS_ONLY", "UNKNOWN"]
+        },
+        "target": {
+          "type": "string",
+          "pattern": "^MAS-[1-9][0-9]{0,8}$"
+        },
+        "target_role": {
+          "type": "string",
+          "enum": ["DECLARED", "SECONDARY", "PARENT", "PROOF_GATE", "ACCEPTANCE_GATE"]
                       }
                     }
                   },
@@ -2805,9 +2810,9 @@
                       "observed"
                     ],
                     "properties": {
-                      "component": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+        "component": {
+          "type": "string",
+          "enum": ["OBSERVATION", "BODY", "CUTOVER", "RULESET", "AUTHORING_EPOCH", "CHANGED_PATHS", "AGENTOS", "LINEAR", "PATH_OWNERSHIP", "NATIVE_LINKAGE"]
                       },
                       "expected": {
                         "type": "object",
@@ -2893,9 +2898,9 @@
                         },
                         "uniqueItems": true
                       },
-                      "snapshot": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+        "snapshot": {
+          "type": "string",
+          "enum": ["AUTHORING_EPOCH", "CHANGED_PATHS", "AGENTOS", "LINEAR", "PATH_OWNERSHIP", "NATIVE_LINKAGE"]
                       }
                     }
                   },
@@ -3753,6 +3758,61 @@
     {"if":{"properties":{"semantic":{"properties":{"verdict":{"const":"CONFORMANT"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"/CONFORMANT$"}}}}}},
     {"if":{"properties":{"semantic":{"properties":{"verdict":{"const":"WARN"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"/WARN$"}}}}}},
     {"if":{"properties":{"semantic":{"properties":{"verdict":{"const":"PARTIAL"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"/PARTIAL$"}}}}}},
-    {"if":{"properties":{"semantic":{"properties":{"verdict":{"const":"REFUSE_METADATA"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"/REFUSE_METADATA$"}}}}}}
+    {"if":{"properties":{"semantic":{"properties":{"verdict":{"const":"REFUSE_METADATA"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"/REFUSE_METADATA$"}}}}}},
+    {
+      "if": {"properties": {"semantic": {"properties": {"declaration": {"properties": {"authoring_state": {"const": "CANONICAL"}}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"findings": {"not": {"contains": {"properties": {"rule_id": {"enum": ["R001","R004","R005","R006","R007","R008","R009","R010","R011","R012","R020","R021","R022"]}}, "required": ["rule_id"]}}}}}}}
+    },
+    {
+      "if": {"properties": {"receipt": {"properties": {"ruleset_digest": {"not": {"const": "2e97ad7acd0aec77ef18dbd76a1b3f2bbf8b7d4585e938498615de1917aa71aa"}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R060"}, "evidence": {"properties": {"component": {"const": "RULESET"}}, "required": ["component"]}}, "required": ["rule_id", "evidence"]}}}}}}
+    },
+    {
+      "if": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R054"}}, "required": ["rule_id"]}}}}}},
+      "then": {"properties": {"semantic": {"allOf": [
+        {"properties": {"unresolved_observation_classes": {"contains": {"const": "NATIVE_LINKAGE"}}}},
+        {"properties": {"declaration": {"properties": {"linear": {"type": "string", "pattern": "^MAS-[1-9][0-9]{0,8}$"}}}}}
+      ]}}}
+    },
+    {
+      "if": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R005"}}, "required": ["rule_id"]}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"declaration": {"properties": {"workstream": {"type": "null"}}}}}}}
+    },
+    {
+      "if": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R056"}}, "required": ["rule_id"]}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"completion_interpretation": {"contains": {"properties": {"consistency": {"const": "MISMATCH"}}, "required": ["consistency"]}}}}}}
+    },
+    {
+      "if": {"properties": {"semantic": {"properties": {"completion_interpretation": {"contains": {"properties": {"consistency": {"const": "MISMATCH"}}, "required": ["consistency"]}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R056"}}, "required": ["rule_id"]}}}}}}
+    },
+    {
+      "if": {"properties": {"semantic": {"properties": {"completion_interpretation": {"contains": {"properties": {"effect": {"const": "COMPLETION_CAPABLE"}, "declared_completion": {"enum": ["built-not-proven", "proof-required", "acceptance-required"]}}, "required": ["effect", "declared_completion"]}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R056"}}, "required": ["rule_id"]}}}}}}
+    },
+    {
+      "if": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R061"}, "evidence": {"properties": {"snapshot": {"const": "AUTHORING_EPOCH"}}, "required": ["snapshot"]}}, "required": ["rule_id", "evidence"]}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"unresolved_observation_classes": {"contains": {"const": "AUTHORING_EPOCH"}}}}}}
+    },
+    {
+      "if": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R061"}, "evidence": {"properties": {"snapshot": {"const": "CHANGED_PATHS"}}, "required": ["snapshot"]}}, "required": ["rule_id", "evidence"]}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"unresolved_observation_classes": {"contains": {"const": "CHANGED_PATHS"}}}}}}
+    },
+    {
+      "if": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R061"}, "evidence": {"properties": {"snapshot": {"const": "AGENTOS"}}, "required": ["snapshot"]}}, "required": ["rule_id", "evidence"]}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"unresolved_observation_classes": {"contains": {"const": "AGENTOS"}}}}}}
+    },
+    {
+      "if": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R061"}, "evidence": {"properties": {"snapshot": {"const": "LINEAR"}}, "required": ["snapshot"]}}, "required": ["rule_id", "evidence"]}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"unresolved_observation_classes": {"contains": {"const": "LINEAR"}}}}}}
+    },
+    {
+      "if": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R061"}, "evidence": {"properties": {"snapshot": {"const": "PATH_OWNERSHIP"}}, "required": ["snapshot"]}}, "required": ["rule_id", "evidence"]}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"unresolved_observation_classes": {"contains": {"const": "PATH_OWNERSHIP"}}}}}}
+    },
+    {
+      "if": {"properties": {"semantic": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R061"}, "evidence": {"properties": {"snapshot": {"const": "NATIVE_LINKAGE"}}, "required": ["snapshot"]}}, "required": ["rule_id", "evidence"]}}}}}},
+      "then": {"properties": {"semantic": {"properties": {"unresolved_observation_classes": {"contains": {"const": "NATIVE_LINKAGE"}}}}}}
+    }
   ]
 }

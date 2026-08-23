@@ -36,7 +36,7 @@ def codes(r): return [f["code"] for f in r["semantic"]["findings"]]
 
 
 def test_manifest_digest_and_clean_golden_are_deterministic():
-    assert validator.digest(MANIFEST) == "41d5634a6ca6d4bbd993e728b73d839260452b24c891e556c59da52a184a1859"
+    assert validator.digest(MANIFEST) == "2e97ad7acd0aec77ef18dbd76a1b3f2bbf8b7d4585e938498615de1917aa71aa"
     first, second = report(), report()
     assert validator.canonical_json(first) == validator.canonical_json(second)
     assert first["semantic"]["verdict"] == "CONFORMANT"
