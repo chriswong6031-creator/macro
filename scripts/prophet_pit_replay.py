@@ -39,6 +39,9 @@ forward-ledger write:
     US only:  site/prophet/plans/<ID>.json                    (surviving minted plans)
               data/prophet/origination_receipts/replay-<session>-<hash>.json
     all markets:
+              data/pit_replay/attempts/<market>-<session>.json
+                (durable operation intent; removed only after exact final validation,
+                 retained as effect-unknown evidence after any partial publication)
               <market's pending_dir>/<session>.json            (pit_replay.pending/v1)
               data/pit_replay/<market>-<session>-<hash>.json   (harness receipt)
   NEVER:      data/prophet/ledger.jsonl, data/china_standout_track/board.parquet,
@@ -163,6 +166,8 @@ PLAN_CORRECTIONS_RELPATH = "data/prophet/plan_corrections.jsonl"
 RECEIPTS_RELDIR = "data/prophet/origination_receipts"
 RECEIPT_SCHEMA = "prophet.origination_receipt/v1"
 PIT_RECEIPTS_RELDIR = "data/pit_replay"
+PIT_PROVENANCE_RELDIR = "data/pit_replay/provenance"
+PIT_ATTEMPTS_RELDIR = "data/pit_replay/attempts"
 PENDING_SCHEMA = "pit_replay.pending/v1"
 
 
@@ -2300,18 +2305,12 @@ def capture_us_snapshot_row(vintage: Path, *, session: str, work: Path,
 # stage-and-absorb: pending-entry writer (masterplan §0.4, §1 pending_dir)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def write_pending_entry(repo: Path, entry: dict[str, Any], *, market: str, session: str,
-                        harness_receipt_relpath: str, rows: list[dict[str, Any]],
-                        vintage_sha: str) -> str:
-    """Write ``<pending_dir>/<session>.json`` (schema ``pit_replay.pending/v1``).
-
-    The market's OWN nightly absorbs this through its OWN append + dedupe machinery
-    (masterplan §0.4) — this harness never writes a forward-ledger store directly.
-    """
-    pending_dir = entry.get("pending_dir")
-    if not pending_dir:
-        raise PitReplayRefused(f"market {market!r} names no pending_dir in its registry entry")
-    doc = {
+def build_pending_entry_doc(
+    *, market: str, session: str, harness_receipt_relpath: str,
+    rows: list[dict[str, Any]], vintage_sha: str,
+) -> dict[str, Any]:
+    """The deterministic ``pit_replay.pending/v1`` payload."""
+    return {
         "schema": PENDING_SCHEMA,
         "market": market,
         "session": session,
@@ -2320,16 +2319,186 @@ def write_pending_entry(repo: Path, entry: dict[str, Any], *, market: str, sessi
         "produced_by": "vintage lane delta capture",
         "vintage_sha": vintage_sha,
     }
+
+
+def write_pending_entry(repo: Path, entry: dict[str, Any], *, market: str, session: str,
+                        harness_receipt_relpath: str, rows: list[dict[str, Any]],
+                        vintage_sha: str) -> str:
+    """Atomically create ``<pending_dir>/<session>.json`` without overwriting.
+
+    The market's OWN nightly absorbs this through its OWN append + dedupe machinery
+    (masterplan §0.4) — this harness never writes a forward-ledger store directly.
+    """
+    pending_dir = entry.get("pending_dir")
+    if not pending_dir:
+        raise PitReplayRefused(f"market {market!r} names no pending_dir in its registry entry")
+    doc = build_pending_entry_doc(
+        market=market, session=session,
+        harness_receipt_relpath=harness_receipt_relpath,
+        rows=rows, vintage_sha=vintage_sha,
+    )
     path = repo / pending_dir / f"{session}.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(doc, indent=2, sort_keys=True, default=str) + "\n",
-                    encoding="utf-8")
+    payload = (json.dumps(doc, indent=2, sort_keys=True, default=str) + "\n").encode()
+    try:
+        _publish_new_bytes(path, payload)
+    except FileExistsError as exc:
+        raise PitReplayRefused(
+            f"the target pending replay path already exists at "
+            f"{path.relative_to(repo)}; refusing to overwrite"
+        ) from exc
     return str(path.relative_to(repo))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # receipt idempotence (masterplan §0.7)
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _attempt_marker_path(repo: Path, market: str, session: str) -> Path:
+    return repo / PIT_ATTEMPTS_RELDIR / f"{market}-{session}.json"
+
+
+def _pending_target_paths(
+    repo: Path, entry: dict[str, Any], market: str, session: str,
+) -> list[Path]:
+    paths: list[Path] = []
+    if entry.get("pending_dir"):
+        paths.append(repo / str(entry["pending_dir"]) / f"{session}.json")
+    if market == "hk" and entry.get("hk_pick_lab_pending_dir"):
+        paths.append(
+            repo / str(entry["hk_pick_lab_pending_dir"]) / f"{session}.json"
+        )
+    return paths
+
+
+def preflight_execute_targets(
+    repo: Path, entry: dict[str, Any], market: str, session: str,
+) -> None:
+    """Refuse a pre-existing pending effect or unresolved operation attempt."""
+    marker = _attempt_marker_path(repo, market, session)
+    if marker.exists():
+        raise PitReplayRefused(
+            f"an operation-intent marker already exists for ({market}, {session}) "
+            f"at {marker.relative_to(repo)} — a prior attempt is effect-unknown; "
+            "reconcile its exact marker and targets before any retry"
+        )
+    for path in _pending_target_paths(repo, entry, market, session):
+        if path.exists():
+            raise PitReplayRefused(
+                f"the target pending replay path already exists at "
+                f"{path.relative_to(repo)} without a completed receipt identity — "
+                "effect is unknown; refusing to overwrite or retry"
+            )
+
+
+def _publish_new_bytes(path: Path, payload: bytes) -> None:
+    """Atomically create *path* with payload, refusing an existing target.
+
+    A fully fsynced same-directory temp file is hard-linked into place.  The link is
+    an atomic no-replace publication: an existing target raises FileExistsError and
+    is never truncated, while a crash before the link leaves no partial final path.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", dir=path.parent, prefix=f".{path.name}.", delete=False,
+        ) as handle:
+            temp_path = Path(handle.name)
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.link(temp_path, path)
+        # The file bytes and the directory entry are separate durability domains.
+        # Fsync both before returning so an operation-intent marker cannot vanish
+        # across a power loss while a later effect publication survives.
+        directory_fd = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+
+
+def _operation_intent_doc(
+    *, market: str, session: str, executed_at: str,
+    executing_commit: str | None, vintage_sha: str,
+    targets: list[tuple[Path, bytes, str]], repo: Path,
+) -> dict[str, Any]:
+    return {
+        "schema": "pit_replay.operation_intent/v1",
+        "market": market,
+        "session": session,
+        "executed_at": executed_at,
+        "executing_commit": executing_commit,
+        "vintage_sha": vintage_sha,
+        "targets": [
+            {
+                "path": str(path.relative_to(repo)),
+                "role": role,
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "size_bytes": len(payload),
+            }
+            for path, payload, role in sorted(
+                targets, key=lambda item: str(item[0].relative_to(repo))
+            )
+        ],
+    }
+
+
+def _reconcile_completed_attempt_marker(
+    repo: Path, market: str, session: str,
+) -> bool:
+    """Remove only a marker whose every intended effect and final receipt match.
+
+    This is recovery for the single crash window after final receipt publication but
+    before successful marker cleanup.  Marker-only or marker+partial-effect states
+    return False and remain durable effect-unknown evidence.
+    """
+    marker_path = _attempt_marker_path(repo, market, session)
+    if not marker_path.exists():
+        return False
+    try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return False
+    if not isinstance(marker, dict):
+        return False
+    targets = marker.get("targets")
+    if (
+        marker.get("schema") != "pit_replay.operation_intent/v1"
+        or marker.get("market") != market
+        or marker.get("session") != session
+        or not isinstance(targets, list)
+        or not targets
+    ):
+        return False
+    final_receipts = [target for target in targets if target.get("role") == "harness_receipt"]
+    if len(final_receipts) != 1:
+        return False
+    for target in targets:
+        if not isinstance(target, dict) or not isinstance(target.get("path"), str):
+            return False
+        path = repo / target["path"]
+        if (
+            not path.is_file()
+            or hashlib.sha256(path.read_bytes()).hexdigest() != target.get("sha256")
+            or path.stat().st_size != target.get("size_bytes")
+        ):
+            return False
+    final_path = repo / final_receipts[0]["path"]
+    try:
+        final_doc = json.loads(final_path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return False
+    if final_path.name != (
+        f"{market}-{session}-{_canonical_sha256(final_doc)[:16]}.json"
+    ):
+        return False
+    marker_path.unlink()
+    return True
+
 
 def check_receipt_idempotence(repo: Path, market: str, session: str) -> None:
     """Refuse execution if a harness receipt for (market, session) already exists,
@@ -2344,6 +2513,16 @@ def check_receipt_idempotence(repo: Path, market: str, session: str) -> None:
     ``--execute`` is refused earlier and separately, in ``main()``, before this
     function's caller even reaches a board build.
     """
+    marker = _attempt_marker_path(repo, market, session)
+    if marker.exists() and not _reconcile_completed_attempt_marker(
+        repo, market, session
+    ):
+        raise PitReplayRefused(
+            f"an operation-intent marker already exists for ({market}, {session}) "
+            f"at {marker.relative_to(repo)} — a prior attempt is effect-unknown; "
+            "never retry until its exact target hashes are reconciled"
+        )
+
     prefix = f"{market}-{session}-"
     # working tree — SKIPPED when data/ is sparse-omitted (see docstring above)
     from scripts.worktree_sparse import missing_dirs  # noqa: PLC0415
@@ -2761,7 +2940,7 @@ def build_harness_receipt(*, market: str, session: str, entry: dict[str, Any],
     per-store post-build assertion result, F2b).
     """
     overlay = result["overlay"]
-    return {
+    receipt = {
         "schema": "pit_replay.receipt/v1",
         "authority": DEC_AUTHORITY, "masterplan": MASTERPLAN,
         "market": market, "session": session, "dry_run": dry_run,
@@ -2789,6 +2968,60 @@ def build_harness_receipt(*, market: str, session: str, entry: dict[str, Any],
             "checks": result.get("pinned_stores_check") or [],
         },
         "executed_at": executed_at, "executing_commit": executing_commit,
+    }
+    if market == "us":
+        receipt["plans_baseline"] = {
+            "commit": result.get("baseline_sha"),
+            "ancestry": result.get("baseline_ancestry"),
+            "plan_count": result.get("plans_baseline_count"),
+        }
+        receipt["disposition_proof"] = build_us_disposition_proof(result)
+    return receipt
+
+
+def build_us_disposition_proof(result: dict[str, Any]) -> dict[str, Any]:
+    """Canonical one-row/one-disposition proof for every admitted US candidate.
+
+    The intake funnel's 52 admitted rows split into duplicate-id blocks plus the
+    four post-admission terminal families.  Keeping the exact row evidence, rather
+    than only their aggregate counts, makes a zero-mint receipt independently
+    mutation-detectable: every candidate is named and every terminal reason is
+    content-addressed.
+    """
+    duplicate_evidence = {
+        str(row.get("plan_id")): row
+        for row in (result.get("duplicate_live_wins") or [])
+        if row.get("plan_id")
+    }
+    rows: list[dict[str, Any]] = []
+    for plan_id in sorted(str(value) for value in (result.get("duplicate_ids") or [])):
+        evidence = duplicate_evidence.get(plan_id) or {
+            "plan_id": plan_id,
+            "reason": "duplicate_id_blocked",
+        }
+        rows.append({"disposition": "duplicate_id_blocked", "evidence": evidence})
+    for disposition, values in (
+        ("minted", result.get("minted") or []),
+        ("collided", result.get("collided") or []),
+        ("chronology_refused", result.get("chronology_refused") or []),
+        ("still_refused", result.get("still_refused") or []),
+    ):
+        for value in values:
+            rows.append({"disposition": disposition, "evidence": value})
+    rows.sort(key=lambda row: (str(row["disposition"]), _canonical_sha256(row)))
+    disposition_counts = {
+        name: sum(1 for row in rows if row["disposition"] == name)
+        for name in (
+            "duplicate_id_blocked", "minted", "collided",
+            "chronology_refused", "still_refused",
+        )
+    }
+    return {
+        "schema": "pit_replay.us_disposition_proof/v1",
+        "rows": rows,
+        "row_count": len(rows),
+        "counts": disposition_counts,
+        "rows_sha256": _canonical_sha256(rows),
     }
 
 
@@ -2833,8 +3066,157 @@ def _is_sha256_commit(value: Any) -> bool:
     )
 
 
+def _is_valid_plans_baseline(repo: Path, value: Any) -> bool:
+    if not (
+        isinstance(value, dict)
+        and _is_sha256_commit(value.get("commit"))
+        and value.get("ancestry") == "ancestor_of_origin_main"
+        and type(value.get("plan_count")) is int
+        and value["plan_count"] >= 0
+    ):
+        return False
+    try:
+        commit = resolve_commit(repo, value["commit"])
+        ancestry = assert_ancestor_of_main(repo, commit, label="plans-baseline receipt")
+        plan_count = len(load_plans_at(repo, commit))
+    except (PitReplayRefused, subprocess.CalledProcessError):
+        return False
+    return (
+        commit == value["commit"]
+        and ancestry == value["ancestry"]
+        and plan_count == value["plan_count"]
+    )
+
+
+def _is_valid_us_disposition_proof(
+    value: Any, *, receipt_counts: dict[str, Any],
+) -> bool:
+    if not isinstance(value, dict) or value.get("schema") != (
+        "pit_replay.us_disposition_proof/v1"
+    ):
+        return False
+    rows = value.get("rows")
+    if (
+        not isinstance(rows, list)
+        or type(value.get("row_count")) is not int
+        or value["row_count"] != len(rows)
+        or value.get("rows_sha256") != _canonical_sha256(rows)
+    ):
+        return False
+    allowed = {
+        "duplicate_id_blocked", "minted", "collided",
+        "chronology_refused", "still_refused",
+    }
+    if any(
+        not isinstance(row, dict)
+        or row.get("disposition") not in allowed
+        or not isinstance(row.get("evidence"), dict)
+        for row in rows
+    ):
+        return False
+    if len({_canonical_sha256(row) for row in rows}) != len(rows):
+        return False
+    for row in rows:
+        disposition = row["disposition"]
+        evidence = row["evidence"]
+        if disposition == "duplicate_id_blocked" and (
+            not isinstance(evidence.get("plan_id"), str)
+            or not isinstance(evidence.get("reason"), str)
+        ):
+            return False
+        if disposition == "minted" and not isinstance(evidence.get("id"), str):
+            return False
+        if disposition in {"collided", "chronology_refused", "still_refused"} and (
+            not isinstance(evidence.get("ticker"), str)
+            or not isinstance(evidence.get("reason"), str)
+        ):
+            return False
+    measured_counts = {
+        name: sum(1 for row in rows if row["disposition"] == name)
+        for name in sorted(allowed)
+    }
+    if value.get("counts") != measured_counts:
+        return False
+    for name in allowed:
+        if receipt_counts.get(name) != measured_counts[name]:
+            return False
+    return receipt_counts.get("admitted") == len(rows)
+
+
+def build_legacy_receipt_provenance(
+    *, repo: Path, receipt_path: Path, receipt_doc: dict[str, Any],
+    plans_baseline: dict[str, Any], disposition_proof: dict[str, Any],
+    reconstruction: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a deterministic additive envelope for a pre-M3 legacy receipt.
+
+    The original execution receipt remains immutable.  This envelope binds its exact
+    bytes and supplies only evidence deterministically reconstructed from pinned
+    execution inputs.  There is intentionally no generated-at clock in this schema.
+    """
+    return {
+        "schema": "pit_replay.receipt_provenance/v1",
+        "market": receipt_doc["market"],
+        "session": receipt_doc["session"],
+        "receipt": {
+            "path": str(receipt_path.relative_to(repo)),
+            "sha256": hashlib.sha256(receipt_path.read_bytes()).hexdigest(),
+            "canonical_body_sha256": _canonical_sha256(receipt_doc),
+        },
+        "plans_baseline": plans_baseline,
+        "disposition_proof": disposition_proof,
+        "reconstruction": reconstruction,
+    }
+
+
+def _is_valid_legacy_receipt_provenance(
+    repo: Path, receipt_path: Path, receipt_doc: dict[str, Any],
+    *, market: str, session: str,
+) -> bool:
+    provenance_dir = repo / PIT_PROVENANCE_RELDIR
+    candidates = sorted(provenance_dir.glob(f"{market}-{session}-*.json")) \
+        if provenance_dir.exists() else []
+    if len(candidates) != 1:
+        return False
+    provenance_path = candidates[0]
+    try:
+        provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 - malformed provenance is inadmissible
+        return False
+    if (
+        not isinstance(provenance, dict)
+        or provenance.get("schema") != "pit_replay.receipt_provenance/v1"
+        or provenance.get("market") != market
+        or provenance.get("session") != session
+        or provenance_path.name != (
+            f"{market}-{session}-{_canonical_sha256(provenance)[:16]}.json"
+        )
+    ):
+        return False
+    receipt_binding = provenance.get("receipt")
+    if (
+        not isinstance(receipt_binding, dict)
+        or receipt_binding.get("path") != str(receipt_path.relative_to(repo))
+        or receipt_binding.get("sha256") != hashlib.sha256(
+            receipt_path.read_bytes()
+        ).hexdigest()
+        or receipt_binding.get("canonical_body_sha256") != _canonical_sha256(
+            receipt_doc
+        )
+    ):
+        return False
+    return (
+        _is_valid_plans_baseline(repo, provenance.get("plans_baseline"))
+        and _is_valid_us_disposition_proof(
+            provenance.get("disposition_proof"),
+            receipt_counts=receipt_doc["counts"],
+        )
+        and isinstance(provenance.get("reconstruction"), dict)
+    )
+
+
 def _is_admissible_zero_mint_execute_receipt(
-    receipt_path: Path, receipt_doc: Any, *, market: str, session: str,
+    repo: Path, receipt_path: Path, receipt_doc: Any, *, market: str, session: str,
 ) -> bool:
     """Authenticate the one zero-mint receipt allowed to stand in for origination.
 
@@ -2881,6 +3263,17 @@ def _is_admissible_zero_mint_execute_receipt(
     ):
         return False
 
+    embedded_provenance = (
+        _is_valid_plans_baseline(repo, receipt_doc.get("plans_baseline"))
+        and _is_valid_us_disposition_proof(
+            receipt_doc.get("disposition_proof"), receipt_counts=counts,
+        )
+    )
+    if not embedded_provenance and not _is_valid_legacy_receipt_provenance(
+        repo, receipt_path, receipt_doc, market=market, session=session,
+    ):
+        return False
+
     digest = _canonical_sha256(receipt_doc)[:16]
     return receipt_path.name == f"{market}-{session}-{digest}.json"
 
@@ -2896,53 +3289,11 @@ def write_pit_artifacts(repo: Path, *, market: str, entry: dict[str, Any],
     written: dict[str, Any] = {"plans": [], "origination_receipt": None,
                                "pending_entry": None, "pending_entry_pick_lab": None,
                                "harness_receipt": None}
+    targets: list[tuple[Path, bytes, str]] = []
 
-    if market == "us" and result.get("minted"):
-        plans_dir = repo / PLANS_RELDIR
-        plans_dir.mkdir(parents=True, exist_ok=True)
-        for plan in result["minted"]:
-            path = plans_dir / f"{plan['id']}.json"
-            if path.exists():
-                print("::error title=prophet-pit-replay-plan-collision::"
-                     f"{PLANS_RELDIR}/{plan['id']}.json already exists — the replay "
-                     "would overwrite a plan it did not write", flush=True)
-                raise SystemExit(4)
-            path.write_bytes(_plan_bytes(plan))
-            written["plans"].append(str(path.relative_to(repo)))
-
-        board = json.loads(Path(result["board_path"]).read_text())
-        board_blob = Path(result["board_path"]).read_bytes()
-        # directive 10: filename is replay-<session>-<hash>.json, and the auditor's
-        # _validate_receipt_shape requires the receipt's OWN receipt_id field to equal
-        # the filename stem exactly — so the id passed into the receipt body and the
-        # filename are derived from the SAME digest, never independently.
-        origination_receipt_id = (
-            f"replay-{session}-{result['receipt_id'].rsplit('-', 1)[-1]}")
-        receipt = _build_origination_receipt(
-            receipt_id=origination_receipt_id, board=board, board_blob=board_blob,
-            baseline_sha=result["baseline_sha"], minted=result["minted"],
-            intake=result.get("intake") or {}, executed_at=executed_at, market=market,
-            session=session, vintage_sha=result["vintage_sha"], overlay=result["overlay"],
-            alpha=result.get("alpha"), fidelity=result["fidelity"],
-            executing_commit=executing_commit, board_relpath=entry["board_relpath"],
-        )
-        encoded = (json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False)
-                  + "\n").encode("utf-8")
-        receipts_dir = repo / RECEIPTS_RELDIR
-        receipts_dir.mkdir(parents=True, exist_ok=True)
-        receipt_name = f"{origination_receipt_id}.json"
-        receipt_path = receipts_dir / receipt_name
-        if receipt_path.exists() and receipt_path.read_bytes() != encoded:
-            print("::error title=prophet-pit-replay-receipt-collision::"
-                 f"{RECEIPTS_RELDIR}/{receipt_name} already exists with different "
-                 "bytes", flush=True)
-            raise SystemExit(4)
-        receipt_path.write_bytes(encoded)
-        written["origination_receipt"] = str(receipt_path.relative_to(repo))
-
-    # The harness receipt's own name is content-addressed (digest of its body), so it
-    # is computed BEFORE the pending entry that points at it — no placeholder, no
-    # after-the-fact fixup of a file another consumer may already be reading.
+    # Precompute every byte and target before the durable intent marker.  This is
+    # deliberately a planning phase only: no plan, pending row, or completion receipt
+    # can exist without a prior marker naming its exact hash.
     receipt_doc = build_harness_receipt(
         market=market, session=session, entry=entry, vintage_info=vintage_info,
         result=result, executed_at=executed_at, executing_commit=executing_commit,
@@ -2951,6 +3302,42 @@ def write_pit_artifacts(repo: Path, *, market: str, entry: dict[str, Any],
     digest = _canonical_sha256(receipt_doc)[:16]
     harness_receipt_name = f"{market}-{session}-{digest}.json"
     harness_receipt_relpath = f"{PIT_RECEIPTS_RELDIR}/{harness_receipt_name}"
+    harness_receipt_path = repo / harness_receipt_relpath
+    harness_receipt_bytes = (
+        json.dumps(receipt_doc, indent=2, sort_keys=True, default=str) + "\n"
+    ).encode("utf-8")
+
+    if market == "us" and result.get("minted"):
+        for plan in result["minted"]:
+            targets.append((
+                repo / PLANS_RELDIR / f"{plan['id']}.json",
+                _plan_bytes(plan),
+                "plan",
+            ))
+
+        board_path = Path(result["board_path"])
+        board_blob = board_path.read_bytes()
+        board = json.loads(board_blob)
+        origination_receipt_id = (
+            f"replay-{session}-{result['receipt_id'].rsplit('-', 1)[-1]}")
+        origination_receipt = _build_origination_receipt(
+            receipt_id=origination_receipt_id, board=board, board_blob=board_blob,
+            baseline_sha=result["baseline_sha"], minted=result["minted"],
+            intake=result.get("intake") or {}, executed_at=executed_at, market=market,
+            session=session, vintage_sha=result["vintage_sha"], overlay=result["overlay"],
+            alpha=result.get("alpha"), fidelity=result["fidelity"],
+            executing_commit=executing_commit, board_relpath=entry["board_relpath"],
+        )
+        origination_bytes = (
+            json.dumps(
+                origination_receipt, indent=2, sort_keys=True, allow_nan=False,
+            ) + "\n"
+        ).encode("utf-8")
+        targets.append((
+            repo / RECEIPTS_RELDIR / f"{origination_receipt_id}.json",
+            origination_bytes,
+            "origination_receipt",
+        ))
 
     # pending entry — every market with a pending_dir and something to hand off
     rows: list[dict[str, Any]] = []
@@ -2982,12 +3369,16 @@ def write_pit_artifacts(repo: Path, *, market: str, entry: dict[str, Any],
                  f"({cap.get('reason', 'not attempted')}) — the pending entry will "
                  "carry zero rows", flush=True)
     if rows or market != "us":
-        pending_path = write_pending_entry(
-            repo, entry, market=market, session=session,
+        pending_doc = build_pending_entry_doc(
+            market=market, session=session,
             harness_receipt_relpath=harness_receipt_relpath,
             rows=rows, vintage_sha=result["vintage_sha"],
         )
-        written["pending_entry"] = pending_path
+        pending_path = repo / str(entry["pending_dir"]) / f"{session}.json"
+        pending_bytes = (
+            json.dumps(pending_doc, indent=2, sort_keys=True, default=str) + "\n"
+        ).encode("utf-8")
+        targets.append((pending_path, pending_bytes, "pending_entry"))
 
     # HK carries a SECOND pending dir for the pick-lab fire pass (masterplan §1
     # pending_dir cell) — written separately from the board rows above, through the
@@ -3003,22 +3394,74 @@ def write_pit_artifacts(repo: Path, *, market: str, entry: dict[str, Any],
                  f"fire capture for {session} produced nothing "
                  f"({pick_cap.get('reason', 'not attempted')}) — the pick-lab pending "
                  "entry will carry zero rows", flush=True)
-        pick_entry = dict(entry)
-        pick_entry["pending_dir"] = entry["hk_pick_lab_pending_dir"]
-        pick_pending_path = write_pending_entry(
-            repo, pick_entry, market=market, session=session,
+        pick_pending_doc = build_pending_entry_doc(
+            market=market, session=session,
             harness_receipt_relpath=harness_receipt_relpath,
             rows=pick_rows, vintage_sha=result["vintage_sha"],
         )
-        written["pending_entry_pick_lab"] = pick_pending_path
+        pick_pending_path = (
+            repo / str(entry["hk_pick_lab_pending_dir"]) / f"{session}.json"
+        )
+        pick_pending_bytes = (
+            json.dumps(
+                pick_pending_doc, indent=2, sort_keys=True, default=str,
+            ) + "\n"
+        ).encode("utf-8")
+        targets.append((
+            pick_pending_path, pick_pending_bytes, "pending_entry_pick_lab",
+        ))
 
-    receipts_dir = repo / PIT_RECEIPTS_RELDIR
-    receipts_dir.mkdir(parents=True, exist_ok=True)
-    harness_receipt_path = receipts_dir / harness_receipt_name
-    harness_receipt_path.write_text(
-        json.dumps(receipt_doc, indent=2, sort_keys=True, default=str) + "\n",
-        encoding="utf-8")
-    written["harness_receipt"] = str(harness_receipt_path.relative_to(repo))
+    # The final completion-shaped receipt is LAST.  The operation-intent marker is
+    # the pre-effect identity; publishing the final receipt early would falsely claim
+    # completion during a partial-effect crash.
+    targets.append((harness_receipt_path, harness_receipt_bytes, "harness_receipt"))
+
+    preflight_execute_targets(repo, entry, market, session)
+    for path, _, _ in targets:
+        if path.exists():
+            raise PitReplayRefused(
+                f"intended replay target already exists at {path.relative_to(repo)}; "
+                "refusing before the operation-intent marker or any effect"
+            )
+
+    marker_path = _attempt_marker_path(repo, market, session)
+    marker_doc = _operation_intent_doc(
+        market=market, session=session, executed_at=executed_at,
+        executing_commit=executing_commit, vintage_sha=result["vintage_sha"],
+        targets=targets, repo=repo,
+    )
+    marker_bytes = (
+        json.dumps(marker_doc, indent=2, sort_keys=True, default=str) + "\n"
+    ).encode("utf-8")
+    try:
+        _publish_new_bytes(marker_path, marker_bytes)
+    except FileExistsError as exc:
+        raise PitReplayRefused(
+            f"operation-intent marker raced into existence at "
+            f"{marker_path.relative_to(repo)}; effect is unknown"
+        ) from exc
+
+    try:
+        for path, payload, role in targets:
+            _publish_new_bytes(path, payload)
+            relpath = str(path.relative_to(repo))
+            if role == "plan":
+                written["plans"].append(relpath)
+            else:
+                written[role] = relpath
+    except Exception as exc:
+        # The durable marker intentionally remains.  Any retry is now effect-unknown
+        # and check_receipt_idempotence() refuses it until exact hashes reconcile.
+        raise PitReplayRefused(
+            f"replay publication stopped with durable operation-intent marker "
+            f"{marker_path.relative_to(repo)}: {exc}"
+        ) from exc
+
+    if not _reconcile_completed_attempt_marker(repo, market, session):
+        raise PitReplayRefused(
+            "all replay writes returned, but their exact hashes did not reconcile "
+            "to the durable operation-intent marker; marker retained, effect unknown"
+        )
 
     return written
 
@@ -3188,21 +3631,34 @@ def main(argv: list[str] | None = None) -> int:
             # dry-run preview, malformed file, or duplicate execution cannot bypass the
             # fail-closed missing-origination-receipt guard.
             pit_receipts_dir = repo / PIT_RECEIPTS_RELDIR
-            zero_mint_receipts: list[Path] = []
-            if pit_receipts_dir.exists():
-                for receipt_path in sorted(
-                    pit_receipts_dir.glob(f"{args.market}-{args.session}-*.json")
+            matching_receipts = sorted(
+                pit_receipts_dir.glob(f"{args.market}-{args.session}-*.json")
+            ) if pit_receipts_dir.exists() else []
+            if len(matching_receipts) > 1:
+                print(
+                    "::error title=prophet-pit-replay-refused::multiple PIT replay "
+                    f"receipt files found for ({args.market}, {args.session}) — "
+                    "execution identity is ambiguous; do not merge",
+                    flush=True,
+                )
+                return 2
+            if len(matching_receipts) == 1:
+                receipt_path = matching_receipts[0]
+                try:
+                    receipt_doc = json.loads(receipt_path.read_text(encoding="utf-8"))
+                except Exception:  # noqa: BLE001 - malformed means not admissible
+                    receipt_doc = None
+                if not _is_admissible_zero_mint_execute_receipt(
+                    repo, receipt_path, receipt_doc,
+                    market=args.market, session=args.session,
                 ):
-                    try:
-                        receipt_doc = json.loads(receipt_path.read_text(encoding="utf-8"))
-                    except Exception:  # noqa: BLE001 - malformed means not admissible
-                        continue
-                    if _is_admissible_zero_mint_execute_receipt(
-                        receipt_path, receipt_doc,
-                        market=args.market, session=args.session,
-                    ):
-                        zero_mint_receipts.append(receipt_path)
-            if len(zero_mint_receipts) == 1:
+                    print(
+                        "::error title=prophet-pit-replay-refused::the sole PIT replay "
+                        f"receipt for ({args.market}, {args.session}) is not an "
+                        "authenticated zero-mint execution receipt; do not merge",
+                        flush=True,
+                    )
+                    return 2
                 try:
                     report = verify_collisions(
                         repo, market=args.market, session=args.session, minted_keys={}
@@ -3213,18 +3669,10 @@ def main(argv: list[str] | None = None) -> int:
                 print(
                     "re-verified zero minted plans against "
                     f"{report['against']} @ {report['against_commit'][:12]} "
-                    f"from {zero_mint_receipts[0].relative_to(repo)}"
+                    f"from {receipt_path.relative_to(repo)}"
                 )
                 print("no new collisions — the minted set is empty")
                 return 0
-            if len(zero_mint_receipts) > 1:
-                print(
-                    "::error title=prophet-pit-replay-refused::multiple zero-mint "
-                    f"execute receipts found for ({args.market}, {args.session}) — "
-                    "execution identity is ambiguous; do not merge",
-                    flush=True,
-                )
-                return 2
             print("::error title=prophet-pit-replay-refused::no origination receipt "
                  f"found for ({args.market}, {args.session}) — run --execute first",
                  flush=True)
@@ -3284,6 +3732,13 @@ def main(argv: list[str] | None = None) -> int:
         if sparse_missing:
             print(f"::error title=prophet-pit-replay-refused::"
                  f"{remedy_line(sparse_missing)}", flush=True)
+            return 2
+        try:
+            preflight_execute_targets(
+                repo, entry, args.market, args.session,
+            )
+        except PitReplayRefused as exc:
+            print(f"::error title=prophet-pit-replay-refused::{exc}", flush=True)
             return 2
 
     work = Path(args.work_dir).resolve() if args.work_dir else (
@@ -3347,6 +3802,10 @@ def main(argv: list[str] | None = None) -> int:
                 vintage_info=vintage_info, executed_at=executed_at,
                 executing_commit=executing_commit,
             )
+        except PitReplayRefused as exc:
+            print(f"::error title=prophet-pit-replay-refused::{exc}", flush=True)
+            cleanup()
+            return 2
         except SystemExit as exc:
             cleanup()
             return int(exc.code or 1)

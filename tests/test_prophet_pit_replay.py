@@ -643,6 +643,161 @@ class TestReceiptIdempotence:
 
 
 # ---------------------------------------------------------------------------
+# Execute publication: durable intent marker + no-overwrite pending target
+# ---------------------------------------------------------------------------
+
+class TestExecuteOperationIntent:
+    session = "2026-08-14"
+
+    @staticmethod
+    def _entry() -> dict:
+        return {
+            "pending_dir": "data/us_board_ledger/pending_replay",
+            "env_pins": {}, "residual_network": [], "pinned_stores": {},
+        }
+
+    @classmethod
+    def _result(cls) -> dict:
+        return {
+            "market": "us", "session": cls.session, "vintage_sha": "1" * 40,
+            "baseline_sha": "2" * 40,
+            "baseline_ancestry": "ancestor_of_origin_main",
+            "plans_baseline_count": 0,
+            "control_through": "2026-08-13",
+            "overlay": {
+                "live_price_source_commit": "3" * 40,
+                "totals": {"written": 1}, "files": {}, "skipped_identical": {},
+                "fence": {"violations": 0, "unscannable_count": 0},
+            },
+            "fidelity": {"measured": True, "passes_floor": True, "waived": False},
+            "board_identity": {"as_of": cls.session},
+            "counts": {
+                "admitted": 0, "duplicate_id_blocked": 0, "minted": 0,
+                "collided": 0, "chronology_refused": 0, "still_refused": 0,
+            },
+            "reconciliation": {
+                "admission_identity": {"holds": True},
+                "disposition_identity": {"holds": True},
+            },
+            "clock": {}, "snapshot_capture": {"ok": True, "row": {"as_of": cls.session}},
+            "ledger_capture": None, "pinned_stores_check": [], "aux_panel_source": None,
+            "duplicate_ids": [], "duplicate_live_wins": [], "minted": [],
+            "collided": [], "chronology_refused": [], "still_refused": [],
+        }
+
+    @classmethod
+    def _vintage(cls) -> dict:
+        return {
+            "slot_utc": f"{cls.session}T22:30:00Z", "sha": "1" * 40,
+            "committed_utc": f"{cls.session}T15:00:00-07:00",
+            "ancestry": "ancestor_of_origin_main",
+        }
+
+    def test_atomic_publication_fsyncs_file_and_directory(self, tmp_path, monkeypatch):
+        fsync_calls: list[int] = []
+        real_fsync = ppr.os.fsync
+
+        def recording_fsync(fd):
+            fsync_calls.append(fd)
+            return real_fsync(fd)
+
+        monkeypatch.setattr(ppr.os, "fsync", recording_fsync)
+        target = tmp_path / "nested" / "artifact.json"
+        ppr._publish_new_bytes(target, b"exact-bytes\n")
+
+        assert target.read_bytes() == b"exact-bytes\n"
+        assert len(fsync_calls) == 2  # temp-file bytes, then linked directory entry
+
+    def test_preexisting_pending_target_refuses_without_any_write(self, tmp_path):
+        repo = _init_repo(tmp_path)
+        pending = repo / self._entry()["pending_dir"] / f"{self.session}.json"
+        pending.parent.mkdir(parents=True)
+        pending.write_text("operator-owned", encoding="utf-8")
+
+        with pytest.raises(ppr.PitReplayRefused, match="refusing to overwrite"):
+            ppr.write_pit_artifacts(
+                repo, market="us", entry=self._entry(), result=self._result(),
+                vintage_info=self._vintage(), executed_at="2026-08-23T10:44:12Z",
+                executing_commit="4" * 40,
+            )
+        assert pending.read_text(encoding="utf-8") == "operator-owned"
+        assert not ppr._attempt_marker_path(repo, "us", self.session).exists()
+        assert not (repo / ppr.PIT_RECEIPTS_RELDIR).exists()
+
+    @pytest.mark.parametrize("fail_role", ["pending_entry", "harness_receipt"])
+    def test_crash_after_marker_stays_effect_unknown_and_retry_refuses(
+        self, tmp_path, monkeypatch, fail_role
+    ):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        real_publish = ppr._publish_new_bytes
+
+        def injected(path, payload):
+            if fail_role == "pending_entry" and "pending_replay" in str(path):
+                raise OSError("injected before first effect")
+            if fail_role == "harness_receipt" and path.parent == (
+                repo / ppr.PIT_RECEIPTS_RELDIR
+            ):
+                raise OSError("injected after pending effect")
+            real_publish(path, payload)
+
+        monkeypatch.setattr(ppr, "_publish_new_bytes", injected)
+        with pytest.raises(ppr.PitReplayRefused, match="durable operation-intent"):
+            ppr.write_pit_artifacts(
+                repo, market="us", entry=self._entry(), result=self._result(),
+                vintage_info=self._vintage(), executed_at="2026-08-23T10:44:12Z",
+                executing_commit="4" * 40,
+            )
+
+        marker = ppr._attempt_marker_path(repo, "us", self.session)
+        pending = repo / self._entry()["pending_dir"] / f"{self.session}.json"
+        assert marker.exists()
+        assert pending.exists() is (fail_role == "harness_receipt")
+        assert not list((repo / ppr.PIT_RECEIPTS_RELDIR).glob(
+            f"us-{self.session}-*.json"
+        ))
+        with pytest.raises(ppr.PitReplayRefused, match="effect-unknown"):
+            ppr.check_receipt_idempotence(repo, "us", self.session)
+        assert marker.exists()
+
+    def test_success_removes_marker_only_after_final_receipt_validates(self, tmp_path):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        written = ppr.write_pit_artifacts(
+            repo, market="us", entry=self._entry(), result=self._result(),
+            vintage_info=self._vintage(), executed_at="2026-08-23T10:44:12Z",
+            executing_commit="4" * 40,
+        )
+        assert not ppr._attempt_marker_path(repo, "us", self.session).exists()
+        assert (repo / written["pending_entry"]).is_file()
+        assert (repo / written["harness_receipt"]).is_file()
+        with pytest.raises(ppr.PitReplayRefused, match="already exists in the working tree"):
+            ppr.check_receipt_idempotence(repo, "us", self.session)
+
+    def test_crash_after_final_receipt_cleans_only_the_completed_marker(
+        self, tmp_path, monkeypatch
+    ):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        monkeypatch.setattr(ppr, "_reconcile_completed_attempt_marker", lambda *a: False)
+        with pytest.raises(ppr.PitReplayRefused, match="exact hashes did not reconcile"):
+            ppr.write_pit_artifacts(
+                repo, market="us", entry=self._entry(), result=self._result(),
+                vintage_info=self._vintage(), executed_at="2026-08-23T10:44:12Z",
+                executing_commit="4" * 40,
+            )
+        monkeypatch.undo()
+        marker = ppr._attempt_marker_path(repo, "us", self.session)
+        assert marker.exists()
+        with pytest.raises(ppr.PitReplayRefused, match="already exists in the working tree"):
+            ppr.check_receipt_idempotence(repo, "us", self.session)
+        assert not marker.exists()
+
+
+# ---------------------------------------------------------------------------
 # receipt shape satisfies the real chronology auditor (directive 10)
 # ---------------------------------------------------------------------------
 
@@ -939,7 +1094,7 @@ class TestVerifyCollisionsAheadOfIdempotence:
     def _write_zero_mint_receipt(
         repo: Path, session: str, *, dry_run: bool = False,
         executing_commit: str = "3" * 40, canonical_name: bool = True,
-    ) -> Path:
+        ) -> Path:
         receipt = ppr.build_harness_receipt(
             market="us",
             session=session,
@@ -963,13 +1118,25 @@ class TestVerifyCollisionsAheadOfIdempotence:
                     "measured": True, "passes_floor": True, "waived": False,
                 },
                 "board_identity": {"as_of": session},
-                "counts": {"minted": 0},
+                "counts": {
+                    "admitted": 1, "duplicate_id_blocked": 1, "minted": 0,
+                    "collided": 0, "chronology_refused": 0, "still_refused": 0,
+                },
                 "reconciliation": {
                     "admission_identity": {"holds": True},
                     "disposition_identity": {"holds": True},
                 },
                 "clock": {},
                 "snapshot_capture": {"ok": True, "row": {}},
+                "baseline_sha": _git(repo, "rev-parse", "HEAD"),
+                "baseline_ancestry": "ancestor_of_origin_main",
+                "plans_baseline_count": 0,
+                "duplicate_ids": ["AAA-BULL-20260810"],
+                "duplicate_live_wins": [],
+                "minted": [],
+                "collided": [],
+                "chronology_refused": [],
+                "still_refused": [],
             },
             executed_at=f"{session}T23:00:00+00:00",
             executing_commit=executing_commit,
@@ -982,6 +1149,39 @@ class TestVerifyCollisionsAheadOfIdempotence:
         path = pit_dir / f"us-{session}-{suffix}.json"
         path.write_text(json.dumps(receipt), encoding="utf-8")
         return path
+
+    @staticmethod
+    def _run_zero_mint_verifier(repo: Path, session: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, "-m", "scripts.prophet_pit_replay",
+             "--market", "us", "--session", session, "--verify-collisions",
+             "--repo", str(repo)],
+            cwd=_REPO, capture_output=True, text=True,
+        )
+
+    @classmethod
+    def _write_legacy_receipt_with_provenance(
+        cls, repo: Path, session: str
+    ) -> tuple[Path, Path]:
+        embedded_path = cls._write_zero_mint_receipt(repo, session)
+        receipt = json.loads(embedded_path.read_text(encoding="utf-8"))
+        plans_baseline = receipt.pop("plans_baseline")
+        disposition_proof = receipt.pop("disposition_proof")
+        embedded_path.unlink()
+        receipt_digest = ppr._canonical_sha256(receipt)[:16]
+        receipt_path = embedded_path.parent / f"us-{session}-{receipt_digest}.json"
+        receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+        provenance = ppr.build_legacy_receipt_provenance(
+            repo=repo, receipt_path=receipt_path, receipt_doc=receipt,
+            plans_baseline=plans_baseline, disposition_proof=disposition_proof,
+            reconstruction={"method": "deterministic-test-fixture"},
+        )
+        provenance_dir = repo / ppr.PIT_PROVENANCE_RELDIR
+        provenance_dir.mkdir(parents=True)
+        provenance_digest = ppr._canonical_sha256(provenance)[:16]
+        provenance_path = provenance_dir / f"us-{session}-{provenance_digest}.json"
+        provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+        return receipt_path, provenance_path
 
     def test_execute_shaped_fixture_reaches_collision_logic_not_idempotence_refusal(
         self, tmp_path
@@ -1014,12 +1214,7 @@ class TestVerifyCollisionsAheadOfIdempotence:
             json.dumps({"id": plan_id, "asset": "AAA", "direction": "BULL"}),
             encoding="utf-8")
 
-        proc = subprocess.run(
-            [sys.executable, "-m", "scripts.prophet_pit_replay",
-             "--market", "us", "--session", session, "--verify-collisions",
-             "--repo", str(repo)],
-            cwd=_REPO, capture_output=True, text=True,
-        )
+        proc = self._run_zero_mint_verifier(repo, session)
         assert "already exists in the working tree" not in proc.stdout, (
             "idempotence must not gate --verify-collisions — got:\n" + proc.stdout
             + proc.stderr
@@ -1036,12 +1231,7 @@ class TestVerifyCollisionsAheadOfIdempotence:
         session = "2026-08-14"
         self._write_zero_mint_receipt(repo, session)
 
-        proc = subprocess.run(
-            [sys.executable, "-m", "scripts.prophet_pit_replay",
-             "--market", "us", "--session", session, "--verify-collisions",
-             "--repo", str(repo)],
-            cwd=_REPO, capture_output=True, text=True,
-        )
+        proc = self._run_zero_mint_verifier(repo, session)
         assert proc.returncode == 0, proc.stdout + proc.stderr
         assert "re-verified zero minted plans" in proc.stdout
         assert "the minted set is empty" in proc.stdout
@@ -1061,14 +1251,9 @@ class TestVerifyCollisionsAheadOfIdempotence:
         digest = ppr._canonical_sha256(receipt)[:16]
         (pit_dir / f"us-{session}-{digest}.json").write_text(json.dumps(receipt))
 
-        proc = subprocess.run(
-            [sys.executable, "-m", "scripts.prophet_pit_replay",
-             "--market", "us", "--session", session, "--verify-collisions",
-             "--repo", str(repo)],
-            cwd=_REPO, capture_output=True, text=True,
-        )
+        proc = self._run_zero_mint_verifier(repo, session)
         assert proc.returncode == 2
-        assert "no origination receipt" in proc.stdout
+        assert "not an authenticated zero-mint execution receipt" in proc.stdout
 
     def test_dry_run_zero_mint_receipt_is_refused(self, tmp_path):
         repo = _init_repo(tmp_path)
@@ -1078,14 +1263,9 @@ class TestVerifyCollisionsAheadOfIdempotence:
         session = "2026-08-14"
         self._write_zero_mint_receipt(repo, session, dry_run=True)
 
-        proc = subprocess.run(
-            [sys.executable, "-m", "scripts.prophet_pit_replay",
-             "--market", "us", "--session", session, "--verify-collisions",
-             "--repo", str(repo)],
-            cwd=_REPO, capture_output=True, text=True,
-        )
+        proc = self._run_zero_mint_verifier(repo, session)
         assert proc.returncode == 2
-        assert "no origination receipt" in proc.stdout
+        assert "not an authenticated zero-mint execution receipt" in proc.stdout
 
     def test_non_content_addressed_zero_mint_receipt_is_refused(self, tmp_path):
         repo = _init_repo(tmp_path)
@@ -1095,14 +1275,9 @@ class TestVerifyCollisionsAheadOfIdempotence:
         session = "2026-08-14"
         self._write_zero_mint_receipt(repo, session, canonical_name=False)
 
-        proc = subprocess.run(
-            [sys.executable, "-m", "scripts.prophet_pit_replay",
-             "--market", "us", "--session", session, "--verify-collisions",
-             "--repo", str(repo)],
-            cwd=_REPO, capture_output=True, text=True,
-        )
+        proc = self._run_zero_mint_verifier(repo, session)
         assert proc.returncode == 2
-        assert "no origination receipt" in proc.stdout
+        assert "not an authenticated zero-mint execution receipt" in proc.stdout
 
     def test_duplicate_zero_mint_execution_receipts_are_refused(self, tmp_path):
         repo = _init_repo(tmp_path)
@@ -1113,14 +1288,158 @@ class TestVerifyCollisionsAheadOfIdempotence:
         self._write_zero_mint_receipt(repo, session, executing_commit="3" * 40)
         self._write_zero_mint_receipt(repo, session, executing_commit="4" * 40)
 
-        proc = subprocess.run(
-            [sys.executable, "-m", "scripts.prophet_pit_replay",
-             "--market", "us", "--session", session, "--verify-collisions",
-             "--repo", str(repo)],
-            cwd=_REPO, capture_output=True, text=True,
-        )
+        proc = self._run_zero_mint_verifier(repo, session)
         assert proc.returncode == 2
-        assert "multiple zero-mint execute receipts" in proc.stdout
+        assert "multiple PIT replay receipt files" in proc.stdout
+
+    @pytest.mark.parametrize(
+        "extra_kind",
+        [
+            "mismatched_authority",
+            "nonzero_mint",
+            "dry_run",
+            "minimal",
+            "malformed",
+            "renamed",
+        ],
+    )
+    def test_valid_receipt_plus_any_extra_same_session_receipt_is_refused(
+        self, tmp_path, extra_kind
+    ):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        _git(repo, "remote", "add", "origin", str(repo))
+        session = "2026-08-14"
+        self._write_zero_mint_receipt(repo, session, executing_commit="3" * 40)
+
+        extra = self._write_zero_mint_receipt(
+            repo, session, executing_commit="4" * 40,
+            dry_run=extra_kind == "dry_run",
+            canonical_name=extra_kind != "renamed",
+        )
+        if extra_kind in {"mismatched_authority", "nonzero_mint", "minimal"}:
+            receipt = json.loads(extra.read_text(encoding="utf-8"))
+            if extra_kind == "mismatched_authority":
+                receipt["authority"] = "DEC:NOT-THE-REPLAY-AUTHORITY"
+            elif extra_kind == "nonzero_mint":
+                receipt["counts"]["minted"] = 1
+            else:
+                receipt = {
+                    "schema": "pit_replay.receipt/v1", "market": "us",
+                    "session": session, "dry_run": False, "counts": {"minted": 0},
+                }
+            extra.unlink()
+            digest = ppr._canonical_sha256(receipt)[:16]
+            extra = extra.parent / f"us-{session}-{digest}.json"
+            extra.write_text(json.dumps(receipt), encoding="utf-8")
+        elif extra_kind == "malformed":
+            extra.write_text("{not-json", encoding="utf-8")
+
+        proc = self._run_zero_mint_verifier(repo, session)
+        assert proc.returncode == 2
+        assert "multiple PIT replay receipt files" in proc.stdout
+
+    def test_legacy_receipt_plus_exact_content_addressed_provenance_passes(
+        self, tmp_path
+    ):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        _git(repo, "remote", "add", "origin", str(repo))
+        session = "2026-08-14"
+        self._write_legacy_receipt_with_provenance(repo, session)
+
+        proc = self._run_zero_mint_verifier(repo, session)
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        assert "re-verified zero minted plans" in proc.stdout
+
+    def test_legacy_receipt_without_provenance_refuses(self, tmp_path):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        _git(repo, "remote", "add", "origin", str(repo))
+        session = "2026-08-14"
+        _, provenance_path = self._write_legacy_receipt_with_provenance(repo, session)
+        provenance_path.unlink()
+
+        proc = self._run_zero_mint_verifier(repo, session)
+        assert proc.returncode == 2
+        assert "not an authenticated zero-mint execution receipt" in proc.stdout
+
+    @pytest.mark.parametrize(
+        "mutation",
+        [
+            "receipt_sha", "baseline_commit", "baseline_ancestry",
+            "baseline_plan_count", "disposition_row", "disposition_count",
+            "renamed", "duplicate",
+        ],
+    )
+    def test_legacy_provenance_mutations_refuse(self, tmp_path, mutation):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        _git(repo, "remote", "add", "origin", str(repo))
+        session = "2026-08-14"
+        _, provenance_path = self._write_legacy_receipt_with_provenance(repo, session)
+        provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+
+        if mutation == "receipt_sha":
+            provenance["receipt"]["sha256"] = "0" * 64
+        elif mutation == "baseline_commit":
+            provenance["plans_baseline"]["commit"] = "not-a-commit"
+        elif mutation == "baseline_ancestry":
+            provenance["plans_baseline"]["ancestry"] = "not-main"
+        elif mutation == "baseline_plan_count":
+            provenance["plans_baseline"]["plan_count"] = -1
+        elif mutation == "disposition_row":
+            provenance["disposition_proof"]["rows"][0]["evidence"]["reason"] = (
+                "mutated"
+            )
+        elif mutation == "disposition_count":
+            provenance["disposition_proof"]["counts"]["minted"] = 1
+        elif mutation == "duplicate":
+            duplicate = provenance_path.with_name(
+                f"us-{session}-duplicate-provenance.json"
+            )
+            duplicate.write_text(json.dumps(provenance), encoding="utf-8")
+        provenance_path.unlink()
+        if mutation == "renamed":
+            provenance_path = provenance_path.with_name(
+                f"us-{session}-not-the-body-digest.json"
+            )
+        elif mutation != "duplicate":
+            provenance_path = provenance_path.with_name(
+                f"us-{session}-{ppr._canonical_sha256(provenance)[:16]}.json"
+            )
+        provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+
+        proc = self._run_zero_mint_verifier(repo, session)
+        assert proc.returncode == 2
+        assert "not an authenticated zero-mint execution receipt" in proc.stdout
+
+    @pytest.mark.parametrize("mutation", ["baseline", "disposition"])
+    def test_embedded_provenance_mutations_refuse(self, tmp_path, mutation):
+        repo = _init_repo(tmp_path)
+        _commit(repo, "init", date_iso="2026-08-01T00:00:00+00:00")
+        _set_origin_main(repo)
+        _git(repo, "remote", "add", "origin", str(repo))
+        session = "2026-08-14"
+        receipt_path = self._write_zero_mint_receipt(repo, session)
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        receipt_path.unlink()
+        if mutation == "baseline":
+            receipt["plans_baseline"]["plan_count"] = -1
+        else:
+            receipt["disposition_proof"]["rows_sha256"] = "0" * 64
+        receipt_path = receipt_path.with_name(
+            f"us-{session}-{ppr._canonical_sha256(receipt)[:16]}.json"
+        )
+        receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+
+        proc = self._run_zero_mint_verifier(repo, session)
+        assert proc.returncode == 2
+        assert "not an authenticated zero-mint execution receipt" in proc.stdout
 
 
 # ---------------------------------------------------------------------------

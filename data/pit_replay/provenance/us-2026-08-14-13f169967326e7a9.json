@@ -1,0 +1,559 @@
+{
+  "disposition_proof": {
+    "counts": {
+      "chronology_refused": 7,
+      "collided": 3,
+      "duplicate_id_blocked": 41,
+      "minted": 0,
+      "still_refused": 1
+    },
+    "row_count": 52,
+    "rows": [
+      {
+        "disposition": "chronology_refused",
+        "evidence": {
+          "class": "chronology",
+          "detail": [
+            "us_standouts staleness.delayed must be explicitly false; a delayed or undisclosed ranked-price vintage cannot originate plans"
+          ],
+          "plan_id": "BWXT-BULL-20260813",
+          "reason": "engine_refusal:clock_provenance",
+          "ticker": "BWXT"
+        }
+      },
+      {
+        "disposition": "chronology_refused",
+        "evidence": {
+          "class": "chronology",
+          "detail": [
+            "us_standouts staleness.delayed must be explicitly false; a delayed or undisclosed ranked-price vintage cannot originate plans"
+          ],
+          "plan_id": "WMB-BULL-20260813",
+          "reason": "engine_refusal:clock_provenance",
+          "ticker": "WMB"
+        }
+      },
+      {
+        "disposition": "chronology_refused",
+        "evidence": {
+          "class": "chronology",
+          "detail": [
+            "us_standouts staleness.delayed must be explicitly false; a delayed or undisclosed ranked-price vintage cannot originate plans"
+          ],
+          "plan_id": "LYV-BULL-20260810",
+          "reason": "engine_refusal:clock_provenance",
+          "ticker": "LYV"
+        }
+      },
+      {
+        "disposition": "chronology_refused",
+        "evidence": {
+          "class": "chronology",
+          "detail": [
+            "us_standouts staleness.delayed must be explicitly false; a delayed or undisclosed ranked-price vintage cannot originate plans",
+            "formation_date '2026-08-13' postdates tier_event_date '2026-08-11'"
+          ],
+          "plan_id": "ONTO-BULL-20260813",
+          "reason": "engine_refusal:clock_provenance",
+          "ticker": "ONTO"
+        }
+      },
+      {
+        "disposition": "chronology_refused",
+        "evidence": {
+          "class": "chronology",
+          "detail": [
+            "us_standouts staleness.delayed must be explicitly false; a delayed or undisclosed ranked-price vintage cannot originate plans",
+            "formation_date '2026-08-14' postdates tier_event_date '2026-08-11'"
+          ],
+          "plan_id": "SM-BULL-20260814",
+          "reason": "engine_refusal:clock_provenance",
+          "ticker": "SM"
+        }
+      },
+      {
+        "disposition": "chronology_refused",
+        "evidence": {
+          "class": "chronology",
+          "detail": [
+            "us_standouts staleness.delayed must be explicitly false; a delayed or undisclosed ranked-price vintage cannot originate plans"
+          ],
+          "plan_id": "LAC-BULL-20260810",
+          "reason": "engine_refusal:clock_provenance",
+          "ticker": "LAC"
+        }
+      },
+      {
+        "disposition": "chronology_refused",
+        "evidence": {
+          "class": "chronology",
+          "detail": [
+            "us_standouts staleness.delayed must be explicitly false; a delayed or undisclosed ranked-price vintage cannot originate plans",
+            "formation_date '2026-08-13' postdates tier_event_date '2026-08-11'"
+          ],
+          "plan_id": "TRLV-BULL-20260813",
+          "reason": "engine_refusal:clock_provenance",
+          "ticker": "TRLV"
+        }
+      },
+      {
+        "disposition": "collided",
+        "evidence": {
+          "live_plan_ids": [
+            "EFC-BULL-20260818"
+          ],
+          "live_recorded_at": [
+            "2026-08-19"
+          ],
+          "plan_key": "EFC-BULL",
+          "reason": "live_origination_wins_open_plan_block",
+          "ticker": "EFC",
+          "would_have_minted": null
+        }
+      },
+      {
+        "disposition": "collided",
+        "evidence": {
+          "live_plan_ids": [
+            "CE-BULL-20260817"
+          ],
+          "live_recorded_at": [
+            "2026-08-17"
+          ],
+          "plan_key": "CE-BULL",
+          "reason": "live_origination_wins_open_plan_block",
+          "ticker": "CE",
+          "would_have_minted": null
+        }
+      },
+      {
+        "disposition": "collided",
+        "evidence": {
+          "live_plan_ids": [
+            "GLXY-BULL-20260817"
+          ],
+          "live_recorded_at": [
+            "2026-08-17"
+          ],
+          "plan_key": "GLXY-BULL",
+          "reason": "live_origination_wins_open_plan_block",
+          "ticker": "GLXY",
+          "would_have_minted": null
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "TMUS-BULL-20260707",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "UCB-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "FDX-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "OZK-BULL-20260813",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "TKO-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "SGML-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "live_recorded_at": "2026-08-18",
+          "plan_id": "GNW-BULL-20260810",
+          "reason": "live_origination_wins_duplicate_id",
+          "ticker": "GNW"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "FTI-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "live_recorded_at": "2026-08-17",
+          "plan_id": "LBRT-BULL-20260813",
+          "reason": "live_origination_wins_duplicate_id",
+          "ticker": "LBRT"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "DXYZ-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "CAVA-BULL-20260813",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "DAR-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "IONQ-BULL-20260813",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "NNE-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "ENTG-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "live_recorded_at": "2026-08-17",
+          "plan_id": "MTDR-BULL-20260810",
+          "reason": "live_origination_wins_duplicate_id",
+          "ticker": "MTDR"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "TREX-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "EW-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "DKNG-BULL-20260813",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "AMR-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "live_recorded_at": "2026-08-17",
+          "plan_id": "HAL-BULL-20260813",
+          "reason": "live_origination_wins_duplicate_id",
+          "ticker": "HAL"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "live_recorded_at": "2026-08-17",
+          "plan_id": "CWEN-BULL-20260810",
+          "reason": "live_origination_wins_duplicate_id",
+          "ticker": "CWEN"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "CVCO-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "live_recorded_at": "2026-08-17",
+          "plan_id": "PPC-BULL-20260604",
+          "reason": "live_origination_wins_duplicate_id",
+          "ticker": "PPC"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "live_recorded_at": "2026-08-17",
+          "plan_id": "LUNR-BULL-20260813",
+          "reason": "live_origination_wins_duplicate_id",
+          "ticker": "LUNR"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "BIIB-BULL-20260731",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "AA-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "TEM-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "PNW-BULL-20260625",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "XEL-BULL-20260727",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "FANG-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "EQIX-BULL-20260813",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "SMPL-BULL-20260813",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "live_recorded_at": "2026-08-17",
+          "plan_id": "ALM-BULL-20260810",
+          "reason": "live_origination_wins_duplicate_id",
+          "ticker": "ALM"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "PL-BULL-20260813",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "SNPS-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "live_recorded_at": "2026-08-17",
+          "plan_id": "ORA-BULL-20260810",
+          "reason": "live_origination_wins_duplicate_id",
+          "ticker": "ORA"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "BWA-BULL-20260813",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "live_recorded_at": "2026-08-18",
+          "plan_id": "SPOT-BULL-20260701",
+          "reason": "live_origination_wins_duplicate_id",
+          "ticker": "SPOT"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "IREN-BULL-20260810",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "duplicate_id_blocked",
+        "evidence": {
+          "plan_id": "RKLB-BULL-20260813",
+          "reason": "duplicate_id_blocked"
+        }
+      },
+      {
+        "disposition": "still_refused",
+        "evidence": {
+          "detail": [
+            "an open plan on BXMT-BULL predates this session; the bake would have blocked it too"
+          ],
+          "plan_id": null,
+          "reason": "engine_refusal:reorigination_blocked",
+          "ticker": "BXMT"
+        }
+      }
+    ],
+    "rows_sha256": "8dd5635bf9668c87d282cc6af05e776aa255c3fb44bf929da091d4c445d26a48",
+    "schema": "pit_replay.us_disposition_proof/v1"
+  },
+  "market": "us",
+  "plans_baseline": {
+    "ancestry": "ancestor_of_origin_main",
+    "commit": "e743db23c31a7d86e8276c1ea602acb79abac7a9",
+    "plan_count": 318
+  },
+  "receipt": {
+    "canonical_body_sha256": "a76ad8f34ad360cd6451d8a004074e711b1eda066051dd578d1c23dade53b9ac",
+    "path": "data/pit_replay/us-2026-08-14-a76ad8f34ad360cd.json",
+    "sha256": "0e77f3dcfb31c404e5af1dc3503a92d8d2da261a9d81f75543a9deeffd332b9d"
+  },
+  "reconstruction": {
+    "identity_closure": {
+      "all_original_execution_identities_match": true,
+      "board_sha256": "4ecc6f5b4decafba89dc2b5adbdaefdc08f59f42f6df165bd1a078b2e78ada42",
+      "counts": {
+        "admitted": 52,
+        "buy_rows": 70,
+        "chronology_refused": 7,
+        "collided": 3,
+        "duplicate_id_blocked": 41,
+        "eligible_after_skips": 7,
+        "minted": 0,
+        "reorigination_blocked": 4,
+        "reorigination_blocked_rows": 4,
+        "still_refused": 1
+      },
+      "fence_state_digest": "eab382f73a39",
+      "reconciliation": {
+        "admission_identity": {
+          "holds": true,
+          "lhs": 52,
+          "rhs": 52,
+          "statement": "admitted == duplicate_id_blocked + reorigination_blocked_rows + eligible_after_skips"
+        },
+        "disposition_identity": {
+          "holds": true,
+          "lhs": 11,
+          "rhs": 11,
+          "statement": "eligible_after_skips + reorigination_blocked == minted + collided + chronology_refused + still_refused"
+        }
+      }
+    },
+    "legacy_execution": {
+      "classification": "pre-operation-intent-marker legacy execution",
+      "contemporaneous_preflight": {
+        "absorbed_aug14_snapshot_count": 0,
+        "matching_plan_originations_count": 0,
+        "same_session_receipt_count": 0,
+        "target_pending_path_existed": false
+      },
+      "execute_argv": [
+        "python",
+        "-m",
+        "scripts.prophet_pit_replay",
+        "--market",
+        "us",
+        "--session",
+        "2026-08-14",
+        "--execute",
+        "--work-dir",
+        "/Users/chriswong/Documents/Cluade/a1r-replay-scratch-20260823",
+        "--aux-panel-source",
+        "/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/a1r-replay-settlement-20260823/data/russell_breadth"
+      ],
+      "operation_intent_marker": "not available in harness version executed",
+      "single_execute_invocation": {
+        "completed_utc": "2026-08-23T10:47:31Z",
+        "count": 1,
+        "executing_commit": "21fab35211433ab9bc4dafda3757d5aa30e11a3e",
+        "receipt_executed_at": "2026-08-23T10:44:12.303557+00:00",
+        "started_utc": "2026-08-23T10:44:10Z"
+      }
+    },
+    "method": "non_effecting_pinned_replay_reconstruction",
+    "pinned_inputs": {
+      "aux_panel_sha256": "5aa73bda0de45589327e0a83a0b9666fae73a15f3abd6715b513e7376fe16407",
+      "live_price_source_commit": "e743db23c31a7d86e8276c1ea602acb79abac7a9",
+      "plans_baseline_commit": "e743db23c31a7d86e8276c1ea602acb79abac7a9",
+      "vintage_sha": "54af649d5e1af4955f1464879f3afdbbaa330e13"
+    },
+    "scratch_identity": {
+      "active_keys_count": 260,
+      "active_keys_match_baseline": true,
+      "existing_ids_count": 318,
+      "existing_ids_match_baseline": true,
+      "origination_input_sha256": "9a99d91c31d95d75ea397dc2d27f1f37240d9e0242d1711976329ea3f2ba4966",
+      "origination_output_sha256": "e5c05d64a463c7de88237c71ae6296a1ab7af4ff14745415c04542ff62ab5d79",
+      "snapshot_output_sha256": "94de0b2ba17c1f1a6733f6ebb3c1586fb330a3dc3b143ad059362ecf516724e8"
+    }
+  },
+  "schema": "pit_replay.receipt_provenance/v1",
+  "session": "2026-08-14"
+}
