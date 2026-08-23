@@ -99,8 +99,8 @@ verified:
       100-iteration perf_counter_ns harness loading the Earnings, FIF, Theme Graph,
       and QLedger fixture outputs and calling compile_recipe()
     result: >
-      Darwin arm64 / Python 3.14.7: p50 174.189 ms, p95 262.864 ms, max
-      501.786 ms; receipt PARTIAL / dominant unknown; 4 included, 0 excluded;
+      Darwin arm64 / Python 3.14.7: p50 164.737 ms, p95 174.757 ms, max
+      185.944 ms; receipt PARTIAL / dominant unknown; 4 included, 0 excluded;
       owner_payloads_persisted=false. No named requirement fails that an index cures.
   - claim: K1 starts no product/runtime/persistence wave and carries no authority.
     command: >

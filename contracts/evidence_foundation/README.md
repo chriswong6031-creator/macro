@@ -128,7 +128,7 @@ invent. All four legs and all native clocks are present, no owner payload is cop
 and no required block is absent.
 
 The measured local fixture-reader/validation composition baseline (Darwin arm64,
-Python 3.14.7, 100 iterations) was p50 174.189 ms, p95 262.864 ms, max 501.786 ms.
+Python 3.14.7, 100 iterations) was p50 164.737 ms, p95 174.757 ms, max 185.944 ms.
 This is a contract/fixture measurement, not a production owner-I/O SLA. No commission
 or current consumer names a latency requirement that it fails, and a pointer index
 would not cure the explicit unknown freshness policy. The K1 persistence verdict is

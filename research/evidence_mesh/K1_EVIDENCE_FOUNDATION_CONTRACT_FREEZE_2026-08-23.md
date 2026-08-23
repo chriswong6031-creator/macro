@@ -32,8 +32,8 @@ The handoff's Mastermind pin is the binding Skillpack pin; remote `master` later
 advanced to `d663d41f19b661c5a0d689076207cf60499cf4dc` without changing this
 commission's protected input. The Macro handoff pin
 `fb2375441f21b94201edc4ed6ac2c40f67274cde` remains an ancestor, but is historical.
-The repaired candidate was reconciled against fresh Macro `origin/main`
-`395db13b9dadf4975e0ed43c68d02983134ddbff`; the authenticated-rider completion
+The repaired candidate and authenticated-rider completion were reconciled against
+fresh Macro `origin/main` `5ebc7327fac75ee5312b2af09526bfcab790e9c9`; the rider
 had separately censused `dc7135422f112d6c0c9ab3e08ed0cb2053bedb35` before its
 three-way reconciliation onto that reviewer-repaired head. Since the first K1
 candidate base,
@@ -52,7 +52,7 @@ classifies FIF-3A2 as `ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN` after Sol PAS
 `9598c5430c587b2ec9d1f84d3fa6e2d704808bcc`. Its decision also explicitly keeps
 the production attested issuer service `NOT_BUILT` and FIF-3 `IN_PROGRESS`; accepted
 golden-fixture/on-main status is not production/live proof. The remaining base movement
-through `395db13b9dadf4975e0ed43c68d02983134ddbff` touched Agent OS governance,
+through `5ebc7327fac75ee5312b2af09526bfcab790e9c9` touched Agent OS governance,
 Intelligence Workspace, render, press, records, Canada/public display, marketing
 publication, and research-vault data rather than changing a registered K1 owner
 contract. K1 did not start, modify, or extend D5; it only reconciled already-merged
@@ -97,7 +97,7 @@ composition instead of claiming that no consumer exists. The golden recipe loads
 four owner-reader fixture outputs independently, validates every owner-native ref and
 clock, validates four bounded blocks, applies the owner-approved PIT identity joins,
 and compiles one in-memory receipt. On Darwin arm64 / Python 3.14.7, 100 iterations
-measured p50 **174.189 ms**, p95 **262.864 ms**, max **501.786 ms**. The receipt is
+measured p50 **164.737 ms**, p95 **174.757 ms**, max **185.944 ms**. The receipt is
 `PARTIAL / dominant unknown` because no owner freshness policy was invented; all four
 requested legs are present (4 included / 0 excluded) and no payload is persisted.
 
@@ -412,7 +412,7 @@ AAPL Security State golden vertical.**
 > Sol, review K1 / FABLE-A Evidence Foundation v1.0.0 as a contract-only freeze.
 > The current protected Skillpack was loaded from Mastermind
 > `db0bac5fe3f72348262d42c8bd26b836bda9f61d`; Macro was reconciled to
-> `395db13b9dadf4975e0ed43c68d02983134ddbff` before final exact-head
+> `5ebc7327fac75ee5312b2af09526bfcab790e9c9` before final exact-head
 > reconciliation. The named
 > AAPL B1 job composes four owner-reader fixture legs through one ordered recipe; the
 > measured receipt is explicit `PARTIAL / unknown freshness`, with 4 included / 0
