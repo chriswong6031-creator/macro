@@ -173,3 +173,37 @@ upheld candidate-portion; conditions → the final eleven); successor continuity
 mechanically regenerated (24 items, all CARRIED_BLOCK pending the single freeze-time
 flip pass). Harness-safety rule adopted (handoff §7): audit scripts run with output
 overrides; never write into a frozen predecessor tree.
+
+
+## §7 Freeze-blocking RIG correction (commit da2df767af77)
+
+A pushed-branch YAML audit (operator/Sol relay) caught that the amended verdict still
+carried 13 upheld_revise rows, which the --mandate mechanically stamps kind:blocker —
+relabeling PWC majors/minors as blockers, exactly what Sol §3 forbids. Corrected:
+blocking_findings = EXACTLY VTC1-001 upheld_revise; every other surviving major/minor
+travels via the eleven structured conditions (finding->condition map in the verdict's
+YAML comment); falsified/upstream records live in overrides; the VTC1-003 clause removed
+from the packet prose. Successor continuity regenerated: 12 rows (1 blocker + 11
+conditions), all CARRIED_BLOCK pending the freeze-time flip.
+
+## §8 Lane F return — adjudicated ACCEPTED (commit 18af6a49394e)
+
+B2-05 strengthening: the 20d delta carries ONE name node with two presentations
+(.r3-figlab clipped >640, painted <=640) — no duplicate spoken label by construction;
+composition = stacked stat tiles (caption over figure) chosen over inline on measured
+grounds (130px label vs the name column's never-ellipsize law; 9:1 proximity ratio keeps
+grouping unambiguous); latent mislabel fixed (Strength caption gated on sc alone).
+Discrimination-proven BOTH ways: carrier revert -> RED 4/6 naming the painted-delta gap;
+label abbreviation -> RED 6/6 naming the header-unit mismatch. Audit extended (delta
+census 66, 16/16 proofs, 0/6 failing). B2-15: the correct surface is Money & Breadth
+(DA1-03's actual charge; my commission's Moving guess was wrong — deviation UPHELD);
+qualification gated on verified fixture fields (index_leadership.json track_record:
+is_context_only true, proven 5-only, note_zh ABSENT — hence lawful reference-authored ZH
+twin, not a producer translation); badge untouched; ZH avoids 验证 so the badge's word
+cannot read as extending to 21d; 21d stats re-classed to their own labelled line.
+Geometry + contrast receipts clean (qualification 12.09/14.78:1; 0 failing lane cells;
+the 189 failing samples are all the upstream sc_flows fragment). Deterministic ×2 at
+ea2e09b812d1; R3A 59; verify 17/19 ((j)/(k) = Lane G artifacts). All five deviations
+UPHELD (owned-file expansion to money.html covered by the commission's own USER JOB
+wording; shell.html untouched; emit-guard fix in-law; byproducts cleaned; nothing
+pushed by the lane).
