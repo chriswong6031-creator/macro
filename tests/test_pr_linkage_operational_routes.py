@@ -78,7 +78,7 @@ def test_source_sha_fallback_is_bounded_validated_and_nullable(monkeypatch):
     monkeypatch.setattr(cli.subprocess, "run", lambda *_, **__: subprocess.CompletedProcess([], 0, "a" * 40 + "\n", ""))
     assert cli.source_sha(None) == "a" * 40
     assert cli.source_sha("b" * 40) == "b" * 40
-    assert cli.source_sha("B" * 40) is None
+    assert cli.source_sha("B" * 40) == "a" * 40
     monkeypatch.setattr(cli.subprocess, "run", lambda *_, **__: (_ for _ in ()).throw(OSError("no git")))
     assert cli.source_sha(None) is None
 

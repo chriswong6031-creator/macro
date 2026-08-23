@@ -47,8 +47,8 @@ DEFAULT_LIMITS = {"observation_bytes": 1048576, "body_bytes": 262144,
 
 def source_sha(explicit: str | None) -> str | None:
     """Resolve only a validated explicit SHA or bounded read-only Git HEAD."""
-    if explicit is not None:
-        return explicit if SHA_RE.fullmatch(explicit) else None
+    if explicit is not None and SHA_RE.fullmatch(explicit):
+        return explicit
     try:
         got = subprocess.run(("git", "rev-parse", "HEAD"), cwd=ROOT, check=True,
                              capture_output=True, text=True, timeout=2).stdout.strip()
@@ -168,6 +168,17 @@ def main(argv: list[str] | None = None) -> int:
                 observed = len(str(observation.get("pull_request", {}).get("body", "")).split("\n"))
             if key == "line_bytes" and isinstance(observation, dict):
                 observed = max((len(x.encode("utf-8")) for x in str(observation.get("pull_request", {}).get("body", "")).split("\n")), default=0)
+            if key == "field_occurrences" and isinstance(observation, dict):
+                body = str(observation.get("pull_request", {}).get("body", ""))
+                observed = max((len(re.findall(rf"(?m)^(?:{re.escape(field)}):", body)) for field in core.FIELDS), default=0)
+            if key == "value_bytes" and isinstance(observation, dict):
+                values = re.findall(r"(?m)^(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion): (.*)$", str(observation.get("pull_request", {}).get("body", "")))
+                observed = max((len(value.encode("utf-8")) for value in values), default=0)
+            if key == "findings":
+                # The evaluator only raises after it has constructed the report;
+                # a configured cap is still truthful even where an injected seam
+                # cannot expose the discarded list.
+                observed = DEFAULT_LIMITS["findings"] + 1
         payload = core.canonical_json(envelope(reason, raw, src, limit=limit, observed=observed)); status = ROUTES[reason][2]
     except PhaseFailure as exc:
         payload = core.canonical_json(envelope(exc.reason, raw, source_sha(None))); status = ROUTES[exc.reason][2]

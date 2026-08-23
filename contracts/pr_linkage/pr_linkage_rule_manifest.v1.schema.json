@@ -1,1 +1,146 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"mastermind.pr_linkage_rule_manifest.v1","type":"object","additionalProperties":false,"required":["schema","ruleset_id","observation_schema","report_schema","execution_error_schema","parser_contract","grammar","limits","compatibility","classification","authority_completion_allowlist","path_reduction","native_reduction","rules","verdict_reduction","enforcement","execution_error","finding_contract"],"properties":{"schema":{"const":"mastermind.pr_linkage_rule_manifest.v1"},"ruleset_id":{"const":"mastermind.pr_linkage_rules.v1"},"observation_schema":{"const":"mastermind.pr_linkage_observation.v1"},"report_schema":{"const":"mastermind.pr_linkage_report.v1"},"execution_error_schema":{"const":"mastermind.pr_linkage_execution_error.v1"},"parser_contract":{"type":"object"},"grammar":{"type":"object"},"limits":{"type":"object"},"compatibility":{"type":"object"},"classification":{"type":"object"},"authority_completion_allowlist":{"type":"array"},"path_reduction":{"type":"object"},"native_reduction":{"type":"object"},"rules":{"type":"array","minItems":46,"maxItems":46,"items":{"type":"object","additionalProperties":false,"required":["rule_id","version","code","channel","severity","applicability","predicate","evidence_keys","remediation_code"],"properties":{"rule_id":{"pattern":"^R[0-9]{3}$"},"version":{"const":1},"code":{"type":"string"},"channel":{"const":"SEMANTIC"},"severity":{"enum":["ERROR","PARTIAL","WARNING","NOTICE"]},"applicability":{"type":"string"},"predicate":{"type":"string"},"evidence_keys":{"type":"array","items":{"type":"string"},"uniqueItems":true},"remediation_code":{"type":"string"}}}},"verdict_reduction":{"type":"array"},"enforcement":{"const":"REPORT_ONLY"},"execution_error":{"type":"object"},"finding_contract":{"type":"object"}}}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mastermind.pr_linkage_rule_manifest.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "ruleset_id",
+    "observation_schema",
+    "report_schema",
+    "execution_error_schema",
+    "parser_contract",
+    "grammar",
+    "limits",
+    "compatibility",
+    "classification",
+    "authority_completion_allowlist",
+    "path_reduction",
+    "native_reduction",
+    "rules",
+    "verdict_reduction",
+    "enforcement",
+    "execution_error",
+    "finding_contract"
+  ],
+  "properties": {
+    "schema": {
+      "const": "mastermind.pr_linkage_rule_manifest.v1"
+    },
+    "ruleset_id": {
+      "const": "mastermind.pr_linkage_rules.v1"
+    },
+    "observation_schema": {
+      "const": "mastermind.pr_linkage_observation.v1"
+    },
+    "report_schema": {
+      "const": "mastermind.pr_linkage_report.v1"
+    },
+    "execution_error_schema": {
+      "const": "mastermind.pr_linkage_execution_error.v1"
+    },
+    "parser_contract": {
+      "type": "object"
+    },
+    "grammar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enum_values","field_patterns","ordered_fields"],
+      "properties": {"enum_values":{"type":"object","additionalProperties":false,"required":["authority","completion","portfolio_mode"],"properties":{"authority":{"type":"array","items":{"type":"string"},"uniqueItems":true},"completion":{"type":"array","items":{"type":"string"},"uniqueItems":true},"portfolio_mode":{"type":"array","items":{"type":"string"},"uniqueItems":true}}},"field_patterns":{"type":"object","additionalProperties":false,"required":["Linear","Wave","Workstream"],"properties":{"Linear":{"type":"string"},"Wave":{"type":"string"},"Workstream":{"type":"string"}}},"ordered_fields":{"type":"array","const":["Workstream","Linear","Portfolio-Mode","Wave","Authority","Completion"]}}
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["body_bytes","body_lines","changed_paths","field_occurrences","findings","line_bytes","observation_bytes","relationships","value_bytes"],
+      "properties": {"body_bytes":{"const":262144},"body_lines":{"const":10000},"changed_paths":{"const":10000},"field_occurrences":{"const":100},"findings":{"const":512},"line_bytes":{"const":16384},"observation_bytes":{"const":1048576},"relationships":{"const":256},"value_bytes":{"const":80}}
+    },
+    "compatibility": {
+      "type": "object"
+    },
+    "classification": {
+      "type": "object"
+    },
+    "authority_completion_allowlist": {
+      "type": "array"
+    },
+    "path_reduction": {
+      "type": "object"
+    },
+    "native_reduction": {
+      "type": "object"
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 46,
+      "maxItems": 46,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rule_id",
+          "version",
+          "code",
+          "channel",
+          "severity",
+          "applicability",
+          "predicate",
+          "evidence_keys",
+          "remediation_code"
+        ],
+        "properties": {
+          "rule_id": {
+            "pattern": "^R[0-9]{3}$"
+          },
+          "version": {
+            "const": 1
+          },
+          "code": {
+            "type": "string"
+          },
+          "channel": {
+            "const": "SEMANTIC"
+          },
+          "severity": {
+            "enum": [
+              "ERROR",
+              "PARTIAL",
+              "WARNING",
+              "NOTICE"
+            ]
+          },
+          "applicability": {
+            "type": "string"
+          },
+          "predicate": {
+            "type": "string"
+          },
+          "evidence_keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "remediation_code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "verdict_reduction": {
+      "type": "array"
+    },
+    "enforcement": {
+      "const": "REPORT_ONLY"
+    },
+    "execution_error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["components","reason_codes","routes","source_sha_resolution","transaction"],
+      "properties": {"components":{"type":"array","items":{"type":"string"},"uniqueItems":true},"reason_codes":{"type":"array","items":{"type":"string"},"uniqueItems":true},"routes":{"type":"array","minItems":20,"maxItems":20,"items":{"type":"object","additionalProperties":false,"required":["component","error_code","exit","limit_policy","reason_code"],"properties":{"component":{"type":"string"},"error_code":{"type":"string"},"exit":{"enum":[2,3]},"limit_policy":{"type":"string"},"reason_code":{"type":"string"}}}},"source_sha_resolution":{"type":"array","items":{"type":"string"},"uniqueItems":true},"transaction":{"type":"string"}}
+    },
+    "finding_contract": {
+      "type": "object"
+    }
+  }
+}

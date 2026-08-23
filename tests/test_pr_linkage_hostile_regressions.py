@@ -127,6 +127,44 @@ def test_report_finding_binding_refuses_forged_code_severity_remediation_and_evi
     with pytest.raises(v.ValidationError): v.validate_report(mutant)
 
 
+def test_reviewer_reducers_r027_r044_r052_native_source_and_numeric_order():
+    # R027 is one aggregate even when two targets carry a declared role.
+    o = clone(observation(VALID)); o["pull_request"]["title"] = "MAS-29 MAS-30"
+    o["linear"]["issues"] += [
+        {"id":"MAS-29","target_role":"DECLARED","project_id":None,"workstream_key":None,"issue_type":"DELIVERY","stop_law":"MERGE"},
+        {"id":"MAS-30","target_role":"DECLARED","project_id":None,"workstream_key":None,"issue_type":"DELIVERY","stop_law":"MERGE"},
+    ]
+    r = v.analyze(finish(o), MANIFEST)
+    assert len([x for x in r["semantic"]["findings"] if x["rule_id"] == "R027"]) == 1
+    # Conclusive partial ownership still disproves a maintenance exception.
+    p = clone(observation(VALID)); mode(p, workstream="NONE", portfolio="maintenance_exception", authority="maintenance", completion="built-not-proven")
+    p["linear"]["issues"][0]["issue_type"] = "MAINTENANCE"; p["path_ownership"].update(state="PARTIAL", diagnostics=["STALE"], resolutions=[{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["maintenance"]}])
+    assert {"R042","R044"} <= ids(finish(p))
+    # Records-only cannot suppress a closing claim through an empty/non-record path set.
+    q = clone(observation(VALID)); mode(q, authority="records", completion="records-only"); q["linear"]["issues"][0]["stop_law"]="RECORDS_ONLY"; q["pull_request"]["body"] += "\nFixes MAS-28\nFixes MAS-28"; q["path_ownership"]["resolutions"]=[{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["records"]}]
+    row = next(x for x in v.analyze(finish(q), MANIFEST)["semantic"]["findings"] if x["rule_id"] == "R052")
+    assert len(row["evidence"]["relationships"]) == 1 and row["location"] == "BODY:L7:RELATIONSHIP"
+    # Native rows must use numeric MAS order and preserve their source rather than adapterizing it.
+    n = clone(observation(VALID)); n["native_linkage"]["relationships"] = [{"issue_id":"MAS-10","kind":"CLOSING","source":"LINEAR_NATIVE","state":"PRESENT","completion_transition":"ELIGIBLE"},{"issue_id":"MAS-2","kind":"CLOSING","source":"LINEAR_NATIVE","state":"PRESENT","completion_transition":"ELIGIBLE"}]
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"): v.analyze(finish(n), MANIFEST)
+
+
+def test_reviewer_state_rows_epoch_and_resource_caps_fail_closed():
+    # PRESENT native requires complete pagination; unavailable payloads cannot carry rows.
+    o = clone(observation(VALID)); o["native_linkage"]["pagination_complete"] = False
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"): v.analyze(finish(o), MANIFEST)
+    o = clone(observation(VALID)); o["linear"].update(state="UNAVAILABLE", diagnostics=["NO_ACCESS"], issues=[o["linear"]["issues"][0]])
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"): v.analyze(finish(o), MANIFEST)
+    # Epoch rows, receipt members, and all three representative first-over-cap values are typed.
+    o = clone(observation(VALID)); o["authoring_epoch"]["template_blobs"][0]["path"] = "wrong.md"
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"): v.analyze(finish(o), MANIFEST)
+    o = clone(observation(VALID)); o["receipt"]["snapshot_digests"].pop("linear")
+    with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"): v.analyze(o, MANIFEST)
+    body = "\n".join(["Workstream: WS:AGENT-OS"] * 101)
+    with pytest.raises(v.ValidationError, match="RESOURCE_LIMIT:field_occurrences"): v.parse_header(body, MANIFEST["limits"])
+    with pytest.raises(v.ValidationError, match="RESOURCE_LIMIT:body_lines"): v.parse_header("\n" * 10001, MANIFEST["limits"])
+
+
 def test_hostile_repro_measurement(capsys):
     # The file is the durable matrix for the originally supplied false-clean and
     # state-law cases; keep its receipt visible to the commissioned review.

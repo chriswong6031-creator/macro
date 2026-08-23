@@ -1,1 +1,264 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"mastermind.pr_linkage_report.v1","type":"object","additionalProperties":false,"required":["schema","semantic","semantic_hash","receipt","human"],"properties":{"schema":{"const":"mastermind.pr_linkage_report.v1"},"semantic_hash":{"type":"string","pattern":"^[0-9a-f]{64}$"},"semantic":{"type":"object","additionalProperties":false,"required":["ruleset_id","ruleset_digest","enforcement","declaration","classification","verdict","completeness","completion_interpretation","unresolved_observation_classes","findings"],"properties":{"ruleset_id":{"const":"mastermind.pr_linkage_rules.v1"},"ruleset_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},"enforcement":{"const":"REPORT_ONLY"},"declaration":{"type":"object","additionalProperties":false,"required":["workstream","linear","portfolio_mode","wave","authority","completion","authoring_state"],"properties":{"workstream":{"type":["string","null"]},"linear":{"type":["string","null"]},"portfolio_mode":{"type":["string","null"]},"wave":{"type":["string","null"]},"authority":{"type":["string","null"]},"completion":{"type":["string","null"]},"authoring_state":{"enum":["CANONICAL","LEGACY","MISSING","INVALID"]}}},"classification":{"enum":["TRACKED","MAINTENANCE_EXCEPTION","CREATES_WORKSTREAM","ARCHITECTURE_CANDIDATE","UNCLASSIFIED_LEGACY","UNKNOWN"]},"verdict":{"enum":["CONFORMANT","WARN","PARTIAL","REFUSE_METADATA"]},"completeness":{"enum":["COMPLETE","DEGRADED","UNAVAILABLE"]},"completion_interpretation":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["issue_id","effect","declared_completion","stop_law","consistency"],"properties":{"issue_id":{"type":"string"},"effect":{"enum":["COMPLETION_CAPABLE","NON_CLOSING","NONE","AMBIGUOUS","UNKNOWN"]},"declared_completion":{"type":["string","null"]},"stop_law":{"type":["string","null"]},"consistency":{"enum":["MATCH","MISMATCH","INDETERMINATE"]}}}},"unresolved_observation_classes":{"type":"array","items":{"type":"string"},"uniqueItems":true},"findings":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["code","rule_id","severity","location","evidence","remediation_code"],"properties":{"code":{"type":"string"},"rule_id":{"pattern":"^R[0-9]{3}$"},"severity":{"enum":["ERROR","PARTIAL","WARNING","NOTICE"]},"location":{"type":"string"},"evidence":{"type":"object"},"remediation_code":{"type":"string"}}}}}},"receipt":{"type":"object"},"human":{"type":"object","additionalProperties":false,"required":["summary","remediations"],"properties":{"summary":{"type":"string"},"remediations":{"type":"array","items":{"type":"string"},"uniqueItems":true}}}}}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mastermind.pr_linkage_report.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "semantic",
+    "semantic_hash",
+    "receipt",
+    "human"
+  ],
+  "properties": {
+    "schema": {
+      "const": "mastermind.pr_linkage_report.v1"
+    },
+    "semantic_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "semantic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruleset_id",
+        "ruleset_digest",
+        "enforcement",
+        "declaration",
+        "classification",
+        "verdict",
+        "completeness",
+        "completion_interpretation",
+        "unresolved_observation_classes",
+        "findings"
+      ],
+      "properties": {
+        "ruleset_id": {
+          "const": "mastermind.pr_linkage_rules.v1"
+        },
+        "ruleset_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "enforcement": {
+          "const": "REPORT_ONLY"
+        },
+        "declaration": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "workstream",
+            "linear",
+            "portfolio_mode",
+            "wave",
+            "authority",
+            "completion",
+            "authoring_state"
+          ],
+          "properties": {
+            "workstream": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "linear": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "portfolio_mode": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "wave": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "authority": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "completion": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "authoring_state": {
+              "enum": [
+                "CANONICAL",
+                "LEGACY",
+                "MISSING",
+                "INVALID"
+              ]
+            }
+          }
+        },
+        "classification": {
+          "enum": [
+            "TRACKED",
+            "MAINTENANCE_EXCEPTION",
+            "CREATES_WORKSTREAM",
+            "ARCHITECTURE_CANDIDATE",
+            "UNCLASSIFIED_LEGACY",
+            "UNKNOWN"
+          ]
+        },
+        "verdict": {
+          "enum": [
+            "CONFORMANT",
+            "WARN",
+            "PARTIAL",
+            "REFUSE_METADATA"
+          ]
+        },
+        "completeness": {
+          "enum": [
+            "COMPLETE",
+            "DEGRADED",
+            "UNAVAILABLE"
+          ]
+        },
+        "completion_interpretation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "issue_id",
+              "effect",
+              "declared_completion",
+              "stop_law",
+              "consistency"
+            ],
+            "properties": {
+              "issue_id": {
+                "type": "string"
+              },
+              "effect": {
+                "enum": [
+                  "COMPLETION_CAPABLE",
+                  "NON_CLOSING",
+                  "NONE",
+                  "AMBIGUOUS",
+                  "UNKNOWN"
+                ]
+              },
+              "declared_completion": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "stop_law": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "consistency": {
+                "enum": [
+                  "MATCH",
+                  "MISMATCH",
+                  "INDETERMINATE"
+                ]
+              }
+            }
+          }
+        },
+        "unresolved_observation_classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "rule_id",
+              "severity",
+              "location",
+              "evidence",
+              "remediation_code"
+            ],
+            "properties": {
+              "code": {
+                "pattern": "^[A-Z][A-Z0-9_]{2,127}$"
+              },
+              "rule_id": {
+                "pattern": "^R[0-9]{3}$"
+              },
+              "severity": {
+                "enum": [
+                  "ERROR",
+                  "PARTIAL",
+                  "WARNING",
+                  "NOTICE"
+                ]
+              },
+              "location": {
+                "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+              },
+              "evidence": {
+                "type": "object",
+                "propertyNames": {
+                  "enum": ["alias","authority","body_targets","bound_workstream","branch_targets","canonical","collisions","completion","component","declared","declared_workstream","diagnostics","effect","epoch","epoch_state","expected","field","issue_type","linear","location","locations","missing_fields","observed","path_classes","paths","portfolio_mode","reason","receipt","receipt_digest","relationships","required_targets","resolutions","roles","snapshot","snapshot_state","stop_law","target","target_role","target_roles","targets","title_targets","value","values","workstream"]
+                }
+              },
+              "remediation_code": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository","pr_number","base_sha","head_sha","source_sha","body_sha256","observation_sha256","cutover_receipt_sha256","ruleset_digest","snapshot_digests","producer"],
+      "properties": {
+        "repository":{"type":"string","pattern":"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"},
+        "pr_number":{"type":"integer","minimum":1},
+        "base_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},"head_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},"source_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},
+        "body_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"observation_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"cutover_receipt_sha256":{"type":["string","null"],"pattern":"^[0-9a-f]{64}$"},"ruleset_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+        "snapshot_digests":{"type":"object","additionalProperties":false,"required":["authoring_epoch","changed_paths","agentos","linear","path_ownership","native_linkage"],"properties":{"authoring_epoch":{"type":"string","pattern":"^[0-9a-f]{64}$"},"changed_paths":{"type":"string","pattern":"^[0-9a-f]{64}$"},"agentos":{"type":"string","pattern":"^[0-9a-f]{64}$"},"linear":{"type":"string","pattern":"^[0-9a-f]{64}$"},"path_ownership":{"type":"string","pattern":"^[0-9a-f]{64}$"},"native_linkage":{"type":"string","pattern":"^[0-9a-f]{64}$"}}},
+        "producer":{"type":"string","minLength":1}
+      }
+    },
+    "human": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "remediations"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "remediations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

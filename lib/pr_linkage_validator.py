@@ -101,7 +101,12 @@ def loads_strict(raw: bytes) -> Any:
 
 
 def _issue_ids(text: str) -> list[str]:
-    return sorted(set(m.group(0).upper() for m in re.finditer(r"(?<![A-Za-z0-9])MAS-[1-9][0-9]{0,8}(?![A-Za-z0-9])", text, re.ASCII | re.I)))
+    return sorted(set(m.group(0).upper() for m in re.finditer(r"(?<![A-Za-z0-9])MAS-[1-9][0-9]{0,8}(?![A-Za-z0-9])", text, re.ASCII | re.I)), key=_mas_key)
+
+
+def _mas_key(value: str) -> tuple[int, str]:
+    match = re.fullmatch(r"MAS-([1-9][0-9]{0,8})", value)
+    return (int(match.group(1)), value) if match else (10**10, value)
 
 
 def _visible_lines(body: str) -> tuple[list[tuple[int, str]], list[str]]:
@@ -331,8 +336,11 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     if epoch["state"] == "PRESENT" and (epoch["relation"] == "UNKNOWN" or epoch.get("receipt_ruleset_digest") != observation["ruleset_digest"]):
         raise ValidationError("EPOCH_RECEIPT_RULESET_MISMATCH")
     if epoch["state"] == "PRESENT":
-        if not isinstance(epoch.get("default_ref"), str) or not isinstance(epoch.get("cutover_merge_sha"), str) or not sha_re.fullmatch(epoch["cutover_merge_sha"]) or not isinstance(epoch.get("first_strict_pr_number"), int) or not epoch.get("template_blobs"):
+        if not isinstance(epoch.get("default_ref"), str) or not epoch["default_ref"] or not isinstance(epoch.get("cutover_merge_sha"), str) or not sha_re.fullmatch(epoch["cutover_merge_sha"]) or not isinstance(epoch.get("first_strict_pr_number"), int) or epoch["first_strict_pr_number"] < 1 or not isinstance(epoch.get("template_blobs"), list) or not epoch["template_blobs"] or not isinstance(epoch.get("cutover_receipt_sha256"), str) or not digest_re.fullmatch(epoch["cutover_receipt_sha256"]):
             raise ValidationError("INVALID_SNAPSHOT_STATE")
+        for blob in epoch["template_blobs"]:
+            if not isinstance(blob, dict) or set(blob) != {"path","blob_sha"} or blob.get("path") != ".github/pull_request_template.md" or not isinstance(blob.get("blob_sha"), str) or not sha_re.fullmatch(blob["blob_sha"]): raise ValidationError("INVALID_SNAPSHOT_STATE")
+        if epoch["template_blobs"] != sorted(epoch["template_blobs"], key=canonical_json) or len({canonical_json(x) for x in epoch["template_blobs"]}) != len(epoch["template_blobs"]): raise ValidationError("INVALID_SNAPSHOT_STATE")
         if epoch["legacy_open_pr_numbers"] != sorted(set(epoch["legacy_open_pr_numbers"])) or any(not isinstance(x, int) or x < 1 for x in epoch["legacy_open_pr_numbers"]): raise ValidationError("INVALID_SNAPSHOT_STATE")
         if epoch["relation"] == "PRE_CUTOVER" and (pr["number"] not in epoch["legacy_open_pr_numbers"] or pr["number"] >= epoch["first_strict_pr_number"]): raise ValidationError("INVALID_SNAPSHOT_STATE")
         if epoch["relation"] == "AT_OR_POST_CUTOVER" and (pr["number"] < epoch["first_strict_pr_number"] or pr["number"] in epoch["legacy_open_pr_numbers"]): raise ValidationError("INVALID_SNAPSHOT_STATE")
@@ -360,7 +368,7 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     for row in issues:
         if not isinstance(row, dict) or set(row) != {"id","target_role","project_id","workstream_key","issue_type","stop_law"} or not isinstance(row.get("id"),str) or not re.fullmatch(r"MAS-[1-9][0-9]{0,8}",row["id"]) or row.get("target_role") not in {"DECLARED","SECONDARY","PARENT","PROOF_GATE","ACCEPTANCE_GATE","UNKNOWN"} or row.get("project_id") is not None and not isinstance(row["project_id"],str) or row.get("workstream_key") is not None and (not isinstance(row["workstream_key"],str) or not re.fullmatch(r"WS:[A-Z0-9]+(?:-[A-Z0-9]+)*",row["workstream_key"])) or not isinstance(row.get("issue_type"),str) or not isinstance(row.get("stop_law"),str):
             raise ValidationError("INVALID_SNAPSHOT_STATE")
-    if issues != sorted(issues, key=lambda r:(r["id"],r["target_role"],r["issue_type"],r["stop_law"])) or len({canonical_json(r) for r in issues}) != len(issues): raise ValidationError("INVALID_SNAPSHOT_STATE")
+    if issues != sorted(issues, key=lambda r:(_mas_key(r["id"]),r["target_role"],r["issue_type"],r["stop_law"])) or len({canonical_json(r) for r in issues}) != len(issues): raise ValidationError("INVALID_SNAPSHOT_STATE")
     resolutions = observation["path_ownership"].get("resolutions", [])
     for row in resolutions:
         if not isinstance(row,dict) or set(row) != {"path","role","resolution","owner_workstream","path_class","allowed_authorities"} or not isinstance(row.get("path"),str) or not row["path"] or row.get("role") not in {"CURRENT","OLD_RENAME_SOURCE"} or row.get("resolution") not in {"EXACT","UNOWNED","AMBIGUOUS"} or row.get("owner_workstream") is not None and not isinstance(row["owner_workstream"],str) or not isinstance(row.get("path_class"),str) or not isinstance(row.get("allowed_authorities"),list) or row["allowed_authorities"] != sorted(set(row["allowed_authorities"])) or any(x not in ENUMS["Authority"] for x in row["allowed_authorities"]):
@@ -368,7 +376,7 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     if resolutions != sorted(resolutions, key=lambda r: (r.get("path", ""), r.get("path_class", ""), r.get("owner_workstream", ""), r.get("resolution", ""))) or len({canonical_json(row) for row in resolutions}) != len(resolutions):
         raise ValidationError("INVALID_SNAPSHOT_STATE")
     native = observation["native_linkage"]
-    if not isinstance(native.get("pagination_complete"), bool):
+    if not isinstance(native.get("pagination_complete"), bool) or (native["state"] == "PRESENT" and native["pagination_complete"] is not True) or (native["state"] in {"UNAVAILABLE","NOT_APPLICABLE"} and native["pagination_complete"] is not False):
         raise ValidationError("INVALID_SNAPSHOT_STATE")
     if len(native.get("relationships", [])) > manifest["limits"]["relationships"]:
         raise ValidationError("RESOURCE_LIMIT:relationships")
@@ -384,13 +392,14 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
         elif state in {"AMBIGUOUS","UNAVAILABLE"}: valid = native["state"] in {"PARTIAL","CONTRADICTORY"} and kind == "UNKNOWN" and source in {"BODY","BRANCH","TITLE","LINEAR_NATIVE","ADAPTER"} and transition == "UNKNOWN"
         if not valid or (native["state"] == "PRESENT" and state not in {"PRESENT","SUPPRESSED"}):
             raise ValidationError("INVALID_SNAPSHOT_STATE")
-    if native["relationships"] != sorted(native["relationships"], key=lambda r:(r["issue_id"],r["state"],r["kind"],r["source"],r["completion_transition"])) or len({canonical_json(r) for r in native["relationships"]}) != len(native["relationships"]):
+    if native["relationships"] != sorted(native["relationships"], key=lambda r:(_mas_key(r["issue_id"]),r["state"],r["kind"],r["source"],r["completion_transition"])) or len({canonical_json(r) for r in native["relationships"]}) != len(native["relationships"]):
         raise ValidationError("INVALID_SNAPSHOT_STATE")
     receipt = observation.get("receipt")
     receipt_keys = {"repository","pr_number","base_sha","head_sha","source_sha","body_sha256","observation_sha256","cutover_receipt_sha256","ruleset_digest","snapshot_digests","producer"}
     if not isinstance(receipt, dict) or set(receipt) != receipt_keys:
         raise ValidationError("TYPE_MISMATCH")
-    if receipt.get("repository") != observation["repository"]["name"] or receipt.get("pr_number") != pr["number"] or any(not isinstance(receipt.get(k), str) or not sha_re.fullmatch(receipt[k]) for k in ("base_sha","head_sha","source_sha")) or any(not isinstance(receipt.get(k), str) or not digest_re.fullmatch(receipt[k]) for k in ("body_sha256","observation_sha256","ruleset_digest")):
+    snapshot_keys = {"authoring_epoch","changed_paths","agentos","linear","path_ownership","native_linkage"}
+    if receipt.get("repository") != observation["repository"]["name"] or receipt.get("pr_number") != pr["number"] or any(not isinstance(receipt.get(k), str) or not sha_re.fullmatch(receipt[k]) for k in ("base_sha","head_sha","source_sha")) or any(not isinstance(receipt.get(k), str) or not digest_re.fullmatch(receipt[k]) for k in ("body_sha256","observation_sha256","ruleset_digest")) or receipt.get("cutover_receipt_sha256") is not None and (not isinstance(receipt["cutover_receipt_sha256"],str) or not digest_re.fullmatch(receipt["cutover_receipt_sha256"])) or not isinstance(receipt.get("producer"),str) or not receipt["producer"] or not isinstance(receipt.get("snapshot_digests"),dict) or set(receipt["snapshot_digests"]) != snapshot_keys or any(not isinstance(v,str) or not digest_re.fullmatch(v) for v in receipt["snapshot_digests"].values()):
         raise ValidationError("TYPE_MISMATCH")
 
 
@@ -506,6 +515,8 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     target_ids = sorted(set(([linear] if linear and linear != "NONE" else []) + branch_targets + title_targets + body_targets + native_targets))
     roles_by_target: dict[str, list[str]] = {}
     rows_by_target: dict[str, list[dict[str, Any]]] = {}
+    role_mismatch_targets: list[str] = []
+    role_mismatch_roles: list[str] = []
     if linear and linear != "NONE":
         if lsnap["state"] != "PRESENT":
             add("R035", {"linear":linear,"snapshot_state":lsnap["state"]})
@@ -525,9 +536,9 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
                     continue
                 declared = [r for r in rows if r.get("target_role") == "DECLARED"]
                 if target == linear and len(declared) != 1:
-                    add("R027", {"declared":linear,"roles":roles_by_target[target],"targets":[target]})
+                    role_mismatch_targets.append(target); role_mismatch_roles.extend(roles_by_target[target])
                 if target != linear and declared:
-                    add("R027", {"declared":linear,"roles":roles_by_target[target],"targets":[target]})
+                    role_mismatch_targets.append(target); role_mismatch_roles.extend(roles_by_target[target])
                 for r in rows:
                     allowed = manifest["classification"]["mode_to_issue_types"].get(mode,[]) if r.get("target_role") == "DECLARED" else manifest["classification"]["target_role_to_issue_types"].get(r.get("target_role"),[])
                     if r.get("issue_type") not in allowed:
@@ -536,23 +547,29 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
                     add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
                 if target == linear and mode == "creates_workstream" and declared and declared[0].get("workstream_key") not in {None, ws}:
                     add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
+    if role_mismatch_targets:
+        add("R027", {"declared":linear,"roles":sorted(set(role_mismatch_roles)),"targets":sorted(set(role_mismatch_targets), key=_mas_key)})
     if linear and linear != "NONE":
         suppressed = {(r.get("issue_id"), r.get("source")) for r in native.get("relationships", []) if r.get("state") == "SUPPRESSED"}
-        native_sources = {r.get("issue_id"): r.get("source") for r in native.get("relationships", []) if r.get("state") == "PRESENT"}
         def competes(target: str, source: str) -> bool:
-            # The adapter may describe a native relation but cannot rewrite its
-            # source.  Suppression is source-specific by contract.
-            effective_source = native_sources.get(target, source) if source == "ADAPTER" else source
-            return target != linear and (target, effective_source) not in suppressed and "DECLARED" in roles_by_target.get(target, [])
+            return target != linear and (target, source) not in suppressed and "DECLARED" in roles_by_target.get(target, [])
         bad_branch = [x for x in branch_targets if competes(x, "BRANCH")]
         if bad_branch: add("R050", {"branch_targets":bad_branch,"declared":linear})
         competing = sorted({x for x in title_targets if competes(x, "TITLE")} | {x for x in body_targets if competes(x, "BODY")})
         if competing: add("R051", {"body_targets":body_targets,"declared":linear,"title_targets":title_targets})
-        declared_targets = sorted({linear} | {x for x in branch_targets if competes(x, "BRANCH")} | {x for x in title_targets if competes(x, "TITLE")} | {x for x in body_targets if competes(x, "BODY")} | {x for x in native_targets if competes(x, "ADAPTER")})
+        native_competing = {r.get("issue_id") for r in native.get("relationships", []) if r.get("state") == "PRESENT" and isinstance(r.get("issue_id"), str) and competes(r["issue_id"], r.get("source", "ADAPTER"))}
+        declared_targets = sorted({linear} | {x for x in branch_targets if competes(x, "BRANCH")} | {x for x in title_targets if competes(x, "TITLE")} | {x for x in body_targets if competes(x, "BODY")} | native_competing, key=_mas_key)
         if len(declared_targets) > 1: add("R039", {"declared":linear,"targets":declared_targets})
     if canonical and tuple([mode,authority,completion]) not in {tuple(x) for x in manifest["authority_completion_allowlist"]}: add("R040", {"authority":authority,"completion":completion,"portfolio_mode":mode})
     if paths["state"] != "PRESENT": add("R043", {"snapshot_state":paths["state"]})
-    if ownership["state"] != "PRESENT": add("R042", {"paths":[],"snapshot_state":ownership["state"]})
+    if ownership["state"] != "PRESENT":
+        add("R042", {"paths":[],"snapshot_state":ownership["state"]})
+        # Partial ownership may still contain conclusive negative evidence.  Do
+        # not convert an observed UNOWNED/exact-nonmaintenance row into an
+        # unknown merely because unrelated rows could not be captured.
+        if canonical and mode == "maintenance_exception":
+            known_bad = [r for r in ownership.get("resolutions", []) if r.get("resolution") == "UNOWNED" or (r.get("resolution") == "EXACT" and (r.get("path_class") != "MAINTENANCE" or r.get("owner_workstream") != "NONE" or "maintenance" not in r.get("allowed_authorities", [])))]
+            if known_bad: add("R044", {"authority":authority,"linear":linear or "NONE","paths":[text_digest(r.get("path","")) for r in known_bad]})
     elif canonical:
         rs = ownership.get("resolutions",[])
         unowned = [r for r in rs if r.get("resolution") == "UNOWNED"]
@@ -592,7 +609,7 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
             declared_row = next((r for r in rows_by_target.get(target, []) if r.get("target_role") == "DECLARED"), None)
             stop_law = declared_row.get("stop_law") if declared_row else None
             declared_completion = completion if target == linear else None
-            records_exception = target == linear and completion == "records-only" and stop_law == "RECORDS_ONLY" and ownership["state"] == "PRESENT" and all(r.get("resolution") == "EXACT" for r in ownership.get("resolutions", []))
+            records_exception = target == linear and completion == "records-only" and stop_law == "RECORDS_ONLY" and ownership["state"] == "PRESENT" and bool(ownership.get("resolutions")) and all(r.get("resolution") == "EXACT" and r.get("path_class") == "RECORDS" and r.get("owner_workstream") in {"NONE", None} and "records" in r.get("allowed_authorities", []) for r in ownership.get("resolutions", []))
             mismatch = (target == linear and completion == "merge-is-done" and effect != "COMPLETION_CAPABLE") or (effect == "COMPLETION_CAPABLE" and ((target != linear) or (completion in {"built-not-proven","proof-required","acceptance-required"}) or (completion == "records-only" and not records_exception)))
             consistency = "INDETERMINATE" if ambiguous or native["state"] != "PRESENT" else ("MISMATCH" if mismatch else "MATCH")
             completion_rows.append({"issue_id":target,"effect":effect,"declared_completion":declared_completion,"stop_law":stop_law,"consistency":consistency})
@@ -626,12 +643,13 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         closing = []
         for target, kind, line in body_relationships:
             declared_row = next((r for r in rows_by_target.get(target, []) if r.get("target_role") == "DECLARED"), None)
-            records_ok = completion == "records-only" and declared_row and declared_row.get("stop_law") == "RECORDS_ONLY" and ownership["state"] == "PRESENT" and all(r.get("resolution") == "EXACT" for r in ownership.get("resolutions", []))
+            records_ok = completion == "records-only" and declared_row and declared_row.get("stop_law") == "RECORDS_ONLY" and ownership["state"] == "PRESENT" and bool(ownership.get("resolutions")) and all(r.get("resolution") == "EXACT" and r.get("path_class") == "RECORDS" and r.get("owner_workstream") in {"NONE", None} and "records" in r.get("allowed_authorities", []) for r in ownership.get("resolutions", []))
             if target == linear and kind == "CLOSING" and not records_ok:
                 closing.append((line, canonical_digest({"issue":target,"kind":kind})))
         if closing:
             closing.sort(key=lambda x:(x[0], canonical_json(x[1])))
-            findings.append(_finding(rules,"R052",{"completion":completion,"linear":linear,"relationships":[x[1] for x in closing]},field="RELATIONSHIP",line=closing[0][0]))
+            relationship_evidence = sorted({canonical_json(x[1]): x[1] for x in closing}.values(), key=canonical_json)
+            findings.append(_finding(rules,"R052",{"completion":completion,"linear":linear,"relationships":relationship_evidence},field="RELATIONSHIP",line=closing[0][0]))
     if linear and linear != "NONE" and lsnap["state"] == "PRESENT":
         declared_rows = [r for r in rows_by_target.get(linear, []) if r.get("target_role") == "DECLARED"]
         if completion == "merge-is-done" and declared_rows and declared_rows[0].get("stop_law") in {"PROOF","ACCEPTANCE"}:

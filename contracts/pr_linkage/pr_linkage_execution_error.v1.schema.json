@@ -1,1 +1,126 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"mastermind.pr_linkage_execution_error.v1","type":"object","additionalProperties":false,"required":["schema","enforcement","error","execution_error_hash","receipt"],"properties":{"schema":{"const":"mastermind.pr_linkage_execution_error.v1"},"enforcement":{"const":"REPORT_ONLY"},"execution_error_hash":{"type":"string","pattern":"^[0-9a-f]{64}$"},"error":{"type":"object","additionalProperties":false,"required":["code","component","reason_code","limit","observed"],"properties":{"code":{"enum":["INVALID_JSON","INVALID_OBSERVATION_SCHEMA","INPUT_RESOURCE_LIMIT_EXCEEDED","UNSUPPORTED_RULESET","INTERNAL_ERROR","OUTPUT_WRITE_ERROR","NONDETERMINISTIC_RESULT"]},"component":{"enum":["INPUT","JSON","OBSERVATION","RULESET","PARSER","EVALUATOR","RENDERER","OUTPUT","DETERMINISM"]},"reason_code":{"enum":["INVALID_UTF8","INVALID_JSON","DUPLICATE_OBJECT_MEMBER","UNKNOWN_KEY","MISSING_KEY","TYPE_MISMATCH","INVALID_SNAPSHOT_STATE","EPOCH_RECEIPT_RULESET_MISMATCH","INVALID_BODY_ENCODING","RESOURCE_LIMIT","UNSUPPORTED_RULESET_ID","RULESET_DIGEST_MISMATCH","INPUT_READ_FAILED","PARSER_INTERNAL_ERROR","EVALUATOR_INTERNAL_ERROR","RENDERER_INTERNAL_ERROR","OUTPUT_TEMP_CREATE_FAILED","OUTPUT_WRITE_FAILED","OUTPUT_REPLACE_FAILED","NONDETERMINISTIC_RESULT"]},"limit":{"type":["integer","null"]},"observed":{"type":["integer","null"]}}},"receipt":{"type":"object","additionalProperties":false,"required":["input_sha256","source_sha","producer"],"properties":{"input_sha256":{"type":["string","null"],"pattern":"^[0-9a-f]{64}$"},"source_sha":{"type":["string","null"],"pattern":"^[0-9a-f]{40}$"},"producer":{"const":"scripts/pr_linkage_validator.py"}}}}}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mastermind.pr_linkage_execution_error.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "enforcement",
+    "error",
+    "execution_error_hash",
+    "receipt"
+  ],
+  "properties": {
+    "schema": {
+      "const": "mastermind.pr_linkage_execution_error.v1"
+    },
+    "enforcement": {
+      "const": "REPORT_ONLY"
+    },
+    "execution_error_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "component",
+        "reason_code",
+        "limit",
+        "observed"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "INVALID_JSON",
+            "INVALID_OBSERVATION_SCHEMA",
+            "INPUT_RESOURCE_LIMIT_EXCEEDED",
+            "UNSUPPORTED_RULESET",
+            "INTERNAL_ERROR",
+            "OUTPUT_WRITE_ERROR",
+            "NONDETERMINISTIC_RESULT"
+          ]
+        },
+        "component": {
+          "enum": [
+            "INPUT",
+            "JSON",
+            "OBSERVATION",
+            "RULESET",
+            "PARSER",
+            "EVALUATOR",
+            "RENDERER",
+            "OUTPUT",
+            "DETERMINISM"
+          ]
+        },
+        "reason_code": {
+          "enum": [
+            "INVALID_UTF8",
+            "INVALID_JSON",
+            "DUPLICATE_OBJECT_MEMBER",
+            "UNKNOWN_KEY",
+            "MISSING_KEY",
+            "TYPE_MISMATCH",
+            "INVALID_SNAPSHOT_STATE",
+            "EPOCH_RECEIPT_RULESET_MISMATCH",
+            "INVALID_BODY_ENCODING",
+            "RESOURCE_LIMIT",
+            "UNSUPPORTED_RULESET_ID",
+            "RULESET_DIGEST_MISMATCH",
+            "INPUT_READ_FAILED",
+            "PARSER_INTERNAL_ERROR",
+            "EVALUATOR_INTERNAL_ERROR",
+            "RENDERER_INTERNAL_ERROR",
+            "OUTPUT_TEMP_CREATE_FAILED",
+            "OUTPUT_WRITE_FAILED",
+            "OUTPUT_REPLACE_FAILED",
+            "NONDETERMINISTIC_RESULT"
+          ]
+        },
+        "limit": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "observed": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_sha256",
+        "source_sha",
+        "producer"
+      ],
+      "properties": {
+        "input_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source_sha": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "producer": {
+          "const": "scripts/pr_linkage_validator.py"
+        }
+      }
+    }
+  }
+}
