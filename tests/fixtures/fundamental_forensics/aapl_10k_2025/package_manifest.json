@@ -11,7 +11,13 @@
   "period_of_report": "2025-09-27",
   "filing_date": "2025-10-31",
   "source_accepted_at": "2025-10-31T10:01:26.000Z",
-  "fixture_recorded_at": "2026-08-22T21:16:00Z",
+  "fixture_recorded_at": "2026-08-23T00:32:31Z",
+  "acceptance_witness": {
+    "path": "sec_submissions_witness.json",
+    "source_url": "https://data.sec.gov/submissions/CIK0000320193.json",
+    "content_sha256": "6449489eef577b096abeb79f5375b7df9c95c23e4765a075222a765a19124d83",
+    "byte_length": 364
+  },
   "archive_index_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/index.json",
   "index_sha256": "d61dde83df2dde7d63041e443321eab963b245e4c0090ba6240ce1711329de83",
   "index_byte_length": 8936,

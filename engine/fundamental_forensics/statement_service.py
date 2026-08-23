@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from lib.dataos.identity import IssuerMaster
+
 from .financial_intelligence_packet import load_core_registry
 from .query_service import (
     MAX_REQUEST_BYTES,
@@ -96,14 +98,24 @@ def admit_statement_request(body: bytes) -> AdmittedStatementRequest:
     return AdmittedStatementRequest(entity_id=entity_id, accession=accession)
 
 
-def _bind_data_os_issuer(repo_root: Path, entity_id: str) -> dict[str, str]:
+def _load_security_records(repo_root: Path) -> list[dict[str, Any]]:
+    try:
+        import pandas as pd
+    except Exception as exc:  # noqa: BLE001
+        raise FinancialQueryUnavailableError() from exc
+    path = Path(repo_root) / "data" / "reference" / "security_master.parquet"
+    if not path.is_file():
+        raise FinancialQueryUnavailableError()
+    return pd.read_parquet(path).to_dict("records")
+
+
+def _load_issuer_metadata(repo_root: Path, entity_id: str) -> dict[str, str]:
     try:
         import pandas as pd
     except Exception as exc:  # noqa: BLE001
         raise FinancialQueryUnavailableError() from exc
     path = Path(repo_root) / "data" / "reference" / "issuer_master.parquet"
-    security_path = Path(repo_root) / "data" / "reference" / "security_master.parquet"
-    if not path.is_file() or not security_path.is_file():
+    if not path.is_file():
         raise FinancialQueryUnavailableError()
     issuers = pd.read_parquet(path)
     rows = issuers[issuers["issuer_id"] == entity_id]
@@ -111,18 +123,58 @@ def _bind_data_os_issuer(repo_root: Path, entity_id: str) -> dict[str, str]:
         raise FinancialQueryAdmissionError(400, "unknown entity")
     row = rows.iloc[0]
     cik = str(row["cik"]).zfill(10)
-    securities = pd.read_parquet(security_path)
-    secs = securities[securities["issuer_id"] == entity_id]
-    if len(secs) != 1:
+    return {
+        "cik": cik,
+        "legal_name": str(row.get("legal_name") or ""),
+    }
+
+
+def bind_canonical_identity(
+    entity_id: str,
+    *,
+    issuer_master: IssuerMaster,
+    issuer_metadata: dict[str, str],
+) -> dict[str, str]:
+    """Resolve issuer→security through IssuerMaster only.
+
+    Raw issuer/security tables may supply metadata after that canonical
+    membership is known. FIF must not independently pick among securities.
+    """
+    securities = issuer_master.securities_of_issuer(entity_id)
+    if len(securities) != 1:
         raise FinancialQueryAdmissionError(400, "unknown entity")
-    sec = secs.iloc[0]
+    security_id = securities[0]
+    row = next((item for item in issuer_master.rows if item.security_id == security_id), None)
+    if row is None:
+        raise FinancialQueryAdmissionError(400, "unknown entity")
+    cik = str(issuer_metadata.get("cik") or "").zfill(10)
+    if len(cik) != 10 or not cik.isdigit():
+        raise FinancialQueryUnavailableError()
     return {
         "entity_id": entity_id,
         "cik": cik,
-        "security_id": str(sec["security_id"]),
-        "listing_key": str(sec["listing_key"]),
-        "legal_name": str(row.get("legal_name") or ""),
+        "security_id": security_id,
+        "listing_key": row.listing_key,
+        "legal_name": str(issuer_metadata.get("legal_name") or ""),
     }
+
+
+def _bind_data_os_issuer(
+    repo_root: Path,
+    entity_id: str,
+    *,
+    issuer_master: IssuerMaster | None = None,
+    issuer_metadata: dict[str, str] | None = None,
+) -> dict[str, str]:
+    if issuer_master is None:
+        issuer_master = IssuerMaster.from_records(_load_security_records(repo_root))
+    if issuer_metadata is None:
+        issuer_metadata = _load_issuer_metadata(repo_root, entity_id)
+    return bind_canonical_identity(
+        entity_id,
+        issuer_master=issuer_master,
+        issuer_metadata=issuer_metadata,
+    )
 
 
 def execute_financial_statements(
@@ -131,9 +183,16 @@ def execute_financial_statements(
     repo_root: Path,
     provider: FinancialStatementProvider | None = None,
     provider_factory: Callable[[], FinancialStatementProvider] | None = None,
+    issuer_master: IssuerMaster | None = None,
+    issuer_metadata: dict[str, str] | None = None,
 ) -> FinancialStatementResult:
     admitted = admit_statement_request(body)
-    binding = _bind_data_os_issuer(repo_root, admitted.entity_id)
+    binding = _bind_data_os_issuer(
+        repo_root,
+        admitted.entity_id,
+        issuer_master=issuer_master,
+        issuer_metadata=issuer_metadata,
+    )
     if provider is None:
         if provider_factory is None:
             raise FinancialQueryUnavailableError()
@@ -196,6 +255,12 @@ def execute_financial_statements(
             "fact_count": reconstructed["fact_count"],
             "context_count": reconstructed["context_count"],
         },
+        "delivery": {
+            "kind": "committed_golden_fixture",
+            "attested": False,
+            "production_issuer_service": False,
+            "authority": "context_display_only",
+        },
     }
     body_out = canonical_json(envelope).encode("utf-8")
     if len(body_out) > MAX_RESPONSE_BYTES:
@@ -211,6 +276,7 @@ __all__ = [
     "GoldenAaplStatementProvider",
     "UnavailableFinancialStatementProvider",
     "admit_statement_request",
+    "bind_canonical_identity",
     "execute_financial_statements",
     "MAX_REQUEST_BYTES",
 ]

@@ -15,7 +15,7 @@ from engine.fundamental_forensics.statement_service import GoldenAaplStatementPr
 ROOT = Path(__file__).resolve().parents[1]
 _PATH = "/api/forensics/v1/financial/statements"
 _SCHEMA = "fundamental_forensics.financial_statement_request/v1"
-_RESPONSE_SHA = "853f2fd89e2dd2175152b089d0c80b2bc7777c103fefb5011433f0657057bda2"
+_RESPONSE_SHA = "1a489e46698e99f83518f18def89c381a29f63960a979d9de82caa29bcc3198e"
 
 _EXPECTED_PRIVATE_HEADERS = {
     "cache-control": "private, no-store",
@@ -129,14 +129,28 @@ def test_paid_golden_aapl_returns_three_statement_trees(paid_client) -> None:
     assert payload["filing"]["accession"] == "0000320193-25-000079"
     assert len(payload["statements"]) == 3
     by_type = {item["statement_type"]: item for item in payload["statements"]}
-    assert by_type["income_statement"]["row_count"] == 25
-    assert by_type["balance_sheet"]["row_count"] == 38
-    assert by_type["cash_flow"]["row_count"] == 36
+    assert by_type["income_statement"]["row_count"] == 24
+    assert by_type["balance_sheet"]["row_count"] == 35
+    assert by_type["cash_flow"]["row_count"] == 35
     sales = next(
-        row for row in by_type["income_statement"]["rows"] if row["as_reported_label"] == "Net sales"
+        row
+        for row in by_type["income_statement"]["rows"]
+        if row["as_reported_label"] == "Total net sales"
     )
     assert sales["cells"][0]["source_receipt"]["source_span"]
     assert sales["cells"][0]["value"] == "416161000000"
+    products = next(
+        row
+        for row in by_type["income_statement"]["rows"]
+        if row["as_reported_label"] == "Products"
+        and "RevenueFromContractWithCustomerExcludingAssessedTax" in (row["concept"] or "")
+    )
+    assert products["cells"][0]["value"] == "307003000000"
+    assert products["cells"][0]["dimensions"]
+    assert payload["delivery"]["kind"] == "committed_golden_fixture"
+    assert payload["delivery"]["attested"] is False
+    assert payload["delivery"]["production_issuer_service"] is False
+    assert payload["delivery"]["authority"] == "context_display_only"
     sga = next(
         row
         for row in by_type["income_statement"]["rows"]

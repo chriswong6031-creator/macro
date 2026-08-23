@@ -40,8 +40,6 @@ changed:
     what: Minimal statement_cell.v1 / statement-tree contract.
   - path: research/financial_intelligence_fabric/FIF_3A1_AAPL_GOLDEN_REVIEW.md
     what: Human review vs captured AAPL 10-K primary document.
-  - path: agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-22-FLAGSHIP-INTELLIGENCE-FANOUT.md
-    what: One-line model enum local so agentos validate can conclude (pre-existing invalid sol).
 verified:
   - claim: Data OS binds CIK 0000320193 to ISS:US-XNAS-AAPL / SEC:US-XNAS-AAPL / US-XNAS-AAPL and not to the CIK as entity_id.
     command: python3 pandas filter of data/reference/issuer_master.parquet and security_master.parquet for cik==0000320193 and issuer_id==ISS:US-XNAS-AAPL

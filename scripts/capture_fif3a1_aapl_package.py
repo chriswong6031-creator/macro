@@ -10,7 +10,10 @@ import hashlib
 import json
 import time
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
+
+from engine.fundamental_forensics.statement_graph import mint_fixture_recorded_at
 
 CIK = "0000320193"
 ACCESSION = "0000320193-25-000079"
@@ -105,6 +108,19 @@ def main() -> None:
             f"submissions identity mismatch: form={form} primary={primary_document}"
         )
 
+    witness = {
+        "source_url": f"https://data.sec.gov/submissions/CIK{CIK}.json",
+        "source_path": f"filings.recent[accessionNumber={ACCESSION}]",
+        "accessionNumber": ACCESSION,
+        "form": form,
+        "filingDate": filing_date,
+        "reportDate": report_date,
+        "acceptanceDateTime": source_accepted_at,
+        "primaryDocument": primary_document,
+    }
+    witness_bytes = (json.dumps(witness, indent=2, sort_keys=True) + "\n").encode("utf-8")
+    (dest / "sec_submissions_witness.json").write_bytes(witness_bytes)
+
     manifest = {
         "schema": "fundamental_forensics.golden_filing_package/v1",
         "entity_id": "ISS:US-XNAS-AAPL",
@@ -118,6 +134,13 @@ def main() -> None:
         "period_of_report": report_date,
         "filing_date": filing_date,
         "source_accepted_at": source_accepted_at,
+        "fixture_recorded_at": mint_fixture_recorded_at(datetime.now(timezone.utc)),
+        "acceptance_witness": {
+            "path": "sec_submissions_witness.json",
+            "source_url": witness["source_url"],
+            "content_sha256": hashlib.sha256(witness_bytes).hexdigest(),
+            "byte_length": len(witness_bytes),
+        },
         "archive_index_url": f"{ARCHIVE_DIR}/index.json",
         "index_sha256": hashlib.sha256(index_bytes).hexdigest(),
         "index_byte_length": len(index_bytes),

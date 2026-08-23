@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -22,15 +24,21 @@ from engine.fundamental_forensics.revision_service import (
 from engine.fundamental_forensics.statement_graph import (
     PRIMARY_STATEMENT_ROLES,
     STATEMENT_TITLES,
+    StatementGraphError,
     _cell_from_facts,
+    admit_golden_aapl_package,
     load_golden_aapl_package,
+    mint_fixture_recorded_at,
+    parse_calculations,
     reconstruct_primary_statements,
 )
 from engine.fundamental_forensics.statement_service import (
     GoldenAaplStatementProvider,
     UnavailableFinancialStatementProvider,
+    bind_canonical_identity,
     execute_financial_statements,
 )
+from lib.dataos.identity import IssuerMaster
 
 ROOT = Path(__file__).resolve().parents[1]
 _REQUEST_SCHEMA = "fundamental_forensics.financial_statement_request/v1"
@@ -38,7 +46,11 @@ _GOLDEN_ENTITY = "ISS:US-XNAS-AAPL"
 _GOLDEN_ACCESSION = "0000320193-25-000079"
 _INDEX_SHA = "d61dde83df2dde7d63041e443321eab963b245e4c0090ba6240ce1711329de83"
 _PRIMARY_SHA = "548ae59778cf08ee0f2ee088e7ece20d947076c3c01f74d2d65db4c2777e436a"
-_RESPONSE_SHA = "853f2fd89e2dd2175152b089d0c80b2bc7777c103fefb5011433f0657057bda2"
+_RESPONSE_SHA = "1a489e46698e99f83518f18def89c381a29f63960a979d9de82caa29bcc3198e"
+_RESPONSE_BYTES = 196358
+_WITNESS_SHA = "6449489eef577b096abeb79f5375b7df9c95c23e4765a075222a765a19124d83"
+_WITNESS_BYTES = 364
+_FIXTURE_RECORDED_AT = "2026-08-23T00:32:31Z"
 
 _HASH_AS_REPORTED_T1_T2 = "358d44741632d74ff76dd8771bb78b34295a08d62d2a0a8566a6abe5feac1442"
 _HASH_LATEST_KNOWN_T1_T2 = "191c49a37998052f17eec78113b5bd8bf0dcaaa52239c406cdb4c27cda5ad1a7"
@@ -102,11 +114,13 @@ def _query_hash(*, selection: str, source: str, recorded: str, metric_ids: list,
     return result.envelope["receipt"]["query_hash"]
 
 
-def _execute(body: bytes | None = None, *, provider=None):
+def _execute(body: bytes | None = None, *, provider=None, issuer_master=None, issuer_metadata=None):
     return execute_financial_statements(
         body=body if body is not None else _statement_body(),
         repo_root=ROOT,
         provider=provider or GoldenAaplStatementProvider(ROOT),
+        issuer_master=issuer_master,
+        issuer_metadata=issuer_metadata,
     )
 
 
@@ -139,6 +153,21 @@ def test_package_manifest_digest_and_member_counts() -> None:
     primary = next(item for item in stored if item["name"] == "aapl-20250927.htm")
     assert primary["content_sha256"] == _PRIMARY_SHA
     assert hashlib.sha256(package.members["aapl-20250927.htm"]).hexdigest() == _PRIMARY_SHA
+    witness = package.manifest["acceptance_witness"]
+    assert witness["content_sha256"] == _WITNESS_SHA
+    assert witness["byte_length"] == _WITNESS_BYTES
+    assert package.manifest["source_accepted_at"] == "2025-10-31T10:01:26.000Z"
+    assert package.manifest["fixture_recorded_at"] == _FIXTURE_RECORDED_AT
+    witness_bytes = (
+        ROOT
+        / "tests"
+        / "fixtures"
+        / "fundamental_forensics"
+        / "aapl_10k_2025"
+        / "sec_submissions_witness.json"
+    ).read_bytes()
+    assert hashlib.sha256(witness_bytes).hexdigest() == _WITNESS_SHA
+    assert len(witness_bytes) == _WITNESS_BYTES
 
 
 def test_reconstruct_three_primary_statements_filing_native() -> None:
@@ -150,9 +179,9 @@ def test_reconstruct_three_primary_statements_filing_native() -> None:
     assert tree["fact_count"] == 1131
     by_type = {item["statement_type"]: item for item in tree["statements"]}
     assert set(by_type) == {"income_statement", "balance_sheet", "cash_flow"}
-    assert by_type["income_statement"]["row_count"] == 25
-    assert by_type["balance_sheet"]["row_count"] == 38
-    assert by_type["cash_flow"]["row_count"] == 36
+    assert by_type["income_statement"]["row_count"] == 24
+    assert by_type["balance_sheet"]["row_count"] == 35
+    assert by_type["cash_flow"]["row_count"] == 35
     for kind, statement in by_type.items():
         assert statement["role_uri"] == PRIMARY_STATEMENT_ROLES[kind]
         assert statement["title"] == STATEMENT_TITLES[kind]
@@ -162,18 +191,27 @@ def test_reconstruct_three_primary_statements_filing_native() -> None:
         "2024-09-28",
         "2023-09-30",
     ]
+    assert [col["start"] for col in by_type["income_statement"]["columns"]] == [
+        "2024-09-29",
+        "2023-10-01",
+        "2022-09-25",
+    ]
     assert [col["label"] for col in by_type["balance_sheet"]["columns"]] == [
         "2025-09-27",
         "2024-09-28",
     ]
     assert by_type["balance_sheet"]["columns"][0]["kind"] == "instant"
     assert by_type["income_statement"]["columns"][0]["kind"] == "duration"
+    income_labels = [row["as_reported_label"] for row in by_type["income_statement"]["rows"]]
+    assert income_labels[:4] == ["Net sales:", "Products", "Services", "Total net sales"]
+    assert not any("Table" in label or "Axis" in label or "Line Items" in label for label in income_labels)
+    assert not any("[Table]" in label or "[Axis]" in label or "[Line Items]" in label for label in income_labels)
 
 
 def test_income_duration_reverses_to_aapl_xbrl_occurrence() -> None:
     package = load_golden_aapl_package(ROOT)
     tree = reconstruct_primary_statements(package=package, registry=load_core_registry(ROOT))
-    sales = _row(tree, "income_statement", "Net sales")
+    sales = _row(tree, "income_statement", "Total net sales")
     cell = sales["cells"][0]
     assert cell["value"] == "416161000000"
     assert cell["scale"] == 6
@@ -214,11 +252,11 @@ def test_cash_flow_order_is_filing_native_and_splits_beginning_ending_cash() -> 
     )
     cf = next(item for item in tree["statements"] if item["statement_type"] == "cash_flow")
     labels = [row["as_reported_label"] for row in cf["rows"]]
-    assert "beginning balances" in labels[1]
     begin = next(row for row in cf["rows"] if "beginning balances" in row["as_reported_label"])
     end = next(row for row in cf["rows"] if "ending balances" in row["as_reported_label"])
     assert begin["concept"] == end["concept"]
-    assert begin["preferred_label_role"] != end["preferred_label_role"]
+    assert begin["as_reported_label"] != end["as_reported_label"]
+    assert begin["order"] < end["order"]
     assert begin["cells"][0]["value"] == "29943000000"
     assert end["cells"][0]["value"] == "35934000000"
     operating = next(
@@ -344,10 +382,17 @@ def test_execute_is_deterministic_and_pinned() -> None:
     second = _execute()
     assert first.body == second.body
     assert first.sha256 == second.sha256 == _RESPONSE_SHA
+    assert len(first.body) == _RESPONSE_BYTES
     assert hashlib.sha256(first.body).hexdigest() == _RESPONSE_SHA
     assert first.envelope["schema"] == "fundamental_forensics.financial_statement_response/v1"
     assert first.envelope["filing"]["source_accepted_at"] == "2025-10-31T10:01:26.000Z"
-    assert first.envelope["filing"]["fixture_recorded_at"] == "2026-08-22T21:16:00Z"
+    assert first.envelope["filing"]["fixture_recorded_at"] == _FIXTURE_RECORDED_AT
+    assert first.envelope["delivery"] == {
+        "kind": "committed_golden_fixture",
+        "attested": False,
+        "production_issuer_service": False,
+        "authority": "context_display_only",
+    }
     assert "now" not in json.dumps(first.envelope)
 
 
@@ -506,3 +551,230 @@ def test_frozen_fif1_paths_are_empty_diff() -> None:
         ).read_text(encoding="utf-8")
     )
     assert golden["packet_id"] == _GOLDEN_FIP1_PACKET_ID
+
+
+def test_issuer_master_selects_active_membership_not_superseded_duplicate() -> None:
+    fixture = json.loads(
+        (
+            ROOT
+            / "tests"
+            / "fixtures"
+            / "fundamental_forensics"
+            / "issuer_master_adversarial_duplicate_mint.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert fixture["securities"][0]["security_state"] == "SUPERSEDED_DUPLICATE_MINT"
+    assert fixture["securities"][0]["security_id"] == "SEC:US-XNAS-AAPL-DUP"
+    master = IssuerMaster.from_records(fixture["securities"])
+    assert master.securities_of_issuer("ISS:US-XNAS-AAPL") == ("SEC:US-XNAS-AAPL",)
+    assert master.security_state_of("SEC:US-XNAS-AAPL-DUP") == "SUPERSEDED_DUPLICATE_MINT"
+    binding = bind_canonical_identity(
+        "ISS:US-XNAS-AAPL",
+        issuer_master=master,
+        issuer_metadata=fixture["issuer_metadata"],
+    )
+    assert binding["security_id"] == "SEC:US-XNAS-AAPL"
+    assert binding["listing_key"] == "US-XNAS-AAPL"
+    result = _execute(
+        issuer_master=master,
+        issuer_metadata=fixture["issuer_metadata"],
+    )
+    assert result.envelope["entity"]["security_id"] == "SEC:US-XNAS-AAPL"
+    assert result.envelope["entity"]["listing_key"] == "US-XNAS-AAPL"
+    assert result.envelope["entity"]["entity_id"] == "ISS:US-XNAS-AAPL"
+    assert result.envelope["entity"]["cik"] == "0000320193"
+
+
+def test_products_and_services_are_displayed_under_net_sales_with_dimensions() -> None:
+    package = load_golden_aapl_package(ROOT)
+    tree = reconstruct_primary_statements(package=package, registry=load_core_registry(ROOT))
+    statement = next(item for item in tree["statements"] if item["statement_type"] == "income_statement")
+    labels = [row["as_reported_label"] for row in statement["rows"]]
+    assert labels[:4] == ["Net sales:", "Products", "Services", "Total net sales"]
+    products = next(
+        row
+        for row in statement["rows"]
+        if row["as_reported_label"] == "Products"
+        and "RevenueFromContractWithCustomerExcludingAssessedTax" in (row["concept"] or "")
+    )
+    services = next(
+        row
+        for row in statement["rows"]
+        if row["as_reported_label"] == "Services"
+        and "RevenueFromContractWithCustomerExcludingAssessedTax" in (row["concept"] or "")
+    )
+    total = _row(tree, "income_statement", "Total net sales")
+    assert products["depth"] == 1
+    assert services["depth"] == 1
+    assert products["cells"][0]["value"] == "307003000000"
+    assert services["cells"][0]["value"] == "109158000000"
+    assert total["cells"][0]["value"] == "416161000000"
+    assert total["cells"][0]["dimensions"] == []
+    product_dims = products["cells"][0]["dimensions"]
+    assert product_dims
+    assert any("ProductOrServiceAxis" in (item.get("dimension_qname") or "") for item in product_dims)
+    assert any("ProductMember" in (item.get("member_qname") or "") for item in product_dims)
+    assert any("ServiceMember" in (item.get("member_qname") or "") for item in services["cells"][0]["dimensions"])
+    receipt = products["cells"][0]["source_receipt"]
+    frag = package.members["aapl-20250927.htm"][
+        receipt["source_span"]["start"] : receipt["source_span"]["end"]
+    ].decode("utf-8")
+    assert "307,003" in frag
+    assert "RevenueFromContractWithCustomerExcludingAssessedTax" in frag
+    assert products["formula_dependencies"] is None
+    assert products["cells"][0]["direct_or_calculated"] == "direct"
+
+
+def test_agreeing_duplicate_occurrences_retain_count() -> None:
+    tree = reconstruct_primary_statements(
+        package=load_golden_aapl_package(ROOT),
+        registry=load_core_registry(ROOT),
+    )
+    total = _row(tree, "income_statement", "Total net sales")
+    assert total["cells"][0]["quality_state"] == "available"
+    assert total["cells"][0]["value"] == "416161000000"
+    assert total["cells"][0]["source_receipt"]["occurrence_count"] > 1
+
+
+def _cloned_package(tmp_path: Path) -> Path:
+    dest = tmp_path / "aapl_10k_2025"
+    shutil.copytree(ROOT / "tests" / "fixtures" / "fundamental_forensics" / "aapl_10k_2025", dest)
+    return dest
+
+
+def _rewrite_manifest(dest: Path, mutate) -> None:
+    path = dest / "package_manifest.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    mutate(payload)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_hostile_index_digest_is_refused(tmp_path: Path) -> None:
+    dest = _cloned_package(tmp_path)
+    index = dest / "index.json"
+    index.write_bytes(index.read_bytes() + b"\n")
+    with pytest.raises(StatementGraphError, match="index digest"):
+        admit_golden_aapl_package(dest)
+
+
+def test_hostile_index_duplicate_member_is_refused(tmp_path: Path) -> None:
+    dest = _cloned_package(tmp_path)
+    index_path = dest / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    index["directory"]["item"].append(index["directory"]["item"][0])
+    raw = json.dumps(index).encode("utf-8")
+    index_path.write_bytes(raw)
+
+    def _align(manifest: dict) -> None:
+        manifest["index_sha256"] = hashlib.sha256(raw).hexdigest()
+        manifest["index_byte_length"] = len(raw)
+
+    _rewrite_manifest(dest, _align)
+    with pytest.raises(StatementGraphError, match="duplicate members"):
+        admit_golden_aapl_package(dest)
+
+
+def test_hostile_inventory_extra_member_is_refused(tmp_path: Path) -> None:
+    dest = _cloned_package(tmp_path)
+    def _extra(manifest: dict) -> None:
+        manifest["members"].append(
+            {
+                "name": "not-in-the-archive.fake",
+                "state": "not_requested",
+                "role": "archive",
+            }
+        )
+        manifest["member_count"] = 94
+    _rewrite_manifest(dest, _extra)
+    with pytest.raises(StatementGraphError, match="inventory does not match"):
+        admit_golden_aapl_package(dest)
+
+
+def test_hostile_inventory_missing_member_is_refused(tmp_path: Path) -> None:
+    dest = _cloned_package(tmp_path)
+
+    def _missing(manifest: dict) -> None:
+        manifest["members"] = [item for item in manifest["members"] if item["name"] != "FilingSummary.xml"]
+        manifest["member_count"] = 92
+
+    _rewrite_manifest(dest, _missing)
+    with pytest.raises(StatementGraphError, match="inventory does not match"):
+        admit_golden_aapl_package(dest)
+
+
+def test_hostile_inventory_duplicate_member_is_refused(tmp_path: Path) -> None:
+    dest = _cloned_package(tmp_path)
+
+    def _dup(manifest: dict) -> None:
+        manifest["members"].append(dict(manifest["members"][0]))
+        manifest["member_count"] = 94
+
+    _rewrite_manifest(dest, _dup)
+    with pytest.raises(StatementGraphError, match="duplicate members"):
+        admit_golden_aapl_package(dest)
+
+
+def test_hostile_acceptance_witness_digest_is_refused(tmp_path: Path) -> None:
+    dest = _cloned_package(tmp_path)
+    witness = dest / "sec_submissions_witness.json"
+    witness.write_bytes(witness.read_bytes() + b" ")
+    with pytest.raises(StatementGraphError, match="witness digest"):
+        admit_golden_aapl_package(dest)
+
+
+def test_hostile_acceptance_witness_unbind_is_refused(tmp_path: Path) -> None:
+    dest = _cloned_package(tmp_path)
+    _rewrite_manifest(dest, lambda manifest: manifest.update({"source_accepted_at": "1999-01-01T00:00:00.000Z"}))
+    with pytest.raises(StatementGraphError, match="source_accepted_at is not bound"):
+        admit_golden_aapl_package(dest)
+
+
+def test_capture_process_mints_fixture_recorded_at() -> None:
+    stamp = mint_fixture_recorded_at(datetime(2026, 8, 23, 0, 32, 31, tzinfo=timezone.utc))
+    assert stamp == "2026-08-23T00:32:31Z"
+    with pytest.raises(StatementGraphError):
+        mint_fixture_recorded_at(datetime(2026, 8, 23, 0, 32, 31))
+    capture = (ROOT / "scripts" / "capture_fif3a1_aapl_package.py").read_text(encoding="utf-8")
+    assert "mint_fixture_recorded_at" in capture
+    assert "hand-edit" not in capture.lower()
+
+
+def test_calculation_relationships_are_role_local() -> None:
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<link:linkbase xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <link:calculationLink xlink:type="extended" xlink:role="http://example.com/role/IS">
+    <link:loc xlink:type="locator" xlink:label="parent" xlink:href="a.xsd#us-gaap_GrossProfit"/>
+    <link:loc xlink:type="locator" xlink:label="is-child" xlink:href="a.xsd#us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax"/>
+    <link:calculationArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/summation-item" xlink:from="parent" xlink:to="is-child" weight="1"/>
+  </link:calculationLink>
+  <link:calculationLink xlink:type="extended" xlink:role="http://example.com/role/CF">
+    <link:loc xlink:type="locator" xlink:label="parent" xlink:href="a.xsd#us-gaap_GrossProfit"/>
+    <link:loc xlink:type="locator" xlink:label="cf-child" xlink:href="a.xsd#us-gaap_NetIncomeLoss"/>
+    <link:calculationArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/summation-item" xlink:from="parent" xlink:to="cf-child" weight="-1"/>
+  </link:calculationLink>
+</link:linkbase>
+""".encode("utf-8")
+    by_role = parse_calculations(xml)
+    parent = "us-gaap:GrossProfit"
+    is_children = dict(by_role["http://example.com/role/IS"][parent])
+    cf_children = dict(by_role["http://example.com/role/CF"][parent])
+    assert is_children == {"us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax": "1"}
+    assert cf_children == {"us-gaap:NetIncomeLoss": "-1"}
+    assert "us-gaap:NetIncomeLoss" not in is_children
+    assert "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax" not in cf_children
+    tree = reconstruct_primary_statements(
+        package=load_golden_aapl_package(ROOT),
+        registry=load_core_registry(ROOT),
+    )
+    gross = _row(tree, "income_statement", "Gross margin")
+    deps = {item["concept"] for item in (gross["formula_dependencies"] or [])}
+    assert "us-gaap:NetIncomeLoss" not in deps
+    missing_role = b"""<?xml version="1.0" encoding="UTF-8"?>
+<link:linkbase xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <link:calculationLink xlink:type="extended">
+    <link:loc xlink:type="locator" xlink:label="parent" xlink:href="a.xsd#us-gaap_GrossProfit"/>
+  </link:calculationLink>
+</link:linkbase>
+"""
+    with pytest.raises(StatementGraphError, match="xlink:role"):
+        parse_calculations(missing_role)

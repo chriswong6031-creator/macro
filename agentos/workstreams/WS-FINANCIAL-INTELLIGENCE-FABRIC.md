@@ -51,6 +51,8 @@ discoveries:
   - DSC:PR-HOLD-REQUIRES-NATIVE-AUTOMERGE-DISARM
   - DSC:REVIEW-HOLD-PROSE-IS-NOT-FAIL-CLOSED
   - DSC:AAPL-LABEL-RESOURCES-SHARE-XLINK-LABEL
+  - DSC:AAPL-PRODUCT-SERVICE-HYPERCUBE-PRECEDES-LINE-ITEMS
+  - DSC:AAPL-CF-BEGINNING-CASH-IS-INSTANT-IN-DURATION-COLUMNS
 decisions:
   - DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE
   - DEC:FIF-1R-HERMETIC-PACKET-CONTRACT
@@ -60,6 +62,10 @@ decisions:
   - DEC:FIF-1-V1-FROZEN
   - DEC:FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3
   - DEC:FIF-3A1-REUSE-MAP
+  - DEC:FIF-3A1-ISSUERMASTER-IS-THE-IDENTITY-READER
+  - DEC:FIF-3A1-DISPLAYED-TABLE-IS-THE-COMPOSITION
+  - DEC:FIF-3A1-PACKAGE-WITNESS-ADMISSION
+  - DEC:FIF-3A1-CALC-NETWORKS-ARE-ROLE-LOCAL
 next_action: >
   FIF-1 is DONE / FROZEN. FIF-2 is DONE / FIXTURE_PROVEN SERVICE
   SUBSTRATE (DEC:FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3). FIF-2A/B/C remain
@@ -79,6 +85,14 @@ landmines:
     Relabeling the B4 attested_occurrence evidence bridge as revenue is a hard
     registry error. Monkeypatching _fact_dimensions_allowed is a workaround the
     kernel exists to prevent.
+  - >
+    Apple FY2025 10-K presentation prefixes the Product/Service hypercube
+    before line items while HTML nests Products/Services under Net sales.
+    Reconstruct the captured tables. See DSC:AAPL-PRODUCT-SERVICE-HYPERCUBE-PRECEDES-LINE-ITEMS
+    and DEC:FIF-3A1-DISPLAYED-TABLE-IS-THE-COMPOSITION.
+  - >
+    Cash-flow beginning cash is an instant fact in duration columns.
+    See DSC:AAPL-CF-BEGINNING-CASH-IS-INSTANT-IN-DURATION-COLUMNS.
   - >
     PR #5799 owns Earnings Intelligence E0/E1/E2 documents. FIF must not edit them.
   - >
@@ -108,6 +122,10 @@ do_not_redo:
   - Do not treat removal of merge-on-green as a merge hold; disable GitHub native auto-merge too.
   - Do not treat PR-body "do not merge" prose as a fail-closed Sol-review gate.
   - Do not mix a CI-control-plane / sol-review-required queue into a FIF packet PR.
+  - Do not treat raw presentation order as AAPL as-reported composition.
+  - Do not build a generic segment/dimension engine from the AAPL Product/Service table.
+  - Do not independently resolve issuer→security; use IssuerMaster.
+  - Do not call this a production issuer service.
   - Do not rewrite source-native SEC/XBRL identity to mint a Mastermind issuer ID.
   - Do not use the live full-registry digest as historical packet identity.
 waves:
