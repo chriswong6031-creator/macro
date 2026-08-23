@@ -89,6 +89,7 @@ artifacts:
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-21.md
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-21-w2a.md
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-23-w2a-closeout.md
+  - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-23-w2b.md
 next_action: >
   W2A is done and proven live. W2B is the current bounded capacity subwave:
   obtain Sol review of the qualified 540 = 500/20/20 change before merge, then
@@ -149,6 +150,7 @@ waves:
     title: Existing-carrier capacity envelope 540 = 500 / 20 / 20
     status: in_progress
     depends_on: [W2A]
+    pr: [6287]
     next_action: >
       Return the qualified implementation and exact receipts for Sol review
       before merge. After approval and merge, wait for the first natural daily;
