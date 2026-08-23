@@ -49,7 +49,6 @@
     "208c08e690e6a0583cd7db56a55b08de5624d4a5": "2026-08-22T22:35:34.703060+00:00",
     "22dc8918a63ebae6373ef8bde675ee0119564312": "2026-08-22T17:02:05.528846+00:00",
     "24db69e3a6308a61f67a63653508c60479525464": "2026-08-23T02:49:45.536404+00:00",
-    "25cdab4c8960d43fc764c117801d93fe20d2f938": "2026-08-22T08:40:33.336221+00:00",
     "26dc3741fc96e8584ec31747e9572f3f258e9451": "2026-08-22T11:52:14.866021+00:00",
     "2901f334c52a6f94c5e07363ce05ef4bf2eb87e8": "2026-08-22T21:50:29.915812+00:00",
     "29701acf56c144067350885fa88f6c1c0d54cf10": "2026-08-22T18:09:25.114670+00:00",
@@ -65,7 +64,6 @@
     "366f243d93b85662c0ca31e2419cf41367e4e3a6": "2026-08-22T17:50:46.860373+00:00",
     "36f3ad6739dbe1f49bb15990516f06ea3bf78c4d": "2026-08-22T21:50:29.915812+00:00",
     "36f9eee9592c7ab560400d27bb2eb53f8919eea6": "2026-08-22T16:43:53.061374+00:00",
-    "379aa6b933ba2b9bffa57141f2366738fdab72a7": "2026-08-22T08:40:33.336221+00:00",
     "388502af42f4c359a8f108825310142db4cb6036": "2026-08-22T14:51:34.363419+00:00",
     "38f672a5d0de153ef4dfde28306ff8b6d3a8e930": "2026-08-22T17:50:46.860373+00:00",
     "39e9191584bb41f866e26555b6f1841ed06bdc60": "2026-08-22T16:43:53.061374+00:00",
@@ -102,6 +100,7 @@
     "5883691754899cd77f11ab50ff32aa4330367ac7": "2026-08-22T20:42:26.993339+00:00",
     "59125ee15f0745b94fcc148e62007ebcb2311d58": "2026-08-22T17:50:46.860373+00:00",
     "593f7d5660d5e0cbf5a35fbc1ae177bb97871ce3": "2026-08-22T17:50:46.860373+00:00",
+    "59462c7b421fa355aa26e2a6be3927a8535c6426": "2026-08-23T09:01:57.804216+00:00",
     "5ad3b8e3440124cca4f180eacc9b2fb49e87e0ce": "2026-08-22T19:35:43.417492+00:00",
     "5ba2e1e084e36b94d3e86897afb8027486f92df0": "2026-08-23T06:54:09.712299+00:00",
     "5bc75807523ecad76f1957be19f1ad280999c5d4": "2026-08-22T18:09:25.114670+00:00",
@@ -177,6 +176,7 @@
     "96324d7fe9f766bab63a7c1254f6ce29903eee8e": "2026-08-22T16:43:53.061374+00:00",
     "96343307a3a9ab269fef120598539edf3494239c": "2026-08-22T17:02:05.528846+00:00",
     "9640d10bd0654f1591afc01dfe968e68e88c7755": "2026-08-22T17:02:05.528846+00:00",
+    "9825f99b4e0c4ba67e56af7bdd8c20cf5feff1da": "2026-08-23T09:01:57.804216+00:00",
     "99fb281e9e3f048ebe91d5e71fc8f27a426d84a3": "2026-08-22T18:09:25.114670+00:00",
     "9a4ff0b1910a1ae19aab8440e2aef4e991d27bf0": "2026-08-22T12:17:43.273188+00:00",
     "9c00f0c5ec2f2ba5faf04a7f29eea26b6c92b471": "2026-08-22T17:02:05.528846+00:00",
@@ -186,7 +186,6 @@
     "9e5fdb04eb69cfed205b949c16e7bed3dd3b3bb2": "2026-08-22T18:09:25.114670+00:00",
     "9e81fef957d1ea9ce297fa38c2db46d161bd57e2": "2026-08-23T04:58:25.743589+00:00",
     "a0a4cfa84d7c9996d5dd37a8e0827a47bb35c53e": "2026-08-22T17:50:46.860373+00:00",
-    "a0b97f6785f7b8533153e8e3672dbb74b6d78189": "2026-08-22T08:40:33.336221+00:00",
     "a1a49c724d479641f891c69633ca549ce3a8c650": "2026-08-22T18:09:25.114670+00:00",
     "a1b9c5a39840cca2340816ef3be269dee41de55d": "2026-08-23T02:49:45.536404+00:00",
     "a1c86ea1a3c1cbb787b1dc828829e28fbefed366": "2026-08-22T17:50:46.860373+00:00",
@@ -231,6 +230,7 @@
     "alpaca:61372393": "2026-08-23T07:58:19.221614+00:00",
     "alpaca:61372412": "2026-08-23T08:37:07.276901+00:00",
     "alpaca:61372425": "2026-08-23T08:37:07.276901+00:00",
+    "alpaca:61372438": "2026-08-23T09:01:57.804216+00:00",
     "b0eb7160a487da9e9315391686b3df1ee0e85088": "2026-08-22T12:17:43.273188+00:00",
     "b121d65119f9ef3cb4e36fecf1ef7c3e9bfa486a": "2026-08-22T18:09:25.114670+00:00",
     "b28b5833fe264ed4d6df32b17286ecc091e766b2": "2026-08-23T05:35:05.838290+00:00",
@@ -339,6 +339,12 @@
         "host:benzinga.com"
       ]
     },
+    "claim:policy:mac:tariffs": {
+      "first_ts": "2026-08-23T09:01:57.804216+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "claim:policy:sec:technology": {
       "first_ts": "2026-08-23T08:37:07.276901+00:00",
       "sources": [
@@ -347,6 +353,12 @@
     },
     "head:ecb chief lagarde ready to serve wef swiss newspaper reports": {
       "first_ts": "2026-08-23T08:37:07.276901+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
+    "head:sell us dollar versus these currencies bca says": {
+      "first_ts": "2026-08-23T09:01:57.804216+00:00",
       "sources": [
         "host:investing.com"
       ]
@@ -934,19 +946,19 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-23T08:37:07.276901+00:00",
+      "last_poll": "2026-08-23T09:01:57.804216+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
-      "since": "2026-08-23T08:30:59+00:00"
+      "since": "2026-08-23T09:00:09+00:00"
     },
     "cnn_truth_backfill": {
       "etag": "\"f0559db7dbb65316b83b76e8f17397c7-3\"",
       "fail_count": 0,
       "last_modified": "Sun, 23 Aug 2026 04:58:07 GMT",
-      "last_poll_ts": 1787471902.193015
+      "last_poll_ts": 1787475721.2807171
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1787474230.4109218
+      "last_poll_ts": 1787475720.6036167
     },
     "twitterapiio": {
       "cursors": {
@@ -1015,65 +1027,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-23T08:37:07Z",
+  "updated_at": "2026-08-23T09:01:57Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1787474228.6857634
+      "last_poll_ts": 1787475719.0775473
     },
     "bls_news": {
       "etag": "\"07aaf967531dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 14:01:40 GMT",
-      "last_poll_ts": 1787474228.4774628
+      "last_poll_ts": 1787475718.9145095
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1787474228.96158
+      "last_poll_ts": 1787475719.2201805
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1787474230.0326326
+      "last_poll_ts": 1787475720.0365133
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 08:34:32 GMT",
-      "last_poll_ts": 1787474230.2733028
+      "last_modified": "Sun, 23 Aug 2026 08:57:46 GMT",
+      "last_poll_ts": 1787475720.5280757
     },
     "fed_press": {
       "etag": "W/\"53636b83de30dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 20 Aug 2026 20:00:13 GMT",
-      "last_poll_ts": 1787474228.3500483
+      "last_poll_ts": 1787475718.8418171
     },
     "forexlive_news": {
-      "etag": "W/\"gmpX8jJddbcFoLJUsRhiVGBezvQ\"",
+      "etag": "W/\"WL3xSavDjBTqcYxDRY_Qkcxose4\"",
       "fail_count": 0,
-      "last_poll_ts": 1787474229.5717108
+      "last_poll_ts": 1787475719.7332172
     },
     "investing_news": {
-      "etag": "W/\"12a8-659b29d6d59c0\"",
+      "etag": "W/\"1268-659b3183309c2\"",
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 08:25:40 GMT",
-      "last_poll_ts": 1787474229.8775015
+      "last_modified": "Sun, 23 Aug 2026 09:00:00 GMT",
+      "last_poll_ts": 1787475719.8823225
     },
     "marketwatch_top": {
-      "etag": "W/\"2114-DEwsZadhG9GZMir8jWMdIn1sn7w\"",
+      "etag": "W/\"2114-aAE85TWXLIukLe1hfd5Mxj+SDX8\"",
       "fail_count": 0,
-      "last_poll_ts": 1787474229.1073687
+      "last_poll_ts": 1787475719.440934
     },
     "whitehouse_actions": {
       "etag": "\"393774828a07a184ce685a347792bc6c\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 21:35:04 GMT",
-      "last_poll_ts": 1787474228.8668382
+      "last_poll_ts": 1787475719.1736994
     },
     "zerohedge_feed": {
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 07:08:40 GMT",
-      "last_poll_ts": 1787474229.237243
+      "last_modified": "Sun, 23 Aug 2026 08:44:03 GMT",
+      "last_poll_ts": 1787475719.5402842
     }
   },
   "wire_day_counts": {
