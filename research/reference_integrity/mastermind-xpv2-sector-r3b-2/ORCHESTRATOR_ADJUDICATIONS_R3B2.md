@@ -119,4 +119,22 @@ honest, not an exclusion. Honest-gap note adopted for Lane E: recapture Lane C's
 heatmap_ink artifact at the freeze SHA (Lane B verified non-staleness at this head, but
 the freeze evidence should re-derive it).
 
-(§5+ appended as further lane returns are adjudicated.)
+## §5 Lane D — completed by the orchestrator after an operator stop (commit 4f0efa86b881)
+
+The Lane D agent was stopped mid-task by the operator with the B2-02 fix and guard already
+written to disk but uncommitted (its last state: fix restored, awaiting rebuild + crops).
+The harness declines to resume a user-stopped agent, so the orchestrator finished the
+remaining MECHANICAL steps inline rather than spawning a replacement: verified the plain
+header (data-r3b2="02", no entity), produced the pre-fix failing proof honestly by staging
+the pre-Lane-D candidate from commit 598144a05ac6 at the audit's pinned path (RED — bytes
+FAIL + 2 DOM hits, saved as lane_crops_d2/NO_EMOJI_PREFIX_FAIL.txt), rebuilt deterministic
+×2 (sha256 e47388c90a13ae91), re-ran the audit at the true head (ALL GREEN — 0 hits, 0
+empty censuses across bytes/DOM/aria/generated-content × EN/ZH), confirmed verify 19/21
+with (q) PASS, R3A 59 passed, captured the EN/ZH after-crops, cleaned the out-of-ownership
+verifier byproducts, and committed only Lane D's owned files. The guard covers literal
+codepoints, decimal/hex numeric character references, decoded DOM text, accessible names
+and measurable generated content, with three enumerated byte-side exclusions documented in
+the script docstring. All 12 lane markers (01..11 + da102) verified present in the built
+candidate.
+
+(§6 freeze record appended at freeze.)
