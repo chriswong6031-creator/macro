@@ -1,189 +1,156 @@
+---
+workstream_key: PROPHET-US-V4-RECOVERY
+recorded_at: "2026-08-23T01:16:00Z"
+changed_at: "2026-08-23T01:16:00Z"
+wave: CELL-G
+state: in_progress
+after:
+  - "3049b6f9785e7a08f03d746e0ca909cc425fdbde"
+---
+
 # Prophet Cell G — Value of Information / Flagship Measurement Handoff
 
 **Issue:** MAS-123  
 **Parent:** MAS-116  
-**Date:** 2026-08-22  
-**Owner session:** Sol / ChatGPT1  
+**Owner:** Sol / ChatGPT1  
 **PR:** #6276 — `MAS-123: freeze Cell G flagship VOI law + read-only report`  
-**Authority:** research + bounded read-only measurement only; no family promotion, rank influence, entry/trade authority, or new evaluation store.
+**Authority:** research + bounded read-only measurement only. No family promotion, rank influence, entry/trade authority, new evaluation store, or new evidence clock.
 
-## Read first
+## Canonical read order
 
 1. `research/prophet_v4/CELL_G_FLAGSHIP_VOI_MEASUREMENT_LAW_2026-08-22.md`
-2. MAS-123 and MAS-116 in Linear
+2. MAS-123 / MAS-116
 3. `agentos/workstreams/WS-EVAL-OS-MEASUREMENT-LAW.md`
 4. `agentos/workstreams/WS-PROPHET-CONDITIONAL-FUSION.md`
 5. `research/prophet_fusion/W3_RACE_PREREG.md`
-6. `data/us_prophet_rank/w3/status.json` **status only until its owner gate opens**
+6. `data/us_prophet_rank/w3/status.json` — status only until owner gate opens
 7. `engine/qledger_evidence_clock.py` + `data/qledger/evidence_clock_start/`
 8. `engine/prophet_voi.py`
 9. `engine/prophet_voi_eawc.py`
 10. `scripts/prophet_flagship_voi_report.py`
 
-Protected Skillpack used for this operation: `mastermindx-market-intelligence/Mastermind@e1101eb2c1f17d801d480ded497b3fc1bb0ef18b`, `mastermind.sol_skillpack.v1`, v1.0.0, bootstrap major 1.
+Protected Skillpack used: `mastermindx-market-intelligence/Mastermind@e1101eb2c1f17d801d480ded497b3fc1bb0ef18b`, schema `mastermind.sol_skillpack.v1`, v1.0.0, bootstrap major 1. Refresh before final merge.
 
 ## Frozen ruling
 
-There is no universal “Prophet got better” scalar. A family can create discovery value, ranking value, path/risk value, or explanation/product value; each has its own subject grain, population, denominator and authority ceiling.
+There is no universal “Prophet got better” scalar. Discovery value, ranking value, path/risk value, and explanation/product value are separate estimands with separate grains, populations, denominators and authority ceilings. Explanation value never substitutes for alpha.
 
-Flagship improvement is a conjunction: preregistered primary benefit + lawful clock/version + dependence/multiplicity control + coverage/effective-N scope + integrity/placebo controls + path guardrails + **lead-time preservation**. Explanation value never substitutes for alpha evidence.
+Load-bearing law:
 
-### Load-bearing measurement law
+- `T_eligible` and `T_surface` are distinct clocks.
+- Retrieval-changing families are discovery experiments first; never intersect lists and call the result a paired rank study.
+- Winner/relevance label, horizon/ruler, K, primary endpoint, minimum effect, multiplicity family and look plan freeze before confirmatory reads.
+- NDCG IDCG uses the full fixed candidate population, not only presented top-K.
+- Recall uses an independent fixed reference-population denominator.
+- Coverage is `covered_applicable / all_applicable`; blocked/missing/refused applicable rows remain in the denominator; true `NOT_APPLICABLE` rows do not.
+- Broad-population coverage floor defaults to 70%; sparse families require specialist scope + coverage-selection audit.
+- Effective N is a vector: raw subjects plus inverse-HHI concentration-effective counts by decision date, economic issuer, and claimed theme/species axes. It is never substituted as synthetic statistical degrees of freedom.
+- Default cross-issuer promotability floor: >=50 matured subjects, `N_eff(date)>=20`, `N_eff(economic_issuer)>=20`; broad theme/species claims require `N_eff>=5`; one group >50% is explicitly dominated.
+- Rank metrics are computed per decision session, then aggregated with preregistered dependence treatment; no pooled row pseudo-N.
+- One confirmatory primary endpoint. Holm FWER by default for promotion-bearing families; BH is exploratory triage only.
+- Fixed-look is default. Repeated reads require preregistered sequential-safe inference.
+- Operational LOFO is distinct from refit LOFO; refit creates a new version/clock.
+- Negative controls are falsifiers, not positive causal proof.
+- Probability calibration is reserved for probability/distribution heads and proper scoring rules.
+- Contemporaneous belief, first legal settlement and later corrected truth remain separate vintages.
 
-- distinguish `T_eligible` (first lawful admission/retrieval eligibility) from `T_surface` (first actual presentation at the registered surface/K);
-- winner/relevance labels, horizon, ruler, K and minimum effect are registered before confirmatory outcome reads;
-- retrieval-changing families are discovery experiments first; do not intersect lists and call them paired ranking experiments;
-- NDCG IDCG is built from the **full same candidate population**, not only the presented top K;
-- recall denominator is the independent fixed reference population, never the challenger’s own surfaced set;
-- coverage is `covered_applicable / all_applicable`; blocked/missing/refused applicable rows stay in the denominator; by-design `NOT_APPLICABLE` rows do not;
-- default broad-population coverage floor is 70%; sparse families may remain specialist-only and require a coverage-selection audit;
-- effective N is a vector, not a magic scalar: raw observations plus inverse-HHI concentration-effective counts by date, economic issuer, theme/species where applicable;
-- default cross-issuer promotion estimability floor: at least 50 matured subjects plus `N_eff(date) >= 20` and `N_eff(economic_issuer) >= 20`; broad theme/species claims require `N_eff >= 5` on the claimed axis; one group >50% is explicitly dominated;
-- session ranking metrics are computed per decision session and then aggregated with the preregistered dependence treatment; no pooled row correlation masquerading as n;
-- one confirmatory primary endpoint; Holm FWER by default for promotion-bearing hypothesis families; BH is exploratory triage only and cannot grant authority;
-- fixed-look is default; repeated reads require a preregistered sequential-safe design;
-- operational LOFO is not refit LOFO; refitting creates a new model/version/clock;
-- negative controls are falsifiers, not positive causal proof;
-- probabilistic calibration is reserved for actual probability/distribution heads and uses proper scoring rules;
-- correction law separates contemporaneous belief, first legal settlement, and later corrected truth.
+### Flagship lead gate
 
-### Flagship lead law
+With dependence-aware one-sided 95% intervals, positive lead/actionable is better and positive unusable is worse:
 
-For dependence-aware one-sided 95% intervals, where positive lead/actionable is better and positive unusable is worse:
-
-- `LEAD_PASS`: lower(`delta_lead`) >= 0 **and** lower(`delta_actionable`) >= 0 **and** upper(`delta_unusable`) <= 0;
-- `LEAD_FAIL`: upper(`delta_lead`) < 0 **or** upper(`delta_actionable`) < 0 **or** lower(`delta_unusable`) > 0;
+- `LEAD_PASS`: LCB(delta lead)>=0 AND LCB(delta actionable)>=0 AND UCB(delta unusable)<=0.
+- `LEAD_FAIL`: UCB(delta lead)<0 OR UCB(delta actionable)<0 OR LCB(delta unusable)>0.
 - otherwise `LEAD_MIXED`.
 
-A precision improvement bought by waiting until the move is substantially complete is a flagship failure when the lead gate fails. It can enter a conservative-confirmation lane only if that lane was separately preregistered before outcome inspection.
+Precision gained by waiting until the move is mostly complete is a flagship failure when this lead gate fails. It can only become a separately named conservative-confirmation lane if that lane was preregistered before outcome inspection.
 
-## Reconciled protected/current state at pickup
+## Reconciled owner state
 
 ### Conditional Fusion W3
 
-At the lawful status read used by Cell G:
+Lawful status read:
+- `comparison_surface=forbidden`
+- `structural.outcome_blind=true`
+- `paired_sessions_accrued=5`
+- `matured_h10_sessions=0`
+- `honest_n_floor=20`
 
-- `comparison_surface=forbidden`;
-- `outcome_blind=true`;
-- 5 paired sessions accrued;
-- 0 matured H=10 sessions;
-- first lawful comparison floor = 20 matured H=10 sessions.
-
-**No W3 comparative outcome file was opened.** The report v1 has no W3 comparative outcome loader at all. When the owner gate eventually opens, v1 reports `OPEN_OWNER_GATE_ADAPTER_ABSENT`; adding a comparison adapter is a separate reviewed operation.
+**No W3 comparative outcome file was opened.** Report v1 has no comparative outcome loader. If the owner gate later opens, v1 reports `OPEN_OWNER_GATE_ADAPTER_ABSENT`; adding an adapter is a separate reviewed operation.
 
 ### QLedger evidence clocks
 
-At reconciliation, the canonical forward-clock directory contained `demand_chain` only:
+At reconciliation the canonical forward-clock directory contained `demand_chain` only:
+- horizon 126 trading days
+- first prospective registration 2026-08-19
 
-- declared horizon 126 trading days;
-- first prospective registration 2026-08-19;
-- write-once clock owner remains Eval OS / QLedger.
-
-`stock_desk` and `thematic_desk` did not have corresponding current clock files, and no matched-control clock directory existed. Do not infer missing clocks.
+No `stock_desk` or `thematic_desk` clock and no matched-control clock directory were found. Do not infer them.
 
 ### Current board / V4 substrate
 
-The committed US board grade ledger can support already-lawful descriptive return/rank/path/coverage telemetry. It does **not** provide canonical V4 episode first-surface truth at the target grain. Therefore the first report refuses rather than fabricates:
+`data/us_board_ledger/retro_grades.parquet` supports lawful descriptive rank/path/coverage telemetry at `(as_of,lane,ticker,horizon)` but not canonical V4 first-surface episode truth. The report therefore refuses rather than fabricates current:
+- `T_eligible`
+- `T_surface`
+- first-surface actionability
+- paired lead vs champion
+- economic-issuer concentration when identity is absent
+- R when frozen initial risk is absent
+- payoff/time-underwater when path series is absent
 
-- `T_eligible`;
-- `T_surface`;
-- first-surface actionability;
-- paired lead versus champion;
-- economic-issuer concentration when issuer identity is absent;
-- R when initial risk is absent;
-- payoff-time / time-underwater when the path series is absent.
+Board observations are never relabelled as V4 episodes. The board ledger spans explicit price/correction eras, including the 2026-08-06 price-basis boundary; pooled board outputs remain `DESCRIPTIVE_ONLY` and cannot become confirmatory family evidence without a homogeneous preregistered cohort/ruler.
 
-Board `(as_of,lane,ticker,horizon)` observations are never relabelled as V4 episodes. The board ledger also spans explicit price-basis/correction eras, including the 2026-08-06 adjusted-price era boundary. Its pooled board telemetry is therefore **descriptive only**; basis/ranker provenance is surfaced and it cannot become confirmatory family evidence without a homogeneous preregistered cohort/ruler.
+### Other prospective owner lanes
 
-## First bounded implementation
+Live Entry Radar remains a separate system by `DEC:LER-SEPARATE-SYSTEM-NOT-PROPHET-CHANGE`. Its W5 preregistration/TrialLedger/look budget and holdout are owner-controlled. Cell G did not open Radar outcome/result artifacts and does not duplicate that gate.
+
+## Bounded implementation
 
 ### `engine/prophet_voi.py`
-
-Pure common metric/report primitives. Important terminal states are explicit: `MEASURED`, `NOT_MATURE`, `PROTECTED_OUTCOME`, `UNAVAILABLE_FIELD`, `UNESTIMABLE`, `NOT_APPLICABLE`, `DESCRIPTIVE_ONLY`, `HOLD_INTEGRITY`.
-
-It pins:
-
-- concentration-effective counts;
-- NDCG/precision/recall denominator law;
-- ES tail floor;
-- lead PASS/MIXED/FAIL classification;
-- fail-closed W3 status gating;
-- board coverage/refusal semantics;
-- per-session rather than pooled rank diagnostics;
-- native path basis and loud unavailable fields.
+Pure common metric/report primitives: terminal measurement states; effective-N diagnostics; NDCG/precision/recall denominator law; tail ES floor; lead PASS/MIXED/FAIL classifier; fail-closed W3 status; board coverage/refusal semantics; per-session rank diagnostics; path basis/refusal states.
 
 ### `engine/prophet_voi_eawc.py`
-
-Pure executable EAWC/path primitives that consume **owner-resolved** fields only. They never search the repository, reconstruct candidate identity, infer trading calendars, or read outcomes.
-
-Implemented and synthetic-tested:
-
-- paired `T_eligible` / `T_surface` lead using owner-resolved session ordinals, with challenger-only/champion-only/neither cells and **no one-sided lead imputation**;
-- early actionable capture recall with all registered positives in the denominator, including misses and blocked actionability;
-- first-surface actionability rate with missing/blocked actionability retained in the applicable denominator;
-- unusable-or-unknown guardrail where missing owner actionability is conservatively bad rather than favorable;
-- realized R requiring frozen initial invalidation/risk, never a retrospective stop;
-- strictly-forward time-to-payoff with right censoring for non-hits;
-- eventual-move-consumed fraction explicitly `DESCRIPTIVE_ONLY` because it uses an ex-post future-MFE denominator.
-
-Current V4/board truth still does not populate the first-surface inputs, so the report correctly refuses those current metrics even though the formulas themselves are executable.
+Pure owner-input EAWC/path primitives, with no repository search or I/O:
+- paired `T_eligible`/`T_surface` lead without one-sided lead imputation;
+- early actionable capture with all registered positives retained in the denominator;
+- first-surface actionability with missing/blocked applicable rows retained;
+- unusable-or-unknown guardrail;
+- R requiring frozen initial risk/invalidation, never a retrospective stop;
+- censored payoff time;
+- ex-post move-consumed fraction explicitly descriptive because it uses future-MFE denominator.
 
 ### `scripts/prophet_flagship_voi_report.py`
+Stdout-only and source-pinned to canonical W3 status, QLedger evidence-clock metadata, and board ledger. No arbitrary input paths, output writer, or promotion consumer.
 
-Stdout-only. It is **source-pinned** and cannot accept arbitrary W3/Qledger/board paths. It reads only:
+### Tests
+- `tests/test_prophet_voi.py`
+- `tests/test_prophet_voi_eawc.py`
+- `tests/test_prophet_flagship_voi_report.py`
 
-- `data/us_prophet_rank/w3/status.json`;
-- `data/qledger/evidence_clock_start/*.json`;
-- `data/us_board_ledger/retro_grades.parquet` unless `--no-board`.
+Synthetic tests pin formulas and refusals; real committed-data smoke asserts zero authority.
 
-There is no output writer and no promotion consumer.
+## Adversarial defects found and repaired
 
-### tests
-
-- `tests/test_prophet_voi.py`: formulas, denominator law, W3 fail-closed gating, null/applicability behavior, board refusal behavior.
-- `tests/test_prophet_voi_eawc.py`: executable EAWC/lead/actionability/chase/R/censoring semantics.
-- `tests/test_prophet_flagship_voi_report.py`: source-pinning plus real committed metadata/board smoke tests that assert zero authority.
-
-## Adversarial defects found and repaired during Sol review
-
-These are important discoveries, not incidental code churn:
-
-1. **Top-K-only IDCG bug:** the first NDCG implementation built its ideal ranking from the presented top K, which could erase a better item below K and overstate quality. Repaired to use the full fixed candidate population; regression test added.
-2. **Arbitrary-path outcome-read hole:** an early CLI accepted `--w3-status <path>`. An operator could redirect it to outcome JSON and cause a read before schema rejection. All source-path overrides were removed; source pinning is now tested.
-3. **Pooled pseudo-N rank correlation:** an early board diagnostic pooled rows across dates. Replaced with one Spearman value per decision session and unweighted session aggregation; underpowered sessions refuse rather than pool.
-4. **Applicability-mask alignment defect:** the first by-design `NOT_APPLICABLE` exclusion could misalign Pandas indexes when enumerating missing reasons. Repaired with aligned indexes.
-5. **Board observation semantic inflation:** the early name `n_subject_episodes` was rejected because `(as_of,ticker)` rows are not canonical episodes. Renamed to `n_board_subject_observations`.
-6. **Outcome-missing top-K laundering:** published occupancy, outcome coverage and precision are separate. A missing #1 grade cannot promote #2 into P@1 or silently become a loss.
-7. **RAN-only null leaked into generic coverage law:** `lane_not_stamped` is a by-design null only for the RAN lane. The first generic exclusion could have hidden a malformed buy row carrying that reason. It is now excluded only when `lane == ran`; on buy/laggard it remains a missing applicable observation.
-8. **Law executable only on paper:** the first implementation had the lead gate classifier but not the EAWC subject-level primitives. Added pure owner-input EAWC functions so future V4/Cell F fields can be consumed without redefining denominators later.
-
-## External method anchors
-
-- Järvelin & Kekäläinen (2002): graded relevance and discounted/normalized rank evaluation.
-- White (2000): model/specification search on reused data can create chance winners.
-- Harvey, Liu & Zhu: finance multiple-testing/search burden requires higher evidentiary discipline than naive t>2.
-- Cameron, Gelbach & Miller: multi-way clustered dependence.
-- Lipsitch, Tchetgen Tchetgen & Cohen: negative controls detect classes of bias but are not themselves positive causal proof.
-- Gneiting & Raftery: strictly proper scoring rules for honest probabilistic forecasts.
-- Holm: confirmatory family-wise multiplicity control.
-- Howard, Ramdas, McAuliffe & Sekhon / Lan-DeMets: repeated looks require a time-uniform or preregistered spending design.
-- Kaplan & Meier: non-hitters stay in the censored risk set rather than being dropped from time-to-payoff analysis.
-- Hill (1973): inverse-concentration diversity can be interpreted as an effective number; Cell G uses this only as a concentration/scope diagnostic, not an inferential sample-size substitute.
+1. Top-K-only IDCG could erase a better item below K -> IDCG now uses full fixed population.
+2. Arbitrary `--w3-status` could read an outcome-bearing JSON before schema rejection -> source-path overrides removed.
+3. Pooled rank correlation created pseudo-N across dates -> session-level Spearman only.
+4. Coverage applicability mask had Pandas index-alignment defect -> repaired.
+5. `(as_of,ticker)` observations were called episodes -> renamed board observations.
+6. Missing #1 outcome could distort P@K -> published occupancy, outcome coverage and precision separated; no survivor backfill.
+7. `lane_not_stamped` was treated as generic N/A -> excluded only on canonical RAN lane.
+8. Lead law existed only at classifier level -> pure EAWC subject-level primitives added.
+9. First exact-head semantic CI correctly found three mechanical ownership defects: new test suites were not wired to a CI job, file-path CLI execution lacked the repository-root import pin, and this handoff lacked compiler-visible YAML frontmatter. The latter two are repaired on the branch; CI wiring is the remaining bounded mechanical repair before a fresh exact-head run. A separate missing-blob error occurred during base replay after base tests passed and must not be classified until the owned failures are cleared.
 
 ## No-rebuild / no-authority boundary
 
-Do not create a Cell G result ledger, scoreboard, evidence clock, promotion registry, ranker, Availability state, candidate-episode store, correction store or second lifecycle. The read-only report is a projection over existing owner truth.
-
-No family receives predictive/rank authority from this PR. Existing Eval/Fusion prospective promotion remains the only authority path.
+Do not create a Cell G result ledger, scoreboard, evidence clock, promotion registry, ranker, Availability state, candidate-episode store, correction store or second lifecycle. No family receives predictive/rank authority from this PR. Existing Eval/Fusion prospective promotion remains the only authority path.
 
 ## Exact continuation
 
-1. Require exact-head `ci` + `fences` on PR #6276.
-2. Review the actual committed-data smoke result and all semantic/fence failures; do not waive a Cell-G-owned defect as “test-only.”
-3. Reconcile fresh `main` immediately before merge; if a material Eval/Fusion/Prophet-owner collision appeared, stop and reconcile instead of blind rebasing/failing over.
-4. If green and collision-free, Sol may release the draft hold and merge this bounded zero-authority vertical under the Chairman’s explicit MAS-123 authorization.
-5. After merge, future Cells A/F/B and the V4 canonical episode/Availability owners may supply missing first-surface/economic-issuer/path fields. Cell G consumes those owner fields; it does not invent substitutes.
-6. W3 outcomes remain protected until the existing status gate opens. A future comparison adapter must bind the frozen Cell G law and then undergo a fresh reviewed change.
-7. Any future family experiment must register its exact version, claim type, population, clock, horizon/ruler, K/label, minimum effect, multiplicity family and look plan **before** the confirmatory clock/result read.
-
-**Current stop condition:** if exact-head CI is not green or the real-data smoke exposes a denominator/clock/authority defect, keep #6276 draft and repair only within this bounded measurement surface. Do not promote anything as a workaround.
+1. Wire the three Cell G suites into the existing canonical semantic CI job; do not create a parallel workflow.
+2. Require fresh exact-head `ci` + `fences` on PR #6276.
+3. Review real committed-data smoke and every semantic/fence failure. Do not waive a Cell-G defect as test-only.
+4. If only the prior base-replay missing-blob infrastructure error remains, verify the head is unchanged and retry that failed proof once; do not blind-retry ambiguous modifications.
+5. Reconcile fresh `main` and current Eval/Fusion/Prophet owners immediately before merge.
+6. Refresh protected Skillpack compatibility.
+7. Only if all blockers are closed may Sol release the draft hold and merge this zero-authority vertical under the Chairman’s explicit MAS-123 authorization.
+8. After merge, future V4/Cell F/A/B owner fields may supply missing first-surface/economic-issuer/path truth. Cell G consumes owner fields; it does not invent substitutes.
+9. W3 comparative outcomes remain protected until its existing owner status gate opens; a future adapter is a new reviewed change.
