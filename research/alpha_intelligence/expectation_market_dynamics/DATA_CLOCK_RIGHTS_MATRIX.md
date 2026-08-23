@@ -17,3 +17,23 @@
 2. `known_at` is required for any historical replay or backtest consumer.
 3. If owner clocks cannot support point-in-time honesty, the K3E emission is
    typed absent or degraded; it is not inferred from current state.
+4. Fiscal-period clocks and market-session clocks remain separate. A fiscal
+   rollover, earnings date movement, or calendar-year mapping correction is a
+   lineage event, not a license to rewrite old expectation history.
+5. Provider-issued time, provider-available time, collector-observed time, and
+   system-known time must not be collapsed unless the source truly cannot
+   distinguish them; when collapsed, the emitted object prints that limitation.
+6. Rights limitations are part of the result. If analyst/provider-native detail
+   is visible to a vendor sample but not licensed for storage or redistribution,
+   K3E records the blocked capability rather than inventing a coarser synthetic
+   substitute.
+
+## Correction and deletion law
+
+- Corrections supersede prior records; they do not mutate historical as-known
+  values in place.
+- Deleted or withdrawn source records remain as withdrawn observations where
+  rights allow, with withdrawal clocks; otherwise the gap is `RIGHTS_BLOCKED`.
+- A current provider snapshot may seed current state only. It may not be spread
+  backward to create fake historical analyst coverage, estimate dispersion, or
+  revision chronology.

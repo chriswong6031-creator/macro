@@ -21,6 +21,10 @@ new residual, valuation, or trade-authority plane.
 - residuals come from existing DRL / residual-alpha owners only;
 - options uncertainty comes from existing options owners only;
 - no K3E path may recompute these just because doing so is convenient.
+- imported market components carry owner-native version, universe, session,
+  corporate-action and as-of receipts; K3E does not normalize those away.
+- market response can contextualize expectation movement, but it cannot define
+  expectation truth or create a fair-value target.
 
 ## Honest degradations
 
@@ -38,3 +42,5 @@ explicit dominant degradation state. Example lawful states:
 - no "fair value gap";
 - no universal rerating score;
 - no use of later event outcomes to define the earlier market state.
+- no board ordering, gating, sizing, alert escalation, Prophet admission, or
+  private-user action from K3E market-response state.

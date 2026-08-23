@@ -14,9 +14,19 @@ change the K3E opportunity set enough to justify a later adapter wave.
 - which vendors close which gaps;
 - whether those gaps matter for the K3E end-state;
 - what rights or operating constraints the vendor would impose.
+- whether sample records actually contain issued/available/superseded clocks,
+  analyst/provider lineage, horizon breadth, EPS/revenue/KPI breadth, and
+  correction history.
 
 ## Do not
 
 - write an adapter;
 - change production sources;
 - imply procurement authority.
+- rank vendors from marketing pages alone.
+
+## Proof
+
+Return a comparison table, sample-record receipts or denial evidence, rights/cost
+constraints, and one recommendation: `NO_VENDOR_YET`, `PROBE_FURTHER`, or
+`PURSUE_VENDOR_X`. A vendor may win only on lawful, inspectable records.

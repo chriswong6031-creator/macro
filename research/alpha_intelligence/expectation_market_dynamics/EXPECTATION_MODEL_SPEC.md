@@ -21,6 +21,29 @@ Preferred long-run grain:
 `SRC-A1` only needs to preserve enough raw source shape to make this future
 grain recoverable. It does not need to solve every derived field in the first PR.
 
+## `SRC-A1` raw accrual contract
+
+`SRC-A1` extends the existing revisions owner lane. It must preserve provider
+shape before K3E derives surfaces:
+
+- every returned horizon, not only the preferred forward year;
+- EPS and revenue expectation records where available;
+- provider horizon label and normalized fiscal period when safely derivable;
+- metric family, basis, units, currency, value, low/high/mean/median/count
+  fields when present;
+- provider-issued, source-available, collected, known, and superseded clocks
+  when distinguishable;
+- raw payload identity or content hash sufficient for idempotent replay;
+- collection attempt identity, source endpoint/accessor, ticker/input identity,
+  and provider/source degradation state;
+- explicit absence for unavailable revenue revisions or analyst-level detail,
+  rather than surrogate columns that look richer than the source.
+
+The first implementation may be BUILT_NOT_PROVEN until a natural collection run
+prints real multi-horizon observations. Natural proof must include at least one
+multi-horizon EPS observation and one revenue observation or a typed provider
+absence explaining why revenue was not lawfully observable.
+
 ## Derived expectation surface
 
 Each metric-horizon node should eventually emit:
@@ -34,6 +57,10 @@ Each metric-horizon node should eventually emit:
 - detected revision clusters;
 - change-point state;
 - rights / missingness / correction state.
+
+Every aggregate must print its denominator: total source records, fresh records,
+stale records, dropped records, unavailable records, and rights-blocked records
+where those categories apply. A missing denominator makes the aggregate invalid.
 
 ## Initial deterministic baselines
 
@@ -54,6 +81,11 @@ targets and eras.
 - Bayesian online change-point detection;
 - latent state-space surfaces;
 - analyst / provider skill weighting where rights and PIT discipline allow.
+
+No challenger may use later market outcomes, later consensus restatements, or
+post-event labels to define the earlier expectation state. Analyst/provider
+skill weighting is blocked until its training data, clocks, rights, and
+held-out evaluation are preregistered.
 
 ## Null law
 

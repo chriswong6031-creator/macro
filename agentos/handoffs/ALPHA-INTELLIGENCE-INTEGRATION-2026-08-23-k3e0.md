@@ -13,7 +13,8 @@ state_before: >
   Alpha-Intel law already ruled K3 contract prep ready in parallel with K1, but
   no merged K3E freeze existed on main. K1 was live as PR #6319; PR #6325
   recorded a neighboring productization packet and K1 double-dispatch receipt
-  but was not merged at census time.
+  but was not merged at amendment time. PR #6329 is now the single K3E-0
+  carrier; no duplicate carrier was created.
 changed:
   - path: research/alpha_intelligence/expectation_market_dynamics/
     what: >
@@ -31,21 +32,30 @@ changed:
 verified:
   - claim: Macro current canonical base was pinned before writing.
     command: git rev-parse origin/main
-    result: 7cc324f2e1c6425ac9710863b3aa4ca8ac20b7c4
+    result: f69348e80d4be151ae62d3d70e38b3ce0924d68f
   - claim: Protected Mastermind skillpack was loaded from one exact protected revision before writing.
     command: git -C /Users/chriswong/Documents/Cluade/Mastermind rev-parse origin/master
-    result: d663d41f19b661c5a0d689076207cf60499cf4dc
+    result: 7292e7c333a63fe2a3940663931d108d2aa54de7
+  - claim: Protected Sol Skillpack compatibility was established at that same revision.
+    command: >
+      git -C /Users/chriswong/Documents/Cluade/Mastermind show
+      origin/master:docs/sol_skills/INDEX.md
+    result: >
+      schema mastermind.sol_skillpack.v1, skillpack_version 1.0.0,
+      minimum_bootstrap_major 1; required skills loaded from the same SHA.
   - claim: K3 contract preparation is already ruled lawful in parallel with K1.
     command: rg -n "K3-E contract prep may proceed in parallel with K1" research/alpha_intelligence/C0_WAVE0_ADJUDICATION_2026-08-19.md
     result: Found in the accepted C0 adjudication.
-  - claim: No live K3E branch or PR existed at census time.
+  - claim: PR #6329 is the single current K3E-0 carrier.
     command: >
-      git branch -a --list '*K3*' '*k3*' '*expect*';
-      gh pr list --state open --limit 100 --json number,title,headRefName
+      gh pr view 6329 --json number,title,headRefName,headRefOid,labels;
+      gh pr list --state open --limit 150 --json number,title,headRefName,headRefOid
     result: >
-      No open PR or branch specific to K3E / expectation-market-dynamics was
-      found; live adjacent lanes were K1 (#6319), the productization packet
-      (#6325), and unrelated Prophet records.
+      K3E-0 is PR #6329 on
+      claude/k3e-0-expectation-market-dynamics-freeze-20260823; no second K3E
+      carrier was created. Adjacent lanes remain K1 (#6319), productization
+      (#6325), Prophet replay (#6320), MAS-122 D5 (#6275), and Prophet draft
+      #6264.
   - claim: MAS-118 and MAS-119 current Linear states were refreshed live.
     command: Live Linear fetch of MAS-118 and MAS-119 on 2026-08-23
     result: >
@@ -60,7 +70,7 @@ unverified:
 unresolved:
   - K1 remains a live open review lane in PR #6319 and may yet change neighboring contract vocabulary.
   - PR #6325 carries adjacent productization rider text but is noncanonical until merged.
-  - The Mastermind strategic-state loader path named by Macro instructions was not present in the current local Mastermind checkout at this pin.
+  - Macro `origin/main` moves frequently; re-fetch before merge and before launching the three next lanes.
 next_actions:
   - Open and land this K3E-0 records-only PR if exact-head CI is clean.
   - After merge, perform one fresh current-head collision census and then launch
@@ -76,6 +86,7 @@ danger_areas:
   - Editing WS:ALPHA-INTELLIGENCE-INTEGRATION directly would collide with the live K1 lane.
   - Treating open productization rider text as already canonical would overstate current law.
   - Folding MAS-118 or MAS-119 ownership into K3E would duplicate owners rather than compose over them.
+  - Treating K3E-0 as canonical K3-E would overwrite the existing Opportunity Evidence Vector semantics.
 ---
 
 ## Return point

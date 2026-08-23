@@ -16,9 +16,19 @@ tuning begins.
 - metrics
 - FDR / subgroup policy
 - promotion threshold language
+- leakage defenses
+- effective-N / episode definition
+- null, adverse, abstention, and rights-blocked accounting
+- red-team review plan
 
 ## Do not
 
 - tune a challenger;
 - claim model authority;
 - backfill a validation result from retrospective design choices.
+- choose the casebook or eras after inspecting the candidate's wins.
+
+## Stop condition
+
+Return once the competition law is preregistered and independently reviewable.
+Do not train, tune, or promote an advanced model in `EVAL-0`.

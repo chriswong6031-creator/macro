@@ -5,6 +5,10 @@
 K3E composes over owner-native truth. If a needed input already has a canonical
 owner, K3E reads it or routes a bounded owner-lane wave. It does not fork it.
 
+`K3E-0` is the Expectation Market Dynamics freeze label. Canonical `K3-E`
+remains the Opportunity Evidence Vector contract; same-name convenience never
+grants replacement authority.
+
 | concern | canonical owner / lane | K3E reuse rule | forbidden duplicate |
 |---|---|---|---|
 | analyst expectation observations | existing revisions owner lane | extend in `SRC-A1`; K3E consumes later | third generic analyst-history store |
@@ -27,3 +31,5 @@ owner, K3E reads it or routes a bounded owner-lane wave. It does not fork it.
    compact K3E emissions.
 3. Market OS may consume K3E outputs later, but K3E does not own product
    execution or private-user state.
+4. K3E may not become a workaround around `DNR:KILL-FUSED-COMPOSITE` or
+   `DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER`.
