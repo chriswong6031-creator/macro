@@ -46,7 +46,8 @@ The canonical F0 top-level object is amended to:
     "material_source_digest": "<64-lower-hex>"
   },
   "audit": {
-    "repository_commit": "<40-hex>"
+    "repository_commit": "<40-hex>",
+    "material_sources_match_commit": true
   },
   "snapshot_hash": "<64-lower-hex>",
   "slots": [],
@@ -59,8 +60,13 @@ No extra top-level keys are accepted by a strict consumer.
 Rules:
 
 - `producer.repository`, `producer.program`, `producer.implementation_id`, `producer.implementation_version` and `producer.material_source_digest` are semantic contract identity.
-- `audit.repository_commit` is the exact Git commit from which the producer executed. It is retained for forensic provenance and debugging but is **not** capacity semantics.
-- `audit` is closed in v1 to exactly `repository_commit`. Do not turn it into a dumping ground for hostnames, worktree paths, users, branch names, credentials or process details.
+- `audit.repository_commit` is the exact current Git commit used as provenance for the producer checkout. It is retained for forensic provenance and debugging but is **not** capacity semantics.
+- `audit.material_sources_match_commit` is a required boolean proving whether every allowlisted material source byte-for-byte matches the version of that same path in `audit.repository_commit`.
+- `audit` is closed in v1 to exactly `repository_commit` and `material_sources_match_commit`. Do not turn it into a dumping ground for hostnames, worktree paths, users, branch names, credentials or process details.
+- a dirty **unrelated** repository path has no effect on material grounding;
+- a dirty/added/deleted/replaced allowlisted material source makes `material_sources_match_commit=false` and requires the safe top-level degradation `PRODUCER_SOURCE_UNGROUNDED`;
+- a producer that cannot resolve the reported Git commit or compare every material path against it must not claim `true`; under CF1's reviewed failure policy it either emits `false` plus the bounded degradation or refuses the projection when even the commit identity is unavailable/ambiguous;
+- later automatic Executive capacity use must treat ungrounded producer source as unavailable unless CF2-F explicitly freezes a narrower reviewed exception. Diagnostic/operator display may still show the snapshot as degraded.
 - A normalization/contract behavior change that is not byte-compatible with the accepted v1 law requires an explicit reviewed `implementation_version` change or a new schema; silently changing semantics under the same implementation identity is forbidden.
 
 ### 2.1 Material-source digest
@@ -90,15 +96,18 @@ The final set is frozen by the CF1 implementation review from the actual import/
 ]
 ```
 
-where every SHA is computed from the exact regular-file bytes the running producer uses. Paths are repository-relative reviewed constants. Missing, duplicate, symlinked, non-regular, unreadable or path-escaping material sources refuse/degrade the producer rather than being silently omitted. The digest is computed from bytes, not from Git blob lookup, so it still describes the executed implementation if the checkout is detached; `audit.repository_commit` separately records Git provenance when available under the reviewed producer contract.
+where every SHA is computed from the exact regular-file bytes the running producer uses. Paths are repository-relative reviewed constants. Missing, duplicate, symlinked, non-regular, unreadable or path-escaping material sources refuse/degrade the producer rather than being silently omitted. The digest is computed from bytes, not from Git blob lookup, so it always describes the executed material implementation. `audit.repository_commit` and `material_sources_match_commit` separately say whether those bytes are recoverable from the reported Git revision.
+
+Grounding comparison is restricted to the reviewed material paths. It must not require the entire Macro worktree to be clean; unrelated generated data/render/press-wire churn must not block a capacity snapshot.
 
 Tests must prove:
 
-- changing an unrelated repository file does not change `material_source_digest`;
-- changing any allowlisted material source does change it;
-- changing the allowlist changes it;
+- changing an unrelated repository file does not change `material_source_digest` and does not flip `material_sources_match_commit`;
+- changing any allowlisted material source does change `material_source_digest` and flips `material_sources_match_commit=false` until committed;
+- restoring/committing the exact material bytes restores `material_sources_match_commit=true` under the corresponding commit;
+- changing the allowlist changes `material_source_digest`;
 - a missing or symlinked allowlisted source refuses/degrades deterministically;
-- the normalizer cannot caller-supply a different source list or digest.
+- the normalizer cannot caller-supply a different source list, digest, commit or grounding result.
 
 ---
 
@@ -121,9 +130,10 @@ Therefore:
 - changed present/enabled/health/cooling/quota/outcome/degraded evidence changes the hash;
 - changed source observation timestamps that are part of those evidence objects change the hash;
 - changed producer implementation version or material-source digest changes the hash;
-- a different wall-clock projection time alone does not change the hash.
+- a different wall-clock projection time alone does not change the hash;
+- `audit.material_sources_match_commit` does not itself change the semantic hash, but `PRODUCER_SOURCE_UNGROUNDED` in `degraded` **does**, so an ungrounded snapshot cannot masquerade as the same complete semantic state as its grounded counterpart.
 
-CF1 tests must explicitly prove that changing only `audit.repository_commit` leaves `snapshot_hash` unchanged while changing `producer.implementation_version` or `producer.material_source_digest` changes it.
+CF1 tests must explicitly prove that changing only a nonsemantic audit commit on byte-identical grounded material sources leaves `snapshot_hash` unchanged, while changing `producer.implementation_version`, `producer.material_source_digest`, or required degradation state changes it.
 
 ---
 
@@ -148,11 +158,11 @@ capacity_snapshot_hash
 capacity_snapshot_generated_at
 ```
 
-plus the accepted selected-slot/policy/evidence fields.
+plus the accepted selected-slot/policy/evidence fields and the accepted producer/audit grounding fields.
 
-A historical claim cannot be reconstructed from `snapshot_hash` alone because the same semantic contents can be freshly re-observed at a later projection time. Replay uses the persisted exact pair; it never reruns capacity selection against current time/provider state.
+A historical claim cannot be reconstructed from `snapshot_hash` alone because the same semantic contents can be freshly re-observed at a later projection time. Replay uses the persisted exact pair and bound producer/audit receipt; it never reruns capacity selection against current time/provider state.
 
-If the landed v4 `JOB_CLAIMED` receipt cannot carry this pair atomically under the reviewed replay/privacy law, stop and return to Sol. Do not widen `placement_snapshot_json`, create a second placement Event/ledger, or invent schema v5 by convenience.
+If the landed v4 `JOB_CLAIMED` receipt cannot carry this evidence atomically under the reviewed replay/privacy law, stop and return to Sol. Do not widen `placement_snapshot_json`, create a second placement Event/ledger, or invent schema v5 by convenience.
 
 ---
 
@@ -161,13 +171,13 @@ If the landed v4 `JOB_CLAIMED` receipt cannot carry this pair atomically under t
 In addition to the parent F0 CF1 packet, CF1 must prove:
 
 1. two invocations over unchanged semantic provider evidence but different wall-clock `generated_at` values produce the same `snapshot_hash`;
-2. changing only `audit.repository_commit` leaves the semantic hash unchanged;
+2. changing only `audit.repository_commit` while the compared material bytes are byte-identical leaves semantic identity unchanged;
 3. changing `producer.implementation_version` changes the semantic hash;
-4. changing any allowlisted material source changes `producer.material_source_digest` and therefore `snapshot_hash`;
+4. changing any allowlisted material source changes `producer.material_source_digest`, causes ungrounded audit/degradation until committed, and changes semantic identity;
 5. changing a source observation timestamp that is semantic evidence changes the hash;
 6. a direct projection-time presence observation is not represented as older/newer than `generated_at` unless a real source timestamp exists;
 7. stale source evidence stays stale after projection and is never refreshed by serialization;
-8. the machine/operator consumer displays or exposes `snapshot_hash`, `generated_at`, producer implementation identity/version/material-source digest and audit repository commit so later freshness/provenance policy has auditable inputs;
+8. the machine/operator consumer displays or exposes `snapshot_hash`, `generated_at`, producer implementation identity/version/material-source digest, audit repository commit and material-source grounding result so later freshness/provenance policy has auditable inputs;
 9. no local checkout path, hostname, username, credential, token, cookie, provider-home path or private process identity appears in `audit` or any other public field.
 
 ---
@@ -194,7 +204,8 @@ Hard rules:
 - do not add a long-lived capacity daemon, database, queue or second provider-control service just to make the bridge convenient unless a separate architecture ruling proves it necessary;
 - acquisition timeout/unavailability yields unavailable/unknown capacity optimization, never permission to read secret/raw provider state as a fallback;
 - the producer remains the authority for normalization/evidence classification; Executive validates the strict returned contract but does not reinterpret source rows;
-- the acquisition receipt used by CF2-F must bind at least the exact `snapshot_hash`, exact `generated_at`, producer implementation identity/version/material-source digest, and non-semantic `audit.repository_commit` used for that historical decision;
+- the acquisition receipt used by CF2-F must bind at least the exact `snapshot_hash`, exact `generated_at`, producer implementation identity/version/material-source digest, `audit.repository_commit`, and `audit.material_sources_match_commit` used for that historical decision;
+- automatic placement must refuse an ungrounded producer snapshot unless CF2-F explicitly reviews another verifiable packaging/attestation mechanism;
 - if the acquisition principal/host cannot lawfully observe a configured slot, that slot is unavailable to that acquisition path; do not copy provider credentials across principals/hosts to make it visible.
 
 This keeps CF1 independently useful and no-write while preventing CF2 from quietly becoming a raw cross-repo provider-state reader.
