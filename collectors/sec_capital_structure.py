@@ -114,7 +114,6 @@ FORM_POLICY = {
 
 LOOKBACK_DAYS_FIRST = 90
 LOOKBACK_DAYS_NIGHTLY = 7
-MAX_FILINGS_PER_RUN = 200
 RETRIEVAL_QUEUE_AGING_DAYS = 7
 INDEX_NOT_PUBLISHED_GRACE_DAYS = 7
 PACE_SECONDS = 0.12
@@ -139,18 +138,21 @@ DISCOVERY_SCOPE_REGISTRATION = "registration_issuance"
 DISCOVERY_SCOPE_RECONCILIATION = "issuer_reconciliation"
 
 # W2 scheduler metadata is deliberately kept out of the source/evidence/event
-# identity plane.  These reserves partition the existing 200-filing ceiling;
-# they do not create another queue or increase collector capacity.
+# identity plane.  W2B keeps the reservations as the one canonical retrieval
+# capacity configuration: the global ceiling is their sum, so a cap and its
+# class guarantees cannot drift independently.  This changes no queue, cadence,
+# source, evidence store, or publication authority.
 WORK_CLASS_ORDER = (
     "LIVE_TAIL",
     "RECOVERY",
     "HISTORICAL_BACKFILL",
 )
 WORK_CLASS_RESERVATIONS = {
-    "LIVE_TAIL": 160,
+    "LIVE_TAIL": 500,
     "RECOVERY": 20,
     "HISTORICAL_BACKFILL": 20,
 }
+MAX_FILINGS_PER_RUN = sum(WORK_CLASS_RESERVATIONS.values())
 LIVE_TAIL_SESSION_COUNT = 5
 RECOVERY_SESSION_COUNT = 20
 
