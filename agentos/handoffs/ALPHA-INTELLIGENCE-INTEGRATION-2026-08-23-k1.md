@@ -35,14 +35,18 @@ changed:
       native bodies and any rank/gate/size/origination/entry authority are forbidden.
   - path: "contracts/evidence_foundation/vocabulary.v1.json"
     what: >
-      Binds 17 current owner-native object families to their exact identity fields,
-      object classes, subject keys, clocks, direct readers, and existing Synapse
-      `asof_field` or explicit null.
+      Binds 14 source-backed owner-native object families to exact native schemas,
+      identity fields and scalar types, object classes, subject keys, complete clock
+      sets, honestly typed accessors, pointer templates, and existing Synapse
+      `asof_field` or explicit null. The nonexistent Earnings lifecycle object and
+      identity-aliased TXI episode grain are absent.
   - path: "lib/evidence_foundation.py"
     what: >
-      Adds a storeless semantic validator for deterministic reference identity,
-      vocabulary integrity, native clock binding, relation independence, correction
-      lineage, missingness, replay lookahead refusal, and zero authority.
+      Adds the one combined JSON-Schema plus semantic fail-closed validator for
+      deterministic reference identity, vocabulary integrity, exact native schema,
+      identity type/pointer/clock binding, declarative-only relation independence,
+      correction target equality, missingness, replay lookahead refusal, and zero
+      authority.
   - path: "tests/fixtures/evidence_foundation/manifest.json and eight fixture JSON files"
     what: >
       Freezes exact bytes and SHA-256 receipts for FIF, Earnings, duplicate versus
@@ -50,10 +54,11 @@ changed:
       leakage cases.
   - path: "tests/test_evidence_foundation_contract.py"
     what: >
-      Proves all fixture verdicts, exact byte receipts, current-base reader symbol
-      resolution, exact owner identities/clocks, explicit Synapse as-of behavior,
-      pointer-only provenance, replay and correction semantics, and sparse-safe
-      absence of every prohibited physical-store path.
+      Proves all fixture verdicts through the combined API, exact byte receipts,
+      current-source schema and accessor binding, one-pointer native-object selection,
+      native-schema and per-clock deletion kills, full TXI transition identity,
+      declarative-only independence, correction target equality, all-cutoff parsing,
+      symmetric cross-grain ambiguity, and changed-inventory no-store evidence.
   - path: "research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md"
     what: >
       Records protected Skillpack provenance, current owner/PR reconciliation, the
@@ -84,11 +89,16 @@ verified:
   - claim: "The historical Macro pin is an ancestor and the build base was reconciled by fast-forward only."
     command: >
       git merge-base --is-ancestor fb2375441f21b94201edc4ed6ac2c40f67274cde
-      21fab35211433ab9bc4dafda3757d5aa30e11a3e; git fetch origin main; git rebase
+      0e38c48b38e7b2a10c55e3218f691bd83d8f4f65; git fetch origin main; git rebase
       origin/main; git merge-base origin/main HEAD
     result: >
       The historical pin is an ancestor; the reconciled base is
-      21fab35211433ab9bc4dafda3757d5aa30e11a3e.
+      0e38c48b38e7b2a10c55e3218f691bd83d8f4f65. The post-first-candidate
+      owner-area deltas are #6308 in event_workspace_build.py, which leaves
+      WORKSPACE_SCHEMA, WORKSPACE_KEYS, native identity/clocks, and
+      read_event_workspace unchanged, and #6312's display-only government
+      supplier-language annotation, which leaves EVENT_CONTRACT, event_id, event
+      clocks, and _validated_award_events unchanged. K1 did not start or modify D5.
   - claim: "No current named committed consumer satisfies the physical-store flip condition."
     command: >
       rg -n -i 'one query|one-query|>=3 owner|three owner|3 owner|cross-store pointer'
@@ -118,23 +128,39 @@ verified:
       tests/test_evidence_foundation_contract.py; python3 -m pytest -q
       tests/test_evidence_foundation_contract.py
     result: >
-      15 passed; exact size and SHA-256 matched for all eight fixtures; all 17 reader
-      paths resolved on the current base; authority leakage, lookahead, automatic
-      corroboration, and body-copy hostile cases were refused. Three warnings were
-      unrelated pytest temporary-directory cleanup warnings outside the worktree.
+      32 passed; exact size and SHA-256 matched for all eight fixtures; all 14 accessor
+      paths are callable on the current base; native-schema/clock omission, TXI alias,
+      unverified independence, correction target mismatch, invalid/all-class cutoff,
+      symmetric cross-grain, noncanonical key, authority, lookahead, and body-copy
+      mutations were refused. Three warnings were unrelated pytest temporary-directory
+      cleanup warnings outside the worktree.
+  - claim: "Current native owner regressions remain green on the reconciled base."
+    command: >
+      python3 -m pytest -q tests/test_dataos_identity.py
+      tests/test_theme_graph_contracts.py tests/test_fundamental_forensics_raw_ledger.py
+      tests/test_company_intelligence_event_workspace.py
+      tests/test_institutional_13f_catalog.py tests/test_government_revenue_award_events.py
+      tests/test_transmission_chains.py tests/test_qledger_evidence_clock.py
+      tests/test_market_memory.py
+    result: >
+      483 passed and 3 skipped. The four warnings were three unrelated pytest
+      temporary-directory cleanup warnings plus one upstream Starlette deprecation.
   - claim: "K1 contains no physical store, native truth mirror, or authority-bearing consumer."
     command: >
-      git ls-files --cached --others --exclude-standard | rg
-      '^(data/evidence_mesh/|data/evidence_foundation/|engine/evidence_mesh/)'; rg -n
+      git diff --name-only origin/main...HEAD; git diff --name-only; git diff --cached
+      --name-only; git ls-files --others --exclude-standard; python3 -c 'from
+      scripts.worktree_sparse import missing_dirs; print(missing_dirs())'; rg -n
       '"can_(rank|gate|size|originate|open_entry)"' contracts/evidence_foundation
       tests/fixtures/evidence_foundation
     result: >
-      No prohibited physical-store path is present in the Git inventory; all valid
-      materialized authority envelopes are false and the hostile true value is refused.
+      No prohibited physical-store path is present in the complete changed-file
+      inventory; sparse omissions were observed but never used as absence evidence.
+      All valid materialized authority envelopes are false and the hostile true value
+      is refused.
   - claim: "The Agent OS packet remains valid as a knowledge-plane update."
     command: "python3 scripts/agentos.py validate"
     result: >
-      Agent OS validated 623 records with 0 errors and 29 unrelated existing
+      Agent OS validated 626 records with 0 errors and 30 unrelated existing
       phantom-path, stale-review, and active-but-complete warnings.
   - claim: "The new K1 suite has a valid binding hosted-CI owner."
     command: >
@@ -142,7 +168,7 @@ verified:
       scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --pack-index 5
       --pack-count 12 --validate-only
     result: >
-      Contract delta reports 0 introduced and 0 inherited findings; all 201 legacy
+      Contract delta reports 0 introduced and 0 inherited findings; all 202 legacy
       jobs validate; pack 5 contains 18 jobs including signal-contract. The workflow
       edit is an explicit CI-authority addition and requires post-merge main-descendant
       baseline proof.
@@ -165,14 +191,14 @@ next_actions:
   - "If Sol accepts, update the K1 wave to done in a separately authorized closeout; do not infer acceptance from merge or green CI."
   - "Do not start K2, K3, K4, B1, K2-B, D5-EARNINGS, or a physical Evidence Mesh under this carrier."
 do_not_redo:
-  - "Do not rebuild owner truth in a shared warehouse; the store flip condition failed and direct owner readers are the frozen baseline."
+  - "Do not rebuild owner truth in a shared warehouse; the store flip condition failed and owner-bound direct/collection/parser access stays the frozen baseline."
   - "Do not reintroduce ticker_store_key, a universal entity id, or Stock Identity behavioral fingerprints as entity identities."
   - "Do not collapse world observations, derived views, system beliefs, forward claims, or instrument states into one evidence class."
   - "Do not describe current-rule recomputation as historical replay or zero-fill typed missingness."
   - "Do not treat #5889/#5898/#6285 merge state as proof that held FIF-3A2 #6302 or any dependent wave is accepted/live."
 danger_areas:
-  - "A new owner binding must preserve the exact native identity, clock names, reader, correction behavior, and Synapse as-of field; a plausible alias is not evidence."
-  - "Source independence, information novelty, and mechanism independence are distinct axes; two projections of one upstream are not independent corroboration."
+  - "A new owner binding must preserve the exact native schema, identity fields/types, complete clock set, accessor kind, pointer, correction behavior, and Synapse as-of field; a plausible alias is not evidence."
+  - "Source independence, information novelty, and mechanism independence are distinct but declarative/unverified in v1; two projections of one upstream are not verified independent corroboration."
   - "A sparse worktree can omit data/ and site/; no-store proof must use the Git inventory, not Path.exists()."
   - "Authority is literal and all-false. Any downstream rank, gate, size, origination, or ENTRY_OPEN use requires a different explicit owner contract and cannot be smuggled through this pointer."
 decisions:
@@ -182,9 +208,9 @@ discoveries: []
 
 # K1 Evidence Foundation cold-session return point
 
-K1 froze a pointer-only interoperability contract over seventeen current owner
-object families. It proved eight exact-byte fixtures and current-base reader
-resolution while refusing the physical store because no named committed consumer
+K1 froze a pointer-only interoperability contract over fourteen source-backed owner
+object families. It proved eight exact-byte fixtures and current-base accessor/
+schema resolution while refusing the physical store because no named committed consumer
 satisfied the three-owner single-query gate. The contract has no ranking, gating,
 sizing, origination, or entry authority and copies no native bodies.
 
