@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from datetime import datetime, timezone
 
 import pytest
 
@@ -9,7 +10,13 @@ from engine.intelligence_workspace.consumers import (
     evaluate_stage_momentum_fixture,
     parity_projection,
 )
-from engine.intelligence_workspace.contracts import DatapointContractError
+from engine.intelligence_workspace.contracts import (
+    AdapterResult,
+    CanonicalEntity,
+    DatapointContractError,
+)
+from engine.intelligence_workspace.registry import load_registry
+from engine.intelligence_workspace.resolver import DatapointResolver
 from engine.neuralweb.brain_gateway import _json_safe, _model_visible_tool_result
 
 
@@ -115,3 +122,75 @@ def test_direct_query_brain_parity_surface_is_identical():
         for fact in brain["facts"]
     )
     assert query == direct == brain_parity
+
+
+def test_real_resolver_direct_query_brain_fingerprints_are_identical():
+    class Identity:
+        def normalize_many(self, entities):
+            return tuple(
+                CanonicalEntity("security", "SEC:US-XNAS-AAPL", "us_equity")
+                for _ in entities
+            )
+
+    class Owner:
+        def resolve_many(self, entities, specs, request, context):
+            del request, context
+            values = {"stage.current": 2, "market.return.3m": 15.0}
+            return {
+                (entity.type, entity.id, spec.field_id): AdapterResult(
+                    value=values[spec.field_id],
+                    status="available",
+                    reason_code=None,
+                    unit=spec.unit,
+                    observed_at="2026-08-22T20:15:00Z",
+                    effective_at="2026-08-22T20:15:00Z",
+                    as_of="2026-08-22T20:15:00Z",
+                    freshness={"state": "fresh", "policy": "owner_native"},
+                    quality={"state": "ok", "issues": []},
+                    source={
+                        "source_id": f"owner.{spec.owner_field_key}",
+                        "owner": spec.owner_ref["owner"],
+                        "license_class": "internal_derived",
+                        "dataset_id": spec.owner_ref["dataset_id"],
+                    },
+                    provenance={
+                        "kind": "owner_derived",
+                        "owner_field_key": spec.owner_field_key,
+                        "basis": spec.basis_policy,
+                    },
+                )
+                for entity in entities
+                for spec in specs
+            }
+
+    owner = Owner()
+    rows = DatapointResolver(
+        registry=load_registry(),
+        identity_normalizer=Identity(),
+        adapters={"stage": owner, "technicals": owner},
+        clock=lambda: datetime(2026, 8, 23, 12, 0, tzinfo=timezone.utc),
+    ).resolve(
+        {
+            "entities": [{"type": "security", "id": "SEC:US-XNAS-AAPL"}],
+            "field_ids": ["stage.current", "market.return.3m"],
+            "audience": "subscriber",
+            "consumer_use": "query",
+        }
+    )
+
+    direct = parity_projection(rows)
+    query = tuple(evaluate_stage_momentum_fixture(rows)["facts"])
+    brain = build_brain_fact_packet(rows)
+    brain_parity = tuple(
+        {
+            **{key: fact[key] for key in direct[0] if key not in {"source_id", "quality_state"}},
+            "source_id": fact["source"]["source_id"],
+            "quality_state": fact["quality_state"],
+        }
+        for fact in brain["facts"]
+    )
+
+    assert query == direct == brain_parity
+    assert {fact["fact_fingerprint"] for fact in direct} == {
+        fact["fact_fingerprint"] for fact in query
+    } == {fact["fact_fingerprint"] for fact in brain_parity}

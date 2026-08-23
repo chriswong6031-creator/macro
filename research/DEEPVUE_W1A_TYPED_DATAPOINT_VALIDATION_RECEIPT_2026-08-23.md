@@ -161,7 +161,7 @@ python3 -m pytest -q \
   tests/test_intelligence_workspace_mutations.py \
   tests/test_intelligence_workspace_cli.py \
   tests/test_intelligence_workspace_performance.py
-=> 139 passed, 3 non-product pytest temporary-directory cleanup warnings
+=> 140 passed, 3 non-product pytest temporary-directory cleanup warnings
 ```
 
 ```text
