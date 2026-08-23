@@ -8901,14 +8901,20 @@ jobs:
     # CI-wiring law — never `gate: data`, and never reading nightly-rewritten
     # site/government-revenue-data/ or data/government_revenue/ artifacts.
     #
-    # Deliberately NOT `scope: exclusive`: unlike govrev-company-bridge (whose
-    # only import is a frozen fixture read as plain text), this suite imports
-    # engine/government_revenue/program_ontology.py's sibling modules AND
-    # scripts/build_government_revenue.py for the end-to-end composer-wiring
-    # smoke test, whose own transitive closure spans a large slice of the
-    # government_revenue engine (dossiers/idv/subaward/budget_program/
-    # candidates/metrics + their contracts). Curating that whole closure by
-    # hand would need constant upkeep as those modules evolve; automatic
+    # Deliberately NOT `scope: exclusive`: this suite imports
+    # engine/government_revenue/program_ontology.py's sibling modules
+    # (award_events/entity_resolution/workspace/budget_program/metrics,
+    # their contracts, and the collectors those touch) -- a closure real but
+    # narrower than it once was. It no longer needs scripts/build_government_
+    # revenue.py's own much larger transitive closure at all: the five D5
+    # composer end-to-end tests that used to pull it in were relocated to
+    # tests/test_build_government_revenue.py (2026-08-23 CI repair, PR #6312
+    # ci-pack-7 red -- that import needs `requests`, which this job's install
+    # line does not carry, while test_build_government_revenue.py's lane
+    # already provisions it). Left inferred rather than curated: the
+    # remaining closure still touches collectors/base.py's/dod_budget.py's
+    # own filesystem-ambiguity widen-to-roots edges, which would need
+    # constant upkeep to hand-curate as those modules evolve; automatic
     # scope inference (the same machinery `scope: exclusive` opts OUT of)
     # derives and keeps it current instead.
     if: ${{ false }}
