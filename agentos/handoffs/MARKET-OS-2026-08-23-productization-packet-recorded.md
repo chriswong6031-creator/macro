@@ -108,6 +108,8 @@ danger_areas:
   - >
     B1A gate 2 is Sol acceptance of K1, not the merge of #6319 — green CI on
     the twin PR is explicitly not final K1 acceptance per its own stop boundary.
+prs:
+  - 6325
 decisions:
   - "DEC:MARKET-INTEL-PRODUCTIZATION-NO-NEW-WORKSTREAM"
 ---
