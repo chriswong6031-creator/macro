@@ -30,7 +30,7 @@ The protected Sol Skillpack was loaded atomically from the current protected
 The handoff's Mastermind pin is exactly current. The Macro handoff pin
 `fb2375441f21b94201edc4ed6ac2c40f67274cde` remains an ancestor, but is historical.
 The repaired candidate was reconciled against fresh Macro `origin/main`
-`7cc324f2e1c6425ac9710863b3aa4ca8ac20b7c4`. Since the first K1 candidate base,
+`395db13b9dadf4975e0ed43c68d02983134ddbff`. Since the first K1 candidate base,
 the first K1-owner-area mainline change was #6308 in
 `engine/company_intelligence/event_workspace_build.py`: it carries corrected
 lifecycle state forward and adds the filing form inside an existing workspace source
@@ -46,7 +46,7 @@ classifies FIF-3A2 as `ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN` after Sol PAS
 `9598c5430c587b2ec9d1f84d3fa6e2d704808bcc`. Its decision also explicitly keeps
 the production attested issuer service `NOT_BUILT` and FIF-3 `IN_PROGRESS`; accepted
 golden-fixture/on-main status is not production/live proof. The remaining base movement
-through `7cc324f2e1c6425ac9710863b3aa4ca8ac20b7c4` touched Agent OS governance,
+through `395db13b9dadf4975e0ed43c68d02983134ddbff` touched Agent OS governance,
 Intelligence Workspace, render, press, records, Canada/public display, marketing
 publication, and research-vault data rather than changing a registered K1 owner
 contract. K1 did not start, modify, or extend D5; it only reconciled already-merged
@@ -296,7 +296,7 @@ run on a main descendant of the merge under the merged authority.
 > Sol, accept K1 / FABLE-A Evidence Foundation v1.0.0 as a contract-only freeze.
 > The current protected Skillpack was loaded from Mastermind
 > `db0bac5fe3f72348262d42c8bd26b836bda9f61d`; Macro was reconciled to
-> `7cc324f2e1c6425ac9710863b3aa4ca8ac20b7c4`. The physical-store flip condition is
+> `395db13b9dadf4975e0ed43c68d02983134ddbff`. The physical-store flip condition is
 > adverse: no named current PR or workstream commits to a one-query native-object
 > read across at least three owner stores for one subject. K1 therefore preserves
 > owner-bound accessors, copies no bodies, creates no store/index/control plane, and
