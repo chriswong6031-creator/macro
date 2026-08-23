@@ -319,18 +319,11 @@ html[data-lang="zh"] .si-view[data-view="money"] .mny-flowfrag .scc-section-h h2
   overflow:visible; z-index:1; }
 .si-view[data-view="money"] .hm-sechd > .agg{ font-variant-numeric:tabular-nums; font-weight:700; }
 .si-view[data-view="money"] .hm-t{ position:absolute; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; overflow:hidden; color:var(--hm-ink-lt);
+  align-items:center; justify-content:center; overflow:hidden; color:#fff;
   text-shadow:0 1px 2px rgba(0,0,0,.42); }
 .si-view[data-view="money"] .hm-t > .sym{ font-weight:700; letter-spacing:-.01em; line-height:1.05; }
-/* B2-03: .pc used to run at opacity:.92 as a purely decorative de-emphasis
-   against .sym. Measured (heatmap_ink_audit.py), that 8% blend toward the
-   tile's own background dropped two light-theme cells below the 4.5:1 floor
-   (b3 4.70->4.24, b1 4.92->4.45) even though the SAME ink passes at full
-   opacity on every bin. font-weight already separates .sym (700) from .pc
-   (600); opacity is not needed to make that distinction and is removed here
-   rather than kept as a second, contrast-eating de-emphasis mechanism. */
 .si-view[data-view="money"] .hm-t > .pc{ font-weight:600; font-variant-numeric:tabular-nums;
-  line-height:1.15; }
+  line-height:1.15; opacity:.92; }
 /* Bin scale — the SAME nine bins and the SAME edges heatmap.js:203-215 binIndex() assigns
    (±1 / ±2 / ±3 % on 1D, with the ±0.5 half-step so a slightly-green name never reads flat).
    The anchor hue is the theme's own --up / --down instead of heatmap.js's --hm-up-v /
@@ -352,46 +345,6 @@ html[data-theme="light"] .si-view[data-view="money"]{ --hm-nu:color-mix(in srgb,
 /* light board: deepen the two extreme bins so a white tile label clears its own surface */
 html[data-theme="light"] .si-view[data-view="money"] .b3 { background:color-mix(in srgb, var(--up) 86%, #000); }
 html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(in srgb, var(--down) 86%, #000); }
-/* B2-03 — deterministic per-bin ink, measured not assumed (build/heatmap_ink_audit.py,
-   full table in HEATMAP_INK.md). Two inks, defined ONCE from tokens already literal
-   in this exact block (#fff was already the tile foreground; #000 already appears
-   two lines up as the light-board b3/b3d deepen mix) — no per-tile JS branch, no new
-   hex literal anywhere in runtime_shim.js/views JS. Pure CSS keyed on [data-theme]
-   and [data-lang], so a THEME flip stays free (the invariant this file already
-   documents) and a LANG flip needs no repaint either — it just selects a different,
-   already-baked rule.
-   html[data-lang="zh"] swaps --up/--down site-wide (dark: #45b873<->#e06464; light:
-   #1f9a55<->#cf4040), so a bin's ACTUAL painted colour depends on theme x lang
-   together, not theme alone — measured directly rather than assumed symmetric.
-   DARK theme: both anchor hues (green #45b873, red #e06464) happen to need the
-   SAME ink at the same mix level (100%/82% too bright for white: 2.51:1/3.19:1
-   one hue, 3.40:1/4.21:1 the other; 46%-and-below clears white by 3.86:1+), so
-   b3/b2/b2d/b3d take dark ink regardless of which language currently owns which
-   class — one lang-invariant rule. LIGHT theme's two anchor hues do NOT share a
-   crossover point (#1f9a55 green and #cf4040 red have different individual
-   luminance), so the SAME class name needs different ink depending on which hue
-   is currently assigned to it: en b2 (green, 4.01:1 white) needs dark ink while
-   en b2d (red, 5.19:1 white) does not; zh swaps the hues, so zh needs dark ink on
-   b2d instead (the class holding the green mix in zh) and NOT on b2 (5.19:1 white
-   there, holding the red mix). bna (theme-only, never touches --up/--down) needs
-   dark ink in light theme regardless of language (2.17:1 white). Every other
-   light-theme bin — b3 (4.70:1, the tightest margin in the whole table),
-   b1/bh/b0/bhd/b1d, and whichever of b2/b2d is NOT listed below for the active
-   language — clears 4.5:1 with white. Zero bins land at a floor no ink can meet:
-   the substrate fallback the commission requires stays unused, and
-   heatmap_ink_audit.py asserts that (a nonzero substrate count would mean this
-   table drifted from the live tokens and needs re-deriving, not silently
-   re-excluded). */
-.si-view[data-view="money"]{ --hm-ink-lt:#fff; --hm-ink-dk:#000; }
-html[data-theme="dark"] .si-view[data-view="money"] .hm-t.b3,
-html[data-theme="dark"] .si-view[data-view="money"] .hm-t.b2,
-html[data-theme="dark"] .si-view[data-view="money"] .hm-t.b2d,
-html[data-theme="dark"] .si-view[data-view="money"] .hm-t.b3d{
-  color:var(--hm-ink-dk); text-shadow:none; }
-html[data-theme="light"] .si-view[data-view="money"] .hm-t.bna,
-html[data-theme="light"][data-lang="en"] .si-view[data-view="money"] .hm-t.b2,
-html[data-theme="light"][data-lang="zh"] .si-view[data-view="money"] .hm-t.b2d{
-  color:var(--hm-ink-dk); text-shadow:none; }
 .si-view[data-view="money"] .mny-takeaway{ margin:11px 0 0; font-size:var(--fs-sm); line-height:1.5; color:var(--text); }
 .si-view[data-view="money"] .mny-scale{ display:flex; align-items:center; flex-wrap:wrap; gap:6px;
   margin-top:9px; font-size:var(--fs-micro); letter-spacing:.05em; color:var(--muted); }
@@ -604,7 +557,7 @@ html[data-theme="light"][data-lang="zh"] .si-view[data-view="money"] .hm-t.b2d{
       <!-- §8.1 mount-width law: this box is NEVER inside a closed <details> or a
            display:none wrapper at activation. It is painted from the si:view event,
            i.e. after the router has made the view visible and forced a reflow. -->
-      <div class="mny-tm is-empty" id="heatmap-scorecard" role="img" aria-labelledby="hm-a11y-name" data-r3b2="03">
+      <div class="mny-tm is-empty" id="heatmap-scorecard" role="img" aria-labelledby="hm-a11y-name">
         <b><span class="l-en">Market heat map</span><span class="l-zh">市场热力图</span></b>
         <span class="l-en">Mounts when this view opens.</span><span class="l-zh">打开本视图时载入。</span>
       </div>

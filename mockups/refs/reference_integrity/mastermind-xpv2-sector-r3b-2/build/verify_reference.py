@@ -30,11 +30,11 @@ Checks:
   (k) contrast matrix — asserts the committed lane_crops_b/CONTRAST_TABLE.md
       + lane_crops_b/contrast_audit.json artifacts exist and report 0 AA
       failures (from committed artifact; NOT rerun here — browser-based gate).
-  (l) candidate-owned heatmap readable ink (B2-03) — asserts the committed
-      heatmap_ink_audit.json artifact exists, reports a NONZERO census, and
-      reports 0 cells under the 4.5:1 floor and 0 cells excluded as
-      unmeasurable (from committed artifact; NOT rerun here — browser-based
-      gate; reproduce with `<playwright-python> heatmap_ink_audit.py`).
+  NOTE — heatmap colour-field axis (Sol FINAL CONTINUATION HANDOFF S4): the ~440
+      shadowed .hm-t glyphs over the data-driven colour field are UNMEASURED by the
+      flat-surface contrast method. This verifier REPORTS that axis and never
+      converts UNMEASURED into PASS or FAIL; final legibility review is a
+      human/appropriate-method task carried to R3C/design-system.
 
 Checks (f)-(i) shell out to Playwright-based sibling scripts in this
 directory and therefore need a Playwright-enabled Python interpreter to run
@@ -77,7 +77,6 @@ LANE_CROPS_B = BUILD_DIR / "lane_crops_b"
 ZOOM_SWEEP_JSON = LANE_CROPS_B / "zoom_sweep.json"
 CONTRAST_TABLE_MD = LANE_CROPS_B / "CONTRAST_TABLE.md"
 CONTRAST_AUDIT_JSON = LANE_CROPS_B / "contrast_audit.json"
-HEATMAP_INK_JSON = BUILD_DIR / "heatmap_ink_audit.json"
 FIG_NAMING_JSON = BUILD_DIR / "fig_naming_audit.json"
 TREEMAP_LABELS_JSON = BUILD_DIR / "treemap_labels_audit.json"
 MOBILE_GEOMETRY_JSON = BUILD_DIR / "mobile_geometry_audit.json"
@@ -232,7 +231,7 @@ def main() -> int:
     # ── (j)/(k)/(l) committed browser-gate artifacts (not rerun here) ────
     check_committed_zoom_sweep()
     check_committed_contrast_audit()
-    check_committed_heatmap_ink_audit()
+    report_heatmap_unmeasured_axis()
 
     # ── (m)/(n)/(o) Lane B responsive/a11y geometry artifacts ────────────
     check_committed_fig_naming_audit()
@@ -321,30 +320,15 @@ def check_committed_contrast_audit() -> None:
           f"(reproduce with `<playwright-python> contrast_audit.py`)")
 
 
-def check_committed_heatmap_ink_audit() -> None:
-    if not HEATMAP_INK_JSON.exists():
-        check("(l) candidate-owned heatmap readable ink (from committed artifact)", False,
-              f"missing {HEATMAP_INK_JSON}")
-        return
-    audit = json.loads(HEATMAP_INK_JSON.read_text(encoding="utf-8"))
-    if audit.get("error"):
-        check("(l) candidate-owned heatmap readable ink (from committed artifact)", False,
-              f"audit reported an error: {audit['error']}")
-        return
-    cells = audit.get("cells", [])
-    census = len(cells)
-    scored = [c for c in cells if c.get("ratio") is not None]
-    fails = [c for c in scored if not c.get("pass")]
-    suspects = [c for c in scored if c.get("suspect_parse")]
-    # B2-03's whole point: this population may never be silently excluded as
-    # "unmeasurable" — every cell in the artifact must carry a real ratio.
-    unscored = [c for c in cells if c.get("ratio") is None]
-    ok = census > 0 and not fails and not suspects and not unscored
-    check("(l) candidate-owned heatmap readable ink (from committed artifact)", ok,
-          f"{census} .hm-t/.hm-sechd leaves measured, {len(fails)} sub-4.5:1 failures, "
-          f"{len(suspects)} parser-suspect, {len(unscored)} excluded-as-unmeasurable "
-          f"(forbidden by COMMISSION.md B2-03; must be 0) "
-          f"(reproduce with `<playwright-python> heatmap_ink_audit.py`)")
+def report_heatmap_unmeasured_axis() -> None:
+    """Sol FINAL CONTINUATION HANDOFF S4 (old B2-03 RECLASSIFIED): the candidate-owned
+    .hm-t colour-field text (~440 shadowed glyphs over a data-driven colour field) is
+    UNMEASURED by the flat-surface contrast method. Report the axis honestly; NEVER
+    convert UNMEASURED into PASS (and never into FAIL without a valid method). Final
+    legibility review = human/appropriate-method, carried to R3C/design-system."""
+    print("NOTE  heatmap colour-field axis: UNMEASURED by flat-surface method "
+          "(~440 shadowed .hm-t glyphs) — reported, not scored; never PASS "
+          "(Sol handoff S4; final review carried to R3C/design-system)")
 
 
 def _load_audit(path: Path, name: str) -> dict | None:
