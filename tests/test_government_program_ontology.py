@@ -16,6 +16,7 @@ from copy import deepcopy
 from datetime import date, datetime, timezone
 import json
 from pathlib import Path
+import re
 
 import jsonschema
 import pytest
@@ -214,6 +215,25 @@ def test_t1_program_rail_reason_code_never_shares_atlas_copy():
     assert po.PROGRAM_LINK_REASON_NO_REVIEWED_LINK != identity_atlas._GAP_NO_REVIEWED_PATH
 
 
+def test_t1_dossier_module_program_rail_copy_never_equals_atlas_gap_copy():
+    """T1 render-law extension (freeze SS8 item 1, D5 mode=programs surface):
+    the program-rail unresolved copy string rendered by the D5 UI module is
+    a distinct string from the atlas's `no_reviewed_exact_path` copy, and no
+    program name token renders anywhere in the module's program_link/
+    program_identity rendering path."""
+    factory_source = _program_dossier_factory_source()
+    program_copy_en = "Program relationship: unresolved / not asserted"
+    program_copy_zh = "项目归属:未解决/未认定"
+    atlas_copy_en = "no reviewed exact recipient → legal entity path exists"
+    assert program_copy_en in factory_source
+    assert program_copy_zh in factory_source
+    assert program_copy_en != atlas_copy_en
+    assert program_copy_zh not in atlas_copy_en
+    # No program name token renders anywhere in the module (the Virginia
+    # pilot's own program name is the concrete case this packet must pass).
+    assert "Virginia" not in factory_source
+
+
 # ---------------------------------------------------------------------------
 # T2 -- revision does not rewrite; identity survives a rename, breaks only
 # on a reviewed restructure
@@ -404,13 +424,48 @@ def test_t5_budget_rail_carries_no_numeric_or_request_fields():
     assert not any(isinstance(v, (int, float)) for v in bundle_state.values())
 
 
-@pytest.mark.skip(
-    reason="T5's EN/ZH label-law assertion is a rendered-template check; the "
-    "mode=programs template surface is a later packet's job per this "
-    "commission's OUT OF SCOPE note. This stub documents the obligation."
-)
+def _program_dossier_factory_source() -> str:
+    """The D5 `mode=programs` UI module, as committed (D4 CI-wiring law:
+    a render-law test reads committed template/JS sources, never a
+    nightly-rewritten site/data artifact)."""
+    js_source = (
+        Path(__file__).parents[1] / "templates" / "government-revenue-dossiers.js"
+    ).read_text(encoding="utf-8")
+    start = js_source.index("global.createGovernmentRevenueProgramDossier=function(api){")
+    end = js_source.index("\n})(window);", start)
+    return js_source[start:end]
+
+
 def test_t5_template_never_labels_a_request_amount_as_obligation_en_zh():
-    raise NotImplementedError
+    """T5 render-law (freeze SS8 item 5): a render/template test, not an
+    artifact-field test. The D5 `mode=programs` surface never sums or
+    compares a budget-request figure with an obligation -- it renders no
+    numeric budget figure at all -- and neither language ever labels a
+    request amount as obligation/appropriation/revenue/backlog."""
+    factory_source = _program_dossier_factory_source()
+
+    # The D5 rail composes zero numeric figures of any kind: no money
+    # formatter and no numeric coercion helper is ever invoked here, so no
+    # request amount can ever be rendered under any label at all -- the
+    # strongest available form of "never labels a request amount as
+    # obligation/appropriation/revenue/backlog". (A bare word scan for
+    # "revenue" etc. over-matches: the frozen `allocation_limitation` copy
+    # itself legitimately says participation "is not a share of revenue" --
+    # the negation T5 requires, not a violation of it.)
+    assert "money(" not in factory_source
+    assert re.search(r"\bapi\.(n|money)\b", factory_source) is None
+    assert re.search(r"[^a-zA-Z_]n\(", factory_source) is None
+
+    # The two frozen limitation strings are the ONLY place "revenue" or
+    # "obligation" may legitimately appear, and only as a disclaiming
+    # negation, never as a numeric label.
+    assert "not a share of revenue" in factory_source
+    assert "obligation" not in factory_source.lower()
+    assert "appropriation" not in factory_source.lower()
+    assert "backlog" not in factory_source.lower()
+    assert "拨款" not in factory_source
+    assert "义务" not in factory_source
+    assert "积压" not in factory_source
 
 
 # ---------------------------------------------------------------------------
@@ -691,6 +746,27 @@ def test_t12_participants_and_economic_relationships_state_tokens_are_rail_scope
         atlas_index={},
     )["state"] == "not_reviewed"
     assert {"state": "not_asserted"} == {"state": "not_asserted"}
+
+
+def test_t12_dossier_module_participants_limitation_strings_render_verbatim_en_zh():
+    """T12 render-law extension (freeze SS8 item 12, D5 mode=programs
+    surface): both participants-rail limitation strings render verbatim in
+    EN and ZH, and the participants rail's rendered `not_asserted`-token
+    copy is asserted UNEQUAL to the economic_relationships rail's copy
+    (rail-scoped copy keys, freeze SS4 gate 6)."""
+    factory_source = _program_dossier_factory_source()
+    assert pd.PARTICIPATION_LIMITATION in factory_source
+    assert pd.ALLOCATION_LIMITATION in factory_source
+    zh_participation = "本栏公司参与同一项目;不主张它们之间存在任何商业关系。"
+    zh_allocation = "已复核的参与关系不代表收入份额。此处不将合同金额分配至任何股票。"
+    assert zh_participation in factory_source
+    assert zh_allocation in factory_source
+
+    issuer_not_asserted_copy = "Issuer path: not asserted"
+    economic_not_asserted_copy = "No reviewed economic-relationship data"
+    assert issuer_not_asserted_copy in factory_source
+    assert economic_not_asserted_copy in factory_source
+    assert issuer_not_asserted_copy != economic_not_asserted_copy
 
 
 # ---------------------------------------------------------------------------
