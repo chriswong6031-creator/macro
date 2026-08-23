@@ -69,13 +69,16 @@ integrated normally and the focused, native-owner, Agent OS, contract-delta, and
 pack-5 validations were rerun against the integrated lineage.
 
 The final bounded anti-livelock fetch observed Macro main at
-`fbdf22a38d5cfd5f0d575236e59ddf7b7e8e728a`. Movement after the integrated
-`8c0608652652d4d81f177c8c315db638975ae2cd` parent is confined to marketing
-outbox/press/publication ledgers, metabolism CI status, research-vault catalog/
-excerpts, and White House health data. It does not touch K1, the authenticated rider,
-CI definitions, Agent OS records, or any registered owner-source law. PR #6319
-recomputed `MERGEABLE / CLEAN`, so the tested candidate was not rewritten merely to
-chase volatile data snapshots.
+`6a1795192cc06c1ea8c9004a33b9e4bec62831c9`. Movement after the integrated
+`8c0608652652d4d81f177c8c315db638975ae2cd` parent is predominantly generated site,
+marketing, metabolism, research-vault, and White House data. #6343 also optimizes the
+adjacent Neural Web event-revision chain walk and its regression, but does not change
+K1's registered `engine.company_intelligence.event_workspace.validate_event_workspace`
+parser, `WORKSPACE_SCHEMA`, `WORKSPACE_KEYS`, event/generation grammar, registered
+clocks, exact K1/CI/AgentOS paths, or `config/synapse.yml`. The source-law census
+therefore found no actual K1 overlap requiring another candidate rewrite; PR #6319
+remains mergeable and the tested candidate was not rewritten merely to chase main
+churn.
 
 Current main then added the manifest-verified Market Intelligence Productization
 packet and its K1 double-dispatch receipt in #6325 (`b300efc0fbb9`). That records an
@@ -219,7 +222,9 @@ excluded/degraded and required unresolved blocks refuse. Output mappings must eq
 each block's declared output-field set and absence behavior, and exact rule
 codes/effects are frozen. A required rights-blocked block refuses; a required
 conflicted block follows the declared abstention. It cannot embed owner payloads or
-gain authority.
+gain authority. Its v1 automatic-relation set is exactly empty. All nine relation
+labels are descriptive/manual-only; the compiler never suppresses, nets, ranks, or
+promotes a block or denominator row from a relation label.
 
 ### Canonical identity and clock law
 
@@ -308,9 +313,11 @@ generation-aware reader exists.
   `declarative_unverified`; it makes no detection or verification claim without
   typed deterministic owner lineage IDs.
 - V1 permits no automatic effect: every relation carries `automatic_effect=false`
-  and `deterministic_key=null` until a typed owner-native lineage key is frozen.
-- `corroborates`, `contradicts`, `shares_upstream`, `corrects`, `supersedes`, and
-  `projects` never auto-net, rank, promote, or suppress.
+  and `deterministic_key=null` until a typed owner-native lineage key is frozen. The
+  Recipe automatic-relation set is exactly empty.
+- `exact_duplicate`, `same_fact`, `same_event`, `corroborates`, `contradicts`,
+  `shares_upstream`, `corrects`, `supersedes`, and `projects` are all descriptive /
+  manual-only in v1 and never auto-net, rank, promote, or suppress.
 - Corrections append and name predecessor references. The `corrects`/`supersedes`
   relation target set must exactly equal the predecessor set, with the right relation
   kind and an honest native chronology-verification state. Predecessors never mutate.
@@ -390,12 +397,14 @@ python3 scripts/check_contract_delta.py --base origin/main
 python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --pack-index 5 --pack-count 12 --validate-only
 ```
 
-The integrated reference-plus-product suite concludes **123 passed**, including the
+The integrated reference-plus-product suite concludes **125 passed**, including the
 no-store inventory assertion, exact owner value grammars, coverage/replay capability
 masquerade kills, canonical-vocabulary rebind refusal across refs/blocks/recipes, and
 the rider's rehashed Block-laundering, map-substitution, exact-output/rule,
 required-rights/conflict, and same-native valid-different QLedger/FIF/Theme
-Ref/Block/Recipe hostiles. The only warnings are three unrelated pytest
+Ref/Block/Recipe hostiles. It also rejects a rehashed non-empty automatic-dedup set
+through the combined and raising APIs and proves descriptive exact-duplicate labels
+leave block inclusion and denominator counts unchanged. The only warnings are three unrelated pytest
 temporary-directory cleanup warnings outside this worktree.
 
 The owner-source regression selection run from the reviewer-repaired full checkout
@@ -416,9 +425,9 @@ hosted `run:` owner. K1 therefore added one step to the existing `signal-contrac
 / Fundamental Forensics lane. It created no new workflow or job. This is an explicit,
 required delivery-scope addition, not evidence-plane expansion.
 
-After wiring, contract-delta reports `0 introduced, 0 inherited` against
-`3abc5e99ef25`; the later bounded fetch moved only through the disjoint volatile data
-paths enumerated above. The current
+After wiring, contract-delta reports `0 introduced, 0 inherited` against bounded
+current main `6a1795192cc0`; its adjacent, unregistered Earnings chain-reader change
+was source-inspected as described above and does not alter K1's contract owner. The current
 12-pack plan places `signal-contract` in pack 5; pack validation reports 202 valid
 legacy jobs and 18 jobs in pack 5. Because `.github/ci/**` is CI authority,
 semantic evidence will carry `authority_changed=true`: merge requires concluded
@@ -439,7 +448,7 @@ run on a main descendant of the merge under the merged authority.
 | R8 honest name/identity | **SATISFIED** — refs, blocks, recipes, and compilation receipt are distinct; pointer IDs carry no join run clock; digest/coverage/freshness/rights are typed. | schemas, deterministic ID tests |
 | R9 PASS-0 gates | **SATISFIED** — FIF remains fixture-only; no specialist adapter; golden/hostile fixtures; all authority false. | product manifest, CI inventory |
 | MO EvidenceBlock | **SATISFIED** — consumer/job, claim/question, refs, fact/deterministic/model/human class, lossless clocks, denominator, uncertainty, dependence/conflict/correction derived from exact cited refs and relations, next observable, permitted consumers. | `block.v1.schema.json`, combined validator, rehashed laundering/map-key hostiles |
-| MO EvidenceRecipe | **SATISFIED / ADVERSE** — ordered required/optional blocks, owners, canonical subject instance, exact-value binding, clocks by ref, frozen refusal/degradation effects, dedup/dependence, and exact output mappings. Join triples are declarations, not proof: the golden refuses because no validated bridge object is supplied. | `recipe.v1.schema.json`; AAPL golden and same-native subject hostiles |
+| MO EvidenceRecipe | **SATISFIED / ADVERSE** — ordered required/optional blocks, owners, canonical subject instance, exact-value binding, clocks by ref, frozen refusal/degradation effects, exact output mappings, and descriptive/manual-only dedup/dependence with an empty automatic set. Join triples are declarations, not proof: the golden refuses because no validated bridge object is supplied. | `recipe.v1.schema.json`; AAPL golden, same-native subject, and automatic-dedup hostiles |
 | MO product integrity | **SATISFIED** — denominator receipt, dominant degradation, adverse states remain partial/refused rather than complete, probability receipt, corrections recompile, rights/unavailable/conflict typed. | product tests and exact fixtures |
 
 ## 7. Continuation contracts and unresolved questions
@@ -490,8 +499,8 @@ AAPL Security State golden vertical.**
 > `eb9910681a6db9f9675b25233c8865bb43325c32`; its `docs/sol_skills` tree and
 > procedure blobs remain byte-identical to the historical commission pin. Macro was
 > integrated on `8c0608652652d4d81f177c8c315db638975ae2cd`; the final bounded
-> census recorded disjoint current main
-> `fbdf22a38d5cfd5f0d575236e59ddf7b7e8e728a` without rewriting the tested
+> census recorded source-compatible current main
+> `6a1795192cc06c1ea8c9004a33b9e4bec62831c9` without rewriting the tested
 > candidate. The named
 > AAPL B1 job validates four owner-reader fixture legs through one ordered recipe; the
 > measured receipt is explicit `REFUSED / identity_unresolved`, with 0 included / 4

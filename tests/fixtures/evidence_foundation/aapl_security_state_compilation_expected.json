@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.recipe_compilation_receipt.v1",
   "version": "1.0.0",
-  "recipe_id": "erp_b12bbad372daf7a9484a7e5f59a10f17cb4f13cb652de0b0eba1d58a74707c0a",
+  "recipe_id": "erp_7cc0791e19ba9b26feeae09786d9984b4dff08173f7c4692afd5640d2c1cf442",
   "consumer": {
     "workstream": "WS:MARKET-OS",
     "job": "build security_state.v1 for AAPL",

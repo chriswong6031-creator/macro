@@ -73,7 +73,10 @@ changing a native clock binding requires v2.
 6. **Automatic effects are unavailable in v1.** Every relation materializes
    `automatic_effect=false` and `deterministic_key=null`. The contract has no frozen
    typed owner-native deterministic-lineage key, so even an `exact_duplicate` label
-   cannot make an arbitrary caller-authored key suppress, net, rank, or promote.
+   cannot make an arbitrary caller-authored key suppress, net, rank, or promote. The
+   recipe therefore freezes `automatic_relation_types` to the empty set and lists
+   every relation type, including exact/same-fact/same-event, as descriptive and
+   manual-only.
 7. **Missingness is typed.** Absence never becomes numeric zero. `unsupported`,
    `stale`, `rights_blocked`, `unresolved_identity`, and the other closed reasons are
    actionable states, not values.
@@ -124,8 +127,8 @@ CIK-to-security/listing joins may use only the Earnings `company_identity.v1` PI
 alias, and Theme-node-to-security joins may use only a validated Theme Graph identity
 resolution row. The dated symbol-directory plus `cik_map` route fails closed.
 
-The recipe freezes required refusal/degradation rules, deterministic dedup rules,
-non-automatic dependence relations, denominator/dominant-degradation laws,
+The recipe freezes required refusal/degradation rules, a closed descriptive/manual
+dedup-dependence vocabulary with no automatic relation types, denominator/dominant-degradation laws,
 correction recompilation, confidence receipts, and no owner-payload copying.
 `compile_recipe()` operates only on caller-supplied owner-reader results and returns an
 in-memory `recipe_compilation_receipt.v1`; it persists no ref, block, owner payload, or

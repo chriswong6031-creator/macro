@@ -121,8 +121,8 @@
       "kind": "recipe",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 5497,
-      "sha256": "6c384c9a70a187f7f688ea5054e01a173c67e206becf3caa1c83c112d4692252"
+      "size_bytes": 5493,
+      "sha256": "caca44490a48f4c6e5d7fde47033642ee868f1a4af920a97ac302c70d8c943d4"
     },
     {
       "file": "forbidden_cik_join_recipe_hostile.json",
@@ -131,8 +131,8 @@
       "expected_violations": [
         "recipe_identity_join_forbidden:0"
       ],
-      "size_bytes": 5466,
-      "sha256": "5a8712ef170d62da8adfe300cbdfba1ba73074c01a400921da74fec7e89b3c58"
+      "size_bytes": 5462,
+      "sha256": "2f9ea0a80536709798edbc054dcf219b5414d70319becd1fcbd57952ce8696c8"
     },
     {
       "file": "aapl_security_state_compilation_expected.json",
@@ -140,7 +140,7 @@
       "expected": "valid",
       "expected_violations": [],
       "size_bytes": 979,
-      "sha256": "d130c344a1fd42f9a2e9235156bad55950ea35928bda4988bbef5d98e6275730"
+      "sha256": "f5ba12b7b845ea65436e4552c0e20064798ed6cea6e6750f556a1bddee43aaf1"
     }
   ]
 }

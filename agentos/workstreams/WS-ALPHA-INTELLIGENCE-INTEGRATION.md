@@ -106,7 +106,13 @@ landmines:
     `unbound` parity across all 13 owners, exposes only native claim/packet/occurrence/
     evidence/generation/event/outcome IDs where the pointer cannot prove an entity,
     migrates the golden Theme leg to a subject-bearing edge belief, and refuses or
-    excludes every cross-type leg lacking validated resolution proof. K1 stays
+    excludes every cross-type leg lacking validated resolution proof. A sixth
+    exact-head review of f1a76d27 closed all prior identity/rider blockers and found
+    one remaining Recipe contradiction: its schema advertised exact/same-fact/
+    same-event as automatic despite the frozen no-automatic-effect law. The current
+    repair freezes the automatic relation set empty, classifies every v1 relation as
+    descriptive/manual-only, and proves relation labels do not suppress blocks or
+    denominator rows. K1 stays
     in_progress until a fresh exact-head review passes
     and Sol accepts. Current main's #6325 authenticated-MO double-dispatch receipt
     authenticates this Ref/Block/Recipe rider on the sole #6319 lane; it does not

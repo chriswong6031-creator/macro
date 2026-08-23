@@ -116,6 +116,18 @@ _RECIPE_RULE_EFFECTS = {
     "RIGHTS_BLOCKED": "refuse",
     "CONFLICTED_REQUIRED_BLOCK": "abstain",
 }
+_RECIPE_AUTOMATIC_RELATION_TYPES: tuple[str, ...] = ()
+_RECIPE_NONAUTOMATIC_RELATION_TYPES = (
+    "exact_duplicate",
+    "same_fact",
+    "same_event",
+    "corroborates",
+    "contradicts",
+    "shares_upstream",
+    "corrects",
+    "supersedes",
+    "projects",
+)
 _DEPENDENCE_RELATION_TO_GROUP = {
     "exact_duplicate": "exact_duplicate",
     "same_fact": "same_fact",
@@ -1652,6 +1664,20 @@ def recipe_semantic_violations(recipe: Mapping[str, Any]) -> tuple[str, ...]:
         expected_effect = _RECIPE_RULE_EFFECTS.get(str(rule.get("code")))
         if rule.get("effect") != expected_effect:
             violations.append(f"recipe_rule_effect_mismatch:{rule.get('code')}")
+    dedup_rules = recipe.get("dedup_dependence_rules")
+    if not isinstance(dedup_rules, Mapping):
+        violations.append("recipe_dedup_dependence_rules_invalid")
+    else:
+        if dedup_rules.get("automatic_relation_types") != list(
+            _RECIPE_AUTOMATIC_RELATION_TYPES
+        ):
+            violations.append("recipe_automatic_relation_types_not_empty_v1")
+        if dedup_rules.get("nonautomatic_relation_types") != list(
+            _RECIPE_NONAUTOMATIC_RELATION_TYPES
+        ):
+            violations.append("recipe_nonautomatic_relation_types_not_exact")
+        if dedup_rules.get("reference_count_implies_independence") is not False:
+            violations.append("recipe_reference_count_independence_forbidden")
     if recipe.get("authority") != ALL_FALSE_AUTHORITY:
         violations.append("recipe_authority_leak")
     return tuple(dict.fromkeys(violations))

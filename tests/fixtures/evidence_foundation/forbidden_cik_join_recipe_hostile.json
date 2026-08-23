@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.recipe.v1",
   "version": "1.0.0",
-  "recipe_id": "erp_e98b1e3a36c9e9686863923b06f1e5ed57591a4f666dadfcec3eaed9ce4574ba",
+  "recipe_id": "erp_489b3887921c5c97f4a55c816a503e3e8e5f9eca47c1d6e3862c36af3cfc5293",
   "recipe_name": "security_state.v1.evidence",
   "consumer": {
     "workstream": "WS:MARKET-OS",
@@ -145,12 +145,11 @@
     }
   ],
   "dedup_dependence_rules": {
-    "automatic_relation_types": [
+    "automatic_relation_types": [],
+    "nonautomatic_relation_types": [
       "exact_duplicate",
       "same_fact",
-      "same_event"
-    ],
-    "nonautomatic_relation_types": [
+      "same_event",
       "corroborates",
       "contradicts",
       "shares_upstream",

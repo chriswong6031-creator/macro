@@ -579,6 +579,81 @@ def test_recipe_rule_codes_and_effects_are_frozen_exactly() -> None:
         validate_recipe(changed)
 
 
+def test_recipe_v1_refuses_any_automatic_dedup_relation_after_rehash() -> None:
+    hostile = _json("aapl_security_state_recipe_valid.json")
+    hostile["dedup_dependence_rules"]["automatic_relation_types"] = [
+        "exact_duplicate"
+    ]
+    hostile["dedup_dependence_rules"]["nonautomatic_relation_types"] = [
+        relation
+        for relation in hostile["dedup_dependence_rules"][
+            "nonautomatic_relation_types"
+        ]
+        if relation != "exact_duplicate"
+    ]
+    hostile["recipe_id"] = compute_recipe_id(hostile)
+    assert (
+        "recipe_automatic_relation_types_not_empty_v1"
+        in combined_recipe_violations(hostile)
+    )
+    assert (
+        "recipe_nonautomatic_relation_types_not_exact"
+        in combined_recipe_violations(hostile)
+    )
+    with pytest.raises(
+        EvidenceFoundationError,
+        match="recipe_automatic_relation_types_not_empty_v1",
+    ):
+        validate_recipe(hostile)
+    with pytest.raises(
+        EvidenceFoundationError,
+        match="recipe_automatic_relation_types_not_empty_v1",
+    ):
+        compile_recipe(hostile, blocks=_golden_blocks(), references=_references())
+
+
+def test_descriptive_exact_duplicate_does_not_suppress_blocks_or_denominator() -> None:
+    references = _references()
+    original = _json("theme_graph_shared_upstream_valid.json")
+    duplicate = deepcopy(original)
+    duplicate["relations"][0]["type"] = "exact_duplicate"
+    duplicate["relations"][0]["automatic_effect"] = False
+    duplicate["relations"][0]["deterministic_key"] = None
+    duplicate["reference_id"] = compute_reference_id(duplicate)
+    assert validate_reference(duplicate) == duplicate
+    references.pop(original["reference_id"])
+    references[duplicate["reference_id"]] = duplicate
+
+    block = json.loads(
+        json.dumps(_json("shared_upstream_block_valid.json")).replace(
+            original["reference_id"], duplicate["reference_id"]
+        )
+    )
+    block["dependence"]["state"] = "mixed"
+    block["dependence"]["groups"][0]["kind"] = "exact_duplicate"
+    block["evidence_block_id"] = compute_block_id(block)
+    assert validate_block(block, references=references) == block
+
+    recipe = _single_required_recipe(
+        block,
+        subject_type="theme_node",
+        subject_key="co:us:AAPL",
+        output_field="opportunity.theme_context",
+    )
+    receipt = compile_recipe(recipe, blocks=[block], references=references)
+    assert receipt["block_ids"] == [block["evidence_block_id"]]
+    assert receipt["denominator"] == {
+        "total": 2,
+        "included": 2,
+        "excluded": 0,
+        "missing": 0,
+        "stale": 0,
+        "rights_blocked": 0,
+        "fallback": 0,
+        "identity_unresolved": 0,
+    }
+
+
 def test_present_required_rights_blocked_block_refuses() -> None:
     block = _json("rights_blocked_block_valid.json")
     recipe = _single_required_recipe(

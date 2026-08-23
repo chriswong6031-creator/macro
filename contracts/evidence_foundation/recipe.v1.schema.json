@@ -169,10 +169,12 @@
       ],
       "properties": {
         "automatic_relation_types": {
-          "const": ["exact_duplicate", "same_fact", "same_event"]
+          "description": "Exactly empty in v1: no relation label has automatic compiler effect without frozen typed owner-native lineage.",
+          "const": []
         },
         "nonautomatic_relation_types": {
-          "const": ["corroborates", "contradicts", "shares_upstream", "corrects", "supersedes", "projects"]
+          "description": "Closed descriptive/manual-only relation vocabulary; labels never suppress, net, rank, or promote blocks or denominator rows in v1.",
+          "const": ["exact_duplicate", "same_fact", "same_event", "corroborates", "contradicts", "shares_upstream", "corrects", "supersedes", "projects"]
         },
         "reference_count_implies_independence": {"const": false}
       }

@@ -46,8 +46,9 @@ changed:
     what: >
       Adds the closed ordered EvidenceRecipe contract: required/optional blocks,
       owner/class/cardinality constraints, exact identity joins, refusal and
-      degradation rules, dedup/dependence, output mappings, integrity laws, and
-      zero authority. Owner-payload copying is literal false.
+      degradation rules, descriptive/manual-only dedup/dependence with an exact
+      empty automatic-relation set, output mappings, integrity laws, and zero
+      authority. Owner-payload copying is literal false.
   - path: "lib/evidence_foundation.py"
     what: >
       Extends the combined fail-closed surface with deterministic block/recipe
@@ -58,7 +59,9 @@ changed:
       in-memory recipe compiler that executes exact canonical subject-value binding,
       treats join triples as declarations rather than proof, excludes optional
       identity-unresolved blocks, refuses required identity-unresolved blocks, and
-      persists nothing. Every public validator loads the validated repository
+      rejects any non-empty automatic-dedup recipe set without suppressing, netting,
+      ranking, or promoting blocks/denominators. It persists nothing. Every public
+      validator loads the validated repository
       vocabulary and exposes no caller-supplied vocabulary authority.
   - path: "tests/fixtures/evidence_foundation/"
     what: >
@@ -126,21 +129,25 @@ verified:
       WORKSPACE_SCHEMA, WORKSPACE_KEYS, event/generation identity grammars, native
       workspace identity, and its three registered clocks remain unchanged. The
       shared legacy-jobs path was integrated normally rather than waived as churn.
-      A final bounded fetch observed fbdf22a38d5cfd5f0d575236e59ddf7b7e8e728a;
-      its delta is confined to volatile marketing/metabolism/research-vault/
-      White House data and PR #6319 remains MERGEABLE/CLEAN, so anti-livelock law
-      leaves the tested candidate unchanged.
+      A final bounded fetch observed 6a1795192cc06c1ea8c9004a33b9e4bec62831c9.
+      Besides volatile/generated site, marketing, metabolism, research-vault, and
+      White House outputs, #6343 changes an adjacent Neural Web event-revision chain
+      walk and its regression. It does not change K1's registered Earnings parser,
+      workspace schema/identity/clocks, exact K1/CI/AgentOS paths, or Synapse law;
+      PR #6319 remains mergeable, so anti-livelock law leaves the tested candidate
+      unchanged.
   - claim: Reference and authenticated product contracts pass their focused tests.
     command: >
       python3 -m pytest -q
       tests/test_evidence_foundation_contract.py
       tests/test_evidence_foundation_product_contract.py
     result: >
-      The integrated combined suite passed 123 tests, including the Git-backed
+      The integrated combined suite passed 125 tests, including the Git-backed
       no-store inventory assertion, all hostile source-identity/coverage/replay
       mutations, attacker-vocabulary refusal, rehashed Block laundering and map-key
       substitution, exact Recipe outputs/rules, required rights/conflict effects,
-      and same-native valid-different QLedger/FIF/Theme Ref/Block/Recipe rejection.
+      same-native valid-different QLedger/FIF/Theme Ref/Block/Recipe rejection, and
+      non-empty automatic-dedup refusal with descriptive-relation no-op proof.
       The run emitted only three unrelated pytest temp-directory cleanup warnings.
   - claim: Current native owner regressions remain green after rider integration.
     command: >
@@ -171,7 +178,8 @@ verified:
       --pack-count 12 --validate-only
     result: >
       Contract delta reports 0 introduced and 0 inherited findings against
-      3abc5e99ef25; the later final-main movement is disjoint volatile data. All 202
+      bounded current main 6a1795192cc0 after the adjacent Earnings chain-reader
+      movement was source-inspected as non-contractual. All 202
       legacy jobs validate; pack 5 selects 18 jobs including
       signal-contract. The workflow edit is an explicit CI-authority addition and
       does not create a new job.
