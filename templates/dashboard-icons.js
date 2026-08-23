@@ -191,3 +191,15 @@
     start();
   }
 }());
+
+/* Canada Stock Dashboard V3.6 progressive composer. Strict no-op elsewhere. */
+(function () {
+  "use strict";
+  if (!/(^|\/)canada_stocks\.html$/.test(location.pathname)) return;
+  if (window.__mmCanadaStockV36Loader) return;
+  window.__mmCanadaStockV36Loader = true;
+  var script = document.createElement("script");
+  script.src = "canada-stock-v36.js?v=20260823";
+  script.async = false;
+  (document.head || document.documentElement).appendChild(script);
+}());
