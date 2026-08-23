@@ -35,6 +35,7 @@ waves:
   - id: W-LIQ.1
     title: Macro data census and state-quality-freshness producer
     status: done
+    pr: 6296
   - id: W-LIQ.2
     title: Mastermind reader and Market View shadow plane
     status: todo
