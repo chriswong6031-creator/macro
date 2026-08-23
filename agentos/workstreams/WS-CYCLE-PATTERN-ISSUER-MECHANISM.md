@@ -982,7 +982,7 @@ waves:
       revision eligibility/replay/contributor laws (Sol A5C directive,
       2026-08-23, items 1/3/4/5/6)
     status: awaiting_ci
-    pr: 6322
+    pr: [6322, 6343]
     depends_on: [A5B, A5C-alpha, A5C]
     next_action: >
       DRAFT PR #6322 open (branch claude/imce-a5c-source-vintage-main, off
@@ -1213,6 +1213,41 @@ waves:
       unchanged). Still a DRAFT PR — never marked ready, armed
       merge-on-green, or merged; the commissioning session owns
       integration/merge.
+      PRODUCTION INCIDENT + HEAL (2026-08-23, PR #6343, branch claude/imce-
+      a5c-discovery-bound, off fresh origin/main after #6322 merged as
+      8c0608652652): #6322's first production run (workflow_dispatch
+      32652474368) crawled each homebuilder's ENTIRE SEC recent block back
+      to 2010 — "not yet represented" alone admits all of history on first
+      deploy, Sol's "since the canonical prior generation" boundary was
+      never implemented — published ~170 backfilled historical events
+      (lawful, A5B-safe: all pre-activation, permanently ineligible) and
+      hit the job's 25-min timeout mid-step. Fix: discover_new_homebuilder_
+      revisions gained discovery_boundary (a row qualifies only if STRICTLY
+      NEWER than the issuer's newest already-represented source_available_
+      at, filtered on the raw row before any per-accession fetch, no
+      warning) and a first-publish bound (current+prior fiscal year,
+      mirrors the A5B builder's own candidate-lookback convention).
+      refresh()'s Phase 1 reordered (carry-forward before discover) so the
+      boundary costs zero extra GETs. Addendum (measured live): a chain
+      walk against the ~170-generation post-incident chain cost 153s for
+      ONE event; the A5B builder called it once per candidate (~8/night,
+      ~20 min against the render budget). Added ci_reader.
+      read_all_event_source_revisions (ONE shared walk harvesting every
+      requested event from one pass, O(hops) not O(events x hops));
+      read_event_source_revisions is now a thin wrapper over it; the
+      builder's run() now performs exactly one walk per run
+      (harvest_event_revisions), all 10 existing test stubs retargeted.
+      refresh_event_workspaces.py's own per-ticker walk is NOT additionally
+      batched across tickers — named judgment call (already near-zero cost
+      per ticker post-boundary-fix on a quiet night, unlike the builder's
+      unconditional every-candidate walk). Tests: boundary law (zero
+      per-accession fetches, proven mutant kill vs pre-fix TypeError),
+      forward-correction-unaffected, first-publish bound, refresh()-level
+      wiring integration test, shared-walk-equals-per-event-walks-at-half-
+      cost, builder-one-walk-per-run (proven mutant kill vs a reverted
+      per-candidate-loop). Seven-suite total 302 passed/2 skipped/0 failed;
+      contract-delta 0 introduced/0 inherited; agentos validate 0 errors.
+      DRAFT — never marked ready, armed, or merged.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's
