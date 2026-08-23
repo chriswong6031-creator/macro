@@ -138,50 +138,38 @@ def main(argv: list[str] | None = None) -> int:
     class TypedParser(argparse.ArgumentParser):
         def error(self, _message): raise PhaseFailure("INPUT_READ_FAILED")
     ap = TypedParser(add_help=False); ap.add_argument("input", nargs="?", default="-"); ap.add_argument("--output"); ap.add_argument("--format", choices=("json","human","github"), default="json"); ap.add_argument("--source-sha")
-    raw = None; observation = None; manifest = None; a = argparse.Namespace(output=None)
+    raw = None; observation = None; manifest = None; a = argparse.Namespace(output=None); src = None
     try:
         a = ap.parse_args(argv); src = source_sha(a.source_sha)
         raw = read_input(a.input)
-        if len(raw) > DEFAULT_LIMITS["observation_bytes"]: raise core.ValidationError("RESOURCE_LIMIT:observation_bytes")
+        if len(raw) > DEFAULT_LIMITS["observation_bytes"]:
+            raise core.ResourceLimitError("observation_bytes", DEFAULT_LIMITS["observation_bytes"], len(raw))
         observation = parse_input(raw)
         manifest = parse_input(read_manifest())
         report = evaluate(observation, manifest); payload = render(report, a.format)
         if payload != render(evaluate(observation, manifest), a.format): raise PhaseFailure("NONDETERMINISTIC_RESULT")
         status = 0
     except core.ValidationError as exc:
-        reason = str(exc).split(":", 1)[0]; src = source_sha(None)
+        reason = str(exc).split(":", 1)[0]
+        # Never discard a validated explicit source SHA just because evaluation
+        # later fails.  Invocation/argument failures have no explicit source and
+        # use the bounded fallback exactly once.
+        if src is None:
+            src = source_sha(None)
         if reason not in ROUTES: reason = "EVALUATOR_INTERNAL_ERROR"
         limit = observed = None
         if reason == "RESOURCE_LIMIT":
-            key = str(exc).split(":", 1)[1] if ":" in str(exc) else None
-            limit = DEFAULT_LIMITS.get(key)
-            observed = len(raw) if raw is not None and key == "observation_bytes" else None
-            if isinstance(manifest, dict):
-                limit = manifest.get("limits", {}).get(key, limit)
-            if key == "relationships" and isinstance(observation, dict):
-                observed = len(observation.get("native_linkage", {}).get("relationships", []))
-            if key == "changed_paths" and isinstance(observation, dict):
-                observed = len(observation.get("changed_paths", {}).get("paths", []))
-            if key == "body_bytes" and isinstance(observation, dict):
-                observed = len(str(observation.get("pull_request", {}).get("body", "")).encode("utf-8"))
-            if key == "body_lines" and isinstance(observation, dict):
-                observed = len(str(observation.get("pull_request", {}).get("body", "")).split("\n"))
-            if key == "line_bytes" and isinstance(observation, dict):
-                observed = max((len(x.encode("utf-8")) for x in str(observation.get("pull_request", {}).get("body", "")).split("\n")), default=0)
-            if key == "field_occurrences" and isinstance(observation, dict):
-                body = str(observation.get("pull_request", {}).get("body", ""))
-                observed = max((len(re.findall(rf"(?m)^(?:{re.escape(field)}):", body)) for field in core.FIELDS), default=0)
-            if key == "value_bytes" and isinstance(observation, dict):
-                values = re.findall(r"(?m)^(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion): (.*)$", str(observation.get("pull_request", {}).get("body", "")))
-                observed = max((len(value.encode("utf-8")) for value in values), default=0)
-            if key == "findings":
-                # The evaluator only raises after it has constructed the report;
-                # a configured cap is still truthful even where an injected seam
-                # cannot expose the discarded list.
-                observed = DEFAULT_LIMITS["findings"] + 1
+            if isinstance(exc, core.ResourceLimitError):
+                limit, observed = exc.limit, exc.observed
+            else:
+                # An injected legacy seam did not provide a measurement.  Keep
+                # the typed route but make absence explicit rather than guessing.
+                limit = observed = None
         payload = core.canonical_json(envelope(reason, raw, src, limit=limit, observed=observed)); status = ROUTES[reason][2]
     except PhaseFailure as exc:
-        payload = core.canonical_json(envelope(exc.reason, raw, source_sha(None))); status = ROUTES[exc.reason][2]
+        if src is None:
+            src = source_sha(None)
+        payload = core.canonical_json(envelope(exc.reason, raw, src)); status = ROUTES[exc.reason][2]
     if a.output:
         try:
             write_atomic(pathlib.Path(a.output), payload)

@@ -83,6 +83,28 @@ def test_source_sha_fallback_is_bounded_validated_and_nullable(monkeypatch):
     assert cli.source_sha(None) is None
 
 
+def test_valid_explicit_source_sha_survives_later_typed_failure(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "read_input", lambda _: b"{}")
+    monkeypatch.setattr(cli, "parse_input", lambda _: (_ for _ in ()).throw(core.ValidationError("TYPE_MISMATCH")))
+    explicit = "c" * 40
+    assert_route(capsys, cli.main(["x", "--source-sha", explicit]), "TYPE_MISMATCH")
+    _, err = capsys.readouterr()
+    # assert_route consumed the stream; exercise a second time for receipt bytes.
+    assert cli.main(["x", "--source-sha", explicit]) == 2
+    _, err = capsys.readouterr()
+    assert json.loads(err)["receipt"]["source_sha"] == explicit
+
+
+def test_resource_limit_uses_phase_measurement_not_raw_reconstruction(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "read_input", lambda _: b"{}")
+    monkeypatch.setattr(cli, "parse_input", lambda _: (_ for _ in ()).throw(core.ResourceLimitError("relationships", 256, 257)))
+    assert cli.main(["x"]) == 2
+    _, err = capsys.readouterr()
+    payload = json.loads(err)
+    assert payload["error"]["reason_code"] == "RESOURCE_LIMIT"
+    assert (payload["error"]["limit"], payload["error"]["observed"]) == (256, 257)
+
+
 def test_manifest_and_invocation_failures_are_typed(monkeypatch, capsys):
     assert_route(capsys, cli.main(["--unknown"]), "INPUT_READ_FAILED")
     monkeypatch.setattr(cli, "read_input", lambda _: core.canonical_json(observation(VALID)))

@@ -41,6 +41,19 @@ class ValidationError(ValueError):
     """Input violates the closed V1 observation contract."""
 
 
+class ResourceLimitError(ValidationError):
+    """A limit failure carries its measurement from the phase that observed it.
+
+    The CLI intentionally does not reconstruct measurements from untrusted raw
+    JSON after a failure: doing so can report a different quantity than the
+    parser/evaluator actually bounded.
+    """
+
+    def __init__(self, key: str, limit: int, observed: int):
+        self.key, self.limit, self.observed = key, limit, observed
+        super().__init__(f"RESOURCE_LIMIT:{key}")
+
+
 def canonical_json(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
                       allow_nan=False).encode("utf-8")
@@ -109,7 +122,14 @@ def _mas_key(value: str) -> tuple[int, str]:
     return (int(match.group(1)), value) if match else (10**10, value)
 
 
-def _visible_lines(body: str) -> tuple[list[tuple[int, str]], list[str]]:
+def _repo_path(value: Any) -> bool:
+    """One lexical grammar for both current and old changed-path identities."""
+    return (isinstance(value, str) and bool(value) and value.isascii()
+            and not value.startswith("/") and "\\" not in value
+            and all(part not in {"", ".", ".."} for part in value.split("/")))
+
+
+def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, str]], list[str]]:
     """Return visible lines plus deterministic parse defects, Markdown-aware enough for V1."""
     defects: list[str] = []
     forbidden = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u200b-\u200f\u202a-\u202e\u2060-\u206f]")
@@ -117,10 +137,11 @@ def _visible_lines(body: str) -> tuple[list[tuple[int, str]], list[str]]:
         raise ValidationError("INVALID_BODY_ENCODING")
     body = body.replace("\r\n", "\n")
     lines = body.split("\n")
-    if len(lines) > 10000:
-        raise ValidationError("RESOURCE_LIMIT:body_lines")
-    if any(len(line.encode("utf-8")) > 16384 for line in lines):
-        raise ValidationError("RESOURCE_LIMIT:line_bytes")
+    if len(lines) > limits["body_lines"]:
+        raise ResourceLimitError("body_lines", limits["body_lines"], len(lines))
+    max_line = max((len(line.encode("utf-8")) for line in lines), default=0)
+    if max_line > limits["line_bytes"]:
+        raise ResourceLimitError("line_bytes", limits["line_bytes"], max_line)
     visible: list[tuple[int, str]] = []
     fence: tuple[str, int] | None = None
     comment = False
@@ -157,7 +178,7 @@ def _visible_lines(body: str) -> tuple[list[tuple[int, str]], list[str]]:
             quote_pending = True
             continue
         if quote_pending and line:
-            defects.append("LAZY_BLOCKQUOTE_CONTINUATION")
+            defects.append(f"PREAMBLE@{n}:LAZY_BLOCKQUOTE_CONTINUATION")
             quote_pending = False
         if not line:
             quote_pending = False
@@ -171,8 +192,8 @@ def _visible_lines(body: str) -> tuple[list[tuple[int, str]], list[str]]:
 
 def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | None], dict[str, list[int]], list[tuple[str, int]], list[str], list[tuple[str, str, int]]]:
     if len(body.encode("utf-8")) > limits["body_bytes"]:
-        raise ValidationError("RESOURCE_LIMIT:body_bytes")
-    visible, defects = _visible_lines(body)
+        raise ResourceLimitError("body_bytes", limits["body_bytes"], len(body.encode("utf-8")))
+    visible, defects = _visible_lines(body, limits)
     zone: list[tuple[int, str]] = []
     for n, line in visible:
         if re.match(r" {0,3}##(?:[ \t]|$)", line):
@@ -185,14 +206,15 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
         if match:
             occ[match.group(1)].append((n, line))
             if len(occ[match.group(1)]) > limits["field_occurrences"]:
-                raise ValidationError("RESOURCE_LIMIT:field_occurrences")
+                raise ResourceLimitError("field_occurrences", limits["field_occurrences"], len(occ[match.group(1)]))
     headers: list[tuple[int, str, str]] = []
     for n, line in zone:
         match = re.fullmatch(r"(Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion): (.*)", line)
         if match:
             headers.append((n, match.group(1), match.group(2)))
         elif line and not re.fullmatch(r"(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|complete|completes|completed|implement|implements|implemented|ref|refs|reference|references|part of|contributes to|toward|towards|relates to|related to|skip|ignore) MAS-[1-9][0-9]{0,8}(?: *, *MAS-[1-9][0-9]{0,8}| +and +MAS-[1-9][0-9]{0,8})*\.?", line, re.I | re.ASCII):
-            defects.append("NONPERMITTED_PREAMBLE")
+            kind = "RELATIONSHIP" if re.match(r"(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|complete|completes|completed|implement|implements|implemented|ref|refs|reference|references|part of|contributes to|toward|towards|relates to|related to|skip|ignore)\b", line, re.I | re.ASCII) else "PREAMBLE"
+            defects.append(f"{kind}@{n}:NONPERMITTED_PREAMBLE")
     block = None
     for i in range(max(0, len(headers) - 5)):
         candidate = headers[i:i + 6]
@@ -206,7 +228,7 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
             if len(val) >= 2 and val.startswith("`") and val.endswith("`") and val.count("`") == 2:
                 val = val[1:-1]
             if len(val.encode("utf-8")) > limits["value_bytes"]:
-                raise ValidationError("RESOURCE_LIMIT:value_bytes")
+                raise ResourceLimitError("value_bytes", limits["value_bytes"], len(val.encode("utf-8")))
             values[field], locs[field] = val, [n]
     else:
         defects.append("NO_CONTIGUOUS_BLOCK")
@@ -227,7 +249,7 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
                 relationships.append((issue, kind, n))
     relationships = sorted(set(relationships))
     if len(relationships) > limits["relationships"]:
-        raise ValidationError("RESOURCE_LIMIT:relationships")
+        raise ResourceLimitError("relationships", limits["relationships"], len(relationships))
     return values, locs, headers, defects, relationships
 
 
@@ -322,16 +344,20 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     if not isinstance(observation.get("repository"), dict) or set(observation["repository"]) != {"name"} or not isinstance(observation["repository"]["name"], str) or not atom_re.fullmatch(observation["repository"]["name"]):
         raise ValidationError("TYPE_MISMATCH")
     pr = observation.get("pull_request")
-    if not isinstance(pr, dict) or set(pr) != {"number","title","body","branch","base_ref","head_ref"} or not isinstance(pr.get("number"), int) or pr["number"] < 1 or not all(isinstance(pr.get(k), str) for k in ("title","body")) or not all(isinstance(pr.get(k), str) and pr[k] and pr[k].isascii() for k in ("branch","base_ref","head_ref")):
+    if not isinstance(pr, dict) or set(pr) != {"number","title","body","branch","base_ref","head_ref"} or not isinstance(pr.get("number"), int) or pr["number"] < 1 or not all(isinstance(pr.get(k), str) for k in ("title","body")) or not all(isinstance(pr.get(k), str) and pr[k] and pr[k].isascii() and pr[k].isprintable() and not any(c.isspace() for c in pr[k]) for k in ("branch","base_ref","head_ref")):
         raise ValidationError("TYPE_MISMATCH")
     if not isinstance(observation.get("ruleset_digest"), str) or not digest_re.fullmatch(observation["ruleset_digest"]): raise ValidationError("TYPE_MISMATCH")
     for name in ("authoring_epoch","changed_paths","agentos","linear","path_ownership","native_linkage"):
         snap = observation[name]
         if not isinstance(snap, dict) or snap.get("state") not in STATE or not isinstance(snap.get("diagnostics"), list) or any(not isinstance(x, str) for x in snap.get("diagnostics", [])) or snap["diagnostics"] != sorted(set(snap["diagnostics"])):
             raise ValidationError("INVALID_SNAPSHOT_STATE")
+        # A complete/applicability claim cannot carry unexplained diagnostics;
+        # a degraded/contradictory claim must say what made it non-complete.
+        if (snap["state"] in {"PRESENT", "NOT_APPLICABLE"} and snap["diagnostics"]) or (snap["state"] in {"PARTIAL", "UNAVAILABLE", "CONTRADICTORY"} and not snap["diagnostics"]):
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
     epoch = observation["authoring_epoch"]
     epoch_keys = {"state","relation","default_ref","cutover_merge_sha","template_blobs","first_strict_pr_number","legacy_open_pr_numbers","receipt_ruleset_digest","cutover_receipt_sha256","diagnostics"}
-    if set(epoch) != epoch_keys or epoch.get("relation") not in {"PRE_CUTOVER","AT_OR_POST_CUTOVER","UNKNOWN"}:
+    if set(epoch) != epoch_keys or epoch.get("state") == "NOT_APPLICABLE" or epoch.get("relation") not in {"PRE_CUTOVER","AT_OR_POST_CUTOVER","UNKNOWN"}:
         raise ValidationError("INVALID_SNAPSHOT_STATE")
     if epoch["state"] == "PRESENT" and (epoch["relation"] == "UNKNOWN" or epoch.get("receipt_ruleset_digest") != observation["ruleset_digest"]):
         raise ValidationError("EPOCH_RECEIPT_RULESET_MISMATCH")
@@ -353,33 +379,47 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
         if snap["state"] in {"UNAVAILABLE", "NOT_APPLICABLE"} and snap[payload]:
             raise ValidationError("INVALID_SNAPSHOT_STATE")
     if len(observation["changed_paths"]["paths"]) > manifest["limits"]["changed_paths"]:
-        raise ValidationError("RESOURCE_LIMIT:changed_paths")
+        raise ResourceLimitError("changed_paths", manifest["limits"]["changed_paths"], len(observation["changed_paths"]["paths"]))
     for name, base in (("agentos", "BASE"), ("path_ownership", "BASE_POLICY")):
         if observation[name].get("basis") != base: raise ValidationError("INVALID_SNAPSHOT_STATE")
     cp = observation["changed_paths"]["paths"]
     for row in cp:
-        if not isinstance(row, dict) or set(row) != {"path","change_type","old_path"} or not isinstance(row.get("path"), str) or not row["path"] or row["path"].startswith("/") or "\\" in row["path"] or any(part in {"", ".", ".."} for part in row["path"].split("/")) or row.get("change_type") not in {"ADDED","MODIFIED","DELETED","RENAMED"} or (row["change_type"] == "RENAMED") != isinstance(row.get("old_path"), str):
+        if not isinstance(row, dict) or set(row) != {"path","change_type","old_path"} or not _repo_path(row.get("path")) or row.get("change_type") not in {"ADDED","MODIFIED","DELETED","RENAMED"} or (row["change_type"] == "RENAMED") != isinstance(row.get("old_path"), str) or (row["change_type"] == "RENAMED" and (not _repo_path(row["old_path"]) or row["old_path"] == row["path"])):
             raise ValidationError("INVALID_SNAPSHOT_STATE")
     if cp != sorted(cp, key=lambda r:(r.get("path", ""), r.get("change_type", ""), r.get("old_path") or "")) or len({(r.get("path"),r.get("change_type"),r.get("old_path")) for r in cp}) != len(cp): raise ValidationError("INVALID_SNAPSHOT_STATE")
-    for row in observation["agentos"].get("workstreams", []):
+    if len({r["path"] for r in cp}) != len(cp) or {r["old_path"] for r in cp if r["old_path"]} & {r["path"] for r in cp}:
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
+    workstreams = observation["agentos"].get("workstreams", [])
+    for row in workstreams:
         if not isinstance(row, dict) or set(row) != {"key","waves"} or not isinstance(row.get("key"),str) or not re.fullmatch(r"WS:[A-Z0-9]+(?:-[A-Z0-9]+)*", row["key"]) or not isinstance(row.get("waves"),list) or row["waves"] != sorted(set(row["waves"])) or any(not isinstance(x,str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}",x) for x in row["waves"]):
             raise ValidationError("INVALID_SNAPSHOT_STATE")
+    if workstreams != sorted(workstreams, key=lambda r:r["key"]) or len({row["key"] for row in workstreams}) != len(workstreams):
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
     issues = observation["linear"].get("issues", [])
     for row in issues:
         if not isinstance(row, dict) or set(row) != {"id","target_role","project_id","workstream_key","issue_type","stop_law"} or not isinstance(row.get("id"),str) or not re.fullmatch(r"MAS-[1-9][0-9]{0,8}",row["id"]) or row.get("target_role") not in {"DECLARED","SECONDARY","PARENT","PROOF_GATE","ACCEPTANCE_GATE","UNKNOWN"} or row.get("project_id") is not None and not isinstance(row["project_id"],str) or row.get("workstream_key") is not None and (not isinstance(row["workstream_key"],str) or not re.fullmatch(r"WS:[A-Z0-9]+(?:-[A-Z0-9]+)*",row["workstream_key"])) or not isinstance(row.get("issue_type"),str) or not isinstance(row.get("stop_law"),str):
             raise ValidationError("INVALID_SNAPSHOT_STATE")
     if issues != sorted(issues, key=lambda r:(_mas_key(r["id"]),r["target_role"],r["issue_type"],r["stop_law"])) or len({canonical_json(r) for r in issues}) != len(issues): raise ValidationError("INVALID_SNAPSHOT_STATE")
+    if len({(row["id"], row["target_role"]) for row in issues}) != len(issues):
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
     resolutions = observation["path_ownership"].get("resolutions", [])
     for row in resolutions:
-        if not isinstance(row,dict) or set(row) != {"path","role","resolution","owner_workstream","path_class","allowed_authorities"} or not isinstance(row.get("path"),str) or not row["path"] or row.get("role") not in {"CURRENT","OLD_RENAME_SOURCE"} or row.get("resolution") not in {"EXACT","UNOWNED","AMBIGUOUS"} or row.get("owner_workstream") is not None and not isinstance(row["owner_workstream"],str) or not isinstance(row.get("path_class"),str) or not isinstance(row.get("allowed_authorities"),list) or row["allowed_authorities"] != sorted(set(row["allowed_authorities"])) or any(x not in ENUMS["Authority"] for x in row["allowed_authorities"]):
+        if not isinstance(row,dict) or set(row) != {"path","role","resolution","owner_workstream","path_class","allowed_authorities"} or not _repo_path(row.get("path")) or row.get("role") not in {"CURRENT","OLD_RENAME_SOURCE"} or row.get("resolution") not in {"EXACT","UNOWNED","AMBIGUOUS"} or row.get("owner_workstream") is not None and (not isinstance(row["owner_workstream"],str) or row["owner_workstream"] != "NONE" and not re.fullmatch(r"WS:[A-Z0-9]+(?:-[A-Z0-9]+)*", row["owner_workstream"])) or row.get("path_class") not in {"IMPLEMENTATION","RECORDS","UNKNOWN"} or not isinstance(row.get("allowed_authorities"),list) or row["allowed_authorities"] != sorted(set(row["allowed_authorities"])) or any(x not in ENUMS["Authority"] for x in row["allowed_authorities"]) or (row["resolution"] != "EXACT" and (row["owner_workstream"] != "NONE" or row["allowed_authorities"])):
             raise ValidationError("INVALID_SNAPSHOT_STATE")
     if resolutions != sorted(resolutions, key=lambda r: (r.get("path", ""), r.get("path_class", ""), r.get("owner_workstream", ""), r.get("resolution", ""))) or len({canonical_json(row) for row in resolutions}) != len(resolutions):
         raise ValidationError("INVALID_SNAPSHOT_STATE")
+    if observation["changed_paths"]["state"] == "PRESENT" and observation["path_ownership"]["state"] == "PRESENT":
+        current = {r["path"] for r in resolutions if r["role"] == "CURRENT"}
+        old_sources = {r["path"] for r in resolutions if r["role"] == "OLD_RENAME_SOURCE"}
+        required_current = {r["path"] for r in cp}
+        required_old = {r["old_path"] for r in cp if r["change_type"] == "RENAMED"}
+        if current != required_current or old_sources != required_old:
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
     native = observation["native_linkage"]
     if not isinstance(native.get("pagination_complete"), bool) or (native["state"] == "PRESENT" and native["pagination_complete"] is not True) or (native["state"] in {"UNAVAILABLE","NOT_APPLICABLE"} and native["pagination_complete"] is not False):
         raise ValidationError("INVALID_SNAPSHOT_STATE")
     if len(native.get("relationships", [])) > manifest["limits"]["relationships"]:
-        raise ValidationError("RESOURCE_LIMIT:relationships")
+        raise ResourceLimitError("relationships", manifest["limits"]["relationships"], len(native["relationships"]))
     legal = manifest["native_reduction"]["legal_rows"]
     for row in native["relationships"]:
         if not isinstance(row, dict) or set(row) != {"issue_id","kind","source","state","completion_transition"}:
@@ -463,7 +503,14 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         if len(locs[f]) > 1:
             duplicate_values = [value for n, field, value in _ if field == f and n in locs[f]]
             findings.append(_finding(rules, "R002", {"field":f,"locations":[f"BODY:L{x}:{f}" for x in locs[f]],"values":sorted((canonical_digest(x) for x in duplicate_values), key=canonical_json)}, field=f, line=locs[f][1]))
-    if defects: add("R003", {"location":"DECLARATION:BLOCK","reason":sorted(set(defects))[0]})
+    if defects:
+        defect = sorted(set(defects))[0]
+        match = re.fullmatch(r"RELATIONSHIP@([1-9][0-9]*):(.+)", defect)
+        if match:
+            location = f"BODY:L{match.group(1)}:RELATIONSHIP"
+            findings.append(_finding(rules, "R003", {"location":location,"reason":match.group(2)}, field="RELATIONSHIP", line=int(match.group(1))))
+        else:
+            findings.append(_finding(rules, "R003", {"location":"DECLARATION:BLOCK","reason":defect.split(":", 1)[-1]}))
     normalized = dict(values)
     epoch = observation["authoring_epoch"]
     for f in FIELDS:
@@ -500,7 +547,7 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     # value but remains visibly legacy; it can never masquerade as a V1 author.
     identity_legal = bool(ws and re.fullmatch(r"(?:NONE|WS:[A-Z0-9]+(?:-[A-Z0-9]+)*)", ws) and linear and re.fullmatch(r"(?:NONE|MAS-[1-9][0-9]{0,8})", linear) and wave and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", wave))
     author_state = "LEGACY" if any(value in ALIASES_BY_FIELD.get(field, {}) for field, value in values.items() if isinstance(value, str)) else ("CANONICAL" if canonical and identity_legal else ("MISSING" if missing else "INVALID"))
-    classification = manifest["classification"]["mode_to_class"].get(mode, manifest["classification"]["legacy_class"] if author_state == "LEGACY" else "UNKNOWN")
+    classification = manifest["classification"]["legacy_class"] if author_state == "LEGACY" else (manifest["classification"]["mode_to_class"].get(mode, "UNKNOWN") if author_state == "CANONICAL" else "UNKNOWN")
     if canonical and linear == "NONE": add("R029", {"linear":"NONE","portfolio_mode":mode})
     agentos, lsnap, paths, ownership, native = (observation[x] for x in ("agentos","linear","changed_paths","path_ownership","native_linkage"))
     if (mode in {"tracked","creates_workstream"} or (mode == "architecture_candidate" and ws not in {None,"NONE"})) and agentos["state"] != "PRESENT": add("R033", {"snapshot_state":agentos["state"],"workstream":ws or "NONE"})
@@ -666,7 +713,7 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         k=canonical_json(f)
         if k not in seen: kept.append(f); seen.add(k)
     if len(kept) > manifest["limits"]["findings"]:
-        raise ValidationError("RESOURCE_LIMIT:findings")
+        raise ResourceLimitError("findings", manifest["limits"]["findings"], len(findings))
     verdict = "REFUSE_METADATA" if any(f["severity"]=="ERROR" for f in kept) else ("PARTIAL" if any(f["severity"]=="PARTIAL" for f in kept) else ("WARN" if kept else "CONFORMANT"))
     completeness = "UNAVAILABLE" if author_state == "MISSING" else ("DEGRADED" if unresolved or any(f["severity"]=="PARTIAL" for f in kept) else "COMPLETE")
     completion_rows.sort(key=lambda r:(r["issue_id"],r["effect"],r["declared_completion"] or "",r["stop_law"] or "",r["consistency"]))

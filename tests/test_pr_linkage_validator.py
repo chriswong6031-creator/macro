@@ -21,7 +21,7 @@ def observation(body: str, *, epoch="AT_OR_POST_CUTOVER", native_state="PRESENT"
       "changed_paths":present("paths",[]),"agentos":{"state":"PRESENT","basis":"BASE","workstreams":[{"key":"WS:AGENT-OS","waves":["MAS28-W1"]}],"diagnostics":[]},
       "linear":{"state":"PRESENT","issues":[{"id":"MAS-28","target_role":"DECLARED","project_id":None,"workstream_key":"WS:AGENT-OS","issue_type":"DELIVERY","stop_law":"BUILT_NOT_PROVEN"}],"diagnostics":[]},
       "path_ownership":{"state":"PRESENT","basis":"BASE_POLICY","resolutions":[],"diagnostics":[]},
-      "native_linkage":{"state":native_state,"pagination_complete":native_state=="PRESENT","relationships":[],"diagnostics":[]},
+      "native_linkage":{"state":native_state,"pagination_complete":native_state=="PRESENT","relationships":[],"diagnostics":[] if native_state == "PRESENT" else ["INCOMPLETE_CAPTURE"]},
       "receipt":{"repository":"owner/repository","pr_number":123,"base_sha":"d"*40,"head_sha":"e"*40,"source_sha":"f"*40,"body_sha256":hashlib.sha256(body.encode()).hexdigest(),"observation_sha256":"0"*64,"cutover_receipt_sha256":"c"*64,"ruleset_digest":d,"snapshot_digests":{},"producer":"test"}}
     return validator.finalize_receipt(raw, MANIFEST)
 

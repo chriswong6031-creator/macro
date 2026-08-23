@@ -32,6 +32,7 @@ def test_creates_workstream_uses_filename_not_colon_key():
     o["linear"]["issues"] = [{"id":"MAS-99","target_role":"DECLARED","project_id":None,"workstream_key":None,"issue_type":"ROOT_RECOVERY","stop_law":"RECORDS_ONLY"}]
     o["agentos"]["workstreams"] = []
     o["changed_paths"]["paths"] = [{"path":"agentos/workstreams/WS-NEW.md","change_type":"ADDED","old_path":None}]
+    o["path_ownership"]["resolutions"] = [{"path":"agentos/workstreams/WS-NEW.md","role":"CURRENT","resolution":"EXACT","owner_workstream":"WS:NEW","path_class":"RECORDS","allowed_authorities":["records"]}]
     assert "R037" not in ids(finish(o))
 
 
@@ -70,6 +71,12 @@ def test_parser_fence_html_tab_and_inline_code_repros():
     assert "R003" in ids(observation(mixed))
     unclosed = "```\n" + VALID + "\n``` trailing"
     assert "R003" in ids(observation(unclosed))
+
+
+def test_malformed_relationship_spacing_has_line_addressable_r003():
+    finding = next(x for x in v.analyze(observation(VALID + "\nFixes  MAS-28"), MANIFEST)["semantic"]["findings"] if x["rule_id"] == "R003")
+    assert finding["location"] == "BODY:L7:RELATIONSHIP"
+    assert finding["evidence"]["location"] == "BODY:L7:RELATIONSHIP"
 
 
 def test_report_receipt_is_deep_copied_and_r054_is_one_aggregate():
@@ -141,7 +148,7 @@ def test_reviewer_reducers_r027_r044_r052_native_source_and_numeric_order():
     p["linear"]["issues"][0]["issue_type"] = "MAINTENANCE"; p["path_ownership"].update(state="PARTIAL", diagnostics=["STALE"], resolutions=[{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["maintenance"]}])
     assert {"R042","R044"} <= ids(finish(p))
     # Records-only cannot suppress a closing claim through an empty/non-record path set.
-    q = clone(observation(VALID)); mode(q, authority="records", completion="records-only"); q["linear"]["issues"][0]["stop_law"]="RECORDS_ONLY"; q["pull_request"]["body"] += "\nFixes MAS-28\nFixes MAS-28"; q["path_ownership"]["resolutions"]=[{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["records"]}]
+    q = clone(observation(VALID)); mode(q, authority="records", completion="records-only"); q["linear"]["issues"][0]["stop_law"]="RECORDS_ONLY"; q["pull_request"]["body"] += "\nFixes MAS-28\nFixes MAS-28"; q["changed_paths"]["paths"]=[{"path":"x","change_type":"ADDED","old_path":None}]; q["path_ownership"]["resolutions"]=[{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["records"]}]
     row = next(x for x in v.analyze(finish(q), MANIFEST)["semantic"]["findings"] if x["rule_id"] == "R052")
     assert len(row["evidence"]["relationships"]) == 1 and row["location"] == "BODY:L7:RELATIONSHIP"
     # Native rows must use numeric MAS order and preserve their source rather than adapterizing it.
@@ -163,6 +170,17 @@ def test_reviewer_state_rows_epoch_and_resource_caps_fail_closed():
     body = "\n".join(["Workstream: WS:AGENT-OS"] * 101)
     with pytest.raises(v.ValidationError, match="RESOURCE_LIMIT:field_occurrences"): v.parse_header(body, MANIFEST["limits"])
     with pytest.raises(v.ValidationError, match="RESOURCE_LIMIT:body_lines"): v.parse_header("\n" * 10001, MANIFEST["limits"])
+
+
+def test_snapshot_state_path_and_semantic_key_laws_fail_closed():
+    o = clone(observation(VALID)); o["linear"]["diagnostics"] = ["SHOULD_NOT_EXIST"]
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"): v.analyze(finish(o), MANIFEST)
+    o = clone(observation(VALID)); o["changed_paths"]["paths"] = [{"path":"new/a","change_type":"RENAMED","old_path":"../old/a"}]
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"): v.analyze(finish(o), MANIFEST)
+    o = clone(observation(VALID)); o["linear"]["issues"].append(dict(o["linear"]["issues"][0], issue_type="ARCHITECTURE"))
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"): v.analyze(finish(o), MANIFEST)
+    o = clone(observation(VALID)); o["changed_paths"]["paths"] = [{"path":"x","change_type":"ADDED","old_path":None}]
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"): v.analyze(finish(o), MANIFEST)
 
 
 def test_hostile_repro_measurement(capsys):

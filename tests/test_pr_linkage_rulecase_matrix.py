@@ -57,15 +57,23 @@ def case(rule):
     elif rule == "R036": o["linear"]["issues"][0]["workstream_key"] = "WS:OTHER"
     elif rule in {"R037","R038","R046"}:
         mode(o, workstream="WS:NEW", linear="MAS-99", portfolio="creates_workstream", authority="records", completion="records-only"); o["linear"]["issues"] = [{"id":"MAS-99","target_role":"DECLARED","project_id":None,"workstream_key":None,"issue_type":"ROOT_RECOVERY","stop_law":"RECORDS_ONLY"}]; o["agentos"]["workstreams"] = ([{"key":"WS:NEW","waves":[]}] if rule == "R038" else [])
-        if rule == "R046": o["path_ownership"]["resolutions"] = [{"path":"app/x.py","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["records"]}]
+        if rule == "R046":
+            o["changed_paths"]["paths"] = [{"path":"app/x.py","change_type":"ADDED","old_path":None}]
+            o["path_ownership"]["resolutions"] = [{"path":"app/x.py","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["records"]}]
     elif rule == "R039": o["pull_request"]["title"] = "MAS-99"; o["linear"]["issues"].append({"id":"MAS-99","target_role":"DECLARED","project_id":None,"workstream_key":None,"issue_type":"DELIVERY","stop_law":"MERGE"})
     elif rule == "R040": mode(o, authority="records")
-    elif rule == "R041": o["path_ownership"]["resolutions"] = [{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"RECORDS","allowed_authorities":["records"]}]
+    elif rule == "R041":
+        o["changed_paths"]["paths"] = [{"path":"x","change_type":"ADDED","old_path":None}]
+        o["path_ownership"]["resolutions"] = [{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"RECORDS","allowed_authorities":["records"]}]
     elif rule == "R042": o["path_ownership"]["state"] = "PARTIAL"; o["path_ownership"]["diagnostics"] = ["STALE"]
     elif rule == "R043": o["changed_paths"]["state"] = "PARTIAL"; o["changed_paths"]["diagnostics"] = ["STALE"]
-    elif rule == "R044": mode(o, workstream="NONE", portfolio="maintenance_exception", authority="maintenance"); o["linear"]["issues"][0]["issue_type"] = "MAINTENANCE"; o["path_ownership"]["resolutions"] = [{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["maintenance"]}]
-    elif rule == "R045": mode(o, portfolio="architecture_candidate", authority="records", completion="records-only"); o["linear"]["issues"][0]["issue_type"] = "ARCHITECTURE"; o["path_ownership"]["resolutions"] = [{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["records"]}]
-    elif rule == "R047": o["path_ownership"]["resolutions"] = [{"path":"x","role":"CURRENT","resolution":"UNOWNED","owner_workstream":"NONE","path_class":"UNKNOWN","allowed_authorities":[]}]
+    elif rule == "R044":
+        mode(o, workstream="NONE", portfolio="maintenance_exception", authority="maintenance"); o["linear"]["issues"][0]["issue_type"] = "MAINTENANCE"; o["changed_paths"]["paths"] = [{"path":"x","change_type":"ADDED","old_path":None}]; o["path_ownership"]["resolutions"] = [{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["maintenance"]}]
+    elif rule == "R045":
+        mode(o, portfolio="architecture_candidate", authority="records", completion="records-only"); o["linear"]["issues"][0]["issue_type"] = "ARCHITECTURE"; o["changed_paths"]["paths"] = [{"path":"x","change_type":"ADDED","old_path":None}]; o["path_ownership"]["resolutions"] = [{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["records"]}]
+    elif rule == "R047":
+        o["changed_paths"]["paths"] = [{"path":"x","change_type":"ADDED","old_path":None}]
+        o["path_ownership"]["resolutions"] = [{"path":"x","role":"CURRENT","resolution":"UNOWNED","owner_workstream":"NONE","path_class":"UNKNOWN","allowed_authorities":[]}]
     elif rule == "R050": o["pull_request"]["branch"] = "mas-99"; o["linear"]["issues"].append({"id":"MAS-99","target_role":"DECLARED","project_id":None,"workstream_key":None,"issue_type":"DELIVERY","stop_law":"MERGE"})
     elif rule == "R051": o["pull_request"]["title"] = "MAS-99"; o["linear"]["issues"].append({"id":"MAS-99","target_role":"DECLARED","project_id":None,"workstream_key":None,"issue_type":"DELIVERY","stop_law":"MERGE"})
     elif rule == "R052": o["pull_request"]["body"] += "\nFixes MAS-28"
