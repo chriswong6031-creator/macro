@@ -10,7 +10,7 @@
 
 **Protected Sol Skillpack pin:** Mastermind `db0bac5fe3f72348262d42c8bd26b836bda9f61d`, `docs/sol_skills` tree `0a009d5314a4a3bbb1aac2f111b68644fc7a64d8`
 
-**Source pins at W0 reconciliation:** Macro `5b25fe3d944dc2344ddfa8abcc75b95f3fde8459`; Mastermind `db0bac5fe3f72348262d42c8bd26b836bda9f61d`; Terminal `449439c690e93ba968185499af4041c2f512b659`
+**Source pins at W0 reconciliation:** Macro `9b3153fd9476c42020bbd0b427ebf7edf72eabb8`; Mastermind `db0bac5fe3f72348262d42c8bd26b836bda9f61d`; Terminal `449439c690e93ba968185499af4041c2f512b659`
 
 ## 1. Decision and precedence
 
@@ -949,11 +949,11 @@ At this freeze:
 - current post-commission Macro movement included generated/data changes and #6258's dislocation
   CI manifest/workflow expansion. The latter did not change `ci-gate`, contract-delta,
   House-Law census or the MAS-28 placement/no-enforcement boundary, and W0 was refreshed to its
-  exact merged head before delivery. The subsequent eight commits through
-  `5b25fe3d944dc2344ddfa8abcc75b95f3fde8459` touched unrelated market data, research
+  exact merged head before delivery. The subsequent nine commits through
+  `9b3153fd9476c42020bbd0b427ebf7edf72eabb8` touched unrelated market data, research
   receipts/runbooks, cycle-pattern/issuer-profile work and a press-wire cursor; their exact path
   census had no MAS-28, WS:AGENT-OS, template or linkage-control collision. The final incoming
-  commit was an Asia dashboard data/site render only.
+  commits were an Asia dashboard data/site render and its nightly timing receipt only.
 
 The exact next action after W0 merges is: reconcile Macro #6135 in place to this grammar and
 cutover law while independently preparing the bounded Mastermind/Terminal authoring corrections;
