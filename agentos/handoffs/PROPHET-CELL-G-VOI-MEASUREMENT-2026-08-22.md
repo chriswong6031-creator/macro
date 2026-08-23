@@ -1,11 +1,102 @@
 ---
-workstream_key: PROPHET-US-V4-RECOVERY
-recorded_at: "2026-08-23T01:16:00Z"
-changed_at: "2026-08-23T01:16:00Z"
-wave: CELL-G
-state: in_progress
-after:
-  - "3049b6f9785e7a08f03d746e0ca909cc425fdbde"
+workstream: "WS:PROPHET-US-V4-RECOVERY"
+session: "chatgpt1/mas-123-cell-g-voi"
+model: sol
+ended_because: ci_handoff
+mission: >
+  Freeze MAS-123 Cell G flagship Value-of-Information measurement law and implement the bounded,
+  read-only flagship VOI report plus owner-input EAWC primitives without opening immature
+  prospective outcomes, changing promotion thresholds after results, or granting family authority.
+state_before: >
+  Cell G was architecture/research only. Conditional Fusion W3 comparisons were forbidden with
+  five paired sessions accrued, zero matured H10 sessions and an honest-N floor of twenty;
+  QLedger exposed only the demand_chain forward evidence clock; and current board truth lacked
+  canonical V4 first-surface, actionability, issuer and frozen-risk fields required for flagship
+  episode claims.
+changed:
+  - path: "research/prophet_v4/CELL_G_FLAGSHIP_VOI_MEASUREMENT_LAW_2026-08-22.md"
+    what: >
+      Froze separate discovery, ranking, risk/path and explanation/product estimands; EAWC,
+      first-eligible versus first-surface, denominator, coverage, concentration-effective-N,
+      lead-preservation, multiplicity, repeated-look, correction and authority law.
+  - path: "engine/prophet_voi.py"
+    what: >
+      Added read-only common metric/report primitives, explicit terminal measurement states,
+      full-population ranking denominators, concentration diagnostics and fail-closed W3/board
+      projections.
+  - path: "engine/prophet_voi_eawc.py"
+    what: >
+      Added pure owner-input paired-lead, actionable-capture, first-surface actionability,
+      unusable/unknown guardrail, initial-risk R, censored payoff-time and descriptive
+      move-consumption primitives with no repository I/O.
+  - path: "scripts/prophet_flagship_voi_report.py"
+    what: >
+      Added a repo-root-safe, source-pinned, stdout-only zero-authority VOI projection with no
+      arbitrary input path, writer, promotion consumer or protected W3 comparative outcome loader.
+  - path: "tests/test_prophet_lab_timeparse.py"
+    what: >
+      Bound discriminating Cell G formula, denominator, refusal, W3-protection and committed
+      owner-metadata smoke tests into the existing canonical prophet-lab semantic CI suite instead
+      of creating a parallel workflow or retaining standalone unwired suites.
+  - path: "agentos/handoffs/PROPHET-CELL-G-VOI-MEASUREMENT-2026-08-22.md"
+    what: >
+      Reconciled the durable handoff to the canonical Agent OS schema and the actual six-file
+      current branch state after the temporary standalone Cell G tests were retired.
+verified:
+  - command: "GitHub Actions fences run 32610722906 for fca7cafbda6bc5fd6520a71702b1bc80d73e6d89"
+    result: >
+      Fences were green on the immediately preceding head. That receipt is intentionally not reused
+      for acceptance after this handoff-schema repair; the new exact head must run again.
+  - command: "GitHub PR #6276 branch/file reconciliation at fca7cafbda6bc5fd6520a71702b1bc80d73e6d89"
+    result: >
+      PR remained draft and unmerged with six changed files; current durable/body state was inspected
+      before this correction.
+  - command: "scripts/agentos.py check_handoff source on macro/main"
+    result: >
+      Current validator requires workstream, session, model, mission, state_before, changed,
+      verified, unresolved, next_actions, do_not_redo, danger_areas and ended_because, with
+      unverified present; this frontmatter now follows that contract.
+unverified:
+  - "Fresh exact-head ci and fences after this canonical Agent OS frontmatter repair."
+  - >
+      Full committed-board parquet execution in a runner with a parquet engine. Current canonical
+      tests prove board formulas/refusals synthetically and exercise committed W3/QLedger owner
+      metadata with --no-board; do not upgrade the board real-data path beyond BUILT_NOT_PROVEN
+      without an actual committed-board read receipt.
+unresolved:
+  - >
+      PR #6276 must remain draft until fresh exact-head ci plus fences are green and a fresh-main,
+      current-owner collision check is clear.
+  - >
+      W3 comparative outcomes remain protected until the existing Conditional Fusion owner maturity
+      gate opens; report v1 intentionally has no comparative adapter.
+  - >
+      Current board observations remain descriptive telemetry rather than canonical V4 episodes and
+      cannot supply missing first-surface/actionability/economic-issuer/frozen-risk truth.
+next_actions:
+  - "Require fresh exact-head ci plus fences on PR #6276 after this commit and inspect every failure."
+  - >
+      If exact-head checks are green, reconcile current main and Eval/Fusion/QLedger/Prophet owner
+      surfaces against the pickup and stop on any material collision.
+  - >
+      Only after the no-leakage/no-authority adversarial gate passes may Sol release the draft hold
+      and merge with the exact reviewed head SHA.
+  - >
+      After an accepted merge, record the immutable merge receipt and reconcile MAS-123 without
+      granting any family predictive, ranking or trade authority.
+do_not_redo:
+  - >
+      Do not recreate standalone Cell G test suites or a parallel CI workflow; Cell G tests are
+      intentionally bound to the existing prophet-lab semantic job.
+  - "Do not open W3 or Live Entry Radar protected prospective outcome artifacts before owner gates."
+  - "Do not change frozen metric thresholds, denominators, labels, horizons or look plans after results."
+  - "Do not create a Cell G evaluation ledger, scoreboard, evidence clock or promotion registry."
+danger_areas:
+  - "No arbitrary source path may be reintroduced into the report CLI."
+  - "Board observations are descriptive and must not be renamed into V4 episodes."
+  - "Effective N is a concentration/scope vector, not inferential sample size."
+  - "Explanation/product value must not be used as alpha evidence."
+  - "Positive precision bought by later surfacing fails flagship promotion when the frozen lead gate fails."
 ---
 
 # Prophet Cell G — Value of Information / Flagship Measurement Handoff
@@ -121,11 +212,9 @@ Pure owner-input EAWC/path primitives, with no repository search or I/O:
 Stdout-only and source-pinned to canonical W3 status, QLedger evidence-clock metadata, and board ledger. No arbitrary input paths, output writer, or promotion consumer.
 
 ### Tests
-- `tests/test_prophet_voi.py`
-- `tests/test_prophet_voi_eawc.py`
-- `tests/test_prophet_flagship_voi_report.py`
+Cell G tests are now integrated into the existing canonical `tests/test_prophet_lab_timeparse.py` semantic suite. The temporary standalone `test_prophet_voi.py`, `test_prophet_voi_eawc.py`, and `test_prophet_flagship_voi_report.py` files were retired so Cell G does not create a second CI plane or leave unwired tests outside the owned job.
 
-Synthetic tests pin formulas and refusals; real committed-data smoke asserts zero authority.
+The integrated suite pins formulas and refusals, verifies W3 status protection and CLI source pinning, exercises board semantics synthetically, and runs a committed owner-metadata `--no-board` smoke through current W3/QLedger state. A real committed-board parquet read remains unverified until a lawful runner has the required parquet engine; do not call that path `PROVEN_LIVE` yet.
 
 ## Adversarial defects found and repaired
 
@@ -137,7 +226,7 @@ Synthetic tests pin formulas and refusals; real committed-data smoke asserts zer
 6. Missing #1 outcome could distort P@K -> published occupancy, outcome coverage and precision separated; no survivor backfill.
 7. `lane_not_stamped` was treated as generic N/A -> excluded only on canonical RAN lane.
 8. Lead law existed only at classifier level -> pure EAWC subject-level primitives added.
-9. First exact-head semantic CI correctly found three mechanical ownership defects: new test suites were not wired to a CI job, file-path CLI execution lacked the repository-root import pin, and this handoff lacked compiler-visible YAML frontmatter. The latter two are repaired on the branch; CI wiring is the remaining bounded mechanical repair before a fresh exact-head run. A separate missing-blob error occurred during base replay after base tests passed and must not be classified until the owned failures are cleared.
+9. First exact-head semantic CI exposed three mechanical ownership defects: standalone tests were outside the canonical job, file-path CLI execution lacked a repository-root import pin, and this handoff used noncanonical frontmatter. The CLI import pin is fixed, tests are integrated into the existing prophet-lab semantic suite, and this commit repairs the handoff schema. A previous base-replay missing-blob error occurred only after base tests passed and must be classified separately if it recurs on the new exact head.
 
 ## No-rebuild / no-authority boundary
 
@@ -145,12 +234,11 @@ Do not create a Cell G result ledger, scoreboard, evidence clock, promotion regi
 
 ## Exact continuation
 
-1. Wire the three Cell G suites into the existing canonical semantic CI job; do not create a parallel workflow.
-2. Require fresh exact-head `ci` + `fences` on PR #6276.
-3. Review real committed-data smoke and every semantic/fence failure. Do not waive a Cell-G defect as test-only.
-4. If only the prior base-replay missing-blob infrastructure error remains, verify the head is unchanged and retry that failed proof once; do not blind-retry ambiguous modifications.
-5. Reconcile fresh `main` and current Eval/Fusion/Prophet owners immediately before merge.
-6. Refresh protected Skillpack compatibility.
-7. Only if all blockers are closed may Sol release the draft hold and merge this zero-authority vertical under the Chairman’s explicit MAS-123 authorization.
-8. After merge, future V4/Cell F/A/B owner fields may supply missing first-surface/economic-issuer/path truth. Cell G consumes owner fields; it does not invent substitutes.
-9. W3 comparative outcomes remain protected until its existing owner status gate opens; a future adapter is a new reviewed change.
+1. Require fresh exact-head `ci` + `fences` on PR #6276 after this handoff-schema repair; stale-head receipts do not count.
+2. Inspect every failure and distinguish owned Cell G defects from independent infrastructure/base-replay faults before any retry.
+3. Reconcile fresh `main` and current Eval/Fusion/QLedger/Prophet owner paths immediately before any merge.
+4. Refresh protected Skillpack compatibility on the final reviewed head.
+5. Only if all blockers are closed may Sol release the draft hold and merge this zero-authority vertical under the Chairman’s explicit MAS-123 authorization.
+6. After merge, record the exact merge SHA and reconcile MAS-123 while preserving the no-promotion ceiling.
+7. Future V4/Cell F/A/B owner fields may supply missing first-surface/economic-issuer/path truth. Cell G consumes owner fields; it does not invent substitutes.
+8. W3 comparative outcomes remain protected until its existing owner status gate opens; a future adapter is a new reviewed change.
