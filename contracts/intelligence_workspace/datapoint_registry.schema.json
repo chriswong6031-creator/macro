@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermindx.ai/contracts/intelligence_workspace/datapoint_registry.schema.json",
+  "title": "Intelligence Workspace datapoint registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "registry_version", "limits", "fields"],
+  "properties": {
+    "schema": {"const": "datapoint_registry.v1"},
+    "registry_version": {"const": "1.0.0"},
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_fields", "max_entities", "max_cells", "max_request_cost"],
+      "properties": {
+        "max_fields": {"type": "integer", "const": 12},
+        "max_entities": {"type": "integer", "const": 250},
+        "max_cells": {"type": "integer", "const": 2000},
+        "max_request_cost": {"type": "integer", "const": 8000}
+      }
+    },
+    "fields": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "items": {"$ref": "#/$defs/field"}
+    }
+  },
+  "$defs": {
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field_id", "label", "value_type", "unit", "unit_policy",
+        "basis_policy", "entity_types", "universes", "owner_ref",
+        "adapter_id", "owner_field_key", "timestamp_policy",
+        "freshness_policy", "point_in_time_policy", "status_policy",
+        "operators", "renderer", "rights_policy", "consumer_uses",
+        "constraints", "cost_weight"
+      ],
+      "properties": {
+        "field_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)+$",
+          "maxLength": 96
+        },
+        "label": {"type": "string", "minLength": 1, "maxLength": 120},
+        "value_type": {
+          "enum": ["number", "integer", "date", "enum", "entity_ref_set"]
+        },
+        "unit": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$"},
+        "unit_policy": {"enum": ["fixed", "owner_currency_code"]},
+        "basis_policy": {
+          "enum": [
+            "owner_native", "owner_native_price_history", "owner_classification",
+            "owner_comparison_set", "owner_event_metric", "direct_source_relation"
+          ]
+        },
+        "entity_types": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["security", "industry"]}
+        },
+        "universes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["us_equity", "us_industry"]}
+        },
+        "owner_ref": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "dataset_id", "artifact_contract"],
+          "properties": {
+            "owner": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,95}$"},
+            "dataset_id": {
+              "type": ["string", "null"],
+              "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+            },
+            "artifact_contract": {"type": "string", "minLength": 1, "maxLength": 160}
+          }
+        },
+        "adapter_id": {
+          "enum": [
+            "quote", "technicals", "stage", "industry", "earnings_calendar",
+            "company_intelligence", "theme"
+          ]
+        },
+        "owner_field_key": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+        "timestamp_policy": {
+          "enum": ["quote_source_clock", "owner_native_clocks", "owner_date_clock", "owner_build_clock"]
+        },
+        "freshness_policy": {"const": "owner_native"},
+        "point_in_time_policy": {"enum": ["current_only", "owner_vintage", "owner_bitemporal"]},
+        "status_policy": {"const": "typed_v1"},
+        "operators": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "eq", "ne", "gt", "gte", "lt", "lte", "between", "before",
+              "on_or_before", "after", "on_or_after", "in", "not_in",
+              "contains", "not_contains", "is_empty", "is_not_empty"
+            ]
+          }
+        },
+        "renderer": {"enum": ["currency", "number", "integer", "stage", "percent", "percentile", "date", "entity_ref_set"]},
+        "rights_policy": {"enum": ["subscriber_allowed", "owner_dynamic", "internal_only"]},
+        "consumer_uses": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["display", "query", "ai_fact", "alert_input", "context"]}
+        },
+        "constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minimum": {"type": "number"},
+            "maximum": {"type": "number"},
+            "min_items": {"type": "integer", "minimum": 0},
+            "max_items": {"type": "integer", "minimum": 0},
+            "item_pattern": {"type": "string", "minLength": 1, "maxLength": 160},
+            "enum_values": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {"type": ["string", "number", "integer"]}
+            }
+          }
+        },
+        "cost_weight": {"type": "integer", "minimum": 1, "maximum": 100}
+      }
+    }
+  }
+}
