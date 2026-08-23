@@ -18,7 +18,9 @@ import pandas as pd
 
 SCHEMA = "btc.decision/v1"
 MATERIAL_CHANGE_PP = 10.0
-RAW_FINAL_TOLERANCE_PP = 0.5
+# This is representation jitter only, not an economic exposure tolerance.
+# A one-picounit fractional delta is 1e-10 percentage points.
+RAW_FINAL_ABS_TOLERANCE = 1e-12
 
 _ADVISORY_KEYS = (
     "levels",
@@ -132,14 +134,36 @@ def _advisory(recommendation: Mapping[str, Any] | None) -> dict[str, Any]:
     return out
 
 
-def _previous_exposure(signals: pd.DataFrame) -> float | None:
+def _is_null(value: Any) -> bool:
+    if value is None:
+        return True
+    try:
+        missing = pd.isna(value)
+    except (TypeError, ValueError):
+        return False
+    return bool(missing) if isinstance(missing, (bool, np.bool_)) else False
+
+
+def _previous_exposure(signals: pd.DataFrame) -> tuple[float | None, str | None]:
+    """Return the latest prior allocation or its fail-closed integrity error.
+
+    Null observations do not represent an allocation and may be skipped.  The
+    first prior non-null observation is authoritative for the comparison: if it
+    is malformed or outside [0, 1], do not search farther back for a value that
+    would make the current state appear actionable.
+    """
     if "alloc_optimal" not in signals:
-        return None
+        return None, None
     for value in reversed(signals["alloc_optimal"].iloc[:-1].tolist()):
+        if _is_null(value):
+            continue
         previous = _finite(value)
-        if previous is not None:
-            return previous
-    return None
+        if previous is None:
+            return None, "PREVIOUS_ALLOCATION_INVALID"
+        if not 0.0 <= previous <= 1.0:
+            return None, "PREVIOUS_ALLOCATION_OUT_OF_RANGE"
+        return previous, None
+    return None, None
 
 
 def _project_action(current_pct: float, previous_pct: float | None) -> dict[str, Any]:
@@ -227,7 +251,7 @@ def build_decision(
 
     final = _finite(last.get("alloc_optimal"))
     raw = _finite(last.get("alloc_optimal_raw"))
-    previous = _previous_exposure(signals)
+    previous, previous_error = _previous_exposure(signals)
 
     override_active = _bool(last.get("override_active"))
     override_id = _text(last.get("override_id"))
@@ -243,8 +267,13 @@ def build_decision(
     mismatch_pp = None
     mismatch = False
     if raw is not None and final_in_range and raw_in_range:
-        mismatch_pp = round(abs(raw - final) * 100.0, 6)
-        mismatch = mismatch_pp > RAW_FINAL_TOLERANCE_PP
+        mismatch_pp = round(abs(raw - final) * 100.0, 12)
+        mismatch = not math.isclose(
+            raw,
+            final,
+            rel_tol=0.0,
+            abs_tol=RAW_FINAL_ABS_TOLERANCE,
+        )
     mismatch_explained = not mismatch or (override_active and override_id is not None)
 
     checks = {
@@ -255,6 +284,7 @@ def build_decision(
         "active_override_is_named": named_override,
         "raw_final_evaluable": raw is not None and final_in_range and raw_in_range,
         "raw_final_consistent_or_named_override": mismatch_explained,
+        "previous_allocation_valid_or_absent": previous_error is None,
     }
     errors: list[str] = []
     if not final_present:
@@ -269,6 +299,8 @@ def build_decision(
         errors.append("ACTIVE_OVERRIDE_WITHOUT_ID")
     if mismatch and not mismatch_explained:
         errors.append("RAW_FINAL_MISMATCH_WITHOUT_NAMED_OVERRIDE")
+    if previous_error is not None:
+        errors.append(previous_error)
 
     master_map = master if isinstance(master, Mapping) else {}
     raw_model = {

@@ -163,6 +163,75 @@ def test_raw_final_mismatch_without_named_override_fails_closed() -> None:
     assert "RAW_FINAL_MISMATCH_WITHOUT_NAMED_OVERRIDE" in out["integrity"]["errors"]
 
 
+def test_point_four_pp_raw_final_mismatch_without_override_fails_closed() -> None:
+    out = build_decision(
+        _signals(
+            [
+                {"alloc_optimal": 0.5, "alloc_optimal_raw": 0.5},
+                {
+                    "alloc_optimal": 0.504,
+                    "alloc_optimal_raw": 0.500,
+                    "override_active": False,
+                },
+            ]
+        ),
+        _master(),
+        generated_at=datetime(2026, 8, 23, tzinfo=timezone.utc),
+    )
+
+    _assert_contract(out)
+    assert out["status"] == "unavailable"
+    assert out["final"]["action_code"] is None
+    assert out["override"]["difference_pp"] == 0.4
+    assert "RAW_FINAL_MISMATCH_WITHOUT_NAMED_OVERRIDE" in out["integrity"]["errors"]
+
+
+def test_point_four_pp_raw_final_mismatch_with_named_override_is_lawful() -> None:
+    out = build_decision(
+        _signals(
+            [
+                {"alloc_optimal": 0.5, "alloc_optimal_raw": 0.5},
+                {
+                    "alloc_optimal": 0.504,
+                    "alloc_optimal_raw": 0.500,
+                    "override_active": True,
+                    "override_id": "named_override",
+                },
+            ]
+        ),
+        _master(),
+        generated_at=datetime(2026, 8, 23, tzinfo=timezone.utc),
+    )
+
+    _assert_contract(out)
+    assert out["status"] == "ok"
+    assert out["override"]["difference_pp"] == 0.4
+    assert out["final"]["action_code"] == "HOLD_EXPOSURE"
+    assert out["integrity"]["errors"] == []
+
+
+def test_raw_final_machine_representation_jitter_remains_lawful() -> None:
+    out = build_decision(
+        _signals(
+            [
+                {"alloc_optimal": 0.3, "alloc_optimal_raw": 0.3},
+                {
+                    "alloc_optimal": 0.1 + 0.2,
+                    "alloc_optimal_raw": 0.3,
+                    "override_active": False,
+                },
+            ]
+        ),
+        _master(),
+        generated_at=datetime(2026, 8, 23, tzinfo=timezone.utc),
+    )
+
+    _assert_contract(out)
+    assert out["status"] == "ok"
+    assert out["final"]["action_code"] == "HOLD_EXPOSURE"
+    assert out["integrity"]["checks"]["raw_final_consistent_or_named_override"] is True
+
+
 def test_named_override_may_lawfully_explain_raw_final_difference() -> None:
     sig = _signals(
         [
@@ -250,6 +319,8 @@ def test_ten_percentage_point_materiality_boundary(prior, current, expected) -> 
         ]
     )
     out = build_decision(sig, _master())
+    _assert_contract(out)
+    assert out["status"] == "ok"
     assert out["final"]["action_code"] == expected
 
 
@@ -438,11 +509,11 @@ def test_bilingual_action_numbers_equal_final_display_target(
         assert int(match.group(1)) == target
 
 
-def test_previous_exposure_uses_prior_finite_observation() -> None:
+def test_previous_exposure_skips_only_prior_null_observations() -> None:
     sig = _signals(
         [
             {"alloc_optimal": 0.2, "alloc_optimal_raw": 0.2},
-            {"alloc_optimal": float("inf"), "alloc_optimal_raw": 0.2},
+            {"alloc_optimal": float("nan"), "alloc_optimal_raw": 0.2},
             {"alloc_optimal": None, "alloc_optimal_raw": 0.2},
             {"alloc_optimal": 0.4, "alloc_optimal_raw": 0.4},
         ]
@@ -457,6 +528,51 @@ def test_previous_exposure_uses_prior_finite_observation() -> None:
     assert out["final"]["previous_exposure_pct"] == 20
     assert out["final"]["change_pp"] == 20
     assert out["final"]["action_code"] == "INCREASE_EXPOSURE"
+
+
+@pytest.mark.parametrize("prior", [1.20, -0.10])
+def test_out_of_range_previous_exposure_fails_closed_and_is_schema_valid(prior) -> None:
+    current = 1.0 if prior > 1.0 else 0.0
+    out = build_decision(
+        _signals(
+            [
+                {"alloc_optimal": 0.25, "alloc_optimal_raw": 0.25},
+                {"alloc_optimal": prior, "alloc_optimal_raw": prior},
+                {"alloc_optimal": current, "alloc_optimal_raw": current},
+            ]
+        ),
+        _master(),
+        generated_at=datetime(2026, 8, 23, tzinfo=timezone.utc),
+    )
+
+    _assert_contract(out)
+    assert out["status"] == "unavailable"
+    assert out["final"]["action_code"] is None
+    assert out["final"]["action_en"] is None
+    assert out["final"]["action_zh"] is None
+    assert out["final"]["previous_exposure_pct"] is None
+    assert "PREVIOUS_ALLOCATION_OUT_OF_RANGE" in out["integrity"]["errors"]
+    assert out["integrity"]["checks"]["previous_allocation_valid_or_absent"] is False
+
+
+@pytest.mark.parametrize("prior", [float("inf"), "corrupt"])
+def test_malformed_previous_exposure_fails_closed_without_searching_farther_back(prior) -> None:
+    out = build_decision(
+        _signals(
+            [
+                {"alloc_optimal": 0.2, "alloc_optimal_raw": 0.2},
+                {"alloc_optimal": prior, "alloc_optimal_raw": 0.2},
+                {"alloc_optimal": 0.4, "alloc_optimal_raw": 0.4},
+            ]
+        ),
+        _master(),
+        generated_at=datetime(2026, 8, 23, tzinfo=timezone.utc),
+    )
+
+    _assert_contract(out)
+    assert out["status"] == "unavailable"
+    assert out["final"]["action_code"] is None
+    assert "PREVIOUS_ALLOCATION_INVALID" in out["integrity"]["errors"]
 
 
 def test_vector_action_surface_reads_only_decision_state() -> None:
