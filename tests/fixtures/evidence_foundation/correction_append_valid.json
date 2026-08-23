@@ -1,0 +1,64 @@
+{
+  "schema": "evidence_foundation.reference.v1",
+  "version": "1.0.0",
+  "reference_id": "efr_f9cfe0b36b480e6e52007608c9b75e75d5f648f843697c066d714372a908e944",
+  "object_class": "derived_view",
+  "owner_store": "earnings.workspace_generation",
+  "native_identity": {
+    "generation_id": "fedcba9876543210fedcba98",
+    "event_id": "evt_cik0000320193_2026q3_results"
+  },
+  "native_schema": "event_workspace.v1",
+  "native_digest": {"state": "known", "sha256": "4444444444444444444444444444444444444444444444444444444444444444"},
+  "coverage_class": "immutable_generation",
+  "subject": {"key_type": "cik", "key": "0000320193"},
+  "secondary_subjects": [],
+  "clocks": [
+    {"class": "knowable", "field": "lifecycle.source_available_at", "value_state": "known", "value": "2026-08-01T15:00:00Z", "grain": "datetime"},
+    {"class": "observed", "field": "lifecycle.observed_at", "value_state": "known", "value": "2026-08-01T15:01:00Z", "grain": "datetime"},
+    {"class": "belief_or_build", "field": "generated_at", "value_state": "known", "value": "2026-08-01T15:02:00Z", "grain": "datetime"}
+  ],
+  "provenance": {
+    "pointer_only": true,
+    "body_embedded": false,
+    "owner_reader": "engine.neuralweb.company_intelligence_reader.read_event_workspace",
+    "pointer": "company_intelligence/event_workspaces/generations/fedcba9876543210fedcba98/workspaces/evt_cik0000320193_2026q3_results.json"
+  },
+  "relations": [
+    {
+      "target_reference_id": "efr_2222222222222222222222222222222222222222222222222222222222222222",
+      "type": "supersedes",
+      "automatic_effect": false,
+      "deterministic_key": null,
+      "independence": {
+        "source_independence": {"state": "shared", "basis": "same issuer event and correction lineage"},
+        "information_novelty": {"state": "independent", "basis": "new source revision changes the cited bytes"},
+        "mechanism_independence": {"state": "not_assessed", "basis": "correction lineage is not an economic mechanism"}
+      }
+    }
+  ],
+  "missingness": {"state": "present", "reason": null, "zero_substituted": false},
+  "correction": {
+    "kind": "superseding_generation",
+    "predecessor_reference_ids": ["efr_2222222222222222222222222222222222222222222222222222222222222222"],
+    "clock_field": "generated_at",
+    "append_only": true,
+    "mutates_predecessor": false
+  },
+  "replay": {
+    "mode": "live",
+    "cutoffs": {
+      "world_valid": {"state": "unknown", "value": null, "grain": "datetime"},
+      "source_published": {"state": "unknown", "value": null, "grain": "datetime"},
+      "knowable": {"state": "unknown", "value": null, "grain": "datetime"},
+      "observed": {"state": "unknown", "value": null, "grain": "datetime"},
+      "system_recorded": {"state": "unknown", "value": null, "grain": "datetime"},
+      "belief_or_build": {"state": "unknown", "value": null, "grain": "datetime"},
+      "review_due": {"state": "unknown", "value": null, "grain": "datetime"}
+    },
+    "code_revision": null,
+    "input_digest": null,
+    "vintage_state": "owner_native"
+  },
+  "authority": {"can_rank": false, "can_gate": false, "can_size": false, "can_originate": false, "can_open_entry": false}
+}

@@ -1,0 +1,44 @@
+{
+  "schema": "evidence_foundation.reference.v1",
+  "version": "1.0.0",
+  "reference_id": "efr_449bb6346c8d99dd35c5c4d80e478cf673e97fd6d7676f1670b8c76f81f63b42",
+  "object_class": "derived_view",
+  "owner_store": "fif.packet",
+  "native_identity": {"packet_id": "fip_0123456789abcdef01234567"},
+  "native_schema": "financial_intelligence_packet.v1",
+  "native_digest": {"state": "known", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"},
+  "coverage_class": "source_release_snapshot_only",
+  "subject": {"key_type": "issuer_id", "key": "ISS:US-XNAS-AAPL"},
+  "secondary_subjects": [{"key_type": "cik", "key": "0000320193"}],
+  "clocks": [
+    {"class": "source_published", "field": "query.source_event_cutoff", "value_state": "known", "value": "2026-07-30T23:00:00Z", "grain": "datetime"},
+    {"class": "system_recorded", "field": "query.system_recorded_cutoff", "value_state": "known", "value": "2026-07-31T02:00:00Z", "grain": "datetime"},
+    {"class": "system_recorded", "field": "governance.governance_recorded_at", "value_state": "known", "value": "2026-07-31T01:30:00Z", "grain": "datetime"},
+    {"class": "belief_or_build", "field": "built_at", "value_state": "known", "value": "2026-08-22T18:00:00Z", "grain": "datetime"}
+  ],
+  "provenance": {
+    "pointer_only": true,
+    "body_embedded": false,
+    "owner_reader": "engine.fundamental_forensics.financial_intelligence_packet.build_financial_intelligence_packet_from_repo",
+    "pointer": "fixture://fif/financial_intelligence_packet.v1/fip_0123456789abcdef01234567"
+  },
+  "relations": [],
+  "missingness": {"state": "present", "reason": null, "zero_substituted": false},
+  "correction": {"kind": "none", "predecessor_reference_ids": [], "clock_field": null, "append_only": true, "mutates_predecessor": false},
+  "replay": {
+    "mode": "live",
+    "cutoffs": {
+      "world_valid": {"state": "unknown", "value": null, "grain": "datetime"},
+      "source_published": {"state": "unknown", "value": null, "grain": "datetime"},
+      "knowable": {"state": "unknown", "value": null, "grain": "datetime"},
+      "observed": {"state": "unknown", "value": null, "grain": "datetime"},
+      "system_recorded": {"state": "unknown", "value": null, "grain": "datetime"},
+      "belief_or_build": {"state": "unknown", "value": null, "grain": "datetime"},
+      "review_due": {"state": "unknown", "value": null, "grain": "datetime"}
+    },
+    "code_revision": null,
+    "input_digest": null,
+    "vintage_state": "owner_native"
+  },
+  "authority": {"can_rank": false, "can_gate": false, "can_size": false, "can_originate": false, "can_open_entry": false}
+}
