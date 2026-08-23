@@ -1805,6 +1805,7 @@ jobs:
       - "scripts/build_options_structure_intraday.py"
       - "scripts/build_prophet_marks.py"
       - "scripts/build_prophet_option_shadow_lifecycle.py"
+      - "scripts/prophet_canonical_git.py"
       - "scripts/capture_market_memory_context.py"
       - "scripts/capture_market_memory_options_episodes.py"
       - "scripts/chain_snapshot_poller.py"
