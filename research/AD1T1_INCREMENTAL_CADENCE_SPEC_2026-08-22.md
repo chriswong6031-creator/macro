@@ -189,11 +189,14 @@ read-only. Per-window retry (2 retries, 5s/15s backoff) is the collector's
 own; the daily mode adds NO additional retry layer.
 
 (F2) **Hard wall-clock deadline:** the daily mode enforces `--deadline-min`
-(default 100) measured from run start: on expiry it stops dispatching new
-roots, drains in-flight work, releases the flock, and writes a `partial`
-receipt with `deadline_exceeded: true`. The lock is never held past the
-deadline + drain. The 04:30/06:00 PT levels-seal window is a protected zone
-by construction (last fire 18:00 PT + 100 min ≪ 04:30 PT).
+(default 65 — RF7, restated here after Sol review B4 caught this paragraph
+still carrying the superseded 100) measured from run start: on expiry it
+stops dispatching new roots, drains in-flight work, releases the flock, and
+writes a `partial` receipt with `deadline_exceeded: true`. The lock is never
+held past the deadline + drain. 65 min is strictly under the 70-min minimum
+fire spacing (13:20→14:30 PT), so a lock is never held into the next rung,
+and the 04:30/06:00 PT levels-seal window is a protected zone by
+construction (last fire 18:00 PT + 65 min deadline + drain ≪ 04:30 PT).
 
 ---
 
@@ -555,3 +558,115 @@ receipt homes outside `_manifest.json`. Owned files beyond the writer pair:
 `scripts/launchd/theta_staleness_sentinel.sh` (F8 staleness-anchor check
 only), `scripts/publish_r2.py` (F15 `_uploadable` exclusion only),
 `.gitignore` (F15 one line), `research/THETADATA_OPS_RUNBOOK.md`, tests.
+
+---
+
+## §K Sol review round — binding amendments (2026-08-23, reviews 5001472540 + 5001476023 on head 352ab22b1ac0)
+
+Sol verdict: REQUEST CHANGES. The core architecture (incremental maintainer,
+W=4 freeze, shared flock, finite scheduler, whole-year retirement,
+`fetch_failed` superset — RATIFIED) is **accepted; do not redesign it.** Four
+bounded amendments. B4 (the §A5 deadline contradiction) is repaired in place
+in §A5. B1–B3 are specified here and SUPERSEDE the conflicting parts of
+§A4/§D/§C-sentinel. The Terminal incident branch is closed (Chairman alert
+adjudicated a false off-host/stale-view alarm; no runtime recovery occurred,
+none authorized).
+
+### K1 (Sol B1a) AD-ready health split — supersedes §D's healthy law
+
+- Receipt renames (observational S-panel fields, unchanged computation —
+  EOD[S] ∧ Greeks[S] ∧ OI[S] within the AD universe):
+  `complete_ad_roots` → `s_panel_ad_roots`;
+  `ad_coverage_pct` → `s_panel_coverage_pct`.
+- NEW: `ad_ready_roots` = AD-universe roots with all FOUR §A4 cells present
+  (EOD[S] ∧ Greeks[S] ∧ OI[S] ∧ OI[D]);
+  `ad_ready_coverage_pct` = `ad_ready_roots / ad_universe_count` (0.0 when
+  the denominator is 0).
+- Healthy law: `status == "healthy"` iff
+  `ad_ready_coverage_pct >= SOURCE_COVERAGE_GATE` (imported, §D) AND NOT
+  `deadline_exceeded` (RF2 unchanged) AND NOT `terminal_lost_mid_run`.
+  **OI[D] absent everywhere ⇒ `partial`, NEVER `healthy`** — the §H hostile
+  test that asserted the opposite is INVERTED. The frozen AD source contract
+  requires the settlement print (`chain_next`) to certify an S/D panel;
+  `s_panel_coverage_pct` is reported but certifies nothing.
+- `complete_t1_roots` (T1 universe, S-panel) and `chain_next_ad_roots`
+  (OI[D] within AD universe) stay as-is. Exit-code law unchanged
+  (0 healthy / 1 partial|failed).
+
+### K2 (Sol B1b, addendum 5001476023) OI[D] frontier via `snapshot_open_interest` — `--daily` ONLY
+
+- The `--daily` oi_D cell stops calling `bulk_open_interest(root, 0, D, D)`
+  (structurally current-day-unavailable: the collector converts the v3
+  current-day-wildcard 400 into an empty frame — the F1 unknown). It calls
+  the EXISTING `collectors.thetadata.snapshot_open_interest(root)` (#2638,
+  measured live vs the same Terminal: full-chain OI snapshot, `snapshot_ts`
+  from the source timestamp, ~06:30 ET OPRA print of END-OF-S positions,
+  static intraday; vendor docs independently confirm, cache reset midnight
+  ET). `collectors/thetadata.py` is NOT modified.
+- Wrapper in `topup_thetadata_day.py` (fetch → guard → normalize; the
+  result flows through the UNCHANGED `_ensure_one_cell` classification):
+  - `None` → stays `None` → `fetch_failed`;
+  - empty frame → stays empty → `vendor_empty`;
+  - else derive `date = snapshot_ts.dt.normalize()` — the SAME vendor
+    `timestamp` clock `_normalize_oi_df` already uses for the store's
+    history-path `date` column — and keep ONLY rows where
+    `date == pd.Timestamp(D)` (**source-timestamp guard**: stale/other-date
+    rows are ABSENT, never relabeled); drop `snapshot_ts`; select exactly
+    `["root","expiration","strike","right","date","open_interest"]`
+    (byte-identical store OI schema).
+  - Nonempty-but-zero-D-rows then classifies `date_unresolved` via the
+    existing rows_for_target_date check; D-rows merge via the same
+    `_merge_day` exact-date replacement writer → `complete`.
+- Receipt: `oi_D_source: "snapshot_open_interest"` (auditable observation
+  path; constant in `--daily`).
+- Correction semantics: later historical OI[D] (backfill, or `--roots`
+  catch-up once D is past) replaces the same exact-date rows through the
+  existing `_merge_day` law — no date duplication, no new mechanism.
+- Legacy `--roots [--date]` and `@universe` catch-up paths UNCHANGED (the
+  history endpoint works for past dates). The snapshot frontier is
+  `--daily`-only; builders must not widen it. Snapshot greeks/trades are NOT
+  consumed (source-cadence amendment, not intraday-authority expansion; no
+  Q_flow).
+- Midnight crossing: ctx frozen at birth (F3); after the vendor's
+  midnight-ET cache reset rows carry a non-D date and the guard drops them
+  ⇒ honest `partial`. No worker consults the wall clock.
+- Authorization: #2638 live evidence + vendor docs per Sol addendum
+  5001476023; operator directive 2026-08-23 rules the evidence sufficient —
+  NO new live probe gates this build.
+
+### K3 (Sol B2) backfill store-agreement check fails CLOSED on resolver exceptions
+
+- `resolve_thetadata_store()` RAISING inside the agreement check ⇒
+  `log.error` + exit 1 + ZERO mutations (no `_backfill_state.json`, no
+  `_manifest.json`, no parquet, no lock-file content side effects beyond the
+  probe itself never being reached). The previous warn-and-proceed minted a
+  potential second store exactly when canonical resolution was uncertain.
+- Clean `None` return REMAINS the explicit fresh-install exception
+  (proceed with `_store_dir()`).
+- Discriminating tests: resolver-raises ⇒ exit 1 ∧ no state/manifest/parquet
+  mutation; resolver-None ⇒ proceeds (fresh-install pin).
+
+### K4 (Sol B3) sentinel validates HEALTH, not only freshness of D
+
+- After 20:00 ET on a session day (RF1 threshold unchanged), the anchor
+  ALERTs unless the daily receipt is a normal production-healthy result:
+  `daily_refresh.D == session_date()` AND `daily_refresh.status == "healthy"`
+  AND `daily_refresh.forced` is exactly `false`. Any other shape — current-D
+  `partial`/`failed`, `forced=true` diagnostic, missing fields — ALERTs
+  (fail closed; the N3 calendar-eval fail-closed path is unchanged). With
+  K1, `healthy` now carries the ≥90% AD-ready settlement guarantee.
+- Verdict JSON gains `daily_refresh_status` and `daily_refresh_forced`.
+- Tests: current-D+partial ⇒ ALERT; current-D+failed ⇒ ALERT;
+  current-D+healthy+forced ⇒ ALERT; current-D+healthy+unforced ⇒ no anchor
+  alert; stale-D ⇒ ALERT (existing).
+
+### K5 Test-surface deltas
+
+- Invert the §H OI[D]-absent hostile family (absent everywhere ⇒ `partial`).
+- Receipt-field tests: `s_panel_ad_roots`/`s_panel_coverage_pct`/
+  `ad_ready_roots`/`ad_ready_coverage_pct`/`oi_D_source` presence + values;
+  healthy requires the AD-ready gate.
+- Frontier wrapper units with frozen frames (no live vendor calls):
+  D-stamped rows pass; stale-stamped only ⇒ `date_unresolved`; mixed keeps
+  only D rows; empty ⇒ `vendor_empty`; `None` ⇒ `fetch_failed`.
+- K3/K4 families as specified above.
