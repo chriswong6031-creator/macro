@@ -21,41 +21,41 @@ state_before: >
 
 changed:
   - {path: "research/market_os/FISCAL_RESEARCH_OS_ARCHITECTURE_DELTA_2026-08-22.md", what: "Full records-only architecture/source-law freeze, ownership map, capability ledger, conceptual contracts, failure states, no-rebuild laws, implementation gates and first bounded RCTX/LENS/BELIEF verticals."}
-  - {path: "agentos/decisions/DEC-MARKET-BELIEF-IS-COMPOSITION-NOT-TRUTH-STORE.md", what: "Ruling: Market Belief is composition; MAS-119 owns common expectation federation, MAS-118 owns family-specific incorporation science, D5 transports later; no universal store/score."}
+  - {path: "agentos/decisions/DEC-MARKET-BELIEF-IS-COMPOSITION-NOT-TRUTH-STORE.md", what: "Ruling: Market Belief is composition; common catalyst expectation semantics must reconcile through the prospective Catalyst Federation/Cell C route, Alpha-E remains the established family-specific incorporation owner route with MAS-118 as current research carrier, and D5 transports later; no universal store/score."}
   - {path: "agentos/decisions/DEC-RESEARCH-CONTEXT-IS-PORTABLE-REFERENCE-NOT-MEMORY.md", what: "Ruling: cross-surface research context is a bounded canonical-reference bundle, default ephemeral; no new memory/evidence/user-state store."}
   - {path: "agentos/decisions/DEC-ANALYTICAL-LENS-REFERENCES-CANONICAL-SEMANTICS.md", what: "Ruling: reusable lenses are closed deterministic expressions over owner-native inputs; FIF remains financial semantics; zero signal authority."}
 
 verified:
   - claim: Protected Skillpack current and compatible
-    command: "Read protected Mastermind master and docs/sol_skills/{INDEX,COMMISSION_WAVE,CLOSEOUT}.md at exact ref db0bac5fe3f72348262d42c8bd26b836bda9f61d."
+    command: "GitHub.fetch_file Mastermind@db0bac5fe3f72348262d42c8bd26b836bda9f61d docs/sol_skills/INDEX.md, docs/sol_skills/COMMISSION_WAVE.md, docs/sol_skills/CLOSEOUT.md."
     result: "PASS — protected master remained db0bac5fe3f72348262d42c8bd26b836bda9f61d; all three files declare mastermind.sol_skillpack.v1 / 1.0.0 / minimum bootstrap 1."
   - claim: Records branch was reconciled before first content write
-    command: "Compare Macro 545344eb86caee06940106ae904c313ca25a1c54..1dde1cc2dd1166c3ecda510a2f05a09ca6452fad, then fast-forward sol/fiscal-research-os-architecture-20260822 before creating content."
+    command: "GitHub.compare_commits Macro 545344eb86caee06940106ae904c313ca25a1c54..1dde1cc2dd1166c3ecda510a2f05a09ca6452fad; GitHub.update_ref sol/fiscal-research-os-architecture-20260822."
     result: "PASS — two intervening commits were site/render churn; branch advanced to 1dde1cc2dd1166c3ecda510a2f05a09ca6452fad before the first architecture file was written."
   - claim: Fiscal architectural evidence is structured and bounded
-    command: "Read Mastermind PR #121 head 758741b9b89d9ee641729a81af691ad608de4720 route_and_context_map.md and observations.jsonl."
+    command: "GitHub.fetch_file Mastermind PR #121 head 758741b9b89d9ee641729a81af691ad608de4720 research/competitive_intelligence/fiscal/2026-08-22/recon01/route_and_context_map.md and observations.jsonl."
     result: "PASS — structured route/context and observation records support the cited workflow findings; no raw screenshot content is reproduced in this architecture freeze."
   - claim: Terminal already owns a local event/evidence selection precedent
-    command: "Read mastermind-terminal master 449439c690e93ba968185499af4041c2f512b659 docs/COMPANY_INTELLIGENCE_WORKSPACE.md."
+    command: "GitHub.fetch_file mastermind-terminal@449439c690e93ba968185499af4041c2f512b659 docs/COMPANY_INTELLIGENCE_WORKSPACE.md."
     result: "PASS — workspace is generation-pinned/context-only, selects receipts, resets evidence on event change, and routes selected ticker into Ask Mastermind."
   - claim: Market OS is the experience parent, not semantic truth owner
-    command: "Read Macro main agentos/workstreams/WS-MARKET-OS.md at the pickup base."
+    command: "GitHub.fetch_file Macro@1dde1cc2dd1166c3ecda510a2f05a09ca6452fad agentos/workstreams/WS-MARKET-OS.md."
     result: "PASS — terminal-user-services owns the shared user-state/alert product boundary while identity/news/company-event/signal/risk/forecast owners remain independent and composed through contracts."
-  - claim: Cell B is already active and owns family-specific incorporation science
-    command: "Read Linear MAS-118 current state and its attached research return."
-    result: "PASS — MAS-118 was In Progress; return rejects a universal gap score, narrows the first candidate family, and blocks measurement implementation on PIT/source/control prerequisites."
-  - claim: Cell C already defines the common expectation seam candidate
-    command: "Read Linear MAS-119 current state plus PR #6264 Cell C prework."
-    result: "PASS — MAS-119 was Backlog and the prework separates EventFact, ExpectationBaseline, SurpriseAssessment, IssuerMaterialityAssessment and IncorporationEvidence with no common catalyst score."
+  - claim: Cell B is already active on the established Alpha-E incorporation route
+    command: "Linear.get_issue MAS-118 with attached research return; GitHub.fetch_file Macro research/opportunity_evidence/E0_MARKET_INCORPORATION_CASEBOOK.md."
+    result: "PASS — MAS-118 was In Progress and rejects a universal gap score; existing Alpha-E research already defines incorporation as a state vector, not a grade."
+  - claim: Cell C is a prospective common expectation federation route, not yet canonical completion
+    command: "Linear.get_issue MAS-119; GitHub.fetch PR #6264 Cell C prework."
+    result: "PASS — MAS-119 was Backlog; prework proposes EventFact -> ExpectationBaseline -> SurpriseAssessment -> IssuerMaterialityAssessment -> IncorporationEvidence and no common catalyst score."
   - claim: Cell F/D5 is transport, not research-navigation state
-    command: "Read Macro PR #6275 head 4380c7de87a403113fd4ddf8de374702c6407cd6 and its Cell F handoff."
+    command: "GitHub.fetch PR #6275 head 4380c7de87a403113fd4ddf8de374702c6407cd6 agentos/handoffs/PROPHET-US-V4-D5-CELL-F-2026-08-22.md."
     result: "PASS — D5 is an episode-scoped typed decision-time evidence read-model; specialist owners compute, D5 mechanically projects, and all D5 authority remains false."
   - claim: FIF remains financial semantic authority
-    command: "Read current WS:FINANCIAL-INTELLIGENCE-FABRIC ownership/no-redo law."
+    command: "GitHub.fetch_file Macro agentos/workstreams/WS-FINANCIAL-INTELLIGENCE-FABRIC.md."
     result: "PASS — FIF forbids a second semantic model, query kernel or metric registry and keeps production issuer coverage separately gated."
   - claim: PR carrier is contained to records-only files
-    command: "Compare Macro 1dde1cc2dd1166c3ecda510a2f05a09ca6452fad..PR #6293 head and list changed filenames."
-    result: "PASS at initial PR head — exactly five added records/research files; zero engine/data/workflow/schema/runtime files. Schema-only amendments modify those same files only."
+    command: "GitHub.compare_commits Macro 1dde1cc2dd1166c3ecda510a2f05a09ca6452fad..PR #6293 head; GitHub.list_pr_changed_filenames #6293."
+    result: "PASS at initial PR head — exactly five added records/research files; zero engine/data/workflow/schema/runtime files. Schema/wording amendments modify those same files only."
 
 unverified:
   - claim: ResearchContextRef, AnalyticalLens or Market-Belief composition work in production
@@ -67,7 +67,7 @@ unverified:
 
 unresolved:
   - "No broad point-in-time licensed historical Street-consensus/estimate-vintage plane is proven; current in-estate revision history is observation-era recent. A separate source/data investigation is needed before deep historical belief replay."
-  - "MAS-119 has not yet executed its domain-by-domain ExpectationBaseline federation; general Market-Belief composition must remain owner-native/typed partial until it does."
+  - "The Catalyst Federation/Cell C expectation route has not yet executed its domain-by-domain ExpectationBaseline federation; general Market-Belief composition must remain owner-native/typed partial until that work is accepted."
   - "MAS-118 cannot yet run its first confirmatory family because broad PIT guidance corpus, survivor-safe price history and historical control prerequisites are not proven."
   - "Portable Research Context persistence owner has not been re-censused at implementation time. This freeze requires default-ephemeral first and forbids a new store."
   - "Analytical Lens is architecture only; broad production FIF input coverage and cross-company comparability must be proven before LENS-1 can claim a comparison workflow."
@@ -76,7 +76,7 @@ unresolved:
 next_actions:
   - "Primary: after PR #6293 receives Sol adversarial review and lands, do not start a broad Research OS build. On a future explicit Chairman implementation instruction, re-run current Market OS/Terminal/Earnings-search/identity collision checks and commission RCTX-1 only: one real search -> event -> exact evidence -> Ask Mastermind -> return reference-continuity journey, default ephemeral, no new store."
   - "Independent: MAS-118 may continue under its own current carrier and scientific gates; this architecture does not modify or rescue it."
-  - "Independent: MAS-119 may be launched separately by explicit Chairman intent to settle common expectation semantics; it is not auto-started here."
+  - "Independent: the Catalyst Federation/Cell C lane represented by MAS-119 may be launched separately by explicit Chairman intent to settle common expectation semantics; it is not auto-started here."
   - "Independent: MAS-122/V4 D5 continues only through its accepted predecessor gates; this architecture does not change D5."
   - "Independent: Earnings E3, Dislocation P0, FIF and Market OS A1A continue under their own canonical handoffs."
   - "Later data-source wave: investigate rights-safe licensed historical estimate/consensus vintages as a separate source/data commission, not as a prerequisite to RCTX-1."
