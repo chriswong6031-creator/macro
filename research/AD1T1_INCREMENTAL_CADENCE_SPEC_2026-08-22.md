@@ -609,12 +609,24 @@ none authorized).
   - empty frame → stays empty → `vendor_empty`;
   - else derive `date = snapshot_ts.dt.normalize()` — the SAME vendor
     `timestamp` clock `_normalize_oi_df` already uses for the store's
-    history-path `date` column — and keep ONLY rows where
-    `date == pd.Timestamp(D)` (**source-timestamp guard**: stale/other-date
-    rows are ABSENT, never relabeled); drop `snapshot_ts`; select exactly
+    history-path `date` column — drop `snapshot_ts`; select exactly
     `["root","expiration","strike","right","date","open_interest"]`
     (byte-identical store OI schema).
-  - Nonempty-but-zero-D-rows then classifies `date_unresolved` via the
+  - **Adjudication (Fable, 2026-08-23, on builder DEVIATIONS flag):** the
+    wrapper does NOT itself filter rows to `date == D`. R4's original prose
+    said both "keep ONLY D rows" and "nonempty-but-zero-D-rows classifies
+    `date_unresolved`" — mutually inconsistent: a wrapper-side filter would
+    collapse a stale-only response into an empty frame, which
+    `_ensure_one_cell` classifies `vendor_empty`, destroying the
+    `date_unresolved` anomaly signal. The binding mechanism is: every row's
+    OWN derived date rides through; `_ensure_one_cell`'s unchanged
+    rows_for_target_date check classifies `date_unresolved` when zero rows
+    carry D; and `_merge_day`'s unchanged exact-date write filter
+    (`fresh["date"] == day_ts`) keeps only D rows at write time. The
+    **source-timestamp guard** is therefore enforced at the writer:
+    stale/other-date rows are ABSENT from the store, never relabeled —
+    identical observable store contract, strictly better diagnostics.
+  - Nonempty-but-zero-D-rows classifies `date_unresolved` via the
     existing rows_for_target_date check; D-rows merge via the same
     `_merge_day` exact-date replacement writer → `complete`.
 - Receipt: `oi_D_source: "snapshot_open_interest"` (auditable observation
