@@ -18,6 +18,12 @@ state_before: >
   DEC:BTC-MIDTERM-BLACKOUT-AUTHORITY-RETIRED; no open PR touched the P0A paths
   at the start or final collision checks.
 changed:
+  - path: .github/ci/legacy-jobs.yml
+    what: >
+      Wired the new decision suite into the existing Vector organ step with its
+      jsonschema dependency and widened the curated picks/boards import closure
+      to include engine/btc_decision.py, closing both introduced contract-delta
+      findings without creating a new job or weakening scope.
   - path: engine/btc_decision.py
     what: >
       Added the pure deterministic btc.decision/v1 builder. It derives action
@@ -75,6 +81,14 @@ changed:
       P0B todo and uncommissioned, with no execution or merge authority implied.
 prs: [6294]
 verified:
+  - claim: >
+      The CI manifest wiring and curated import-closure repair satisfy the
+      manifest planner's adversarial unit contracts.
+    command: >-
+      PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest -q
+      tests/test_btc_decision.py tests/test_contract_delta.py
+      tests/test_ci_pack.py tests/test_ci_plan_workflow.py
+    result: "167 passed; only three pytest temporary-directory cleanup warnings."
   - claim: >
       The deterministic decision, BTC authority, Vector, asset and site-reference
       regression set passes in a full checkout on the refreshed branch.
