@@ -872,6 +872,9 @@ PUBLIC_EXACT = frozenset({
     "/watchstore.js",
     "/market_books.js",
     "/portfolio.js",
+    "/portfolio_import.css",
+    "/portfolio_import.js",
+    "/portfolio_import_ui.js",
     "/mtf.js",
     "/mm_brain.js",
     # The seventh funnel-shell script, promoted deliberately (#6141, 2026-08-20)

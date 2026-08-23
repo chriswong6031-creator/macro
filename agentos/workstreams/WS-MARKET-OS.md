@@ -46,16 +46,16 @@ waves:
       protections remain intact.
   - id: A1B
     title: Portfolio Fast Start Import
-    status: todo
+    status: in_progress
     depends_on: [A1A]
     next_action: >
-      A1A is now accepted, so A1B is eligible for a separate bounded Sol commission.
-      Before any code write, refresh current Macro main, protected Terminal master,
-      open PR/worktree/path collisions, the Active Build Map, and the canonical
-      portfolio_positions mutation/identity contracts. Then ship one reviewed paste
-      to canonical positions vertical with stable identity, atomic/idempotent
-      persistence, lost-response safety, and Macro/Terminal conformance. Do not absorb
-      A2-A6 or a broad My Market rewrite.
+      The separately commissioned A1B implementation carrier now provides the bounded
+      paste -> exact editable review -> one canonical Portfolio batch save vertical on
+      branch warp/warp-71ca86ff4f1545089aa1fc6fd9eda4e0. It is locally verified and
+      must be returned as one DRAFT / HOLD-FOR-SOL review PR with its exact head and
+      concluded CI/fence receipts. Sol code review is the next gate. Do not merge,
+      deploy, mutate production Portfolio rows, begin production acceptance, change
+      Terminal, or absorb A2-A6 from this carrier.
   - id: A2-A6
     title: Persistent sizing assumptions, CSV import, My Market rail, universal add, and Watchlist workspace
     status: todo
@@ -149,14 +149,13 @@ artifacts:
   - agentos/handoffs/MARKET-OS-2026-08-22-a1a-restoration-v2-probe.md
   - agentos/handoffs/MARKET-OS-2026-08-23-a1a-final-authenticated-matrix.md
   - agentos/handoffs/MARKET-OS-2026-08-23-a1a-sol-acceptance.md
+  - agentos/handoffs/MARKET-OS-2026-08-23-a1b-implementation.md
   - agentos/handoffs/MARKET-OS-2026-08-20-a1a-merge-reconciliation.md
   - agentos/decisions/DEC-MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED.md
 next_action: >
-  PRIMARY: commission exactly A1B Portfolio Fast Start Import after a fresh current-head,
-  open-PR/worktree/path-collision, Active Build Map, and canonical mutation/identity
-  census across Macro and protected Terminal. A1B must write reviewed paste/import rows
-  to canonical portfolio_positions with stable identity, atomic/idempotent persistence,
-  lost-response safety, and Macro-Terminal conformance; do not absorb A2-A6. PARALLEL:
+  PRIMARY: Sol reviews the exact A1B DRAFT / HOLD-FOR-SOL implementation head and its
+  CI/fence receipt. The carrier must remain unmerged, undeployed, and production-unrun
+  until Sol explicitly authorizes the next action; do not absorb A2-A6. PARALLEL:
   RCTX-1 remains bound to merged #6300 and its existing Fable DELIVERY_ONLY transport;
   reconcile only when real ACK/branch/PR/return evidence appears and do not auto-failover.
 ---
@@ -169,12 +168,14 @@ Market; one shared Decision Spine; separate public intelligence and private expo
 and explicit fact, deterministic-state, forecast, and decision authority.
 
 A1A is accepted in production. The canonical Portfolio population/state authority seam
-is now a proven foundation for the next import wave: authenticated users do not fail open
+is the proven foundation for the import wave: authenticated users do not fail open
 to local Portfolio state; Watchlists and temporary baskets do not enter Portfolio count,
 market membership, weighting, book or risk; weighting assumptions and abstention are
 explicit; and Macro/Terminal agreement has been demonstrated across the frozen live
-matrix. Fast Start Import itself is still NOT_BUILT and must arrive through A1B rather
-than by relabeling the existing Watchlist/ENTERED paste path.
+matrix. A1B is now implemented and locally verified on its bounded review carrier, but
+it is not merged, deployed, production-proven, or accepted. It writes canonical
+Portfolio positions rather than relabeling the existing Watchlist/ENTERED paste path;
+the next authority is Sol code review of the exact draft head.
 
 ## Program-parent note
 
