@@ -12,7 +12,7 @@ K4, B1, K2-B, or D5-EARNINGS work.
 The protected Sol Skillpack was loaded atomically from the current protected
 `mastermindx-market-intelligence/Mastermind` `master` commit:
 
-- repository commit: `5d752c4c28d63207849247bd608cf9993e2f58bb`
+- repository commit: `eb9910681a6db9f9675b25233c8865bb43325c32`
 - Skillpack tree: `0a009d5314a4a3bbb1aac2f111b68644fc7a64d8`
 - schema: `mastermind.sol_skillpack.v1`
 - version: `1.0.0`
@@ -29,7 +29,7 @@ The protected Sol Skillpack was loaded atomically from the current protected
 
 The handoff and later authenticated-MO commission pin
 `db0bac5fe3f72348262d42c8bd26b836bda9f61d` remains historical. The protected
-Mastermind outer commit moved to `5d752c4c28d63207849247bd608cf9993e2f58bb`,
+Mastermind outer commit moved to `eb9910681a6db9f9675b25233c8865bb43325c32`,
 but its `docs/sol_skills` tree and every procedure blob listed above remain
 byte-identical. This distinction matters: current protected-repository state moved;
 the protected Skillpack bytes did not. The Macro handoff pin
@@ -330,7 +330,7 @@ run on a main descendant of the merge under the merged authority.
 
 > Sol, accept K1 / FABLE-A Evidence Foundation v1.0.0 as a contract-only freeze.
 > The current protected Skillpack was loaded from Mastermind
-> `5d752c4c28d63207849247bd608cf9993e2f58bb` (Skillpack tree remains byte-identical
+> `eb9910681a6db9f9675b25233c8865bb43325c32` (Skillpack tree remains byte-identical
 > to the commission pin); Macro was reconciled to
 > `fa4c0683aff04a2bdf4092ca8200be599845800c`. The physical-store flip condition is
 > adverse: #6325 names B1/AAPL as a candidate but leaves it unauthorized, no product

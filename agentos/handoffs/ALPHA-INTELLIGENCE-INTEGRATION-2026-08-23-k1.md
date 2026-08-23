@@ -87,12 +87,12 @@ verified:
   - claim: "The current protected Sol Skillpack was atomically loaded and is compatible."
     command: >
       git ls-remote origin refs/heads/master; git rev-parse
-      5d752c4c28d63207849247bd608cf9993e2f58bb:docs/sol_skills; git ls-tree
-      5d752c4c28d63207849247bd608cf9993e2f58bb:docs/sol_skills; git show
-      5d752c4c28d63207849247bd608cf9993e2f58bb:docs/sol_skills/INDEX.md; gh api
+      eb9910681a6db9f9675b25233c8865bb43325c32:docs/sol_skills; git ls-tree
+      eb9910681a6db9f9675b25233c8865bb43325c32:docs/sol_skills; git show
+      eb9910681a6db9f9675b25233c8865bb43325c32:docs/sol_skills/INDEX.md; gh api
       repos/mastermindx-market-intelligence/Mastermind/branches/master/protection
     result: >
-      Protected master is 5d752c4c28d63207849247bd608cf9993e2f58bb;
+      Protected master is eb9910681a6db9f9675b25233c8865bb43325c32;
       Skillpack tree 0a009d5314a4a3bbb1aac2f111b68644fc7a64d8; schema
       mastermind.sol_skillpack.v1; version 1.0.0; minimum bootstrap major 1;
       strict required check test and enforce_admins=true; every procedure blob is
