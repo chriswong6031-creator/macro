@@ -9323,7 +9323,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: neural-web cortex world-state consumers + the factor-contradiction plane
-        run: python -m pytest tests/test_build_active_build_map.py tests/test_build_cycle_pattern_state.py tests/test_factor_contradictions.py tests/test_nw_consumers_w3.py tests/test_nw_health_escalation.py tests/test_options_nw_wiring.py tests/test_til_nw_citizenship.py tests/test_world_state_special_sits.py tests/test_world_state_stage_analysis.py -q
+        run: python -m pytest tests/test_build_active_build_map.py tests/test_build_cycle_pattern_state.py tests/test_imce_prospective.py tests/test_factor_contradictions.py tests/test_nw_consumers_w3.py tests/test_nw_health_escalation.py tests/test_options_nw_wiring.py tests/test_til_nw_citizenship.py tests/test_world_state_special_sits.py tests/test_world_state_stage_analysis.py -q
       - name: three-repository advisory Active Build Map
         run: python -m pytest tests/test_project_active_build_map.py -q
       # Wired 2026-08-06: the CPI substrate that test_build_cycle_pattern_state.py (in

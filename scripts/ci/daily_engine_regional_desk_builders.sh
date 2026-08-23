@@ -167,7 +167,10 @@ cl_misc() {
   # the source event_workspace.v1 objects this step reads). Runs after the
   # other cycle_pattern steps (family grouping) and before `measurement`,
   # which reads this ledger for its compact accrual/status projection.
-  brun cycle_pattern_imce_prospective "IMCE A5B prospective capture (build_cycle_pattern_imce_prospective)" scripts.build_cycle_pattern_imce_prospective
+  # --production is REQUIRED (red-team M7): a bare invocation of this
+  # builder refuses to touch the production ledger at all. This is the ONE
+  # caller authorized to pass it.
+  brun cycle_pattern_imce_prospective "IMCE A5B prospective capture (build_cycle_pattern_imce_prospective)" scripts.build_cycle_pattern_imce_prospective --production
   # Stock seasonality calendar clock (research/STOCK_SEASONALITY_LANE2_DESIGN_SPEC.md).
   # DAILY-ONLY and LAST in cl_misc: the 2645-window family and its independent
   # circular year-shift null (B=2000, raw + market-neutral) are the heavy leg, and

@@ -348,14 +348,21 @@ waves:
       engine/cycle_pattern/imce_prospective.py (append-only JSONL,
       activation/observation/correction row kinds, content-addressed
       observation_id, first-observation-wins keying on
-      (event_id, decision_cutoff), strict activation-law fencing that also
-      binds contributing-issuer states, an outcome-field blacklist assertion,
-      and a reconstruction/production write-path law enforced bidirectionally
-      so tests can never touch the production ledger). M_t implements
+      (event_id, decision_cutoff), activation-law fencing that also binds
+      contributing-issuer states — ENFORCED AT BOTH the builder script AND
+      (red-team M7 hardening, below) the module itself, independent of
+      caller discipline — an outcome-field blacklist assertion, and a
+      reconstruction/production write-path law enforced bidirectionally so
+      tests can never touch the production ledger). M_t's sign table, ≥2-
+      contributor pooling floor, tie handling, and label rule implement
       research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md
-      verbatim (sign-only §2 lookup table, §3.1 ≥2-contributor pooling floor
-      with any tie typed MIXED, 4/4→cohort / 2-3→named_subset / <2→
-      NOT_RECONSTRUCTABLE label rule) reusing A5A's own extracted facts
+      VERBATIM and are UNCHANGED end to end (red-team-verified constant-exact
+      against the frozen doc; §2 lookup table, §3.1 ≥2-contributor pooling
+      floor with any tie typed MIXED, 4/4→cohort / 2-3→named_subset / <2→
+      NOT_RECONSTRUCTABLE label rule) — per-issuer CONTRIBUTOR ELIGIBILITY,
+      upstream of that verbatim arithmetic, gained two new gates in the
+      red-team fixes below (calendar-quarter pooling-key alignment;
+      denominator-convention conformance) — reusing A5A's own extracted facts
       (fact_net_orders_current/prior_year, fact_cancellation_rate_current/
       prior_year/denominator, plus TOL's beginning-quarter-backlog
       sensitivity fact) — zero new threshold/model/issuer logic. TOL's §1b
@@ -417,6 +424,107 @@ waves:
       nightly; this wave does not backfill or manufacture one. Next gate:
       whatever the commissioning session names after reviewing this draft
       (a real post-activation observation is the natural A5B proof event).
+
+      RED-TEAM FIXES (same PR #6281, same branch — BLOCK verdict returned 3
+      blockers/4 majors/3 minors; M_t sign table/floor/tie/label logic
+      verified constant-exact and untouched by any fix below). B1: R_t
+      admissibility was daily-bar-only, so a truncated series could emit a
+      biweekly bar labelled by a FUTURE (not-yet-closed) period-end built
+      from a partial week — fixed by additionally filtering the biweekly
+      resample's own period-end dates through the same session-close
+      admissibility check; stamps last_biweekly_period_end; reproduced and
+      fixed against real DHI bars (Wed 2026-08-19 cutoff no longer admits
+      the 2026-08-21 period; sign flips + -> - exactly as the review
+      predicted once the period genuinely closes). B2: the outcome-field
+      blacklist was exact-match only — hardened to normalized-stem substring
+      matching (separator-stripped, lowercased) plus two added tokens
+      (fwd_ret, outcome); test-verified against forward_return_63d,
+      fwd_ret_21d, brier_score_90d, hit_rate_pct, p_value_two_sided,
+      sharpe_1y, forwardReturn, outcome, with an explicit no-false-positive
+      check against the real packet schema. B3: load_prior_workspace's own
+      fail-soft design (correct for ITS callers) meant the builder could not
+      tell a network failure from a genuine not-yet-published event —
+      addressed with an injectable-fetch classifier
+      (found/not_published/fetch_failed) mirroring load_prior_workspace's
+      own base-URL/manifest/workspace GET sequence without touching that
+      function or any other caller; ANY fetch_failed anywhere in a run now
+      defers every observation that run (no row written, activation not
+      stamped if this is the first run) — the roster is fixed and every
+      pooled read spans all four tickers, so one failure taints all of them
+      equally; the next nightly retries cleanly. M4: correction detection
+      keyed on exhibit sha256, which does not move on re-extraction, and an
+      8-K/A mints a new decision_cutoff, producing an unlinked second
+      observation instead of a correction — fixed at the module level
+      (append_observation now refuses a second observation for any event_id
+      that already has one, forcing the caller through append_correction)
+      plus a new packet_materially_differs() gate (generation_id change AND
+      a genuinely different derived per-issuer state — a cosmetic republish
+      is not material) that the builder uses to decide correction-worthy vs
+      no-op. M5: contributor snapshots had no recency bound at all — fixed
+      by implementing (mechanically, generically, from calendar_end alone)
+      the ACTUAL frozen calendar-quarter pooling key from
+      research/imce/IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md §4b ("Pooling
+      key (NEW) = calendar quarter by majority-month", verified
+      zero-collision across all six roster issuers) — NOTE: this is a more
+      precise, independently-verified, ALREADY-FROZEN source than the
+      review's own proposed "same-or-preceding-quarter" approximation, which
+      it therefore supersedes rather than contradicts; a misaligned
+      contributor is typed activation_law="stale_snapshot_outside_aligned_
+      quarter". M6: c_t leg observation_timestamp (and the R_t leg's new
+      read-time vintage stamp, added for item (i) below) sat inside the
+      hashed body, so two identical builds at different wall-clock times
+      minted different observation_ids — both keys are now stripped from
+      compute_observation_id()'s hashed body (never from the stored packet)
+      and a same-inputs-different-wall-time test proves identical ids. M7:
+      activation-law fencing lived only in the builder — append_observation
+      now independently rejects any packet whose decision_cutoff predates
+      the ledger's own activation row; every non-reconstruction write
+      (ensure_activation/append_observation/append_correction) now
+      additionally requires an explicit production=True, which only the
+      nightly's --production CLI flag (wired into cl_misc's brun call)
+      supplies — a bare invocation refuses every write; and the builder now
+      fetches candidates BEFORE calling ensure_activation, so a first run
+      whose manifest read fails never burns the activation clock. MIN8: TOL
+      sensitivity's prior-year value is now a REAL fact lookup
+      (fact_cancellation_rate_beginning_backlog_sensitivity_prior_year) —
+      honestly NOT_RECONSTRUCTABLE today because A5A does not yet emit that
+      fact_id, self-healing the day it does. MIN9: a new denominator-
+      convention conformance guard checks the captured
+      fact_cancellation_rate_denominator text against the construction
+      doc's §1 frozen per-issuer keywords, excluding the contributor on
+      mismatch. MIN10: pmms/fred_alfred/nar_series now carry the same full
+      C_t leg shape as treasury_cmt. Item (i): R_t's adjustment_basis no
+      longer implies a stable/frozen basis it cannot evidence — it now
+      states plainly that the plane back-adjusts at READ TIME, values are
+      not guaranteed stable across re-reads if a corporate action posts
+      retroactively, and sign stability holds only absent such an event;
+      `vintage` records the read-time timestamp, never a per-bar revision
+      vintage the plane does not itself carry. tests/test_imce_prospective.py
+      grew from 57 to 100 cases covering every fix above (including the
+      builder's fetch-disposition classifier and correction-routing logic,
+      via injectable stubs — still zero network). Re-verified after the
+      fixes: pytest tests/test_imce_prospective.py (100 passed);
+      tests/test_dag_conformance.py (48 passed, --production arg addition
+      does not disturb parsing); tests/test_issuer_profiles_a5a.py +
+      tests/test_build_cycle_pattern_state.py (no regression, combined
+      with the above: 186 passed); python3 scripts/agentos.py validate (0
+      errors); python3 scripts/check_cycle_pattern_authority.py (exit 0,
+      same pre-existing unrelated WARNs, 0 HARD). python3
+      scripts/check_contract_delta.py --base
+      5b8ca994de05345d3cea514c46c27611bfe496d1 FIRST caught a genuine
+      finding of its own (tests/test_imce_prospective.py "named by no run:
+      step in any workflow") — healed by adding the file to the existing
+      DISABLED (`if: ${{ false }}`) unrun-neuralweb-cortex job's
+      cycle_pattern pytest line in .github/ci/legacy-jobs.yml, next to its
+      closest sibling tests/test_build_cycle_pattern_state.py (that job's
+      sibling test_issuer_profiles_a5a.py lives in an identically-disabled
+      neural-web-core job — a pre-existing house pattern of "named but not
+      scheduled," satisfying audit_unrun_tests.py's naming contract without
+      inventing a new one); re-run after the heal: 0 introduced, 0
+      inherited. tests/test_ci_pack.py re-run clean after the
+      legacy-jobs.yml edit (no pack-weight/import-closure regression).
+      Production ledger path still never created by this session. PR stays
+      DRAFT pending the commissioning session's re-review.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's

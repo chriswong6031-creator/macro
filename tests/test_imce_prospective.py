@@ -1,26 +1,40 @@
-"""Tests for engine/cycle_pattern/imce_prospective.py (IMCE A5B).
+"""Tests for engine/cycle_pattern/imce_prospective.py (IMCE A5B) and its
+nightly builder scripts/build_cycle_pattern_imce_prospective.py.
 
-All fixtures are labelled RECONSTRUCTION — every write in this file targets an
-explicit temp path via ``reconstruction=True``; the word "prospective" appears
-here only as the dataset's own name, never as a claim about a real event.
+All fixtures are labelled RECONSTRUCTION — every write in this file targets
+an explicit temp path via ``reconstruction=True``; the word "prospective"
+appears here only as the dataset's own name, never as a claim about a real
+event.
 
 No network. Price-leg tests read the REAL committed
 data/baskets/ohlcv/{DHI,PHM,KBH,TOL}.parquet files (already on disk, no
 network) so the PIT-bound logic is exercised against real bars rather than a
-synthetic series.
+synthetic series. Fetch-disposition tests inject a stub fetch function
+(never real HTTP).
 
-Coverage (frozen spec TESTS a-j):
+Coverage (frozen spec TESTS a-j, plus the red-team B1/B2/B3/M4/M5/M6/M7/
+MIN8/MIN9/MIN10 fixes applied on top of the same branch):
   a. activation record idempotence
   b. first-observation-wins + exact-duplicate rerun no-op
   c. correction append + original packet immutability (byte-compare)
   d. activation-law fencing + reconstruction/production path law
   e. M_t verbatim conformance (>=2 floor, tie=>MIXED, missing-never-zero,
-     no state carry-forward past a source failure)
-  f. R_t PIT admissibility + construction pins + typed absence
+     no state carry-forward past a source failure) — UNCHANGED arithmetic
+  f. R_t PIT admissibility + construction pins + typed absence, INCLUDING
+     the B1 biweekly-period-end truncation fix
   g. label truth table (4/4 cohort, 2-3 named_subset, <2 NOT_RECONSTRUCTABLE)
-  h. schema outcome-field blacklist
+  h. schema outcome-field blacklist, INCLUDING the B2 substring/stem fix
   i. measurement projection rebuilds from the ledger alone
   j. cycle-pattern authority guard passes with the new reader/writer
+  B3. network failure vs not-published disposition
+  M4. correction-path routing (re-extraction + 8-K/A shapes)
+  M5. contributor staleness / calendar-quarter pooling-key alignment
+  M6. observation_id determinism (wall-clock timestamps excluded from hash)
+  M7. module-level activation-law enforcement + production-flag law +
+      activation-stamped-only-after-manifest-success
+  MIN8. TOL sensitivity self-healing fact lookup
+  MIN9. denominator-convention conformance guard
+  MIN10. full C_t leg shape for every context leg
 """
 from __future__ import annotations
 
@@ -36,6 +50,30 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from engine.cycle_pattern import imce_prospective as m  # noqa: E402
+
+ACTIVATION_TS = "2026-01-01T00:00:00Z"
+CIKS = {"DHI": "0000882184", "PHM": "0000822416", "KBH": "0000795266", "TOL": "0000794170"}
+
+# Calendar-aligned default quarter-end (matches PHM/KBH's real FYE) so most
+# tests get a trivial pooling key of (year, quarter) without having to think
+# about the majority-month rule; M5 tests override this explicitly to
+# exercise DHI/TOL's genuinely offset fiscal calendars.
+_CALENDAR_ALIGNED_QUARTER_END = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}
+
+
+def _default_calendar_end(year: int, quarter: int) -> str:
+    return f"{year}-{_CALENDAR_ALIGNED_QUARTER_END[quarter]}"
+
+
+# Ticker-aware default denominator text so a fixture that doesn't care about
+# MIN9 conformance still passes it by default (construction doc §1 frozen
+# per-issuer convention keywords).
+_DEFAULT_DENOMINATOR_TEXT = {
+    "DHI": "gross orders in period",
+    "PHM": "gross new orders in period",
+    "KBH": "cancellation rate as a percentage of gross orders",
+    "TOL": "quarterly cancellations as a percentage of signed contracts in quarter",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -62,7 +100,8 @@ def _workspace(
     net_orders_prior=None,
     cancel_current=None,
     cancel_prior=None,
-    denominator="stated denominator",
+    denominator: str | None = None,
+    calendar_end: str | None = None,
     generation_id: str = "a" * 24,
     accession: str = "0000000000-26-000001",
     sha256hex: str = "d" * 64,
@@ -71,6 +110,7 @@ def _workspace(
     if facts_override is not None:
         facts = facts_override
     else:
+        denom_text = denominator if denominator is not None else _DEFAULT_DENOMINATOR_TEXT.get(ticker, "gross orders in period")
         facts = [
             _fact_present("fact_net_orders_current", net_orders_current) if net_orders_current is not None
             else _fact_absent("fact_net_orders_current"),
@@ -80,7 +120,7 @@ def _workspace(
             else _fact_absent("fact_cancellation_rate_current"),
             _fact_present("fact_cancellation_rate_prior_year", cancel_prior) if cancel_prior is not None
             else _fact_absent("fact_cancellation_rate_prior_year"),
-            _fact_present("fact_cancellation_rate_denominator", denominator, basis=denominator),
+            _fact_present("fact_cancellation_rate_denominator", denom_text, basis=denom_text),
         ]
         if ticker == "TOL":
             facts.append(_fact_present(
@@ -93,7 +133,8 @@ def _workspace(
             "company_id": f"cik:{cik}",
             "listings": [{"security_id": f"xnys:{ticker}", "ticker": ticker, "mic": "XNYS", "is_primary": True}],
         },
-        "fiscal_period": {"year": year, "quarter": quarter, "calendar_end": None},
+        "fiscal_period": {"year": year, "quarter": quarter,
+                           "calendar_end": calendar_end or _default_calendar_end(year, quarter)},
         "lifecycle": {"state": "results_released", "source_available_at": source_available_at},
         "facts": facts,
         "sources": [{
@@ -104,14 +145,12 @@ def _workspace(
     }
 
 
-CIKS = {"DHI": "0000882184", "PHM": "0000822416", "KBH": "0000795266", "TOL": "0000794170"}
-
-
 def _mk_ws(ticker, *, cutoff, **kwargs):
     return _workspace(ticker=ticker, cik=CIKS[ticker], year=2026, quarter=2, source_available_at=cutoff, **kwargs)
 
 
-ACTIVATION_TS = "2026-01-01T00:00:00Z"
+def _trigger_pooling_key(ws: dict) -> tuple[int, int]:
+    return m.calendar_quarter_key(ws["fiscal_period"]["calendar_end"])
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +208,8 @@ def test_correction_append_never_rewrites_original(tmp_path):
     original_lines = original_bytes.splitlines()
 
     revised_trig = _mk_ws("PHM", cutoff="2026-05-01T20:00:00Z", net_orders_current=101, net_orders_prior=90,
-                           cancel_current=10.0, cancel_prior=12.0, sha256hex="b" * 64)
+                           cancel_current=10.0, cancel_prior=12.0, sha256hex="b" * 64,
+                           generation_id="b" * 24)
     revised_packet = m.build_observation_packet(
         trigger_ticker="PHM", trigger_workspace=revised_trig,
         issuer_workspaces={"DHI": None, "PHM": revised_trig, "KBH": None, "TOL": None},
@@ -205,16 +245,18 @@ def test_pre_activation_event_excluded_from_cohort():
     activation = "2026-06-01T00:00:00Z"
     pre_activation_ws = _mk_ws("DHI", cutoff="2026-01-01T00:00:00Z", net_orders_current=100,
                                 net_orders_prior=90, cancel_current=10.0, cancel_prior=12.0)
+    key = _trigger_pooling_key(pre_activation_ws)
     state = m.per_issuer_state("DHI", pre_activation_ws, activation_started_at=activation,
-                                as_of_cutoff="2026-07-01T00:00:00Z")
+                                as_of_cutoff="2026-07-01T00:00:00Z", trigger_pooling_key=key)
     assert state["contributor_eligible"] is False
     assert state["activation_law"] == "pre_activation_excluded"
     assert state["order_softness"] == "NOT_RECONSTRUCTABLE"
 
     post_activation_ws = _mk_ws("DHI", cutoff="2026-07-01T00:00:00Z", net_orders_current=100,
                                  net_orders_prior=90, cancel_current=10.0, cancel_prior=12.0)
+    key2 = _trigger_pooling_key(post_activation_ws)
     state2 = m.per_issuer_state("DHI", post_activation_ws, activation_started_at=activation,
-                                 as_of_cutoff="2026-07-01T00:00:00Z")
+                                 as_of_cutoff="2026-07-01T00:00:00Z", trigger_pooling_key=key2)
     assert state2["contributor_eligible"] is True
     assert state2["activation_law"] == "post_activation"
 
@@ -224,14 +266,50 @@ def test_reconstruction_mode_cannot_touch_production_path():
         m.ensure_activation(path=m.PRODUCTION_PATH, reconstruction=True)
 
 
-def test_production_write_must_target_production_path(tmp_path):
+def test_production_write_without_flag_is_refused(tmp_path):
     stray = tmp_path / "not_production.jsonl"
+    # Wrong path AND missing production flag — either alone would raise;
+    # this proves the path check fires first (unchanged behavior).
     with pytest.raises(m.ProspectiveLedgerError):
         m.ensure_activation(path=stray, reconstruction=False)
 
 
+def test_production_path_requires_explicit_production_flag(monkeypatch, tmp_path):
+    """M7(b): even targeting the real production PATH, a bare
+    reconstruction=False call without production=True is refused."""
+    fake_prod = tmp_path / "fake_production.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    with pytest.raises(m.ProspectiveLedgerError, match="production=True"):
+        m.ensure_activation(reconstruction=False)  # production defaults False
+    assert not fake_prod.exists()
+    # With production=True it succeeds.
+    row = m.ensure_activation(reconstruction=False, production=True,
+                               now=datetime(2026, 1, 1, tzinfo=timezone.utc))
+    assert row["activation_started_at"] == "2026-01-01T00:00:00Z"
+    assert fake_prod.exists()
+
+
 # ---------------------------------------------------------------------------
-# (e) M_t verbatim conformance
+# M7(a): module-level activation-law enforcement in append_observation
+# ---------------------------------------------------------------------------
+
+def test_append_observation_rejects_pre_activation_decision_cutoff(tmp_path):
+    p = tmp_path / "recon_activation_gate.jsonl"
+    m.ensure_activation(path=p, reconstruction=True, now=datetime(2026, 6, 1, tzinfo=timezone.utc))
+    pre_ws = _mk_ws("KBH", cutoff="2026-01-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
+                     cancel_current=10.0, cancel_prior=12.0)
+    packet = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=pre_ws,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": pre_ws, "TOL": None},
+        activation_started_at="2026-01-01T00:00:00Z",  # packet claims an (incorrect) earlier activation
+    )
+    with pytest.raises(m.ProspectiveLedgerError, match="activation law"):
+        m.append_observation(packet, path=p, reconstruction=True)
+    assert m.load_rows(p) == [m.activation_row(p)]  # nothing else was written
+
+
+# ---------------------------------------------------------------------------
+# (e) M_t verbatim conformance — UNCHANGED arithmetic, red-team constant-exact
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("d_orders,d_cancel,expected", [
@@ -247,9 +325,7 @@ def test_order_softness_lookup_table_verbatim(d_orders, d_cancel, expected):
 
 
 def test_yoy_sign_missing_never_becomes_zero():
-    # A genuine zero-change reading IS "0" (a real, present observation).
     assert m.yoy_sign(100, 100) == "0"
-    # A missing input is None, never coerced to "0".
     assert m.yoy_sign(None, 100) is None
     assert m.yoy_sign(100, None) is None
     assert m.yoy_sign(None, None) is None
@@ -288,38 +364,172 @@ def test_pooling_tie_is_mixed_two_way_and_three_way():
 
 
 def test_no_state_carry_forward_past_a_source_failure():
-    """Statelessness: a workspace with a present fact followed by one with a
-    typed absence must NEVER reuse the earlier non-missing state — each call
-    is pure over its own input only."""
     good_ws = _mk_ws("KBH", cutoff="2026-05-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
                       cancel_current=10.0, cancel_prior=12.0)
+    good_key = _trigger_pooling_key(good_ws)
     good_state = m.per_issuer_state("KBH", good_ws, activation_started_at=ACTIVATION_TS,
-                                     as_of_cutoff="2026-06-01T00:00:00Z")
+                                     as_of_cutoff="2026-06-01T00:00:00Z", trigger_pooling_key=good_key)
     assert good_state["order_softness"] != "NOT_RECONSTRUCTABLE"
 
     failed_ws = _mk_ws("KBH", cutoff="2026-08-01T00:00:00Z", net_orders_current=None, net_orders_prior=None,
                         cancel_current=10.0, cancel_prior=12.0)
+    failed_key = _trigger_pooling_key(failed_ws)
     failed_state = m.per_issuer_state("KBH", failed_ws, activation_started_at=ACTIVATION_TS,
-                                       as_of_cutoff="2026-09-01T00:00:00Z")
-    # Independent of the earlier good_state — never "sticky".
+                                       as_of_cutoff="2026-09-01T00:00:00Z", trigger_pooling_key=failed_key)
     assert failed_state["order_softness"] == "NOT_RECONSTRUCTABLE"
     assert failed_state["d_orders"] is None
 
 
-def test_tol_sensitivity_diagnostic_present_but_honestly_not_reconstructable():
+# ---------------------------------------------------------------------------
+# M5 — contributor staleness / calendar-quarter pooling-key alignment
+# ---------------------------------------------------------------------------
+
+def test_calendar_quarter_key_matches_frozen_majority_month_table():
+    # Frozen table (research/imce/IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md §4b):
+    # DHI FQ1 ends Dec 31 -> CQ4 of THAT SAME year (Oct/Nov/Dec all in it).
+    assert m.calendar_quarter_key("2025-12-31") == (2025, 4)
+    # TOL FQ1 ends Jan 31 -> CQ4 of the PRIOR year (Nov+Dec majority).
+    assert m.calendar_quarter_key("2026-01-31") == (2025, 4)
+    # PHM/KBH-style calendar-aligned quarter ends map onto themselves.
+    assert m.calendar_quarter_key("2026-06-30") == (2026, 2)
+    assert m.calendar_quarter_key("2026-05-31") == (2026, 2)
+    assert m.calendar_quarter_key(None) is None
+    assert m.calendar_quarter_key("not-a-date") is None
+
+
+def test_m5_stale_snapshot_outside_aligned_quarter_excluded():
+    """The reviewer's reproduction case: a multi-year-stale KBH snapshot
+    (published well AFTER activation, so the activation-law gate alone would
+    let it through) must never be pooled into a live trigger's read — the
+    pooling-key alignment gate must catch what the activation-law gate
+    cannot."""
+    trigger_ws = _mk_ws("DHI", cutoff="2026-05-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
+                         cancel_current=10.0, cancel_prior=12.0)
+    trigger_key = _trigger_pooling_key(trigger_ws)
+    assert trigger_key == (2026, 2)
+
+    # KBH's fiscal Q4 2020 (calendar-aligned -> pooling key (2020, 4)),
+    # but published/republished LATE — well after activation, so PIT and
+    # activation-law alone would both pass it.
+    stale_kbh = _workspace(
+        ticker="KBH", cik=CIKS["KBH"], year=2020, quarter=4,
+        source_available_at="2026-02-01T00:00:00Z", calendar_end="2020-11-30",
+        net_orders_current=50, net_orders_prior=45, cancel_current=8.0, cancel_prior=9.0,
+    )
+    assert m.calendar_quarter_key(stale_kbh["fiscal_period"]["calendar_end"]) != trigger_key
+    state = m.per_issuer_state("KBH", stale_kbh, activation_started_at=ACTIVATION_TS,
+                                as_of_cutoff="2026-05-01T00:00:00Z", trigger_pooling_key=trigger_key)
+    assert state["contributor_eligible"] is False
+    assert state["activation_law"] == "stale_snapshot_outside_aligned_quarter"
+    assert state["order_softness"] == "NOT_RECONSTRUCTABLE"
+
+
+def test_m5_natural_staggered_cadence_all_eligible():
+    """The genuine natural staggered cadence, verified mechanically against
+    the frozen majority-month table (POOLING_KEY_DOC §4b) rather than
+    assumed: TOL's Oct-31 FYE means its own CQ2-2026-aligned quarter (fiscal
+    Q3, ending Jul 31) is the LAST of the four issuers to close and report
+    for that calendar quarter — DHI (Jun 30), KBH (May 31), and PHM (Jun 30)
+    are all already published by the time TOL itself reports in mid-August,
+    which is exactly what makes a genuine 4/4 cohort pooling read possible:
+    triggered by TOL's OWN report, with all three others already available
+    and pooling-key-aligned.
+
+    (Note: a DHI/PHM/KBH-triggered read for the SAME calendar quarter,
+    published in July, structurally CANNOT include TOL — TOL's aligned
+    quarter has not even closed yet at that point. That is not a defect;
+    it is what the frozen majority-month rule + PIT correctly implies for
+    TOL's specific fiscal offset.)"""
+    dhi = _workspace(ticker="DHI", cik=CIKS["DHI"], year=2026, quarter=3,
+                      source_available_at="2026-07-15T20:00:00Z", calendar_end="2026-06-30",
+                      net_orders_current=100, net_orders_prior=90, cancel_current=10.0, cancel_prior=12.0)
+    kbh = _workspace(ticker="KBH", cik=CIKS["KBH"], year=2026, quarter=2,
+                      source_available_at="2026-06-20T20:00:00Z", calendar_end="2026-05-31",
+                      net_orders_current=50, net_orders_prior=45, cancel_current=8.0, cancel_prior=9.0)
+    phm = _workspace(ticker="PHM", cik=CIKS["PHM"], year=2026, quarter=2,
+                      source_available_at="2026-07-25T20:00:00Z", calendar_end="2026-06-30",
+                      net_orders_current=200, net_orders_prior=180, cancel_current=11.0, cancel_prior=10.0)
+    tol = _workspace(ticker="TOL", cik=CIKS["TOL"], year=2026, quarter=3,
+                      source_available_at="2026-08-15T20:00:00Z", calendar_end="2026-07-31",
+                      net_orders_current=30, net_orders_prior=28, cancel_current=5.0, cancel_prior=6.0)
+
+    trigger_key = _trigger_pooling_key(tol)
+    assert trigger_key == (2026, 2)
+    for ticker, ws in (("DHI", dhi), ("KBH", kbh), ("PHM", phm)):
+        assert m.calendar_quarter_key(ws["fiscal_period"]["calendar_end"]) == (2026, 2), ticker
+
+    for ticker, ws in (("DHI", dhi), ("KBH", kbh), ("PHM", phm), ("TOL", tol)):
+        state = m.per_issuer_state(ticker, ws, activation_started_at=ACTIVATION_TS,
+                                    as_of_cutoff="2026-08-15T20:00:00Z", trigger_pooling_key=trigger_key)
+        assert state["contributor_eligible"] is True, (ticker, state)
+        assert state["activation_law"] == "post_activation"
+
+
+# ---------------------------------------------------------------------------
+# MIN9 — denominator-convention conformance guard
+# ---------------------------------------------------------------------------
+
+def test_denominator_conformance_mismatch_excludes_contributor():
+    ws = _mk_ws("DHI", cutoff="2026-05-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
+                cancel_current=10.0, cancel_prior=12.0, denominator="some unrelated convention text")
+    key = _trigger_pooling_key(ws)
+    state = m.per_issuer_state("DHI", ws, activation_started_at=ACTIVATION_TS,
+                                as_of_cutoff="2026-06-01T00:00:00Z", trigger_pooling_key=key)
+    assert state["contributor_eligible"] is False
+    assert state["activation_law"] == "denominator_convention_mismatch"
+    assert state["denominator_conforms"] is False
+
+
+def test_denominator_conformance_matching_keyword_passes():
+    ws = _mk_ws("TOL", cutoff="2026-05-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
+                cancel_current=5.0, cancel_prior=6.0,
+                denominator="Quarterly Cancellations as a Percentage of Signed Contracts in Quarter")
+    key = _trigger_pooling_key(ws)
+    state = m.per_issuer_state("TOL", ws, activation_started_at=ACTIVATION_TS,
+                                as_of_cutoff="2026-06-01T00:00:00Z", trigger_pooling_key=key)
+    assert state["denominator_conforms"] is True
+    assert state["contributor_eligible"] is True
+
+
+# ---------------------------------------------------------------------------
+# MIN8 — TOL sensitivity self-healing fact lookup
+# ---------------------------------------------------------------------------
+
+def test_tol_sensitivity_diagnostic_self_heals_when_fact_absent():
     ws = _mk_ws("TOL", cutoff="2026-05-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
                 cancel_current=5.0, cancel_prior=6.0)
-    state = m.per_issuer_state("TOL", ws, activation_started_at=ACTIVATION_TS, as_of_cutoff="2026-06-01T00:00:00Z")
-    assert "sensitivity" in state
+    key = _trigger_pooling_key(ws)
+    state = m.per_issuer_state("TOL", ws, activation_started_at=ACTIVATION_TS,
+                                as_of_cutoff="2026-06-01T00:00:00Z", trigger_pooling_key=key)
     sens = state["sensitivity"]
     assert sens["current_value"] == 4.2
     assert sens["prior_year_value"] is None
+    assert sens["prior_year_absence_reason"] == "fact_absent_from_workspace"
     assert sens["d_cancel_sensitivity"] is None
     assert sens["order_softness_sensitivity_basis"] == "NOT_RECONSTRUCTABLE"
 
 
+def test_tol_sensitivity_diagnostic_computes_when_prior_year_fact_present():
+    facts = [
+        _fact_present("fact_net_orders_current", 100), _fact_present("fact_net_orders_prior_year", 90),
+        _fact_present("fact_cancellation_rate_current", 5.0), _fact_present("fact_cancellation_rate_prior_year", 6.0),
+        _fact_present("fact_cancellation_rate_denominator", "signed contracts in quarter"),
+        _fact_present("fact_cancellation_rate_beginning_backlog_sensitivity", 4.2),
+        _fact_present("fact_cancellation_rate_beginning_backlog_sensitivity_prior_year", 3.0),
+    ]
+    ws = _mk_ws("TOL", cutoff="2026-05-01T00:00:00Z", facts_override=facts)
+    key = _trigger_pooling_key(ws)
+    state = m.per_issuer_state("TOL", ws, activation_started_at=ACTIVATION_TS,
+                                as_of_cutoff="2026-06-01T00:00:00Z", trigger_pooling_key=key)
+    sens = state["sensitivity"]
+    assert sens["prior_year_value"] == 3.0
+    assert sens["d_cancel_sensitivity"] == "+"  # 4.2 > 3.0
+    assert sens["order_softness_sensitivity_basis"] != "NOT_RECONSTRUCTABLE"
+    assert sens["agreement_with_primary_basis"] is not None
+
+
 # ---------------------------------------------------------------------------
-# (f) R_t PIT admissibility + construction pins + typed absence
+# (f) R_t PIT admissibility + construction pins + typed absence + B1 fix
 # ---------------------------------------------------------------------------
 
 def test_construction_pins_forbidden_strings_absent():
@@ -346,14 +556,39 @@ def test_price_leg_pit_bound_never_uses_a_future_bar():
     assert leg["typed_absence"] is None
     last_bar = leg["last_admissible_bar"]
     assert last_bar is not None
-    # The reported last admissible bar's calendar date must be STRICTLY before
-    # the cutoff's own calendar date (cutoff is pre-market-close same day).
     assert last_bar[:10] < "2026-06-01"
 
-    # A cutoff comfortably after that day's close DOES admit the same-day bar.
     late_cutoff = datetime(2026, 6, 1, 23, 0, tzinfo=timezone.utc)
     leg2 = m.price_leg_for_ticker("DHI", late_cutoff)
     assert leg2["last_admissible_bar"][:10] <= "2026-06-01"
+
+
+@pytest.mark.needs_full_checkout("data")
+def test_b1_biweekly_period_end_truncation_mid_week_cutoff():
+    """A bar whose PERIOD contains the cutoff must not participate — the
+    stamped biweekly period-end must always be <= the cutoff date. Reproduces
+    the reviewer's exact scenario: a Wed 2026-08-19 cutoff must not admit the
+    2026-08-21 (Friday) period."""
+    mid_week_cutoff = datetime(2026, 8, 19, 20, 0, tzinfo=timezone.utc)
+    leg = m.price_leg_for_ticker("DHI", mid_week_cutoff)
+    assert leg["typed_absence"] is None
+    assert leg["last_biweekly_period_end"] is not None
+    assert leg["last_biweekly_period_end"][:10] <= "2026-08-19"
+    assert leg["last_biweekly_period_end"][:10] != "2026-08-21"
+
+    # Once the period has genuinely closed, the SAME period-end is admitted
+    # and the sign is free to differ from the mid-week read.
+    closed_cutoff = datetime(2026, 8, 22, 20, 0, tzinfo=timezone.utc)
+    leg2 = m.price_leg_for_ticker("DHI", closed_cutoff)
+    assert leg2["last_biweekly_period_end"][:10] == "2026-08-21"
+
+
+def test_r_t_leg_vintage_and_adjustment_basis_are_honest():
+    leg = m.price_leg_for_ticker("ZZZZNOPE", datetime(2026, 6, 1, tzinfo=timezone.utc),
+                                  now=datetime(2026, 6, 2, tzinfo=timezone.utc))
+    assert leg["vintage"] == "2026-06-02T00:00:00Z"
+    # No plane -> no adjustment_basis claim at all.
+    assert leg["adjustment_basis"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -385,13 +620,33 @@ def test_label_truth_table_below_two_is_not_reconstructable():
 
 
 # ---------------------------------------------------------------------------
-# (h) schema outcome-field blacklist
+# (h) schema outcome-field blacklist — including the B2 substring/stem fix
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("token", sorted(m.FORBIDDEN_OUTCOME_TOKENS))
-def test_outcome_blacklist_catches_every_token(token):
+def test_outcome_blacklist_catches_every_bare_token(token):
     with pytest.raises(m.ProspectiveLedgerError):
         m.assert_no_outcome_fields({"nested": {token: 1.23}})
+
+
+@pytest.mark.parametrize("key", [
+    "forward_return_63d", "fwd_ret_21d", "brier_score_90d", "hit_rate_pct",
+    "p_value_two_sided", "sharpe_1y", "forwardReturn", "outcome",
+])
+def test_outcome_blacklist_b2_substring_stem_fix(key):
+    """B2: the blacklist must catch decorated/camelCase variants, not just
+    exact tokens."""
+    with pytest.raises(m.ProspectiveLedgerError):
+        m.assert_no_outcome_fields({key: 1.0})
+
+
+@pytest.mark.parametrize("key", [
+    "company_id", "security_id", "event_id", "decision_cutoff", "activation_started_at",
+    "pooled_state", "contributor_eligible", "prior_year_value", "current_value",
+    "source_timestamp", "as_of_decision_cutoff", "denominator_conforms", "pooling_key",
+])
+def test_outcome_blacklist_no_false_positives_on_real_schema_keys(key):
+    m.assert_no_outcome_fields({key: 1.0})  # must not raise
 
 
 def test_real_observation_packet_carries_zero_outcome_fields():
@@ -410,6 +665,239 @@ def test_real_observation_packet_carries_zero_outcome_fields():
 
 def test_schema_version_string():
     assert m.SCHEMA == "imce.prospective_observation.v1"
+
+
+# ---------------------------------------------------------------------------
+# M6 — observation_id determinism (wall-clock timestamps excluded from hash)
+# ---------------------------------------------------------------------------
+
+def test_observation_id_is_deterministic_across_wall_clock_times():
+    trig = _mk_ws("KBH", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0)
+    packet1 = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
+        activation_started_at=ACTIVATION_TS, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    )
+    packet2 = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
+        activation_started_at=ACTIVATION_TS, now=datetime(2026, 3, 15, 12, 30, tzinfo=timezone.utc),
+    )
+    # The two builds' c_t observation_timestamp fields genuinely differ...
+    assert packet1["c_t"]["treasury_cmt"]["observation_timestamp"] != packet2["c_t"]["treasury_cmt"]["observation_timestamp"]
+    # ...but the content-address must be identical.
+    id1 = m.compute_observation_id(packet1)
+    id2 = m.compute_observation_id(packet2)
+    assert id1 == id2
+
+
+def test_observation_timestamp_survives_in_the_stored_row(tmp_path):
+    p = tmp_path / "recon_m6.jsonl"
+    trig = _mk_ws("PHM", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0)
+    packet = m.build_observation_packet(
+        trigger_ticker="PHM", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": trig, "KBH": None, "TOL": None},
+        activation_started_at=ACTIVATION_TS, now=datetime(2026, 4, 1, tzinfo=timezone.utc),
+    )
+    row, _ = m.append_observation(packet, path=p, reconstruction=True)
+    assert row["c_t"]["treasury_cmt"]["observation_timestamp"] == "2026-04-01T00:00:00Z"
+
+
+# ---------------------------------------------------------------------------
+# MIN10 — full C_t leg shape for every context leg
+# ---------------------------------------------------------------------------
+
+def test_context_legs_all_carry_the_full_shape():
+    legs = m.context_legs(now=datetime(2026, 1, 1, tzinfo=timezone.utc))
+    required = {"source", "value", "typed_absence", "pit_class", "source_timestamp",
+                "observation_timestamp", "context_only"}
+    for name, leg in legs.items():
+        assert required <= set(leg.keys()), f"{name} missing fields: {required - set(leg.keys())}"
+        assert leg["context_only"] is True
+        assert leg["value"] is None
+        assert leg["typed_absence"] is not None
+
+
+# ---------------------------------------------------------------------------
+# M4 — correction-path routing (identity law: at most one observation per event_id)
+# ---------------------------------------------------------------------------
+
+def test_m4_append_observation_refuses_second_observation_same_event_id(tmp_path):
+    p = tmp_path / "recon_m4a.jsonl"
+    trig = _mk_ws("TOL", cutoff="2026-05-01T20:00:00Z", net_orders_current=30, net_orders_prior=28,
+                  cancel_current=5.0, cancel_prior=6.0)
+    packet1 = m.build_observation_packet(
+        trigger_ticker="TOL", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": None, "TOL": trig},
+        activation_started_at=ACTIVATION_TS,
+    )
+    row1, appended1 = m.append_observation(packet1, path=p, reconstruction=True)
+    assert appended1 is True
+
+    # 8-K/A shape: SAME event_id, a NEW decision_cutoff.
+    revised_trig = dict(trig)
+    revised_trig["lifecycle"] = {"state": "results_released", "source_available_at": "2026-05-03T20:00:00Z"}
+    packet2 = m.build_observation_packet(
+        trigger_ticker="TOL", trigger_workspace=revised_trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": None, "TOL": revised_trig},
+        activation_started_at=ACTIVATION_TS,
+    )
+    assert packet2["trigger"]["event_id"] == packet1["trigger"]["event_id"]
+    assert packet2["trigger"]["decision_cutoff"] != packet1["trigger"]["decision_cutoff"]
+    with pytest.raises(m.ProspectiveLedgerError, match="already has an observation"):
+        m.append_observation(packet2, path=p, reconstruction=True)
+    # Still exactly one observation row.
+    assert sum(1 for r in m.load_rows(p) if r["row_kind"] == "observation") == 1
+
+
+def test_m4_find_observation_by_event_id(tmp_path):
+    p = tmp_path / "recon_m4_find.jsonl"
+    assert m.find_observation_by_event_id("evt_cik0000794170_2026q2_results", p) is None
+
+    trig = _mk_ws("TOL", cutoff="2026-05-01T20:00:00Z", net_orders_current=30, net_orders_prior=28,
+                  cancel_current=5.0, cancel_prior=6.0)
+    packet = m.build_observation_packet(
+        trigger_ticker="TOL", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": None, "TOL": trig},
+        activation_started_at=ACTIVATION_TS,
+    )
+    row, _ = m.append_observation(packet, path=p, reconstruction=True)
+
+    # find_observation_by_event_id ignores decision_cutoff entirely — even a
+    # WRONG cutoff still finds the row, unlike find_observation (exact-key).
+    found = m.find_observation_by_event_id(packet["trigger"]["event_id"], p)
+    assert found is not None
+    assert found["observation_id"] == row["observation_id"]
+    assert m.find_observation(packet["trigger"]["event_id"], "1999-01-01T00:00:00Z", p) is None
+    assert m.find_observation_by_event_id("evt_cik0000000000_2026q1_results", p) is None
+
+
+def test_m4_packet_materially_differs_generation_gate():
+    trig = _mk_ws("KBH", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, generation_id="a" * 24)
+    packet_orig = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    original_row = dict(packet_orig)
+    original_row["observation_id"] = "obs_fake"
+
+    # Same generation_id, everything else identical -> NOT material.
+    same_gen_packet = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    assert m.packet_materially_differs(original_row, same_gen_packet, "KBH") is False
+
+    # New generation_id but IDENTICAL derived facts -> NOT material (cosmetic republish).
+    cosmetic_trig = _mk_ws("KBH", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                            cancel_current=10.0, cancel_prior=12.0, generation_id="b" * 24)
+    cosmetic_packet = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=cosmetic_trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": cosmetic_trig, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    assert m.packet_materially_differs(original_row, cosmetic_packet, "KBH") is False
+
+    # New generation_id AND a genuinely different derived fact -> MATERIAL.
+    changed_trig = _mk_ws("KBH", cutoff="2026-05-01T20:00:00Z", net_orders_current=999, net_orders_prior=90,
+                           cancel_current=10.0, cancel_prior=12.0, generation_id="c" * 24)
+    changed_packet = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=changed_trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": changed_trig, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    assert m.packet_materially_differs(original_row, changed_packet, "KBH") is True
+
+
+# ---------------------------------------------------------------------------
+# B3 — network failure vs not-published disposition (builder-level)
+# ---------------------------------------------------------------------------
+
+def test_b3_disposition_found_not_published_fetch_failed():
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    def stub_found(event_id):
+        return {"event_id": event_id, "lifecycle": {"source_available_at": "2026-01-01T00:00:00Z"}}
+
+    def stub_not_published(event_id):
+        raise b._NotPublished("clean 404")
+
+    def stub_network_error(event_id):
+        raise TimeoutError("connection timed out")
+
+    ws, disp = b._load_workspace_with_disposition("e1", fetch=stub_found)
+    assert disp == "found" and ws is not None
+
+    ws, disp = b._load_workspace_with_disposition("e1", fetch=stub_not_published)
+    assert disp == "not_published" and ws is None
+
+    ws, disp = b._load_workspace_with_disposition("e1", fetch=stub_network_error)
+    assert disp == "fetch_failed" and ws is None
+
+
+def test_b3_bare_invocation_refuses_and_writes_nothing(tmp_path, monkeypatch):
+    """A stub network-error fetch -> zero rows appended, production never
+    touched (also proves the production-flag law end to end)."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_b3.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+
+    summary = b.run()  # production=False by default
+    assert summary["production"] is False
+    assert summary["activated"] is False
+    assert not fake_prod.exists()
+
+
+def test_b3_fetch_failed_defers_entire_run(monkeypatch, tmp_path):
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_b3b.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+
+    def fake_fetch_all_candidates(today):
+        # One genuine not_published, one genuine fetch_failed.
+        dispositions = {
+            "DHI": {"evt_1": "not_published"},
+            "PHM": {"evt_2": "fetch_failed"},
+            "KBH": {}, "TOL": {},
+        }
+        found = {"DHI": [], "PHM": [], "KBH": [], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    summary = b.run(production=True)
+    assert summary["deferred_fetch_failed"] == ["evt_2"]
+    assert summary["activated"] is False  # activation never stamped this run
+    assert not fake_prod.exists()
+
+
+def test_b3_not_published_only_proceeds_normally(monkeypatch, tmp_path):
+    """A genuine not_published (no fetch_failed anywhere) must NOT defer —
+    activation proceeds and the run completes with zero candidates found."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_b3c.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"DHI": {"evt_1": "not_published"}, "PHM": {}, "KBH": {}, "TOL": {}}
+        found = {"DHI": [], "PHM": [], "KBH": [], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    summary = b.run(production=True)
+    assert summary["deferred_fetch_failed"] == []
+    assert summary["activated"] is True
+    assert fake_prod.exists()
 
 
 # ---------------------------------------------------------------------------
