@@ -53,7 +53,7 @@ evidence:
   - "Macro PR #6125 — closed without merge as superseded before this ruling"
 affects: ["WS:MARKET-OS", "A1A", "A1B"]
 confidence: high
-reversibility: medium
+reversibility: costly
 decided_by: sol
 decided_at: 2026-08-23
 ---
