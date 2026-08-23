@@ -77,7 +77,10 @@ def test_aug21_split_brain_is_structurally_impossible() -> None:
     assert out["decision"]["receipts"]["kelly_risk_budget_pct"] == 6
     assert out["decision"]["receipts"]["categorical_momentum"] == "bear"
     assert out["advisory_action"] == "STAY DEFENSIVE"  # preserved only as a receipt
+    assert out["advisory_conflict"] is True
+    assert out["levels"] == {}  # bearish advisory invalidation is not published beside HOLD 100%
     assert out["decision"]["integrity"]["advisory_can_resize"] is False
+    assert out["decision"]["integrity"]["advisory_consistent_with_final"] is False
 
 
 def test_material_change_projects_exact_final_exposure() -> None:
@@ -139,7 +142,7 @@ def test_missing_or_invalid_final_allocation_never_fabricates_zero() -> None:
 
     bad = _frame(final=1.2, raw=1.2)
     invalid = D.build(bad, {}, {})
-    assert invalid["status"] == "unavailable"
+    assert invalid["status"] == "unavailble"
     assert invalid["error"]["code"] == "invalid_authoritative_allocation"
 
 

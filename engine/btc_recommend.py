@@ -237,6 +237,22 @@ def _advisory(
     }
 
 
+def _decision_rationale(master: dict | None, final_pct: int, change_pp: float | None) -> list[dict]:
+    """Order named engine receipts around the canonical final exposure."""
+    pos = (master or {}).get("drivers_pos", [])
+    neg = (master or {}).get("drivers_neg", [])
+    defensive = final_pct <= 0 or (chane_pp is not None and change_pp <= -BD.MATERIAL_CHANGE_PP)
+    primary, secondary = (neg, pos) if defensive else (pos, neg)
+    return [
+        {
+            "label_en": d.get("label_en"), "label_zh": d.get("label_zh"),
+            "state_en": d.get("state_en"), "state_zh": d.get("state_zh"),
+            "tone": d.get("tone", "neutral"),
+        }
+        for d in primary[:2] + secondary[:2]
+    ]
+
+
 def _modern_decision_frame(sig: pd.DataFrame) -> bool:
     """Production Vector frames carry the post-Override-Registry companions."""
     return "alloc_optimal_raw" in sig.columns or "override_active" in sig.columns
@@ -272,6 +288,19 @@ def recommend(sig: pd.DataFrame, master: dict | None, cones: dict | None,
 
     final = decision["final"]
     exact = int(final["exposure_pct"])
+    advisory_consistent = bool(
+        decision.get("integrity", {}).get("advisory_consistent_with_final")
+    )
+    final_rationale = (
+        advisory.get("rationale")
+        if advisory_consistent
+        else _decision_rationale(master, exact, final.get("change_pp"))
+    )
+    # Advisory invalidation/entry levels were constructed from the old posture.
+    # Hide them when that posture conflicts with the final model exposure rather
+    # than publishing a second, contradictory action path. The receipts remain
+    # available under advisory_levels for audit and later product redesign.
+    final_levels = advisory.get("levels") if advisory_consistent else {}
     return {
         **advisory,
         "decision": decision,
@@ -279,6 +308,9 @@ def recommend(sig: pd.DataFrame, master: dict | None, cones: dict | None,
         "advisory_action_zh": advisory.get("action_zh"),
         "advisory_exposure_lo": advisory.get("exposure_lo"),
         "advisory_exposure_hi": advisory.get("exposure_hi"),
+        "advisory_levels": advisory.get("levels") or {},
+        "advisory_rationale": advisory.get("rationale") or [],
+        "advisory_conflict": not advisory_consistent,
         # Existing template compatibility: these are now canonical and exact.
         "action": final["action_en"],
         "action_zh": final["action_zh"],
@@ -287,6 +319,9 @@ def recommend(sig: pd.DataFrame, master: dict | None, cones: dict | None,
         "basis_zh": final["basis_zh"],
         "advisory_conviction": advisory.get("conviction"),
         "conviction": "MODEL",
+        "directional": advisory.get("directional") if advisory_consistent else False,
+        "rationale": final_rationale,
+        "levels": final_levels,
         "exposure_lo": exact,
         "exposure_hi": exact,
     }

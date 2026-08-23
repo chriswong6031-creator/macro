@@ -215,6 +215,18 @@ def build(
         final_pct, previous_pct, change_pp, float(material_change_pp)
     )
     advisory = advisory or {}
+    advisory_lo = _finite(advisory.get("exposure_lo"))
+    advisory_hi = _finite(advisory.get("exposure_hi"))
+    advisory_tone = _clean_text(advisory.get("tone"))
+    advisory_band_contains_final = (
+        advisory_lo is not None and advisory_hi is not None
+        and advisory_lo <= final_pct <= advisory_hi
+    )
+    advisory_tone_consistent = not (
+        (final_pct >= 50 and advisory_tone == "bear")
+        or (final_pct <= 0 and advisory_tone == "bull")
+    )
+    advisory_consistent = advisory_band_contains_final and advisory_tone_consistent
     score_value = _finite((master or {}).get("score"))
     stance = (master or {}).get("band") or (master or {}).get("stance")
     generated = generated_at.isoformat() if isinstance(generated_at, datetime) else generated_at
@@ -288,6 +300,9 @@ def build(
             "raw_final_delta_has_named_override": raw_final_valid,
             "action_projects_final_exposure": True,
             "advisory_can_resize": False,
+            "advisory_band_contains_final": advisory_band_contains_final,
+            "advisory_tone_consistent": advisory_tone_consistent,
+            "advisory_consistent_with_final": advisory_consistent,
         },
     }
     return decision
