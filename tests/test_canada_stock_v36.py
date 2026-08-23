@@ -54,6 +54,19 @@ def test_v36_uses_existing_theme_and_sector_authorities():
     assert '"#anv2-red"' in COMPOSER
 
 
+def test_v36_theme_membership_reads_current_canada_symbol_contract():
+    # Current site/canadabasketdata/baskets.json publishes member identity as
+    # `symbol`; ticker remains compatibility-only for alternate/older producers.
+    assert "m.ticker || m.symbol" in COMPOSER
+    assert "x.ticker || x.symbol || x.t" in COMPOSER
+
+
+def test_v36_migration_clears_legacy_show_more_visibility():
+    assert 'card.classList.remove("sm-hidden")' in COMPOSER
+    assert 'card.style.removeProperty("display")' in COMPOSER
+    assert ".ca-v36-card-grid .sm-hidden{display:flex!important}" in COMPOSER
+
+
 def test_v36_ticker_price_and_change_are_human_scale_sf_ui():
     assert "--font-ui" in COMPOSER
     assert ".ca-v36-card-grid .pv-tk{font-family:" in COMPOSER
@@ -79,7 +92,7 @@ def test_v36_mobile_is_one_decision_card_wide():
 
 def test_v36_authority_and_live_status_are_not_conflated():
     assert 'bi("Screen · evidence accruing", "筛选 · 证据积累中")' in COMPOSER
-    assert 'bi("Board " + boardDate.en, "榜单 " + boardDate.zh)' in COMPOSER
+    assert 'bi("Board " + bd.en, "榜单 " + bd.zh)' in COMPOSER
     assert "ca-v36-live-dot" in COMPOSER
     assert "<b>LIVE</b>" in COMPOSER
 
