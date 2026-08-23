@@ -14,10 +14,14 @@ from typing import Any
 OBS_SCHEMA = "mastermind.pr_linkage_observation.v1"
 REPORT_SCHEMA = "mastermind.pr_linkage_report.v1"
 RULESET_ID = "mastermind.pr_linkage_rules.v1"
+FROZEN_RULESET_DIGEST = "41d5634a6ca6d4bbd993e728b73d839260452b24c891e556c59da52a184a1859"
 FIELDS = ("Workstream", "Linear", "Portfolio-Mode", "Wave", "Authority", "Completion")
 STATE = {"PRESENT", "PARTIAL", "UNAVAILABLE", "NOT_APPLICABLE", "CONTRADICTORY"}
-ALIASES = {"workstream_creation": "creates_workstream", "runtime": "implementation",
-           "production-proof": "proof", "production-proof-required": "proof-required"}
+ALIASES_BY_FIELD = {
+    "Portfolio-Mode": {"workstream_creation": "creates_workstream"},
+    "Authority": {"runtime": "implementation", "production-proof": "proof"},
+    "Completion": {"production-proof-required": "proof-required"},
+}
 ENUMS = {"Portfolio-Mode": {"tracked", "maintenance_exception", "creates_workstream", "architecture_candidate"},
          "Authority": {"implementation", "records", "research", "maintenance", "proof", "deploy", "architecture_candidate"},
          "Completion": {"merge-is-done", "built-not-proven", "proof-required", "acceptance-required", "records-only"}}
@@ -26,6 +30,11 @@ SEVERITY = {"ERROR": 0, "PARTIAL": 1, "WARNING": 2, "NOTICE": 3}
 # outside the frozen manifest.  `analyze` verifies equality before semantic reduction.
 FROZEN_RULE_IDS = frozenset((
  "R001","R002","R003","R004","R005","R006","R007","R008","R009","R010","R011","R012","R020","R021","R022","R026","R027","R028","R029","R030","R031","R032","R033","R034","R035","R036","R037","R038","R039","R040","R041","R042","R043","R044","R045","R046","R047","R050","R051","R052","R053","R054","R055","R056","R060","R061"))
+FROZEN_FINDINGS = {
+ "R001":("HEADER_MISSING","ERROR","ADD_CANONICAL_HEADER",("missing_fields",)),"R002":("HEADER_DUPLICATE","ERROR","REMOVE_DUPLICATE_FIELD",("field","locations","values")),"R003":("HEADER_AUTHORITY_ZONE_INVALID","ERROR","REPAIR_AUTHORITY_ZONE",("location","reason")),"R004":("PLACEHOLDER_UNRESOLVED","ERROR","REPLACE_PLACEHOLDER",("field","location","value")),"R005":("WORKSTREAM_ID_INVALID","ERROR","USE_EXACT_WORKSTREAM_ID",("location","value")),"R006":("LINEAR_ID_INVALID","ERROR","USE_EXACT_LINEAR_ID",("location","value")),"R007":("WAVE_EMPTY","ERROR","SET_BOUNDED_WAVE",("location",)),"R008":("WAVE_INVALID","ERROR","SET_BOUNDED_WAVE",("location","value")),"R009":("PORTFOLIO_MODE_INVALID","ERROR","SET_CANONICAL_PORTFOLIO_MODE",("location","value")),"R010":("PORTFOLIO_MODE_RESERVED","ERROR","REMOVE_RESERVED_MODE",("location","value")),"R011":("AUTHORITY_INVALID","ERROR","SET_CANONICAL_AUTHORITY",("location","value")),"R012":("COMPLETION_INVALID","ERROR","SET_CANONICAL_COMPLETION",("location","value")),
+ "R020":("AUTHORING_SCHEMA_VERSION_MISMATCH","ERROR","MIGRATE_TO_V1",("epoch","field","value")),"R021":("LEGACY_AUTHORING_ALIAS","NOTICE","MIGRATE_TO_V1",("alias","canonical","field","receipt")),"R022":("AUTHORING_CUTOVER_RELATION_UNAVAILABLE","PARTIAL","SUPPLY_CUTOVER_RECEIPT",("epoch_state","receipt_digest")),"R026":("LINEAR_TARGET_ROLE_UNAVAILABLE","PARTIAL","SUPPLY_COMPLETE_LINEAR_TARGET_ROLES",("required_targets","target_roles")),"R027":("LINEAR_TARGET_ROLE_MISMATCH","ERROR","REPAIR_LINEAR_TARGET_ROLES",("declared","roles","targets")),"R028":("LINEAR_ISSUE_TYPE_MISMATCH","ERROR","REPAIR_LINEAR_ISSUE_TYPE",("issue_type","portfolio_mode","target_role")),"R029":("LINEAR_REQUIRED_FOR_MODE","ERROR","SET_CONCRETE_LINEAR_ISSUE",("linear","portfolio_mode")),"R030":("WORKSTREAM_UNKNOWN","ERROR","USE_EXISTING_WORKSTREAM",("workstream",)),"R031":("WORKSTREAM_REQUIRED_FOR_TRACKED","ERROR","SET_TRACKED_WORKSTREAM",("portfolio_mode","workstream")),"R032":("WORKSTREAM_MUST_BE_NONE_FOR_EXCEPTION","ERROR","SET_WORKSTREAM_NONE",("portfolio_mode","workstream")),"R033":("AGENTOS_SNAPSHOT_UNAVAILABLE","PARTIAL","SUPPLY_AGENTOS_SNAPSHOT",("snapshot_state","workstream")),"R034":("LINEAR_ISSUE_UNKNOWN","ERROR","USE_EXISTING_LINEAR_ISSUE",("linear",)),"R035":("LINEAR_SNAPSHOT_UNAVAILABLE","PARTIAL","SUPPLY_LINEAR_SNAPSHOT",("linear","snapshot_state")),"R036":("LINEAR_PROJECT_WORKSTREAM_MISMATCH","ERROR","REPAIR_LINEAR_BINDING",("bound_workstream","declared_workstream","linear")),"R037":("WORKSTREAM_CREATION_NO_WORKSTREAM_RECORD","ERROR","ADD_EXACT_WORKSTREAM_RECORD",("paths","workstream")),"R038":("WORKSTREAM_CREATION_KEY_COLLISION","ERROR","CHOOSE_UNIQUE_WORKSTREAM_KEY",("collisions","workstream")),"R039":("MULTIPLE_PR_IDENTITIES","ERROR","RECONCILE_PR_IDENTITIES",("declared","targets")),"R040":("AUTHORITY_COMPLETION_MISMATCH","ERROR","USE_ALLOWED_AUTHORITY_COMPLETION",("authority","completion","portfolio_mode")),
+ "R041":("AUTHORITY_PATH_MISMATCH","ERROR","RECONCILE_AUTHORITY_AND_PATHS",("authority","paths","resolutions")),"R042":("PATH_OWNERSHIP_SNAPSHOT_UNAVAILABLE","PARTIAL","SUPPLY_PATH_OWNERSHIP_SNAPSHOT",("paths","snapshot_state")),"R043":("CHANGED_PATHS_UNAVAILABLE","PARTIAL","SUPPLY_CHANGED_PATHS",("snapshot_state",)),"R044":("MAINTENANCE_EXCEPTION_UNBOUND","ERROR","BIND_MAINTENANCE_EXCEPTION",("authority","linear","paths")),"R045":("ARCHITECTURE_CANDIDATE_CLAIMS_AUTHORITY","ERROR","REMOVE_CANDIDATE_EXECUTION_AUTHORITY",("authority","paths")),"R046":("WORKSTREAM_CREATION_HIDDEN_IMPLEMENTATION","ERROR","SPLIT_WORKSTREAM_CREATION_FROM_BUILD",("path_classes","paths")),"R047":("PATH_OWNERSHIP_UNMAPPED","PARTIAL","MAP_PATH_OWNERSHIP",("paths","resolutions")),"R050":("BRANCH_LINEAR_MISMATCH","ERROR","RECONCILE_BRANCH_IDENTITY",("branch_targets","declared")),"R051":("TITLE_BODY_LINEAR_CONFLICT","ERROR","RECONCILE_TEXT_IDENTITIES",("body_targets","declared","title_targets")),"R052":("CLOSING_KEYWORD_FOR_NON_MERGE_DONE","ERROR","USE_NONCLOSING_RELATIONSHIP",("completion","linear","relationships")),"R053":("MERGE_DONE_WITH_EXPLICIT_PROOF_GATE","ERROR","SET_NONFINAL_COMPLETION",("completion","linear","stop_law")),"R054":("NATIVE_LINKAGE_SNAPSHOT_UNAVAILABLE","PARTIAL","SUPPLY_NATIVE_LINKAGE_SNAPSHOT",("linear","snapshot_state")),"R055":("NATIVE_RELATIONSHIP_AMBIGUOUS","PARTIAL","RECONCILE_NATIVE_RELATIONSHIP",("diagnostics","linear","relationships")),"R056":("PORTFOLIO_LINKAGE_COMPLETION_MISMATCH","ERROR","REPAIR_COMPLETION_RELATIONSHIP",("completion","effect","stop_law","target","target_role")),"R060":("OBSERVATION_GROUNDING_MISMATCH","ERROR","REBUILD_IMMUTABLE_OBSERVATION",("component","expected","observed")),"R061":("SNAPSHOT_CONTRADICTION","PARTIAL","RECAPTURE_CONSISTENT_SNAPSHOT",("diagnostics","snapshot")),
+}
 
 
 class ValidationError(ValueError):
@@ -255,6 +264,9 @@ def validate_report(report: dict[str, Any]) -> None:
     for finding in findings:
         if not isinstance(finding, dict) or set(finding) != {"code","rule_id","severity","location","evidence","remediation_code"} or finding["rule_id"] not in FROZEN_RULE_IDS or not isinstance(finding.get("code"), str) or not isinstance(finding.get("remediation_code"), str) or finding.get("severity") not in SEVERITY or not isinstance(finding.get("location"), str) or not isinstance(finding.get("evidence"), dict):
             raise ValidationError("TYPE_MISMATCH")
+        code, severity, remediation, evidence_keys = FROZEN_FINDINGS[finding["rule_id"]]
+        if (finding["code"], finding["severity"], finding["remediation_code"], tuple(sorted(finding["evidence"]))) != (code, severity, remediation, tuple(sorted(evidence_keys))):
+            raise ValidationError("TYPE_MISMATCH")
         for value in finding["evidence"].values():
             values = value if isinstance(value, list) else [value]
             if any(not (v is None or isinstance(v, str) or (isinstance(v, dict) and set(v) == {"prefix","sha256"} and isinstance(v["prefix"],str) and re.fullmatch(r"[0-9a-f]{64}", v["sha256"]))) for v in values): raise ValidationError("TYPE_MISMATCH")
@@ -294,8 +306,11 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     if not isinstance(observation, dict): raise ValidationError("TYPE_MISMATCH")
     if set(observation) != required: raise ValidationError("UNKNOWN_KEY" if set(observation)-required else "MISSING_KEY")
     if observation["schema"] != OBS_SCHEMA: raise ValidationError("TYPE_MISMATCH")
+    if not isinstance(manifest, dict) or manifest.get("ruleset_id") != RULESET_ID: raise ValidationError("UNSUPPORTED_RULESET_ID")
+    manifest_digest = digest(manifest)
+    if manifest_digest != FROZEN_RULESET_DIGEST: raise ValidationError("RULESET_DIGEST_MISMATCH")
     if observation["ruleset_id"] != manifest["ruleset_id"]: raise ValidationError("UNSUPPORTED_RULESET_ID")
-    if observation["ruleset_digest"] != digest(manifest): raise ValidationError("RULESET_DIGEST_MISMATCH")
+    if observation["ruleset_digest"] != manifest_digest: raise ValidationError("RULESET_DIGEST_MISMATCH")
     atom_re = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
     sha_re = re.compile(r"^[0-9a-f]{40}$")
     digest_re = re.compile(r"^[0-9a-f]{64}$")
@@ -449,9 +464,10 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
             add("R004", {"field":f,"location":f"BODY:L{locs[f][0]}:{f}","value":text_digest(v)}, f); continue
         if f not in ENUMS:
             continue
-        if v in ALIASES:
+        aliases = ALIASES_BY_FIELD.get(f, {})
+        if v in aliases:
             if epoch["state"] == "PRESENT" and epoch.get("relation") == "PRE_CUTOVER":
-                normalized[f] = ALIASES[v]; add("R021", {"alias":v,"canonical":ALIASES[v],"field":f,"receipt":canonical_digest(epoch)}, f)
+                normalized[f] = aliases[v]; add("R021", {"alias":v,"canonical":aliases[v],"field":f,"receipt":canonical_digest(epoch)}, f)
             elif epoch["state"] == "PRESENT" and epoch.get("relation") == "AT_OR_POST_CUTOVER":
                 add("R020", {"epoch":"AT_OR_POST_CUTOVER","field":f,"value":text_digest(v)}, f)
             else:
@@ -473,7 +489,8 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     canonical = mode in ENUMS["Portfolio-Mode"] and authority in ENUMS["Authority"] and completion in ENUMS["Completion"]
     # A receipt-authorized compatibility alias is analysed through its normalized
     # value but remains visibly legacy; it can never masquerade as a V1 author.
-    author_state = "LEGACY" if any(x in ALIASES for x in values.values() if isinstance(x,str)) else ("CANONICAL" if canonical else ("MISSING" if missing else "INVALID"))
+    identity_legal = bool(ws and re.fullmatch(r"(?:NONE|WS:[A-Z0-9]+(?:-[A-Z0-9]+)*)", ws) and linear and re.fullmatch(r"(?:NONE|MAS-[1-9][0-9]{0,8})", linear) and wave and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", wave))
+    author_state = "LEGACY" if any(value in ALIASES_BY_FIELD.get(field, {}) for field, value in values.items() if isinstance(value, str)) else ("CANONICAL" if canonical and identity_legal else ("MISSING" if missing else "INVALID"))
     classification = manifest["classification"]["mode_to_class"].get(mode, manifest["classification"]["legacy_class"] if author_state == "LEGACY" else "UNKNOWN")
     if canonical and linear == "NONE": add("R029", {"linear":"NONE","portfolio_mode":mode})
     agentos, lsnap, paths, ownership, native = (observation[x] for x in ("agentos","linear","changed_paths","path_ownership","native_linkage"))

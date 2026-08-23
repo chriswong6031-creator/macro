@@ -4104,11 +4104,33 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml jsonschema
       - name: contract drift check (hard-fail — ratchet flipped 2026-07-14)
         run: python scripts/check_contract_drift.py
       - name: contract drift unit tests
         run: python -m pytest tests/test_contract_drift.py -q
+      # MAS-28 W1 is a hermetic, report-only frozen-contract analyzer.  Keep its
+      # executable fixtures in this existing unscoped contract lane: the suite
+      # exercises the actual parser, manifest, JSON schemas, deterministic CLI,
+      # receipt grounding and mutation boundary, and is intentionally not a
+      # waiver or a new job.  jsonschema is the only extra wheel and is installed
+      # above.  Naming every module here prevents a contract test from becoming
+      # dark merely because its path is new to the repository.
+      - name: MAS-28 PR-linkage frozen-contract matrix
+        run: >-
+          python -m pytest
+          tests/test_pr_linkage_validator.py
+          tests/test_pr_linkage_parser.py
+          tests/test_pr_linkage_cli.py
+          tests/test_pr_linkage_mutations.py
+          tests/test_pr_linkage_contract_matrix.py
+          tests/test_pr_linkage_header_executable.py
+          tests/test_pr_linkage_epoch_executable.py
+          tests/test_pr_linkage_schema_matrix.py
+          tests/test_pr_linkage_rulecase_matrix.py
+          tests/test_pr_linkage_operational_routes.py
+          tests/test_pr_linkage_purity_boundaries.py
+          tests/test_pr_linkage_hostile_regressions.py -q
 
   flow-cohorts:
     if: ${{ false }}

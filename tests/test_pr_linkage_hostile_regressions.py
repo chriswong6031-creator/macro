@@ -17,6 +17,16 @@ def test_pre_cutover_alias_stays_legacy_not_canonical():
     assert "R021" in {f["rule_id"] for f in report["semantic"]["findings"]}
 
 
+def test_aliases_are_field_specific_and_manifest_digest_is_pinned():
+    wrong = VALID.replace("Workstream: WS:AGENT-OS", "Workstream: runtime")
+    result = v.analyze(observation(wrong, epoch="PRE_CUTOVER"), MANIFEST)
+    assert result["semantic"]["declaration"]["authoring_state"] == "INVALID"
+    assert "R021" not in {f["rule_id"] for f in result["semantic"]["findings"]}
+    forged = clone(MANIFEST); forged["limits"]["findings"] = 513
+    with pytest.raises(v.ValidationError, match="RULESET_DIGEST_MISMATCH"):
+        v.analyze(observation(VALID), forged)
+
+
 def test_creates_workstream_uses_filename_not_colon_key():
     o = clone(observation(VALID)); mode(o, workstream="WS:NEW", linear="MAS-99", portfolio="creates_workstream", authority="records", completion="records-only")
     o["linear"]["issues"] = [{"id":"MAS-99","target_role":"DECLARED","project_id":None,"workstream_key":None,"issue_type":"ROOT_RECOVERY","stop_law":"RECORDS_ONLY"}]
@@ -105,6 +115,16 @@ def test_report_wire_rejects_nested_extra_type_and_order_mutants():
     unordered["semantic_hash"] = v.digest(unordered["semantic"])
     if unordered["semantic"]["completion_interpretation"] != good["semantic"]["completion_interpretation"]:
         with pytest.raises(v.ValidationError): v.validate_report(unordered)
+
+
+def test_report_finding_binding_refuses_forged_code_severity_remediation_and_evidence():
+    report = v.analyze(observation("note\n" + VALID), MANIFEST)
+    finding = report["semantic"]["findings"][0]
+    for key, value in (("code", "FORGED"), ("severity", "NOTICE"), ("remediation_code", "FORGED")):
+        mutant = clone(report); mutant["semantic"]["findings"][0][key] = value; mutant["semantic_hash"] = v.digest(mutant["semantic"])
+        with pytest.raises(v.ValidationError): v.validate_report(mutant)
+    mutant = clone(report); mutant["semantic"]["findings"][0]["evidence"]["forged"] = "value"; mutant["semantic_hash"] = v.digest(mutant["semantic"])
+    with pytest.raises(v.ValidationError): v.validate_report(mutant)
 
 
 def test_hostile_repro_measurement(capsys):
