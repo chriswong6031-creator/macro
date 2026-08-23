@@ -33,6 +33,9 @@ artifacts:
   - research/alpha_intelligence/MASTERMIND_ALPHA_INTELLIGENCE_EXPANSION_PASS0_2026-08-18.md
   - research/alpha_intelligence/C0_WAVE0_ADJUDICATION_2026-08-19.md
   - research/alpha_intelligence/C0G_G0_SEAT_ADJUDICATION_2026-08-19.md
+  - research/alpha_intelligence/expectation_market_dynamics/MASTERPLAN.md
+  - research/alpha_intelligence/expectation_market_dynamics/BUILD_SEQUENCE.md
+  - research/alpha_intelligence/expectation_market_dynamics/AUTHORITY_AND_SCOPE_RECEIPT.md
 landmines:
   - "Runtime authority of this workstream is NONE, permanently. It coordinates and
     adjudicates; it never gates, dispatches, ranks, or owns production state. Its
@@ -67,6 +70,11 @@ landmines:
     C0G_G0_SEAT_ADJUDICATION_2026-08-19.md remains the governing record of
     G0 canonicity (final merged-object pins in its §7); never adjudicate
     from any resurrected rival copy."
+  - "K3E-0 is the Expectation Market Dynamics child-program freeze ID, not a
+    rename or replacement of canonical K3-E Opportunity Evidence Vector. EMD
+    uses owner-native references, MAS-119 common federation, MAS-118 family
+    science and Market OS projection; it owns no truth store or runtime authority
+    (DEC:EXPECTATION-MARKET-DYNAMICS-IS-DERIVED-NOT-K3E-REPLACEMENT)."
   - "K4-G preconditions are frozen in the seat packet §6: clock-direction fix
     targets observed_at/generated_at, NEVER source_available_at
     (DSC:EVENT-WORKSPACE-CLOCKS-COLLAPSE-BY-CONSTRUCTION); frontier = derived
@@ -129,16 +137,37 @@ waves:
     title: K7 Chairman final experience acceptance
     status: todo
     depends_on: [k6]
+  - id: emd0
+    title: K3E-0 Expectation Market Dynamics architecture and records freeze
+    status: done
+    depends_on: [c0]
+  - id: emd-src-a1
+    title: SRC-A1 raw prospective multi-horizon EPS and revenue expectation accrual
+    status: todo
+    depends_on: [emd0]
+  - id: emd-vend0
+    title: VEND-0 institutional estimates vendor bake-off
+    status: todo
+    depends_on: [emd0]
+  - id: emd-eval0
+    title: EVAL-0 model and evaluation preregistration
+    status: todo
+    depends_on: [emd0]
 next_action: >
-  Sol dispatch FABLE-A (with the c0 §5.1 rider appended verbatim; contract-first;
+  Run the already-commissioned FABLE-A K1 lane (with the c0 §5.1 and
+  authenticated Market Ontology riders; contract-first;
   store build gated on A0 §8 flip condition; FIF acceptance leg fixture-only
-  until Sol rules). FABLE-00 waves p0/c0/c0g are CLOSED and proven on origin/main
+  until Sol rules) while the independently authorized EMD child lanes SRC-A1,
+  VEND-0 and EVAL-0 run in parallel from their frozen handoffs. Each EMD worker
+  stops after one independently useful PR and returns evidence; no EXP/MKT/CPL
+  runtime begins until all three returns are adjudicated. FABLE-00 waves
+  p0/c0/c0g are CLOSED and proven on origin/main
   (operator acceptance 2026-08-19); #5955/#5943/#5933/#5953 ALL MERGED
   (#5953 rival G0 copy withdrawn pre-merge). A FRESH session adjudicates the
   K1 packet; Sol authors K4-G carrying the seat packet §6 preconditions
   unchanged (canonical sources per item: handoff
   ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19 §"K4-G preconditions — canonical
-  sources"). This seat begins neither.
+  sources"). EMD does not rename canonical K3-E or begin those downstream waves.
 ---
 
 # Alpha Intelligence Expansion — integration workstream
