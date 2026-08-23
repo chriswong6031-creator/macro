@@ -36,7 +36,7 @@ byte-identical. This distinction matters: current protected-repository state mov
 the protected Skillpack bytes did not. The Macro handoff pin
 `fb2375441f21b94201edc4ed6ac2c40f67274cde` also remains an ancestor, but is
 historical. The integrated candidate was reconciled against fresh Macro `origin/main`
-`ded469f674e208f439586a7ec881eb2d4dba7e2c`. Since the first K1 candidate base,
+`8c0608652652d4d81f177c8c315db638975ae2cd`. Since the first K1 candidate base,
 the first K1-owner-area mainline change was #6308 in
 `engine/company_intelligence/event_workspace_build.py`: it carries corrected
 lifecycle state forward and adds the filing form inside an existing workspace source
@@ -57,6 +57,16 @@ Intelligence Workspace, render, press, records, Canada/public display, marketing
 publication, and research-vault data rather than changing a registered K1 owner
 contract. K1 did not start, modify, or extend D5; it only reconciled already-merged
 owner source on its base.
+
+The final bounded freshness census then found Macro main at
+`8c0608652652d4d81f177c8c315db638975ae2cd`. That movement adds the immutable
+Earnings workspace manifest v2 predecessor chain and a chain-specific regression to
+the existing Neural Web CI line. It changes neither `WORKSPACE_SCHEMA`,
+`WORKSPACE_KEYS`, `_EVENT_ID_RE`, `_GENERATION_RE`, the native workspace identity,
+nor its lifecycle/build clocks. The branch shares `.github/ci/legacy-jobs.yml`, so
+this was treated as real overlap rather than disjoint churn: current main was
+integrated normally and the focused, native-owner, Agent OS, contract-delta, and
+pack-5 validations were rerun against the integrated lineage.
 
 Current main then added the manifest-verified Market Intelligence Productization
 packet and its K1 double-dispatch receipt in #6325 (`b300efc0fbb9`). That records an
@@ -182,9 +192,18 @@ authority by omission. `ENTRY_OPEN` remains false.
 `EvidenceBlock` additionally enforces lossless owner-clock summaries, aggregate
 denominator receipts, dominant degradation, explicit uncertainty, source dependence,
 conflict/correction state, next observable, permitted consumers, and recompilation
-lineage. A `forward_claim` cannot compile as a `fact` block. `EvidenceRecipe` orders
+lineage. Those claims are derived from the cited, internally valid references and
+their typed relations: a caller reference-map key must equal the referenced object's
+content ID; shared-upstream/same-fact/same-event/exact-duplicate relations cannot be
+relabeled independent; contradiction, correction, typed absence, rights, and stale
+states cannot be laundered into complete/supported coverage. A `forward_claim`
+cannot compile as a `fact` block. `EvidenceRecipe` orders
 required and optional blocks, owner readers, identity joins, refusal/degradation,
-dedup/dependence, and output mappings. It cannot embed owner payloads or gain authority.
+dedup/dependence, and output mappings. It freezes one canonical subject instance,
+executes exact value joins at compile time, requires output mappings to equal each
+block's declared output-field set and absence behavior, and freezes the exact rule
+codes/effects. A required rights-blocked block refuses; a required conflicted block
+follows the declared abstention. It cannot embed owner payloads or gain authority.
 
 ### Canonical identity and clock law
 
@@ -195,8 +214,11 @@ symbol-directory plus `cik_map` branch stays forbidden. Theme node ids preserve 
 owner epoch semantics. Identity is value-bound as well as label-bound: every owner
 field carries a closed source-native regex, date grammar, enum, or integer minimum;
 every subject-key type carries its own grammar. A ticker cannot masquerade as a CIK,
-and a caller cannot make an invalid value lawful by recomputing the pointer and
-`reference_id`.
+Data OS issuer/security/listing ID, QLedger security, FIF issuer, or Theme node, and a
+caller cannot make an invalid or valid-but-different value lawful by recomputing the
+pointer and `reference_id`. Every owner explicitly declares subject/native parity for
+every admitted subject type; where native identity carries the subject, equality (or
+the source-native Earnings event-CIK / Theme edge-endpoint rule) is mandatory.
 
 Coverage and replay capability are exact owner vocabulary, not caller assertions.
 Every owner has one source-backed `coverage_class` and a closed map from supported
@@ -286,7 +308,7 @@ generation-aware reader exists.
 
 `manifest.json` freezes the original eight reference fixtures after materializing the
 required freshness, rights, and authority-class fields. `product_manifest.json`
-freezes sixteen additional owner refs, blocks, recipes, hostiles, and the golden AAPL
+freezes seventeen additional owner refs, blocks, recipes, hostiles, and the golden AAPL
 compilation receipt. Both manifests carry exact byte counts and SHA-256 receipts; tests
 recompute every row.
 
@@ -306,7 +328,8 @@ Reference packet:
 Product packet coverage:
 
 - real Earnings `event_workspace.v1` and fixture-only FIF references;
-- Theme Graph world observations, including two refs that share one upstream;
+- Theme Graph world observations, including source-related shared-upstream and
+  contradictory reference pairs;
 - a QLedger `forward_claim` that remains model authority;
 - rights-blocked, conflicted, corrected/recompiled, and unknown-freshness states;
 - a hostile forward-claim-as-fact block;
@@ -318,8 +341,10 @@ Product packet coverage:
 the combined validators: lossless clocks, owner/class sets, denominator arithmetic,
 dominant degradation, shared-upstream honest-N, rights blocking, conflict retention,
 correction recompilation without predecessor rewrite, probability receipts, required
-versus optional absence, lawful identity joins, AAPL four-owner compilation, exact
-fixture bytes/hashes, no owner-payload copy, and zero authority.
+versus optional absence, source-derived Block claims, caller-map identity binding,
+exact output/rule contracts, lawful value-bound identity joins, mixed-security
+refusal, AAPL four-owner compilation, exact fixture bytes/hashes, no owner-payload
+copy, and zero authority.
 
 The reference suite additionally proves exact source-backed schema/identity/clock/
 accessor inventories, native Earnings parser identity, one-pointer selection,
@@ -343,11 +368,12 @@ python3 scripts/check_contract_delta.py --base origin/main
 python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --pack-index 5 --pack-count 12 --validate-only
 ```
 
-The integrated reference-plus-product suite concludes **86 passed**, including the
+The integrated reference-plus-product suite concludes **111 passed**, including the
 no-store inventory assertion, exact owner value grammars, coverage/replay capability
 masquerade kills, canonical-vocabulary rebind refusal across refs/blocks/recipes, and
-the rider's AAPL composition hostiles. The only warnings are three unrelated pytest
-temporary-directory cleanup warnings outside this worktree.
+the rider's rehashed Block-laundering, map-substitution, exact-output/rule,
+required-rights/conflict, and mixed AAPL/MSFT composition hostiles. The only warnings
+are three unrelated pytest temporary-directory cleanup warnings outside this worktree.
 
 The owner-source regression selection run from the reviewer-repaired full checkout
 (Data OS no-I/O negative control, Theme Graph, FIF, Earnings workspace, 13F,
@@ -386,8 +412,8 @@ run on a main descendant of the merge under the merged authority.
 | R7 flip condition | **SATISFIED / FALSE** — four-owner AAPL composition works with explicit partial freshness; no store advantage is proven. | golden compilation receipt and timing receipt |
 | R8 honest name/identity | **SATISFIED** — refs, blocks, recipes, and compilation receipt are distinct; pointer IDs carry no join run clock; digest/coverage/freshness/rights are typed. | schemas, deterministic ID tests |
 | R9 PASS-0 gates | **SATISFIED** — FIF remains fixture-only; no specialist adapter; golden/hostile fixtures; all authority false. | product manifest, CI inventory |
-| MO EvidenceBlock | **SATISFIED** — consumer/job, claim/question, refs, fact/deterministic/model/human class, lossless clocks, denominator, uncertainty, conflict/correction, next observable, permitted consumers. | `block.v1.schema.json` and combined validator |
-| MO EvidenceRecipe | **SATISFIED** — ordered required/optional blocks, owners, identity joins, clocks by ref, refusals/degradation, dedup/dependence, output mappings. | `recipe.v1.schema.json`; AAPL golden recipe |
+| MO EvidenceBlock | **SATISFIED** — consumer/job, claim/question, refs, fact/deterministic/model/human class, lossless clocks, denominator, uncertainty, dependence/conflict/correction derived from exact cited refs and relations, next observable, permitted consumers. | `block.v1.schema.json`, combined validator, rehashed laundering/map-key hostiles |
+| MO EvidenceRecipe | **SATISFIED** — ordered required/optional blocks, owners, canonical subject instance, executed exact-value identity joins, clocks by ref, frozen refusal/degradation effects, dedup/dependence, exact output mappings. | `recipe.v1.schema.json`; AAPL golden and mixed-security hostiles |
 | MO product integrity | **SATISFIED** — denominator receipt, dominant degradation, partial not complete, probability receipt, corrections recompile, rights/unavailable/conflict typed. | product tests and exact fixtures |
 
 ## 7. Continuation contracts and unresolved questions
@@ -434,7 +460,7 @@ AAPL Security State golden vertical.**
 > The current protected Skillpack was loaded from Mastermind
 > `eb9910681a6db9f9675b25233c8865bb43325c32`; its `docs/sol_skills` tree and
 > procedure blobs remain byte-identical to the historical commission pin. Macro was
-> reconciled to `ded469f674e208f439586a7ec881eb2d4dba7e2c` before final exact-head
+> reconciled to `8c0608652652d4d81f177c8c315db638975ae2cd` before final exact-head
 > reconciliation. The named
 > AAPL B1 job composes four owner-reader fixture legs through one ordered recipe; the
 > measured receipt is explicit `PARTIAL / unknown freshness`, with 4 included / 0

@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.block.v1",
   "version": "1.0.0",
-  "evidence_block_id": "ebl_6854d1873c3ca99324401f3df21ea5f05cde965e3d053a39d0fee4cd4e249d59",
+  "evidence_block_id": "ebl_c564c6baa427742fb1f59eb1b76c9d727089bd55478c1bcefc3c8ed552983879",
   "block_key": "theme_context",
   "consumer": {
     "workstream": "WS:MARKET-OS",
@@ -14,7 +14,7 @@
     "state": "partial"
   },
   "reference_ids": [
-    "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63"
+    "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8"
   ],
   "owner_stores": [
     "theme_graph.evidence"
@@ -27,7 +27,7 @@
     "collapsed": false,
     "entries": [
       {
-      "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+      "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
         "class": "source_published",
         "field": "published_at",
         "value_state": "known",
@@ -35,7 +35,7 @@
         "grain": "date"
       },
       {
-        "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+        "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
         "class": "world_valid",
         "field": "effective_at",
         "value_state": "known",
@@ -43,7 +43,7 @@
         "grain": "date"
       },
       {
-        "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+        "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
         "class": "belief_or_build",
         "field": "computed_at",
         "value_state": "known",

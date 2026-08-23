@@ -1,16 +1,16 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+  "reference_id": "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548",
   "object_class": "world_observation",
   "owner_store": "theme_graph.evidence",
   "native_identity": {
-    "evidence_id": "ev:3333333333333333"
+    "evidence_id": "ev:7777777777777777"
   },
   "native_schema": "theme_graph.evidence.v1",
   "native_digest": {
     "state": "known",
-    "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    "sha256": "7777777777777777777777777777777777777777777777777777777777777777"
   },
   "coverage_class": "append_only_bitemporal",
   "freshness": {
@@ -47,7 +47,7 @@
       "class": "belief_or_build",
       "field": "computed_at",
       "value_state": "known",
-      "value": "2026-07-31T00:15:00Z",
+      "value": "2026-07-31T00:17:00Z",
       "grain": "datetime"
     }
   ],
@@ -56,9 +56,56 @@
     "body_embedded": false,
     "owner_reader": "engine.theme_graph.store.read_evidence",
     "owner_reader_kind": "collection",
-    "pointer": "data/theme_graph/evidence.parquet#evidence_id=ev:3333333333333333"
+    "pointer": "data/theme_graph/evidence.parquet#evidence_id=ev:7777777777777777"
   },
-  "relations": [],
+  "relations": [
+    {
+      "target_reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+      "type": "shares_upstream",
+      "automatic_effect": false,
+      "deterministic_key": null,
+      "independence": {
+        "source_independence": {
+          "state": "shared",
+          "assessment": "declarative_unverified",
+          "basis": "two owner observations cite the same upstream earnings release"
+        },
+        "information_novelty": {
+          "state": "shared",
+          "assessment": "declarative_unverified",
+          "basis": "two owner observations cite the same upstream earnings release"
+        },
+        "mechanism_independence": {
+          "state": "unknown",
+          "assessment": "declarative_unverified",
+          "basis": "two owner observations cite the same upstream earnings release"
+        }
+      }
+    },
+    {
+      "target_reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+      "type": "contradicts",
+      "automatic_effect": false,
+      "deterministic_key": null,
+      "independence": {
+        "source_independence": {
+          "state": "shared",
+          "assessment": "declarative_unverified",
+          "basis": "the same upstream release produced mutually incompatible owner observations"
+        },
+        "information_novelty": {
+          "state": "shared",
+          "assessment": "declarative_unverified",
+          "basis": "the same upstream release produced mutually incompatible owner observations"
+        },
+        "mechanism_independence": {
+          "state": "unknown",
+          "assessment": "declarative_unverified",
+          "basis": "the same upstream release produced mutually incompatible owner observations"
+        }
+      }
+    }
+  ],
   "missingness": {
     "state": "present",
     "reason": null,

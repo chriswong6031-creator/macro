@@ -52,24 +52,27 @@ changed:
       identities, cross-ref validation, reality/belief masquerade refusal, lossless
       clock and denominator validation, correction-recompile receipts, lawful-join
       validation, exact owner identity/coverage/replay enforcement, FIF historical
-      replay cutoffs, and an in-memory recipe compiler that persists nothing. Every
-      public validator loads the validated repository vocabulary and exposes no
-      caller-supplied vocabulary authority.
+      replay cutoffs, cited-reference/typed-relation-derived Block claims, and an
+      in-memory recipe compiler that executes exact subject-value joins and persists
+      nothing. Every public validator loads the validated repository vocabulary and
+      exposes no caller-supplied vocabulary authority.
   - path: "tests/fixtures/evidence_foundation/"
     what: >
       Retains eight byte-receipted reference fixtures after adding rights/freshness/
-      authority fields and adds sixteen product fixtures: Theme Graph, QLedger,
+      authority fields and adds seventeen product fixtures: Theme Graph, QLedger,
       rights-blocked, shared-upstream, conflict, correction, hostile belief-as-fact,
       hostile forbidden CIK join, AAPL recipe, and exact compilation receipt.
   - path: "tests/test_evidence_foundation_product_contract.py"
     what: >
       Proves all authenticated-rider product laws, the four-owner AAPL composition,
-      source-valid native identities, and canonical-vocabulary rebind refusal.
+      source-valid native identities, canonical-vocabulary rebind refusal, derived
+      Block claims/map identity, exact Recipe outputs/rules, required adverse effects,
+      and mixed-security refusal.
   - path: "tests/test_evidence_foundation_contract.py"
     what: >
-      Proves the exact 13-owner schema, identity grammar, coverage/replay, native
-      clock, accessor, pointer, replay/cutoff, correction, independence, authority,
-      and no-store invariants through the combined validator.
+      Proves the exact 13-owner schema, identity and subject grammar/native parity,
+      coverage/replay, native clock, accessor, pointer, replay/cutoff, correction,
+      independence, authority, and no-store invariants through the combined validator.
   - path: "contracts/evidence_foundation/README.md"
     what: >
       Freezes the complete Ref/Block/Recipe law and direct-reader/index ruling.
@@ -112,21 +115,24 @@ verified:
       a22bf70db5ee4794ee56caefbc4c355e894d5d40..origin/main; git merge --no-edit
       origin/main; git merge-base --is-ancestor origin/main HEAD
     result: >
-      Current Macro main is ded469f674e208f439586a7ec881eb2d4dba7e2c and is an
-      ancestor of the candidate. Its post-a22 movement is limited to CCR Agent OS,
-      press-wire cursor, metabolism/immune receipts, and VEND-0 research-vault
-      packet and SEO audit data paths; no K1 owner contract, accessor, schema, or
-      clock source moved.
+      Current Macro main is 8c0608652652d4d81f177c8c315db638975ae2cd and is an
+      ancestor of the candidate. Its final K1-relevant movement adds the immutable
+      Earnings workspace manifest v2 predecessor chain and its Neural Web CI test;
+      WORKSPACE_SCHEMA, WORKSPACE_KEYS, event/generation identity grammars, native
+      workspace identity, and its three registered clocks remain unchanged. The
+      shared legacy-jobs path was integrated normally rather than waived as churn.
   - claim: Reference and authenticated product contracts pass their focused tests.
     command: >
       python3 -m pytest -q
       tests/test_evidence_foundation_contract.py
       tests/test_evidence_foundation_product_contract.py
     result: >
-      The integrated combined suite passed 86 tests, including the Git-backed
+      The integrated combined suite passed 111 tests, including the Git-backed
       no-store inventory assertion, all hostile source-identity/coverage/replay
-      mutations, and the product validation surface's attacker-vocabulary refusal.
-      The run emitted only three unrelated pytest temp-directory cleanup warnings.
+      mutations, attacker-vocabulary refusal, rehashed Block laundering and map-key
+      substitution, exact Recipe outputs/rules, required rights/conflict effects,
+      and mixed AAPL/MSFT subject composition. The run emitted only three unrelated
+      pytest temp-directory cleanup warnings.
   - claim: Current native owner regressions remain green after rider integration.
     command: >
       python3 -m pytest -q tests/test_dataos_identity.py
@@ -153,7 +159,7 @@ verified:
       --pack-count 12 --validate-only
     result: >
       Contract delta reports 0 introduced and 0 inherited findings against
-      ded469f674e2. All 202 legacy jobs validate; pack 5 selects 18 jobs including
+      8c0608652652. All 202 legacy jobs validate; pack 5 selects 18 jobs including
       signal-contract. The workflow edit is an explicit CI-authority addition and
       does not create a new job.
   - claim: The direct four-owner fixture composition is measured and adverse to a store.

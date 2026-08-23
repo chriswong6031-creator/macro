@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.block.v1",
   "version": "1.0.0",
-  "evidence_block_id": "ebl_6623852ab9e9565deefa8918e1dfd9b9a92ffd71b8cd61c4c25be16bd67f22e2",
+  "evidence_block_id": "ebl_658734b353eb7a01e9328348f8b9d19ae72011c0ce1c9302ae8ea7a791071559",
   "block_key": "shared_upstream_example",
   "consumer": {
     "workstream": "WS:MARKET-OS",
@@ -14,8 +14,8 @@
     "state": "partial"
   },
   "reference_ids": [
-    "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
-    "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3"
+    "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+    "efr_935c3338134d71458acf9d53c4193ca2cec35e1831f0537fc0315cb3fc3557cd"
   ],
   "owner_stores": [
     "theme_graph.evidence"
@@ -28,7 +28,7 @@
     "collapsed": false,
     "entries": [
       {
-      "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+      "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
         "class": "source_published",
         "field": "published_at",
         "value_state": "known",
@@ -36,7 +36,7 @@
         "grain": "date"
       },
       {
-        "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+        "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
         "class": "world_valid",
         "field": "effective_at",
         "value_state": "known",
@@ -44,7 +44,7 @@
         "grain": "date"
       },
       {
-        "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+        "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
         "class": "belief_or_build",
         "field": "computed_at",
         "value_state": "known",
@@ -52,7 +52,7 @@
         "grain": "datetime"
       },
       {
-        "reference_id": "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3",
+        "reference_id": "efr_935c3338134d71458acf9d53c4193ca2cec35e1831f0537fc0315cb3fc3557cd",
         "class": "source_published",
         "field": "published_at",
         "value_state": "known",
@@ -60,7 +60,7 @@
         "grain": "date"
       },
       {
-        "reference_id": "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3",
+        "reference_id": "efr_935c3338134d71458acf9d53c4193ca2cec35e1831f0537fc0315cb3fc3557cd",
         "class": "world_valid",
         "field": "effective_at",
         "value_state": "known",
@@ -68,7 +68,7 @@
         "grain": "date"
       },
       {
-        "reference_id": "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3",
+        "reference_id": "efr_935c3338134d71458acf9d53c4193ca2cec35e1831f0537fc0315cb3fc3557cd",
         "class": "belief_or_build",
         "field": "computed_at",
         "value_state": "known",
@@ -102,8 +102,8 @@
       {
         "kind": "shared_upstream",
         "reference_ids": [
-          "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
-          "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3"
+          "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+          "efr_935c3338134d71458acf9d53c4193ca2cec35e1831f0537fc0315cb3fc3557cd"
         ],
         "deterministic_key": null
       }

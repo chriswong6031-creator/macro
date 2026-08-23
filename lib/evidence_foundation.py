@@ -109,11 +109,19 @@ _REQUIRED_RECIPE_RULES = frozenset({
     "RIGHTS_BLOCKED",
     "CONFLICTED_REQUIRED_BLOCK",
 })
-_DETERMINISTIC_DEPENDENCE_KINDS = frozenset({
-    "exact_duplicate",
-    "same_fact",
-    "same_event",
-})
+_RECIPE_RULE_EFFECTS = {
+    "REQUIRED_BLOCK_ABSENT": "refuse",
+    "OPTIONAL_BLOCK_ABSENT": "degrade",
+    "IDENTITY_UNRESOLVED": "refuse",
+    "RIGHTS_BLOCKED": "refuse",
+    "CONFLICTED_REQUIRED_BLOCK": "abstain",
+}
+_DEPENDENCE_RELATION_TO_GROUP = {
+    "exact_duplicate": "exact_duplicate",
+    "same_fact": "same_fact",
+    "same_event": "same_event",
+    "shares_upstream": "shared_upstream",
+}
 
 
 class EvidenceFoundationError(ValueError):
@@ -185,6 +193,18 @@ def _validate_grammar(grammar: object, expected_type: object, label: str) -> Non
         ):
             raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
         return
+    if kind == "dataos_identity":
+        if (
+            set(grammar) != {"kind", "identity_kind"}
+            or expected_type != "string"
+            or grammar.get("identity_kind") not in {"issuer", "security", "listing"}
+        ):
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        return
+    if kind == "theme_graph_node":
+        if set(grammar) != {"kind"} or expected_type != "string":
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        return
     if kind == "integer_range":
         if (
             set(grammar) not in (
@@ -242,6 +262,46 @@ def _matches_grammar(value: object, grammar: object) -> bool:
             and int(grammar.get("minimum_length", -1)) <= len(value)
             <= int(grammar.get("maximum_length", -1))
         )
+    if kind == "dataos_identity":
+        if not isinstance(value, str):
+            return False
+        try:
+            from lib.dataos.identity import (
+                issuer_id,
+                listing_id,
+                parse_id,
+                security_id,
+            )
+
+            parsed_kind, listing = parse_id(value)
+            rendered = {
+                "issuer": issuer_id,
+                "security": security_id,
+                "listing": listing_id,
+            }[str(grammar.get("identity_kind"))](listing)
+        except (ImportError, KeyError, TypeError, ValueError):
+            return False
+        return parsed_kind == grammar.get("identity_kind") and value == rendered
+    if kind == "theme_graph_node":
+        if not isinstance(value, str):
+            return False
+        try:
+            from engine.theme_graph import identity as theme_identity
+
+            if theme_identity.COMPANY_ID_RE.fullmatch(value):
+                return True
+            if theme_identity.LOCAL_THEME_ID_RE.fullmatch(value):
+                return True
+            if value.startswith("theme:"):
+                return theme_identity.theme_node_id(value.removeprefix("theme:")) == value
+            if value.startswith("etf:"):
+                return theme_identity.etf_node_id(value.removeprefix("etf:")) == value
+            if value.startswith("basket:"):
+                _, suite, basket_id = value.split(":", 2)
+                return theme_identity.basket_node_id(suite, basket_id) == value
+        except (ImportError, TypeError, ValueError):
+            return False
+        return False
     if kind == "integer_range":
         maximum = grammar.get("maximum")
         return (
@@ -253,6 +313,48 @@ def _matches_grammar(value: object, grammar: object) -> bool:
     if kind == "enum":
         return value in list(grammar.get("values") or ())
     return False
+
+
+def _validate_subject_native_rule(
+    rule: object,
+    *,
+    owner_name: str,
+    subject_type: str,
+    identity_fields: set[str],
+) -> None:
+    if not isinstance(rule, dict):
+        raise EvidenceFoundationError(
+            f"vocabulary_owner_subject_native_parity_invalid:{owner_name}:{subject_type}"
+        )
+    kind = rule.get("kind")
+    if kind == "unbound":
+        valid = set(rule) == {"kind"}
+    elif kind == "native_field_equal":
+        valid = (
+            set(rule) == {"kind", "field"}
+            and isinstance(rule.get("field"), str)
+            and rule["field"] in identity_fields
+        )
+    elif kind == "earnings_event_cik_equal":
+        valid = (
+            set(rule) == {"kind", "field"}
+            and subject_type == "cik"
+            and rule.get("field") == "event_id"
+            and "event_id" in identity_fields
+        )
+    elif kind == "theme_edge_endpoint":
+        valid = (
+            set(rule) == {"kind", "field"}
+            and subject_type == "theme_node"
+            and rule.get("field") == "edge_id"
+            and "edge_id" in identity_fields
+        )
+    else:
+        valid = False
+    if not valid:
+        raise EvidenceFoundationError(
+            f"vocabulary_owner_subject_native_parity_invalid:{owner_name}:{subject_type}"
+        )
 
 
 def _content_identity(value: Mapping[str, Any], *, field: str, prefix: str) -> str:
@@ -356,6 +458,21 @@ def load_vocabulary(path: str | Path | None = None) -> dict[str, Any]:
             or not set(owner["subject_key_types"]).issubset(payload["subject_key_types"])
         ):
             raise EvidenceFoundationError(f"vocabulary_owner_subjects_missing:{name}")
+        subject_native_parity = owner.get("subject_native_parity")
+        if (
+            not isinstance(subject_native_parity, dict)
+            or set(subject_native_parity) != set(owner["subject_key_types"])
+        ):
+            raise EvidenceFoundationError(
+                f"vocabulary_owner_subject_native_parity_invalid:{name}"
+            )
+        for subject_type, rule in subject_native_parity.items():
+            _validate_subject_native_rule(
+                rule,
+                owner_name=name,
+                subject_type=subject_type,
+                identity_fields=set(identity_fields),
+            )
         coverage_classes = owner.get("coverage_classes")
         if (
             not isinstance(coverage_classes, list)
@@ -471,6 +588,59 @@ def render_owner_pointer(owner: Mapping[str, Any], identity: Mapping[str, Any]) 
     if not pointer or pointer != pointer.strip():
         raise EvidenceFoundationError("owner_pointer_render_invalid")
     return pointer
+
+
+def _subject_native_parity_violation(
+    subject: Mapping[str, Any],
+    *,
+    owner: Mapping[str, Any],
+    native_identity: Mapping[str, Any],
+) -> str | None:
+    """Bind a subject to owner-native identity wherever the owner carries it."""
+    subject_type = subject.get("key_type")
+    rules = owner.get("subject_native_parity")
+    rule = rules.get(subject_type) if isinstance(rules, Mapping) else None
+    if not isinstance(rule, Mapping):
+        return f"subject_native_parity_rule_missing:{subject_type}"
+    kind = rule.get("kind")
+    if kind == "unbound":
+        return None
+    field = rule.get("field")
+    native_value = native_identity.get(field) if isinstance(field, str) else None
+    subject_value = subject.get("key")
+    if kind == "native_field_equal":
+        return (
+            None
+            if subject_value == native_value
+            else f"subject_native_identity_mismatch:{subject_type}"
+        )
+    if kind == "earnings_event_cik_equal":
+        try:
+            from engine.company_intelligence import event_workspace
+
+            event_id = str(native_value)
+            source_valid = event_workspace._EVENT_ID_RE.fullmatch(event_id) is not None
+        except (AttributeError, ImportError, TypeError, ValueError):
+            source_valid = False
+            event_id = ""
+        embedded_cik = event_id[7:17] if source_valid else None
+        return (
+            None
+            if subject_value == embedded_cik
+            else f"subject_native_identity_mismatch:{subject_type}"
+        )
+    if kind == "theme_edge_endpoint":
+        try:
+            body = str(native_value).split(":", 1)[1].rsplit("@", 1)[0]
+            source_node, target_node = body.split("->", 1)
+        except (IndexError, ValueError):
+            source_node = target_node = ""
+        return (
+            None
+            if subject_value in {source_node, target_node}
+            else f"subject_native_identity_mismatch:{subject_type}"
+        )
+    return f"subject_native_parity_rule_unknown:{subject_type}"
 
 
 def _parse_clock(value: object, grain: object) -> date | datetime | None:
@@ -612,6 +782,14 @@ def semantic_violations(reference: Mapping[str, Any]) -> tuple[str, ...]:
             )
             if not _matches_grammar(subject.get("key"), grammar):
                 violations.append(f"subject_{index}_key_invalid:{key_type}")
+            if isinstance(native_identity, Mapping):
+                parity_violation = _subject_native_parity_violation(
+                    subject,
+                    owner=owner,
+                    native_identity=native_identity,
+                )
+                if parity_violation is not None:
+                    violations.append(f"subject_{index}_{parity_violation}")
 
     if reference.get("coverage_class") not in set(owner.get("coverage_classes") or []):
         violations.append("coverage_class_not_owned")
@@ -902,6 +1080,167 @@ def _schema_violations(reference: Mapping[str, Any]) -> tuple[str, ...]:
     )
 
 
+def _relation_edges(
+    references: list[Mapping[str, Any]],
+    *,
+    cited_ids: set[str],
+    relation_types: set[str],
+) -> set[tuple[str, str, str]]:
+    edges: set[tuple[str, str, str]] = set()
+    for reference in references:
+        source_id = str(reference.get("reference_id"))
+        if source_id not in cited_ids:
+            continue
+        for relation in reference.get("relations") or ():
+            if not isinstance(relation, Mapping):
+                continue
+            relation_type = relation.get("type")
+            target_id = relation.get("target_reference_id")
+            if relation_type in relation_types and target_id in cited_ids:
+                edges.add((str(relation_type), source_id, str(target_id)))
+    return edges
+
+
+def _connected_components(
+    nodes: set[str], edges: set[tuple[str, str, str]]
+) -> list[frozenset[str]]:
+    adjacency = {node: set() for node in nodes}
+    for _, left, right in edges:
+        if left in adjacency and right in adjacency:
+            adjacency[left].add(right)
+            adjacency[right].add(left)
+    components: list[frozenset[str]] = []
+    remaining = set(nodes)
+    while remaining:
+        pending = [min(remaining)]
+        component: set[str] = set()
+        while pending:
+            node = pending.pop()
+            if node in component:
+                continue
+            component.add(node)
+            pending.extend(sorted(adjacency[node] - component, reverse=True))
+        remaining -= component
+        components.append(frozenset(component))
+    return sorted(components, key=lambda value: tuple(sorted(value)))
+
+
+def _derived_block_facts(
+    resolved: list[Mapping[str, Any]],
+) -> dict[str, Any]:
+    cited_ids = {str(reference.get("reference_id")) for reference in resolved}
+    absent_ids = {
+        str(reference.get("reference_id"))
+        for reference in resolved
+        if reference.get("missingness", {}).get("state") == "absent"
+    }
+    included_ids = cited_ids - absent_ids
+    rights_ids = {
+        str(reference.get("reference_id"))
+        for reference in resolved
+        if reference.get("rights", {}).get("state") == "rights_blocked"
+    }
+    stale_ids = {
+        str(reference.get("reference_id"))
+        for reference in resolved
+        if reference.get("missingness", {}).get("reason") == "stale"
+    }
+    fallback_ids = {
+        str(reference.get("reference_id"))
+        for reference in resolved
+        if reference.get("missingness", {}).get("reason")
+        == "reconstructed_not_operational_pit"
+    }
+    corrected_ids = {
+        str(reference.get("reference_id"))
+        for reference in resolved
+        if reference.get("correction", {}).get("kind") != "none"
+    }
+    conflict_edges = _relation_edges(
+        resolved,
+        cited_ids=cited_ids,
+        relation_types={"contradicts"},
+    )
+    conflict_ids = {
+        reference_id
+        for _, left, right in conflict_edges
+        for reference_id in (left, right)
+    }
+    dependence_edges = _relation_edges(
+        resolved,
+        cited_ids=included_ids,
+        relation_types=set(_DEPENDENCE_RELATION_TO_GROUP),
+    )
+    unknown_freshness = any(
+        reference.get("freshness", {}).get("state") != "native_clock_bound"
+        or not reference.get("freshness", {}).get("policy_id")
+        for reference in resolved
+        if str(reference.get("reference_id")) in included_ids
+    )
+    if rights_ids:
+        coverage_state = "rights_blocked"
+    elif conflict_ids:
+        coverage_state = "conflicted"
+    elif corrected_ids:
+        coverage_state = "corrected"
+    elif stale_ids:
+        coverage_state = "stale"
+    elif absent_ids:
+        coverage_state = "unavailable" if not included_ids else "partial"
+    elif unknown_freshness:
+        coverage_state = "unknown"
+    else:
+        coverage_state = "complete"
+
+    dependence_components = _connected_components(included_ids, dependence_edges)
+    group_components: set[tuple[str, frozenset[str], None]] = set()
+    for relation_type, group_kind in _DEPENDENCE_RELATION_TO_GROUP.items():
+        typed_edges = {edge for edge in dependence_edges if edge[0] == relation_type}
+        typed_nodes = {
+            reference_id
+            for _, left, right in typed_edges
+            for reference_id in (left, right)
+        }
+        for component in _connected_components(typed_nodes, typed_edges):
+            if len(component) >= 2:
+                # Reference.v1 freezes deterministic_key to null and disables all
+                # automatic effects.  A Block may report the typed relation group,
+                # but cannot invent a grouping key that the cited relations do not
+                # carry.
+                group_components.add((group_kind, component, None))
+    if not dependence_edges:
+        dependence_state = "independent"
+    elif {edge[0] for edge in dependence_edges} == {"shares_upstream"}:
+        dependence_state = "shared_upstream"
+    else:
+        dependence_state = "mixed"
+
+    if conflict_ids and corrected_ids:
+        conflict_state = "mixed"
+    elif conflict_ids:
+        conflict_state = "conflicted"
+    elif corrected_ids:
+        conflict_state = "corrected"
+    else:
+        conflict_state = "none"
+    return {
+        "cited_ids": cited_ids,
+        "included_ids": included_ids,
+        "absent_ids": absent_ids,
+        "rights_ids": rights_ids,
+        "stale_ids": stale_ids,
+        "fallback_ids": fallback_ids,
+        "corrected_ids": corrected_ids,
+        "conflict_ids": conflict_ids,
+        "coverage_state": coverage_state,
+        "dependence_state": dependence_state,
+        "independent_evidence_count": len(dependence_components),
+        "dependence_groups": group_components,
+        "conflict_state": conflict_state,
+        "conflict_reference_ids": conflict_ids | corrected_ids,
+    }
+
+
 def block_semantic_violations(
     block: Mapping[str, Any],
     *,
@@ -929,9 +1268,14 @@ def block_semantic_violations(
         if not isinstance(reference, Mapping):
             violations.append(f"block_reference_missing:{reference_id}")
             continue
+        if reference.get("reference_id") != reference_id:
+            violations.append(f"block_reference_key_mismatch:{reference_id}")
+            continue
         if combined_violations(reference):
             violations.append(f"block_reference_invalid:{reference_id}")
         resolved.append(reference)
+
+    derived = _derived_block_facts(resolved)
 
     expected_owners = {str(reference.get("owner_store")) for reference in resolved}
     expected_classes = {str(reference.get("object_class")) for reference in resolved}
@@ -995,21 +1339,19 @@ def block_semantic_violations(
             violations.append("block_denominator_invalid")
         elif included + excluded != total:
             violations.append("block_denominator_not_reconciled")
-        adverse_counts = [
-            coverage.get(name)
-            for name in ("missing", "stale", "rights_blocked", "fallback")
-        ]
-        if coverage.get("state") == "complete" and (
-            excluded != 0 or any(value != 0 for value in adverse_counts)
-        ):
-            violations.append("block_complete_with_degradation")
-        rights_count = sum(
-            1 for reference in resolved if reference.get("rights", {}).get("state") == "rights_blocked"
-        )
-        if coverage.get("rights_blocked") != rights_count:
-            violations.append("block_rights_denominator_mismatch")
-        if rights_count and coverage.get("state") not in {"rights_blocked", "partial", "unavailable"}:
-            violations.append("block_rights_not_dominant")
+        expected_denominator = {
+            "included": len(derived["included_ids"]),
+            "excluded": len(reference_ids) - len(derived["included_ids"]),
+            "missing": len(derived["absent_ids"]),
+            "stale": len(derived["stale_ids"]),
+            "rights_blocked": len(derived["rights_ids"]),
+            "fallback": len(derived["fallback_ids"]),
+        }
+        for name, expected in expected_denominator.items():
+            if coverage.get(name) != expected:
+                violations.append(f"block_denominator_{name}_mismatch")
+        if coverage.get("state") != derived["coverage_state"]:
+            violations.append("block_coverage_state_not_derived")
         supported_state_for_coverage = {
             "complete": "supported",
             "partial": "partial",
@@ -1021,7 +1363,9 @@ def block_semantic_violations(
             "corrected": "corrected",
         }
         supported_claim = block.get("supported_claim")
-        expected_supported_state = supported_state_for_coverage.get(coverage.get("state"))
+        expected_supported_state = supported_state_for_coverage.get(
+            derived["coverage_state"]
+        )
         if (
             not isinstance(supported_claim, Mapping)
             or supported_claim.get("state") != expected_supported_state
@@ -1032,60 +1376,57 @@ def block_semantic_violations(
     if not isinstance(dependence, Mapping):
         violations.append("block_dependence_invalid")
     else:
-        independent_count = dependence.get("independent_evidence_count")
-        included = coverage.get("included") if isinstance(coverage, Mapping) else None
-        if isinstance(independent_count, int) and isinstance(included, int) and independent_count > included:
-            violations.append("block_independence_exceeds_included")
+        if dependence.get("state") != derived["dependence_state"]:
+            violations.append("block_dependence_state_not_derived")
+        if (
+            dependence.get("independent_evidence_count")
+            != derived["independent_evidence_count"]
+        ):
+            violations.append("block_independent_count_not_derived")
         groups = dependence.get("groups") or ()
-        if dependence.get("state") in {"shared_upstream", "mixed"} and not groups:
-            violations.append("block_dependence_group_missing")
+        actual_groups: set[tuple[str, frozenset[str], str | None]] = set()
         for index, group in enumerate(groups):
             if not isinstance(group, Mapping):
                 continue
-            group_ids = set(group.get("reference_ids") or ())
+            group_ids = frozenset(group.get("reference_ids") or ())
+            group_kind = str(group.get("kind"))
+            raw_key = group.get("deterministic_key")
+            normalized_key = raw_key if isinstance(raw_key, str) else None
+            actual_groups.add((group_kind, group_ids, normalized_key))
             if not group_ids <= set(reference_ids):
                 violations.append(f"block_dependence_group_external:{index}")
-            if group.get("kind") == "shared_upstream" and group.get("deterministic_key") is not None:
-                violations.append(f"block_shared_upstream_key_must_be_null:{index}")
-            if group.get("kind") == "shared_upstream":
-                has_shared_upstream_relation = any(
-                    isinstance(relation, Mapping)
-                    and relation.get("type") == "shares_upstream"
-                    and str(reference.get("reference_id")) in group_ids
-                    and relation.get("target_reference_id") in group_ids
-                    for reference in resolved
-                    for relation in reference.get("relations") or ()
-                )
-                if not has_shared_upstream_relation:
-                    violations.append(f"block_shared_upstream_relation_missing:{index}")
-            if group.get("kind") in _DETERMINISTIC_DEPENDENCE_KINDS and not group.get("deterministic_key"):
-                violations.append(f"block_deterministic_group_key_missing:{index}")
+            if group.get("deterministic_key") is not None:
+                violations.append(f"block_dependence_key_not_source_derived:{index}")
+        if actual_groups != derived["dependence_groups"]:
+            violations.append("block_dependence_groups_not_derived")
 
     conflict = block.get("conflict_correction")
     lineage = block.get("lineage")
-    corrected_ids = {
-        str(reference.get("reference_id"))
-        for reference in resolved
-        if reference.get("correction", {}).get("kind") != "none"
-    }
+    corrected_ids = set(derived["corrected_ids"])
     if not isinstance(conflict, Mapping):
         violations.append("block_conflict_correction_invalid")
     else:
         cited = set(conflict.get("reference_ids") or ())
         if not cited <= set(reference_ids):
             violations.append("block_conflict_reference_external")
-        if corrected_ids and (
-            conflict.get("state") not in {"corrected", "mixed"} or not corrected_ids <= cited
-        ):
-            violations.append("block_correction_not_propagated")
+        if conflict.get("state") != derived["conflict_state"]:
+            violations.append("block_conflict_state_not_derived")
+        if cited != derived["conflict_reference_ids"]:
+            violations.append("block_conflict_references_not_derived")
     if not isinstance(lineage, Mapping):
         violations.append("block_lineage_invalid")
     elif corrected_ids and (
         lineage.get("state") != "recompiled"
-        or not corrected_ids <= set(lineage.get("invalidated_by_reference_ids") or ())
+        or corrected_ids != set(lineage.get("invalidated_by_reference_ids") or ())
         or not lineage.get("predecessor_block_ids")
     ):
         violations.append("block_correction_missing_recompile_receipt")
+    elif not corrected_ids and (
+        lineage.get("state") != "original"
+        or lineage.get("predecessor_block_ids")
+        or lineage.get("invalidated_by_reference_ids")
+    ):
+        violations.append("block_lineage_not_derived")
 
     uncertainty = block.get("uncertainty")
     if not isinstance(uncertainty, Mapping):
@@ -1156,8 +1497,31 @@ def recipe_semantic_violations(recipe: Mapping[str, Any]) -> tuple[str, ...]:
 
     owners = vocab.get("owner_stores") or {}
     subject_types = set(vocab.get("subject_key_types") or ())
-    if not set(recipe.get("subject_key_types") or ()) <= subject_types:
+    recipe_subject_types = set(recipe.get("subject_key_types") or ())
+    if not recipe_subject_types <= subject_types:
         violations.append("recipe_subject_key_unknown")
+    subject_grammars = vocab.get("subject_key_grammars")
+    subject_instance = recipe.get("subject_instance")
+    if not isinstance(subject_instance, Mapping):
+        violations.append("recipe_subject_instance_invalid")
+        canonical_subject: tuple[str, str] | None = None
+    else:
+        canonical_type = subject_instance.get("key_type")
+        canonical_key = subject_instance.get("key")
+        canonical_subject = (
+            (str(canonical_type), str(canonical_key))
+            if isinstance(canonical_type, str) and isinstance(canonical_key, str)
+            else None
+        )
+        if canonical_type not in recipe_subject_types:
+            violations.append("recipe_subject_instance_type_unbound")
+        grammar = (
+            subject_grammars.get(canonical_type)
+            if isinstance(subject_grammars, Mapping)
+            else None
+        )
+        if not _matches_grammar(canonical_key, grammar):
+            violations.append("recipe_subject_instance_value_invalid")
 
     specs = recipe.get("block_specs")
     specs = specs if isinstance(specs, list) else []
@@ -1192,14 +1556,69 @@ def recipe_semantic_violations(recipe: Mapping[str, Any]) -> tuple[str, ...]:
         for row in vocab.get("identity_join_rules") or ()
         if isinstance(row, Mapping)
     }
+    bound_values: dict[str, set[str]] = {
+        key_type: set() for key_type in recipe_subject_types
+    }
+    if canonical_subject is not None:
+        bound_values.setdefault(canonical_subject[0], set()).add(canonical_subject[1])
+    join_edges: set[tuple[tuple[str, str], tuple[str, str]]] = set()
     for index, join in enumerate(recipe.get("identity_joins") or ()):
-        if isinstance(join, Mapping) and (
-            join.get("from"), join.get("to"), join.get("only_via")
-        ) not in allowed_joins:
+        if not isinstance(join, Mapping):
+            continue
+        from_type = join.get("from")
+        to_type = join.get("to")
+        from_key = join.get("from_key")
+        to_key = join.get("to_key")
+        if (from_type, to_type, join.get("only_via")) not in allowed_joins:
             violations.append(f"recipe_identity_join_forbidden:{index}")
+        if from_type not in recipe_subject_types or to_type not in recipe_subject_types:
+            violations.append(f"recipe_identity_join_type_unbound:{index}")
+        for label, key_type, key in (
+            ("from", from_type, from_key),
+            ("to", to_type, to_key),
+        ):
+            grammar = (
+                subject_grammars.get(key_type)
+                if isinstance(subject_grammars, Mapping)
+                else None
+            )
+            if not _matches_grammar(key, grammar):
+                violations.append(f"recipe_identity_join_{label}_value_invalid:{index}")
+            if isinstance(key_type, str) and isinstance(key, str):
+                bound_values.setdefault(key_type, set()).add(key)
+        if all(isinstance(value, str) for value in (from_type, from_key, to_type, to_key)):
+            join_edges.add(((from_type, from_key), (to_type, to_key)))
+    for key_type in sorted(recipe_subject_types):
+        if len(bound_values.get(key_type, set())) != 1:
+            violations.append(f"recipe_subject_binding_not_exact:{key_type}")
+    if canonical_subject is not None:
+        reachable = {canonical_subject}
+        changed = True
+        while changed:
+            changed = False
+            for left, right in join_edges:
+                if left in reachable and right not in reachable:
+                    reachable.add(right)
+                    changed = True
+                if right in reachable and left not in reachable:
+                    reachable.add(left)
+                    changed = True
+        expected_bindings = {
+            (key_type, next(iter(values)))
+            for key_type, values in bound_values.items()
+            if len(values) == 1
+        }
+        if reachable != expected_bindings:
+            violations.append("recipe_subject_bindings_disconnected")
 
     output_fields: set[str] = set()
     block_keys = set(keys)
+    specs_by_key = {
+        str(spec.get("block_key")): spec
+        for spec in specs
+        if isinstance(spec, Mapping)
+    }
+    mapped_by_block: dict[str, set[str]] = {key: set() for key in block_keys}
     for index, mapping in enumerate(recipe.get("output_mappings") or ()):
         if not isinstance(mapping, Mapping):
             continue
@@ -1207,15 +1626,36 @@ def recipe_semantic_violations(recipe: Mapping[str, Any]) -> tuple[str, ...]:
         if output_field in output_fields:
             violations.append(f"recipe_output_field_duplicate:{output_field}")
         output_fields.add(output_field)
-        if mapping.get("block_key") not in block_keys:
+        block_key = mapping.get("block_key")
+        if block_key not in block_keys:
             violations.append(f"recipe_output_block_unknown:{index}")
+            continue
+        mapped_by_block[str(block_key)].add(str(output_field))
+        spec = specs_by_key[str(block_key)]
+        expected_unavailable = {
+            "refuse": "refuse",
+            "degrade": "explicit_unavailable",
+            "omit": "omit_optional",
+        }.get(spec.get("on_absent"))
+        if mapping.get("when_unavailable") != expected_unavailable:
+            violations.append(f"recipe_output_absence_behavior_mismatch:{index}")
+    for block_key, spec in specs_by_key.items():
+        if mapped_by_block.get(block_key, set()) != set(spec.get("output_fields") or ()):
+            violations.append(f"recipe_output_fields_not_exact:{block_key}")
 
-    rule_codes = {
-        rule.get("code") for rule in recipe.get("refusal_degradation_rules") or ()
+    rules = [
+        rule for rule in recipe.get("refusal_degradation_rules") or ()
         if isinstance(rule, Mapping)
-    }
-    for missing in sorted(_REQUIRED_RECIPE_RULES - rule_codes):
-        violations.append(f"recipe_required_rule_missing:{missing}")
+    ]
+    rule_codes = [rule.get("code") for rule in rules]
+    if len(rule_codes) != len(set(rule_codes)):
+        violations.append("recipe_rule_code_duplicate")
+    if set(rule_codes) != _REQUIRED_RECIPE_RULES:
+        violations.append("recipe_rule_codes_not_exact")
+    for rule in rules:
+        expected_effect = _RECIPE_RULE_EFFECTS.get(str(rule.get("code")))
+        if rule.get("effect") != expected_effect:
+            violations.append(f"recipe_rule_effect_mismatch:{rule.get('code')}")
     if recipe.get("authority") != ALL_FALSE_AUTHORITY:
         violations.append("recipe_authority_leak")
     return tuple(dict.fromkeys(violations))
@@ -1237,6 +1677,23 @@ def validate_recipe(recipe: Mapping[str, Any]) -> dict[str, Any]:
     return json.loads(json.dumps(recipe, allow_nan=False))
 
 
+def _recipe_bound_subjects(recipe: Mapping[str, Any]) -> set[tuple[str, str]]:
+    bound: set[tuple[str, str]] = set()
+    subject = recipe.get("subject_instance")
+    if isinstance(subject, Mapping):
+        key_type, key = subject.get("key_type"), subject.get("key")
+        if isinstance(key_type, str) and isinstance(key, str):
+            bound.add((key_type, key))
+    for join in recipe.get("identity_joins") or ():
+        if not isinstance(join, Mapping):
+            continue
+        for type_field, key_field in (("from", "from_key"), ("to", "to_key")):
+            key_type, key = join.get(type_field), join.get(key_field)
+            if isinstance(key_type, str) and isinstance(key, str):
+                bound.add((key_type, key))
+    return bound
+
+
 def compile_recipe(
     recipe: Mapping[str, Any],
     *,
@@ -1245,9 +1702,28 @@ def compile_recipe(
 ) -> dict[str, Any]:
     """Compile a deterministic in-memory receipt; persist no owner fact or block."""
     validated_recipe = validate_recipe(recipe)
+    bound_subjects = _recipe_bound_subjects(validated_recipe)
+    bound_types = set(validated_recipe["subject_key_types"])
     validated_blocks: dict[str, dict[str, Any]] = {}
     for block in blocks:
         validated = validate_block(block, references=references)
+        for reference_id in validated["reference_ids"]:
+            reference = references[reference_id]
+            subjects = [reference.get("subject"), *(reference.get("secondary_subjects") or ())]
+            relevant = {
+                (str(subject.get("key_type")), str(subject.get("key")))
+                for subject in subjects
+                if isinstance(subject, Mapping)
+                and subject.get("key_type") in bound_types
+            }
+            if not relevant:
+                raise EvidenceFoundationError(
+                    f"compile_reference_subject_unbound:{reference_id}"
+                )
+            if not relevant <= bound_subjects:
+                raise EvidenceFoundationError(
+                    f"compile_reference_subject_mismatch:{reference_id}"
+                )
         key = validated["block_key"]
         if key in validated_blocks:
             raise EvidenceFoundationError(f"compile_block_key_duplicate:{key}")
@@ -1261,6 +1737,8 @@ def compile_recipe(
     missing_required: list[str] = []
     missing_optional: list[str] = []
     adverse_states: list[str] = []
+    required_rights_blocked: list[str] = []
+    required_conflicted: list[str] = []
     denominator = {
         key: 0 for key in (
             "total", "included", "excluded", "missing", "stale", "rights_blocked", "fallback"
@@ -1297,16 +1775,20 @@ def compile_recipe(
             denominator[field] += block["coverage"][field]
         if block["coverage"]["state"] != "complete":
             adverse_states.append(block["coverage"]["state"])
+        if spec["requirement"] == "required":
+            if block["coverage"]["state"] == "rights_blocked":
+                required_rights_blocked.append(key)
+            if block["coverage"]["state"] == "conflicted":
+                required_conflicted.append(key)
 
     if missing_required:
         state = "refused"
         dominant = "required_block_absent"
-    elif any(
-        validated_blocks[key]["coverage"]["state"] == "conflicted"
-        for key in validated_blocks
-        if key in {spec["block_key"] for spec in validated_recipe["block_specs"] if spec["requirement"] == "required"}
-    ):
-        state = "conflicted"
+    elif required_rights_blocked:
+        state = "refused"
+        dominant = "rights_blocked"
+    elif required_conflicted:
+        state = "abstained"
         dominant = "conflicted"
     elif missing_optional or adverse_states:
         state = "partial"

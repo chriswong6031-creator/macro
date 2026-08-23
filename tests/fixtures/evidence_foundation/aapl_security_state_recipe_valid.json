@@ -1,12 +1,16 @@
 {
   "schema": "evidence_foundation.recipe.v1",
   "version": "1.0.0",
-  "recipe_id": "erp_06d5b69308a45fbfbda9a43389cb8a6a0a3d93a35f494f2a20c136ac1cc981f2",
+  "recipe_id": "erp_b47b1ec809c500a4560615eff2c5eeb90f38fc103785028df5135d8bdf7177a9",
   "recipe_name": "security_state.v1.evidence",
   "consumer": {
     "workstream": "WS:MARKET-OS",
     "job": "build security_state.v1 for AAPL",
     "output_contract": "security_state.v1"
+  },
+  "subject_instance": {
+    "key_type": "security_id",
+    "key": "SEC:US-XNAS-AAPL"
   },
   "subject_key_types": [
     "cik",
@@ -93,12 +97,23 @@
   "identity_joins": [
     {
       "from": "cik",
+      "from_key": "0000320193",
       "to": "security_id",
+      "to_key": "SEC:US-XNAS-AAPL",
       "only_via": "engine.company_intelligence.identity company_identity.v1 PIT alias"
     },
     {
-      "from": "theme_node",
+      "from": "issuer_id",
+      "from_key": "ISS:US-XNAS-AAPL",
       "to": "security_id",
+      "to_key": "SEC:US-XNAS-AAPL",
+      "only_via": "lib.dataos.identity.IssuerMaster resolved owner row"
+    },
+    {
+      "from": "theme_node",
+      "from_key": "co:us:AAPL",
+      "to": "security_id",
+      "to_key": "SEC:US-XNAS-AAPL",
       "only_via": "engine.theme_graph.identity_resolution resolved owner row"
     }
   ],

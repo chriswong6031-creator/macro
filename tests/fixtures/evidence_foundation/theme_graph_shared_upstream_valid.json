@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3",
+  "reference_id": "efr_935c3338134d71458acf9d53c4193ca2cec35e1831f0537fc0315cb3fc3557cd",
   "object_class": "world_observation",
   "owner_store": "theme_graph.evidence",
   "native_identity": {
@@ -25,7 +25,7 @@
   "authority_class": "fact",
   "subject": {
     "key_type": "theme_node",
-    "key": "issuer:ISS:US-XNAS-AAPL#2026-01-01"
+    "key": "co:us:AAPL"
   },
   "secondary_subjects": [],
   "clocks": [
@@ -60,7 +60,7 @@
   },
   "relations": [
     {
-      "target_reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+      "target_reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
       "type": "shares_upstream",
       "automatic_effect": false,
       "deterministic_key": null,

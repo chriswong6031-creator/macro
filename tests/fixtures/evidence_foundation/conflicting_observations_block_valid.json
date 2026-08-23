@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.block.v1",
   "version": "1.0.0",
-  "evidence_block_id": "ebl_58237cfaf954d060e7b04b987cd0727bf1b3780159d2368f773746d7a588f109",
+  "evidence_block_id": "ebl_057a804b783ca9074b8c869b9fa4d1822b33ea00947aab28f9dc070b9a05b72d",
   "block_key": "conflict_example",
   "consumer": {
     "workstream": "WS:MARKET-OS",
@@ -14,8 +14,8 @@
     "state": "conflicted"
   },
   "reference_ids": [
-    "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
-    "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3"
+    "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+    "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548"
   ],
   "owner_stores": [
     "theme_graph.evidence"
@@ -28,7 +28,7 @@
     "collapsed": false,
     "entries": [
       {
-      "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+      "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
         "class": "source_published",
         "field": "published_at",
         "value_state": "known",
@@ -36,7 +36,7 @@
         "grain": "date"
       },
       {
-        "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+        "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
         "class": "world_valid",
         "field": "effective_at",
         "value_state": "known",
@@ -44,7 +44,7 @@
         "grain": "date"
       },
       {
-        "reference_id": "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
+        "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
         "class": "belief_or_build",
         "field": "computed_at",
         "value_state": "known",
@@ -52,7 +52,7 @@
         "grain": "datetime"
       },
       {
-        "reference_id": "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3",
+        "reference_id": "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548",
         "class": "source_published",
         "field": "published_at",
         "value_state": "known",
@@ -60,7 +60,7 @@
         "grain": "date"
       },
       {
-        "reference_id": "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3",
+        "reference_id": "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548",
         "class": "world_valid",
         "field": "effective_at",
         "value_state": "known",
@@ -68,11 +68,11 @@
         "grain": "date"
       },
       {
-        "reference_id": "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3",
+        "reference_id": "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548",
         "class": "belief_or_build",
         "field": "computed_at",
         "value_state": "known",
-        "value": "2026-07-31T00:16:00Z",
+        "value": "2026-07-31T00:17:00Z",
         "grain": "datetime"
       }
     ]
@@ -102,8 +102,8 @@
       {
         "kind": "shared_upstream",
         "reference_ids": [
-          "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
-          "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3"
+          "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+          "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548"
         ],
         "deterministic_key": null
       }
@@ -112,8 +112,8 @@
   "conflict_correction": {
     "state": "conflicted",
     "reference_ids": [
-      "efr_44a84c08436b6dcb68b2f831038a0755f9cf9f5da08e78f1d3080f7806e83f63",
-      "efr_b58ea9b7df1d172cc6243ea79b90ed50b85131ac40d02e3317e4835016d2b6f3"
+      "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+      "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548"
     ]
   },
   "next_observable": {

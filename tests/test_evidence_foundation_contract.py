@@ -6,6 +6,7 @@ import importlib
 import inspect
 import json
 from pathlib import Path
+import re
 import subprocess
 
 import pytest
@@ -325,6 +326,59 @@ EXPECTED_NATIVE_IDENTITY_GRAMMARS = {
     },
 }
 
+EXPECTED_SUBJECT_NATIVE_PARITY = {
+    "theme_graph.evidence": {"theme_node": {"kind": "unbound"}},
+    "theme_graph.edge_belief": {
+        "theme_node": {"kind": "theme_edge_endpoint", "field": "edge_id"}
+    },
+    "fif.raw_occurrence": {
+        "issuer_id": {"kind": "unbound"},
+        "cik": {"kind": "unbound"},
+        "accession": {"kind": "unbound"},
+    },
+    "fif.packet": {
+        "issuer_id": {"kind": "unbound"},
+        "cik": {"kind": "unbound"},
+    },
+    "earnings.workspace_generation": {
+        "cik": {"kind": "earnings_event_cik_equal", "field": "event_id"}
+    },
+    "institutional_13f.raw_receipt": {
+        "institutional_manager_cik": {"kind": "native_field_equal", "field": "filer_cik"},
+        "cik": {"kind": "native_field_equal", "field": "filer_cik"},
+        "accession": {"kind": "native_field_equal", "field": "accession"},
+    },
+    "institutional_13f.catalog_generation": {
+        "institutional_manager_cik": {"kind": "unbound"},
+        "cik": {"kind": "unbound"},
+        "cusip": {"kind": "unbound"},
+    },
+    "govrev.event.v2": {
+        "award_key": {"kind": "unbound"},
+        "notice_id": {"kind": "unbound"},
+        "cik": {"kind": "unbound"},
+    },
+    "biocatalyst.current_source_snapshot": {
+        "nct": {"kind": "native_field_equal", "field": "nct_id"}
+    },
+    "biocatalyst.history_source_snapshot": {
+        "nct": {"kind": "native_field_equal", "field": "nct_id"}
+    },
+    "txi.episode_transition": {
+        "chain_id": {"kind": "native_field_equal", "field": "chain"}
+    },
+    "qledger.claim": {
+        "claim_id": {"kind": "native_field_equal", "field": "claim_id"},
+        "security_id": {"kind": "unbound"},
+        "listing_key": {"kind": "unbound"},
+    },
+    "market_memory.outcome_record": {
+        "mm_subject": {"kind": "unbound"},
+        "security_id": {"kind": "unbound"},
+        "listing_key": {"kind": "unbound"},
+    },
+}
+
 VALID_NATIVE_IDENTITIES = {
     "theme_graph.evidence": {"evidence_id": "ev:" + "a" * 16},
     "theme_graph.edge_belief": {
@@ -386,17 +440,17 @@ ALTERNATE_FIRST_IDENTITY_VALUE = {
 
 VALID_SUBJECT_VALUES = {
     "cik": "0000320193",
-    "issuer_id": "cik:0000320193",
-    "security_id": "xnas:AAPL",
+    "issuer_id": "ISS:US-XNAS-AAPL",
+    "security_id": "SEC:US-XNAS-AAPL",
     "listing_key": "US-XNAS-AAPL",
-    "award_key": "award-fixture",
+    "award_key": "generated:award-fixture",
     "notice_id": "notice-fixture",
     "nct": "NCT00000001",
     "theme_node": "co:us:AAPL",
     "chain_id": "supply",
     "claim_id": "a" * 16,
     "accession": "0000320193-26-000001",
-    "mm_subject": "xnas:AAPL",
+    "mm_subject": "mmsecurity_" + "a" * 64,
     "institutional_manager_cik": "0000320193",
     "cusip": "037833100",
 }
@@ -647,6 +701,8 @@ def test_owner_vocabulary_is_bound_to_current_source_contracts(vocabulary: dict)
         assert owner["coverage_classes"] == expected_coverage, name
         assert owner["replay_capabilities"] == expected_replay, name
         assert owner["native_identity_grammars"] == EXPECTED_NATIVE_IDENTITY_GRAMMARS[name]
+        assert owner["subject_native_parity"] == EXPECTED_SUBJECT_NATIVE_PARITY[name]
+        assert set(owner["subject_native_parity"]) == set(owner["subject_key_types"])
 
     assert owners["theme_graph.evidence"]["native_identity_fields"] == list(EVIDENCE_KEY)
     assert owners["theme_graph.edge_belief"]["native_identity_fields"] == list(EDGE_KEY)
@@ -955,6 +1011,100 @@ def test_subject_cik_rejects_ticker_after_pointer_and_reference_id_recompute(
     assert "subject_0_key_invalid:cik" in combined_violations(hostile)
     with pytest.raises(EvidenceFoundationError, match="subject_0_key_invalid:cik"):
         validate_reference(hostile)
+
+
+@pytest.mark.parametrize(
+    ("fixture_name", "hostile_key", "key_type"),
+    [
+        ("qledger_claim_valid.json", "AAPL", "security_id"),
+        ("fif_packet_valid.json", "AAPL", "issuer_id"),
+        ("theme_graph_evidence_valid.json", "AAPL", "theme_node"),
+    ],
+)
+def test_structured_subject_types_reject_ticker_labels_after_rehash_through_both_apis(
+    fixture_name: str,
+    hostile_key: str,
+    key_type: str,
+) -> None:
+    hostile = _fixture(fixture_name)
+    assert hostile["subject"]["key_type"] == key_type
+    hostile["subject"]["key"] = hostile_key
+    _with_id(hostile)
+    expected = f"subject_0_key_invalid:{key_type}"
+    assert expected in combined_violations(hostile)
+    with pytest.raises(EvidenceFoundationError, match=expected):
+        validate_reference(hostile)
+
+
+def test_earnings_subject_cik_must_equal_the_native_event_cik_after_rehash() -> None:
+    hostile = _fixture("earnings_workspace_valid.json")
+    hostile["subject"]["key"] = "0001067983"
+    _with_id(hostile)
+    expected = "subject_0_subject_native_identity_mismatch:cik"
+    assert expected in combined_violations(hostile)
+    with pytest.raises(EvidenceFoundationError, match=expected):
+        validate_reference(hostile)
+
+
+@pytest.mark.parametrize(
+    ("owner_name", "subject_type", "hostile_key"),
+    [
+        ("theme_graph.edge_belief", "theme_node", "co:us:MSFT"),
+        ("earnings.workspace_generation", "cik", "0001067983"),
+        ("institutional_13f.raw_receipt", "institutional_manager_cik", "0001067983"),
+        ("institutional_13f.raw_receipt", "cik", "0001067983"),
+        ("institutional_13f.raw_receipt", "accession", "0001067983-26-000001"),
+        ("biocatalyst.current_source_snapshot", "nct", "NCT00000002"),
+        ("biocatalyst.history_source_snapshot", "nct", "NCT00000002"),
+        ("txi.episode_transition", "chain_id", "other_chain"),
+        ("qledger.claim", "claim_id", "b" * 16),
+    ],
+)
+def test_every_bound_subject_native_identity_rule_kills_valid_but_different_values(
+    owner_name: str,
+    subject_type: str,
+    hostile_key: str,
+    vocabulary: dict,
+) -> None:
+    owner = vocabulary["owner_stores"][owner_name]
+    hostile = _owner_reference(owner_name, owner, vocabulary["clock_classes"])
+    hostile["subject"] = {"key_type": subject_type, "key": hostile_key}
+    _with_id(hostile)
+    expected = f"subject_0_subject_native_identity_mismatch:{subject_type}"
+    assert expected in combined_violations(hostile)
+    with pytest.raises(EvidenceFoundationError, match=expected):
+        validate_reference(hostile)
+
+
+def test_subject_grammars_are_exact_source_native_shapes_not_bounded_labels(
+    vocabulary: dict,
+) -> None:
+    from engine.neuralweb.market_memory_identity_observation import _FROZEN_SUBJECT
+    from engine.theme_graph.identity import company_node_id
+    from lib.dataos.identity import issuer_id, listing_id, security_id
+
+    grammars = vocabulary["subject_key_grammars"]
+    assert all(grammar["kind"] != "bounded_text" for grammar in grammars.values())
+    assert grammars["issuer_id"] == {
+        "kind": "dataos_identity",
+        "identity_kind": "issuer",
+    }
+    assert grammars["security_id"] == {
+        "kind": "dataos_identity",
+        "identity_kind": "security",
+    }
+    assert grammars["listing_key"] == {
+        "kind": "dataos_identity",
+        "identity_kind": "listing",
+    }
+    assert issuer_id("US-XNAS-AAPL") == VALID_SUBJECT_VALUES["issuer_id"]
+    assert security_id("US-XNAS-AAPL") == VALID_SUBJECT_VALUES["security_id"]
+    assert listing_id("US-XNAS-AAPL") == VALID_SUBJECT_VALUES["listing_key"]
+    assert company_node_id("baskets", "AAPL") == VALID_SUBJECT_VALUES["theme_node"]
+    assert _FROZEN_SUBJECT["subject_id"].startswith("mmsecurity_")
+    assert re.fullmatch(
+        grammars["mm_subject"]["pattern"], _FROZEN_SUBJECT["subject_id"]
+    )
 
 
 def test_public_validation_api_cannot_trust_attacker_vocabulary_rebinding(

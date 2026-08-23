@@ -11,6 +11,7 @@
     "recipe_id",
     "recipe_name",
     "consumer",
+    "subject_instance",
     "subject_key_types",
     "block_specs",
     "identity_joins",
@@ -26,6 +27,7 @@
     "recipe_id": {"type": "string", "pattern": "^erp_[a-f0-9]{64}$"},
     "recipe_name": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,127}$"},
     "consumer": {"$ref": "#/$defs/consumer"},
+    "subject_instance": {"$ref": "#/$defs/subjectInstance"},
     "subject_key_types": {
       "type": "array",
       "minItems": 1,
@@ -80,6 +82,15 @@
         "output_contract": {"type": "string", "minLength": 1, "maxLength": 256}
       }
     },
+    "subjectInstance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_type", "key"],
+      "properties": {
+        "key_type": {"type": "string", "minLength": 1, "maxLength": 64},
+        "key": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    },
     "blockSpec": {
       "type": "object",
       "additionalProperties": false,
@@ -129,10 +140,12 @@
     "identityJoin": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["from", "to", "only_via"],
+      "required": ["from", "from_key", "to", "to_key", "only_via"],
       "properties": {
         "from": {"type": "string", "minLength": 1, "maxLength": 64},
+        "from_key": {"type": "string", "minLength": 1, "maxLength": 1024},
         "to": {"type": "string", "minLength": 1, "maxLength": 64},
+        "to_key": {"type": "string", "minLength": 1, "maxLength": 1024},
         "only_via": {"type": "string", "minLength": 1, "maxLength": 512}
       }
     },

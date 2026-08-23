@@ -92,11 +92,17 @@ landmines:
     executed cutoff/replay mutation kills. A third exact-head review of 32b8015 then
     requested source-backed coverage/replay capability, native identity value
     grammars, closure of the public vocabulary-injection seam, and the missing 13F
-    catalog adoption row. The fourth candidate carries those exact repairs and hostile
-    kills. K1 stays in_progress until a fourth fresh exact-head review passes and Sol
-    accepts. Current main's #6325 authenticated-MO double-dispatch receipt separately
-    leaves Sol to decide partial K1 plus bounded K1-B versus return for
-    EvidenceBlock/EvidenceRecipe expansion; no session may infer that ruling."
+    catalog adoption row. The fourth exact-head review of 71cd33ab then reproduced
+    rider-specific laundering: Block claims were not derived from cited refs and
+    relations, the caller reference map could alias a different object, Recipe outputs
+    and rules were not exact, required rights-blocked composition degraded instead of
+    refusing, and subject joins did not execute exact values. The current repair binds
+    structured subject/native identities, Block coverage/dependence/conflict/correction,
+    reference-map keys, exact Recipe outputs/rules, and AAPL subject values through
+    rehashed hostile kills. K1 stays in_progress until a fresh exact-head review passes
+    and Sol accepts. Current main's #6325 authenticated-MO double-dispatch receipt
+    authenticates this Ref/Block/Recipe rider on the sole #6319 lane; it does not
+    authorize a separate K1-B, B1A, runtime, store, or dependent wave."
   - "US G0 canonical copy is MERGED PR #5955 (research/earnings_intelligence/g0/,
     inside the Earnings owner's owns_paths); CN-G0 is MERGED PR #5943
     (research/alpha_intelligence/censuses/CN-G0/). The #5822->#5953 rival
