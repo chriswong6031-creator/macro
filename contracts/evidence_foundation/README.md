@@ -18,9 +18,11 @@ canonical bytes. K1 does not pretend a parser or materializer is a physical read
 - `reference.v1.schema.json` is the closed wire shape.
 - `vocabulary.v1.json` is the versioned owner/identity/clock binding table.
 - `lib/evidence_foundation.py` exports the one combined JSON-Schema plus semantic
-  fail-closed validator. Its semantic pass enforces exact owner schema, identity type,
-  pointer and clock bindings, v1 automatic-effect refusal, append/supersede lineage,
-  and replay lookahead refusal.
+  fail-closed validator. Its semantic pass enforces exact owner schema, identity
+  type and value grammar, coverage/replay capability, pointer and clock bindings,
+  v1 automatic-effect refusal, append/supersede lineage, and replay lookahead
+  refusal. Public validation always uses the validated repository vocabulary and
+  accepts no caller-supplied vocabulary authority.
 
 The schema and vocabulary version are both `1.0.0`. Evolution is additive within v1.
 Renaming a field, repurposing an enum member, weakening all-false authority, or
@@ -37,6 +39,8 @@ changing a native clock binding requires v2.
    NCT, award, 13F, TXI, QLedger, and Market Memory ids remain owner-native. A CIK to
    listing/security join is lawful only through the Earnings `company_identity.v1`
    PIT alias. Symbol-directory plus `cik_map` is not a listing-security binding.
+   Every owner identity field and every subject-key type carries a source-backed
+   value grammar; matching the field label or scalar type is insufficient.
 3. **Every clock keeps its native name.** The seven classes are
    `world_valid`, `source_published`, `knowable`, `observed`, `system_recorded`,
    `belief_or_build`, and `review_due`. `vocabulary.v1.json` binds each class to exact
@@ -47,8 +51,8 @@ changing a native clock binding requires v2.
    owner-native object is not registered. `null` is an adverse result, not permission
    to guess a replacement clock.
 4. **Pointers, not bodies.** `pointer_only` is true and `body_embedded` false.
-   `native_digest` and `coverage_class` use explicit `unknown` states; neither is
-   zero-filled or guessed.
+   `native_digest` uses an explicit `unknown` state and is never zero-filled or
+   guessed. `coverage_class` is exact per owner, not a caller-selected claim.
 5. **Independence has three axes and v1 does not verify them.** Source independence,
    information novelty, and economic/mechanism independence are separately declared
    on every relation with `assessment=declarative_unverified`. Until an owner supplies
@@ -67,7 +71,9 @@ changing a native clock binding requires v2.
    object, and preserve replay. The complete set of `corrects` or `supersedes` relation
    targets must exactly equal the predecessor set, and the wire states whether native
    clock ordering was verified or remains unverified. In-place mutation is forbidden.
-9. **Replay is honest.** Every known cutoff is parsed even when the reference carries
+9. **Replay is honest and owner-capable.** Every owner declares the exact supported
+   mode-to-vintage combinations; a current-only source cannot masquerade as
+   owner-native historical replay. Every known cutoff is parsed even when the reference carries
    no clock in that class. `historical_replay` carries typed cutoffs, code revision,
    input digest, and an available vintage state. FIF historical replay additionally
    requires known native `accepted_at` and `recorded_at` clocks. A clock beyond its
@@ -99,9 +105,12 @@ contract explicitly requires them to be known.
 
 ## Physical-store decision
 
-K1 found no named PR or workstream committed to list, in one query, native objects
-across at least three owner stores for one subject without importing owner engines.
-The A0 Brain example is hypothetical and does not satisfy the gate. Therefore K1
-freezes contracts and fixtures only. A future store requires a new named consumer,
-Data OS persistence adjudication, a producer, owner program, native `asof_field`,
-freshness SLA, and `config/synapse.yml` registration before any path is minted.
+K1 found no authorized/committed PR or workstream that must list, in one query, native
+objects across at least three owner stores for one subject and whose direct owner-reader
+baseline fails a named requirement. The A0 Brain example is hypothetical. Current
+main's later #6325 packet names Market OS B1/AAPL as a candidate job, but explicitly
+keeps B1A `PREPARED_NOT_AUTHORIZED` and records no direct-reader failure. Therefore K1
+freezes contracts and fixtures only. A future store requires a committed consumer,
+measured failed requirement, Data OS persistence adjudication, a producer, owner
+program, native `asof_field`, freshness SLA, and `config/synapse.yml` registration
+before any path is minted.

@@ -49,6 +49,29 @@ ALL_FALSE_AUTHORITY = {
     "can_open_entry": False,
 }
 READER_KINDS = frozenset({"direct", "collection", "materializer", "parser"})
+COVERAGE_CLASSES = frozenset({
+    "unknown",
+    "current_only",
+    "record_history_complete",
+    "source_release_snapshot_only",
+    "append_only_bitemporal",
+    "immutable_generation",
+    "prospective_only",
+    "reconstruction",
+    "partial",
+})
+REPLAY_MODES = frozenset({
+    "live",
+    "historical_replay",
+    "retrospective_research",
+    "current_rule_recomputation",
+})
+VINTAGE_STATES = frozenset({
+    "owner_native",
+    "reconstructed_not_operational_pit",
+    "current_rule_recomputation",
+    "unavailable",
+})
 CORRECTION_RELATION_KIND = {
     "amendment": "corrects",
     "restatement": "corrects",
@@ -56,7 +79,6 @@ CORRECTION_RELATION_KIND = {
     "withdrawal": "corrects",
     "superseding_generation": "supersedes",
 }
-_NATIVE_IDENTITY_TEXT_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,1023}\Z")
 
 
 class EvidenceFoundationError(ValueError):
@@ -88,6 +110,116 @@ def compute_reference_id(reference: Mapping[str, Any]) -> str:
     return f"efr_{digest}"
 
 
+def _validate_grammar(grammar: object, expected_type: object, label: str) -> None:
+    """Fail closed on the small, declarative value-grammar vocabulary."""
+    if not isinstance(grammar, dict) or not isinstance(grammar.get("kind"), str):
+        raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+    kind = grammar["kind"]
+    if kind == "regex":
+        if set(grammar) != {"kind", "pattern"} or expected_type != "string":
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        pattern = grammar.get("pattern")
+        if not isinstance(pattern, str) or not pattern:
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        try:
+            re.compile(pattern)
+        except re.error as exc:
+            raise EvidenceFoundationError(
+                f"vocabulary_value_grammar_invalid:{label}"
+            ) from exc
+        return
+    if kind == "date":
+        if set(grammar) != {"kind"} or expected_type != "string":
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        return
+    if kind == "bounded_text":
+        if (
+            set(grammar) != {"kind", "minimum_length", "maximum_length"}
+            or expected_type != "string"
+        ):
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        minimum = grammar.get("minimum_length")
+        maximum = grammar.get("maximum_length")
+        if (
+            isinstance(minimum, bool)
+            or isinstance(maximum, bool)
+            or not isinstance(minimum, int)
+            or not isinstance(maximum, int)
+            or minimum < 1
+            or minimum > maximum
+        ):
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        return
+    if kind == "integer_range":
+        if (
+            set(grammar) not in (
+                {"kind", "minimum"},
+                {"kind", "minimum", "maximum"},
+            )
+            or expected_type != "integer"
+        ):
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        minimum = grammar.get("minimum")
+        maximum = grammar.get("maximum")
+        if (
+            isinstance(minimum, bool)
+            or not isinstance(minimum, int)
+            or (
+                maximum is not None
+                and (
+                    isinstance(maximum, bool)
+                    or not isinstance(maximum, int)
+                    or minimum > maximum
+                )
+            )
+        ):
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        return
+    if kind == "enum":
+        if set(grammar) != {"kind", "values"}:
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        values = grammar.get("values")
+        if not isinstance(values, list) or not values or len(values) != len(set(values)):
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        if expected_type == "string" and any(not isinstance(value, str) for value in values):
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        if expected_type == "integer" and any(
+            isinstance(value, bool) or not isinstance(value, int) for value in values
+        ):
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        if expected_type not in {"string", "integer"}:
+            raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+        return
+    raise EvidenceFoundationError(f"vocabulary_value_grammar_invalid:{label}")
+
+
+def _matches_grammar(value: object, grammar: object) -> bool:
+    if not isinstance(grammar, Mapping):
+        return False
+    kind = grammar.get("kind")
+    if kind == "regex":
+        return isinstance(value, str) and re.fullmatch(str(grammar.get("pattern")), value) is not None
+    if kind == "date":
+        return isinstance(value, str) and _parse_clock(value, "date") is not None
+    if kind == "bounded_text":
+        return (
+            isinstance(value, str)
+            and int(grammar.get("minimum_length", -1)) <= len(value)
+            <= int(grammar.get("maximum_length", -1))
+        )
+    if kind == "integer_range":
+        maximum = grammar.get("maximum")
+        return (
+            not isinstance(value, bool)
+            and isinstance(value, int)
+            and int(grammar.get("minimum", 1)) <= value
+            and (maximum is None or value <= int(maximum))
+        )
+    if kind == "enum":
+        return value in list(grammar.get("values") or ())
+    return False
+
+
 def load_vocabulary(path: str | Path | None = None) -> dict[str, Any]:
     """Load and fail-closed validate the frozen owner vocabulary."""
     target = Path(path) if path is not None else VOCABULARY_PATH
@@ -99,6 +231,23 @@ def load_vocabulary(path: str | Path | None = None) -> dict[str, Any]:
         raise EvidenceFoundationError("vocabulary_not_object")
     if payload.get("schema") != VOCABULARY_SCHEMA or payload.get("version") != VERSION:
         raise EvidenceFoundationError("vocabulary_schema_or_version_mismatch")
+    for field in ("object_classes", "clock_classes", "subject_key_types"):
+        values = payload.get(field)
+        if (
+            not isinstance(values, list)
+            or not values
+            or len(values) != len(set(values))
+            or any(not isinstance(value, str) or not value for value in values)
+        ):
+            raise EvidenceFoundationError(f"vocabulary_{field}_invalid")
+    subject_key_grammars = payload.get("subject_key_grammars")
+    if (
+        not isinstance(subject_key_grammars, dict)
+        or set(subject_key_grammars) != set(payload["subject_key_types"])
+    ):
+        raise EvidenceFoundationError("vocabulary_subject_key_grammars_invalid")
+    for key_type, grammar in subject_key_grammars.items():
+        _validate_grammar(grammar, "string", f"subject:{key_type}")
     owner_stores = payload.get("owner_stores")
     if not isinstance(owner_stores, dict):
         raise EvidenceFoundationError("vocabulary_owner_stores_missing")
@@ -122,6 +271,19 @@ def load_vocabulary(path: str | Path | None = None) -> dict[str, Any]:
             or any(value not in {"string", "integer"} for value in identity_types.values())
         ):
             raise EvidenceFoundationError(f"vocabulary_owner_identity_types_invalid:{name}")
+        identity_grammars = owner.get("native_identity_grammars")
+        if not isinstance(identity_grammars, dict) or set(identity_grammars) != set(
+            identity_fields
+        ):
+            raise EvidenceFoundationError(
+                f"vocabulary_owner_identity_grammars_invalid:{name}"
+            )
+        for field in identity_fields:
+            _validate_grammar(
+                identity_grammars[field],
+                identity_types[field],
+                f"owner:{name}:{field}",
+            )
         native_schemas = owner.get("native_schemas")
         if (
             not isinstance(native_schemas, list)
@@ -130,12 +292,49 @@ def load_vocabulary(path: str | Path | None = None) -> dict[str, Any]:
             or any(not isinstance(value, str) or not value for value in native_schemas)
         ):
             raise EvidenceFoundationError(f"vocabulary_owner_native_schemas_invalid:{name}")
-        if not isinstance(owner.get("object_classes"), list) or not owner["object_classes"]:
+        if (
+            not isinstance(owner.get("object_classes"), list)
+            or not owner["object_classes"]
+            or len(owner["object_classes"]) != len(set(owner["object_classes"]))
+            or not set(owner["object_classes"]).issubset(payload["object_classes"])
+        ):
             raise EvidenceFoundationError(f"vocabulary_owner_classes_missing:{name}")
-        if not isinstance(owner.get("subject_key_types"), list) or not owner[
-            "subject_key_types"
-        ]:
+        if (
+            not isinstance(owner.get("subject_key_types"), list)
+            or not owner["subject_key_types"]
+            or len(owner["subject_key_types"]) != len(set(owner["subject_key_types"]))
+            or not set(owner["subject_key_types"]).issubset(payload["subject_key_types"])
+        ):
             raise EvidenceFoundationError(f"vocabulary_owner_subjects_missing:{name}")
+        coverage_classes = owner.get("coverage_classes")
+        if (
+            not isinstance(coverage_classes, list)
+            or len(coverage_classes) != 1
+            or coverage_classes[0] not in COVERAGE_CLASSES
+        ):
+            raise EvidenceFoundationError(
+                f"vocabulary_owner_coverage_classes_invalid:{name}"
+            )
+        replay_capabilities = owner.get("replay_capabilities")
+        if (
+            not isinstance(replay_capabilities, dict)
+            or "live" not in replay_capabilities
+            or not replay_capabilities
+            or not set(replay_capabilities).issubset(REPLAY_MODES)
+        ):
+            raise EvidenceFoundationError(
+                f"vocabulary_owner_replay_capabilities_invalid:{name}"
+            )
+        for mode, vintage_states in replay_capabilities.items():
+            if (
+                not isinstance(vintage_states, list)
+                or not vintage_states
+                or len(vintage_states) != len(set(vintage_states))
+                or not set(vintage_states).issubset(VINTAGE_STATES)
+            ):
+                raise EvidenceFoundationError(
+                    f"vocabulary_owner_replay_capability_invalid:{name}:{mode}"
+                )
         bindings = owner.get("clock_bindings")
         if not isinstance(bindings, dict) or not bindings:
             raise EvidenceFoundationError(f"vocabulary_owner_clocks_missing:{name}")
@@ -190,19 +389,30 @@ def render_owner_pointer(owner: Mapping[str, Any], identity: Mapping[str, Any]) 
     """Render the one canonical pointer for an exact owner-native identity."""
     template = owner.get("pointer_template")
     fields = owner.get("native_identity_fields")
-    if not isinstance(template, str) or not isinstance(fields, list):
+    identity_types = owner.get("native_identity_types")
+    identity_grammars = owner.get("native_identity_grammars")
+    if (
+        not isinstance(template, str)
+        or not isinstance(fields, list)
+        or not isinstance(identity_types, Mapping)
+        or not isinstance(identity_grammars, Mapping)
+        or set(identity_types) != set(fields)
+        or set(identity_grammars) != set(fields)
+    ):
         raise EvidenceFoundationError("owner_pointer_contract_invalid")
     if set(identity) != set(fields):
         raise EvidenceFoundationError("owner_pointer_identity_fields_mismatch")
     for field in fields:
         value = identity[field]
-        if isinstance(value, bool):
-            raise EvidenceFoundationError("owner_pointer_identity_value_invalid")
-        if isinstance(value, int):
-            if value < 0:
-                raise EvidenceFoundationError("owner_pointer_identity_value_invalid")
-            continue
-        if not isinstance(value, str) or not _NATIVE_IDENTITY_TEXT_RE.fullmatch(value):
+        expected_type = identity_types[field]
+        type_valid = (
+            expected_type == "string"
+            and isinstance(value, str)
+            or expected_type == "integer"
+            and not isinstance(value, bool)
+            and isinstance(value, int)
+        )
+        if not type_valid or not _matches_grammar(value, identity_grammars[field]):
             raise EvidenceFoundationError("owner_pointer_identity_value_invalid")
     try:
         pointer = template.format(**identity)
@@ -252,13 +462,11 @@ def _beyond_cutoff(clock: Mapping[str, Any], cutoff: Mapping[str, Any]) -> bool 
     return None
 
 
-def semantic_violations(
-    reference: Mapping[str, Any],
-    *,
-    vocabulary: Mapping[str, Any] | None = None,
-) -> tuple[str, ...]:
+def semantic_violations(reference: Mapping[str, Any]) -> tuple[str, ...]:
     """Return stable violation codes for semantics JSON Schema cannot express."""
-    vocab = dict(vocabulary) if vocabulary is not None else load_vocabulary()
+    # This public boundary always uses the validated, repository-frozen vocabulary.
+    # Caller-supplied owner schemas/readers must never become validation authority.
+    vocab = load_vocabulary()
     violations: list[str] = []
 
     if reference.get("schema") != SCHEMA:
@@ -286,15 +494,40 @@ def semantic_violations(
         if set(native_identity) != set(expected_identity_fields):
             violations.append("native_identity_fields_mismatch")
         expected_identity_types = owner.get("native_identity_types")
+        expected_identity_grammars = owner.get("native_identity_grammars")
         if isinstance(expected_identity_types, Mapping):
             for field, expected_type in expected_identity_types.items():
                 value = native_identity.get(field)
+                type_valid = False
                 if expected_type == "string" and not isinstance(value, str):
                     violations.append(f"native_identity_type_mismatch:{field}")
+                elif expected_type == "string":
+                    type_valid = True
                 if expected_type == "integer" and (
                     isinstance(value, bool) or not isinstance(value, int)
                 ):
                     violations.append(f"native_identity_type_mismatch:{field}")
+                elif expected_type == "integer":
+                    type_valid = True
+                grammar = (
+                    expected_identity_grammars.get(field)
+                    if isinstance(expected_identity_grammars, Mapping)
+                    else None
+                )
+                if type_valid and not _matches_grammar(value, grammar):
+                    violations.append(f"native_identity_value_invalid:{field}")
+        if owner_store == "txi.episode_transition":
+            chain = native_identity.get("chain")
+            rev = native_identity.get("rev")
+            episode_id = native_identity.get("episode_id")
+            if (
+                isinstance(chain, str)
+                and not isinstance(rev, bool)
+                and isinstance(rev, int)
+                and isinstance(episode_id, str)
+                and not episode_id.startswith(f"{chain}@r{rev}:")
+            ):
+                violations.append("native_identity_composite_mismatch:episode_id")
     else:
         violations.append("native_identity_invalid")
 
@@ -314,6 +547,19 @@ def semantic_violations(
             violations.append(f"subject_{index}_invalid")
         elif subject.get("key_type") not in allowed_subjects:
             violations.append(f"subject_{index}_not_owned")
+        else:
+            key_type = subject.get("key_type")
+            subject_grammars = vocab.get("subject_key_grammars")
+            grammar = (
+                subject_grammars.get(key_type)
+                if isinstance(subject_grammars, Mapping)
+                else None
+            )
+            if not _matches_grammar(subject.get("key"), grammar):
+                violations.append(f"subject_{index}_key_invalid:{key_type}")
+
+    if reference.get("coverage_class") not in set(owner.get("coverage_classes") or []):
+        violations.append("coverage_class_not_owned")
 
     provenance = reference.get("provenance")
     if not isinstance(provenance, Mapping):
@@ -476,6 +722,15 @@ def semantic_violations(
         violations.append("replay_invalid")
     else:
         mode = replay.get("mode")
+        vintage_state = replay.get("vintage_state")
+        replay_capabilities = owner.get("replay_capabilities")
+        replay_capabilities = (
+            replay_capabilities if isinstance(replay_capabilities, Mapping) else {}
+        )
+        if mode not in replay_capabilities:
+            violations.append("replay_mode_not_owned")
+        elif vintage_state not in set(replay_capabilities.get(mode) or []):
+            violations.append(f"replay_vintage_not_owned:{mode}")
         cutoffs = replay.get("cutoffs")
         cutoffs = cutoffs if isinstance(cutoffs, Mapping) else {}
         for clock_class in vocab.get("clock_classes") or ():
@@ -558,28 +813,20 @@ def _schema_violations(reference: Mapping[str, Any]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(codes))
 
 
-def combined_violations(
-    reference: Mapping[str, Any],
-    *,
-    vocabulary: Mapping[str, Any] | None = None,
-) -> tuple[str, ...]:
+def combined_violations(reference: Mapping[str, Any]) -> tuple[str, ...]:
     """Return JSON-Schema and semantic violations through one fail-closed API."""
     if not isinstance(reference, Mapping):
         return ("reference_not_mapping",)
     return tuple(
         dict.fromkeys(
-            (*_schema_violations(reference), *semantic_violations(reference, vocabulary=vocabulary))
+            (*_schema_violations(reference), *semantic_violations(reference))
         )
     )
 
 
-def validate_reference(
-    reference: Mapping[str, Any],
-    *,
-    vocabulary: Mapping[str, Any] | None = None,
-) -> dict[str, Any]:
+def validate_reference(reference: Mapping[str, Any]) -> dict[str, Any]:
     """Validate the entire v1 contract and return a defensive JSON copy."""
-    violations = combined_violations(reference, vocabulary=vocabulary)
+    violations = combined_violations(reference)
     if violations:
         raise EvidenceFoundationError(";".join(violations))
     try:
@@ -588,13 +835,9 @@ def validate_reference(
         raise EvidenceFoundationError("reference_not_canonical_json") from exc
 
 
-def assert_semantically_valid(
-    reference: Mapping[str, Any],
-    *,
-    vocabulary: Mapping[str, Any] | None = None,
-) -> None:
+def assert_semantically_valid(reference: Mapping[str, Any]) -> None:
     """Backward-compatible alias for the combined fail-closed validator."""
-    violations = combined_violations(reference, vocabulary=vocabulary)
+    violations = combined_violations(reference)
     if violations:
         raise EvidenceFoundationError(";".join(violations))
 

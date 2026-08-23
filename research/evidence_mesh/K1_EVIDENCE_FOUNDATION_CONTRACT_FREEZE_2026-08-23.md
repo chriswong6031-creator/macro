@@ -1,6 +1,6 @@
 # K1 Evidence Foundation contract freeze — 2026-08-23
 
-Status: **REPAIRED CANDIDATE; PHYSICAL STORE REFUSED; FRESH REVIEW PENDING**
+Status: **FOURTH CANDIDATE; PHYSICAL STORE REFUSED; FRESH REVIEW PENDING**
 
 This is the K1 / FABLE-A return packet. It freezes a shared pointer vocabulary over
 owner-native evidence without creating a new truth store, reader plane, index,
@@ -12,7 +12,7 @@ K4, B1, K2-B, or D5-EARNINGS work.
 The protected Sol Skillpack was loaded atomically from the current protected
 `mastermindx-market-intelligence/Mastermind` `master` commit:
 
-- repository commit: `db0bac5fe3f72348262d42c8bd26b836bda9f61d`
+- repository commit: `5d752c4c28d63207849247bd608cf9993e2f58bb`
 - Skillpack tree: `0a009d5314a4a3bbb1aac2f111b68644fc7a64d8`
 - schema: `mastermind.sol_skillpack.v1`
 - version: `1.0.0`
@@ -27,10 +27,15 @@ The protected Sol Skillpack was loaded atomically from the current protected
   - `RECONCILE_STATE.md` — `d7113c723656b5f22d61ec6b9924e38b3d93c73c`
   - `REVIEW_RETURN.md` — `e1e35ebb0b8d70ebd30f6010936894bf26c13fd3`
 
-The handoff's Mastermind pin is exactly current. The Macro handoff pin
-`fb2375441f21b94201edc4ed6ac2c40f67274cde` remains an ancestor, but is historical.
-The repaired candidate was reconciled against fresh Macro `origin/main`
-`395db13b9dadf4975e0ed43c68d02983134ddbff`. Since the first K1 candidate base,
+The handoff and later authenticated-MO commission pin
+`db0bac5fe3f72348262d42c8bd26b836bda9f61d` remains historical. The protected
+Mastermind outer commit moved to `5d752c4c28d63207849247bd608cf9993e2f58bb`,
+but its `docs/sol_skills` tree and every procedure blob listed above remain
+byte-identical. This distinction matters: current protected-repository state moved;
+the protected Skillpack bytes did not. The Macro handoff pin
+`fb2375441f21b94201edc4ed6ac2c40f67274cde` also remains an ancestor, but is
+historical. The fourth candidate was reconciled against fresh Macro `origin/main`
+`2ab19e6aa35fb2ad118af39106a8c3445d4606ad`. Since the first K1 candidate base,
 the first K1-owner-area mainline change was #6308 in
 `engine/company_intelligence/event_workspace_build.py`: it carries corrected
 lifecycle state forward and adds the filing form inside an existing workspace source
@@ -46,11 +51,21 @@ classifies FIF-3A2 as `ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN` after Sol PAS
 `9598c5430c587b2ec9d1f84d3fa6e2d704808bcc`. Its decision also explicitly keeps
 the production attested issuer service `NOT_BUILT` and FIF-3 `IN_PROGRESS`; accepted
 golden-fixture/on-main status is not production/live proof. The remaining base movement
-through `395db13b9dadf4975e0ed43c68d02983134ddbff` touched Agent OS governance,
+through `32cbd775e827653e88f8be6f8094d73e8c3014dc` touched Agent OS governance,
 Intelligence Workspace, render, press, records, Canada/public display, marketing
 publication, and research-vault data rather than changing a registered K1 owner
 contract. K1 did not start, modify, or extend D5; it only reconciled already-merged
 owner source on its base.
+
+Current main then added the manifest-verified Market Intelligence Productization
+packet and its K1 double-dispatch receipt in #6325 (`b300efc0fbb9`). That records an
+authenticated-MO rider asking Sol to decide whether this pointer-only K1 is accepted
+as a partial first slice with a separately bounded K1-B completion, or returned for
+EvidenceBlock/EvidenceRecipe expansion. The records explicitly did not authorize a
+parallel K1 lane, B1A, or runtime work. This fourth-head repair therefore closes the
+fresh review's K1 contract defects without silently starting B1, K2/K3/K4/K5, or the
+rider's separate product-composition surface. The rider gap is disclosed to Sol in
+§6; green tests or merge cannot decide it.
 
 The current Mastermind strategic state remains
 `mastermind.strategic_state.v1`, phase `PRE_REVENUE_MVP_CONVERGENCE`, with the
@@ -79,10 +94,12 @@ service proof, and it does not extend FIF-3A2.
 
 The binding flip condition requires a **named PR or workstream committed to consume,
 in one query, native objects across at least three owner stores for one subject
-without importing those engines**. Current `origin/main`, Agent OS, the active build
-map, open PRs, and live worktrees contain no such committed consumer. The only hits
-for the exact requirement are the A0 hypothetical/gate text and the FABLE-A dispatch
-decision itself:
+without importing those engines**, plus a named measurable requirement that direct
+owner-reader composition fails. Current main's #6325 packet now names
+`WS:MARKET-OS` B1/AAPL as the candidate job, but B1A is explicitly
+`PREPARED_NOT_AUTHORIZED`, no committed product PR exists, and no direct-reader
+requirement has failed. The only earlier hits for the exact requirement were the A0
+hypothetical/gate text and the FABLE-A dispatch decision itself:
 
 ```text
 research/evidence_mesh/A0_MINIMAL_EVIDENCE_MESH_RECOMMENDATION.md
@@ -91,9 +108,10 @@ agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19.md
 agentos/decisions/DEC-ALPHA-INTEL-FABLE-A-CONTRACT-FIRST-DISPATCH.md
 ```
 
-The A0 Brain example is hypothetical and cannot self-certify demand. No open PR
-touches the K1 target paths. Live worktree census likewise shows no sibling K1
-worktree or proposed-path owner. The contract therefore keeps owner readers direct.
+The A0 Brain example is hypothetical and cannot self-certify demand. #6325 makes the
+candidate concrete but does not satisfy the commitment or failed-baseline legs and
+explicitly leaves B1A unauthorized. No open product PR supplies those missing proofs.
+The contract therefore keeps owner readers direct.
 
 Consequences:
 
@@ -152,7 +170,18 @@ Owner-native identity is reused. K1 mints no universal entity id and excludes
 `ticker_store_key` and a Stock Identity behavioral fingerprint as entity identities.
 CIK ↔ security/listing joins are only through the current PIT owner alias; the struck
 symbol-directory plus `cik_map` branch stays forbidden. Theme node ids preserve their
-owner epoch semantics.
+owner epoch semantics. Identity is value-bound as well as label-bound: every owner
+field carries a closed source-native regex, date grammar, enum, or integer minimum;
+every subject-key type carries its own grammar. A ticker cannot masquerade as a CIK,
+and a caller cannot make an invalid value lawful by recomputing the pointer and
+`reference_id`.
+
+Coverage and replay capability are exact owner vocabulary, not caller assertions.
+Every owner has one source-backed `coverage_class` and a closed map from supported
+replay mode to supported vintage state. Bio current is exactly `current_only` with
+live owner-native access; Bio history is exactly `record_history_complete` with
+live/historical/retrospective owner-native access. The combined validator rejects
+either row masquerading as the other. The same exact census covers all 13 owners.
 
 Seven clock classes are frozen without renaming native fields:
 
@@ -185,6 +214,7 @@ means the owner returns a native collection and the full native key selects one 
 | FIF packet | `packet_id` | source/system cutoffs, governance, build | `validate_packet_semantics` (parser) |
 | Earnings workspace generation | `generation_id + event_id` | lifecycle available/observed, generated | `validate_event_workspace` (parser; native identity checked) |
 | Institutional 13F receipt | `filer_cik + accession + receipt_id` | report/accepted/retained | `RawEvidenceReceipt.from_json_bytes` (parser) |
+| Institutional 13F catalog generation | `report_period + generation_id` | report/source-cutoff/published | `load_catalog_generation` (direct) |
 | GovRev event v2 | `event_id` | effective/known/first-seen/last-seen | `_validated_award_events` (collection) |
 | Bio current source snapshot | `nct_id + source_snapshot_id` | effective/published/dataset/update/retrieved/first-seen/valid-from+to/transaction-from+to | `validate_contract` (parser) |
 | Bio history source snapshot | `nct_id + source_version + source_snapshot_id` | submitted/QC/retrieved/transaction-from+to | `validate_contract` (parser) |
@@ -221,6 +251,9 @@ generation-aware reader exists.
   relation target set must exactly equal the predecessor set, with the right relation
   kind and an honest native chronology-verification state. Predecessors never mutate.
 - Missingness is typed and can never be substituted with zero.
+- The public combined and raising validators always load the validated canonical
+  repository vocabulary. They accept no caller-supplied vocabulary seam; an attacker
+  cannot rebind `attacker.schema` or `attacker.read` into owner authority.
 - Every known replay cutoff is parsed even when unused. Historical replay refuses an
   unavailable vintage, requires known FIF accepted/recorded clocks, refuses any
   native clock beyond its class cutoff, and treats same-day date/datetime comparisons
@@ -235,17 +268,19 @@ The manifest freezes eight byte-receipted fixtures:
 |---|---:|---:|---|
 | `fif_packet_valid.json` | valid | 3168 | `d9657d3baa86ea1f60442b6e6a367e4831863aae01d1fc7510166dc312140861` |
 | `earnings_workspace_valid.json` | valid | 2981 | `abf73734e79f21277b68a0dd4cf6347012b28287b484b69d96e284be9a771589` |
-| `duplicate_corroboration_hostile.json` | invalid | 3667 | `f1731de02cbdec27aaab897a77215a4fdcdd5dbfb6879f64106b2b4fbcad652f` |
+| `duplicate_corroboration_hostile.json` | invalid | 3645 | `d453c9f04d315d515ea9b6dd1b6f0458e52b9061c9ddf2d9baa7d22d17e85986` |
 | `correction_append_valid.json` | valid | 3927 | `241550bbd082fab3dab321d4d071a90f505d2ef52ca38f437776d334bd6fa3fd` |
-| `replay_valid.json` | valid | 3509 | `ea4e1c05568c004b371dcb721ebc9cf512f420482e0f926406882fc157bd8614` |
-| `replay_lookahead_hostile.json` | invalid | 3415 | `4f24b366cad2f1344955b771adc8fe4614da9fe18cd66480c8ba4e05c0ee91b7` |
+| `replay_valid.json` | valid | 3595 | `c54bb48100e722075b51a885e6dad9c3800f5771dbbea8bfd90485e99dafbe83` |
+| `replay_lookahead_hostile.json` | invalid | 3515 | `cf59410446d47cd61e0238c33fdf6e4a2ace48c20f87b2174e195f14c8d1b1a8` |
 | `typed_missingness_valid.json` | valid | 2808 | `cece49f53fc161f7a2dbd24d821fc38ca5bd5f4d0daa5140c79dc8ab246e3eaa` |
-| `authority_leak_hostile.json` | invalid | 2603 | `61f7ebbd0964657f8b3556e63a302619dcbe4cfb4dccfc620ca25896e151b765` |
+| `authority_leak_hostile.json` | invalid | 2607 | `f3c956ecd390a8251fc5f3a125bdf72b34a749d9b6afef8b5bf09416c88533e0` |
 
 `tests/test_evidence_foundation_contract.py` uses only the combined validator for
 consumer verdicts. It proves exact source-backed schema/identity/clock/accessor
 inventories, native Earnings parser identity, one-pointer selection, exact fixture
-bytes/hashes, native-schema and per-clock deletion kills, 13F/GovRev/Bio
+bytes/hashes, exact coverage/replay capability and identity-value grammar censuses,
+attacker-vocabulary rebind refusal, native-schema and per-clock deletion kills,
+13F/GovRev/Bio
 cutoff-inversion kills, FIF unknown-clock and unavailable-vintage replay kills, TXI
 collision resistance, declarative-only independence, v1 automatic-effect refusal,
 correction target equality, all-class invalid cutoffs, symmetric cross-grain ambiguity,
@@ -265,7 +300,7 @@ python3 scripts/check_contract_delta.py --base origin/main
 python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --pack-index 5 --pack-count 12 --validate-only
 ```
 
-The repaired targeted fixture/contract suite concluded **41 passed**. The only warnings were
+The fourth-head targeted fixture/contract suite concluded **70 passed**. The only warnings were
 three unrelated pytest temporary-directory cleanup warnings outside this worktree.
 After restoring the full checkout required by the committed Bio fixtures, the
 owner-source regression selection (Data OS no-I/O negative control, Theme Graph,
@@ -295,12 +330,16 @@ run on a main descendant of the merge under the merged authority.
 
 > Sol, accept K1 / FABLE-A Evidence Foundation v1.0.0 as a contract-only freeze.
 > The current protected Skillpack was loaded from Mastermind
-> `db0bac5fe3f72348262d42c8bd26b836bda9f61d`; Macro was reconciled to
-> `395db13b9dadf4975e0ed43c68d02983134ddbff`. The physical-store flip condition is
-> adverse: no named current PR or workstream commits to a one-query native-object
-> read across at least three owner stores for one subject. K1 therefore preserves
+> `5d752c4c28d63207849247bd608cf9993e2f58bb` (Skillpack tree remains byte-identical
+> to the commission pin); Macro was reconciled to
+> `2ab19e6aa35fb2ad118af39106a8c3445d4606ad`. The physical-store flip condition is
+> adverse: #6325 names B1/AAPL as a candidate but leaves it unauthorized, no product
+> PR commits the three-owner read, and no direct-reader requirement has failed. K1 therefore preserves
 > owner-bound accessors, copies no bodies, creates no store/index/control plane, and
 > freezes only the pointer schema, 13-owner vocabulary, combined fail-closed validator, and
 > eight exact-hash fixtures. All authority axes, including ENTRY_OPEN, are false.
-> Please rule ACCEPT or return exact K1 amendments. This packet does not authorize or
-> begin K2, K3, K4, B1, K2-B, or D5-EARNINGS.
+> Please rule ACCEPT or return exact K1 amendments. Current main's authenticated-MO
+> double-dispatch receipt additionally asks Sol—not this builder—to decide whether
+> this EvidenceRef/pointer freeze is accepted as the first K1 slice with a separately
+> bounded K1-B completion, or returned for EvidenceBlock/EvidenceRecipe expansion.
+> This packet does not authorize or begin K2, K3, K4, K5, B1, K2-B, or D5-EARNINGS.

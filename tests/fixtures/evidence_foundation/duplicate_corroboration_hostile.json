@@ -1,11 +1,11 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_ee387e2f07f97e0c137932da936fd71e29f4f118509e0e0f1137eb5154b21086",
+  "reference_id": "efr_a88a37de161cbc9de37883646d3d84de463e46632889b7b2cc8ce2989b18c1c0",
   "object_class": "world_observation",
   "owner_store": "theme_graph.evidence",
   "native_identity": {
-    "evidence_id": "ev:sec-transcript-projection-b"
+    "evidence_id": "ev:3333333333333333"
   },
   "native_schema": "theme_graph.evidence.v1",
   "native_digest": {
@@ -45,7 +45,7 @@
     "pointer_only": true,
     "body_embedded": false,
     "owner_reader": "engine.theme_graph.store.read_evidence",
-    "pointer": "data/theme_graph/evidence.parquet#evidence_id=ev:sec-transcript-projection-b",
+    "pointer": "data/theme_graph/evidence.parquet#evidence_id=ev:3333333333333333",
     "owner_reader_kind": "collection"
   },
   "relations": [

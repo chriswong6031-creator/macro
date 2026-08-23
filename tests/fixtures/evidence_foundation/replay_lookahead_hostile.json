@@ -1,11 +1,11 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_70341b82dbd5cfebe7083d5cef14ec946d9805f2592cfab3c76e1a4540b9b865",
+  "reference_id": "efr_d8e0823e44f9dbc25d721755d7b010cd7ec7f2cb36ae7d2ea347614c928a2674",
   "object_class": "world_observation",
   "owner_store": "fif.raw_occurrence",
   "native_identity": {
-    "occurrence_id": "fifocc_future_revision"
+    "occurrence_id": "rawfact_7777777777777777777777777777777777777777777777777777777777777777"
   },
   "native_schema": "fundamental_forensics.raw_ledger/v1#RawFactOccurrence",
   "native_digest": {
@@ -64,7 +64,7 @@
     "pointer_only": true,
     "body_embedded": false,
     "owner_reader": "engine.fundamental_forensics.raw_ledger.RawFactLedger.by_id",
-    "pointer": "fundamental-forensics://raw-occurrence/fifocc_future_revision",
+    "pointer": "fundamental-forensics://raw-occurrence/rawfact_7777777777777777777777777777777777777777777777777777777777777777",
     "owner_reader_kind": "direct"
   },
   "relations": [],

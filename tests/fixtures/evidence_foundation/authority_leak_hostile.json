@@ -1,14 +1,14 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_50457d3a24004e3709a10d10fe300207dc9d9fb2093a1ab0c1c60a01f9bc96e4",
+  "reference_id": "efr_06025b5c2bb4ac3ff0e59223458b1a8c9723e229a17c52af874d46d37b79ae99",
   "object_class": "instrument_state",
   "owner_store": "txi.episode_transition",
   "native_identity": {
     "chain": "supply-chain",
     "rev": 1,
     "episode_id": "supply-chain@r1:2026-08-23",
-    "transition": "TRIPPED",
+    "transition": "expressed",
     "hop": 2,
     "asof": "2026-08-23"
   },
@@ -36,7 +36,7 @@
     "pointer_only": true,
     "body_embedded": false,
     "owner_reader": "engine.transmission_chains._read_ledger",
-    "pointer": "data/transmission/chain_episodes.jsonl#chain=supply-chain&rev=1&episode_id=supply-chain@r1:2026-08-23&transition=TRIPPED&hop=2&asof=2026-08-23",
+    "pointer": "data/transmission/chain_episodes.jsonl#chain=supply-chain&rev=1&episode_id=supply-chain@r1:2026-08-23&transition=expressed&hop=2&asof=2026-08-23",
     "owner_reader_kind": "collection"
   },
   "relations": [],

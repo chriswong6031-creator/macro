@@ -82,8 +82,14 @@ landmines:
     relation escape. The current repaired candidate uses 13 source-backed rows, the
     native Earnings parser, no Data OS pseudo-reader, one combined validator,
     declarative_unverified independence, automatic_effect=false throughout v1, and
-    executed cutoff/replay mutation kills. K1 stays in_progress until a third fresh
-    exact-head review passes and Sol accepts."
+    executed cutoff/replay mutation kills. A third exact-head review of 32b8015 then
+    requested source-backed coverage/replay capability, native identity value
+    grammars, closure of the public vocabulary-injection seam, and the missing 13F
+    catalog adoption row. The fourth candidate carries those exact repairs and hostile
+    kills. K1 stays in_progress until a fourth fresh exact-head review passes and Sol
+    accepts. Current main's #6325 authenticated-MO double-dispatch receipt separately
+    leaves Sol to decide partial K1 plus bounded K1-B versus return for
+    EvidenceBlock/EvidenceRecipe expansion; no session may infer that ruling."
   - "US G0 canonical copy is MERGED PR #5955 (research/earnings_intelligence/g0/,
     inside the Earnings owner's owns_paths); CN-G0 is MERGED PR #5943
     (research/alpha_intelligence/censuses/CN-G0/). The #5822->#5953 rival
@@ -130,7 +136,7 @@ waves:
     title: K1 Evidence Foundation — mesh contract freeze (FABLE-A)
     status: in_progress
     depends_on: [c0]
-    next_action: A third fresh exact-head review rules on the repaired v1.0.0 contract-only packet; after reviewer PASS, Sol accepts or returns exact amendments. No dependent wave starts before Sol's ruling.
+    next_action: A fourth fresh exact-head review rules on the repaired v1.0.0 contract-only packet; after reviewer PASS, Sol accepts or returns exact amendments, including its explicit disposition of the #6325 authenticated-MO rider gap. No dependent wave starts before Sol's ruling.
   - id: k2
     title: K2 Institutional Intelligence — manager ontology + intent contract (B), adapter pilots (C)
     status: todo
@@ -156,13 +162,15 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  A third fresh exact-head reviewer rules on the repaired K1 Evidence Foundation
+  A fourth fresh exact-head reviewer rules on the repaired K1 Evidence Foundation
   v1.0.0 return packet at
   research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md.
   After reviewer PASS, Sol rules ACCEPT or names exact amendments. The physical-store
-  flip condition is adverse: no named committed >=3-owner single-query consumer
-  exists, so owner access remains owner-bound and no store/index was built. Do not
-  start K2, K3, K4, B1, K2-B, D5-EARNINGS, or any dependent wave before Sol accepts K1.
+  flip condition is adverse: #6325's B1/AAPL candidate is unauthorized, no product
+  PR commits the >=3-owner single-query, and no direct-reader requirement failed, so
+  owner access remains owner-bound and no store/index was built. Do not
+  start K2, K3, K4, K5, B1, K2-B, D5-EARNINGS, a K1-B rider completion, or any
+  dependent wave before Sol accepts K1.
 ---
 
 # Alpha Intelligence Expansion — integration workstream

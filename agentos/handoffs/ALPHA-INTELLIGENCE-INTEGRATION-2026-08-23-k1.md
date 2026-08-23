@@ -37,8 +37,9 @@ changed:
   - path: "contracts/evidence_foundation/vocabulary.v1.json"
     what: >
       Binds 13 source-backed owner-native object families to exact native schemas,
-      identity fields and scalar types, object classes, subject keys, complete clock
-      sets, honestly typed accessors, pointer templates, and existing Synapse
+      identity fields, scalar types and value grammars, exact coverage/replay
+      capability, object classes, typed subject-key grammars, complete clock sets,
+      honestly typed accessors, pointer templates, and existing Synapse
       `asof_field` or explicit null. The Earnings row uses its native workspace
       parser because the convenience reader aliases generations; the Data OS
       IssuerMaster row is deferred because its scalar no-I/O lookup is not a native
@@ -48,10 +49,12 @@ changed:
     what: >
       Adds the one combined JSON-Schema plus semantic fail-closed validator for
       deterministic reference identity, vocabulary integrity, exact native schema,
-      identity type/pointer/clock binding, declarative-only relation independence,
+      identity type/value/pointer/clock binding, exact owner coverage/replay
+      capability, declarative-only relation independence,
       correction target equality, missingness, replay lookahead refusal, and zero
-      authority. Historical FIF replay rejects unknown accepted/recorded clocks and
-      unavailable vintages; v1 refuses every automatic effect and deterministic key.
+      authority. Public validation accepts no caller vocabulary injection. Historical
+      FIF replay rejects unknown accepted/recorded clocks and unavailable vintages;
+      v1 refuses every automatic effect and deterministic key.
   - path: "tests/fixtures/evidence_foundation/manifest.json and eight fixture JSON files"
     what: >
       Freezes exact bytes and SHA-256 receipts for FIF, Earnings, duplicate versus
@@ -60,7 +63,8 @@ changed:
   - path: "tests/test_evidence_foundation_contract.py"
     what: >
       Proves all fixture verdicts through the combined API, exact byte receipts,
-      exact source-backed owner-schema/identity/clock/accessor inventories, native
+      exact source-backed owner-schema/identity grammar/coverage/replay/clock/accessor
+      inventories, hostile attacker-schema vocabulary rebind refusal, native
       Earnings parser object identity, one-pointer native-object selection,
       native-schema and per-clock deletion kills, 13F/GovRev/Bio cutoff-inversion
       kills, FIF replay unknown/unavailable kills, full TXI transition identity,
@@ -83,16 +87,17 @@ verified:
   - claim: "The current protected Sol Skillpack was atomically loaded and is compatible."
     command: >
       git ls-remote origin refs/heads/master; git rev-parse
-      db0bac5fe3f72348262d42c8bd26b836bda9f61d:docs/sol_skills; git ls-tree
-      db0bac5fe3f72348262d42c8bd26b836bda9f61d:docs/sol_skills; git show
-      db0bac5fe3f72348262d42c8bd26b836bda9f61d:docs/sol_skills/INDEX.md; gh api
+      5d752c4c28d63207849247bd608cf9993e2f58bb:docs/sol_skills; git ls-tree
+      5d752c4c28d63207849247bd608cf9993e2f58bb:docs/sol_skills; git show
+      5d752c4c28d63207849247bd608cf9993e2f58bb:docs/sol_skills/INDEX.md; gh api
       repos/mastermindx-market-intelligence/Mastermind/branches/master/protection
     result: >
-      Protected master is db0bac5fe3f72348262d42c8bd26b836bda9f61d;
+      Protected master is 5d752c4c28d63207849247bd608cf9993e2f58bb;
       Skillpack tree 0a009d5314a4a3bbb1aac2f111b68644fc7a64d8; schema
       mastermind.sol_skillpack.v1; version 1.0.0; minimum bootstrap major 1;
       strict required check test and enforce_admins=true; every procedure blob is
-      pinned in the K1 research packet.
+      byte-identical to the historical commission pin and is pinned in the K1
+      research packet.
   - claim: "The historical Macro pin and rejected PR head are ancestors, and the continuation was reconciled without rewriting either history."
     command: >
       git fetch origin; git merge --no-edit origin/main; git merge --no-edit
@@ -102,12 +107,21 @@ verified:
     result: >
       Both historical pins are ancestors; the continuation merged current main and
       the remote PR lineage without rebase/reset/force. The reconciled base is
-      395db13b9dadf4975e0ed43c68d02983134ddbff. The post-first-candidate
+      2ab19e6aa35fb2ad118af39106a8c3445d4606ad. The post-first-candidate
       owner-area deltas are #6308 in event_workspace_build.py, which leaves
       WORKSPACE_SCHEMA, WORKSPACE_KEYS, native identity/clocks, and
       read_event_workspace unchanged, and #6312's display-only government
       supplier-language annotation, which leaves EVENT_CONTRACT, event_id, event
       clocks, and _validated_award_events unchanged. K1 did not start or modify D5.
+  - claim: "Current main's authenticated-MO K1 double-dispatch receipt was reconciled without silently expanding this repair."
+    command: >
+      git show origin/main:agentos/handoffs/MARKET-OS-2026-08-23-productization-packet-recorded.md;
+      git show origin/main:research/market_intelligence_productization/FABLE_A_K1_EVIDENCE_FOUNDATION_COMMISSION_WITH_AUTHENTICATED_MO_RIDER_2026-08-23.md
+    result: >
+      #6325 is merged in the current base and records, rather than resolves, the
+      rider gap: Sol must choose partial K1 plus bounded K1-B or return for
+      EvidenceBlock/EvidenceRecipe expansion. The record explicitly forbids a
+      parallel K1 lane and leaves B1A unauthorized; this repair starts neither.
   - claim: "No current named committed consumer satisfies the physical-store flip condition."
     command: >
       rg -n -i 'one query|one-query|>=3 owner|three owner|3 owner|cross-store pointer'
@@ -115,9 +129,10 @@ verified:
       open --limit 200 --json number,title,headRefName,url,files; git worktree list
       --porcelain
     result: >
-      Exact-condition hits are only A0 hypothetical/gate text plus the dispatch
-      decision/handoff/workstream; no named consumer commitment and no target-path
-      collision exists. Physical store verdict is FALSE.
+      #6325 now names Market OS B1/AAPL as the candidate job but explicitly leaves
+      B1A PREPARED_NOT_AUTHORIZED. No product PR commits the >=3-owner query and no
+      direct-reader baseline fails a named requirement. Physical store verdict
+      remains FALSE.
   - claim: "Current FIF and Fundamental Forensics carrier state was reconciled without inferring production from merge."
     command: >
       gh pr view 5889 --json state,isDraft,headRefOid,mergeCommit,mergedAt; gh pr view
@@ -142,8 +157,9 @@ verified:
       tests/test_evidence_foundation_contract.py; python3 -m pytest -q
       tests/test_evidence_foundation_contract.py
     result: >
-      41 passed; exact size and SHA-256 matched for all eight fixtures; all 13
+      70 passed; exact size and SHA-256 matched for all eight fixtures; all 13
       accessor paths resolve against current source law; exact owner inventory,
+      identity-value grammar, coverage/replay masquerade, attacker vocabulary rebind,
       native-schema/clock omission, 13F/GovRev/Bio cutoff inversion, FIF unknown/
       unavailable replay, TXI alias, unverified independence, automatic-effect,
       correction target mismatch, invalid/all-class cutoff, symmetric cross-grain,
@@ -204,14 +220,19 @@ unverified:
       at least three owner stores for one subject without importing owner engines, then
       passes a new Data OS persistence and Synapse registration adjudication.
 unresolved:
-  - "A third fresh exact-head reviewer must PASS the repaired K1 candidate before it is returned to Sol."
+  - "A fourth fresh exact-head reviewer must PASS the repaired K1 candidate before it is returned to Sol."
   - "Sol acceptance of K1 v1.0.0 remains pending by design; merge or green CI cannot substitute for it."
-  - "The physical-store flip condition is adverse; there is no committed >=3-owner consumer."
+  - "The physical-store flip condition is adverse: B1/AAPL is a named but unauthorized candidate, with no committed >=3-owner product PR and no failed direct-reader requirement."
+  - >
+    Current main's #6325 K1 double-dispatch receipt records an authenticated-MO
+    EvidenceBlock/EvidenceRecipe rider gap and assigns Sol the choice: accept this
+    pointer-only freeze as a first K1 slice with bounded K1-B completion, or return it
+    for expansion. This repair does not self-decide or implement that separate surface.
 next_actions:
-  - "A third fresh reviewer inspects the pushed exact K1 head and returns PASS or exact amendments."
+  - "A fourth fresh reviewer inspects the pushed exact K1 head and returns PASS or exact amendments."
   - "After reviewer PASS, Sol reviews research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md and returns ACCEPT or exact amendments."
   - "If Sol accepts, update the K1 wave to done in a separately authorized closeout; do not infer acceptance from merge or green CI."
-  - "Do not start K2, K3, K4, B1, K2-B, D5-EARNINGS, or a physical Evidence Mesh under this carrier."
+  - "Do not start K2, K3, K4, K5, B1, K2-B, D5-EARNINGS, a K1-B rider completion, or a physical Evidence Mesh under this carrier."
 do_not_redo:
   - "Do not rebuild owner truth in a shared warehouse; the store flip condition failed and owner-bound direct/collection/parser access stays the frozen baseline."
   - "Do not reintroduce ticker_store_key, a universal entity id, or Stock Identity behavioral fingerprints as entity identities."
@@ -236,5 +257,5 @@ schema resolution while refusing the physical store because no named committed c
 satisfied the three-owner single-query gate. The contract has no ranking, gating,
 sizing, origination, or entry authority and copies no native bodies.
 
-Stop here. A third exact-head reviewer rules first; after PASS, Sol reviews the exact
+Stop here. A fourth exact-head reviewer rules first; after PASS, Sol reviews the exact
 K1 packet. This carrier starts no dependent wave.
