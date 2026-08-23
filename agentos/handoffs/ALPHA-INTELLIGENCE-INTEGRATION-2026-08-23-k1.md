@@ -138,12 +138,13 @@ verified:
       python3 -m pytest -q tests/test_dataos_identity.py
       tests/test_theme_graph_contracts.py tests/test_fundamental_forensics_raw_ledger.py
       tests/test_company_intelligence_event_workspace.py
+      tests/test_company_intelligence_workspace_chain.py
       tests/test_institutional_13f_catalog.py tests/test_government_revenue_award_events.py
       tests/test_biocatalyst_protocols.py tests/test_clinicaltrials_history.py
       tests/test_transmission_chains.py tests/test_qledger_evidence_clock.py
       tests/test_market_memory.py
     result: >
-      After full-checkout materialization restored the committed Bio fixtures, 569
+      After full-checkout materialization restored the committed Bio fixtures, 584
       passed and 1 skipped. The four warnings were three unrelated temporary-directory
       cleanup warnings plus one upstream Starlette deprecation warning. The configured
       sparse profile was then restored without heavy-tree dirt.

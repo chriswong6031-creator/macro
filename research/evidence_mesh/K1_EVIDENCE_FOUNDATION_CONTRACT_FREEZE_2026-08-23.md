@@ -376,9 +376,10 @@ required-rights/conflict, and mixed AAPL/MSFT composition hostiles. The only war
 are three unrelated pytest temporary-directory cleanup warnings outside this worktree.
 
 The owner-source regression selection run from the reviewer-repaired full checkout
-(Data OS no-I/O negative control, Theme Graph, FIF, Earnings workspace, 13F,
+(Data OS no-I/O negative control, Theme Graph, FIF, Earnings workspace and manifest
+chain, 13F,
 government events, Bio current/history, TXI, QLedger, and Market Memory) concluded
-**569 passed, 1 skipped**. Its four warnings were three unrelated temporary-directory
+**584 passed, 1 skipped**. Its four warnings were three unrelated temporary-directory
 cleanup warnings plus one upstream Starlette deprecation warning. The preceding sparse
 run's 72 Bio `FileNotFoundError` results are not treated as contract failures; they
 were missing-fixture artifacts and the identical selection passed after full
