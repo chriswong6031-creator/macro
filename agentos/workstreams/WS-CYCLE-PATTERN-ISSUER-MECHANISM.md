@@ -575,6 +575,66 @@ waves:
       5b8ca994de05345d3cea514c46c27611bfe496d1 (0 introduced, 0 inherited).
       Production ledger path still never created by this session. PR stays
       DRAFT pending the commissioning session's re-review.
+  - id: A5C-alpha
+    title: IMCE-A5C-alpha — fail-closed correction detection pending source-revision history (Sol A5C review item 1)
+    status: awaiting_ci
+    pr: 6308
+    depends_on: [A5B]
+    next_action: >
+      Sol's A5C review (2026-08-23) named item 1: "no correction to a
+      pre-activation event can ever enter the prospective cohort as a new
+      observation" — until canonical source-revision history exists, A5B
+      must fail closed rather than mint an observation from a corrected
+      event_workspace when no prior observation exists for that event_id.
+      Activation may exist; unsafe observation creation may not. PR #6308
+      (branch claude/imce-a5c-safety-law, off fresh origin/main) implements
+      the interim AND PERMANENT backstop for chain-unresolvable cases (the
+      lawful earliest-revision eligibility path via the manifest/history
+      chain is a separate future PR, out of this one's scope).
+      engine/cycle_pattern/imce_prospective.py: append_observation gains an
+      explicit trigger_lifecycle_state parameter (never inferred from the
+      packet — zero ledger schema change; the frozen N1 whitelist tests
+      pass with unchanged key sets). SAFE_ORIGINAL_LIFECYCLE_STATES =
+      frozenset({"complete"}) — the ONLY published lifecycle.state
+      build_event_workspace ever emits WITHOUT having applied a "corrected"
+      transition (engine/company_intelligence/event_workspace_build.py:
+      169-196); every other value, including "corrected" itself and any
+      unknown/future state, is unsafe by construction (events.py's
+      _TRANSITIONS graph lets "corrected" advance to "derived_ready"/
+      "superseded"/itself, so a state further down that graph cannot be
+      trusted as never-corrected just because its current string is no
+      longer literally "corrected"). A first-ever write for an event_id
+      whose trigger is unsafe is refused: no row of any kind appended, no
+      exception raised, a bare print("::warning title=imce-prospective-
+      unsafe-correction::...", flush=True) logged (line-start, never a
+      logger — repo's GitHub-annotation law), and the builder's
+      per-candidate loop continues normally. Does NOT join failed_ids
+      (no whole-night deferral), does NOT stamp/unstamp activation, is
+      naturally idempotent (nothing written, nothing to undo) — no new row
+      kind. A corrected revision for an event_id that ALREADY has a prior
+      observation is unaffected — still routes through append_correction
+      exactly as before. scripts/build_cycle_pattern_imce_prospective.py
+      reads each trigger workspace's own lifecycle.state and passes it
+      straight through (engine module is the sole enforcement point);
+      refusals counted separately in
+      summary["n_observations_refused_unsafe_correction"].
+      tests/test_imce_prospective.py: the fixture's placeholder default
+      lifecycle state "results_released" (never a real value in events.py's
+      EVENT_STATES vocabulary) corrected to the real production
+      safe-original value "complete"; 8 pre-existing first-write call sites
+      updated to pass trigger_lifecycle_state="complete" explicitly; 10 new
+      A5C tests (refusal-with-empty-ledger + ::warning capture via capsys,
+      sibling-event isolation, correction-with-existing-observation
+      regression, safe-state regression, no-deferral/no-activation-block at
+      the builder level, idempotence across reruns, unknown/future-state
+      fail-closed vocabulary parametrized over 8 values, frozen-schema-
+      whitelist non-disturbance). Verified: pytest
+      tests/test_imce_prospective.py (124 passed, 2 skipped —
+      needs_full_checkout price-leg tests, expected in this sparse
+      worktree); pytest tests/test_gh_annotation_line_start.py (4 passed);
+      python3 scripts/check_contract_delta.py --base origin/main (0
+      introduced, 0 inherited). DRAFT PR — commissioning session
+      adjudicates and merges; not marked ready, merge-on-green not armed.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's
