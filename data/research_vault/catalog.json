@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T12:16:09.081863+00:00",
-  "count": 1685,
+  "generated_at": "2026-08-23T13:24:00.454657+00:00",
+  "count": 1688,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1354,6 +1354,66 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-p5zp9ljlvxg-3b2451",
+      "title": "UK equities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:22Z",
+      "summary_points": [
+        "**UK Earnings Outlook**: 2024 earnings growth forecast raised to 16% (from 11%) driven by cyclical commodity strength; 2025 growth expected at 9% amid weaker commodity outlook.",
+        "**FTSE 100 Scenarios**: Upside target 12,300 (2027) fueled by global growth, commodity demand, weaker GBP (75-80% FTSE 100 revenue outside UK), and policy support; downside target 7,700 (2027) from Middle East disruption, trade wars, lower commodities (20% of earnings), higher yields, and stronger GBP.",
+        "**Sector Allocation**: Banks, industrials, consumer discretionary, and healthcare favored for structural/cyclical growth; European IT upgraded to Attractive."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7gabv21amty-f3105d",
+      "title": "China A-shares",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:20Z",
+      "summary_points": [
+        "**Macro Weakness**: Soft recovery with NBS PMI contraction, weak domestic demand, subdued inflation, and lackluster activity data; policymakers prioritize accelerating existing policies over broad stimulus.",
+        "**Dividend Yield Premium**: High-dividend A-shares offer 4.6% yield vs 1.7% CGB yield, outperformed broader market (13% vs -11% in July), driven by SOE reforms and stable cash flows.",
+        "**Policy Stance**: Moderately accommodative monetary policy with no major easing; fragile domestic demand backdrop necessitates defensive positioning via high-dividend stocks.",
+        "**Defensive Allocation**: High-dividend stocks provide stability amid geopolitical uncertainty and weak consumption/investment, maintaining \"Attractive\" rating for portfolio exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2k62h9i7t1s-10d0ae",
+      "title": "Investing in China (onshore)",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:17Z",
+      "summary_points": [
+        "**China's uneven recovery dynamics**: A-shares rebounded post-July correction but macro remains soft (weak demand, subdued inflation); policymakers favor growth/defensive segments (offshore equities, onshore high-dividend stocks, high-grade credit bonds).",
+        "**Asset allocation priorities**: CNY investors favor China CNY Credit Bond (High Grade) and A-share High Dividend Yield; China Gov't Bond Aggregate and 1-3yr bonds are unattractive.",
+        "**Platform businesses valuation**: Leading Chinese platforms offer strong fundamentals with double-digit EPS growth forecasts, 12-month forward P/E ~11x, and mid-teens total returns expected through June 2027.",
+        "**Critical risks**: Geopolitical tensions (Middle East conflict) and domestic inflation surprises threaten neutral view; July data shows slower demand recovery.",
+        "**Onshore high-grade credit bonds**: Attractive with spreads at 55-60 bps over CGBs, yields 1.85%-2.0%, supported by resilient demand (wealth mgmt, insurers) and PBoC liquidity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
