@@ -196,7 +196,7 @@ verified:
   - claim: "The Agent OS packet remains valid as a knowledge-plane update."
     command: "python3 scripts/agentos.py validate"
     result: >
-      Agent OS validated 637 records with 0 errors and 30 unrelated existing
+      Agent OS validated 644 records with 0 errors and 19 unrelated existing
       phantom-path, stale-review, and active-but-complete warnings.
   - claim: "The new K1 suite has a valid binding hosted-CI owner."
     command: >
