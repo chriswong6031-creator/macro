@@ -6,10 +6,11 @@ from pathlib import Path
 
 import pytest
 
+from collectors.edgar_forensics import endpoint_url, historical_submissions_url, persist_response
 from scripts.research.dislocation_p0_a1_lib import canonical_json
 from scripts.research.dislocation_p0_s1f_owner_run import (
     OwnerRunBlocked, _fts_document_names, _packet_artifacts, _primary_view,
-    _validate_inputs,
+    _replay_transport_receipts, _validate_inputs,
 )
 from scripts.research.dislocation_p0_s1f_runner import _batch_plan, _selection_logical_hash
 from scripts.research.dislocation_p0_s1f_selection import AUTHORITY, STRATA, exact70_manifest
@@ -94,3 +95,41 @@ def test_primary_exact_match_reuses_one_source_file_and_is_never_a_substitute() 
     assert model[0]["primary_context"]["source_path"] == model[0]["documents"][0]["source_path"]
     assert public[0]["primary_document_substitution"] is False
     assert model[0]["primary_document_substitution"] is False
+
+
+def _transport_entry(root: Path, *, cik: str, source_kind: str, source_name: str | None) -> dict:
+    url = endpoint_url(cik, "submissions") if source_kind == "current" else historical_submissions_url(cik, str(source_name))
+    receipt = persist_response(
+        root, cik=cik, endpoint="submissions", url=url,
+        content=(b'{"filings":{"recent":{}}}' if source_kind == "current" else b'{"accessionNumber":[]}'),
+        retrieved_at="2026-08-23T00:00:00Z", publish_latest=source_kind == "current",
+    )
+    receipt_path = root / Path(receipt.object_path).with_suffix(".receipt.json")
+    return {
+        "owner": "collectors.edgar_forensics.SecForensicsCollector", "source_kind": source_kind,
+        "source_name": source_name, "receipt_storage_key": Path(receipt.object_path).with_suffix(".receipt.json").as_posix(),
+        "receipt_file_sha256": __import__("hashlib").sha256(receipt_path.read_bytes()).hexdigest(),
+        "receipt": json.loads(receipt_path.read_text()),
+    }
+
+
+def test_transport_replay_requires_one_current_and_replays_declared_historical_bytes(tmp_path: Path) -> None:
+    cik = "0001069533"; name = "CIK0001069533-submissions-001.json"
+    current = _transport_entry(tmp_path, cik=cik, source_kind="current", source_name=None)
+    historical = _transport_entry(tmp_path, cik=cik, source_kind="historical", source_name=name)
+    rows, hosts = _replay_transport_receipts(
+        frozen={"submissions_transport_receipts": [current, historical]},
+        generic_root=tmp_path, expected_ciks={cik},
+    )
+    assert rows == [current, historical] and hosts == {"data.sec.gov"}
+    with pytest.raises(OwnerRunBlocked, match="receipt coverage is incomplete"):
+        _replay_transport_receipts(
+            frozen={"submissions_transport_receipts": [historical]},
+            generic_root=tmp_path, expected_ciks={cik},
+        )
+    crosswired = dict(historical) | {"source_name": "CIK0000000001-submissions-001.json"}
+    with pytest.raises(OwnerRunBlocked, match="historical receipt source binding mismatch"):
+        _replay_transport_receipts(
+            frozen={"submissions_transport_receipts": [current, crosswired]},
+            generic_root=tmp_path, expected_ciks={cik},
+        )

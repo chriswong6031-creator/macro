@@ -20,7 +20,9 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from collectors.edgar_forensics import RetrievalReceipt, SecForensicsCollector  # noqa: E402
+from collectors.edgar_forensics import (  # noqa: E402
+    RetrievalReceipt, SecForensicsCollector, endpoint_url, historical_submissions_url,
+)
 from scripts.research.dislocation_p0_a1_lib import (  # noqa: E402
     ALLOWED_HOSTS, assert_blind_workspace, canonical_json, forbidden_market_fields,
     sha256_text,
@@ -200,7 +202,7 @@ def _replay_transport_receipts(
     if not isinstance(entries, list) or not entries:
         raise OwnerRunBlocked("S1F frozen generic-SEC transport receipts are missing")
     rebuilt: list[dict[str, Any]] = []
-    seen: set[str] = set(); hosts: set[str] = set()
+    seen_current: set[str] = set(); seen_historical: set[tuple[str, str]] = set(); hosts: set[str] = set()
     for entry in entries:
         if not isinstance(entry, Mapping) or entry.get("owner") != "collectors.edgar_forensics.SecForensicsCollector" or not isinstance(entry.get("receipt"), Mapping):
             raise OwnerRunBlocked("S1F frozen generic-SEC transport receipt is malformed")
@@ -208,17 +210,33 @@ def _replay_transport_receipts(
             receipt = RetrievalReceipt(**dict(entry["receipt"]))
         except TypeError as exc:
             raise OwnerRunBlocked(f"S1F frozen generic-SEC receipt is malformed: {exc}") from exc
-        if receipt.endpoint != "submissions" or receipt.cik not in expected_ciks or receipt.cik in seen:
+        if receipt.endpoint != "submissions" or receipt.cik not in expected_ciks:
             raise OwnerRunBlocked("S1F frozen generic-SEC receipt coverage mismatch")
+        source_kind, source_name = entry.get("source_kind"), entry.get("source_name")
+        if source_kind == "current" and source_name is None:
+            if receipt.cik in seen_current or receipt.url != endpoint_url(receipt.cik, "submissions"):
+                raise OwnerRunBlocked("S1F current Submissions receipt coverage mismatch")
+            seen_current.add(receipt.cik)
+        elif source_kind == "historical" and isinstance(source_name, str):
+            try:
+                expected_url = historical_submissions_url(receipt.cik, source_name)
+            except ValueError as exc:
+                raise OwnerRunBlocked(f"S1F historical receipt source binding mismatch: {exc}") from exc
+            key = (receipt.cik, source_name)
+            if key in seen_historical or receipt.url != expected_url:
+                raise OwnerRunBlocked("S1F historical Submissions receipt coverage mismatch")
+            seen_historical.add(key)
+        else:
+            raise OwnerRunBlocked("S1F generic-SEC receipt source kind is invalid")
         try:
             _raw, stored, key, digest = _replay_generic_source_receipt(generic_root, receipt)
         except A1ROwnerRunBlocked as exc:
             raise OwnerRunBlocked(f"S1F generic-SEC owner replay failed: {exc}") from exc
-        row = {"owner": "collectors.edgar_forensics.SecForensicsCollector", "receipt_storage_key": key, "receipt_file_sha256": digest, "receipt": stored}
+        row = {"owner": "collectors.edgar_forensics.SecForensicsCollector", "source_kind": source_kind, "source_name": source_name, "receipt_storage_key": key, "receipt_file_sha256": digest, "receipt": stored}
         if canonical_json(row) != canonical_json(entry):
             raise OwnerRunBlocked(f"S1F frozen generic-SEC receipt projection drift: {receipt.cik}")
-        rebuilt.append(row); seen.add(receipt.cik); hosts.add((urlparse(receipt.url).hostname or "").lower())
-    if seen != expected_ciks:
+        rebuilt.append(row); hosts.add((urlparse(receipt.url).hostname or "").lower())
+    if seen_current != expected_ciks:
         raise OwnerRunBlocked("S1F frozen generic-SEC receipt coverage is incomplete")
     return rebuilt, hosts
 
@@ -278,10 +296,17 @@ def execute_owner_run(*, selection_path: Path, receipt_path: Path, batch_plan_pa
     def fetch(cik: str) -> tuple[bytes, Mapping[str, str | None]]:
         owner_receipt = collector.fetch(cik, "submissions", max_response_bytes=CURRENT_SUBMISSIONS_MAX_BYTES)
         raw, persisted, storage_key, receipt_sha = _replay_generic_source_receipt(generic_root, owner_receipt)
-        transport.append({"owner": "collectors.edgar_forensics.SecForensicsCollector", "receipt_storage_key": storage_key, "receipt_file_sha256": receipt_sha, "receipt": persisted})
+        transport.append({"owner": "collectors.edgar_forensics.SecForensicsCollector", "source_kind": "current", "source_name": None, "receipt_storage_key": storage_key, "receipt_file_sha256": receipt_sha, "receipt": persisted})
+        return raw, {"url": owner_receipt.url, "http_etag": owner_receipt.http_etag, "http_last_modified": owner_receipt.http_last_modified}
+    def fetch_historical(cik: str, source_name: str) -> tuple[bytes, Mapping[str, str | None]]:
+        owner_receipt = collector.fetch_historical_submissions_file(
+            cik, source_name, max_response_bytes=CURRENT_SUBMISSIONS_MAX_BYTES,
+        )
+        raw, persisted, storage_key, receipt_sha = _replay_generic_source_receipt(generic_root, owner_receipt)
+        transport.append({"owner": "collectors.edgar_forensics.SecForensicsCollector", "source_kind": "historical", "source_name": source_name, "receipt_storage_key": storage_key, "receipt_file_sha256": receipt_sha, "receipt": persisted})
         return raw, {"url": owner_receipt.url, "http_etag": owner_receipt.http_etag, "http_last_modified": owner_receipt.http_last_modified}
     recorded_at = _utc_now()
-    result = materialize_current_source_refs(archive_root=owner_root, selections=refs, user_agent=USER_AGENT, fetch_submissions=fetch, recorded_at=recorded_at, required_packet_count=REQUIRED_PACKET_COUNT, include_primary_context=True, primary_context_required=True)
+    result = materialize_current_source_refs(archive_root=owner_root, selections=refs, user_agent=USER_AGENT, fetch_submissions=fetch, fetch_historical_submissions=fetch_historical, recorded_at=recorded_at, required_packet_count=REQUIRED_PACKET_COUNT, include_primary_context=True, primary_context_required=True)
     hosts = {(urlparse(row["receipt"]["url"]).hostname or "").lower() for row in transport}
     if not hosts or not hosts.issubset(ALLOWED_HOSTS):
         raise OwnerRunBlocked(f"non-SEC generic owner host observed: {sorted(hosts)}")
