@@ -1,9 +1,10 @@
 # PROPHET FLAGSHIP INTELLIGENCE — READ FIRST / COLD-START MAP
 
 **Date:** 2026-08-22  
-**Purpose:** one front door for a fresh Sol CEO session taking responsibility for any MAS-117..MAS-124 flagship research cell.  
-**Authority:** routing/precedence map only; no implementation authority.  
-**Skillpack authoring pin:** `mastermindx-market-intelligence/Mastermind@90db9baf5bcc5f2221e3c9870c2aa09a95293c99`
+**Purpose:** one front door for a fresh Sol CEO session taking responsibility for any MAS-117..MAS-124 flagship cell.  
+**Authority:** routing/precedence map only; no runtime/rank/gate/trade authority.  
+**Latest hardening procedure pin:** `mastermindx-market-intelligence/Mastermind@e1101eb2c1f17d801d480ded497b3fc1bb0ef18b`, protected `master`, `mastermind.sol_skillpack.v1`, version `1.0.0`, bootstrap major `1`  
+**Important:** every receiving session reloads the **then-current** protected Skillpack and current Macro `main`; this pin records this hardening continuation, not a permanent runtime pin.
 
 ---
 
@@ -19,16 +20,18 @@ The flagship program is deliberately separated into:
 
 - **truth** owned by canonical specialist/data systems;
 - **economic intelligence** such as exposure, expectations, materiality, transmission and incorporation;
-- **deterministic availability** that alone decides whether an entry is open;
+- **deterministic Availability** that alone decides whether an entry is open;
 - **Conditional Fusion** for earned cross-family ranking authority;
 - **Eval OS** for prospective measurement/promotion;
 - **Prophet product** for the coherent user workflow.
 
-No cell may create a parallel graph, ranker, memory store, evaluation plane, identity master or availability truth.
+No cell may create a parallel graph, ranker, memory store, evaluation plane, identity master, source truth or Availability truth.
 
 Research may kill a hypothesis. It may not weaken the product thesis or silently change ownership.
 
-The integrated masterplan has already received an adversarial architecture pass. Its **A1-A12 anti-circularity/leakage amendments are binding** on future research.
+The integrated masterplan has received a system adversarial architecture pass. Its **A1–A12 anti-circularity/leakage amendments are binding** wherever applicable.
+
+The cells now also have **backbone prework** and **ChatGPT-first end-to-end launch handoffs**. Those are starting designs to attack/refine—not proof that the hypotheses work.
 
 ---
 
@@ -71,9 +74,7 @@ Read:
 
 `research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_ADVERSARIAL_REVIEW_AND_AMENDMENTS_2026-08-22.md`
 
-The adversarial review found a real architecture-level risk: an apparently sensible expected-response model can become mathematically circular if the target contributes to its own theme/peer impulse, if historical priors use future folds, if price-derived exposure overlaps the response window, or if issuer materiality is inferred from the same price move being explained.
-
-**Binding A1-A12 controls include:**
+Binding controls include:
 
 - leave-target-economic-issuer-out theme/peer baselines;
 - fold-frozen historical priors;
@@ -88,7 +89,7 @@ The adversarial review found a real architecture-level risk: an apparently sensi
 - coverage-selection audits;
 - contemporaneous-belief vs final-corrected historical views.
 
-A Cell A/B result that ignores relevant A1-A12 controls cannot PASS.
+A relevant result that omits an applicable control is `HOLD`, not PASS.
 
 ## Step 5 — What is still only a hypothesis
 
@@ -104,7 +105,7 @@ Read:
 
 `research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_EXTERNAL_METHODS_BENCHMARK_2026-08-22.md`
 
-Do not spend half the session repeating generic research into segment exposure, thematic NLP, supply-chain propagation, expectations, novelty or factor residualization. Use the benchmark as the shared starting point, then investigate the cell's genuinely open Mastermind-specific question.
+Do not spend half the session repeating generic research. Use the benchmark as shared starting state, then investigate the cell's genuinely open Mastermind-specific questions.
 
 ## Step 7 — Data/source/rights/freshness requirements
 
@@ -112,18 +113,16 @@ Read:
 
 `research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_DATA_SOURCE_AND_MOAT_LEDGER_2026-08-22.md`
 
-This maps the desired evidence families to authoritative/current owner sources, first-party/public possibilities, likely licensed gaps, point-in-time requirements, freshness classes and build-vs-license decision law.
+A proposed field is not real until it has an honest owner/source/history/known-at/correction/rights story.
 
-Key examples:
+Examples:
 
-- SEC filing/iXBRL segment truth is an extraction/governance problem before it is a vendor problem;
+- SEC filing/iXBRL segment truth is an extraction/governance problem before a vendor problem;
 - detailed point-in-time broker/KPI consensus is a plausible licensed gap, not assumed available;
-- SEC 13F and FINRA short interest are slow positioning states with publication lag, not live flow;
-- ClinicalTrials.gov/USAspending remain specialist-owner official sources;
-- ThetaData remains the canonical options source under its owner;
-- public URLs do not automatically grant scraping/redistribution rights.
-
-A cell may not design around a data field without an honest source/history/rights story.
+- 13F and FINRA short interest are slow positioning states, not live flow;
+- ClinicalTrials.gov and USAspending remain specialist-owner official sources;
+- ThetaData remains canonical options source under its owner;
+- public URLs do not automatically grant automated extraction/redistribution rights.
 
 ## Step 8 — Concrete product/intelligence states
 
@@ -131,7 +130,7 @@ Read:
 
 `research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_REFERENCE_CASEBOOK_2026-08-22.md`
 
-If your proposed architecture cannot represent the negative/missing/conflicted/correction cases in that file, it is probably flattening the system incorrectly.
+If your architecture cannot represent the negative/missing/conflicted/correction cases there, it is probably flattening the system incorrectly.
 
 ## Step 9 — Executive decision hygiene
 
@@ -153,7 +152,37 @@ Read:
 
 `research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_CELL_HARDENING_INDEX_2026-08-22.md`
 
-## Step 12 — Your dedicated cell handoff
+## Step 12 — Backbone prework for your cell
+
+### R1 backbone — A / B / F / G
+
+Read:
+
+`research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_R1_BACKBONE_PREWORK_2026-08-22.md`
+
+Applies to:
+
+- A / MAS-117 — Theme Intelligence;
+- B / MAS-118 — Evidence–Price Gap;
+- F / MAS-122 — Evidence Translation;
+- G / MAS-123 — Value of Information.
+
+### R2/R3 backbone — C / D / E / H
+
+Read:
+
+`research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_R2_R3_BACKBONE_PREWORK_2026-08-22.md`
+
+Applies to:
+
+- C / MAS-119 — Catalyst Federation;
+- D / MAS-120 — Species & Analogues;
+- E / MAS-121 — Fragility & Crowding;
+- H / MAS-124 — Flagship Experience.
+
+Backbone prework is labeled `PRELIMINARY_RULING / OPEN_TEST / REJECTED_STARTING_SHAPE / CELL_MUST_RETURN`. Challenge it with current evidence; do not treat it as empirical proof.
+
+## Step 13 — Your original hardened cell handoff
 
 - A / MAS-117 → `CELL_A_THEME_INTELLIGENCE_HANDOFF_2026-08-22.md`
 - B / MAS-118 → `CELL_B_EVIDENCE_PRICE_GAP_HANDOFF_2026-08-22.md`
@@ -164,7 +193,32 @@ Read:
 - G / MAS-123 → `CELL_G_VALUE_OF_INFORMATION_MEASUREMENT_HANDOFF_2026-08-22.md`
 - H / MAS-124 → `CELL_H_FLAGSHIP_PRODUCT_EXPERIENCE_HANDOFF_2026-08-22.md`
 
-## Step 13 — Standard return shape
+These define the detailed research scope and no-rebuild boundaries.
+
+## Step 14 — ChatGPT-first end-to-end launch handoff
+
+Read the cell-specific file under:
+
+`research/prophet_v4/flagship_cells/launch_handoffs/`
+
+- A → `CELL_A_THEME_INTELLIGENCE_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md`
+- B → `CELL_B_EVIDENCE_PRICE_GAP_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md`
+- C → `CELL_C_CATALYST_FEDERATION_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md`
+- D → `CELL_D_SPECIES_ANALOGUES_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md`
+- E → `CELL_E_FRAGILITY_CROWDING_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md`
+- F → `CELL_F_EVIDENCE_TRANSLATION_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md`
+- G → `CELL_G_VALUE_OF_INFORMATION_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md`
+- H → `CELL_H_FLAGSHIP_EXPERIENCE_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md`
+
+These launch overlays encode the Chairman's preferred resource model:
+
+> use abundant ChatGPT CEO reasoning/research for high-ambiguity work; use external coding workers after a bounded owner-compatible vertical is frozen.
+
+They also contain the cell-specific copy-paste active Chairman launch instruction.
+
+**Important:** a file does not grant perpetual runtime authority. Current explicit Chairman intent + current owner/path/runtime gates still govern any modification.
+
+## Step 15 — Standard return shape
 
 Read before doing the work, not only at closeout:
 
@@ -194,7 +248,7 @@ There is no single total ordering for all questions. Use the correct precedence 
 3. integrated flagship masterplan;
 4. architecture freeze/integration graph;
 5. binding adversarial amendments where they tighten research mechanics;
-6. cell handoff;
+6. cell handoff/backbone prework;
 7. Linear summary.
 
 ## 2.3 “Who owns this?”
@@ -210,7 +264,7 @@ A stale `next_action` does not transfer ownership.
 
 1. prospective promoted evidence / Eval OS ruling;
 2. preregistered confirmatory evidence;
-3. PIT-safe retrospective research that satisfies applicable adversarial amendments;
+3. PIT-safe retrospective research satisfying applicable adversarial amendments;
 4. hypothesis matrix;
 5. architecture desire.
 
@@ -225,6 +279,17 @@ A desired product capability is last in this ordering, not first.
 5. desired product field.
 
 If the desired field has no lawful PIT source story, it remains unavailable.
+
+## 2.6 “May this session implement now?”
+
+1. current explicit Chairman intent in the active chat;
+2. current compatible Skillpack procedure;
+3. current canonical owner/permission/path/runtime state;
+4. cell launch handoff implementation entrance gate;
+5. frozen bounded vertical with exact scope/tests/proof;
+6. coding/connected-app capability.
+
+A Linear issue, old handoff or technical write capability alone never grants implementation authority.
 
 ---
 
@@ -245,22 +310,25 @@ If the desired field has no lawful PIT source story, it remains unavailable.
 - Strong thesis + bad entry is valid.
 - Empty/no-action days are valid.
 - A1-A12 anti-circularity/leakage controls for relevant research.
-- A desired source/data field requires an explicit owner/clock/history/rights story.
+- A desired field requires an explicit owner/clock/history/rights story.
+- ChatGPT-first reasoning is preferred for unresolved high-ambiguity architecture; workers get bounded implementation contracts.
 
 ## Open
 
 - which exposure axes prove useful;
 - whether exposure-weighted theme impulse adds alpha after target-issuer exclusion;
 - which transmission mechanisms are estimable;
-- whether an incorporation-gap state adds value after fold-frozen/PIT controls;
+- whether incorporation gap adds incremental value;
 - which domains support expectation/materiality well;
 - whether licensed detailed consensus/relationship data is worth buying;
-- whether species routing adds value;
-- whether analogues calibrate outcomes;
-- whether fragility/crowding help rank vs only path/explanation;
+- whether hard species add anything beyond continuous fingerprints;
+- whether analogues calibrate outcomes or remain explanation-only;
+- whether any narrow regime interactions are estimable;
+- which fragility/crowding components add path/rank value;
 - whether trajectory derivatives add value;
 - exact EAWC metric design;
-- whether learned listwise/router/graph challengers beat the deterministic baseline.
+- whether learned listwise/router/graph challengers beat deterministic baselines;
+- final H product semantics for fields whose upstream contracts are still returning.
 
 If you find yourself debating a Frozen item, re-read the architecture before proceeding.
 
@@ -268,7 +336,7 @@ If you find yourself debating a Frozen item, re-read the architecture before pro
 
 # 4. The central semantic chain
 
-Every cell should be able to place its work somewhere on this chain:
+Every cell should place its work on this chain:
 
 ```text
 truth
@@ -290,56 +358,68 @@ Your cell should **not** own the entire chain.
 
 ---
 
-# 5. The fastest misconstruction / leakage / source test
+# 5. Fast misconstruction / leakage / source test
 
-Before writing a conclusion, ask:
+Before a conclusion or code commission, ask:
 
 1. Did I create a new owner because the current one looked inconvenient or stale?
 2. Did I turn missing data into zero/neutral?
 3. Did I let intelligence change `ENTRY_OPEN`?
 4. Did I count derivatives of one source as independent evidence?
-5. Did I select a taxonomy/baseline/horizon after seeing outcomes?
+5. Did I select taxonomy/baseline/horizon after seeing outcomes?
 6. Did I use current identity/theme membership historically?
-7. Did I turn a catalyst into surprise/materiality without an expectation/economic basis?
+7. Did I turn a catalyst into surprise/materiality without a valid expectation/economic basis?
 8. Did I turn a graph edge into causal transmission without a mechanism/control?
 9. Did I turn a large price drop into “dislocation” without testing justified impairment?
-10. Did I output a probability/score from inadequate effective N?
+10. Did I output probability/score from inadequate effective N?
 11. Did I preserve correction lineage and contemporaneous-belief features?
-12. Does my target security or same economic issuer contribute to the baseline predicting itself?
-13. Did any historical prior/calibration see the target episode or future fold?
-14. Does any price-derived exposure/sensitivity overlap the response window being judged?
-15. Is issuer materiality partly defined by the same target price reaction being explained?
-16. Did I collapse incompatible component units into a universal score before calibration?
-17. Can a graph path cycle back into the target and leak its own response?
+12. Does target/same economic issuer contribute to baseline predicting itself?
+13. Did historical prior/calibration see target episode/future fold?
+14. Does price-derived exposure overlap the response window?
+15. Is issuer materiality defined by the same target price reaction being explained?
+16. Did I collapse incompatible units before lawful calibration?
+17. Can a graph path cycle into the target and leak its own response?
 18. Did I confuse different source roots with economically independent information?
 19. Could coverage itself be the feature my model is learning?
-20. Does the field I want have a lawful PIT source, known-at clock, correction story and rights tier?
-21. Am I using a slow source (13F/short interest/etc.) as if it were live flow?
-22. Does my return say what should be killed if the hypothesis fails?
+20. Does the desired field have a lawful PIT source, known-at, corrections and rights?
+21. Am I using slow 13F/short-interest/etc. as live flow?
+22. Does the return say what should be killed if the hypothesis fails?
+23. Did I make missing analogue dimensions create false similarity?
+24. Did I choose species/regime because it worked historically?
+25. Did I interpret options OI as directional intent without an identified method?
+26. Did I label a clinical schedule date as a readout/outcome?
+27. Did I treat potential award ceiling as funded issuer revenue?
+28. Did a mockup invent an upstream semantic field?
+29. Does a public/anonymous carrier expose premium data even if visually hidden?
+30. Am I asking a coding worker to resolve a CEO architecture question by coding convenience?
 
-Any `yes` is a reason to HOLD and repair the research design.
+Any `yes` is a reason to HOLD and repair the design.
 
 ---
 
 # 6. Claim protocol summary
 
-After the required reads and current-state reconciliation, comment on the child:
+After required reads and current-state reconciliation, comment on the child:
 
 ```text
 SOL RESEARCH SESSION CLAIMED
 current main: <sha>
 canonical owner(s): <...>
 masterplan read: yes
+backbone prework read: yes
+launch handoff read: yes
 adversarial amendments read: yes
 source ledger read: yes
 material status disagreements: <...>
 open hypothesis IDs owned by this cell: <...>
-mutation authority: RESEARCH ONLY
+initial mutation authority: RESEARCH / ARCHITECTURE
 ```
 
 Then move only that child to In Progress.
 
-No cell claim creates a runtime Executive Job or implementation authority.
+A cell claim itself creates no Executive Job or production authority.
+
+If the active Chairman launch instruction authorizes end-to-end continuation, implementation may begin **later in the same session** only after the cell's implementation entrance gate and current canonical owner/permission gates are satisfied.
 
 ---
 
@@ -350,15 +430,16 @@ A complete research return must:
 - use the standard deliverable template;
 - reconcile to current main at closeout;
 - classify capabilities honestly;
-- show compliance with all applicable adversarial amendments;
-- state source owner / PIT history / freshness / rights for every proposed intelligence field;
-- update the hypothesis/kill outcomes for the questions it actually tested;
+- show compliance with applicable adversarial amendments;
+- state source owner / PIT history / freshness / rights for every proposed field;
+- update hypothesis/kill outcomes for questions actually tested;
 - name external benchmark methods used and where Mastermind differs;
 - produce `ADOPT / EXTEND / DEFER / REJECT` rulings;
 - provide bounded owner-routed vertical candidates;
-- identify executive decisions only where the decision docket says they belong;
-- write a cold-stranger continuation;
-- leave implementation unstarted unless separately commissioned.
+- identify executive decisions only where the docket says they belong;
+- write a cold-stranger continuation.
+
+If the active Chairman launch instruction authorized end-to-end continuation, the session may then freeze/execute bounded implementation verticals under current owner gates. Each build still has its own `BUILT_NOT_PROVEN → PROVEN_LIVE` proof law and cannot auto-promote predictive authority.
 
 ---
 
@@ -370,6 +451,8 @@ Your job is to preserve the Chairman's end-state while determining which concret
 
 A smaller architecture with five proven intelligence families is better than a giant “superintelligence” vector full of unvalidated scores.
 
+Use cheap/abundant CEO reasoning until the ambiguity is gone.
+
 The ambition stays maximal.
 
-The claims must stay earned.
+The claims stay earned.
