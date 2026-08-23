@@ -98,6 +98,7 @@ SESSION_WORKTREE_ROOTS = (
     ".codex-worktrees/",
     ".cursor/worktrees/",
     ".grok/worktrees/",
+    ".warp/worktrees/",
 )
 
 

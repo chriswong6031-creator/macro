@@ -1820,6 +1820,29 @@ class TestPressureWatchBand:
         order = re.findall(r'<span class="pw-t">([A-Z]+)</span>', tracked)
         assert order == ["CDE", "ARQT", "IONQ", "VKTX"]
 
+    def test_a_row_without_a_dossier_renders_unlinked_but_intact(self):
+        """The guard's SOFT tier, pinned on the RENDERED page.
+
+        A context-only assertion would pass a template that ignored `href` and
+        went on emitting `{{ r.t }}.html` — the markup that put six dead links
+        (ARGX, CLM, CRF, NUVL, PRA, SATS) on stocks/index.html through
+        2026-08-22. What the reader loses is the anchor; the row is untouched.
+        """
+        from engine import stocks_hub
+
+        band = stocks_hub.pressure_band(
+            json.loads(self._FIXTURE.read_text(encoding="utf-8")),
+            board_asof="2026-07-02", linkable=frozenset({"CDE", "SGMO"}),
+        )
+        html = self._section(self._render(band))
+        assert 'href="CDE.html"' in html and 'href="SGMO.html"' in html
+        for t in ("BEAM", "ATRA", "ARQT", "IONQ", "VKTX"):
+            assert f'href="{t}.html"' not in html, f"{t} links a dossier that never rendered"
+            assert f'<span class="pw-t">{t}</span>' in html, f"{t} lost its row, not just its link"
+        # Read the band the way scripts/check_site_asset_refs.py reads a page.
+        refs = re.findall(r'(?<![\w-])href\s*=\s*"([^"]+)"', html)
+        assert sorted(r for r in refs if r.endswith(".html")) == ["CDE.html", "SGMO.html"]
+
     def test_artifact_absent_renders_the_warm_up_state(self):
         """The loader hands warm-up copy through; the section still renders."""
         from engine import stocks_hub
