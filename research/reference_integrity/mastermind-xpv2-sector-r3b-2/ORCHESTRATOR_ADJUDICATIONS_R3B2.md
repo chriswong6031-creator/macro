@@ -43,4 +43,35 @@ receipts above.
    verdict.yml. The lanes must verify each defect exists in the frozen bytes before
    repairing (a repair without a reproduced defect is scope creep).
 
-(§2+ appended as lane returns are adjudicated.)
+## §2 Lane A return — adjudicated ACCEPTED (commit 2f5daab9808b; PARTIAL = plumbing only)
+
+B2-01 / DA1-02 / B2-04 / B2-08 / B2-09 all landed producer-cited: every
+theme_intel.themes[].score binding site renders Strength / 强度 (six sites listed with
+file:line; the false-independence source comment deleted and replaced by the
+scripts/build_site.py:1774-1785 citation); the DA1-02 chip re-labeled **against the actual
+producer contract** — `reliability()` at engine/subsector_confluence.py:73-82 reads
+`n_priced` (member count), so the commission's suggested "Sparse history" wording was
+REJECTED as untrue and "Few live members — read with caution / 实时成分股很少 — 请谨慎解读"
+chosen, corroborated by the rows' own N column; B2-04 ships a native ZH projection KEYED to
+the exact producer string with a lawful lang="en" identified fallback, plus
+lang_of_parts_audit.py proven failing-pre (1 finding, 38 Latin words) / passing-post with a
+nonzero 4,281-node census; B2-08 uses the two-line header pattern with a re-authored
+adverbial ZH twin; B2-09 binds --muted (5.57/5.43:1, is_reserved=false ×4) — no token
+minted per DESIGN_SYSTEM_SPEC:373, and the error-red family was correctly rejected because
+--act sits outside the ZH 红涨绿跌 swap. Deterministic ×2 at b9f7d31b847f; fresh 16,140-cell
+contrast matrix 0 AA failures; ARIA/dup-ID/lang/mutation/inventory checks all green.
+
+Rulings: (1) the 14/16 verifier state is a SCAFFOLD artifact — checks (j)/(k) read
+committed lane_crops_b evidence that legitimately does not exist yet for this reference id;
+the substance (zoom, contrast) is green at this head by Lane A's own matrices. Lane E owns
+regenerating and committing those artifacts at the freeze head. NOT a Lane A defect.
+(2) All five deviations UPHELD — the two extra renames serve Sol's one-term law (a
+string-equality uniqueness map must resolve to ONE label; screen-reader caption and header
+must agree); byproduct deletion kept the diff inside owned files. (3) Standing warning
+adopted for Lane C/E: the producer-path→label uniqueness guard must resolve labels from the
+PAINTED DOM, never source grep — retired strings survive in shipped source comments as the
+audit trail. (4) Handoffs: Lane B inlines "Strength 76 / 强度 76" (the label Lane A set);
+Lane D's B2-02 defect is CONFIRMED reproduced (the &#128202; entity visible in Lane A's 09-*
+crops).
+
+(§3+ appended as further lane returns are adjudicated.)
