@@ -755,6 +755,15 @@ def _financial_packet_provider():
     return UnavailableFinancialPacketProvider()
 
 
+def _financial_statement_provider():
+    """Golden AAPL 10-K fixture only. Production attested issuer service stays unbuilt."""
+    from engine.fundamental_forensics.statement_service import (  # noqa: PLC0415
+        GoldenAaplStatementProvider,
+    )
+
+    return GoldenAaplStatementProvider(repo_root=REPO)
+
+
 def _financial_query_max_request_bytes() -> int:
     from engine.fundamental_forensics.query_service import MAX_REQUEST_BYTES  # noqa: PLC0415
 
@@ -952,6 +961,58 @@ async def financial_packet(
         headers={
             **_PRIVATE_HEADERS,
             "X-FIF-Response-SHA256": result.response_sha256,
+        },
+    )
+
+
+@router.api_route(
+    "/api/forensics/v1/financial/statements",
+    methods=["GET", "PUT", "PATCH", "DELETE", "HEAD"],
+)
+def financial_statements_method_not_allowed(
+    response: Response,
+    _user: dict = Depends(require_site_full_user),
+) -> None:
+    """Auth first, then a private 405. Starlette's default 405 has no no-store policy."""
+    del response
+    raise _private_error(405, "method not allowed")
+
+
+@router.post("/api/forensics/v1/financial/statements")
+async def financial_statements(
+    request: Request,
+    _user: dict = Depends(require_site_full_user),
+) -> Response:
+    """Serve filing-native as-reported primary statement trees for a named filing."""
+    from engine.fundamental_forensics.query_service import (  # noqa: PLC0415
+        FinancialQueryAdmissionError,
+        FinancialQueryUnavailableError,
+    )
+    from engine.fundamental_forensics.statement_service import (  # noqa: PLC0415
+        execute_financial_statements,
+    )
+
+    body = await _admit_json_post_body(request)
+
+    try:
+        result = execute_financial_statements(
+            body=body,
+            repo_root=REPO,
+            provider_factory=_financial_statement_provider,
+        )
+    except FinancialQueryAdmissionError as exc:
+        raise _private_error(exc.status_code, exc.detail) from None
+    except FinancialQueryUnavailableError:
+        raise _private_error(503, "financial statements temporarily unavailable") from None
+    except Exception:  # noqa: BLE001
+        raise _private_error(503, "financial statements temporarily unavailable") from None
+
+    return Response(
+        content=result.body,
+        media_type="application/json",
+        headers={
+            **_PRIVATE_HEADERS,
+            "X-FIF-Response-SHA256": result.sha256,
         },
     )
 
