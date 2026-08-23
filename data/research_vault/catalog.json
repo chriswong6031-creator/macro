@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T15:11:08.211165+00:00",
-  "count": 1694,
+  "generated_at": "2026-08-23T16:11:38.332078+00:00",
+  "count": 1697,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -86,6 +86,66 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-9apkizzne1f-04d9c6",
+      "title": "Fed On Hold",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-23T14:53:27Z",
+      "summary_points": [
+        "**Fed on Hold Thesis**: TCW urges Fed to maintain current rates, emphasizing strategic patience for fixed income management amid economic uncertainty.",
+        "**Fed on Hold Rationale**: Inflation driven by supply shocks (tariffs, AI, oil), not demand; labor cooling (falling job openings, flat/negative wage growth) and slowing growth (Real GDP, payroll) render rate hikes ineffective.",
+        "**Policy Restrictiveness & Supply Shocks**: Current Fed Funds rate (3.5-3.75%) exceeds neutral rate (3%), but economy not overheating; rate hikes counterproductive as unemployment must rise (4-6%) to offset supply shocks like tariffs/Iran war."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wvwffwoochk-149ec1",
+      "title": "Article selectivitytakesthelead ltr",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:53:05Z",
+      "summary_points": [
+        "**Fed Policy Misinterpretation**: Fed held rates but hawkish signal (3 votes for 25bps hike) interpreted as dovish, driving global rate selloff (U.S.",
+        "10-yr yield +27bps to 4.73%) and curve steepening (2s10s +15bps).",
+        "**EM Debt Risk Surge**: Brazil’s 1005bps spread over U.S.",
+        "10-yr yield (vs.",
+        "+44bps month change) signals extreme EM debt risk amid global yield pressures and geopolitical tensions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uxknxblgq7b-c40a26",
+      "title": "Factor narratives Quality under pressure but the investment case remains intact",
+      "institution": "Eastspring",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:51:54Z",
+      "summary_points": [
+        "**Quality Fundamentals Unchanged**: Underlying fundamentals (stable earnings, strong balance sheets, proven profitability) remain intact despite worst 60-year performance, preserving long-term investment case.",
+        "**Geopolitical & AI Momentum Shift**: Risk-on markets (e.g., Iran conflict, oil >$100) and speculative AI/semiconductor focus drove cyclical/higher-beta outperformance, causing quality underperformance from both sides.",
+        "**Valuation Asymmetry & Entry Point**: Quality’s pre-correction overvaluation implies rebound potential; expected outperformance in 2026 offers attractive entry amid broader market weakness.",
+        "**Convexity to Regime Change**: Quality acts as hedge against AI capex disappointment and credit deterioration, leveraging stronger profitability and lower leverage for resilience in downside scenarios."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-xckjnt7knxj-a3da8e",
       "title": "Investment bulletin weekly week 33",
