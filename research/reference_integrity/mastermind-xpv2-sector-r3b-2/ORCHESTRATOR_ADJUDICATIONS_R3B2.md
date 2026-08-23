@@ -1,5 +1,13 @@
 # XPV2-SC-R3B.2 — Orchestrator adjudication record
 
+> **RECONCILED 2026-08-23 — READ §6 FIRST.** Sections §0–§5 record execution under the
+> EARLIER draft packet (COMMISSION.md). Sol's FINAL CONTINUATION HANDOFF
+> (FINAL_CONTINUATION_HANDOFF.md in this directory, relayed with a Chairman controlling
+> preamble) superseded that packet mid-cycle: old B2-02/03/04/07 were WITHDRAWN or
+> reclassified and B2-12/13/14/15 added. §6 records the reconciliation — which lane work
+> survived, which was reverted, and the corrected obligation set. The predecessor
+> verdict.yml was amended in the same pass.
+
 Returning R3B/R3B.1 Fable orchestrator, executing COMMISSION.md (Sol + Chairman execution
 directive, 2026-08-23). Companion records: `../mastermind-xpv2-sector-r3b-1/verdict.yml`
 (the governing REVISE + B2 conditions), `continuity.yml` (25-item closure), and the four
@@ -120,3 +128,48 @@ heatmap_ink artifact at the freeze SHA (Lane B verified non-staleness at this he
 the freeze evidence should re-derive it).
 
 (§5+ appended as further lane returns are adjudicated.)
+
+
+## §6 RECONCILIATION to Sol's FINAL CONTINUATION HANDOFF (commit d48bc7c40c7c + verdict amendment)
+
+Pins re-verified at reconciliation: Skillpack `Mastermind@db0bac5fe3f7` (INDEX,
+REVIEW_RETURN, RECONCILE_STATE, COMMISSION_WAVE loaded from that exact commit);
+origin/main re-pinned at `e210a80d2bad` (past Sol's observed `cd42b890d1df`); frozen
+R3B.1 identity re-verified. Disagreement class (RECONCILE_STATE step 1): implementation
+disagreement — the build branch carried superseded-packet work.
+
+**Withdrawn and REVERTED:**
+- Old B2-02 (emoji): Lane D's removal + no_emoji guard reverted wholesale. DISCLOSED
+  DRIFT for Sol (handoff §11 "semantic drift discovered after pickup"): the handoff's
+  premise is the durable PRC rerun's zero rendered hits, but two independent observations
+  in this session saw the `&#128202;` entity render in the Moving Track-record header —
+  Lane A's crops (lane_crops_a2/09-*) and Lane D's audit pre-fix run (RED — bytes FAIL +
+  2 DOM hits, EN+ZH). The artifact now complies with the withdrawal (entity present,
+  untouched); the discrepancy is reported, not resolved, and is Sol's to re-adjudicate.
+- Old B2-03 (heatmap recolor): Lane C's deterministic two-ink rule, opacity change, and
+  binding (l) gate reverted wholesale. verify_reference.py now REPORTS the colour-field
+  axis as UNMEASURED (never PASS, never FAIL-without-method); final legibility review is
+  carried to R3C/design-system per the handoff.
+- Old B2-04 (candidate ZH translation): Lane A's `preFreezeNote()` projection, fallback
+  rung, and lang_of_parts_audit.py reverted; producer bytes render verbatim again
+  (predecessor behavior byte-restored). `note_zh`/language-of-parts carried upstream
+  (PRC1R-U02).
+- Old B2-07 (tiles/links): Lane B's ≤640 pointer-events + hatch reorder reverted; audit
+  assertions stripped (tile pointer-events + hatch presence now reported-only; the
+  natively-true zero-interactive census still gates as an artifact fact).
+
+**Survived (mapped to the final set):** Lane A B2-01 (Strength law) and B2-08/09; Lane B
+B2-05 mechanism (to be STRENGTHENED per the new law — the 20d-vs-market figure now needs
+a VISIBLE inline mobile label, not vh-only), B2-06, B2-10, B2-11, B2-13 (aria-controls),
+B2-14 (收起 floor). B2-12 applied at reconciliation: chip = Sol's canonical
+`Low confidence / 低置信度` (Lane A's causal wording superseded; its producer-contract
+analysis retained as audit trail in the ledger and confluence.html comment).
+
+**Still open after reconciliation:** B2-05 strengthening (visible delta label + 3-class
+mutations), B2-15 (context-only/5d disclosure — DA1-03 candidate portion, now upheld),
+B2-01/B2-12/B2-13 guards + mutations, and the freeze-time evidence/artifact refresh.
+Predecessor verdict.yml amended (VTC1-003/MAC1-003 → overridden-falsified; DA1-03 →
+upheld candidate-portion; conditions → the final eleven); successor continuity
+mechanically regenerated (24 items, all CARRIED_BLOCK pending the single freeze-time
+flip pass). Harness-safety rule adopted (handoff §7): audit scripts run with output
+overrides; never write into a frozen predecessor tree.

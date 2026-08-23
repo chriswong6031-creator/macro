@@ -17,6 +17,14 @@
 # summarizing the lost chat receipts) conflicts with these durable dispositions, the durable
 # receipts win (Chairman directive). B2-02/B2-03/B2-04 carry no durable receipt row; their
 # obligation source is the Sol adjudication itself, named per-condition below.
+# AMENDED 2026-08-23 per Sol's FINAL CONTINUATION HANDOFF (committed at
+# research/reference_integrity/mastermind-xpv2-sector-r3b-2/FINAL_CONTINUATION_HANDOFF.md,
+# superseding the earlier R3B.2 draft packet where they differ): old B2-02 (emoji)
+# WITHDRAWN, old B2-03 (heatmap recolor) RECLASSIFIED AS UNMEASURED/R3C-verification,
+# old B2-04 (candidate ZH translation) WITHDRAWN upstream, old B2-07 (503 links)
+# WITHDRAWN as falsified by MAC1-003; DA1-02 -> B2-12, PRC1R-001 -> B2-13,
+# MAC1-002 -> B2-14, candidate-owned DA1-03 portion -> B2-15 (upheld, no longer
+# fully overridden); conditions below are the FINAL eleven-item closure set.
 schema: mastermind.rig_verdict.v1
 reference_id: mastermind-xpv2-sector-r3b-1
 
@@ -67,9 +75,7 @@ packet:                      # all eight answers required, non-empty (RIG S7)
     without the mobile counter-check -- convenience of one legend idiom over the binding
     "every figure has a name" law the cycle's own copy ledger stated. DA1-01 traces to
     obedient compliance with an explicitly false-premised instruction -- the candidate's
-    compliance was correct, the instruction is now amended (B2-01). The emoji entity
-    (B2-02) traces to an icon-guard scanning literal glyphs but not numeric entities --
-    guard convenience, closed by the decoded-output guard.
+    compliance was correct, the instruction is now amended (B2-01).
   production_preferable_for: >
     Production remains preferable only for the live integrations a reference lawfully
     cannot carry (Time Machine live episodes, auth settlement, premium 403/offline) and for
@@ -93,8 +99,8 @@ blocking_findings:           # every surviving durable-receipt finding, adjudica
     resolution: upheld_revise
     note: "Treemap sector-group labels overlap at 320/390 (overlapX=17px); painted-width gate covers tickers only. Fix = B2-06."
   - finding: VTC1-003
-    resolution: upheld_revise
-    note: "503 treemap tap targets at 17px height on touch widths (cross-seat with MAC1-003). Fix = B2-07."
+    resolution: overridden
+    note: "FALSIFIED by the durable Mobile seat's own measurement (MAC1-003: 17px boxes at ~40.6px vertical pitch, one target per row -- WCAG 2.2 SC 2.5.8 spacing exception satisfied). Old B2-07 WITHDRAWN (Sol handoff S4); do not inflate or disable the links/tiles."
   - finding: VTC1-004
     resolution: upheld_revise
     note: "Rank-scope note orphaned 1075px below the rank column it explains. Fix = B2-08."
@@ -112,22 +118,22 @@ blocking_findings:           # every surviving durable-receipt finding, adjudica
     note: "One producer field under two customer names; the R3B1-06 carve-out premise is FALSE (DA seat condition C1 -- Sol now rules: Strength / 强度 everywhere for theme_intel.themes[].score). Fix = B2-01 with producer-path->label uniqueness guard."
   - finding: DA1-02
     resolution: upheld_revise
-    note: "ORCHESTRATOR SCOPE RULING (disclosed for Sol review): one customer word 'thin' over two contradicting producer paths on one screen; candidate-owned promotion, copy-only remedy per DA seat condition C2. Adjudicated IN scope as the bidirectional face of B2-01's one-measure-one-name law; closed by Lane A with the DA-recommended chip re-label. If Sol rejects this reading, the closure reverts to a recorded residual."
+    note: "One customer word 'thin' over two contradicting producer paths on one Confluence screen (coverage.n_thin gate-drops vs in-table reliability=low). Sol-canonical fix = B2-12: chip renamed 'Low confidence / 低置信度'; the 48-row omission sentence unchanged; guard forbids the two paths collapsing to one term."
   - finding: MAC1-001
     resolution: upheld_revise
     note: "Two numeric board columns have no accessible label at any width and no visible label below 641px -- same defect class as VTC1-001. Fix = B2-05."
   - finding: MAC1-002
     resolution: upheld_revise
-    note: "ZH 收起 control 39.0px inline axis (language-conditional target defect; sole sub-44 control in 3,624). Closed inside the B2-05/B2-07 a11y lane (one CSS min-width; disclosed as an in-lane a11y repair, not new scope)."
+    note: "ZH 收起 control 39.0px inline axis (language-conditional; sole sub-44 control in 3,624 vs the house 44px floor). Fix = B2-14 (min-width:44px or symmetric padding; re-measure ZH at 320/390/820)."
   - finding: PRC1R-001
     resolution: upheld_revise
-    note: "R3B1-02 receipt button drives #r3-receipt with aria-expanded but no aria-controls, unlike its three R3B1-08 siblings. Closed inside the B2-05 a11y lane (one attribute; disclosed as an in-lane a11y repair, not new scope)."
+    note: "R3B1-02 receipt button drives #r3-receipt with aria-expanded but no aria-controls. Fix = B2-13 (add aria-controls + a guard that every control owning the shared panel's expanded state names the same target)."
   - finding: PRC1R-002
     resolution: upheld_revise
     note: "Conviction header display:none <=640px -- the commissioned label reaches sighted mobile users nowhere. Same closure as VTC1-001 (B2-05)."
   - finding: DA1-03
-    resolution: overridden
-    note: "Forward track record: Validated painted over 21d stats with proven=false and the producer's context-only caveat dropped. Sol adjudication classifies this a SEPARATE authority/product repair (upstream list); carried as an R3C/upstream dependency, not an R3B.2 reference edit."
+    resolution: upheld_revise
+    note: "SPLIT per Sol handoff: the CANDIDATE-OWNED portion (the payload's own is_context_only:true / proven 5d-only qualification dropped beside the track-record badge) is upheld -> B2-15 (paint 'Context only - evidence proven at 5d - never sizes decisions' + ZH twin; 21d figures stay labelled 21d and separate). The PRODUCTION 'Validated' badge/21d pairing remains an upstream/R3C owner repair."
   - finding: DA1-04
     resolution: overridden
     note: "Tri-valent 'validated' token across one reference -- producer/design-system naming debt; R3C record."
@@ -141,30 +147,30 @@ blocking_findings:           # every surviving durable-receipt finding, adjudica
     resolution: overridden
     note: "Producer-emitted English-only strings untranslated in ZH -- upstream category_zh/reco_why class, carried R3C dependency."
   - finding: MAC1-003
-    resolution: upheld_revise
-    note: "OBSERVATION promoted by cross-seat convergence with VTC1-003: 503 browse-list links at 17px height. Closed with B2-07's touch-law treatment."
+    resolution: overridden
+    note: "The seat's own receipt records the spacing-exception pass (SC 2.5.8); observation, not defect. Old B2-07 WITHDRAWN (Sol handoff S4)."
 
 overrides:                   # permanent record for every overridden row above
-  - {finding: DA1-03, justification: "Sol final adjudication 'Upstream / R3C production dependencies': the Validated badge repair is a separate authority/product repair at the producer/design-system owner; the reference may not rebake producer semantics silently.", authority: "Sol final four-critic adjudication 2026-08-23"}
+  - {finding: VTC1-003, justification: "Falsified by MAC1-003 measurement (SC 2.5.8 spacing exception satisfied); old B2-07 withdrawn.", authority: "Sol FINAL CONTINUATION HANDOFF 2026-08-23, S4"}
+  - {finding: MAC1-003, justification: "The seat own receipt records the spacing-exception pass; observation, not defect.", authority: "Sol FINAL CONTINUATION HANDOFF 2026-08-23, S4"}
   - {finding: DA1-04, justification: "Producer-side naming debt (three customer meanings of 'validated'); repair belongs to the token/producer owner, recorded R3C.", authority: "Sol final four-critic adjudication 2026-08-23"}
   - {finding: DA1-05, justification: "Production's own false universal, now PROVEN against a real payload by this reference; production repair candidate, not a reference edit.", authority: "Sol final four-critic adjudication 2026-08-23"}
   - {finding: PRC1R-U01, justification: "Upstream producer naming collision recorded since R3B.1 Lane A; disambiguation is an engine/template item.", authority: "Sol final four-critic adjudication 2026-08-23"}
   - {finding: PRC1R-U02, justification: "Upstream producer i18n gap (category_zh/reco_why class); reference may not invent translations of producer bytes.", authority: "Sol final four-critic adjudication 2026-08-23"}
 
 verdict: REVISE
-conditions:                  # the R3B.2 surgical closure packet, verbatim scope; sources named where no durable receipt row exists.
-  - {id: B2-01, text: "One producer measure, one customer term: trace every customer-visible use of theme_intel.themes[].score; canonical label Strength / 强度 everywhere (the action-board Score header included -- the carve-out is amended); remove copy claiming a separate action-board producer field; build a producer-path->customer-label map failing when one path maps to multiple terms without authority adjudication; mutation reverting one occurrence to Score must yield a unique red. Source: DA1-01 + Sol core authority ruling."}
-  - {id: B2-02, text: "Decoded emoji closure: remove the encoded chart emoji from Track record (prefer plain Track record / 跟踪记录); harden the icon guard against literal emoji, decimal/hex numeric entities, decoded DOM text, accessible names, and measurable generated content. Source: Sol adjudication (lost-chat PRC finding, durable in the adjudication itself)."}
-  - {id: B2-03, text: "Candidate-owned heatmap readable ink (.hm-t bins, NOT the byte-verbatim sc_flows fragment): per actual bin/theme/language determine effective painted background, choose lawful foreground deterministically, require >=4.5:1 normal-text contrast, no text-shadow as the compliance mechanism, preserve bin ordering; if unmeasurable, give labels a measurable high-contrast substrate keeping the data color visible. Verifier treats these cells as BLOCKING, never 'unmeasurable-excluded'. Source: mobile seat's 440-cell unverified-axis disclosure + Sol adjudication."}
-  - {id: B2-04, text: "ZH language-of-parts: the visible grader/pre-freeze note may not be substantial English prose inside inherited zh-CN; prefer native ZH display projection with identical governed meaning, else wrap raw English with lang=en identified as source-language content; add a scanner for visible substantial Latin prose under ZH (tickers/acronyms/units allowed). Source: Sol adjudication (lost-chat mobile finding, durable in the adjudication itself)."}
-  - {id: B2-05, text: "Mobile figure labels (VTC1-001/MAC1-001/PRC1R-002): audit all 18 .r3-fig instances; every figure has an accessible name at every width; desktop column header may provide visual naming only while visible; at <=640 if .r3-cols disappears each figure gains an inline visible label or the legend recomposes. Prove Overview Strength 76 / 强度 76 and Confluence Conviction / 综合把握 at 320/390 and meaningful AT names for all other figure classes. In-lane a11y closures: PRC1R-001 aria-controls, MAC1-002 ZH 收起 44px floor."}
-  - {id: B2-06, text: "Treemap group-label fit at 320/390: no group/sector label overlap by painted width (not character count); primary identity wins; secondary label may drop; accessible/list equivalent retains full information. Source: VTC1-002."}
-  - {id: B2-07, text: "Mobile heatmap interaction at <=640: 503 small tiles must not be required individual tap targets; lead with the existing large Browse/List escape hatches or the sector roll-up; any tile staying interactive meets the target floor; same information reachable in the same view. Source: VTC1-003/MAC1-003."}
-  - {id: B2-08, text: "Move Rank across all groups / native ZH twin into the immediate Map/Themes rank label/header (two-line header pattern); drop the orphan note. Source: VTC1-004."}
-  - {id: B2-09, text: "RECENTLY WRONG (LOGGED) uses neutral history/error ink, never reserved up/positive/Buy color; token route. Source: VTC1-005."}
-  - {id: B2-10, text: "Suppress the horizontal five-segment ramp when state cells stack vertically and the ramp no longer maps to the cells; do not replace with decoration. Source: VTC1-006."}
-  - {id: B2-11, text: "Flow-aware receipt placement so the Overview receipt belongs to the whole wrapped statement; test 320/390 EN/ZH and large text. Source: VTC1-007."}
-
+conditions:                  # the FINAL eleven-item R3B.2 closure set (Sol FINAL CONTINUATION HANDOFF S5).
+  - {id: B2-01, text: "One producer measure, one customer term: theme_intel.themes[].score renders Strength / 强度 everywhere (Overview action-board theme rows and Map/context surfaces included); remove copy asserting an independent action-board score field; producer-path->customer-label map with mutation (one occurrence back to Score / 评分 -> unique red). A truly separate producer measure may use another term only with a distinct producer path."}
+  - {id: B2-05, text: "COMPLETE visible + accessible figure labeling: at ALL widths every .r3-fig gets a localized per-cell accessible name independent of .r3-cols; at <=640 every figure whose visual header disappears gets a visible inline mobile label. Required meanings include Strength 76 / 强度 76, 20d vs market +27.2% / 20日对比市场 +27.2%, Entry tier T1 / 入场层级 T1, Conviction 0.60 / 综合把握 0.60. Acceptance: census all 18 .r3-fig; 18/18 AT names desktop+mobile; 18/18 non-naked at 320/390; no duplicate spoken label; EN/ZH parity; unique mutations for all three figure classes."}
+  - {id: B2-06, text: "Treemap label collision at 320/390: no sector/group-label overlap by painted width (never character count); primary identity wins; secondary label may drop; accessible/list equivalent retains full information."}
+  - {id: B2-08, text: "Rank scope at point of use: Rank across all groups + native ZH twin in the immediate Map/Themes rank label/header."}
+  - {id: B2-09, text: "Neutral Recent Wrong semantics: RECENTLY WRONG (LOGGED) + ZH twin never in reserved up/positive/Buy ink; neutral history/error treatment; result data unchanged."}
+  - {id: B2-10, text: "Suppress the horizontal five-segment state ramp when the state cells recompose vertically on mobile and it no longer maps spatially; no decorative replacement."}
+  - {id: B2-11, text: "Headline receipt follows wrapped text: the Overview receipt/disclosure stays visually associated with the full wrapped headline; test 320/390 EN/ZH and large text."}
+  - {id: B2-12, text: "thin vs reliability semantic collision: keep the visible reliability chip but rename the low-reliability state 'Low confidence / 低置信度' (no causal copy unless the exact producer contract proves the cause); keep the 48-row omission sentence unchanged; guard: coverage.n_thin and reliability=low may not collapse to one customer term; mutation restoring 'Thin data' on in-table rows -> red."}
+  - {id: B2-13, text: "Methodology receipt aria-controls: add aria-controls=r3-receipt to the [data-r3b1=02] named receipt button; guard that any control owning expanded/collapsed state for the shared panel names the same target."}
+  - {id: B2-14, text: "ZH Show fewer target floor: 收起 gets min-width:44px or equivalent symmetric inline padding (house 44px control floor); re-measure ZH at 320/390/820."}
+  - {id: B2-15, text: "Context-only / 5d evidence disclosure: paint the payload's own qualification (is_context_only:true, proven 5d true / 21d false) beside the track-record badge -- minimum customer semantics 'Context only - evidence proven at 5d - never sizes decisions' + native ZH twin; adjacent 21d figures stay explicitly labelled 21d and visually separate; never claim the 21d horizon is validated. Production's broader Validated badge semantics remain an R3C owner repair."}
 preserved_strengths:
   - "Six product views and task order; one dominant answer per view; five Overview action states with producer order/counts; context/action authority split; regime sizing + lag/non-forecast receipt + migration note + playbook + hero enrichment; Bottoming Watch; Map reserved-hue law; mobile Map recomposition; Moving five-source binding; Money hierarchy; Explore workflow; Confluence four-universe law; Conviction / 综合把握; 2x3 mobile navigation; 44px help controls; language switching; zero duplicate ids; zero href='#'; zero normal-width overflow; complete ZH direction-color inversion (Sol 'Preserved strengths -- do not disturb')."
   - "Every traced figure resolves to a real producer field; counts internally consistent to the row; EN/ZH numeric parity; graded-vs-display separation explicit (data_authority S5)."
