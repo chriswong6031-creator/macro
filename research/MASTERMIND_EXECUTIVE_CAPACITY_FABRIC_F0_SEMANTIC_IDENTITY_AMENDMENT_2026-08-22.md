@@ -1,4 +1,4 @@
-# Executive Capacity Fabric F0 — semantic identity and freshness amendment
+# Executive Capacity Fabric F0 — semantic identity, freshness and acquisition amendment
 
 **Date:** 2026-08-22  
 **Owner:** Sol, AI CEO  
@@ -7,7 +7,7 @@
 **Current protected Mastermind reviewed:** `e1101eb2c1f17d801d480ded497b3fc1bb0ef18b`  
 **Current Macro material-source review:** provider-control ownership and producer inputs remain materially unchanged from the F0 pickup through the current reconciliation; unrelated press-wire/data churn is explicitly non-semantic.
 
-This amendment corrects load-bearing semantic-identity and cross-repo acquisition defects found during Sol's pre-merge adversarial review. It does not change provider-capacity ownership, quota evidence vocabularies, the closed Phase 1F-C placement object, RF1, HF1 or MH1.
+This amendment corrects load-bearing semantic-identity, freshness, credential-boundary and cross-repo acquisition defects found during Sol's pre-merge adversarial review. It does not change provider-capacity ownership, quota evidence vocabularies, the closed Phase 1F-C placement object, RF1, HF1 or MH1.
 
 ---
 
@@ -162,7 +162,42 @@ This keeps CF1 independently useful and no-write while preventing CF2 from quiet
 
 ---
 
-## 7. No change to ownership or later gates
+## 7. Credential-access boundary inside Provider Control
+
+`secret-free projection` describes the contract boundary, not a claim that the existing Provider Control implementation never touches a credential value internally.
+
+Some current owning helpers establish presence under existing Provider Control authority. For example, current Macro helper paths may test configured secret presence or inspect an attached-login home while returning only safe capability IDs/booleans/typed observations. That existing authority is not transferred to Capacity Fabric or Executive OS.
+
+CF1 must follow this exact split:
+
+```text
+existing Provider Control helper
+  may perform its already-reviewed credential/presence mechanics
+        |
+        | secret-free typed return only
+        v
+engine/provider_capacity.py normalizer
+  NEVER receives/opens/serializes the credential value
+        |
+        v
+mastermind.provider_capacity.v1
+```
+
+Rules:
+
+- the new CF1 normalizer must not directly call a secret store to obtain token/key/password/cookie values;
+- it must not open provider auth files, Codex auth JSON, browser cookies, provider-home secret material or raw credential-bearing environment values;
+- it may consume existing reviewed Provider Control helper results whose public return contract is already secret-free, even when the owning helper internally tests credential presence under its existing principal;
+- CF1 must not widen which OS principal, process, host or repository can access the underlying credential merely to populate `present`/health fields;
+- if a safe existing helper cannot establish a field, emit unknown/degraded evidence rather than adding a new secret read to the normalizer;
+- tests should inject typed helper fixtures and include an import/AST redline proving `engine/provider_capacity.py` contains no direct credential-store/auth-file access path;
+- later Executive acquisition must execute through the reviewed Provider Control acquisition seam. The Executive principal does not inherit Provider Control credentials.
+
+This clarifies the parent CF1 non-goal: **no new direct provider-credential read in the Capacity Fabric normalizer**. It does not outlaw existing provider-control credential mechanics that already own provider authentication/presence and return a secret-free observation.
+
+---
+
+## 8. No change to ownership or later gates
 
 This amendment changes no owner:
 
@@ -176,4 +211,4 @@ Agent OS / Control Room   -> organizational/product projection
 
 It also does not accelerate later waves. CF1 remains no-write and existing-provider-only. Phase 1F-C still owns schema v4. CF2-F remains mandatory before capacity-aware placement. RF1 and HF1 remain mandatory before heterogeneous providers share production routes, and MH1 remains mandatory before a second physical Mac becomes a real Executive execution host.
 
-This amendment supersedes only the parent F0 rules that made whole-repository commit identity semantic, implied `snapshot_hash` alone was sufficient freshness evidence for a future Executive claim, or implied that CF1's local CLI proof automatically defined the later Executive acquisition transport.
+This amendment supersedes only the parent F0 rules that made whole-repository commit identity semantic, implied `snapshot_hash` alone was sufficient freshness evidence for a future Executive claim, implied CF1's local CLI proof automatically defined the later Executive acquisition transport, or could be read as requiring the new Capacity Fabric normalizer itself to gain direct access to provider credentials.
