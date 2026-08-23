@@ -35,6 +35,10 @@ MIN8/MIN9/MIN10 fixes applied on top of the same branch):
   MIN8. TOL sensitivity self-healing fact lookup
   MIN9. denominator-convention conformance guard
   MIN10. full C_t leg shape for every context leg
+  A5C. fail-closed correction detection pending source-revision history
+      (Sol A5C review 2026-08-23 item 1) — corrected/unknown-state workspace
+      with no prior observation is refused, log-only, activation/other
+      candidates unaffected, idempotent, no schema/row-kind change
 """
 from __future__ import annotations
 
@@ -106,6 +110,7 @@ def _workspace(
     accession: str = "0000000000-26-000001",
     sha256hex: str = "d" * 64,
     facts_override: list[dict] | None = None,
+    lifecycle_state: str = "complete",
 ) -> dict:
     if facts_override is not None:
         facts = facts_override
@@ -135,7 +140,7 @@ def _workspace(
         },
         "fiscal_period": {"year": year, "quarter": quarter,
                            "calendar_end": calendar_end or _default_calendar_end(year, quarter)},
-        "lifecycle": {"state": "results_released", "source_available_at": source_available_at},
+        "lifecycle": {"state": lifecycle_state, "source_available_at": source_available_at},
         "facts": facts,
         "sources": [{
             "kind": "issuer_release", "source_sha256": sha256hex,
@@ -180,7 +185,9 @@ def test_first_observation_wins_and_duplicate_is_noop(tmp_path):
         issuer_workspaces={"DHI": trig, "PHM": None, "KBH": None, "TOL": None},
         activation_started_at=ACTIVATION_TS,
     )
-    row1, appended1 = m.append_observation(packet, path=p, reconstruction=True)
+    row1, appended1 = m.append_observation(
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+    )
     assert appended1 is True
     row2, appended2 = m.append_observation(packet, path=p, reconstruction=True)
     assert appended2 is False
@@ -202,7 +209,9 @@ def test_correction_append_never_rewrites_original(tmp_path):
         issuer_workspaces={"DHI": None, "PHM": trig, "KBH": None, "TOL": None},
         activation_started_at=ACTIVATION_TS,
     )
-    row1, _ = m.append_observation(packet, path=p, reconstruction=True)
+    row1, _ = m.append_observation(
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+    )
 
     original_bytes = p.read_bytes()
     original_lines = original_bytes.splitlines()
@@ -807,7 +816,9 @@ def test_observation_timestamp_survives_in_the_stored_row(tmp_path):
         issuer_workspaces={"DHI": None, "PHM": trig, "KBH": None, "TOL": None},
         activation_started_at=ACTIVATION_TS, now=datetime(2026, 4, 1, tzinfo=timezone.utc),
     )
-    row, _ = m.append_observation(packet, path=p, reconstruction=True)
+    row, _ = m.append_observation(
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+    )
     assert row["c_t"]["treasury_cmt"]["observation_timestamp"] == "2026-04-01T00:00:00Z"
 
 
@@ -839,7 +850,9 @@ def test_m4_append_observation_refuses_second_observation_same_event_id(tmp_path
         issuer_workspaces={"DHI": None, "PHM": None, "KBH": None, "TOL": trig},
         activation_started_at=ACTIVATION_TS,
     )
-    row1, appended1 = m.append_observation(packet1, path=p, reconstruction=True)
+    row1, appended1 = m.append_observation(
+        packet1, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+    )
     assert appended1 is True
 
     # 8-K/A shape: SAME event_id, a NEW decision_cutoff.
@@ -869,7 +882,9 @@ def test_m4_find_observation_by_event_id(tmp_path):
         issuer_workspaces={"DHI": None, "PHM": None, "KBH": None, "TOL": trig},
         activation_started_at=ACTIVATION_TS,
     )
-    row, _ = m.append_observation(packet, path=p, reconstruction=True)
+    row, _ = m.append_observation(
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+    )
 
     # find_observation_by_event_id ignores decision_cutoff entirely — even a
     # WRONG cutoff still finds the row, unlike find_observation (exact-key).
@@ -895,7 +910,9 @@ def test_n3_exact_key_identical_rebuild_stays_a_noop(tmp_path):
         issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
         activation_started_at=ACTIVATION_TS,
     )
-    row1, appended1 = m.append_observation(packet, path=p, reconstruction=True)
+    row1, appended1 = m.append_observation(
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+    )
     assert appended1 is True
 
     # A second call with the byte-identical inputs (same trigger workspace,
@@ -916,7 +933,9 @@ def test_n3_exact_key_materially_different_rebuild_raises(tmp_path, monkeypatch)
         issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
         activation_started_at=ACTIVATION_TS,
     )
-    row1, appended1 = m.append_observation(packet1, path=p, reconstruction=True)
+    row1, appended1 = m.append_observation(
+        packet1, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+    )
     assert appended1 is True
 
     # Force a SAME (event_id, decision_cutoff) key but a materially
@@ -1074,7 +1093,7 @@ def test_measurement_projection_rebuilds_from_ledger(tmp_path, monkeypatch):
         issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
         activation_started_at="2026-01-01T00:00:00Z",
     )
-    m.append_observation(packet, path=p, reconstruction=True)
+    m.append_observation(packet, path=p, reconstruction=True, trigger_lifecycle_state="complete")
 
     monkeypatch.setattr(m, "PRODUCTION_PATH", p)
     monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", p)
@@ -1118,3 +1137,235 @@ def test_authority_guard_no_hard_findings_on_new_files():
         findings = guard.scan(REPO_ROOT, extra_files={rel: text})
         hard = [f for f in findings if f["severity"] == "HARD"]
         assert hard == [], f"{rel}: unexpected HARD authority findings: {hard}"
+
+
+# ---------------------------------------------------------------------------
+# A5C — fail-closed correction detection pending source-revision history
+# (Sol A5C review, 2026-08-23, item 1): "Until canonical source-revision
+# history is available, A5B must fail closed rather than mint an observation
+# from a corrected workspace when no prior observation exists. Activation
+# may exist; unsafe observation creation may not."
+# ---------------------------------------------------------------------------
+
+def test_a5c_safe_state_constant_is_exactly_complete():
+    """Pins the enumerated safe set itself — a future edit widening it must
+    do so deliberately, never accidentally."""
+    assert m.SAFE_ORIGINAL_LIFECYCLE_STATES == frozenset({"complete"})
+    assert m.is_safe_original_lifecycle_state("complete") is True
+    assert m.is_safe_original_lifecycle_state("corrected") is False
+    assert m.is_safe_original_lifecycle_state(None) is False
+
+
+def test_a5c_corrected_workspace_with_empty_ledger_is_refused_not_appended(tmp_path, capsys):
+    """(a): corrected workspace + empty ledger for that event -> NO
+    observation row appended, refusal logged."""
+    p = tmp_path / "recon_a5c_refuse.jsonl"
+    trig = _mk_ws("DHI", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, lifecycle_state="corrected")
+    packet = m.build_observation_packet(
+        trigger_ticker="DHI", trigger_workspace=trig,
+        issuer_workspaces={"DHI": trig, "PHM": None, "KBH": None, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    row, appended = m.append_observation(
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="corrected",
+    )
+    assert row is None
+    assert appended is False
+    assert m.load_rows(p) == []
+
+    out = capsys.readouterr().out
+    assert "::warning title=imce-prospective-unsafe-correction::" in out
+    assert packet["trigger"]["event_id"] in out
+    assert "fail-closed pending source-revision history" in out
+
+
+def test_a5c_sibling_events_unaffected_by_a_refusal(tmp_path):
+    """(a, continued): a refusal on one event_id does not taint another."""
+    p = tmp_path / "recon_a5c_sibling.jsonl"
+    corrected_trig = _mk_ws("DHI", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                             cancel_current=10.0, cancel_prior=12.0, lifecycle_state="corrected")
+    corrected_packet = m.build_observation_packet(
+        trigger_ticker="DHI", trigger_workspace=corrected_trig,
+        issuer_workspaces={"DHI": corrected_trig, "PHM": None, "KBH": None, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    m.append_observation(corrected_packet, path=p, reconstruction=True, trigger_lifecycle_state="corrected")
+
+    safe_trig = _mk_ws("PHM", cutoff="2026-05-01T20:00:00Z", net_orders_current=50, net_orders_prior=45,
+                        cancel_current=8.0, cancel_prior=9.0)  # default lifecycle_state="complete"
+    safe_packet = m.build_observation_packet(
+        trigger_ticker="PHM", trigger_workspace=safe_trig,
+        issuer_workspaces={"DHI": None, "PHM": safe_trig, "KBH": None, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    row, appended = m.append_observation(
+        safe_packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+    )
+    assert appended is True
+    assert row is not None
+    assert sum(1 for r in m.load_rows(p) if r["row_kind"] == "observation") == 1
+
+
+def test_a5c_corrected_workspace_with_existing_prior_observation_still_corrects(tmp_path):
+    """(b): when a prior observation DOES exist, a corrected revision
+    behaves exactly as before — routes to append_correction, never
+    refused."""
+    p = tmp_path / "recon_a5c_existing.jsonl"
+    trig = _mk_ws("KBH", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, generation_id="a" * 24)
+    packet = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    row1, appended1 = m.append_observation(
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+    )
+    assert appended1 is True
+
+    revised_trig = _mk_ws("KBH", cutoff="2026-05-01T20:00:00Z", net_orders_current=105, net_orders_prior=90,
+                           cancel_current=10.0, cancel_prior=12.0, generation_id="b" * 24,
+                           lifecycle_state="corrected")
+    revised_packet = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=revised_trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": revised_trig, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    corr = m.append_correction(
+        superseded_observation_id=row1["observation_id"],
+        corrected_packet=revised_packet,
+        reason="source revision test",
+        path=p, reconstruction=True,
+    )
+    assert corr["row_kind"] == "correction"
+    assert corr["supersedes_observation_id"] == row1["observation_id"]
+    assert sum(1 for r in m.load_rows(p) if r["row_kind"] == "correction") == 1
+    assert sum(1 for r in m.load_rows(p) if r["row_kind"] == "observation") == 1
+
+
+def test_a5c_safe_original_state_mints_observation_as_before(tmp_path):
+    """(c): a NON-corrected (safe-original) state behaves exactly as
+    today — regression."""
+    p = tmp_path / "recon_a5c_safe.jsonl"
+    trig = _mk_ws("TOL", cutoff="2026-05-01T20:00:00Z", net_orders_current=30, net_orders_prior=28,
+                  cancel_current=5.0, cancel_prior=6.0)  # default lifecycle_state="complete"
+    packet = m.build_observation_packet(
+        trigger_ticker="TOL", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": None, "TOL": trig},
+        activation_started_at=ACTIVATION_TS,
+    )
+    row, appended = m.append_observation(
+        packet, path=p, reconstruction=True, trigger_lifecycle_state="complete",
+    )
+    assert appended is True
+    assert row is not None
+    assert sum(1 for r in m.load_rows(p) if r["row_kind"] == "observation") == 1
+
+
+def test_a5c_refusal_does_not_defer_the_run_or_block_activation(monkeypatch, tmp_path):
+    """(d): a refusal must NOT join failed_ids / trigger the fetch_failed
+    all-or-nothing deferral, and must NOT block ensure_activation. Exercised
+    at the builder level."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_a5c.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+
+    # Pre-stamp activation well BEFORE the candidate's decision_cutoff (real
+    # wall-clock "now" would otherwise postdate a 2026-05-01 cutoff and the
+    # builder's own pre-activation trigger fence would skip the candidate
+    # before ever reaching append_observation — unrelated to this law).
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    corrected_ws = _mk_ws("DHI", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                           cancel_current=10.0, cancel_prior=12.0, lifecycle_state="corrected")
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"DHI": {corrected_ws["event_id"]: "found"}, "PHM": {}, "KBH": {}, "TOL": {}}
+        found = {"DHI": [corrected_ws], "PHM": [], "KBH": [], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    summary = b.run(production=True)
+    assert summary["deferred_fetch_failed"] == []
+    assert summary["activated"] is True
+    assert summary["n_observations_appended"] == 0
+    assert summary["n_observations_refused_unsafe_correction"] == 1
+    assert summary["errors"] == []
+    assert fake_prod.exists()  # activation WAS written
+    assert m.load_rows(fake_prod) == [m.activation_row(fake_prod)]  # only the activation row
+
+
+def test_a5c_refusal_is_idempotent_across_reruns(monkeypatch, tmp_path):
+    """(e): two consecutive nightly runs over the same corrected/no-prior
+    candidate append ZERO rows both times — refusals are log-only, never a
+    new row kind."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_a5c_idem.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+
+    # See test_a5c_refusal_does_not_defer_the_run_or_block_activation for why
+    # activation must be pre-stamped early relative to the candidate cutoff.
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    corrected_ws = _mk_ws("PHM", cutoff="2026-05-01T20:00:00Z", net_orders_current=50, net_orders_prior=45,
+                           cancel_current=8.0, cancel_prior=9.0, lifecycle_state="corrected")
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"PHM": {corrected_ws["event_id"]: "found"}, "DHI": {}, "KBH": {}, "TOL": {}}
+        found = {"DHI": [], "PHM": [corrected_ws], "KBH": [], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    summary1 = b.run(production=True)
+    rows_after_1 = m.load_rows(fake_prod)
+    summary2 = b.run(production=True)
+    rows_after_2 = m.load_rows(fake_prod)
+
+    assert summary1["n_observations_refused_unsafe_correction"] == 1
+    assert summary2["n_observations_refused_unsafe_correction"] == 1
+    assert sum(1 for r in rows_after_1 if r["row_kind"] == "observation") == 0
+    assert sum(1 for r in rows_after_2 if r["row_kind"] == "observation") == 0
+    assert rows_after_1 == rows_after_2  # nothing new appended the second run
+
+
+@pytest.mark.parametrize("unknown_state", [
+    None, "", "results_released", "derived_ready", "distributed",
+    "completed_partial", "discovered", "future_state_v2",
+])
+def test_a5c_unknown_or_future_lifecycle_state_is_treated_as_unsafe(tmp_path, unknown_state):
+    """(f): fail-closed vocabulary — anything OTHER than the enumerated
+    safe-original set is unsafe, including states this module has never
+    seen a production writer emit."""
+    assert m.is_safe_original_lifecycle_state(unknown_state) is False
+
+    p = tmp_path / "recon_a5c_unknown.jsonl"
+    trig = _mk_ws("KBH", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0)
+    packet = m.build_observation_packet(
+        trigger_ticker="KBH", trigger_workspace=trig,
+        issuer_workspaces={"DHI": None, "PHM": None, "KBH": trig, "TOL": None},
+        activation_started_at=ACTIVATION_TS,
+    )
+    row, appended = m.append_observation(
+        packet, path=p, reconstruction=True, trigger_lifecycle_state=unknown_state,
+    )
+    assert row is None
+    assert appended is False
+    assert m.load_rows(p) == []
+
+
+def test_a5c_frozen_schema_whitelist_unaffected():
+    """(g): the packet schema/whitelist is untouched by this law — the
+    lifecycle state travels into append_observation as a function parameter,
+    never as a new packet key."""
+    packet = _whitelist_packet()
+    assert set(packet.keys()) == _FROZEN_TOP_LEVEL_KEYS
+    assert set(packet["trigger"].keys()) == _FROZEN_TRIGGER_KEYS
+    assert set(packet["m_t"].keys()) == _FROZEN_MT_KEYS

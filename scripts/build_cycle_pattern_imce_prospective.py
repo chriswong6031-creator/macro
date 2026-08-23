@@ -36,6 +36,16 @@ deferred (no row written, no activation stamped if this is the first run)
 tickers, so a failure on any one of them taints every pooled read equally;
 the next nightly retries cleanly since nothing was written.
 
+A5C safety law (Sol A5C review, 2026-08-23, item 1): this builder reads each
+trigger workspace's OWN ``lifecycle.state`` and passes it through to
+``append_observation`` as ``trigger_lifecycle_state`` — it never decides
+safety itself; ``engine.cycle_pattern.imce_prospective`` is the sole
+enforcement point (a builder-only check would be insufficient — see that
+module's docstring). A refusal there is PER-CANDIDATE only: it does not join
+``failed_ids`` (never defers the whole night), does not stamp/unstamp
+activation, and does not block any other candidate in the same run; it is
+counted separately in ``summary["n_observations_refused_unsafe_correction"]``.
+
 Fail-open, house pattern (cf. scripts/build_cycle_pattern_state.py) for
 everything EXCEPT the production-write gate itself: every input is guarded;
 a missing/unreadable input degrades to a no-op run with a logged note, never
@@ -219,7 +229,8 @@ def run(production: bool = False) -> dict:
     summary = {
         "production": production, "activated": False, "activation_started_at": None,
         "n_candidates": 0, "n_observations_appended": 0, "n_observations_noop": 0,
-        "n_corrections": 0, "deferred_fetch_failed": [], "errors": [],
+        "n_corrections": 0, "n_observations_refused_unsafe_correction": 0,
+        "deferred_fetch_failed": [], "errors": [],
     }
 
     if not production:
@@ -365,11 +376,22 @@ def run(production: bool = False) -> dict:
                 continue
 
             try:
-                _row, appended = append_observation(packet, production=True)
+                # A5C (Sol, 2026-08-23, item 1): read this workspace's OWN
+                # lifecycle state and pass it through untouched — the engine
+                # module decides safety, this builder never does.
+                trigger_lifecycle_state = (trigger_ws.get("lifecycle") or {}).get("state")
+                _row, appended = append_observation(
+                    packet, production=True, trigger_lifecycle_state=trigger_lifecycle_state,
+                )
                 if appended:
                     summary["n_observations_appended"] += 1
                     log.info("%s %s: observation appended (label=%s pooled_state=%s)",
                              trigger_ticker, event_id, packet["m_t"]["label"], packet["m_t"]["pooled_state"])
+                elif _row is None:
+                    # A5C refusal: no row of any kind was written. Per-candidate
+                    # only — other candidates this run are unaffected, activation
+                    # stays as already stamped above.
+                    summary["n_observations_refused_unsafe_correction"] += 1
                 else:
                     summary["n_observations_noop"] += 1
             except Exception as exc:  # noqa: BLE001
@@ -378,9 +400,11 @@ def run(production: bool = False) -> dict:
 
     elapsed = time.time() - t0
     log.info(
-        "imce_prospective: done in %.1fs — candidates=%d appended=%d noop=%d corrections=%d errors=%d",
+        "imce_prospective: done in %.1fs — candidates=%d appended=%d noop=%d corrections=%d "
+        "refused_unsafe_correction=%d errors=%d",
         elapsed, summary["n_candidates"], summary["n_observations_appended"],
-        summary["n_observations_noop"], summary["n_corrections"], len(summary["errors"]),
+        summary["n_observations_noop"], summary["n_corrections"],
+        summary["n_observations_refused_unsafe_correction"], len(summary["errors"]),
     )
     return summary
 
