@@ -13,8 +13,11 @@ walk (frozen spec D2) — now live ONCE, in
 ``_load_workspace_with_disposition`` is a thin disposition classifier over
 that ONE shared implementation (``ci_reader.load_current_workspace`` for
 the current-generation disposition scan, ``ci_reader.
-read_event_source_revisions`` for the per-event ordered-revision chain
-walk this module's eligibility/replay logic needs) — the former duplicate
+read_all_event_source_revisions`` for the ordered-revision chain walk this
+module's eligibility/replay logic needs — production incident addendum,
+2026-08-23: ONE shared walk harvests EVERY candidate event's own history in
+a single pass, replacing a per-candidate walk that independently re-walked
+the same marker->predecessor chain once per event) — the former duplicate
 GET implementation (``_raw_fetch_workspace``) is RETIRED; it no longer
 exists in this file.
 
@@ -146,15 +149,28 @@ def _load_workspace_with_disposition(event_id: str, *, fetch=None) -> tuple[dict
         return None, "fetch_failed"
 
 
-def _load_event_revision_history(event_id: str) -> list[dict]:
-    """Ordered (oldest -> newest) source revisions for *event_id*, via the
-    ONE shared reader chain-walk (frozen spec D2(d)). Raises on ANY chain-
-    integrity or network failure — never silently returns a truncated or
-    empty history; the caller treats any exception here exactly like a
-    disposition-level fetch_failed (defers the whole run — E4 fail-closed).
-    A module-level indirection point so tests can inject a stub the same
-    way they already stub ``_fetch_all_candidates``."""
-    return ci_reader.read_event_source_revisions(event_id)
+def harvest_event_revisions(event_ids) -> dict[str, list[dict]]:
+    """Ordered (oldest -> newest) source revisions for EVERY one of
+    *event_ids*, via ONE shared reader chain-walk (frozen spec D2(d)).
+
+    Production incident addendum (2026-08-23): this REPLACES a former
+    per-candidate walk (``_load_event_revision_history(event_id)``, called
+    once per candidate in a loop) — a live measurement against the
+    post-incident ~170-generation backfilled chain found a single-event
+    walk cost 153 SECONDS; this builder was paying that ~8 times per run
+    (~20 minutes of pure chain-walking against the ~67-minute nightly
+    render budget). The walk is IDENTICAL for every candidate in one run —
+    ``ci_reader.read_all_event_source_revisions`` fetches each generation's
+    manifest exactly ONCE and extracts every requested event's own
+    revisions from that SAME pass (was O(candidates x hops); now O(hops)).
+
+    Raises on ANY chain-integrity or network failure — never silently
+    returns a truncated or partial mapping; the caller treats any
+    exception here exactly like a disposition-level fetch_failed for EVERY
+    requested id (defers the whole run — E4 fail-closed). A module-level
+    indirection point so tests can inject a stub the same way they already
+    stub ``_fetch_all_candidates``."""
+    return ci_reader.read_all_event_source_revisions(event_ids)
 
 
 def _candidate_event_ids(ticker: str, company_id: str, today: date) -> list[str]:
@@ -292,17 +308,29 @@ def run(production: bool = False) -> dict:
     # the "network was down" ambiguity the fetch_failed law already exists
     # to catch, discovered one layer deeper (a broken chain link, or an
     # unbounded walk, is a hard failure, never a silent skip or truncation).
+    #
+    # Production incident addendum (2026-08-23): ONE shared walk
+    # (harvest_event_revisions) covers EVERY candidate this run — the walk
+    # itself is IDENTICAL regardless of which event_ids are requested, so
+    # calling it once per candidate (the former shape) paid the SAME
+    # marker->predecessor traversal repeatedly. A shared-walk failure is
+    # classified fetch_failed for EVERY requested candidate at once — the
+    # same outcome each one would have reached independently anyway, since
+    # every per-event walk traverses the identical chain depth regardless
+    # of where its own event happens to appear in it.
+    candidate_event_ids = {
+        str(ws["event_id"]) for per_ticker_found in found.values()
+        for ws in per_ticker_found if ws.get("event_id")
+    }
     revision_histories: dict[str, list[dict]] = {}
-    for per_ticker_found in found.values():
-        for ws in per_ticker_found:
-            event_id = ws.get("event_id")
-            if not event_id or event_id in revision_histories:
-                continue
-            try:
-                revision_histories[event_id] = _load_event_revision_history(event_id)
-            except Exception as exc:  # noqa: BLE001 - chain ambiguity is fetch_failed-equivalent
-                log.info("%s: revision history read failed, classified fetch_failed (%s)", event_id, exc)
-                failed_ids.append(event_id)
+    if candidate_event_ids:
+        try:
+            revision_histories = harvest_event_revisions(candidate_event_ids)
+        except Exception as exc:  # noqa: BLE001 - chain ambiguity is fetch_failed-equivalent for EVERY candidate
+            log.info(
+                "shared revision-history walk failed, classifying every candidate fetch_failed (%s)", exc,
+            )
+            failed_ids.extend(sorted(candidate_event_ids))
 
     if failed_ids:
         # Red-team N4: a deferral this important must be visible in the

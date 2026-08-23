@@ -278,6 +278,83 @@ def test_carried_forward_generations_create_no_phantom_revision(tmp_path: Path, 
     assert len(revisions) == 2
 
 
+def test_read_all_event_source_revisions_matches_per_event_walks_at_one_fetch_cost(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Production incident addendum (2026-08-23): read_all_event_source_
+    revisions must extract EXACTLY the same per-event revisions as separate
+    per-event read_event_source_revisions calls would — while costing ONE
+    manifest fetch per generation TOTAL, never per event. A live measurement
+    against the post-incident ~170-generation backfilled chain found a
+    single-event walk cost 153 SECONDS; the A5B nightly builder was paying
+    that once per candidate (~8), which is the O(events x hops) cost this
+    fix collapses to O(hops)."""
+    event_id_2 = "evt_cik0000000002_2026q2_results"
+    ws1_a = _raw_workspace(source_available_at="2026-01-30T16:30:00Z", source_sha256="a" * 64, event_id=EVENT_ID)
+    ws2_a = _raw_workspace(source_available_at="2026-02-01T00:00:00Z", source_sha256="e" * 64, event_id=event_id_2)
+    ws1_b = _raw_workspace(source_available_at="2026-01-30T16:30:00Z", source_sha256="a" * 64, event_id=EVENT_ID)  # unchanged carry
+    ws2_b = _raw_workspace(
+        source_available_at="2026-02-02T00:00:00Z", source_sha256="f" * 64, event_id=event_id_2, form="8-K/A",
+    )
+
+    gen1, man1 = _mint(tmp_path, {EVENT_ID: ws1_a, event_id_2: ws2_a}, generated_at="2026-02-01T00:00:00Z")
+    gen1_sha = sha256(canonical_json_bytes(man1)).hexdigest()
+    gen2, man2 = _mint(
+        tmp_path, {EVENT_ID: ws1_b, event_id_2: ws2_b}, generated_at="2026-02-02T00:00:00Z",
+        previous_generation_id=gen1, previous_manifest_sha256=gen1_sha,
+    )
+
+    objects = {
+        gen1: {"manifest": man1, "workspaces": {
+            EVENT_ID: ws1_a | {"generation_id": gen1}, event_id_2: ws2_a | {"generation_id": gen1},
+        }},
+        gen2: {"manifest": man2, "workspaces": {
+            EVENT_ID: ws1_b | {"generation_id": gen2}, event_id_2: ws2_b | {"generation_id": gen2},
+        }},
+    }
+
+    def _manifest_fetch_count(calls: list[str]) -> int:
+        return len([u for u in calls if u.endswith("/manifest.json") and "/generations/" in u])
+
+    # Per-event walks (the OLD pattern) — each pays its OWN 2-manifest-fetch
+    # cost for this 2-generation chain (MAJOR-8(a)), 4 total across both.
+    per_event_calls_1: list[str] = []
+    monkeypatch.setattr(reader, "_fetch_bytes", _server(objects, marker_generation_id=gen2, fetch_calls=per_event_calls_1))
+    per_event_1 = reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+    per_event_calls_2: list[str] = []
+    monkeypatch.setattr(reader, "_fetch_bytes", _server(objects, marker_generation_id=gen2, fetch_calls=per_event_calls_2))
+    per_event_2 = reader.read_event_source_revisions(event_id_2, base_url=BASE)
+    assert _manifest_fetch_count(per_event_calls_1) == 2
+    assert _manifest_fetch_count(per_event_calls_2) == 2
+
+    # ONE shared walk (the fix) — must extract the SAME per-event results,
+    # at HALF the total manifest-fetch cost (2, not 4).
+    shared_calls: list[str] = []
+    monkeypatch.setattr(reader, "_fetch_bytes", _server(objects, marker_generation_id=gen2, fetch_calls=shared_calls))
+    shared = reader.read_all_event_source_revisions((EVENT_ID, event_id_2), base_url=BASE)
+
+    assert shared[EVENT_ID] == per_event_1
+    assert shared[event_id_2] == per_event_2
+    assert _manifest_fetch_count(shared_calls) == 2  # NOT 4
+
+
+def test_read_all_event_source_revisions_includes_every_requested_id_even_with_none_found(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An event_id with no revisions anywhere in the walked chain still
+    appears in the result, mapped to an empty list — a caller must always
+    be able to index the result by every id it asked for."""
+    ws = _raw_workspace(source_available_at="2026-01-30T16:30:00Z", source_sha256="a" * 64, event_id=EVENT_ID)
+    gen1, man1 = _mint(tmp_path, {EVENT_ID: ws}, generated_at="2026-01-30T16:30:00Z")
+    objects = {gen1: {"manifest": man1, "workspaces": {EVENT_ID: ws | {"generation_id": gen1}}}}
+    monkeypatch.setattr(reader, "_fetch_bytes", _server(objects, marker_generation_id=gen1))
+
+    never_represented = "evt_cik0000000009_2029q1_results"
+    result = reader.read_all_event_source_revisions((EVENT_ID, never_represented), base_url=BASE)
+    assert result[EVENT_ID][0]["source_sha256"] == "a" * 64
+    assert result[never_represented] == []
+
+
 def test_chain_link_to_a_nonexistent_generation_is_a_typed_hard_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     ws = _raw_workspace(source_available_at="2026-01-30T16:30:00Z")
     gen1, man1 = _mint(

@@ -16,7 +16,7 @@ import socket
 import threading
 import time
 import urllib.parse
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
 import requests
 
@@ -1107,57 +1107,93 @@ def _event_revision_from_generation(
     return fetch_raw_workspace(event_id, generation_id, base_url=base_url)
 
 
-def read_event_source_revisions(
-    event_id: str,
+def _receipt_from_revision(revision: Mapping[str, Any], *, generation_id: str) -> dict[str, Any]:
+    """One event's workspace body, at one generation, as the receipt dict
+    both walk functions below return: ``generation_id``, ``source_sha256``
+    (the workspace's own issuer_release source row hash, or ``None`` if
+    absent), ``source_available_at``, ``observed_at``, ``lifecycle_state``,
+    ``form`` (the issuer_release source row's SEC form), and ``workspace``
+    (the full body)."""
+    lifecycle = revision.get("lifecycle") if isinstance(revision.get("lifecycle"), Mapping) else {}
+    source_sha256 = None
+    form = None
+    for source in revision.get("sources") or []:
+        if isinstance(source, Mapping) and source.get("kind") == "issuer_release":
+            source_sha256 = source.get("source_sha256")
+            form = source.get("form")
+            break
+    return {
+        "generation_id": generation_id,
+        "source_sha256": source_sha256,
+        "source_available_at": lifecycle.get("source_available_at"),
+        "observed_at": lifecycle.get("observed_at"),
+        "lifecycle_state": lifecycle.get("state"),
+        "form": form,
+        "workspace": revision,
+    }
+
+
+def _dedupe_carry_forward_hops(newest_first: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """OLDEST FIRST, with CONSECUTIVE generations carrying a byte-identical
+    ``source_sha256`` (a carry-forward hop, WORLD STATE note) deduped —
+    only the FIRST generation that introduced a given source_sha256 is
+    kept, so a carry creates no phantom revision."""
+    oldest_first = list(reversed(newest_first))
+    deduped: list[dict[str, Any]] = []
+    for revision in oldest_first:
+        if deduped and revision["source_sha256"] == deduped[-1]["source_sha256"]:
+            continue
+        deduped.append(revision)
+    return deduped
+
+
+def read_all_event_source_revisions(
+    event_ids: Iterable[str],
     *,
     base_url: str | None = None,
     max_hops: int = DEFAULT_MAX_CHAIN_HOPS,
     start_generation_id: str | None = None,
-) -> list[dict[str, Any]]:
-    """Walk the verified predecessor chain and return *event_id*'s own
-    ordered source revisions, OLDEST FIRST.
+) -> dict[str, list[dict[str, Any]]]:
+    """Walk the verified predecessor chain ONCE and return EACH of
+    *event_ids*' own ordered source revisions, OLDEST FIRST — the SAME
+    per-hop verification semantics as :func:`read_event_source_revisions`
+    (raw-byte hash receipts, typed integrity failures on a broken link, the
+    documented hop bound), but performing exactly ONE bounded walk no
+    matter how many events are requested.
 
-    Frozen spec D2(d): each hop verifies ``previous_manifest_sha256``
-    against the FETCHED predecessor manifest's own bytes — a link to a
-    nonexistent generation, or a hash mismatch, is a HARD
-    ``WorkspaceChainIntegrityError``, never a silent skip or truncation. A
-    v1 manifest (no ``previous_generation_id`` key at all) terminates the
-    walk as the chain ROOT — v1 is lawful history, never an error. *max_hops*
-    (documented, finite — D2(c)) bounds the walk; exceeding it is also a
-    ``WorkspaceChainIntegrityError`` (an unbounded walk is never attempted).
+    Production incident addendum (2026-08-23): a post-incident chain of
+    ~170+ generations measured 153 SECONDS for a single-event walk via
+    :func:`read_event_source_revisions`; the A5B nightly builder was
+    calling that once PER CANDIDATE event (~8), which threatens the
+    nightly render budget (~20 minutes of pure chain-walking). The walk
+    itself is IDENTICAL for every event in one run — this function fetches
+    each generation's manifest exactly ONCE (was O(events x hops); now
+    O(hops)) and extracts every requested event's own revision from that
+    SAME fetched manifest at each hop.
 
-    Each returned revision is a receipt dict: ``generation_id``,
-    ``source_sha256`` (the workspace's own issuer_release source row hash,
-    or ``None`` if absent), ``source_available_at``, ``observed_at``,
-    ``lifecycle_state``, ``form`` (the issuer_release source row's SEC
-    form), and ``workspace`` (the full body). CONSECUTIVE generations
-    carrying a byte-identical ``source_sha256`` for this event (a
-    carry-forward hop, WORLD STATE note) are deduped — only the FIRST
-    generation that introduced a given source_sha256 is kept, so a carry
-    creates no phantom revision.
-
-    *start_generation_id* lets a caller resume from a KNOWN generation_id
-    without a fresh marker fetch (e.g. the generation just minted locally
-    this cycle, not yet visible on R2 under cache); default resolves the
+    Returns a dict keyed by every one of *event_ids* (never a subset) —
+    an id with no revisions anywhere in the walked chain maps to an empty
+    list, so a caller can always index the result by every id it asked
+    for. *start_generation_id* lets a caller resume from a KNOWN
+    generation_id without a fresh marker fetch; default resolves the
     CURRENT published marker.
     """
+    ids = {str(event_id) for event_id in event_ids}
     if start_generation_id is not None:
         generation_id: str | None = start_generation_id
-        manifest_bytes: bytes | None = None
         manifest: dict[str, Any] | None = None
     else:
         marker = fetch_current_workspace_marker(base_url=base_url)
         generation_id = str(marker["generation_id"]) if marker else None
-        manifest_bytes = None
         manifest = None
 
-    newest_first: list[dict[str, Any]] = []
+    newest_first: dict[str, list[dict[str, Any]]] = {event_id: [] for event_id in ids}
     hops = 0
     while generation_id is not None:
         if hops >= max_hops:
             raise WorkspaceChainIntegrityError(
-                f"{event_id}: predecessor chain exceeds the {max_hops}-hop bound "
-                "without reaching a root — refusing an unbounded walk"
+                f"predecessor chain exceeds the {max_hops}-hop bound without reaching a root "
+                "— refusing an unbounded walk"
             )
         hops += 1
         if manifest is None:
@@ -1167,34 +1203,20 @@ def read_event_source_revisions(
             # the PREVIOUS hop's predecessor — reused below (MAJOR-8(a): no
             # second fetch per hop).
             try:
-                manifest_bytes, manifest = _fetch_generation_manifest_raw(generation_id, base_url=base_url)
+                _manifest_bytes, manifest = _fetch_generation_manifest_raw(generation_id, base_url=base_url)
             except WorkspaceChainNotPublished as exc:
                 raise WorkspaceChainIntegrityError(
-                    f"{event_id}: chain link names generation {generation_id!r}, which does not exist"
+                    f"chain link names generation {generation_id!r}, which does not exist"
                 ) from exc
 
-        revision = _event_revision_from_generation(
-            manifest, event_id, generation_id=generation_id, base_url=base_url,
-        )
-        if revision is not None:
-            lifecycle = revision.get("lifecycle") if isinstance(revision.get("lifecycle"), Mapping) else {}
-            source_sha256 = None
-            for source in revision.get("sources") or []:
-                if isinstance(source, Mapping) and source.get("kind") == "issuer_release":
-                    source_sha256 = source.get("source_sha256")
-                    form = source.get("form")
-                    break
-            else:
-                form = None
-            newest_first.append({
-                "generation_id": generation_id,
-                "source_sha256": source_sha256,
-                "source_available_at": lifecycle.get("source_available_at"),
-                "observed_at": lifecycle.get("observed_at"),
-                "lifecycle_state": lifecycle.get("state"),
-                "form": form,
-                "workspace": revision,
-            })
+        # ONE manifest fetch above serves EVERY requested event_id at this
+        # hop — the fix's whole point (was one fetch per event PER hop).
+        for event_id in ids:
+            revision = _event_revision_from_generation(
+                manifest, event_id, generation_id=generation_id, base_url=base_url,
+            )
+            if revision is not None:
+                newest_first[event_id].append(_receipt_from_revision(revision, generation_id=generation_id))
 
         schema = manifest.get("schema")
         if schema == "event_workspace_manifest.v1":
@@ -1208,8 +1230,7 @@ def read_event_source_revisions(
             predecessor_bytes, predecessor_manifest = _fetch_generation_manifest_raw(previous_id, base_url=base_url)
         except WorkspaceChainNotPublished as exc:
             raise WorkspaceChainIntegrityError(
-                f"{event_id}: generation {generation_id} names predecessor {previous_id!r}, "
-                "which does not exist"
+                f"generation {generation_id} names predecessor {previous_id!r}, which does not exist"
             ) from exc
         # MINOR-10: verify against the sha256 of the RAW FETCHED BYTES of
         # the predecessor manifest — never a re-serialization of the parsed
@@ -1218,23 +1239,39 @@ def read_event_source_revisions(
         actual_sha = sha256(predecessor_bytes).hexdigest()
         if actual_sha != expected_sha:
             raise WorkspaceChainIntegrityError(
-                f"{event_id}: generation {generation_id}'s previous_manifest_sha256 "
-                f"({expected_sha!r}) does not match predecessor {previous_id}'s actual "
-                f"manifest bytes ({actual_sha!r})"
+                f"generation {generation_id}'s previous_manifest_sha256 ({expected_sha!r}) does not "
+                f"match predecessor {previous_id}'s actual manifest bytes ({actual_sha!r})"
             )
         # MAJOR-8(a): the predecessor's bytes/manifest are ALREADY verified —
         # reuse them as the NEXT loop iteration's "current" generation
         # instead of re-fetching (halves manifest GETs from 2N to N).
         generation_id = previous_id
-        manifest_bytes, manifest = predecessor_bytes, predecessor_manifest
+        manifest = predecessor_manifest
 
-    newest_first.reverse()  # now oldest -> newest
-    deduped: list[dict[str, Any]] = []
-    for revision in newest_first:
-        if deduped and revision["source_sha256"] == deduped[-1]["source_sha256"]:
-            # A carry-forward hop: consecutive generations with a
-            # byte-identical source_sha256 for this event create no phantom
-            # revision (WORLD STATE chain/carry interplay note).
-            continue
-        deduped.append(revision)
-    return deduped
+    return {event_id: _dedupe_carry_forward_hops(revisions) for event_id, revisions in newest_first.items()}
+
+
+def read_event_source_revisions(
+    event_id: str,
+    *,
+    base_url: str | None = None,
+    max_hops: int = DEFAULT_MAX_CHAIN_HOPS,
+    start_generation_id: str | None = None,
+) -> list[dict[str, Any]]:
+    """Walk the verified predecessor chain and return *event_id*'s own
+    ordered source revisions, OLDEST FIRST — a thin single-event wrapper
+    over :func:`read_all_event_source_revisions` (production incident
+    addendum, 2026-08-23), so the two share ONE walk implementation rather
+    than two that could drift. See that function's docstring for the full
+    per-hop verification semantics (raw-byte hash receipts, typed
+    integrity failures, the documented hop bound) and the carry-forward
+    dedupe rule.
+
+    *start_generation_id* lets a caller resume from a KNOWN generation_id
+    without a fresh marker fetch (e.g. the generation just minted locally
+    this cycle, not yet visible on R2 under cache); default resolves the
+    CURRENT published marker.
+    """
+    return read_all_event_source_revisions(
+        (event_id,), base_url=base_url, max_hops=max_hops, start_generation_id=start_generation_id,
+    )[event_id]

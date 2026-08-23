@@ -972,6 +972,250 @@ def test_discover_new_homebuilder_revisions_skips_already_represented_accessions
 
 
 # ---------------------------------------------------------------------------
+# PRODUCTION INCIDENT FIX (verification round 4, 2026-08-23): production
+# run 32652474368 (workflow_dispatch) crawled each homebuilder's ENTIRE SEC
+# "recent" submissions block back to 2010 — "not yet represented in the
+# chain" alone admits all of history on first deploy. Sol's law is "all
+# newly observed qualifying accessions SINCE THE CANONICAL PRIOR
+# GENERATION" — discovery_boundary implements that temporal boundary,
+# filtered on the raw submissions row BEFORE any per-accession HTTP fetch.
+# ---------------------------------------------------------------------------
+
+def test_discovery_boundary_excludes_at_or_older_rows_with_zero_per_accession_fetches() -> None:
+    """A row AT OR OLDER than discovery_boundary is outside the discovery
+    window BY LAW — filtered before ANY per-accession fetch (index-headers
+    + exhibit) and without ever consulting chain_state_loader. This is the
+    exact fetch pattern that timed out production run 32652474368 (~0.5s x
+    hundreds of accessions back to 2010) — proven here to never happen for
+    anything at-or-older than the boundary."""
+    fetch_log: list[str] = []
+
+    def http_get(url: str) -> tuple[int, bytes]:
+        fetch_log.append(url)
+        if url == f"https://data.sec.gov/submissions/CIK{_DHI_CIK}.json":
+            return 200, json.dumps({
+                "cik": _DHI_CIK,
+                "filings": {"recent": {
+                    "accessionNumber": [_DHI_ORIGINAL_ACCESSION],
+                    "filingDate": [_DHI_REPORT_DATE],
+                    "acceptanceDateTime": ["2026-07-21T16:30:00.000Z"],
+                    "reportDate": [_DHI_REPORT_DATE],
+                    "form": ["8-K"],
+                    "primaryDocument": ["a.htm"],
+                    "items": ["2.02"],
+                }},
+            }).encode("utf-8")
+        return 404, b""  # any per-accession fetch here is a TEST FAILURE by construction
+
+    def fetch_index(_base: str) -> dict:
+        return {
+            "schema": "mastermind.tx-index/v1", "symbols": {}, "revisions": {}, "dates": {},
+            "body_count": 0, "symbol_count": 0, "generated_at": "2026-01-01T00:00:00Z",
+        }
+
+    def fetch_body(_base: str, _ref) -> dict:  # pragma: no cover
+        raise AssertionError("no transcript should be fetched in this test")
+
+    def raising_chain_state_loader(event_id: str):  # pragma: no cover
+        raise AssertionError("chain_state_loader must never be consulted for an excluded row")
+
+    revisions = discover_new_homebuilder_revisions(
+        "DHI", http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        chain_state_loader=raising_chain_state_loader,
+        # Exactly at the row's own acceptance — AT-OR-OLDER, excluded
+        # (the law is STRICTLY newer, never "newer-or-equal").
+        discovery_boundary="2026-07-21T16:30:00Z",
+    )
+    assert revisions == []
+    assert len(fetch_log) == 1  # only the ONE submissions call — nothing else
+
+
+def test_discovery_boundary_still_admits_a_genuinely_newer_amendment() -> None:
+    """Forward corrections are unaffected by the boundary: an 8-K/A whose
+    OWN acceptance_datetime is NEWER than discovery_boundary still
+    qualifies and correctly chains onto the boundary-setting original via
+    chain_state_loader — only the already-represented, at-the-boundary
+    original itself is excluded, with zero fetches for its own accession."""
+    amendment_exhibit = _DHI_EXHIBIT.read_text(encoding="utf-8") + "\n<!-- amendment restates a figure -->\n"
+    exhibit_name = "dhi-ex991.htm"
+    fetch_log: list[str] = []
+
+    def http_get(url: str) -> tuple[int, bytes]:
+        fetch_log.append(url)
+        if url == f"https://data.sec.gov/submissions/CIK{_DHI_CIK}.json":
+            return 200, json.dumps({
+                "cik": _DHI_CIK,
+                "filings": {"recent": {
+                    "accessionNumber": [_DHI_AMENDMENT_ACCESSION, _DHI_ORIGINAL_ACCESSION],
+                    "filingDate": ["2026-07-22", _DHI_REPORT_DATE],
+                    "acceptanceDateTime": ["2026-07-22T12:00:00.000Z", "2026-07-21T16:30:00.000Z"],
+                    "reportDate": [_DHI_REPORT_DATE, _DHI_REPORT_DATE],
+                    "form": ["8-K/A", "8-K"],
+                    "primaryDocument": ["a.htm", "b.htm"],
+                    "items": ["2.02", "2.02"],
+                }},
+            }).encode("utf-8")
+        base = _dhi_archive_base(_DHI_AMENDMENT_ACCESSION)
+        if url == f"{base}/{_DHI_AMENDMENT_ACCESSION}-index-headers.html":
+            return 200, (
+                "<HTML><BODY><PRE>&lt;DOCUMENT&gt;\n&lt;TYPE&gt;EX-99.1\n"
+                f"&lt;FILENAME&gt;{exhibit_name}\n&lt;/DOCUMENT&gt;\n</PRE></BODY></HTML>"
+            ).encode("utf-8")
+        if url == f"{base}/{exhibit_name}":
+            return 200, amendment_exhibit.encode("utf-8")
+        return 404, b""  # the excluded original's own accession must never be fetched
+
+    def fetch_index(_base: str) -> dict:
+        return {
+            "schema": "mastermind.tx-index/v1", "symbols": {}, "revisions": {}, "dates": {},
+            "body_count": 0, "symbol_count": 0, "generated_at": "2026-01-01T00:00:00Z",
+        }
+
+    def fetch_body(_base: str, _ref) -> dict:  # pragma: no cover
+        raise AssertionError("no transcript should be fetched in this test")
+
+    original_ws = _stub_dhi_revision(
+        source_available_at="2026-07-21T16:30:00Z", source_sha256="a" * 64, accession=_DHI_ORIGINAL_ACCESSION,
+    )
+    revisions = discover_new_homebuilder_revisions(
+        "DHI", http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        chain_state_loader=lambda event_id: [
+            {"source_available_at": "2026-07-21T16:30:00Z", "workspace": original_ws},
+        ],
+        discovery_boundary="2026-07-21T16:30:00Z",
+    )
+    assert len(revisions) == 1
+    _event_id, payload = revisions[0]
+    assert payload["sources"][0]["filing_key"]["accession"] == _DHI_AMENDMENT_ACCESSION
+    assert payload["lifecycle"]["state"] == "corrected"
+    original_nodash = _DHI_ORIGINAL_ACCESSION.replace("-", "")
+    original_fetches = [u for u in fetch_log if original_nodash in u]
+    assert original_fetches == [], f"the excluded original must never be per-accession-fetched, saw: {original_fetches}"
+
+
+def test_discovery_boundary_none_bounds_first_publish_to_current_and_prior_fiscal_year() -> None:
+    """No represented event yet for this issuer (discovery_boundary=None,
+    genuine first-ever discovery) — bounded to the current + immediately
+    prior fiscal year (mirrors scripts/build_cycle_pattern_imce_
+    prospective.py's own bounded candidate lookback convention), never the
+    whole recent block — the exact incident this fix closes. A row from
+    2010 must produce ZERO per-accession fetches; only the in-window 2026
+    row is resolved."""
+    from datetime import date as _date
+
+    old_accession = "0000882184-10-000005"
+    exhibit_name = "dhi-ex991.htm"
+    fetch_log: list[str] = []
+
+    def http_get(url: str) -> tuple[int, bytes]:
+        fetch_log.append(url)
+        if url == f"https://data.sec.gov/submissions/CIK{_DHI_CIK}.json":
+            return 200, json.dumps({
+                "cik": _DHI_CIK,
+                "filings": {"recent": {
+                    "accessionNumber": [_DHI_ORIGINAL_ACCESSION, old_accession],
+                    "filingDate": [_DHI_REPORT_DATE, "2010-07-21"],
+                    "acceptanceDateTime": ["2026-07-21T16:30:00.000Z", "2010-07-21T16:05:00.000Z"],
+                    "reportDate": [_DHI_REPORT_DATE, "2010-07-21"],
+                    "form": ["8-K", "8-K"],
+                    "primaryDocument": ["a.htm", "b.htm"],
+                    "items": ["2.02", "2.02"],
+                }},
+            }).encode("utf-8")
+        base = _dhi_archive_base(_DHI_ORIGINAL_ACCESSION)
+        if url == f"{base}/{_DHI_ORIGINAL_ACCESSION}-index-headers.html":
+            return 200, (
+                "<HTML><BODY><PRE>&lt;DOCUMENT&gt;\n&lt;TYPE&gt;EX-99.1\n"
+                f"&lt;FILENAME&gt;{exhibit_name}\n&lt;/DOCUMENT&gt;\n</PRE></BODY></HTML>"
+            ).encode("utf-8")
+        if url == f"{base}/{exhibit_name}":
+            return 200, _DHI_EXHIBIT.read_text(encoding="utf-8").encode("utf-8")
+        return 404, b""  # the 2010 row must never be per-accession-fetched here
+
+    def fetch_index(_base: str) -> dict:
+        return {
+            "schema": "mastermind.tx-index/v1", "symbols": {}, "revisions": {}, "dates": {},
+            "body_count": 0, "symbol_count": 0, "generated_at": "2026-01-01T00:00:00Z",
+        }
+
+    def fetch_body(_base: str, _ref) -> dict:  # pragma: no cover
+        raise AssertionError("no transcript should be fetched in this test")
+
+    revisions = discover_new_homebuilder_revisions(
+        "DHI", http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        chain_state_loader=lambda event_id: [],
+        discovery_boundary=None,
+        today=_date(2026, 8, 23),
+    )
+    assert len(revisions) == 1
+    _event_id, payload = revisions[0]
+    assert payload["sources"][0]["filing_key"]["accession"] == _DHI_ORIGINAL_ACCESSION
+    old_nodash = old_accession.replace("-", "")
+    old_fetches = [u for u in fetch_log if old_nodash in u]
+    assert old_fetches == [], f"a first-publish row outside current+prior fiscal year must never be fetched, saw: {old_fetches}"
+
+
+def test_refresh_wires_the_carry_forward_boundary_into_real_discovery_convergence(tmp_path: Path) -> None:
+    """Integration-level proof that refresh() ITSELF (not merely the unit-
+    level discover_new_homebuilder_revisions) threads discovery_boundary
+    from the SAME carry-forward read that seeds Phase 1's base snapshot —
+    the exact wiring production run 32652474368 lacked. Uses the REAL
+    discover_new_homebuilder_revisions (homebuilder_discovery is NOT
+    stubbed off) against a DHI carry-forward whose own source_available_at
+    is T and a submissions fixture whose only candidate row predates T:
+    the cycle converges to ZERO new DHI revisions and ZERO per-accession
+    fetches for that row — a normal quiet cycle, not a backfill."""
+    fake = _FakeR2()
+    current_dhi = _stub_dhi_revision(
+        source_available_at="2026-07-21T16:30:00Z", source_sha256="a" * 64,
+    )
+    fetch_log: list[str] = []
+    aapl_http_get = _http_get_factory()
+
+    def combined_http_get(url: str) -> tuple[int, bytes]:
+        fetch_log.append(url)
+        if url == f"https://data.sec.gov/submissions/CIK{_DHI_CIK}.json":
+            return 200, json.dumps({
+                "cik": _DHI_CIK,
+                "filings": {"recent": {
+                    "accessionNumber": [_DHI_ORIGINAL_ACCESSION],
+                    "filingDate": [_DHI_REPORT_DATE],
+                    # AT the boundary — must be excluded (already the
+                    # source of the boundary itself), never re-fetched.
+                    "acceptanceDateTime": ["2026-07-21T16:30:00.000Z"],
+                    "reportDate": [_DHI_REPORT_DATE],
+                    "form": ["8-K"],
+                    "primaryDocument": ["a.htm"],
+                    "items": ["2.02"],
+                }},
+            }).encode("utf-8")
+        return aapl_http_get(url)
+
+    assert _refresh(
+        tmp_path, fake,
+        http_get=combined_http_get,
+        homebuilder_carry_forward_loader=lambda ticker: current_dhi if ticker == "DHI" else None,
+        # The REAL production default -- not a stub -- proving the actual
+        # refresh()-to-discover() wiring, not just the unit-level function.
+        homebuilder_discovery=discover_new_homebuilder_revisions,
+    ) == 0
+
+    marker = _marker(tmp_path)
+    assert marker["event_count"] == 2  # AAPL flagship + DHI's carried-forward current state only
+    dhi_event_id = current_dhi["event_id"]
+    assert f"workspaces/{dhi_event_id}.json" in marker["files"]
+    dhi_nodash = _DHI_ORIGINAL_ACCESSION.replace("-", "")
+    dhi_fetches = [u for u in fetch_log if dhi_nodash in u]
+    assert dhi_fetches == [], f"the boundary-setting DHI accession must never be re-fetched, saw: {dhi_fetches}"
+    # Exactly ONE marker promotion this cycle (the closing write) — no
+    # per-ticker chained write happened, because DHI produced zero new
+    # revisions and PHM/KBH/TOL's submissions calls 404 (fail-soft, no
+    # prior to carry).
+    marker_puts = [key for key, _ in fake.puts if key == WS_MARKER]
+    assert len(marker_puts) == 1
+
+
+# ---------------------------------------------------------------------------
 # MAJOR-5 (Opus red-team, 2026-08-23): refresh()-level multi-generation
 # chaining was previously untested — every test above hard-stubs discovery
 # off. These tests inject a real ``homebuilder_discovery`` stub returning

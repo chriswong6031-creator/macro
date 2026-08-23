@@ -163,21 +163,30 @@ def _trigger_pooling_key(ws: dict) -> tuple[int, int]:
 # ---------------------------------------------------------------------------
 # IMCE A5C: builder-level tests that inject content into
 # ``_fetch_all_candidates``'s ``found`` map must ALSO stub
-# ``_load_event_revision_history`` — scripts.build_cycle_pattern_
+# ``harvest_event_revisions`` — scripts.build_cycle_pattern_
 # imce_prospective.run() now walks each found candidate's OWN chain
 # (frozen spec D2(d)) via the shared reader BEFORE it can be observed/
 # corrected. Without an explicit stub, the real default
-# (engine.neuralweb.company_intelligence_reader.read_event_source_revisions)
+# (engine.neuralweb.company_intelligence_reader.read_all_event_source_revisions)
 # would make a genuine network call against production R2 — this file's own
 # "No network." law. Every synthetic single-snapshot fixture here represents
 # an event whose chain has never accumulated a real correction, so a
 # single-revision history derived from that ONE workspace is the faithful
 # stub.
+#
+# Production incident addendum (2026-08-23): run() now performs ONE shared
+# chain walk across every candidate this run (harvest_event_revisions,
+# event_ids -> {event_id: history}), replacing a PER-CANDIDATE walk
+# (_load_event_revision_history, event_id -> history) that independently
+# re-walked the SAME marker->predecessor chain once per candidate — a
+# post-incident ~170-generation chain measured 153s for ONE event, and the
+# nightly builder was paying that ~8 times. The stub helpers below build the
+# SAME fixture data, just shaped as a batch-callable now.
 # ---------------------------------------------------------------------------
 
 def _revision_entry(ws: dict) -> dict:
     """One synthetic chain revision matching
-    engine.neuralweb.company_intelligence_reader.read_event_source_revisions's
+    engine.neuralweb.company_intelligence_reader.read_all_event_source_revisions's
     own receipt shape, derived from a single already-built test workspace."""
     lifecycle = ws.get("lifecycle") or {}
     source = next((s for s in ws.get("sources") or [] if s.get("kind") == "issuer_release"), {})
@@ -193,27 +202,27 @@ def _revision_entry(ws: dict) -> dict:
 
 
 def _stub_revision_history(*workspaces: dict):
-    """A ``_load_event_revision_history`` stub mapping each workspace's own
-    event_id to a single-revision history."""
+    """A ``harvest_event_revisions`` stub mapping each workspace's own
+    event_id to a single-revision history, for every requested event_id."""
     by_event = {ws["event_id"]: [_revision_entry(ws)] for ws in workspaces}
 
-    def loader(event_id: str) -> list[dict]:
-        return by_event.get(event_id, [])
+    def harvester(event_ids) -> dict[str, list[dict]]:
+        return {str(eid): by_event.get(str(eid), []) for eid in event_ids}
 
-    return loader
+    return harvester
 
 
 def _stub_revision_history_ordered(event_id: str, *ordered_workspaces: dict):
-    """A ``_load_event_revision_history`` stub for ONE event_id carrying
-    MULTIPLE ordered revisions (oldest first, as the caller supplies them)
-    — for eligibility/replay tests that need more than one source revision
-    of the same event."""
+    """A ``harvest_event_revisions`` stub for ONE event_id carrying MULTIPLE
+    ordered revisions (oldest first, as the caller supplies them) — for
+    eligibility/replay tests that need more than one source revision of the
+    same event. Every OTHER requested event_id maps to an empty history."""
     history = [_revision_entry(ws) for ws in ordered_workspaces]
 
-    def loader(candidate_event_id: str) -> list[dict]:
-        return history if candidate_event_id == event_id else []
+    def harvester(event_ids) -> dict[str, list[dict]]:
+        return {str(eid): (history if str(eid) == event_id else []) for eid in event_ids}
 
-    return loader
+    return harvester
 
 
 # ---------------------------------------------------------------------------
@@ -1359,13 +1368,59 @@ def test_a5c_builder_happy_path_appends_a_real_observation(monkeypatch, tmp_path
         return found, dispositions
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
-    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(safe_ws))
+    monkeypatch.setattr(b, "harvest_event_revisions", _stub_revision_history(safe_ws))
     summary = b.run(production=True)
     assert summary["errors"] == []
     assert summary["n_observations_appended"] == 1
     assert summary["n_observations_refused_unsafe_correction"] == 0
     rows = m.load_rows(fake_prod)
     assert sum(1 for r in rows if r["row_kind"] == "observation") == 1
+
+
+def test_a5c_builder_harvests_all_candidates_in_exactly_one_walk(monkeypatch, tmp_path):
+    """Production incident addendum (2026-08-23): run() must call
+    harvest_event_revisions EXACTLY ONCE per run, covering EVERY candidate
+    across every ticker in that ONE call — never once per candidate. A
+    live measurement found a single-event chain walk cost 153 SECONDS
+    against the post-incident ~170-generation backfilled chain; calling it
+    once per candidate (the former shape this replaces) would multiply
+    that by the candidate count every night (~8 candidates => ~20 min)."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_a5c_one_walk.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    tol_ws = _mk_ws("TOL", cutoff="2026-05-01T20:00:00Z", net_orders_current=30, net_orders_prior=28,
+                     cancel_current=5.0, cancel_prior=6.0)  # default lifecycle_state="complete", form="8-K"
+    dhi_ws = _mk_ws("DHI", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                     cancel_current=10.0, cancel_prior=12.0)
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {
+            "TOL": {tol_ws["event_id"]: "found"}, "DHI": {dhi_ws["event_id"]: "found"},
+            "PHM": {}, "KBH": {},
+        }
+        found = {"DHI": [dhi_ws], "PHM": [], "KBH": [], "TOL": [tol_ws]}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+
+    real_harvester = _stub_revision_history(tol_ws, dhi_ws)
+    calls: list[set] = []
+
+    def counting_harvester(event_ids):
+        calls.append({str(e) for e in event_ids})
+        return real_harvester(event_ids)
+
+    monkeypatch.setattr(b, "harvest_event_revisions", counting_harvester)
+    summary = b.run(production=True)
+    assert summary["errors"] == []
+    assert summary["n_observations_appended"] == 2
+    assert len(calls) == 1  # exactly ONE walk this run
+    assert calls[0] == {tol_ws["event_id"], dhi_ws["event_id"]}  # covering EVERY candidate in that one call
 
 
 def test_a5c_safe_state_and_form_constants_stay_inside_the_real_event_vocabulary():
@@ -1406,7 +1461,7 @@ def test_a5c_refusal_does_not_defer_the_run_or_block_activation(monkeypatch, tmp
         return found, dispositions
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
-    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(corrected_ws))
+    monkeypatch.setattr(b, "harvest_event_revisions", _stub_revision_history(corrected_ws))
     summary = b.run(production=True)
     assert summary["deferred_fetch_failed"] == []
     assert summary["activated"] is True
@@ -1441,7 +1496,7 @@ def test_a5c_refusal_is_idempotent_across_reruns(monkeypatch, tmp_path):
         return found, dispositions
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
-    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(corrected_ws))
+    monkeypatch.setattr(b, "harvest_event_revisions", _stub_revision_history(corrected_ws))
     summary1 = b.run(production=True)
     rows_after_1 = m.load_rows(fake_prod)
     summary2 = b.run(production=True)
@@ -1536,7 +1591,7 @@ def test_a5c_builder_end_to_end_refuses_a_workspace_missing_its_form(monkeypatch
         return found, dispositions
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
-    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(no_form_ws))
+    monkeypatch.setattr(b, "harvest_event_revisions", _stub_revision_history(no_form_ws))
     summary = b.run(production=True)
     assert summary["errors"] == []
     assert summary["n_observations_appended"] == 0
@@ -1566,7 +1621,7 @@ def test_a5c_builder_end_to_end_refuses_a_workspace_missing_its_lifecycle_state(
         return found, dispositions
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
-    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(no_state_ws))
+    monkeypatch.setattr(b, "harvest_event_revisions", _stub_revision_history(no_state_ws))
     summary = b.run(production=True)
     assert summary["errors"] == []
     assert summary["n_observations_appended"] == 0
@@ -1614,7 +1669,7 @@ def test_e_post_activation_amendment_on_a_pre_activation_event_mints_nothing(mon
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
     monkeypatch.setattr(
-        b, "_load_event_revision_history",
+        b, "harvest_event_revisions",
         _stub_revision_history_ordered(original_ws["event_id"], original_ws, amendment_ws),
     )
     summary = b.run(production=True)
@@ -1658,7 +1713,7 @@ def test_e_eligibility_survives_an_inverted_chain_order(monkeypatch, tmp_path):
     # (original) second — the opposite of read_event_source_revisions's own
     # oldest-first contract.
     monkeypatch.setattr(
-        b, "_load_event_revision_history",
+        b, "harvest_event_revisions",
         _stub_revision_history_ordered(original_ws["event_id"], amendment_ws, original_ws),
     )
     summary = b.run(production=True)
@@ -1700,7 +1755,7 @@ def test_f_packet_build_failure_on_the_anchor_revision_never_mints_from_a_later_
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
     monkeypatch.setattr(
-        b, "_load_event_revision_history",
+        b, "harvest_event_revisions",
         _stub_revision_history_ordered(rev1["event_id"], rev1, rev2),
     )
     summary = b.run(production=True)
@@ -1730,7 +1785,7 @@ def test_e_post_activation_original_is_eligible_and_mints(monkeypatch, tmp_path)
         return found, dispositions
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
-    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(safe_ws))
+    monkeypatch.setattr(b, "harvest_event_revisions", _stub_revision_history(safe_ws))
     summary = b.run(production=True)
     assert summary["n_observations_appended"] == 1
 
@@ -1800,7 +1855,7 @@ def test_f_ordered_replay_mints_from_earliest_then_corrects_only_material_change
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
     monkeypatch.setattr(
-        b, "_load_event_revision_history",
+        b, "harvest_event_revisions",
         _stub_revision_history_ordered(rev1["event_id"], rev1, rev2, rev3),
     )
     summary = b.run(production=True)
