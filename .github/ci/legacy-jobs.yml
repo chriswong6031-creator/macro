@@ -8891,6 +8891,56 @@ jobs:
       - name: D4 company financial truth bridge — IRDM-only, hostile families T1-T10 + R2/R4/R5/R7/R9/R10/R12
         run: python -m pytest tests/test_government_revenue_company_bridge.py -q
 
+  govrev-program-ontology:
+    # D5 Program/Mission/Capability/Product graph (research/defense_intelligence/
+    # DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md): the reviewed acquisition-
+    # domain ontology contract, its propose/curate admission scripts, and the
+    # composed Program Dossier read model. Must be merge-binding (freeze SS8's
+    # T1-T17 adversarial battery is the acceptance gate for the whole vertical),
+    # so this rides `gate: code` with frozen committed fixtures per the D4
+    # CI-wiring law — never `gate: data`, and never reading nightly-rewritten
+    # site/government-revenue-data/ or data/government_revenue/ artifacts.
+    #
+    # `scope: exclusive` (mirrors govrev-company-bridge immediately above):
+    # the suite's own cross-file imports (tests/test_government_revenue_award_events.py
+    # for a schema-valid v2 event fixture, tests/test_build_government_revenue.py
+    # for the shared payload fixture) are opaque to scope inference the same
+    # way that job's node subprocess call is, so the true dependency set is
+    # curated here explicitly rather than left to widen.
+    if: ${{ false }}
+    gate: code
+    scope: exclusive
+    paths:
+      - "contracts/government_revenue/government_program_ontology.v1.schema.json"
+      - "contracts/government_revenue/government_program_dossier.v1.schema.json"
+      - "engine/government_revenue/program_ontology.py"
+      - "engine/government_revenue/program_dossier.py"
+      - "engine/government_revenue/workspace.py"
+      - "engine/government_revenue/award_events.py"
+      - "engine/government_revenue/identity_atlas.py"
+      - "engine/government_revenue/entity_resolution.py"
+      - "scripts/propose_government_program_ontology.py"
+      - "scripts/curate_government_program_ontology.py"
+      - "scripts/build_government_revenue.py"
+      - "tests/fixtures/government_program_ontology/**"
+      - "tests/test_government_program_ontology.py"
+      - "tests/test_government_program_ontology_scripts.py"
+      - "tests/test_government_revenue_award_events.py"
+      - "tests/test_build_government_revenue.py"
+      - "research/defense_intelligence/evidence/fixtures/d5-representability-fixtures.json"
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest jsonschema pandas numpy pyarrow jinja2
+      - name: D5 program ontology — T1-T17 adversarial battery + dossier composer
+        run: python -m pytest tests/test_government_program_ontology.py -q
+      - name: D5 program ontology — propose/curate admission scripts
+        run: python -m pytest tests/test_government_program_ontology_scripts.py -q
+
   unrun-government-revenue-candidate-projection:
     # The projection matrix is the slower half of the candidate contract. It
     # reached 42/44 tests when it shared one sequential 15-minute lane with the
