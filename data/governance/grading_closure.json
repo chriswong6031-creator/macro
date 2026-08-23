@@ -1,6 +1,6 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-08-23T00:33:12.238256+00:00",
+  "generated_at": "2026-08-23T09:13:18.119134+00:00",
   "n_ledgers": 34,
   "n_closed": 25,
   "n_grader_starved": 9,
@@ -14,9 +14,9 @@
       "graders": [
         "scripts/grade_qledger.py"
       ],
-      "n_logged": 59136,
-      "n_graded": 79337,
-      "last_graded_at": "2026-08-22T09:14:24.691416+00:00",
+      "n_logged": 60804,
+      "n_graded": 80232,
+      "last_graded_at": "2026-08-23T09:11:14.423390+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -28,9 +28,9 @@
       "graders": [
         "scripts/grade_qledger.py"
       ],
-      "n_logged": 79337,
-      "n_graded": 79337,
-      "last_graded_at": "2026-08-22T09:14:24.691416+00:00",
+      "n_logged": 80232,
+      "n_graded": 80232,
+      "last_graded_at": "2026-08-23T09:11:14.423390+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -84,7 +84,7 @@
       "graders": [
         "engine/track_record.py"
       ],
-      "n_logged": 59394,
+      "n_logged": 59401,
       "n_graded": 59175,
       "last_graded_at": null,
       "tune_step": "N",
@@ -225,7 +225,7 @@
       "graders": [
         "engine/risk_radar_intl_audit.py"
       ],
-      "n_logged": 16,
+      "n_logged": 17,
       "n_graded": 2,
       "last_graded_at": null,
       "tune_step": "Y",
@@ -239,7 +239,7 @@
       "graders": [
         "engine/risk_radar_intl_audit.py"
       ],
-      "n_logged": 14,
+      "n_logged": 15,
       "n_graded": 2,
       "last_graded_at": null,
       "tune_step": "Y",
@@ -253,7 +253,7 @@
       "graders": [
         "engine/risk_radar_intl_audit.py"
       ],
-      "n_logged": 15,
+      "n_logged": 16,
       "n_graded": 3,
       "last_graded_at": null,
       "tune_step": "Y",
@@ -267,7 +267,7 @@
       "graders": [
         "engine/risk_radar_intl_audit.py"
       ],
-      "n_logged": 15,
+      "n_logged": 16,
       "n_graded": 3,
       "last_graded_at": null,
       "tune_step": "Y",
@@ -281,7 +281,7 @@
       "graders": [
         "engine/risk_radar_intl_audit.py"
       ],
-      "n_logged": 17,
+      "n_logged": 18,
       "n_graded": 3,
       "last_graded_at": null,
       "tune_step": "Y",
@@ -295,7 +295,7 @@
       "graders": [
         "engine/risk_radar_intl_audit.py"
       ],
-      "n_logged": 17,
+      "n_logged": 18,
       "n_graded": 4,
       "last_graded_at": null,
       "tune_step": "Y",
@@ -309,7 +309,7 @@
       "graders": [
         "engine/risk_radar_intl_audit.py"
       ],
-      "n_logged": 17,
+      "n_logged": 18,
       "n_graded": 4,
       "last_graded_at": null,
       "tune_step": "Y",
@@ -395,7 +395,7 @@
       ],
       "n_logged": 166,
       "n_graded": 0,
-      "last_graded_at": "2026-08-21",
+      "last_graded_at": "2026-08-22",
       "tune_step": "N",
       "verdict": "GRADER-STARVED"
     },
@@ -407,7 +407,7 @@
       "graders": [
         "scripts/grade_policy_calendar.py"
       ],
-      "n_logged": 551,
+      "n_logged": 565,
       "n_graded": 469,
       "last_graded_at": "2026-08-22",
       "tune_step": "N",

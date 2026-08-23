@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T07:23:58.585269+00:00",
-  "count": 1671,
+  "generated_at": "2026-08-23T09:17:04.686027+00:00",
+  "count": 1676,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1020,6 +1020,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-srugyppwoin-abfe66",
+      "title": "Optimize your leverage",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:22Z",
+      "summary_points": [
+        "**Strategic Borrowing Rationale**: Mitigates tax drag and diversifies, but requires hedging geopolitical risks (Iran war, oil supply) and US rate cut timing (2027) to avoid margin calls/debt repayment issues.",
+        "**Leverage Strategy Core**: Align debt duration with assets, stress-test for margin calls during Middle East volatility, and formalize repayment timelines with contingency plans.",
+        "**Risk Resilience Essentials**: Monitor loan-to-value ratios and geopolitical shocks; ensure assets buffer against margin calls and delayed cash inflows to sustain leverage.",
+        "**Equity Rating Structure**: Five-tier system collapses equities to \"Unattractive\" if included in three-tier portfolio constraints, requiring tactical allocation adjustments for borrowing limits."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3enxppdbicy-25e66a",
+      "title": "Diversify with alternatives",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:21Z",
+      "summary_points": [
+        "**Hedge Fund Performance**: Discretionary macro hedge funds delivered 7.2% avg annual return (5.6% volatility, 8.1% max drawdown) vs 54.0% equities, highlighting superior risk-adjusted returns.",
+        "**Infrastructure Diversification**: Private infrastructure offers 11% annualized returns with 30% correlation to stocks/bonds, providing inflation-linked diversification critical amid rising rates.",
+        "**PE Thematic Shift**: Global PE fundraising hit $262B in H1 2026 (exceeding 2025 full-year), led by Asia Pacific, with thematic focus on healthcare/new energy at 10.5x buyout multiples.",
+        "**Diversification Imperative**: Mitigate overconcentration and localized disruption by diversifying across sectors, geographies, strategies, and vintages in private markets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-h5tkii37jkc-b0afb5",
       "title": "Go sustainable",
       "institution": "UBS",
@@ -1036,6 +1076,66 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iqrqn1i2u1d-273d81",
+      "title": "Strengthen your core",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:18Z",
+      "summary_points": [
+        "**Portfolio Allocation**: Core strategy mandates 30-70% stocks (50% US, 20% global), 15-50% fixed income, 30% growth themes (AI/Power/Longevity), with rebalancing to trim outperformers and add underperformers for risk control.",
+        "**Geopolitical Risks**: US-Iran conflict, Middle East tensions, and oil volatility drive uncertainty; CIO projects global equities to rise by 2026 amid periodic volatility from economic/tech/geopolitical shifts.",
+        "**Alternatives Allocation**: Recommends 20-40% in alternatives (hedge funds/private equity) with careful manager selection for resilience, but mandates awareness of illiquidity risks and structural constraints.",
+        "**Liquidity Risks**: Withdrawal limits (\"gating\") signal liquidity concerns; investors must assess structure, stress behavior, and inherent illiquidity of private market assets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-so6z9qaywfv-1ff944",
+      "title": "Audio",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:17Z",
+      "summary_points": [
+        "**Geopolitical Risk**: Iran sanctions due Monday (economic warfare) risk market optimism bias; Strait of Hormuz closure fears compound with US Treasury bond weakness and Trump policy response uncertainty.",
+        "**Fundamental Data Releases**: South Korea semiconductor exports drive export strength (Bank of Korea rate hike expected); UK July retail sales weakened by weather/early discounting despite fuel sales offsetting oil price impact.",
+        "**Tactical Allocation Tool**: Five-tier equity rating system (Most Attractive to Least Attractive) collapses to three tiers when combined with other assets, guiding portfolio allocation via expected returns and scenario analysis."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ydkpdw6jcyl-660bdf",
+      "title": "Listed real estate",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:17Z",
+      "summary_points": [
+        "**Allocation Priorities**: Prioritize Continental Europe, Hong Kong Developers/REITs, and US; avoid Australia, Japan, Singapore, UK due to interest rate sensitivity, China capital restrictions, and volatile bond markets.",
+        "**Earnings Growth**: Listed real estate EPS expected to grow 10.2% in 2026 and 7.7% in 2027 (ex-emerging markets), driven by rental indexation, reversion, and portfolio transactions.",
+        "**Valuation & Risk**: Sector dividend yield at 3.2% (below 7-yr avg 3.6%); REITs trade at 6% NAV premium; debt maturities >5yrs support refinancing flexibility amid office take-up risks.",
+        "**Target Range**: FTSE EPRA/Nareit 2027 target 9,100 (upside) vs.",
+        "8,500 (downside), driven by rental income growth, debt market stability, and NAV discounts for discounted companies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },

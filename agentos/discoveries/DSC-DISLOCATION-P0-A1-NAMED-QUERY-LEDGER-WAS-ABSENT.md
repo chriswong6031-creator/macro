@@ -14,9 +14,11 @@ falsifier: >
   canonical SHA-256 is 04d502e398a0f2ae65df7b2f9d5156305094f7b10ca104da08792d7219c1f83c
   from a committed or attached source that predates this reconstruction.
 so_what: >
-  Do not invent a ledger that hashes to 04d502e. Reconstruct from the Turn-5
-  lexicon/selection protocol, record the named SHA as
-  UNVERIFIED_ABSENT_SOURCE_FILE, and keep ranking on the Turn-5 schema seed.
+  Do not invent a ledger that hashes to 04d502e. Preserve the named SHA as
+  UNVERIFIED_ABSENT_SOURCE_FILE and historical reconciliation evidence. For resumed
+  P0-A1R it is non-authoritative: #6068 plus
+  DEC:DISLOCATION-P0-A1R-SOURCE-LAW-RECONCILIATION control selection and sampling.
+  A derived ledger may be retained only transparently and may never impersonate 04d.
 kind: landmine
 verified_at: 2026-08-20
 verified_by: >
@@ -28,5 +30,6 @@ scope: [macro, alpha-intelligence, WS:ALPHA-INTELLIGENCE-INTEGRATION]
 confidence: verified
 ---
 
-The A1 handoff is still the extraction commission. The missing named ledger is a
-provenance gap, not permission to unfreeze phrases or to join prices.
+The #6117 A1 handoff remains historical extraction evidence, not the resumed
+commission. The missing named ledger is a provenance gap, not permission to unfreeze
+phrases, join prices, or override the A1R source-law reconciliation.

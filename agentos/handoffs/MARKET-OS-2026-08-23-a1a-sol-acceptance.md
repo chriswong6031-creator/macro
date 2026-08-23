@@ -11,24 +11,27 @@ mission: >
 state_before: >
   A1A engineering and repairs were merged/deployed and the complete authenticated
   production matrix had passed, but WS:MARKET-OS correctly remained in_progress until
-  Sol made the explicit acceptance ruling. A stale open records PR #6125 still
-  described an earlier BUILT_NOT_PROVEN state before the later production evidence.
+  Sol made the explicit acceptance ruling. PR #6125 had merged after this carrier's
+  original base and preserved the earlier BUILT_NOT_PROVEN reconciliation state before
+  the later production evidence.
   Separately, RCTX-1 had been commissioned and delivered to Fable through Slack but had
   no ACK, branch, or implementation PR; it was disjoint from A1A.
 changed:
   - path: "agentos/decisions/DEC-MARKET-OS-A1A-ACCEPTED-IN-PRODUCTION.md"
     what: >
       Records Sol's explicit A1A PASS ruling, exact acceptance basis, supersession of
-      stale #6125 state, limits of the ruling, and the A1B continuation gate.
+      #6125's pre-proof gate state and account-transition clause for A1A completion,
+      explicit Scene-9 non-blocking scope, limits of the ruling, and the A1B
+      continuation gate.
+  - path: "agentos/decisions/DEC-MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED.md"
+    what: >
+      Adds the reciprocal superseded_by link and preserves the record as historical
+      evidence while making clear that Scene 9 is not hidden A1A debt.
   - path: "agentos/workstreams/WS-MARKET-OS.md"
     what: >
       Marks A1A done, makes A1B the primary next Market OS wave subject to a fresh
       commission/collision census, preserves the narrow timestamp restoration law, and
       keeps all later waves gated and separate.
-  - path: "Macro PR #6125"
-    what: >
-      Closed without merge as stale/superseded because its pre-production-proof state
-      would regress current Agent OS truth.
 verified:
   - claim: "The current protected Sol Skillpack permits this review/closeout workflow"
     command: >
@@ -48,6 +51,16 @@ verified:
       last-good; first-read explicit unknown; Macro-Terminal conformance; privacy;
       exact temporary cleanup; sequential semantic-v2 restoration; immediate and
       delayed reconciliation all passed.
+  - claim: "Scene 9 is not an unfinished A1A completion gate"
+    command: >
+      Reconcile DEC:MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED with the later
+      specific Sol action-time authorities, the #6160 auth-generation protections, and
+      Sol's final A1A production acceptance ruling
+    result: >
+      PASS — later specific authorities prohibited destructive sign-out/sign-in Scene 9
+      while retaining auth-generation protections and commissioning the remaining
+      authenticated matrix; Sol accepted that matrix, so the older account-transition
+      clause is superseded for A1A completion rather than retained as hidden debt.
   - claim: "The restoration exception remains narrow and does not weaken semantic identity"
     command: >
       Review current WS:MARKET-OS plus the accepted semantic-v2 restoration probe and
@@ -58,12 +71,12 @@ verified:
       Watchlists, Macro-Terminal agreement, and ordered row IDs remain exact.
   - claim: "No higher-priority current Market OS authority contradicts A1A acceptance"
     command: >
-      Read current Macro main 900b5d8d489a91a9121fc6febd50338fbae1c9a9,
-      WS:MARKET-OS, final matrix, current open PR census, and stale #6125
+      Read current Macro main cd42b890d1df740f7fd5fddee6e582221360791b,
+      WS:MARKET-OS, final matrix, current open PR census, and merged #6125
     result: >
-      PASS — current WS says the sole remaining A1A gate is Sol acceptance; #6125 is
-      an older pre-proof carrier and was closed without merge. No contradictory
-      production evidence was found.
+      PASS — current WS says the sole remaining A1A gate is Sol acceptance; #6125
+      merged as ed66b11297bb and is preserved as the older pre-proof reconciliation.
+      No contradictory production evidence was found.
   - claim: "RCTX-1 does not block or complete A1A"
     command: >
       Reconcile merged #6300 RCTX-1 handoff with current WS:MARKET-OS, Slack
@@ -115,7 +128,8 @@ next_actions:
     auto-failover.
 do_not_redo:
   - "Do not repeat the final authenticated A1A production matrix absent contradictory production evidence or an explicit new Sol recommission."
-  - "Do not merge or revive stale #6125; its pre-proof BUILT_NOT_PROVEN state is superseded."
+  - "Do not treat merged #6125's pre-proof BUILT_NOT_PROVEN state as the current gate; preserve it as historical reconciliation evidence."
+  - "Do not reopen Scene 9 as hidden A1A debt; any future identity-transition production test requires separate authority."
   - "Do not broaden the semantic-v2 restoration exception beyond created_at and updated_at."
   - "Do not let Watchlist membership, temporary baskets, local fallback, mixed weighting completion, or fabricated clusters re-enter canonical Portfolio population/risk semantics."
   - "Do not call A1B started or built because A1A is accepted."
@@ -125,6 +139,7 @@ prs:
   - 6125
 decisions:
   - DEC:MARKET-OS-A1A-ACCEPTED-IN-PRODUCTION
+  - DEC:MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED
   - DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS
 ---
 

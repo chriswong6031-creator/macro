@@ -1,0 +1,29 @@
+{
+  "schema": "mastermind.dislocation_p0.a1_quarantine_salvage.v1",
+  "status": "QUARANTINED_UNAUDITED",
+  "authority": {"can_escalate": false, "can_gate": false, "can_originate_signal": false, "can_rank": false, "can_size": false},
+  "governing_source": {"turn5_squash": "fab129e21335253c17a034ab7f6c0e57f77e5acd", "a1r_decision": "DEC:DISLOCATION-P0-A1R-SOURCE-LAW-RECONCILIATION"},
+  "historical_reconciliation": {
+    "declared_ledger_sha256": "04d502e398a0f2ae65df7b2f9d5156305094f7b10ca104da08792d7219c1f83c",
+    "authority_status": "HISTORICAL_NONAUTHORITY_SUPERSEDED",
+    "derived_ledger_canonical_json_sha256": "496537f5d3822c160c93afb3cbccf55f6334028e20094979e1de797e6aab3b36",
+    "derived_ledger_status": "TRANSPARENT_DERIVATION_ONLY",
+    "accepted_draft_canonical_json_sha256": "832ac650cf18bd31b593fbb0214d9f3ac1b85ccdda6d417e12e5d81a35b76d32",
+    "accepted_draft_status": "QUARANTINED_UNAUDITED",
+    "candidate_queue_canonical_json_sha256": "85f43bb6d73b3c53ba0b54b0064168262362be2baee0889a214cdbf7b6b306f6",
+    "hash_note": "These are reproducible canonical-JSON provenance hashes, not raw pretty-printed file-byte hashes and not P0-A1R freeze authority."
+  },
+  "completion_gate": {"logical_query_cells_required": 146, "before_complete_pool_hash": true, "before_exact_twenty_selection": true},
+  "components": [
+    {"component": "fts_sharding_pagination", "disposition": "RETAIN_SOURCE_ACQUISITION"},
+    {"component": "client_side_exact_form_normalization", "disposition": "RETAIN"},
+    {"component": "cik_accession_identity_and_selection_key", "disposition": "RETAIN_UNDER_A1R_SELECTION_LAW"},
+    {"component": "sec_allowlist_firewall_query_observations", "disposition": "RETAIN_SOURCE_ONLY"},
+    {"component": "extract_pass_and_same_function_second_pass", "disposition": "QUARANTINED_NOT_INDEPENDENT_AUDIT"},
+    {"component": "one_accession_one_episode_construction", "disposition": "QUARANTINED_NO_EPISODE_AUTHORITY"},
+    {"component": "p0_local_filing_document_receipt_identities", "disposition": "QUARANTINED_USE_CANONICAL_OWNER"},
+    {"component": "a1_accepted_manifest_draft_313_rows", "disposition": "QUARANTINED_UNAUDITED_INPUT_ONLY"},
+    {"component": "canonical_json_hash_receipts_496537_832ac650_and_85f43b", "disposition": "PRESERVE_QUARANTINED_NOT_A1R_FREEZE_RECEIPTS"}
+  ],
+  "prohibitions": ["price_join", "counterfactual_access", "outcome_access", "semantic_or_outcome_informed_topups", "macro_phrase_invention", "broad_sec_store_modification", "p0_local_truth_plane"]
+}

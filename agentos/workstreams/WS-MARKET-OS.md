@@ -38,7 +38,12 @@ waves:
       canonical 13-row Portfolio and four-list/134-membership Watchlist baselines were
       restored with no temporary residue. Do not repeat the matrix absent contradictory
       production evidence or explicit recommission. A1A acceptance does not implement
-      or automatically start A1B.
+      or automatically start A1B. Scene 9 was intentionally prohibited by the later,
+      specific authenticated-matrix authorities and was not executed; Sol's final
+      acceptance supersedes the older account-transition production-proof clause in
+      DEC:MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED for A1A completion.
+      That clause is not hidden A1A debt, while the merged #6160 auth-generation
+      protections remain intact.
   - id: A1B
     title: Portfolio Fast Start Import
     status: todo
@@ -87,6 +92,7 @@ decisions:
   - "DEC:MARKET-OS-WATCHLIST-PORTFOLIO-SEPARATE-TRUTH-UNIFIED-EXPERIENCE"
   - "DEC:MARKET-OS-PORTFOLIO-TRUTH-PRECEDES-FAST-IMPORT"
   - "DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS"
+  - "DEC:MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED"
   - "DEC:MARKET-OS-A1A-ACCEPTED-IN-PRODUCTION"
 discoveries:
   - "DSC:MARKET-OS-PASTE-FLOW-WRITES-WATCHLIST-NOT-PORTFOLIO"
@@ -132,7 +138,8 @@ do_not_redo:
   - Do not attempt to preserve created_at or updated_at during the bounded A1A restore; omit both and let production generate them.
   - Do not repeat the passed semantic-v2 temporary-row restoration probe; its exact cleanup receipt is durable in the latest handoff.
   - Do not repeat the passed final authenticated A1A production matrix unless new contradictory production evidence appears or Sol explicitly recommissions it.
-  - Do not revive or merge stale PR #6125; its pre-production-proof BUILT_NOT_PROVEN state is superseded.
+  - Do not reopen Scene 9 as hidden A1A debt; it was prohibited by the later specific matrix authorities and Sol accepted A1A without it.
+  - Do not treat merged PR #6125's pre-production-proof BUILT_NOT_PROVEN state as the current gate; preserve it as historical reconciliation evidence.
 artifacts:
   - research/market_os/MASTERMIND_MARKET_OS_ARCHITECTURE_FREEZE_AND_A1A_COMMISSIONING_2026-08-20.md
   - agentos/handoffs/MARKET-OS-2026-08-20.md
@@ -142,6 +149,8 @@ artifacts:
   - agentos/handoffs/MARKET-OS-2026-08-22-a1a-restoration-v2-probe.md
   - agentos/handoffs/MARKET-OS-2026-08-23-a1a-final-authenticated-matrix.md
   - agentos/handoffs/MARKET-OS-2026-08-23-a1a-sol-acceptance.md
+  - agentos/handoffs/MARKET-OS-2026-08-20-a1a-merge-reconciliation.md
+  - agentos/decisions/DEC-MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED.md
 next_action: >
   PRIMARY: commission exactly A1B Portfolio Fast Start Import after a fresh current-head,
   open-PR/worktree/path-collision, Active Build Map, and canonical mutation/identity
