@@ -20,6 +20,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 import pandas as pd
 
 from engine.prophet_voi import HOLD_INTEGRITY, MEASURED, UNAVAILABLE_FIELD, build_report
