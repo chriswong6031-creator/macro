@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T21:11:01.446047+00:00",
-  "count": 1703,
+  "generated_at": "2026-08-23T22:10:11.275451+00:00",
+  "count": 1705,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -86,6 +86,46 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-g6uqrtgtpmh-7a25a3",
+      "title": "Week in Focus 24 28th August 2026 1",
+      "institution": "Week Ahead",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T21:12:33Z",
+      "summary_points": [
+        "**Iran Sanctions & China Oil Dependence**: China's 80% purchase of Iran's shipped oil (2025 data) escalates geopolitical risk, threatening global supply chains and China's trade exposure amid US Treasury warnings of Iran's economic collapse.",
+        "**US PCE & Nvidia Earnings**: Sticky core inflation (3.3% Y/Y) and Nvidia's $91.94bn revenue/EPS $8.96 preview drive tech sector flows, with China chip sales concerns amplifying AI investment risk and market volatility.",
+        "**Chinese Data Divergence**: Industrial Production up 4.5% Y/Y but Property investment down 19.2% and Fixed Asset Investment contracting 6.7% signal severe policy tightening pressure, contrasting with weak domestic demand in Japan (Q2 GDP 1.1% vs 2.0% exp)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1qwfryuot2l-fe0505",
+      "title": "Weekly US Earnings Estimates 24 28th August 2026",
+      "institution": "Week Ahead",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T21:12:32Z",
+      "summary_points": [
+        "**NVIDIA Catalyst**: $5.25tn market cap, $2.09 Qtrly EPS, $569.99bn Next FY Revenue Expectations; 21:20 BST earnings event critical for positioning.",
+        "**Sector Divergence**: XPEV negative Qtrly EPS (-0.48) vs.",
+        "INTU/ZM robust Qtrly EPS (3.58/1.48) and strong FY Exp EPS (23.83/6.04), signaling EV underperformance vs.",
+        "software.",
+        "**Semiconductor Momentum**: SNPS Next FY Revenue $10.73bn and CRWD $7.24bn indicate strong sector tailwinds in semiconductor/cybersecurity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-nbeniyipz2s-6bd58c",
       "title": "MS AI Sovereignty Policy, Market, and Economic Implications",
