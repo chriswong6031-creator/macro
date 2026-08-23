@@ -252,7 +252,7 @@ def write_report(out_path: Path, baseline_ok: bool, rows: list[dict],
         for a, b, shared in collisions:
             lines.append(f"- `{a}` and `{b}` both produced: {shared}\n")
     lines.append(
-        "\n## Method\n\n"
+        "## Method\n\n"
         "Each mutation targets the exact JS source construct Lane A/B restored "
         "for that capability (a return-early guard, a ternary condition forced "
         "false, or a literal string fragment blanked) — the built candidate "
@@ -261,7 +261,7 @@ def write_report(out_path: Path, baseline_ok: bool, rows: list[dict],
         "producer contract. `destination_family_basket` instead does a global "
         "byte substitution of the literal `basket/` prefix, proving direction 2 "
         "(candidate -> allowed) catches a stripped destination family, not only "
-        "direction 1's hero-copy pins.\n"
+        "direction 1's hero-copy pins."
     )
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

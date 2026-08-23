@@ -173,3 +173,57 @@ upheld candidate-portion; conditions → the final eleven); successor continuity
 mechanically regenerated (24 items, all CARRIED_BLOCK pending the single freeze-time
 flip pass). Harness-safety rule adopted (handoff §7): audit scripts run with output
 overrides; never write into a frozen predecessor tree.
+
+## §7 FINAL CONTINUATION RETURN — commissioned work complete, freeze permitted
+
+The open work named in §6 is now closed on candidate SHA-256
+`091bc578d18876ae1e9f922235ddac82d8d7519e0ceb579d7a92010a4915bd0b`.
+This section supersedes §6's provisional “still open” state; it does not reopen any
+withdrawn item.
+
+**B2-05 strengthened:** every valued `.r3-fig` now retains an accessible name at every
+width and paints its own compact label when the shared legend disappears at `<=640px`.
+Overview independently names `Strength / 强度` and `20d vs market / 20日相对大盘`;
+Confluence independently names `Entry / 入场位` and `Conviction / 综合把握`. The binding
+browser census covers 18 figures per cell over 1440/390/320 × EN/ZH: zero unnamed,
+zero mobile-naked, zero desktop duplicate-caption figures, and 30/30 exact-value proofs.
+Four independent B2-05 mutations each produce a distinct red.
+
+**B2-15 implemented from producer truth:** the Money view reads
+`track_record.is_context_only=true` and displays three localized qualifications:
+context only, evidence proven at 5d, and never sizes decisions. The 21d line is a
+separate visual clause divided by a hairline; it is not folded into the validated
+5d statement. EN/ZH rendered checks and a removal mutation bind the mechanism.
+
+**Final semantic guards landed:** B2-01 one-producer-path/one-customer-term,
+B2-12 distinct coverage-vs-reliability terms, B2-13 one shared receipt target with
+four exact controls, and B2-15 producer/scope/visual separation. The closure audit is
+40/40 across EN/ZH. Eight final-continuation mutations all produce nonempty,
+pairwise-distinct failing-check sets. The inherited inventory and mutation guards remain
+green (26/26 inventory; 11/11 unique reds, 13/13 suite checks).
+
+**Fresh evidence and state proof:** the final packet contains 61 PNGs, all byte-hashed
+in `evidence/capture_manifest.json`, plus candidate-hash-bound machine receipts. It
+covers all six views, desktop/light, mobile EN/ZH, 320 physical at 200%, changed-state
+crops, access gated/hydrated/ungated arithmetic, 6 canonical and 21 legacy routes,
+four isolated Confluence universes, 48/48 severe-zoom cells, 5,928 treemap tiles,
+288 painted labels, 36 mobile controls, and EN/ZH ARIA/document-language checks. The
+integrated verifier is 22/22 and the R3A substrate floor is 59 passed.
+
+**Continuity:** the corrected nearest-predecessor verdict emits exactly 12 obligations
+(VTC1-001 plus B2-01/05/06/08/09/10/11/12/13/14/15). All 12 successor rows are
+`RESOLVED_BY_CHANGE`, with committed evidence and changed-file bindings. No obsolete
+24-row draft remains.
+
+**Honest adverse/null results preserved:** old B2-02 stays withdrawn and unscored even
+though the fresh rendered receipt observes one `📊` glyph in Moving; the discrepancy is
+recorded for Sol. The candidate heatmap colour-field axis remains **UNMEASURED**, never
+PASS. Seventy-five low-contrast `sc_flows` producer-fragment cells and producer
+language-of-parts debt remain upstream/R3C-only. `#sc-top` is the one documented absent
+legacy target. None was silently repaired or promoted.
+
+**Authority boundary:** this return changes reference/research bytes only. It performs
+no production migration, routing/default activation, critic dispatch, approval, merge,
+or R3C work. After reconciliation to fresh protected main, the immutable artifact SHA is
+to be stamped into `manifest.yml`/`proposal.yml`, status advances only to `in_review`,
+and the PR remains draft `HOLD-FOR-SOL` for Sol's next ruling.
