@@ -35,7 +35,6 @@
     "1b8d3d83cf026a977253988bffadf6372025133c": "2026-08-22T17:50:46.860373+00:00",
     "1c99dfde5703d87aebf76aada09e1415f656202f": "2026-08-22T19:11:37.170503+00:00",
     "1d0b581da3bbe14862b8d1037255566a5b37e724": "2026-08-22T17:50:46.860373+00:00",
-    "1e7bc43af24de0eca7ec5fc0ea0f9629553c62ce": "2026-08-22T10:48:27.056492+00:00",
     "1ebffaf6358d70474fdc11be9e5310521fc2c3ab": "2026-08-22T17:50:46.860373+00:00",
     "1edfa56835126c75c7a70e31db2c31946dd2d9fc": "2026-08-22T13:41:04.877384+00:00",
     "1fb3c5df4e05ec68c5b8f3e68a68c7522a16a542": "2026-08-22T19:11:37.170503+00:00",
@@ -157,7 +156,6 @@
     "84cf09b1cb13a92f5078a058656ca6f15c3ec253": "2026-08-22T13:05:33.659628+00:00",
     "8559a38078b1449777201e1a379aa96aaf08352c": "2026-08-23T02:49:45.536404+00:00",
     "87e929d803f2448b5504b94a08026afc725aa31f": "2026-08-22T21:30:09.554662+00:00",
-    "88fc4c849b51e890bc659ba2a3e45b89a89eb68f": "2026-08-22T10:48:27.056492+00:00",
     "898fb3d986f463088a77aef8b8054285237b70de": "2026-08-22T17:50:46.860373+00:00",
     "89e417a4fac0285b13bf35194ae0130b7fa838d7": "2026-08-22T23:40:35.692695+00:00",
     "8b3346ca404c76a43b86af69173e986de513f7ad": "2026-08-22T17:30:12.448418+00:00",
@@ -1556,7 +1554,7 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-23T10:28:29.343714+00:00",
+      "last_poll": "2026-08-23T10:52:31.766860+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
       "since": "2026-08-23T10:01:11+00:00"
     },
@@ -1568,7 +1566,7 @@
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1787480911.6366765
+      "last_poll_ts": 1787482354.5555477
     },
     "twitterapiio": {
       "cursors": {
@@ -1637,65 +1635,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-23T10:28:29Z",
+  "updated_at": "2026-08-23T10:52:31Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1787480910.4569077
+      "last_poll_ts": 1787482352.7865796
     },
     "bls_news": {
       "etag": "\"07aaf967531dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 14:01:40 GMT",
-      "last_poll_ts": 1787480910.3275332
+      "last_poll_ts": 1787482352.5740397
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1787480910.5362055
+      "last_poll_ts": 1787482353.2318897
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1787480911.434825
+      "last_poll_ts": 1787482354.252124
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 10:27:48 GMT",
-      "last_poll_ts": 1787480911.5873766
+      "last_modified": "Sun, 23 Aug 2026 10:50:53 GMT",
+      "last_poll_ts": 1787482354.4075356
     },
     "fed_press": {
       "etag": "W/\"53636b83de30dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 20 Aug 2026 20:00:13 GMT",
-      "last_poll_ts": 1787480910.2711928
+      "last_poll_ts": 1787482352.4833472
     },
     "forexlive_news": {
-      "etag": "W/\"SgY7C_HQ3DJ7mjr5jaiMn-vHJv0\"",
+      "etag": "W/\"vb02j1SbjHfZQMmmhyrI7R8u8u8\"",
       "fail_count": 0,
-      "last_poll_ts": 1787480911.122109
+      "last_poll_ts": 1787482353.873133
     },
     "investing_news": {
-      "etag": "W/\"1239-659b4502e3fbe\"",
+      "etag": "W/\"1239-659b49be9df5c\"",
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 10:27:14 GMT",
-      "last_poll_ts": 1787480911.3506038
+      "last_modified": "Sun, 23 Aug 2026 10:48:25 GMT",
+      "last_poll_ts": 1787482354.0815349
     },
     "marketwatch_top": {
-      "etag": "W/\"2114-y8dkr8KABzNoAmHJ4ZZiTKhyhP0\"",
+      "etag": "W/\"2114-iv7n4OfbvKpd3neOlsiv5bNY5Po\"",
       "fail_count": 0,
-      "last_poll_ts": 1787480910.7804837
+      "last_poll_ts": 1787482353.3983974
     },
     "whitehouse_actions": {
       "etag": "\"393774828a07a184ce685a347792bc6c\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 21:35:04 GMT",
-      "last_poll_ts": 1787480910.5041516
+      "last_poll_ts": 1787482353.1087248
     },
     "zerohedge_feed": {
       "fail_count": 0,
       "last_modified": "Sun, 23 Aug 2026 09:54:23 GMT",
-      "last_poll_ts": 1787480910.90608
+      "last_poll_ts": 1787482353.512648
     }
   },
   "wire_day_counts": {

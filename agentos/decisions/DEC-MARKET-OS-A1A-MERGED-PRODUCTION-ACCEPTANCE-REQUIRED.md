@@ -66,6 +66,7 @@ confidence: high
 reversibility: easy
 decided_by: ceo-sol
 decided_at: 2026-08-20
+superseded_by: DEC:MARKET-OS-A1A-ACCEPTED-IN-PRODUCTION
 ---
 
 ## Authority consequence
@@ -83,3 +84,14 @@ The only lawful A1A continuation is:
 
 Only after that acceptance may A1B become eligible for a separate bounded
 commission. It does not auto-start.
+
+## Supersession note — 2026-08-23
+
+This pre-proof decision remains the historical record for the repair and real-production
+acceptance boundary. Those bounded repairs and the commissioned authenticated matrix later
+passed. For A1A completion only, the successor acceptance decision supersedes this record's
+unfinished-gate state and its broad account-transition production-proof clause: later,
+more-specific Sol authorities explicitly prohibited sign-out/sign-in Scene 9 while retaining
+the merged auth-generation protections and commissioning the remaining matrix. Sol accepted
+that matrix without Scene 9. Any future identity-transition production test requires separate
+authority and is not hidden A1A debt.
