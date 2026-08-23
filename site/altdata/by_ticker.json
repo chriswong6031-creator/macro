@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-23",
-  "generated_utc": "2026-08-23T01:05:06.425651+00:00",
+  "generated_utc": "2026-08-23T02:28:41.006888+00:00",
   "n_tickers": 2589,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
@@ -1233,20 +1233,6 @@
       "clinical_phase3_starts": 15,
       "clinical_halts": 1,
       "congress_position_usd": 38556000.0,
-      "convergence_score": 2,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "PFE": {
-      "ticker": "PFE",
-      "channels": [
-        "clinical_phase3_start",
-        "fda_label_expansion"
-      ],
-      "weighted_score": 0.9,
-      "clinical_phase3_starts": 15,
-      "clinical_halts": 1,
-      "congress_position_usd": 37800000.0,
       "convergence_score": 2,
       "trump_linked": false,
       "affiliated": false
