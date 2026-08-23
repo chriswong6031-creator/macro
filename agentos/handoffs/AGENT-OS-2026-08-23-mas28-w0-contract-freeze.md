@@ -50,14 +50,14 @@ verified:
       git fetch all three origins; fast-forward the isolated Macro carrier with
       git merge --ff-only origin/main; inspect targeted logs/diffs and current templates.
     result: >
-      Macro pin 55501af1af6cc1bfd9b066e0c03d436a57c3ac18; Mastermind pin
+      Macro pin 5b25fe3d944dc2344ddfa8abcc75b95f3fde8459; Mastermind pin
       db0bac5fe3f72348262d42c8bd26b836bda9f61d; Terminal pin
       449439c690e93ba968185499af4041c2f512b659. Post-commission Macro movement also
       included #6258's dislocation CI manifest/workflow expansion; exact diff review proved
       it did not change ci-gate, contract-delta, House-Law census or MAS-28 placement law.
-      Seven later commits through 55501af1af6cc1bfd9b066e0c03d436a57c3ac18 were exact-path
+      Eight later commits through 5b25fe3d944dc2344ddfa8abcc75b95f3fde8459 were exact-path
       reconciled and touched only unrelated data, research/runbook, cycle-pattern,
-      issuer-profile and press-wire surfaces.
+      issuer-profile, press-wire and Asia dashboard render surfaces.
   - claim: The controlling commission, MAS-6, MAS-28, MAS-67, #6119, #6135, templates and adjacent MAS-65/MAS-66 were reconciled.
     command: >
       Read the current Linear commission/issue/document/comments and current GitHub PR
