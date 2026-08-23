@@ -154,8 +154,22 @@ html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
 .r3-tr-mlab{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.05em;
   text-transform:uppercase; color:var(--muted); }
 .r3-tr-miss{ font-size:var(--fs-sm); }
-.r3-tr-miss i{ font-style:normal; margin-left:4px; font-variant-numeric:tabular-nums; }
-.r3-tr-miss i.up{ color:var(--ink-up); } .r3-tr-miss i.dn{ color:var(--ink-down); }
+/* B2-09 · a logged miss is HISTORY, not a direction call.
+   These figures used to bind `.up`/`.dn` off the call's own STAGE (emerging→dn,
+   fading→up), so six of the eight logged misses painted in the reserved
+   up-green — the page's admission that it was wrong, rendered in the one ink
+   this system reserves for "this went the way we said" (VTC1-005). The sign is
+   already in the text (+/-), so colour was carrying no information the reader
+   could not read; it was only mislabelling the row's meaning.
+   The replacement is the neutral rung, not a second state hue: an error-red
+   family is DISQUALIFIED here because `--act` does not participate in the
+   zh 红涨绿跌 swap, so red under ZH reads as up — the same defect mirrored.
+   `--muted` is the system's own secondary ink, is what this block's own label
+   (`.r3-tr-mlab`), note and disclaimer already carry, and mints no token — the
+   spec forbids a new one (DESIGN_SYSTEM_SPEC.md §373). Measured on `--panel`:
+   5.57:1 dark, 5.43:1 light, identical EN/ZH because the rung is achromatic. */
+.r3-tr-miss i{ font-style:normal; margin-left:4px; font-variant-numeric:tabular-nums;
+  color:var(--muted); }
 .r3-tr-disc{ padding:10px 16px 14px; border-top:1px solid var(--line);
   font-size:var(--fs-micro); color:var(--muted); line-height:1.5; }
 /* ── R3B1-08 · the scorecard's three help controls ───────────────────────────
@@ -670,8 +684,11 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     }).join('');
     var misses=(tr.recent_misses||[]).slice(0,8).map(function(mi){
       var v=mi.fwd_rel==null?0:mi.fwd_rel;
+      /* B2-09: no `.up`/`.dn` class. The stage no longer picks an ink — see the
+         CSS note on `.r3-tr-miss i`. The signed number still says which way it
+         went; the ink no longer says it went the right way. */
       return '<span class="r3-tr-miss"><b>'+esc(mi.name)+'</b>'
-        +'<i class="'+(mi.stage==='emerging'?'dn':'up')+'">'+(v>0?'+':'')+(v*100).toFixed(1)+'%</i></span>';
+        +'<i>'+(v>0?'+':'')+(v*100).toFixed(1)+'%</i></span>';
     }).join('');
     return '<div class="r3-panel r3-tr">'
       +'<div class="r3-tr-hd">' + L('&#128202; Track record','&#128202; 跟踪记录')
@@ -695,7 +712,7 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
           +' data-tip-en="Reliability is how unlikely that match is to be luck &mdash; a check means it clears the bar for that horizon."'
           +' data-tip-zh="可靠度是指这种吻合有多不可能出于偶然&mdash;&mdash;对勾表示该周期已达标。"></button></th>'
         +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
-      +(misses?'<div class="r3-tr-misses"><span class="r3-tr-mlab">'+L('Recently wrong (logged)','近期误判（已记录）')
+      +(misses?'<div class="r3-tr-misses" data-r3b2="09"><span class="r3-tr-mlab">'+L('Recently wrong (logged)','近期误判（已记录）')
         +'</span>'+misses+'</div>':'')
       +'<div class="r3-tr-disc">'
         +L('A scorecard of this page&#39;s own calls, checked against what happened next. Until a time-window has enough history, it is still measuring &mdash; read it as &#8220;measuring&#8221;, not proof.',

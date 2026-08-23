@@ -971,6 +971,12 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
   color:var(--muted); font-variant-numeric:tabular-nums; }
 [data-view="overview"] .r3-gr-note{ margin-top:12px; font-size:var(--fs-sm); color:var(--muted);
   line-height:1.5; }
+/* B2-04 fallback rung — the source-language identification line that precedes raw
+   producer English when no authored projection covers the emitted bytes. It is a
+   label, so it takes the micro step and the same --muted ink as the note it
+   introduces; it never renders on the fixture's own note, which is projected. */
+[data-view="overview"] .r3-gr-src{ display:block; margin-bottom:3px;
+  font-size:var(--fs-micro); font-weight:600; letter-spacing:.03em; }
 
 /* stale: the as-of stamp takes health ink + one plain line. Never a banner. */
 [data-view="overview"] .r3-asof.r3-stale{ color:var(--c); font-weight:600; }
@@ -1432,9 +1438,22 @@ function laneOf(key){
    fold id on EVERY lane, not only the visible one (access_hydration_contract §3
    step 6). */
 function paintPanel(){
+  /* ── B2-01 · ONE PRODUCER MEASURE, ONE CUSTOMER TERM ────────────────────────
+     This column paints `action_board.json → items[].score`, which is a BYTE COPY
+     of `theme_intel.themes[].score` for every `kind: "theme"` item —
+     `scripts/build_site.py:1774-1785` assigns `"score": th.get("score")` straight
+     off the `theme_intel.themes[]` element. The Data/Authority seat cross-joined
+     the two embedded fixtures on ticker and measured 33 of 33 identical, zero
+     differing (DA1-01): there is no independent action-board quantity here.
+     R3B1-06's carve-out ("do not rename the independent action-board score")
+     rested on that false premise and is AMENDED by Sol — the customer term for
+     this producer path is Strength / 强度 on every surface that paints it, action
+     board included. Two names over one number invited exactly the inference the
+     carve-out was meant to prevent: that the board carries an action-grade
+     measure the Map's context surface does not. */
   var cols = '<div class="r3-cols" aria-hidden="true">'
     + '<span>' + L('Sector or theme', '板块或主题') + '</span>'
-    + '<span class="r3-colfig" data-r3b1="11">' + L('Score', '评分')
+    + '<span class="r3-colfig" data-r3b1="11" data-r3b2="01">' + L('Strength', '强度')
     + '<em>' + L('20d vs market', '20日对比市场') + '</em></span>'
     + '<span>' + L('Why it is here', '入选原因') + '</span><span></span></div>';
   var bodies = LANES.map(function(L1){
@@ -1976,6 +1995,52 @@ function paintWatch(){
 }
 
 /* ── 5 · track record ───────────────────────────────────────────────────────── */
+
+/* ══ B2-04 · LANGUAGE OF PARTS — the pre-freeze note ═══════════════════════════
+   `grader.pre_freeze_note` is the one string on this artifact that reached the
+   reader as substantial ENGLISH PROSE inside an inherited `zh-CN` document: three
+   sentences, 38 Latin words, painted verbatim under a fully Chinese panel. Every
+   other line in this block already twins. A Chinese reader was handed the
+   product's own honesty disclosure — why grading starts where it starts, and
+   which part of the record is not gradeable at all — in a language the page had
+   just told them it was not using.
+
+   THE REPAIR IS A DISPLAY PROJECTION, NOT A REWRITE. The producer bytes are
+   untouched and still render verbatim under EN. Under ZH the reader gets a native
+   Chinese sentence carrying the identical governed meaning, clause for clause:
+
+     · grading accrues from 2026-07-02, the W3.8 freeze date;
+     · pre-freeze basket calls are not graded, because the series before that date
+       is permanently survivorship-contaminated (D4-N3);
+     · basket return math was re-anchored 2026-08 after the moving-base freeze
+       defect, and grades accrue from the chain anchor 2026-08-06.
+
+   Every date and both receipt keys (W3.8, D4-N3) survive, because they are the
+   handles a reader uses to look the claim up; a projection that dropped them
+   would be a softer statement, not the same one. Governed-meaning source: the
+   producer string itself, recorded as an EN→ZH pair in
+   research/reference_integrity/mastermind-xpv2-sector-r3b-2/copy_ledger_r3b2.md.
+
+   THE PROJECTION IS KEYED TO THE BYTES IT WAS AUTHORED AGAINST. If the producer
+   ever emits a different note, this reference does not guess a translation and
+   does not silently ship the old one: the English is kept, marked `lang="en"` so
+   assistive tech switches voice, and identified to the reader — in their own
+   language — as the data provider's original wording. That is the fallback
+   B2-04 sanctions, and it is a fallback, not the shipped path.  */
+var PRE_FREEZE_EN = 'Basket grading accruing from 2026-07-02 (W3.8 freeze date). '
+  + 'Pre-freeze basket calls are not graded: the series before this date is permanently '
+  + 'survivorship-contaminated (D4-N3). Basket return math re-anchored 2026-08 after the '
+  + 'moving-base freeze defect; grades accrue from the chain anchor (2026-08-06).';
+var PRE_FREEZE_ZH = '篮子评分自 2026-07-02（W3.8 冻结日）起累积。冻结日之前的篮子判断不予评分：'
+  + '该日期之前的序列存在无法消除的幸存者偏差（D4-N3）。篮子收益算法在出现移动基期冻结缺陷后'
+  + '已于 2026-08 重新锚定；评分自链条锚点（2026-08-06）起累积。';
+function preFreezeNote(raw){
+  var en = esc(raw);
+  if(String(raw) === PRE_FREEZE_EN) return L(en, PRE_FREEZE_ZH);
+  return L(en, '<span class="r3-gr-src">数据提供方原文（英文）</span>'
+    + '<span lang="en">' + en + '</span>');
+}
+
 /* Copy verbatim from sector_central.html.j2:3386-3405 (renderGrader). */
 function paintGrader(){
   var GR = (SCD && SCD.grader) || null;
@@ -2006,7 +2071,7 @@ function paintGrader(){
       + '</span></div>');
   });
   var note = GR.pre_freeze_note
-    ? '<p class="r3-gr-note">' + esc(GR.pre_freeze_note) + '</p>' : '';
+    ? '<p class="r3-gr-note" data-r3b2="04">' + preFreezeNote(GR.pre_freeze_note) + '</p>' : '';
   body.innerHTML = '<div class="r3-gr">' + (cells.join('')
     || '<div class="r3-gr-cell"><span class="r3-gr-v accruing">' + L('accruing', '累积中') + '</span></div>')
     + '</div>' + note;
@@ -2173,17 +2238,31 @@ document.addEventListener('DOMContentLoaded', function(){
       <div class="r3-rmap-list">
         <div class="r3-panel r3-tblbox">
           <table class="r3-tbl r3-rmap-tbl" id="rvx-board">
-            <caption class="r3-vh"><span class="l-en">Text equivalent of the rotation map — every group, where it sits, its strength score, its 20-day move against the S&amp;P and its rank move this week.</span><span class="l-zh">轮动图的文字等价表 — 每个板块所处位置、强度评分、20日相对标普涨跌与本周排名变化。</span></caption>
+            <caption class="r3-vh"><span class="l-en">Text equivalent of the rotation map — every group, where it sits, its strength, its 20-day move against the S&amp;P and its rank move this week.</span><span class="l-zh">轮动图的文字等价表 — 每个板块所处位置、强度、20日相对标普涨跌与本周排名变化。</span></caption>
             <thead><tr>
-              <th class="num"><span class="l-en">Rank</span><span class="l-zh">排名</span></th>
+              <!-- B2-08 · the rank's SCOPE travels with the rank. Under the Themes
+                   tab (the default) this column reads 1, 3, 4, 6, 7… because the
+                   rank is the group's rank across the whole board and the sector
+                   rows are filtered out of the list without renumbering. That fact
+                   used to sit in an orphan `.r3-note` 1075px below the column it
+                   explains (VTC1-004) — far enough down that a reader met the gaps
+                   first and the explanation never. It is now the header's own
+                   second line, using the two-line column-header pattern Overview
+                   already uses for its unit line, so the scope is read as part of
+                   the column name in both languages and by assistive tech. -->
+              <th class="num" data-r3b2="08"><span class="l-en">Rank</span><span class="l-zh">排名</span><em><span class="l-en">across all groups</span><span class="l-zh">在全部分组中</span></em></th>
               <th><span class="l-en">Group</span><span class="l-zh">板块</span></th>
               <th><span class="l-en">Where it sits</span><span class="l-zh">所处位置</span></th>
-              <!-- R3B1-06: `theme_intel.themes[].score` carries ONE name on every
-                   context surface of this build — Strength / 强度 (here, in the
-                   scatter tooltip and in the selected-object list, which uses
-                   production's own "Strength score / 强度评分", :2991). The graded
-                   action-board figure on Overview is a separate producer field
-                   (action_board.json) and is deliberately not renamed. -->
+              <!-- R3B1-06 + B2-01: `theme_intel.themes[].score` carries ONE name on
+                   EVERY surface of this build that paints it — Strength / 强度. That
+                   is here, the scatter tooltip, the selected-object list, and the
+                   Overview action board, whose `score` is a byte copy of this same
+                   field (scripts/build_site.py:1784; 33 of 33 identical on this
+                   fixture, DA1-01). The earlier carve-out claiming the action-board
+                   figure was a separate producer field was false and is withdrawn.
+                   The two genuinely different measures keep their own producer
+                   names: `conviction.score` = Conviction / 信心, and
+                   `double_gated.double_buy[].combined_score` = Conviction / 综合把握. -->
               <th class="num" data-r3b1="06"><span class="l-en">Strength</span><span class="l-zh">强度</span></th>
               <th class="num"><span class="l-en">20d vs S&amp;P</span><span class="l-zh">20日相对</span></th>
               <th class="num"><span class="l-en">Rank move 5d</span><span class="l-zh">5日排名变化</span></th>
@@ -2206,12 +2285,8 @@ document.addEventListener('DOMContentLoaded', function(){
           <span class="l-en">Noted tags come from the rotation board and carry no graded call — only the Overview lanes do.</span>
           <span class="l-zh">「备注」标签来自轮动看板，不构成分级判断 — 仅总览清单具此权重。</span>
         </p>
-        <!-- Rank is the group's global rank; under the Themes scope filter (default
-             above) it is non-contiguous (1, 3, 4, 6…) since sectors are filtered out
-             of the list without renumbering. -->
-        <p class="r3-note">
-          <span class="l-en">Rank across all groups</span><span class="l-zh">排名范围：全部分组</span>
-        </p>
+        <!-- B2-08: the orphan rank-scope note that used to live here is gone; the
+             scope now rides in the Rank column header itself (thead, above). -->
       </div>
 
       <!-- 1d · the map itself.  MOUNT-WIDTH LAW (spec §8.1): this container is
@@ -2418,6 +2493,21 @@ html[data-lang="zh"] .r3-rmap-detail .r3-selcat{ letter-spacing:0; text-transfor
 .r3-rmap-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4);
   padding:10px 2px 0; }
 .r3-rmap-foot #r3-map-count{ margin-left:auto; }
+/* B2-08 · two-line column header — the same device Overview uses for its unit line
+   ([data-view="overview"] .r3-colfig em), transposed onto a table head. Line 1 keeps
+   the `.r3-tbl th` treatment (micro, 700, uppercase, tracked); line 2 drops the
+   uppercase and the tracking so the scope reads as a phrase rather than a second
+   label, and stays on the same `--muted` rung the header already carries (no new
+   token, no literal). `white-space:nowrap` is load-bearing: the rank column's
+   min-content width is one short word, so without it the scope broke into a
+   three-line ragged stack that read as an accident rather than a second header
+   line. Held to one line it is exactly the two-line header the pattern intends,
+   and the ~48px it adds to the narrowest column is absorbed by the table box's
+   own sideways scroll, which is already discoverable on the widths where it
+   happens (`.r3-scrollhint`). */
+.r3-rmap-tbl thead em{ display:block; margin-top:2px; font-style:normal;
+  font-size:var(--fs-micro); font-weight:600; letter-spacing:.02em; text-transform:none;
+  line-height:1.25; color:var(--muted); white-space:nowrap; }
 /* the in-container scroll is lawful (the box scrolls, the page never does) but it
    has to be discoverable, so it says so — on the widths where it actually happens. */
 .r3-scrollhint{ display:none; }
@@ -2728,7 +2818,12 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
       +'<dl class="r3-selstats">'
       +'<dt>'+L('Where it sits','所处位置')+'</dt><dd>'+L(q[0],q[1])+'</dd>'
       +'<dt>'+L('Rank','排名')+'</dt><dd class="tnum">'+d.rank+'</dd>'
-      +'<dt>'+L('Strength score','强度评分')+'</dt><dd class="tnum">'+d.score+'</dd>'
+      /* B2-01: production's own dt reads "Strength score / 强度评分" (:2991). The
+         trailing noun is dropped here so `theme_intel.themes[].score` answers to
+         exactly ONE customer term across this reference — Strength / 强度 — and a
+         producer-path→label uniqueness check resolves to a single string. The
+         measure, the value and the field are unchanged; only the noun goes. */
+      +'<dt>'+L('Strength','强度')+'</dt><dd class="tnum">'+d.score+'</dd>'
       +'<dt>'+L('20 days vs S&amp;P','20日相对标普')+'</dt>'
         +'<dd class="r3-mv'+mvCls(d.r20)+'">'+pct1(d.r20)+'</dd>'
       +'<dt>'+L('Rank move this week','本周排名变化')+'</dt>'
@@ -3151,8 +3246,22 @@ html[data-lang="zh"] .r3-flowsub{ letter-spacing:0; text-transform:none; }
 .r3-tr-mlab{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.05em;
   text-transform:uppercase; color:var(--muted); }
 .r3-tr-miss{ font-size:var(--fs-sm); }
-.r3-tr-miss i{ font-style:normal; margin-left:4px; font-variant-numeric:tabular-nums; }
-.r3-tr-miss i.up{ color:var(--ink-up); } .r3-tr-miss i.dn{ color:var(--ink-down); }
+/* B2-09 · a logged miss is HISTORY, not a direction call.
+   These figures used to bind `.up`/`.dn` off the call's own STAGE (emerging→dn,
+   fading→up), so six of the eight logged misses painted in the reserved
+   up-green — the page's admission that it was wrong, rendered in the one ink
+   this system reserves for "this went the way we said" (VTC1-005). The sign is
+   already in the text (+/-), so colour was carrying no information the reader
+   could not read; it was only mislabelling the row's meaning.
+   The replacement is the neutral rung, not a second state hue: an error-red
+   family is DISQUALIFIED here because `--act` does not participate in the
+   zh 红涨绿跌 swap, so red under ZH reads as up — the same defect mirrored.
+   `--muted` is the system's own secondary ink, is what this block's own label
+   (`.r3-tr-mlab`), note and disclaimer already carry, and mints no token — the
+   spec forbids a new one (DESIGN_SYSTEM_SPEC.md §373). Measured on `--panel`:
+   5.57:1 dark, 5.43:1 light, identical EN/ZH because the rung is achromatic. */
+.r3-tr-miss i{ font-style:normal; margin-left:4px; font-variant-numeric:tabular-nums;
+  color:var(--muted); }
 .r3-tr-disc{ padding:10px 16px 14px; border-top:1px solid var(--line);
   font-size:var(--fs-micro); color:var(--muted); line-height:1.5; }
 /* ── R3B1-08 · the scorecard's three help controls ───────────────────────────
@@ -3667,8 +3776,11 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
     }).join('');
     var misses=(tr.recent_misses||[]).slice(0,8).map(function(mi){
       var v=mi.fwd_rel==null?0:mi.fwd_rel;
+      /* B2-09: no `.up`/`.dn` class. The stage no longer picks an ink — see the
+         CSS note on `.r3-tr-miss i`. The signed number still says which way it
+         went; the ink no longer says it went the right way. */
       return '<span class="r3-tr-miss"><b>'+esc(mi.name)+'</b>'
-        +'<i class="'+(mi.stage==='emerging'?'dn':'up')+'">'+(v>0?'+':'')+(v*100).toFixed(1)+'%</i></span>';
+        +'<i>'+(v>0?'+':'')+(v*100).toFixed(1)+'%</i></span>';
     }).join('');
     return '<div class="r3-panel r3-tr">'
       +'<div class="r3-tr-hd">' + L('&#128202; Track record','&#128202; 跟踪记录')
@@ -3692,7 +3804,7 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
           +' data-tip-en="Reliability is how unlikely that match is to be luck &mdash; a check means it clears the bar for that horizon."'
           +' data-tip-zh="可靠度是指这种吻合有多不可能出于偶然&mdash;&mdash;对勾表示该周期已达标。"></button></th>'
         +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
-      +(misses?'<div class="r3-tr-misses"><span class="r3-tr-mlab">'+L('Recently wrong (logged)','近期误判（已记录）')
+      +(misses?'<div class="r3-tr-misses" data-r3b2="09"><span class="r3-tr-mlab">'+L('Recently wrong (logged)','近期误判（已记录）')
         +'</span>'+misses+'</div>':'')
       +'<div class="r3-tr-disc">'
         +L('A scorecard of this page&#39;s own calls, checked against what happened next. Until a time-window has enough history, it is still measuring &mdash; read it as &#8220;measuring&#8221;, not proof.',
@@ -6772,10 +6884,37 @@ function paintFoot(){
 function relDot(rel){
   /* subsectors.js:58 renders this as an EN-only title=; house law + spec §9 put a
      bilingual accessible name in .r3-vh instead — title= is CI-guarded and a
-     single-language aria-label is not permitted on a bilingual surface. */
+     single-language aria-label is not permitted on a bilingual surface. That
+     promotion stays: it is the only reason this flag reaches a nonvisual reader
+     or a Chinese one at all.
+
+     ── DA1-02 · ONE WORD MAY NOT CARRY TWO PRODUCER FACTS ─────────────────────
+     What changed is the WORD. This chip used to read `Thin data — read with
+     caution / 数据稀疏 — 请谨慎解读`, which collided with the R3B1-07 coverage
+     sentence `paintFoot()` prints above this list ("48 are too thin to time and
+     are omitted from the timed table"). Those are two different producer paths
+     whose statements contradict each other on one screen: the sentence's "thin"
+     is `coverage.n_thin`, the GATE-DROPPED groups that never enter
+     `subsectors[]` at all; this chip's is `subsectors[].reliability == "low"`,
+     an IN-TABLE flag on rows that did pass the gate. A reader met "48 are
+     omitted as too thin" and then, on this fixture, 31 rows inside that very
+     table stamped "Thin data" (DA1-02 counted 32 painted nodes view-wide,
+     the timed table's 31 plus the selected list's).
+
+     The new label names what the producer field actually measures. Contract:
+     `engine/subsector_confluence.py:73-82` — `reliability(n_priced)` returns
+     HIGH/MED/LOW purely from the count of PRICED members (`>=12` high, `>=6`
+     med, otherwise low), documented at :62-71 as a breadth flag: an equal-weight
+     index on very few priced names is dominated by one or two of them, so its
+     cascade tier and regime read are high-variance. It is a MEMBER-COUNT fact,
+     not a history-length one — which is why "sparse history / 历史数据较少" was
+     considered and rejected as untrue to the field. `read with caution /
+     请谨慎解读` is kept verbatim from production: the stance is unchanged, only
+     the reason is now stated correctly, and the word "thin"/"稀疏" is left to
+     the coverage sentence alone. */
   if(String(rel || '').toLowerCase() !== 'low') return '';
-  return '<span class="r3-thin" aria-hidden="true"></span><span class="r3-vh">'
-    + L('Thin data — read with caution', '数据稀疏 — 请谨慎解读') + '</span>';
+  return '<span class="r3-thin" aria-hidden="true" data-r3b2="da102"></span><span class="r3-vh">'
+    + L('Few live members — read with caution', '实时成分股很少 — 请谨慎解读') + '</span>';
 }
 function groupRow(g){
   var e = g.entry || {}, r = g.regime || {};

@@ -281,6 +281,12 @@ html[data-lang="zh"] [data-view="overview"] .si-trace-k{ letter-spacing:0; text-
   color:var(--muted); font-variant-numeric:tabular-nums; }
 [data-view="overview"] .r3-gr-note{ margin-top:12px; font-size:var(--fs-sm); color:var(--muted);
   line-height:1.5; }
+/* B2-04 fallback rung — the source-language identification line that precedes raw
+   producer English when no authored projection covers the emitted bytes. It is a
+   label, so it takes the micro step and the same --muted ink as the note it
+   introduces; it never renders on the fixture's own note, which is projected. */
+[data-view="overview"] .r3-gr-src{ display:block; margin-bottom:3px;
+  font-size:var(--fs-micro); font-weight:600; letter-spacing:.03em; }
 
 /* stale: the as-of stamp takes health ink + one plain line. Never a banner. */
 [data-view="overview"] .r3-asof.r3-stale{ color:var(--c); font-weight:600; }
@@ -742,9 +748,22 @@ function laneOf(key){
    fold id on EVERY lane, not only the visible one (access_hydration_contract §3
    step 6). */
 function paintPanel(){
+  /* ── B2-01 · ONE PRODUCER MEASURE, ONE CUSTOMER TERM ────────────────────────
+     This column paints `action_board.json → items[].score`, which is a BYTE COPY
+     of `theme_intel.themes[].score` for every `kind: "theme"` item —
+     `scripts/build_site.py:1774-1785` assigns `"score": th.get("score")` straight
+     off the `theme_intel.themes[]` element. The Data/Authority seat cross-joined
+     the two embedded fixtures on ticker and measured 33 of 33 identical, zero
+     differing (DA1-01): there is no independent action-board quantity here.
+     R3B1-06's carve-out ("do not rename the independent action-board score")
+     rested on that false premise and is AMENDED by Sol — the customer term for
+     this producer path is Strength / 强度 on every surface that paints it, action
+     board included. Two names over one number invited exactly the inference the
+     carve-out was meant to prevent: that the board carries an action-grade
+     measure the Map's context surface does not. */
   var cols = '<div class="r3-cols" aria-hidden="true">'
     + '<span>' + L('Sector or theme', '板块或主题') + '</span>'
-    + '<span class="r3-colfig" data-r3b1="11">' + L('Score', '评分')
+    + '<span class="r3-colfig" data-r3b1="11" data-r3b2="01">' + L('Strength', '强度')
     + '<em>' + L('20d vs market', '20日对比市场') + '</em></span>'
     + '<span>' + L('Why it is here', '入选原因') + '</span><span></span></div>';
   var bodies = LANES.map(function(L1){
@@ -1286,6 +1305,52 @@ function paintWatch(){
 }
 
 /* ── 5 · track record ───────────────────────────────────────────────────────── */
+
+/* ══ B2-04 · LANGUAGE OF PARTS — the pre-freeze note ═══════════════════════════
+   `grader.pre_freeze_note` is the one string on this artifact that reached the
+   reader as substantial ENGLISH PROSE inside an inherited `zh-CN` document: three
+   sentences, 38 Latin words, painted verbatim under a fully Chinese panel. Every
+   other line in this block already twins. A Chinese reader was handed the
+   product's own honesty disclosure — why grading starts where it starts, and
+   which part of the record is not gradeable at all — in a language the page had
+   just told them it was not using.
+
+   THE REPAIR IS A DISPLAY PROJECTION, NOT A REWRITE. The producer bytes are
+   untouched and still render verbatim under EN. Under ZH the reader gets a native
+   Chinese sentence carrying the identical governed meaning, clause for clause:
+
+     · grading accrues from 2026-07-02, the W3.8 freeze date;
+     · pre-freeze basket calls are not graded, because the series before that date
+       is permanently survivorship-contaminated (D4-N3);
+     · basket return math was re-anchored 2026-08 after the moving-base freeze
+       defect, and grades accrue from the chain anchor 2026-08-06.
+
+   Every date and both receipt keys (W3.8, D4-N3) survive, because they are the
+   handles a reader uses to look the claim up; a projection that dropped them
+   would be a softer statement, not the same one. Governed-meaning source: the
+   producer string itself, recorded as an EN→ZH pair in
+   research/reference_integrity/mastermind-xpv2-sector-r3b-2/copy_ledger_r3b2.md.
+
+   THE PROJECTION IS KEYED TO THE BYTES IT WAS AUTHORED AGAINST. If the producer
+   ever emits a different note, this reference does not guess a translation and
+   does not silently ship the old one: the English is kept, marked `lang="en"` so
+   assistive tech switches voice, and identified to the reader — in their own
+   language — as the data provider's original wording. That is the fallback
+   B2-04 sanctions, and it is a fallback, not the shipped path.  */
+var PRE_FREEZE_EN = 'Basket grading accruing from 2026-07-02 (W3.8 freeze date). '
+  + 'Pre-freeze basket calls are not graded: the series before this date is permanently '
+  + 'survivorship-contaminated (D4-N3). Basket return math re-anchored 2026-08 after the '
+  + 'moving-base freeze defect; grades accrue from the chain anchor (2026-08-06).';
+var PRE_FREEZE_ZH = '篮子评分自 2026-07-02（W3.8 冻结日）起累积。冻结日之前的篮子判断不予评分：'
+  + '该日期之前的序列存在无法消除的幸存者偏差（D4-N3）。篮子收益算法在出现移动基期冻结缺陷后'
+  + '已于 2026-08 重新锚定；评分自链条锚点（2026-08-06）起累积。';
+function preFreezeNote(raw){
+  var en = esc(raw);
+  if(String(raw) === PRE_FREEZE_EN) return L(en, PRE_FREEZE_ZH);
+  return L(en, '<span class="r3-gr-src">数据提供方原文（英文）</span>'
+    + '<span lang="en">' + en + '</span>');
+}
+
 /* Copy verbatim from sector_central.html.j2:3386-3405 (renderGrader). */
 function paintGrader(){
   var GR = (SCD && SCD.grader) || null;
@@ -1316,7 +1381,7 @@ function paintGrader(){
       + '</span></div>');
   });
   var note = GR.pre_freeze_note
-    ? '<p class="r3-gr-note">' + esc(GR.pre_freeze_note) + '</p>' : '';
+    ? '<p class="r3-gr-note" data-r3b2="04">' + preFreezeNote(GR.pre_freeze_note) + '</p>' : '';
   body.innerHTML = '<div class="r3-gr">' + (cells.join('')
     || '<div class="r3-gr-cell"><span class="r3-gr-v accruing">' + L('accruing', '累积中') + '</span></div>')
     + '</div>' + note;

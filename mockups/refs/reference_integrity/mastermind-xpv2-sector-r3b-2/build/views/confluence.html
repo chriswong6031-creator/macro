@@ -614,10 +614,37 @@ function paintFoot(){
 function relDot(rel){
   /* subsectors.js:58 renders this as an EN-only title=; house law + spec §9 put a
      bilingual accessible name in .r3-vh instead — title= is CI-guarded and a
-     single-language aria-label is not permitted on a bilingual surface. */
+     single-language aria-label is not permitted on a bilingual surface. That
+     promotion stays: it is the only reason this flag reaches a nonvisual reader
+     or a Chinese one at all.
+
+     ── DA1-02 · ONE WORD MAY NOT CARRY TWO PRODUCER FACTS ─────────────────────
+     What changed is the WORD. This chip used to read `Thin data — read with
+     caution / 数据稀疏 — 请谨慎解读`, which collided with the R3B1-07 coverage
+     sentence `paintFoot()` prints above this list ("48 are too thin to time and
+     are omitted from the timed table"). Those are two different producer paths
+     whose statements contradict each other on one screen: the sentence's "thin"
+     is `coverage.n_thin`, the GATE-DROPPED groups that never enter
+     `subsectors[]` at all; this chip's is `subsectors[].reliability == "low"`,
+     an IN-TABLE flag on rows that did pass the gate. A reader met "48 are
+     omitted as too thin" and then, on this fixture, 31 rows inside that very
+     table stamped "Thin data" (DA1-02 counted 32 painted nodes view-wide,
+     the timed table's 31 plus the selected list's).
+
+     The new label names what the producer field actually measures. Contract:
+     `engine/subsector_confluence.py:73-82` — `reliability(n_priced)` returns
+     HIGH/MED/LOW purely from the count of PRICED members (`>=12` high, `>=6`
+     med, otherwise low), documented at :62-71 as a breadth flag: an equal-weight
+     index on very few priced names is dominated by one or two of them, so its
+     cascade tier and regime read are high-variance. It is a MEMBER-COUNT fact,
+     not a history-length one — which is why "sparse history / 历史数据较少" was
+     considered and rejected as untrue to the field. `read with caution /
+     请谨慎解读` is kept verbatim from production: the stance is unchanged, only
+     the reason is now stated correctly, and the word "thin"/"稀疏" is left to
+     the coverage sentence alone. */
   if(String(rel || '').toLowerCase() !== 'low') return '';
-  return '<span class="r3-thin" aria-hidden="true"></span><span class="r3-vh">'
-    + L('Thin data — read with caution', '数据稀疏 — 请谨慎解读') + '</span>';
+  return '<span class="r3-thin" aria-hidden="true" data-r3b2="da102"></span><span class="r3-vh">'
+    + L('Few live members — read with caution', '实时成分股很少 — 请谨慎解读') + '</span>';
 }
 function groupRow(g){
   var e = g.entry || {}, r = g.regime || {};

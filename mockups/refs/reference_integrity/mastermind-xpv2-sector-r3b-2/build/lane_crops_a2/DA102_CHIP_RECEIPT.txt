@@ -1,0 +1,16 @@
+candidate: /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/xpv2-sc-r3b-resume/mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+
+── lang=en ─────────────────────────────────────────────
+R3B1-07 coverage sentence (#cf-foot, byte-unchanged):
+    65 of 113 subsectors have enough live data to time. 48 are too thin to time and are omitted from the timed table. How timing support is graded 1 of 1 shown
+timed table (#cf-table): 65 tbody rows, 31 reliability chips, marker data-r3b2='da102'
+chip accessible name(s) in the timed table: ['Few live members — read with caution']
+chip accessible name(s) in the selected list: ['Few live members — read with caution']
+
+── lang=zh ─────────────────────────────────────────────
+R3B1-07 coverage sentence (#cf-foot, byte-unchanged):
+    113 个子行业中，65 个实时数据足够，可用于计时。另有 48 个数据过于稀疏，无法计时，未列入下方计时表。 时机支持的评分方式 已显示 1 / 1
+timed table (#cf-table): 65 tbody rows, 31 reliability chips, marker data-r3b2='da102'
+chip accessible name(s) in the timed table: ['实时成分股很少 — 请谨慎解读']
+chip accessible name(s) in the selected list: ['实时成分股很少 — 请谨慎解读']
+

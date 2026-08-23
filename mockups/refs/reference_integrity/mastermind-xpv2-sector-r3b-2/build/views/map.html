@@ -70,17 +70,31 @@
       <div class="r3-rmap-list">
         <div class="r3-panel r3-tblbox">
           <table class="r3-tbl r3-rmap-tbl" id="rvx-board">
-            <caption class="r3-vh"><span class="l-en">Text equivalent of the rotation map — every group, where it sits, its strength score, its 20-day move against the S&amp;P and its rank move this week.</span><span class="l-zh">轮动图的文字等价表 — 每个板块所处位置、强度评分、20日相对标普涨跌与本周排名变化。</span></caption>
+            <caption class="r3-vh"><span class="l-en">Text equivalent of the rotation map — every group, where it sits, its strength, its 20-day move against the S&amp;P and its rank move this week.</span><span class="l-zh">轮动图的文字等价表 — 每个板块所处位置、强度、20日相对标普涨跌与本周排名变化。</span></caption>
             <thead><tr>
-              <th class="num"><span class="l-en">Rank</span><span class="l-zh">排名</span></th>
+              <!-- B2-08 · the rank's SCOPE travels with the rank. Under the Themes
+                   tab (the default) this column reads 1, 3, 4, 6, 7… because the
+                   rank is the group's rank across the whole board and the sector
+                   rows are filtered out of the list without renumbering. That fact
+                   used to sit in an orphan `.r3-note` 1075px below the column it
+                   explains (VTC1-004) — far enough down that a reader met the gaps
+                   first and the explanation never. It is now the header's own
+                   second line, using the two-line column-header pattern Overview
+                   already uses for its unit line, so the scope is read as part of
+                   the column name in both languages and by assistive tech. -->
+              <th class="num" data-r3b2="08"><span class="l-en">Rank</span><span class="l-zh">排名</span><em><span class="l-en">across all groups</span><span class="l-zh">在全部分组中</span></em></th>
               <th><span class="l-en">Group</span><span class="l-zh">板块</span></th>
               <th><span class="l-en">Where it sits</span><span class="l-zh">所处位置</span></th>
-              <!-- R3B1-06: `theme_intel.themes[].score` carries ONE name on every
-                   context surface of this build — Strength / 强度 (here, in the
-                   scatter tooltip and in the selected-object list, which uses
-                   production's own "Strength score / 强度评分", :2991). The graded
-                   action-board figure on Overview is a separate producer field
-                   (action_board.json) and is deliberately not renamed. -->
+              <!-- R3B1-06 + B2-01: `theme_intel.themes[].score` carries ONE name on
+                   EVERY surface of this build that paints it — Strength / 强度. That
+                   is here, the scatter tooltip, the selected-object list, and the
+                   Overview action board, whose `score` is a byte copy of this same
+                   field (scripts/build_site.py:1784; 33 of 33 identical on this
+                   fixture, DA1-01). The earlier carve-out claiming the action-board
+                   figure was a separate producer field was false and is withdrawn.
+                   The two genuinely different measures keep their own producer
+                   names: `conviction.score` = Conviction / 信心, and
+                   `double_gated.double_buy[].combined_score` = Conviction / 综合把握. -->
               <th class="num" data-r3b1="06"><span class="l-en">Strength</span><span class="l-zh">强度</span></th>
               <th class="num"><span class="l-en">20d vs S&amp;P</span><span class="l-zh">20日相对</span></th>
               <th class="num"><span class="l-en">Rank move 5d</span><span class="l-zh">5日排名变化</span></th>
@@ -103,12 +117,8 @@
           <span class="l-en">Noted tags come from the rotation board and carry no graded call — only the Overview lanes do.</span>
           <span class="l-zh">「备注」标签来自轮动看板，不构成分级判断 — 仅总览清单具此权重。</span>
         </p>
-        <!-- Rank is the group's global rank; under the Themes scope filter (default
-             above) it is non-contiguous (1, 3, 4, 6…) since sectors are filtered out
-             of the list without renumbering. -->
-        <p class="r3-note">
-          <span class="l-en">Rank across all groups</span><span class="l-zh">排名范围：全部分组</span>
-        </p>
+        <!-- B2-08: the orphan rank-scope note that used to live here is gone; the
+             scope now rides in the Rank column header itself (thead, above). -->
       </div>
 
       <!-- 1d · the map itself.  MOUNT-WIDTH LAW (spec §8.1): this container is
@@ -315,6 +325,21 @@ html[data-lang="zh"] .r3-rmap-detail .r3-selcat{ letter-spacing:0; text-transfor
 .r3-rmap-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4);
   padding:10px 2px 0; }
 .r3-rmap-foot #r3-map-count{ margin-left:auto; }
+/* B2-08 · two-line column header — the same device Overview uses for its unit line
+   ([data-view="overview"] .r3-colfig em), transposed onto a table head. Line 1 keeps
+   the `.r3-tbl th` treatment (micro, 700, uppercase, tracked); line 2 drops the
+   uppercase and the tracking so the scope reads as a phrase rather than a second
+   label, and stays on the same `--muted` rung the header already carries (no new
+   token, no literal). `white-space:nowrap` is load-bearing: the rank column's
+   min-content width is one short word, so without it the scope broke into a
+   three-line ragged stack that read as an accident rather than a second header
+   line. Held to one line it is exactly the two-line header the pattern intends,
+   and the ~48px it adds to the narrowest column is absorbed by the table box's
+   own sideways scroll, which is already discoverable on the widths where it
+   happens (`.r3-scrollhint`). */
+.r3-rmap-tbl thead em{ display:block; margin-top:2px; font-style:normal;
+  font-size:var(--fs-micro); font-weight:600; letter-spacing:.02em; text-transform:none;
+  line-height:1.25; color:var(--muted); white-space:nowrap; }
 /* the in-container scroll is lawful (the box scrolls, the page never does) but it
    has to be discoverable, so it says so — on the widths where it actually happens. */
 .r3-scrollhint{ display:none; }
@@ -625,7 +650,12 @@ html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
       +'<dl class="r3-selstats">'
       +'<dt>'+L('Where it sits','所处位置')+'</dt><dd>'+L(q[0],q[1])+'</dd>'
       +'<dt>'+L('Rank','排名')+'</dt><dd class="tnum">'+d.rank+'</dd>'
-      +'<dt>'+L('Strength score','强度评分')+'</dt><dd class="tnum">'+d.score+'</dd>'
+      /* B2-01: production's own dt reads "Strength score / 强度评分" (:2991). The
+         trailing noun is dropped here so `theme_intel.themes[].score` answers to
+         exactly ONE customer term across this reference — Strength / 强度 — and a
+         producer-path→label uniqueness check resolves to a single string. The
+         measure, the value and the field are unchanged; only the noun goes. */
+      +'<dt>'+L('Strength','强度')+'</dt><dd class="tnum">'+d.score+'</dd>'
       +'<dt>'+L('20 days vs S&amp;P','20日相对标普')+'</dt>'
         +'<dd class="r3-mv'+mvCls(d.r20)+'">'+pct1(d.r20)+'</dd>'
       +'<dt>'+L('Rank move this week','本周排名变化')+'</dt>'
