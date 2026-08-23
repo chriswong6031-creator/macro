@@ -1672,7 +1672,8 @@ def _bar_close(bar: Any) -> float | None:
         return None
 
 
-def _build_hub_context(site: Path, rows: list[dict]) -> dict:
+def _build_hub_context(site: Path, rows: list[dict],
+                       linkable_tickers: frozenset[str] | None = None) -> dict:
     """Assemble everything the /stocks/ market hub renders.
 
     Fail-soft by design: every block is independently optional and the template
@@ -1736,9 +1737,17 @@ def _build_hub_context(site: Path, rows: list[dict]) -> dict:
         # This surface ships ahead of the engine that writes the artifact, so the
         # absent path is the one users see first and it has to be presentable.
         try:
+            # `linkable_tickers`, NOT the `linkable` set the boards above use:
+            # that one is this render's own index rows, while the pressure
+            # ledger is an outside source (like factors.json for peer cards), so
+            # it asks the same question the dead-reference guard asks — does a
+            # dossier SHIP for this name (lib.pages.rendered_ticker_pages). Six
+            # rows named a page that never rendered on every render through
+            # 2026-08-22; the row stays, the anchor goes.
             hub["pressure"] = _hub.pressure_band(
                 _load_json(site.parent / "data" / "price_pressure" / "latest.json"),
                 board_asof=board_asof,
+                linkable=linkable_tickers,
             )
         except Exception as e:  # noqa: BLE001
             print(f"::warning title=stocks_hub::pressure band unavailable: {e}",
@@ -3948,7 +3957,7 @@ def run(
     if not context_only and tmpl_index:
         try:
             index_rows_sorted = sorted(index_rows, key=lambda r: r["ticker"])
-            hub = _build_hub_context(site, index_rows_sorted)
+            hub = _build_hub_context(site, index_rows_sorted, linkable_tickers)
             index_html = tmpl_index.render(
                 rows=index_rows_sorted,
                 n_total=len(index_rows_sorted),
