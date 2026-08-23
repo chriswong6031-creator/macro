@@ -55,6 +55,7 @@ evidence:
   - "Macro research/CROSS_REPO_CONTRACT_BOUNDARY_AUDIT_2026-08-11.md — provider/auth-capacity bridge is safe while floating implementation coupling requires hardening"
   - "Mastermind research/EXECUTIVE_OS_PHASE1FC_CEO_POLICY_AND_IMPLEMENTATION_COMMISSION_2026-08-20.md — later accepted COO-cycle law owns schema-v4 placement/principal evidence"
   - "Mastermind control_plane/model_router.py + config/executive_worker_routes.json — current deterministic task/model routing remains separate from provider capacity"
+  - "research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_SEMANTIC_IDENTITY_AMENDMENT_2026-08-22.md — whole-repo commit is nonsemantic audit provenance; later claim evidence must bind snapshot hash plus generated time"
 affects:
   - WS:EXECUTIVE-CAPACITY-FABRIC
   - shared-ai-provider-control
@@ -73,13 +74,21 @@ its usability**. Model Router answers **what model/execution classes are accepta
 Job**. Executive OS answers **which already-eligible worker actually receives one Attempt**.
 Neither provider observations nor model output grants authority.
 
-`mastermind.provider_capacity.v1` is a projection, not a new lifecycle store. A later
-Executive placement receipt may bind the exact projection/snapshot digest used for a claim,
-but it must never mutate historical placement evidence when provider state is corrected later.
+`mastermind.provider_capacity.v1` is a projection, not a new lifecycle store. Its semantic
+`snapshot_hash` deliberately excludes wall-clock `generated_at` and nonsemantic audit metadata,
+so unrelated repository churn does not create false capacity changes. A later Executive claim
+receipt must bind at least the exact `snapshot_hash` **and** exact `generated_at` used for the
+freshness decision; the producing repository commit is retained separately as audit provenance.
+Historical claim evidence never mutates when provider state is corrected later.
+
+CF1's local producer/CLI proof does not itself define how Executive obtains the projection.
+CF2-F must freeze the then-current secret-free acquisition seam. Executive may validate the
+strict contract but may not import floating Macro implementation code or read raw provider
+ledgers, auth files, provider homes or secret-bearing environment as a fallback.
 
 ## No-rebuild boundary
 
 Do not add an Executive provider-account database, a second quota ledger, a second cooling
-ledger, another host/session registry, a provider-specific scheduler, or a hidden retry/failover
-plane. New providers extend Shared Provider Control plus reviewed worker harnesses; they do not
-change the ownership law above.
+ledger, another host/session registry, a provider-specific scheduler, a long-lived bridge daemon
+created only for convenience, or a hidden retry/failover plane. New providers extend Shared
+Provider Control plus reviewed worker harnesses; they do not change the ownership law above.
