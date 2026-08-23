@@ -3,22 +3,26 @@
 **Status:** NORMATIVE AMENDMENT to `CELL_F_D5_EVIDENCE_TRANSLATION_AND_TRAJECTORY_CONTRACT_2026-08-22.md`  
 **Linear:** MAS-122  
 **PR:** #6275  
-**Review basis:** exact branch head derived from final reconciled main base `3049b6f9785e7a08f03d746e0ca909cc425fdbde`
+**Historical construction parent:** `3049b6f9785e7a08f03d746e0ca909cc425fdbde` — **not** the final/current reconciliation base
 
 This file closes precision defects found by Sol's adversarial read of the frozen Cell F contract. It does **not** reopen the core architecture. Where this amendment conflicts with the base contract, this amendment wins.
 
 ---
 
-## A1 — Correct the archaeology receipt after final-main reconciliation
+## A1 — Correct archaeology and carrier provenance
 
-The base contract header's `Macro archaeology pin` sentence is superseded by this exact receipt:
+The earlier wording calling `3049b6f9785e7a08f03d746e0ca909cc425fdbde` the “final reconciled main base” was wrong and is superseded.
+
+The exact historical receipt is:
 
 - deep semantic/code/owner census: `f6a16bc24b62b3655d2662dba2018d6e83ee2e18`;
-- first post-census main: `9f373fd9553603192f495260b2100c16c177023b`, differing only by `data/marketing/outbox/activity.jsonl`;
-- final PR base: `3049b6f9785e7a08f03d746e0ca909cc425fdbde`;
-- the additional delta from `9f373f…` to `3049b6…` touched only `data/marketing/press_wire/cursors.json` and `data/marketing/press_wire/seen_ring.jsonl`.
+- first post-census main: `9f373fd9553603192f495260b2100c16c177023b`, differing from the deeper census pin only by `data/marketing/outbox/activity.jsonl`;
+- **original Cell F construction parent:** `3049b6f9785e7a08f03d746e0ca909cc425fdbde`; the first Cell F commit `e97947669b2e4eb8577a39aeb8515a4fb7423fe2` is directly parented to it;
+- the historical delta `9f373f… → 3049b6…` is three commits touching only `data/marketing/press_wire/cursors.json` and `data/marketing/press_wire/seen_ring.jsonl`;
+- prior closeout later reconciled the carrier against then-current main `d87abb9def7766aaba23819f0cc652dcd11a3aff`, producing subject head `4380c7de87a403113fd4ddf8de374702c6407cd6` and green exact-head CI/fences;
+- this 2026-08-23 continuation re-pins and reconciles again to current main before its new exact-head validation. The final current-main SHA for this continuation belongs in the return/PR receipt; it must not be retroactively mislabeled as the old `3049b6…` construction parent.
 
-Those intervening changes are fleet marketing data movement, not V4, D5, Context Vector, Fusion, specialist-contract, or Agent OS semantic changes. The PR carrier was rebuilt on the exact final base before review. Do not read the older `9f373f…` header sentence as the final merge-base receipt.
+Thus `3049b6…` remains useful **historical provenance**, but it is not the final merge-base/current-main receipt for #6275.
 
 ---
 
@@ -131,11 +135,27 @@ This closes the last route by which correction enrichment could accidentally bec
 
 ---
 
+## A7 — Candidate-level compositions and deterministic E1 baseline
+
+The family-level examples in the base contract are necessary but insufficient as an implementation acceptance oracle. The normative research companion is now:
+
+`research/prophet_v4/flagship_cells/CELL_F_D5_CANDIDATE_REFERENCE_COMPOSITIONS_AND_E1_BASELINE_2026-08-23.md`
+
+It contains eight candidate-level research compositions covering genuine independent confluence, common-ancestor fake confluence, favorable evidence plus fragility/crowding, missing/not-covered/unbuilt families, corrections/reversals, rights blocking, measured neutral, and strong intelligence with deterministic entry unavailable.
+
+Every one is explicitly labeled:
+
+> **REFERENCE COMPOSITION ONLY — not a canonical `prophet.candidate_episode/v1` instance until B1 exists.**
+
+The same document freezes the deterministic E1 recommendation: D5 itself ranks nothing; only decision-admissible owner-native observations explicitly bound to accepted Conditional Fusion members/versions can become E1 inputs. Missing/not-covered/unbuilt/rights-blocked/stale evidence abstains rather than becoming a zero vote; measured neutral is eligible only when positively measured under the member contract; rank remains inside the B4 availability lane; learned E3–E5 challengers remain shadow-only until E6 separately promotes them.
+
+---
+
 ## Review disposition
 
-After A1–A6, no semantic blocker remains inside Cell F itself. The only runtime blocker remains the upstream canonical V4 candidate episode B1 documented in `DSC-PROPHET-D5-BLOCKED-ON-CANONICAL-CANDIDATE-EPISODE-B1`.
+After A1–A7, no semantic blocker remains inside Cell F itself. The runtime blocker remains the upstream canonical V4 candidate episode B1 documented in `DSC-PROPHET-D5-BLOCKED-ON-CANONICAL-CANDIDATE-EPISODE-B1`.
 
-The first implementation vertical therefore remains unchanged:
+The first implementation vertical remains:
 
 > owner-issued canonical V4 candidate episode → mature Earnings `event_workspace.v1` → thin allowlisted `earnings.event` adapter → `prophet.intelligence_vector/v1` → one existing read-only Prophet Lab consumer → tests/proof → stop.
 
