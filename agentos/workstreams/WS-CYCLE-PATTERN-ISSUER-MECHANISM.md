@@ -587,13 +587,21 @@ waves:
       merges. Extraction-only, closes the named A5 gap: "TOL sensitivity
       prior-year comparator not extracted by A5A" (this file's own
       next_action above). engine/company_intelligence/issuer_profiles.py's
-      TOL beginning-quarter-backlog row (:1165-1230 post-change) now also
+      TOL beginning-quarter-backlog block (:1162-1261 post-change) now also
       emits fact_cancellation_rate_beginning_backlog_sensitivity_prior_year
       from the SAME row's prior-year cell (cells[1], the two-cell pattern
       already proven for the adjacent signed-contracts row), receipted
       byte-exact over its own span, period prior_year_same_quarter, basis
       the row's own verbatim label shared with the current-quarter fact —
-      no inference, no substitution. The consumption side
+      no inference, no substitution. Post-red-team hardening: the
+      prior-year fact is minted ONLY when the row's filtered numeric-cell
+      list has EXACTLY 2 entries AND that cell's own text parses as a
+      float; an ambiguous row shape (!=2 numeric cells -- e.g. a future
+      combined three-months+nine-months row) or an unparseable cell
+      ("N/A", "(1)", "1,234", an em-dash) both fall through to typed
+      absence with a detail naming the specific ambiguous-shape or
+      unparseable-cell reason -- these are the two absence paths a future
+      session will actually debug. The consumption side
       (engine/cycle_pattern/imce_prospective.py:161's
       TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID lookup, A5B's self-healing
       _tol_sensitivity diagnostic) is UNTOUCHED — this PR does not modify
@@ -608,8 +616,9 @@ waves:
       accession 0000794170-26-000096) verifies current==2.6/prior_year==3.2
       from disjoint byte spans, also disjoint from
       fact_cancellation_rate_prior_year's span (signed-contracts row).
-      tests/test_issuer_profiles_a5a.py grew 24 -> 27 passing (python3 -m
-      pytest tests/test_issuer_profiles_a5a.py -q). Once merged, A5B's
+      tests/test_issuer_profiles_a5a.py grew 24 -> 33 passing across the
+      extraction PR and the red-team fix round (python3 -m pytest
+      tests/test_issuer_profiles_a5a.py -q). Once merged, A5B's
       _tol_sensitivity diagnostic self-heals to NOT_RECONSTRUCTABLE only
       when d_orders is also unavailable -- no runtime/consumption code
       change required, confirming the A5B design note at
