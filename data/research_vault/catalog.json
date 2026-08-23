@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T08:16:30.924520+00:00",
-  "count": 1674,
+  "generated_at": "2026-08-23T09:17:04.686027+00:00",
+  "count": 1676,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1096,6 +1096,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-so6z9qaywfv-1ff944",
+      "title": "Audio",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:17Z",
+      "summary_points": [
+        "**Geopolitical Risk**: Iran sanctions due Monday (economic warfare) risk market optimism bias; Strait of Hormuz closure fears compound with US Treasury bond weakness and Trump policy response uncertainty.",
+        "**Fundamental Data Releases**: South Korea semiconductor exports drive export strength (Bank of Korea rate hike expected); UK July retail sales weakened by weather/early discounting despite fuel sales offsetting oil price impact.",
+        "**Tactical Allocation Tool**: Five-tier equity rating system (Most Attractive to Least Attractive) collapses to three tiers when combined with other assets, guiding portfolio allocation via expected returns and scenario analysis."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ydkpdw6jcyl-660bdf",
+      "title": "Listed real estate",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:17Z",
+      "summary_points": [
+        "**Allocation Priorities**: Prioritize Continental Europe, Hong Kong Developers/REITs, and US; avoid Australia, Japan, Singapore, UK due to interest rate sensitivity, China capital restrictions, and volatile bond markets.",
+        "**Earnings Growth**: Listed real estate EPS expected to grow 10.2% in 2026 and 7.7% in 2027 (ex-emerging markets), driven by rental indexation, reversion, and portfolio transactions.",
+        "**Valuation & Risk**: Sector dividend yield at 3.2% (below 7-yr avg 3.6%); REITs trade at 6% NAV premium; debt maturities >5yrs support refinancing flexibility amid office take-up risks.",
+        "**Target Range**: FTSE EPRA/Nareit 2027 target 9,100 (upside) vs.",
+        "8,500 (downside), driven by rental income growth, debt market stability, and NAV discounts for discounted companies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
