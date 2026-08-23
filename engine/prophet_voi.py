@@ -75,6 +75,14 @@ def _missing_group(value: Any) -> bool:
     return bool(marker) if isinstance(marker, (bool, np.bool_)) else False
 
 
+def _nonnegative_int(value: Any) -> int | None:
+    """Strict integer parser for owner/count contracts; booleans/floats/strings are not counts."""
+    if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
+        return None
+    parsed = int(value)
+    return parsed if parsed >= 0 else None
+
+
 def concentration_effective_count(values: Iterable[Any]) -> dict[str, Any]:
     """Inverse-HHI concentration diagnostic: 1 / sum(group_share ** 2)."""
     seq = list(values)
@@ -167,11 +175,20 @@ def precision_recall_at_k(
     if k <= 0:
         raise ValueError("k must be positive")
     top = list(positive[:k])
+    invalid_labels = sum(
+        value is not None and not isinstance(value, (bool, np.bool_)) for value in top
+    )
+    if invalid_labels:
+        return {
+            "state": HOLD_INTEGRITY,
+            "reason": "positive_label_must_be_boolean_or_null",
+            "invalid_labels": int(invalid_labels),
+        }
     if any(value is None for value in top):
         return {"state": UNAVAILABLE_FIELD, "reason": "missing_positive_label"}
 
     n_presented = len(top)
-    n_positive = sum(bool(value) for value in top)
+    n_positive = sum(value is True or isinstance(value, np.bool_) and bool(value) for value in top)
     out: dict[str, Any] = {
         "state": MEASURED,
         "k": k,
@@ -188,9 +205,29 @@ def precision_recall_at_k(
                 "recall_reason": "reference_population_positive_count_required",
             }
         )
-    elif reference_positive_count < 0:
-        raise ValueError("reference_positive_count must be non-negative")
-    elif reference_positive_count == 0:
+        return out
+
+    reference_count = _nonnegative_int(reference_positive_count)
+    if reference_count is None:
+        out.update(
+            {
+                "state": HOLD_INTEGRITY,
+                "recall": None,
+                "recall_state": HOLD_INTEGRITY,
+                "recall_reason": "reference_positive_count_must_be_nonnegative_integer",
+            }
+        )
+    elif reference_count < n_positive:
+        out.update(
+            {
+                "state": HOLD_INTEGRITY,
+                "recall": None,
+                "recall_state": HOLD_INTEGRITY,
+                "recall_reason": "topk_positives_exceed_reference_population_positives",
+                "reference_positive_count": reference_count,
+            }
+        )
+    elif reference_count == 0:
         out.update(
             {
                 "recall": None,
@@ -201,8 +238,9 @@ def precision_recall_at_k(
     else:
         out.update(
             {
-                "recall": _round(n_positive / reference_positive_count),
+                "recall": _round(n_positive / reference_count),
                 "recall_state": MEASURED,
+                "reference_positive_count": reference_count,
             }
         )
     return out
@@ -279,17 +317,26 @@ def classify_flagship_lead_gate(
 def _w3_integrity_error(status: Mapping[str, Any]) -> str | None:
     if status.get("schema") != "us.prophet_w3_status/v1":
         return "unexpected_or_missing_w3_status_schema"
-    try:
-        floor = int(status["honest_n_floor"])
-        matured = int(status["matured_h10_sessions"])
-    except (KeyError, TypeError, ValueError):
+
+    floor = _nonnegative_int(status.get("honest_n_floor"))
+    matured = _nonnegative_int(status.get("matured_h10_sessions"))
+    if floor is None or floor <= 0 or matured is None:
         return "missing_or_invalid_w3_maturity_fields"
-    if floor <= 0 or matured < 0:
-        return "invalid_w3_maturity_floor_or_count"
+
+    counts: dict[str, int] = {}
+    for field in ("paired_sessions_accrued", "unmatured_sessions", "n_degraded_or_unpaired", "n_missing"):
+        parsed = _nonnegative_int(status.get(field))
+        if parsed is None:
+            return f"missing_or_invalid_w3_count:{field}"
+        counts[field] = parsed
+    if matured > counts["paired_sessions_accrued"]:
+        return "matured_w3_sessions_exceed_paired_sessions_accrued"
+
     structural = status.get("structural")
     if not isinstance(structural, Mapping) or not isinstance(structural.get("outcome_blind"), bool):
         return "missing_w3_structural_outcome_blind_gate"
-    if status.get("comparison_surface") is None:
+    comparison_surface = status.get("comparison_surface")
+    if not isinstance(comparison_surface, str) or not comparison_surface.strip():
         return "missing_w3_comparison_surface_gate"
     return None
 
@@ -309,6 +356,10 @@ def summarize_w3_status(status: Mapping[str, Any]) -> dict[str, Any]:
 
     floor = int(status["honest_n_floor"])
     matured = int(status["matured_h10_sessions"])
+    paired = int(status["paired_sessions_accrued"])
+    unmatured = int(status["unmatured_sessions"])
+    degraded = int(status["n_degraded_or_unpaired"])
+    missing = int(status["n_missing"])
     outcome_blind = bool(status["structural"]["outcome_blind"])
     comparison_surface = status.get("comparison_surface")
     gate_closed = outcome_blind or matured < floor or comparison_surface == "forbidden"
@@ -322,10 +373,10 @@ def summarize_w3_status(status: Mapping[str, Any]) -> dict[str, Any]:
         "first_lawful_comparison_read": status.get("first_lawful_comparison_read"),
         "honest_n_floor": floor,
         "matured_h10_sessions": matured,
-        "paired_sessions_accrued": int(status.get("paired_sessions_accrued") or 0),
-        "unmatured_sessions": int(status.get("unmatured_sessions") or 0),
-        "n_degraded_or_unpaired": int(status.get("n_degraded_or_unpaired") or 0),
-        "n_missing": int(status.get("n_missing") or 0),
+        "paired_sessions_accrued": paired,
+        "unmatured_sessions": unmatured,
+        "n_degraded_or_unpaired": degraded,
+        "n_missing": missing,
         "outcome_blind": outcome_blind,
         "outcome_files_opened": False,
         "reason": (
