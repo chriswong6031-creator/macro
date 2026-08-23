@@ -41,6 +41,7 @@ depends_on:
 decisions:
   - DEC:PROPHET-V4-THEIA-SOURCE-RIGHTS
   - DEC:PROPHET-LAB-B5A-RECUT
+  - DEC:PROPHET-D5-PRESERVES-CONTEXT-VECTOR-AND-SEPARATES-EVIDENCE-AUTHORITY
 landmines:
   - "THE OUTAGE was LIVE at 0A (2026-08-17) and STILL UNRESOLVED on the reader at the
     0B pin (2026-08-18T00Z: source_asof=2026-08-13, 206 plans): #5742 open; sibling
@@ -96,6 +97,9 @@ do_not_redo:
     entry-detector fusion is Radar's reserved F1_FUSION slot."
   - "Do not synthesize the missed Aug-14 session from later knowledge — exact
     reconstruction from Aug-14-knowable data or an explicit unrecoverable receipt."
+  - "D5 v1 does NOT mutate or widen engine/us_context_vector.py; Context Vector is a read/reference-only PIT history/research substrate for D5."
+  - "An unbuilt D5 adapter emits no evidence-family envelope. Adapter readiness may accrue outside evidence_families[], but missing/unbuilt is never zero or neutral."
+  - "Runtime D5 requires the owner-issued canonical prophet.candidate_episode/v1 from B1. Never alias mastermind.live_entry_episode.v1 or mint ticker/date surrogate episodes."
 artifacts:
   - research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md
   - research/prophet_v4/PROPHET_US_V4_RECOVERY_AND_INTELLIGENCE_GRAPH_OS_MASTERPLAN_BY_SOL_2026-08-17.md
@@ -108,6 +112,10 @@ artifacts:
   - research/prophet_v4/EXPERIENCE_REFERENCE_COMPOSITIONS.md
   - research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md
   - research/prophet_v4/V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md
+  - research/prophet_v4/D1_D5_READINESS_RULING.md
+  - research/prophet_v4/flagship_cells/CELL_F_D5_EVIDENCE_TRANSLATION_AND_TRAJECTORY_CONTRACT_2026-08-22.md
+  - research/prophet_v4/flagship_cells/CELL_F_D5_ADVERSARIAL_REVIEW_AMENDMENTS_2026-08-22.md
+  - research/prophet_v4/flagship_cells/CELL_F_D5_CANDIDATE_REFERENCE_COMPOSITIONS_AND_E1_BASELINE_2026-08-23.md
 waves:
   - id: 0a
     title: "V4-0A — estate archaeology + architecture freeze. Merged #5832
@@ -511,15 +519,18 @@ waves:
     title: "V4-D4 — peer and transmission features"
     status: todo
   - id: d5
-    depends_on: [d1]
-    title: "V4-D5 — V4 intelligence-vector contract (prophet.intelligence_vector/v1).
-      Sol ADJUDICATED 2026-08-18 (D2A commission §19): D1's readiness ruling
-      ACCEPTED WITH BOUNDARY — contract work may later proceed in parallel once Sol
-      authorizes execution, but until d3 the theme_graph family status = ACCRUING,
-      measured fields = null, contribution = none; no provisional theme score, no
-      fake zero, no rank authority. Execution NOT authorized during D2A. Original
-      ruling: research/prophet_v4/D1_D5_READINESS_RULING.md (no ticker-string joins;
-      SPARSE coverage band is the honest scan-tier default)."
+    depends_on: [b1]
+    title: "V4-D5 — prophet.intelligence_vector/v1. CELL F RECONCILED 2026-08-23:
+      semantic architecture is frozen/research-return-ready, but runtime remains
+      SPEC_ONLY and is BLOCKED on the V4 owner's canonical B1 candidate episode after
+      A1 acceptance/adoption. D5 owns NO Context Vector mutation: engine/us_context_vector.py
+      stays unchanged/read-reference-only. An unbuilt adapter emits NO family envelope;
+      specifically Theme has no theme.theme_state envelope until canonical GMI ThemeState
+      plus a lawful D5 adapter exist — readiness may accrue only outside evidence_families[].
+      Entry Radar mastermind.live_entry_episode.v1 is not B1 and may not be aliased.
+      D5 has all rank/gate/size/origination/ENTRY_OPEN authority false. Candidate-level
+      references and the deterministic E1 boundary are frozen in
+      research/prophet_v4/flagship_cells/CELL_F_D5_CANDIDATE_REFERENCE_COMPOSITIONS_AND_E1_BASELINE_2026-08-23.md."
     status: todo
   - id: d6
     depends_on: [d5]
@@ -536,7 +547,13 @@ waves:
     depends_on: [b4, c1, d5]
     title: "V4-E1 — explainable deterministic V4 priority (extends Fusion registry
       post-3D). 0B note: Fusion PR-3B AND PR-3C (#5839) are merged; PR-3D remains the
-      sibling acceptance boundary; V4 does not read/tune from the W3 forward race."
+      sibling acceptance boundary; V4 does not read/tune from the W3 forward race.
+      CELL F boundary: only decision-admissible owner-native observations explicitly
+      bound to accepted Fusion members/versions may enter E1. Missing/not-covered/
+      unbuilt/rights-blocked/stale evidence abstains rather than becoming zero;
+      measured neutral is eligible only when positively measured; semantic heads,
+      source/root counts, dependence counts and coverage itself do not rank. E1
+      orders only inside the B4 availability lane; E3-E5 remain shadow until E6."
     status: todo
   - id: e2
     depends_on: [e1, b7, c2, a4]
@@ -559,18 +576,12 @@ waves:
     title: "V4-E6 — promotion gauntlet + V3 retirement ruling"
     status: todo
 next_action: >
-  V4-D1 complete. Route to Sol for three adjudications: (1) commission d2 with GMI
-  per research/prophet_v4/V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md; (2) ratify the
-  D3/W3B merge-order recommendation with GMI; (3) optionally commission the d5
-  contract-only lane in parallel (D1_D5_READINESS_RULING.md). Rights decisions
-  routed in the census §7 await Chairman/Sol. A-lane unchanged: DO NOT SPAWN A1 —
-  sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first. B5A LAB lane
-  (Chairman 2026-08-18): day-1 wave COMPLETE 2026-08-19 — W4.1 #5929 + P-LAB-API
-  #5928 built, twice-reviewed MERGE-SAFE, armed (merge gated on the house-law-registry
-  VMRK self-heal at the next nightly snapshot); R5 RIG cycle verdict REVISE recorded
-  on #5931 (armed); R5.1+R5.2 revision built on #5940 at frozen SHA f40ae70ac989 with
-  its two-pass critic cycle + verdict OWED. Next session: execute
-  agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-19-lab-day1.md §1 in order.
+  Cell F D5 architecture is records/research-only and runtime-blocked; do not spawn
+  D5 implementation from this record. Required D5 continuation is exactly:
+  V4 A1 acceptance/adoption → canonical V4-B1 candidate episode → Cell F Earnings
+  thin adapter. D2/GMI work remains separately owner-controlled under its frozen
+  child-wave gates. B5A/Lab/public-boundary state remains owned by its existing
+  handoffs and is not changed by the Cell F reconciliation.
 ---
 
 ## Context
