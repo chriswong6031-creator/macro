@@ -233,16 +233,30 @@ def test_board_actionability_coverage_keeps_missing_rows_in_denominator() -> Non
     assert coverage["null_reason_counts"] == {"short_history": 1, "unstamped_at_publish": 1}
 
 
-def test_board_actionability_excludes_by_design_lane_not_stamped_from_denominator() -> None:
-    frame = _board_fixture()
-    frame.loc[0, "entry_status"] = None
-    frame.loc[0, "entry_status_reason"] = "lane_not_stamped"
-    got = summarize_us_board_frame(frame, horizon=10, lane="buy")
+def test_lane_not_stamped_is_not_applicable_only_on_ran_lane() -> None:
+    ran = _board_fixture().iloc[[0]].copy()
+    ran.loc[:, "lane"] = "ran"
+    ran.loc[:, "entry_status"] = None
+    ran.loc[:, "entry_status_reason"] = "lane_not_stamped"
+    got = summarize_us_board_frame(ran, horizon=10, lane="ran")
     coverage = got["entry_status_coverage"]
     assert coverage["not_applicable_rows"] == 1
-    assert coverage["applicable_rows"] == 5
-    assert coverage["covered_rows"] == 3
-    assert coverage["coverage"] == 0.6
+    assert coverage["applicable_rows"] == 0
+    assert coverage["covered_rows"] == 0
+    assert coverage["state"] == NOT_APPLICABLE
+
+    # The same reason on a buy row is an integrity-shaped missing applicable value,
+    # not a license to improve the buy-lane coverage denominator.
+    buy = _board_fixture().iloc[[0]].copy()
+    buy.loc[:, "entry_status"] = None
+    buy.loc[:, "entry_status_reason"] = "lane_not_stamped"
+    got_buy = summarize_us_board_frame(buy, horizon=10, lane="buy")
+    buy_coverage = got_buy["entry_status_coverage"]
+    assert buy_coverage["not_applicable_rows"] == 0
+    assert buy_coverage["applicable_rows"] == 1
+    assert buy_coverage["covered_rows"] == 0
+    assert buy_coverage["coverage"] == 0.0
+    assert buy_coverage["null_reason_counts"] == {"lane_not_stamped": 1}
 
 
 def test_board_path_uses_native_basis_and_refuses_r_and_payoff_time() -> None:
